@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crystal Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* geode: cut mineral seen under low light */
+    --void:      #14111C;
+    --matrix:    #1E1A2B;
+    --seam:      #2E2842;
+    --seam-lit:  #443A63;
+    --chalk:     #D6CEE4;
+    --dust:      #8B819F;
+
+    --amethyst:  #A67BE8;
+    --citrine:   #E8B84B;
+    --quartz:    #6FC7E8;
+    --verdite:   #5FD9A4;
+    --ember:     #E8735F;
+
+    --display: 'Silkscreen', 'Courier New', monospace;
+    --body: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+
+    --step: 4px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--void);
+    color: var(--chalk);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* faint facet grid, like light through a cut stone */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--seam) 1px, transparent 1px),
+      linear-gradient(90deg, var(--seam) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: .22;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--chalk); }
+  h1 span { color: var(--amethyst); }
+  .sub { font-size: 12px; color: var(--dust); }
+  .seedbar { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
+  .seedbar code { color: var(--quartz); }
+
+  button { font-family: var(--body); cursor: pointer; border: 1px solid var(--seam-lit); background: var(--matrix); color: var(--chalk); }
+  button:focus-visible { outline: 2px solid var(--citrine); outline-offset: 2px; }
+  button:disabled { cursor: not-allowed; }
+
+  .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; }
+  .mini:hover:not(:disabled) { border-color: var(--amethyst); color: var(--amethyst); }
+
+  .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--dust); }
+  .chip:hover { color: var(--chalk); border-color: var(--seam-lit); }
+  .chip--on { background: var(--seam); color: var(--chalk); border-color: var(--amethyst); }
+
+  .cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--matrix); border: 1px solid var(--seam); padding: 16px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel__title { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin: 0 0 12px; }
+
+  #item-name { font-family: var(--display); font-size: 16px; margin: 0; }
+  #item-name.locked { color: var(--ember); }
+  #item-meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+
+  /* --- the signature: slots as cut facets --------------------------- */
+  .slotgroup { margin-bottom: 14px; }
+  .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
+  .facets { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .facet {
+    width: 54px; height: 62px; padding: 0;
+    position: relative;
+    border: none; background: none;
+    display: grid; place-items: center;
+    clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
+    transition: transform .12s steps(3), filter .12s steps(3);
+  }
+  .facet--empty { background: var(--void); box-shadow: inset 0 0 0 2px var(--seam); }
+  .facet--set { box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+  .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
+  .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
+  .facet__tier { font-family: var(--display); font-size: 11px; color: var(--void); }
+
+  .facet--amethyst { background: var(--amethyst); }
+  .facet--citrine  { background: var(--citrine); }
+  .facet--quartz   { background: var(--quartz); }
+  .facet--verdite  { background: var(--verdite); }
+  .facet--ember    { background: var(--ember); }
+
+  .mod { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--seam); }
+  .mod--focus { background: var(--seam); margin: 0 -8px; padding: 8px; }
+  .mod__stats { font-size: 13px; }
+  .mod__name { font-size: 11px; color: var(--dust); letter-spacing: .04em; }
+  .dot { width: 8px; height: 8px; margin-top: 6px; flex: none; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .dot--amethyst { background: var(--amethyst); }
+  .dot--citrine  { background: var(--citrine); }
+  .dot--quartz   { background: var(--quartz); }
+  .dot--verdite  { background: var(--verdite); }
+  .dot--ember    { background: var(--ember); }
+
+  .empty { color: var(--dust); font-size: 12px; font-style: italic; }
+
+  .shelf__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; }
+  .shelf__label:first-child { margin-top: 0; }
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+
+  .curr { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 2px; border-left-width: 3px; }
+  .curr__name { font-size: 12px; font-weight: 600; }
+  .curr__desc { font-size: 10px; color: var(--dust); line-height: 1.35; }
+  .curr__why { font-size: 10px; color: var(--ember); margin-top: 2px; }
+  .curr--basic    { border-left-color: var(--dust); }
+  .curr--uncommon { border-left-color: var(--verdite); }
+  .curr--rare     { border-left-color: var(--quartz); }
+  .curr--exotic   { border-left-color: var(--citrine); }
+  .curr:hover:not(:disabled) { background: var(--seam); }
+  .curr--off { opacity: .42; }
+
+  #log { max-height: 320px; overflow-y: auto; font-size: 12px; }
+  .logline { padding: 2px 0; border-bottom: 1px solid var(--seam); }
+  .logline--add    { color: var(--verdite); }
+  .logline--remove { color: var(--ember); }
+  .logline--fail   { color: var(--citrine); }
+  .logline--note   { color: var(--dust); letter-spacing: .04em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Crystal <span>Bench</span></h1>
+      <div class="sub">Crafting test harness — every currency is data, not code.</div>
+    </div>
+    <div class="seedbar">
+      seed <code id="seed">0</code>
+      <button class="mini" id="reseed">New seed</button>
+      <button class="mini" id="clear">Clear log</button>
+    </div>
+  </header>
+
+  <div class="bases" id="bases"></div>
+
+  <div class="cols">
+    <div>
+      <div class="panel">
+        <h2 id="item-name">—</h2>
+        <div id="item-meta"></div>
+        <div id="sockets"></div>
+        <div id="modlist"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <p class="panel__title">Currency</p>
+        <div id="currencies"></div>
+      </div>
+      <div class="panel">
+        <p class="panel__title">History</p>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>

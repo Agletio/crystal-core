@@ -1,0 +1,20 @@
+{
+  "name": "crystal-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/demo.ts",
+    "build": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js",
+    "watch": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js --watch",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "esbuild": "^0.28.1",
+    "jsdom": "^30.0.1",
+    "tsx": "^4.23.5",
+    "typescript": "^7.0.2"
+  }
+}
