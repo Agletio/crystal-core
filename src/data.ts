@@ -422,6 +422,8 @@ export const HERO_BASE = {
   moveSpeed: 3.4,
   armour: 0,
   attackRange: 1.7,
+  /** Body radius in tiles. */
+  radius: 0.34,
   /** How far the hero will notice a monster and divert to fight it. */
   aggroRange: 9,
   /** Percent of max life per second. Recovery happens between packs, which
@@ -468,6 +470,7 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.85,
     attacksPerSecond: 1,
     attackRange: 1,
+    radius: 0.3,
     sprite: 'grub',
     weight: 1000,
     tags: ['beast'],
@@ -480,6 +483,7 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1,
     attacksPerSecond: 0.9,
     attackRange: 1,
+    radius: 0.32,
     sprite: 'husk',
     weight: 800,
     tags: ['undead'],
@@ -492,6 +496,7 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.45,
     attacksPerSecond: 1.25,
     attackRange: 1,
+    radius: 0.26,
     sprite: 'stalker',
     weight: 600,
     tags: ['beast'],
@@ -504,6 +509,7 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.7,
     attacksPerSecond: 0.7,
     attackRange: 1.15,
+    radius: 0.44,
     sprite: 'brute',
     weight: 260,
     tags: ['humanoid'],
@@ -513,6 +519,18 @@ export const MONSTERS: MonsterDef[] = [
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
   MONSTERS.map((m) => [m.id, m])
 );
+
+/**
+ * Chance a pack spawns wielding the ranged skill instead of closing to melee.
+ *
+ * Rolled per PACK, not per monster, for the same reason kinds are: a pack that
+ * hangs back and shoots is a thing you can recognise, where one archer mixed
+ * into a melee pack is just an inconsistency.
+ */
+export const RANGED_PACK_CHANCE = 0.25;
+
+/** Which skill a ranged pack uses. */
+export const MONSTER_RANGED_SKILL = 'bolt';
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
@@ -555,6 +573,23 @@ export const SKILLS: SkillDef[] = [
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: HERO_BASE.attackRange,
+  },
+  {
+    // Needed no new code — same single_target behaviour, longer range. That is
+    // the registry doing its job.
+    //
+    // Deliberately identical to Strike apart from reach, so it isolates what
+    // range alone is worth. That also makes it strictly better; when you want
+    // it to be a real choice, drop damageMultiplier or rateMultiplier here.
+    id: 'bolt',
+    name: 'Arcane Bolt',
+    description: 'A single bolt at range. Same hit, from much further away.',
+    tags: ['spell', 'ranged'],
+    behaviour: 'single_target',
+    damageTypes: ['physical'],
+    damageMultiplier: 1,
+    rateMultiplier: 1,
+    range: 6.5,
   },
 ];
 

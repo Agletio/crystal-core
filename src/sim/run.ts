@@ -17,7 +17,14 @@ import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
 import type { Character } from './character';
-import { MONSTERS, SKILLS, SKILL_BY_ID } from '../data';
+import {
+  HERO_BASE,
+  MONSTERS,
+  MONSTER_RANGED_SKILL,
+  RANGED_PACK_CHANCE,
+  SKILLS,
+  SKILL_BY_ID,
+} from '../data';
 import type { Item, SkillDef } from '../types';
 
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
@@ -40,6 +47,9 @@ const ACQUIRE_PATH_LIMIT = 2.5;
 
 /** How long a rejected monster is left alone before being reconsidered. */
 const IGNORE_SECONDS = 5;
+
+/** Relaxation iterations for body separation. See separate(). */
+const SEPARATION_PASSES = 2;
 
 export type EntityKind = 'hero' | 'monster';
 
@@ -66,6 +76,10 @@ export interface Entity {
   /** Radians. Where the entity is looking — sprites need this, the sim doesn't. */
   facing: number;
   action: EntityAction;
+  /** Body radius in tiles. Units shove each other apart rather than stacking. */
+  radius: number;
+  /** Skill this entity attacks with. Null means a plain melee hit. */
+  skillId: string | null;
   /** Seconds left holding a transient action before falling back to idle/move. */
   actionTimer: number;
   /** Seconds since death, for the fade-out. Only meaningful once dead. */
@@ -182,6 +196,8 @@ export class RunSim {
       y: map.entrance.y,
       facing: 0,
       action: 'idle',
+      radius: HERO_BASE.radius,
+      skillId: character.skillId,
       actionTimer: 0,
       deathAge: 0,
       life: stats.maxLife,
@@ -233,10 +249,21 @@ export class RunSim {
       // One kind per pack. Mixed packs read as noise; a uniform pack reads as
       // a thing you can recognise and react to.
       const def = this.rng.weighted(MONSTERS, (m) => m.weight) ?? MONSTERS[0];
-      let stats = statsFor.get(def.id);
+      const ranged = this.rng.chance(RANGED_PACK_CHANCE);
+      const bolt = SKILL_BY_ID[MONSTER_RANGED_SKILL];
+
+      // Stats differ between the melee and ranged variants of a kind, so they
+      // key separately — a ranged pack reaches much further and has to notice
+      // the hero from beyond its own reach to ever open fire.
+      const statsKey = ranged ? `${def.id}:ranged` : def.id;
+      let stats = statsFor.get(statsKey);
       if (!stats) {
-        stats = monsterStats(crystal, tier, def);
-        statsFor.set(def.id, stats);
+        const base = monsterStats(crystal, tier, def);
+        stats =
+          ranged && bolt
+            ? { ...base, attackRange: bolt.range, aggroRange: bolt.range + 2 }
+            : base;
+        statsFor.set(statsKey, stats);
       }
 
       for (let i = 0; i < packSize; i++) {
@@ -244,6 +271,8 @@ export class RunSim {
           id: this.nextId++,
           kind: 'monster',
           sprite: def.sprite,
+          radius: def.radius,
+          skillId: ranged && bolt ? MONSTER_RANGED_SKILL : null,
           x: this.rng.float(room.x, room.x + room.w - 1),
           y: this.rng.float(room.y, room.y + room.h - 1),
           facing: this.rng.float(0, Math.PI * 2),
@@ -298,6 +327,91 @@ export class RunSim {
       this.stepMonster(m, dt);
       if (s.status !== 'running') return;
     }
+
+    this.separate();
+  }
+
+  /**
+   * Push overlapping bodies apart.
+   *
+   * Runs after everyone has moved, so pathing stays simple: entities steer as
+   * if the world were empty and then get shoved out of each other. Doing it
+   * the other way round — collision-aware pathfinding — is far more code for
+   * a result nobody watching could tell apart.
+   *
+   * Bucketed by tile so this stays linear rather than checking all pairs;
+   * sixty monsters in one room would otherwise be 1,800 comparisons a tick.
+   */
+  private separate(): void {
+    const s = this.state;
+    const { grid } = s.map;
+
+    // Two passes. One leaves visible residual overlap in a crowded corridor,
+    // because pushing A out of B can shove it into C. Two gets it to roughly
+    // a twentieth of a tile, which nobody can see. Three buys nothing.
+    for (let pass = 0; pass < SEPARATION_PASSES; pass++) {
+      const buckets = new Map<number, Entity[]>();
+      const actives: Entity[] = [];
+
+      const add = (e: Entity) => {
+        actives.push(e);
+        const k = Math.round(e.y) * grid.width + Math.round(e.x);
+        const list = buckets.get(k);
+        if (list) list.push(e);
+        else buckets.set(k, [e]);
+      };
+
+      for (const m of s.monsters) if (!m.dead) add(m);
+      if (!s.hero.dead) add(s.hero);
+
+      for (const a of actives) {
+        const ax = Math.round(a.x);
+        const ay = Math.round(a.y);
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const list = buckets.get((ay + dy) * grid.width + (ax + dx));
+            if (!list) continue;
+            // id ordering visits each pair exactly once.
+            for (const b of list) if (b.id > a.id) this.resolveOverlap(a, b);
+          }
+        }
+      }
+    }
+  }
+
+  private resolveOverlap(a: Entity, b: Entity): void {
+    const min = a.radius + b.radius;
+    let dx = b.x - a.x;
+    let dy = b.y - a.y;
+    let d = Math.hypot(dx, dy);
+    if (d >= min) return;
+
+    if (d < 1e-4) {
+      // Exactly stacked, which happens at spawn. Pick a direction off the id
+      // so the nudge is deterministic and the pair doesn't jitter.
+      dx = Math.cos(a.id * 2.399);
+      dy = Math.sin(a.id * 2.399);
+      d = 1;
+    }
+
+    const overlap = (min - d) / 2;
+    const nx = (dx / d) * overlap;
+    const ny = (dy / d) * overlap;
+
+    // The hero shoves rather than being shoved. Otherwise a big pack walks it
+    // backwards off its own path and it never reaches anything.
+    const aw = a.kind === 'hero' ? 0.2 : 1;
+    const bw = b.kind === 'hero' ? 0.2 : 1;
+
+    this.nudge(a, -nx * aw, -ny * aw);
+    this.nudge(b, nx * bw, ny * bw);
+  }
+
+  /** Move an entity, refusing any component that would put it inside a wall. */
+  private nudge(e: Entity, dx: number, dy: number): void {
+    const { grid } = this.state.map;
+    if (grid.walkable(e.x + dx, e.y)) e.x += dx;
+    if (grid.walkable(e.x, e.y + dy)) e.y += dy;
   }
 
   /** Decay the transient pose and fall back to whether it's moving. */
@@ -336,7 +450,7 @@ export class RunSim {
         hero.path = [];
         this.face(hero, target.x, target.y);
         this.settleAction(hero, false);
-        if (hero.cooldown <= 0) this.useSkill(hero, target);
+        if (hero.cooldown <= 0) this.useSkill(hero, target, this.skill);
       } else if (!this.advance(hero, target, dt)) {
         // Route vanished. Drop it and look elsewhere rather than stand and
         // stare at a wall.
@@ -382,10 +496,14 @@ export class RunSim {
       this.face(m, hero.x, hero.y);
       this.settleAction(m, false);
       if (m.cooldown <= 0) {
-        // Monsters don't use skills yet — one plain hit. When they do, this
-        // becomes the same useSkill() call the hero makes.
-        this.dealDamage(m, hero, 1);
-        m.cooldown = 1 / m.stats.attacksPerSecond;
+        const skill = m.skillId ? SKILL_BY_ID[m.skillId] : undefined;
+        if (skill) {
+          // Ranged packs go through the exact same skill path the hero uses.
+          this.useSkill(m, hero, skill);
+        } else {
+          this.dealDamage(m, hero, 1);
+          m.cooldown = 1 / m.stats.attacksPerSecond;
+        }
       }
       return;
     }
@@ -503,28 +621,37 @@ export class RunSim {
    * decides what a hit does. Adding chain lightning or a ground slam means
    * adding a behaviour, not touching this method.
    */
-  private useSkill(user: Entity, primary: Entity): void {
-    const behaviour =
-      SKILL_BEHAVIOURS[this.skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
+  private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
+    const behaviour = SKILL_BEHAVIOURS[skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
 
     user.action = 'attack';
     user.actionTimer = ATTACK_POSE;
 
     behaviour({
-      skill: this.skill,
+      skill,
       user,
       primary,
-      enemies: this.state.monsters.filter((m) => !m.dead),
+      // Whose side you're on decides who counts as an enemy. Monsters only
+      // ever have one, which is why this stays a list rather than a lookup.
+      enemies:
+        user.kind === 'hero'
+          ? this.state.monsters.filter((m) => !m.dead)
+          : [this.state.hero],
       rng: this.rng,
-      hit: (target, multiplier) => this.dealDamage(user, target, multiplier),
+      hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       vfx: (kind, points, ttl = 0.3) =>
-        this.emit(kind, points, this.skill.damageTypes[0] ?? 'physical', ttl),
+        this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
     });
 
     user.cooldown = 1 / user.stats.attacksPerSecond;
   }
 
-  private dealDamage(attacker: Entity, defender: Entity, multiplier: number): void {
+  private dealDamage(
+    attacker: Entity,
+    defender: Entity,
+    multiplier: number,
+    skill?: SkillDef
+  ): void {
     const s = this.state;
     if (defender.dead) return;
 
@@ -551,7 +678,7 @@ export class RunSim {
     this.emit(
       'impact',
       [{ x: defender.x, y: defender.y }],
-      attacker.kind === 'hero' ? this.skill.damageTypes[0] ?? 'physical' : 'physical',
+      skill?.damageTypes[0] ?? 'physical',
       0.25
     );
 

@@ -100,28 +100,56 @@ function carveRoom(grid: Grid, r: Room): void {
   }
 }
 
-function hLine(grid: Grid, x0: number, x1: number, y: number): void {
-  for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) grid.set(x, y, FLOOR);
+/** Carve one tile, leaving a permanent wall border around the map. */
+function carve(grid: Grid, x: number, y: number): void {
+  if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
+  grid.set(x, y, FLOOR);
 }
 
-function vLine(grid: Grid, y0: number, y1: number, x: number): void {
-  for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) grid.set(x, y, FLOOR);
+/** Offsets that centre a band of the given width on a line. */
+function band(width: number): number[] {
+  const lo = -Math.floor((width - 1) / 2);
+  const out: number[] = [];
+  for (let i = 0; i < width; i++) out.push(lo + i);
+  return out;
 }
 
-/** L-shaped corridor. Both legs always get carved; leg ORDER is what the
- *  seed picks, which is what makes layouts differ. */
+function hLine(grid: Grid, x0: number, x1: number, y: number, width: number): void {
+  const offsets = band(width);
+  for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {
+    for (const d of offsets) carve(grid, x, y + d);
+  }
+}
+
+function vLine(grid: Grid, y0: number, y1: number, x: number, width: number): void {
+  const offsets = band(width);
+  for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) {
+    for (const d of offsets) carve(grid, x + d, y);
+  }
+}
+
+/**
+ * L-shaped corridor. Both legs always get carved; leg ORDER is what the seed
+ * picks, which is what makes layouts differ.
+ *
+ * Corridors are 2-3 tiles wide so a few units fit abreast. At one tile wide,
+ * body collision turns every hallway into a single-file queue and the hero
+ * fights one monster at a time forever — which looks less like a fight and
+ * more like a checkout line.
+ */
 function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng): void {
   const ax = Math.round(a.x);
   const ay = Math.round(a.y);
   const bx = Math.round(b.x);
   const by = Math.round(b.y);
+  const width = rng.int(2, 3);
 
   if (rng.chance(0.5)) {
-    hLine(grid, ax, bx, ay);
-    vLine(grid, ay, by, bx);
+    hLine(grid, ax, bx, ay, width);
+    vLine(grid, ay, by, bx, width);
   } else {
-    vLine(grid, ay, by, ax);
-    hLine(grid, ax, bx, by);
+    vLine(grid, ay, by, ax, width);
+    hLine(grid, ax, bx, by, width);
   }
 }
 

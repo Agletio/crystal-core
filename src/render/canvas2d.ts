@@ -186,7 +186,16 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     }
     ctx.globalAlpha = 1;
 
-    if (!fading) drawLifeBar(v, m, 0.7, palette.ember);
+    if (!fading) {
+      drawLifeBar(v, m, 0.7, palette.ember);
+      // Pip marks a monster that shoots.
+      if (m.skillId) {
+        ctx.beginPath();
+        ctx.arc(cx(v, m.x), cy(v, m.y) - v.tile * 0.55, v.tile * 0.11, 0, Math.PI * 2);
+        ctx.fillStyle = palette.amethyst;
+        ctx.fill();
+      }
+    }
   }
 
   function drawVfx(v: View, state: RunState): void {

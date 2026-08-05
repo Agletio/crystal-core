@@ -210,6 +210,15 @@ export async function createPixiRenderer(
     for (const m of state.monsters) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite);
 
+    // Ranged monsters get a pip, so a pack that shoots is identifiable before
+    // it starts shooting.
+    for (const m of state.monsters) {
+      if (m.dead || !m.skillId) continue;
+      vfxLayer
+        .circle(cx(m.x), cy(m.y) - tile * 0.55, tile * 0.11)
+        .fill(toHexNumber(palette.amethyst));
+    }
+
     // Skill and impact effects.
     for (const fx of state.vfx) {
       const t = fx.age / fx.ttl;

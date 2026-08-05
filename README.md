@@ -208,6 +208,28 @@ A pack rolls **one** kind and spawns all of it. Mixed packs read as noise on
 screen; a uniform pack reads as "that's a Brute pack, careful" — which is the
 difference between decoration and information.
 
+A pack also rolls `RANGED_PACK_CHANCE` to spawn wielding the `bolt` skill
+instead of closing to melee — the same skill the hero can use, through the same
+code path. Ranged monsters get a pip above them so a pack that shoots is
+identifiable before it starts shooting.
+
+## Bodies and corridors
+
+Units have a `radius` and shove each other apart, so a pack spreads into a
+crowd instead of stacking on one tile. Separation runs *after* movement:
+entities steer as if the world were empty and then get pushed out of each
+other. Collision-aware pathfinding is far more code for a result nobody
+watching could tell apart.
+
+It relaxes over two passes, because one leaves visible overlap in a crowd —
+pushing A out of B can shove it into C. Two gets residual overlap to about a
+seventh of a tile; three buys nothing. The hero shoves rather than being
+shoved, or a big pack walks it backwards off its own path.
+
+Corridors are 2-3 tiles wide for the same reason. At one tile, body collision
+turns every hallway into a single-file queue and the hero fights one monster at
+a time forever.
+
 ## Levelling
 
 XP comes off kills, scaled by crystal tier, and the curve lives in `LEVELLING`
@@ -288,8 +310,12 @@ several times. That oscillation is the endgame rhythm.
 - **A boss.** "Clear all" means every monster, then the exit — there is no boss
   fight at the end yet, and `simulateRun`'s `killBoss` flag is part of the old
   stub, not the sim.
-- Only one skill exists (`strike`). The registry that makes more of them cheap
-  is in place; the skills themselves are not.
+- Two skills exist (`strike`, `bolt`), both `single_target`. The interesting
+  ones — chain, area, projectile — need a behaviour each, which is the point of
+  the registry but isn't done.
+- `bolt` is identical to `strike` apart from reach, which isolates what range
+  alone is worth and makes it strictly better. Give it a cost when it should be
+  a real choice.
 - The art is procedural placeholder shapes, not sprites anyone drew. The
   pipeline that consumes real sprite sheets is what exists.
 - The camera fits the whole map on screen, so creatures are roughly one tile

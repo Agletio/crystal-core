@@ -158,6 +158,8 @@ export interface MonsterDef {
   moveSpeed: number;
   attacksPerSecond: number;
   attackRange: number;
+  /** Body radius in tiles. Units push each other apart rather than stacking. */
+  radius: number;
   sprite: string;
   /** Relative spawn weight. */
   weight: number;
