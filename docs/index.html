@@ -211,7 +211,10 @@
   .coin__n { color: var(--citrine); font-weight: 600; }
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
-  .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; max-height: 190px; overflow-y: auto; }
+  .inv__body { max-height: 260px; overflow-y: auto; }
+  .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .invsection__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 12px 0 6px; }
+  .invsection__label:first-child { margin-top: 0; }
   .invitem { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border-left-width: 3px; }
   .invitem__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .icon { flex: none; display: block; }
@@ -288,7 +291,7 @@
       <p class="panel__title">Inventory</p>
       <div class="wallet" id="wallet"></div>
     </div>
-    <div class="inv__grid" id="inventory"></div>
+    <div class="inv__body" id="inventory"></div>
   </div>
 
   <div id="view-bench">

@@ -81,6 +81,15 @@ assert(all('#wallet .coin').length === 1, 'wallet shows fragments only', text('w
 assert(text('wallet').includes('fragments'), 'fragments are held', text('wallet'));
 assert(all('#inventory .invitem .icon').length === invItems().length, 'every item has an icon');
 
+// Bench splits crystals from equipment; the run screen doesn't.
+const sectionLabels = () =>
+  all('#inventory .invsection__label').map((n) => n.textContent.trim());
+assert(
+  sectionLabels().join('|') === 'Crystals|Equipment',
+  'bench splits crystals and equipment',
+  sectionLabels().join('|')
+);
+
 // --- bench starts empty ---------------------------------------------------
 assert($('bench-empty').hidden === false, 'bench starts empty');
 assert($('bench-item').hidden === true, 'no item panel until something is placed');
@@ -188,11 +197,15 @@ runCrystal.click();
 assert($('run-launch').disabled === false, 'launch enabled once chosen');
 assert(text('run-selected').includes('Crystal'), 'chosen map is described');
 
-// Gear must NOT be selectable as a map.
-const gearChip = invItems().find((b) =>
+// Gear isn't shown at all here — it's noise you'd look past every time.
+const gearOnRun = invItems().filter((b) =>
   /Vest|Band/.test(b.querySelector('.invitem__name')?.textContent ?? '')
 );
-assert(!!gearChip && gearChip.disabled, 'gear cannot be run as a map');
+assert(gearOnRun.length === 0, 'gear is hidden on the run screen', String(gearOnRun.length));
+assert(
+  all('#inventory .invsection__label').length === 0,
+  'run inventory is a single flat list'
+);
 
 // --- launching consumes the crystal and shows the map ---------------------
 const beforeLaunch = invItems().length;

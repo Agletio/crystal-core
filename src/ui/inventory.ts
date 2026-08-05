@@ -14,7 +14,7 @@ import { fillState } from '../mods';
 import { describeMod } from '../crafting';
 import { itemIcon } from './icons';
 import type { GameState } from '../game/state';
-import type { Item } from '../types';
+import type { Item, ItemKind } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -30,7 +30,21 @@ export interface InventoryHandler {
   actionFor(item: Item): { label: string; run: () => void } | null;
   /** Item currently spoken for by the active view — bench item, chosen map. */
   highlighted?(item: Item): boolean;
+  /**
+   * Which kinds this view shows at all. Omit for everything.
+   *
+   * The run screen only takes crystals, so listing gear there is noise you
+   * have to look past every time you pick a map.
+   */
+  kinds?: readonly ItemKind[];
+  /** Split into labelled sections instead of one flat grid. */
+  grouped?: boolean;
 }
+
+const KIND_LABELS: Record<ItemKind, string> = {
+  crystal: 'Crystals',
+  gear: 'Equipment',
+};
 
 let game: GameState | null = null;
 let handler: InventoryHandler | null = null;
@@ -76,13 +90,42 @@ export function renderInventory(): void {
   const host = $('inventory');
   host.replaceChildren();
 
-  if (game.inventory.length === 0) {
-    host.append(el('p', 'empty', 'Empty. Clear a map or buy something on the bench.'));
+  const kinds = handler?.kinds ?? (['crystal', 'gear'] as ItemKind[]);
+  const visible = game.inventory.filter((i) => kinds.includes(i.kind));
+
+  if (visible.length === 0) {
+    host.append(
+      el(
+        'p',
+        'empty',
+        kinds.length === 1 && kinds[0] === 'crystal'
+          ? 'No crystals. Buy one on the bench — they cost fragments.'
+          : 'Empty. Clear a map or buy something on the bench.'
+      )
+    );
     return;
   }
 
-  // Crystals first: they're what you spend to play.
-  const sorted = [...game.inventory].sort((a, b) => {
+  if (handler?.grouped) {
+    for (const kind of kinds) {
+      const group = visible.filter((i) => i.kind === kind);
+      host.append(el('div', 'invsection__label', KIND_LABELS[kind]));
+      if (group.length === 0) {
+        host.append(el('p', 'empty', `No ${KIND_LABELS[kind].toLowerCase()}.`));
+        continue;
+      }
+      host.append(grid(group));
+    }
+    return;
+  }
+
+  host.append(grid(visible));
+}
+
+/** Crystals first within a group: they're what you spend to play. */
+function grid(items: Item[]): HTMLElement {
+  const host = el('div', 'inv__grid');
+  const sorted = [...items].sort((a, b) => {
     if (a.kind !== b.kind) return a.kind === 'crystal' ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
@@ -117,4 +160,5 @@ export function renderInventory(): void {
     }
     host.append(btn);
   }
+  return host;
 }

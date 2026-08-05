@@ -286,6 +286,10 @@ function render(): void {
  */
 function benchHandler() {
   return {
+    // Split, because crystals and equipment are worked on for different
+    // reasons and one mixed list means hunting for the thing you meant.
+    kinds: ['crystal', 'gear'] as const,
+    grouped: true,
     actionFor: (item: Item) => ({
       label: 'Open on bench',
       run: () => {

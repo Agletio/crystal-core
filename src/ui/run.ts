@@ -67,9 +67,10 @@ function setPhase(next: Phase): void {
   setInventoryHandler(runHandler());
 }
 
-/** Only crystals are selectable here, and only while choosing. */
+/** Only crystals, and only while choosing — gear isn't shown here at all. */
 function runHandler() {
   return {
+    kinds: ['crystal'] as const,
     actionFor: (item: Item) => {
       if (phase !== 'menu' || item.kind !== 'crystal') return null;
       return {
