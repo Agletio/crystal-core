@@ -234,6 +234,26 @@
       }
       return removed > 0;
     },
+    /**
+     * Coin-flip: empower or diminish every matching mod's values at once.
+     * Unlike reroll_values this doesn't touch the authored ranges — it scales
+     * whatever is already there, so a well-rolled item has more to lose. That
+     * asymmetry is the whole point of pairing it with a lock.
+     */
+    scale_values: (ctx, p) => {
+      const targets = matching(ctx.item.mods, p);
+      if (targets.length === 0) return false;
+      const magnitude = p.magnitude ?? 0.25;
+      const up = ctx.rng.chance(p.upChance ?? 0.5);
+      const factor = up ? 1 + magnitude : 1 - magnitude;
+      for (const mod of targets) {
+        mod.stats = mod.stats.map((s) => ({ ...s, value: scaleValue(s.value, factor) }));
+      }
+      ctx.log.push(
+        `${up ? "empowered" : "diminished"} ${targets.length} mod(s) by ${Math.round(magnitude * 100)}%`
+      );
+      return true;
+    },
     /** Re-roll the numeric values of existing mods, keeping which mods they are. */
     reroll_values: (ctx, p) => {
       const targets = matching(ctx.item.mods, p);
@@ -301,6 +321,13 @@
       return true;
     }
   };
+  function scaleValue(value, factor) {
+    const scaled = value * factor;
+    if (!Number.isInteger(value)) return Number(scaled.toFixed(2));
+    const rounded = Math.round(scaled);
+    if (rounded === 0 && value !== 0) return value < 0 ? -1 : 1;
+    return rounded;
+  }
   function fillAll(ctx, slot, limit = Infinity) {
     let guard = 32;
     while (ctx.item.mods.length < limit && guard-- > 0) {
@@ -613,15 +640,6 @@
       effects: [{ kind: "reroll_values" }]
     },
     {
-      id: "shard_of_ruin",
-      name: "Shard of Ruin",
-      class: "basic",
-      description: "Strips every modifier, emptying all slots.",
-      targets: {},
-      requires: [{ kind: "not_corrupted" }, { kind: "mod_count", min: 1 }],
-      effects: [{ kind: "clear_mods" }]
-    },
-    {
       id: "shard_of_awakening",
       name: "Shard of Awakening",
       class: "basic",
@@ -701,13 +719,29 @@
       id: "sigil_of_finality",
       name: "Sigil of Finality",
       class: "exotic",
-      description: "Fills a slot if it can, then locks the item permanently.",
+      description: "Empowers or diminishes every modifier by 25% at random, then locks the item permanently.",
       targets: {},
       requires: [{ kind: "not_corrupted" }],
+      // A coin flip you can't take back. Scaling what's already rolled (rather
+      // than adding) means the better the item, the more the gamble costs you —
+      // so finishing a good item is a real decision instead of a free upgrade.
       effects: [
-        { kind: "add_mod", optional: true },
+        { kind: "scale_values", magnitude: 0.25, optional: true },
         { kind: "corrupt" }
       ]
+    },
+    {
+      // Deliberately exotic and drop-only. As a cheap basic this was the single
+      // biggest thing devaluing bases: any good chest could be spammed back to
+      // blank and re-rolled for free, so no base was ever worth keeping. Making
+      // a wipe scarce is what gives a well-rolled base its weight.
+      id: "shard_of_ruin",
+      name: "Shard of Ruin",
+      class: "exotic",
+      description: "Strips every modifier, emptying all slots. Rare \u2014 spend it carefully.",
+      targets: {},
+      requires: [{ kind: "not_corrupted" }, { kind: "mod_count", min: 1 }],
+      effects: [{ kind: "clear_mods" }]
     }
   ];
   var CURRENCY_BY_ID = Object.fromEntries(
@@ -752,12 +786,8 @@
       inputs: { fragment: 10 },
       output: { type: "currency", id: "shard_of_awakening", qty: 1 }
     },
-    {
-      id: "make_shard_of_ruin",
-      name: "Shard of Ruin",
-      inputs: { fragment: 4 },
-      output: { type: "currency", id: "shard_of_ruin", qty: 1 }
-    },
+    // No recipe for Shard of Ruin — it's exotic and drop-only. If you could buy
+    // a wipe for fragments, bases would be disposable again.
     {
       id: "make_shard_of_chaos",
       name: "Shard of Chaos",

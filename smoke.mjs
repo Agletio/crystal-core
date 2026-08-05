@@ -109,6 +109,14 @@ const finality = currencyButton('Sigil of Finality');
 assert(!!finality && !finality.disabled, 'Sigil of Finality available');
 finality.click();
 
+const history = [...$('log').querySelectorAll('.logline')]
+  .map((l) => l.textContent)
+  .join(' | ');
+assert(
+  /(empowered|diminished) \d+ mod\(s\) by 25%/.test(history),
+  'finality scaled every modifier before locking',
+  history.slice(0, 160)
+);
 assert(text('item-meta').includes('locked'), 'item reads as locked', text('item-meta'));
 assert(
   [...$('currencies').querySelectorAll('button.curr')].every((b) => b.disabled),

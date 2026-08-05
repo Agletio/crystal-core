@@ -102,9 +102,14 @@ Most of the time, no code. Add an entry to `CURRENCIES` in `data.ts`:
 Effects run in order. If one fails and isn't `optional`, the whole craft rolls
 back and the item is untouched — which makes preview and undo trivial in UI.
 
-Available effects: `add_mod`, `remove_mod`, `reroll_values`, `reroll_mods`,
-`clear_mods`, `fill_slots`, `add_slot`, `upgrade_mod_tier`, `corrupt`,
-`set_meta`. Most take an optional `slot` and/or `tag` to constrain them.
+Available effects: `add_mod`, `remove_mod`, `reroll_values`, `scale_values`,
+`reroll_mods`, `clear_mods`, `fill_slots`, `add_slot`, `upgrade_mod_tier`,
+`corrupt`, `set_meta`. Most take an optional `slot` and/or `tag` to constrain
+them.
+
+`scale_values` multiplies existing rolls rather than re-rolling them, so the
+better the item the more a bad flip costs. `magnitude` defaults to 0.25 and
+`upChance` to 0.5.
 
 Available conditions: `has_open_slot`, `slots_full`, `has_slot_type`,
 `fill_state`, `mod_count`, `has_mod_tag`, `has_item_tag`, `ilvl_at_least`,

@@ -276,15 +276,6 @@ export const CURRENCIES: CurrencyDef[] = [
     effects: [{ kind: 'reroll_values' }],
   },
   {
-    id: 'shard_of_ruin',
-    name: 'Shard of Ruin',
-    class: 'basic',
-    description: 'Strips every modifier, emptying all slots.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'clear_mods' }],
-  },
-  {
     id: 'shard_of_awakening',
     name: 'Shard of Awakening',
     class: 'basic',
@@ -365,13 +356,30 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'sigil_of_finality',
     name: 'Sigil of Finality',
     class: 'exotic',
-    description: 'Fills a slot if it can, then locks the item permanently.',
+    description:
+      'Empowers or diminishes every modifier by 25% at random, then locks the item permanently.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }],
+    // A coin flip you can't take back. Scaling what's already rolled (rather
+    // than adding) means the better the item, the more the gamble costs you —
+    // so finishing a good item is a real decision instead of a free upgrade.
     effects: [
-      { kind: 'add_mod', optional: true },
+      { kind: 'scale_values', magnitude: 0.25, optional: true },
       { kind: 'corrupt' },
     ],
+  },
+  {
+    // Deliberately exotic and drop-only. As a cheap basic this was the single
+    // biggest thing devaluing bases: any good chest could be spammed back to
+    // blank and re-rolled for free, so no base was ever worth keeping. Making
+    // a wipe scarce is what gives a well-rolled base its weight.
+    id: 'shard_of_ruin',
+    name: 'Shard of Ruin',
+    class: 'exotic',
+    description: 'Strips every modifier, emptying all slots. Rare — spend it carefully.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
+    effects: [{ kind: 'clear_mods' }],
   },
 ];
 
@@ -426,12 +434,8 @@ export const RECIPES: Recipe[] = [
     inputs: { fragment: 10 },
     output: { type: 'currency', id: 'shard_of_awakening', qty: 1 },
   },
-  {
-    id: 'make_shard_of_ruin',
-    name: 'Shard of Ruin',
-    inputs: { fragment: 4 },
-    output: { type: 'currency', id: 'shard_of_ruin', qty: 1 },
-  },
+  // No recipe for Shard of Ruin — it's exotic and drop-only. If you could buy
+  // a wipe for fragments, bases would be disposable again.
   {
     id: 'make_shard_of_chaos',
     name: 'Shard of Chaos',

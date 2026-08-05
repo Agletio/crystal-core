@@ -138,6 +138,31 @@ export const EFFECTS: Record<string, EffectImpl> = {
     return removed > 0;
   },
 
+  /**
+   * Coin-flip: empower or diminish every matching mod's values at once.
+   * Unlike reroll_values this doesn't touch the authored ranges — it scales
+   * whatever is already there, so a well-rolled item has more to lose. That
+   * asymmetry is the whole point of pairing it with a lock.
+   */
+  scale_values: (ctx, p) => {
+    const targets = matching(ctx.item.mods, p);
+    if (targets.length === 0) return false;
+
+    const magnitude = p.magnitude ?? 0.25;
+    const up = ctx.rng.chance(p.upChance ?? 0.5);
+    const factor = up ? 1 + magnitude : 1 - magnitude;
+
+    for (const mod of targets) {
+      mod.stats = mod.stats.map((s) => ({ ...s, value: scaleValue(s.value, factor) }));
+    }
+
+    ctx.log.push(
+      `${up ? 'empowered' : 'diminished'} ${targets.length} mod(s) by ` +
+        `${Math.round(magnitude * 100)}%`
+    );
+    return true;
+  },
+
   /** Re-roll the numeric values of existing mods, keeping which mods they are. */
   reroll_values: (ctx, p) => {
     const targets = matching(ctx.item.mods, p);
@@ -215,6 +240,19 @@ export const EFFECTS: Record<string, EffectImpl> = {
     return true;
   },
 };
+
+/**
+ * Scales one rolled value, preserving the int/float shape rollValues produced.
+ * A diminish that rounded to zero would silently delete a stat line, so the
+ * magnitude is clamped to leave at least 1 behind.
+ */
+function scaleValue(value: number, factor: number): number {
+  const scaled = value * factor;
+  if (!Number.isInteger(value)) return Number(scaled.toFixed(2));
+  const rounded = Math.round(scaled);
+  if (rounded === 0 && value !== 0) return value < 0 ? -1 : 1;
+  return rounded;
+}
 
 /** Rolls mods until slots are full, or until `limit` mods have been added. */
 function fillAll(ctx: CraftContext, slot?: ModSlot, limit = Infinity): void {

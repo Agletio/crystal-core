@@ -139,6 +139,9 @@ export function simulateRun(
   const rareChance = 0.04 * (1 + rarity / 100) * (opts.killBoss ? 2.5 : 1);
   if (rng.chance(rareChance)) grant(currency, 'sigil_of_refinement', 1);
   if (rng.chance(rareChance * 0.25)) grant(currency, 'sigil_of_excess', 1);
+  // Ruin is the scarcest thing that drops — it's the only way to reclaim a
+  // base, so its drop rate is effectively the "how disposable are bases" dial.
+  if (rng.chance(rareChance * 0.1)) grant(currency, 'shard_of_ruin', 1);
 
   const layout = computeStat(1, crystal.mods, 'layoutComplexity');
   const seconds = Math.round(60 * layout * (0.6 + 0.4 * clear) + monsters * 0.25);
