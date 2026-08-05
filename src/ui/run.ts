@@ -21,7 +21,7 @@ import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
-import { readPalette } from '../render/renderer';
+import { ZOOM_MAX, ZOOM_MIN, clampZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
 import type { Item } from '../types';
@@ -47,6 +47,7 @@ let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
 let clearAll = false;
+let zoom = 1;
 let chosen: Item | null = null;
 let log: Array<{ text: string; kind: string }> = [];
 
@@ -347,6 +348,14 @@ function fitCanvas(): void {
   renderer?.resize(width, height);
 }
 
+function setZoom(next: number): void {
+  zoom = clampZoom(next);
+  renderer?.setZoom(zoom);
+  $('run-zoom-label').textContent = `${zoom.toFixed(1)}×`;
+  ($('run-zoom-out') as HTMLButtonElement).disabled = zoom <= ZOOM_MIN;
+  ($('run-zoom-in') as HTMLButtonElement).disabled = zoom >= ZOOM_MAX;
+}
+
 /**
  * Start on canvas so something is on screen immediately, then hand over to
  * WebGL once Pixi has its device. If Pixi can't initialise — no WebGL, a
@@ -409,12 +418,28 @@ export function initRun(state: GameState): void {
     clearBtn.setAttribute('aria-pressed', String(clearAll));
   };
 
+  // Zoom: buttons for discoverability, wheel because that's what anyone
+  // watching a map will reach for first.
+  ($('run-zoom-in') as HTMLButtonElement).onclick = () => setZoom(zoom + 0.5);
+  ($('run-zoom-out') as HTMLButtonElement).onclick = () => setZoom(zoom - 0.5);
+  ($('run-zoom-fit') as HTMLButtonElement).onclick = () => setZoom(1);
+
+  stage.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      setZoom(zoom + (event.deltaY < 0 ? 0.35 : -0.35));
+    },
+    { passive: false }
+  );
+
   globalThis.addEventListener('resize', fitCanvas);
 
   renderSkills();
   renderStatsPanel();
   renderMenu();
   renderLog();
+  setZoom(1);
   setPhase('menu');
   requestAnimationFrame(frame);
 }

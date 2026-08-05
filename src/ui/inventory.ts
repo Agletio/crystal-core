@@ -12,6 +12,7 @@
  */
 import { fillState } from '../mods';
 import { describeMod } from '../crafting';
+import { itemIcon } from './icons';
 import type { GameState } from '../game/state';
 import type { Item } from '../types';
 
@@ -44,25 +45,23 @@ export function setInventoryHandler(next: InventoryHandler | null): void {
   renderInventory();
 }
 
-/** Currency counts read left to right, fragments first — it's the one you spend. */
+/**
+ * Fragments only.
+ *
+ * Every crafting currency also shows its count on its own button in the
+ * bench sidebar, so listing them all up here was the same information twice
+ * and it wrapped to three lines. Fragments stay because they're the thing you
+ * spend everywhere, and there's no other place they appear.
+ */
 function renderWallet(): void {
   if (!game) return;
   const host = $('wallet');
   host.replaceChildren();
 
-  const entries = Object.entries(game.wallet).filter(([, n]) => n > 0);
-  if (entries.length === 0) {
-    host.append(el('span', 'empty', 'no currency'));
-    return;
-  }
-
-  entries.sort((a, b) => (a[0] === 'fragment' ? -1 : b[0] === 'fragment' ? 1 : 0));
-  for (const [id, n] of entries) {
-    const chip = el('span', 'coin');
-    chip.append(el('span', 'coin__n', String(n)));
-    chip.append(el('span', 'coin__id', id.replace(/_/g, ' ')));
-    host.append(chip);
-  }
+  const chip = el('span', 'coin');
+  chip.append(el('span', 'coin__n', String(game.wallet.fragment ?? 0)));
+  chip.append(el('span', 'coin__id', 'fragments'));
+  host.append(chip);
 }
 
 function tooltip(item: Item): string {
@@ -92,8 +91,11 @@ export function renderInventory(): void {
     const action = handler?.actionFor(item) ?? null;
     const btn = el('button', `invitem invitem--${item.kind}`) as HTMLButtonElement;
 
-    btn.append(el('span', 'invitem__name', item.name));
-    btn.append(
+    btn.append(itemIcon(item));
+
+    const body = el('span', 'invitem__body');
+    body.append(el('span', 'invitem__name', item.name));
+    body.append(
       el(
         'span',
         'invitem__meta',
@@ -101,6 +103,7 @@ export function renderInventory(): void {
           (item.meta.corrupted ? ' · locked' : '')
       )
     );
+    btn.append(body);
     btn.title = tooltip(item);
 
     if (handler?.highlighted?.(item)) btn.classList.add('invitem--on');

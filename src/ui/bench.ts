@@ -11,9 +11,10 @@ import { ModPool, fillState, slotCapacity, slotTypes, slotUsed } from '../mods';
 import { canApply, craft, describeMod } from '../crafting';
 import { ALL_MODS, CURRENCIES, RECIPES } from '../data';
 import { balance, runRecipe, spend } from '../economy';
-import { addItem, clearBench, putOnBench } from '../game/state';
+import { addItem, benchItem, clearBench, replaceItem, selectForBench } from '../game/state';
 import type { GameState } from '../game/state';
 import { renderInventory, setInventoryHandler } from './inventory';
+import { currencyIcon } from './icons';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
@@ -63,7 +64,7 @@ function note(text: string, kind: 'add' | 'remove' | 'note' | 'fail' = 'note'): 
 // ---------------------------------------------------------------------------
 
 function use(currency: CurrencyDef): void {
-  const item = game.bench;
+  const item = benchItem(game);
   if (!item) return;
 
   if (balance(game.wallet, currency.id) < 1) {
@@ -85,7 +86,9 @@ function use(currency: CurrencyDef): void {
   for (const entry of result.log) {
     note(entry, entry.startsWith('-') ? 'remove' : 'add');
   }
-  game.bench = result.item;
+  // The crafted item keeps its id, so it swaps back into the same inventory
+  // slot and stays selected.
+  replaceItem(game, result.item);
   render();
 }
 
@@ -117,7 +120,7 @@ function reseed(): void {
 // ---------------------------------------------------------------------------
 
 function renderItem(): void {
-  const item = game.bench;
+  const item = benchItem(game);
 
   const empty = $('bench-empty');
   const body = $('bench-item');
@@ -199,7 +202,7 @@ function renderItem(): void {
 function renderCurrencies(): void {
   const host = $('currencies');
   host.replaceChildren();
-  const item = game.bench;
+  const item = benchItem(game);
 
   const classes = ['basic', 'uncommon', 'rare', 'exotic'] as const;
   for (const cls of classes) {
@@ -213,14 +216,17 @@ function renderCurrencies(): void {
       const blocked = item ? canApply(item, currency) : 'nothing on the bench';
       const btn = el('button', `curr curr--${cls}`) as HTMLButtonElement;
 
-      btn.append(el('span', 'curr__name', currency.name));
-      btn.append(el('span', 'curr__desc', currency.description));
-      btn.append(el('span', 'curr__stock', `${stock} held`));
+      btn.append(currencyIcon(currency));
+      const body = el('span', 'curr__body');
+      body.append(el('span', 'curr__name', currency.name));
+      body.append(el('span', 'curr__desc', currency.description));
+      body.append(el('span', 'curr__stock', `${stock} held`));
+      btn.append(body);
 
       if (blocked || stock < 1) {
         btn.disabled = true;
         btn.classList.add('curr--off');
-        btn.append(el('span', 'curr__why', stock < 1 ? 'none in stock' : blocked!));
+        body.append(el('span', 'curr__why', stock < 1 ? 'none in stock' : blocked!));
       }
       btn.onclick = () => use(currency);
       grid.append(btn);
@@ -274,19 +280,22 @@ function render(): void {
   renderInventory();
 }
 
-/** Clicking anything in the inventory puts it on the bench. */
+/**
+ * Clicking an inventory item opens it on the bench. It stays in the list,
+ * highlighted — the selection is a reference, not a move.
+ */
 function benchHandler() {
   return {
     actionFor: (item: Item) => ({
-      label: 'Put on bench',
+      label: 'Open on bench',
       run: () => {
-        putOnBench(game, item);
+        selectForBench(game, item);
         focused = null;
         note(`Bench: ${item.name}`);
         render();
       },
     }),
-    highlighted: (item: Item) => item === game.bench,
+    highlighted: (item: Item) => item.id === game.benchId,
   };
 }
 
@@ -305,8 +314,9 @@ export function initBench(state: GameState): void {
     render();
   };
   ($('bench-return') as HTMLButtonElement).onclick = () => {
-    if (!game.bench) return;
-    note(`Returned ${game.bench.name}`);
+    const item = benchItem(game);
+    if (!item) return;
+    note(`Closed ${item.name}`);
     clearBench(game);
     render();
   };

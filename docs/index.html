@@ -17,6 +17,11 @@
     --chalk:     #D6CEE4;
     --dust:      #8B819F;
 
+    /* The map draws with its own, much brighter pair. Panel colours are meant
+       to sit behind text; a floor lit like that is unreadable at tile size. */
+    --floor:     #3B3357;
+    --floor-lit: #5E5188;
+
     --amethyst:  #A67BE8;
     --citrine:   #E8B84B;
     --quartz:    #6FC7E8;
@@ -30,6 +35,12 @@
   }
 
   * { box-sizing: border-box; }
+
+  /* The `hidden` attribute only sets display:none from the UA stylesheet, so
+     ANY author rule with a display wins and the element stays on screen —
+     which is invisible to tests that check the attribute rather than the
+     rendering. Make hidden actually mean hidden. */
+  [hidden] { display: none !important; }
 
   html, body {
     margin: 0;
@@ -128,7 +139,8 @@
   .shelf__label:first-child { margin-top: 0; }
   .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
 
-  .curr { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 2px; border-left-width: 3px; }
+  .curr { text-align: left; padding: 9px 10px; display: flex; align-items: flex-start; gap: 9px; border-left-width: 3px; }
+  .curr__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .curr__name { font-size: 12px; font-weight: 600; }
   .curr__desc { font-size: 10px; color: var(--dust); line-height: 1.35; }
   .curr__why { font-size: 10px; color: var(--ember); margin-top: 2px; }
@@ -200,7 +212,10 @@
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
   .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; max-height: 190px; overflow-y: auto; }
-  .invitem { text-align: left; padding: 7px 9px; display: flex; flex-direction: column; gap: 2px; border-left-width: 3px; }
+  .invitem { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border-left-width: 3px; }
+  .invitem__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .icon { flex: none; display: block; }
+  .zoomlabel { font-size: 11px; color: var(--quartz); min-width: 34px; text-align: center; }
   .invitem--crystal { border-left-color: var(--amethyst); }
   .invitem--gear { border-left-color: var(--quartz); }
   .invitem__name { font-size: 12px; }
@@ -351,6 +366,11 @@
       <button class="chip" id="run-speed-1">1&times;</button>
       <button class="chip" id="run-speed-2">2&times;</button>
       <button class="chip" id="run-speed-4">4&times;</button>
+      <span class="sub">zoom</span>
+      <button class="chip" id="run-zoom-out" title="Zoom out">&minus;</button>
+      <span class="zoomlabel" id="run-zoom-label">1.0&times;</span>
+      <button class="chip" id="run-zoom-in" title="Zoom in">+</button>
+      <button class="chip" id="run-zoom-fit" title="Fit the whole map">Fit</button>
       <span class="spacer"></span>
       <span class="run-status" id="run-status">paused</span>
     </div>

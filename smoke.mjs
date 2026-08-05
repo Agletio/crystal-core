@@ -74,8 +74,12 @@ assert(dupes.length === 0, 'no duplicate element ids', dupes.join(', '));
 // --- inventory is permanent -----------------------------------------------
 const invItems = () => all('#inventory .invitem');
 assert(invItems().length >= 4, 'inventory populated', String(invItems().length));
-assert(all('#wallet .coin').length >= 2, 'wallet shows currency');
-assert(text('wallet').includes('fragment'), 'fragments are held', text('wallet'));
+
+// Fragments only up top; every other currency shows its count on its own
+// button in the bench sidebar, so listing them here was the same twice.
+assert(all('#wallet .coin').length === 1, 'wallet shows fragments only', text('wallet'));
+assert(text('wallet').includes('fragments'), 'fragments are held', text('wallet'));
+assert(all('#inventory .invitem .icon').length === invItems().length, 'every item has an icon');
 
 // --- bench starts empty ---------------------------------------------------
 assert($('bench-empty').hidden === false, 'bench starts empty');
@@ -91,12 +95,20 @@ assert(!!crystalChip, 'a crystal is in the inventory');
 const inventoryBefore = invItems().length;
 crystalChip.click();
 
-assert($('bench-item').hidden === false, 'bench shows the placed item');
-assert(text('item-name').includes('Crystal'), 'placed item is the crystal', text('item-name'));
+assert($('bench-item').hidden === false, 'bench shows the selected item');
+assert(text('item-name').includes('Crystal'), 'selected item is the crystal', text('item-name'));
+
+// Selecting is a reference, not a move: the item must STAY visible, marked,
+// or it looks like crafting ate it.
 assert(
-  invItems().length === inventoryBefore - 1,
-  'item left the inventory',
+  invItems().length === inventoryBefore,
+  'item stays in the inventory when selected',
   `${invItems().length} vs ${inventoryBefore}`
+);
+assert(
+  all('#inventory .invitem--on').length === 1,
+  'the selected item is highlighted',
+  String(all('#inventory .invitem--on').length)
 );
 assert($('bench-return').disabled === false, 'return is now available');
 assert($('sockets').querySelectorAll('.facet').length === 3, 'crystal shows 3 facets');
@@ -107,30 +119,50 @@ const currencyButton = (name) =>
     (b) => (b.querySelector('.curr__name')?.textContent ?? '').trim() === name
   );
 
-const walletCount = (id) => {
-  const coin = all('#wallet .coin').find((c) =>
-    (c.querySelector('.coin__id')?.textContent ?? '').includes(id)
-  );
-  return coin ? Number(coin.querySelector('.coin__n').textContent) : 0;
+// Counts live on the currency buttons now, not in the wallet strip.
+const heldCount = (name) => {
+  const btn = currencyButton(name);
+  const stock = btn?.querySelector('.curr__stock')?.textContent ?? '';
+  return Number(stock.replace(/[^\d]/g, '')) || 0;
 };
 
 const making = currencyButton('Shard of Making');
 assert(!!making && !making.disabled, 'Shard of Making usable on a blank crystal');
+assert(heldCount('Shard of Making') > 0, 'currency count shown on the button');
 
-const stockBefore = walletCount('shard of making');
+const stockBefore = heldCount('Shard of Making');
 making.click();
 
 assert($('modlist').querySelectorAll('.mod').length === 1, 'a modifier was added');
 assert(
-  walletCount('shard of making') === stockBefore - 1,
+  heldCount('Shard of Making') === stockBefore - 1,
   'currency was spent',
-  `${walletCount('shard of making')} vs ${stockBefore}`
+  `${heldCount('Shard of Making')} vs ${stockBefore}`
+);
+assert(
+  all('#currencies .curr .icon').length >= 10,
+  'currencies have icons',
+  String(all('#currencies .curr .icon').length)
 );
 
-// --- returning it -------------------------------------------------------
+// The crafted item keeps its id, so it stays selected in place rather than
+// jumping to the end of the list.
+assert(
+  all('#inventory .invitem--on').length === 1,
+  'still selected after crafting',
+  String(all('#inventory .invitem--on').length)
+);
+assert(
+  invItems().length === inventoryBefore,
+  'crafting did not duplicate the item',
+  `${invItems().length} vs ${inventoryBefore}`
+);
+
+// --- closing it ---------------------------------------------------------
 $('bench-return').click();
 assert($('bench-empty').hidden === false, 'bench is empty again');
-assert(invItems().length === inventoryBefore, 'item returned to the inventory');
+assert(invItems().length === inventoryBefore, 'item is still in the inventory');
+assert(all('#inventory .invitem--on').length === 0, 'nothing highlighted after closing');
 
 // --- workshop buys against fragments --------------------------------------
 const buys = all('#workshop button.buy');
@@ -176,6 +208,15 @@ assert(
 assert(/^0\/\d+$/.test(text('run-killed')), 'run readout initialised', text('run-killed'));
 assert(Number(text('run-killed').split('/')[1]) > 0, 'the map spawned monsters');
 assert($('run-results').hidden === true, 'no results overlay mid-run');
+
+// --- zoom -----------------------------------------------------------------
+assert(text('run-zoom-label') === '1.0×', 'zoom starts fitted', text('run-zoom-label'));
+assert($('run-zoom-out').disabled === true, 'cannot zoom out past the whole map');
+$('run-zoom-in').click();
+assert(text('run-zoom-label') === '1.5×', 'zoom in works', text('run-zoom-label'));
+assert($('run-zoom-out').disabled === false, 'zoom out enabled once zoomed');
+$('run-zoom-fit').click();
+assert(text('run-zoom-label') === '1.0×', 'fit returns to the whole map');
 
 // --- abandoning returns to the menu ---------------------------------------
 $('run-abandon').click();

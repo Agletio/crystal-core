@@ -13,7 +13,7 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { spriteColour, vfxColour } from './renderer';
+import { clampZoom, spriteColour, vfxColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -34,13 +34,19 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     // Headless (jsdom in smoke.mjs) has no 2D context. The sim is what's
     // under test there, so drawing degrades to a no-op instead of crashing
     // the page on boot.
-    return { resize: () => {}, draw: () => {}, destroy: () => canvas.remove() };
+    return {
+      resize: () => {},
+      draw: () => {},
+      setZoom: () => {},
+      destroy: () => canvas.remove(),
+    };
   }
   // Rebound so the narrowing survives into the draw closures below.
   const ctx = maybeCtx;
 
   let cssWidth = canvas.clientWidth || 640;
   let cssHeight = canvas.clientHeight || 420;
+  let zoom = 1;
 
   function resize(width: number, height: number): void {
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
@@ -53,16 +59,24 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  /** Whole map on screen at once — for an idle game you want to see the run,
-   *  not chase it with a camera. */
+  /** Zoom 1 fits the whole map; above that it follows the hero, clamped. */
   function viewFor(state: RunState): View {
     const { grid } = state.map;
-    const tile = Math.min(cssWidth / grid.width, cssHeight / grid.height);
-    return {
-      tile,
-      offX: (cssWidth - tile * grid.width) / 2,
-      offY: (cssHeight - tile * grid.height) / 2,
-    };
+    const fit = Math.min(cssWidth / grid.width, cssHeight / grid.height);
+    const tile = fit * zoom;
+    const mapW = tile * grid.width;
+    const mapH = tile * grid.height;
+
+    if (zoom <= 1) {
+      return { tile, offX: (cssWidth - mapW) / 2, offY: (cssHeight - mapH) / 2 };
+    }
+
+    const hero = state.hero;
+    let offX = cssWidth / 2 - (hero.x + 0.5) * tile;
+    let offY = cssHeight / 2 - (hero.y + 0.5) * tile;
+    offX = mapW <= cssWidth ? (cssWidth - mapW) / 2 : Math.min(0, Math.max(cssWidth - mapW, offX));
+    offY = mapH <= cssHeight ? (cssHeight - mapH) / 2 : Math.min(0, Math.max(cssHeight - mapH, offY));
+    return { tile, offX, offY };
   }
 
   const cx = (v: View, x: number) => v.offX + (x + 0.5) * v.tile;
@@ -71,7 +85,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   function drawMap(state: RunState, v: View): void {
     const { grid } = state.map;
 
-    ctx.fillStyle = palette.matrix;
+    ctx.fillStyle = palette.floor;
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         if (grid.at(x, y) === WALL) continue;
@@ -84,9 +98,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       }
     }
 
-    // Seam highlight on floor edges gives the map readable shape without
+    // Bright edge where floor meets wall gives the map readable shape without
     // needing tilesets.
-    ctx.strokeStyle = palette.seam;
+    ctx.strokeStyle = palette.floorLit;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let y = 0; y < grid.height; y++) {
@@ -293,6 +307,10 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (const f of state.floaters) drawFloater(v, f);
   }
 
+  function setZoom(next: number): void {
+    zoom = clampZoom(next);
+  }
+
   resize(cssWidth, cssHeight);
-  return { resize, draw, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, destroy: () => canvas.remove() };
 }

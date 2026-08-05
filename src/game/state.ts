@@ -27,8 +27,16 @@ export interface GameState {
   wallet: Wallet;
   inventory: Item[];
   character: Character;
-  /** The item currently on the crafting bench, pulled out of the inventory. */
-  bench: Item | null;
+  /**
+   * Id of the inventory item currently open on the bench.
+   *
+   * A reference, not a move. The bench used to take the item OUT of the
+   * inventory, which made it look like crafting had eaten it — the thing you
+   * were working on vanished from the list. Selecting in place means it stays
+   * visible and highlighted, and "returning" it is just dropping the
+   * reference.
+   */
+  benchId: string | null;
 }
 
 export function createGame(): GameState {
@@ -46,7 +54,7 @@ export function createGame(): GameState {
     wallet,
     inventory,
     character: makeCharacter(starterLoadout(new Rng(1)), 'strike'),
-    bench: null,
+    benchId: null,
   };
 }
 
@@ -58,6 +66,7 @@ export function removeItem(game: GameState, item: Item): boolean {
   const i = game.inventory.indexOf(item);
   if (i < 0) return false;
   game.inventory.splice(i, 1);
+  if (game.benchId === item.id) game.benchId = null;
   return true;
 }
 
@@ -65,17 +74,29 @@ export function findItem(game: GameState, id: string): Item | undefined {
   return game.inventory.find((i) => i.id === id);
 }
 
-/** Moves an item from the inventory onto the bench, returning whatever was there. */
-export function putOnBench(game: GameState, item: Item): void {
-  if (!removeItem(game, item)) return;
-  if (game.bench) addItem(game, game.bench);
-  game.bench = item;
+/** The item the bench is working on, or null. */
+export function benchItem(game: GameState): Item | null {
+  if (!game.benchId) return null;
+  return findItem(game, game.benchId) ?? null;
+}
+
+export function selectForBench(game: GameState, item: Item): void {
+  game.benchId = item.id;
 }
 
 export function clearBench(game: GameState): void {
-  if (!game.bench) return;
-  addItem(game, game.bench);
-  game.bench = null;
+  game.benchId = null;
+}
+
+/**
+ * Swaps a crafted result back into the inventory in place.
+ * craft() returns a new object but preserves the id, so position is kept and
+ * the bench selection survives.
+ */
+export function replaceItem(game: GameState, item: Item): void {
+  const i = game.inventory.findIndex((existing) => existing.id === item.id);
+  if (i < 0) game.inventory.push(item);
+  else game.inventory[i] = item;
 }
 
 export const crystalsIn = (game: GameState): Item[] =>

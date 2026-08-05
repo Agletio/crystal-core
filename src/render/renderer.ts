@@ -19,6 +19,9 @@ export interface Palette {
   matrix: string;
   seam: string;
   seamLit: string;
+  /** Map-only, and much brighter than the panel colours. */
+  floor: string;
+  floorLit: string;
   chalk: string;
   dust: string;
   amethyst: string;
@@ -32,15 +35,29 @@ export interface Renderer {
   /** CSS pixel dimensions. Implementations handle devicePixelRatio. */
   resize(width: number, height: number): void;
   draw(state: RunState): void;
+  /**
+   * 1 fits the whole map on screen. Above that the view zooms in and follows
+   * the hero, because a zoomed view that doesn't track the action just shows
+   * you an empty corner.
+   */
+  setZoom(zoom: number): void;
   /** Release the surface and any GPU resources. */
   destroy(): void;
 }
+
+export const ZOOM_MIN = 1;
+export const ZOOM_MAX = 5;
+
+export const clampZoom = (z: number): number =>
+  Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
 
 const VARS: Array<[keyof Palette, string]> = [
   ['void', '--void'],
   ['matrix', '--matrix'],
   ['seam', '--seam'],
   ['seamLit', '--seam-lit'],
+  ['floor', '--floor'],
+  ['floorLit', '--floor-lit'],
   ['chalk', '--chalk'],
   ['dust', '--dust'],
   ['amethyst', '--amethyst'],

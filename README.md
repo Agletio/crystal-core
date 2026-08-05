@@ -89,7 +89,8 @@ slots; gear runs 5 for 2 on each side.
 | `render/renderer.ts` | The Renderer interface. **The graphics seam.** |
 | `render/pixi.ts` | WebGL renderer (PixiJS). The default. |
 | `render/canvas2d.ts` | Plain-shapes fallback when there's no WebGL. |
-| `render/sprites.ts` | Procedural placeholder sprite sheets. |
+| `render/sprites.ts` | Procedural placeholder creature sprites. |
+| `ui/icons.ts` | Procedural inline-SVG item icons. |
 | `game/state.ts` | The whole game in one object. Inventory, wallet, character, bench. |
 | `game/report.ts` | Banks a finished run and describes it for the results overlay. |
 | `ui/inventory.ts` | The permanent inventory strip. |
@@ -120,6 +121,21 @@ simply stays and the page is never blank.
 
 A renderer owns its own `<canvas>` and appends it to `#run-stage`, because a
 WebGL context and a 2D context can't share one element.
+
+### Camera
+
+Everything geometric lives in a `world` container measured in **tile units**,
+and the camera is that container's transform. That's what makes zooming cheap:
+the map is built once and then moved, rather than 2,000 rectangles being
+redrawn at new pixel coordinates every frame.
+
+Zoom 1 fits the whole map. Above that it follows the hero, clamped to the map
+edges so it never pans into the void. Damage numbers live in screen space
+instead of the world, so zooming doesn't scale them into a blur.
+
+The map draws with its own `--floor` / `--floor-lit` pair, much brighter than
+the panel colours. Panel colours are meant to sit behind text; a floor lit
+like that is unreadable at tile size.
 
 ### Replacing the placeholder art
 
@@ -230,6 +246,21 @@ you pull a crystal out to run, put gear into the bench, watch it fill after a
 clear — so hiding it behind navigation would mean constantly flipping back to
 check what you have. Clicking an item does whatever the active view registered;
 the inventory itself has no opinion about what an item is for.
+
+**The bench selects in place.** `benchId` is a reference into the inventory,
+not a move. Taking the item out made it look like crafting had eaten it — the
+thing you were working on vanished from the list — so it stays visible and
+highlighted instead. `craft()` preserves the item id, so the result swaps back
+into the same slot and the selection survives.
+
+Only fragments show in the wallet strip. Every crafting currency already shows
+its count on its own button in the bench sidebar, so listing them all up top
+was the same information twice.
+
+Items get procedural inline-SVG icons (`ui/icons.ts`) — crystals gain facets,
+size and a halo with tier, so a T6 reads as more valuable than a T1 without
+reading the label. SVG rather than canvas because they live in the DOM next to
+text and scale with it.
 
 The loop:
 
