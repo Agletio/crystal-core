@@ -183,6 +183,19 @@ function renderItem(): void {
 
   const list = $('modlist');
   list.replaceChildren();
+
+  // Implicits first and visibly separate — they're part of the base, not
+  // something you rolled, and no craft can touch them.
+  for (const imp of item.implicits) {
+    const row = el('div', 'mod mod--implicit');
+    row.append(el('span', 'dot dot--citrine'));
+    const b = el('div', 'mod__body');
+    b.append(el('div', 'mod__stats', describeMod(imp)));
+    b.append(el('div', 'mod__name', 'base — cannot be changed'));
+    row.append(b);
+    list.append(row);
+  }
+
   if (item.mods.length === 0) {
     list.append(el('p', 'empty', 'No modifiers. Use a currency to fill a slot.'));
   }

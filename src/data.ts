@@ -6,6 +6,7 @@ import type {
   MonsterDef,
   Recipe,
   SkillDef,
+  StatSpec,
 } from './types';
 
 // ===========================================================================
@@ -133,11 +134,97 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
  * instead of being generic stat sticks. Weapons keep one defence slot, so a
  * weapon can still roll armour or life.
  */
+/**
+ * One-handed weapons, in four families.
+ *
+ * Every weapon carries an IMPLICIT — a stat it always has, which no craft can
+ * add or remove. That's the reason to want a wand over a sword before either
+ * has rolled anything, and it's what makes a weapon drop interesting rather
+ * than being a mod container with a different name.
+ *
+ *   wands    spell damage, or cast speed
+ *   swords   attack speed
+ *   daggers  flat critical chance — flat, because increases multiply a 5%
+ *            base and would be worth almost nothing here
+ *   maces    flat damage of ONE type per base, so a mace commits you
+ *
+ * Tiers within a family are gated by ilvl, so better bases are themselves a
+ * progression rather than everything being available immediately.
+ */
+const WEAPON_SLOTS = { offence: 2, defence: 1, damage: 1, utility: 0 };
+
+const weapon = (
+  id: string,
+  name: string,
+  family: string,
+  implicit: StatSpec[]
+): GearBase => ({
+  id, name, kind: 'weapon', art: family, family,
+  slots: { ...WEAPON_SLOTS },
+  implicit,
+});
+
+export const WEAPON_BASES: GearBase[] = [
+  // --- wands: the spell family ---------------------------------------
+  weapon('ash_wand', 'Ash Wand', 'wand', [
+    { stat: 'damage', form: 'inc', range: [10, 10], tags: ['spell'] },
+  ]),
+  weapon('carved_wand', 'Carved Wand', 'wand', [
+    { stat: 'damage', form: 'inc', range: [16, 16], tags: ['spell'] },
+  ]),
+  weapon('quartz_wand', 'Quartz Wand', 'wand', [
+    { stat: 'damage', form: 'inc', range: [24, 24], tags: ['spell'] },
+  ]),
+  weapon('whisper_wand', 'Whispering Wand', 'wand', [
+    { stat: 'castSpeed', form: 'inc', range: [12, 12] },
+  ]),
+
+  // --- swords: attack speed ------------------------------------------
+  weapon('rusted_sword', 'Rusted Sword', 'sword', [
+    { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
+  ]),
+  weapon('iron_sword', 'Iron Sword', 'sword', [
+    { stat: 'attackSpeed', form: 'inc', range: [13, 13] },
+  ]),
+  weapon('steel_sword', 'Steel Sword', 'sword', [
+    { stat: 'attackSpeed', form: 'inc', range: [18, 18] },
+  ]),
+
+  // --- daggers: crit --------------------------------------------------
+  weapon('shiv', 'Shiv', 'dagger', [
+    { stat: 'critChance', form: 'flat', range: [3, 3] },
+  ]),
+  weapon('stiletto', 'Stiletto', 'dagger', [
+    { stat: 'critChance', form: 'flat', range: [5, 5] },
+  ]),
+  weapon('fang', 'Fang', 'dagger', [
+    { stat: 'critChance', form: 'flat', range: [8, 8] },
+  ]),
+
+  // --- maces: one damage type each, so the choice commits you ---------
+  //
+  // Tagged 'attack' as well as their type. Without it a mace's flat fire
+  // damage would arm a spell too — a wand user could hold a mace for free
+  // damage, which defeats the point of families.
+  weapon('cudgel', 'Cudgel', 'mace', [
+    { stat: 'damage', form: 'flat', range: [5, 5], tags: ['physical', 'attack'] },
+  ]),
+  weapon('ember_maul', 'Ember Maul', 'mace', [
+    { stat: 'damage', form: 'flat', range: [9, 9], tags: ['fire', 'attack'] },
+  ]),
+  weapon('frost_maul', 'Frost Maul', 'mace', [
+    { stat: 'damage', form: 'flat', range: [9, 9], tags: ['cold', 'attack'] },
+  ]),
+  weapon('storm_maul', 'Storm Maul', 'mace', [
+    { stat: 'damage', form: 'flat', range: [9, 9], tags: ['lightning', 'attack'] },
+  ]),
+  weapon('skull_maul', 'Skull Maul', 'mace', [
+    { stat: 'damage', form: 'flat', range: [14, 14], tags: ['physical', 'attack'] },
+  ]),
+];
+
 export const GEAR_BASES: GearBase[] = [
-  {
-    id: 'sword', name: 'Iron Sword', kind: 'weapon', art: 'weapon',
-    slots: { offence: 2, defence: 1, damage: 1, utility: 0 },
-  },
+  ...WEAPON_BASES,
   {
     id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet',
     slots: { offence: 1, defence: 2, damage: 1, utility: 0 },
@@ -1164,7 +1251,20 @@ export const FREE_MAP = {
    * roughly one run in five — acceptable for a map you chose and paid for,
    * not for the one the game hands you.
    */
-  densityScale: 0.9,
+  densityScale: 0.55,
+  /**
+   * What clearing it the FIRST time hands you, on top of the map's own loot.
+   *
+   * Without this the opening was: choose a skill, watch for a minute, and
+   * still not have enough for a crystal. A first clear should leave you
+   * holding something to make a decision about — which is what the fragments
+   * and the weapon are for.
+   */
+  firstClear: {
+    fragments: 22,
+    weapon: 'ash_wand',
+    currency: { shard_of_awakening: 1, shard_of_chaos: 1 },
+  },
 };
 
 export interface StartPreset {

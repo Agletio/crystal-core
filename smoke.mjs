@@ -237,6 +237,36 @@ assert(
   `${invItems().length} vs ${inventoryBefore}`
 );
 
+// --- implicits survive everything ----------------------------------------
+// A weapon's implicit is its identity. Every effect in the registry operates
+// on `mods`, so nothing — including Shard of Ruin, which strips the lot —
+// should be able to reach it.
+$('bench-return').click();
+const weaponChip = invItems().find((b) =>
+  /Wand|Sword|Shiv|Stiletto|Fang|Cudgel|Maul/.test(
+    b.querySelector('.invitem__name')?.textContent ?? ''
+  )
+);
+assert(!!weaponChip, 'a weapon base is in the inventory');
+weaponChip.click();
+
+const implicitRows = () => all('#modlist .mod--implicit');
+assert(implicitRows().length === 1, 'the weapon shows its implicit');
+const implicitText = implicitRows()[0].textContent;
+
+const awaken2 = currencyButton('Shard of Awakening');
+if (awaken2 && !awaken2.disabled) awaken2.click();
+const ruin = currencyButton('Shard of Ruin');
+if (ruin && !ruin.disabled) ruin.click();
+
+assert(
+  implicitRows().length === 1 && implicitRows()[0].textContent === implicitText,
+  'crafting cannot reach an implicit'
+);
+
+$('bench-return').click();
+crystalChip.click();
+
 // --- closing it ---------------------------------------------------------
 $('bench-return').click();
 assert($('bench-empty').hidden === false, 'bench is empty again');

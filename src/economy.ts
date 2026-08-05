@@ -7,7 +7,7 @@ import {
   GEAR_SLOTS,
   RECIPES,
 } from './data';
-import type { Item, ItemKind, Recipe, Wallet } from './types';
+import type { GearBase, Item, ItemKind, Recipe, RolledMod, Wallet } from './types';
 
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
@@ -28,8 +28,37 @@ export function makeCrystal(tier: number): Item {
     ilvl: def.ilvl,
     slots: { ...CRYSTAL_SLOTS },
     mods: [],
+    implicits: [],
     meta: { tier },
   };
+}
+
+/**
+ * Turns a base's authored implicit into a rolled mod.
+ *
+ * Implicits use fixed ranges, so there's nothing random about them — they're
+ * built through the same shape as a mod purely so stat aggregation treats
+ * them identically and needs no special case.
+ */
+function implicitsFor(def: GearBase | undefined): RolledMod[] {
+  if (!def?.implicit?.length) return [];
+  return [
+    {
+      entryId: `${def.id}_implicit`,
+      defId: `${def.id}_implicit`,
+      group: 'implicit',
+      slot: 'implicit',
+      name: 'Base',
+      tier: 0,
+      tags: ['implicit'],
+      stats: def.implicit.map((s) => ({
+        stat: s.stat,
+        form: s.form,
+        value: s.range[0],
+        tags: s.tags ?? [],
+      })),
+    },
+  ];
 }
 
 export function makeGear(base: string, ilvl: number, name?: string): Item {
@@ -45,6 +74,7 @@ export function makeGear(base: string, ilvl: number, name?: string): Item {
     // utility slots can never roll move speed.
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
+    implicits: implicitsFor(def),
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
     meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },

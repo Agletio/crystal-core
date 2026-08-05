@@ -96,6 +96,14 @@ export interface Item {
   /** Slot capacity, declared by the base. e.g. { main: 2, secondary: 2 } */
   slots: Record<ModSlot, number>;
   mods: RolledMod[];
+  /**
+   * Base stats that are part of the item itself.
+   *
+   * Kept apart from `mods` so crafting can't touch them: every effect in the
+   * registry operates on `mods` alone, so an implicit needs no special-casing
+   * to be safe from Ruin, Chaos or anything added later.
+   */
+  implicits: RolledMod[];
   /** Escape hatch for one-off state: bonus slots, corruption, etc. */
   meta: Record<string, any>;
 }
@@ -159,6 +167,16 @@ export interface GearBase {
   art: string;
   /** Mod-group capacities. Zero in a group means it can never roll one. */
   slots: Record<string, number>;
+  /**
+   * Always present, never rolled, never removable.
+   *
+   * This is what gives a base an identity — the reason to want a wand over a
+   * sword before either has rolled a single mod. Crafting only ever touches
+   * `mods`, so an implicit survives everything, including Shard of Ruin.
+   */
+  implicit?: StatSpec[];
+  /** Weapon family, for grouping in UI. */
+  family?: string;
 }
 
 export interface EquipSlotDef {

@@ -80,8 +80,13 @@ function renderWallet(): void {
 }
 
 function tooltip(item: Item): string {
-  if (item.mods.length === 0) return `${item.name} — no modifiers`;
-  return `${item.name}\n${item.mods.map((m) => describeMod(m)).join('\n')}`;
+  const lines = [item.name];
+  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
+  if (item.mods.length === 0 && item.implicits.length === 0) {
+    lines.push('no modifiers');
+  }
+  for (const mod of item.mods) lines.push(describeMod(mod));
+  return lines.join('\n');
 }
 
 export function renderInventory(): void {

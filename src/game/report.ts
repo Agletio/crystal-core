@@ -8,7 +8,7 @@
  * That was the point of asking for damage-taken up front: it proves the shape
  * holds more than one kind of thing.
  */
-import { addItem } from './state';
+import { addItem, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { grant } from '../economy';
 import { addXp, addSkillXp } from '../sim/character';
@@ -55,6 +55,8 @@ export function buildReport(game: GameState, run: RunState): RunReport {
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
+  const gifts: Item[] = [];
+
   if (cleared) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
       const n = round(amount);
@@ -63,6 +65,17 @@ export function buildReport(game: GameState, run: RunState): RunReport {
       grant(game.wallet, id, n);
     }
     for (const item of run.loot.items) addItem(game, item);
+
+    // The opening payout. Folded into the same banked/items shape so the
+    // overlay shows it as loot rather than it appearing silently in the bag.
+    const first = grantFirstClear(game);
+    if (first) {
+      banked.fragment = (banked.fragment ?? 0) + first.fragments;
+      for (const [id, n] of Object.entries(first.currency)) {
+        banked[id] = (banked[id] ?? 0) + n;
+      }
+      if (first.weapon) gifts.push(first.weapon);
+    }
   }
 
   // XP is earned either way — you learned something on the way to dying.
@@ -103,7 +116,7 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     headline: cleared ? 'Map cleared' : 'You died',
     rows,
     banked,
-    items: cleared ? run.loot.items : [],
+    items: cleared ? [...run.loot.items, ...gifts] : [],
     lostLoot: !cleared && hadLoot,
     xp: Math.round(run.xpGained),
     levelsGained,

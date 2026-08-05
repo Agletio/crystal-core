@@ -300,6 +300,13 @@ export function clone(item: Item): Item {
       tags: [...m.tags],
       stats: m.stats.map((s) => ({ ...s, tags: [...s.tags] })),
     })),
+    // Carried through untouched. No effect in the registry reads or writes
+    // implicits, which is exactly why they survive every craft.
+    implicits: item.implicits.map((m) => ({
+      ...m,
+      tags: [...m.tags],
+      stats: m.stats.map((s) => ({ ...s, tags: [...s.tags] })),
+    })),
     meta: JSON.parse(JSON.stringify(item.meta ?? {})),
   };
 }

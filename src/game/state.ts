@@ -8,7 +8,7 @@
  * so a format change can reset cleanly instead of crashing on old data.
  */
 import { Rng } from '../rng';
-import { EQUIP_SLOTS, START_PRESETS } from '../data';
+import { EQUIP_SLOTS, FREE_MAP, START_PRESETS } from '../data';
 import type { EquipSlotDef } from '../types';
 import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
@@ -35,6 +35,8 @@ export interface GameState {
   benchId: string | null;
   /** False until a skill has been chosen on the first run. */
   onboarded: boolean;
+  /** False until the first map has been cleared. Gates the opening payout. */
+  firstClearDone: boolean;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -47,6 +49,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     character: makeCharacter({}, 'strike'),
     benchId: null,
     onboarded: false,
+    firstClearDone: false,
   };
   resetGame(game, mode);
   return game;
@@ -80,6 +83,31 @@ export function resetGame(game: GameState, mode: StartMode): void {
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
+  game.firstClearDone = mode === 'dev';
+}
+
+/**
+ * The opening payout, granted once, when the first map is cleared.
+ *
+ * Returns what was given so the results overlay can show it as loot rather
+ * than having it appear silently in the inventory.
+ */
+export function grantFirstClear(game: GameState): {
+  fragments: number;
+  currency: Record<string, number>;
+  weapon: Item | null;
+} | null {
+  if (game.firstClearDone) return null;
+  game.firstClearDone = true;
+
+  const gift = FREE_MAP.firstClear;
+  grant(game.wallet, 'fragment', gift.fragments);
+  for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
+
+  const weapon = makeGear(gift.weapon, 1);
+  addItem(game, weapon);
+
+  return { fragments: gift.fragments, currency: gift.currency, weapon };
 }
 
 export function addItem(game: GameState, item: Item): void {

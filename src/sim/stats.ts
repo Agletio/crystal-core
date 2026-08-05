@@ -215,7 +215,12 @@ export function characterStats(character: Character): CombatStats {
   const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
   const items = equippedItems(character);
   const extra = treeMod(character);
-  const mods = [...items.flatMap((i) => i.mods), ...(extra ? [extra] : [])];
+  // Implicits count exactly like rolled mods — the only difference is that
+  // crafting can't reach them.
+  const mods = [
+    ...items.flatMap((i) => [...i.mods, ...i.implicits]),
+    ...(extra ? [extra] : []),
+  ];
   return heroStats(mods, character.level, skill, treeGrants(character));
 }
 
