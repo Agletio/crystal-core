@@ -17,7 +17,11 @@ import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
 import type { Character } from './character';
+import { crystalRewards } from './crystal';
+import type { CrystalRewards } from './crystal';
 import {
+  CURRENCIES,
+  CURRENCY_DROP,
   HERO_BASE,
   LOOT,
   MONSTERS,
@@ -51,6 +55,9 @@ const IGNORE_SECONDS = 5;
 
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
+
+/** Ordered worst-to-best, so rarity climbs the list. */
+const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 
 export type EntityKind = 'hero' | 'monster';
 
@@ -194,6 +201,12 @@ export class RunSim {
   private xpPerKill = 1;
   /** Fragments one monster is worth. Fractional; rounds when banked. */
   private fragmentsPerKill = 0;
+  private rewards: CrystalRewards = {
+    danger: 0,
+    payingDanger: 0,
+    fragmentYield: 1,
+    rarity: 0,
+  };
   /**
    * Monsters not worth pursuing right now, mapped to the time they may be
    * reconsidered. Temporary rather than permanent, so a monster dismissed as
@@ -263,8 +276,13 @@ export class RunSim {
   private spawn(crystal: Item, map: GameMap): Entity[] {
     const tier = (crystal.meta.tier as number) ?? 1;
     const { packCount, packSize } = mapDensity(crystal);
+    // Danger pays here: the crystal's own modifiers set what a kill is worth.
+    this.rewards = crystalRewards(crystal);
     this.xpPerKill = monsterXp(tier);
-    this.fragmentsPerKill = LOOT.fragmentsPerKill * Math.pow(LOOT.tierScale, tier - 1);
+    this.fragmentsPerKill =
+      LOOT.fragmentsPerKill *
+      Math.pow(LOOT.tierScale, tier - 1) *
+      this.rewards.fragmentYield;
 
     const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
     const monsters: Entity[] = [];
@@ -719,7 +737,7 @@ export class RunSim {
     this.emit(
       'impact',
       [{ x: defender.x, y: defender.y }],
-      skill?.damageTypes[0] ?? 'physical',
+      skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical',
       0.25
     );
 
@@ -736,7 +754,8 @@ export class RunSim {
     });
 
     if (defender.kind === 'hero') {
-      const type = skill?.damageTypes[0] ?? 'physical';
+      // A monster with no skill still has a type — 'of Cinders' maps burn you.
+      const type = skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical';
       s.damageTaken[type] = (s.damageTaken[type] ?? 0) + dmg;
       this.events.push({ kind: 'hurt', life: Math.max(0, defender.life), maxLife: defender.stats.maxLife });
     }
@@ -758,7 +777,32 @@ export class RunSim {
     s.killed++;
     s.xpGained += this.xpPerKill;
     s.loot.currency.fragment = (s.loot.currency.fragment ?? 0) + this.fragmentsPerKill;
+    this.rollCurrency();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
+  }
+
+  /**
+   * Currency drops, and the only thing rarity does.
+   *
+   * A drop starts at `basic` and rarity gives it repeated chances to climb a
+   * class, so the scarce currencies are reachable only by making the map more
+   * dangerous. This is also what finally gives the sigils a source — before
+   * this they existed solely in the starting wallet.
+   */
+  private rollCurrency(): void {
+    if (!this.rng.chance(CURRENCY_DROP.chancePerKill)) return;
+
+    const climb = CURRENCY_DROP.upgradeChance * (1 + this.rewards.rarity / 100);
+    let rank = 0;
+    while (rank < CURRENCY_CLASSES.length - 1 && this.rng.chance(climb)) rank++;
+
+    const cls = CURRENCY_CLASSES[rank];
+    const pool = CURRENCIES.filter((c) => c.class === cls);
+    const dropped = this.rng.pick(pool);
+    if (!dropped) return;
+
+    const loot = this.state.loot.currency;
+    loot[dropped.id] = (loot[dropped.id] ?? 0) + 1;
   }
 }
 

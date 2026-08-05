@@ -15,6 +15,7 @@ import { addItem, benchItem, clearBench, replaceItem, selectForBench } from '../
 import type { GameState } from '../game/state';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { currencyIcon } from './icons';
+import { rewardRows } from '../sim/crystal';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
@@ -134,6 +135,20 @@ function renderItem(): void {
   $('item-meta').textContent =
     `ilvl ${item.ilvl} · ${fillState(item)}` + (item.meta.corrupted ? ' · locked' : '');
   $('item-name').classList.toggle('locked', !!item.meta.corrupted);
+
+  // What this crystal is worth, right under its name — the mods below say
+  // what makes it dangerous, this says what the danger buys.
+  const multipliers = $('item-rewards');
+  multipliers.replaceChildren();
+  multipliers.hidden = item.kind !== 'crystal';
+  if (item.kind === 'crystal') {
+    for (const row of rewardRows(item)) {
+      const chip = el('span', 'mult');
+      chip.append(el('span', 'mult__k', row.label));
+      chip.append(el('span', 'mult__v', row.value));
+      multipliers.append(chip);
+    }
+  }
 
   const host = $('sockets');
   host.replaceChildren();

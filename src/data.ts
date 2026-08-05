@@ -44,26 +44,44 @@ export const CRYSTAL_MODS: ModDef[] = [
       { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [8, 18] }] },
     ],
   },
+  // Gilded (itemRarity) and Fractured (fragmentYield) used to live here as
+  // pure upside. They're gone: reward is now derived from danger, so a mod
+  // that only gave you something was a mod with no decision in it. Their
+  // slots are taken by the three below.
   {
-    id: 'item_rarity',
+    id: 'monster_armour',
     slot: 'mod',
-    name: 'Gilded',
+    name: 'of Hardened Hide',
     appliesTo: ['crystal'],
-    tags: ['reward'],
+    tags: ['danger'],
     tiers: [
-      { ilvl: 50, weight: 250, stats: [{ stat: 'itemRarity', form: 'inc', range: [40, 60] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'itemRarity', form: 'inc', range: [15, 30] }] },
+      { ilvl: 45, weight: 300, stats: [{ stat: 'monsterArmour', form: 'inc', range: [50, 80] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'inc', range: [20, 40] }] },
     ],
   },
   {
-    id: 'fragment_yield',
+    id: 'monster_crit',
     slot: 'mod',
-    name: 'Fractured',
+    name: 'of Cruelty',
     appliesTo: ['crystal'],
-    tags: ['reward', 'sustain'],
+    tags: ['danger'],
     tiers: [
-      { ilvl: 40, weight: 300, stats: [{ stat: 'fragmentYield', form: 'inc', range: [25, 40] }] },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'fragmentYield', form: 'inc', range: [10, 20] }] },
+      { ilvl: 50, weight: 250, stats: [{ stat: 'monsterCrit', form: 'inc', range: [25, 40] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCrit', form: 'inc', range: [10, 20] }] },
+    ],
+  },
+  {
+    // Makes monsters deal fire instead of physical, which is the first mod
+    // that a character could be built to shrug off — and it shows up in the
+    // results overlay's damage-by-type breakdown immediately.
+    id: 'monster_fire',
+    slot: 'mod',
+    name: 'of Cinders',
+    appliesTo: ['crystal'],
+    tags: ['danger', 'fire'],
+    tiers: [
+      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [30, 50] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [12, 25] }] },
     ],
   },
   {
@@ -546,6 +564,71 @@ export const MONSTER_RANGED_SKILL = 'bolt';
 // Loot banks only when a run is CLEARED. Dying loses it, which is what makes
 // the clear/fail distinction worth anything.
 // ===========================================================================
+
+// ===========================================================================
+// DANGER → REWARD
+//
+// Every crystal modifier is a DOWNSIDE. Reward is derived from how dangerous
+// the map has become, rather than being rolled separately.
+//
+// The point is that no mod is simply good or simply bad: a roll becomes "how
+// much of this can my character eat", and a build that shrugs off one kind of
+// danger is being paid extra for it. That's the whole reason this model is
+// worth the plumbing.
+//
+// `weight` is how dangerous one point of a stat is, relative to monster
+// damage at 1.0. `rewards` is whether that danger PAYS.
+//
+// Density is the exception: more monsters is genuinely harder, so it counts
+// toward the displayed Danger, but it already pays you in extra kills — more
+// loot and more XP fall out of there being more things to kill. Letting it
+// also raise the multiplier would pay twice and make density the mod you
+// always want.
+// ===========================================================================
+
+export interface DangerStat {
+  weight: number;
+  rewards: boolean;
+}
+
+export const DANGER_STATS: Record<string, DangerStat> = {
+  monsterDamage: { weight: 1.0, rewards: true },
+  monsterLife: { weight: 0.7, rewards: true },
+  monsterArmour: { weight: 0.55, rewards: true },
+  monsterCrit: { weight: 0.5, rewards: true },
+  monsterFire: { weight: 0.9, rewards: true },
+  monsterMoveSpeed: { weight: 0.6, rewards: true },
+  layoutComplexity: { weight: 0.2, rewards: true },
+  packCount: { weight: 0.5, rewards: false },
+  packSize: { weight: 0.5, rewards: false },
+};
+
+/**
+ * What a point of rewarding danger is worth.
+ *
+ * Loot only, deliberately — XP stays per-kill. If a "juice XP at the cost of
+ * loot" modifier arrives later, it belongs here as a second channel rather
+ * than as a special case in the sim.
+ */
+export const REWARD = {
+  /** Fragment multiplier gained per danger point. 100 danger = +100%. */
+  fragmentPerDanger: 0.01,
+  /** Rarity percent gained per danger point. */
+  rarityPerDanger: 0.8,
+};
+
+/**
+ * Currency drops, and what rarity does to them.
+ *
+ * A drop picks a class first and then a currency within it, so rarity
+ * upgrading `basic → uncommon → rare → exotic` is the only thing that gets
+ * you the scarce ones. This is also what finally gives the sigils a source.
+ */
+export const CURRENCY_DROP = {
+  chancePerKill: 0.022,
+  /** Per-step chance to climb one class, before rarity is applied. */
+  upgradeChance: 0.17,
+};
 
 export const LOOT = {
   /**

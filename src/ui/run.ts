@@ -14,6 +14,7 @@ import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
+import { rewardRows } from '../sim/crystal';
 import { SKILLS } from '../data';
 import { removeItem, crystalsIn } from '../game/state';
 import type { GameState } from '../game/state';
@@ -115,6 +116,15 @@ function renderMenu(): void {
 
   host.append(el('div', 'chosen__name', chosen.name));
   host.append(el('div', 'chosen__meta', `ilvl ${chosen.ilvl} · ${chosen.mods.length} modifiers`));
+
+  const multipliers = el('div', 'mults');
+  for (const row of rewardRows(chosen)) {
+    const chip = el('span', 'mult');
+    chip.append(el('span', 'mult__k', row.label));
+    chip.append(el('span', 'mult__v', row.value));
+    multipliers.append(chip);
+  }
+  host.append(multipliers);
 
   if (chosen.mods.length === 0) {
     host.append(el('p', 'empty', 'Unmodified — craft it on the bench for a richer map.'));

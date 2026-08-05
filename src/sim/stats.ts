@@ -30,6 +30,8 @@ export interface CombatStats {
   aggroRange: number;
   /** Life restored per second. Monsters have none. */
   lifeRegen: number;
+  /** Damage type dealt when attacking without a skill. Monsters only. */
+  damageType?: string;
 }
 
 /**
@@ -105,17 +107,23 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
   const damage =
     MONSTER_BASE.damage * Math.pow(MONSTER_TIER_SCALE.damage, tier - 1) * def.damage;
 
+  // Crystal danger mods land here: armour blunts your hits, crit spikes
+  // theirs, and fire changes what you're actually being killed by.
+  const fire = computeStat(0, crystal.mods, 'monsterFire');
+
   return {
     maxLife: computeStat(life, crystal.mods, 'monsterLife'),
-    damage: computeStat(damage, crystal.mods, 'monsterDamage'),
+    damage: computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100),
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
-    critChance: 0,
+    critChance: computeStat(0, crystal.mods, 'monsterCrit'),
     moveSpeed:
       computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
-    armour: 0,
+    armour: computeStat(0, crystal.mods, 'monsterArmour'),
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
+    /** What monsters on this map hurt you with. Shows in the results overlay. */
+    damageType: fire > 0 ? 'fire' : 'physical',
   };
 }
 

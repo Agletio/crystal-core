@@ -122,6 +122,20 @@ assert(
 assert($('bench-return').disabled === false, 'return is now available');
 assert($('sockets').querySelectorAll('.facet').length === 3, 'crystal shows 3 facets');
 
+// Derived reward multipliers under the name. A blank crystal must read as
+// exactly baseline — no danger, no bonus.
+const multRows = () =>
+  all('#item-rewards .mult').map(
+    (n) =>
+      `${n.querySelector('.mult__k').textContent}=${n.querySelector('.mult__v').textContent}`
+  );
+assert($('item-rewards').hidden === false, 'crystal shows reward multipliers');
+assert(
+  multRows().join(' ') === 'danger=0 fragments=0% rarity=0%',
+  'a blank crystal is worth exactly base',
+  multRows().join(' ')
+);
+
 // --- crafting spends currency ---------------------------------------------
 const currencyButton = (name) =>
   all('#currencies button.curr').find(
@@ -143,6 +157,10 @@ const stockBefore = heldCount('Shard of Making');
 making.click();
 
 assert($('modlist').querySelectorAll('.mod').length === 1, 'a modifier was added');
+
+// Every crystal mod is a downside now, so adding one must move danger up.
+const danger = () => Number(multRows()[0].split('=')[1]);
+assert(danger() > 0, 'crafting a mod raises danger', String(danger()));
 assert(
   heldCount('Shard of Making') === stockBefore - 1,
   'currency was spent',

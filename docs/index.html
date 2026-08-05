@@ -238,6 +238,12 @@
   .curr__stock { font-size: 10px; color: var(--citrine); }
 
   /* --- chosen map ----------------------------------------------------- */
+  /* Derived reward multipliers, shown right under a crystal's name. */
+  .mults { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .mult { display: inline-flex; gap: 5px; align-items: baseline; background: var(--seam); padding: 3px 8px; font-size: 11px; }
+  .mult__k { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+  .mult__v { color: var(--citrine); font-weight: 600; }
+
   .chosen__name { font-family: var(--display); font-size: 15px; }
   .chosen__meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
   .chosen__mod { font-size: 12px; padding: 3px 0; border-top: 1px solid var(--seam); }
@@ -311,6 +317,7 @@
           <div id="bench-item" hidden>
             <h2 id="item-name">—</h2>
             <div id="item-meta"></div>
+            <div class="mults" id="item-rewards" hidden></div>
             <div id="sockets"></div>
             <div id="modlist"></div>
           </div>

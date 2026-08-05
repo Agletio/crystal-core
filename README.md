@@ -232,6 +232,51 @@ instead of closing to melee — the same skill the hero can use, through the sam
 code path. Ranged monsters get a pip above them so a pack that shoots is
 identifiable before it starts shooting.
 
+## Danger buys reward
+
+**Every crystal modifier is a downside.** Reward isn't rolled — it's derived
+from how dangerous the mods made the map.
+
+This is the difference between a roll being lucky and a roll being a decision.
+When rarity was a mod, it was a gift and monster damage was a tax, so a crystal
+was just good or bad. Now every mod asks the same question: how much of this
+can your character eat?
+
+It also sets up the thing that makes builds matter — **a character that shrugs
+off one kind of danger gets paid for danger it isn't taking**. `of Cinders`
+exists partly to be the first mod something could be built to ignore.
+
+`DANGER_STATS` in `data.ts` scores it: `weight` is how dangerous a point of a
+stat is (monster damage = 1.0), `rewards` is whether it pays.
+
+```ts
+monsterDamage: { weight: 1.0, rewards: true },
+packCount:     { weight: 0.5, rewards: false },
+```
+
+**Density is the exception.** More monsters is genuinely harder, so it counts
+toward the displayed Danger — but it already pays you in extra kills, since
+loot and XP are both per-kill. Letting it also raise the multiplier would pay
+twice and make density the mod you always want. It gets its own line in the
+header instead.
+
+The crystal header shows `danger · fragments · rarity · density`, so what the
+mods below are buying is legible before you commit.
+
+`REWARD` converts paying danger into multipliers. Loot only — XP stays
+per-kill. A future "juice XP at the cost of loot" modifier belongs there as a
+second channel rather than as a special case in the sim.
+
+### What rarity does
+
+Rarity is the chance a currency drop climbs a class: `basic → uncommon → rare
+→ exotic`, rolled per step. The scarce currencies are reachable *only* by
+making maps more dangerous, and this is what finally gives the sigils a source
+— before it they existed solely in the starting wallet.
+
+Equipment rarity is the same idea and isn't built: fixed-stat legendaries with
+rarity tiers, where more rarity means better ones.
+
 ## Inventory, loot, and the loop
 
 The whole game lives in one object (`game/state.ts`): inventory, wallet,
@@ -411,12 +456,12 @@ several times. That oscillation is the endgame rhythm.
 
 ## Deliberately not here yet
 
-- **Only fragments drop.** The payload is a currency map plus an item list, so
-  adding shards, gear or crystal drops is a change to what gets pushed in — not
-  to the plumbing that carries it or the overlay that shows it.
-- **The rare currencies have no source.** Sigils and Shard of Ruin used to come
-  from the `simulateRun()` stub, which is gone. Until runs drop currency they
-  exist only in `STARTING_CURRENCY`, seeded so the bench can be exercised.
+- **No gear or crystals drop.** Fragments and currency do. The payload is a
+  currency map plus an item list, so adding item drops is a change to what gets
+  pushed in — not to the plumbing that carries it or the overlay that shows it.
+- **Legendaries.** Equipment rarity has nothing to act on: rarity only upgrades
+  currency classes. The intended shape is fixed-stat legendaries with rarity
+  tiers, so higher rarity means better ones.
 - **Equipment.** The character wears a seeded starter set. Gear can be looted
   into the inventory and crafted on the bench, but not worn — no slots, no
   character sheet.
