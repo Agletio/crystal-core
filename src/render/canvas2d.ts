@@ -13,7 +13,7 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { damageColour, spriteColour } from './renderer';
+import { spriteColour, vfxColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -200,25 +200,45 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
   function drawVfx(v: View, state: RunState): void {
     for (const fx of state.vfx) {
-      const t = fx.age / fx.ttl;
+      const t = Math.min(1, fx.age / fx.ttl);
+      const colour = vfxColour(palette, fx.kind, fx.damageType);
+      const from = fx.points[0];
+      if (!from) continue;
+      const to = fx.points[1] ?? from;
+
       ctx.globalAlpha = Math.max(0, 1 - t);
-      ctx.strokeStyle = damageColour(palette, fx.damageType);
+      ctx.strokeStyle = colour;
+      ctx.fillStyle = colour;
       ctx.lineWidth = Math.max(1, v.tile * 0.1);
 
-      if (fx.points.length >= 2) {
+      if (fx.kind === 'slash') {
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const sweep = Math.PI * 0.75;
+        const start = angle - sweep / 2 + sweep * t;
+        ctx.lineWidth = Math.max(2, v.tile * 0.18);
         ctx.beginPath();
-        ctx.moveTo(cx(v, fx.points[0].x), cy(v, fx.points[0].y));
+        ctx.arc(cx(v, from.x), cy(v, from.y), v.tile * 0.95, start, start + sweep * 0.45);
+        ctx.stroke();
+      } else if (fx.kind === 'bolt') {
+        const travel = Math.min(1, t * 1.5);
+        const tail = Math.max(0, travel - 0.3);
+        const px = from.x + (to.x - from.x) * travel;
+        const py = from.y + (to.y - from.y) * travel;
+        ctx.beginPath();
+        ctx.moveTo(cx(v, from.x + (to.x - from.x) * tail), cy(v, from.y + (to.y - from.y) * tail));
+        ctx.lineTo(cx(v, px), cy(v, py));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx(v, px), cy(v, py), v.tile * 0.16, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (fx.points.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(cx(v, from.x), cy(v, from.y));
         for (const p of fx.points.slice(1)) ctx.lineTo(cx(v, p.x), cy(v, p.y));
         ctx.stroke();
-      } else if (fx.points.length === 1) {
+      } else {
         ctx.beginPath();
-        ctx.arc(
-          cx(v, fx.points[0].x),
-          cy(v, fx.points[0].y),
-          v.tile * (0.18 + t * 0.3),
-          0,
-          Math.PI * 2
-        );
+        ctx.arc(cx(v, from.x), cy(v, from.y), v.tile * (0.18 + t * 0.3), 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;

@@ -62,7 +62,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage. The floor every other behaviour builds on. */
   single_target: (use) => {
     use.hit(use.primary, 1);
-    use.vfx('swing', [
+    // The skill names its visual; the renderer decides what that looks like.
+    use.vfx(use.skill.vfxKind ?? 'swing', [
       { x: use.user.x, y: use.user.y },
       { x: use.primary.x, y: use.primary.y },
     ]);

@@ -213,6 +213,33 @@ instead of closing to melee — the same skill the hero can use, through the sam
 code path. Ranged monsters get a pip above them so a pack that shoots is
 identifiable before it starts shooting.
 
+## Line of sight
+
+`hasLineOfSight()` samples the segment between two entity centres and fails on
+the first wall. Attacks require it — being in range is not enough, or a ranged
+attack cheerfully shoots through walls, which is exactly what it did before
+this existed.
+
+Monsters also need it to **wake**, but not to **keep** chasing: losing sight of
+you mid-fight shouldn't make a pack forget you exist.
+
+An attacker in range but blocked falls through to pathing, so it walks around
+the corner instead of standing there. Verified over 5,253 attacks across 28
+runs with zero resolving through a wall.
+
+## Telling attacks apart
+
+A skill names its visual with `vfxKind`; the renderer decides what that looks
+like. `slash` draws an arc sweeping through the swing, `bolt` draws a
+projectile that actually travels with a trail behind it.
+
+Different **shapes**, not just different colours — at melee range two coloured
+lines are indistinguishable, which was the original problem.
+
+Colour is chosen in `vfxColour()`, where kind wins over damage type. That's a
+presentation call, which is why it lives in the renderer and not the skill
+data.
+
 ## Bodies and corridors
 
 Units have a `radius` and shove each other apart, so a pack spreads into a

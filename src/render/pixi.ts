@@ -16,7 +16,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
-import { damageColour, toHexNumber } from './renderer';
+import { toHexNumber, vfxColour } from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
 
 const FLOATER_LIFE = 1.1;
@@ -219,19 +219,50 @@ export async function createPixiRenderer(
         .fill(toHexNumber(palette.amethyst));
     }
 
-    // Skill and impact effects.
+    // Skill and impact effects. Each kind gets a different SHAPE, not just a
+    // different colour — at melee range two lines are indistinguishable.
     for (const fx of state.vfx) {
-      const t = fx.age / fx.ttl;
-      const colour = toHexNumber(damageColour(palette, fx.damageType));
+      const t = Math.min(1, fx.age / fx.ttl);
+      const colour = toHexNumber(vfxColour(palette, fx.kind, fx.damageType));
       const alpha = Math.max(0, 1 - t);
+      const from = fx.points[0];
+      const to = fx.points[1] ?? from;
+
+      if (fx.kind === 'slash' && from) {
+        // An arc that sweeps through the swing, centred on the attacker.
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const sweep = Math.PI * 0.75;
+        const start = angle - sweep / 2 + sweep * t;
+        vfxLayer
+          .arc(cx(from.x), cy(from.y), tile * 0.95, start, start + sweep * 0.45)
+          .stroke({ width: Math.max(2, tile * 0.18), color: colour, alpha });
+        continue;
+      }
+
+      if (fx.kind === 'bolt' && from) {
+        // A projectile that actually travels, with a short trail behind it.
+        const travel = Math.min(1, t * 1.5);
+        const tail = Math.max(0, travel - 0.3);
+        const px = from.x + (to.x - from.x) * travel;
+        const py = from.y + (to.y - from.y) * travel;
+        const tx = from.x + (to.x - from.x) * tail;
+        const ty = from.y + (to.y - from.y) * tail;
+
+        vfxLayer
+          .moveTo(cx(tx), cy(ty))
+          .lineTo(cx(px), cy(py))
+          .stroke({ width: Math.max(1, tile * 0.1), color: colour, alpha: alpha * 0.7 });
+        vfxLayer.circle(cx(px), cy(py), tile * 0.16).fill({ color: colour, alpha });
+        continue;
+      }
 
       if (fx.points.length >= 2) {
-        vfxLayer.moveTo(cx(fx.points[0].x), cy(fx.points[0].y));
+        vfxLayer.moveTo(cx(from.x), cy(from.y));
         for (const p of fx.points.slice(1)) vfxLayer.lineTo(cx(p.x), cy(p.y));
         vfxLayer.stroke({ width: Math.max(1, tile * 0.09), color: colour, alpha });
-      } else if (fx.points.length === 1) {
+      } else if (from) {
         vfxLayer
-          .circle(cx(fx.points[0].x), cy(fx.points[0].y), tile * (0.16 + t * 0.3))
+          .circle(cx(from.x), cy(from.y), tile * (0.16 + t * 0.3))
           .stroke({ width: Math.max(1, tile * 0.08), color: colour, alpha });
       }
     }

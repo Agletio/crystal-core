@@ -196,6 +196,12 @@ export interface SkillDef {
   rateMultiplier: number;
   /** Reach, in tiles. */
   range: number;
+  /**
+   * Which visual the renderer draws for a hit: 'slash', 'bolt', …
+   * A name, not a shape — the renderer decides what it looks like, and the
+   * sim never knows. Skills that don't set one get a generic line.
+   */
+  vfxKind?: string;
   /** Behaviour-specific knobs: chain count, radius, projectile count, … */
   params?: Record<string, any>;
 }

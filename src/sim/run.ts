@@ -9,7 +9,7 @@
  * step(TICK) a whole number of times, so frame rate never changes outcomes.
  */
 import { Rng } from '../rng';
-import { generateMap, dist } from './grid';
+import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath } from './pathfind';
 import { characterStats, monsterStats, mapDensity } from './stats';
@@ -420,6 +420,11 @@ export class RunSim {
     e.action = moving ? 'move' : 'idle';
   }
 
+  /** Unobstructed line between two entities. */
+  private canSee(a: Entity, b: Entity): boolean {
+    return hasLineOfSight(this.state.map.grid, a, b);
+  }
+
   private face(e: Entity, towardX: number, towardY: number): void {
     const dx = towardX - e.x;
     const dy = towardY - e.y;
@@ -446,7 +451,9 @@ export class RunSim {
 
     if (target) {
       const d = dist(hero, target);
-      if (d <= hero.stats.attackRange) {
+      // In range is not enough — you have to be able to see it. Without this a
+      // ranged attack happily shoots through a wall.
+      if (d <= hero.stats.attackRange && this.canSee(hero, target)) {
         hero.path = [];
         this.face(hero, target.x, target.y);
         this.settleAction(hero, false);
@@ -486,12 +493,15 @@ export class RunSim {
     const d = dist(m, hero);
     if (d > ACTIVE_RANGE) return;
 
-    if (!m.aggroed && d <= m.stats.aggroRange) m.aggroed = true;
+    // Monsters wake to something they can actually see. Once woken they stay
+    // woken and will chase around corners — losing sight of you mid-fight
+    // shouldn't make a pack forget you exist.
+    if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) m.aggroed = true;
     if (!m.aggroed) return;
 
     if (m.actionTimer > 0) m.actionTimer -= dt;
 
-    if (d <= m.stats.attackRange) {
+    if (d <= m.stats.attackRange && this.canSee(m, hero)) {
       m.path = [];
       this.face(m, hero.x, hero.y);
       this.settleAction(m, false);

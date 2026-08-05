@@ -78,6 +78,30 @@ export class Grid {
   }
 }
 
+/**
+ * Can a straight line between two points be drawn without crossing a wall?
+ *
+ * Sampled along the segment rather than a Bresenham walk, because entities sit
+ * at fractional positions and we care about the line between their actual
+ * centres, not between the tiles they happen to round into.
+ *
+ * The step is well under a tile, so a one-tile wall can never be skipped over.
+ * Only called once a range check has already passed, so it stays cheap.
+ */
+export function hasLineOfSight(grid: Grid, a: Vec2, b: Vec2): boolean {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-6) return true;
+
+  const steps = Math.ceil(length / 0.2);
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    if (!grid.walkable(a.x + dx * t, a.y + dy * t)) return false;
+  }
+  return true;
+}
+
 export interface GameMap {
   grid: Grid;
   rooms: Room[];

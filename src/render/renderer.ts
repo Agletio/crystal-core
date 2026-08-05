@@ -82,6 +82,18 @@ export function spriteColour(palette: Palette, sprite: string): string {
   }
 }
 
+/**
+ * Colour for an effect. Kind wins over damage type, because telling two
+ * attacks apart at a glance matters more than colour-coding the element —
+ * and this is a presentation call, which is why it lives here and not in
+ * the skill data.
+ */
+export function vfxColour(palette: Palette, kind: string, damageType: string): string {
+  if (kind === 'bolt') return palette.amethyst;
+  if (kind === 'slash') return palette.chalk;
+  return damageColour(palette, damageType);
+}
+
 export function damageColour(palette: Palette, type: string): string {
   switch (type) {
     case 'fire':

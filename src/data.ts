@@ -413,10 +413,13 @@ export const CRYSTAL_TIERS = [
 // Distances are in tiles, speeds in tiles/second, rates in per-second.
 // ===========================================================================
 
+// Deliberately generous. A character that insta-dies makes the game
+// unwatchable, which blocks judging whether the loop is any fun — so when in
+// doubt these go up, not down. Tune for real once the systems stop moving.
 export const HERO_BASE = {
-  life: 240,
+  life: 320,
   /** Physical damage per hit before gear. Elemental damage is gear-only. */
-  weaponDamage: 55,
+  weaponDamage: 72,
   attacksPerSecond: 1.2,
   critChance: 5,
   moveSpeed: 3.4,
@@ -573,6 +576,7 @@ export const SKILLS: SkillDef[] = [
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: HERO_BASE.attackRange,
+    vfxKind: 'slash',
   },
   {
     // Needed no new code — same single_target behaviour, longer range. That is
@@ -590,6 +594,7 @@ export const SKILLS: SkillDef[] = [
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: 6.5,
+    vfxKind: 'bolt',
   },
 ];
 
