@@ -42,7 +42,6 @@ let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
 let phase: Phase = 'menu';
 let playing = false;
-let speed = 1;
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
@@ -313,7 +312,10 @@ function frame(now: number): void {
   lastFrame = now;
 
   if (playing && sim && sim.state.status === 'running') {
-    accumulator += dt * speed;
+    // One pace, always. Speed multipliers were papering over combat that
+    // will change as the character scales; tuning the real pace is the
+    // honest fix.
+    accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
       sim.step(TICK);
@@ -399,17 +401,6 @@ export function initRun(state: GameState): void {
     setPhase('menu');
     renderMenu();
   };
-
-  for (const mult of [1, 2, 4]) {
-    const btn = $(`run-speed-${mult}`) as HTMLButtonElement;
-    btn.onclick = () => {
-      speed = mult;
-      for (const m of [1, 2, 4]) {
-        $(`run-speed-${m}`).classList.toggle('chip--on', m === speed);
-      }
-    };
-  }
-  $('run-speed-1').classList.add('chip--on');
 
   const clearBtn = $('run-clearall') as HTMLButtonElement;
   clearBtn.onclick = () => {
