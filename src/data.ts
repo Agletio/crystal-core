@@ -1179,15 +1179,15 @@ export const SKILLS: SkillDef[] = [
     // Needed no new code — same single_target behaviour, longer range. That is
     // the registry doing its job.
     //
-    // Deliberately identical to Strike apart from reach, so it isolates what
-    // range alone is worth. That also makes it strictly better; when you want
-    // it to be a real choice, drop damageMultiplier or rateMultiplier here.
+    // `projectile` is a delivery tag and `fire` is a damage type: the tag
+    // goes in tags, the type in damageTypes. Putting the type in tags would
+    // make it satisfy every damage pass and scale the lot.
     id: 'bolt',
-    name: 'Arcane Bolt',
-    description: 'A single bolt at range. Same hit, from much further away.',
-    tags: ['spell', 'ranged'],
+    name: 'Fire Bolt',
+    description: 'A bolt of fire at range. Single target, from much further away.',
+    tags: ['spell', 'projectile'],
     behaviour: 'single_target',
-    damageTypes: ['physical'],
+    damageTypes: ['fire'],
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: 6.5,
@@ -1209,7 +1209,10 @@ export const SKILLS: SkillDef[] = [
     name: 'Creeping Blight',
     description:
       'Poisons up to 5 nearby enemies for 10s. Weak alone, and it stacks.',
-    tags: ['spell', 'area', 'occult'],
+    // 'occult' is a damage GROUP and must not appear here. Skill tags ride
+    // along in every damage pass, so a stat line tagged 'occult' would scale
+    // this skill's fire damage too once Pyroclasm converts it.
+    tags: ['spell', 'area'],
     behaviour: 'ailment_burst',
     damageTypes: ['poison'],
     damageMultiplier: 1.6,

@@ -13,6 +13,7 @@
 import { fillState } from '../mods';
 import { describeMod } from '../crafting';
 import { itemIcon } from './icons';
+import { attachTooltip } from './tooltip';
 import type { GameState } from '../game/state';
 import type { Item, ItemKind } from '../types';
 
@@ -147,7 +148,7 @@ function grid(items: Item[]): HTMLElement {
       )
     );
     btn.append(body);
-    btn.title = tooltip(item);
+    attachTooltip(btn, () => tooltip(item));
 
     if (handler?.highlighted?.(item)) btn.classList.add('invitem--on');
 

@@ -148,7 +148,9 @@ export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
       id: 'bl_pyre',
       name: 'Pyroclasm',
       description:
-        'Blight deals Fire damage instead of Poison. Increases to Poison Damage apply to it.',
+        'Creeping Blight deals Fire damage instead of Poison. ' +
+        'Increases to Fire Damage now apply to Creeping Blight, ' +
+        'and increases to Poison Damage still do.',
       ring: 2,
       angle: ring2(3),
       requires: 'bl_cast',
@@ -243,7 +245,10 @@ export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
     {
       id: 'st_ember',
       name: 'Searing Edge',
-      description: 'Strike deals Fire damage instead of Physical.',
+      description:
+        'Strike deals Fire damage instead of Physical. ' +
+        'Increases to Fire Damage now apply to Strike, ' +
+        'and increases to Physical Damage still do.',
       ring: 2,
       angle: ring2(3),
       requires: 'st_reach',
@@ -339,7 +344,9 @@ export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
       id: 'bo_frost',
       name: 'Rime',
       description:
-        'Fire Bolt deals Cold damage instead. Increases to Fire Damage apply to it.',
+        'Fire Bolt deals Cold damage instead of Fire. ' +
+        'Increases to Cold Damage now apply to Fire Bolt, ' +
+        'and increases to Fire Damage still do.',
       ring: 2,
       angle: ring2(3),
       requires: 'bo_proj',

@@ -17,6 +17,7 @@ import { xpToNext } from '../sim/character';
 import { equipItem, fitsSlot, unequipItem } from '../game/state';
 import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
+import { attachTooltip, hideTooltip } from './tooltip';
 import { renderInventory } from './inventory';
 import type { Item } from '../types';
 
@@ -57,7 +58,7 @@ function renderSlots(): void {
         el('span', 'slotcell__meta', `${worn.mods.length} mod${worn.mods.length === 1 ? '' : 's'}`)
       );
       btn.append(body);
-      btn.title = tooltip(worn);
+      attachTooltip(btn, () => tooltip(worn));
       btn.classList.add('slotcell__btn--worn');
       btn.onclick = () => {
         unequipItem(game, slot.id);
@@ -103,7 +104,7 @@ function renderPicker(): void {
       el('span', 'invitem__meta', `ilvl ${item.ilvl} · ${item.mods.length} mods`)
     );
     btn.append(body);
-    btn.title = tooltip(item);
+    attachTooltip(btn, () => tooltip(item));
     btn.onclick = () => {
       equipItem(game, item, slot.id);
       picking = null;
@@ -162,6 +163,7 @@ function renderStats(): void {
 }
 
 function render(): void {
+  hideTooltip();
   renderSlots();
   renderPicker();
   renderStats();

@@ -13,8 +13,11 @@ import { SKILLS, SKILL_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
 import {
   canAllocate,
   canDeallocate,
+  nodeById,
   treeFor,
 } from '../skills-tree';
+import { skillIcon } from './icons';
+import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats } from '../sim/stats';
 import {
@@ -167,18 +170,19 @@ function renderTree(): void {
     );
   }
 
-  // Centre: the skill itself, and the tooltip that explains the numbers.
+  // Centre: the skill's own icon, and the tooltip explaining its numbers.
   const centre = svgEl('g', { class: 'web__centre' });
   centre.append(svgEl('circle', { cx: CENTRE, cy: CENTRE, r: 38, class: 'web__hub' }));
-  const label = svgEl('text', {
-    x: CENTRE, y: CENTRE + 5, class: 'web__hublabel', 'text-anchor': 'middle',
-  });
-  label.textContent = skill.name.split(' ')[0];
-  centre.append(label);
 
-  const tip = svgEl('title', {});
-  tip.textContent = skillSummary(skill).join('\n');
-  centre.append(tip);
+  // Nested SVG, so the icon keeps its own 32-unit coordinate space.
+  const art = skillIcon(skillId, 48);
+  art.setAttribute('x', String(CENTRE - 24));
+  art.setAttribute('y', String(CENTRE - 24));
+  art.setAttribute('width', '48');
+  art.setAttribute('height', '48');
+  centre.append(art);
+
+  attachTooltip(centre, () => skillSummary(skill).join('\n'));
   svg.append(centre);
 
   for (const node of nodes) {
@@ -199,9 +203,16 @@ function renderTree(): void {
       svgEl('circle', { cx: pos.x, cy: pos.y, r: node.major ? 26 : 17 })
     );
 
-    const title = svgEl('title', {});
-    title.textContent = `${node.name}\n${node.description}`;
-    group.append(title);
+    attachTooltip(group, () => {
+      const state = progress.allocated.includes(node.id)
+        ? 'allocated'
+        : canAllocate(skillId, node.id, progress.allocated)
+          ? pointsAvailable(progress) > 0
+            ? 'available'
+            : 'no points left'
+          : `requires ${nodeById(skillId, node.requires ?? '')?.name ?? 'the centre'}`;
+      return `${node.name}  (${state})\n${node.description}`;
+    });
 
     const act = () => {
       if (taken) {
@@ -260,6 +271,9 @@ function renderHeader(): void {
 }
 
 function render(): void {
+  // Rebuilding the tree destroys whatever the cursor was over, and a tooltip
+  // bound to a removed node would hang around forever.
+  hideTooltip();
   renderSkillList();
   renderHeader();
   renderTree();

@@ -332,8 +332,17 @@
   .web__edge { stroke: var(--seam); stroke-width: 2; }
   .web__edge--on { stroke: var(--amethyst); stroke-width: 3; }
   .web__hub { fill: var(--matrix); stroke: var(--amethyst); stroke-width: 2; }
-  .web__hublabel { font-family: var(--display); font-size: 11px; fill: var(--chalk); }
   .web__centre { cursor: help; }
+
+  /* Tooltip. Instant, and in the page's own colours — the native title
+     attribute is delayed by the browser and drawn in the OS's white box. */
+  .tip {
+    position: fixed; z-index: 40; pointer-events: none;
+    max-width: 320px; padding: 8px 10px;
+    background: var(--matrix); border: 1px solid var(--seam-lit);
+    color: var(--chalk); font-size: 11px; line-height: 1.45;
+    white-space: pre-wrap; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  }
 
   .web__node circle { fill: var(--matrix); stroke: var(--seam-lit); stroke-width: 2; cursor: pointer; }
   .web__node:hover circle { stroke: var(--chalk); }
@@ -577,6 +586,9 @@
     </div>
   </div>
 </div>
+<!-- Replaces the native title attribute: instant, and in the page's colours
+     rather than the OS's white box. -->
+<div class="tip" id="tooltip" hidden></div>
 <script src="./app.js"></script>
 </body>
 </html>

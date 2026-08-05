@@ -16,6 +16,7 @@ import type { GameState } from '../game/state';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { currencyIcon } from './icons';
 import { note } from './history';
+import { attachTooltip, hideTooltip } from './tooltip';
 import { rewardRows } from '../sim/crystal';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
@@ -161,7 +162,7 @@ function renderItem(): void {
       const facet = el('button', 'facet') as HTMLButtonElement;
       if (mod) {
         facet.classList.add('facet--set', `facet--${facetOf(mod)}`);
-        facet.title = describeMod(mod);
+        attachTooltip(facet, () => describeMod(mod));
         facet.setAttribute('aria-label', describeMod(mod));
         facet.onclick = () => {
           focused = focused === mod.entryId ? null : mod.entryId;
@@ -271,6 +272,9 @@ function renderWorkshop(): void {
 }
 
 function render(): void {
+  // Re-rendering removes whatever the cursor was over; a tooltip bound to a
+  // detached element would otherwise sit there forever.
+  hideTooltip();
   renderItem();
   renderCurrencies();
   renderWorkshop();

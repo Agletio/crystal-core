@@ -1,7 +1,14 @@
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import { craft, describeItem } from './crafting';
-import { ALL_MODS, CURRENCY_BY_ID, CRYSTAL_TIERS } from './data';
+import {
+  ALL_MODS,
+  CURRENCY_BY_ID,
+  CRYSTAL_TIERS,
+  DAMAGE_GROUPS,
+  DAMAGE_TYPES,
+  SKILLS,
+} from './data';
 import {
   balance,
   crystalCost,
@@ -119,6 +126,34 @@ rule('AN ACTUAL RUN — headless, no browser');
       `${final.killed}/${final.totalMonsters} killed, ` +
       `${Math.max(0, Math.round(final.hero.life))} life left, ` +
       `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
+  );
+}
+
+// ===========================================================================
+rule('SKILL TAG CHECK — no damage types hiding in skill tags');
+
+// Skill tags join the context of EVERY damage-type pass. A damage type or
+// group sitting in tags therefore satisfies all of them and silently scales
+// every type the skill deals. It looks harmless until a mod tagged with that
+// group exists, and then it is very hard to spot.
+{
+  const banned = new Set<string>([
+    ...DAMAGE_TYPES.map((d) => d.id),
+    ...DAMAGE_GROUPS,
+  ]);
+  const offenders: string[] = [];
+
+  for (const skill of SKILLS) {
+    for (const tag of skill.tags) {
+      if (banned.has(tag)) offenders.push(`${skill.name} has '${tag}' in tags`);
+    }
+  }
+
+  for (const offender of offenders) line(`  ✗ ${offender}`);
+  line(
+    offenders.length === 0
+      ? '  ✓ every skill keeps its damage types out of its tags'
+      : '  ✗ TAG LEAK'
   );
 }
 

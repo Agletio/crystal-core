@@ -294,12 +294,43 @@ $('open-skills').click();
 assert($('skills').hidden === false, 'skills modal opens');
 assert(all('#skills-list .skillrow').length === 3, 'all skills listed');
 
+// The skill was renamed; nothing should still say Arcane Bolt anywhere.
+const pageText = document.body.textContent ?? '';
+assert(!/Arcane Bolt/.test(pageText), 'no stale "Arcane Bolt" naming');
+assert(/Fire Bolt/.test(pageText), 'Fire Bolt is named');
+
 // Opening a skill draws its web.
 all('#skills-list .skillrow')[0].click();
 assert($('skills-detail').hidden === false, 'selecting a skill shows its tree');
 assert(all('#skills-tree .web__node').length === 10, 'ten nodes drawn');
 assert(all('#skills-tree .web__edge').length === 10, 'every node is connected');
 assert(all('#skills-tree .web__node--major').length >= 1, 'tree has a major node');
+
+// The centre is an icon now, not a word.
+assert(
+  $('skills-tree').querySelector('.web__centre svg') !== null,
+  'centre shows a skill icon'
+);
+
+// Tooltips are ours, not the browser's — nothing should rely on `title`,
+// which is delayed and drawn in the OS's colours.
+assert(
+  $('skills-tree').querySelectorAll('title').length === 0,
+  'tree uses custom tooltips, not native title'
+);
+assert($('tooltip').hidden === true, 'tooltip starts hidden');
+
+const hub = $('skills-tree').querySelector('.web__centre');
+hub.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+assert($('tooltip').hidden === false, 'hovering the skill shows a tooltip at once');
+assert(
+  /Fire Bolt|Strike|Creeping Blight/.test(text('tooltip')),
+  'tooltip names the skill',
+  text('tooltip').slice(0, 40)
+);
+assert(/damage per hit/.test(text('tooltip')), 'tooltip shows the damage breakdown');
+hub.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+assert($('tooltip').hidden === true, 'tooltip hides again');
 
 // Level 1 means one point, and outer nodes must be unreachable until their
 // inner one is paid for.

@@ -215,6 +215,67 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
   return node;
 }
 
+/**
+ * Skill icons, for the middle of a tree.
+ *
+ * A word in a circle told you nothing you didn't already know from the list
+ * you clicked. Same placeholder rules as everything else: a shape that reads
+ * at a glance, swappable for real art one function later.
+ */
+export function skillIcon(skillId: string, size = 44): SVGSVGElement {
+  const node = svg(size);
+  const outline = { stroke: 'var(--void)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' };
+
+  switch (skillId) {
+    case 'bolt': {
+      // A fireball: hot core, trailing flame.
+      shape(node, 'path', {
+        d: 'M16 3 Q22 11 22 16 Q22 25 16 29 Q10 25 10 16 Q10 11 16 3 Z',
+        fill: 'var(--ember)',
+        ...outline,
+      });
+      shape(node, 'path', {
+        d: 'M16 12 Q19 17 19 20 Q19 24 16 26 Q13 24 13 20 Q13 17 16 12 Z',
+        fill: 'var(--citrine)',
+      });
+      break;
+    }
+
+    case 'blight': {
+      // A dripping droplet, with a smaller one falling.
+      shape(node, 'path', {
+        d: 'M16 4 Q24 14 24 19 A8 8 0 0 1 8 19 Q8 14 16 4 Z',
+        fill: 'var(--verdite)',
+        ...outline,
+      });
+      shape(node, 'circle', { cx: 13, cy: 17, r: 2.6, fill: 'var(--chalk)', opacity: 0.5 });
+      shape(node, 'path', {
+        d: 'M16 27 Q18 29.5 18 30.5 A2 2 0 0 1 14 30.5 Q14 29.5 16 27 Z',
+        fill: 'var(--verdite)',
+      });
+      break;
+    }
+
+    default: {
+      // Strike: a blade and the arc it sweeps.
+      shape(node, 'path', {
+        d: 'M7 26 L20 7 L23 9 L11 28 Z',
+        fill: 'var(--quartz)',
+        ...outline,
+      });
+      shape(node, 'path', {
+        d: 'M9 8 A15 15 0 0 1 26 20',
+        fill: 'none',
+        stroke: 'var(--chalk)',
+        'stroke-width': 2.4,
+        'stroke-linecap': 'round',
+        opacity: 0.8,
+      });
+    }
+  }
+  return node;
+}
+
 /** Whatever this item is, give me something to put next to its name. */
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
