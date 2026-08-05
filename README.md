@@ -255,6 +255,55 @@ condition cleared maps with sixty monsters still standing. A monster is written
 off only after `HOPELESS_AFTER` failed routings, and `reachableRemain()` is
 what actually decides the map is done.
 
+## Skills and their trees
+
+Skills level by **use** — the active skill shares whatever XP a run earns — so
+the tree is what you get for committing to one, not something handed out with
+character levels. Points spent are nodes allocated; the budget is the skill's
+level.
+
+Two rings around the skill. Inner nodes touch the centre, outer nodes hang off
+an inner one, so reaching the interesting things means paying for the cheap
+things first.
+
+### A node has two channels
+
+```ts
+stats   ordinary stat lines, exactly like a mod's
+grants  switches that CHANGE HOW THE SKILL WORKS
+```
+
+The second is the point. Most of your *numbers* should come from gear; the
+tree should decide how you **play**. "Critical casts spread the blight" and
+"Blight deals fire instead of poison" aren't expressible as stat lines, so
+they're grants the behaviour and damage resolution read — same division as
+currencies, where data says what and a registry says how.
+
+Grants understood today: `convertTo`, `spreadOnCrit`, `extraTargets`,
+`splashMultiplier`.
+
+**Conversion keeps the original type's scaling.** Pyroclasm turns Blight's
+damage to Fire but "increased Poison Damage" still applies to it — otherwise
+converting would be a straight downgrade and nobody would take the node.
+
+Node stats are folded into one synthetic `RolledMod`, so they go through the
+same aggregation as gear rather than being a parallel system that drifts.
+
+### Flat crit, not increased
+
+Build-defining nodes grant **flat** critical chance. Increases multiply a 5%
+base, so "+20% increased Critical Chance" is +1% — nowhere near enough to
+build a crit-triggered archetype on. Gear supplies the multipliers; nodes
+supply the base. With both crit nodes, Blight crits ~25% of casts instead of
+7%, which is the difference between Contagion being a mechanic and being a
+rounding error.
+
+### Attacks and spells
+
+Attacks scale with attack speed, spells with cast speed, chosen by whether the
+skill has the `spell` tag. A spell has no business getting faster because you
+found a sharper sword.
+
 ## Damage, resistance, armour
 
 Damage types live in a table (`DAMAGE_TYPES` in `data.ts`) with a group each.

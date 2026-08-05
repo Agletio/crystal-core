@@ -161,26 +161,10 @@ function renderStats(): void {
     `${Math.min(100, (game.character.xp / need) * 100)}%`;
 }
 
-function renderSkills(): void {
-  const host = $('sheet-skills');
-  host.replaceChildren();
-  for (const skill of SKILLS) {
-    const btn = el('button', 'chip', skill.name) as HTMLButtonElement;
-    btn.title = skill.description;
-    if (skill.id === game.character.skillId) btn.classList.add('chip--on');
-    btn.onclick = () => {
-      game.character.skillId = skill.id;
-      render();
-    };
-    host.append(btn);
-  }
-}
-
 function render(): void {
   renderSlots();
   renderPicker();
   renderStats();
-  renderSkills();
   renderInventory();
   onChanged?.();
 }

@@ -1,16 +1,18 @@
 /**
  * Browser entry point. Owns the game state and wires the views to it.
  *
- * Two views behind tabs, one permanent inventory, and two modals. The
+ * Two views behind tabs, one permanent inventory, and three modals. The
  * inventory sits outside the view switcher because every screen acts on it;
- * the character sheet and history are modals because they're things you open,
- * read, and close — and both need to be reachable from either tab.
+ * the character sheet, skills and history are modals because they're things
+ * you open, read, and close — and all three need to be reachable from either
+ * tab.
  */
 import { createGame } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
 import { initRun, onRunShown, refreshRunPanels } from './ui/run';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
+import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
 import { initHistory, openHistory, closeHistory, isHistoryOpen } from './ui/history';
 
 type ViewName = 'bench' | 'run';
@@ -36,19 +38,23 @@ for (const name of VIEWS) {
 }
 
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
+document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  if (isCharacterOpen()) closeCharacter();
+  if (isSkillsOpen()) closeSkills();
+  else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
 });
 
 initInventory(game);
 initHistory();
-// Equipping changes derived stats, so the run view's panels have to re-read.
+// Equipping gear or spending a tree point changes derived stats, so the run
+// view's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels);
+initSkills(game, refreshRunPanels);
 initBench(game);
 initRun(game);
 show('bench');

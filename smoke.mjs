@@ -203,7 +203,6 @@ assert($('view-run').hidden === false, 'run view opens');
 assert($('run-menu').hidden === false, 'run starts on the map-choosing menu');
 assert($('run-stagewrap').hidden === true, 'no map until a run starts');
 assert(($('run-launch')).disabled === true, 'cannot launch without choosing');
-assert(all('#run-skills .chip').length >= 2, 'skills listed');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
 // --- choosing a crystal ---------------------------------------------------
@@ -288,7 +287,47 @@ const overCap = resRows.filter(
 );
 assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.length));
 
-assert(all('#sheet-skills .chip').length === 3, 'three skills selectable');
+// --- skills modal and tree ------------------------------------------------
+$('sheet-close').click();
+assert($('skills').hidden === true, 'skills modal starts closed');
+$('open-skills').click();
+assert($('skills').hidden === false, 'skills modal opens');
+assert(all('#skills-list .skillrow').length === 3, 'all skills listed');
+
+// Opening a skill draws its web.
+all('#skills-list .skillrow')[0].click();
+assert($('skills-detail').hidden === false, 'selecting a skill shows its tree');
+assert(all('#skills-tree .web__node').length === 10, 'ten nodes drawn');
+assert(all('#skills-tree .web__edge').length === 10, 'every node is connected');
+assert(all('#skills-tree .web__node--major').length >= 1, 'tree has a major node');
+
+// Level 1 means one point, and outer nodes must be unreachable until their
+// inner one is paid for.
+const allocated = () => all('#skills-tree .web__node--on').length;
+const locked = () => all('#skills-tree .web__node--locked').length;
+assert(allocated() === 0, 'nothing allocated to begin with');
+assert(locked() >= 5, 'outer ring starts locked', String(locked()));
+
+const openNodes = all('#skills-tree .web__node').filter(
+  (n) => !n.classList.contains('web__node--locked')
+);
+assert(openNodes.length === 5, 'exactly the inner ring is reachable', String(openNodes.length));
+
+openNodes[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+assert(allocated() === 1, 'a node can be allocated');
+assert(locked() >= 9, 'spending the only point locks the rest', String(locked()));
+
+// The dev lever exists precisely so this is testable without grinding.
+$('skills-devlevel').click();
+assert(
+  all('#skills-tree .web__node').filter((n) => !n.classList.contains('web__node--locked'))
+    .length > 0,
+  'a granted level frees up another node'
+);
+
+$('skills-close').click();
+assert($('skills').hidden === true, 'skills modal closes');
+$('open-character').click();
 
 // Taking something off must return it to the inventory and free the slot.
 const invBefore = invItems().length;

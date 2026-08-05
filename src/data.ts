@@ -372,6 +372,19 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
     ],
   },
   {
+    // Spells scale with cast speed, attacks with attack speed. A spell should
+    // not be getting faster because you found a sharper sword.
+    id: 'cast_speed',
+    slot: 'damage',
+    name: 'of Quickening',
+    appliesTo: ['gear'],
+    tags: ['speed', 'damage', 'spell'],
+    tiers: [
+      { ilvl: 40, weight: 300, stats: [{ stat: 'castSpeed', form: 'inc', range: [14, 20] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'castSpeed', form: 'inc', range: [5, 12] }] },
+    ],
+  },
+  {
     id: 'crit_chance',
     slot: 'damage',
     name: 'of Precision',

@@ -12,7 +12,7 @@ import { Rng } from '../rng';
 import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { characterStats, monsterStats, mapDensity } from './stats';
+import { characterStats, monsterStats, mapDensity, treeGrants } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
@@ -218,6 +218,10 @@ export class RunSim {
   private xpPerKill = 1;
   /** Fragments one monster is worth. Fractional; rounds when banked. */
   private fragmentsPerKill = 0;
+  /** Tree switches for the hero's skill, resolved once at spawn. */
+  private readonly grants: Record<string, unknown>;
+  /** Crit decided for the current skill use, so every target shares it. */
+  private useCrit: boolean | null = null;
   /** Set once the closing encounter has been spawned. */
   private finale: EncounterDef | null = null;
   /** Baseline monster stats for this map, scaled into the finale. */
@@ -239,6 +243,7 @@ export class RunSim {
     this.rng = rng;
     this.options = options;
     this.skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+    this.grants = treeGrants(character);
 
     const map = generateMap(crystal, rng);
     const stats = characterStats(character);
@@ -750,10 +755,18 @@ export class RunSim {
     user.action = 'attack';
     user.actionTimer = ATTACK_POSE;
 
+    // Rolled once for the whole use. Behaviours branch on it (Contagion), and
+    // dealDamage honours it so a critical cast crits every target it touches.
+    const crit =
+      user.stats.critChance > 0 && this.rng.chance(user.stats.critChance / 100);
+    this.useCrit = crit;
+
     behaviour({
       skill,
       user,
       primary,
+      grants: user.kind === 'hero' ? this.grants : {},
+      crit,
       // Whose side you're on decides who counts as an enemy. Monsters only
       // ever have one, which is why this stays a list rather than a lookup.
       enemies:
@@ -768,6 +781,7 @@ export class RunSim {
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
     });
 
+    this.useCrit = null;
     user.cooldown = 1 / user.stats.attacksPerSecond;
   }
 
@@ -780,8 +794,12 @@ export class RunSim {
     const s = this.state;
     if (defender.dead) return;
 
+    // Inside a skill use, crit was decided once for the whole cast. A plain
+    // monster swing rolls its own.
     const crit =
-      attacker.stats.critChance > 0 && this.rng.chance(attacker.stats.critChance / 100);
+      this.useCrit ??
+      (attacker.stats.critChance > 0 &&
+        this.rng.chance(attacker.stats.critChance / 100));
 
     let dmg = attacker.stats.damage * multiplier * this.rng.float(0.9, 1.1);
     if (crit) dmg *= 2 + attacker.stats.critMultiplier / 100;

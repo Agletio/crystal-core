@@ -20,6 +20,7 @@ import {
 } from '../data';
 import { equippedItems } from './character';
 import type { Character } from './character';
+import { nodeById } from '../skills-tree';
 import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
@@ -93,12 +94,28 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
  * The skill's own tags ride along in every pass, which is how "increased
  * Melee Damage" finds a melee skill for free.
  */
-export function skillDamage(mods: RolledMod[], base: number, skill: SkillDef): number {
+export function skillDamage(
+  mods: RolledMod[],
+  base: number,
+  skill: SkillDef,
+  grants: Record<string, unknown> = {}
+): number {
   let total = 0;
 
+  // Conversion replaces the skill's type but keeps the ORIGINAL type in
+  // context, so "increased Poison Damage" still scales a blight that now
+  // deals fire. Without that, converting would be a straight downgrade and
+  // nobody would take the node.
+  const convertTo = grants.convertTo as string | undefined;
+  const from = skill.damageTypes;
+  const active = convertTo ? [convertTo] : from;
+  const inherited = convertTo ? from : [];
+
   for (const type of DAMAGE_TYPES) {
-    const typeBase = skill.damageTypes.includes(type.id) ? base : 0;
-    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type.id]);
+    const typeBase = active.includes(type.id) ? base : 0;
+    const context = [...skill.tags, type.id];
+    if (active.includes(type.id)) context.push(...inherited);
+    total += computeStat(typeBase, mods, 'damage', context);
   }
 
   // Typeless carries no type tag, so only untagged lines — generic
@@ -120,8 +137,12 @@ function baseFor(level: number): { life: number; weaponDamage: number } {
   };
 }
 
-export function heroStats(equipped: Item[], level: number, skill: SkillDef): CombatStats {
-  const mods = equipped.flatMap((item) => item.mods);
+export function heroStats(
+  mods: RolledMod[],
+  level: number,
+  skill: SkillDef,
+  grants: Record<string, unknown> = {}
+): CombatStats {
   const base = baseFor(level);
   const maxLife = computeStat(base.life, mods, 'life');
 
@@ -131,9 +152,15 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
     critMultiplier: computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
     rarity: computeStat(0, mods, 'rarity'),
     currencyFind: computeStat(0, mods, 'currencyFind'),
-    damage: skillDamage(mods, base.weaponDamage, skill),
+    damage: skillDamage(mods, base.weaponDamage, skill, grants),
+    // Spells scale with cast speed, attacks with attack speed. A spell has no
+    // business getting faster because you found a sharper sword.
     attacksPerSecond:
-      computeStat(HERO_BASE.attacksPerSecond, mods, 'attackSpeed') * skill.rateMultiplier,
+      computeStat(
+        HERO_BASE.attacksPerSecond,
+        mods,
+        skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
+      ) * skill.rateMultiplier,
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
@@ -144,10 +171,52 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
   };
 }
 
-/** Stats for a character, resolving its selected skill and worn gear. */
+/**
+ * Everything the allocated tree nodes contribute, as one synthetic mod.
+ *
+ * Reusing RolledMod means node stats go through the exact same aggregation as
+ * gear — tags, flat/increased/more, all of it — rather than being a second
+ * parallel system that drifts.
+ */
+export function treeMod(character: Character): RolledMod | null {
+  const progress = character.skills[character.skillId];
+  if (!progress || progress.allocated.length === 0) return null;
+
+  const stats = progress.allocated
+    .flatMap((id) => nodeById(character.skillId, id)?.stats ?? [])
+    .map((s) => ({ stat: s.stat, form: s.form, value: s.value, tags: s.tags ?? [] }));
+
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'tree',
+    defId: 'tree',
+    group: 'tree',
+    slot: 'tree',
+    name: 'Skill tree',
+    tier: 1,
+    tags: [],
+    stats,
+  };
+}
+
+/** Behaviour switches from every allocated node, merged. */
+export function treeGrants(character: Character): Record<string, unknown> {
+  const progress = character.skills[character.skillId];
+  if (!progress) return {};
+  const out: Record<string, unknown> = {};
+  for (const id of progress.allocated) {
+    Object.assign(out, nodeById(character.skillId, id)?.grants ?? {});
+  }
+  return out;
+}
+
+/** Stats for a character, resolving its selected skill, gear and tree. */
 export function characterStats(character: Character): CombatStats {
   const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
-  return heroStats(equippedItems(character), character.level, skill);
+  const items = equippedItems(character);
+  const extra = treeMod(character);
+  const mods = [...items.flatMap((i) => i.mods), ...(extra ? [extra] : [])];
+  return heroStats(mods, character.level, skill, treeGrants(character));
 }
 
 /**

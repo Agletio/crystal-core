@@ -128,23 +128,6 @@ function renderMenu(): void {
   launch.disabled = false;
 }
 
-function renderSkills(): void {
-  const host = $('run-skills');
-  host.replaceChildren();
-
-  for (const skill of SKILLS) {
-    const btn = el('button', 'chip', skill.name) as HTMLButtonElement;
-    btn.title = skill.description;
-    if (skill.id === game.character.skillId) btn.classList.add('chip--on');
-    btn.onclick = () => {
-      game.character.skillId = skill.id;
-      renderSkills();
-      renderStatsPanel();
-    };
-    host.append(btn);
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
@@ -415,7 +398,6 @@ export function initRun(state: GameState): void {
 
   globalThis.addEventListener('resize', fitCanvas);
 
-  renderSkills();
   renderStatsPanel();
   renderMenu();
   setZoom(1);
@@ -426,7 +408,6 @@ export function initRun(state: GameState): void {
 /** Re-read derived stats — called after equipment changes on the sheet. */
 export function refreshRunPanels(): void {
   renderStatsPanel();
-  renderSkills();
   renderMenu();
 }
 
@@ -434,7 +415,6 @@ export function refreshRunPanels(): void {
 export function onRunShown(): void {
   setInventoryHandler(runHandler());
   renderMenu();
-  renderSkills();
   renderStatsPanel();
   fitCanvas();
 }

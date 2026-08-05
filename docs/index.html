@@ -309,6 +309,48 @@
   .slotcell__empty { font-size: 11px; color: var(--dust); font-style: italic; }
 
   #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
+
+  /* --- skills --------------------------------------------------------- */
+  .modal__card--wide { width: min(940px, 100%); }
+  .skillcols { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 18px; align-items: start; }
+  @media (max-width: 780px) { .skillcols { grid-template-columns: 1fr; } }
+
+  .skilllist { display: grid; gap: 6px; }
+  .skillrow { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; border-left-width: 3px; border-left-color: var(--seam-lit); }
+  .skillrow:hover { background: var(--seam); }
+  .skillrow--on { background: var(--seam); border-left-color: var(--amethyst); }
+  .skillrow__head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+  .skillrow__name { font-size: 12px; }
+  .skillrow__tag { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .skillrow__meta { font-size: 10px; color: var(--dust); }
+
+  .skillhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .skillhead__title { font-family: var(--display); font-size: 14px; margin: 0; }
+  .skillhead__sub { font-size: 11px; color: var(--dust); }
+
+  .web { width: 100%; max-width: 420px; display: block; margin: 0 auto; }
+  .web__edge { stroke: var(--seam); stroke-width: 2; }
+  .web__edge--on { stroke: var(--amethyst); stroke-width: 3; }
+  .web__hub { fill: var(--matrix); stroke: var(--amethyst); stroke-width: 2; }
+  .web__hublabel { font-family: var(--display); font-size: 11px; fill: var(--chalk); }
+  .web__centre { cursor: help; }
+
+  .web__node circle { fill: var(--matrix); stroke: var(--seam-lit); stroke-width: 2; cursor: pointer; }
+  .web__node:hover circle { stroke: var(--chalk); }
+  .web__node--major circle { stroke-width: 3; stroke: var(--citrine); }
+  .web__node--on circle { fill: var(--amethyst); stroke: var(--chalk); }
+  .web__node--major.web__node--on circle { fill: var(--citrine); }
+  .web__node--locked circle { opacity: .35; cursor: not-allowed; }
+
+  .weblegend { display: grid; gap: 4px; margin-top: 14px; border-top: 1px solid var(--seam); padding-top: 12px; }
+  .weblegend__row { display: flex; gap: 8px; align-items: flex-start; opacity: .55; }
+  .weblegend__row--on { opacity: 1; }
+  .weblegend__dot { width: 9px; height: 9px; margin-top: 5px; flex: none; background: var(--seam-lit); border-radius: 50%; }
+  .weblegend__row--on .weblegend__dot { background: var(--amethyst); }
+  .weblegend__dot--major { width: 12px; height: 12px; background: var(--citrine); }
+  .weblegend__body { display: flex; flex-direction: column; min-width: 0; }
+  .weblegend__name { font-size: 12px; }
+  .weblegend__desc { font-size: 10px; color: var(--dust); }
   #history-log { font-size: 12px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -326,6 +368,7 @@
     </div>
     <div class="seedbar">
       <button class="mini" id="open-character">Character</button>
+      <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
     </div>
   </header>
@@ -399,8 +442,6 @@
             <span class="levelrow__value" id="run-level">1</span>
           </div>
           <div id="run-stats"></div>
-          <p class="panel__title" style="margin-top:16px">Skill</p>
-          <div class="bases" id="run-skills"></div>
         </div>
       </div>
     </div>
@@ -486,8 +527,34 @@
           <div id="sheet-stats"></div>
           <p class="panel__title" style="margin-top:16px">Resistances</p>
           <div id="sheet-res"></div>
-          <p class="panel__title" style="margin-top:16px">Skill</p>
-          <div class="bases" id="sheet-skills"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Skills. Pick one, then spend its own levels on its own web. -->
+<div class="modal" id="skills" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">Skills</h2>
+      <div class="seedbar">
+        <button class="mini" id="skills-devlevel" title="Dev only: grant a skill level">+1 level (dev)</button>
+        <button class="mini" id="skills-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="skillcols">
+        <div class="skilllist" id="skills-list"></div>
+        <div id="skills-detail" hidden>
+          <div class="skillhead">
+            <div>
+              <h3 class="skillhead__title" id="skills-title">—</h3>
+              <div class="skillhead__sub" id="skills-sub"></div>
+            </div>
+            <button class="mini" id="skills-equip">Equip</button>
+          </div>
+          <div id="skills-tree"></div>
         </div>
       </div>
     </div>

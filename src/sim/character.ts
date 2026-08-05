@@ -8,6 +8,19 @@
 import { LEVELLING } from '../data';
 import type { Item } from '../types';
 
+/**
+ * A skill's own progression.
+ *
+ * Levels come from USE — the active skill shares whatever XP a run generates
+ * — so committing to one skill is what advances its tree. Points spent are
+ * `allocated.length`, and the budget is the level.
+ */
+export interface SkillProgress {
+  level: number;
+  xp: number;
+  allocated: string[];
+}
+
 export interface Character {
   level: number;
   /** XP banked toward the NEXT level, not lifetime total. */
@@ -15,13 +28,43 @@ export interface Character {
   /** Slot id → worn item. Slots with nothing in them are simply absent. */
   equipment: Record<string, Item>;
   skillId: string;
+  /** Per-skill levels and tree allocations, keyed by skill id. */
+  skills: Record<string, SkillProgress>;
 }
 
 export function makeCharacter(
   equipment: Record<string, Item>,
   skillId: string
 ): Character {
-  return { level: 1, xp: 0, equipment, skillId };
+  return { level: 1, xp: 0, equipment, skillId, skills: {} };
+}
+
+/** Progress for a skill, created on first sight. */
+export function skillProgress(character: Character, skillId: string): SkillProgress {
+  let progress = character.skills[skillId];
+  if (!progress) {
+    progress = { level: 1, xp: 0, allocated: [] };
+    character.skills[skillId] = progress;
+  }
+  return progress;
+}
+
+export const pointsSpent = (p: SkillProgress): number => p.allocated.length;
+export const pointsAvailable = (p: SkillProgress): number => p.level - p.allocated.length;
+
+/** Skills use the same curve as the character, so the numbers stay legible. */
+export function addSkillXp(character: Character, skillId: string, amount: number): number {
+  if (amount <= 0) return 0;
+  const progress = skillProgress(character, skillId);
+  progress.xp += amount;
+
+  let gained = 0;
+  while (progress.xp >= xpToNext(progress.level)) {
+    progress.xp -= xpToNext(progress.level);
+    progress.level++;
+    gained++;
+  }
+  return gained;
 }
 
 /** Everything worn, in no particular order. What stat derivation reads. */

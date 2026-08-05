@@ -11,7 +11,7 @@
 import { addItem } from './state';
 import type { GameState } from './state';
 import { grant } from '../economy';
-import { addXp } from '../sim/character';
+import { addXp, addSkillXp } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
 
@@ -66,7 +66,12 @@ export function buildReport(game: GameState, run: RunState): RunReport {
   }
 
   // XP is earned either way — you learned something on the way to dying.
-  const levelsGained = addXp(game.character, Math.round(run.xpGained));
+  const xp = Math.round(run.xpGained);
+  const levelsGained = addXp(game.character, xp);
+
+  // The active skill shares the same XP. That's what makes committing to one
+  // skill the thing that advances its tree.
+  const skillLevels = addSkillXp(game.character, game.character.skillId, xp);
 
   const rows: ReportRow[] = [
     { label: 'time', value: `${run.elapsed.toFixed(1)}s` },
@@ -76,6 +81,9 @@ export function buildReport(game: GameState, run: RunState): RunReport {
 
   if (levelsGained > 0) {
     rows.push({ label: 'levels gained', value: `+${levelsGained}` });
+  }
+  if (skillLevels > 0) {
+    rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
   // Damage taken, split by type. Nothing reads this yet beyond the overlay —

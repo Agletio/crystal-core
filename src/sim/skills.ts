@@ -38,6 +38,16 @@ export interface SkillUse {
   enemies: Entity[];
   rng: Rng;
   /**
+   * Behaviour switches from the skill tree.
+   *
+   * Rolled once per use rather than per target, so "crits spread" is a
+   * property of the cast — which is what makes it feel like an event instead
+   * of a per-enemy coin flip.
+   */
+  grants: Record<string, unknown>;
+  /** Whether this whole use crit. */
+  crit: boolean;
+  /**
    * Deal this skill's damage to one target.
    * `multiplier` is relative to the skill's own damage, so 0.6 means a
    * weakened chain jump rather than 60% of some other number.
@@ -70,6 +80,23 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage. The floor every other behaviour builds on. */
   single_target: (use) => {
     use.hit(use.primary, 1);
+
+    // Fork and the like: nearest others, full damage.
+    const extra = (use.grants.extraTargets as number) ?? 0;
+    if (extra > 0) {
+      const others = use.enemies
+        .filter((e) => e !== use.primary)
+        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
+        .slice(0, extra);
+      for (const other of others) {
+        use.hit(other, 1);
+        use.vfx(use.skill.vfxKind ?? 'swing', [
+          { x: use.primary.x, y: use.primary.y },
+          { x: other.x, y: other.y },
+        ]);
+      }
+    }
+
     // The skill names its visual; the renderer decides what that looks like.
     use.vfx(use.skill.vfxKind ?? 'swing', [
       { x: use.user.x, y: use.user.y },
@@ -89,7 +116,11 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
    */
   cleave: (use) => {
     const radius = (use.skill.params?.splashRadius as number) ?? 2.2;
-    const splash = (use.skill.params?.splashMultiplier as number) ?? 0.1;
+    // Whirlwind and the like override the splash fraction outright.
+    const splash =
+      (use.grants.splashMultiplier as number) ??
+      (use.skill.params?.splashMultiplier as number) ??
+      0.1;
 
     use.hit(use.primary, 1);
 
@@ -117,9 +148,15 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
    * params: { targets, radius, duration }
    */
   ailment_burst: (use) => {
-    const cap = (use.skill.params?.targets as number) ?? 5;
+    const base = (use.skill.params?.targets as number) ?? 5;
     const radius = (use.skill.params?.radius as number) ?? 3;
     const duration = (use.skill.params?.duration as number) ?? 10;
+
+    // Contagion: a critical cast spreads further. Crit is rolled per USE, so
+    // this is an event you notice rather than a per-enemy coin flip — which
+    // is what makes crit chance worth stacking on a skill that never "hits".
+    const spread = use.crit ? ((use.grants.spreadOnCrit as number) ?? 0) : 0;
+    const cap = base + spread;
 
     const inRange = use.enemies
       .filter((e) => separation(use.primary, e) <= radius)
