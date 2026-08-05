@@ -232,6 +232,29 @@ instead of closing to melee — the same skill the hero can use, through the sam
 code path. Ranged monsters get a pip above them so a pack that shoots is
 identifiable before it starts shooting.
 
+## How a run ends
+
+The hero clears the **whole** map — that's baseline, not a toggle. Then
+something takes the exit: a Warden, an Honour Guard, or a Swarm, from
+`ENCOUNTERS`.
+
+Which one is rolled **per run, not per crystal**, and isn't shown beforehand.
+If you could see it coming you'd pick maps that suit your build, which is the
+opposite of keeping it fresh. The three shapes stress different things —
+single-target damage, sustained fighting, area clear — so no one build owns the
+ending. Their multipliers apply to whatever the map's monsters already are, so
+a finale on a dangerous crystal is dangerous for the same reasons.
+
+The run is cleared when the finale is dead. Nothing special-cases it: it spawns
+at the exit as ordinary monsters with a `bounty` multiplier, and the hero walks
+over and fights it like anything else.
+
+**Careful with "no target left".** It doesn't mean "no monsters left" — one can
+be briefly unroutable while a crowd shuffles. Spawning the finale on that
+condition cleared maps with sixty monsters still standing. A monster is written
+off only after `HOPELESS_AFTER` failed routings, and `reachableRemain()` is
+what actually decides the map is done.
+
 ## Danger buys reward
 
 **Every crystal modifier is a downside.** Reward isn't rolled — it's derived

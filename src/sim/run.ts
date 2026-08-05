@@ -22,6 +22,7 @@ import type { CrystalRewards } from './crystal';
 import {
   CURRENCIES,
   CURRENCY_DROP,
+  ENCOUNTERS,
   HERO_BASE,
   LOOT,
   MONSTERS,
@@ -30,6 +31,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
+import type { EncounterDef } from '../data';
 import type { Item, SkillDef } from '../types';
 
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
@@ -55,6 +57,9 @@ const IGNORE_SECONDS = 5;
 
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
+
+/** Failed routing attempts before a monster is written off permanently. */
+const HOPELESS_AFTER = 4;
 
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
@@ -99,6 +104,8 @@ export interface Entity {
   pathTimer: number;
   /** Committed target, held across ticks so the hero doesn't thrash. */
   targetId: number | null;
+  /** Multiplier on the xp and fragments this one is worth. 1 for rank and file. */
+  bounty: number;
   aggroed: boolean;
   /** Seconds of "just got hit" left, for the renderer to flash. */
   hitFlash: number;
@@ -130,18 +137,21 @@ export interface Vfx {
   ttl: number;
 }
 
+/**
+ * Nothing to configure yet.
+ *
+ * Clearing the map used to be a toggle. It's baseline now: the hero hunts
+ * everything, then the finale spawns at the exit. A "leave early" option was
+ * mostly a way to skip content and made every reward number conditional on
+ * how it was played.
+ */
 export interface RunOptions {
-  /**
-   * Hunt every monster on the map before heading for the exit.
-   *
-   * Off, the hero only fights what comes within aggro range and beelines the
-   * exit otherwise — faster, leaves XP on the floor. On, it clears the map.
-   * That tradeoff is the first real decision the player gets to make.
-   */
-  clearAll?: boolean;
+  /** Placeholder so callers don't churn when a real option arrives. */
+  reserved?: never;
 }
 
 export type RunEvent =
+  | { kind: 'finale'; name: string; herald: string }
   | { kind: 'kill'; total: number; xp: number }
   | { kind: 'hurt'; life: number; maxLife: number }
   | { kind: 'cleared'; seconds: number; killed: number }
@@ -175,6 +185,8 @@ export interface RunState {
   totalMonsters: number;
   /** XP earned so far. The character banks it; the run just reports it. */
   xpGained: number;
+  /** Name of the closing encounter, once it has appeared. */
+  finale: string | null;
   /** Carried, not owned — lost entirely if the hero dies. */
   loot: RunLoot;
   /**
@@ -201,6 +213,13 @@ export class RunSim {
   private xpPerKill = 1;
   /** Fragments one monster is worth. Fractional; rounds when banked. */
   private fragmentsPerKill = 0;
+  /** Failed routing attempts per monster, and the ones written off for good. */
+  private readonly failures = new Map<number, number>();
+  private readonly hopeless = new Set<number>();
+  /** Set once the closing encounter has been spawned. */
+  private finale: EncounterDef | null = null;
+  /** Baseline monster stats for this map, scaled into the finale. */
+  private finaleStats!: CombatStats;
   private rewards: CrystalRewards = {
     danger: 0,
     payingDanger: 0,
@@ -241,6 +260,7 @@ export class RunSim {
       skillId: character.skillId,
       actionTimer: 0,
       deathAge: 0,
+      bounty: 1,
       life: stats.maxLife,
       stats,
       cooldown: 0,
@@ -266,6 +286,7 @@ export class RunSim {
       killed: 0,
       totalMonsters: monsters.length,
       xpGained: 0,
+      finale: null,
       loot: { currency: {}, items: [] },
       damageTaken: {},
     };
@@ -291,6 +312,10 @@ export class RunSim {
     // fifty entities cheap and makes "all Brutes hit this hard" true by
     // construction.
     const statsFor = new Map<string, CombatStats>();
+
+    // Baseline for the finale, so it scales with the crystal like everything
+    // else rather than being a fixed lump of numbers.
+    this.finaleStats = monsterStats(crystal, tier, MONSTERS[0]);
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -328,6 +353,7 @@ export class RunSim {
           action: 'idle',
           actionTimer: 0,
           deathAge: 0,
+          bounty: 1,
           life: stats.maxLife,
           stats,
           cooldown: this.rng.float(0, 1),
@@ -517,22 +543,82 @@ export class RunSim {
       return;
     }
 
-    // Nothing to fight — head for the exit. Arrival is compared in whole
-    // tiles, the same units the pathfinder works in, so it can't be defeated
-    // by a fraction of a tile.
-    const arrived =
-      Math.round(hero.x) === Math.round(s.map.exit.x) &&
-      Math.round(hero.y) === Math.round(s.map.exit.y);
-    if (arrived) {
-      s.status = 'cleared';
-      this.events.push({
-        kind: 'cleared',
-        seconds: s.elapsed,
-        killed: s.killed,
-      });
+    // No target doesn't mean no monsters — one can be briefly unroutable
+    // while a crowd shuffles. Only spawn the finale when nothing reachable is
+    // left, or the map "clears" with sixty monsters still standing.
+    if (this.reachableRemain()) {
+      this.settleAction(hero, false);
       return;
     }
-    this.advance(hero, s.map.exit, dt);
+
+    // Map is empty. Something takes its place at the exit, once.
+    if (!this.finale) {
+      this.spawnFinale();
+      return;
+    }
+
+    // Finale down too — that's the run.
+    s.status = 'cleared';
+    this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
+  }
+
+  /**
+   * Spawns the closing encounter at the exit.
+   *
+   * Rolled from the run's rng rather than the crystal, so the same crystal
+   * doesn't always end the same way. The hero walks over to it like anything
+   * else — the approach is the drama, no special casing needed.
+   */
+  private spawnFinale(): void {
+    const s = this.state;
+    const def = this.rng.weighted(ENCOUNTERS, (e) => e.weight) ?? ENCOUNTERS[0];
+    this.finale = def;
+
+    const base = this.finaleStats;
+    const stats: CombatStats = {
+      ...base,
+      maxLife: base.maxLife * def.life,
+      damage: base.damage * def.damage,
+    };
+
+    const exit = s.map.exit;
+    for (let i = 0; i < def.count; i++) {
+      // Ring them around the exit so a swarm doesn't spawn inside itself;
+      // separation sorts out the rest on the first tick.
+      const angle = (i / Math.max(1, def.count)) * Math.PI * 2;
+      const spread = def.count > 1 ? 0.8 + def.count * 0.09 : 0;
+
+      const entity: Entity = {
+        id: this.nextId++,
+        kind: 'monster',
+        sprite: def.count === 1 ? 'brute' : 'husk',
+        radius: 0.34 * def.size,
+        skillId: null,
+        x: exit.x + Math.cos(angle) * spread,
+        y: exit.y + Math.sin(angle) * spread,
+        facing: angle + Math.PI,
+        action: 'idle',
+        actionTimer: 0,
+        deathAge: 0,
+        bounty: def.bounty,
+        life: stats.maxLife,
+        stats,
+        cooldown: 0,
+        path: [],
+        pathTimer: 0,
+        targetId: null,
+        // Awake from the moment they exist; they're the point of the room.
+        aggroed: true,
+        hitFlash: 0,
+        dead: false,
+      };
+      s.monsters.push(entity);
+      this.byId.set(entity.id, entity);
+    }
+
+    s.totalMonsters += def.count;
+    s.finale = def.name;
+    this.events.push({ kind: 'finale', name: def.name, herald: def.herald });
   }
 
   private stepMonster(m: Entity, dt: number): void {
@@ -570,20 +656,38 @@ export class RunSim {
   }
 
   private isIgnored(id: number): boolean {
+    if (this.hopeless.has(id)) return true;
     return (this.ignoreUntil.get(id) ?? -1) > this.state.elapsed;
   }
 
+  /**
+   * Shelve a target that couldn't be routed to.
+   *
+   * Temporary the first few times — a monster can be briefly unroutable while
+   * a crowd shuffles. After repeated failures it's genuinely walled off and
+   * gets written off for good, which is what lets "is the map clear?" have an
+   * answer instead of looping forever between ignore and retry.
+   */
   private ignore(id: number): void {
+    const failures = (this.failures.get(id) ?? 0) + 1;
+    this.failures.set(id, failures);
+    if (failures >= HOPELESS_AFTER) this.hopeless.add(id);
     this.ignoreUntil.set(id, this.state.elapsed + IGNORE_SECONDS);
   }
 
   /**
-   * Hold the committed target until it dies; otherwise look for a new one.
+   * Hold the committed target until it dies; otherwise take the nearest.
    *
-   * Normally the hero only fights what comes within aggro range. With
-   * clearAll it hunts across the whole map instead — the difference between a
-   * fast run and a thorough one.
+   * Clearing the map is baseline now, so there's no aggro limit and no leash
+   * — the hero hunts the nearest thing anywhere. Commitment is still what
+   * stops the thrash a range check used to cause: a monster on the boundary
+   * would be acquired, pathed away from, dropped, and reacquired forever.
    */
+  /** Any monster still alive that hasn't been written off as unreachable. */
+  private reachableRemain(): boolean {
+    return this.state.monsters.some((m) => !m.dead && !this.hopeless.has(m.id));
+  }
+
   private acquireTarget(hero: Entity): Entity | null {
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
@@ -592,19 +696,13 @@ export class RunSim {
       hero.path = [];
     }
 
-    const candidate =
-      this.nearestMonster(hero, hero.stats.aggroRange) ??
-      (this.options.clearAll ? this.nearestMonster(hero, Infinity) : null);
+    const candidate = this.nearestMonster(hero, Infinity);
     if (!candidate) return null;
 
-    // Validate by route, not by straight line. clearAll wants everything
-    // eventually, so it only rejects the genuinely unreachable.
+    // Validated by route, not straight line — only the genuinely unreachable
+    // are skipped, and only for a while.
     const path = findPath(this.state.map.grid, hero, candidate);
-    const limit = this.options.clearAll
-      ? Infinity
-      : hero.stats.aggroRange * ACQUIRE_PATH_LIMIT;
-
-    if (path.length === 0 || path.length > limit) {
+    if (path.length === 0) {
       this.ignore(candidate.id);
       return null;
     }
@@ -775,8 +873,9 @@ export class RunSim {
     }
 
     s.killed++;
-    s.xpGained += this.xpPerKill;
-    s.loot.currency.fragment = (s.loot.currency.fragment ?? 0) + this.fragmentsPerKill;
+    s.xpGained += this.xpPerKill * victim.bounty;
+    s.loot.currency.fragment =
+      (s.loot.currency.fragment ?? 0) + this.fragmentsPerKill * victim.bounty;
     this.rollCurrency();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
   }

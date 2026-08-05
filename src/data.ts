@@ -550,6 +550,74 @@ export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
  */
 export const RANGED_PACK_CHANCE = 0.25;
 
+// ===========================================================================
+// FINALE
+//
+// Once the map is empty, something waits at the exit. Which something is
+// rolled per RUN and isn't shown beforehand — if you could see it coming
+// you'd pick maps that suit your build, which is the opposite of keeping it
+// fresh.
+//
+// Three shapes deliberately: one huge target, a handful of tough ones, and a
+// swarm. They stress different things — single-target damage, sustained
+// fighting, area clear — so no one build owns the ending. Equal weights: it
+// should feel like a coin toss, not a rare event.
+//
+// Multipliers apply to whatever the map's normal monsters already are, so a
+// finale on a dangerous crystal is dangerous for the same reasons.
+// ===========================================================================
+
+export interface EncounterDef {
+  id: string;
+  name: string;
+  /** Line shown when it appears. */
+  herald: string;
+  weight: number;
+  count: number;
+  life: number;
+  damage: number;
+  /** Body radius multiplier — a boss should read as big before it hits you. */
+  size: number;
+  /** Multiplier on the xp and fragments each one is worth. */
+  bounty: number;
+}
+
+export const ENCOUNTERS: EncounterDef[] = [
+  {
+    id: 'warden',
+    name: 'Warden',
+    herald: 'Something heavy is waiting at the exit.',
+    weight: 100,
+    count: 1,
+    life: 16,
+    damage: 2.2,
+    size: 2.1,
+    bounty: 14,
+  },
+  {
+    id: 'honour_guard',
+    name: 'Honour Guard',
+    herald: 'A knot of armoured shapes blocks the exit.',
+    weight: 100,
+    count: 4,
+    life: 3.6,
+    damage: 1.5,
+    size: 1.35,
+    bounty: 3.5,
+  },
+  {
+    id: 'swarm',
+    name: 'Swarm',
+    herald: 'The walls come alive near the exit.',
+    weight: 100,
+    count: 20,
+    life: 0.75,
+    damage: 0.9,
+    size: 0.95,
+    bounty: 0.7,
+  },
+];
+
 /** Which skill a ranged pack uses. */
 export const MONSTER_RANGED_SKILL = 'bolt';
 
@@ -635,7 +703,7 @@ export const LOOT = {
    * Fragments one monster is worth at tier 1. Accumulates fractionally and
    * rounds when banked, so per-kill values below 1 still work.
    */
-  fragmentsPerKill: 0.15,
+  fragmentsPerKill: 0.1,
   /** Multiplier per crystal tier. */
   tierScale: 1.85,
 };

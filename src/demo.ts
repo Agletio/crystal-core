@@ -123,23 +123,32 @@ rule('AN ACTUAL RUN — headless, no browser');
 }
 
 // ===========================================================================
-rule('CLEAR ALL — thoroughness costs time');
+rule('THE FINALE — what is waiting at the exit?');
 
+// Rolled per run, so the same crystal doesn't always end the same way. All
+// three should show up across a handful of seeds; if one dominates, the
+// weights are wrong and one build would own every ending.
 {
-  line('  mode          result     time   killed        xp');
-  for (const clearAll of [false, true]) {
+  line('  seed   finale          result     time   killed        xp');
+  const tally: Record<string, number> = {};
+
+  for (const seed of [11, 12, 13, 14, 15, 16]) {
     const c = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
     const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
-    const sim = new RunSim(c, hero, new Rng(31337), { clearAll });
-    const total = sim.state.totalMonsters;
+    const sim = new RunSim(c, hero, new Rng(seed * 101));
     const f = runToCompletion(sim);
+    const name = f.finale ?? '(never reached)';
+    tally[name] = (tally[name] ?? 0) + 1;
 
     line(
-      `  ${(clearAll ? 'clear all' : 'rush exit').padEnd(12)}  ${f.status.padEnd(8)} ` +
-        `${f.elapsed.toFixed(0).padStart(5)}s   ${String(f.killed).padStart(3)}/${total}   ` +
-        `${String(f.xpGained).padStart(7)}`
+      `  ${String(seed).padStart(4)}   ${name.padEnd(14)}  ${f.status.padEnd(8)} ` +
+        `${f.elapsed.toFixed(0).padStart(5)}s   ${String(f.killed).padStart(3)}/${
+          f.totalMonsters
+        }   ${String(Math.round(f.xpGained)).padStart(7)}`
     );
   }
+  line();
+  line(`  spread: ${JSON.stringify(tally)}`);
 }
 
 // ===========================================================================
@@ -203,26 +212,21 @@ rule('TERMINATION CHECK — does every run actually end?');
   const stuck: string[] = [];
 
   for (const t of CRYSTAL_TIERS) {
-    for (const clearAll of [false, true]) {
-      for (const seed of [11, 29]) {
-        const c = craft(
-          makeCrystal(t.tier),
-          CURRENCY_BY_ID.shard_of_awakening,
-          pool,
-          rng
-        ).item;
-        const sim = new RunSim(
-          c,
-          makeCharacter(starterLoadout(new Rng(7)), 'strike'),
-          new Rng(seed * 31 + t.tier),
-          { clearAll }
-        );
-        const f = runToCompletion(sim, 400);
-        checked++;
-        if (f.status === 'running') {
-          stuck.push(`T${t.tier} seed ${seed} clearAll=${clearAll}`);
-        }
-      }
+    for (const seed of [11, 29, 47, 63]) {
+      const c = craft(
+        makeCrystal(t.tier),
+        CURRENCY_BY_ID.shard_of_awakening,
+        pool,
+        rng
+      ).item;
+      const sim = new RunSim(
+        c,
+        makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+        new Rng(seed * 31 + t.tier)
+      );
+      const f = runToCompletion(sim, 400);
+      checked++;
+      if (f.status === 'running') stuck.push(`T${t.tier} seed ${seed}`);
     }
   }
 
@@ -256,7 +260,7 @@ for (const t of CRYSTAL_TIERS) {
       c,
       makeCharacter(starterLoadout(new Rng(7)), 'strike'),
       new Rng(5000 + t.tier * 31 + i),
-      { clearAll: true }
+      {}
     );
     const final = runToCompletion(sim, 400);
     // Only a cleared run banks anything, which is the point of the mechanic.
@@ -299,9 +303,7 @@ line(`Prepped ${queue.length} crystals, ${balance(wallet, 'fragment')} fragments
 let elapsed = 0;
 let survived = 0;
 for (const c of queue) {
-  const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng, {
-    clearAll: true,
-  });
+  const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng);
   const final = runToCompletion(sim, 400);
   elapsed += final.elapsed;
   if (final.status !== 'cleared') continue;

@@ -46,7 +46,6 @@ let playing = false;
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
-let clearAll = false;
 let zoom = 1;
 let chosen: Item | null = null;
 let log: Array<{ text: string; kind: string }> = [];
@@ -165,7 +164,7 @@ function launch(): void {
   chosen = null;
 
   seed = Math.floor(Math.random() * 1e9);
-  sim = new RunSim(crystal, game.character, new Rng(seed), { clearAll });
+  sim = new RunSim(crystal, game.character, new Rng(seed));
 
   log = [];
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
@@ -413,12 +412,6 @@ export function initRun(state: GameState): void {
     renderMenu();
   };
 
-  const clearBtn = $('run-clearall') as HTMLButtonElement;
-  clearBtn.onclick = () => {
-    clearAll = !clearAll;
-    clearBtn.classList.toggle('chip--on', clearAll);
-    clearBtn.setAttribute('aria-pressed', String(clearAll));
-  };
 
   // Zoom: buttons for discoverability, wheel because that's what anyone
   // watching a map will reach for first.
