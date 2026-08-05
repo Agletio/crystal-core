@@ -15,6 +15,71 @@ import type {
 // gear splits power (main) from utility (secondary) so the two never compete.
 // ===========================================================================
 
+// ===========================================================================
+// DAMAGE TYPES
+//
+// A table, not a hardcoded list, so adding a type is a data entry: it starts
+// being resolved, resisted and displayed everywhere at once.
+//
+// Groups let a single mod cover several types at lower value — Elemental
+// covers fire/cold/lightning, Occult covers poison/dark/light. Physical and
+// Crystal stand alone, so their only cover is their own resistance.
+//
+// TYPELESS is deliberately absent from this table. Nothing type-specific
+// scales it and nothing resists it; generic "increased Damage" still applies,
+// because that carries no type tag to fail against.
+// ===========================================================================
+
+export interface DamageTypeDef {
+  id: string;
+  name: string;
+  /** Shared resistance family, or null for a standalone type. */
+  group: string | null;
+}
+
+export const DAMAGE_TYPES: DamageTypeDef[] = [
+  { id: 'physical', name: 'Physical', group: null },
+  { id: 'fire', name: 'Fire', group: 'elemental' },
+  { id: 'cold', name: 'Cold', group: 'elemental' },
+  { id: 'lightning', name: 'Lightning', group: 'elemental' },
+  { id: 'poison', name: 'Poison', group: 'occult' },
+  { id: 'dark', name: 'Dark', group: 'occult' },
+  { id: 'light', name: 'Light', group: 'occult' },
+  { id: 'crystal', name: 'Crystal', group: null },
+];
+
+export const DAMAGE_TYPE_BY_ID: Record<string, DamageTypeDef> = Object.fromEntries(
+  DAMAGE_TYPES.map((d) => [d.id, d])
+);
+
+export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
+
+/** Damage that nothing scales and nothing resists. */
+export const TYPELESS = 'typeless';
+
+/**
+ * Defensive layers.
+ *
+ * Resistance and armour are separate MULTIPLIERS, so at both caps you take
+ * 0.25 * 0.25 = 6.25% of a hit. Adding them instead would mean immunity at
+ * 75 + 75, which is why they don't add.
+ *
+ * Armour reduction curves with armour POINTS rather than with the size of the
+ * hit. Hit-size scaling made armour impossible to display honestly — its
+ * worth changed with every attacker. This way it's one number you can print,
+ * while still avoiding the two failure modes of a linear conversion: mods
+ * that do nothing, or three mods reaching the cap.
+ *
+ * Armour applies only to HITS. Damage over time goes through resistance
+ * alone, which is what lets an ailment threaten a heavily armoured build.
+ */
+export const DEFENCE = {
+  resistanceCap: 75,
+  armourCap: 75,
+  /** Armour points at which reduction reaches half the cap. */
+  armourHalfPoint: 300,
+};
+
 export const CRYSTAL_SLOTS = { mod: 3 };
 export const GEAR_SLOTS = { main: 2, secondary: 2 };
 
@@ -205,39 +270,8 @@ export const GEAR_MAIN_MODS: ModDef[] = [
       { ilvl: 1, weight: 900, stats: [{ stat: 'armour', form: 'flat', range: [20, 60] }] },
     ],
   },
-  {
-    id: 'inc_phys_damage',
-    slot: 'main',
-    name: 'Heavy',
-    appliesTo: ['gear'],
-    tags: ['damage', 'physical'],
-    tiers: [
-      { ilvl: 55, weight: 250, stats: [{ stat: 'damage', form: 'inc', range: [60, 80], tags: ['physical'] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'damage', form: 'inc', range: [20, 40], tags: ['physical'] }] },
-    ],
-  },
-  {
-    id: 'flat_fire_damage',
-    slot: 'main',
-    name: 'Smouldering',
-    appliesTo: ['gear'],
-    tags: ['damage', 'fire', 'elemental'],
-    tiers: [
-      { ilvl: 45, weight: 400, stats: [{ stat: 'damage', form: 'flat', range: [12, 24], tags: ['fire'] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'damage', form: 'flat', range: [3, 8], tags: ['fire'] }] },
-    ],
-  },
-  {
-    id: 'flat_cold_damage',
-    slot: 'main',
-    name: 'Frostbound',
-    appliesTo: ['gear'],
-    tags: ['damage', 'cold', 'elemental'],
-    tiers: [
-      { ilvl: 45, weight: 400, stats: [{ stat: 'damage', form: 'flat', range: [10, 20], tags: ['cold'] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'damage', form: 'flat', range: [2, 7], tags: ['cold'] }] },
-    ],
-  },
+  // Typed damage mods are generated from DAMAGE_TYPES below — one flat and
+  // one increased family per type, so a new type arrives fully equipped.
 ];
 
 // --- gear: SECONDARY = utility and clear speed -----------------------------
@@ -299,7 +333,123 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
   },
 ];
 
-export const GEAR_MODS: ModDef[] = [...GEAR_MAIN_MODS, ...GEAR_SECONDARY_MODS];
+// --- generated: one family per damage type ---------------------------------
+//
+// Written as a loop rather than eighteen near-identical blocks. Adding a
+// damage type to DAMAGE_TYPES gives it flat damage, increased damage and a
+// resistance automatically, which is the whole point of the table.
+
+const FLAT_DAMAGE_NAMES: Record<string, string> = {
+  physical: 'Weighted',
+  fire: 'Smouldering',
+  cold: 'Frostbound',
+  lightning: 'Thunderstruck',
+  poison: 'Venomous',
+  dark: 'Shrouded',
+  light: 'Radiant',
+  crystal: 'Faceted',
+};
+
+const INC_DAMAGE_NAMES: Record<string, string> = {
+  physical: 'Heavy',
+  fire: 'Blazing',
+  cold: 'Glacial',
+  lightning: 'Storming',
+  poison: 'Virulent',
+  dark: 'Umbral',
+  light: 'Brilliant',
+  crystal: 'Prismatic',
+};
+
+const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
+  {
+    id: `flat_${type.id}_damage`,
+    slot: 'main',
+    name: FLAT_DAMAGE_NAMES[type.id] ?? type.name,
+    appliesTo: ['gear'],
+    tags: ['damage', type.id, ...(type.group ? [type.group] : [])],
+    tiers: [
+      {
+        ilvl: 45,
+        weight: 380,
+        stats: [{ stat: 'damage', form: 'flat', range: [12, 24], tags: [type.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 880,
+        stats: [{ stat: 'damage', form: 'flat', range: [3, 8], tags: [type.id] }],
+      },
+    ],
+  },
+  {
+    id: `inc_${type.id}_damage`,
+    slot: 'main',
+    name: INC_DAMAGE_NAMES[type.id] ?? type.name,
+    appliesTo: ['gear'],
+    tags: ['damage', type.id, ...(type.group ? [type.group] : [])],
+    tiers: [
+      {
+        ilvl: 55,
+        weight: 240,
+        stats: [{ stat: 'damage', form: 'inc', range: [45, 65], tags: [type.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 860,
+        stats: [{ stat: 'damage', form: 'inc', range: [18, 34], tags: [type.id] }],
+      },
+    ],
+  },
+]);
+
+/** Single-type resistances roll high; group resistances roll low but wide. */
+const RESISTANCE_MODS: ModDef[] = [
+  ...DAMAGE_TYPES.map((type) => ({
+    id: `${type.id}_resist`,
+    slot: 'main',
+    name: `of ${type.name} Warding`,
+    appliesTo: ['gear'],
+    tags: ['resistance', type.id, ...(type.group ? [type.group] : [])],
+    tiers: [
+      {
+        ilvl: 40,
+        weight: 320,
+        stats: [{ stat: `${type.id}Res`, form: 'flat' as const, range: [26, 38] as [number, number] }],
+      },
+      {
+        ilvl: 1,
+        weight: 820,
+        stats: [{ stat: `${type.id}Res`, form: 'flat' as const, range: [10, 22] as [number, number] }],
+      },
+    ],
+  })),
+  ...DAMAGE_GROUPS.map((group) => ({
+    id: `${group}_resist`,
+    slot: 'main',
+    name: group === 'elemental' ? 'of the Bulwark' : 'of the Veil',
+    appliesTo: ['gear'],
+    tags: ['resistance', group],
+    tiers: [
+      {
+        ilvl: 50,
+        weight: 200,
+        stats: [{ stat: `${group}Res`, form: 'flat' as const, range: [12, 18] as [number, number] }],
+      },
+      {
+        ilvl: 1,
+        weight: 520,
+        stats: [{ stat: `${group}Res`, form: 'flat' as const, range: [5, 11] as [number, number] }],
+      },
+    ],
+  })),
+];
+
+export const GEAR_MODS: ModDef[] = [
+  ...GEAR_MAIN_MODS,
+  ...GEAR_SECONDARY_MODS,
+  ...TYPED_DAMAGE_MODS,
+  ...RESISTANCE_MODS,
+];
 export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
 
 // ===========================================================================
@@ -844,6 +994,31 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     range: 6.5,
     vfxKind: 'bolt',
+  },
+  {
+    /**
+     * The first skill that doesn't work by hitting things.
+     *
+     * Damage over time is resisted but NOT reduced by armour, so this is the
+     * answer to a target you can't punch through — and the first case where
+     * what a monster is armoured against actually matters.
+     *
+     * Low per-stack damage that stacks is deliberate: the payoff comes from
+     * applying it to a crowd early and letting it work while you fight, not
+     * from any single cast.
+     */
+    id: 'blight',
+    name: 'Creeping Blight',
+    description:
+      'Poisons up to 5 nearby enemies for 10s. Weak alone, and it stacks.',
+    tags: ['spell', 'area', 'occult'],
+    behaviour: 'ailment_burst',
+    damageTypes: ['poison'],
+    damageMultiplier: 1.6,
+    rateMultiplier: 0.75,
+    range: 6.5,
+    vfxKind: 'blight',
+    params: { targets: 5, radius: 3.2, duration: 10 },
   },
 ];
 

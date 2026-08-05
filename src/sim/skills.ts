@@ -44,6 +44,14 @@ export interface SkillUse {
    */
   hit(target: Entity, multiplier: number): void;
   /**
+   * Apply a damage-over-time stack.
+   *
+   * `multiplier` is the TOTAL damage across the whole duration, relative to
+   * the skill's damage — so 1.0 over 10 seconds is one hit's worth, spread
+   * thin. The sim divides it out; behaviours never deal in per-tick numbers.
+   */
+  ailment(target: Entity, multiplier: number, seconds: number): void;
+  /**
    * Emit a visual event. Only the skill knows the SHAPE of what happened —
    * a chain's arc is A→B→C, which no renderer could reconstruct from the
    * damage alone. Points are in tile units.
@@ -90,6 +98,40 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         if (enemy === use.primary) continue;
         if (separation(use.user, enemy) <= radius) use.hit(enemy, splash);
       }
+    }
+
+    use.vfx(use.skill.vfxKind ?? 'swing', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
+  },
+
+  /**
+   * No hit at all — spreads a damage-over-time stack to everything near the
+   * primary target.
+   *
+   * Nearest-first up to a cap, so it reliably covers the knot of enemies you
+   * are standing in rather than scattering across whichever ones the list
+   * happened to hold.
+   *
+   * params: { targets, radius, duration }
+   */
+  ailment_burst: (use) => {
+    const cap = (use.skill.params?.targets as number) ?? 5;
+    const radius = (use.skill.params?.radius as number) ?? 3;
+    const duration = (use.skill.params?.duration as number) ?? 10;
+
+    const inRange = use.enemies
+      .filter((e) => separation(use.primary, e) <= radius)
+      .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
+      .slice(0, cap);
+
+    // The primary is always poisoned, even if the radius somehow excludes it.
+    if (!inRange.includes(use.primary)) inRange.unshift(use.primary);
+
+    for (const enemy of inRange.slice(0, cap)) {
+      use.ailment(enemy, 1, duration);
+      use.vfx('blight', [{ x: enemy.x, y: enemy.y }], 0.5);
     }
 
     use.vfx(use.skill.vfxKind ?? 'swing', [

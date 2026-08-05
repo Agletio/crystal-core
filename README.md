@@ -255,6 +255,62 @@ condition cleared maps with sixty monsters still standing. A monster is written
 off only after `HOPELESS_AFTER` failed routings, and `reachableRemain()` is
 what actually decides the map is done.
 
+## Damage, resistance, armour
+
+Damage types live in a table (`DAMAGE_TYPES` in `data.ts`) with a group each.
+Adding a type there gives it flat damage, increased damage and a resistance
+family automatically — those mods are generated from the table rather than
+hand-written.
+
+| | |
+|---|---|
+| **Elemental** | Fire, Cold, Lightning |
+| **Occult** | Poison, Dark, Light |
+| **Standalone** | Physical, Crystal |
+| **Typeless** | scaled by nothing type-specific, resisted by nothing |
+
+Group resistances roll low but cover three types; single resistances roll
+high. Both stack, then cap together.
+
+### Order of operations
+
+```
+base → flat added (per type) → increased (additive) → more (multiplicative)
+     → crit → resistance (per type, cap 75%) → armour (hits only, cap 75%)
+```
+
+**The load-bearing part is per-type resolution**, not where resistance sits
+relative to armour — they're both multipliers, so their order is commutative.
+What would break is applying resistance to a *summed* total, because then Fire
+resistance would reduce Physical damage.
+
+Resistance and armour multiply rather than add. At both caps that's
+`0.25 × 0.25` = 6.25% of a hit; adding them would mean immunity at 75 + 75.
+
+### Armour
+
+`reduction% = min(75, 100 × armour / (armour + 300))`
+
+Curved on **points**, not on the size of the hit. Hit-size scaling made armour
+impossible to state honestly — its worth changed with every attacker — so the
+sheet now prints `armour 108 (27%)`. A straight linear conversion has no good
+answer either: a small divisor and three mods reach the cap, a large one and
+every mod feels like nothing.
+
+Armour applies to **hits only**. Damage over time goes through resistance
+alone, which is what lets an ailment threaten a heavily armoured build.
+
+### Ailments
+
+`Ailment` stacks are separate entries with their own clocks, capped at
+`MAX_AILMENT_STACKS`. Applying to a saturated target drops the oldest rather
+than being refused, so re-applying still refreshes.
+
+Behaviours call `use.ailment(target, multiplier, seconds)` where `multiplier`
+is TOTAL damage over the whole duration — they never reason in per-tick
+numbers. `Creeping Blight` is the worked example: area, up to 5 targets, 10s,
+weak alone and stacking.
+
 ## Danger buys reward
 
 **Every crystal modifier is a downside.** Reward isn't rolled — it's derived

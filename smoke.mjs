@@ -269,6 +269,27 @@ const worn = all('#sheet-slots .slotcell__btn--worn');
 assert(worn.length === 8, 'starter set fills every slot', String(worn.length));
 assert(all('#sheet-stats .stat').length >= 8, 'sheet lists derived stats');
 
+// Armour must print points AND what they're worth — the whole reason it
+// curves on points rather than hit size is that this can be stated.
+const armourRow = all('#sheet-stats .stat').find(
+  (r) => r.querySelector('.stat__k')?.textContent === 'armour'
+);
+assert(
+  /^\d+ \(\d+%\)$/.test(armourRow?.querySelector('.stat__v')?.textContent ?? ''),
+  'armour shows points and percent',
+  armourRow?.querySelector('.stat__v')?.textContent
+);
+
+// One resistance row per damage type, none of them above the cap.
+const resRows = all('#sheet-res .stat');
+assert(resRows.length === 8, 'a resistance row per damage type', String(resRows.length));
+const overCap = resRows.filter(
+  (r) => Number((r.querySelector('.stat__v')?.textContent ?? '0').replace('%', '')) > 75
+);
+assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.length));
+
+assert(all('#sheet-skills .chip').length === 3, 'three skills selectable');
+
 // Taking something off must return it to the inventory and free the slot.
 const invBefore = invItems().length;
 worn[0].click();

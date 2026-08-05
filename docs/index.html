@@ -201,6 +201,8 @@
 
   .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
   .stat__k { color: var(--dust); }
+  .stat__v--capped { color: var(--citrine); }
+  .stat__v--zero { color: var(--ember); }
 
   .readout { display: grid; gap: 4px; font-size: 12px; }
   .readout div { display: flex; justify-content: space-between; gap: 10px; }
@@ -482,6 +484,8 @@
           </div>
           <p class="panel__title">Stats</p>
           <div id="sheet-stats"></div>
+          <p class="panel__title" style="margin-top:16px">Resistances</p>
+          <div id="sheet-res"></div>
           <p class="panel__title" style="margin-top:16px">Skill</p>
           <div class="bases" id="sheet-skills"></div>
         </div>

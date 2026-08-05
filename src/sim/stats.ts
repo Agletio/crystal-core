@@ -8,8 +8,11 @@
  */
 import { computeStat } from '../mods';
 import {
+  DAMAGE_TYPES,
+  DEFENCE,
   HERO_BASE,
   LEVELLING,
+  TYPELESS,
   MONSTER_BASE,
   MONSTER_TIER_SCALE,
   SKILLS,
@@ -33,14 +36,44 @@ export interface CombatStats {
   lifeRegen: number;
   /** Damage type dealt when attacking without a skill. Monsters only. */
   damageType?: string;
+  /** Percent reduction per damage type, already capped. Typeless is absent. */
+  resistances: Record<string, number>;
+  /** Percent reduction against HITS only, already capped. */
+  armourReduction: number;
 }
 
 /**
- * Every damage type the engine knows about. A skill's base damage lands on
- * the types it declares; the rest start at zero, so an unmodded character
- * deals no fire damage rather than a phantom amount.
+ * Armour points to a flat percentage.
+ *
+ * Curved on POINTS, not on the size of the hit. Hit-size scaling made armour
+ * impossible to state honestly — its worth changed with every attacker — but
+ * a straight linear conversion has no good answer either: pick a small
+ * divisor and three mods reach the cap, pick a large one and every mod feels
+ * like nothing. This keeps each point useful and still prints as one number.
  */
-const DAMAGE_TYPES = ['physical', 'fire', 'cold', 'lightning'] as const;
+export function armourReduction(armour: number): number {
+  if (armour <= 0) return 0;
+  const raw = (100 * armour) / (armour + DEFENCE.armourHalfPoint);
+  return Math.min(DEFENCE.armourCap, raw);
+}
+
+/**
+ * Resistance per type: its own, plus its group's, capped together.
+ *
+ * Typeless is deliberately missing from the result — nothing resists it.
+ */
+export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const type of DAMAGE_TYPES) {
+    const own = computeStat(0, mods, `${type.id}Res`);
+    const group = type.group ? computeStat(0, mods, `${type.group}Res`) : 0;
+    out[type.id] = Math.min(DEFENCE.resistanceCap, own + group);
+  }
+  return out;
+}
+
+// Damage types now come from the DAMAGE_TYPES table in data.ts, so adding one
+// makes it resolvable, resistable and displayable everywhere at once.
 
 /**
  * Damage types are resolved separately and summed.
@@ -57,10 +90,19 @@ const DAMAGE_TYPES = ['physical', 'fire', 'cold', 'lightning'] as const;
  */
 export function skillDamage(mods: RolledMod[], base: number, skill: SkillDef): number {
   let total = 0;
+
   for (const type of DAMAGE_TYPES) {
-    const typeBase = skill.damageTypes.includes(type) ? base : 0;
-    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type]);
+    const typeBase = skill.damageTypes.includes(type.id) ? base : 0;
+    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type.id]);
   }
+
+  // Typeless carries no type tag, so only untagged lines — generic
+  // "increased Damage" — can reach it. Nothing type-specific scales it, which
+  // is the entire point of having it.
+  if (skill.damageTypes.includes(TYPELESS)) {
+    total += computeStat(base, mods, 'damage', [...skill.tags, TYPELESS]);
+  }
+
   return total * skill.damageMultiplier;
 }
 
@@ -87,6 +129,8 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
+    armourReduction: armourReduction(computeStat(HERO_BASE.armour, mods, 'armour')),
+    resistances: resistancesFrom(mods),
     attackRange: skill.range,
     aggroRange: HERO_BASE.aggroRange,
   };
@@ -120,6 +164,10 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
     moveSpeed:
       computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour: computeStat(0, crystal.mods, 'monsterArmour'),
+    armourReduction: armourReduction(computeStat(0, crystal.mods, 'monsterArmour')),
+    // Monsters carry no resistances yet — crystal mods that grant them are
+    // the obvious next danger family.
+    resistances: {},
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,

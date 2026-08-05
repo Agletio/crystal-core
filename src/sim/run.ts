@@ -49,6 +49,27 @@ const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 export type EntityKind = 'hero' | 'monster';
 
 /**
+ * A damage-over-time stack.
+ *
+ * Resisted like anything else, but NOT reduced by armour — that split is what
+ * makes an ailment the answer to a target you can't punch through, and the
+ * first place where how a monster is defended actually changes what you
+ * should be using.
+ *
+ * Stacks are separate entries rather than a merged number, so each expires on
+ * its own clock and the count is meaningful.
+ */
+export interface Ailment {
+  type: string;
+  /** Damage per second before resistance. */
+  dps: number;
+  remaining: number;
+}
+
+/** Enough for stacking to matter, few enough that it can't run away. */
+const MAX_AILMENT_STACKS = 12;
+
+/**
  * What an entity is visibly doing. The sim already knows this implicitly;
  * naming it is what lets a renderer pick an animation without guessing from
  * position deltas.
@@ -79,6 +100,8 @@ export interface Entity {
   actionTimer: number;
   /** Seconds since death, for the fade-out. Only meaningful once dead. */
   deathAge: number;
+  /** Active damage-over-time stacks. */
+  ailments: Ailment[];
   life: number;
   stats: CombatStats;
   cooldown: number;
@@ -232,6 +255,7 @@ export class RunSim {
       skillId: character.skillId,
       actionTimer: 0,
       deathAge: 0,
+      ailments: [],
       bounty: 1,
       life: stats.maxLife,
       stats,
@@ -325,6 +349,7 @@ export class RunSim {
           action: 'idle',
           actionTimer: 0,
           deathAge: 0,
+          ailments: [],
           bounty: 1,
           life: stats.maxLife,
           stats,
@@ -361,6 +386,11 @@ export class RunSim {
 
     for (const v of s.vfx) v.age += dt;
     if (s.vfx.length > 0) s.vfx = s.vfx.filter((v) => v.age < v.ttl);
+
+    // Ailments tick before anyone acts, so a poisoned monster can die on its
+    // own without first getting a free swing.
+    this.stepAilments(s.hero, dt);
+    for (const m of s.monsters) if (!m.dead) this.stepAilments(m, dt);
 
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -564,6 +594,7 @@ export class RunSim {
         action: 'idle',
         actionTimer: 0,
         deathAge: 0,
+        ailments: [],
         bounty: def.bounty,
         life: stats.maxLife,
         stats,
@@ -731,6 +762,8 @@ export class RunSim {
           : [this.state.hero],
       rng: this.rng,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
+      ailment: (target, multiplier, seconds) =>
+        this.applyAilment(user, target, multiplier, seconds, skill),
       vfx: (kind, points, ttl = 0.3) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
     });
@@ -753,10 +786,17 @@ export class RunSim {
     let dmg = attacker.stats.damage * multiplier * this.rng.float(0.9, 1.1);
     if (crit) dmg *= 2;
 
-    // Armour mitigates on a curve against the size of the hit, so it's strong
-    // against chip damage and weak against big hits. Never reaches immunity.
-    const armour = defender.stats.armour;
-    if (armour > 0) dmg *= 1 - armour / (armour + 12 * dmg);
+    const type = skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical';
+
+    // Resistance first, then armour. They're both multipliers so the order
+    // between them doesn't change the result — but each must be applied to
+    // ONE type's damage, never to a summed total, or fire resistance would
+    // start reducing physical hits.
+    dmg = this.afterResistance(defender, dmg, type);
+
+    // Armour is a flat percentage against hits only. Damage over time skips
+    // this entirely, which is what lets an ailment threaten a tanky build.
+    dmg *= 1 - defender.stats.armourReduction / 100;
     dmg = Math.max(1, dmg);
 
     defender.life -= dmg;
@@ -787,13 +827,62 @@ export class RunSim {
     });
 
     if (defender.kind === 'hero') {
-      // A monster with no skill still has a type — 'of Cinders' maps burn you.
-      const type = skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical';
       s.damageTaken[type] = (s.damageTaken[type] ?? 0) + dmg;
       this.events.push({ kind: 'hurt', life: Math.max(0, defender.life), maxLife: defender.stats.maxLife });
     }
 
     if (defender.life <= 0) this.kill(defender);
+  }
+
+  /** Typeless has no entry, so it passes through untouched — by design. */
+  private afterResistance(defender: Entity, amount: number, type: string): number {
+    const res = defender.stats.resistances[type] ?? 0;
+    return amount * (1 - res / 100);
+  }
+
+  /**
+   * Applies one stack of damage over time.
+   *
+   * `multiplier` is total damage across the whole duration relative to the
+   * skill's damage, so behaviours never have to reason in per-tick numbers.
+   */
+  private applyAilment(
+    attacker: Entity,
+    target: Entity,
+    multiplier: number,
+    seconds: number,
+    skill: SkillDef
+  ): void {
+    if (target.dead || seconds <= 0) return;
+
+    const total = attacker.stats.damage * multiplier;
+    const type = skill.damageTypes[0] ?? 'physical';
+
+    // Oldest stack falls off rather than refusing the new one, so re-applying
+    // to a saturated target still refreshes rather than being wasted.
+    if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
+    target.ailments.push({ type, dps: total / seconds, remaining: seconds });
+  }
+
+  /** Ticks every active stack. Resisted, never armoured. */
+  private stepAilments(e: Entity, dt: number): void {
+    if (e.ailments.length === 0 || e.dead) return;
+    let total = 0;
+
+    for (const ailment of e.ailments) {
+      ailment.remaining -= dt;
+      const dealt = this.afterResistance(e, ailment.dps * dt, ailment.type);
+      total += dealt;
+      if (e.kind === 'hero') {
+        this.state.damageTaken[ailment.type] =
+          (this.state.damageTaken[ailment.type] ?? 0) + dealt;
+      }
+    }
+    e.ailments = e.ailments.filter((a) => a.remaining > 0);
+    if (total <= 0) return;
+
+    e.life -= total;
+    if (e.life <= 0) this.kill(e);
   }
 
   private kill(victim: Entity): void {

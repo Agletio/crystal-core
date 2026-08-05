@@ -10,7 +10,7 @@
  * fits. Worn items live here rather than in the inventory, which is safe
  * precisely because this screen shows them.
  */
-import { EQUIP_SLOTS, SKILLS } from '../data';
+import { DAMAGE_TYPES, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
@@ -125,7 +125,9 @@ function renderStats(): void {
     ['attacks/sec', s.attacksPerSecond.toFixed(2)],
     ['crit chance', `${Math.round(s.critChance)}%`],
     ['move speed', s.moveSpeed.toFixed(1)],
-    ['armour', Math.round(s.armour).toString()],
+    // Armour shows points AND what they're worth — the whole reason it curves
+    // on points rather than on hit size is that this number can be stated.
+    ['armour', `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`],
     ['regen/sec', s.lifeRegen.toFixed(1)],
     ['reach', s.attackRange.toFixed(1)],
   ];
@@ -135,6 +137,21 @@ function renderStats(): void {
     row.append(el('span', 'stat__k', k));
     row.append(el('span', 'stat__v', v));
     host.append(row);
+  }
+
+  // Resistances, grouped as they're resisted. Zeroes are shown too — an
+  // unresisted type is exactly the thing you want to notice.
+  const res = $('sheet-res');
+  res.replaceChildren();
+  for (const type of DAMAGE_TYPES) {
+    const value = Math.round(s.resistances[type.id] ?? 0);
+    const row = el('div', 'stat');
+    row.append(el('span', 'stat__k', type.name.toLowerCase()));
+    const cell = el('span', 'stat__v', `${value}%`);
+    if (value >= DEFENCE.resistanceCap) cell.classList.add('stat__v--capped');
+    else if (value === 0) cell.classList.add('stat__v--zero');
+    row.append(cell);
+    res.append(row);
   }
 
   const need = xpToNext(game.character.level);
