@@ -138,6 +138,40 @@ export interface CurrencyDef {
 }
 
 // ---------------------------------------------------------------------------
+// Skills
+// ---------------------------------------------------------------------------
+
+/**
+ * An authored skill. Same shape of idea as CurrencyDef: the data says WHAT,
+ * a registry entry says HOW, and most new skills need no new code.
+ *
+ * `tags` are what the modifier engine matches against, exactly like mod tags —
+ * a skill tagged ['attack','melee'] picks up "increased Melee Damage" for free.
+ * Deliberately do NOT put damage types in `tags`; those come from
+ * `damageTypes`, so "increased Physical Damage" can't leak onto a skill's fire
+ * damage.
+ */
+export interface SkillDef {
+  id: string;
+  name: string;
+  description: string;
+  /** Modifier-engine tags: 'attack', 'spell', 'melee', 'area', 'chain', … */
+  tags: string[];
+  /** Key into the SKILL_BEHAVIOURS registry — how the hit is delivered. */
+  behaviour: string;
+  /** Which damage types this skill's BASE damage is dealt as. */
+  damageTypes: string[];
+  /** Multiplier on base damage. */
+  damageMultiplier: number;
+  /** Multiplier on the character's attacks/sec. */
+  rateMultiplier: number;
+  /** Reach, in tiles. */
+  range: number;
+  /** Behaviour-specific knobs: chain count, radius, projectile count, … */
+  params?: Record<string, any>;
+}
+
+// ---------------------------------------------------------------------------
 // Economy
 // ---------------------------------------------------------------------------
 

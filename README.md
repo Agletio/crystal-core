@@ -83,6 +83,8 @@ slots; gear runs 5 for 2 on each side.
 | `sim/pathfind.ts` | A* on the tile grid. |
 | `sim/stats.ts` | Items → combat numbers, through `computeStat`. |
 | `sim/run.ts` | The tick loop: movement, aggro, combat. Deterministic. |
+| `sim/skills.ts` | Skill delivery registry. **The combat extension point.** |
+| `sim/character.ts` | Level, XP, and what persists between runs. |
 | `sim/loadout.ts` | Placeholder starter gear until equipment exists. |
 | `render/` | Renderer interface + a placeholder canvas implementation. |
 | `ui/` | The two views: crafting bench and run. |
@@ -106,8 +108,61 @@ Swapping stick figures for sprites means writing a second implementation of
 `Renderer` and changing one line in `ui/run.ts`.
 
 `npm run demo` prints the tier ladder — which crystal tiers the starter gear
-clears and where it dies. That gap is the reason to craft; if it never loses,
-gear doesn't matter yet.
+clears and where it dies, averaged over several seeds. That gap is the reason
+to craft; if it never loses, gear doesn't matter yet.
+
+It also prints a **termination check**. A run that never ends is the worst bug
+this thing can have — it looks exactly like a hero standing still, and it has
+happened three separate times (a corridor carved with only one leg, a
+fractional exit tile the hero could never quite stand on, and a target on the
+aggro boundary chased in circles). Assert on it, always.
+
+## Adding a skill
+
+Same shape as adding a currency. Most of the time, no code — add an entry to
+`SKILLS` in `data.ts`:
+
+```ts
+{
+  id: 'chain_lightning',
+  name: 'Chain Lightning',
+  description: 'Arcs to nearby enemies, weakening with each jump.',
+  tags: ['spell', 'chain'],
+  behaviour: 'chain',
+  damageTypes: ['lightning'],
+  damageMultiplier: 0.8,
+  rateMultiplier: 0.9,
+  range: 7,
+  params: { chains: 3, chainRange: 5, falloff: 0.7 },
+}
+```
+
+`behaviour` names an entry in `SKILL_BEHAVIOURS` (`sim/skills.ts`), which
+decides **who gets hit**. The sim decides what a hit *does* — crit, armour,
+death, XP — so a behaviour is usually a few lines of targeting:
+
+- `chain` — hit the primary, then the nearest unhit enemy within
+  `chainRange`, `chains` times, multiplier decaying by `falloff`.
+- `ground_slam` — hit everything within `params.radius` of the user.
+- `projectile` — fire `params.count` lines at the primary, hitting the first
+  enemy each meets.
+
+You only write code when you invent a genuinely new *kind* of delivery.
+
+**`tags` vs `damageTypes` matters.** Tags feed the modifier engine, so
+`['attack','melee']` picks up "increased Melee Damage" for free. Damage types
+are separate so that "increased Physical Damage" can't leak onto a skill's
+fire damage — each type is resolved in its own pass with the skill's tags
+riding along. Never put a damage type in `tags`.
+
+## Levelling
+
+XP comes off kills, scaled by crystal tier, and the curve lives in `LEVELLING`
+in `data.ts`. Levels grant flat life and damage.
+
+Stats resolve once when a run starts, so a level gained mid-run applies from
+the next one. That's deliberate — recomputing the hero's stats halfway through
+a fight would make the replay a lie about what the sim actually did.
 
 ## Adding a currency
 
@@ -177,6 +232,11 @@ several times. That oscillation is the endgame rhythm.
 - The hero's gear is a seeded starter set. The bench bridges into it (a crystal
   becomes the map, a piece of gear replaces the starter item of the same base),
   but that's wiring, not an equipment system.
+- **A boss.** "Clear all" means every monster, then the exit — there is no boss
+  fight at the end yet, and `simulateRun`'s `killBoss` flag is part of the old
+  stub, not the sim.
+- Only one skill exists (`strike`). The registry that makes more of them cheap
+  is in place; the skills themselves are not.
 - Trade, stash, passive tree, behavior scripts.
 - Unique items — a base with a fixed mod list and `meta.unique`.
 

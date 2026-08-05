@@ -1,0 +1,6 @@
+# docs/app.js is a committed build artifact. esbuild writes LF; git on Windows
+# would otherwise check it out as CRLF, so every rebuild shows as a diff and
+# two machines produce conflicting bundles from identical source.
+#
+# Normalising the working tree to LF makes the build reproducible everywhere.
+* text=auto eol=lf

@@ -1,4 +1,4 @@
-import type { CurrencyDef, ModDef, Recipe } from './types';
+import type { CurrencyDef, ModDef, Recipe, SkillDef } from './types';
 
 // ===========================================================================
 // SLOT LAYOUTS
@@ -447,6 +447,54 @@ export const MONSTER_BASE = {
  * and loses badly around T6 — that gap is the reason to craft.
  */
 export const MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
+
+/** What each level is worth, and how much XP a level costs. */
+export const LEVELLING = {
+  lifePerLevel: 14,
+  damagePerLevel: 1.6,
+  /** XP from one tier-1 monster. */
+  perMonster: 8,
+  tierScale: 1.6,
+  /**
+   * xpToNext(level) = curveBase * level ^ curveExponent
+   *
+   * Tuned so a first cleared T1 map is worth roughly two levels and the curve
+   * outruns a single run quickly after that. Higher tiers pay far more per
+   * monster, so climbing tiers — not grinding T1 — is what levels you.
+   */
+  curveBase: 260,
+  curveExponent: 1.8,
+};
+
+// ===========================================================================
+// SKILLS
+//
+// Adding a skill is normally a data entry here naming a behaviour from
+// SKILL_BEHAVIOURS in sim/skills.ts — same deal as currencies and effects.
+//
+// `tags` feed the modifier engine, so a skill tagged ['attack','melee'] picks
+// up "increased Melee Damage" with no special-casing. Damage types belong in
+// `damageTypes`, NOT in tags, or "increased Physical Damage" would leak onto
+// a skill's fire damage.
+// ===========================================================================
+
+export const SKILLS: SkillDef[] = [
+  {
+    id: 'strike',
+    name: 'Strike',
+    description: 'A single melee hit. No frills, always available.',
+    tags: ['attack', 'melee'],
+    behaviour: 'single_target',
+    damageTypes: ['physical'],
+    damageMultiplier: 1,
+    rateMultiplier: 1,
+    range: HERO_BASE.attackRange,
+  },
+];
+
+export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(
+  SKILLS.map((s) => [s.id, s])
+);
 
 export const RECIPES: Recipe[] = [
   ...CRYSTAL_TIERS.map((t) => ({

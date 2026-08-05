@@ -167,6 +167,31 @@ assert(/^0\/\d+$/.test(killed), 'run readout initialised', killed);
 assert(Number(killed.split('/')[1]) > 0, 'the map spawned monsters', killed);
 assert(/^\d+$/.test(text('run-seed')), 'run seed is displayed', text('run-seed'));
 
+// --- levelling and skills --------------------------------------------------
+assert(text('run-level') === '1', 'character starts at level 1', text('run-level'));
+assert(/^0 \/ \d+$/.test(text('run-xp-text')), 'xp bar initialised', text('run-xp-text'));
+assert(
+  Number(text('run-xp-text').split('/')[1]) > 0,
+  'levelling curve returns a real requirement',
+  text('run-xp-text')
+);
+
+const skillChips = $('run-skills').querySelectorAll('button');
+assert(skillChips.length >= 1, 'skill list rendered from SKILLS data');
+assert(
+  [...skillChips].some((b) => b.classList.contains('chip--on')),
+  'a skill is selected'
+);
+
+// --- clear-all toggle ------------------------------------------------------
+const clearBtn = $('run-clearall');
+assert(clearBtn.getAttribute('aria-pressed') === 'false', 'clear-all starts off');
+clearBtn.click();
+assert(clearBtn.getAttribute('aria-pressed') === 'true', 'clear-all toggles on');
+assert(clearBtn.classList.contains('chip--on'), 'clear-all shows as active');
+clearBtn.click();
+assert(clearBtn.getAttribute('aria-pressed') === 'false', 'clear-all toggles back off');
+
 $('tab-bench').click();
 assert($('view-bench').hidden === false, 'switching back restores the bench');
 

@@ -800,6 +800,38 @@
     aggroRange: 8
   };
   var MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
+  var LEVELLING = {
+    lifePerLevel: 14,
+    damagePerLevel: 1.6,
+    /** XP from one tier-1 monster. */
+    perMonster: 8,
+    tierScale: 1.6,
+    /**
+     * xpToNext(level) = curveBase * level ^ curveExponent
+     *
+     * Tuned so a first cleared T1 map is worth roughly two levels and the curve
+     * outruns a single run quickly after that. Higher tiers pay far more per
+     * monster, so climbing tiers — not grinding T1 — is what levels you.
+     */
+    curveBase: 260,
+    curveExponent: 1.8
+  };
+  var SKILLS = [
+    {
+      id: "strike",
+      name: "Strike",
+      description: "A single melee hit. No frills, always available.",
+      tags: ["attack", "melee"],
+      behaviour: "single_target",
+      damageTypes: ["physical"],
+      damageMultiplier: 1,
+      rateMultiplier: 1,
+      range: HERO_BASE.attackRange
+    }
+  ];
+  var SKILL_BY_ID = Object.fromEntries(
+    SKILLS.map((s) => [s.id, s])
+  );
   var RECIPES = [
     ...CRYSTAL_TIERS.map((t) => ({
       id: `crystal_t${t.tier}`,
@@ -1311,29 +1343,41 @@
   }
 
   // src/sim/stats.ts
-  var DAMAGE_TYPES = ["physical", "fire", "cold"];
-  function damageFrom(mods, weaponBase) {
+  var DAMAGE_TYPES = ["physical", "fire", "cold", "lightning"];
+  function skillDamage(mods, base, skill) {
     let total = 0;
     for (const type of DAMAGE_TYPES) {
-      const base = type === "physical" ? weaponBase : 0;
-      total += computeStat(base, mods, "damage", [type]);
+      const typeBase = skill.damageTypes.includes(type) ? base : 0;
+      total += computeStat(typeBase, mods, "damage", [...skill.tags, type]);
     }
-    return total;
+    return total * skill.damageMultiplier;
   }
-  function heroStats(equipped) {
+  function baseFor(level) {
+    const steps = Math.max(0, level - 1);
+    return {
+      life: HERO_BASE.life + steps * LEVELLING.lifePerLevel,
+      weaponDamage: HERO_BASE.weaponDamage + steps * LEVELLING.damagePerLevel
+    };
+  }
+  function heroStats(equipped, level, skill) {
     const mods = equipped.flatMap((item2) => item2.mods);
-    const maxLife = computeStat(HERO_BASE.life, mods, "life");
+    const base = baseFor(level);
+    const maxLife = computeStat(base.life, mods, "life");
     return {
       maxLife,
       lifeRegen: maxLife * HERO_BASE.lifeRegenPercent / 100,
-      damage: damageFrom(mods, HERO_BASE.weaponDamage),
-      attacksPerSecond: computeStat(HERO_BASE.attacksPerSecond, mods, "attackSpeed"),
+      damage: skillDamage(mods, base.weaponDamage, skill),
+      attacksPerSecond: computeStat(HERO_BASE.attacksPerSecond, mods, "attackSpeed") * skill.rateMultiplier,
       critChance: computeStat(HERO_BASE.critChance, mods, "critChance"),
       moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, "moveSpeed"),
       armour: computeStat(HERO_BASE.armour, mods, "armour"),
-      attackRange: HERO_BASE.attackRange,
+      attackRange: skill.range,
       aggroRange: HERO_BASE.aggroRange
     };
+  }
+  function characterStats(character2) {
+    const skill = SKILL_BY_ID[character2.skillId] ?? SKILLS[0];
+    return heroStats(character2.equipped, character2.level, skill);
   }
   function monsterStats(crystal, tier) {
     const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1);
@@ -1357,19 +1401,65 @@
     };
   }
 
+  // src/sim/skills.ts
+  var SKILL_BEHAVIOURS = {
+    /** One target, full damage. The floor every other behaviour builds on. */
+    single_target: (use2) => {
+      use2.hit(use2.primary, 1);
+    }
+  };
+
+  // src/sim/character.ts
+  function makeCharacter(equipped, skillId) {
+    return { level: 1, xp: 0, equipped, skillId };
+  }
+  function xpToNext(level) {
+    return Math.round(LEVELLING.curveBase * Math.pow(level, LEVELLING.curveExponent));
+  }
+  function monsterXp(tier) {
+    return Math.max(1, Math.round(LEVELLING.perMonster * Math.pow(LEVELLING.tierScale, tier - 1)));
+  }
+  function addXp(character2, amount) {
+    if (amount <= 0) return 0;
+    character2.xp += amount;
+    let gained = 0;
+    while (character2.xp >= xpToNext(character2.level)) {
+      character2.xp -= xpToNext(character2.level);
+      character2.level++;
+      gained++;
+    }
+    return gained;
+  }
+
   // src/sim/run.ts
   var TICK = 1 / 30;
   var ACTIVE_RANGE = 16;
+  var ACQUIRE_PATH_LIMIT = 2.5;
+  var IGNORE_SECONDS = 5;
   var FLOATER_LIFE = 1.1;
   var RunSim = class {
     state;
     rng;
+    options;
+    skill;
     events = [];
     nextId = 1;
-    constructor(crystal, equipped, rng2) {
+    /** XP one monster on this map is worth, fixed by crystal tier at spawn. */
+    xpPerKill = 1;
+    /**
+     * Monsters not worth pursuing right now, mapped to the time they may be
+     * reconsidered. Temporary rather than permanent, so a monster dismissed as
+     * too far can still be fought when the hero later walks past it — otherwise
+     * it could stand there hitting a hero that refuses to hit back.
+     */
+    ignoreUntil = /* @__PURE__ */ new Map();
+    byId = /* @__PURE__ */ new Map();
+    constructor(crystal, character2, rng2, options = {}) {
       this.rng = rng2;
+      this.options = options;
+      this.skill = SKILL_BY_ID[character2.skillId] ?? SKILLS[0];
       const map = generateMap(crystal, rng2);
-      const stats = heroStats(equipped);
+      const stats = characterStats(character2);
       const hero = {
         id: 0,
         kind: "hero",
@@ -1380,11 +1470,13 @@
         cooldown: 0,
         path: [],
         pathTimer: 0,
+        targetId: null,
         aggroed: false,
         hitFlash: 0,
         dead: false
       };
       const monsters = this.spawn(crystal, map);
+      this.byId = new Map(monsters.map((m) => [m.id, m]));
       this.state = {
         map,
         hero,
@@ -1393,7 +1485,8 @@
         elapsed: 0,
         status: "running",
         killed: 0,
-        totalMonsters: monsters.length
+        totalMonsters: monsters.length,
+        xpGained: 0
       };
     }
     /** Packs land in rooms other than the entrance, so you always get a moment
@@ -1402,6 +1495,7 @@
       const tier = crystal.meta.tier ?? 1;
       const stats = monsterStats(crystal, tier);
       const { packCount, packSize } = mapDensity(crystal);
+      this.xpPerKill = monsterXp(tier);
       const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
       const monsters = [];
       for (let p = 0; p < packCount; p++) {
@@ -1417,6 +1511,7 @@
             cooldown: this.rng.float(0, 1),
             path: [],
             pathTimer: 0,
+            targetId: null,
             aggroed: false,
             hitFlash: 0,
             dead: false
@@ -1456,14 +1551,16 @@
       if (hero.life < hero.stats.maxLife) {
         hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
       }
-      const target = this.nearestMonster(hero, hero.stats.aggroRange);
+      const target = this.acquireTarget(hero);
       if (target) {
         const d = dist(hero, target);
         if (d <= hero.stats.attackRange) {
           hero.path = [];
-          if (hero.cooldown <= 0) this.attack(hero, target);
-        } else {
-          this.advance(hero, target, dt);
+          if (hero.cooldown <= 0) this.useSkill(hero, target);
+        } else if (!this.advance(hero, target, dt)) {
+          this.ignore(target.id);
+          hero.targetId = null;
+          hero.path = [];
         }
         return;
       }
@@ -1488,16 +1585,52 @@
       if (!m.aggroed) return;
       if (d <= m.stats.attackRange) {
         m.path = [];
-        if (m.cooldown <= 0) this.attack(m, hero);
+        if (m.cooldown <= 0) {
+          this.dealDamage(m, hero, 1);
+          m.cooldown = 1 / m.stats.attacksPerSecond;
+        }
         return;
       }
       this.advance(m, hero, dt);
+    }
+    isIgnored(id) {
+      return (this.ignoreUntil.get(id) ?? -1) > this.state.elapsed;
+    }
+    ignore(id) {
+      this.ignoreUntil.set(id, this.state.elapsed + IGNORE_SECONDS);
+    }
+    /**
+     * Hold the committed target until it dies; otherwise look for a new one.
+     *
+     * Normally the hero only fights what comes within aggro range. With
+     * clearAll it hunts across the whole map instead — the difference between a
+     * fast run and a thorough one.
+     */
+    acquireTarget(hero) {
+      if (hero.targetId !== null) {
+        const held = this.byId.get(hero.targetId);
+        if (held && !held.dead) return held;
+        hero.targetId = null;
+        hero.path = [];
+      }
+      const candidate = this.nearestMonster(hero, hero.stats.aggroRange) ?? (this.options.clearAll ? this.nearestMonster(hero, Infinity) : null);
+      if (!candidate) return null;
+      const path = findPath(this.state.map.grid, hero, candidate);
+      const limit = this.options.clearAll ? Infinity : hero.stats.aggroRange * ACQUIRE_PATH_LIMIT;
+      if (path.length === 0 || path.length > limit) {
+        this.ignore(candidate.id);
+        return null;
+      }
+      hero.targetId = candidate.id;
+      hero.path = path;
+      hero.pathTimer = 0.4;
+      return candidate;
     }
     nearestMonster(from, range) {
       let best = null;
       let bestDist = range;
       for (const m of this.state.monsters) {
-        if (m.dead) continue;
+        if (m.dead || this.isIgnored(m.id)) continue;
         const d = dist(from, m);
         if (d <= bestDist) {
           bestDist = d;
@@ -1506,13 +1639,19 @@
       }
       return best;
     }
-    /** Walk along a cached path, repathing on a stagger so a whole pack never
-     *  recomputes on the same tick. */
+    /**
+     * Walk along a cached path, repathing on a stagger so a whole pack never
+     * recomputes on the same tick.
+     *
+     * Returns false when there is no route to the goal, which callers treat as
+     * "pick something else" rather than looping forever.
+     */
     advance(e, goal, dt) {
       e.pathTimer -= dt;
       if (e.path.length === 0 || e.pathTimer <= 0) {
         e.path = findPath(this.state.map.grid, e, goal);
         e.pathTimer = 0.4 + this.rng.float(0, 0.25);
+        if (e.path.length === 0) return false;
       }
       let remaining = e.stats.moveSpeed * dt;
       while (remaining > 0 && e.path.length > 0) {
@@ -1535,18 +1674,36 @@
           remaining = 0;
         }
       }
+      return true;
     }
-    attack(attacker, defender) {
+    /**
+     * Use the character's skill. The behaviour decides WHO gets hit; the sim
+     * decides what a hit does. Adding chain lightning or a ground slam means
+     * adding a behaviour, not touching this method.
+     */
+    useSkill(user, primary) {
+      const behaviour = SKILL_BEHAVIOURS[this.skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
+      behaviour({
+        skill: this.skill,
+        user,
+        primary,
+        enemies: this.state.monsters.filter((m) => !m.dead),
+        rng: this.rng,
+        hit: (target, multiplier) => this.dealDamage(user, target, multiplier)
+      });
+      user.cooldown = 1 / user.stats.attacksPerSecond;
+    }
+    dealDamage(attacker, defender, multiplier) {
       const s = this.state;
+      if (defender.dead) return;
       const crit = attacker.stats.critChance > 0 && this.rng.chance(attacker.stats.critChance / 100);
-      let dmg = attacker.stats.damage * this.rng.float(0.9, 1.1);
+      let dmg = attacker.stats.damage * multiplier * this.rng.float(0.9, 1.1);
       if (crit) dmg *= 2;
       const armour = defender.stats.armour;
       if (armour > 0) dmg *= 1 - armour / (armour + 12 * dmg);
       dmg = Math.max(1, dmg);
       defender.life -= dmg;
       defender.hitFlash = 0.18;
-      attacker.cooldown = 1 / attacker.stats.attacksPerSecond;
       s.floaters.push({
         x: defender.x,
         y: defender.y,
@@ -1570,7 +1727,8 @@
         return;
       }
       s.killed++;
-      this.events.push({ kind: "kill", total: s.killed });
+      s.xpGained += this.xpPerKill;
+      this.events.push({ kind: "kill", total: s.killed, xp: this.xpPerKill });
     }
   };
 
@@ -1775,8 +1933,12 @@
   var log2 = [];
   var crystalLabel = "\u2014";
   var gearLabel = "\u2014";
+  var clearAll = false;
+  var appliedXp = 0;
+  var character = makeCharacter(starterLoadout(new Rng(1)), "strike");
   function buildSim() {
     seed2 = Math.floor(Math.random() * 1e9);
+    appliedXp = 0;
     const bench = currentItem();
     const crystal = bench.kind === "crystal" ? bench : makeCrystal(3);
     crystalLabel = `${crystal.name}${crystal.mods.length ? "" : " (unmodded)"}`;
@@ -1789,12 +1951,13 @@
     } else {
       gearLabel = "starter set";
     }
-    const built = new RunSim(crystal, loadout, new Rng(seed2));
-    renderStatsPanel(loadout);
+    character.equipped = loadout;
+    const built = new RunSim(crystal, character, new Rng(seed2), { clearAll });
+    renderStatsPanel();
     return built;
   }
-  function renderStatsPanel(loadout) {
-    const s = heroStats(loadout);
+  function renderStatsPanel() {
+    const s = characterStats(character);
     const host = $2("run-stats");
     host.replaceChildren();
     const rows = [
@@ -1834,6 +1997,11 @@
     $2("run-killed").textContent = `${s.killed}/${s.totalMonsters}`;
     $2("run-seed").textContent = String(seed2);
     $2("run-source").textContent = `${crystalLabel} \xB7 ${gearLabel}`;
+    $2("run-xp-gained").textContent = String(s.xpGained);
+    const need = xpToNext(character.level);
+    $2("run-level").textContent = String(character.level);
+    $2("run-xp-text").textContent = `${character.xp} / ${need}`;
+    $2("run-xp-fill").style.width = `${Math.min(100, character.xp / need * 100)}%`;
     const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
     $2("run-hp-fill").style.width = `${frac * 100}%`;
     $2("run-hp-text").textContent = `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
@@ -1843,6 +2011,14 @@
   }
   function absorbEvents() {
     if (!sim) return;
+    const delta = sim.state.xpGained - appliedXp;
+    if (delta > 0) {
+      appliedXp = sim.state.xpGained;
+      const levels = addXp(character, delta);
+      if (levels > 0) {
+        note(`Level ${character.level}${levels > 1 ? ` (+${levels})` : ""}`, "add");
+      }
+    }
     let kills = 0;
     for (const e of sim.drainEvents()) {
       if (e.kind === "kill") kills++;
@@ -1899,6 +2075,23 @@
     const height = Math.max(320, Math.round(width * 0.66));
     renderer?.resize(width, height);
   }
+  function renderSkills() {
+    const host = $2("run-skills");
+    host.replaceChildren();
+    for (const skill of SKILLS) {
+      const btn = el2("button", "chip", skill.name);
+      btn.title = skill.description;
+      if (skill.id === character.skillId) btn.classList.add("chip--on");
+      btn.onclick = () => {
+        character.skillId = skill.id;
+        renderSkills();
+        renderStatsPanel();
+        note(`Skill: ${skill.name} \u2014 applies next run`, "note");
+        renderLog2();
+      };
+      host.append(btn);
+    }
+  }
   function initRun() {
     const canvas = $2("run-canvas");
     renderer = createCanvasRenderer(canvas, readPalette(document.documentElement));
@@ -1911,6 +2104,14 @@
       setStartLabel();
     };
     $2("run-new").onclick = () => newRun();
+    const clearBtn = $2("run-clearall");
+    clearBtn.onclick = () => {
+      clearAll = !clearAll;
+      clearBtn.classList.toggle("chip--on", clearAll);
+      clearBtn.setAttribute("aria-pressed", String(clearAll));
+      note(`Clear all: ${clearAll ? "on" : "off"} \u2014 applies next run`, "note");
+      renderLog2();
+    };
     for (const mult of [1, 2, 4]) {
       const btn = $2(`run-speed-${mult}`);
       btn.onclick = () => {
@@ -1922,6 +2123,7 @@
     }
     $2("run-speed-1").classList.add("chip--on");
     globalThis.addEventListener("resize", fitCanvas);
+    renderSkills();
     sim = buildSim();
     fitCanvas();
     renderLog2();

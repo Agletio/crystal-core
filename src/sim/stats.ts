@@ -7,8 +7,16 @@
  * months" — this is where that would show up.
  */
 import { computeStat } from '../mods';
-import { HERO_BASE, MONSTER_BASE, MONSTER_TIER_SCALE } from '../data';
-import type { Item, RolledMod } from '../types';
+import {
+  HERO_BASE,
+  LEVELLING,
+  MONSTER_BASE,
+  MONSTER_TIER_SCALE,
+  SKILLS,
+  SKILL_BY_ID,
+} from '../data';
+import type { Character } from './character';
+import type { Item, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -25,40 +33,66 @@ export interface CombatStats {
 }
 
 /**
+ * Every damage type the engine knows about. A skill's base damage lands on
+ * the types it declares; the rest start at zero, so an unmodded character
+ * deals no fire damage rather than a phantom amount.
+ */
+const DAMAGE_TYPES = ['physical', 'fire', 'cold', 'lightning'] as const;
+
+/**
  * Damage types are resolved separately and summed.
  *
  * This is what makes tagged mods work without special-casing: a stat line
- * applies only if all of ITS tags are in the context, so "+12 fire damage"
- * (tags ['fire']) contributes only to the fire pass, while an untagged
- * "+40% increased damage" has no tags and therefore applies to every pass.
- * Only physical carries the weapon's base — the others start at zero, so an
- * unmodded character deals no fire damage rather than a phantom amount.
+ * applies only if all of ITS tags are in the context. So in the fire pass the
+ * context is [...skillTags, 'fire'] — "+12 fire damage" (tags ['fire'])
+ * applies, "increased Physical Damage" (tags ['physical']) does not, and an
+ * untagged "+40% increased damage" applies to every pass because it has no
+ * tags to satisfy.
+ *
+ * The skill's own tags ride along in every pass, which is how "increased
+ * Melee Damage" finds a melee skill for free.
  */
-const DAMAGE_TYPES = ['physical', 'fire', 'cold'] as const;
-
-export function damageFrom(mods: RolledMod[], weaponBase: number): number {
+export function skillDamage(mods: RolledMod[], base: number, skill: SkillDef): number {
   let total = 0;
   for (const type of DAMAGE_TYPES) {
-    const base = type === 'physical' ? weaponBase : 0;
-    total += computeStat(base, mods, 'damage', [type]);
+    const typeBase = skill.damageTypes.includes(type) ? base : 0;
+    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type]);
   }
-  return total;
+  return total * skill.damageMultiplier;
 }
 
-export function heroStats(equipped: Item[]): CombatStats {
+/** Base life and weapon damage before gear, after levelling. */
+function baseFor(level: number): { life: number; weaponDamage: number } {
+  const steps = Math.max(0, level - 1);
+  return {
+    life: HERO_BASE.life + steps * LEVELLING.lifePerLevel,
+    weaponDamage: HERO_BASE.weaponDamage + steps * LEVELLING.damagePerLevel,
+  };
+}
+
+export function heroStats(equipped: Item[], level: number, skill: SkillDef): CombatStats {
   const mods = equipped.flatMap((item) => item.mods);
-  const maxLife = computeStat(HERO_BASE.life, mods, 'life');
+  const base = baseFor(level);
+  const maxLife = computeStat(base.life, mods, 'life');
+
   return {
     maxLife,
     lifeRegen: (maxLife * HERO_BASE.lifeRegenPercent) / 100,
-    damage: damageFrom(mods, HERO_BASE.weaponDamage),
-    attacksPerSecond: computeStat(HERO_BASE.attacksPerSecond, mods, 'attackSpeed'),
+    damage: skillDamage(mods, base.weaponDamage, skill),
+    attacksPerSecond:
+      computeStat(HERO_BASE.attacksPerSecond, mods, 'attackSpeed') * skill.rateMultiplier,
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
-    attackRange: HERO_BASE.attackRange,
+    attackRange: skill.range,
     aggroRange: HERO_BASE.aggroRange,
   };
+}
+
+/** Stats for a character, resolving its selected skill. */
+export function characterStats(character: Character): CombatStats {
+  const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  return heroStats(character.equipped, character.level, skill);
 }
 
 /** Monsters read their stats off the CRYSTAL's mods — same aggregation, other side. */

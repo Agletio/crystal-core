@@ -12,7 +12,8 @@ import {
   simulateRun,
 } from './economy';
 import { RunSim, runToCompletion } from './sim/run';
-import { heroStats } from './sim/stats';
+import { characterStats } from './sim/stats';
+import { makeCharacter, xpToNext } from './sim/character';
 import { starterLoadout } from './sim/loadout';
 import type { Item, Wallet } from './types';
 
@@ -95,16 +96,17 @@ rule('AN ACTUAL RUN — headless, no browser');
     pool,
     rng
   ).item;
-  const gear = starterLoadout(new Rng(7));
-  const stats = heroStats(gear);
+  const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
+  const stats = characterStats(hero);
 
   line(`Crystal: ${mapCrystal.mods.map((m) => m.name).join(', ')}`);
   line(
-    `Hero:    ${Math.round(stats.maxLife)} life · ${Math.round(stats.damage)} dmg · ` +
-      `${stats.attacksPerSecond.toFixed(2)}/s · ${Math.round(stats.critChance)}% crit`
+    `Hero:    level ${hero.level} · ${Math.round(stats.maxLife)} life · ` +
+      `${Math.round(stats.damage)} dmg · ${stats.attacksPerSecond.toFixed(2)}/s · ` +
+      `${Math.round(stats.critChance)}% crit`
   );
 
-  const sim = new RunSim(mapCrystal, gear, new Rng(4242));
+  const sim = new RunSim(mapCrystal, hero, new Rng(4242));
   const { grid } = sim.state.map;
   line(
     `Map:     ${grid.width}x${grid.height}, ${sim.state.map.rooms.length} rooms, ` +
@@ -116,34 +118,119 @@ rule('AN ACTUAL RUN — headless, no browser');
   line(
     `Result:  ${final.status} in ${final.elapsed.toFixed(1)}s — ` +
       `${final.killed}/${final.totalMonsters} killed, ` +
-      `${Math.max(0, Math.round(final.hero.life))} life left`
+      `${Math.max(0, Math.round(final.hero.life))} life left, ` +
+      `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
   );
+}
+
+// ===========================================================================
+rule('CLEAR ALL — thoroughness costs time');
+
+{
+  line('  mode          result     time   killed        xp');
+  for (const clearAll of [false, true]) {
+    const c = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
+    const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
+    const sim = new RunSim(c, hero, new Rng(31337), { clearAll });
+    const total = sim.state.totalMonsters;
+    const f = runToCompletion(sim);
+
+    line(
+      `  ${(clearAll ? 'clear all' : 'rush exit').padEnd(12)}  ${f.status.padEnd(8)} ` +
+        `${f.elapsed.toFixed(0).padStart(5)}s   ${String(f.killed).padStart(3)}/${total}   ` +
+        `${String(f.xpGained).padStart(7)}`
+    );
+  }
 }
 
 // ===========================================================================
 rule('TIER LADDER — where does starter gear fall over?');
 
-line('  tier   monsters   result     time   killed   life left');
-for (const t of CRYSTAL_TIERS) {
-  const mapCrystal = craft(
-    makeCrystal(t.tier),
-    CURRENCY_BY_ID.shard_of_awakening,
-    pool,
-    rng
-  ).item;
-  const sim = new RunSim(mapCrystal, starterLoadout(new Rng(7)), new Rng(900 + t.tier));
-  const total = sim.state.totalMonsters;
-  const f = runToCompletion(sim, 400);
+// Several seeds per tier — one run per tier is far too noisy to tune against,
+// and a ladder you can't trust is worse than no ladder.
+const LADDER_SEEDS = [3, 17, 41, 58, 90];
 
+line('  tier   cleared   avg time   avg killed   avg life left');
+for (const t of CRYSTAL_TIERS) {
+  let cleared = 0;
+  let time = 0;
+  let killed = 0;
+  let life = 0;
+
+  for (const seed of LADDER_SEEDS) {
+    const mapCrystal = craft(
+      makeCrystal(t.tier),
+      CURRENCY_BY_ID.shard_of_awakening,
+      pool,
+      rng
+    ).item;
+    const sim = new RunSim(
+      mapCrystal,
+      makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+      new Rng(900 + seed * 7 + t.tier)
+    );
+    const f = runToCompletion(sim, 400);
+
+    if (f.status === 'cleared') cleared++;
+    time += f.elapsed;
+    killed += f.killed;
+    life += Math.max(0, f.hero.life);
+  }
+
+  const n = LADDER_SEEDS.length;
   line(
-    `   T${t.tier}   ${String(total).padStart(8)}   ${f.status.padEnd(8)} ` +
-      `${f.elapsed.toFixed(0).padStart(5)}s   ${String(f.killed).padStart(6)}   ` +
-      `${String(Math.max(0, Math.round(f.hero.life))).padStart(9)}`
+    `   T${t.tier}   ${`${cleared}/${n}`.padStart(7)}   ` +
+      `${(time / n).toFixed(0).padStart(7)}s   ` +
+      `${(killed / n).toFixed(0).padStart(10)}   ` +
+      `${(life / n).toFixed(0).padStart(13)}`
   );
 }
 line();
-line('Starter gear should walk T1-T3 and lose somewhere above it. That gap is');
-line('the reason to craft — if it never loses, gear does not matter yet.');
+line('Starter gear: safe at T1-T2, a coin flip at T3-T4, hopeless above that.');
+line('Gear is what moves that line up. If it never loses, gear does not matter');
+line('yet, and if it never wins the early game is unplayable — watch both ends.');
+
+// ===========================================================================
+rule('TERMINATION CHECK — does every run actually end?');
+
+// Worth its own check because this failure mode has bitten three times now
+// (a corridor that carved only one leg, a fractional exit the hero could
+// never quite stand on, and a target on the aggro boundary it chased in
+// circles). All three looked identical from outside: a hero standing still
+// forever at full life. A run that does not end is the worst bug this thing
+// can have, and it is invisible unless you assert on it.
+{
+  let checked = 0;
+  const stuck: string[] = [];
+
+  for (const t of CRYSTAL_TIERS) {
+    for (const clearAll of [false, true]) {
+      for (const seed of [11, 29]) {
+        const c = craft(
+          makeCrystal(t.tier),
+          CURRENCY_BY_ID.shard_of_awakening,
+          pool,
+          rng
+        ).item;
+        const sim = new RunSim(
+          c,
+          makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+          new Rng(seed * 31 + t.tier),
+          { clearAll }
+        );
+        const f = runToCompletion(sim, 400);
+        checked++;
+        if (f.status === 'running') {
+          stuck.push(`T${t.tier} seed ${seed} clearAll=${clearAll}`);
+        }
+      }
+    }
+  }
+
+  line(`  ${checked} runs, ${stuck.length} that never ended`);
+  for (const s of stuck) line(`   ✗ ${s}`);
+  line(stuck.length === 0 ? '  ✓ all runs terminated' : '  ✗ TERMINATION REGRESSION');
+}
 
 // ===========================================================================
 rule('SUSTAIN CHECK — is reinvestment under 1.0?');

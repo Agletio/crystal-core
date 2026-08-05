@@ -8,8 +8,11 @@
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent } from '../sim/run';
-import { heroStats } from '../sim/stats';
+import { characterStats } from '../sim/stats';
+import { addXp, makeCharacter, xpToNext } from '../sim/character';
+import type { Character } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
+import { SKILLS } from '../data';
 import { makeCrystal } from '../economy';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { readPalette } from '../render/renderer';
@@ -36,6 +39,16 @@ let seed = 0;
 let log: Array<{ text: string; kind: string }> = [];
 let crystalLabel = '—';
 let gearLabel = '—';
+let clearAll = false;
+/** XP already banked from the current run, so we only apply the delta. */
+let appliedXp = 0;
+
+/**
+ * The character persists across runs — this is the only state on this page
+ * that survives pressing New run. Levels earned apply from the NEXT run,
+ * since stats are resolved once at spawn.
+ */
+const character: Character = makeCharacter(starterLoadout(new Rng(1)), 'strike');
 
 /**
  * Builds the run from whatever is on the bench.
@@ -47,6 +60,7 @@ let gearLabel = '—';
  */
 function buildSim(): RunSim {
   seed = Math.floor(Math.random() * 1e9);
+  appliedXp = 0;
   const bench = currentItem();
 
   const crystal: Item = bench.kind === 'crystal' ? bench : makeCrystal(3);
@@ -61,14 +75,15 @@ function buildSim(): RunSim {
   } else {
     gearLabel = 'starter set';
   }
+  character.equipped = loadout;
 
-  const built = new RunSim(crystal, loadout, new Rng(seed));
-  renderStatsPanel(loadout);
+  const built = new RunSim(crystal, character, new Rng(seed), { clearAll });
+  renderStatsPanel();
   return built;
 }
 
-function renderStatsPanel(loadout: Item[]): void {
-  const s = heroStats(loadout);
+function renderStatsPanel(): void {
+  const s = characterStats(character);
   const host = $('run-stats');
   host.replaceChildren();
 
@@ -114,6 +129,13 @@ function renderReadout(): void {
   $('run-killed').textContent = `${s.killed}/${s.totalMonsters}`;
   $('run-seed').textContent = String(seed);
   $('run-source').textContent = `${crystalLabel} · ${gearLabel}`;
+  $('run-xp-gained').textContent = String(s.xpGained);
+
+  const need = xpToNext(character.level);
+  $('run-level').textContent = String(character.level);
+  $('run-xp-text').textContent = `${character.xp} / ${need}`;
+  ($('run-xp-fill') as HTMLElement).style.width =
+    `${Math.min(100, (character.xp / need) * 100)}%`;
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
@@ -128,6 +150,20 @@ function renderReadout(): void {
 
 function absorbEvents(): void {
   if (!sim) return;
+
+  // Bank XP as it's earned rather than at the end, so the bar moves while
+  // you watch. Levels gained apply from the next run — stats are resolved
+  // once at spawn and re-deriving them mid-fight would be a lie about what
+  // the sim actually did.
+  const delta = sim.state.xpGained - appliedXp;
+  if (delta > 0) {
+    appliedXp = sim.state.xpGained;
+    const levels = addXp(character, delta);
+    if (levels > 0) {
+      note(`Level ${character.level}${levels > 1 ? ` (+${levels})` : ''}`, 'add');
+    }
+  }
+
   let kills = 0;
   for (const e of sim.drainEvents() as RunEvent[]) {
     if (e.kind === 'kill') kills++;
@@ -193,6 +229,30 @@ function fitCanvas(): void {
   renderer?.resize(width, height);
 }
 
+/**
+ * One chip per authored skill. With a single skill this looks like overkill —
+ * the point is that adding chain lightning to SKILLS makes it appear here with
+ * no UI work.
+ */
+function renderSkills(): void {
+  const host = $('run-skills');
+  host.replaceChildren();
+
+  for (const skill of SKILLS) {
+    const btn = el('button', 'chip', skill.name) as HTMLButtonElement;
+    btn.title = skill.description;
+    if (skill.id === character.skillId) btn.classList.add('chip--on');
+    btn.onclick = () => {
+      character.skillId = skill.id;
+      renderSkills();
+      renderStatsPanel();
+      note(`Skill: ${skill.name} — applies next run`, 'note');
+      renderLog();
+    };
+    host.append(btn);
+  }
+}
+
 export function initRun(): void {
   const canvas = $('run-canvas') as HTMLCanvasElement;
   renderer = createCanvasRenderer(canvas, readPalette(document.documentElement));
@@ -208,6 +268,17 @@ export function initRun(): void {
 
   ($('run-new') as HTMLButtonElement).onclick = () => newRun();
 
+  const clearBtn = $('run-clearall') as HTMLButtonElement;
+  clearBtn.onclick = () => {
+    clearAll = !clearAll;
+    clearBtn.classList.toggle('chip--on', clearAll);
+    clearBtn.setAttribute('aria-pressed', String(clearAll));
+    // Takes effect on the next run — the hero's orders shouldn't change
+    // halfway through something you're watching.
+    note(`Clear all: ${clearAll ? 'on' : 'off'} — applies next run`, 'note');
+    renderLog();
+  };
+
   for (const mult of [1, 2, 4]) {
     const btn = $(`run-speed-${mult}`) as HTMLButtonElement;
     btn.onclick = () => {
@@ -221,6 +292,7 @@ export function initRun(): void {
 
   globalThis.addEventListener('resize', fitCanvas);
 
+  renderSkills();
   sim = buildSim();
   fitCanvas();
   renderLog();

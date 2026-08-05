@@ -163,9 +163,16 @@
   .runbar .spacer { flex: 1 1 auto; }
   .runbar .sub { letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
 
-  .hp { position: relative; height: 20px; background: var(--void); border: 1px solid var(--seam); margin-bottom: 12px; }
+  .hp { position: relative; height: 20px; background: var(--void); border: 1px solid var(--seam); margin-bottom: 8px; }
   .hp__fill { height: 100%; background: var(--verdite); }
   .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--chalk); }
+  .hp--xp { height: 14px; margin-bottom: 14px; }
+  .hp__fill--xp { background: var(--amethyst); }
+  .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
+
+  .levelrow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
+  .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); }
 
   .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
   .stat__k { color: var(--dust); }
@@ -242,6 +249,7 @@
       <button class="chip" id="run-speed-1">1&times;</button>
       <button class="chip" id="run-speed-2">2&times;</button>
       <button class="chip" id="run-speed-4">4&times;</button>
+      <button class="chip" id="run-clearall" aria-pressed="false" title="Hunt every monster before taking the exit">Clear all</button>
       <span class="spacer"></span>
       <span class="run-status" id="run-status">paused</span>
     </div>
@@ -254,11 +262,26 @@
       <div>
         <div class="panel">
           <p class="panel__title">Character</p>
+
+          <div class="levelrow">
+            <span class="levelrow__label">level</span>
+            <span class="levelrow__value" id="run-level">1</span>
+          </div>
+
           <div class="hp">
             <div class="hp__fill" id="run-hp-fill"></div>
             <div class="hp__text" id="run-hp-text">—</div>
           </div>
+
+          <div class="hp hp--xp">
+            <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
+            <div class="hp__text" id="run-xp-text">0 / 0</div>
+          </div>
+
           <div id="run-stats"></div>
+
+          <p class="panel__title" style="margin-top:16px">Skill</p>
+          <div class="bases" id="run-skills"></div>
         </div>
 
         <div class="panel">
@@ -266,6 +289,7 @@
           <div class="readout">
             <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
             <div><span>killed</span><code id="run-killed">0/0</code></div>
+            <div><span>xp earned</span><code id="run-xp-gained">0</code></div>
             <div><span>seed</span><code id="run-seed">0</code></div>
           </div>
           <div class="runsrc" id="run-source">—</div>
