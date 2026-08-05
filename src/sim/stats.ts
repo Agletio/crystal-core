@@ -15,6 +15,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
+import { equippedItems } from './character';
 import type { Character } from './character';
 import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
@@ -91,10 +92,10 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
   };
 }
 
-/** Stats for a character, resolving its selected skill. */
+/** Stats for a character, resolving its selected skill and worn gear. */
 export function characterStats(character: Character): CombatStats {
   const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
-  return heroStats(character.equipped, character.level, skill);
+  return heroStats(equippedItems(character), character.level, skill);
 }
 
 /**

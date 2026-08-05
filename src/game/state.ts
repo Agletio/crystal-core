@@ -9,11 +9,13 @@
  */
 import { Rng } from '../rng';
 import {
+  EQUIP_SLOTS,
   STARTING_CRYSTALS,
   STARTING_CURRENCY,
   STARTING_FRAGMENTS,
   STARTING_GEAR,
 } from '../data';
+import type { EquipSlotDef } from '../types';
 import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
@@ -46,7 +48,7 @@ export function createGame(): GameState {
 
   const inventory: Item[] = [
     ...STARTING_CRYSTALS.map((tier) => makeCrystal(tier)),
-    ...STARTING_GEAR.map((g) => makeGear(g.base, g.ilvl, g.name)),
+    ...STARTING_GEAR.map((g) => makeGear(g.base, g.ilvl)),
   ];
 
   return {
@@ -101,3 +103,48 @@ export function replaceItem(game: GameState, item: Item): void {
 
 export const crystalsIn = (game: GameState): Item[] =>
   game.inventory.filter((i) => i.kind === 'crystal');
+
+/** Which slot type an item fits, if any. */
+export function gearKindOf(item: Item): string | null {
+  if (item.kind !== 'gear') return null;
+  return (item.meta.gearKind as string) ?? null;
+}
+
+export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
+  return gearKindOf(item) === slot.accepts;
+}
+
+/**
+ * Wear an item, returning whatever came off to the inventory.
+ *
+ * Worn items leave the inventory. Unlike the bench — where taking the item
+ * out made crafting look destructive — equipping has somewhere obvious to
+ * show it, so the character sheet IS where that item now lives.
+ */
+export function equipItem(game: GameState, item: Item, slotId: string): boolean {
+  const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
+  if (!slot || !fitsSlot(item, slot)) return false;
+
+  const previous = game.character.equipment[slotId];
+  if (!removeItem(game, item)) return false;
+  if (previous) addItem(game, previous);
+
+  game.character.equipment[slotId] = item;
+  return true;
+}
+
+export function unequipItem(game: GameState, slotId: string): boolean {
+  const worn = game.character.equipment[slotId];
+  if (!worn) return false;
+  delete game.character.equipment[slotId];
+  addItem(game, worn);
+  return true;
+}
+
+/** The first empty slot this item fits, else the first it fits at all. */
+export function slotFor(game: GameState, item: Item): string | null {
+  const fitting = EQUIP_SLOTS.filter((s) => fitsSlot(item, s));
+  if (fitting.length === 0) return null;
+  const empty = fitting.find((s) => !game.character.equipment[s.id]);
+  return (empty ?? fitting[0]).id;
+}

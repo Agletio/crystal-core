@@ -1,4 +1,12 @@
-import type { CurrencyDef, ModDef, MonsterDef, Recipe, SkillDef } from './types';
+import type {
+  CurrencyDef,
+  EquipSlotDef,
+  GearBase,
+  ModDef,
+  MonsterDef,
+  Recipe,
+  SkillDef,
+} from './types';
 
 // ===========================================================================
 // SLOT LAYOUTS
@@ -9,6 +17,43 @@ import type { CurrencyDef, ModDef, MonsterDef, Recipe, SkillDef } from './types'
 
 export const CRYSTAL_SLOTS = { mod: 3 };
 export const GEAR_SLOTS = { main: 2, secondary: 2 };
+
+// ===========================================================================
+// EQUIPMENT
+//
+// A full slot set from the start, so the character sheet has its final shape
+// and adding a base later fills a hole rather than changing the layout.
+//
+// Gear mods declare appliesTo: ['gear'], so every base rolls from the same
+// pool and a new base needs no new mod content. Base-specific pools (weapons
+// getting damage, boots getting movement) are the obvious next step and cost
+// nothing to add later.
+// ===========================================================================
+
+export const EQUIP_SLOTS: EquipSlotDef[] = [
+  { id: 'weapon', name: 'Weapon', accepts: 'weapon' },
+  { id: 'helmet', name: 'Helmet', accepts: 'helmet' },
+  { id: 'body', name: 'Body', accepts: 'body' },
+  { id: 'gloves', name: 'Gloves', accepts: 'gloves' },
+  { id: 'boots', name: 'Boots', accepts: 'boots' },
+  { id: 'amulet', name: 'Amulet', accepts: 'amulet' },
+  { id: 'ring1', name: 'Ring I', accepts: 'ring' },
+  { id: 'ring2', name: 'Ring II', accepts: 'ring' },
+];
+
+export const GEAR_BASES: GearBase[] = [
+  { id: 'sword', name: 'Iron Sword', kind: 'weapon', art: 'weapon' },
+  { id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet' },
+  { id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body' },
+  { id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves' },
+  { id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots' },
+  { id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet' },
+  { id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring' },
+];
+
+export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
+  GEAR_BASES.map((b) => [b.id, b])
+);
 
 // ===========================================================================
 // MOD POOL
@@ -731,10 +776,9 @@ export const STARTING_CURRENCY: Record<string, number> = {
   shard_of_chaos: 2,
 };
 export const STARTING_CRYSTALS = [1, 1, 2];
-export const STARTING_GEAR = [
-  { base: 'body_armour', ilvl: 40, name: 'Plated Vest' },
-  { base: 'ring', ilvl: 30, name: 'Copper Band' },
-];
+
+/** One of each base at low ilvl, so every slot can be filled immediately. */
+export const STARTING_GEAR = GEAR_BASES.map((b) => ({ base: b.id, ilvl: 20 }));
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {

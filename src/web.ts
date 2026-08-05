@@ -1,14 +1,17 @@
 /**
  * Browser entry point. Owns the game state and wires the views to it.
  *
- * The inventory sits outside the view switcher because it's the thing every
- * screen acts on — you pull a crystal out of it to run, put gear into the
- * bench, and watch it fill after a clear.
+ * Two views behind tabs, one permanent inventory, and two modals. The
+ * inventory sits outside the view switcher because every screen acts on it;
+ * the character sheet and history are modals because they're things you open,
+ * read, and close — and both need to be reachable from either tab.
  */
 import { createGame } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
-import { initRun, onRunShown } from './ui/run';
+import { initRun, onRunShown, refreshRunPanels } from './ui/run';
+import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
+import { initHistory, openHistory, closeHistory, isHistoryOpen } from './ui/history';
 
 type ViewName = 'bench' | 'run';
 
@@ -32,7 +35,20 @@ for (const name of VIEWS) {
   document.getElementById(`tab-${name}`)!.addEventListener('click', () => show(name));
 }
 
+document.getElementById('open-character')!.addEventListener('click', openCharacter);
+document.getElementById('open-history')!.addEventListener('click', openHistory);
+
+// Escape closes whatever is on top. Cheap, and the first thing anyone tries.
+globalThis.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  if (isCharacterOpen()) closeCharacter();
+  else if (isHistoryOpen()) closeHistory();
+});
+
 initInventory(game);
+initHistory();
+// Equipping changes derived stats, so the run view's panels have to re-read.
+initCharacter(game, refreshRunPanels);
 initBench(game);
 initRun(game);
 show('bench');

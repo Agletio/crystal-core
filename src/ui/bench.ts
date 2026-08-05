@@ -15,6 +15,7 @@ import { addItem, benchItem, clearBench, replaceItem, selectForBench } from '../
 import type { GameState } from '../game/state';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { currencyIcon } from './icons';
+import { note } from './history';
 import { rewardRows } from '../sim/crystal';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
@@ -22,7 +23,6 @@ const pool = new ModPool(ALL_MODS);
 let seed = Math.floor(Math.random() * 1e9);
 let rng = new Rng(seed);
 let game: GameState;
-let log: Array<{ text: string; kind: 'add' | 'remove' | 'note' | 'fail' }> = [];
 let focused: string | null = null;
 
 /** Facet colour by what the mod actually does. */
@@ -53,11 +53,6 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   if (cls) node.className = cls;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-function note(text: string, kind: 'add' | 'remove' | 'note' | 'fail' = 'note'): void {
-  log.unshift({ text, kind });
-  if (log.length > 60) log.length = 60;
 }
 
 // ---------------------------------------------------------------------------
@@ -275,22 +270,10 @@ function renderWorkshop(): void {
   }
 }
 
-function renderLog(): void {
-  const host = $('log');
-  host.replaceChildren();
-  if (log.length === 0) {
-    host.append(el('p', 'empty', 'Craft something and the history shows up here.'));
-  }
-  for (const entry of log.slice(0, 60)) {
-    host.append(el('div', `logline logline--${entry.kind}`, entry.text));
-  }
-}
-
 function render(): void {
   renderItem();
   renderCurrencies();
   renderWorkshop();
-  renderLog();
   $('seed').textContent = String(seed);
   renderInventory();
 }
@@ -328,10 +311,6 @@ export function initBench(state: GameState): void {
   game = state;
 
   ($('reseed') as HTMLButtonElement).onclick = reseed;
-  ($('clear') as HTMLButtonElement).onclick = () => {
-    log = [];
-    render();
-  };
   ($('bench-return') as HTMLButtonElement).onclick = () => {
     const item = benchItem(game);
     if (!item) return;

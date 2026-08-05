@@ -42,8 +42,13 @@
      rendering. Make hidden actually mean hidden. */
   [hidden] { display: none !important; }
 
+  /* App shell: the page itself never scrolls. Regions that can overflow get
+     their own scrollbar, so the frame stays put like an application window
+     rather than a document. */
   html, body {
     margin: 0;
+    height: 100%;
+    overflow: hidden;
     background: var(--void);
     color: var(--chalk);
     font-family: var(--body);
@@ -65,9 +70,17 @@
     z-index: 0;
   }
 
-  .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; }
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 1180px; margin: 0 auto; padding: 14px 20px 16px;
+    height: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  /* The active view is the only thing that gets to grow, and it scrolls
+     inside itself rather than pushing the frame around. */
+  .viewport { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
 
-  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
   h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--chalk); }
   h1 span { color: var(--amethyst); }
   .sub { font-size: 12px; color: var(--dust); }
@@ -272,6 +285,30 @@
   .lootrow--lost { opacity: .5; text-decoration: line-through; }
   .lootrow--lost .lootrow__v { color: var(--ember); }
 
+  /* --- modals --------------------------------------------------------- */
+  .modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(20,17,28,.82); padding: 20px; }
+  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: min(86vh, 900px); display: flex; flex-direction: column; }
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--seam); }
+  .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--amethyst); }
+  .modal__body { padding: 16px 18px; overflow-y: auto; }
+
+  .sheetcols { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 18px; align-items: start; }
+  @media (max-width: 720px) { .sheetcols { grid-template-columns: 1fr; } }
+
+  .slotgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
+  .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin-bottom: 3px; }
+  .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
+  .slotcell__btn--worn { border-color: var(--seam-lit); }
+  .slotcell__btn--picking { border-color: var(--citrine); background: var(--seam); }
+  .slotcell__btn:hover { background: var(--seam); }
+  .slotcell__body { display: flex; flex-direction: column; min-width: 0; }
+  .slotcell__name { font-size: 12px; }
+  .slotcell__meta { font-size: 10px; color: var(--dust); }
+  .slotcell__empty { font-size: 11px; color: var(--dust); font-style: italic; }
+
+  #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
+  #history-log { font-size: 12px; }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -280,16 +317,16 @@
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>Crystal <span>Core</span></h1>
-      <div class="sub">Craft it on the bench, then watch it run.</div>
+    <h1>Crystal <span>Core</span></h1>
+    <div class="tabs" role="tablist">
+      <button class="tab tab--on" id="tab-bench" role="tab" aria-selected="true">Bench</button>
+      <button class="tab" id="tab-run" role="tab" aria-selected="false">Run</button>
+    </div>
+    <div class="seedbar">
+      <button class="mini" id="open-character">Character</button>
+      <button class="mini" id="open-history">History</button>
     </div>
   </header>
-
-  <div class="tabs" role="tablist">
-    <button class="tab tab--on" id="tab-bench" role="tab" aria-selected="true">Bench</button>
-    <button class="tab" id="tab-run" role="tab" aria-selected="false">Run</button>
-  </div>
 
   <!-- Permanent: every view acts on this, so it never hides behind a tab. -->
   <div class="panel inv">
@@ -300,12 +337,12 @@
     <div class="inv__body" id="inventory"></div>
   </div>
 
+  <div class="viewport">
   <div id="view-bench">
     <div class="seedbar" style="margin-bottom:14px">
       seed <code id="seed">0</code>
       <button class="mini" id="reseed">New seed</button>
-      <button class="mini" id="clear">Clear log</button>
-      <button class="mini" id="bench-return">Return to inventory</button>
+      <button class="mini" id="bench-return">Close item</button>
     </div>
 
     <div class="cols">
@@ -333,10 +370,6 @@
         <div class="panel">
           <p class="panel__title">Currency</p>
           <div id="currencies"></div>
-        </div>
-        <div class="panel">
-          <p class="panel__title">History</p>
-          <div id="log"></div>
         </div>
       </div>
     </div>
@@ -416,12 +449,60 @@
           </div>
         </div>
 
-        <div class="panel">
-          <p class="panel__title">History</p>
-          <div id="run-log"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- Character sheet. A modal because it's reference you consult, not a
+     workspace — and you want it available from either tab. -->
+<div class="modal" id="sheet" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Character</h2>
+      <button class="mini" id="sheet-close">Close</button>
+    </div>
+    <div class="modal__body">
+      <div class="sheetcols">
+        <div>
+          <p class="panel__title">Equipment</p>
+          <div class="slotgrid" id="sheet-slots"></div>
+          <div id="sheet-picker" hidden></div>
+        </div>
+        <div>
+          <div class="levelrow">
+            <span class="levelrow__label">level</span>
+            <span class="levelrow__value" id="sheet-level">1</span>
+          </div>
+          <div class="hp hp--xp">
+            <div class="hp__fill hp__fill--xp" id="sheet-xp-fill"></div>
+            <div class="hp__text" id="sheet-xp-text">0 / 0</div>
+          </div>
+          <p class="panel__title">Stats</p>
+          <div id="sheet-stats"></div>
+          <p class="panel__title" style="margin-top:16px">Skill</p>
+          <div class="bases" id="sheet-skills"></div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- History, also a modal: it's a log you go and read, not a feed that
+     should be shouting "+1 kill" at you while you watch. -->
+<div class="modal" id="history" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">History</h2>
+      <div class="seedbar">
+        <button class="mini" id="history-clear">Clear</button>
+        <button class="mini" id="history-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div id="history-log"></div>
     </div>
   </div>
 </div>

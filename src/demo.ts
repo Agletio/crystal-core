@@ -194,7 +194,12 @@ for (const t of CRYSTAL_TIERS) {
   );
 }
 line();
-line('Starter gear: safe at T1-T2, a coin flip at T3-T4, hopeless above that.');
+// Deliberately describes what to look FOR rather than asserting a result —
+// a hardcoded verdict goes stale the moment the numbers move and then the
+// harness is confidently lying to you.
+line('Read the cleared column, not the times. Somewhere on this ladder should');
+line('be the tier that stops being safe; that gap is what gear is for. If the');
+line('top row clears every time, there is nothing left to chase.');
 line('Gear is what moves that line up. If it never loses, gear does not matter');
 line('yet, and if it never wins the early game is unplayable — watch both ends.');
 

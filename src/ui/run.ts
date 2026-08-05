@@ -25,6 +25,7 @@ import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_MAX, ZOOM_MIN, clampZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
+import { note } from './history';
 import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -48,13 +49,6 @@ let lastFrame = 0;
 let seed = 0;
 let zoom = 1;
 let chosen: Item | null = null;
-let log: Array<{ text: string; kind: string }> = [];
-
-function note(text: string, kind = 'note'): void {
-  log.unshift({ text, kind });
-  if (log.length > 60) log.length = 60;
-}
-
 // ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
@@ -166,14 +160,12 @@ function launch(): void {
   seed = Math.floor(Math.random() * 1e9);
   sim = new RunSim(crystal, game.character, new Rng(seed));
 
-  log = [];
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
   accumulator = 0;
   playing = true;
 
   setPhase('running');
   renderStatsPanel();
-  renderLog();
   fitCanvas();
   setStartLabel();
   // Paint once up front rather than waiting for the first animation frame,
@@ -211,17 +203,6 @@ function renderStatsPanel(): void {
     row.append(el('span', 'stat__k', k));
     row.append(el('span', 'stat__v', v));
     host.append(row);
-  }
-}
-
-function renderLog(): void {
-  const host = $('run-log');
-  host.replaceChildren();
-  if (log.length === 0) {
-    host.append(el('p', 'empty', 'Choose a crystal and set off.'));
-  }
-  for (const entry of log) {
-    host.append(el('div', `logline logline--${entry.kind}`, entry.text));
   }
 }
 
@@ -308,13 +289,18 @@ function renderResults(report: RunReport, run: RunState): void {
 
 function absorbEvents(): void {
   if (!sim) return;
-  let kills = 0;
+  const at = sim.state.elapsed;
+
+  // Kills aren't logged. Sixty "+1 killed" lines bury the three entries that
+  // actually explain a run, and the kill count is already on screen.
   for (const e of sim.drainEvents() as RunEvent[]) {
-    if (e.kind === 'kill') kills++;
-    else if (e.kind === 'cleared') note(`Cleared in ${e.seconds.toFixed(1)}s`, 'add');
-    else if (e.kind === 'died') note(`Died at ${e.seconds.toFixed(1)}s`, 'fail');
+    if (e.kind === 'finale') note(e.herald, 'note', at);
+    else if (e.kind === 'cleared') {
+      note(`Cleared in ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'add', at);
+    } else if (e.kind === 'died') {
+      note(`Died at ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'fail', at);
+    }
   }
-  if (kills > 0) note(`+${kills} killed`, 'remove');
 }
 
 function frame(now: number): void {
@@ -333,7 +319,6 @@ function frame(now: number): void {
       steps++;
     }
     absorbEvents();
-    renderLog();
 
     if (sim.state.status !== 'running') {
       setStartLabel();
@@ -433,10 +418,16 @@ export function initRun(state: GameState): void {
   renderSkills();
   renderStatsPanel();
   renderMenu();
-  renderLog();
   setZoom(1);
   setPhase('menu');
   requestAnimationFrame(frame);
+}
+
+/** Re-read derived stats — called after equipment changes on the sheet. */
+export function refreshRunPanels(): void {
+  renderStatsPanel();
+  renderSkills();
+  renderMenu();
 }
 
 /** Called when the Run tab becomes visible. */

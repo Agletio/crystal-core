@@ -1,6 +1,12 @@
 import { Rng } from './rng';
 import { computeStat } from './mods';
-import { CRYSTAL_SLOTS, CRYSTAL_TIERS, GEAR_SLOTS, RECIPES } from './data';
+import {
+  CRYSTAL_SLOTS,
+  CRYSTAL_TIERS,
+  GEAR_BASE_BY_ID,
+  GEAR_SLOTS,
+  RECIPES,
+} from './data';
 import type { Item, ItemKind, Recipe, Wallet } from './types';
 
 let nextId = 1;
@@ -27,16 +33,19 @@ export function makeCrystal(tier: number): Item {
 }
 
 export function makeGear(base: string, ilvl: number, name?: string): Item {
+  const def = GEAR_BASE_BY_ID[base];
   return {
     id: uid('gear'),
     kind: 'gear',
     base,
-    name: name ?? base,
+    name: name ?? def?.name ?? base,
     tags: ['gear', base],
     ilvl,
     slots: { ...GEAR_SLOTS },
     mods: [],
-    meta: {},
+    // Which slot type this fits. Kept on the item so equipping doesn't have
+    // to reach back into the base table every time it asks.
+    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },
   };
 }
 

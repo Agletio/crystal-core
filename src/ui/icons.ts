@@ -99,42 +99,95 @@ export function crystalIcon(tier: number, size = 26): SVGSVGElement {
   return node;
 }
 
-/** Deliberately generic: a breastplate, a band, a fallback plate. */
-export function gearIcon(base: string, size = 26): SVGSVGElement {
+/**
+ * One silhouette per slot. Deliberately generic — the job is telling a helm
+ * from a boot at a glance, not looking good.
+ */
+export function gearIcon(art: string, size = 26): SVGSVGElement {
   const node = svg(size);
+  const steel = 'var(--quartz)';
+  const outline = { stroke: 'var(--void)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' };
 
-  if (base === 'ring') {
-    shape(node, 'circle', {
-      cx: 16,
-      cy: 18,
-      r: 8,
-      fill: 'none',
-      stroke: 'var(--quartz)',
-      'stroke-width': 3.5,
-    });
-    shape(node, 'polygon', {
-      points: polygon(16, 7, 4, 4),
-      fill: 'var(--citrine)',
-      stroke: 'var(--void)',
-      'stroke-width': 1.2,
-    });
-    return node;
+  switch (art) {
+    case 'weapon':
+      shape(node, 'path', {
+        d: 'M16 3 L19 9 L19 20 L13 20 L13 9 Z',
+        fill: steel,
+        ...outline,
+      });
+      shape(node, 'rect', { x: 9, y: 20, width: 14, height: 3, fill: 'var(--dust)', ...outline });
+      shape(node, 'rect', { x: 15, y: 23, width: 2, height: 6, fill: 'var(--dust)' });
+      break;
+
+    case 'helmet':
+      shape(node, 'path', {
+        d: 'M8 20 Q8 7 16 7 Q24 7 24 20 L20 20 L20 14 L12 14 L12 20 Z',
+        fill: steel,
+        ...outline,
+      });
+      break;
+
+    case 'gloves':
+      shape(node, 'path', {
+        d: 'M11 12 L11 8 L14 8 L14 12 L18 12 L18 7 L21 7 L21 18 Q16 25 11 18 Z',
+        fill: steel,
+        ...outline,
+      });
+      break;
+
+    case 'boots':
+      shape(node, 'path', {
+        d: 'M12 6 L18 6 L18 18 L25 21 L25 26 L12 26 Z',
+        fill: steel,
+        ...outline,
+      });
+      break;
+
+    case 'amulet':
+      shape(node, 'path', {
+        d: 'M9 8 Q16 16 23 8',
+        fill: 'none',
+        stroke: 'var(--dust)',
+        'stroke-width': 2,
+      });
+      shape(node, 'polygon', {
+        points: polygon(16, 19, 6, 6),
+        fill: 'var(--citrine)',
+        ...outline,
+      });
+      break;
+
+    case 'ring':
+      shape(node, 'circle', {
+        cx: 16,
+        cy: 18,
+        r: 8,
+        fill: 'none',
+        stroke: steel,
+        'stroke-width': 3.5,
+      });
+      shape(node, 'polygon', {
+        points: polygon(16, 7, 4, 4),
+        fill: 'var(--citrine)',
+        stroke: 'var(--void)',
+        'stroke-width': 1.2,
+      });
+      break;
+
+    default:
+      // Body armour: a plate with shoulders.
+      shape(node, 'path', {
+        d: 'M10 8 L16 6 L22 8 L23 18 Q16 27 9 18 Z',
+        fill: steel,
+        ...outline,
+      });
+      shape(node, 'path', {
+        d: 'M16 8 L16 22',
+        stroke: 'var(--void)',
+        'stroke-width': 1.2,
+        opacity: 0.55,
+      });
   }
-
-  // Body armour: a plate with shoulders.
-  shape(node, 'path', {
-    d: 'M10 8 L16 6 L22 8 L23 18 Q16 27 9 18 Z',
-    fill: 'var(--quartz)',
-    stroke: 'var(--void)',
-    'stroke-width': 1.5,
-    'stroke-linejoin': 'round',
-  });
-  shape(node, 'path', {
-    d: 'M16 8 L16 22',
-    stroke: 'var(--void)',
-    'stroke-width': 1.2,
-    opacity: 0.55,
-  });
   return node;
 }
 
@@ -167,5 +220,5 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
     return crystalIcon((item.meta.tier as number) ?? 1, size);
   }
-  return gearIcon(item.base, size);
+  return gearIcon((item.meta.art as string) ?? 'body', size);
 }

@@ -300,6 +300,40 @@ making maps more dangerous, and this is what finally gives the sigils a source
 Equipment rarity is the same idea and isn't built: fixed-stat legendaries with
 rarity tiers, where more rarity means better ones.
 
+## The shell
+
+The page never scrolls. `.wrap` fills the viewport, and only the active view
+grows — it scrolls inside itself, so the frame stays put like an application
+window rather than a document.
+
+Two views behind tabs, one permanent inventory, and two modals:
+
+- **Character sheet** — a modal, not a tab. It's reference you consult rather
+  than a workspace you live in, and you want your stats while choosing a map
+  *or* crafting gear, which a third tab would prevent. Escape closes it.
+- **History** — also a modal. It was a panel on both views, which meant
+  watching a run was mostly watching "+7 killed" scroll past. Kills aren't
+  logged at all now; the count is already on screen. It's a record you go and
+  read, not a feed.
+
+The eventual history is filterable and much richer — xp, damage by source,
+regen, drops — enough to answer "why did I die" after the fact. Entries
+already carry a `kind` and a timestamp, which is what a filter would key off.
+
+## Equipment
+
+Eight slots from `EQUIP_SLOTS`, filled from `GEAR_BASES`. A full set from the
+start so the sheet has its final shape and a new base fills a hole rather than
+changing the layout.
+
+Worn items leave the inventory. Unlike the bench — where taking the item out
+made crafting look destructive — equipping has somewhere obvious to show it,
+so the sheet *is* where that item now lives.
+
+Clicking a filled slot takes it off; clicking an empty one lists only what
+fits. Rings fit either ring slot, which is why bases declare a `kind` and
+slots declare what they `accept` rather than matching by name.
+
 ## Inventory, loot, and the loop
 
 The whole game lives in one object (`game/state.ts`): inventory, wallet,
@@ -485,9 +519,15 @@ several times. That oscillation is the endgame rhythm.
 - **Legendaries.** Equipment rarity has nothing to act on: rarity only upgrades
   currency classes. The intended shape is fixed-stat legendaries with rarity
   tiers, so higher rarity means better ones.
-- **Equipment.** The character wears a seeded starter set. Gear can be looted
-  into the inventory and crafted on the bench, but not worn — no slots, no
-  character sheet.
+- **Weapons carry no base damage.** A weapon is currently just another mod
+  carrier; `HERO_BASE.weaponDamage` is innate. Per-base implicit stats are the
+  obvious next step.
+- **Gear rolls from one pool.** Every base draws the same mods, so boots can
+  roll the same things a helmet does. Base-specific pools are cheap to add —
+  `appliesTo` already exists.
+- **Eight slots of stacked mods make the character very strong.** That's the
+  deliberate direction (a character that insta-dies makes the loop unjudgeable)
+  but it means the tier ladder currently has no falloff.
 - **Nothing persists.** A reload is a new game.
 - **A boss.** "Clear all" means every monster, then the exit — there is no boss
   fight at the end yet, and `simulateRun`'s `killBoss` flag is part of the old

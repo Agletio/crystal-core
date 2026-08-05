@@ -12,12 +12,21 @@ export interface Character {
   level: number;
   /** XP banked toward the NEXT level, not lifetime total. */
   xp: number;
-  equipped: Item[];
+  /** Slot id → worn item. Slots with nothing in them are simply absent. */
+  equipment: Record<string, Item>;
   skillId: string;
 }
 
-export function makeCharacter(equipped: Item[], skillId: string): Character {
-  return { level: 1, xp: 0, equipped, skillId };
+export function makeCharacter(
+  equipment: Record<string, Item>,
+  skillId: string
+): Character {
+  return { level: 1, xp: 0, equipment, skillId };
+}
+
+/** Everything worn, in no particular order. What stat derivation reads. */
+export function equippedItems(character: Character): Item[] {
+  return Object.values(character.equipment);
 }
 
 /** XP required to get from `level` to `level + 1`. */

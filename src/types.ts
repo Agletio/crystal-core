@@ -138,6 +138,34 @@ export interface CurrencyDef {
 }
 
 // ---------------------------------------------------------------------------
+// Equipment
+// ---------------------------------------------------------------------------
+
+/** What kind of slot a base occupies. Rings fit either ring slot. */
+export type GearKind =
+  | 'weapon'
+  | 'helmet'
+  | 'body'
+  | 'gloves'
+  | 'boots'
+  | 'amulet'
+  | 'ring';
+
+export interface GearBase {
+  id: string;
+  name: string;
+  kind: GearKind;
+  /** Icon family. Same idea as monster sprites — a name, not an asset. */
+  art: string;
+}
+
+export interface EquipSlotDef {
+  id: string;
+  name: string;
+  accepts: GearKind;
+}
+
+// ---------------------------------------------------------------------------
 // Monsters
 // ---------------------------------------------------------------------------
 

@@ -257,6 +257,61 @@ assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
 $('tab-bench').click();
 assert($('view-bench').hidden === false, 'switching back restores the bench');
 
+// --- character sheet ------------------------------------------------------
+assert($('sheet').hidden === true, 'character sheet starts closed');
+$('open-character').click();
+assert($('sheet').hidden === false, 'character sheet opens');
+
+const slots = all('#sheet-slots .slotcell');
+assert(slots.length === 8, 'all eight equipment slots shown', String(slots.length));
+
+const worn = all('#sheet-slots .slotcell__btn--worn');
+assert(worn.length === 8, 'starter set fills every slot', String(worn.length));
+assert(all('#sheet-stats .stat').length >= 8, 'sheet lists derived stats');
+
+// Taking something off must return it to the inventory and free the slot.
+const invBefore = invItems().length;
+worn[0].click();
+assert(
+  all('#sheet-slots .slotcell__btn--worn').length === 7,
+  'unequipping empties the slot'
+);
+assert(invItems().length === invBefore + 1, 'unequipped item returns to inventory');
+
+// Picking that slot should offer only things that fit it.
+assert($('sheet-picker').hidden === true, 'picker closed by default');
+all('#sheet-slots .slotcell__btn')[0].click();
+assert($('sheet-picker').hidden === false, 'picking a slot opens the picker');
+
+const offered = all('#sheet-picker .invitem');
+assert(offered.length > 0, 'picker offers something that fits');
+offered[0].click();
+assert(
+  all('#sheet-slots .slotcell__btn--worn').length === 8,
+  're-equipping fills the slot'
+);
+assert(invItems().length === invBefore, 'equipped item leaves the inventory');
+
+$('sheet-close').click();
+assert($('sheet').hidden === true, 'character sheet closes');
+
+// --- history --------------------------------------------------------------
+assert($('history').hidden === true, 'history starts closed');
+$('open-history').click();
+assert($('history').hidden === false, 'history opens');
+assert(all('#history-log .logline').length > 0, 'history recorded earlier actions');
+$('history-clear').click();
+assert(all('#history-log .logline').length === 0, 'clearing empties the history');
+$('history-close').click();
+assert($('history').hidden === true, 'history closes');
+
+// --- the page itself must not scroll --------------------------------------
+assert(
+  window.getComputedStyle(document.body).overflow === 'hidden',
+  'page does not scroll',
+  window.getComputedStyle(document.body).overflow
+);
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();
