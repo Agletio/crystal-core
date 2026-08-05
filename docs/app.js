@@ -3,8 +3,8 @@
   // src/rng.ts
   var Rng = class {
     state;
-    constructor(seed2 = Date.now()) {
-      this.state = seed2 >>> 0 || 2654435769;
+    constructor(seed3 = Date.now()) {
+      this.state = seed3 >>> 0 || 2654435769;
     }
     /** Raw float in [0, 1). Every other method is built on this one. */
     next() {
@@ -155,6 +155,26 @@
     const candidates = pool2.eligible(item2, opts);
     const entry = rng2.weighted(candidates, (e) => e.weight);
     return entry ? instantiate(entry, rng2) : null;
+  }
+  function aggregate(mods, stat, contextTags = []) {
+    const out = { flat: 0, inc: 0, more: [] };
+    const ctx = new Set(contextTags);
+    for (const mod of mods) {
+      for (const line of mod.stats) {
+        if (line.stat !== stat) continue;
+        if (!line.tags.every((t) => ctx.has(t))) continue;
+        if (line.form === "flat") out.flat += line.value;
+        else if (line.form === "inc") out.inc += line.value;
+        else out.more.push(line.value);
+      }
+    }
+    return out;
+  }
+  function computeStat(base, mods, stat, contextTags = []) {
+    const b = aggregate(mods, stat, contextTags);
+    let v = (base + b.flat) * (1 + b.inc / 100);
+    for (const m of b.more) v *= 1 + m / 100;
+    return v;
   }
 
   // src/crafting.ts
@@ -755,6 +775,31 @@
     { tier: 5, ilvl: 58, fragments: 190 },
     { tier: 6, ilvl: 70, fragments: 370 }
   ];
+  var HERO_BASE = {
+    life: 240,
+    /** Physical damage per hit before gear. Elemental damage is gear-only. */
+    weaponDamage: 55,
+    attacksPerSecond: 1.2,
+    critChance: 5,
+    moveSpeed: 3.4,
+    armour: 0,
+    attackRange: 1.7,
+    /** How far the hero will notice a monster and divert to fight it. */
+    aggroRange: 9,
+    /** Percent of max life per second. Recovery happens between packs, which
+     *  is what turns a run into a series of fights instead of one long
+     *  attrition curve you always lose. */
+    lifeRegenPercent: 2.2
+  };
+  var MONSTER_BASE = {
+    life: 26,
+    damage: 1.9,
+    attacksPerSecond: 0.8,
+    moveSpeed: 2.3,
+    attackRange: 1.3,
+    aggroRange: 8
+  };
+  var MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
   var RECIPES = [
     ...CRYSTAL_TIERS.map((t) => ({
       id: `crystal_t${t.tier}`,
@@ -831,13 +876,16 @@
     RECIPES.map((r) => [r.id, r])
   );
 
-  // src/web.ts
+  // src/ui/bench.ts
   var pool = new ModPool(ALL_MODS);
   var seed = Math.floor(Math.random() * 1e9);
   var rng = new Rng(seed);
   var item = makeCrystal(3);
   var log = [];
   var focused = null;
+  function currentItem() {
+    return item;
+  }
   var BENCH_ITEMS = [
     ...CRYSTAL_TIERS.map((t) => ({
       label: `Crystal T${t.tier}`,
@@ -1011,11 +1059,898 @@
     renderLog();
     $("seed").textContent = String(seed);
   }
-  $("reseed").onclick = reseed;
-  $("clear").onclick = () => {
-    log = [];
+  function initBench() {
+    $("reseed").onclick = reseed;
+    $("clear").onclick = () => {
+      log = [];
+      render();
+    };
+    log.unshift({ text: `Seed ${seed}`, kind: "note" });
     render();
+  }
+
+  // src/sim/grid.ts
+  var WALL = 0;
+  var FLOOR = 1;
+  var ENTRANCE = 2;
+  var EXIT = 3;
+  var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  function roomCenter(r) {
+    return { x: r.x + Math.floor((r.w - 1) / 2), y: r.y + Math.floor((r.h - 1) / 2) };
+  }
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+  var Grid = class {
+    width;
+    height;
+    tiles;
+    constructor(width, height) {
+      this.width = width;
+      this.height = height;
+      this.tiles = new Uint8Array(width * height);
+    }
+    inBounds(x, y) {
+      return x >= 0 && y >= 0 && x < this.width && y < this.height;
+    }
+    at(x, y) {
+      if (!this.inBounds(x, y)) return WALL;
+      return this.tiles[y * this.width + x];
+    }
+    set(x, y, tile) {
+      if (this.inBounds(x, y)) this.tiles[y * this.width + x] = tile;
+    }
+    /** Walls block; everything else is walkable. Entities use float positions,
+     *  so this is sampled at the rounded tile under them. */
+    walkable(x, y) {
+      return this.at(Math.round(x), Math.round(y)) !== WALL;
+    }
   };
-  log.unshift({ text: `Seed ${seed}`, kind: "note" });
-  render();
+  function overlaps(a, b, pad) {
+    return a.x - pad < b.x + b.w && a.x + a.w + pad > b.x && a.y - pad < b.y + b.h && a.y + a.h + pad > b.y;
+  }
+  function carveRoom(grid, r) {
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) grid.set(x, y, FLOOR);
+    }
+  }
+  function hLine(grid, x0, x1, y) {
+    for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) grid.set(x, y, FLOOR);
+  }
+  function vLine(grid, y0, y1, x) {
+    for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) grid.set(x, y, FLOOR);
+  }
+  function carveCorridor(grid, a, b, rng2) {
+    const ax = Math.round(a.x);
+    const ay = Math.round(a.y);
+    const bx = Math.round(b.x);
+    const by = Math.round(b.y);
+    if (rng2.chance(0.5)) {
+      hLine(grid, ax, bx, ay);
+      vLine(grid, ay, by, bx);
+    } else {
+      vLine(grid, ay, by, ax);
+      hLine(grid, ax, bx, by);
+    }
+  }
+  function reachable(grid, from) {
+    const seen = /* @__PURE__ */ new Set();
+    const start = Math.round(from.y) * grid.width + Math.round(from.x);
+    const queue = [start];
+    seen.add(start);
+    while (queue.length > 0) {
+      const node = queue.pop();
+      const x = node % grid.width;
+      const y = (node - x) / grid.width;
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!grid.inBounds(nx, ny) || grid.at(nx, ny) === WALL) continue;
+        const nk = ny * grid.width + nx;
+        if (seen.has(nk)) continue;
+        seen.add(nk);
+        queue.push(nk);
+      }
+    }
+    return seen;
+  }
+  function generateMap(crystal, rng2) {
+    const layout = computeStat(1, crystal.mods, "layoutComplexity");
+    const width = clamp(Math.round(42 * Math.sqrt(layout)), 30, 72);
+    const height = clamp(Math.round(28 * Math.sqrt(layout)), 22, 48);
+    const grid = new Grid(width, height);
+    const target = clamp(Math.round(7 * layout), 5, 16);
+    const rooms = [];
+    for (let attempt = 0; attempt < 500 && rooms.length < target; attempt++) {
+      const w = rng2.int(5, 9);
+      const h = rng2.int(4, 7);
+      const candidate = {
+        x: rng2.int(1, Math.max(1, width - w - 2)),
+        y: rng2.int(1, Math.max(1, height - h - 2)),
+        w,
+        h
+      };
+      if (rooms.some((r) => overlaps(r, candidate, 2))) continue;
+      rooms.push(candidate);
+    }
+    for (const room of rooms) carveRoom(grid, room);
+    for (let i = 1; i < rooms.length; i++) {
+      carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng2);
+    }
+    const entrance = roomCenter(rooms[0]);
+    let exitRoom = rooms[rooms.length - 1];
+    let best = -1;
+    for (const room of rooms.slice(1)) {
+      const d = dist(entrance, roomCenter(room));
+      if (d > best) {
+        best = d;
+        exitRoom = room;
+      }
+    }
+    const exit = roomCenter(exitRoom);
+    const exitKey = Math.round(exit.y) * grid.width + Math.round(exit.x);
+    if (!reachable(grid, entrance).has(exitKey)) {
+      carveCorridor(grid, entrance, exit, rng2);
+    }
+    grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
+    grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
+    return { grid, rooms, entrance, exit };
+  }
+
+  // src/sim/pathfind.ts
+  var DIRS = [
+    [1, 0, 1],
+    [-1, 0, 1],
+    [0, 1, 1],
+    [0, -1, 1],
+    [1, 1, Math.SQRT2],
+    [1, -1, Math.SQRT2],
+    [-1, 1, Math.SQRT2],
+    [-1, -1, Math.SQRT2]
+  ];
+  var MinHeap = class {
+    items = [];
+    get size() {
+      return this.items.length;
+    }
+    push(key, cost) {
+      this.items.push({ key, cost });
+      let i = this.items.length - 1;
+      while (i > 0) {
+        const parent = i - 1 >> 1;
+        if (this.items[parent].cost <= this.items[i].cost) break;
+        [this.items[parent], this.items[i]] = [this.items[i], this.items[parent]];
+        i = parent;
+      }
+    }
+    pop() {
+      const top = this.items[0];
+      const last = this.items.pop();
+      if (this.items.length > 0) {
+        this.items[0] = last;
+        let i = 0;
+        for (; ; ) {
+          const l = i * 2 + 1;
+          const r = l + 1;
+          let smallest = i;
+          if (l < this.items.length && this.items[l].cost < this.items[smallest].cost) smallest = l;
+          if (r < this.items.length && this.items[r].cost < this.items[smallest].cost) smallest = r;
+          if (smallest === i) break;
+          [this.items[smallest], this.items[i]] = [this.items[i], this.items[smallest]];
+          i = smallest;
+        }
+      }
+      return top.key;
+    }
+  };
+  function canStep(grid, x, y, dx, dy) {
+    if (grid.at(x + dx, y + dy) === WALL) return false;
+    if (dx !== 0 && dy !== 0) {
+      if (grid.at(x + dx, y) === WALL || grid.at(x, y + dy) === WALL) return false;
+    }
+    return true;
+  }
+  function findPath(grid, from, to, maxNodes = 4e3) {
+    const sx = Math.round(from.x);
+    const sy = Math.round(from.y);
+    const gx = Math.round(to.x);
+    const gy = Math.round(to.y);
+    if (sx === gx && sy === gy) return [];
+    if (grid.at(gx, gy) === WALL) return [];
+    const { width } = grid;
+    const key = (x, y) => y * width + x;
+    const goal = key(gx, gy);
+    const gScore = /* @__PURE__ */ new Map();
+    const cameFrom = /* @__PURE__ */ new Map();
+    const open = new MinHeap();
+    const closed = /* @__PURE__ */ new Set();
+    const h = (x, y) => Math.hypot(x - gx, y - gy);
+    gScore.set(key(sx, sy), 0);
+    open.push(key(sx, sy), h(sx, sy));
+    let expanded = 0;
+    while (open.size > 0 && expanded < maxNodes) {
+      const current = open.pop();
+      if (closed.has(current)) continue;
+      closed.add(current);
+      expanded++;
+      if (current === goal) break;
+      const cx = current % width;
+      const cy = (current - cx) / width;
+      const base = gScore.get(current);
+      for (const [dx, dy, cost] of DIRS) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        if (!grid.inBounds(nx, ny) || !canStep(grid, cx, cy, dx, dy)) continue;
+        const nk = key(nx, ny);
+        if (closed.has(nk)) continue;
+        const tentative = base + cost;
+        const known = gScore.get(nk);
+        if (known !== void 0 && known <= tentative) continue;
+        gScore.set(nk, tentative);
+        cameFrom.set(nk, current);
+        open.push(nk, tentative + h(nx, ny));
+      }
+    }
+    if (!cameFrom.has(goal) && goal !== key(sx, sy)) return [];
+    const path = [];
+    let node = goal;
+    const start = key(sx, sy);
+    while (node !== start) {
+      const x = node % width;
+      path.push({ x, y: (node - x) / width });
+      const prev = cameFrom.get(node);
+      if (prev === void 0) return [];
+      node = prev;
+    }
+    return path.reverse();
+  }
+
+  // src/sim/stats.ts
+  var DAMAGE_TYPES = ["physical", "fire", "cold"];
+  function damageFrom(mods, weaponBase) {
+    let total = 0;
+    for (const type of DAMAGE_TYPES) {
+      const base = type === "physical" ? weaponBase : 0;
+      total += computeStat(base, mods, "damage", [type]);
+    }
+    return total;
+  }
+  function heroStats(equipped) {
+    const mods = equipped.flatMap((item2) => item2.mods);
+    const maxLife = computeStat(HERO_BASE.life, mods, "life");
+    return {
+      maxLife,
+      lifeRegen: maxLife * HERO_BASE.lifeRegenPercent / 100,
+      damage: damageFrom(mods, HERO_BASE.weaponDamage),
+      attacksPerSecond: computeStat(HERO_BASE.attacksPerSecond, mods, "attackSpeed"),
+      critChance: computeStat(HERO_BASE.critChance, mods, "critChance"),
+      moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, "moveSpeed"),
+      armour: computeStat(HERO_BASE.armour, mods, "armour"),
+      attackRange: HERO_BASE.attackRange,
+      aggroRange: HERO_BASE.aggroRange
+    };
+  }
+  function monsterStats(crystal, tier) {
+    const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1);
+    const damage = MONSTER_BASE.damage * Math.pow(MONSTER_TIER_SCALE.damage, tier - 1);
+    return {
+      maxLife: computeStat(life, crystal.mods, "monsterLife"),
+      damage: computeStat(damage, crystal.mods, "monsterDamage"),
+      attacksPerSecond: MONSTER_BASE.attacksPerSecond,
+      critChance: 0,
+      moveSpeed: computeStat(MONSTER_BASE.moveSpeed, crystal.mods, "monsterMoveSpeed"),
+      armour: 0,
+      attackRange: MONSTER_BASE.attackRange,
+      aggroRange: MONSTER_BASE.aggroRange,
+      lifeRegen: 0
+    };
+  }
+  function mapDensity(crystal) {
+    return {
+      packCount: Math.max(1, Math.round(computeStat(10, crystal.mods, "packCount"))),
+      packSize: Math.max(1, Math.round(computeStat(5, crystal.mods, "packSize")))
+    };
+  }
+
+  // src/sim/run.ts
+  var TICK = 1 / 30;
+  var ACTIVE_RANGE = 16;
+  var FLOATER_LIFE = 1.1;
+  var RunSim = class {
+    state;
+    rng;
+    events = [];
+    nextId = 1;
+    constructor(crystal, equipped, rng2) {
+      this.rng = rng2;
+      const map = generateMap(crystal, rng2);
+      const stats = heroStats(equipped);
+      const hero = {
+        id: 0,
+        kind: "hero",
+        x: map.entrance.x,
+        y: map.entrance.y,
+        life: stats.maxLife,
+        stats,
+        cooldown: 0,
+        path: [],
+        pathTimer: 0,
+        aggroed: false,
+        hitFlash: 0,
+        dead: false
+      };
+      const monsters = this.spawn(crystal, map);
+      this.state = {
+        map,
+        hero,
+        monsters,
+        floaters: [],
+        elapsed: 0,
+        status: "running",
+        killed: 0,
+        totalMonsters: monsters.length
+      };
+    }
+    /** Packs land in rooms other than the entrance, so you always get a moment
+     *  to look at the map before anything reaches you. */
+    spawn(crystal, map) {
+      const tier = crystal.meta.tier ?? 1;
+      const stats = monsterStats(crystal, tier);
+      const { packCount, packSize } = mapDensity(crystal);
+      const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
+      const monsters = [];
+      for (let p = 0; p < packCount; p++) {
+        const room = this.rng.pick(rooms) ?? rooms[0];
+        for (let i = 0; i < packSize; i++) {
+          monsters.push({
+            id: this.nextId++,
+            kind: "monster",
+            x: this.rng.float(room.x, room.x + room.w - 1),
+            y: this.rng.float(room.y, room.y + room.h - 1),
+            life: stats.maxLife,
+            stats,
+            cooldown: this.rng.float(0, 1),
+            path: [],
+            pathTimer: 0,
+            aggroed: false,
+            hitFlash: 0,
+            dead: false
+          });
+        }
+      }
+      return monsters;
+    }
+    /** Events since the last call. The UI drains these to build its log. */
+    drainEvents() {
+      const out = this.events;
+      this.events = [];
+      return out;
+    }
+    step(dt) {
+      const s = this.state;
+      if (s.status !== "running") return;
+      s.elapsed += dt;
+      for (const f of s.floaters) f.age += dt;
+      if (s.floaters.length > 0 && s.floaters[0].age >= FLOATER_LIFE) {
+        s.floaters = s.floaters.filter((f) => f.age < FLOATER_LIFE);
+      }
+      this.stepHero(dt);
+      if (s.status !== "running") return;
+      for (const m of s.monsters) {
+        if (m.dead) continue;
+        if (m.hitFlash > 0) m.hitFlash -= dt;
+        this.stepMonster(m, dt);
+        if (s.status !== "running") return;
+      }
+    }
+    stepHero(dt) {
+      const s = this.state;
+      const hero = s.hero;
+      if (hero.cooldown > 0) hero.cooldown -= dt;
+      if (hero.hitFlash > 0) hero.hitFlash -= dt;
+      if (hero.life < hero.stats.maxLife) {
+        hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
+      }
+      const target = this.nearestMonster(hero, hero.stats.aggroRange);
+      if (target) {
+        const d = dist(hero, target);
+        if (d <= hero.stats.attackRange) {
+          hero.path = [];
+          if (hero.cooldown <= 0) this.attack(hero, target);
+        } else {
+          this.advance(hero, target, dt);
+        }
+        return;
+      }
+      const arrived = Math.round(hero.x) === Math.round(s.map.exit.x) && Math.round(hero.y) === Math.round(s.map.exit.y);
+      if (arrived) {
+        s.status = "cleared";
+        this.events.push({
+          kind: "cleared",
+          seconds: s.elapsed,
+          killed: s.killed
+        });
+        return;
+      }
+      this.advance(hero, s.map.exit, dt);
+    }
+    stepMonster(m, dt) {
+      const hero = this.state.hero;
+      if (m.cooldown > 0) m.cooldown -= dt;
+      const d = dist(m, hero);
+      if (d > ACTIVE_RANGE) return;
+      if (!m.aggroed && d <= m.stats.aggroRange) m.aggroed = true;
+      if (!m.aggroed) return;
+      if (d <= m.stats.attackRange) {
+        m.path = [];
+        if (m.cooldown <= 0) this.attack(m, hero);
+        return;
+      }
+      this.advance(m, hero, dt);
+    }
+    nearestMonster(from, range) {
+      let best = null;
+      let bestDist = range;
+      for (const m of this.state.monsters) {
+        if (m.dead) continue;
+        const d = dist(from, m);
+        if (d <= bestDist) {
+          bestDist = d;
+          best = m;
+        }
+      }
+      return best;
+    }
+    /** Walk along a cached path, repathing on a stagger so a whole pack never
+     *  recomputes on the same tick. */
+    advance(e, goal, dt) {
+      e.pathTimer -= dt;
+      if (e.path.length === 0 || e.pathTimer <= 0) {
+        e.path = findPath(this.state.map.grid, e, goal);
+        e.pathTimer = 0.4 + this.rng.float(0, 0.25);
+      }
+      let remaining = e.stats.moveSpeed * dt;
+      while (remaining > 0 && e.path.length > 0) {
+        const wp = e.path[0];
+        const dx = wp.x - e.x;
+        const dy = wp.y - e.y;
+        const d = Math.hypot(dx, dy);
+        if (d <= 1e-6) {
+          e.path.shift();
+          continue;
+        }
+        if (d <= remaining) {
+          e.x = wp.x;
+          e.y = wp.y;
+          e.path.shift();
+          remaining -= d;
+        } else {
+          e.x += dx / d * remaining;
+          e.y += dy / d * remaining;
+          remaining = 0;
+        }
+      }
+    }
+    attack(attacker, defender) {
+      const s = this.state;
+      const crit = attacker.stats.critChance > 0 && this.rng.chance(attacker.stats.critChance / 100);
+      let dmg = attacker.stats.damage * this.rng.float(0.9, 1.1);
+      if (crit) dmg *= 2;
+      const armour = defender.stats.armour;
+      if (armour > 0) dmg *= 1 - armour / (armour + 12 * dmg);
+      dmg = Math.max(1, dmg);
+      defender.life -= dmg;
+      defender.hitFlash = 0.18;
+      attacker.cooldown = 1 / attacker.stats.attacksPerSecond;
+      s.floaters.push({
+        x: defender.x,
+        y: defender.y,
+        text: String(Math.round(dmg)),
+        age: 0,
+        crit,
+        on: defender.kind
+      });
+      if (defender.kind === "hero") {
+        this.events.push({ kind: "hurt", life: Math.max(0, defender.life), maxLife: defender.stats.maxLife });
+      }
+      if (defender.life <= 0) this.kill(defender);
+    }
+    kill(victim) {
+      const s = this.state;
+      victim.dead = true;
+      victim.life = 0;
+      if (victim.kind === "hero") {
+        s.status = "died";
+        this.events.push({ kind: "died", seconds: s.elapsed, killed: s.killed });
+        return;
+      }
+      s.killed++;
+      this.events.push({ kind: "kill", total: s.killed });
+    }
+  };
+
+  // src/sim/loadout.ts
+  function starterLoadout(rng2, ilvl = 30) {
+    const pool2 = new ModPool(ALL_MODS);
+    const fill = (item2) => craft(item2, CURRENCY_BY_ID.shard_of_awakening, pool2, rng2).item;
+    return [
+      fill(makeGear("body_armour", ilvl, "Worn Plate")),
+      fill(makeGear("ring", ilvl, "Iron Band"))
+    ];
+  }
+
+  // src/render/canvas2d.ts
+  var FLOATER_LIFE2 = 1.1;
+  function createCanvasRenderer(canvas, palette) {
+    const maybeCtx = canvas.getContext("2d");
+    if (!maybeCtx) {
+      return { resize: () => {
+      }, draw: () => {
+      } };
+    }
+    const ctx = maybeCtx;
+    let cssWidth = canvas.clientWidth || 640;
+    let cssHeight = canvas.clientHeight || 420;
+    function resize(width, height) {
+      const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+      cssWidth = Math.max(1, Math.floor(width));
+      cssHeight = Math.max(1, Math.floor(height));
+      canvas.width = Math.floor(cssWidth * dpr);
+      canvas.height = Math.floor(cssHeight * dpr);
+      canvas.style.width = `${cssWidth}px`;
+      canvas.style.height = `${cssHeight}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function viewFor(state) {
+      const { grid } = state.map;
+      const tile = Math.min(cssWidth / grid.width, cssHeight / grid.height);
+      return {
+        tile,
+        offX: (cssWidth - tile * grid.width) / 2,
+        offY: (cssHeight - tile * grid.height) / 2
+      };
+    }
+    const cx = (v, x) => v.offX + (x + 0.5) * v.tile;
+    const cy = (v, y) => v.offY + (y + 0.5) * v.tile;
+    function drawMap(state, v) {
+      const { grid } = state.map;
+      ctx.fillStyle = palette.matrix;
+      for (let y = 0; y < grid.height; y++) {
+        for (let x2 = 0; x2 < grid.width; x2++) {
+          if (grid.at(x2, y) === WALL) continue;
+          ctx.fillRect(
+            v.offX + x2 * v.tile,
+            v.offY + y * v.tile,
+            Math.ceil(v.tile),
+            Math.ceil(v.tile)
+          );
+        }
+      }
+      ctx.strokeStyle = palette.seam;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let y = 0; y < grid.height; y++) {
+        for (let x2 = 0; x2 < grid.width; x2++) {
+          if (grid.at(x2, y) === WALL) continue;
+          if (grid.at(x2, y - 1) === WALL) {
+            ctx.moveTo(v.offX + x2 * v.tile, v.offY + y * v.tile);
+            ctx.lineTo(v.offX + (x2 + 1) * v.tile, v.offY + y * v.tile);
+          }
+          if (grid.at(x2, y + 1) === WALL) {
+            ctx.moveTo(v.offX + x2 * v.tile, v.offY + (y + 1) * v.tile);
+            ctx.lineTo(v.offX + (x2 + 1) * v.tile, v.offY + (y + 1) * v.tile);
+          }
+          if (grid.at(x2 - 1, y) === WALL) {
+            ctx.moveTo(v.offX + x2 * v.tile, v.offY + y * v.tile);
+            ctx.lineTo(v.offX + x2 * v.tile, v.offY + (y + 1) * v.tile);
+          }
+          if (grid.at(x2 + 1, y) === WALL) {
+            ctx.moveTo(v.offX + (x2 + 1) * v.tile, v.offY + y * v.tile);
+            ctx.lineTo(v.offX + (x2 + 1) * v.tile, v.offY + (y + 1) * v.tile);
+          }
+        }
+      }
+      ctx.stroke();
+      const e = state.map.entrance;
+      ctx.fillStyle = palette.seamLit;
+      ctx.fillRect(
+        cx(v, e.x) - v.tile * 0.3,
+        cy(v, e.y) - v.tile * 0.3,
+        v.tile * 0.6,
+        v.tile * 0.6
+      );
+      const x = state.map.exit;
+      const pulse = 0.75 + 0.25 * Math.sin(state.elapsed * 3);
+      ctx.save();
+      ctx.translate(cx(v, x.x), cy(v, x.y));
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = palette.citrine;
+      ctx.globalAlpha = pulse;
+      const s = v.tile * 0.42;
+      ctx.fillRect(-s, -s, s * 2, s * 2);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+    function drawLifeBar(v, e, width, colour) {
+      const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
+      if (frac >= 1) return;
+      const w = v.tile * width;
+      const h = Math.max(2, v.tile * 0.12);
+      const x = cx(v, e.x) - w / 2;
+      const y = cy(v, e.y) - v.tile * 0.72;
+      ctx.fillStyle = palette.void;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = colour;
+      ctx.fillRect(x, y, w * frac, h);
+    }
+    function drawMonster(v, m) {
+      const r = v.tile * 0.3;
+      ctx.beginPath();
+      ctx.arc(cx(v, m.x), cy(v, m.y), r, 0, Math.PI * 2);
+      ctx.fillStyle = m.hitFlash > 0 ? palette.chalk : palette.ember;
+      ctx.fill();
+      drawLifeBar(v, m, 0.7, palette.ember);
+    }
+    function drawHero(v, hero) {
+      const r = v.tile * 0.38;
+      const x = cx(v, hero.x);
+      const y = cy(v, hero.y);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = hero.hitFlash > 0 ? palette.ember : palette.quartz;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+      ctx.fillStyle = palette.void;
+      ctx.fill();
+      drawLifeBar(v, hero, 1.1, palette.verdite);
+    }
+    function drawFloater(v, f) {
+      const t = f.age / FLOATER_LIFE2;
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.fillStyle = f.on === "hero" ? palette.ember : f.crit ? palette.citrine : palette.chalk;
+      ctx.font = `${f.crit ? 700 : 500} ${Math.max(9, v.tile * (f.crit ? 0.75 : 0.6))}px ui-monospace, monospace`;
+      ctx.textAlign = "center";
+      ctx.fillText(f.text, cx(v, f.x), cy(v, f.y) - v.tile * (0.5 + t * 1.2));
+      ctx.globalAlpha = 1;
+    }
+    function draw(state) {
+      const v = viewFor(state);
+      ctx.fillStyle = palette.void;
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+      drawMap(state, v);
+      for (const m of state.monsters) {
+        if (!m.dead) drawMonster(v, m);
+      }
+      if (!state.hero.dead) drawHero(v, state.hero);
+      for (const f of state.floaters) drawFloater(v, f);
+    }
+    resize(cssWidth, cssHeight);
+    return { resize, draw };
+  }
+
+  // src/render/renderer.ts
+  var VARS = [
+    ["void", "--void"],
+    ["matrix", "--matrix"],
+    ["seam", "--seam"],
+    ["seamLit", "--seam-lit"],
+    ["chalk", "--chalk"],
+    ["dust", "--dust"],
+    ["amethyst", "--amethyst"],
+    ["citrine", "--citrine"],
+    ["quartz", "--quartz"],
+    ["verdite", "--verdite"],
+    ["ember", "--ember"]
+  ];
+  function readPalette(el3) {
+    const style = getComputedStyle(el3);
+    const out = {};
+    for (const [key, cssVar] of VARS) {
+      out[key] = style.getPropertyValue(cssVar).trim() || "#ffffff";
+    }
+    return out;
+  }
+
+  // src/ui/run.ts
+  var $2 = (id) => document.getElementById(id);
+  function el2(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== void 0) node.textContent = text;
+    return node;
+  }
+  var sim = null;
+  var renderer = null;
+  var playing = false;
+  var speed = 1;
+  var accumulator = 0;
+  var lastFrame = 0;
+  var seed2 = 0;
+  var log2 = [];
+  var crystalLabel = "\u2014";
+  var gearLabel = "\u2014";
+  function buildSim() {
+    seed2 = Math.floor(Math.random() * 1e9);
+    const bench = currentItem();
+    const crystal = bench.kind === "crystal" ? bench : makeCrystal(3);
+    crystalLabel = `${crystal.name}${crystal.mods.length ? "" : " (unmodded)"}`;
+    const loadout = starterLoadout(new Rng(seed2 ^ 6250335));
+    if (bench.kind === "gear") {
+      const idx = loadout.findIndex((i) => i.base === bench.base);
+      if (idx >= 0) loadout[idx] = bench;
+      else loadout.push(bench);
+      gearLabel = `starter + ${bench.name}`;
+    } else {
+      gearLabel = "starter set";
+    }
+    const built = new RunSim(crystal, loadout, new Rng(seed2));
+    renderStatsPanel(loadout);
+    return built;
+  }
+  function renderStatsPanel(loadout) {
+    const s = heroStats(loadout);
+    const host = $2("run-stats");
+    host.replaceChildren();
+    const rows = [
+      ["life", Math.round(s.maxLife).toString()],
+      ["damage", Math.round(s.damage).toString()],
+      ["atk/sec", s.attacksPerSecond.toFixed(2)],
+      ["crit", `${Math.round(s.critChance)}%`],
+      ["move", s.moveSpeed.toFixed(1)],
+      ["armour", Math.round(s.armour).toString()],
+      ["regen/s", s.lifeRegen.toFixed(1)]
+    ];
+    for (const [label, value] of rows) {
+      const row = el2("div", "stat");
+      row.append(el2("span", "stat__k", label));
+      row.append(el2("span", "stat__v", value));
+      host.append(row);
+    }
+  }
+  function note(text, kind = "note") {
+    log2.unshift({ text, kind });
+    if (log2.length > 60) log2.length = 60;
+  }
+  function renderLog2() {
+    const host = $2("run-log");
+    host.replaceChildren();
+    if (log2.length === 0) {
+      host.append(el2("p", "empty", "Press Start to send the character in."));
+    }
+    for (const entry of log2) {
+      host.append(el2("div", `logline logline--${entry.kind}`, entry.text));
+    }
+  }
+  function renderReadout() {
+    if (!sim) return;
+    const s = sim.state;
+    $2("run-elapsed").textContent = `${s.elapsed.toFixed(1)}s`;
+    $2("run-killed").textContent = `${s.killed}/${s.totalMonsters}`;
+    $2("run-seed").textContent = String(seed2);
+    $2("run-source").textContent = `${crystalLabel} \xB7 ${gearLabel}`;
+    const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
+    $2("run-hp-fill").style.width = `${frac * 100}%`;
+    $2("run-hp-text").textContent = `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
+    const status = $2("run-status");
+    status.textContent = s.status === "running" ? playing ? "running" : "paused" : s.status;
+    status.className = `run-status run-status--${s.status}`;
+  }
+  function absorbEvents() {
+    if (!sim) return;
+    let kills = 0;
+    for (const e of sim.drainEvents()) {
+      if (e.kind === "kill") kills++;
+      else if (e.kind === "cleared") {
+        note(`Cleared in ${e.seconds.toFixed(1)}s \u2014 ${e.killed} killed`, "add");
+        playing = false;
+        setStartLabel();
+      } else if (e.kind === "died") {
+        note(`Died at ${e.seconds.toFixed(1)}s \u2014 ${e.killed} killed`, "fail");
+        playing = false;
+        setStartLabel();
+      }
+    }
+    if (kills > 0) note(`+${kills} killed`, "remove");
+  }
+  function frame(now) {
+    const dt = lastFrame === 0 ? 0 : Math.min(0.25, (now - lastFrame) / 1e3);
+    lastFrame = now;
+    if (playing && sim && sim.state.status === "running") {
+      accumulator += dt * speed;
+      let steps = 0;
+      while (accumulator >= TICK && steps < 400) {
+        sim.step(TICK);
+        accumulator -= TICK;
+        steps++;
+      }
+      absorbEvents();
+      renderLog2();
+    }
+    if (sim && renderer) renderer.draw(sim.state);
+    renderReadout();
+    requestAnimationFrame(frame);
+  }
+  function setStartLabel() {
+    const btn = $2("run-start");
+    const done = sim && sim.state.status !== "running";
+    btn.textContent = done ? "Finished" : playing ? "Pause" : "Start";
+    btn.disabled = !!done;
+  }
+  function newRun() {
+    sim = buildSim();
+    log2 = [];
+    accumulator = 0;
+    playing = true;
+    note(`Seed ${seed2} \xB7 ${sim.state.totalMonsters} monsters`, "note");
+    setStartLabel();
+    renderLog2();
+    fitCanvas();
+  }
+  function fitCanvas() {
+    const canvas = $2("run-canvas");
+    const box = canvas.parentElement;
+    const width = box.clientWidth;
+    const height = Math.max(320, Math.round(width * 0.66));
+    renderer?.resize(width, height);
+  }
+  function initRun() {
+    const canvas = $2("run-canvas");
+    renderer = createCanvasRenderer(canvas, readPalette(document.documentElement));
+    $2("run-start").onclick = () => {
+      if (!sim || sim.state.status !== "running") {
+        newRun();
+        return;
+      }
+      playing = !playing;
+      setStartLabel();
+    };
+    $2("run-new").onclick = () => newRun();
+    for (const mult of [1, 2, 4]) {
+      const btn = $2(`run-speed-${mult}`);
+      btn.onclick = () => {
+        speed = mult;
+        for (const m of [1, 2, 4]) {
+          $2(`run-speed-${m}`).classList.toggle("chip--on", m === speed);
+        }
+      };
+    }
+    $2("run-speed-1").classList.add("chip--on");
+    globalThis.addEventListener("resize", fitCanvas);
+    sim = buildSim();
+    fitCanvas();
+    renderLog2();
+    setStartLabel();
+    renderReadout();
+    requestAnimationFrame(frame);
+  }
+  function onRunShown() {
+    fitCanvas();
+    renderReadout();
+  }
+
+  // src/web.ts
+  var VIEWS = ["bench", "run"];
+  function show(view) {
+    for (const name of VIEWS) {
+      const panel = document.getElementById(`view-${name}`);
+      const tab = document.getElementById(`tab-${name}`);
+      const active = name === view;
+      panel.hidden = !active;
+      tab.classList.toggle("tab--on", active);
+      tab.setAttribute("aria-selected", String(active));
+    }
+    if (view === "run") onRunShown();
+  }
+  for (const name of VIEWS) {
+    document.getElementById(`tab-${name}`).addEventListener("click", () => show(name));
+  }
+  initBench();
+  initRun();
+  show("bench");
 })();

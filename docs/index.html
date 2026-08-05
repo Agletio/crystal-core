@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crystal Bench</title>
+<title>Crystal Core</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -146,6 +146,43 @@
   .logline--fail   { color: var(--citrine); }
   .logline--note   { color: var(--dust); letter-spacing: .04em; }
 
+  /* --- tabs ---------------------------------------------------------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--seam); }
+  .tab { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 9px 18px; border: 1px solid transparent; border-bottom: none; background: none; color: var(--dust); }
+  .tab:hover { color: var(--chalk); }
+  .tab--on { background: var(--matrix); border-color: var(--seam); color: var(--amethyst); }
+
+  /* --- run view ------------------------------------------------------ */
+  .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
+
+  .stage { background: var(--void); border: 1px solid var(--seam); line-height: 0; }
+  #run-canvas { display: block; width: 100%; }
+
+  .runbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+  .runbar .spacer { flex: 1 1 auto; }
+  .runbar .sub { letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
+
+  .hp { position: relative; height: 20px; background: var(--void); border: 1px solid var(--seam); margin-bottom: 12px; }
+  .hp__fill { height: 100%; background: var(--verdite); }
+  .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--chalk); }
+
+  .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
+  .stat__k { color: var(--dust); }
+
+  .readout { display: grid; gap: 4px; font-size: 12px; }
+  .readout div { display: flex; justify-content: space-between; gap: 10px; }
+  .readout span { color: var(--dust); }
+  .readout code { color: var(--quartz); }
+  .runsrc { margin-top: 10px; font-size: 11px; color: var(--dust); }
+
+  .run-status { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); }
+  .run-status--running { color: var(--verdite); }
+  .run-status--cleared { color: var(--citrine); }
+  .run-status--died { color: var(--ember); }
+
+  #run-log { max-height: 240px; overflow-y: auto; font-size: 12px; }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -155,36 +192,89 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Crystal <span>Bench</span></h1>
-      <div class="sub">Crafting test harness — every currency is data, not code.</div>
+      <h1>Crystal <span>Core</span></h1>
+      <div class="sub">Craft it on the bench, then watch it run.</div>
     </div>
-    <div class="seedbar">
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab tab--on" id="tab-bench" role="tab" aria-selected="true">Bench</button>
+    <button class="tab" id="tab-run" role="tab" aria-selected="false">Run</button>
+  </div>
+
+  <div id="view-bench">
+    <div class="seedbar" style="margin-bottom:14px">
       seed <code id="seed">0</code>
       <button class="mini" id="reseed">New seed</button>
       <button class="mini" id="clear">Clear log</button>
     </div>
-  </header>
 
-  <div class="bases" id="bases"></div>
+    <div class="bases" id="bases"></div>
 
-  <div class="cols">
-    <div>
-      <div class="panel">
-        <h2 id="item-name">—</h2>
-        <div id="item-meta"></div>
-        <div id="sockets"></div>
-        <div id="modlist"></div>
+    <div class="cols">
+      <div>
+        <div class="panel">
+          <h2 id="item-name">—</h2>
+          <div id="item-meta"></div>
+          <div id="sockets"></div>
+          <div id="modlist"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <p class="panel__title">Currency</p>
+          <div id="currencies"></div>
+        </div>
+        <div class="panel">
+          <p class="panel__title">History</p>
+          <div id="log"></div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div>
-      <div class="panel">
-        <p class="panel__title">Currency</p>
-        <div id="currencies"></div>
+  <div id="view-run" hidden>
+    <div class="runbar">
+      <button class="mini" id="run-start">Start</button>
+      <button class="mini" id="run-new">New run</button>
+      <span class="sub">speed</span>
+      <button class="chip" id="run-speed-1">1&times;</button>
+      <button class="chip" id="run-speed-2">2&times;</button>
+      <button class="chip" id="run-speed-4">4&times;</button>
+      <span class="spacer"></span>
+      <span class="run-status" id="run-status">paused</span>
+    </div>
+
+    <div class="runcols">
+      <div class="stage">
+        <canvas id="run-canvas" aria-label="map view"></canvas>
       </div>
-      <div class="panel">
-        <p class="panel__title">History</p>
-        <div id="log"></div>
+
+      <div>
+        <div class="panel">
+          <p class="panel__title">Character</p>
+          <div class="hp">
+            <div class="hp__fill" id="run-hp-fill"></div>
+            <div class="hp__text" id="run-hp-text">—</div>
+          </div>
+          <div id="run-stats"></div>
+        </div>
+
+        <div class="panel">
+          <p class="panel__title">Run</p>
+          <div class="readout">
+            <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
+            <div><span>killed</span><code id="run-killed">0/0</code></div>
+            <div><span>seed</span><code id="run-seed">0</code></div>
+          </div>
+          <div class="runsrc" id="run-source">—</div>
+        </div>
+
+        <div class="panel">
+          <p class="panel__title">History</p>
+          <div id="run-log"></div>
+        </div>
       </div>
     </div>
   </div>

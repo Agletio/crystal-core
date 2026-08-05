@@ -78,7 +78,36 @@ slots; gear runs 5 for 2 on each side.
 | `crafting.ts` | Condition registry, effect registry, `craft()`. **The extension point.** |
 | `data.ts` | All mods, currencies, recipes. Content lives here, not in code. |
 | `economy.ts` | Wallet, item factory, recipes, placeholder run rewards. |
-| `demo.ts` | Runnable walkthrough + the sustain harness. |
+| `demo.ts` | Runnable walkthrough, tier ladder, sustain harness. |
+| `sim/grid.ts` | Map generation. Size and room count come off crystal mods. |
+| `sim/pathfind.ts` | A* on the tile grid. |
+| `sim/stats.ts` | Items → combat numbers, through `computeStat`. |
+| `sim/run.ts` | The tick loop: movement, aggro, combat. Deterministic. |
+| `sim/loadout.ts` | Placeholder starter gear until equipment exists. |
+| `render/` | Renderer interface + a placeholder canvas implementation. |
+| `ui/` | The two views: crafting bench and run. |
+
+## The sim
+
+`src/sim/` is headless and DOM-free, same discipline as the crafting core — it
+runs in Node, which is why `demo.ts` can print a tier ladder without a browser.
+
+Three rules keep the graphics replaceable:
+
+1. **The renderer only reads.** It takes `RunState` and draws. It never writes
+   back, and the sim doesn't know it exists.
+2. **Positions are in tile units, not pixels.** A new renderer picks its own
+   scale, camera and projection without touching the sim.
+3. **Fixed timestep off the seeded RNG.** Same crystal, gear and seed gives the
+   same run tick for tick, so a balance complaint is reproducible from a seed
+   rather than a description.
+
+Swapping stick figures for sprites means writing a second implementation of
+`Renderer` and changing one line in `ui/run.ts`.
+
+`npm run demo` prints the tier ladder — which crystal tiers the starter gear
+clears and where it dies. That gap is the reason to craft; if it never loses,
+gear doesn't matter yet.
 
 ## Adding a currency
 
@@ -141,17 +170,23 @@ several times. That oscillation is the endgame rhythm.
 
 ## Deliberately not here yet
 
-- The spatial sim (grid, pathfinding, combat). `simulateRun()` is a stub with
-  the right *shape* — it reads rewards off crystal mods via the same
-  aggregation the character will use. Swap its body when the sim exists.
+- **Loot and equipment.** The sim kills things but drops nothing, and there's
+  no inventory. `simulateRun()` in `economy.ts` is still the old stub — the
+  economy has not been rewired to the real sim yet, so the sustain numbers and
+  the map you watch are currently two separate models of the same run.
+- The hero's gear is a seeded starter set. The bench bridges into it (a crystal
+  becomes the map, a piece of gear replaces the starter item of the same base),
+  but that's wiring, not an equipment system.
 - Trade, stash, passive tree, behavior scripts.
 - Unique items — a base with a fixed mod list and `meta.unique`.
 
 ## Next
 
-1. Write unit tests for `computeStat` before anything else. A subtle bug in the
-   flat/inc/more order poisons everything downstream and stays invisible for
-   months.
-2. Build the grid map with a sprite that pathfinds to an exit — no combat.
-   Confirm that watching it for three minutes is actually pleasant. That's the
-   load-bearing assumption in the whole design and it's cheap to test now.
+1. **Loot.** Drops on kill, an inventory, and equipping what you crafted. Then
+   delete `simulateRun()` and let the real sim report its own rewards, so
+   there's one model of a run instead of two.
+2. Unit tests for `computeStat`. The sim exercises it hard now, but a subtle
+   bug in the flat/inc/more order still poisons everything downstream and
+   stays invisible for months.
+3. Watch a T3 run for three minutes and decide whether it's genuinely pleasant.
+   That was always the load-bearing assumption, and it's now actually testable.

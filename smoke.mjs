@@ -33,16 +33,27 @@ if (!existsSync(bundlePath)) {
   fail('docs/app.js exists', 'run `npm run build` first');
 }
 
-// Any console.error from page code is a failure, not noise.
+// Any console.error from page code is a failure, not noise — except for the
+// one thing headless Node genuinely cannot do. jsdom has no 2D canvas without
+// a native dependency, and the renderer already degrades to a no-op there, so
+// this particular error is expected rather than a regression.
+const EXPECTED = [/HTMLCanvasElement.*getContext/];
+
 const pageErrors = [];
 const virtualConsole = new VirtualConsole();
-virtualConsole.on('error', (msg) => pageErrors.push(String(msg)));
-virtualConsole.on('jsdomError', (err) => pageErrors.push(err.message));
+const record = (text) => {
+  if (!EXPECTED.some((re) => re.test(text))) pageErrors.push(text);
+};
+virtualConsole.on('error', (msg) => record(String(msg)));
+virtualConsole.on('jsdomError', (err) => record(err.message));
 
 const dom = new JSDOM(readFileSync(htmlPath, 'utf8'), {
   runScripts: 'dangerously',
   virtualConsole,
   url: 'http://localhost/',
+  // The run view drives itself off requestAnimationFrame, which only exists
+  // in jsdom's visual mode.
+  pretendToBeVisual: true,
 });
 const { window } = dom;
 const { document } = window;
@@ -134,6 +145,30 @@ assert($('modlist').querySelectorAll('.mod').length === 0, 'fresh item has no mo
 
 $('clear').click();
 assert($('log').querySelectorAll('.logline').length === 0, 'clear empties the history');
+
+// --- the run view ----------------------------------------------------------
+assert($('view-bench').hidden === false, 'bench view starts visible');
+assert($('view-run').hidden === true, 'run view starts hidden');
+
+$('tab-run').click();
+assert($('view-run').hidden === false, 'clicking Run reveals the map view');
+assert($('view-bench').hidden === true, 'clicking Run hides the bench');
+
+// The sim is built on boot, so these prove a map generated and populated
+// itself headlessly — no canvas required.
+assert(
+  $('run-stats').querySelectorAll('.stat').length >= 6,
+  'character panel lists derived stats',
+  String($('run-stats').querySelectorAll('.stat').length)
+);
+
+const killed = text('run-killed');
+assert(/^0\/\d+$/.test(killed), 'run readout initialised', killed);
+assert(Number(killed.split('/')[1]) > 0, 'the map spawned monsters', killed);
+assert(/^\d+$/.test(text('run-seed')), 'run seed is displayed', text('run-seed'));
+
+$('tab-bench').click();
+assert($('view-bench').hidden === false, 'switching back restores the bench');
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 

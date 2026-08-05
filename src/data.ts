@@ -403,6 +403,51 @@ export const CRYSTAL_TIERS = [
   { tier: 6, ilvl: 70, fragments: 370 },
 ];
 
+// ===========================================================================
+// COMBAT BASELINES
+//
+// The character's stats before any gear, and a monster's before any crystal
+// mods. Every one of these is a dial you will want to turn while watching a
+// run, so they live here rather than buried in the sim.
+//
+// Distances are in tiles, speeds in tiles/second, rates in per-second.
+// ===========================================================================
+
+export const HERO_BASE = {
+  life: 240,
+  /** Physical damage per hit before gear. Elemental damage is gear-only. */
+  weaponDamage: 55,
+  attacksPerSecond: 1.2,
+  critChance: 5,
+  moveSpeed: 3.4,
+  armour: 0,
+  attackRange: 1.7,
+  /** How far the hero will notice a monster and divert to fight it. */
+  aggroRange: 9,
+  /** Percent of max life per second. Recovery happens between packs, which
+   *  is what turns a run into a series of fights instead of one long
+   *  attrition curve you always lose. */
+  lifeRegenPercent: 2.2,
+};
+
+export const MONSTER_BASE = {
+  life: 26,
+  damage: 1.9,
+  attacksPerSecond: 0.8,
+  moveSpeed: 2.3,
+  attackRange: 1.3,
+  aggroRange: 8,
+};
+
+/**
+ * Per-tier monster scaling.
+ *
+ * Life outpaces damage so climbing tiers first reads as "this takes longer",
+ * and only later as "this kills me". Starter gear comfortably clears T1-T3
+ * and loses badly around T6 — that gap is the reason to craft.
+ */
+export const MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
+
 export const RECIPES: Recipe[] = [
   ...CRYSTAL_TIERS.map((t) => ({
     id: `crystal_t${t.tier}`,

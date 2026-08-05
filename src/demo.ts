@@ -11,6 +11,9 @@ import {
   runRecipe,
   simulateRun,
 } from './economy';
+import { RunSim, runToCompletion } from './sim/run';
+import { heroStats } from './sim/stats';
+import { starterLoadout } from './sim/loadout';
 import type { Item, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
@@ -81,6 +84,66 @@ line();
 line(describeItem(trinket));
 line();
 trinket = apply(trinket, 'shard_of_making'); // should be refused
+
+// ===========================================================================
+rule('AN ACTUAL RUN — headless, no browser');
+
+{
+  const mapCrystal = craft(
+    makeCrystal(3),
+    CURRENCY_BY_ID.shard_of_awakening,
+    pool,
+    rng
+  ).item;
+  const gear = starterLoadout(new Rng(7));
+  const stats = heroStats(gear);
+
+  line(`Crystal: ${mapCrystal.mods.map((m) => m.name).join(', ')}`);
+  line(
+    `Hero:    ${Math.round(stats.maxLife)} life · ${Math.round(stats.damage)} dmg · ` +
+      `${stats.attacksPerSecond.toFixed(2)}/s · ${Math.round(stats.critChance)}% crit`
+  );
+
+  const sim = new RunSim(mapCrystal, gear, new Rng(4242));
+  const { grid } = sim.state.map;
+  line(
+    `Map:     ${grid.width}x${grid.height}, ${sim.state.map.rooms.length} rooms, ` +
+      `${sim.state.totalMonsters} monsters`
+  );
+
+  const final = runToCompletion(sim);
+  line();
+  line(
+    `Result:  ${final.status} in ${final.elapsed.toFixed(1)}s — ` +
+      `${final.killed}/${final.totalMonsters} killed, ` +
+      `${Math.max(0, Math.round(final.hero.life))} life left`
+  );
+}
+
+// ===========================================================================
+rule('TIER LADDER — where does starter gear fall over?');
+
+line('  tier   monsters   result     time   killed   life left');
+for (const t of CRYSTAL_TIERS) {
+  const mapCrystal = craft(
+    makeCrystal(t.tier),
+    CURRENCY_BY_ID.shard_of_awakening,
+    pool,
+    rng
+  ).item;
+  const sim = new RunSim(mapCrystal, starterLoadout(new Rng(7)), new Rng(900 + t.tier));
+  const total = sim.state.totalMonsters;
+  const f = runToCompletion(sim, 400);
+
+  line(
+    `   T${t.tier}   ${String(total).padStart(8)}   ${f.status.padEnd(8)} ` +
+      `${f.elapsed.toFixed(0).padStart(5)}s   ${String(f.killed).padStart(6)}   ` +
+      `${String(Math.max(0, Math.round(f.hero.life))).padStart(9)}`
+  );
+}
+line();
+line('Starter gear should walk T1-T3 and lose somewhere above it. That gap is');
+line('the reason to craft — if it never loses, gear does not matter yet.');
 
 // ===========================================================================
 rule('SUSTAIN CHECK — is reinvestment under 1.0?');
