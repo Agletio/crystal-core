@@ -93,6 +93,10 @@
 
   .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; }
   .mini:hover:not(:disabled) { border-color: var(--amethyst); color: var(--amethyst); }
+  /* Dev tools, marked so they read as scaffolding rather than features. */
+  .mini--dev { border-style: dashed; color: var(--dust); }
+  .mini--dev:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
+  .devsep { width: 1px; align-self: stretch; background: var(--seam); margin: 0 4px; }
 
   .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
   .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--dust); }
@@ -379,6 +383,9 @@
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
+      <span class="devsep"></span>
+      <button class="mini mini--dev" id="dev-fresh" title="Wipe to a true new game: two T1 crystals, nothing else">New game</button>
+      <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, fragments and every currency">Dev kit</button>
     </div>
   </header>
 

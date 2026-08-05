@@ -7,18 +7,30 @@
  * you open, read, and close — and all three need to be reachable from either
  * tab.
  */
-import { createGame } from './game/state';
+import { createGame, resetGame } from './game/state';
+import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
 import { initRun, onRunShown, refreshRunPanels } from './ui/run';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
-import { initHistory, openHistory, closeHistory, isHistoryOpen } from './ui/history';
+import {
+  initHistory,
+  openHistory,
+  closeHistory,
+  isHistoryOpen,
+  clearHistory,
+  note,
+} from './ui/history';
 
 type ViewName = 'bench' | 'run';
 
 const VIEWS: ViewName[] = ['bench', 'run'];
-const game = createGame();
+
+// Fresh by default. Judging whether the loop is engaging from a stocked
+// inventory is judging the endgame at the start.
+const game = createGame('fresh');
+let current: ViewName = 'bench';
 
 function show(view: ViewName): void {
   for (const name of VIEWS) {
@@ -29,8 +41,18 @@ function show(view: ViewName): void {
     tab.classList.toggle('tab--on', active);
     tab.setAttribute('aria-selected', String(active));
   }
+  current = view;
   if (view === 'run') onRunShown();
   else onBenchShown();
+}
+
+/** Wipe and re-render everything. Both buttons are dev tools. */
+function restart(mode: StartMode): void {
+  resetGame(game, mode);
+  clearHistory();
+  note(mode === 'fresh' ? 'New game — two crystals and nothing else.' : 'Dev kit granted.');
+  refreshRunPanels();
+  show(current);
 }
 
 for (const name of VIEWS) {
@@ -40,6 +62,8 @@ for (const name of VIEWS) {
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
+document.getElementById('dev-fresh')!.addEventListener('click', () => restart('fresh'));
+document.getElementById('dev-kit')!.addEventListener('click', () => restart('dev'));
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {

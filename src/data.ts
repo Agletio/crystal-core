@@ -1108,6 +1108,38 @@ export const LOOT = {
  * bench is a shelf of disabled buttons until you've been to the workshop,
  * which is a poor first thirty seconds.
  */
+export interface StartPreset {
+  fragments: number;
+  currency: Record<string, number>;
+  crystals: number[];
+  gear: Array<{ base: string; ilvl: number }>;
+  /** Whether that gear starts worn, or has to be earned first. */
+  equipped: boolean;
+}
+
+/**
+ * Two starting states, because they answer different questions.
+ *
+ * `fresh` is what a new player actually gets: two Tier 1 crystals and
+ * nothing else. `dev` is stocked, for exercising the bench and the tree
+ * without grinding first.
+ *
+ * The distinction matters more than it looks. Judging whether the loop is
+ * engaging while starting with a full set of filled gear and 260 fragments
+ * is judging the endgame state at the start — no scarcity means nothing to
+ * progress through.
+ */
+export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
+  fresh: { fragments: 0, currency: {}, crystals: [1, 1], gear: [], equipped: false },
+  dev: {
+    fragments: 260,
+    currency: {},
+    crystals: [1, 1, 2],
+    gear: [],
+    equipped: true,
+  },
+};
+
 export const STARTING_FRAGMENTS = 260;
 export const STARTING_CURRENCY: Record<string, number> = {
   shard_of_making: 6,
@@ -1127,6 +1159,10 @@ export const STARTING_CRYSTALS = [1, 1, 2];
 
 /** One of each base at low ilvl, so every slot can be filled immediately. */
 export const STARTING_GEAR = GEAR_BASES.map((b) => ({ base: b.id, ilvl: 20 }));
+
+// Fill in the halves of the presets that depend on the constants above.
+START_PRESETS.dev.currency = STARTING_CURRENCY;
+START_PRESETS.dev.gear = STARTING_GEAR;
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {

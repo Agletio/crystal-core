@@ -8,13 +8,7 @@
  * so a format change can reset cleanly instead of crashing on old data.
  */
 import { Rng } from '../rng';
-import {
-  EQUIP_SLOTS,
-  STARTING_CRYSTALS,
-  STARTING_CURRENCY,
-  STARTING_FRAGMENTS,
-  STARTING_GEAR,
-} from '../data';
+import { EQUIP_SLOTS, START_PRESETS } from '../data';
 import type { EquipSlotDef } from '../types';
 import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
@@ -41,23 +35,45 @@ export interface GameState {
   benchId: string | null;
 }
 
-export function createGame(): GameState {
-  const wallet: Wallet = {};
-  grant(wallet, 'fragment', STARTING_FRAGMENTS);
-  for (const [id, n] of Object.entries(STARTING_CURRENCY)) grant(wallet, id, n);
+export type StartMode = 'fresh' | 'dev';
 
-  const inventory: Item[] = [
-    ...STARTING_CRYSTALS.map((tier) => makeCrystal(tier)),
-    ...STARTING_GEAR.map((g) => makeGear(g.base, g.ilvl)),
-  ];
-
-  return {
+export function createGame(mode: StartMode = 'dev'): GameState {
+  const game: GameState = {
     version: SAVE_VERSION,
-    wallet,
-    inventory,
-    character: makeCharacter(starterLoadout(new Rng(1)), 'strike'),
+    wallet: {},
+    inventory: [],
+    character: makeCharacter({}, 'strike'),
     benchId: null,
   };
+  resetGame(game, mode);
+  return game;
+}
+
+/**
+ * Wipes back to a starting state, IN PLACE.
+ *
+ * Mutates rather than replacing because every view captured this object at
+ * init. Handing them a new one would leave them all pointed at the old game.
+ */
+export function resetGame(game: GameState, mode: StartMode): void {
+  const preset = START_PRESETS[mode];
+
+  game.wallet = {};
+  grant(game.wallet, 'fragment', preset.fragments);
+  for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
+
+  game.inventory = [
+    ...preset.crystals.map((tier) => makeCrystal(tier)),
+    ...preset.gear.map((g) => makeGear(g.base, g.ilvl)),
+  ];
+
+  // A fresh character owns nothing and has worn nothing. The dev preset wears
+  // a rolled set so the sheet and the stat pipeline have something in them.
+  game.character = makeCharacter(
+    preset.equipped ? starterLoadout(new Rng(1)) : {},
+    'strike'
+  );
+  game.benchId = null;
 }
 
 export function addItem(game: GameState, item: Item): void {

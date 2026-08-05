@@ -66,6 +66,28 @@ const $ = (id) => document.getElementById(id);
 const text = (id) => ($(id)?.textContent ?? '').trim();
 const all = (sel) => [...document.querySelectorAll(sel)];
 
+// --- a new game starts with nothing ---------------------------------------
+// The app boots fresh on purpose: judging the loop from a stocked inventory
+// is judging the endgame at the start.
+assert(
+  all('#inventory .invitem').length === 2,
+  'a fresh game holds exactly two crystals',
+  String(all('#inventory .invitem').length)
+);
+assert(text('wallet').startsWith('0'), 'a fresh game has no fragments', text('wallet'));
+assert(
+  all('#currencies button.curr:not(:disabled)').length === 0,
+  'nothing is craftable with an empty wallet'
+);
+
+// Everything below needs stock, which is what the dev kit is for.
+$('dev-kit').click();
+assert(
+  all('#inventory .invitem').length > 2,
+  'the dev kit stocks the inventory',
+  String(all('#inventory .invitem').length)
+);
+
 // --- duplicate ids would silently break getElementById --------------------
 const ids = all('[id]').map((n) => n.id);
 const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
