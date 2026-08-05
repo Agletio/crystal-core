@@ -157,6 +157,8 @@ export interface GearBase {
   kind: GearKind;
   /** Icon family. Same idea as monster sprites — a name, not an asset. */
   art: string;
+  /** Mod-group capacities. Zero in a group means it can never roll one. */
+  slots: Record<string, number>;
 }
 
 export interface EquipSlotDef {

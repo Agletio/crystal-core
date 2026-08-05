@@ -41,7 +41,9 @@ export function makeGear(base: string, ilvl: number, name?: string): Item {
     name: name ?? def?.name ?? base,
     tags: ['gear', base],
     ilvl,
-    slots: { ...GEAR_SLOTS },
+    // Per-base capacities are the whole restriction mechanism: a base with no
+    // utility slots can never roll move speed.
+    slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.

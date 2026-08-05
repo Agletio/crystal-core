@@ -40,6 +40,11 @@ export interface CombatStats {
   resistances: Record<string, number>;
   /** Percent reduction against HITS only, already capped. */
   armourReduction: number;
+  /** Extra percent damage on a crit, on top of the base doubling. */
+  critMultiplier: number;
+  /** Gear-side reward stats. Added to whatever the crystal already grants. */
+  rarity: number;
+  currencyFind: number;
 }
 
 /**
@@ -122,7 +127,10 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
 
   return {
     maxLife,
-    lifeRegen: (maxLife * HERO_BASE.lifeRegenPercent) / 100,
+    lifeRegen: computeStat((maxLife * HERO_BASE.lifeRegenPercent) / 100, mods, 'lifeRegen'),
+    critMultiplier: computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
+    rarity: computeStat(0, mods, 'rarity'),
+    currencyFind: computeStat(0, mods, 'currencyFind'),
     damage: skillDamage(mods, base.weaponDamage, skill),
     attacksPerSecond:
       computeStat(HERO_BASE.attacksPerSecond, mods, 'attackSpeed') * skill.rateMultiplier,
@@ -131,7 +139,7 @@ export function heroStats(equipped: Item[], level: number, skill: SkillDef): Com
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
     armourReduction: armourReduction(computeStat(HERO_BASE.armour, mods, 'armour')),
     resistances: resistancesFrom(mods),
-    attackRange: skill.range,
+    attackRange: computeStat(skill.range, mods, 'attackRange'),
     aggroRange: HERO_BASE.aggroRange,
   };
 }
@@ -171,6 +179,9 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
+    critMultiplier: 0,
+    rarity: 0,
+    currencyFind: 0,
     /** What monsters on this map hurt you with. Shows in the results overlay. */
     damageType: fire > 0 ? 'fire' : 'physical',
   };

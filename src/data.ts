@@ -81,7 +81,24 @@ export const DEFENCE = {
 };
 
 export const CRYSTAL_SLOTS = { mod: 3 };
-export const GEAR_SLOTS = { main: 2, secondary: 2 };
+
+/**
+ * Gear mod groups.
+ *
+ * Slot types were always just strings declared per base — so restricting what
+ * a piece can roll is a capacity table, not an engine feature. A base with
+ * zero utility slots simply cannot roll move speed; no per-mod base lists, no
+ * eligibility special-casing.
+ *
+ *   offence  raw damage
+ *   defence  staying alive
+ *   damage   multipliers — attack speed and crit are not utility
+ *   utility  everything that isn't damage
+ */
+export const GEAR_SLOT_TYPES = ['offence', 'defence', 'damage', 'utility'] as const;
+
+/** Kept for crystals and any caller that still wants a default gear layout. */
+export const GEAR_SLOTS = { offence: 1, defence: 1, damage: 1, utility: 1 };
 
 // ===========================================================================
 // EQUIPMENT
@@ -106,14 +123,45 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'ring2', name: 'Ring II', accepts: 'ring' },
 ];
 
+/**
+ * Each base declares how many of each group it can hold. This is the whole
+ * restriction mechanism.
+ *
+ * Only boots and amulets have utility slots, which is what confines move
+ * speed to them — by construction rather than by rule. Body has no offence at
+ * all and boots no multipliers, so those pieces have a defensive identity
+ * instead of being generic stat sticks. Weapons keep one defence slot, so a
+ * weapon can still roll armour or life.
+ */
 export const GEAR_BASES: GearBase[] = [
-  { id: 'sword', name: 'Iron Sword', kind: 'weapon', art: 'weapon' },
-  { id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet' },
-  { id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body' },
-  { id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves' },
-  { id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots' },
-  { id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet' },
-  { id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring' },
+  {
+    id: 'sword', name: 'Iron Sword', kind: 'weapon', art: 'weapon',
+    slots: { offence: 2, defence: 1, damage: 1, utility: 0 },
+  },
+  {
+    id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet',
+    slots: { offence: 1, defence: 2, damage: 1, utility: 0 },
+  },
+  {
+    id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body',
+    slots: { offence: 0, defence: 3, damage: 1, utility: 0 },
+  },
+  {
+    id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves',
+    slots: { offence: 1, defence: 1, damage: 2, utility: 0 },
+  },
+  {
+    id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots',
+    slots: { offence: 0, defence: 2, damage: 0, utility: 2 },
+  },
+  {
+    id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet',
+    slots: { offence: 1, defence: 1, damage: 1, utility: 1 },
+  },
+  {
+    id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring',
+    slots: { offence: 1, defence: 2, damage: 1, utility: 0 },
+  },
 ];
 
 export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
@@ -245,11 +293,11 @@ export const CRYSTAL_MODS: ModDef[] = [
   },
 ];
 
-// --- gear: MAIN = raw power ------------------------------------------------
+// --- gear: DEFENCE = staying alive -----------------------------------------
 export const GEAR_MAIN_MODS: ModDef[] = [
   {
     id: 'flat_life',
-    slot: 'main',
+    slot: 'defence',
     name: 'of the Bear',
     appliesTo: ['gear'],
     tags: ['life', 'defence'],
@@ -260,8 +308,19 @@ export const GEAR_MAIN_MODS: ModDef[] = [
     ],
   },
   {
+    id: 'inc_life',
+    slot: 'defence',
+    name: 'of the Ox',
+    appliesTo: ['gear'],
+    tags: ['life', 'defence'],
+    tiers: [
+      { ilvl: 50, weight: 280, stats: [{ stat: 'life', form: 'inc', range: [12, 20] }] },
+      { ilvl: 1, weight: 760, stats: [{ stat: 'life', form: 'inc', range: [5, 11] }] },
+    ],
+  },
+  {
     id: 'armour',
-    slot: 'main',
+    slot: 'defence',
     name: 'Plated',
     appliesTo: ['gear'],
     tags: ['defence'],
@@ -270,15 +329,104 @@ export const GEAR_MAIN_MODS: ModDef[] = [
       { ilvl: 1, weight: 900, stats: [{ stat: 'armour', form: 'flat', range: [20, 60] }] },
     ],
   },
-  // Typed damage mods are generated from DAMAGE_TYPES below — one flat and
-  // one increased family per type, so a new type arrives fully equipped.
+  {
+    id: 'inc_armour',
+    slot: 'defence',
+    name: 'Reinforced',
+    appliesTo: ['gear'],
+    tags: ['defence'],
+    tiers: [
+      { ilvl: 45, weight: 300, stats: [{ stat: 'armour', form: 'inc', range: [18, 28] }] },
+      { ilvl: 1, weight: 780, stats: [{ stat: 'armour', form: 'inc', range: [8, 16] }] },
+    ],
+  },
+  {
+    id: 'life_regen',
+    slot: 'defence',
+    name: 'of Vigour',
+    appliesTo: ['gear'],
+    tags: ['life', 'defence'],
+    tiers: [
+      { ilvl: 40, weight: 260, stats: [{ stat: 'lifeRegen', form: 'inc', range: [25, 40] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'lifeRegen', form: 'inc', range: [10, 22] }] },
+    ],
+  },
+  // Resistances are generated from DAMAGE_TYPES below, also into 'defence'.
 ];
 
-// --- gear: SECONDARY = utility and clear speed -----------------------------
+// --- gear: DAMAGE = multipliers --------------------------------------------
+//
+// Attack speed and crit are not utility. They multiply your damage, and
+// grouping them with move speed made a "utility" slot the best damage slot on
+// the item.
 export const GEAR_SECONDARY_MODS: ModDef[] = [
   {
+    id: 'attack_speed',
+    slot: 'damage',
+    name: 'of Alacrity',
+    appliesTo: ['gear'],
+    tags: ['speed', 'damage'],
+    tiers: [
+      { ilvl: 40, weight: 300, stats: [{ stat: 'attackSpeed', form: 'inc', range: [14, 20] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'attackSpeed', form: 'inc', range: [5, 12] }] },
+    ],
+  },
+  {
+    id: 'crit_chance',
+    slot: 'damage',
+    name: 'of Precision',
+    appliesTo: ['gear'],
+    tags: ['crit', 'damage'],
+    tiers: [
+      { ilvl: 45, weight: 250, stats: [{ stat: 'critChance', form: 'inc', range: [30, 45] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'critChance', form: 'inc', range: [10, 25] }] },
+    ],
+  },
+  {
+    id: 'crit_multiplier',
+    slot: 'damage',
+    name: 'of Savagery',
+    appliesTo: ['gear'],
+    tags: ['crit', 'damage'],
+    tiers: [
+      { ilvl: 50, weight: 220, stats: [{ stat: 'critMultiplier', form: 'flat', range: [22, 34] }] },
+      { ilvl: 1, weight: 620, stats: [{ stat: 'critMultiplier', form: 'flat', range: [8, 18] }] },
+    ],
+  },
+  {
+    id: 'aoe',
+    slot: 'damage',
+    name: 'of Reach',
+    appliesTo: ['gear'],
+    tags: ['area', 'clear'],
+    tiers: [
+      { ilvl: 35, weight: 250, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [18, 26] }] },
+      { ilvl: 1, weight: 600, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [6, 15] }] },
+    ],
+  },
+  {
+    // Untagged, so it scales every damage type including typeless.
+    id: 'inc_damage_generic',
+    slot: 'damage',
+    name: 'Honed',
+    appliesTo: ['gear'],
+    tags: ['damage'],
+    tiers: [
+      { ilvl: 55, weight: 200, stats: [{ stat: 'damage', form: 'inc', range: [20, 30] }] },
+      { ilvl: 1, weight: 640, stats: [{ stat: 'damage', form: 'inc', range: [8, 16] }] },
+    ],
+  },
+];
+
+// --- gear: UTILITY = everything that isn't damage --------------------------
+//
+// Only boots and amulets have these slots, so this is where move speed lives
+// and where it competes for room. Three slots on the whole character, which
+// is what stops universally-useful mods from being free power.
+export const GEAR_UTILITY_MODS: ModDef[] = [
+  {
     id: 'move_speed',
-    slot: 'secondary',
+    slot: 'utility',
     name: 'of the Wind',
     appliesTo: ['gear'],
     tags: ['speed', 'clear'],
@@ -289,46 +437,39 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
     ],
   },
   {
-    id: 'attack_speed',
-    slot: 'secondary',
-    name: 'of Alacrity',
+    id: 'attack_range',
+    slot: 'utility',
+    name: 'of Extension',
     appliesTo: ['gear'],
-    tags: ['speed', 'damage'],
+    tags: ['utility'],
     tiers: [
-      { ilvl: 40, weight: 300, stats: [{ stat: 'attackSpeed', form: 'inc', range: [14, 20] }] },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'attackSpeed', form: 'inc', range: [5, 12] }] },
+      { ilvl: 40, weight: 260, stats: [{ stat: 'attackRange', form: 'inc', range: [12, 20] }] },
+      { ilvl: 1, weight: 640, stats: [{ stat: 'attackRange', form: 'inc', range: [5, 11] }] },
     ],
   },
   {
-    id: 'pickup_radius',
-    slot: 'secondary',
-    name: 'of Gathering',
+    // Same meaning as the crystal's rarity: better classes of currency drop.
+    id: 'gear_rarity',
+    slot: 'utility',
+    name: 'of Fortune',
     appliesTo: ['gear'],
-    tags: ['utility', 'clear'],
+    tags: ['reward', 'utility'],
     tiers: [
-      { ilvl: 1, weight: 500, stats: [{ stat: 'pickupRadius', form: 'inc', range: [20, 45] }] },
+      { ilvl: 45, weight: 220, stats: [{ stat: 'rarity', form: 'flat', range: [18, 30] }] },
+      { ilvl: 1, weight: 600, stats: [{ stat: 'rarity', form: 'flat', range: [6, 15] }] },
     ],
   },
   {
-    id: 'aoe',
-    slot: 'secondary',
-    name: 'of Reach',
+    // Chance that currency drops at all, as opposed to how good it is.
+    // Fragments go stale; the scarce classes never do.
+    id: 'currency_find',
+    slot: 'utility',
+    name: 'of Avarice',
     appliesTo: ['gear'],
-    tags: ['area', 'clear'],
+    tags: ['reward', 'utility'],
     tiers: [
-      { ilvl: 35, weight: 250, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [18, 26] }] },
-      { ilvl: 1, weight: 600, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [6, 15] }] },
-    ],
-  },
-  {
-    id: 'crit_chance',
-    slot: 'secondary',
-    name: 'of Precision',
-    appliesTo: ['gear'],
-    tags: ['crit', 'damage'],
-    tiers: [
-      { ilvl: 45, weight: 250, stats: [{ stat: 'critChance', form: 'inc', range: [30, 45] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'critChance', form: 'inc', range: [10, 25] }] },
+      { ilvl: 45, weight: 220, stats: [{ stat: 'currencyFind', form: 'inc', range: [20, 34] }] },
+      { ilvl: 1, weight: 600, stats: [{ stat: 'currencyFind', form: 'inc', range: [8, 18] }] },
     ],
   },
 ];
@@ -361,10 +502,50 @@ const INC_DAMAGE_NAMES: Record<string, string> = {
   crystal: 'Prismatic',
 };
 
+/**
+ * Delivery tags, not damage types.
+ *
+ * A damage type is WHAT (fire, cold); a delivery tag is HOW (projectile,
+ * spell, melee). They're separate axes, and skill tags ride along in every
+ * damage pass — so a mod tagged ['projectile'] scales any projectile skill
+ * whatever its element, with no engine change.
+ *
+ * This is also why a damage type must NEVER appear in a skill's tags: it
+ * would then satisfy every type pass and scale the lot.
+ */
+export const DELIVERY_TAGS = ['melee', 'projectile', 'spell', 'area'] as const;
+
+const DELIVERY_NAMES: Record<string, string> = {
+  melee: 'Brutal',
+  projectile: 'Sharpshooter',
+  spell: 'Arcane',
+  area: 'Sweeping',
+};
+
+const DELIVERY_DAMAGE_MODS: ModDef[] = DELIVERY_TAGS.map((tag) => ({
+  id: `inc_${tag}_damage`,
+  slot: 'offence',
+  name: `${DELIVERY_NAMES[tag]}`,
+  appliesTo: ['gear'],
+  tags: ['damage', tag],
+  tiers: [
+    {
+      ilvl: 50,
+      weight: 240,
+      stats: [{ stat: 'damage', form: 'inc' as const, range: [30, 45] as [number, number], tags: [tag] }],
+    },
+    {
+      ilvl: 1,
+      weight: 720,
+      stats: [{ stat: 'damage', form: 'inc' as const, range: [12, 24] as [number, number], tags: [tag] }],
+    },
+  ],
+}));
+
 const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
   {
     id: `flat_${type.id}_damage`,
-    slot: 'main',
+    slot: 'offence',
     name: FLAT_DAMAGE_NAMES[type.id] ?? type.name,
     appliesTo: ['gear'],
     tags: ['damage', type.id, ...(type.group ? [type.group] : [])],
@@ -383,7 +564,7 @@ const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
   },
   {
     id: `inc_${type.id}_damage`,
-    slot: 'main',
+    slot: 'offence',
     name: INC_DAMAGE_NAMES[type.id] ?? type.name,
     appliesTo: ['gear'],
     tags: ['damage', type.id, ...(type.group ? [type.group] : [])],
@@ -406,7 +587,7 @@ const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
 const RESISTANCE_MODS: ModDef[] = [
   ...DAMAGE_TYPES.map((type) => ({
     id: `${type.id}_resist`,
-    slot: 'main',
+    slot: 'defence',
     name: `of ${type.name} Warding`,
     appliesTo: ['gear'],
     tags: ['resistance', type.id, ...(type.group ? [type.group] : [])],
@@ -425,7 +606,7 @@ const RESISTANCE_MODS: ModDef[] = [
   })),
   ...DAMAGE_GROUPS.map((group) => ({
     id: `${group}_resist`,
-    slot: 'main',
+    slot: 'defence',
     name: group === 'elemental' ? 'of the Bulwark' : 'of the Veil',
     appliesTo: ['gear'],
     tags: ['resistance', group],
@@ -447,7 +628,9 @@ const RESISTANCE_MODS: ModDef[] = [
 export const GEAR_MODS: ModDef[] = [
   ...GEAR_MAIN_MODS,
   ...GEAR_SECONDARY_MODS,
+  ...GEAR_UTILITY_MODS,
   ...TYPED_DAMAGE_MODS,
+  ...DELIVERY_DAMAGE_MODS,
   ...RESISTANCE_MODS,
 ];
 export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
@@ -532,8 +715,8 @@ export const CURRENCIES: CurrencyDef[] = [
     class: 'uncommon',
     description: 'Fills a main slot with a guaranteed Damage modifier.',
     targets: { kinds: ['gear'], slots: ['main'] },
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'main' }],
-    effects: [{ kind: 'add_mod', slot: 'main', tag: 'damage' }],
+    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'offence' }],
+    effects: [{ kind: 'add_mod', slot: 'offence', tag: 'damage' }],
   },
   {
     id: 'oil_of_swiftness',
@@ -543,9 +726,9 @@ export const CURRENCIES: CurrencyDef[] = [
     targets: { kinds: ['gear'], slots: ['secondary'] },
     requires: [
       { kind: 'not_corrupted' },
-      { kind: 'has_open_slot', slot: 'secondary' },
+      { kind: 'has_open_slot', slot: 'utility' },
     ],
-    effects: [{ kind: 'add_mod', slot: 'secondary', tag: 'speed' }],
+    effects: [{ kind: 'add_mod', slot: 'utility', tag: 'speed' }],
   },
   {
     id: 'sigil_of_refinement',
@@ -635,6 +818,8 @@ export const HERO_BASE = {
   weaponDamage: 72,
   attacksPerSecond: 1.2,
   critChance: 5,
+  /** Extra percent on a crit, on top of the base doubling. */
+  critMultiplier: 0,
   moveSpeed: 3.4,
   armour: 0,
   attackRange: 1.7,

@@ -784,7 +784,7 @@ export class RunSim {
       attacker.stats.critChance > 0 && this.rng.chance(attacker.stats.critChance / 100);
 
     let dmg = attacker.stats.damage * multiplier * this.rng.float(0.9, 1.1);
-    if (crit) dmg *= 2;
+    if (crit) dmg *= 2 + attacker.stats.critMultiplier / 100;
 
     const type = skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical';
 
@@ -913,9 +913,14 @@ export class RunSim {
    * this they existed solely in the starting wallet.
    */
   private rollCurrency(): void {
-    if (!this.rng.chance(CURRENCY_DROP.chancePerKill)) return;
+    // Gear stacks with the crystal: currency find changes HOW OFTEN, rarity
+    // changes HOW GOOD. Two separate questions, so two separate stats.
+    const hero = this.state.hero.stats;
+    const chance = CURRENCY_DROP.chancePerKill * (1 + hero.currencyFind / 100);
+    if (!this.rng.chance(chance)) return;
 
-    const climb = CURRENCY_DROP.upgradeChance * (1 + this.rewards.rarity / 100);
+    const rarity = this.rewards.rarity + hero.rarity;
+    const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
     while (rank < CURRENCY_CLASSES.length - 1 && this.rng.chance(climb)) rank++;
 
