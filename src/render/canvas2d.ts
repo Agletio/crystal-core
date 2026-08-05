@@ -136,19 +136,23 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
   }
 
+  /** Shown on everything alive; dimmed while untouched. */
   function drawLifeBar(v: View, e: Entity, width: number, colour: string): void {
     const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
-    if (frac >= 1) return;
+    const hurt = frac < 1;
 
     const w = v.tile * width;
     const h = Math.max(2, v.tile * 0.12);
     const x = cx(v, e.x) - w / 2;
     const y = cy(v, e.y) - v.tile * 0.72;
 
+    ctx.globalAlpha = hurt ? 1 : 0.5;
     ctx.fillStyle = palette.void;
     ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = hurt ? 1 : 0.45;
     ctx.fillStyle = colour;
     ctx.fillRect(x, y, w * frac, h);
+    ctx.globalAlpha = 1;
   }
 
   /** Size hint per kind, so a Brute reads as bigger than a Grub. */

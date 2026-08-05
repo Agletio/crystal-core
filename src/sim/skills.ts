@@ -68,4 +68,33 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       { x: use.primary.x, y: use.primary.y },
     ]);
   },
+
+  /**
+   * Full damage to the target, a fraction to everything else in reach.
+   *
+   * Centred on the USER rather than the target, because it models a swing
+   * around the attacker — which is also what the arc visual shows. Centring
+   * it on the target would let you clip enemies behind a monster you're
+   * barely touching.
+   *
+   * params: { splashRadius, splashMultiplier }
+   */
+  cleave: (use) => {
+    const radius = (use.skill.params?.splashRadius as number) ?? 2.2;
+    const splash = (use.skill.params?.splashMultiplier as number) ?? 0.1;
+
+    use.hit(use.primary, 1);
+
+    if (splash > 0) {
+      for (const enemy of use.enemies) {
+        if (enemy === use.primary) continue;
+        if (separation(use.user, enemy) <= radius) use.hit(enemy, splash);
+      }
+    }
+
+    use.vfx(use.skill.vfxKind ?? 'swing', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
+  },
 };

@@ -569,14 +569,18 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'strike',
     name: 'Strike',
-    description: 'A single melee hit. No frills, always available.',
+    description:
+      'A sweeping melee hit. Full damage to the target, 10% to everything else in reach.',
     tags: ['attack', 'melee'],
-    behaviour: 'single_target',
+    behaviour: 'cleave',
     damageTypes: ['physical'],
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: HERO_BASE.attackRange,
     vfxKind: 'slash',
+    // Splash is placeholder-cheap on purpose. The mechanism is what matters;
+    // 10% is a number to look at, not a number that has been balanced.
+    params: { splashRadius: 2.2, splashMultiplier: 0.1 },
   },
   {
     // Needed no new code — same single_target behaviour, longer range. That is

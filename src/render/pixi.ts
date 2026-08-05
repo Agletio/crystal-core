@@ -196,16 +196,26 @@ export async function createPixiRenderer(
       .rect(cx(x.x) - tile * 0.32, cy(x.y) - tile * 0.32, tile * 0.64, tile * 0.64)
       .fill({ color: toHexNumber(palette.citrine), alpha: pulse });
 
-    // Life bars for anything hurt.
+    // Life bars on everything alive, not just the wounded — the whole point
+    // is seeing at a glance who is and isn't taking damage. Untouched bars
+    // are dimmed so a full room doesn't shout.
     const bar = (e: Entity, width: number, colour: string) => {
+      if (e.dead) return;
       const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
-      if (frac >= 1 || e.dead) return;
+      const hurt = frac < 1;
       const w = tile * width;
       const h = Math.max(2, tile * 0.11);
       const bx = cx(e.x) - w / 2;
       const by = cy(e.y) - tile * 0.75;
-      vfxLayer.rect(bx, by, w, h).fill(toHexNumber(palette.void));
-      vfxLayer.rect(bx, by, w * frac, h).fill(toHexNumber(colour));
+
+      vfxLayer.rect(bx, by, w, h).fill({
+        color: toHexNumber(palette.void),
+        alpha: hurt ? 1 : 0.5,
+      });
+      vfxLayer.rect(bx, by, w * frac, h).fill({
+        color: toHexNumber(colour),
+        alpha: hurt ? 1 : 0.45,
+      });
     };
     for (const m of state.monsters) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite);
@@ -233,8 +243,15 @@ export async function createPixiRenderer(
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         const sweep = Math.PI * 0.75;
         const start = angle - sweep / 2 + sweep * t;
+        const radius = tile * 0.95;
+
+        // arc() continues the current path, exactly like Canvas2D — without
+        // moving to its start first it draws a line from wherever the path
+        // was (the canvas origin) out to the arc, which reads as a stray
+        // beam shooting off to the corner of the map.
         vfxLayer
-          .arc(cx(from.x), cy(from.y), tile * 0.95, start, start + sweep * 0.45)
+          .moveTo(cx(from.x) + Math.cos(start) * radius, cy(from.y) + Math.sin(start) * radius)
+          .arc(cx(from.x), cy(from.y), radius, start, start + sweep * 0.45)
           .stroke({ width: Math.max(2, tile * 0.18), color: colour, alpha });
         continue;
       }

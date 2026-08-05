@@ -240,6 +240,14 @@ Colour is chosen in `vfxColour()`, where kind wins over damage type. That's a
 presentation call, which is why it lives in the renderer and not the skill
 data.
 
+One trap worth knowing: PixiJS `arc()` continues the current path, exactly like
+Canvas2D. Without a `moveTo()` to its start point it draws a line from the
+canvas origin out to the arc — which looks like a stray beam fired at the
+corner of the map.
+
+Life bars are drawn on everything alive rather than only the wounded, dimmed
+while untouched, so you can see who is and isn't taking damage.
+
 ## Bodies and corridors
 
 Units have a `radius` and shove each other apart, so a pack spreads into a
@@ -337,9 +345,10 @@ several times. That oscillation is the endgame rhythm.
 - **A boss.** "Clear all" means every monster, then the exit — there is no boss
   fight at the end yet, and `simulateRun`'s `killBoss` flag is part of the old
   stub, not the sim.
-- Two skills exist (`strike`, `bolt`), both `single_target`. The interesting
-  ones — chain, area, projectile — need a behaviour each, which is the point of
-  the registry but isn't done.
+- Two skills exist: `strike` (`cleave` — full damage to the target, 10% to
+  everything else in reach) and `bolt` (`single_target`, ranged). The
+  interesting ones — chain, true area, multi-projectile — need a behaviour
+  each, which is the point of the registry but isn't done.
 - `bolt` is identical to `strike` apart from reach, which isolates what range
   alone is worth and makes it strictly better. Give it a cost when it should be
   a real choice.
