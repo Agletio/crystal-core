@@ -11,7 +11,8 @@ import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
-import { initRun, onRunShown, refreshRunPanels } from './ui/run';
+import { initRun, onRunShown, refreshRunPanels, chooseFreeMap } from './ui/run';
+import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
 import {
@@ -52,7 +53,15 @@ function restart(mode: StartMode): void {
   clearHistory();
   note(mode === 'fresh' ? 'New game — two crystals and nothing else.' : 'Dev kit granted.');
   refreshRunPanels();
-  show(current);
+  show(mode === 'fresh' ? 'run' : current);
+  maybeShowWelcome();
+}
+
+/** After choosing a skill: straight to the Fissure, nothing else to do first. */
+function begin(): void {
+  refreshRunPanels();
+  show('run');
+  chooseFreeMap();
 }
 
 for (const name of VIEWS) {
@@ -81,4 +90,9 @@ initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
 initBench(game);
 initRun(game);
-show('bench');
+
+// A new player lands on the Fissure with a skill chosen; a stocked one lands
+// on the bench, which is where a returning player wants to be.
+if (game.onboarded) show('bench');
+else show('run');
+initWelcome(game, begin);

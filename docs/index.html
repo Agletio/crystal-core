@@ -314,6 +314,13 @@
 
   #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
 
+  /* --- first run ------------------------------------------------------ */
+  .welcomegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .welcomecard { text-align: left; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .welcomecard:hover { background: var(--seam); border-color: var(--amethyst); }
+  .welcomecard__name { font-family: var(--display); font-size: 13px; }
+  .welcomecard__desc { font-size: 11px; color: var(--dust); text-align: center; line-height: 1.4; }
+
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
   .skillcols { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 18px; align-items: start; }
@@ -377,7 +384,7 @@
     <h1>Crystal <span>Core</span></h1>
     <div class="tabs" role="tablist">
       <button class="tab tab--on" id="tab-bench" role="tab" aria-selected="true">Bench</button>
-      <button class="tab" id="tab-run" role="tab" aria-selected="false">Run</button>
+      <button class="tab" id="tab-run" role="tab" aria-selected="false">Fracture</button>
     </div>
     <div class="seedbar">
       <button class="mini" id="open-character">Character</button>
@@ -443,7 +450,8 @@
           <p class="panel__title">Choose a map</p>
           <div id="run-selected"></div>
           <div class="runbar" style="margin-top:16px">
-            <button class="mini" id="run-launch" disabled>Run map</button>
+            <button class="mini" id="run-launch" disabled>Enter</button>
+            <button class="chip" id="run-free" title="Always open, costs nothing, pays little">The Fissure (free)</button>
           </div>
           <p class="runsrc">
             Clears the whole map, then something waits at the exit.
@@ -593,6 +601,22 @@
     </div>
   </div>
 </div>
+<!-- First run: choose how you fight, then straight into the Fissure. Nothing
+     to buy, nothing to understand first. -->
+<div class="modal" id="welcome" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Choose how you fight</h2>
+    </div>
+    <div class="modal__body">
+      <p class="empty" style="margin-top:0">
+        You can change this later, and each one levels on its own as you use it.
+      </p>
+      <div class="welcomegrid" id="welcome-skills"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Replaces the native title attribute: instant, and in the page's colours
      rather than the OS's white box. -->
 <div class="tip" id="tooltip" hidden></div>

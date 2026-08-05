@@ -840,15 +840,30 @@ export const HERO_BASE = {
   radius: 0.34,
   /** How far the hero will notice a monster and divert to fight it. */
   aggroRange: 9,
-  /** Percent of max life per second. Recovery happens between packs, which
-   *  is what turns a run into a series of fights instead of one long
-   *  attrition curve you always lose. */
-  lifeRegenPercent: 2.2,
+  /**
+   * Percent of max life per second.
+   *
+   * Recovery between packs is what turns a run into a series of fights
+   * rather than one attrition curve you always lose. But at 2.2% it
+   * out-healed everything a low tier could do — a naked character finished
+   * the first map at full life, so nothing was ever at stake.
+   *
+   * Tuned so an ungeared level 1 finishes the Fissure around a third of the
+   * way down: visibly hurt, never actually threatened.
+   */
+  lifeRegenPercent: 1.0,
 };
 
 export const MONSTER_BASE = {
-  life: 26,
-  damage: 1.9,
+  /**
+   * Raised sharply from 26.
+   *
+   * A naked character killed a tier 1 monster in about a third of a second,
+   * so a pack died before it landed two hits and the first map ended at full
+   * life. Nothing was at stake because nothing survived long enough to swing.
+   */
+  life: 46,
+  damage: 2.9,
   attacksPerSecond: 0.8,
   moveSpeed: 2.3,
   attackRange: 1.3,
@@ -862,7 +877,14 @@ export const MONSTER_BASE = {
  * and only later as "this kills me". Starter gear comfortably clears T1-T3
  * and loses badly around T6 — that gap is the reason to craft.
  */
-export const MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
+/**
+ * Flattened along with the base raise.
+ *
+ * Raising the base without lowering these would have made the top tiers
+ * unreachable rather than the bottom one meaningful. The intent is a curve
+ * that starts somewhere real and ends roughly where it already did.
+ */
+export const MONSTER_TIER_SCALE = { life: 1.36, damage: 1.24 };
 
 // ===========================================================================
 // MONSTER KINDS
@@ -1096,9 +1118,19 @@ export const LOOT = {
    * Fragments one monster is worth at tier 1. Accumulates fractionally and
    * rounds when banked, so per-kill values below 1 still work.
    */
-  fragmentsPerKill: 0.1,
-  /** Multiplier per crystal tier. */
-  tierScale: 1.85,
+  fragmentsPerKill: 0.115,
+  /**
+   * Multiplier per crystal tier.
+   *
+   * Matched to how crystal COST scales (roughly 2.1x a tier). At 1.85 the
+   * yield fell behind the price every tier, so climbing was a losing trade
+   * however well you played — the deep tiers could never pay for themselves.
+   *
+   * Now a juiced crystal sustains its own tier with a little over, and a
+   * plain one does not, which is what makes crafting the crystal the point
+   * rather than an optional flourish.
+   */
+  tierScale: 2.1,
 };
 
 /**
@@ -1108,6 +1140,33 @@ export const LOOT = {
  * bench is a shelf of disabled buttons until you've been to the workshop,
  * which is a poor first thirty seconds.
  */
+/**
+ * The free map. Always available, never consumed.
+ *
+ * Without it the economy can strand you: a plain crystal banks less than it
+ * costs, so a player who runs out of both crystals and fragments has no way
+ * back in. This is the floor that makes that impossible, and it doubles as
+ * the first thing a new player ever runs.
+ *
+ * Deliberately unmodifiable and therefore unrewarding — it carries no danger,
+ * so it pays the base rate and nothing more. It's a way back, not a place to
+ * farm.
+ */
+export const FREE_MAP = {
+  tier: 1,
+  name: 'The Fissure',
+  description: 'A thin place in the rock. Costs nothing, pays little, always open.',
+  /**
+   * Thinner than a real tier 1 map.
+   *
+   * It's the first thing anyone runs, so it should leave you visibly hurt
+   * without killing you. A plain T1 crystal killed an ungeared character
+   * roughly one run in five — acceptable for a map you chose and paid for,
+   * not for the one the game hands you.
+   */
+  densityScale: 0.9,
+};
+
 export interface StartPreset {
   fragments: number;
   currency: Record<string, number>;

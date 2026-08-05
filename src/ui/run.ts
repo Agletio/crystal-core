@@ -15,7 +15,8 @@ import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { rewardRows } from '../sim/crystal';
-import { SKILLS } from '../data';
+import { FREE_MAP } from '../data';
+import { makeCrystal } from '../economy';
 import { removeItem, crystalsIn } from '../game/state';
 import type { GameState } from '../game/state';
 import { buildReport, lootRows } from '../game/report';
@@ -49,6 +50,8 @@ let lastFrame = 0;
 let seed = 0;
 let zoom = 1;
 let chosen: Item | null = null;
+/** The free map is picked separately — it isn't an inventory item. */
+let freeChosen = false;
 // ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
@@ -71,6 +74,7 @@ function runHandler() {
         label: 'Choose map',
         run: () => {
           chosen = item;
+          freeChosen = false;
           renderMenu();
         },
       };
@@ -87,22 +91,31 @@ function renderMenu(): void {
   const host = $('run-selected');
   host.replaceChildren();
 
-  const available = crystalsIn(game);
   const launch = $('run-launch') as HTMLButtonElement;
-
-  if (available.length === 0) {
-    host.append(
-      el('p', 'empty', 'No crystals. Buy one on the bench — they cost fragments.')
-    );
-    launch.disabled = true;
-    chosen = null;
-    return;
-  }
+  const free = $('run-free') as HTMLButtonElement;
+  free.classList.toggle('chip--on', freeChosen);
 
   if (chosen && !game.inventory.includes(chosen)) chosen = null;
 
+  // The free map is always an option, so "no crystals" is never a dead end.
+  if (freeChosen) {
+    host.append(el('div', 'chosen__name', FREE_MAP.name));
+    host.append(el('div', 'chosen__meta', `tier ${FREE_MAP.tier} · free · not consumed`));
+    host.append(el('p', 'empty', FREE_MAP.description));
+    launch.disabled = false;
+    return;
+  }
+
   if (!chosen) {
-    host.append(el('p', 'empty', 'Pick a crystal from your inventory below.'));
+    host.append(
+      el(
+        'p',
+        'empty',
+        crystalsIn(game).length === 0
+          ? 'No crystals. Run the Fissure for fragments, or buy one on the bench.'
+          : 'Pick a crystal from your inventory below, or run the Fissure.'
+      )
+    );
     launch.disabled = true;
     return;
   }
@@ -133,15 +146,24 @@ function renderMenu(): void {
 // ---------------------------------------------------------------------------
 
 function launch(): void {
-  if (!chosen) return;
+  // The Fissure is generated fresh each time and never taken from you —
+  // that's what makes running out of crystals a setback rather than an end.
+  const crystal = freeChosen ? makeCrystal(FREE_MAP.tier) : chosen;
+  if (!crystal) return;
 
-  const crystal = chosen;
-  // Consumed win or lose. The crystal is the entry fee.
-  removeItem(game, crystal);
+  if (!freeChosen) {
+    // A real crystal is consumed win or lose. It's the entry fee.
+    removeItem(game, crystal);
+  }
   chosen = null;
 
   seed = Math.floor(Math.random() * 1e9);
-  sim = new RunSim(crystal, game.character, new Rng(seed));
+  sim = new RunSim(
+    crystal,
+    game.character,
+    new Rng(seed),
+    freeChosen ? { densityScale: FREE_MAP.densityScale } : {}
+  );
 
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
   accumulator = 0;
@@ -365,6 +387,13 @@ export function initRun(state: GameState): void {
 
   ($('run-launch') as HTMLButtonElement).onclick = () => launch();
 
+  ($('run-free') as HTMLButtonElement).onclick = () => {
+    freeChosen = !freeChosen;
+    if (freeChosen) chosen = null;
+    renderMenu();
+    renderInventory();
+  };
+
   ($('run-pause') as HTMLButtonElement).onclick = () => {
     if (!sim || sim.state.status !== 'running') return;
     playing = !playing;
@@ -403,6 +432,14 @@ export function initRun(state: GameState): void {
   setZoom(1);
   setPhase('menu');
   requestAnimationFrame(frame);
+}
+
+/** Preselect the free map — what a new player is dropped straight into. */
+export function chooseFreeMap(): void {
+  freeChosen = true;
+  chosen = null;
+  renderMenu();
+  renderInventory();
 }
 
 /** Re-read derived stats — called after equipment changes on the sheet. */

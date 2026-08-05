@@ -66,6 +66,20 @@ const $ = (id) => document.getElementById(id);
 const text = (id) => ($(id)?.textContent ?? '').trim();
 const all = (sel) => [...document.querySelectorAll(sel)];
 
+// --- first run asks one question, then plays -------------------------------
+assert($('welcome').hidden === false, 'a new game asks you to choose a skill');
+assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
+
+all('#welcome-skills .welcomecard')[0].click();
+assert($('welcome').hidden === true, 'choosing dismisses the prompt');
+assert($('view-run').hidden === false, 'and drops you straight into the map view');
+assert(
+  text('run-selected').includes('Fissure'),
+  'with the free map already chosen',
+  text('run-selected').slice(0, 60)
+);
+assert($('run-launch').disabled === false, 'ready to enter immediately');
+
 // --- a new game starts with nothing ---------------------------------------
 // The app boots fresh on purpose: judging the loop from a stocked inventory
 // is judging the endgame at the start.
@@ -79,6 +93,22 @@ assert(
   all('#currencies button.curr:not(:disabled)').length === 0,
   'nothing is craftable with an empty wallet'
 );
+
+// The free map is the anti-stuck guarantee: it must be runnable with an
+// empty inventory and must not be consumed.
+$('tab-run').click();
+// Already selected by the first-run flow; clicking would toggle it off.
+assert($('run-launch').disabled === false, 'the Fissure is runnable with nothing');
+const beforeFissure = all('#inventory .invitem').length;
+$('run-launch').click();
+assert($('run-stagewrap').hidden === false, 'the Fissure starts');
+assert(
+  all('#inventory .invitem').length === beforeFissure,
+  'the Fissure consumes nothing',
+  `${all('#inventory .invitem').length} vs ${beforeFissure}`
+);
+$('run-abandon').click();
+$('tab-bench').click();
 
 // Everything below needs stock, which is what the dev kit is for.
 $('dev-kit').click();
@@ -224,7 +254,12 @@ $('tab-run').click();
 assert($('view-run').hidden === false, 'run view opens');
 assert($('run-menu').hidden === false, 'run starts on the map-choosing menu');
 assert($('run-stagewrap').hidden === true, 'no map until a run starts');
+
+// Deselect the Fissure to check the empty-handed state.
+$('run-free').click();
 assert(($('run-launch')).disabled === true, 'cannot launch without choosing');
+$('run-free').click();
+assert(($('run-launch')).disabled === false, 'the Fissure is always selectable');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
 // --- choosing a crystal ---------------------------------------------------

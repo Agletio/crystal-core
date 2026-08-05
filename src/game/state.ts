@@ -33,6 +33,8 @@ export interface GameState {
    * reference.
    */
   benchId: string | null;
+  /** False until a skill has been chosen on the first run. */
+  onboarded: boolean;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -44,6 +46,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     inventory: [],
     character: makeCharacter({}, 'strike'),
     benchId: null,
+    onboarded: false,
   };
   resetGame(game, mode);
   return game;
@@ -74,6 +77,9 @@ export function resetGame(game: GameState, mode: StartMode): void {
     'strike'
   );
   game.benchId = null;
+
+  // A fresh game asks which skill you want; the dev kit assumes you know.
+  game.onboarded = mode === 'dev';
 }
 
 export function addItem(game: GameState, item: Item): void {

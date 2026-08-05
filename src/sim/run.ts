@@ -151,8 +151,12 @@ export interface Vfx {
  * how it was played.
  */
 export interface RunOptions {
-  /** Placeholder so callers don't churn when a real option arrives. */
-  reserved?: never;
+  /**
+   * Multiplier on how much spawns. The Fissure runs thinner than a real map
+   * of its tier, because it's the one the game hands you rather than one you
+   * chose.
+   */
+  densityScale?: number;
 }
 
 export type RunEvent =
@@ -297,7 +301,10 @@ export class RunSim {
    *  to look at the map before anything reaches you. */
   private spawn(crystal: Item, map: GameMap): Entity[] {
     const tier = (crystal.meta.tier as number) ?? 1;
-    const { packCount, packSize } = mapDensity(crystal);
+    const density = mapDensity(crystal);
+    const scale = this.options.densityScale ?? 1;
+    const packCount = Math.max(1, Math.round(density.packCount * scale));
+    const packSize = Math.max(1, Math.round(density.packSize * scale));
     // Danger pays here: the crystal's own modifiers set what a kill is worth.
     this.rewards = crystalRewards(crystal);
     this.xpPerKill = monsterXp(tier);
