@@ -68,6 +68,65 @@ function canStep(grid: Grid, x: number, y: number, dx: number, dy: number): bool
 }
 
 /**
+ * The nearest tile satisfying `hit`, measured by WALKING distance.
+ *
+ * Straight-line distance is the wrong ruler for picking a target: a monster
+ * three tiles away through a wall beats one twelve tiles down an open
+ * corridor, so the hero jogs past a room full of things to reach whatever
+ * happens to be closest as the crow flies.
+ *
+ * A single breadth-first flood answers it properly. Four-way, so the frontier
+ * expands in true distance order and the first hit is genuinely the nearest;
+ * the movement path is still A* afterwards. It's also authoritative about
+ * REACHABILITY — nothing walled off is ever returned, which is what lets
+ * "is the map clear?" have an honest answer.
+ *
+ * Returns a tile key (y * width + x), or null when nothing qualifies.
+ */
+export function nearestByPath(
+  grid: Grid,
+  from: Vec2,
+  hit: (key: number) => boolean,
+  maxNodes = 8000
+): number | null {
+  const sx = Math.round(from.x);
+  const sy = Math.round(from.y);
+  if (!grid.inBounds(sx, sy)) return null;
+
+  const width = grid.width;
+  const start = sy * width + sx;
+  if (hit(start)) return start;
+
+  const seen = new Set<number>([start]);
+  const queue: number[] = [start];
+  let head = 0;
+
+  while (head < queue.length && seen.size < maxNodes) {
+    const node = queue[head++];
+    const x = node % width;
+    const y = (node - x) / width;
+
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!grid.inBounds(nx, ny) || grid.at(nx, ny) === WALL) continue;
+
+      const nk = ny * width + nx;
+      if (seen.has(nk)) continue;
+      seen.add(nk);
+      if (hit(nk)) return nk;
+      queue.push(nk);
+    }
+  }
+  return null;
+}
+
+/**
  * Tile path from `from` to `to`, excluding the starting tile.
  * Empty array means unreachable — callers treat that as "stand still".
  */

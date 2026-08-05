@@ -11,7 +11,7 @@
 import { Rng } from '../rng';
 import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
-import { findPath } from './pathfind';
+import { findPath, nearestByPath } from './pathfind';
 import { characterStats, monsterStats, mapDensity } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
@@ -40,26 +40,8 @@ export const TICK = 1 / 30;
 /** Monsters beyond this range of the hero don't think at all. */
 const ACTIVE_RANGE = 16;
 
-/**
- * Aggro range is a straight-line check, but a monster ten tiles away through
- * a wall can be forty tiles away by corridor. Acquiring one of those made the
- * hero oscillate forever: chase it the long way, exceed any distance leash,
- * drop it, turn back toward the exit, re-enter straight-line range, re-acquire.
- *
- * So a candidate is only worth turning around for if its ROUTE is within this
- * multiple of aggro range. Committed targets are then never dropped on
- * distance at all — only on death or a failed path.
- */
-const ACQUIRE_PATH_LIMIT = 2.5;
-
-/** How long a rejected monster is left alone before being reconsidered. */
-const IGNORE_SECONDS = 5;
-
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
-
-/** Failed routing attempts before a monster is written off permanently. */
-const HOPELESS_AFTER = 4;
 
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
@@ -213,9 +195,6 @@ export class RunSim {
   private xpPerKill = 1;
   /** Fragments one monster is worth. Fractional; rounds when banked. */
   private fragmentsPerKill = 0;
-  /** Failed routing attempts per monster, and the ones written off for good. */
-  private readonly failures = new Map<number, number>();
-  private readonly hopeless = new Set<number>();
   /** Set once the closing encounter has been spawned. */
   private finale: EncounterDef | null = null;
   /** Baseline monster stats for this map, scaled into the finale. */
@@ -226,13 +205,6 @@ export class RunSim {
     fragmentYield: 1,
     rarity: 0,
   };
-  /**
-   * Monsters not worth pursuing right now, mapped to the time they may be
-   * reconsidered. Temporary rather than permanent, so a monster dismissed as
-   * too far can still be fought when the hero later walks past it — otherwise
-   * it could stand there hitting a hero that refuses to hit back.
-   */
-  private ignoreUntil = new Map<number, number>();
   private byId = new Map<number, Entity>();
 
   constructor(
@@ -534,23 +506,15 @@ export class RunSim {
         this.settleAction(hero, false);
         if (hero.cooldown <= 0) this.useSkill(hero, target, this.skill);
       } else if (!this.advance(hero, target, dt)) {
-        // Route vanished. Drop it and look elsewhere rather than stand and
-        // stare at a wall.
-        this.ignore(target.id);
+        // Route vanished mid-chase. Drop it; the next flood picks correctly.
         hero.targetId = null;
         hero.path = [];
       }
       return;
     }
 
-    // No target doesn't mean no monsters — one can be briefly unroutable
-    // while a crowd shuffles. Only spawn the finale when nothing reachable is
-    // left, or the map "clears" with sixty monsters still standing.
-    if (this.reachableRemain()) {
-      this.settleAction(hero, false);
-      return;
-    }
-
+    // Nothing reachable is left — the flood is authoritative about that, so
+    // no separate bookkeeping is needed to be sure.
     // Map is empty. Something takes its place at the exit, once.
     if (!this.finale) {
       this.spawnFinale();
@@ -655,39 +619,21 @@ export class RunSim {
     this.advance(m, hero, dt);
   }
 
-  private isIgnored(id: number): boolean {
-    if (this.hopeless.has(id)) return true;
-    return (this.ignoreUntil.get(id) ?? -1) > this.state.elapsed;
-  }
-
   /**
-   * Shelve a target that couldn't be routed to.
+   * Hold the committed target until it dies; otherwise take the nearest by
+   * WALKING distance.
    *
-   * Temporary the first few times — a monster can be briefly unroutable while
-   * a crowd shuffles. After repeated failures it's genuinely walled off and
-   * gets written off for good, which is what lets "is the map clear?" have an
-   * answer instead of looping forever between ignore and retry.
-   */
-  private ignore(id: number): void {
-    const failures = (this.failures.get(id) ?? 0) + 1;
-    this.failures.set(id, failures);
-    if (failures >= HOPELESS_AFTER) this.hopeless.add(id);
-    this.ignoreUntil.set(id, this.state.elapsed + IGNORE_SECONDS);
-  }
-
-  /**
-   * Hold the committed target until it dies; otherwise take the nearest.
+   * Straight-line distance was the bug: a monster three tiles away through a
+   * wall beat one twelve tiles down an open corridor, so the hero jogged past
+   * a room full of things to reach whatever was nearest as the crow flies.
+   * nearestByPath floods outward from the hero, so "nearest" means what it
+   * looks like it means on screen.
    *
-   * Clearing the map is baseline now, so there's no aggro limit and no leash
-   * — the hero hunts the nearest thing anywhere. Commitment is still what
-   * stops the thrash a range check used to cause: a monster on the boundary
-   * would be acquired, pathed away from, dropped, and reacquired forever.
+   * It's also authoritative about reachability — a walled-off monster is
+   * never returned — so null here honestly means "nothing left to fight".
+   * The ignore/hopeless bookkeeping that used to live here existed only to
+   * paper over euclidean picking things it couldn't reach, and went with it.
    */
-  /** Any monster still alive that hasn't been written off as unreachable. */
-  private reachableRemain(): boolean {
-    return this.state.monsters.some((m) => !m.dead && !this.hopeless.has(m.id));
-  }
-
   private acquireTarget(hero: Entity): Entity | null {
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
@@ -696,35 +642,24 @@ export class RunSim {
       hero.path = [];
     }
 
-    const candidate = this.nearestMonster(hero, Infinity);
-    if (!candidate) return null;
-
-    // Validated by route, not straight line — only the genuinely unreachable
-    // are skipped, and only for a while.
-    const path = findPath(this.state.map.grid, hero, candidate);
-    if (path.length === 0) {
-      this.ignore(candidate.id);
-      return null;
+    const { grid } = this.state.map;
+    const occupancy = new Map<number, Entity>();
+    for (const m of this.state.monsters) {
+      if (m.dead) continue;
+      const key = Math.round(m.y) * grid.width + Math.round(m.x);
+      if (!occupancy.has(key)) occupancy.set(key, m);
     }
+    if (occupancy.size === 0) return null;
 
+    const key = nearestByPath(grid, hero, (k) => occupancy.has(k));
+    if (key === null) return null;
+
+    // A four-way route exists, so A* with diagonals will always find one too.
+    const candidate = occupancy.get(key)!;
     hero.targetId = candidate.id;
-    hero.path = path;
+    hero.path = findPath(grid, hero, candidate);
     hero.pathTimer = 0.4;
     return candidate;
-  }
-
-  private nearestMonster(from: Entity, range: number): Entity | null {
-    let best: Entity | null = null;
-    let bestDist = range;
-    for (const m of this.state.monsters) {
-      if (m.dead || this.isIgnored(m.id)) continue;
-      const d = dist(from, m);
-      if (d <= bestDist) {
-        bestDist = d;
-        best = m;
-      }
-    }
-    return best;
   }
 
   /**
