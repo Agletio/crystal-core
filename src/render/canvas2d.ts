@@ -10,8 +10,10 @@
  * Nothing outside this file knows what a pixel is.
  */
 import { WALL } from '../sim/grid';
+import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
+import { damageColour, spriteColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -21,16 +23,18 @@ interface View {
   offY: number;
 }
 
-export function createCanvasRenderer(
-  canvas: HTMLCanvasElement,
-  palette: Palette
-): Renderer {
+export function createCanvasRenderer(host: HTMLElement, palette: Palette): Renderer {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'run-canvas';
+  canvas.setAttribute('aria-label', 'map view');
+  host.replaceChildren(canvas);
+
   const maybeCtx = canvas.getContext('2d');
   if (!maybeCtx) {
     // Headless (jsdom in smoke.mjs) has no 2D context. The sim is what's
     // under test there, so drawing degrades to a no-op instead of crashing
     // the page on boot.
-    return { resize: () => {}, draw: () => {} };
+    return { resize: () => {}, draw: () => {}, destroy: () => canvas.remove() };
   }
   // Rebound so the narrowing survives into the draw closures below.
   const ctx = maybeCtx;
@@ -147,13 +151,69 @@ export function createCanvasRenderer(
     ctx.fillRect(x, y, w * frac, h);
   }
 
+  /** Size hint per kind, so a Brute reads as bigger than a Grub. */
+  function sizeOf(sprite: string): number {
+    if (sprite === 'brute') return 0.42;
+    if (sprite === 'stalker') return 0.26;
+    if (sprite === 'grub') return 0.27;
+    return 0.32;
+  }
+
   function drawMonster(v: View, m: Entity): void {
-    const r = v.tile * 0.3;
+    // Corpses shrink and fade rather than vanishing mid-frame.
+    const fading = m.dead;
+    const t = fading ? Math.min(1, m.deathAge / DEATH_FADE) : 0;
+    if (fading && t >= 1) return;
+
+    const r = v.tile * sizeOf(m.sprite) * (1 - t * 0.6);
+    ctx.globalAlpha = 1 - t;
     ctx.beginPath();
     ctx.arc(cx(v, m.x), cy(v, m.y), r, 0, Math.PI * 2);
-    ctx.fillStyle = m.hitFlash > 0 ? palette.chalk : palette.ember;
+    ctx.fillStyle = m.hitFlash > 0 ? palette.chalk : spriteColour(palette, m.sprite);
     ctx.fill();
-    drawLifeBar(v, m, 0.7, palette.ember);
+
+    // A short facing tick — crude, but it tells you which way it's going.
+    if (!fading) {
+      ctx.strokeStyle = palette.void;
+      ctx.lineWidth = Math.max(1, v.tile * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(cx(v, m.x), cy(v, m.y));
+      ctx.lineTo(
+        cx(v, m.x) + Math.cos(m.facing) * r,
+        cy(v, m.y) + Math.sin(m.facing) * r
+      );
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    if (!fading) drawLifeBar(v, m, 0.7, palette.ember);
+  }
+
+  function drawVfx(v: View, state: RunState): void {
+    for (const fx of state.vfx) {
+      const t = fx.age / fx.ttl;
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.strokeStyle = damageColour(palette, fx.damageType);
+      ctx.lineWidth = Math.max(1, v.tile * 0.1);
+
+      if (fx.points.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(cx(v, fx.points[0].x), cy(v, fx.points[0].y));
+        for (const p of fx.points.slice(1)) ctx.lineTo(cx(v, p.x), cy(v, p.y));
+        ctx.stroke();
+      } else if (fx.points.length === 1) {
+        ctx.beginPath();
+        ctx.arc(
+          cx(v, fx.points[0].x),
+          cy(v, fx.points[0].y),
+          v.tile * (0.18 + t * 0.3),
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   function drawHero(v: View, hero: Entity): void {
@@ -193,12 +253,13 @@ export function createCanvasRenderer(
     drawMap(state, v);
 
     for (const m of state.monsters) {
-      if (!m.dead) drawMonster(v, m);
+      if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
     }
     if (!state.hero.dead) drawHero(v, state.hero);
+    drawVfx(v, state);
     for (const f of state.floaters) drawFloater(v, f);
   }
 
   resize(cssWidth, cssHeight);
-  return { resize, draw };
+  return { resize, draw, destroy: () => canvas.remove() };
 }

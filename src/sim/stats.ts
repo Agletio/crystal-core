@@ -16,7 +16,7 @@ import {
   SKILL_BY_ID,
 } from '../data';
 import type { Character } from './character';
-import type { Item, RolledMod, SkillDef } from '../types';
+import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -95,19 +95,25 @@ export function characterStats(character: Character): CombatStats {
   return heroStats(character.equipped, character.level, skill);
 }
 
-/** Monsters read their stats off the CRYSTAL's mods — same aggregation, other side. */
-export function monsterStats(crystal: Item, tier: number): CombatStats {
-  const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1);
-  const damage = MONSTER_BASE.damage * Math.pow(MONSTER_TIER_SCALE.damage, tier - 1);
+/**
+ * Monsters read their stats off the CRYSTAL's mods — same aggregation, other
+ * side of the design. The kind's multipliers apply on top, so crystal mods and
+ * monster identity compose instead of competing.
+ */
+export function monsterStats(crystal: Item, tier: number, def: MonsterDef): CombatStats {
+  const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1) * def.life;
+  const damage =
+    MONSTER_BASE.damage * Math.pow(MONSTER_TIER_SCALE.damage, tier - 1) * def.damage;
 
   return {
     maxLife: computeStat(life, crystal.mods, 'monsterLife'),
     damage: computeStat(damage, crystal.mods, 'monsterDamage'),
-    attacksPerSecond: MONSTER_BASE.attacksPerSecond,
+    attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
     critChance: 0,
-    moveSpeed: computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed'),
+    moveSpeed:
+      computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour: 0,
-    attackRange: MONSTER_BASE.attackRange,
+    attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
   };

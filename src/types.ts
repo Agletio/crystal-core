@@ -138,6 +138,33 @@ export interface CurrencyDef {
 }
 
 // ---------------------------------------------------------------------------
+// Monsters
+// ---------------------------------------------------------------------------
+
+/**
+ * A kind of monster. Stat fields are MULTIPLIERS on the tier-scaled baseline
+ * in MONSTER_BASE, so tier scaling and monster identity stay independent —
+ * a Brute is 2.2x whatever a monster is worth at that tier.
+ *
+ * `sprite` is the only renderer-facing field, and it's a name rather than any
+ * kind of asset: the placeholder renderer draws a shape for it, a real one
+ * looks up a sprite sheet. The sim never knows which.
+ */
+export interface MonsterDef {
+  id: string;
+  name: string;
+  life: number;
+  damage: number;
+  moveSpeed: number;
+  attacksPerSecond: number;
+  attackRange: number;
+  sprite: string;
+  /** Relative spawn weight. */
+  weight: number;
+  tags?: string[];
+}
+
+// ---------------------------------------------------------------------------
 // Skills
 // ---------------------------------------------------------------------------
 

@@ -86,7 +86,10 @@ slots; gear runs 5 for 2 on each side.
 | `sim/skills.ts` | Skill delivery registry. **The combat extension point.** |
 | `sim/character.ts` | Level, XP, and what persists between runs. |
 | `sim/loadout.ts` | Placeholder starter gear until equipment exists. |
-| `render/` | Renderer interface + a placeholder canvas implementation. |
+| `render/renderer.ts` | The Renderer interface. **The graphics seam.** |
+| `render/pixi.ts` | WebGL renderer (PixiJS). The default. |
+| `render/canvas2d.ts` | Plain-shapes fallback when there's no WebGL. |
+| `render/sprites.ts` | Procedural placeholder sprite sheets. |
 | `ui/` | The two views: crafting bench and run. |
 
 ## The sim
@@ -104,8 +107,43 @@ Three rules keep the graphics replaceable:
    same run tick for tick, so a balance complaint is reproducible from a seed
    rather than a description.
 
-Swapping stick figures for sprites means writing a second implementation of
-`Renderer` and changing one line in `ui/run.ts`.
+## Renderers
+
+There are **two** implementations of `Renderer`, which is the practical proof
+the seam works. The page starts on canvas so something is on screen
+immediately, then hands over to WebGL once Pixi has its GPU device. If Pixi
+can't initialise — no WebGL, a hostile driver, jsdom in the smoke test — canvas
+simply stays and the page is never blank.
+
+A renderer owns its own `<canvas>` and appends it to `#run-stage`, because a
+WebGL context and a 2D context can't share one element.
+
+### Replacing the placeholder art
+
+`render/sprites.ts` draws every creature at runtime onto offscreen canvases.
+That keeps binary assets out of the repo and means nothing needs redrawing
+when a colour changes. To use real art, replace `makeSheet()` with a loader
+and keep the same `{sprite, frame}` lookup — `pixi.ts` doesn't change.
+
+Each creature has two walk frames; everything else (bob, lunge, recoil, death
+spin) is done with transforms, because transforms are free and frames are not.
+
+### What the sim exposes for animation
+
+These are the hooks that would be expensive to retrofit, so they exist now
+even though the placeholder art barely uses them:
+
+| Field | Why a renderer needs it |
+|---|---|
+| `facing` | Which way to point a sprite. |
+| `action` | `idle` / `move` / `attack` / `hurt` → which animation to play. |
+| `actionTimer` | How far through a transient pose it is. |
+| `deathAge` | Corpses fade over `DEATH_FADE` instead of vanishing mid-frame. |
+| `sprite` | Art key. A name, never an asset — the sim has no idea what it looks like. |
+| `state.vfx` | Effect *shapes*. A chain's arc is A→B→C, which no renderer could reconstruct from "three entities lost life". |
+
+Skills emit `vfx` themselves, via the `vfx()` callback on `SkillUse`, because
+only the skill knows the geometry of what it did.
 
 `npm run demo` prints the tier ladder — which crystal tiers the starter gear
 clears and where it dies, averaged over several seeds. That gap is the reason
@@ -154,6 +192,21 @@ You only write code when you invent a genuinely new *kind* of delivery.
 are separate so that "increased Physical Damage" can't leak onto a skill's
 fire damage — each type is resolved in its own pass with the skill's tags
 riding along. Never put a damage type in `tags`.
+
+## Adding a monster kind
+
+A data entry in `MONSTERS` (`data.ts`). Stat fields are **multipliers** on the
+tier-scaled baseline, so tier scaling and monster identity stay independent — a
+Brute is 2.2x whatever a monster is worth at that tier, at every tier.
+
+```ts
+{ id: 'brute', name: 'Brute', life: 2.2, damage: 1.6, moveSpeed: 0.7,
+  attacksPerSecond: 0.7, attackRange: 1.15, sprite: 'brute', weight: 260 }
+```
+
+A pack rolls **one** kind and spawns all of it. Mixed packs read as noise on
+screen; a uniform pack reads as "that's a Brute pack, careful" — which is the
+difference between decoration and information.
 
 ## Levelling
 
@@ -237,6 +290,10 @@ several times. That oscillation is the endgame rhythm.
   stub, not the sim.
 - Only one skill exists (`strike`). The registry that makes more of them cheap
   is in place; the skills themselves are not.
+- The art is procedural placeholder shapes, not sprites anyone drew. The
+  pipeline that consumes real sprite sheets is what exists.
+- The camera fits the whole map on screen, so creatures are roughly one tile
+  and stay small on big maps. A follow-camera is a change to `pixi.ts` alone.
 - Trade, stash, passive tree, behavior scripts.
 - Unique items — a base with a fixed mod list and `meta.unique`.
 

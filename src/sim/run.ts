@@ -17,7 +17,7 @@ import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
 import type { Character } from './character';
-import { SKILLS, SKILL_BY_ID } from '../data';
+import { MONSTERS, SKILLS, SKILL_BY_ID } from '../data';
 import type { Item, SkillDef } from '../types';
 
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
@@ -43,11 +43,33 @@ const IGNORE_SECONDS = 5;
 
 export type EntityKind = 'hero' | 'monster';
 
+/**
+ * What an entity is visibly doing. The sim already knows this implicitly;
+ * naming it is what lets a renderer pick an animation without guessing from
+ * position deltas.
+ */
+export type EntityAction = 'idle' | 'move' | 'attack' | 'hurt';
+
+/** How long a corpse stays on screen so a death animation can play out. */
+export const DEATH_FADE = 0.6;
+
+const ATTACK_POSE = 0.22;
+const HURT_POSE = 0.16;
+
 export interface Entity {
   id: number;
   kind: EntityKind;
+  /** Which monster kind this is; 'hero' for the hero. Renderer art key. */
+  sprite: string;
   x: number;
   y: number;
+  /** Radians. Where the entity is looking — sprites need this, the sim doesn't. */
+  facing: number;
+  action: EntityAction;
+  /** Seconds left holding a transient action before falling back to idle/move. */
+  actionTimer: number;
+  /** Seconds since death, for the fade-out. Only meaningful once dead. */
+  deathAge: number;
   life: number;
   stats: CombatStats;
   cooldown: number;
@@ -68,6 +90,22 @@ export interface Floater {
   age: number;
   crit: boolean;
   on: EntityKind;
+}
+
+/**
+ * A transient visual event.
+ *
+ * The sim emits these because only the sim knows the shape of what happened —
+ * a chain skill's arc is A→B→C, and no renderer could reconstruct that from
+ * "three entities lost life". `points` is in tile units like everything else,
+ * and `damageType` lets the renderer colour it without knowing any rules.
+ */
+export interface Vfx {
+  kind: string;
+  points: Vec2[];
+  damageType: string;
+  age: number;
+  ttl: number;
 }
 
 export interface RunOptions {
@@ -94,6 +132,7 @@ export interface RunState {
   hero: Entity;
   monsters: Entity[];
   floaters: Floater[];
+  vfx: Vfx[];
   elapsed: number;
   status: RunStatus;
   killed: number;
@@ -138,8 +177,13 @@ export class RunSim {
     const hero: Entity = {
       id: 0,
       kind: 'hero',
+      sprite: 'hero',
       x: map.entrance.x,
       y: map.entrance.y,
+      facing: 0,
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
       life: stats.maxLife,
       stats,
       cooldown: 0,
@@ -159,6 +203,7 @@ export class RunSim {
       hero,
       monsters,
       floaters: [],
+      vfx: [],
       elapsed: 0,
       status: 'running',
       killed: 0,
@@ -171,21 +216,40 @@ export class RunSim {
    *  to look at the map before anything reaches you. */
   private spawn(crystal: Item, map: GameMap): Entity[] {
     const tier = (crystal.meta.tier as number) ?? 1;
-    const stats = monsterStats(crystal, tier);
     const { packCount, packSize } = mapDensity(crystal);
     this.xpPerKill = monsterXp(tier);
 
     const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
     const monsters: Entity[] = [];
 
+    // Stats are per KIND, not per monster — one shared object per kind keeps
+    // fifty entities cheap and makes "all Brutes hit this hard" true by
+    // construction.
+    const statsFor = new Map<string, CombatStats>();
+
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
+
+      // One kind per pack. Mixed packs read as noise; a uniform pack reads as
+      // a thing you can recognise and react to.
+      const def = this.rng.weighted(MONSTERS, (m) => m.weight) ?? MONSTERS[0];
+      let stats = statsFor.get(def.id);
+      if (!stats) {
+        stats = monsterStats(crystal, tier, def);
+        statsFor.set(def.id, stats);
+      }
+
       for (let i = 0; i < packSize; i++) {
         monsters.push({
           id: this.nextId++,
           kind: 'monster',
+          sprite: def.sprite,
           x: this.rng.float(room.x, room.x + room.w - 1),
           y: this.rng.float(room.y, room.y + room.h - 1),
+          facing: this.rng.float(0, Math.PI * 2),
+          action: 'idle',
+          actionTimer: 0,
+          deathAge: 0,
           life: stats.maxLife,
           stats,
           cooldown: this.rng.float(0, 1),
@@ -219,15 +283,37 @@ export class RunSim {
       s.floaters = s.floaters.filter((f) => f.age < FLOATER_LIFE);
     }
 
+    for (const v of s.vfx) v.age += dt;
+    if (s.vfx.length > 0) s.vfx = s.vfx.filter((v) => v.age < v.ttl);
+
     this.stepHero(dt);
     if (s.status !== 'running') return;
 
     for (const m of s.monsters) {
-      if (m.dead) continue;
+      if (m.dead) {
+        if (m.deathAge < DEATH_FADE) m.deathAge += dt;
+        continue;
+      }
       if (m.hitFlash > 0) m.hitFlash -= dt;
       this.stepMonster(m, dt);
       if (s.status !== 'running') return;
     }
+  }
+
+  /** Decay the transient pose and fall back to whether it's moving. */
+  private settleAction(e: Entity, moving: boolean): void {
+    if (e.actionTimer > 0) return;
+    e.action = moving ? 'move' : 'idle';
+  }
+
+  private face(e: Entity, towardX: number, towardY: number): void {
+    const dx = towardX - e.x;
+    const dy = towardY - e.y;
+    if (dx * dx + dy * dy > 1e-6) e.facing = Math.atan2(dy, dx);
+  }
+
+  private emit(kind: string, points: Vec2[], damageType: string, ttl: number): void {
+    this.state.vfx.push({ kind, points, damageType, age: 0, ttl });
   }
 
   private stepHero(dt: number): void {
@@ -236,6 +322,7 @@ export class RunSim {
 
     if (hero.cooldown > 0) hero.cooldown -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
+    if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
     if (hero.life < hero.stats.maxLife) {
       hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
@@ -247,6 +334,8 @@ export class RunSim {
       const d = dist(hero, target);
       if (d <= hero.stats.attackRange) {
         hero.path = [];
+        this.face(hero, target.x, target.y);
+        this.settleAction(hero, false);
         if (hero.cooldown <= 0) this.useSkill(hero, target);
       } else if (!this.advance(hero, target, dt)) {
         // Route vanished. Drop it and look elsewhere rather than stand and
@@ -286,8 +375,12 @@ export class RunSim {
     if (!m.aggroed && d <= m.stats.aggroRange) m.aggroed = true;
     if (!m.aggroed) return;
 
+    if (m.actionTimer > 0) m.actionTimer -= dt;
+
     if (d <= m.stats.attackRange) {
       m.path = [];
+      this.face(m, hero.x, hero.y);
+      this.settleAction(m, false);
       if (m.cooldown <= 0) {
         // Monsters don't use skills yet — one plain hit. When they do, this
         // becomes the same useSkill() call the hero makes.
@@ -374,6 +467,9 @@ export class RunSim {
       if (e.path.length === 0) return false;
     }
 
+    const startX = e.x;
+    const startY = e.y;
+
     let remaining = e.stats.moveSpeed * dt;
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];
@@ -395,6 +491,10 @@ export class RunSim {
         remaining = 0;
       }
     }
+
+    const moved = Math.abs(e.x - startX) > 1e-6 || Math.abs(e.y - startY) > 1e-6;
+    if (moved) this.face(e, e.x + (e.x - startX), e.y + (e.y - startY));
+    this.settleAction(e, moved);
     return true;
   }
 
@@ -407,6 +507,9 @@ export class RunSim {
     const behaviour =
       SKILL_BEHAVIOURS[this.skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
 
+    user.action = 'attack';
+    user.actionTimer = ATTACK_POSE;
+
     behaviour({
       skill: this.skill,
       user,
@@ -414,6 +517,8 @@ export class RunSim {
       enemies: this.state.monsters.filter((m) => !m.dead),
       rng: this.rng,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier),
+      vfx: (kind, points, ttl = 0.3) =>
+        this.emit(kind, points, this.skill.damageTypes[0] ?? 'physical', ttl),
     });
 
     user.cooldown = 1 / user.stats.attacksPerSecond;
@@ -437,6 +542,19 @@ export class RunSim {
 
     defender.life -= dmg;
     defender.hitFlash = 0.18;
+    defender.action = 'hurt';
+    defender.actionTimer = HURT_POSE;
+    this.face(attacker, defender.x, defender.y);
+
+    // Every hit leaves a mark the renderer can draw. Type comes from the
+    // attacker's skill for the hero, and is plain physical for monsters.
+    this.emit(
+      'impact',
+      [{ x: defender.x, y: defender.y }],
+      attacker.kind === 'hero' ? this.skill.damageTypes[0] ?? 'physical' : 'physical',
+      0.25
+    );
+
     // Cooldown is the caller's business — a multi-target skill deals several
     // hits from one use and must not pay for each of them.
 

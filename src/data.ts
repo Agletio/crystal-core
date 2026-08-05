@@ -1,4 +1,4 @@
-import type { CurrencyDef, ModDef, Recipe, SkillDef } from './types';
+import type { CurrencyDef, ModDef, MonsterDef, Recipe, SkillDef } from './types';
 
 // ===========================================================================
 // SLOT LAYOUTS
@@ -447,6 +447,72 @@ export const MONSTER_BASE = {
  * and loses badly around T6 — that gap is the reason to craft.
  */
 export const MONSTER_TIER_SCALE = { life: 1.5, damage: 1.32 };
+
+// ===========================================================================
+// MONSTER KINDS
+//
+// Multipliers on the tier-scaled baseline, so identity and tier scaling stay
+// independent. A pack rolls ONE kind and spawns all of it — mixed packs read
+// as noise on screen, uniform packs read as "that's a Brute pack, careful".
+//
+// Adding a kind is a data entry. `sprite` is a name the renderer maps to art;
+// the sim never knows what it looks like.
+// ===========================================================================
+
+export const MONSTERS: MonsterDef[] = [
+  {
+    id: 'grub',
+    name: 'Grub',
+    life: 0.8,
+    damage: 0.85,
+    moveSpeed: 0.85,
+    attacksPerSecond: 1,
+    attackRange: 1,
+    sprite: 'grub',
+    weight: 1000,
+    tags: ['beast'],
+  },
+  {
+    id: 'husk',
+    name: 'Husk',
+    life: 1.1,
+    damage: 1,
+    moveSpeed: 1,
+    attacksPerSecond: 0.9,
+    attackRange: 1,
+    sprite: 'husk',
+    weight: 800,
+    tags: ['undead'],
+  },
+  {
+    id: 'stalker',
+    name: 'Stalker',
+    life: 0.6,
+    damage: 1,
+    moveSpeed: 1.45,
+    attacksPerSecond: 1.25,
+    attackRange: 1,
+    sprite: 'stalker',
+    weight: 600,
+    tags: ['beast'],
+  },
+  {
+    id: 'brute',
+    name: 'Brute',
+    life: 2.2,
+    damage: 1.6,
+    moveSpeed: 0.7,
+    attacksPerSecond: 0.7,
+    attackRange: 1.15,
+    sprite: 'brute',
+    weight: 260,
+    tags: ['humanoid'],
+  },
+];
+
+export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
+  MONSTERS.map((m) => [m.id, m])
+);
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {

@@ -255,9 +255,8 @@
     </div>
 
     <div class="runcols">
-      <div class="stage">
-        <canvas id="run-canvas" aria-label="map view"></canvas>
-      </div>
+      <!-- The active renderer creates and owns its own canvas in here. -->
+      <div class="stage" id="run-stage"></div>
 
       <div>
         <div class="panel">

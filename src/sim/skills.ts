@@ -26,6 +26,7 @@
 import { Rng } from '../rng';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
+import type { Vec2 } from './grid';
 
 export interface SkillUse {
   skill: SkillDef;
@@ -42,6 +43,12 @@ export interface SkillUse {
    * weakened chain jump rather than 60% of some other number.
    */
   hit(target: Entity, multiplier: number): void;
+  /**
+   * Emit a visual event. Only the skill knows the SHAPE of what happened —
+   * a chain's arc is A→B→C, which no renderer could reconstruct from the
+   * damage alone. Points are in tile units.
+   */
+  vfx(kind: string, points: Vec2[], ttl?: number): void;
 }
 
 export type SkillBehaviour = (use: SkillUse) => void;
@@ -55,5 +62,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage. The floor every other behaviour builds on. */
   single_target: (use) => {
     use.hit(use.primary, 1);
+    use.vfx('swing', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
   },
 };

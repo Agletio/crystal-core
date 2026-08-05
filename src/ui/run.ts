@@ -15,8 +15,9 @@ import { starterLoadout } from '../sim/loadout';
 import { SKILLS } from '../data';
 import { makeCrystal } from '../economy';
 import { createCanvasRenderer } from '../render/canvas2d';
+import { createPixiRenderer } from '../render/pixi';
 import { readPalette } from '../render/renderer';
-import type { Renderer } from '../render/renderer';
+import type { Palette, Renderer } from '../render/renderer';
 import { currentItem } from './bench';
 import type { Item } from '../types';
 
@@ -222,11 +223,35 @@ function newRun(): void {
 }
 
 function fitCanvas(): void {
-  const canvas = $('run-canvas') as HTMLCanvasElement;
-  const box = canvas.parentElement!;
+  const box = $('run-stage');
   const width = box.clientWidth;
   const height = Math.max(320, Math.round(width * 0.66));
   renderer?.resize(width, height);
+}
+
+/**
+ * Start on canvas so something is on screen immediately, then hand over to
+ * WebGL once Pixi has its device. If Pixi can't initialise — no WebGL, a
+ * hostile driver, jsdom in the smoke test — canvas simply stays, and the
+ * page is never blank.
+ *
+ * This swap is the whole argument for the Renderer interface: two
+ * implementations, live, and the sim never learns which one is drawing.
+ */
+async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<void> {
+  let pixi: Renderer | null = null;
+  try {
+    pixi = await createPixiRenderer(host, palette);
+  } catch {
+    pixi = null;
+  }
+  if (!pixi) return;
+
+  renderer?.destroy();
+  renderer = pixi;
+  fitCanvas();
+  note('WebGL renderer active', 'note');
+  renderLog();
 }
 
 /**
@@ -254,8 +279,10 @@ function renderSkills(): void {
 }
 
 export function initRun(): void {
-  const canvas = $('run-canvas') as HTMLCanvasElement;
-  renderer = createCanvasRenderer(canvas, readPalette(document.documentElement));
+  const stage = $('run-stage');
+  const palette = readPalette(document.documentElement);
+  renderer = createCanvasRenderer(stage, palette);
+  void upgradeRenderer(stage, palette);
 
   ($('run-start') as HTMLButtonElement).onclick = () => {
     if (!sim || sim.state.status !== 'running') {
