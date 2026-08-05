@@ -21,6 +21,15 @@ import { RunSim, runToCompletion } from './sim/run';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
 import { starterLoadout } from './sim/loadout';
+import { TUTORIAL_STEPS } from './ui/tutorial';
+import {
+  benchItem,
+  createGame,
+  equipItem,
+  grantFirstClear,
+  replaceItem,
+  selectForBench,
+} from './game/state';
 import type { Item, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
@@ -126,6 +135,70 @@ rule('AN ACTUAL RUN — headless, no browser');
       `${final.killed}/${final.totalMonsters} killed, ` +
       `${Math.max(0, Math.round(final.hero.life))} life left, ` +
       `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
+  );
+}
+
+// ===========================================================================
+rule('GUIDED OPENING — does every step actually complete?');
+
+// Steps are predicates over game state, so the whole sequence can be walked
+// here without a browser. This is the check that matters: a step whose `done`
+// can never become true would strand a new player on it forever, and that is
+// invisible from the UI until someone sits there clicking.
+{
+  const game = createGame('fresh');
+  let view = 'run';
+  let step = 0;
+  const trace: string[] = [];
+
+  // Everything the guide asks for, in order. Each entry is what a player
+  // would do; the step should then satisfy itself.
+  const actions: Array<() => void> = [
+    () => { view = 'bench'; },
+    () => { runRecipe(game.wallet, 'make_shard_of_awakening'); },
+    () => {
+      const wand = game.inventory.find((i) => i.kind === 'gear');
+      if (wand) selectForBench(game, wand);
+    },
+    () => {
+      const wand = benchItem(game)!;
+      const result = craft(wand, CURRENCY_BY_ID.shard_of_awakening, pool, rng);
+      if (result.ok) replaceItem(game, result.item);
+    },
+    () => { runRecipe(game.wallet, 'make_shard_of_chaos'); },
+    () => {
+      const wand = benchItem(game)!;
+      equipItem(game, wand, 'weapon');
+    },
+    () => { view = 'run'; },
+  ];
+
+  // Grant what a first clear would have.
+  grantFirstClear(game);
+  line(`  after the first clear: ${balance(game.wallet, 'fragment')} fragments, ` +
+    `${game.inventory.length} items`);
+
+  for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
+    const current = TUTORIAL_STEPS[step];
+    actions[i]?.();
+    // Advance past everything now satisfied, as the real driver does.
+    while (step < TUTORIAL_STEPS.length && TUTORIAL_STEPS[step].done(game, view)) step++;
+    trace.push(`${current.id} -> ${step}`);
+  }
+
+  for (const entry of trace) line(`  ${entry}`);
+  line(
+    step >= TUTORIAL_STEPS.length
+      ? `  ✓ all ${TUTORIAL_STEPS.length} steps completed, and affordable`
+      : `  ✗ STUCK on '${TUTORIAL_STEPS[step].id}' — a new player cannot finish`
+  );
+  // The last step claims you can afford a crystal. It should be true.
+  const left = balance(game.wallet, 'fragment');
+  const crystalCost = CRYSTAL_TIERS[0].fragments;
+  line(
+    left >= crystalCost
+      ? `  ✓ ${left} fragments left — a T1 crystal costs ${crystalCost}, as promised`
+      : `  ✗ only ${left} left but the last step promises a crystal at ${crystalCost}`
   );
 }
 

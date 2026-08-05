@@ -37,6 +37,8 @@ export interface GameState {
   onboarded: boolean;
   /** False until the first map has been cleared. Gates the opening payout. */
   firstClearDone: boolean;
+  /** Index into the guided steps, or null when not running / finished. */
+  tutorialStep: number | null;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -50,6 +52,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     benchId: null,
     onboarded: false,
     firstClearDone: false,
+    tutorialStep: null,
   };
   resetGame(game, mode);
   return game;
@@ -84,6 +87,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
+  game.tutorialStep = null;
 }
 
 /**

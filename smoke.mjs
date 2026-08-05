@@ -110,7 +110,18 @@ assert(
 $('run-abandon').click();
 $('tab-bench').click();
 
-// Everything below needs stock, which is what the dev kit is for.
+// --- the guided opening ----------------------------------------------------
+// Only the plumbing is checked here: driving a real clear would take the full
+// run in wall-clock time. The step machine itself is exercised headlessly in
+// the demo, where state can be built directly.
+assert($('guide').hidden === true, 'no guidance before the first clear');
+assert($('guide-skip') !== null, 'guidance can be dismissed');
+assert(
+  all('.guide-on').length === 0,
+  'nothing is highlighted before the guide runs',
+  String(all('.guide-on').length)
+);
+
 $('dev-kit').click();
 assert(
   all('#inventory .invitem').length > 2,

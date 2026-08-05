@@ -13,6 +13,7 @@ import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
 import { initRun, onRunShown, refreshRunPanels, chooseFreeMap } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
+import { initTutorial, stopTutorial } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
 import {
@@ -50,6 +51,7 @@ function show(view: ViewName): void {
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
   resetGame(game, mode);
+  stopTutorial();
   clearHistory();
   note(mode === 'fresh' ? 'New game — two crystals and nothing else.' : 'Dev kit granted.');
   refreshRunPanels();
@@ -90,6 +92,7 @@ initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
 initBench(game);
 initRun(game);
+initTutorial(game, () => current);
 
 // A new player lands on the Fissure with a skill chosen; a stocked one lands
 // on the bench, which is where a returning player wants to be.

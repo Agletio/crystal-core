@@ -1260,10 +1260,20 @@ export const FREE_MAP = {
    * holding something to make a decision about — which is what the fragments
    * and the weapon are for.
    */
+  /**
+   * A Shard of Awakening (10), a Shard of Chaos (12), and a Tier 1 crystal
+   * (8) — the exact cost of everything the guided opening asks you to do,
+   * plus the crystal it points you at afterwards.
+   *
+   * The tutorial teaches you to BUY these, so handing them over would skip
+   * the thing it's teaching. Covering the crystal too matters because the
+   * last step tells you that you can afford one: at 22 you finished on zero
+   * and it was a lie.
+   */
   firstClear: {
-    fragments: 22,
+    fragments: 30,
     weapon: 'ash_wand',
-    currency: { shard_of_awakening: 1, shard_of_chaos: 1 },
+    currency: {} as Record<string, number>,
   },
 };
 

@@ -316,6 +316,26 @@
 
   #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
 
+  /* --- guided opening ------------------------------------------------- */
+  .guide { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--matrix); border: 1px solid var(--citrine); }
+  .guide__step { font-family: var(--display); font-size: 10px; letter-spacing: .1em; color: var(--citrine); flex: none; }
+  .guide__text { font-size: 12px; flex: 1 1 auto; }
+
+  /* The one thing to click next. Outline rather than a colour change, so it
+     reads on buttons, panels and tabs alike without restyling any of them. */
+  .guide-on {
+    outline: 2px solid var(--citrine);
+    outline-offset: 2px;
+    animation: guidepulse 1.6s ease-in-out infinite;
+  }
+  @keyframes guidepulse {
+    0%, 100% { outline-color: var(--citrine); }
+    50% { outline-color: rgba(232,184,75,.25); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .guide-on { animation: none; }
+  }
+
   /* --- first run ------------------------------------------------------ */
   .welcomegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
   .welcomecard { text-align: left; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -397,6 +417,14 @@
       <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, fragments and every currency">Dev kit</button>
     </div>
   </header>
+
+  <!-- The guided opening. Sits above the inventory so it reads before you
+       start clicking, and disappears the moment the last step is done. -->
+  <div class="guide" id="guide" hidden>
+    <span class="guide__step" id="guide-step">1 / 7</span>
+    <span class="guide__text" id="guide-text"></span>
+    <button class="mini" id="guide-skip">Skip</button>
+  </div>
 
   <!-- Permanent: every view acts on this, so it never hides behind a tab. -->
   <div class="panel inv">
