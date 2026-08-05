@@ -1,16 +1,19 @@
 /**
- * Browser entry point. Wires the two views together and nothing else.
+ * Browser entry point. Owns the game state and wires the views to it.
  *
- * The bench is where you make things; the run is where you find out whether
- * they were worth making. Eventually the bench becomes a debug panel next to
- * the game, which is why they share a page and a bundle.
+ * The inventory sits outside the view switcher because it's the thing every
+ * screen acts on — you pull a crystal out of it to run, put gear into the
+ * bench, and watch it fill after a clear.
  */
-import { initBench } from './ui/bench';
+import { createGame } from './game/state';
+import { initInventory } from './ui/inventory';
+import { initBench, onBenchShown } from './ui/bench';
 import { initRun, onRunShown } from './ui/run';
 
 type ViewName = 'bench' | 'run';
 
 const VIEWS: ViewName[] = ['bench', 'run'];
+const game = createGame();
 
 function show(view: ViewName): void {
   for (const name of VIEWS) {
@@ -22,12 +25,14 @@ function show(view: ViewName): void {
     tab.setAttribute('aria-selected', String(active));
   }
   if (view === 'run') onRunShown();
+  else onBenchShown();
 }
 
 for (const name of VIEWS) {
   document.getElementById(`tab-${name}`)!.addEventListener('click', () => show(name));
 }
 
-initBench();
-initRun();
+initInventory(game);
+initBench(game);
+initRun(game);
 show('bench');

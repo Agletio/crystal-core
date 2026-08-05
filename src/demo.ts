@@ -9,7 +9,6 @@ import {
   makeCrystal,
   makeGear,
   runRecipe,
-  simulateRun,
 } from './economy';
 import { RunSim, runToCompletion } from './sim/run';
 import { characterStats } from './sim/stats';
@@ -235,28 +234,53 @@ rule('TERMINATION CHECK — does every run actually end?');
 // ===========================================================================
 rule('SUSTAIN CHECK — is reinvestment under 1.0?');
 
-line('  tier   cost   avg yield   ratio   (want < 1.00)');
+// Measured by actually running maps, not by a formula. There used to be a
+// separate analytical model here (simulateRun) which meant the harness and
+// the game could disagree about what a run was worth; now there is one
+// answer. Fewer samples than the old formula allowed, since each of these is
+// a full simulation.
+line('  tier   cost   avg yield   ratio   (want < 1.00)   cleared');
 for (const t of CRYSTAL_TIERS) {
-  let total = 0;
-  const runs = 400;
+  const runs = 12;
+  let banked = 0;
+  let cleared = 0;
+
   for (let i = 0; i < runs; i++) {
-    let c = makeCrystal(t.tier);
-    c = craft(c, CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-    total += simulateRun(c, rng, { clearPercent: 1, killBoss: true }).fragments;
+    const c = craft(
+      makeCrystal(t.tier),
+      CURRENCY_BY_ID.shard_of_awakening,
+      pool,
+      rng
+    ).item;
+    const sim = new RunSim(
+      c,
+      makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+      new Rng(5000 + t.tier * 31 + i),
+      { clearAll: true }
+    );
+    const final = runToCompletion(sim, 400);
+    // Only a cleared run banks anything, which is the point of the mechanic.
+    if (final.status === 'cleared') {
+      cleared++;
+      banked += final.loot.currency.fragment ?? 0;
+    }
   }
-  const avg = total / runs;
+
+  const avg = banked / runs;
   const cost = crystalCost(t.tier);
   const ratio = avg / cost;
   const flag = ratio >= 1 ? '  ← above 1.0' : '';
   line(
-    `   T${t.tier}   ${String(cost).padStart(4)}   ${avg.toFixed(1).padStart(9)}   ${ratio
-      .toFixed(2)
-      .padStart(5)}${flag}`
+    `   T${t.tier}   ${String(cost).padStart(4)}   ${avg.toFixed(1).padStart(9)}   ` +
+      `${ratio.toFixed(2).padStart(5)}${flag.padEnd(15)}   ${cleared}/${runs}`
   );
 }
+line();
+line('Yield is what a run BANKS, so dying scores zero — the deeper tiers are');
+line('self-limiting without needing the numbers tuned against them.');
 
 // ===========================================================================
-rule('QUEUE DRAIN — one session');
+rule('WHERE THE FRAGMENTS GO');
 
 const wallet: Wallet = {};
 grant(wallet, 'fragment', 300);
@@ -273,15 +297,22 @@ while (true) {
 line(`Prepped ${queue.length} crystals, ${balance(wallet, 'fragment')} fragments left`);
 
 let elapsed = 0;
+let survived = 0;
 for (const c of queue) {
-  const out = simulateRun(c, rng, { clearPercent: 0.85, killBoss: false });
-  grant(wallet, 'fragment', out.fragments);
-  for (const [id, n] of Object.entries(out.currency)) grant(wallet, id, n);
-  elapsed += out.seconds;
+  const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng, {
+    clearAll: true,
+  });
+  const final = runToCompletion(sim, 400);
+  elapsed += final.elapsed;
+  if (final.status !== 'cleared') continue;
+  survived++;
+  for (const [id, n] of Object.entries(final.loot.currency)) {
+    grant(wallet, id, Math.round(n));
+  }
 }
 
 line(
-  `Ran ${queue.length} crystals in ${Math.round(elapsed / 60)} min → ` +
+  `Ran ${queue.length} crystals (${survived} cleared) in ${Math.round(elapsed / 60)} min → ` +
     `${balance(wallet, 'fragment')} fragments`
 );
 line(

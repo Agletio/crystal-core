@@ -90,6 +90,9 @@ slots; gear runs 5 for 2 on each side.
 | `render/pixi.ts` | WebGL renderer (PixiJS). The default. |
 | `render/canvas2d.ts` | Plain-shapes fallback when there's no WebGL. |
 | `render/sprites.ts` | Procedural placeholder sprite sheets. |
+| `game/state.ts` | The whole game in one object. Inventory, wallet, character, bench. |
+| `game/report.ts` | Banks a finished run and describes it for the results overlay. |
+| `ui/inventory.ts` | The permanent inventory strip. |
 | `ui/` | The two views: crafting bench and run. |
 
 ## The sim
@@ -213,6 +216,48 @@ instead of closing to melee — the same skill the hero can use, through the sam
 code path. Ranged monsters get a pip above them so a pack that shoots is
 identifiable before it starts shooting.
 
+## Inventory, loot, and the loop
+
+The whole game lives in one object (`game/state.ts`): inventory, wallet,
+character, and whatever is on the bench. Nothing persists — a reload starts
+fresh — but it's centralised anyway, because that's the difference between
+adding save points later and having to hunt state out of five modules first.
+`version` is already there so a format change can reset cleanly instead of
+crashing on old data.
+
+The inventory strip is deliberately **not** a tab. Every screen acts on it —
+you pull a crystal out to run, put gear into the bench, watch it fill after a
+clear — so hiding it behind navigation would mean constantly flipping back to
+check what you have. Clicking an item does whatever the active view registered;
+the inventory itself has no opinion about what an item is for.
+
+The loop:
+
+```
+fragments → buy a crystal → craft it on the bench → run it → fragments
+```
+
+Two rules give it teeth:
+
+- **Running a crystal consumes it**, win or lose. It's the entry fee, and it's
+  what stops one good map being farmed forever.
+- **Loot banks only on a clear.** A run carries what it finds in
+  `RunState.loot` and hands it over at the exit; dying drops all of it. That's
+  the entire reason the clear/fail distinction is worth anything.
+
+XP is kept either way — you learned something on the way to dying.
+
+### Adding to the results overlay
+
+The overlay renders whatever rows `buildReport()` hands it and knows nothing
+about what they mean. A new diagnostic — time spent walking versus fighting,
+largest hit taken, damage by source — is a line in `buildReport()` and nothing
+else.
+
+`damageTaken` (split by damage type) is the worked example: it's tracked in the
+sim, summarised in the report, and displayed, without the overlay knowing what
+a damage type is.
+
 ## Line of sight
 
 `hasLineOfSight()` samples the segment between two entity centres and fails on
@@ -335,13 +380,16 @@ several times. That oscillation is the endgame rhythm.
 
 ## Deliberately not here yet
 
-- **Loot and equipment.** The sim kills things but drops nothing, and there's
-  no inventory. `simulateRun()` in `economy.ts` is still the old stub — the
-  economy has not been rewired to the real sim yet, so the sustain numbers and
-  the map you watch are currently two separate models of the same run.
-- The hero's gear is a seeded starter set. The bench bridges into it (a crystal
-  becomes the map, a piece of gear replaces the starter item of the same base),
-  but that's wiring, not an equipment system.
+- **Only fragments drop.** The payload is a currency map plus an item list, so
+  adding shards, gear or crystal drops is a change to what gets pushed in — not
+  to the plumbing that carries it or the overlay that shows it.
+- **The rare currencies have no source.** Sigils and Shard of Ruin used to come
+  from the `simulateRun()` stub, which is gone. Until runs drop currency they
+  exist only in `STARTING_CURRENCY`, seeded so the bench can be exercised.
+- **Equipment.** The character wears a seeded starter set. Gear can be looted
+  into the inventory and crafted on the bench, but not worn — no slots, no
+  character sheet.
+- **Nothing persists.** A reload is a new game.
 - **A boss.** "Clear all" means every monster, then the exit — there is no boss
   fight at the end yet, and `simulateRun`'s `killBoss` flag is part of the old
   stub, not the sim.
@@ -361,9 +409,8 @@ several times. That oscillation is the endgame rhythm.
 
 ## Next
 
-1. **Loot.** Drops on kill, an inventory, and equipping what you crafted. Then
-   delete `simulateRun()` and let the real sim report its own rewards, so
-   there's one model of a run instead of two.
+1. **Equipment.** Slots, a character sheet, and wearing what you looted. Until
+   gear can be worn, half the inventory is decorative.
 2. Unit tests for `computeStat`. The sim exercises it hard now, but a subtle
    bug in the flat/inc/more order still poisons everything downstream and
    stays invisible for months.

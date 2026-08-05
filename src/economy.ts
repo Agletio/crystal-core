@@ -97,57 +97,14 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
 // ---------------------------------------------------------------------------
 // Crystal rewards
 //
-// Placeholder until the real sim exists, but the SHAPE is what matters:
-// rewards read off the crystal's own mods via the same aggregation the
-// character uses. Sustain is deliberately under 100% — see notes.
+// There used to be a simulateRun() stub here that modelled a run analytically.
+// It's gone: the real sim reports its own loot (see RunState.loot), so there
+// is one answer to "what is a run worth" instead of two that could disagree.
+//
+// It was also the only source of the rare sigils and Shard of Ruin. Until the
+// sim drops currency, those are unobtainable except from the starting wallet —
+// see STARTING_CURRENCY.
 // ---------------------------------------------------------------------------
-
-export interface RunOutcome {
-  fragments: number;
-  currency: Record<string, number>;
-  monstersKilled: number;
-  seconds: number;
-}
-
-/** Base fragment yield per tier, tuned so reinvestment decays as you climb. */
-function baseFragmentYield(tier: number): number {
-  return Math.round(5 * Math.pow(1.85, tier - 1));
-}
-
-export function simulateRun(
-  crystal: Item,
-  rng: Rng,
-  opts: { clearPercent?: number; killBoss?: boolean } = {}
-): RunOutcome {
-  const clear = opts.clearPercent ?? 1;
-  const tier = (crystal.meta.tier as number) ?? 1;
-
-  const packCount = computeStat(10, crystal.mods, 'packCount');
-  const packSize = computeStat(5, crystal.mods, 'packSize');
-  const rarity = computeStat(0, crystal.mods, 'itemRarity');
-
-  const monsters = Math.round(packCount * packSize * clear);
-
-  const yieldMult = computeStat(1, crystal.mods, 'fragmentYield');
-  const densityBonus = 1 + (packCount * packSize) / 200;
-  let fragments = Math.round(
-    baseFragmentYield(tier) * yieldMult * densityBonus * clear * rng.float(0.85, 1.15)
-  );
-  if (opts.killBoss) fragments = Math.round(fragments * 1.25);
-
-  const currency: Record<string, number> = {};
-  const rareChance = 0.04 * (1 + rarity / 100) * (opts.killBoss ? 2.5 : 1);
-  if (rng.chance(rareChance)) grant(currency, 'sigil_of_refinement', 1);
-  if (rng.chance(rareChance * 0.25)) grant(currency, 'sigil_of_excess', 1);
-  // Ruin is the scarcest thing that drops — it's the only way to reclaim a
-  // base, so its drop rate is effectively the "how disposable are bases" dial.
-  if (rng.chance(rareChance * 0.1)) grant(currency, 'shard_of_ruin', 1);
-
-  const layout = computeStat(1, crystal.mods, 'layoutComplexity');
-  const seconds = Math.round(60 * layout * (0.6 + 0.4 * clear) + monsters * 0.25);
-
-  return { fragments, currency, monstersKilled: monsters, seconds };
-}
 
 /** Fragments spent to make this crystal, for sustain accounting. */
 export function crystalCost(tier: number): number {

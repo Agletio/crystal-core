@@ -535,6 +535,56 @@ export const RANGED_PACK_CHANCE = 0.25;
 /** Which skill a ranged pack uses. */
 export const MONSTER_RANGED_SKILL = 'bolt';
 
+// ===========================================================================
+// LOOT
+//
+// Fragments are the only thing that drops today, but what the sim accumulates
+// is a currency map plus an item list — so adding shards, gear or crystals
+// later changes what gets pushed in, not the plumbing that carries it or the
+// overlay that displays it.
+//
+// Loot banks only when a run is CLEARED. Dying loses it, which is what makes
+// the clear/fail distinction worth anything.
+// ===========================================================================
+
+export const LOOT = {
+  /**
+   * Fragments one monster is worth at tier 1. Accumulates fractionally and
+   * rounds when banked, so per-kill values below 1 still work.
+   */
+  fragmentsPerKill: 0.15,
+  /** Multiplier per crystal tier. */
+  tierScale: 1.85,
+};
+
+/**
+ * What a new game starts with, so there's something to do immediately.
+ *
+ * The currency matters as much as the fragments: with an empty wallet the
+ * bench is a shelf of disabled buttons until you've been to the workshop,
+ * which is a poor first thirty seconds.
+ */
+export const STARTING_FRAGMENTS = 260;
+export const STARTING_CURRENCY: Record<string, number> = {
+  shard_of_making: 6,
+  shard_of_awakening: 3,
+  shard_of_unmaking: 3,
+  shard_of_change: 4,
+  // The rare ones have no recipe and, until runs drop currency, no source at
+  // all. Seeded here so the whole bench can be exercised rather than half of
+  // it being permanently greyed out.
+  sigil_of_refinement: 2,
+  sigil_of_excess: 1,
+  sigil_of_finality: 1,
+  shard_of_ruin: 1,
+  shard_of_chaos: 2,
+};
+export const STARTING_CRYSTALS = [1, 1, 2];
+export const STARTING_GEAR = [
+  { base: 'body_armour', ilvl: 40, name: 'Plated Vest' },
+  { base: 'ring', ilvl: 30, name: 'Copper Band' },
+];
+
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
   lifePerLevel: 14,

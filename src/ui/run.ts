@@ -1,24 +1,29 @@
 /**
- * The run view: watch the character clear a map.
+ * The run view, in three states: choose a map, watch it, read the result.
  *
  * Owns real time and nothing else. The sim advances in fixed TICK steps and
  * the renderer draws whatever state it finds, so pausing, speeding up, or a
  * janky frame can't change the outcome of a run — only how fast you watch it.
+ *
+ * Running a crystal CONSUMES it, win or lose. That's what gives fragments a
+ * purpose and stops a single good map being farmed forever.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
-import type { RunEvent } from '../sim/run';
+import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
-import { addXp, makeCharacter, xpToNext } from '../sim/character';
-import type { Character } from '../sim/character';
-import { starterLoadout } from '../sim/loadout';
+import { xpToNext } from '../sim/character';
+import { describeMod } from '../crafting';
 import { SKILLS } from '../data';
-import { makeCrystal } from '../economy';
+import { removeItem, crystalsIn } from '../game/state';
+import type { GameState } from '../game/state';
+import { buildReport, lootRows } from '../game/report';
+import type { RunReport } from '../game/report';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
-import { currentItem } from './bench';
+import { renderInventory, setInventoryHandler } from './inventory';
 import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -30,61 +35,154 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
+type Phase = 'menu' | 'running' | 'results';
+
+let game: GameState;
 let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
+let phase: Phase = 'menu';
 let playing = false;
 let speed = 1;
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
-let log: Array<{ text: string; kind: string }> = [];
-let crystalLabel = '—';
-let gearLabel = '—';
 let clearAll = false;
-/** XP already banked from the current run, so we only apply the delta. */
-let appliedXp = 0;
+let chosen: Item | null = null;
+let log: Array<{ text: string; kind: string }> = [];
 
-/**
- * The character persists across runs — this is the only state on this page
- * that survives pressing New run. Levels earned apply from the NEXT run,
- * since stats are resolved once at spawn.
- */
-const character: Character = makeCharacter(starterLoadout(new Rng(1)), 'strike');
+function note(text: string, kind = 'note'): void {
+  log.unshift({ text, kind });
+  if (log.length > 60) log.length = 60;
+}
 
-/**
- * Builds the run from whatever is on the bench.
- *
- * A crystal on the bench becomes the map; a piece of gear becomes equipment,
- * replacing the starter item of the same base. Neither is a real inventory —
- * it's the cheapest wiring that lets you craft something and immediately see
- * what it does.
- */
-function buildSim(): RunSim {
-  seed = Math.floor(Math.random() * 1e9);
-  appliedXp = 0;
-  const bench = currentItem();
+// ---------------------------------------------------------------------------
+// Phase
+// ---------------------------------------------------------------------------
 
-  const crystal: Item = bench.kind === 'crystal' ? bench : makeCrystal(3);
-  crystalLabel = `${crystal.name}${crystal.mods.length ? '' : ' (unmodded)'}`;
+function setPhase(next: Phase): void {
+  phase = next;
+  $('run-menu').hidden = next !== 'menu';
+  $('run-stagewrap').hidden = next === 'menu';
+  $('run-results').hidden = next !== 'results';
+  setInventoryHandler(runHandler());
+}
 
-  const loadout = starterLoadout(new Rng(seed ^ 0x5f5f5f));
-  if (bench.kind === 'gear') {
-    const idx = loadout.findIndex((i) => i.base === bench.base);
-    if (idx >= 0) loadout[idx] = bench;
-    else loadout.push(bench);
-    gearLabel = `starter + ${bench.name}`;
-  } else {
-    gearLabel = 'starter set';
+/** Only crystals are selectable here, and only while choosing. */
+function runHandler() {
+  return {
+    actionFor: (item: Item) => {
+      if (phase !== 'menu' || item.kind !== 'crystal') return null;
+      return {
+        label: 'Choose map',
+        run: () => {
+          chosen = item;
+          renderMenu();
+        },
+      };
+    },
+    highlighted: (item: Item) => item === chosen,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Menu
+// ---------------------------------------------------------------------------
+
+function renderMenu(): void {
+  const host = $('run-selected');
+  host.replaceChildren();
+
+  const available = crystalsIn(game);
+  const launch = $('run-launch') as HTMLButtonElement;
+
+  if (available.length === 0) {
+    host.append(
+      el('p', 'empty', 'No crystals. Buy one on the bench — they cost fragments.')
+    );
+    launch.disabled = true;
+    chosen = null;
+    return;
   }
-  character.equipped = loadout;
 
-  const built = new RunSim(crystal, character, new Rng(seed), { clearAll });
+  if (chosen && !game.inventory.includes(chosen)) chosen = null;
+
+  if (!chosen) {
+    host.append(el('p', 'empty', 'Pick a crystal from your inventory below.'));
+    launch.disabled = true;
+    return;
+  }
+
+  host.append(el('div', 'chosen__name', chosen.name));
+  host.append(el('div', 'chosen__meta', `ilvl ${chosen.ilvl} · ${chosen.mods.length} modifiers`));
+
+  if (chosen.mods.length === 0) {
+    host.append(el('p', 'empty', 'Unmodified — craft it on the bench for a richer map.'));
+  }
+  for (const mod of chosen.mods) {
+    host.append(el('div', 'chosen__mod', describeMod(mod)));
+  }
+  launch.disabled = false;
+}
+
+function renderSkills(): void {
+  const host = $('run-skills');
+  host.replaceChildren();
+
+  for (const skill of SKILLS) {
+    const btn = el('button', 'chip', skill.name) as HTMLButtonElement;
+    btn.title = skill.description;
+    if (skill.id === game.character.skillId) btn.classList.add('chip--on');
+    btn.onclick = () => {
+      game.character.skillId = skill.id;
+      renderSkills();
+      renderStatsPanel();
+    };
+    host.append(btn);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Run
+// ---------------------------------------------------------------------------
+
+function launch(): void {
+  if (!chosen) return;
+
+  const crystal = chosen;
+  // Consumed win or lose. The crystal is the entry fee.
+  removeItem(game, crystal);
+  chosen = null;
+
+  seed = Math.floor(Math.random() * 1e9);
+  sim = new RunSim(crystal, game.character, new Rng(seed), { clearAll });
+
+  log = [];
+  note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
+  accumulator = 0;
+  playing = true;
+
+  setPhase('running');
   renderStatsPanel();
-  return built;
+  renderLog();
+  fitCanvas();
+  setStartLabel();
+  // Paint once up front rather than waiting for the first animation frame,
+  // or everything reads as placeholder text until a frame lands.
+  renderReadout();
+  renderInventory();
+}
+
+function finish(): void {
+  if (!sim) return;
+  const report = buildReport(game, sim.state);
+  playing = false;
+  renderResults(report, sim.state);
+  setPhase('results');
+  renderInventory();
 }
 
 function renderStatsPanel(): void {
-  const s = characterStats(character);
+  const s = characterStats(game.character);
   const host = $('run-stats');
   host.replaceChildren();
 
@@ -98,24 +196,19 @@ function renderStatsPanel(): void {
     ['regen/s', s.lifeRegen.toFixed(1)],
   ];
 
-  for (const [label, value] of rows) {
+  for (const [k, v] of rows) {
     const row = el('div', 'stat');
-    row.append(el('span', 'stat__k', label));
-    row.append(el('span', 'stat__v', value));
+    row.append(el('span', 'stat__k', k));
+    row.append(el('span', 'stat__v', v));
     host.append(row);
   }
-}
-
-function note(text: string, kind = 'note'): void {
-  log.unshift({ text, kind });
-  if (log.length > 60) log.length = 60;
 }
 
 function renderLog(): void {
   const host = $('run-log');
   host.replaceChildren();
   if (log.length === 0) {
-    host.append(el('p', 'empty', 'Press Start to send the character in.'));
+    host.append(el('p', 'empty', 'Choose a crystal and set off.'));
   }
   for (const entry of log) {
     host.append(el('div', `logline logline--${entry.kind}`, entry.text));
@@ -129,14 +222,13 @@ function renderReadout(): void {
   $('run-elapsed').textContent = `${s.elapsed.toFixed(1)}s`;
   $('run-killed').textContent = `${s.killed}/${s.totalMonsters}`;
   $('run-seed').textContent = String(seed);
-  $('run-source').textContent = `${crystalLabel} · ${gearLabel}`;
-  $('run-xp-gained').textContent = String(s.xpGained);
+  $('run-xp-gained').textContent = String(Math.round(s.xpGained));
 
-  const need = xpToNext(character.level);
-  $('run-level').textContent = String(character.level);
-  $('run-xp-text').textContent = `${character.xp} / ${need}`;
+  const need = xpToNext(game.character.level);
+  $('run-level').textContent = String(game.character.level);
+  $('run-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('run-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (character.xp / need) * 100)}%`;
+    `${Math.min(100, (game.character.xp / need) * 100)}%`;
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
@@ -144,42 +236,74 @@ function renderReadout(): void {
     `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
 
   const status = $('run-status');
-  status.textContent =
-    s.status === 'running' ? (playing ? 'running' : 'paused') : s.status;
+  status.textContent = s.status === 'running' ? (playing ? 'running' : 'paused') : s.status;
   status.className = `run-status run-status--${s.status}`;
+}
+
+/** The overlay. Rows come from the report, so a new stat needs nothing here. */
+function renderResults(report: RunReport, run: RunState): void {
+  const host = $('run-results');
+  host.replaceChildren();
+
+  const card = el('div', `resultcard resultcard--${report.status}`);
+  card.append(el('h3', 'resultcard__head', report.headline));
+
+  const grid = el('div', 'resultgrid');
+  for (const row of report.rows) {
+    const r = el('div', `resultrow${row.bad ? ' resultrow--bad' : ''}`);
+    r.append(el('span', 'resultrow__k', row.label));
+    r.append(el('span', 'resultrow__v', row.value));
+    grid.append(r);
+  }
+  card.append(grid);
+
+  card.append(el('p', 'resultcard__sub', report.cleared ? 'Loot' : 'Loot lost'));
+  const loot = el('div', 'lootlist');
+  const rows = lootRows(run);
+
+  if (rows.length === 0) {
+    loot.append(el('p', 'empty', 'Nothing dropped.'));
+  } else {
+    for (const row of rows) {
+      const r = el('div', `lootrow${report.cleared ? '' : ' lootrow--lost'}`);
+      r.append(el('span', 'lootrow__k', row.label.replace(/_/g, ' ')));
+      r.append(el('span', 'lootrow__v', row.value));
+      loot.append(r);
+    }
+    for (const item of report.items) {
+      const r = el('div', 'lootrow');
+      r.append(el('span', 'lootrow__k', item.name));
+      r.append(el('span', 'lootrow__v', '+1'));
+      loot.append(r);
+    }
+  }
+  card.append(loot);
+
+  if (report.lostLoot) {
+    card.append(
+      el('p', 'resultcard__warn', 'You died holding it. Nothing was banked.')
+    );
+  }
+
+  const again = el('button', 'mini', 'Choose another map') as HTMLButtonElement;
+  again.onclick = () => {
+    sim = null;
+    setPhase('menu');
+    renderMenu();
+  };
+  card.append(again);
+
+  host.append(card);
 }
 
 function absorbEvents(): void {
   if (!sim) return;
-
-  // Bank XP as it's earned rather than at the end, so the bar moves while
-  // you watch. Levels gained apply from the next run — stats are resolved
-  // once at spawn and re-deriving them mid-fight would be a lie about what
-  // the sim actually did.
-  const delta = sim.state.xpGained - appliedXp;
-  if (delta > 0) {
-    appliedXp = sim.state.xpGained;
-    const levels = addXp(character, delta);
-    if (levels > 0) {
-      note(`Level ${character.level}${levels > 1 ? ` (+${levels})` : ''}`, 'add');
-    }
-  }
-
   let kills = 0;
   for (const e of sim.drainEvents() as RunEvent[]) {
     if (e.kind === 'kill') kills++;
-    else if (e.kind === 'cleared') {
-      note(`Cleared in ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'add');
-      playing = false;
-      setStartLabel();
-    } else if (e.kind === 'died') {
-      note(`Died at ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'fail');
-      playing = false;
-      setStartLabel();
-    }
+    else if (e.kind === 'cleared') note(`Cleared in ${e.seconds.toFixed(1)}s`, 'add');
+    else if (e.kind === 'died') note(`Died at ${e.seconds.toFixed(1)}s`, 'fail');
   }
-  // Kills are summarised rather than logged one by one; fifty lines of
-  // "killed a monster" is noise, not history.
   if (kills > 0) note(`+${kills} killed`, 'remove');
 }
 
@@ -197,29 +321,23 @@ function frame(now: number): void {
     }
     absorbEvents();
     renderLog();
+
+    if (sim.state.status !== 'running') {
+      setStartLabel();
+      finish();
+    }
   }
 
-  if (sim && renderer) renderer.draw(sim.state);
-  renderReadout();
+  if (sim && renderer && phase !== 'menu') renderer.draw(sim.state);
+  if (sim) renderReadout();
   requestAnimationFrame(frame);
 }
 
 function setStartLabel(): void {
-  const btn = $('run-start') as HTMLButtonElement;
-  const done = sim && sim.state.status !== 'running';
-  btn.textContent = done ? 'Finished' : playing ? 'Pause' : 'Start';
-  btn.disabled = !!done;
-}
-
-function newRun(): void {
-  sim = buildSim();
-  log = [];
-  accumulator = 0;
-  playing = true;
-  note(`Seed ${seed} · ${sim.state.totalMonsters} monsters`, 'note');
-  setStartLabel();
-  renderLog();
-  fitCanvas();
+  const btn = $('run-pause') as HTMLButtonElement;
+  const done = !sim || sim.state.status !== 'running';
+  btn.textContent = playing ? 'Pause' : 'Resume';
+  btn.disabled = done;
 }
 
 function fitCanvas(): void {
@@ -232,11 +350,8 @@ function fitCanvas(): void {
 /**
  * Start on canvas so something is on screen immediately, then hand over to
  * WebGL once Pixi has its device. If Pixi can't initialise — no WebGL, a
- * hostile driver, jsdom in the smoke test — canvas simply stays, and the
- * page is never blank.
- *
- * This swap is the whole argument for the Renderer interface: two
- * implementations, live, and the sim never learns which one is drawing.
+ * hostile driver, jsdom in the smoke test — canvas simply stays, and the page
+ * is never blank.
  */
 async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<void> {
   let pixi: Renderer | null = null;
@@ -246,64 +361,34 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
     pixi = null;
   }
   if (!pixi) return;
-
   renderer?.destroy();
   renderer = pixi;
   fitCanvas();
-  note('WebGL renderer active', 'note');
-  renderLog();
 }
 
-/**
- * One chip per authored skill. With a single skill this looks like overkill —
- * the point is that adding chain lightning to SKILLS makes it appear here with
- * no UI work.
- */
-function renderSkills(): void {
-  const host = $('run-skills');
-  host.replaceChildren();
+export function initRun(state: GameState): void {
+  game = state;
 
-  for (const skill of SKILLS) {
-    const btn = el('button', 'chip', skill.name) as HTMLButtonElement;
-    btn.title = skill.description;
-    if (skill.id === character.skillId) btn.classList.add('chip--on');
-    btn.onclick = () => {
-      character.skillId = skill.id;
-      renderSkills();
-      renderStatsPanel();
-      note(`Skill: ${skill.name} — applies next run`, 'note');
-      renderLog();
-    };
-    host.append(btn);
-  }
-}
-
-export function initRun(): void {
   const stage = $('run-stage');
   const palette = readPalette(document.documentElement);
   renderer = createCanvasRenderer(stage, palette);
   void upgradeRenderer(stage, palette);
 
-  ($('run-start') as HTMLButtonElement).onclick = () => {
-    if (!sim || sim.state.status !== 'running') {
-      newRun();
-      return;
-    }
+  ($('run-launch') as HTMLButtonElement).onclick = () => launch();
+
+  ($('run-pause') as HTMLButtonElement).onclick = () => {
+    if (!sim || sim.state.status !== 'running') return;
     playing = !playing;
     setStartLabel();
   };
 
-  ($('run-new') as HTMLButtonElement).onclick = () => newRun();
-
-  const clearBtn = $('run-clearall') as HTMLButtonElement;
-  clearBtn.onclick = () => {
-    clearAll = !clearAll;
-    clearBtn.classList.toggle('chip--on', clearAll);
-    clearBtn.setAttribute('aria-pressed', String(clearAll));
-    // Takes effect on the next run — the hero's orders shouldn't change
-    // halfway through something you're watching.
-    note(`Clear all: ${clearAll ? 'on' : 'off'} — applies next run`, 'note');
-    renderLog();
+  ($('run-abandon') as HTMLButtonElement).onclick = () => {
+    // The crystal is already spent, so this is a forfeit, not an undo.
+    if (!sim) return;
+    playing = false;
+    sim = null;
+    setPhase('menu');
+    renderMenu();
   };
 
   for (const mult of [1, 2, 4]) {
@@ -317,21 +402,28 @@ export function initRun(): void {
   }
   $('run-speed-1').classList.add('chip--on');
 
+  const clearBtn = $('run-clearall') as HTMLButtonElement;
+  clearBtn.onclick = () => {
+    clearAll = !clearAll;
+    clearBtn.classList.toggle('chip--on', clearAll);
+    clearBtn.setAttribute('aria-pressed', String(clearAll));
+  };
+
   globalThis.addEventListener('resize', fitCanvas);
 
   renderSkills();
-  sim = buildSim();
-  fitCanvas();
+  renderStatsPanel();
+  renderMenu();
   renderLog();
-  setStartLabel();
-  // Paint once up front so the panel is populated before the first frame —
-  // otherwise everything reads as placeholder text until you press Start.
-  renderReadout();
+  setPhase('menu');
   requestAnimationFrame(frame);
 }
 
-/** Called when the Run tab becomes visible — the canvas has no size while hidden. */
+/** Called when the Run tab becomes visible. */
 export function onRunShown(): void {
+  setInventoryHandler(runHandler());
+  renderMenu();
+  renderSkills();
+  renderStatsPanel();
   fitCanvas();
-  renderReadout();
 }

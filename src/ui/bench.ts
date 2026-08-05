@@ -1,41 +1,27 @@
 /**
- * The crafting bench view.
+ * The crafting bench.
  *
- * Was src/web.ts. Now one of two views, and it exposes currentItem() so the
- * run view can take whatever you just crafted onto the map — that bridge is
- * the whole point of putting them on one page.
+ * Now works on an item pulled out of the inventory rather than one conjured
+ * from a button, and currency is spent from the wallet instead of being
+ * infinite. The bench holds exactly one item at a time; putting a second one
+ * down returns the first.
  */
 import { Rng } from '../rng';
 import { ModPool, fillState, slotCapacity, slotTypes, slotUsed } from '../mods';
 import { canApply, craft, describeMod } from '../crafting';
-import { ALL_MODS, CRYSTAL_TIERS, CURRENCIES } from '../data';
-import { makeCrystal, makeGear } from '../economy';
+import { ALL_MODS, CURRENCIES, RECIPES } from '../data';
+import { balance, runRecipe, spend } from '../economy';
+import { addItem, clearBench, putOnBench } from '../game/state';
+import type { GameState } from '../game/state';
+import { renderInventory, setInventoryHandler } from './inventory';
 import type { CurrencyDef, Item, RolledMod } from '../types';
-
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
 
 const pool = new ModPool(ALL_MODS);
 let seed = Math.floor(Math.random() * 1e9);
 let rng = new Rng(seed);
-let item: Item = makeCrystal(3);
+let game: GameState;
 let log: Array<{ text: string; kind: 'add' | 'remove' | 'note' | 'fail' }> = [];
 let focused: string | null = null;
-
-/** What the run view picks up when you hit Start. */
-export function currentItem(): Item {
-  return item;
-}
-
-const BENCH_ITEMS: Array<{ label: string; make: () => Item }> = [
-  ...CRYSTAL_TIERS.map((t) => ({
-    label: `Crystal T${t.tier}`,
-    make: () => makeCrystal(t.tier),
-  })),
-  { label: 'Body Armour', make: () => makeGear('body_armour', 55, 'Runeplate') },
-  { label: 'Ring', make: () => makeGear('ring', 40, 'Band of Ash') },
-];
 
 /** Facet colour by what the mod actually does. */
 const TAG_COLOURS: Array<[string, string]> = [
@@ -58,44 +44,6 @@ function facetOf(mod: RolledMod): string {
   return 'quartz';
 }
 
-// ---------------------------------------------------------------------------
-// Actions
-// ---------------------------------------------------------------------------
-
-function use(currency: CurrencyDef): void {
-  const result = craft(item, currency, pool, rng);
-  if (!result.ok) {
-    log.unshift({ text: `${currency.name} — ${result.error}`, kind: 'fail' });
-    render();
-    return;
-  }
-  log.unshift({ text: currency.name, kind: 'note' });
-  for (const entry of result.log) {
-    const kind = entry.startsWith('-') ? 'remove' : 'add';
-    log.unshift({ text: entry, kind });
-  }
-  item = result.item;
-  render();
-}
-
-function loadBase(index: number): void {
-  item = BENCH_ITEMS[index].make();
-  focused = null;
-  log.unshift({ text: `Loaded ${item.name}`, kind: 'note' });
-  render();
-}
-
-function reseed(): void {
-  seed = Math.floor(Math.random() * 1e9);
-  rng = new Rng(seed);
-  log.unshift({ text: `Seed ${seed}`, kind: 'note' });
-  render();
-}
-
-// ---------------------------------------------------------------------------
-// Render
-// ---------------------------------------------------------------------------
-
 const $ = (id: string) => document.getElementById(id)!;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -105,24 +53,83 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-function renderBases(): void {
-  const host = $('bases');
-  host.replaceChildren();
-  BENCH_ITEMS.forEach((base, i) => {
-    const btn = el('button', 'chip', base.label) as HTMLButtonElement;
-    if (base.label === item.name || item.name.startsWith(base.label)) {
-      btn.classList.add('chip--on');
-    }
-    btn.onclick = () => loadBase(i);
-    host.append(btn);
-  });
+function note(text: string, kind: 'add' | 'remove' | 'note' | 'fail' = 'note'): void {
+  log.unshift({ text, kind });
+  if (log.length > 60) log.length = 60;
 }
 
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+function use(currency: CurrencyDef): void {
+  const item = game.bench;
+  if (!item) return;
+
+  if (balance(game.wallet, currency.id) < 1) {
+    note(`${currency.name} — none in stock`, 'fail');
+    render();
+    return;
+  }
+
+  const result = craft(item, currency, pool, rng);
+  if (!result.ok) {
+    // A refused craft costs nothing — the currency is only spent on a change.
+    note(`${currency.name} — ${result.error}`, 'fail');
+    render();
+    return;
+  }
+
+  spend(game.wallet, { [currency.id]: 1 });
+  note(currency.name, 'note');
+  for (const entry of result.log) {
+    note(entry, entry.startsWith('-') ? 'remove' : 'add');
+  }
+  game.bench = result.item;
+  render();
+}
+
+function buy(recipeId: string): void {
+  const result = runRecipe(game.wallet, recipeId);
+  if (!result.ok) {
+    note(result.error ?? 'cannot afford that', 'fail');
+    render();
+    return;
+  }
+  if (result.item) {
+    addItem(game, result.item);
+    note(`Bought ${result.item.name}`, 'add');
+  } else {
+    note('Bought currency', 'add');
+  }
+  render();
+}
+
+function reseed(): void {
+  seed = Math.floor(Math.random() * 1e9);
+  rng = new Rng(seed);
+  note(`Seed ${seed}`);
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+
 function renderItem(): void {
+  const item = game.bench;
+
+  const empty = $('bench-empty');
+  const body = $('bench-item');
+  empty.hidden = !!item;
+  body.hidden = !item;
+  ($('bench-return') as HTMLButtonElement).disabled = !item;
+
+  if (!item) return;
+
   $('item-name').textContent = item.name;
   $('item-meta').textContent =
-    `ilvl ${item.ilvl} · ${fillState(item)}` +
-    (item.meta.corrupted ? ' · locked' : '');
+    `ilvl ${item.ilvl} · ${fillState(item)}` + (item.meta.corrupted ? ' · locked' : '');
   $('item-name').classList.toggle('locked', !!item.meta.corrupted);
 
   const host = $('sockets');
@@ -169,8 +176,8 @@ function renderItem(): void {
     const row = el('div', 'mod');
     if (focused === mod.entryId) row.classList.add('mod--focus');
     row.append(el('span', `dot dot--${facetOf(mod)}`));
-    const body = el('div', 'mod__body');
-    body.append(
+    const b = el('div', 'mod__body');
+    b.append(
       el(
         'div',
         'mod__stats',
@@ -183,8 +190,8 @@ function renderItem(): void {
           .join(', ')
       )
     );
-    body.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
-    row.append(body);
+    b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
+    row.append(b);
     list.append(row);
   }
 }
@@ -192,6 +199,7 @@ function renderItem(): void {
 function renderCurrencies(): void {
   const host = $('currencies');
   host.replaceChildren();
+  const item = game.bench;
 
   const classes = ['basic', 'uncommon', 'rare', 'exotic'] as const;
   for (const cls of classes) {
@@ -199,20 +207,50 @@ function renderCurrencies(): void {
     if (group.length === 0) continue;
     host.append(el('div', 'shelf__label', cls));
     const grid = el('div', 'shelf');
+
     for (const currency of group) {
-      const blocked = canApply(item, currency);
+      const stock = balance(game.wallet, currency.id);
+      const blocked = item ? canApply(item, currency) : 'nothing on the bench';
       const btn = el('button', `curr curr--${cls}`) as HTMLButtonElement;
+
       btn.append(el('span', 'curr__name', currency.name));
       btn.append(el('span', 'curr__desc', currency.description));
-      if (blocked) {
+      btn.append(el('span', 'curr__stock', `${stock} held`));
+
+      if (blocked || stock < 1) {
         btn.disabled = true;
         btn.classList.add('curr--off');
-        btn.append(el('span', 'curr__why', blocked));
+        btn.append(el('span', 'curr__why', stock < 1 ? 'none in stock' : blocked!));
       }
       btn.onclick = () => use(currency);
       grid.append(btn);
     }
     host.append(grid);
+  }
+}
+
+/** Fragments are the universal feedstock; this is where they turn into things. */
+function renderWorkshop(): void {
+  const host = $('workshop');
+  host.replaceChildren();
+
+  for (const recipe of RECIPES) {
+    const cost = Object.entries(recipe.inputs)
+      .map(([id, n]) => `${n} ${id}`)
+      .join(', ');
+    const affordable = Object.entries(recipe.inputs).every(
+      ([id, n]) => balance(game.wallet, id) >= n
+    );
+
+    const btn = el('button', 'buy') as HTMLButtonElement;
+    btn.append(el('span', 'buy__name', recipe.name));
+    btn.append(el('span', 'buy__cost', cost));
+    if (!affordable) {
+      btn.disabled = true;
+      btn.classList.add('buy--off');
+    }
+    btn.onclick = () => buy(recipe.id);
+    host.append(btn);
   }
 }
 
@@ -228,24 +266,51 @@ function renderLog(): void {
 }
 
 function render(): void {
-  renderBases();
   renderItem();
   renderCurrencies();
+  renderWorkshop();
   renderLog();
   $('seed').textContent = String(seed);
+  renderInventory();
 }
 
-// ---------------------------------------------------------------------------
-// Boot
-// ---------------------------------------------------------------------------
+/** Clicking anything in the inventory puts it on the bench. */
+function benchHandler() {
+  return {
+    actionFor: (item: Item) => ({
+      label: 'Put on bench',
+      run: () => {
+        putOnBench(game, item);
+        focused = null;
+        note(`Bench: ${item.name}`);
+        render();
+      },
+    }),
+    highlighted: (item: Item) => item === game.bench,
+  };
+}
 
-export function initBench(): void {
+/** Called when the Bench tab becomes visible. */
+export function onBenchShown(): void {
+  setInventoryHandler(benchHandler());
+  render();
+}
+
+export function initBench(state: GameState): void {
+  game = state;
+
   ($('reseed') as HTMLButtonElement).onclick = reseed;
   ($('clear') as HTMLButtonElement).onclick = () => {
     log = [];
     render();
   };
+  ($('bench-return') as HTMLButtonElement).onclick = () => {
+    if (!game.bench) return;
+    note(`Returned ${game.bench.name}`);
+    clearBench(game);
+    render();
+  };
 
-  log.unshift({ text: `Seed ${seed}`, kind: 'note' });
+  note(`Seed ${seed}`);
   render();
 }
