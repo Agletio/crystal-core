@@ -368,13 +368,15 @@ assert($('run-loot') !== null, 'a carrying panel is on screen during a run');
 assert(text('run-loot').length > 0, 'the carrying panel says what it holds');
 
 // --- zoom -----------------------------------------------------------------
-assert(text('run-zoom-label') === '1.0×', 'zoom starts fitted', text('run-zoom-label'));
-assert($('run-zoom-out').disabled === true, 'cannot zoom out past the whole map');
+// Starts close enough to read a fight, not fitted — at 1× a monster is four
+// pixels.
+assert(text('run-zoom-label') === '2.0×', 'zoom starts close', text('run-zoom-label'));
+assert($('run-zoom-out').disabled === false, 'and can be pulled back');
 $('run-zoom-in').click();
-assert(text('run-zoom-label') === '1.5×', 'zoom in works', text('run-zoom-label'));
-assert($('run-zoom-out').disabled === false, 'zoom out enabled once zoomed');
+assert(text('run-zoom-label') === '2.5×', 'zoom in works', text('run-zoom-label'));
 $('run-zoom-fit').click();
-assert(text('run-zoom-label') === '1.0×', 'fit returns to the whole map');
+assert(text('run-zoom-label') === '1.0×', 'fit shows the whole Fissure');
+assert($('run-zoom-out').disabled === true, 'and cannot go wider than that');
 
 // The frame only freezes while a map is on screen, and the map keeps running
 // underneath the bench rather than being left for.

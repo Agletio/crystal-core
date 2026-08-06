@@ -55,7 +55,15 @@ let playing = false;
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
-let zoom = 1;
+/**
+ * Close enough to see what's happening.
+ *
+ * Fit (1×) shows the whole Fissure, which is useful for orienting and useless
+ * for watching a fight — at that scale a monster is four pixels. Start where
+ * the action is legible; Fit is one click away.
+ */
+const DEFAULT_ZOOM = 2;
+let zoom = DEFAULT_ZOOM;
 /** What's in the socket. Null is a plain, unempowered descent. */
 let chosen: Item | null = null;
 // ---------------------------------------------------------------------------
@@ -453,6 +461,10 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
   if (!pixi) return;
   renderer?.destroy();
   renderer = pixi;
+  // The new renderer starts at its own default, so the zoom the UI is
+  // currently claiming has to be handed over with it — otherwise the label
+  // says 2× and the picture is fitted.
+  pixi.setZoom(zoom);
   fitCanvas();
 }
 
@@ -510,7 +522,7 @@ export function initRun(state: GameState): void {
 
   renderStatsPanel();
   renderMenu();
-  setZoom(1);
+  setZoom(DEFAULT_ZOOM);
   setPhase('menu');
   requestAnimationFrame(frame);
 }
