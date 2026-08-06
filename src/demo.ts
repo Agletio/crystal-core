@@ -23,6 +23,7 @@ import {
   runRecipe,
 } from './economy';
 import { RunSim, runToCompletion } from './sim/run';
+import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
 import { starterLoadout } from './sim/loadout';
@@ -159,6 +160,60 @@ rule('AN ACTUAL RUN — headless, no browser');
       `${final.killed}/${final.totalMonsters} killed, ` +
       `${Math.max(0, Math.round(final.hero.life))} life left, ` +
       `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
+  );
+}
+
+// ===========================================================================
+rule('MAP SHAPE — do chambers, passages and veins survive generation?');
+
+// The renderer colours a corridor differently from a room, which only works
+// if the generator actually labels them. Two things can quietly break that:
+// a corridor carved THROUGH a room relabelling its middle, and anything in
+// the sim testing `=== FLOOR` instead of `!== WALL` — which would leave the
+// hero unable to walk down a passage. Neither is visible from a screenshot.
+{
+  let rooms = 0;
+  let tunnels = 0;
+  let unwalkable = 0;
+  let roomsCutByCorridors = 0;
+  const veins: number[] = [];
+
+  for (const tier of [1, 3, 6]) {
+    const map = generateMap(makeCrystal(tier), new Rng(1000 + tier));
+    veins.push(map.vein);
+    const { grid } = map;
+
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const tile = grid.at(x, y);
+        if (tile === WALL) continue;
+        if (tile === TUNNEL) tunnels++;
+        if (tile === FLOOR) rooms++;
+        if (!grid.walkable(x, y)) unwalkable++;
+      }
+    }
+
+    for (const room of map.rooms) {
+      for (let y = room.y; y < room.y + room.h; y++) {
+        for (let x = room.x; x < room.x + room.w; x++) {
+          if (grid.at(x, y) === TUNNEL) roomsCutByCorridors++;
+        }
+      }
+    }
+  }
+
+  line(`  ${rooms} chamber tiles, ${tunnels} passage tiles across three maps`);
+  check(rooms > 0 && tunnels > 0, 'maps have both chambers and passages', 'one kind is missing');
+  check(unwalkable === 0, 'every carved tile is walkable', `${unwalkable} carved tiles block the hero`);
+  check(
+    roomsCutByCorridors === 0,
+    'a corridor never relabels the room it joins',
+    `${roomsCutByCorridors} room tiles marked as passage`
+  );
+  check(
+    veins.join(',') === '1,3,6',
+    'the vein tracks the crystal you socketed',
+    `veins were ${veins.join(', ')}`
   );
 }
 

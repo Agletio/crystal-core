@@ -22,6 +22,15 @@ export const WALL = 0;
 export const FLOOR = 1;
 export const ENTRANCE = 2;
 export const EXIT = 3;
+/**
+ * Corridor floor.
+ *
+ * Walkable exactly like FLOOR — `walkable()` is "not a wall", so nothing in
+ * the sim has to learn about it. It exists so a renderer can tell a chamber
+ * from a passage without re-deriving it from the room rectangles every frame,
+ * which is what turns a flat slab of one colour into somewhere with a shape.
+ */
+export const TUNNEL = 4;
 
 export interface Room {
   x: number;
@@ -107,6 +116,19 @@ export interface GameMap {
   rooms: Room[];
   entrance: Vec2;
   exit: Vec2;
+  /**
+   * Which mineral runs through this rock, as a tier index.
+   *
+   * Presentation reads it; the sim never does. It's here rather than in the
+   * renderer because it has to be a fact about the MAP — the same crystal
+   * must produce the same coloured seams every time, and a renderer inventing
+   * it would give the two implementations different maps.
+   *
+   * A descent should look like the crystal you paid for. Every Fissure being
+   * the same violet slab made the socket feel cosmetic, which is the opposite
+   * of what a crystal is meant to be.
+   */
+  vein: number;
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -124,10 +146,17 @@ function carveRoom(grid: Grid, r: Room): void {
   }
 }
 
-/** Carve one tile, leaving a permanent wall border around the map. */
+/**
+ * Carve one corridor tile, leaving a permanent wall border around the map.
+ *
+ * Only ever writes into rock. Corridors are carved after every room, so
+ * without the guard a passage crossing a chamber would relabel the middle of
+ * it as passage — and the map would draw a corridor-coloured stripe through
+ * the room it connects to.
+ */
 function carve(grid: Grid, x: number, y: number): void {
   if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
-  grid.set(x, y, FLOOR);
+  if (grid.at(x, y) === WALL) grid.set(x, y, TUNNEL);
 }
 
 /** Offsets that centre a band of the given width on a line. */
@@ -266,5 +295,5 @@ export function generateMap(crystal: Item, rng: Rng): GameMap {
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit };
+  return { grid, rooms, entrance, exit, vein: (crystal.meta.tier as number) ?? 1 };
 }

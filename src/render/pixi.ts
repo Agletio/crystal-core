@@ -23,7 +23,17 @@ import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, poisonFieldRadius, tileSize, toHexNumber, vfxColour } from './renderer';
+import {
+  clampZoom,
+  floorColour,
+  poisonDrops,
+  poisonFieldRadius,
+  tileFleck,
+  tileSize,
+  toHexNumber,
+  veinColour,
+  vfxColour,
+} from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
 
 const FLOATER_LIFE = 1.1;
@@ -137,12 +147,28 @@ export async function createPixiRenderer(
     const { grid } = map;
     mapLayer.clear();
 
-    const floor = toHexNumber(palette.floor);
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const tile = grid.at(x, y);
+        if (tile === WALL) continue;
+        // Slight overdraw closes hairline seams between adjacent tiles.
+        mapLayer
+          .rect(x - 0.01, y - 0.01, 1.02, 1.02)
+          .fill(toHexNumber(floorColour(palette, tile, x, y)));
+      }
+    }
+
+    // Mineral in the rock, in the socketed crystal's own colour. Drawn after
+    // the floor so a fleck sits ON the stone rather than replacing a tile of
+    // it, and before the wall edges so it never breaks the map's outline.
+    const vein = toHexNumber(veinColour(palette, map.vein));
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         if (grid.at(x, y) === WALL) continue;
-        // Slight overdraw closes hairline seams between adjacent tiles.
-        mapLayer.rect(x - 0.01, y - 0.01, 1.02, 1.02).fill(floor);
+        const fleck = tileFleck(x, y);
+        if (fleck) {
+          mapLayer.circle(fleck.x, fleck.y, fleck.r).fill({ color: vein, alpha: 0.5 });
+        }
       }
     }
 

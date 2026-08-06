@@ -244,6 +244,37 @@ The map draws with its own `--floor` / `--floor-lit` pair, much brighter than
 the panel colours. Panel colours are meant to sit behind text; a floor lit
 like that is unreadable at tile size.
 
+### The floor
+
+`floorColour()` and `tileFleck()` in `render/renderer.ts` are pure functions of
+`(tile, x, y)`, so both renderers agree exactly and a redraw can never make the
+floor shimmer. Three things vary, in rising order of how much they say:
+
+- **Grain.** Value noise smoothed across a lattice five tiles wide. Hashing
+  each tile independently is the obvious version and it looks like television
+  static — every tile differs from its neighbour, so the eye reads noise rather
+  than surface. Rock varies in patches.
+- **Chambers against passages.** `generateMap` labels corridor tiles `TUNNEL`
+  rather than `FLOOR`, and `carve()` only ever writes into rock, so a passage
+  crossing a chamber can't relabel the middle of it. `walkable()` is "not a
+  wall", so the sim never had to learn the new value. Corridors draw darker,
+  which makes the shape of a level legible at Fit instead of something you have
+  to trace. This is the one that is worth more than decoration.
+- **The vein.** `GameMap.vein` carries the socketed crystal's tier; the
+  renderer turns it into sparse sub-tile flecks in that tier's colour, so a T5
+  descent is visibly not a T1 one. It lives on the map rather than in the
+  renderer because it has to be a fact about the map — a renderer inventing it
+  would give the two implementations different rock.
+
+Flecks are deliberately smaller than a tile. Tinting the whole tile was the
+first attempt, and at any real zoom it reads as a square somebody forgot to
+paint: you see the grid, not the rock.
+
+`npm run demo` guards all of it — that maps have both chambers and passages,
+that every carved tile is walkable (so nothing has started testing `=== FLOOR`
+and stranded the hero in a corridor), that a corridor never relabels the room
+it joins, and that the vein tracks the crystal.
+
 ### Replacing the placeholder art
 
 `render/sprites.ts` draws every creature at runtime onto offscreen canvases.

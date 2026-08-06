@@ -13,7 +13,17 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, poisonFieldRadius, spriteColour, tileSize, vfxColour } from './renderer';
+import {
+  clampZoom,
+  floorColour,
+  poisonDrops,
+  poisonFieldRadius,
+  spriteColour,
+  tileFleck,
+  tileSize,
+  veinColour,
+  vfxColour,
+} from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -85,10 +95,11 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   function drawMap(state: RunState, v: View): void {
     const { grid } = state.map;
 
-    ctx.fillStyle = palette.floor;
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        if (grid.at(x, y) === WALL) continue;
+        const tile = grid.at(x, y);
+        if (tile === WALL) continue;
+        ctx.fillStyle = floorColour(palette, tile, x, y);
         ctx.fillRect(
           v.offX + x * v.tile,
           v.offY + y * v.tile,
@@ -97,6 +108,30 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         );
       }
     }
+
+    // Mineral in the rock, in the socketed crystal's own colour. Drawn after
+    // the floor so a fleck sits ON the stone rather than replacing a tile of
+    // it, and before the wall edges so it never breaks the map's outline.
+    ctx.fillStyle = veinColour(palette, state.map.vein);
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.at(x, y) === WALL) continue;
+        const fleck = tileFleck(x, y);
+        if (!fleck) continue;
+        ctx.moveTo(v.offX + (fleck.x + fleck.r) * v.tile, v.offY + fleck.y * v.tile);
+        ctx.arc(
+          v.offX + fleck.x * v.tile,
+          v.offY + fleck.y * v.tile,
+          fleck.r * v.tile,
+          0,
+          Math.PI * 2
+        );
+      }
+    }
+    ctx.fill();
+    ctx.globalAlpha = 1;
 
     // Bright edge where floor meets wall gives the map readable shape without
     // needing tilesets.

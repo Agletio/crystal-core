@@ -12,6 +12,7 @@
  * Positions in RunState are in tile units, not pixels, so an implementation
  * is free to choose its own scale, camera, or projection.
  */
+import { TUNNEL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 
 export interface Palette {
@@ -164,6 +165,158 @@ export function damageColour(palette: Palette, type: string): string {
     default:
       return palette.chalk;
   }
+}
+
+// ---------------------------------------------------------------------------
+// The floor
+// ---------------------------------------------------------------------------
+
+/**
+ * Rock colour, per tile.
+ *
+ * The map used to be one flat fill across every walkable tile, which read as
+ * a violet slab with a bright outline rather than a place — and it read the
+ * same on every descent, so a crystal changed the numbers and nothing you
+ * could see.
+ *
+ * Three things vary here, in rising order of how much they say:
+ *
+ *  - Grain. A deterministic per-tile wobble, small enough that you never
+ *    catch a single tile being different and large enough that the surface
+ *    stops looking printed.
+ *  - Chambers against passages. A corridor is darker and cooler than a room,
+ *    so the shape of the level is legible at Fit instead of having to be
+ *    traced. This is the one that is worth more than decoration.
+ *  - The vein. The mineral the crystal ran through the rock, as sparse flecks
+ *    in that tier's colour. A T5 map is visibly not a T1 map.
+ *
+ * Everything is a pure function of (x, y, tile, vein) so both renderers agree
+ * exactly, and re-drawing a frame can never make the floor shimmer.
+ */
+
+/** The seam colour for a crystal tier. Matches the icons' own ladder. */
+const VEIN_COLOURS: Array<keyof Palette> = [
+  'dust',
+  'quartz',
+  'verdite',
+  'amethyst',
+  'citrine',
+  'ember',
+];
+
+export function veinColour(palette: Palette, vein: number): string {
+  const i = Math.max(1, Math.min(VEIN_COLOURS.length, Math.round(vein))) - 1;
+  return palette[VEIN_COLOURS[i]];
+}
+
+/**
+ * A stable 0..1 hash of a tile.
+ *
+ * Not the seeded Rng: this has to be answerable for one tile without having
+ * generated every tile before it, because a renderer draws whatever is on
+ * screen and nothing else.
+ */
+function tileNoise(x: number, y: number, salt: number): number {
+  let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/**
+ * The same hash, smoothed across a coarse lattice.
+ *
+ * Hashing each tile independently is the obvious thing and it looks like
+ * television static: every tile differs from its neighbour, so the eye reads
+ * noise rather than surface. Rock varies in PATCHES. Interpolating between
+ * lattice points several tiles apart gives broad soft areas of lighter and
+ * darker stone, which is what the flat fill was actually missing.
+ */
+function patchNoise(x: number, y: number, scale: number, salt: number): number {
+  const fx = x / scale;
+  const fy = y / scale;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  // Smoothstep, so the lattice itself never shows up as a grid.
+  const tx = fx - x0;
+  const ty = fy - y0;
+  const sx = tx * tx * (3 - 2 * tx);
+  const sy = ty * ty * (3 - 2 * ty);
+
+  const top =
+    tileNoise(x0, y0, salt) + (tileNoise(x0 + 1, y0, salt) - tileNoise(x0, y0, salt)) * sx;
+  const bottom =
+    tileNoise(x0, y0 + 1, salt) +
+    (tileNoise(x0 + 1, y0 + 1, salt) - tileNoise(x0, y0 + 1, salt)) * sx;
+  return top + (bottom - top) * sy;
+}
+
+/** Parse `#rgb` / `#rrggbb` into components. */
+function rgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '').trim();
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = Number.parseInt(full, 16);
+  return Number.isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** Blend two colours. `t` of 0 is all `a`. */
+export function mix(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = rgb(a);
+  const [br, bg, bb] = rgb(b);
+  const c = (x: number, y: number) => Math.round(x + (y - x) * t);
+  return `#${((1 << 24) | (c(ar, br) << 16) | (c(ag, bg) << 8) | c(ab, bb)).toString(16).slice(1)}`;
+}
+
+/** How much darker a corridor is than a chamber. */
+const TUNNEL_DEPTH = 0.34;
+/** Tiles across one patch of lighter or darker stone. */
+const PATCH_SCALE = 5;
+/** How far a patch can push the floor colour either way. */
+const PATCH_DEPTH = 0.16;
+export function floorColour(palette: Palette, tile: number, x: number, y: number): string {
+  // Passages are further from the light than the chambers they join.
+  const base =
+    tile === TUNNEL ? mix(palette.floor, palette.void, TUNNEL_DEPTH) : palette.floor;
+
+  // Broad patches of lighter and darker stone.
+  const patch = patchNoise(x, y, PATCH_SCALE, 1);
+  return mix(
+    base,
+    patch > 0.5 ? palette.floorLit : palette.void,
+    Math.abs(patch - 0.5) * 2 * PATCH_DEPTH
+  );
+}
+
+/** Fraction of tiles carrying a fleck of the vein. */
+const VEIN_DENSITY = 0.055;
+
+export interface Fleck {
+  /** Centre, in tile units, absolute. */
+  x: number;
+  y: number;
+  /** Radius in tiles. */
+  r: number;
+}
+
+/**
+ * The mineral in this tile, if any.
+ *
+ * A fleck is deliberately SMALLER than a tile. Tinting the whole tile was the
+ * first attempt and at any real zoom it reads as a square somebody forgot to
+ * paint — the eye sees the grid, not the rock. A mark inside the tile, offset
+ * so it doesn't line up with its neighbours, reads as something embedded in
+ * the floor instead of as the floor.
+ *
+ * Deterministic, so it never crawls between frames.
+ */
+export function tileFleck(x: number, y: number): Fleck | null {
+  const roll = tileNoise(x, y, 2);
+  if (roll >= VEIN_DENSITY) return null;
+  const t = roll / VEIN_DENSITY;
+  return {
+    x: x + 0.25 + tileNoise(x, y, 3) * 0.5,
+    y: y + 0.25 + tileNoise(x, y, 4) * 0.5,
+    r: 0.09 + t * 0.09,
+  };
 }
 
 /** Hex string to a 0xRRGGBB number, for renderers that want numeric colours. */
