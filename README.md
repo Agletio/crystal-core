@@ -21,9 +21,23 @@ Two ways, no server needed:
 
 - **Locally** — `npm run build`, then open `docs/index.html` in a browser.
   Use `npm run watch` to rebuild automatically while you edit.
-- **Anywhere** — push to GitHub, then Settings → Pages → Source: *Deploy from
-  a branch*, Branch: `main`, Folder: `/docs`. Give it a minute and it's live at
-  `https://<user>.github.io/<repo>/`. Phone, work laptop, anywhere.
+- **Anywhere** — <https://crystal-core.austin-baxter990.workers.dev>. Merging
+  to `main` republishes it in about twenty seconds. Phone, work laptop,
+  anywhere.
+
+Cloudflare serves `docs/` as static files, configured in `wrangler.toml`.
+There is no build step in that deploy, and that is deliberate: `docs/app.js`
+is committed so publishing the site is a copy rather than a compile.
+
+It used to be GitHub Pages, which deploys from the same runner pool as every
+other Actions job. On a day when those runners were starved, a site that
+needed no build sat undeployed for six hours while the checks that genuinely
+need a machine passed fine in between. Moving the deploy off that pool means
+a queue on GitHub can no longer stand between a merge and playing the game;
+the checks stayed where they were, because waiting on a check costs nothing.
+
+Cloudflare also builds branches, so a pull request gets its own playable URL —
+which is a better answer than a screenshot to "what does this actually do".
 
 `docs/app.js` is committed on purpose — Pages serves static files and won't run
 a build for you. Build before pushing, or let CI do it (below).
@@ -98,13 +112,15 @@ height. Playable, but it was designed for a desktop.
 
 ### When the site doesn't update
 
-Merging pushes to `main`, which triggers `pages build and deployment`. If the
-site still serves the old bundle, look at that run rather than at the code —
-`build and check` passing tells you the bundle is right, not that it shipped.
+Look at the Cloudflare deployment, not at the code — `build and check` passing
+tells you the bundle is correct, not that it shipped. The two are separate
+systems now and only one of them puts anything on screen.
 
-**Do not re-run an old deployment.** It is the obvious move and it does not
-work: `deploy-pages` authenticates with an OIDC token bound to the run's
-original context, so re-running an hours-old run is rejected with
+Worth keeping from the GitHub Pages era, in case anything here ever goes back
+to an Actions-based deploy: **do not re-run a failed deployment.** It is the
+obvious move and it cannot work. `deploy-pages` authenticates with an OIDC
+token bound to the run's original context, so re-running an hours-old run is
+rejected with
 
 ```
 Failed to create deployment (status: 400)
@@ -112,9 +128,8 @@ Invalid actions OIDC token due to No keys from key endpoint match the id token
 ```
 
 which reads like a permissions problem and is really a staleness one. Push a
-commit instead — a fresh run mints a fresh token. Flipping Settings → Pages
-source to `None` and back also works, and builds outside the Actions queue,
-which is the better lever when runners are the thing that is struggling.
+commit instead: only a fresh run mints a fresh token. Three re-runs were spent
+learning that.
 
 ## Branching
 
