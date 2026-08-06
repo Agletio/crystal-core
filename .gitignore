@@ -15,3 +15,6 @@ Thumbs.db
 *.tsbuildinfo
 .vscode/
 .idea/
+
+# Screenshot output from `npm run shots` — regenerated, never reviewed.
+shots/
