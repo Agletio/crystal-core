@@ -62,10 +62,20 @@ function setPhase(next: Phase): void {
   $('run-menu').hidden = next !== 'menu';
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
-  // The stage sizes itself to the frame, so the scroll container has to stop
-  // scrolling for the duration — otherwise the two fight over the height.
-  document.querySelector('.viewport')?.classList.toggle('viewport--locked', next !== 'menu');
+  syncViewportLock();
   setInventoryHandler(runHandler());
+}
+
+/**
+ * The stage sizes itself to the frame, so the scroll container has to stop
+ * scrolling while a map is up — otherwise the two fight over the height.
+ *
+ * It belongs to the run view SHOWING A MAP, not to the app. Left on while you
+ * tabbed to the bench, it froze that page with its items out of reach.
+ */
+export function syncViewportLock(): void {
+  const filling = !$('view-run').hidden && phase !== 'menu';
+  document.querySelector('.viewport')?.classList.toggle('viewport--locked', filling);
 }
 
 /** Only crystals, and only while choosing — gear isn't shown here at all. */

@@ -11,7 +11,7 @@ import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, onBenchShown } from './ui/bench';
-import { initRun, onRunShown, refreshRunPanels, chooseFreeMap } from './ui/run';
+import { initRun, onRunShown, refreshRunPanels, chooseFreeMap, syncViewportLock } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, stopTutorial } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
@@ -46,6 +46,8 @@ function show(view: ViewName): void {
   current = view;
   if (view === 'run') onRunShown();
   else onBenchShown();
+  // Only the run view freezes the frame, and only while a map is on it.
+  syncViewportLock();
 }
 
 /** Wipe and re-render everything. Both buttons are dev tools. */

@@ -358,8 +358,24 @@ assert($('run-zoom-out').disabled === false, 'zoom out enabled once zoomed');
 $('run-zoom-fit').click();
 assert(text('run-zoom-label') === '1.0×', 'fit returns to the whole map');
 
+// The frame only freezes while a map is on screen. Tabbing away mid-run left
+// it frozen once, which put the bench's own items out of reach.
+const viewport = document.querySelector('.viewport');
+assert(viewport.classList.contains('viewport--locked'), 'a running map fills the frame');
+$('tab-bench').click();
+assert(
+  !viewport.classList.contains('viewport--locked'),
+  'the bench scrolls even with a run in progress'
+);
+$('tab-run').click();
+assert(viewport.classList.contains('viewport--locked'), 'and the map takes it back');
+
 // --- abandoning returns to the menu ---------------------------------------
 $('run-abandon').click();
+assert(
+  !viewport.classList.contains('viewport--locked'),
+  'the frame unfreezes once the map is gone'
+);
 assert($('run-menu').hidden === false, 'abandon returns to the menu');
 assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
 
