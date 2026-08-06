@@ -29,12 +29,12 @@ import { starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
-  benchItem,
+  craftItem,
   createGame,
   equipItem,
   grantFirstClear,
   replaceItem,
-  selectForBench,
+  selectForCraft,
 } from './game/state';
 import type { Item, Wallet } from './types';
 
@@ -182,7 +182,9 @@ rule('GUIDED OPENING — does every step actually complete?');
     { view: 'run', phase: 'menu', top: null },
     { view: 'run', phase: 'running', top: null },
     { view: 'run', phase: 'results', top: null },
-    { view: 'bench', phase: 'results', top: 'bench' },
+    { view: 'craft', phase: 'results', top: 'craft' },
+    { view: 'craft', phase: 'results', top: 'shop' },
+    { view: 'run', phase: 'results', top: 'shop' },
     { view: 'run', phase: 'results', top: 'sheet' },
     { view: 'run', phase: 'menu', top: 'skills' },
   ];
@@ -202,7 +204,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     .join('\n');
 
   // Four ways for an id to be real: written into the markup, assigned as a
-  // literal somewhere in the UI, or built by the bench from a recipe or by the
+  // literal somewhere in the UI, or built by the shop from a recipe or by the
   // sheet from an equipment slot.
   const exists = (id: string): boolean =>
     MARKUP.includes(`id="${id}"`) ||
@@ -225,20 +227,24 @@ rule('GUIDED OPENING — does every step actually complete?');
           `${game.inventory.length} items`
       );
     },
-    () => { ctx.view = 'bench'; ctx.top = 'bench'; },
+    () => { ctx.top = 'shop'; },
     () => { runRecipe(game.wallet, 'make_shard_of_awakening'); },
     () => {
+      // Currency is spent from the dock onto the bench, so getting to the
+      // next step means leaving the shop for crafting.
+      ctx.view = 'craft';
+      ctx.top = 'craft';
       const wand = game.inventory.find((i) => i.kind === 'gear');
-      if (wand) selectForBench(game, wand);
+      if (wand) selectForCraft(game, wand);
     },
     () => {
-      const wand = benchItem(game)!;
+      const wand = craftItem(game)!;
       const result = craft(wand, CURRENCY_BY_ID.shard_of_awakening, pool, rng);
       if (result.ok) replaceItem(game, result.item);
     },
-    () => { runRecipe(game.wallet, 'make_shard_of_chaos'); },
+    () => { ctx.top = 'shop'; runRecipe(game.wallet, 'make_shard_of_chaos'); },
     () => {
-      const wand = benchItem(game)!;
+      const wand = craftItem(game)!;
       equipItem(game, wand, 'weapon');
     },
     // Close the sheet, dismiss the report, enter again.
@@ -274,10 +280,10 @@ rule('GUIDED OPENING — does every step actually complete?');
     `points at nothing: ${targetless.join(', ')}`
   );
   // The guide walks you into equipping the item that is sitting on the bench.
-  // A stale benchId would leave the bench holding something you're wearing,
+  // A stale craftId would leave the bench holding something you're wearing,
   // with every currency button live against it.
   check(
-    benchItem(game) === null,
+    craftItem(game) === null,
     'equipping the benched item cleared the bench',
     'the bench still holds an item you are now wearing'
   );

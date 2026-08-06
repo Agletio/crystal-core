@@ -1329,6 +1329,14 @@ export const DEV_CURRENCY: Record<string, number> = {
   sigil_of_finality: 1,
   shard_of_ruin: 1,
   shard_of_chaos: 2,
+  // The crystal essences were the half this was meant to stop being greyed
+  // out and weren't in it. That was invisible while every currency rendered
+  // whether or not you held any; now the dock shows only what you own, so a
+  // dev kit missing four of thirteen is four icons nobody can look at.
+  essence_of_the_swarm: 2,
+  essence_of_greed: 2,
+  whetstone_of_might: 2,
+  oil_of_swiftness: 2,
 };
 
 /** One of each base at low ilvl, so every slot can be filled immediately. */

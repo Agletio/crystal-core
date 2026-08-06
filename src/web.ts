@@ -1,20 +1,22 @@
 /**
  * Browser entry point. Owns the game state and wires the screens to it.
  *
- * One screen and four popups. The map is the floor — it's where the game
+ * One screen and five popups. The map is the floor — it's where the game
  * happens and the thing you come back to after everything else — so it isn't
- * behind a tab at all. The bench, the character sheet, skills and history are
- * things you open, use, and close over the top of it, and a run keeps
- * advancing underneath while you do.
+ * behind a tab at all. Crafting, the shop, the character sheet, skills and
+ * history are things you open, use, and close over the top of it, and a run
+ * keeps advancing underneath while you do.
  *
  * The inventory dock sits below all of it, uncovered by every popup, because
- * the bench works ON the dock: covering it with the thing that needs it would
- * be the one mistake this layout can't afford.
+ * crafting works ON the dock — both the item and the currency come from it —
+ * so covering it with the thing that needs it would be the one mistake this
+ * layout can't afford.
  */
 import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
-import { initBench, openBench, closeBench, isBenchOpen } from './ui/bench';
+import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
+import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
@@ -43,9 +45,10 @@ function restart(mode: StartMode): void {
   refreshRunPanels();
   // Same rule as booting: a stocked game has something to spend, a fresh one
   // has a map to run.
-  if (mode === 'dev') openBench();
+  if (mode === 'dev') openCraft();
   else {
-    closeBench();
+    closeCraft();
+    closeShop();
     onRunFocused();
   }
   maybeShowWelcome();
@@ -65,7 +68,8 @@ function begin(): void {
   startTutorial();
 }
 
-document.getElementById('open-bench')!.addEventListener('click', openBench);
+document.getElementById('open-craft')!.addEventListener('click', openCraft);
+document.getElementById('open-shop')!.addEventListener('click', openShop);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
@@ -78,7 +82,8 @@ globalThis.addEventListener('keydown', (event) => {
   if (isSkillsOpen()) closeSkills();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
-  else if (isBenchOpen()) closeBench();
+  else if (isShopOpen()) closeShop();
+  else if (isCraftOpen()) closeCraft();
 });
 
 /**
@@ -106,7 +111,8 @@ initHistory();
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
-initBench(game, onRunFocused);
+initCraft(game, onRunFocused);
+initShop(game);
 initRun(game);
 /**
  * What the guide needs that the game state can't tell it: which surface has
@@ -118,16 +124,18 @@ function guideContext(): GuideCtx {
     ? 'skills'
     : isCharacterOpen()
       ? 'sheet'
-      : isBenchOpen()
-        ? 'bench'
-        : null;
-  return { view: isBenchOpen() ? 'bench' : 'run', phase: runPhase(), top };
+      : isShopOpen()
+        ? 'shop'
+        : isCraftOpen()
+          ? 'craft'
+          : null;
+  return { view: isCraftOpen() ? 'craft' : 'run', phase: runPhase(), top };
 }
 
 initTutorial(game, guideContext);
 
-// A stocked game opens the bench, which is where a returning player wants to
+// A stocked game opens crafting, which is where a returning player wants to
 // be; a new one has nothing to spend and lands on the map.
-if (game.onboarded) openBench();
+if (game.onboarded) openCraft();
 else onRunFocused();
 initWelcome(game, begin);

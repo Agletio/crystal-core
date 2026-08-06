@@ -4,9 +4,9 @@ Headless. No rendering, no DOM. Run it in Node, test it, then build UI on top.
 
 ```bash
 npm install
-npm run build       # bundle the bench -> docs/app.js
+npm run build       # bundle the game -> docs/app.js
 npm run demo        # console walkthrough + sustain harness
-npm run smoke       # headless check that the bench boots
+npm run smoke       # headless check that the game boots
 npm run typecheck
 npm run shots       # real-browser screenshots, phone + desktop
 npm run mods        # does every modifier do what it says?
@@ -15,7 +15,7 @@ npm run mods        # does every modifier do what it says?
 The first four are the fast loop. The last two are slower and answer questions
 the fast loop structurally cannot — see below.
 
-## Running the bench
+## Running it
 
 Two ways, no server needed:
 
@@ -201,7 +201,7 @@ slots; gear runs 5 for 2 on each side.
 | `game/state.ts` | The whole game in one object. Inventory, wallet, character, bench. |
 | `game/report.ts` | Banks a finished run and describes it for the results overlay. |
 | `ui/inventory.ts` | The permanent inventory dock. |
-| `ui/` | The two views: crafting bench and run. |
+| `ui/` | The screens: the run, crafting, the shop, and the dock they all act on. |
 
 ## The sim
 
@@ -518,14 +518,19 @@ The page never scrolls. `.wrap` fills the viewport, and only the active view
 grows — it scrolls inside itself, so the frame stays put like an application
 window rather than a document.
 
-**One screen, four popups, and a dock.** The map is the floor: it's where the
+**One screen, five popups, and a dock.** The map is the floor: it's where the
 game happens and the thing you return to after everything else, so it isn't
 behind navigation at all. Two tab bars — Bench/Fracture in one place,
 Character/Skills/History in another — were one set of destinations pretending
 to be two.
 
-- **Bench** — a popup over the map rather than a page you leave for, which
-  means a run keeps advancing while you spend what it dropped.
+- **Crafting** — a popup over the map rather than a page you leave for, which
+  means a run keeps advancing while you spend what it dropped. The window is
+  the item and nothing else.
+- **Shop** — split out of crafting, because the two do unrelated jobs: one
+  turns fragments into stock, the other spends stock on the item in front of
+  you. Sharing a window meant that item scrolled out of sight exactly when you
+  went to buy something for it.
 - **Character sheet** — reference you consult rather than a workspace you live
   in, and you want your stats while choosing a map *or* crafting gear.
 - **Skills** — the same, per-skill webs.
@@ -537,8 +542,9 @@ Escape closes whichever is on top.
 
 Every popup stops **above the dock** — `--dock-h` is measured by the shell and
 the modal's `bottom` and `max-height` are both derived from it. That isn't
-cosmetic: the bench works *on* the dock, so covering it with the thing that
-needs it is the one mistake this layout can't afford.
+cosmetic: crafting works *on* the dock — both the item and the currency come
+from it — so covering it with the thing that needs it is the one mistake this
+layout can't afford.
 
 While a map is on screen the viewport stops scrolling (`.viewport--locked`) and
 the stage takes whatever height is left, rather than being sized to an aspect
@@ -556,8 +562,8 @@ Eight slots from `EQUIP_SLOTS`, filled from `GEAR_BASES`. A full set from the
 start so the sheet has its final shape and a new base fills a hole rather than
 changing the layout.
 
-Worn items leave the inventory. Unlike the bench — where taking the item out
-made crafting look destructive — equipping has somewhere obvious to show it,
+Worn items leave the inventory. Unlike crafting — where taking the item out
+made it look destructive — equipping has somewhere obvious to show it,
 so the sheet *is* where that item now lives.
 
 Clicking a filled slot takes it off; clicking an empty one lists only what
@@ -574,34 +580,55 @@ adding save points later and having to hunt state out of five modules first.
 crashing on old data.
 
 The inventory dock is deliberately **not** a screen. Every other screen acts on
-it — you pull a crystal out to run, put gear into the bench, watch it fill
-after a clear — so hiding it behind navigation would mean constantly flipping
-back to check what you have. Clicking an item does whatever the active screen
-registered; the dock itself has no opinion about what an item is for. When the
-bench is closed, gear is still *shown* but renders inert: there is nothing to
-do with a helmet at the Fissure, and a live-looking button that does nothing is
-worse than a dim one.
+it — you pull a crystal out to run, put gear on the bench, spend currency on
+it, watch the lot fill up after a clear — so hiding it behind navigation would
+mean constantly flipping back to check what you have. Clicking anything does
+whatever the active screen registered; the dock itself has no opinion about
+what an item is for. When crafting is closed, gear is still *shown* but renders
+inert: there is nothing to do with a helmet at the Fissure, and a live-looking
+button that does nothing is worse than a dim one.
 
-It's icons in slots, crystals left and equipment right, with the name and every
+**Currency is inventory.** It used to be thirteen labelled buttons inside the
+crafting popup, which said the quiet part out loud: a Shard of Making was a
+menu command rather than a thing you own. It is a thing you own — you find it,
+you count it, you run out of it — so it's a third column of stacks in the dock,
+with the count on the icon. Clicking one applies it to whatever is on the
+bench, which is the same seam items already used (`CurrencyHandler` alongside
+`InventoryHandler`); with nothing on the bench it opens crafting instead,
+because a currency you own that does nothing when clicked reads as broken.
+Only what you *hold* is drawn — a stack of zero is not in your inventory, and
+rendering all thirteen greyed out would rebuild the wall this replaced.
+
+It's icons in slots — crystals, equipment, currency — with the name and every
 modifier in the hover tooltip. Forty item names is a wall you read past; forty
 icons is something you scan. Slots pad out to a minimum so an empty dock still
 reads as a container rather than a blank strip, and a column deeper than two
 rows scrolls inside itself rather than pushing the Fissure off screen.
 
-**The bench selects in place.** `benchId` is a reference into the inventory,
+**The bench selects in place.** `craftId` is a reference into the inventory,
 not a move. Taking the item out made it look like crafting had eaten it — the
 thing you were working on vanished from the list — so it stays visible and
 highlighted instead. `craft()` preserves the item id, so the result swaps back
 into the same slot and the selection survives.
 
-Only fragments show in the wallet strip. Every crafting currency already shows
-its count on its own button in the bench sidebar, so listing them all up top
-was the same information twice.
+Only fragments show in the wallet strip, and that's deliberate: fragments are
+the number you compare against a shop price, constantly, which is a readout
+rather than an inventory slot. Everything you apply *to an item* is a stack
+below.
 
-Items get procedural inline-SVG icons (`ui/icons.ts`) — crystals gain facets,
-size and a halo with tier, so a T6 reads as more valuable than a T1 without
-reading the label. SVG rather than canvas because they live in the DOM next to
-text and scale with it.
+Items get procedural inline-SVG icons (`ui/icons.ts`). Crystals grow on three
+axes at once — size, facet count, elongation — so adjacent tiers differ in
+outline and not only in hue, and a T6 reads as more valuable than a T1 without
+reading the label. Currency gets one silhouette per kind, chosen for what the
+thing *does*: a spike that grows for the one that adds, the same spike with a
+chunk missing for the one that removes, a ring for a re-roll, a burst for the
+one that fills everything at once. Class drives colour, so rarity is learnable
+across a shelf while function is learnable up close. They were previously one
+polygon with a side count driven by class, which meant all five basic shards
+were the same shape in the same colour and the icon meant nothing. Shading is
+one shared helper — a pale wedge and a dark wedge clipped to the silhouette —
+so a set drawn months apart still has one light source. SVG rather than canvas
+because they live in the DOM next to text and scale with it.
 
 ### One place, not a list of them
 

@@ -24,15 +24,15 @@ export interface GameState {
   inventory: Item[];
   character: Character;
   /**
-   * Id of the inventory item currently open on the bench.
+   * Id of the inventory item currently open for crafting.
    *
-   * A reference, not a move. The bench used to take the item OUT of the
+   * A reference, not a move. Crafting used to take the item OUT of the
    * inventory, which made it look like crafting had eaten it — the thing you
    * were working on vanished from the list. Selecting in place means it stays
    * visible and highlighted, and "returning" it is just dropping the
    * reference.
    */
-  benchId: string | null;
+  craftId: string | null;
   /** False until a skill has been chosen on the first run. */
   onboarded: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
@@ -49,7 +49,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     wallet: {},
     inventory: [],
     character: makeCharacter({}, 'strike'),
-    benchId: null,
+    craftId: null,
     onboarded: false,
     firstClearDone: false,
     tutorialStep: null,
@@ -82,7 +82,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
     preset.equipped ? starterLoadout(new Rng(1)) : {},
     'strike'
   );
-  game.benchId = null;
+  game.craftId = null;
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
@@ -122,7 +122,7 @@ export function removeItem(game: GameState, item: Item): boolean {
   const i = game.inventory.indexOf(item);
   if (i < 0) return false;
   game.inventory.splice(i, 1);
-  if (game.benchId === item.id) game.benchId = null;
+  if (game.craftId === item.id) game.craftId = null;
   return true;
 }
 
@@ -130,24 +130,24 @@ export function findItem(game: GameState, id: string): Item | undefined {
   return game.inventory.find((i) => i.id === id);
 }
 
-/** The item the bench is working on, or null. */
-export function benchItem(game: GameState): Item | null {
-  if (!game.benchId) return null;
-  return findItem(game, game.benchId) ?? null;
+/** The item crafting is working on, or null. */
+export function craftItem(game: GameState): Item | null {
+  if (!game.craftId) return null;
+  return findItem(game, game.craftId) ?? null;
 }
 
-export function selectForBench(game: GameState, item: Item): void {
-  game.benchId = item.id;
+export function selectForCraft(game: GameState, item: Item): void {
+  game.craftId = item.id;
 }
 
-export function clearBench(game: GameState): void {
-  game.benchId = null;
+export function clearCraft(game: GameState): void {
+  game.craftId = null;
 }
 
 /**
  * Swaps a crafted result back into the inventory in place.
  * craft() returns a new object but preserves the id, so position is kept and
- * the bench selection survives.
+ * the crafting selection survives.
  */
 export function replaceItem(game: GameState, item: Item): void {
   const i = game.inventory.findIndex((existing) => existing.id === item.id);
@@ -171,7 +171,7 @@ export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
 /**
  * Wear an item, returning whatever came off to the inventory.
  *
- * Worn items leave the inventory. Unlike the bench — where taking the item
+ * Worn items leave the inventory. Unlike crafting — where taking the item
  * out made crafting look destructive — equipping has somewhere obvious to
  * show it, so the character sheet IS where that item now lives.
  */
@@ -183,10 +183,10 @@ export function equipItem(game: GameState, item: Item, slotId: string): boolean 
   if (!removeItem(game, item)) return false;
   if (previous) addItem(game, previous);
 
-  // Worn items leave the inventory, and the bench works on inventory items.
-  // A stale benchId would leave the bench displaying something you're now
-  // wearing, with every currency button live against it.
-  if (game.benchId === item.id) game.benchId = null;
+  // Worn items leave the inventory, and crafting works on inventory items.
+  // A stale craftId would leave the bench displaying something you're now
+  // wearing, with every currency in the dock live against it.
+  if (game.craftId === item.id) game.craftId = null;
 
   game.character.equipment[slotId] = item;
   return true;

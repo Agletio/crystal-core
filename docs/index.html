@@ -177,22 +177,6 @@
 
   .empty { color: var(--dust); font-size: 12px; font-style: italic; }
 
-  .shelf__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; }
-  .shelf__label:first-child { margin-top: 0; }
-  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
-
-  .curr { text-align: left; padding: 9px 10px; display: flex; align-items: flex-start; gap: 9px; border-left-width: 3px; }
-  .curr__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .curr__name { font-size: 12px; font-weight: 600; }
-  .curr__desc { font-size: 10px; color: var(--dust); line-height: 1.35; }
-  .curr__why { font-size: 10px; color: var(--ember); margin-top: 2px; }
-  .curr--basic    { border-left-color: var(--dust); }
-  .curr--uncommon { border-left-color: var(--verdite); }
-  .curr--rare     { border-left-color: var(--quartz); }
-  .curr--exotic   { border-left-color: var(--citrine); }
-  .curr:hover:not(:disabled) { background: var(--seam); }
-  .curr--off { opacity: .42; }
-
   #log { max-height: 320px; overflow-y: auto; font-size: 12px; }
   .logline { padding: 2px 0; border-bottom: 1px solid var(--seam); }
   .logline--add    { color: var(--verdite); }
@@ -284,7 +268,11 @@
   .coin__n { color: var(--citrine); font-weight: 600; }
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
-  .dock__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  /* Currency gets the widest column: there are thirteen kinds against two
+     item kinds, and it's the one you scan for a specific thing rather than
+     browse. Auto-fill does the rest, so the share is a hint, not a lockstep
+     count of slots per row. */
+  .dock__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr); gap: 16px; }
   .dockcol { min-width: 0; }
   .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
   /* Two rows always visible; a hoard deeper than that scrolls inside its own
@@ -297,6 +285,8 @@
     width: 40px; height: 40px; padding: 0;
     display: grid; place-items: center;
     background: var(--void); border: 1px solid var(--seam);
+    /* The stack count is positioned against this. */
+    position: relative;
   }
   .slot--empty { opacity: .5; }
   .slot--crystal { border-color: rgba(157,120,214,.45); }
@@ -304,12 +294,36 @@
   .slot:hover:not(:disabled) { background: var(--seam); border-color: var(--seam-lit); }
   .slot--on { background: var(--seam); border-color: var(--citrine); }
   .slot--off { opacity: .34; }
+
+  /* Currency stacks. Class colours the border, matching the icon's fill, so
+     rarity reads from the grid before you've learned a single silhouette. */
+  .slot--basic    { border-color: rgba(139,129,159,.5); }
+  .slot--uncommon { border-color: rgba(95,217,164,.45); }
+  .slot--rare     { border-color: rgba(111,199,232,.5); }
+  .slot--exotic   { border-color: rgba(232,184,75,.55); }
+  /* The count is the point of a stack, so it sits on the icon rather than in
+     a hover. Boxed against the void so it stays legible over any silhouette. */
+  .slot__n {
+    position: absolute; right: 1px; bottom: 0;
+    font-size: 10px; font-weight: 600; line-height: 1;
+    padding: 1px 2px; color: var(--chalk); background: var(--void);
+    pointer-events: none;
+  }
   /* A crafted item is worth spotting in a full dock. */
   .slot--modded { box-shadow: inset 0 0 0 1px rgba(212,175,79,.35); }
   .icon { flex: none; display: block; }
   .zoomlabel { font-size: 11px; color: var(--quartz); min-width: 34px; text-align: center; }
 
-  @media (max-width: 720px) { .dock__cols { grid-template-columns: 1fr; } }
+  /* Narrow: currency takes the full width on its own row, because it is the
+     column that actually needs one. */
+  @media (max-width: 900px) {
+    .dock__cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+    .dockcol--wide { grid-column: 1 / -1; }
+  }
+  @media (max-width: 720px) {
+    .dock__cols { grid-template-columns: 1fr; }
+    .dockcol--wide { grid-column: auto; }
+  }
 
   /* Phones. The tablet rules above stack everything, which is right until the
      screen is ~390px tall in the part that matters: stacking the dock's two
@@ -326,6 +340,7 @@
     }
     .dock { padding: 8px 10px 10px; }
     .dock__cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+    .dockcol--wide { grid-column: 1 / -1; }
     .slots { grid-template-columns: repeat(auto-fill, 34px); gap: 4px; max-height: 76px; }
     .slot { width: 34px; height: 34px; }
     h1 { font-size: 17px; }
@@ -343,15 +358,16 @@
   .invitem:hover:not(:disabled) { background: var(--seam); }
   .invitem--off { opacity: .38; }
 
-  /* --- workshop ------------------------------------------------------- */
-  .buys { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-  .buy { text-align: left; padding: 7px 9px; display: flex; flex-direction: column; gap: 2px; }
+  /* --- the shop ------------------------------------------------------- */
+  .buys { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+  /* Icon beside the name, because the shop is where you learn which
+     silhouette is which — you buy the thing while looking at its shape. */
+  .buy { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; }
+  .buy__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .buy__name { font-size: 12px; }
   .buy__cost { font-size: 10px; color: var(--dust); }
   .buy:hover:not(:disabled) { background: var(--seam); }
   .buy--off { opacity: .38; }
-
-  .curr__stock { font-size: 10px; color: var(--citrine); }
 
   /* --- the socketed crystal ------------------------------------------- */
   /* Derived reward multipliers, shown right under a crystal's name. */
@@ -594,7 +610,8 @@
   <header>
     <h1>Crystal <span>Core</span></h1>
     <div class="seedbar">
-      <button class="mini" id="open-bench">Bench</button>
+      <button class="mini" id="open-craft">Crafting</button>
+      <button class="mini" id="open-shop">Shop</button>
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
@@ -703,9 +720,10 @@
   </div>
 
   <!-- The dock. Everything you own, always on screen, never scrolled past:
-       crystals on the left because they're what you spend to play, gear on
-       the right. Icons only — the name and the modifiers are a hover away,
-       and reading forty names was never the point of a stash. -->
+       crystals first because they're what you spend to play, then gear, then
+       the currency you spend on both. Icons only — the name and the modifiers
+       are a hover away, and reading forty names was never the point of a
+       stash. -->
   <div class="panel dock" id="dock">
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
@@ -720,51 +738,64 @@
         <div class="dockcol__label">Equipment</div>
         <div class="slots" id="inv-gear"></div>
       </div>
+      <div class="dockcol dockcol--wide">
+        <div class="dockcol__label">Currency</div>
+        <div class="slots" id="inv-currency"></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- The bench. A popup over the map rather than a page you leave for, so a
-     run keeps going while you spend what it dropped. -->
-<div class="modal" id="bench" hidden>
-  <div class="modal__card modal__card--wide">
+<!-- Crafting. A popup over the map rather than a page you leave for, so a run
+     keeps going while you spend what it dropped.
+
+     The window is the item and nothing else. The currency you apply is in the
+     dock underneath, which every popup stops above — so what you are crafting
+     and what you are crafting it with are both on screen at once, and neither
+     can scroll the other away. -->
+<div class="modal" id="craft" hidden>
+  <div class="modal__card">
     <div class="modal__head">
-      <h2 class="modal__title">Bench</h2>
+      <h2 class="modal__title">Crafting</h2>
       <div class="seedbar">
         seed <code id="seed">0</code>
         <button class="mini" id="reseed">New seed</button>
-        <button class="mini" id="bench-return">Close item</button>
-        <button class="mini" id="bench-close">Close</button>
+        <button class="mini" id="craft-return">Close item</button>
+        <button class="mini" id="craft-close">Close</button>
       </div>
     </div>
     <div class="modal__body">
-      <div class="cols">
-        <div>
-          <div class="panel">
-            <p class="empty" id="bench-empty">
-              Nothing on the bench. Click something in your inventory to work on it.
-            </p>
-            <div id="bench-item" hidden>
-              <h2 id="item-name">—</h2>
-              <div id="item-meta"></div>
-              <div class="mults" id="item-rewards" hidden></div>
-              <div id="sockets"></div>
-              <div id="modlist"></div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <p class="panel__title">Workshop</p>
-            <div class="buys" id="workshop"></div>
-          </div>
+      <div class="panel">
+        <p class="empty" id="craft-empty">
+          Nothing on the bench. Click something in your inventory to work on it.
+        </p>
+        <div id="craft-item" hidden>
+          <h2 id="item-name">—</h2>
+          <div id="item-meta"></div>
+          <div class="mults" id="item-rewards" hidden></div>
+          <div id="sockets"></div>
+          <div id="modlist"></div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        <div>
-          <div class="panel">
-            <p class="panel__title">Currency</p>
-            <div id="currencies"></div>
-          </div>
-        </div>
+<!-- The shop. Fragments in, stock out. Separate from crafting because they do
+     unrelated jobs: this one turns what a run paid into things to spend, and
+     what you buy lands in the dock rather than here. -->
+<div class="modal" id="shop" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Shop</h2>
+      <div class="seedbar">
+        <code id="shop-purse">0 fragments</code>
+        <button class="mini" id="shop-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="panel">
+        <div class="buys" id="workshop"></div>
       </div>
     </div>
   </div>

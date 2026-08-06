@@ -8,7 +8,7 @@
  *
  * The card is anchored to whatever it's pointing at rather than pinned to the
  * top of the page. It used to be a banner in the shell, which worked right up
- * until the bench became a popup: the banner ended up underneath the modal,
+ * until crafting became a popup: the banner ended up underneath the modal,
  * still describing a button the modal was covering.
  *
  * Steps are DATA with a `done` predicate rather than a script of callbacks.
@@ -24,15 +24,15 @@
  * target that moved.
  */
 import { balance } from '../economy';
-import { benchItem } from '../game/state';
+import { craftItem } from '../game/state';
 import type { GameState } from '../game/state';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 /** What the shell knows that the game state doesn't. */
 export interface GuideCtx {
-  /** Which surface has focus: the bench popup, or the Fissure underneath. */
-  view: 'bench' | 'run';
+  /** Which surface has focus: the crafting popup, or the Fissure underneath. */
+  view: 'craft' | 'run';
   /**
    * Where the Fissure itself is: choosing, descending, or reading the report.
    *
@@ -67,9 +67,9 @@ export interface TutorialStep {
 const has = (g: GameState, id: string) => balance(g.wallet, id) > 0;
 
 /**
- * Id of a workshop recipe's button.
+ * Id of a shop recipe's button.
  *
- * Defined here rather than in the bench because the guide is the only reason
+ * Defined here rather than in the shop because the guide is the only reason
  * those buttons need identifying at all — pointing at the whole shelf and
  * saying "buy the Shard of Awakening" is exactly the ambiguity this rewrite
  * was meant to remove.
@@ -99,36 +99,52 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     done: (g) => g.firstClearDone,
   },
   {
-    id: 'to_bench',
-    text: 'You came back with fragments and a wand. Open the Bench — everything you found is spent there.',
-    target: 'open-bench',
-    done: (_g, ctx) => ctx.view === 'bench',
+    id: 'to_shop',
+    text: 'You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.',
+    target: 'open-shop',
+    done: (_g, ctx) => ctx.top === 'shop' || has(_g, 'shard_of_awakening'),
   },
+  /**
+   * Same moving-target trick as the equip step below: from wherever the last
+   * step left you, the Shop may or may not still be open, so the guide points
+   * at the button that gets you to the next click either way.
+   */
   {
     id: 'buy_awakening',
-    text: 'Buy a Shard of Awakening from the Workshop. It fills every empty slot on an item at once.',
-    hint: 'Costs 10 fragments.',
-    target: recipeButtonId('make_shard_of_awakening'),
+    text: (ctx) =>
+      ctx.top === 'shop'
+        ? 'Buy a Shard of Awakening. It fills every empty slot on an item at once.'
+        : 'Open the Shop and buy a Shard of Awakening.',
+    hint: 'Costs 10 fragments. It lands in your inventory.',
+    target: (ctx) =>
+      ctx.top === 'shop' ? recipeButtonId('make_shard_of_awakening') : 'open-shop',
     done: (g) => has(g, 'shard_of_awakening'),
   },
   {
     id: 'select_weapon',
-    text: 'Click your Ash Wand in the dock below to put it on the bench.',
+    text: (ctx) =>
+      ctx.view === 'craft'
+        ? 'Click your Ash Wand in the dock below to put it on the bench.'
+        : 'Open Crafting, then click your Ash Wand in the dock below.',
     hint: 'The dock stays reachable under every popup.',
-    target: 'inv-gear',
-    done: (g) => benchItem(g)?.kind === 'gear',
+    target: (ctx) => (ctx.view === 'craft' ? 'inv-gear' : 'open-craft'),
+    done: (g) => craftItem(g)?.kind === 'gear',
   },
   {
     id: 'use_awakening',
-    text: 'Now use the Shard of Awakening on it. The wand keeps its base stat; the empty slots fill with modifiers.',
-    target: 'currencies',
-    done: (g) => (benchItem(g)?.mods.length ?? 0) > 0,
+    text: 'Now click the Shard of Awakening in your Currency shelf. The wand keeps its base stat; the empty slots fill with modifiers.',
+    hint: 'Currency is spent from the dock, onto whatever is on the bench.',
+    target: 'inv-currency',
+    done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },
   {
     id: 'buy_chaos',
-    text: 'Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor.',
+    text: (ctx) =>
+      ctx.top === 'shop'
+        ? 'Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor.'
+        : 'Back to the Shop for a Shard of Chaos.',
     hint: 'Costs 12 fragments. Using it is your call.',
-    target: recipeButtonId('make_shard_of_chaos'),
+    target: (ctx) => (ctx.top === 'shop' ? recipeButtonId('make_shard_of_chaos') : 'open-shop'),
     done: (g) => has(g, 'shard_of_chaos'),
   },
   /**
@@ -142,17 +158,21 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'equip',
     text: (ctx) =>
-      ctx.view === 'bench'
-        ? 'The wand is crafted. Close the Bench — the Character button is behind it.'
-        : ctx.top === 'sheet'
-          ? 'Click the Weapon slot, then pick the Ash Wand.'
-          : 'Open Character and put the wand in your weapon slot.',
+      ctx.top === 'shop'
+        ? 'The wand is crafted. Close the Shop.'
+        : ctx.view === 'craft'
+          ? 'Close Crafting — the Character button is behind it.'
+          : ctx.top === 'sheet'
+            ? 'Click the Weapon slot, then pick the Ash Wand.'
+            : 'Open Character and put the wand in your weapon slot.',
     target: (ctx) =>
-      ctx.view === 'bench'
-        ? 'bench-close'
-        : ctx.top === 'sheet'
-          ? slotButtonId('weapon')
-          : 'open-character',
+      ctx.top === 'shop'
+        ? 'shop-close'
+        : ctx.view === 'craft'
+          ? 'craft-close'
+          : ctx.top === 'sheet'
+            ? slotButtonId('weapon')
+            : 'open-character',
     done: (g) => !!g.character.equipment.weapon,
   },
   /**
@@ -165,20 +185,24 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === 'sheet'
         ? 'That is the loop. Close the sheet — you can afford a crystal now.'
-        : ctx.top === 'bench'
-          ? 'That is the loop. Close the Bench and head back down.'
-          : ctx.phase === 'results'
-            ? 'Your report from last time is still open. Head back to the Fissure.'
-            : 'Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.',
+        : ctx.top === 'shop'
+          ? 'That is the loop. Close the Shop and head back down.'
+          : ctx.top === 'craft'
+            ? 'That is the loop. Close Crafting and head back down.'
+            : ctx.phase === 'results'
+              ? 'Your report from last time is still open. Head back to the Fissure.'
+              : 'Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.',
     hint: 'Crystals are spent on entry, win or lose.',
     target: (ctx) =>
       ctx.top === 'sheet'
         ? 'sheet-close'
-        : ctx.top === 'bench'
-          ? 'bench-close'
-          : ctx.phase === 'results'
-            ? 'run-again'
-            : 'run-launch',
+        : ctx.top === 'shop'
+          ? 'shop-close'
+          : ctx.top === 'craft'
+            ? 'craft-close'
+            : ctx.phase === 'results'
+              ? 'run-again'
+              : 'run-launch',
     done: (_g, ctx) => ctx.phase === 'running',
   },
 ];

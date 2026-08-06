@@ -69,7 +69,11 @@ const all = (sel) => [...document.querySelectorAll(sel)];
 // The dock is icons in slots, so an item is identified by its aria-label —
 // which is what a screen reader gets too, and the only name in the markup.
 const filled = (sel) => all(`${sel} .slot:not(.slot--empty)`);
-const dockItems = () => filled('.dock');
+// Items only. Currency shares the dock now, and a craft that empties a stack
+// removes a slot — folding the two together would make every "the item count
+// did not change" assertion below quietly depend on what you just spent.
+const dockItems = () => [...filled('#inv-crystal'), ...filled('#inv-gear')];
+const currencySlots = () => filled('#inv-currency');
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
 // --- first run asks one question, then plays -------------------------------
@@ -81,7 +85,7 @@ $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
-assert($('bench').hidden === true, 'and drops you straight at the Fissure, not the bench');
+assert($('craft').hidden === true, 'and drops you straight at the Fissure, not the bench');
 assert($('run-launch').disabled === false, 'ready to enter immediately');
 
 // --- a new game starts with literally nothing ------------------------------
@@ -91,8 +95,9 @@ assert($('run-launch').disabled === false, 'ready to enter immediately');
 assert(dockItems().length === 0, 'a fresh game owns nothing at all', String(dockItems().length));
 assert(text('wallet').startsWith('0'), 'a fresh game has no fragments', text('wallet'));
 assert(
-  all('#currencies button.curr:not(:disabled)').length === 0,
-  'nothing is craftable with an empty wallet'
+  currencySlots().length === 0,
+  'an empty wallet puts no currency in the dock',
+  String(currencySlots().length)
 );
 
 // The dock is a fixed shape whether or not you own anything, so it never
@@ -144,7 +149,7 @@ assert(
 assert($('guide-skip') === null, 'there is no way to skip it');
 
 // The card floats over the popups rather than living in the shell — half its
-// steps point at things inside the bench.
+// steps point at things inside a modal.
 assert(
   !document.querySelector('.wrap').contains($('guide')),
   'the guide is not trapped inside the shell'
@@ -154,7 +159,7 @@ $('dev-kit').click();
 assert($('guide').hidden === true, 'a wipe ends it');
 assert(all('.guide-on').length === 0, 'and takes the highlight with it');
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
-assert($('bench').hidden === false, 'a stocked game opens on the bench');
+assert($('craft').hidden === false, 'a stocked game opens on the bench');
 
 // --- duplicate ids would silently break getElementById --------------------
 const ids = all('[id]').map((n) => n.id);
@@ -165,11 +170,30 @@ assert(dupes.length === 0, 'no duplicate element ids', dupes.join(', '));
 const invItems = dockItems;
 assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 
-// Fragments only up top; every other currency shows its count on its own
-// button in the bench, so listing them here was the same information twice.
+// Fragments only up top: they are the number you compare against a shop
+// price, not a thing you apply to an item. Everything you DO apply is a
+// stack in the dock.
 assert(all('#wallet .coin').length === 1, 'wallet shows fragments only', text('wallet'));
 assert(text('wallet').includes('fragments'), 'fragments are held', text('wallet'));
-assert(all('.dock .slot .icon').length === invItems().length, 'every item has an icon');
+assert(
+  all('.dock .slot .icon').length === invItems().length + currencySlots().length,
+  'every item and every stack has an icon'
+);
+
+// --- currency is inventory ------------------------------------------------
+// It used to be thirteen labelled buttons inside the crafting popup, which
+// made a Shard of Making a menu command rather than a thing you own.
+assert(currencySlots().length > 0, 'the dev kit stocks currency in the dock');
+assert(
+  currencySlots().every((b) => b.querySelector('.slot__n')),
+  'every stack shows its count'
+);
+assert(
+  currencySlots().every((b) => /held/.test(named(b))),
+  'and says how many it holds out loud',
+  named(currencySlots()[0])
+);
+assert(text('inv-currency').replace(/[0-9]/g, '') === '', 'currency is icons and counts, not names', text('inv-currency'));
 
 // Crystals left, equipment right — always, on every screen.
 assert(filled('#inv-crystal').length > 0, 'crystals have their own column');
@@ -186,9 +210,9 @@ assert(
 assert(text('inv-crystal') === '', 'the dock shows icons, not names', text('inv-crystal'));
 
 // --- bench starts empty ---------------------------------------------------
-assert($('bench-empty').hidden === false, 'bench starts empty');
-assert($('bench-item').hidden === true, 'no item panel until something is placed');
-assert($('bench-return').disabled === true, 'return disabled with an empty bench');
+assert($('craft-empty').hidden === false, 'bench starts empty');
+assert($('craft-item').hidden === true, 'no item panel until something is placed');
+assert($('craft-return').disabled === true, 'return disabled with an empty bench');
 
 // --- putting a crystal on the bench ---------------------------------------
 const crystalChip = filled('#inv-crystal')[0];
@@ -197,7 +221,7 @@ assert(!!crystalChip, 'a crystal is in the dock');
 const inventoryBefore = invItems().length;
 crystalChip.click();
 
-assert($('bench-item').hidden === false, 'bench shows the selected item');
+assert($('craft-item').hidden === false, 'bench shows the selected item');
 assert(text('item-name').includes('Crystal'), 'selected item is the crystal', text('item-name'));
 
 // Selecting is a reference, not a move: the item must STAY visible, marked,
@@ -212,7 +236,7 @@ assert(
   'the selected item is highlighted',
   String(all('.dock .slot--on').length)
 );
-assert($('bench-return').disabled === false, 'return is now available');
+assert($('craft-return').disabled === false, 'return is now available');
 assert($('sockets').querySelectorAll('.facet').length === 3, 'crystal shows 3 facets');
 
 // Derived reward multipliers under the name. A blank crystal must read as
@@ -230,21 +254,17 @@ assert(
 );
 
 // --- crafting spends currency ---------------------------------------------
+// Currency is spent from the dock onto whatever is on the bench, so finding
+// one means searching the dock — by aria-label, same as any other item.
 const currencyButton = (name) =>
-  all('#currencies button.curr').find(
-    (b) => (b.querySelector('.curr__name')?.textContent ?? '').trim() === name
-  );
+  currencySlots().find((b) => named(b).includes(name));
 
-// Counts live on the currency buttons now, not in the wallet strip.
-const heldCount = (name) => {
-  const btn = currencyButton(name);
-  const stock = btn?.querySelector('.curr__stock')?.textContent ?? '';
-  return Number(stock.replace(/[^\d]/g, '')) || 0;
-};
+const heldCount = (name) =>
+  Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
 const making = currencyButton('Shard of Making');
 assert(!!making && !making.disabled, 'Shard of Making usable on a blank crystal');
-assert(heldCount('Shard of Making') > 0, 'currency count shown on the button');
+assert(heldCount('Shard of Making') > 0, 'currency count shown on the stack');
 
 const stockBefore = heldCount('Shard of Making');
 making.click();
@@ -260,10 +280,22 @@ assert(
   `${heldCount('Shard of Making')} vs ${stockBefore}`
 );
 assert(
-  all('#currencies .curr .icon').length >= 10,
-  'currencies have icons',
-  String(all('#currencies .curr .icon').length)
+  currencySlots().length >= 10,
+  'the dock holds the whole spread of currency',
+  String(currencySlots().length)
 );
+// Thirteen currencies that all looked the same made the icon decoration; the
+// silhouette is what tells them apart before you have learned the names.
+{
+  const shapes = new Set(
+    currencySlots().map((b) => b.querySelector('.icon path')?.getAttribute('d') ?? '?')
+  );
+  assert(
+    shapes.size === currencySlots().length,
+    'every currency has its own silhouette',
+    `${shapes.size} shapes for ${currencySlots().length} stacks`
+  );
+}
 
 // The crafted item keeps its id, so it stays selected in place rather than
 // jumping to the end of the list.
@@ -282,7 +314,7 @@ assert(
 // A weapon's implicit is its identity. Every effect in the registry operates
 // on `mods`, so nothing — including Shard of Ruin, which strips the lot —
 // should be able to reach it.
-$('bench-return').click();
+$('craft-return').click();
 const weaponChip = filled('#inv-gear').find((b) =>
   /Wand|Sword|Shiv|Stiletto|Fang|Cudgel|Maul/.test(named(b))
 );
@@ -303,31 +335,74 @@ assert(
   'crafting cannot reach an implicit'
 );
 
-$('bench-return').click();
+$('craft-return').click();
 crystalChip.click();
 
 // --- closing it ---------------------------------------------------------
-$('bench-return').click();
-assert($('bench-empty').hidden === false, 'bench is empty again');
+$('craft-return').click();
+assert($('craft-empty').hidden === false, 'bench is empty again');
 assert(invItems().length === inventoryBefore, 'item is still in the dock');
 assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
-// --- workshop buys against fragments --------------------------------------
+// --- the shop buys against fragments --------------------------------------
+// A separate window from crafting: one turns fragments into stock, the other
+// spends stock on the item in front of you, and sharing a window meant that
+// item scrolled away exactly when you went to buy something for it.
+assert($('shop').hidden === true, 'the shop starts closed');
+assert(!$('craft').contains($('workshop')), 'the shop is not inside crafting');
+$('open-shop').click();
+assert($('shop').hidden === false, 'the shop opens');
+
 const buys = all('#workshop button.buy');
-assert(buys.length >= 6, 'workshop lists recipes', String(buys.length));
+assert(buys.length >= 6, 'the shop lists recipes', String(buys.length));
 const affordable = buys.find((b) => !b.disabled);
 assert(!!affordable, 'at least one recipe is affordable');
 
-// --- the map is the floor, the bench is a popup over it -------------------
-// The dock must stay reachable underneath every popup: it's what the bench
-// works on, and covering it would break the only way to load the bench.
-assert($('bench').hidden === false, 'the bench is a popup, not a page');
+// Prices were printing the raw wallet key, unpluralised — "8 fragment". Same
+// class of leak as a modifier rendering `areaOfEffect`, and just as invisible
+// until someone reads the button.
+const prices = buys.map((b) => b.querySelector('.buy__cost')?.textContent ?? '');
 assert(
-  !$('bench').contains($('inv-crystal')),
+  prices.every((p) => !/\b1?\d+ fragment\b(?!s)/.test(p)),
+  'prices are pluralised, not raw ids',
+  prices.find((p) => /\b\d+ fragment\b(?!s)/.test(p)) ?? ''
+);
+assert(
+  buys.every((b) => b.querySelector('.icon')),
+  'every recipe shows what you are buying'
+);
+
+// What you buy lands in the dock, not in the shop.
+{
+  const before = currencySlots().reduce(
+    (n, b) => n + Number(b.querySelector('.slot__n')?.textContent ?? 0),
+    0
+  );
+  affordable.click();
+  const after = currencySlots().reduce(
+    (n, b) => n + Number(b.querySelector('.slot__n')?.textContent ?? 0),
+    0
+  );
+  assert(after > before || dockItems().length > 0, 'a purchase lands in the dock', `${before} -> ${after}`);
+}
+$('shop-close').click();
+assert($('shop').hidden === true, 'the shop closes');
+
+// --- the map is the floor, crafting is a popup over it -------------------
+// The dock must stay reachable underneath every popup: it holds both the item
+// crafting works on AND the currency it is spent with, so covering it would
+// break the only way to do either.
+assert($('craft').hidden === false, 'crafting is a popup, not a page');
+assert(
+  !$('craft').contains($('inv-crystal')),
   'the dock lives outside every popup'
 );
-$('bench-close').click();
-assert($('bench').hidden === true, 'the bench closes');
+assert(
+  !$('craft').contains($('inv-currency')),
+  'and so does the currency you spend from it'
+);
+$('craft-close').click();
+assert($('craft').hidden === true, 'crafting closes');
 assert($('run-menu').hidden === false, 'and the Fissure is waiting underneath');
 assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
@@ -397,17 +472,17 @@ assert(text('run-zoom-label') === '1.0×', 'fit shows the whole Fissure');
 assert($('run-zoom-out').disabled === true, 'and cannot go wider than that');
 
 // The frame only freezes while a map is on screen, and the map keeps running
-// underneath the bench rather than being left for.
+// underneath crafting rather than being left for.
 const viewport = document.querySelector('.viewport');
 assert(viewport.classList.contains('viewport--locked'), 'a running map fills the frame');
-$('open-bench').click();
-assert($('bench').hidden === false, 'the bench opens over a live run');
+$('open-craft').click();
+assert($('craft').hidden === false, 'crafting opens over a live run');
 assert($('run-stagewrap').hidden === false, 'and the run is still going underneath');
 assert(
   filled('#inv-gear').every((b) => !b.disabled),
-  'the dock answers to the bench while it is open'
+  'the dock answers to crafting while it is open'
 );
-$('bench-close').click();
+$('craft-close').click();
 assert(
   filled('#inv-gear').every((b) => b.disabled),
   'and to the map again once it closes'
