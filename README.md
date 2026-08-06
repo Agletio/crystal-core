@@ -96,6 +96,26 @@ columns below 720px, and below 430px the dock goes back to two columns and
 shrinks its slots, because stacking it there costs the map about 140px of
 height. Playable, but it was designed for a desktop.
 
+### When the site doesn't update
+
+Merging pushes to `main`, which triggers `pages build and deployment`. If the
+site still serves the old bundle, look at that run rather than at the code —
+`build and check` passing tells you the bundle is right, not that it shipped.
+
+**Do not re-run an old deployment.** It is the obvious move and it does not
+work: `deploy-pages` authenticates with an OIDC token bound to the run's
+original context, so re-running an hours-old run is rejected with
+
+```
+Failed to create deployment (status: 400)
+Invalid actions OIDC token due to No keys from key endpoint match the id token
+```
+
+which reads like a permissions problem and is really a staleness one. Push a
+commit instead — a fresh run mints a fresh token. Flipping Settings → Pages
+source to `None` and back also works, and builds outside the Actions queue,
+which is the better lever when runners are the thing that is struggling.
+
 ## Branching
 
 `main` always works. Break things on `dev`.
