@@ -17,6 +17,7 @@ import { renderInventory, setInventoryHandler } from './inventory';
 import { currencyIcon } from './icons';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { recipeButtonId } from './tutorial';
 import { rewardRows } from '../sim/crystal';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
@@ -273,6 +274,9 @@ function renderWorkshop(): void {
     );
 
     const btn = el('button', 'buy') as HTMLButtonElement;
+    // Stable id so the guided opening can point at one recipe rather than the
+    // whole shelf. The demo asserts every step's target exists.
+    btn.id = recipeButtonId(recipe.id);
     btn.append(el('span', 'buy__name', recipe.name));
     btn.append(el('span', 'buy__cost', cost));
     if (!affordable) {

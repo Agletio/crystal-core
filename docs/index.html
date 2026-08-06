@@ -394,20 +394,45 @@
   #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
 
   /* --- guided opening ------------------------------------------------- */
-  .guide { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--matrix); border: 1px solid var(--citrine); }
-  .guide__step { font-family: var(--display); font-size: 10px; letter-spacing: .1em; color: var(--citrine); flex: none; }
-  .guide__text { font-size: 12px; flex: 1 1 auto; }
+  /* A card that follows the thing it's talking about, rather than a banner
+     pinned to the top of the page. The banner was fine until the bench became
+     a popup and covered both the banner AND the button it was pointing at. */
+  .guide {
+    position: fixed; z-index: 50;
+    width: min(340px, calc(100vw - 32px));
+    background: var(--matrix);
+    border: 2px solid var(--citrine);
+    box-shadow: 0 10px 34px rgba(0,0,0,.65);
+    padding: 14px 16px 12px;
+  }
+  .guide__step { display: block; font-family: var(--display); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--citrine); margin-bottom: 6px; }
+  .guide__text { display: block; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+  .guide__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .guide__hint { font-size: 11px; color: var(--dust); font-style: italic; }
+
+  /* The arrow, drawn as a rotated square poking out of the card's edge.
+     Which side it's on is set with the position, since that depends on where
+     the target ended up. */
+  .guide__arrow {
+    position: absolute; width: 12px; height: 12px;
+    background: var(--matrix);
+    border-left: 2px solid var(--citrine);
+    border-top: 2px solid var(--citrine);
+    transform: rotate(45deg);
+  }
 
   /* The one thing to click next. Outline rather than a colour change, so it
-     reads on buttons, panels and tabs alike without restyling any of them. */
+     reads on buttons, panels and docks alike without restyling any of them.
+     Heavier than it was: at 2px on a dim button people missed it. */
   .guide-on {
-    outline: 2px solid var(--citrine);
-    outline-offset: 2px;
-    animation: guidepulse 1.6s ease-in-out infinite;
+    position: relative;
+    outline: 3px solid var(--citrine);
+    outline-offset: 3px;
+    animation: guidepulse 1.4s ease-in-out infinite;
   }
   @keyframes guidepulse {
-    0%, 100% { outline-color: var(--citrine); }
-    50% { outline-color: rgba(232,184,75,.25); }
+    0%, 100% { outline-color: var(--citrine); box-shadow: 0 0 0 0 rgba(232,184,75,.55); }
+    50% { outline-color: rgba(232,184,75,.55); box-shadow: 0 0 18px 6px rgba(232,184,75,.22); }
   }
   @media (prefers-reduced-motion: reduce) {
     .guide-on { animation: none; }
@@ -500,13 +525,6 @@
     </div>
   </header>
 
-  <!-- The guided opening. Sits above everything it points at, and disappears
-       the moment the last step is done. -->
-  <div class="guide" id="guide" hidden>
-    <span class="guide__step" id="guide-step">1 / 7</span>
-    <span class="guide__text" id="guide-text"></span>
-    <button class="mini" id="guide-skip">Skip</button>
-  </div>
 
   <div class="viewport">
   <div id="view-run">
@@ -770,6 +788,18 @@
       </p>
       <div class="welcomegrid" id="welcome-skills"></div>
     </div>
+  </div>
+</div>
+
+<!-- The guided opening. Lives outside .wrap so it can float over the popups —
+     it spends half its steps pointing at things inside them. -->
+<div class="guide" id="guide" hidden>
+  <div class="guide__arrow" id="guide-arrow"></div>
+  <span class="guide__step" id="guide-step">1 / 9</span>
+  <span class="guide__text" id="guide-text"></span>
+  <div class="guide__foot">
+    <span class="guide__hint" id="guide-hint"></span>
+    <button class="mini" id="guide-skip">Skip</button>
   </div>
 </div>
 

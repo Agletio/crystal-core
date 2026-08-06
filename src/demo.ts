@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import { craft, describeItem } from './crafting';
@@ -7,6 +8,7 @@ import {
   CRYSTAL_TIERS,
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
+  RECIPES,
   SKILLS,
 } from './data';
 import {
@@ -21,7 +23,8 @@ import { RunSim, runToCompletion } from './sim/run';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
 import { starterLoadout } from './sim/loadout';
-import { TUTORIAL_STEPS } from './ui/tutorial';
+import { TUTORIAL_STEPS, recipeButtonId } from './ui/tutorial';
+import type { GuideCtx } from './ui/tutorial';
 import {
   benchItem,
   createGame,
@@ -147,14 +150,26 @@ rule('GUIDED OPENING — does every step actually complete?');
 // invisible from the UI until someone sits there clicking.
 {
   const game = createGame('fresh');
-  let view = 'run';
+  const ctx: GuideCtx = { view: 'run', running: false, top: null };
   let step = 0;
   const trace: string[] = [];
+  const targetless: string[] = [];
+  const MARKUP = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
 
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
   const actions: Array<() => void> = [
-    () => { view = 'bench'; },
+    () => { ctx.running = true; },
+    () => {
+      // Clearing it: what the first descent actually hands over.
+      ctx.running = false;
+      grantFirstClear(game);
+      line(
+        `  after the first clear: ${balance(game.wallet, 'fragment')} fragments, ` +
+          `${game.inventory.length} items`
+      );
+    },
+    () => { ctx.view = 'bench'; ctx.top = 'bench'; },
     () => { runRecipe(game.wallet, 'make_shard_of_awakening'); },
     () => {
       const wand = game.inventory.find((i) => i.kind === 'gear');
@@ -170,20 +185,24 @@ rule('GUIDED OPENING — does every step actually complete?');
       const wand = benchItem(game)!;
       equipItem(game, wand, 'weapon');
     },
-    () => { view = 'run'; },
+    () => { ctx.view = 'run'; ctx.top = null; ctx.running = true; },
   ];
-
-  // Grant what a first clear would have.
-  grantFirstClear(game);
-  line(`  after the first clear: ${balance(game.wallet, 'fragment')} fragments, ` +
-    `${game.inventory.length} items`);
 
   for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
     const current = TUTORIAL_STEPS[step];
     actions[i]?.();
     // Advance past everything now satisfied, as the real driver does.
-    while (step < TUTORIAL_STEPS.length && TUTORIAL_STEPS[step].done(game, view)) step++;
+    while (step < TUTORIAL_STEPS.length && TUTORIAL_STEPS[step].done(game, ctx)) step++;
     trace.push(`${current.id} -> ${step}`);
+
+    // Every step must name an element that exists, or it highlights nothing
+    // and the card floats in a corner pointing at empty space. Two ways to
+    // exist: written into the markup, or a workshop button the bench builds
+    // from a recipe that's actually in the table.
+    const id = typeof current.target === 'function' ? current.target(ctx) : current.target;
+    const inMarkup = MARKUP.includes(`id="${id}"`);
+    const isRecipe = RECIPES.some((r) => recipeButtonId(r.id) === id);
+    if (!inMarkup && !isRecipe) targetless.push(`${current.id} -> #${id}`);
   }
 
   for (const entry of trace) line(`  ${entry}`);
@@ -191,6 +210,11 @@ rule('GUIDED OPENING — does every step actually complete?');
     step >= TUTORIAL_STEPS.length
       ? `  ✓ all ${TUTORIAL_STEPS.length} steps completed, and affordable`
       : `  ✗ STUCK on '${TUTORIAL_STEPS[step].id}' — a new player cannot finish`
+  );
+  line(
+    targetless.length === 0
+      ? '  ✓ every step points at an element that exists'
+      : `  ✗ points at nothing: ${targetless.join(', ')}`
   );
   // The last step claims you can afford a crystal. It should be true.
   const left = balance(game.wallet, 'fragment');

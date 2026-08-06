@@ -15,9 +15,10 @@ import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, openBench, closeBench, isBenchOpen } from './ui/bench';
-import { initRun, onRunFocused, refreshRunPanels } from './ui/run';
+import { initRun, onRunFocused, refreshRunPanels, runIsActive } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
-import { initTutorial, stopTutorial } from './ui/tutorial';
+import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
+import type { GuideCtx } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
 import {
@@ -50,10 +51,18 @@ function restart(mode: StartMode): void {
   maybeShowWelcome();
 }
 
-/** After choosing a skill: straight to the Fissure, nothing else to do first. */
+/**
+ * After choosing a skill: straight to the Fissure, with the guide already
+ * pointing at Enter.
+ *
+ * The opening used to start after the first clear, which left the first thing
+ * anyone ever does — the descent itself — as the one unguided moment in the
+ * game.
+ */
 function begin(): void {
   refreshRunPanels();
   onRunFocused();
+  startTutorial();
 }
 
 document.getElementById('open-bench')!.addEventListener('click', openBench);
@@ -99,7 +108,23 @@ initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
 initBench(game, onRunFocused);
 initRun(game);
-initTutorial(game, () => (isBenchOpen() ? 'bench' : 'run'));
+/**
+ * What the guide needs that the game state can't tell it: which surface has
+ * focus, whether a descent is under way, and what's on top — so a step that
+ * says "close this" can point at the right close button.
+ */
+function guideContext(): GuideCtx {
+  const top = isSkillsOpen()
+    ? 'skills'
+    : isCharacterOpen()
+      ? 'sheet'
+      : isBenchOpen()
+        ? 'bench'
+        : null;
+  return { view: isBenchOpen() ? 'bench' : 'run', running: runIsActive(), top };
+}
+
+initTutorial(game, guideContext);
 
 // A stocked game opens the bench, which is where a returning player wants to
 // be; a new one has nothing to spend and lands on the map.

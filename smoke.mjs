@@ -123,16 +123,33 @@ assert(
 $('run-abandon').click();
 
 // --- the guided opening ----------------------------------------------------
-// Only the plumbing is checked here: driving a real clear would take the full
-// run in wall-clock time. The step machine itself is exercised headlessly in
-// the demo, where state can be built directly.
-assert($('guide').hidden === true, 'no guidance before the first clear');
-assert($('guide-skip') !== null, 'guidance can be dismissed');
+// It runs from the very first click now, so a new player is never looking at
+// a screen full of buttons with no idea which one. Only the plumbing is
+// checked here; the step machine itself is walked headlessly in the demo,
+// where state can be built directly.
+assert($('guide').hidden === false, 'the guide is up from the start');
+assert(/step 1 of/i.test(text('guide-step')), 'starting at step one', text('guide-step'));
 assert(
-  all('.guide-on').length === 0,
-  'nothing is highlighted before the guide runs',
+  all('.guide-on').length === 1,
+  'exactly one thing is highlighted',
   String(all('.guide-on').length)
 );
+assert(
+  $('run-launch').classList.contains('guide-on'),
+  'and it is the button that starts the game'
+);
+assert($('guide-skip') !== null, 'guidance can be dismissed');
+
+// The card floats over the popups rather than living in the shell — half its
+// steps point at things inside the bench.
+assert(
+  !document.querySelector('.wrap').contains($('guide')),
+  'the guide is not trapped inside the shell'
+);
+
+$('guide-skip').click();
+assert($('guide').hidden === true, 'skipping puts it away');
+assert(all('.guide-on').length === 0, 'and takes the highlight with it');
 
 $('dev-kit').click();
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));

@@ -33,7 +33,6 @@ import { ZOOM_MAX, ZOOM_MIN, clampZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { note } from './history';
-import { startTutorial } from './tutorial';
 import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -89,6 +88,9 @@ function setPhase(next: Phase): void {
 export function syncViewportLock(): void {
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', phase !== 'menu');
 }
+
+/** True while a descent is actually under way. */
+export const runIsActive = (): boolean => phase === 'running';
 
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
@@ -208,14 +210,9 @@ function launch(): void {
 
 function finish(): void {
   if (!sim) return;
-  const firstEver = !game.firstClearDone && sim.state.status === 'cleared';
   const report = buildReport(game, sim.state);
   playing = false;
 
-  // The guided opening begins the moment you've actually cleared something,
-  // so it teaches spending against loot you're holding rather than in the
-  // abstract.
-  if (firstEver) startTutorial();
   renderResults(report, sim.state);
   setPhase('results');
   renderInventory();
