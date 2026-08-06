@@ -60,7 +60,20 @@ export interface SkillUse {
    * the skill's damage — so 1.0 over 10 seconds is one hit's worth, spread
    * thin. The sim divides it out; behaviours never deal in per-tick numbers.
    */
-  ailment(target: Entity, multiplier: number, seconds: number): void;
+  ailment(
+    target: Entity,
+    multiplier: number,
+    seconds: number,
+    spread?: { radius: number; generation: number }
+  ): void;
+  /**
+   * Scales a base radius by the user's Area of Effect.
+   *
+   * The stat increases AREA, so the radius grows by the square root — +100%
+   * area is a 1.41x radius, not 2x. Every behaviour goes through this so two
+   * area skills can never disagree about what the stat means.
+   */
+  areaRadius(base: number): number;
   /**
    * Emit a visual event. Only the skill knows the SHAPE of what happened —
    * a chain's arc is A→B→C, which no renderer could reconstruct from the
@@ -138,42 +151,44 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * No hit at all — spreads a damage-over-time stack to everything near the
-   * primary target.
+   * No hit at all — drops a circle of poison centred on the target.
    *
-   * Nearest-first up to a cap, so it reliably covers the knot of enemies you
-   * are standing in rather than scattering across whichever ones the list
-   * happened to hold.
+   * There is no target cap: the circle poisons whatever is standing in it, so
+   * the way to poison more things is to make the circle bigger. That is the
+   * whole reason this skill wants Area of Effect, and a cap would have quietly
+   * made the stat worthless past the fifth enemy.
    *
-   * params: { targets, radius, duration }
+   * params: { radius, duration }
+   * grants: { contagionRadius } — see Contagion in the tree.
    */
   ailment_burst: (use) => {
-    const base = (use.skill.params?.targets as number) ?? 5;
-    const radius = (use.skill.params?.radius as number) ?? 3;
     const duration = (use.skill.params?.duration as number) ?? 10;
+    const radius = use.areaRadius((use.skill.params?.radius as number) ?? 1.6);
 
-    // Contagion: a critical cast spreads further. Crit is rolled per USE, so
-    // this is an event you notice rather than a per-enemy coin flip — which
-    // is what makes crit chance worth stacking on a skill that never "hits".
-    const spread = use.crit ? ((use.grants.spreadOnCrit as number) ?? 0) : 0;
-    const cap = base + spread;
+    // Contagion turns the poison itself infectious: a critical TICK plants a
+    // fresh circle around whatever it ticked on. The jump inherits Area of
+    // Effect too, so investing in area widens both the cast and every jump.
+    const contagion = use.grants.contagionRadius as number | undefined;
+    const spread = contagion
+      ? { radius: use.areaRadius(contagion), generation: 0 }
+      : undefined;
 
-    const inRange = use.enemies
-      .filter((e) => separation(use.primary, e) <= radius)
-      .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
-      .slice(0, cap);
-
+    const caught = use.enemies.filter((e) => separation(use.primary, e) <= radius);
     // The primary is always poisoned, even if the radius somehow excludes it.
-    if (!inRange.includes(use.primary)) inRange.unshift(use.primary);
+    if (!caught.includes(use.primary)) caught.push(use.primary);
 
-    for (const enemy of inRange.slice(0, cap)) {
-      use.ailment(enemy, 1, duration);
-      use.vfx('blight', [{ x: enemy.x, y: enemy.y }], 0.5);
-    }
+    for (const enemy of caught) use.ailment(enemy, 1, duration, spread);
 
-    use.vfx(use.skill.vfxKind ?? 'swing', [
-      { x: use.user.x, y: use.user.y },
-      { x: use.primary.x, y: use.primary.y },
-    ]);
+    // The field carries its true radius as a second point, so the renderer
+    // draws exactly what the sim used — you can see what you did and did not
+    // catch, and see it grow as Area of Effect goes up.
+    use.vfx(
+      use.skill.vfxKind ?? 'blight_field',
+      [
+        { x: use.primary.x, y: use.primary.y },
+        { x: use.primary.x + radius, y: use.primary.y },
+      ],
+      0.85
+    );
   },
 };

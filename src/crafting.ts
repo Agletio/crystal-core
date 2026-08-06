@@ -1,4 +1,5 @@
 import { Rng } from './rng';
+import { describeStatLine } from './mod-text';
 import {
   ModPool,
   fillState,
@@ -350,14 +351,7 @@ export function craft(
 // ---------------------------------------------------------------------------
 
 export function describeMod(mod: RolledMod): string {
-  const lines = mod.stats
-    .map((s) => {
-      const sign = s.value >= 0 ? '+' : '';
-      if (s.form === 'flat') return `${sign}${s.value} ${s.stat}`;
-      if (s.form === 'inc') return `${sign}${s.value}% increased ${s.stat}`;
-      return `${s.value}% more ${s.stat}`;
-    })
-    .join(', ');
+  const lines = mod.stats.map(describeStatLine).join(', ');
   return `${lines}  (T${mod.tier} ${mod.name})`;
 }
 

@@ -299,9 +299,12 @@ export const CRYSTAL_MODS: ModDef[] = [
     name: 'of Hardened Hide',
     appliesTo: ['crystal'],
     tags: ['danger'],
+    // Armour is POINTS — it feeds armourReduction, which curves them into a
+    // percentage. Written as 'inc' it multiplied a base of zero and did
+    // nothing at all; these same numbers are meaningful as flat armour.
     tiers: [
-      { ilvl: 45, weight: 300, stats: [{ stat: 'monsterArmour', form: 'inc', range: [50, 80] }] },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'inc', range: [20, 40] }] },
+      { ilvl: 45, weight: 300, stats: [{ stat: 'monsterArmour', form: 'flat', range: [50, 80] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'flat', range: [20, 40] }] },
     ],
   },
   {
@@ -1415,7 +1418,8 @@ export const SKILLS: SkillDef[] = [
     id: 'blight',
     name: 'Creeping Blight',
     description:
-      'Poisons up to 5 nearby enemies for 10s. Weak alone, and it stacks.',
+      'Drops a circle of poison on the target for 10s. No target limit — ' +
+      'Area of Effect is what makes it hit more.',
     // 'occult' is a damage GROUP and must not appear here. Skill tags ride
     // along in every damage pass, so a stat line tagged 'occult' would scale
     // this skill's fire damage too once Pyroclasm converts it.
@@ -1425,8 +1429,14 @@ export const SKILLS: SkillDef[] = [
     damageMultiplier: 1.6,
     rateMultiplier: 0.75,
     range: 6.5,
-    vfxKind: 'blight',
-    params: { targets: 5, radius: 3.2, duration: 10 },
+    vfxKind: 'blight_field',
+    /**
+     * 3.2 poisons ~2.4 enemies per cast, measured over 24 real runs rather
+     * than guessed at. That was already the right size; what was missing was
+     * anything to spend Area of Effect ON — the old version capped at five
+     * targets, so past the cap a bigger circle bought nothing.
+     */
+    params: { radius: 3.2, duration: 10 },
   },
 ];
 

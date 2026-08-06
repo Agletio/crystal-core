@@ -127,13 +127,18 @@ export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
     {
       id: 'bl_contagion',
       name: 'Contagion',
-      description: 'Critical casts spread the blight to 3 extra enemies. +10% Critical Chance.',
+      description:
+        'The poison itself becomes infectious: a critical poison tick plants a ' +
+        'fresh circle around its victim. Scales with Area of Effect. ' +
+        '+10% Critical Chance.',
       ring: 2,
       angle: ring2(1),
       requires: 'bl_crit',
       major: true,
       stats: [{ stat: 'critChance', form: 'flat', value: 10 }],
-      grants: { spreadOnCrit: 3 },
+      // Tighter than the cast's own circle: a jump should chain through a pack
+      // rather than re-cover the ground the cast already poisoned.
+      grants: { contagionRadius: 1.2 },
     },
     {
       id: 'bl_area2',
