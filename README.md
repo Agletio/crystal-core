@@ -42,14 +42,23 @@ Which makes phone-only iteration work:
    loop works, every run terminates, and the guided opening still finishes.
    `npm run demo` exits non-zero when one of its checks fails — the numbers it
    prints are for judging by eye, but the `check()` calls have answers.
-3. **Merge from the GitHub mobile app**, then play it on the Pages URL a minute
+3. **Look at the screenshots on the PR.** A second check renders the PR's own
+   build in a real browser at phone and desktop size and posts the pictures as
+   a comment. That is the QC step a phone otherwise cannot do: the Pages URL
+   only ever shows `main`, so without it the only way to see a change is to
+   merge it. It also fails on horizontal overflow.
+4. **Merge from the GitHub mobile app**, then play it on the Pages URL a minute
    later.
 
 Merge into `dev` first if you want somewhere to be wrong; `main` is the live
-site and a bad merge is visible immediately.
+site and a bad merge is visible immediately. Note that `dev` has no URL of its
+own — Pages serves one branch, and it serves `main`. The PR screenshots are
+what you look at before merging, not a staging site.
 
 The layout stacks on a phone — map and side panel below 900px, the dock's two
-columns below 720px. Playable, but it was designed for a desktop.
+columns below 720px, and below 430px the dock goes back to two columns and
+shrinks its slots, because stacking it there costs the map about 140px of
+height. Playable, but it was designed for a desktop.
 
 ## Branching
 
