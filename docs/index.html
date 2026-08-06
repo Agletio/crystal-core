@@ -428,6 +428,20 @@
   .guide__hint { display: block; font-size: 11px; color: var(--dust); font-style: italic; margin-top: 8px; }
   .guide__hint:empty { display: none; }
 
+  /* Short screens, by height rather than by device. A 667px phone cannot fit
+     the header, a readable map and a full-size card at once, and the card is
+     the one of the three that can afford to shrink. Keyed on available height
+     so it covers every short screen there will ever be, rather than the one
+     that happened to be tested. */
+  @media (max-height: 720px) {
+    .guide { padding: 9px 12px 8px; }
+    .guide__step { margin-bottom: 3px; }
+    .guide__text { font-size: 12.5px; line-height: 1.4; }
+    /* The aside is the first thing to go: it is always secondary to the
+       instruction above it. */
+    .guide__hint { display: none; }
+  }
+
   /* Shown when the thing to click is scrolled out of its panel. The card
      stays put and points the way rather than following the target off the
      bottom of the window, which is how a step managed to vanish entirely. */

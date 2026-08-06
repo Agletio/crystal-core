@@ -252,10 +252,15 @@ function parkOverDock(card: HTMLElement, arrow: HTMLElement, away: 'up' | 'down'
 
   const box = dock.getBoundingClientRect();
   const size = card.getBoundingClientRect();
-  // Centred on the dock, then clamped, so a dock shorter than the card still
-  // leaves the card fully on screen.
+
+  // Clearing the map beats centring on the dock. On a short screen the dock
+  // sits high enough that a dock-centred card still clips the canvas, and the
+  // whole point of moving was to stop covering the fight.
+  const map = document.getElementById('run-canvas') ?? document.getElementById('run-stage');
+  const floor = map ? map.getBoundingClientRect().bottom + 8 : 0;
+
   const top = Math.min(
-    Math.max(8, box.top + (box.height - size.height) / 2),
+    Math.max(8, floor, box.top + (box.height - size.height) / 2),
     globalThis.innerHeight - size.height - 8
   );
   card.style.top = `${Math.round(top)}px`;
