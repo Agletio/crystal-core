@@ -47,6 +47,24 @@ const rule = (t: string) => {
   line(`── ${t} ${'─'.repeat(Math.max(0, 60 - t.length))}`);
 };
 
+/**
+ * An assertion that reports rather than throws, and sets the exit code.
+ *
+ * Distinct from the ✗ marks the crafting walkthrough prints: those are the
+ * rules working — a refused craft is the demonstration. These are the checks
+ * that must hold, and CI is only worth having if a broken one turns the run
+ * red instead of printing a cross into a log nobody reads.
+ */
+let failed = 0;
+function check(ok: boolean, good: string, bad: string): void {
+  if (ok) {
+    line(`  ✓ ${good}`);
+    return;
+  }
+  failed++;
+  line(`  ✗ FAILED — ${bad}`);
+}
+
 function apply(item: Item, currencyId: string): Item {
   const currency = CURRENCY_BY_ID[currencyId];
   const res = craft(item, currency, pool, rng);
@@ -245,31 +263,31 @@ rule('GUIDED OPENING — does every step actually complete?');
   }
 
   for (const entry of trace) line(`  ${entry}`);
-  line(
-    step >= TUTORIAL_STEPS.length
-      ? `  ✓ all ${TUTORIAL_STEPS.length} steps completed, and affordable`
-      : `  ✗ STUCK on '${TUTORIAL_STEPS[step].id}' — a new player cannot finish`
+  check(
+    step >= TUTORIAL_STEPS.length,
+    `all ${TUTORIAL_STEPS.length} steps completed, and affordable`,
+    `STUCK on '${TUTORIAL_STEPS[step]?.id}' — a new player cannot finish`
   );
-  line(
-    targetless.length === 0
-      ? '  ✓ every step points at an element that exists'
-      : `  ✗ points at nothing: ${targetless.join(', ')}`
+  check(
+    targetless.length === 0,
+    'every step points at an element that exists',
+    `points at nothing: ${targetless.join(', ')}`
   );
   // The guide walks you into equipping the item that is sitting on the bench.
   // A stale benchId would leave the bench holding something you're wearing,
   // with every currency button live against it.
-  line(
-    benchItem(game) === null
-      ? '  ✓ equipping the benched item cleared the bench'
-      : '  ✗ the bench still holds an item you are now wearing'
+  check(
+    benchItem(game) === null,
+    'equipping the benched item cleared the bench',
+    'the bench still holds an item you are now wearing'
   );
   // The last step claims you can afford a crystal. It should be true.
   const left = balance(game.wallet, 'fragment');
   const crystalCost = CRYSTAL_TIERS[0].fragments;
-  line(
-    left >= crystalCost
-      ? `  ✓ ${left} fragments left — a T1 crystal costs ${crystalCost}, as promised`
-      : `  ✗ only ${left} left but the last step promises a crystal at ${crystalCost}`
+  check(
+    left >= crystalCost,
+    `${left} fragments left — a T1 crystal costs ${crystalCost}, as promised`,
+    `only ${left} left but the last step promises a crystal at ${crystalCost}`
   );
 }
 
@@ -293,11 +311,10 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
     }
   }
 
-  for (const offender of offenders) line(`  ✗ ${offender}`);
-  line(
-    offenders.length === 0
-      ? '  ✓ every skill keeps its damage types out of its tags'
-      : '  ✗ TAG LEAK'
+  check(
+    offenders.length === 0,
+    'every skill keeps its damage types out of its tags',
+    `tag leak: ${offenders.join(', ')}`
   );
 }
 
@@ -415,8 +432,11 @@ rule('TERMINATION CHECK — does every run actually end?');
   }
 
   line(`  ${checked} runs, ${stuck.length} that never ended`);
-  for (const s of stuck) line(`   ✗ ${s}`);
-  line(stuck.length === 0 ? '  ✓ all runs terminated' : '  ✗ TERMINATION REGRESSION');
+  check(
+    stuck.length === 0,
+    'all runs terminated',
+    `termination regression: ${stuck.join(', ')}`
+  );
 }
 
 // ===========================================================================
@@ -504,3 +524,15 @@ line(
 line(
   `Queue is empty and you can't rebuild it fully — that's the resting state working.`
 );
+
+// ===========================================================================
+// The harness is a report you read AND a check that can fail. Everything
+// above prints numbers to judge by eye; the check() calls are the ones with
+// an answer, and CI needs them to decide red or green.
+rule('RESULT');
+line(
+  failed === 0
+    ? '  ✓ every check passed'
+    : `  ✗ ${failed} check${failed === 1 ? '' : 's'} failed — see above`
+);
+process.exitCode = failed === 0 ? 0 : 1;

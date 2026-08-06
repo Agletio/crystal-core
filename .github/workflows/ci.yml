@@ -1,0 +1,65 @@
+# Build and check, on every push and pull request.
+#
+# The bundle is the reason this exists. docs/app.js is a COMMITTED artifact —
+# GitHub Pages serves static files and won't run a build — so a change to src/
+# that lands without a rebuild produces a green PR, a clean merge, and a live
+# site that does not change. That is the one failure mode you cannot diagnose
+# without a terminal, which is exactly the situation this workflow is for.
+#
+# So: every push rebuilds and verifies, and a push to main commits the rebuilt
+# bundle back. You never hand-build again.
+name: build and check
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+# Needed only by the bundle-commit step on main.
+permissions:
+  contents: write
+
+# A second push while the first is still building would race on docs/app.js.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Order matters: typecheck is the fastest signal, the bundle has to exist
+      # before smoke can boot it, and the demo is the slowest.
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: build
+        run: npm run build
+
+      - name: smoke — does the page boot and does the loop work
+        run: npm run smoke
+
+      - name: demo — does the sim still terminate and the opening still finish
+        run: npm run demo
+
+      - name: commit the rebuilt bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- docs/app.js; then
+            echo "bundle already matches the source"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/app.js
+          git commit -m "Rebuild docs/app.js [skip ci]"
+          git push

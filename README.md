@@ -21,8 +21,35 @@ Two ways, no server needed:
   `https://<user>.github.io/<repo>/`. Phone, work laptop, anywhere.
 
 `docs/app.js` is committed on purpose — Pages serves static files and won't run
-a build for you. Re-run `npm run build` before pushing or the live page will be
-stale.
+a build for you. Build before pushing, or let CI do it (below).
+
+## CI, and working without a terminal
+
+`.github/workflows/ci.yml` runs on every push and pull request: typecheck,
+build, smoke, demo. A push to `main` also **commits the rebuilt `docs/app.js`
+back**, so the live page can never lag the source.
+
+That last part is the whole point. The bundle is a committed artifact, so a
+change to `src/` that lands without a rebuild gives you a green PR, a clean
+merge, and a live site that doesn't change — the one failure you can't diagnose
+without a terminal.
+
+Which makes phone-only iteration work:
+
+1. **Claude Code on the web** (`claude.ai/code`) in a mobile browser, pointed at
+   this repo. It works in a cloud sandbox and opens a pull request.
+2. **Read the check on the PR.** Green means it typechecks, the page boots, the
+   loop works, every run terminates, and the guided opening still finishes.
+   `npm run demo` exits non-zero when one of its checks fails — the numbers it
+   prints are for judging by eye, but the `check()` calls have answers.
+3. **Merge from the GitHub mobile app**, then play it on the Pages URL a minute
+   later.
+
+Merge into `dev` first if you want somewhere to be wrong; `main` is the live
+site and a bad merge is visible immediately.
+
+The layout stacks on a phone — map and side panel below 900px, the dock's two
+columns below 720px. Playable, but it was designed for a desktop.
 
 ## Branching
 
