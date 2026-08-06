@@ -1,4 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import { craft, describeItem } from './crafting';
@@ -151,7 +153,7 @@ rule('GUIDED OPENING — does every step actually complete?');
 // invisible from the UI until someone sits there clicking.
 {
   const game = createGame('fresh');
-  const ctx: GuideCtx = { view: 'run', running: false, top: null };
+  const ctx: GuideCtx = { view: 'run', phase: 'menu', top: null };
   let step = 0;
   const trace: string[] = [];
   const targetless: string[] = [];
@@ -159,11 +161,12 @@ rule('GUIDED OPENING — does every step actually complete?');
 
   /** Every surface a step could be pointing at when it fires. */
   const SITUATIONS: GuideCtx[] = [
-    { view: 'run', running: false, top: null },
-    { view: 'run', running: true, top: null },
-    { view: 'bench', running: false, top: 'bench' },
-    { view: 'run', running: false, top: 'sheet' },
-    { view: 'run', running: false, top: 'skills' },
+    { view: 'run', phase: 'menu', top: null },
+    { view: 'run', phase: 'running', top: null },
+    { view: 'run', phase: 'results', top: null },
+    { view: 'bench', phase: 'results', top: 'bench' },
+    { view: 'run', phase: 'results', top: 'sheet' },
+    { view: 'run', phase: 'menu', top: 'skills' },
   ];
 
   const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
@@ -171,20 +174,33 @@ rule('GUIDED OPENING — does every step actually complete?');
       ? [s.target]
       : [...new Set(SITUATIONS.map((c) => (s.target as (c: GuideCtx) => string)(c)))];
 
-  // Three ways for an id to be real: written into the markup, built by the
-  // bench from a recipe, or built by the sheet from an equipment slot.
+  // Everything the UI assigns an id to at runtime — every ui module except
+  // the one under test, since the guide quotes its own targets and would
+  // happily vouch for a typo it made itself.
+  const UI = join(fileURLToPath(new URL('./ui/', import.meta.url)));
+  const UI_SRC = readdirSync(UI)
+    .filter((f) => f.endsWith('.ts') && f !== 'tutorial.ts')
+    .map((f) => readFileSync(join(UI, f), 'utf8'))
+    .join('\n');
+
+  // Four ways for an id to be real: written into the markup, assigned as a
+  // literal somewhere in the UI, or built by the bench from a recipe or by the
+  // sheet from an equipment slot.
   const exists = (id: string): boolean =>
     MARKUP.includes(`id="${id}"`) ||
+    UI_SRC.includes(`'${id}'`) ||
     RECIPES.some((r) => recipeButtonId(r.id) === id) ||
     EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id);
 
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
   const actions: Array<() => void> = [
-    () => { ctx.running = true; },
+    () => { ctx.phase = 'running'; },
     () => {
-      // Clearing it: what the first descent actually hands over.
-      ctx.running = false;
+      // Clearing it leaves the report on screen — and it STAYS there through
+      // everything below, because nothing in the guided opening dismisses it.
+      // That is why the last step has to point at "Back to the Fissure".
+      ctx.phase = 'results';
       grantFirstClear(game);
       line(
         `  after the first clear: ${balance(game.wallet, 'fragment')} fragments, ` +
@@ -207,7 +223,8 @@ rule('GUIDED OPENING — does every step actually complete?');
       const wand = benchItem(game)!;
       equipItem(game, wand, 'weapon');
     },
-    () => { ctx.view = 'run'; ctx.top = null; ctx.running = true; },
+    // Close the sheet, dismiss the report, enter again.
+    () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
   ];
 
   for (let i = 0; i < TUTORIAL_STEPS.length; i++) {

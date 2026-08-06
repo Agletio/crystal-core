@@ -44,7 +44,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-type Phase = 'menu' | 'running' | 'results';
+export type Phase = 'menu' | 'running' | 'results';
 
 let game: GameState;
 let sim: RunSim | null = null;
@@ -89,8 +89,8 @@ export function syncViewportLock(): void {
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', phase !== 'menu');
 }
 
-/** True while a descent is actually under way. */
-export const runIsActive = (): boolean => phase === 'running';
+/** Which of the three states the Fissure is in. The guide branches on it. */
+export const runPhase = (): Phase => phase;
 
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
@@ -354,6 +354,9 @@ function renderResults(report: RunReport, run: RunState): void {
   }
 
   const again = el('button', 'mini', 'Back to the Fissure') as HTMLButtonElement;
+  // Stable id: the guided opening's last step points here while the report is
+  // up, because this is the click that gets you back to Enter.
+  again.id = 'run-again';
   again.onclick = () => {
     sim = null;
     setPhase('menu');

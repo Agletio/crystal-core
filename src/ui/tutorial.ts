@@ -33,8 +33,14 @@ const $ = (id: string) => document.getElementById(id)!;
 export interface GuideCtx {
   /** Which surface has focus: the bench popup, or the Fissure underneath. */
   view: 'bench' | 'run';
-  /** True while a descent is actually in progress. */
-  running: boolean;
+  /**
+   * Where the Fissure itself is: choosing, descending, or reading the report.
+   *
+   * The last one matters more than it looks. The report sits over the menu,
+   * so "Enter" is hidden until you dismiss it — a step pointing at Enter from
+   * there points at nothing.
+   */
+  phase: 'menu' | 'running' | 'results';
   /** Topmost popup, so a step can point at the right close button. */
   top: string | null;
 }
@@ -79,7 +85,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: 'This is the Fissure — the one place you go, always open and always free. Click Enter to descend.',
     hint: 'You fight automatically. Nothing to time.',
     target: 'run-launch',
-    done: (g, ctx) => ctx.running || g.firstClearDone,
+    done: (g, ctx) => ctx.phase !== 'menu' || g.firstClearDone,
   },
   {
     id: 'watch',
@@ -149,22 +155,36 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : 'open-character',
     done: (g) => !!g.character.equipment.weapon,
   },
+  /**
+   * Same moving-target trick as the equip step, and for the same reason: from
+   * where you're standing when it fires, Enter is under a report, under a
+   * character sheet, under a bench. It points at whatever is in the way.
+   */
   {
     id: 'descend',
-    text: 'That is the whole loop: descend, spend what drops, descend harder. Close this and go again — you can afford a crystal now, and it goes in the Fissure.',
-    hint: 'A socketed crystal makes it deadlier, and pays for it.',
+    text: (ctx) =>
+      ctx.top === 'sheet'
+        ? 'That is the loop. Close the sheet — you can afford a crystal now.'
+        : ctx.top === 'bench'
+          ? 'That is the loop. Close the Bench and head back down.'
+          : ctx.phase === 'results'
+            ? 'Your report from last time is still open. Head back to the Fissure.'
+            : 'Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.',
+    hint: 'Crystals are spent on entry, win or lose.',
     target: (ctx) =>
       ctx.top === 'sheet'
         ? 'sheet-close'
         : ctx.top === 'bench'
           ? 'bench-close'
-          : 'run-launch',
-    done: (_g, ctx) => ctx.running,
+          : ctx.phase === 'results'
+            ? 'run-again'
+            : 'run-launch',
+    done: (_g, ctx) => ctx.phase === 'running',
   },
 ];
 
 let game: GameState;
-let context: () => GuideCtx = () => ({ view: 'run', running: false, top: null });
+let context: () => GuideCtx = () => ({ view: 'run', phase: 'menu', top: null });
 let highlighted: Element | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -195,6 +215,11 @@ function scroller(node: Element): HTMLElement | null {
  */
 function outOfView(target: Element): 'up' | 'down' | null {
   const box = target.getBoundingClientRect();
+  // A display:none element measures 0x0 at the origin, which looks exactly
+  // like "scrolled off the top" and isn't. Telling someone to scroll up to
+  // reach a button that isn't rendered is worse than saying nothing.
+  if (box.width === 0 && box.height === 0) return null;
+
   const box2 = scroller(target)?.getBoundingClientRect();
   const top = Math.max(0, box2?.top ?? 0);
   const bottom = Math.min(globalThis.innerHeight, box2?.bottom ?? globalThis.innerHeight);

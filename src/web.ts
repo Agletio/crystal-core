@@ -15,7 +15,7 @@ import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, openBench, closeBench, isBenchOpen } from './ui/bench';
-import { initRun, onRunFocused, refreshRunPanels, runIsActive } from './ui/run';
+import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
@@ -121,7 +121,7 @@ function guideContext(): GuideCtx {
       : isBenchOpen()
         ? 'bench'
         : null;
-  return { view: isBenchOpen() ? 'bench' : 'run', running: runIsActive(), top };
+  return { view: isBenchOpen() ? 'bench' : 'run', phase: runPhase(), top };
 }
 
 initTutorial(game, guideContext);
