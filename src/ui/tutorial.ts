@@ -41,7 +41,8 @@ export interface GuideCtx {
 
 export interface TutorialStep {
   id: string;
-  text: string;
+  /** A function when what to say depends on what's currently open. */
+  text: string | ((ctx: GuideCtx) => string);
   /** Element to point at. A function when it depends on what's on top. */
   target: string | ((ctx: GuideCtx) => string);
   /**
@@ -68,6 +69,9 @@ const has = (g: GameState, id: string) => balance(g.wallet, id) > 0;
  * was meant to remove.
  */
 export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
+
+/** Id of an equipment slot's button on the character sheet. Same reason. */
+export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
@@ -121,10 +125,28 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     target: recipeButtonId('make_shard_of_chaos'),
     done: (g) => has(g, 'shard_of_chaos'),
   },
+  /**
+   * One step, three targets.
+   *
+   * Equipping takes three clicks from inside the bench, and the first two are
+   * only there because the bench is covering the button for the third. Split
+   * into separate steps they'd read as busywork; as one step with a moving
+   * target, the guide simply always points at the next click.
+   */
   {
     id: 'equip',
-    text: 'The wand is crafted. Open Character and put it in your weapon slot.',
-    target: 'open-character',
+    text: (ctx) =>
+      ctx.view === 'bench'
+        ? 'The wand is crafted. Close the Bench — the Character button is behind it.'
+        : ctx.top === 'sheet'
+          ? 'Click the Weapon slot, then pick the Ash Wand.'
+          : 'Open Character and put the wand in your weapon slot.',
+    target: (ctx) =>
+      ctx.view === 'bench'
+        ? 'bench-close'
+        : ctx.top === 'sheet'
+          ? slotButtonId('weapon')
+          : 'open-character',
     done: (g) => !!g.character.equipment.weapon,
   },
   {
@@ -151,6 +173,37 @@ function clearHighlight(): void {
   highlighted = null;
 }
 
+/** The scrollable box a target sits in, if any. */
+function scroller(node: Element): HTMLElement | null {
+  let el = node.parentElement;
+  while (el && el !== document.body) {
+    const overflow = getComputedStyle(el).overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Which way you'd have to scroll to see the target, if you can't.
+ *
+ * A card pinned to something below the fold went off the bottom of the window
+ * with it, so the step vanished entirely and the only way to find out what to
+ * do next was to scroll at random.
+ */
+function outOfView(target: Element): 'up' | 'down' | null {
+  const box = target.getBoundingClientRect();
+  const box2 = scroller(target)?.getBoundingClientRect();
+  const top = Math.max(0, box2?.top ?? 0);
+  const bottom = Math.min(globalThis.innerHeight, box2?.bottom ?? globalThis.innerHeight);
+
+  if (box.bottom <= top + 2) return 'up';
+  if (box.top >= bottom - 2) return 'down';
+  return null;
+}
+
 /**
  * Puts the card beside its target: under it if there's room, over it if not,
  * and clamped to the window either way. Runs every tick, because the target
@@ -159,23 +212,37 @@ function clearHighlight(): void {
 function place(target: Element): void {
   const card = $('guide');
   const arrow = $('guide-arrow');
-  const box = target.getBoundingClientRect();
   const size = card.getBoundingClientRect();
   const GAP = 14;
+
+  // When the target is scrolled out of its panel, anchor to the panel instead
+  // and say which way to scroll. Following the target off-screen is how the
+  // step managed to disappear completely.
+  const away = outOfView(target);
+  const anchor = away ? (scroller(target) ?? target) : target;
+  const box = anchor.getBoundingClientRect();
+  showScrollHint(away);
 
   // Below if it fits, inside if the target is a region big enough to hold it,
   // above otherwise. The middle case is what keeps the card off the health bar
   // during the descent: the loot panel has room to spare and the panels above
   // it are the ones you're being told to watch.
-  const below = box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
+  const below = !away && box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
   const inside = !below && box.height > size.height + GAP * 2;
-  const top = below
+  const raw = below
     ? box.bottom + GAP
     : inside
-      ? box.top + GAP
-      : Math.max(8, box.top - GAP - size.height);
+      ? // Hug the edge you're being sent towards, so the card and the scroll
+        // it's asking for are in the same place.
+        away === 'down'
+        ? box.bottom - size.height - GAP
+        : box.top + GAP
+      : box.top - GAP - size.height;
 
-  // Centred on the target, then pulled back inside the window.
+  // Clamped last, so the card is on screen whatever the target was doing.
+  const top = Math.min(Math.max(8, raw), globalThis.innerHeight - size.height - 8);
+
+  // Centred on the anchor, then pulled back inside the window.
   const wanted = box.left + box.width / 2 - size.width / 2;
   const left = Math.min(
     Math.max(8, wanted),
@@ -186,13 +253,22 @@ function place(target: Element): void {
   card.style.left = `${Math.round(left)}px`;
 
   // The arrow points back at the target's centre, clamped so it stays on the
-  // card's edge when the card had to slide away. Sitting inside the target,
+  // card's edge when the card had to slide away. Sitting inside the anchor,
   // there's nothing to point at.
-  arrow.hidden = inside;
+  arrow.hidden = inside || !!away;
   const tip = Math.min(Math.max(box.left + box.width / 2 - left, 16), size.width - 16);
   arrow.style.left = `${Math.round(tip - 6)}px`;
   arrow.style.top = below ? '-8px' : `${Math.round(size.height - 6)}px`;
   arrow.style.transform = below ? 'rotate(45deg)' : 'rotate(225deg)';
+}
+
+function showScrollHint(away: 'up' | 'down' | null): void {
+  const hint = $('guide-scroll');
+  hint.hidden = away === null;
+  if (!away) return;
+  hint.classList.toggle('guide__scroll--up', away === 'up');
+  $('guide-scroll-text').textContent =
+    away === 'down' ? 'Scroll down to reach it' : 'Scroll up to reach it';
 }
 
 function paint(): void {
@@ -207,7 +283,8 @@ function paint(): void {
 
   const ctx = context();
   card.hidden = false;
-  $('guide-text').textContent = step.text;
+  $('guide-text').textContent =
+    typeof step.text === 'function' ? step.text(ctx) : step.text;
   $('guide-hint').textContent = step.hint ?? '';
   $('guide-step').textContent =
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;

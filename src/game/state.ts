@@ -183,6 +183,11 @@ export function equipItem(game: GameState, item: Item, slotId: string): boolean 
   if (!removeItem(game, item)) return false;
   if (previous) addItem(game, previous);
 
+  // Worn items leave the inventory, and the bench works on inventory items.
+  // A stale benchId would leave the bench displaying something you're now
+  // wearing, with every currency button live against it.
+  if (game.benchId === item.id) game.benchId = null;
+
   game.character.equipment[slotId] = item;
   return true;
 }

@@ -18,6 +18,7 @@ import { equipItem, fitsSlot, unequipItem } from '../game/state';
 import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { slotButtonId } from './tutorial';
 import { renderInventory } from './inventory';
 import type { Item } from '../types';
 
@@ -50,6 +51,9 @@ function renderSlots(): void {
     cell.append(el('div', 'slotcell__label', slot.name));
 
     const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
+    // Stable id so the guided opening can point at one slot rather than the
+    // grid. The demo asserts every step's target exists.
+    btn.id = slotButtonId(slot.id);
     if (worn) {
       btn.append(gearIcon((worn.meta.art as string) ?? 'body', 30));
       const body = el('span', 'slotcell__body');

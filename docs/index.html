@@ -410,6 +410,30 @@
   .guide__hint { display: block; font-size: 11px; color: var(--dust); font-style: italic; margin-top: 8px; }
   .guide__hint:empty { display: none; }
 
+  /* Shown when the thing to click is scrolled out of its panel. The card
+     stays put and points the way rather than following the target off the
+     bottom of the window, which is how a step managed to vanish entirely. */
+  .guide__scroll {
+    display: flex; align-items: center; gap: 9px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--seam);
+    font-size: 12px; color: var(--citrine);
+  }
+  .guide__mouse { flex: none; }
+  .guide__wheel { animation: guidewheel 1.4s ease-in-out infinite; }
+  @keyframes guidewheel {
+    0%, 100% { transform: translateY(0); opacity: .45; }
+    55% { transform: translateY(7px); opacity: 1; }
+  }
+  .guide__scroll--up .guide__wheel { animation-name: guidewheel-up; }
+  @keyframes guidewheel-up {
+    0%, 100% { transform: translateY(7px); opacity: .45; }
+    55% { transform: translateY(0); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .guide__wheel { animation: none; }
+  }
+
   /* The arrow, drawn as a rotated square poking out of the card's edge.
      Which side it's on is set with the position, since that depends on where
      the target ended up. */
@@ -798,6 +822,13 @@
   <span class="guide__step" id="guide-step">Step 1 of 9</span>
   <span class="guide__text" id="guide-text"></span>
   <span class="guide__hint" id="guide-hint"></span>
+  <span class="guide__scroll" id="guide-scroll" hidden>
+    <svg class="guide__mouse" viewBox="0 0 16 24" width="15" height="22" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="13" height="21" rx="6.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle class="guide__wheel" cx="8" cy="7" r="1.8" fill="currentColor"/>
+    </svg>
+    <span id="guide-scroll-text">Scroll down to reach it</span>
+  </span>
 </div>
 
 <!-- Replaces the native title attribute: instant, and in the page's colours

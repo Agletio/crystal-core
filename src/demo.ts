@@ -8,6 +8,7 @@ import {
   CRYSTAL_TIERS,
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
+  EQUIP_SLOTS,
   RECIPES,
   SKILLS,
 } from './data';
@@ -23,7 +24,7 @@ import { RunSim, runToCompletion } from './sim/run';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
 import { starterLoadout } from './sim/loadout';
-import { TUTORIAL_STEPS, recipeButtonId } from './ui/tutorial';
+import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
   benchItem,
@@ -156,6 +157,27 @@ rule('GUIDED OPENING — does every step actually complete?');
   const targetless: string[] = [];
   const MARKUP = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
 
+  /** Every surface a step could be pointing at when it fires. */
+  const SITUATIONS: GuideCtx[] = [
+    { view: 'run', running: false, top: null },
+    { view: 'run', running: true, top: null },
+    { view: 'bench', running: false, top: 'bench' },
+    { view: 'run', running: false, top: 'sheet' },
+    { view: 'run', running: false, top: 'skills' },
+  ];
+
+  const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
+    typeof s.target === 'string'
+      ? [s.target]
+      : [...new Set(SITUATIONS.map((c) => (s.target as (c: GuideCtx) => string)(c)))];
+
+  // Three ways for an id to be real: written into the markup, built by the
+  // bench from a recipe, or built by the sheet from an equipment slot.
+  const exists = (id: string): boolean =>
+    MARKUP.includes(`id="${id}"`) ||
+    RECIPES.some((r) => recipeButtonId(r.id) === id) ||
+    EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id);
+
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
   const actions: Array<() => void> = [
@@ -196,13 +218,13 @@ rule('GUIDED OPENING — does every step actually complete?');
     trace.push(`${current.id} -> ${step}`);
 
     // Every step must name an element that exists, or it highlights nothing
-    // and the card floats in a corner pointing at empty space. Two ways to
-    // exist: written into the markup, or a workshop button the bench builds
-    // from a recipe that's actually in the table.
-    const id = typeof current.target === 'function' ? current.target(ctx) : current.target;
-    const inMarkup = MARKUP.includes(`id="${id}"`);
-    const isRecipe = RECIPES.some((r) => recipeButtonId(r.id) === id);
-    if (!inMarkup && !isRecipe) targetless.push(`${current.id} -> #${id}`);
+    // and the card floats in a corner pointing at empty space. Targets that
+    // branch on what's open are checked in EVERY branch, not just the one
+    // this walkthrough happens to be in — the whole point of a moving target
+    // is that it fires in situations the happy path never visits.
+    for (const id of targetsOf(current)) {
+      if (!exists(id)) targetless.push(`${current.id} -> #${id}`);
+    }
   }
 
   for (const entry of trace) line(`  ${entry}`);
@@ -215,6 +237,14 @@ rule('GUIDED OPENING — does every step actually complete?');
     targetless.length === 0
       ? '  ✓ every step points at an element that exists'
       : `  ✗ points at nothing: ${targetless.join(', ')}`
+  );
+  // The guide walks you into equipping the item that is sitting on the bench.
+  // A stale benchId would leave the bench holding something you're wearing,
+  // with every currency button live against it.
+  line(
+    benchItem(game) === null
+      ? '  ✓ equipping the benched item cleared the bench'
+      : '  ✗ the bench still holds an item you are now wearing'
   );
   // The last step claims you can afford a crystal. It should be true.
   const left = balance(game.wallet, 'fragment');
