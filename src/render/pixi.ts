@@ -23,7 +23,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, toHexNumber, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, toHexNumber, vfxColour } from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
 
 const FLOATER_LIFE = 1.1;
@@ -279,7 +279,7 @@ export async function createPixiRenderer(
       if (fx.kind === 'blight_field') {
         // The second point IS the radius — see poisonDrops. Drawing anything
         // else here would be lying about what the sim poisoned.
-        const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
 
         vfxLayer
           .circle(cx(from.x), cy(from.y), radius)

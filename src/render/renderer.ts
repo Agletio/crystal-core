@@ -167,6 +167,23 @@ export interface PoisonDrop {
 const DROP_COUNT = 16;
 /** How far above the ground a droplet starts, in tiles. */
 const DROP_HEIGHT = 1.15;
+/** Fraction of the effect's life spent snapping open. */
+const OPEN = 0.16;
+
+/**
+ * The drawn radius, which snaps open and then holds at the true one.
+ *
+ * A circle that simply appears at full size and fades reads as an aura that
+ * belongs to whatever is standing there. Punching it open says something
+ * HAPPENED, at a moment, in a place — which is what a cast is. The hold is the
+ * important half: for most of its life the circle is exactly the radius the
+ * sim used, so it stays a statement about what got caught.
+ */
+export function poisonFieldRadius(radius: number, t: number): number {
+  if (t >= OPEN) return radius;
+  const p = t / OPEN;
+  return radius * (1 - (1 - p) * (1 - p));
+}
 
 export function poisonDrops(
   centreX: number,

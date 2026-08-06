@@ -13,7 +13,7 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, spriteColour, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, spriteColour, vfxColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -232,7 +232,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       if (fx.kind === 'blight_field') {
         // The second point IS the radius — see poisonDrops. Drawing anything
         // else here would be lying about what the sim poisoned.
-        const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
         const px = cx(v, from.x);
         const py = cy(v, from.y);
 

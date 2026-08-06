@@ -182,13 +182,20 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     // The field carries its true radius as a second point, so the renderer
     // draws exactly what the sim used — you can see what you did and did not
     // catch, and see it grow as Area of Effect goes up.
+    //
+    // It lives for half a cast, never a fixed time. At 0.85s against a 1.11s
+    // cadence the circle was on screen 77% of the time, which stops reading as
+    // "a spell landed here" and starts reading as an aura the caster is
+    // wearing — and any cast speed at all would have closed the gap entirely.
+    // Tying it to the user's own rate keeps the gap at every build speed.
+    const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
     use.vfx(
       use.skill.vfxKind ?? 'blight_field',
       [
         { x: use.primary.x, y: use.primary.y },
         { x: use.primary.x + radius, y: use.primary.y },
       ],
-      0.85
+      Math.min(0.75, cadence * 0.5)
     );
   },
 };
