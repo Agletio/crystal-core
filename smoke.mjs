@@ -81,23 +81,14 @@ $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
-assert($('bench').hidden === true, 'and drops you straight onto the map, not the bench');
-assert(
-  text('run-selected').includes('Fissure'),
-  'with the free map already chosen',
-  text('run-selected').slice(0, 60)
-);
+assert($('bench').hidden === true, 'and drops you straight at the Fissure, not the bench');
 assert($('run-launch').disabled === false, 'ready to enter immediately');
 
-// --- a new game starts with nothing ---------------------------------------
+// --- a new game starts with literally nothing ------------------------------
 // The app boots fresh on purpose: judging the loop from a stocked inventory
-// is judging the endgame at the start.
-assert(
-  dockItems().length === 2,
-  'a fresh game holds exactly two crystals',
-  String(dockItems().length)
-);
-assert(filled('#inv-gear').length === 0, 'and no equipment at all');
+// is judging the endgame at the start. No crystals either — two of them read
+// as "spend these now", and a new character who did that died to it.
+assert(dockItems().length === 0, 'a fresh game owns nothing at all', String(dockItems().length));
 assert(text('wallet').startsWith('0'), 'a fresh game has no fragments', text('wallet'));
 assert(
   all('#currencies button.curr:not(:disabled)').length === 0,
@@ -105,13 +96,22 @@ assert(
 );
 
 // The dock is a fixed shape whether or not you own anything, so it never
-// collapses and shoves the map around.
+// collapses and shoves the Fissure around.
 assert(all('#inv-crystal .slot--empty').length > 0, 'the dock keeps empty slots');
 
-// The free map is the anti-stuck guarantee: it must be runnable with an
-// empty inventory and must not be consumed.
-// Already selected by the first-run flow; clicking would toggle it off.
-assert($('run-launch').disabled === false, 'the Fissure is runnable with nothing');
+// One place, always open. An empty socket is a real descent, not a missing
+// choice — that's the anti-stuck guarantee, so Enter must never be disabled.
+assert($('run-socket') !== null, 'the Fissure has a socket');
+assert(
+  !$('run-socket').classList.contains('socket--full'),
+  'which starts empty'
+);
+assert(
+  /empty socket/i.test(text('run-selected')),
+  'and says so',
+  text('run-selected').slice(0, 60)
+);
+assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
 const beforeFissure = dockItems().length;
 $('run-launch').click();
 assert($('run-stagewrap').hidden === false, 'the Fissure starts');
@@ -310,39 +310,44 @@ assert(
 );
 $('bench-close').click();
 assert($('bench').hidden === true, 'the bench closes');
-assert($('run-menu').hidden === false, 'and the map is waiting underneath');
-assert($('run-stagewrap').hidden === true, 'no map until a run starts');
-
-// Deselect the Fissure to check the empty-handed state.
-$('run-free').click();
-assert(($('run-launch')).disabled === true, 'cannot launch without choosing');
-$('run-free').click();
-assert(($('run-launch')).disabled === false, 'the Fissure is always selectable');
+assert($('run-menu').hidden === false, 'and the Fissure is waiting underneath');
+assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
-// --- choosing a crystal ---------------------------------------------------
+// --- socketing a crystal --------------------------------------------------
 const runCrystal = filled('#inv-crystal')[0];
-assert(!!runCrystal, 'a crystal is selectable from the dock');
+assert(!!runCrystal, 'a crystal is socketable from the dock');
+assert(
+  /socket/i.test(named(runCrystal)),
+  'the dock offers to socket it',
+  named(runCrystal)
+);
 runCrystal.click();
-assert($('run-launch').disabled === false, 'launch enabled once chosen');
-assert(text('run-selected').includes('Crystal'), 'chosen map is described');
+assert($('run-socket').classList.contains('socket--full'), 'the socket fills');
+assert(text('run-selected').includes('Crystal'), 'and describes the crystal');
+
+// Taking it back out costs nothing — socketing is a reference, not a spend.
+$('run-socket').click();
+assert(!$('run-socket').classList.contains('socket--full'), 'the socket empties again');
+assert($('run-launch').disabled === false, 'and you can still descend without one');
+runCrystal.click();
 
 // Gear stays in the dock — it's always in the dock — but there's nothing to
 // do with a helmet here, so it must render inert rather than look clickable.
 assert(
   filled('#inv-gear').every((b) => b.disabled),
-  'gear is inert while choosing a map'
+  'gear is inert at the Fissure'
 );
 assert(
   filled('#inv-crystal').every((b) => !b.disabled),
   'crystals are not'
 );
 
-// --- launching consumes the crystal and shows the map ---------------------
+// --- entering consumes the socketed crystal -------------------------------
 const beforeLaunch = invItems().length;
 $('run-launch').click();
 
-assert($('run-stagewrap').hidden === false, 'map view appears');
+assert($('run-stagewrap').hidden === false, 'the descent begins');
 assert($('run-menu').hidden === true, 'menu hides while running');
 assert(
   invItems().length === beforeLaunch - 1,

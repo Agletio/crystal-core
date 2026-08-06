@@ -472,14 +472,14 @@ after a clear — so hiding it behind navigation would mean constantly flipping
 back to check what you have. Clicking an item does whatever the active screen
 registered; the dock itself has no opinion about what an item is for. When the
 bench is closed, gear is still *shown* but renders inert: there is nothing to
-do with a helmet on the map screen, and a live-looking button that does nothing
-is worse than a dim one.
+do with a helmet at the Fissure, and a live-looking button that does nothing is
+worse than a dim one.
 
 It's icons in slots, crystals left and equipment right, with the name and every
 modifier in the hover tooltip. Forty item names is a wall you read past; forty
 icons is something you scan. Slots pad out to a minimum so an empty dock still
 reads as a container rather than a blank strip, and a column deeper than two
-rows scrolls inside itself rather than pushing the map off screen.
+rows scrolls inside itself rather than pushing the Fissure off screen.
 
 **The bench selects in place.** `benchId` is a reference into the inventory,
 not a move. Taking the item out made it look like crafting had eaten it — the
@@ -496,16 +496,33 @@ size and a halo with tier, so a T6 reads as more valuable than a T1 without
 reading the label. SVG rather than canvas because they live in the DOM next to
 text and scale with it.
 
+### One place, not a list of them
+
+There is a single destination — **the Fissure** — and it is always open and
+always free. A crystal is not somewhere else to go: it's something you *socket*
+to empower what's already down there. That framing does two jobs at once. It
+makes the next action obvious (there is one button, Enter, and it is never
+disabled), and it makes "no crystals" a lean run rather than a dead end.
+
+An empty socket is a legitimate descent, thinned by `FREE_MAP.densityScale`.
+Socketing is a reference into the inventory, not a spend — you can pull the
+crystal back out — and the crystal is only consumed at the moment you enter.
+
+A new game therefore starts with **nothing at all**, not even a crystal. Two
+starting crystals read as "spend these now", and a brand-new character who
+socketed one into their first descent died to it. Crystals are what the first
+clear's fragments are *for*.
+
 The loop:
 
 ```
-fragments → buy a crystal → craft it on the bench → run it → fragments
+fragments → buy a crystal → craft it on the bench → socket it → fragments
 ```
 
 Two rules give it teeth:
 
-- **Running a crystal consumes it**, win or lose. It's the entry fee, and it's
-  what stops one good map being farmed forever.
+- **A socketed crystal is consumed**, win or lose. It's the stake, and it's
+  what stops one good crystal being farmed forever.
 - **Loot banks only on a clear.** A run carries what it finds in
   `RunState.loot` and hands it over at the exit; dying drops all of it. That's
   the entire reason the clear/fail distinction is worth anything.

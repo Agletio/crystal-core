@@ -15,7 +15,7 @@ import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initBench, openBench, closeBench, isBenchOpen } from './ui/bench';
-import { initRun, onRunFocused, refreshRunPanels, chooseFreeMap } from './ui/run';
+import { initRun, onRunFocused, refreshRunPanels } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, stopTutorial } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
@@ -53,7 +53,7 @@ function restart(mode: StartMode): void {
 /** After choosing a skill: straight to the Fissure, nothing else to do first. */
 function begin(): void {
   refreshRunPanels();
-  chooseFreeMap();
+  onRunFocused();
 }
 
 document.getElementById('open-bench')!.addEventListener('click', openBench);

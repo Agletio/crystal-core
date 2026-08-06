@@ -312,12 +312,29 @@
 
   .curr__stock { font-size: 10px; color: var(--citrine); }
 
-  /* --- chosen map ----------------------------------------------------- */
+  /* --- the socketed crystal ------------------------------------------- */
   /* Derived reward multipliers, shown right under a crystal's name. */
   .mults { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
   .mult { display: inline-flex; gap: 5px; align-items: baseline; background: var(--seam); padding: 3px 8px; font-size: 11px; }
   .mult__k { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
   .mult__v { color: var(--citrine); font-weight: 600; }
+
+  /* --- the Fissure and its socket ------------------------------------- */
+  .fissure { font-size: 12px; color: var(--dust); margin: 0 0 14px; }
+
+  /* Deliberately looks like a slot waiting to be filled, not a button. */
+  .socket {
+    display: block; width: 100%; text-align: left;
+    padding: 14px; background: var(--void);
+    border: 1px dashed var(--seam-lit);
+  }
+  .socket:hover { border-color: var(--amethyst); }
+  .socket--full { border-style: solid; border-color: var(--amethyst); background: var(--matrix); }
+  .socket__hint { font-size: 11px; color: var(--dust); font-style: italic; }
+  .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
+
+  .mini--go { border-color: var(--amethyst); color: var(--chalk); }
+  .mini--go:hover:not(:disabled) { background: var(--seam); }
 
   .chosen__name { font-family: var(--display); font-size: 15px; }
   .chosen__meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
@@ -495,16 +512,26 @@
   <div id="view-run">
     <div id="run-menu">
       <div class="cols">
+        <!-- One place, always open. A crystal doesn't take you somewhere
+             else, it empowers what's already down there — so the socket is
+             optional and Enter is never disabled. -->
         <div class="panel">
-          <p class="panel__title">Choose a map</p>
-          <div id="run-selected"></div>
+          <p class="panel__title">The Fissure</p>
+          <p class="fissure">
+            A thin place in the rock. Always open, always free — and it pays
+            like it. Socket a crystal to empower what is waiting down there.
+          </p>
+
+          <button class="socket" id="run-socket">
+            <div id="run-selected"></div>
+          </button>
+
           <div class="runbar" style="margin-top:16px">
-            <button class="mini" id="run-launch" disabled>Enter</button>
-            <button class="chip" id="run-free" title="Always open, costs nothing, pays little">The Fissure (free)</button>
+            <button class="mini mini--go" id="run-launch">Enter the Fissure</button>
           </div>
           <p class="runsrc">
-            Clears the whole map, then something waits at the exit.
-            The crystal is consumed, win or lose.
+            You clear the whole Fissure, then something waits at the exit.
+            A socketed crystal is consumed, win or lose.
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 /**
  * The guided opening.
  *
- * Starts once the first map is cleared, and walks through the loop the game
+ * Starts once the Fissure is first cleared, and walks through the loop the game
  * is actually about: buy a currency, craft your weapon with it, wear the
  * result, go again. Each step highlights the one thing to click and says why.
  *
@@ -69,7 +69,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'return',
-    text: 'That is the loop. Close the Bench and run it again — you can afford a crystal now.',
+    text: 'That is the loop. Close the Bench — you can afford a crystal now, and it goes in the Fissure.',
     target: 'bench-close',
     done: (_g, view) => view === 'run',
   },

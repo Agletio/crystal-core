@@ -1299,7 +1299,15 @@ export interface StartPreset {
  * progress through.
  */
 export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
-  fresh: { fragments: 0, currency: {}, crystals: [1, 1], gear: [], equipped: false },
+  /**
+   * Nothing at all — not even a crystal.
+   *
+   * Two starting crystals read as "use these now", and a brand-new character
+   * socketing one into their first descent died to it. The Fissure is always
+   * open and always free; crystals are what you spend the first clear's
+   * fragments ON, once you have something to spend.
+   */
+  fresh: { fragments: 0, currency: {}, crystals: [], gear: [], equipped: false },
   dev: {
     fragments: 260,
     currency: {},

@@ -113,7 +113,7 @@ export function buildReport(game: GameState, run: RunState): RunReport {
   return {
     status: cleared ? 'cleared' : 'died',
     cleared,
-    headline: cleared ? 'Map cleared' : 'You died',
+    headline: cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
     items: cleared ? [...run.loot.items, ...gifts] : [],

@@ -1,12 +1,18 @@
 /**
- * The run view, in three states: choose a map, watch it, read the result.
+ * The Fissure, in three states: prepare, descend, read the result.
+ *
+ * There is only ever one place you go. A crystal isn't a destination, it's
+ * something you socket to empower what's already down there — which is why
+ * Enter is never disabled and an empty socket is a legitimate run rather than
+ * an error state. That's the whole anti-stuck guarantee: no crystals is a
+ * setback, never a dead end.
  *
  * Owns real time and nothing else. The sim advances in fixed TICK steps and
- * the renderer draws whatever state it finds, so pausing, speeding up, or a
- * janky frame can't change the outcome of a run — only how fast you watch it.
+ * the renderer draws whatever state it finds, so pausing or a janky frame
+ * can't change the outcome of a run — only how fast you watch it.
  *
- * Running a crystal CONSUMES it, win or lose. That's what gives fragments a
- * purpose and stops a single good map being farmed forever.
+ * A socketed crystal is CONSUMED, win or lose. That's what gives fragments a
+ * purpose and stops one good crystal being farmed forever.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
@@ -50,9 +56,8 @@ let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
 let zoom = 1;
+/** What's in the socket. Null is a plain, unempowered descent. */
 let chosen: Item | null = null;
-/** The free map is picked separately — it isn't an inventory item. */
-let freeChosen = false;
 // ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
@@ -94,10 +99,9 @@ function runHandler() {
     actionFor: (item: Item) => {
       if (phase !== 'menu' || item.kind !== 'crystal') return null;
       return {
-        label: 'Choose map',
+        label: 'Socket crystal',
         run: () => {
           chosen = item;
-          freeChosen = false;
           renderMenu();
         },
       };
@@ -114,32 +118,24 @@ function renderMenu(): void {
   const host = $('run-selected');
   host.replaceChildren();
 
-  const launch = $('run-launch') as HTMLButtonElement;
-  const free = $('run-free') as HTMLButtonElement;
-  free.classList.toggle('chip--on', freeChosen);
+  const socket = $('run-socket');
 
+  // A crystal can leave the inventory behind our back — spent on the bench,
+  // or wiped by a restart. Socketing is a reference, not a reservation.
   if (chosen && !game.inventory.includes(chosen)) chosen = null;
-
-  // The free map is always an option, so "no crystals" is never a dead end.
-  if (freeChosen) {
-    host.append(el('div', 'chosen__name', FREE_MAP.name));
-    host.append(el('div', 'chosen__meta', `tier ${FREE_MAP.tier} · free · not consumed`));
-    host.append(el('p', 'empty', FREE_MAP.description));
-    launch.disabled = false;
-    return;
-  }
+  socket.classList.toggle('socket--full', chosen !== null);
 
   if (!chosen) {
+    host.append(el('div', 'socket__empty', 'Empty socket'));
     host.append(
       el(
         'p',
-        'empty',
+        'socket__hint',
         crystalsIn(game).length === 0
-          ? 'No crystals. Run the Fissure for fragments, or buy one on the bench.'
-          : 'Pick a crystal from your inventory below, or run the Fissure.'
+          ? 'No crystals yet. Descend as you are — the Fissure pays little, but it pays.'
+          : 'Click a crystal in the dock below to empower the Fissure.'
       )
     );
-    launch.disabled = true;
     return;
   }
 
@@ -156,12 +152,12 @@ function renderMenu(): void {
   host.append(multipliers);
 
   if (chosen.mods.length === 0) {
-    host.append(el('p', 'empty', 'Unmodified — craft it on the bench for a richer map.'));
+    host.append(el('p', 'empty', 'Unmodified — craft it on the bench for a richer descent.'));
   }
   for (const mod of chosen.mods) {
     host.append(el('div', 'chosen__mod', describeMod(mod)));
   }
-  launch.disabled = false;
+  host.append(el('p', 'socket__hint', 'Click to take it back out.'));
 }
 
 // ---------------------------------------------------------------------------
@@ -169,15 +165,14 @@ function renderMenu(): void {
 // ---------------------------------------------------------------------------
 
 function launch(): void {
-  // The Fissure is generated fresh each time and never taken from you —
-  // that's what makes running out of crystals a setback rather than an end.
-  const crystal = freeChosen ? makeCrystal(FREE_MAP.tier) : chosen;
-  if (!crystal) return;
+  // An empty socket is a real descent, not a missing choice: the unempowered
+  // Fissure is generated fresh each time and never taken from you, which is
+  // what makes running out of crystals a setback rather than an end.
+  const empowered = chosen !== null;
+  const crystal = chosen ?? makeCrystal(FREE_MAP.tier);
 
-  if (!freeChosen) {
-    // A real crystal is consumed win or lose. It's the entry fee.
-    removeItem(game, crystal);
-  }
+  // A socketed crystal is consumed win or lose. It's the stake.
+  if (empowered) removeItem(game, crystal);
   chosen = null;
 
   seed = Math.floor(Math.random() * 1e9);
@@ -185,7 +180,7 @@ function launch(): void {
     crystal,
     game.character,
     new Rng(seed),
-    freeChosen ? { densityScale: FREE_MAP.densityScale } : {}
+    empowered ? {} : { densityScale: FREE_MAP.densityScale }
   );
 
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
@@ -353,7 +348,7 @@ function renderResults(report: RunReport, run: RunState): void {
     );
   }
 
-  const again = el('button', 'mini', 'Choose another map') as HTMLButtonElement;
+  const again = el('button', 'mini', 'Back to the Fissure') as HTMLButtonElement;
   again.onclick = () => {
     sim = null;
     setPhase('menu');
@@ -471,9 +466,11 @@ export function initRun(state: GameState): void {
 
   ($('run-launch') as HTMLButtonElement).onclick = () => launch();
 
-  ($('run-free') as HTMLButtonElement).onclick = () => {
-    freeChosen = !freeChosen;
-    if (freeChosen) chosen = null;
+  // Clicking the socket empties it. Socketing is a reference into the
+  // inventory, so taking it back out costs nothing.
+  ($('run-socket') as HTMLButtonElement).onclick = () => {
+    if (!chosen) return;
+    chosen = null;
     renderMenu();
     renderInventory();
   };
@@ -518,13 +515,6 @@ export function initRun(state: GameState): void {
   requestAnimationFrame(frame);
 }
 
-/** Preselect the free map — what a new player is dropped straight into. */
-export function chooseFreeMap(): void {
-  freeChosen = true;
-  chosen = null;
-  renderMenu();
-  renderInventory();
-}
 
 /** Re-read derived stats — called after equipment changes on the sheet. */
 export function refreshRunPanels(): void {
