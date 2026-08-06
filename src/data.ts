@@ -1244,8 +1244,7 @@ export const LOOT = {
 export const FISSURE = {
   tier: 1,
   name: 'The Fissure',
-  description:
-    'A thin place in the rock. Costs nothing, pays little, always open — socket a crystal to make it worth the trip.',
+  description: 'A thin place in the rock. Costs nothing, pays little, always open.',
   /**
    * Thinner than a tier 1 crystal makes it.
    *
