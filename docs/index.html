@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- viewport-fit=cover so the page owns the full screen in standalone;
+     the safe-area insets below are what keep content off the notch and the
+     home indicator once the browser chrome is gone. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Crystal Core</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -47,7 +50,16 @@
      rather than a document. */
   html, body {
     margin: 0;
+    /*
+     * dvh, not vh. On mobile Safari `vh` is the height with the browser
+     * chrome COLLAPSED, so in a browser it over-states the space that
+     * actually exists — the layout is measured against a screen taller than
+     * the one you are holding. dvh tracks the real visible height, which also
+     * means a browser tab and an installed full-screen app lay out the same:
+     * tuning done in one carries over to the other instead of being redone.
+     */
     height: 100%;
+    height: 100dvh;
     overflow: hidden;
     background: var(--void);
     color: var(--chalk);
@@ -73,6 +85,12 @@
   .wrap {
     position: relative; z-index: 1;
     max-width: 1180px; margin: 0 auto; padding: 14px 20px 16px;
+    /* Longhands after the shorthand, so they win. max() means the insets only
+       ever ADD room — on a device without a notch they resolve to 0 and the
+       padding above stands. */
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
     height: 100%;
     display: flex; flex-direction: column; gap: 12px;
   }
@@ -300,7 +318,12 @@
      columns and shrinks its slots, and the reclaimed height goes to the view.
      Everything here is height, not width — the layout already fits across. */
   @media (max-width: 430px) {
-    .wrap { padding: 10px 12px 12px; gap: 8px; }
+    .wrap {
+      padding: 10px 12px 12px; gap: 8px;
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
     .dock { padding: 8px 10px 10px; }
     .dock__cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
     .slots { grid-template-columns: repeat(auto-fill, 34px); gap: 4px; max-height: 76px; }
@@ -390,7 +413,7 @@
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(20,17,28,.82); padding: 20px; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
-  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
+  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
   .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--seam); }
   .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--amethyst); }
   .modal__body { padding: 16px 18px; overflow-y: auto; }
@@ -427,6 +450,20 @@
   .guide__text { display: block; font-size: 14px; line-height: 1.5; }
   .guide__hint { display: block; font-size: 11px; color: var(--dust); font-style: italic; margin-top: 8px; }
   .guide__hint:empty { display: none; }
+
+  /* Short screens, by height rather than by device. A 667px phone cannot fit
+     the header, a readable map and a full-size card at once, and the card is
+     the one of the three that can afford to shrink. Keyed on available height
+     so it covers every short screen there will ever be, rather than the one
+     that happened to be tested. */
+  @media (max-height: 720px) {
+    .guide { padding: 9px 12px 8px; }
+    .guide__step { margin-bottom: 3px; }
+    .guide__text { font-size: 12.5px; line-height: 1.4; }
+    /* The aside is the first thing to go: it is always secondary to the
+       instruction above it. */
+    .guide__hint { display: none; }
+  }
 
   /* Shown when the thing to click is scrolled out of its panel. The card
      stays put and points the way rather than following the target off the
@@ -669,7 +706,7 @@
        crystals on the left because they're what you spend to play, gear on
        the right. Icons only — the name and the modifiers are a hover away,
        and reading forty names was never the point of a stash. -->
-  <div class="panel dock">
+  <div class="panel dock" id="dock">
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
       <div class="wallet" id="wallet"></div>

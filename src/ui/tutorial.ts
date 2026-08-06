@@ -230,6 +230,47 @@ function outOfView(target: Element): 'up' | 'down' | null {
 }
 
 /**
+ * Width below which the layout is stacked rather than columned.
+ *
+ * Matches the run view's own stacking rule, because that is the thing that
+ * puts a side-column target below the fold in the first place.
+ */
+const STACKED = 900;
+
+/**
+ * Parks the card over the dock, for the case where following the target would
+ * mean covering the map.
+ *
+ * Only when the layout is stacked AND the target is off-screen — a card that
+ * can still sit next to the thing it is talking about should always do that.
+ * Returns whether it took over the placement.
+ */
+function parkOverDock(card: HTMLElement, arrow: HTMLElement, away: 'up' | 'down' | null): boolean {
+  if (!away || globalThis.innerWidth > STACKED) return false;
+  const dock = document.getElementById('dock');
+  if (!dock) return false;
+
+  const box = dock.getBoundingClientRect();
+  const size = card.getBoundingClientRect();
+
+  // Clearing the map beats centring on the dock. On a short screen the dock
+  // sits high enough that a dock-centred card still clips the canvas, and the
+  // whole point of moving was to stop covering the fight.
+  const map = document.getElementById('run-canvas') ?? document.getElementById('run-stage');
+  const floor = map ? map.getBoundingClientRect().bottom + 8 : 0;
+
+  const top = Math.min(
+    Math.max(8, floor, box.top + (box.height - size.height) / 2),
+    globalThis.innerHeight - size.height - 8
+  );
+  card.style.top = `${Math.round(top)}px`;
+  card.style.left = `${Math.round(Math.max(8, (globalThis.innerWidth - size.width) / 2))}px`;
+  // Nothing to point at: the card is deliberately not beside its target.
+  arrow.hidden = true;
+  return true;
+}
+
+/**
  * Puts the card beside its target: under it if there's room, over it if not,
  * and clamped to the window either way. Runs every tick, because the target
  * moves — panels re-render, popups open, the dock reflows.
@@ -247,6 +288,13 @@ function place(target: Element): void {
   const anchor = away ? (scroller(target) ?? target) : target;
   const box = anchor.getBoundingClientRect();
   showScrollHint(away);
+
+  // On a phone the columns stack, so a target in the side column is below the
+  // fold and the card falls back to sitting INSIDE the scroller — which on a
+  // stacked layout is the map, so the card lands squarely on the fight. Park
+  // it over the dock instead: the step has nothing to click, and this early
+  // the dock is empty anyway, so it is the one region worth covering.
+  if (parkOverDock(card, arrow, away)) return;
 
   // Below if it fits, inside if the target is a region big enough to hold it,
   // above otherwise. The middle case is what keeps the card off the health bar
