@@ -1,0 +1,19 @@
+# Cloudflare Workers config — how the live site is published.
+#
+# There is no Worker script here, only static assets. docs/ is the entire
+# site: one hand-written index.html and the committed bundle beside it. That
+# is also why there is no build step below — docs/app.js is checked in
+# precisely so a host can serve it without running anything.
+#
+# This exists because GitHub Pages puts its deploy behind the same runner pool
+# as every other Actions job. On a day when those runners were starved, a
+# static site that needed no build sat undeployed for hours. Cloudflare builds
+# on its own machines, so a queue on GitHub can no longer stand between a
+# merge and playing the game. GitHub still runs the checks, where waiting is
+# harmless.
+name = "crystal-core"
+compatibility_date = "2026-08-06"
+
+# Serve docs/ directly. index.html is the entry point; app.js sits next to it
+# and is fetched relatively, so no routing rules are needed.
+assets = { directory = "./docs" }
