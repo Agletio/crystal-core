@@ -66,6 +66,12 @@ const $ = (id) => document.getElementById(id);
 const text = (id) => ($(id)?.textContent ?? '').trim();
 const all = (sel) => [...document.querySelectorAll(sel)];
 
+// The dock is icons in slots, so an item is identified by its aria-label —
+// which is what a screen reader gets too, and the only name in the markup.
+const filled = (sel) => all(`${sel} .slot:not(.slot--empty)`);
+const dockItems = () => filled('.dock');
+const named = (btn) => btn.getAttribute('aria-label') ?? '';
+
 // --- first run asks one question, then plays -------------------------------
 assert($('welcome').hidden === false, 'a new game asks you to choose a skill');
 assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
@@ -75,7 +81,7 @@ $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
-assert($('view-run').hidden === false, 'and drops you straight into the map view');
+assert($('bench').hidden === true, 'and drops you straight onto the map, not the bench');
 assert(
   text('run-selected').includes('Fissure'),
   'with the free map already chosen',
@@ -87,31 +93,34 @@ assert($('run-launch').disabled === false, 'ready to enter immediately');
 // The app boots fresh on purpose: judging the loop from a stocked inventory
 // is judging the endgame at the start.
 assert(
-  all('#inventory .invitem').length === 2,
+  dockItems().length === 2,
   'a fresh game holds exactly two crystals',
-  String(all('#inventory .invitem').length)
+  String(dockItems().length)
 );
+assert(filled('#inv-gear').length === 0, 'and no equipment at all');
 assert(text('wallet').startsWith('0'), 'a fresh game has no fragments', text('wallet'));
 assert(
   all('#currencies button.curr:not(:disabled)').length === 0,
   'nothing is craftable with an empty wallet'
 );
 
+// The dock is a fixed shape whether or not you own anything, so it never
+// collapses and shoves the map around.
+assert(all('#inv-crystal .slot--empty').length > 0, 'the dock keeps empty slots');
+
 // The free map is the anti-stuck guarantee: it must be runnable with an
 // empty inventory and must not be consumed.
-$('tab-run').click();
 // Already selected by the first-run flow; clicking would toggle it off.
 assert($('run-launch').disabled === false, 'the Fissure is runnable with nothing');
-const beforeFissure = all('#inventory .invitem').length;
+const beforeFissure = dockItems().length;
 $('run-launch').click();
 assert($('run-stagewrap').hidden === false, 'the Fissure starts');
 assert(
-  all('#inventory .invitem').length === beforeFissure,
+  dockItems().length === beforeFissure,
   'the Fissure consumes nothing',
-  `${all('#inventory .invitem').length} vs ${beforeFissure}`
+  `${dockItems().length} vs ${beforeFissure}`
 );
 $('run-abandon').click();
-$('tab-bench').click();
 
 // --- the guided opening ----------------------------------------------------
 // Only the plumbing is checked here: driving a real clear would take the full
@@ -126,35 +135,37 @@ assert(
 );
 
 $('dev-kit').click();
-assert(
-  all('#inventory .invitem').length > 2,
-  'the dev kit stocks the inventory',
-  String(all('#inventory .invitem').length)
-);
+assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
+assert($('bench').hidden === false, 'a stocked game opens on the bench');
 
 // --- duplicate ids would silently break getElementById --------------------
 const ids = all('[id]').map((n) => n.id);
 const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
 assert(dupes.length === 0, 'no duplicate element ids', dupes.join(', '));
 
-// --- inventory is permanent -----------------------------------------------
-const invItems = () => all('#inventory .invitem');
-assert(invItems().length >= 4, 'inventory populated', String(invItems().length));
+// --- the dock is permanent -------------------------------------------------
+const invItems = dockItems;
+assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 
 // Fragments only up top; every other currency shows its count on its own
-// button in the bench sidebar, so listing them here was the same twice.
+// button in the bench, so listing them here was the same information twice.
 assert(all('#wallet .coin').length === 1, 'wallet shows fragments only', text('wallet'));
 assert(text('wallet').includes('fragments'), 'fragments are held', text('wallet'));
-assert(all('#inventory .invitem .icon').length === invItems().length, 'every item has an icon');
+assert(all('.dock .slot .icon').length === invItems().length, 'every item has an icon');
 
-// Bench splits crystals from equipment; the run screen doesn't.
-const sectionLabels = () =>
-  all('#inventory .invsection__label').map((n) => n.textContent.trim());
+// Crystals left, equipment right — always, on every screen.
+assert(filled('#inv-crystal').length > 0, 'crystals have their own column');
+assert(filled('#inv-gear').length > 0, 'equipment has its own column');
 assert(
-  sectionLabels().join('|') === 'Crystals|Equipment',
-  'bench splits crystals and equipment',
-  sectionLabels().join('|')
+  filled('#inv-crystal').every((b) => b.classList.contains('slot--crystal')),
+  'the crystal column holds only crystals'
 );
+assert(
+  filled('#inv-gear').every((b) => b.classList.contains('slot--gear')),
+  'the equipment column holds only equipment'
+);
+// Icons only: the name and every modifier live in the tooltip.
+assert(text('inv-crystal') === '', 'the dock shows icons, not names', text('inv-crystal'));
 
 // --- bench starts empty ---------------------------------------------------
 assert($('bench-empty').hidden === false, 'bench starts empty');
@@ -162,10 +173,8 @@ assert($('bench-item').hidden === true, 'no item panel until something is placed
 assert($('bench-return').disabled === true, 'return disabled with an empty bench');
 
 // --- putting a crystal on the bench ---------------------------------------
-const crystalChip = invItems().find((b) =>
-  (b.querySelector('.invitem__name')?.textContent ?? '').includes('Crystal')
-);
-assert(!!crystalChip, 'a crystal is in the inventory');
+const crystalChip = filled('#inv-crystal')[0];
+assert(!!crystalChip, 'a crystal is in the dock');
 
 const inventoryBefore = invItems().length;
 crystalChip.click();
@@ -181,9 +190,9 @@ assert(
   `${invItems().length} vs ${inventoryBefore}`
 );
 assert(
-  all('#inventory .invitem--on').length === 1,
+  all('.dock .slot--on').length === 1,
   'the selected item is highlighted',
-  String(all('#inventory .invitem--on').length)
+  String(all('.dock .slot--on').length)
 );
 assert($('bench-return').disabled === false, 'return is now available');
 assert($('sockets').querySelectorAll('.facet').length === 3, 'crystal shows 3 facets');
@@ -241,9 +250,9 @@ assert(
 // The crafted item keeps its id, so it stays selected in place rather than
 // jumping to the end of the list.
 assert(
-  all('#inventory .invitem--on').length === 1,
+  all('.dock .slot--on').length === 1,
   'still selected after crafting',
-  String(all('#inventory .invitem--on').length)
+  String(all('.dock .slot--on').length)
 );
 assert(
   invItems().length === inventoryBefore,
@@ -256,12 +265,10 @@ assert(
 // on `mods`, so nothing — including Shard of Ruin, which strips the lot —
 // should be able to reach it.
 $('bench-return').click();
-const weaponChip = invItems().find((b) =>
-  /Wand|Sword|Shiv|Stiletto|Fang|Cudgel|Maul/.test(
-    b.querySelector('.invitem__name')?.textContent ?? ''
-  )
+const weaponChip = filled('#inv-gear').find((b) =>
+  /Wand|Sword|Shiv|Stiletto|Fang|Cudgel|Maul/.test(named(b))
 );
-assert(!!weaponChip, 'a weapon base is in the inventory');
+assert(!!weaponChip, 'a weapon base is in the dock');
 weaponChip.click();
 
 const implicitRows = () => all('#modlist .mod--implicit');
@@ -284,8 +291,8 @@ crystalChip.click();
 // --- closing it ---------------------------------------------------------
 $('bench-return').click();
 assert($('bench-empty').hidden === false, 'bench is empty again');
-assert(invItems().length === inventoryBefore, 'item is still in the inventory');
-assert(all('#inventory .invitem--on').length === 0, 'nothing highlighted after closing');
+assert(invItems().length === inventoryBefore, 'item is still in the dock');
+assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
 // --- workshop buys against fragments --------------------------------------
 const buys = all('#workshop button.buy');
@@ -293,10 +300,17 @@ assert(buys.length >= 6, 'workshop lists recipes', String(buys.length));
 const affordable = buys.find((b) => !b.disabled);
 assert(!!affordable, 'at least one recipe is affordable');
 
-// --- run view: menu first, no map ----------------------------------------
-$('tab-run').click();
-assert($('view-run').hidden === false, 'run view opens');
-assert($('run-menu').hidden === false, 'run starts on the map-choosing menu');
+// --- the map is the floor, the bench is a popup over it -------------------
+// The dock must stay reachable underneath every popup: it's what the bench
+// works on, and covering it would break the only way to load the bench.
+assert($('bench').hidden === false, 'the bench is a popup, not a page');
+assert(
+  !$('bench').contains($('inv-crystal')),
+  'the dock lives outside every popup'
+);
+$('bench-close').click();
+assert($('bench').hidden === true, 'the bench closes');
+assert($('run-menu').hidden === false, 'and the map is waiting underneath');
 assert($('run-stagewrap').hidden === true, 'no map until a run starts');
 
 // Deselect the Fissure to check the empty-handed state.
@@ -307,22 +321,21 @@ assert(($('run-launch')).disabled === false, 'the Fissure is always selectable')
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
 // --- choosing a crystal ---------------------------------------------------
-const runCrystal = invItems().find((b) =>
-  (b.querySelector('.invitem__name')?.textContent ?? '').includes('Crystal')
-);
-assert(!!runCrystal, 'a crystal is selectable on the run screen');
+const runCrystal = filled('#inv-crystal')[0];
+assert(!!runCrystal, 'a crystal is selectable from the dock');
 runCrystal.click();
 assert($('run-launch').disabled === false, 'launch enabled once chosen');
 assert(text('run-selected').includes('Crystal'), 'chosen map is described');
 
-// Gear isn't shown at all here — it's noise you'd look past every time.
-const gearOnRun = invItems().filter((b) =>
-  /Vest|Band/.test(b.querySelector('.invitem__name')?.textContent ?? '')
-);
-assert(gearOnRun.length === 0, 'gear is hidden on the run screen', String(gearOnRun.length));
+// Gear stays in the dock — it's always in the dock — but there's nothing to
+// do with a helmet here, so it must render inert rather than look clickable.
 assert(
-  all('#inventory .invsection__label').length === 0,
-  'run inventory is a single flat list'
+  filled('#inv-gear').every((b) => b.disabled),
+  'gear is inert while choosing a map'
+);
+assert(
+  filled('#inv-crystal').every((b) => !b.disabled),
+  'crystals are not'
 );
 
 // --- launching consumes the crystal and shows the map ---------------------
@@ -358,17 +371,22 @@ assert($('run-zoom-out').disabled === false, 'zoom out enabled once zoomed');
 $('run-zoom-fit').click();
 assert(text('run-zoom-label') === '1.0×', 'fit returns to the whole map');
 
-// The frame only freezes while a map is on screen. Tabbing away mid-run left
-// it frozen once, which put the bench's own items out of reach.
+// The frame only freezes while a map is on screen, and the map keeps running
+// underneath the bench rather than being left for.
 const viewport = document.querySelector('.viewport');
 assert(viewport.classList.contains('viewport--locked'), 'a running map fills the frame');
-$('tab-bench').click();
+$('open-bench').click();
+assert($('bench').hidden === false, 'the bench opens over a live run');
+assert($('run-stagewrap').hidden === false, 'and the run is still going underneath');
 assert(
-  !viewport.classList.contains('viewport--locked'),
-  'the bench scrolls even with a run in progress'
+  filled('#inv-gear').every((b) => !b.disabled),
+  'the dock answers to the bench while it is open'
 );
-$('tab-run').click();
-assert(viewport.classList.contains('viewport--locked'), 'and the map takes it back');
+$('bench-close').click();
+assert(
+  filled('#inv-gear').every((b) => b.disabled),
+  'and to the map again once it closes'
+);
 
 // --- abandoning returns to the menu ---------------------------------------
 $('run-abandon').click();
@@ -378,9 +396,6 @@ assert(
 );
 assert($('run-menu').hidden === false, 'abandon returns to the menu');
 assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
-
-$('tab-bench').click();
-assert($('view-bench').hidden === false, 'switching back restores the bench');
 
 // --- character sheet ------------------------------------------------------
 assert($('sheet').hidden === true, 'character sheet starts closed');

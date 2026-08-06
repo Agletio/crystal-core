@@ -34,7 +34,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'to_bench',
     text: 'Good. Open the Bench — everything you found is spent there.',
-    target: 'tab-bench',
+    target: 'open-bench',
     done: (_g, view) => view === 'bench',
   },
   {
@@ -45,8 +45,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'select_weapon',
-    text: 'Click your Ash Wand in the inventory to put it on the bench.',
-    target: 'inventory',
+    text: 'Click your Ash Wand in the dock below to put it on the bench.',
+    target: 'inv-gear',
     done: (g) => benchItem(g)?.kind === 'gear',
   },
   {
@@ -69,8 +69,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'return',
-    text: 'That is the loop. Back to Fracture and run it again — you can afford a crystal now.',
-    target: 'tab-run',
+    text: 'That is the loop. Close the Bench and run it again — you can afford a crystal now.',
+    target: 'bench-close',
     done: (_g, view) => view === 'run',
   },
 ];

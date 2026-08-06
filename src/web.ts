@@ -1,17 +1,21 @@
 /**
- * Browser entry point. Owns the game state and wires the views to it.
+ * Browser entry point. Owns the game state and wires the screens to it.
  *
- * Two views behind tabs, one permanent inventory, and three modals. The
- * inventory sits outside the view switcher because every screen acts on it;
- * the character sheet, skills and history are modals because they're things
- * you open, read, and close — and all three need to be reachable from either
- * tab.
+ * One screen and four popups. The map is the floor — it's where the game
+ * happens and the thing you come back to after everything else — so it isn't
+ * behind a tab at all. The bench, the character sheet, skills and history are
+ * things you open, use, and close over the top of it, and a run keeps
+ * advancing underneath while you do.
+ *
+ * The inventory dock sits below all of it, uncovered by every popup, because
+ * the bench works ON the dock: covering it with the thing that needs it would
+ * be the one mistake this layout can't afford.
  */
 import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
-import { initBench, onBenchShown } from './ui/bench';
-import { initRun, onRunShown, refreshRunPanels, chooseFreeMap, syncViewportLock } from './ui/run';
+import { initBench, openBench, closeBench, isBenchOpen } from './ui/bench';
+import { initRun, onRunFocused, refreshRunPanels, chooseFreeMap } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, stopTutorial } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
@@ -25,30 +29,9 @@ import {
   note,
 } from './ui/history';
 
-type ViewName = 'bench' | 'run';
-
-const VIEWS: ViewName[] = ['bench', 'run'];
-
 // Fresh by default. Judging whether the loop is engaging from a stocked
 // inventory is judging the endgame at the start.
 const game = createGame('fresh');
-let current: ViewName = 'bench';
-
-function show(view: ViewName): void {
-  for (const name of VIEWS) {
-    const panel = document.getElementById(`view-${name}`)!;
-    const tab = document.getElementById(`tab-${name}`)!;
-    const active = name === view;
-    panel.hidden = !active;
-    tab.classList.toggle('tab--on', active);
-    tab.setAttribute('aria-selected', String(active));
-  }
-  current = view;
-  if (view === 'run') onRunShown();
-  else onBenchShown();
-  // Only the run view freezes the frame, and only while a map is on it.
-  syncViewportLock();
-}
 
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
@@ -57,21 +40,23 @@ function restart(mode: StartMode): void {
   clearHistory();
   note(mode === 'fresh' ? 'New game — two crystals and nothing else.' : 'Dev kit granted.');
   refreshRunPanels();
-  show(mode === 'fresh' ? 'run' : current);
+  // Same rule as booting: a stocked game has something to spend, a fresh one
+  // has a map to run.
+  if (mode === 'dev') openBench();
+  else {
+    closeBench();
+    onRunFocused();
+  }
   maybeShowWelcome();
 }
 
 /** After choosing a skill: straight to the Fissure, nothing else to do first. */
 function begin(): void {
   refreshRunPanels();
-  show('run');
   chooseFreeMap();
 }
 
-for (const name of VIEWS) {
-  document.getElementById(`tab-${name}`)!.addEventListener('click', () => show(name));
-}
-
+document.getElementById('open-bench')!.addEventListener('click', openBench);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
@@ -84,20 +69,40 @@ globalThis.addEventListener('keydown', (event) => {
   if (isSkillsOpen()) closeSkills();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
+  else if (isBenchOpen()) closeBench();
 });
+
+/**
+ * Popups stop above the dock, and the dock's height depends on what's in it.
+ * Measured rather than guessed: a hardcoded number would be wrong the first
+ * time the wallet wrapped to two lines.
+ */
+const dock = document.querySelector('.dock') as HTMLElement;
+function measureDock(): void {
+  // Distance from the dock's top edge to the bottom of the window, not the
+  // dock's own height — the shell's padding sits below it, and a popup that
+  // stopped short by exactly that much would still clip the top row of slots.
+  const gap = globalThis.innerHeight - dock.getBoundingClientRect().top;
+  document.documentElement.style.setProperty('--dock-h', `${Math.max(0, Math.round(gap))}px`);
+}
+// ResizeObserver catches the dock growing a row; the resize listener covers
+// environments without one, which includes the headless smoke test.
+if (typeof ResizeObserver === 'function') new ResizeObserver(measureDock).observe(dock);
+globalThis.addEventListener('resize', measureDock);
+measureDock();
 
 initInventory(game);
 initHistory();
-// Equipping gear or spending a tree point changes derived stats, so the run
-// view's readouts have to re-read after either.
+// Equipping gear or spending a tree point changes derived stats, so the map
+// screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
-initBench(game);
+initBench(game, onRunFocused);
 initRun(game);
-initTutorial(game, () => current);
+initTutorial(game, () => (isBenchOpen() ? 'bench' : 'run'));
 
-// A new player lands on the Fissure with a skill chosen; a stocked one lands
-// on the bench, which is where a returning player wants to be.
-if (game.onboarded) show('bench');
-else show('run');
+// A stocked game opens the bench, which is where a returning player wants to
+// be; a new one has nothing to spend and lands on the map.
+if (game.onboarded) openBench();
+else onRunFocused();
 initWelcome(game, begin);

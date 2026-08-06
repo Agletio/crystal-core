@@ -93,7 +93,7 @@ slots; gear runs 5 for 2 on each side.
 | `ui/icons.ts` | Procedural inline-SVG item icons. |
 | `game/state.ts` | The whole game in one object. Inventory, wallet, character, bench. |
 | `game/report.ts` | Banks a finished run and describes it for the results overlay. |
-| `ui/inventory.ts` | The permanent inventory strip. |
+| `ui/inventory.ts` | The permanent inventory dock. |
 | `ui/` | The two views: crafting bench and run. |
 
 ## The sim
@@ -411,15 +411,33 @@ The page never scrolls. `.wrap` fills the viewport, and only the active view
 grows — it scrolls inside itself, so the frame stays put like an application
 window rather than a document.
 
-Two views behind tabs, one permanent inventory, and two modals:
+**One screen, four popups, and a dock.** The map is the floor: it's where the
+game happens and the thing you return to after everything else, so it isn't
+behind navigation at all. Two tab bars — Bench/Fracture in one place,
+Character/Skills/History in another — were one set of destinations pretending
+to be two.
 
-- **Character sheet** — a modal, not a tab. It's reference you consult rather
-  than a workspace you live in, and you want your stats while choosing a map
-  *or* crafting gear, which a third tab would prevent. Escape closes it.
-- **History** — also a modal. It was a panel on both views, which meant
-  watching a run was mostly watching "+7 killed" scroll past. Kills aren't
-  logged at all now; the count is already on screen. It's a record you go and
-  read, not a feed.
+- **Bench** — a popup over the map rather than a page you leave for, which
+  means a run keeps advancing while you spend what it dropped.
+- **Character sheet** — reference you consult rather than a workspace you live
+  in, and you want your stats while choosing a map *or* crafting gear.
+- **Skills** — the same, per-skill webs.
+- **History** — it was a panel on every view, which meant watching a run was
+  mostly watching "+7 killed" scroll past. Kills aren't logged at all now; the
+  count is already on screen. It's a record you go and read, not a feed.
+
+Escape closes whichever is on top.
+
+Every popup stops **above the dock** — `--dock-h` is measured by the shell and
+the modal's `bottom` and `max-height` are both derived from it. That isn't
+cosmetic: the bench works *on* the dock, so covering it with the thing that
+needs it is the one mistake this layout can't afford.
+
+While a map is on screen the viewport stops scrolling (`.viewport--locked`) and
+the stage takes whatever height is left, rather than being sized to an aspect
+ratio that made the view taller than the window. The lock is a function of two
+facts — the map is showing, and it's showing a *map* — recomputed on every
+phase change, because leaving it on froze whatever came next.
 
 The eventual history is filterable and much richer — xp, damage by source,
 regen, drops — enough to answer "why did I die" after the fact. Entries
@@ -448,11 +466,20 @@ adding save points later and having to hunt state out of five modules first.
 `version` is already there so a format change can reset cleanly instead of
 crashing on old data.
 
-The inventory strip is deliberately **not** a tab. Every screen acts on it —
-you pull a crystal out to run, put gear into the bench, watch it fill after a
-clear — so hiding it behind navigation would mean constantly flipping back to
-check what you have. Clicking an item does whatever the active view registered;
-the inventory itself has no opinion about what an item is for.
+The inventory dock is deliberately **not** a screen. Every other screen acts on
+it — you pull a crystal out to run, put gear into the bench, watch it fill
+after a clear — so hiding it behind navigation would mean constantly flipping
+back to check what you have. Clicking an item does whatever the active screen
+registered; the dock itself has no opinion about what an item is for. When the
+bench is closed, gear is still *shown* but renders inert: there is nothing to
+do with a helmet on the map screen, and a live-looking button that does nothing
+is worse than a dim one.
+
+It's icons in slots, crystals left and equipment right, with the name and every
+modifier in the hover tooltip. Forty item names is a wall you read past; forty
+icons is something you scan. Slots pad out to a minimum so an empty dock still
+reads as a container rather than a blank strip, and a column deeper than two
+rows scrolls inside itself rather than pushing the map off screen.
 
 **The bench selects in place.** `benchId` is a reference into the inventory,
 not a move. Taking the item out made it look like crafting had eaten it — the

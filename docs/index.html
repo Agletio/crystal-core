@@ -109,6 +109,8 @@
   .panel { background: var(--matrix); border: 1px solid var(--seam); padding: 16px; }
   .panel + .panel { margin-top: 16px; }
   .panel__title { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin: 0 0 12px; }
+  /* A heading inside a panel, for when one panel holds two things. */
+  .panel__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; border-top: 1px solid var(--seam); padding-top: 12px; }
 
   #item-name { font-family: var(--display); font-size: 16px; margin: 0; }
   #item-name.locked { color: var(--ember); }
@@ -177,12 +179,6 @@
   .logline--fail   { color: var(--citrine); }
   .logline--note   { color: var(--dust); letter-spacing: .04em; }
 
-  /* --- tabs ---------------------------------------------------------- */
-  .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--seam); }
-  .tab { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 9px 18px; border: 1px solid transparent; border-bottom: none; background: none; color: var(--dust); }
-  .tab:hover { color: var(--chalk); }
-  .tab--on { background: var(--matrix); border-color: var(--seam); color: var(--amethyst); }
-
   /* --- run view ------------------------------------------------------ */
   .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
@@ -197,8 +193,8 @@
   #run-stagewrap .runcols { flex: 1 1 auto; min-height: 0; display: flex; align-items: stretch; }
   #run-stagewrap .stagebox { flex: 1 1 auto; min-width: 0; }
   .runside { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-  #run-stagewrap .runside { flex: 0 0 300px; overflow: hidden; }
-  #run-stagewrap .runside > .panel:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #run-stagewrap .runside { flex: 0 0 290px; overflow: hidden; }
+  #run-stagewrap .runside > .panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   #run-loot { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
   /* Too narrow for a stage and a sidebar side by side. The panels stack, the
      frame can't hold them, and scrolling is the right answer again. */
@@ -255,29 +251,55 @@
 
   #run-log { max-height: 240px; overflow-y: auto; font-size: 12px; }
 
-  /* --- inventory (permanent) ----------------------------------------- */
-  .inv { margin-bottom: 18px; }
-  .inv__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-  .inv__head .panel__title { margin: 0; }
+  /* --- the inventory dock --------------------------------------------- */
+  /* Fixed height at the bottom of the frame. Icons in slots rather than rows
+     of text: forty item names is a wall you read past, forty icons is a thing
+     you scan. The name and every modifier are one hover away. */
+  .dock { flex: none; padding: 10px 14px 12px; }
+  .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .dock__head .panel__title { margin: 0; }
   .wallet { display: flex; flex-wrap: wrap; gap: 10px; }
   .coin { display: inline-flex; gap: 5px; align-items: baseline; font-size: 11px; }
   .coin__n { color: var(--citrine); font-weight: 600; }
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
-  .inv__body { max-height: 260px; overflow-y: auto; }
-  .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-  .invsection__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 12px 0 6px; }
-  .invsection__label:first-child { margin-top: 0; }
-  .invitem { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border-left-width: 3px; }
-  .invitem__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .dock__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  .dockcol { min-width: 0; }
+  .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
+  /* Two rows always visible; a hoard deeper than that scrolls inside its own
+     column rather than pushing the map off screen. */
+  .slots {
+    display: grid; grid-template-columns: repeat(auto-fill, 40px);
+    gap: 5px; max-height: 90px; overflow-y: auto; align-content: start;
+  }
+  .slot {
+    width: 40px; height: 40px; padding: 0;
+    display: grid; place-items: center;
+    background: var(--void); border: 1px solid var(--seam);
+  }
+  .slot--empty { opacity: .5; }
+  .slot--crystal { border-color: rgba(157,120,214,.45); }
+  .slot--gear { border-color: rgba(139,162,181,.4); }
+  .slot:hover:not(:disabled) { background: var(--seam); border-color: var(--seam-lit); }
+  .slot--on { background: var(--seam); border-color: var(--citrine); }
+  .slot--off { opacity: .34; }
+  /* A crafted item is worth spotting in a full dock. */
+  .slot--modded { box-shadow: inset 0 0 0 1px rgba(212,175,79,.35); }
   .icon { flex: none; display: block; }
   .zoomlabel { font-size: 11px; color: var(--quartz); min-width: 34px; text-align: center; }
+
+  @media (max-width: 720px) { .dock__cols { grid-template-columns: 1fr; } }
+
+  /* The equip picker on the character sheet. A named list, not a grid of
+     icons: you're comparing two helmets there, and the difference is words. */
+  .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .invitem { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border-left-width: 3px; }
+  .invitem__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .invitem--crystal { border-left-color: var(--amethyst); }
   .invitem--gear { border-left-color: var(--quartz); }
   .invitem__name { font-size: 12px; }
   .invitem__meta { font-size: 10px; color: var(--dust); }
   .invitem:hover:not(:disabled) { background: var(--seam); }
-  .invitem--on { background: var(--seam); border-color: var(--citrine); }
   .invitem--off { opacity: .38; }
 
   /* --- workshop ------------------------------------------------------- */
@@ -326,8 +348,14 @@
   .lootrow--lost .lootrow__v { color: var(--ember); }
 
   /* --- modals --------------------------------------------------------- */
-  .modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(20,17,28,.82); padding: 20px; }
-  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: min(86vh, 900px); display: flex; flex-direction: column; }
+  /* Every popup stops above the dock. The bench works ON your inventory, so
+     covering it with the thing that needs it would be the one mistake this
+     layout can't afford; the rest stop there too, for consistency. --dock-h
+     is measured and written by the shell. */
+  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(20,17,28,.82); padding: 20px; }
+  /* Bounded by the popup area, not the window — the area now stops above the
+     dock, and a card measured in vh would hang over it. */
+  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
   .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--seam); }
   .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--amethyst); }
   .modal__body { padding: 16px 18px; overflow-y: auto; }
@@ -444,11 +472,8 @@
 <div class="wrap">
   <header>
     <h1>Crystal <span>Core</span></h1>
-    <div class="tabs" role="tablist">
-      <button class="tab tab--on" id="tab-bench" role="tab" aria-selected="true">Bench</button>
-      <button class="tab" id="tab-run" role="tab" aria-selected="false">Fracture</button>
-    </div>
     <div class="seedbar">
+      <button class="mini" id="open-bench">Bench</button>
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
@@ -458,62 +483,16 @@
     </div>
   </header>
 
-  <!-- The guided opening. Sits above the inventory so it reads before you
-       start clicking, and disappears the moment the last step is done. -->
+  <!-- The guided opening. Sits above everything it points at, and disappears
+       the moment the last step is done. -->
   <div class="guide" id="guide" hidden>
     <span class="guide__step" id="guide-step">1 / 7</span>
     <span class="guide__text" id="guide-text"></span>
     <button class="mini" id="guide-skip">Skip</button>
   </div>
 
-  <!-- Permanent: every view acts on this, so it never hides behind a tab. -->
-  <div class="panel inv">
-    <div class="inv__head">
-      <p class="panel__title">Inventory</p>
-      <div class="wallet" id="wallet"></div>
-    </div>
-    <div class="inv__body" id="inventory"></div>
-  </div>
-
   <div class="viewport">
-  <div id="view-bench">
-    <div class="seedbar" style="margin-bottom:14px">
-      seed <code id="seed">0</code>
-      <button class="mini" id="reseed">New seed</button>
-      <button class="mini" id="bench-return">Close item</button>
-    </div>
-
-    <div class="cols">
-      <div>
-        <div class="panel">
-          <p class="empty" id="bench-empty">
-            Nothing on the bench. Click something in your inventory to work on it.
-          </p>
-          <div id="bench-item" hidden>
-            <h2 id="item-name">—</h2>
-            <div id="item-meta"></div>
-            <div class="mults" id="item-rewards" hidden></div>
-            <div id="sockets"></div>
-            <div id="modlist"></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <p class="panel__title">Workshop</p>
-          <div class="buys" id="workshop"></div>
-        </div>
-      </div>
-
-      <div>
-        <div class="panel">
-          <p class="panel__title">Currency</p>
-          <div id="currencies"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="view-run" hidden>
+  <div id="view-run">
     <div id="run-menu">
       <div class="cols">
         <div class="panel">
@@ -561,6 +540,9 @@
         <div class="results" id="run-results" hidden></div>
       </div>
 
+      <!-- One panel rather than three. The inventory dock below needs the
+           height, and three sets of padding and titles were most of what was
+           filling this column. -->
       <div class="runside">
         <div class="panel">
           <div class="whoami">
@@ -577,29 +559,90 @@
             <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
             <div class="hp__text" id="run-xp-text">0 / 0</div>
           </div>
-        </div>
 
-        <div class="panel">
-          <p class="panel__title">Run</p>
           <div class="readout">
             <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
             <div><span>killed</span><code id="run-killed">0/0</code></div>
             <div><span>xp earned</span><code id="run-xp-gained">0</code></div>
             <div><span>seed</span><code id="run-seed">0</code></div>
           </div>
-        </div>
 
-        <!-- Carried, not banked. Fills as things drop and is lost on death,
-             which is the whole reason to watch it. -->
-        <div class="panel">
-          <p class="panel__title">Carrying</p>
+          <!-- Carried, not banked. Fills as things drop and is lost on death,
+               which is the whole reason to watch it. -->
+          <p class="panel__sub">Carrying</p>
           <div id="run-loot"></div>
         </div>
-
       </div>
     </div>
     </div>
   </div>
+  </div>
+
+  <!-- The dock. Everything you own, always on screen, never scrolled past:
+       crystals on the left because they're what you spend to play, gear on
+       the right. Icons only — the name and the modifiers are a hover away,
+       and reading forty names was never the point of a stash. -->
+  <div class="panel dock">
+    <div class="dock__head">
+      <p class="panel__title">Inventory</p>
+      <div class="wallet" id="wallet"></div>
+    </div>
+    <div class="dock__cols">
+      <div class="dockcol">
+        <div class="dockcol__label">Crystals</div>
+        <div class="slots" id="inv-crystal"></div>
+      </div>
+      <div class="dockcol">
+        <div class="dockcol__label">Equipment</div>
+        <div class="slots" id="inv-gear"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The bench. A popup over the map rather than a page you leave for, so a
+     run keeps going while you spend what it dropped. -->
+<div class="modal" id="bench" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">Bench</h2>
+      <div class="seedbar">
+        seed <code id="seed">0</code>
+        <button class="mini" id="reseed">New seed</button>
+        <button class="mini" id="bench-return">Close item</button>
+        <button class="mini" id="bench-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="cols">
+        <div>
+          <div class="panel">
+            <p class="empty" id="bench-empty">
+              Nothing on the bench. Click something in your inventory to work on it.
+            </p>
+            <div id="bench-item" hidden>
+              <h2 id="item-name">—</h2>
+              <div id="item-meta"></div>
+              <div class="mults" id="item-rewards" hidden></div>
+              <div id="sockets"></div>
+              <div id="modlist"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <p class="panel__title">Workshop</p>
+            <div class="buys" id="workshop"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <p class="panel__title">Currency</p>
+            <div id="currencies"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

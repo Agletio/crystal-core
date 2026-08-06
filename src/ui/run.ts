@@ -74,14 +74,23 @@ function setPhase(next: Phase): void {
  * tabbed to the bench, it froze that page with its items out of reach.
  */
 export function syncViewportLock(): void {
-  const filling = !$('view-run').hidden && phase !== 'menu';
-  document.querySelector('.viewport')?.classList.toggle('viewport--locked', filling);
+  document.querySelector('.viewport')?.classList.toggle('viewport--locked', phase !== 'menu');
 }
 
-/** Only crystals, and only while choosing — gear isn't shown here at all. */
+/** Called when the bench popup closes — the dock answers to the map again. */
+export function onRunFocused(): void {
+  setInventoryHandler(runHandler());
+  renderMenu();
+  renderStatsPanel();
+}
+
+/**
+ * Only crystals, and only while choosing. Gear is still in the dock — it's
+ * always in the dock — but there is nothing to do with a helmet here, so it
+ * renders inert rather than pretending to be a map.
+ */
 function runHandler() {
   return {
-    kinds: ['crystal'] as const,
     actionFor: (item: Item) => {
       if (phase !== 'menu' || item.kind !== 'crystal') return null;
       return {
@@ -523,10 +532,3 @@ export function refreshRunPanels(): void {
   renderMenu();
 }
 
-/** Called when the Run tab becomes visible. */
-export function onRunShown(): void {
-  setInventoryHandler(runHandler());
-  renderMenu();
-  renderStatsPanel();
-  fitCanvas();
-}

@@ -1,18 +1,21 @@
 /**
- * The inventory strip, visible on every screen.
+ * The inventory dock, along the bottom of the frame.
  *
- * Deliberately not a tab. It's the thing every other screen acts on — you
+ * Deliberately not a page. It's the thing every other screen acts on — you
  * pull a crystal out of it to run, put gear into the bench, and watch it fill
  * up after a clear — so hiding it behind navigation would mean constantly
- * flipping back to check what you have.
+ * flipping back to check what you have. Every popup stops above it.
  *
- * Clicking an item does whatever the ACTIVE view wants, which each view
- * registers here. The inventory itself has no opinion about what an item is
- * for.
+ * Items are icons in slots, split crystals from equipment. Names and modifiers
+ * live in the hover tooltip: a stash is something you scan, and forty lines of
+ * text is something you read past.
+ *
+ * Clicking an item does whatever the ACTIVE screen wants, which each screen
+ * registers here. The dock itself has no opinion about what an item is for.
  */
+import { itemIcon } from './icons';
 import { fillState } from '../mods';
 import { describeMod } from '../crafting';
-import { itemIcon } from './icons';
 import { attachTooltip } from './tooltip';
 import type { GameState } from '../game/state';
 import type { Item, ItemKind } from '../types';
@@ -27,24 +30,18 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 export interface InventoryHandler {
-  /** Null means "this view can't use that item", and it renders disabled. */
+  /** Null means "this screen can't use that item", and it renders disabled. */
   actionFor(item: Item): { label: string; run: () => void } | null;
-  /** Item currently spoken for by the active view — bench item, chosen map. */
+  /** Item currently spoken for by the active screen — bench item, chosen map. */
   highlighted?(item: Item): boolean;
-  /**
-   * Which kinds this view shows at all. Omit for everything.
-   *
-   * The run screen only takes crystals, so listing gear there is noise you
-   * have to look past every time you pick a map.
-   */
-  kinds?: readonly ItemKind[];
-  /** Split into labelled sections instead of one flat grid. */
-  grouped?: boolean;
 }
 
-const KIND_LABELS: Record<ItemKind, string> = {
-  crystal: 'Crystals',
-  gear: 'Equipment',
+/** Kept full even when you own less, so the dock is a fixed shape. */
+const MIN_SLOTS = 12;
+
+const HOSTS: Record<ItemKind, string> = {
+  crystal: 'inv-crystal',
+  gear: 'inv-gear',
 };
 
 let game: GameState | null = null;
@@ -54,7 +51,7 @@ export function initInventory(state: GameState): void {
   game = state;
 }
 
-/** Views call this when they become active, and again when their state moves. */
+/** Screens call this when they take focus, and again when their state moves. */
 export function setInventoryHandler(next: InventoryHandler | null): void {
   handler = next;
   renderInventory();
@@ -64,9 +61,9 @@ export function setInventoryHandler(next: InventoryHandler | null): void {
  * Fragments only.
  *
  * Every crafting currency also shows its count on its own button in the
- * bench sidebar, so listing them all up here was the same information twice
- * and it wrapped to three lines. Fragments stay because they're the thing you
- * spend everywhere, and there's no other place they appear.
+ * bench, so listing them all up here was the same information twice and it
+ * wrapped to three lines. Fragments stay because they're the thing you spend
+ * everywhere, and there's no other place they appear.
  */
 function renderWallet(): void {
   if (!game) return;
@@ -80,12 +77,16 @@ function renderWallet(): void {
 }
 
 function tooltip(item: Item): string {
-  const lines = [item.name];
+  const lines = [item.name, `ilvl ${item.ilvl} · ${fillState(item)}`];
+  if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
   for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
   if (item.mods.length === 0 && item.implicits.length === 0) {
     lines.push('no modifiers');
   }
   for (const mod of item.mods) lines.push(describeMod(mod));
+
+  const action = handler?.actionFor(item);
+  if (action) lines.push(`— click to ${action.label.toLowerCase()}`);
   return lines.join('\n');
 }
 
@@ -93,78 +94,51 @@ export function renderInventory(): void {
   if (!game) return;
   renderWallet();
 
-  const host = $('inventory');
-  host.replaceChildren();
-
-  const kinds = handler?.kinds ?? (['crystal', 'gear'] as ItemKind[]);
-  const visible = game.inventory.filter((i) => kinds.includes(i.kind));
-
-  if (visible.length === 0) {
-    host.append(
-      el(
-        'p',
-        'empty',
-        kinds.length === 1 && kinds[0] === 'crystal'
-          ? 'No crystals. Buy one on the bench — they cost fragments.'
-          : 'Empty. Clear a map or buy something on the bench.'
-      )
-    );
-    return;
+  for (const kind of Object.keys(HOSTS) as ItemKind[]) {
+    const items = game.inventory.filter((i) => i.kind === kind);
+    fill($(HOSTS[kind]), items, kind);
   }
-
-  if (handler?.grouped) {
-    for (const kind of kinds) {
-      const group = visible.filter((i) => i.kind === kind);
-      host.append(el('div', 'invsection__label', KIND_LABELS[kind]));
-      if (group.length === 0) {
-        host.append(el('p', 'empty', `No ${KIND_LABELS[kind].toLowerCase()}.`));
-        continue;
-      }
-      host.append(grid(group));
-    }
-    return;
-  }
-
-  host.append(grid(visible));
 }
 
-/** Crystals first within a group: they're what you spend to play. */
-function grid(items: Item[]): HTMLElement {
-  const host = el('div', 'inv__grid');
-  const sorted = [...items].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'crystal' ? -1 : 1;
+/** Crystals sort by tier, gear by name — the orders you'd look for them in. */
+function sorted(items: Item[], kind: ItemKind): Item[] {
+  return [...items].sort((a, b) => {
+    if (kind === 'crystal') {
+      const at = (a.meta.tier as number) ?? 0;
+      const bt = (b.meta.tier as number) ?? 0;
+      if (at !== bt) return bt - at;
+    }
     return a.name.localeCompare(b.name);
   });
+}
 
-  for (const item of sorted) {
+function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
+  host.replaceChildren();
+
+  for (const item of sorted(items, kind)) {
     const action = handler?.actionFor(item) ?? null;
-    const btn = el('button', `invitem invitem--${item.kind}`) as HTMLButtonElement;
+    const btn = el('button', `slot slot--${kind}`) as HTMLButtonElement;
 
-    btn.append(itemIcon(item));
-
-    const body = el('span', 'invitem__body');
-    body.append(el('span', 'invitem__name', item.name));
-    body.append(
-      el(
-        'span',
-        'invitem__meta',
-        `${fillState(item)} · ${item.mods.length} mod${item.mods.length === 1 ? '' : 's'}` +
-          (item.meta.corrupted ? ' · locked' : '')
-      )
-    );
-    btn.append(body);
+    btn.append(itemIcon(item, 30));
+    if (item.mods.length > 0) btn.classList.add('slot--modded');
     attachTooltip(btn, () => tooltip(item));
 
-    if (handler?.highlighted?.(item)) btn.classList.add('invitem--on');
+    if (handler?.highlighted?.(item)) btn.classList.add('slot--on');
 
     if (action) {
       btn.onclick = action.run;
       btn.setAttribute('aria-label', `${action.label}: ${item.name}`);
     } else {
       btn.disabled = true;
-      btn.classList.add('invitem--off');
+      btn.classList.add('slot--off');
+      btn.setAttribute('aria-label', item.name);
     }
     host.append(btn);
   }
-  return host;
+
+  // Empty slots to the minimum, so an empty dock still reads as a container
+  // waiting to be filled rather than a blank strip.
+  for (let i = items.length; i < MIN_SLOTS; i++) {
+    host.append(el('div', 'slot slot--empty'));
+  }
 }

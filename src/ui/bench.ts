@@ -301,10 +301,6 @@ function render(): void {
  */
 function benchHandler() {
   return {
-    // Split, because crystals and equipment are worked on for different
-    // reasons and one mixed list means hunting for the thing you meant.
-    kinds: ['crystal', 'gear'] as const,
-    grouped: true,
     actionFor: (item: Item) => ({
       label: 'Open on bench',
       run: () => {
@@ -318,16 +314,35 @@ function benchHandler() {
   };
 }
 
-/** Called when the Bench tab becomes visible. */
-export function onBenchShown(): void {
+/**
+ * The bench is a popup over the map, not a page you leave for.
+ *
+ * A run keeps going behind it, so the crystal you're crafting can be paid for
+ * by the map you're still clearing — and the dock stays uncovered, because
+ * clicking an item in it is how anything gets onto the bench at all.
+ */
+let onClosed: (() => void) | null = null;
+
+export function openBench(): void {
+  $('bench').hidden = false;
   setInventoryHandler(benchHandler());
   render();
 }
 
-export function initBench(state: GameState): void {
+export function closeBench(): void {
+  $('bench').hidden = true;
+  hideTooltip();
+  onClosed?.();
+}
+
+export const isBenchOpen = (): boolean => !$('bench').hidden;
+
+export function initBench(state: GameState, closed: () => void): void {
   game = state;
+  onClosed = closed;
 
   ($('reseed') as HTMLButtonElement).onclick = reseed;
+  ($('bench-close') as HTMLButtonElement).onclick = closeBench;
   ($('bench-return') as HTMLButtonElement).onclick = () => {
     const item = benchItem(game);
     if (!item) return;
