@@ -8,7 +8,12 @@ npm run build       # bundle the bench -> docs/app.js
 npm run demo        # console walkthrough + sustain harness
 npm run smoke       # headless check that the bench boots
 npm run typecheck
+npm run shots       # real-browser screenshots, phone + desktop
+npm run mods        # does every modifier do what it says?
 ```
+
+The first four are the fast loop. The last two are slower and answer questions
+the fast loop structurally cannot — see below.
 
 ## Running the bench
 
@@ -50,10 +55,41 @@ Which makes phone-only iteration work:
 4. **Merge from the GitHub mobile app**, then play it on the Pages URL a minute
    later.
 
+If the screenshots never appear, **Actions → pr shots → Run workflow**, and give
+it the PR number. `pull_request` events are not guaranteed to arrive — PR #4
+opened with no checks at all, and neither reopening it nor pushing to it
+produced a run, while a manual dispatch ran instantly. A review step you cannot
+re-trigger is one you eventually merge without.
+
 Merge into `dev` first if you want somewhere to be wrong; `main` is the live
 site and a bad merge is visible immediately. Note that `dev` has no URL of its
 own — Pages serves one branch, and it serves `main`. The PR screenshots are
 what you look at before merging, not a staging site.
+
+## Checking the modifiers
+
+`npm run mods` is not part of the fast loop. Run it after touching the mod
+tables, the stat pipeline, or a skill's tags — it exists for bugs that are
+silent by construction, and it has already caught two kinds that shipped:
+
+- **A mod the engine never reads.** `areaOfEffect` was claimed by a gear mod
+  and two nodes on Blight's own tree while nothing consumed it, so allocating
+  them did nothing at all — and the mod still rolled, displayed and stacked
+  exactly like a working one. The same shape had killed Currency Find and three
+  crystal danger mods: `computeStat` multiplies, so an "increased" line on a
+  stat whose base is zero yields zero. `percentStat` is for stats that ARE a
+  percentage rather than scaling one.
+- **A mod nobody can tell apart.** Fire, cold, lightning, melee, spell and
+  generic damage are all `stat: 'damage'`, differing only by the stat line's
+  tags. The describer ignored tags, so six distinct mods all rendered as
+  "+18% increased damage" — which reads to a player as "elemental mods don't
+  exist" rather than as a display bug.
+
+So the checks assert that the ENGINE responds to the tables, not that the
+tables look right: every mod must roll somewhere, move a stat something reads,
+scale only its own tags, and read as words rather than identifiers. Mods that
+are inert only because no skill deals their damage type are reported rather
+than passed in silence.
 
 The layout stacks on a phone — map and side panel below 900px, the dock's two
 columns below 720px, and below 430px the dock goes back to two columns and
