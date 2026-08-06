@@ -34,6 +34,10 @@ function render(): void {
     card.append(el('span', 'welcomecard__name', skill.name));
     card.append(el('span', 'welcomecard__desc', skill.description));
     card.onclick = () => {
+      // Fall back rather than block on an empty field — nobody should be
+      // stopped at the door for not wanting to name themselves.
+      const typed = ($('welcome-name') as HTMLInputElement).value.trim();
+      game.character.name = typed.slice(0, 24) || 'Wanderer';
       game.character.skillId = skill.id;
       game.onboarded = true;
       $('welcome').hidden = true;
@@ -57,4 +61,5 @@ export function maybeShowWelcome(): void {
   }
   render();
   $('welcome').hidden = false;
+  ($('welcome-name') as HTMLInputElement).focus();
 }

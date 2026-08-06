@@ -43,6 +43,19 @@ const ACTIVE_RANGE = 16;
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
 
+/**
+ * How far waking one monster wakes its neighbours.
+ *
+ * Aggro used to be purely a line-of-sight range check, which meant an area
+ * skill could poison something across the room and it would stand there
+ * politely dying without ever noticing. Damage now always wakes the thing it
+ * hit, and that wakes whoever is standing near it.
+ *
+ * Deliberately ONE hop. Letting the woken neighbours wake their own
+ * neighbours would cascade across a dense map and pull everything at once.
+ */
+const AGGRO_CHAIN_RADIUS = 4.5;
+
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 
@@ -638,7 +651,9 @@ export class RunSim {
     // Monsters wake to something they can actually see. Once woken they stay
     // woken and will chase around corners — losing sight of you mid-fight
     // shouldn't make a pack forget you exist.
-    if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) m.aggroed = true;
+    // Seeing the hero wakes this one and whoever is beside it, so a pack
+    // turns together rather than trickling in one at a time.
+    if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) this.wake(m, true);
     if (!m.aggroed) return;
 
     if (m.actionTimer > 0) m.actionTimer -= dt;
@@ -824,6 +839,10 @@ export class RunSim {
     dmg *= 1 - defender.stats.armourReduction / 100;
     dmg = Math.max(1, dmg);
 
+    // Being hit is the most reliable way to notice someone, whatever the
+    // range or the line of sight.
+    this.wake(defender, true);
+
     defender.life -= dmg;
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
@@ -857,6 +876,23 @@ export class RunSim {
     }
 
     if (defender.life <= 0) this.kill(defender);
+  }
+
+  /**
+   * Wake a monster, and optionally whoever is standing near it.
+   *
+   * `chain` is false on the second hop, so a pack comes together without the
+   * whole map coming with it.
+   */
+  private wake(m: Entity, chain: boolean): void {
+    if (m.kind !== 'monster' || m.dead || m.aggroed) return;
+    m.aggroed = true;
+    if (!chain) return;
+
+    for (const other of this.state.monsters) {
+      if (other === m || other.dead || other.aggroed) continue;
+      if (dist(m, other) <= AGGRO_CHAIN_RADIUS) this.wake(other, false);
+    }
   }
 
   /** Typeless has no entry, so it passes through untouched — by design. */
@@ -905,6 +941,10 @@ export class RunSim {
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);
     if (total <= 0) return;
+
+    // Poison counts as being hit. Without this an area ailment could kill
+    // something across the room that never once looked up.
+    this.wake(e, true);
 
     e.life -= total;
     if (e.life <= 0) this.kill(e);

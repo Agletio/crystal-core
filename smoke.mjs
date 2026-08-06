@@ -69,8 +69,11 @@ const all = (sel) => [...document.querySelectorAll(sel)];
 // --- first run asks one question, then plays -------------------------------
 assert($('welcome').hidden === false, 'a new game asks you to choose a skill');
 assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
+assert($('welcome-name') !== null, 'and asks who you are');
 
+$('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
+assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
 assert($('view-run').hidden === false, 'and drops you straight into the map view');
 assert(
@@ -336,6 +339,15 @@ assert(
 assert(/^0\/\d+$/.test(text('run-killed')), 'run readout initialised', text('run-killed'));
 assert(Number(text('run-killed').split('/')[1]) > 0, 'the map spawned monsters');
 assert($('run-results').hidden === true, 'no results overlay mid-run');
+
+// Who you are, above the health bar, while the map is on screen. The dev kit
+// wiped the game since the name was chosen, so this is the default one.
+assert(text('run-name') === 'Wanderer', 'the map screen names you', text('run-name'));
+assert(text('run-level') === '1', 'and shows your level', text('run-level'));
+
+// Loot is live: the panel exists from the first frame and says so when empty.
+assert($('run-loot') !== null, 'a carrying panel is on screen during a run');
+assert(text('run-loot').length > 0, 'the carrying panel says what it holds');
 
 // --- zoom -----------------------------------------------------------------
 assert(text('run-zoom-label') === '1.0×', 'zoom starts fitted', text('run-zoom-label'));

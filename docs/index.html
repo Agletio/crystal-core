@@ -187,6 +187,30 @@
   .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
 
+  /* Watching a map is an application screen, not a document: it fills the
+     frame exactly and the stage takes whatever height is left, so the page
+     never grows a scrollbar mid-run. Only the loot list — the one region that
+     can genuinely run long — scrolls, and only once it has to. */
+  .viewport--locked { overflow: hidden; }
+  .viewport--locked #view-run { height: 100%; }
+  #run-stagewrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+  #run-stagewrap .runcols { flex: 1 1 auto; min-height: 0; display: flex; align-items: stretch; }
+  #run-stagewrap .stagebox { flex: 1 1 auto; min-width: 0; }
+  .runside { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  #run-stagewrap .runside { flex: 0 0 300px; overflow: hidden; }
+  #run-stagewrap .runside > .panel:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #run-loot { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  /* Too narrow for a stage and a sidebar side by side. The panels stack, the
+     frame can't hold them, and scrolling is the right answer again. */
+  @media (max-width: 900px) {
+    .viewport--locked { overflow-y: auto; }
+    .viewport--locked #view-run { height: auto; }
+    #run-stagewrap { height: auto; }
+    #run-stagewrap .runcols { flex: 0 0 auto; flex-direction: column; }
+    #run-stagewrap .runside { flex: 0 0 auto; overflow: visible; }
+    #run-loot { overflow-y: visible; }
+  }
+
   .stage { background: var(--void); border: 1px solid var(--seam); line-height: 0; }
   #run-canvas { display: block; width: 100%; }
 
@@ -200,6 +224,14 @@
   .hp--xp { height: 14px; margin-bottom: 14px; }
   .hp__fill--xp { background: var(--amethyst); }
   .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
+
+  .whoami { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .whoami__name { font-family: var(--display); font-size: 14px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .whoami__level { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); flex: none; }
+  .whoami__level b { color: var(--citrine); font-size: 12px; }
+
+  .lootline { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--seam); }
+  .lootline__v { color: var(--verdite); }
 
   .levelrow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
   .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
@@ -337,6 +369,14 @@
   }
 
   /* --- first run ------------------------------------------------------ */
+  .namefield { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .namefield__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); flex: none; }
+  .namefield__input {
+    flex: 1 1 auto; padding: 8px 10px;
+    background: var(--void); border: 1px solid var(--seam-lit);
+    color: var(--chalk); font-family: var(--body); font-size: 13px;
+  }
+  .namefield__input:focus { outline: none; border-color: var(--amethyst); }
   .welcomegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
   .welcomecard { text-align: left; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .welcomecard:hover { background: var(--seam); border-color: var(--amethyst); }
@@ -493,7 +533,7 @@
           <p class="panel__title">Character</p>
           <div class="levelrow">
             <span class="levelrow__label">level</span>
-            <span class="levelrow__value" id="run-level">1</span>
+            <span class="levelrow__value" id="run-menu-level">1</span>
           </div>
           <div id="run-stats"></div>
         </div>
@@ -521,9 +561,12 @@
         <div class="results" id="run-results" hidden></div>
       </div>
 
-      <div>
+      <div class="runside">
         <div class="panel">
-          <p class="panel__title">Character</p>
+          <div class="whoami">
+            <span class="whoami__name" id="run-name">—</span>
+            <span class="whoami__level">level <b id="run-level">1</b></span>
+          </div>
 
           <div class="hp">
             <div class="hp__fill" id="run-hp-fill"></div>
@@ -544,6 +587,13 @@
             <div><span>xp earned</span><code id="run-xp-gained">0</code></div>
             <div><span>seed</span><code id="run-seed">0</code></div>
           </div>
+        </div>
+
+        <!-- Carried, not banked. Fills as things drop and is lost on death,
+             which is the whole reason to watch it. -->
+        <div class="panel">
+          <p class="panel__title">Carrying</p>
+          <div id="run-loot"></div>
         </div>
 
       </div>
@@ -636,11 +686,17 @@
 <div class="modal" id="welcome" hidden>
   <div class="modal__card">
     <div class="modal__head">
-      <h2 class="modal__title">Choose how you fight</h2>
+      <h2 class="modal__title">Who are you?</h2>
     </div>
     <div class="modal__body">
-      <p class="empty" style="margin-top:0">
-        You can change this later, and each one levels on its own as you use it.
+      <label class="namefield">
+        <span class="namefield__label">Name</span>
+        <input id="welcome-name" class="namefield__input" type="text" maxlength="24"
+               placeholder="Wanderer" autocomplete="off" />
+      </label>
+      <p class="empty">
+        And how do you fight? You can change this later, and each skill levels
+        on its own as you use it.
       </p>
       <div class="welcomegrid" id="welcome-skills"></div>
     </div>

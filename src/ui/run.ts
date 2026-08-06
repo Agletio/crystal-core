@@ -62,6 +62,9 @@ function setPhase(next: Phase): void {
   $('run-menu').hidden = next !== 'menu';
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
+  // The stage sizes itself to the frame, so the scroll container has to stop
+  // scrolling for the duration — otherwise the two fight over the height.
+  document.querySelector('.viewport')?.classList.toggle('viewport--locked', next !== 'menu');
   setInventoryHandler(runHandler());
 }
 
@@ -169,6 +172,7 @@ function launch(): void {
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
   accumulator = 0;
   playing = true;
+  lootSig = '';
 
   setPhase('running');
   renderStatsPanel();
@@ -199,6 +203,8 @@ function renderStatsPanel(): void {
   const s = characterStats(game.character);
   const host = $('run-stats');
   host.replaceChildren();
+  $('run-menu-level').textContent = String(game.character.level);
+  $('run-name').textContent = game.character.name;
 
   const rows: Array<[string, string]> = [
     ['life', Math.round(s.maxLife).toString()],
@@ -218,9 +224,49 @@ function renderStatsPanel(): void {
   }
 }
 
+/**
+ * What the run is currently carrying — redrawn only when it changes.
+ *
+ * This runs inside the animation frame, so rebuilding the list sixty times a
+ * second for loot that moves every few kills would be pure waste. A signature
+ * of the rows is cheaper than the DOM work it avoids.
+ */
+let lootSig = '';
+
+function renderCarrying(): void {
+  if (!sim) return;
+  const rows = lootRows(sim.state);
+  const items = sim.state.loot.items;
+  const sig = rows.map((r) => `${r.label}${r.value}`).join('|') + `#${items.length}`;
+  if (sig === lootSig) return;
+  lootSig = sig;
+
+  const host = $('run-loot');
+  host.replaceChildren();
+
+  if (rows.length === 0 && items.length === 0) {
+    host.append(el('p', 'empty', 'Nothing yet.'));
+    return;
+  }
+  for (const row of rows) {
+    const line = el('div', 'lootline');
+    line.append(el('span', 'lootline__k', row.label.replace(/_/g, ' ')));
+    line.append(el('span', 'lootline__v', row.value));
+    host.append(line);
+  }
+  for (const item of items) {
+    const line = el('div', 'lootline');
+    line.append(el('span', 'lootline__k', item.name));
+    line.append(el('span', 'lootline__v', '+1'));
+    host.append(line);
+  }
+}
+
 function renderReadout(): void {
   if (!sim) return;
   const s = sim.state;
+
+  renderCarrying();
 
   $('run-elapsed').textContent = `${s.elapsed.toFixed(1)}s`;
   $('run-killed').textContent = `${s.killed}/${s.totalMonsters}`;
@@ -350,10 +396,22 @@ function setStartLabel(): void {
   btn.disabled = done;
 }
 
+/**
+ * The stage takes the height the frame has left rather than an aspect ratio.
+ * An aspect ratio is what made the run view taller than the window and grew a
+ * scrollbar over it. Measured off the row, not the stage box, because the
+ * canvas we're about to size is what's inside the box.
+ */
 function fitCanvas(): void {
   const box = $('run-stage');
   const width = box.clientWidth;
-  const height = Math.max(320, Math.round(width * 0.66));
+  // Below the stacking breakpoint the panels sit under the stage and the view
+  // scrolls again, so there's no "space left over" to measure. Same number as
+  // the media query, because they describe the same layout.
+  const stacked = globalThis.innerWidth <= 900;
+  const row = box.closest('.runcols') as HTMLElement | null;
+  const available = !stacked && row ? row.clientHeight - 2 : 0;
+  const height = available > 240 ? available : Math.max(320, Math.round(width * 0.66));
   renderer?.resize(width, height);
 }
 

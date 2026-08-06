@@ -22,6 +22,8 @@ export interface SkillProgress {
 }
 
 export interface Character {
+  /** Chosen on the first run. Shown above the health bar during a map. */
+  name: string;
   level: number;
   /** XP banked toward the NEXT level, not lifetime total. */
   xp: number;
@@ -36,7 +38,7 @@ export function makeCharacter(
   equipment: Record<string, Item>,
   skillId: string
 ): Character {
-  return { level: 1, xp: 0, equipment, skillId, skills: {} };
+  return { name: 'Wanderer', level: 1, xp: 0, equipment, skillId, skills: {} };
 }
 
 /** Progress for a skill, created on first sight. */

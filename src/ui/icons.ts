@@ -257,19 +257,33 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
     }
 
     default: {
-      // Strike: a blade and the arc it sweeps.
+      // Strike: a mace. The old blade-and-arc read as a pickaxe.
       shape(node, 'path', {
-        d: 'M7 26 L20 7 L23 9 L11 28 Z',
+        d: 'M9 28 L20 17',
+        stroke: 'var(--dust)',
+        'stroke-width': 3.2,
+        'stroke-linecap': 'round',
+      });
+      shape(node, 'path', {
+        d: 'M17 13 L24 6 L28 10 L21 17 Z',
         fill: 'var(--quartz)',
         ...outline,
       });
+      // Flanges, so it reads as blunt rather than bladed.
       shape(node, 'path', {
-        d: 'M9 8 A15 15 0 0 1 26 20',
+        d: 'M15 10 L20 4 L24 6 M22 19 L28 14 L26 10',
+        fill: 'none',
+        stroke: 'var(--quartz)',
+        'stroke-width': 3,
+        'stroke-linejoin': 'round',
+      });
+      shape(node, 'path', {
+        d: 'M8 22 A16 16 0 0 1 22 26',
         fill: 'none',
         stroke: 'var(--chalk)',
-        'stroke-width': 2.4,
+        'stroke-width': 2.2,
         'stroke-linecap': 'round',
-        opacity: 0.8,
+        opacity: 0.55,
       });
     }
   }
