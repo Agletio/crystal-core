@@ -44,6 +44,14 @@ export interface TutorialStep {
   text: string;
   /** Element to point at. A function when it depends on what's on top. */
   target: string | ((ctx: GuideCtx) => string);
+  /**
+   * Ring the target as well as pointing at it. Default true.
+   *
+   * False for steps with nothing to click. Ringing the stage put a border
+   * around the whole viewport while the camera was zoomed somewhere inside
+   * it, which reads as a frame around a random patch of rock.
+   */
+  ring?: boolean;
   /** Optional aside under the text — what this costs, or what to expect. */
   hint?: string;
   done(game: GameState, ctx: GuideCtx): boolean;
@@ -71,9 +79,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'watch',
-    text: 'Clear it and something will be waiting at the exit. Loot only banks if you make it out.',
-    hint: 'Nothing to click — watch.',
-    target: 'run-stage',
+    text: 'You fight on your own. Clear it and something will be waiting at the exit — and everything you find only banks if you make it out.',
+    hint: 'Nothing to click. What you are carrying shows here.',
+    // Anchored beside the loot list rather than on the stage: there is
+    // nothing to click, and a ring around the viewport of a zoomed-in camera
+    // frames a random patch of rock rather than the fight.
+    target: 'run-loot',
+    ring: false,
     done: (g) => g.firstClearDone,
   },
   {
@@ -151,8 +163,17 @@ function place(target: Element): void {
   const size = card.getBoundingClientRect();
   const GAP = 14;
 
+  // Below if it fits, inside if the target is a region big enough to hold it,
+  // above otherwise. The middle case is what keeps the card off the health bar
+  // during the descent: the loot panel has room to spare and the panels above
+  // it are the ones you're being told to watch.
   const below = box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
-  const top = below ? box.bottom + GAP : Math.max(8, box.top - GAP - size.height);
+  const inside = !below && box.height > size.height + GAP * 2;
+  const top = below
+    ? box.bottom + GAP
+    : inside
+      ? box.top + GAP
+      : Math.max(8, box.top - GAP - size.height);
 
   // Centred on the target, then pulled back inside the window.
   const wanted = box.left + box.width / 2 - size.width / 2;
@@ -165,7 +186,9 @@ function place(target: Element): void {
   card.style.left = `${Math.round(left)}px`;
 
   // The arrow points back at the target's centre, clamped so it stays on the
-  // card's edge when the card had to slide away.
+  // card's edge when the card had to slide away. Sitting inside the target,
+  // there's nothing to point at.
+  arrow.hidden = inside;
   const tip = Math.min(Math.max(box.left + box.width / 2 - left, 16), size.width - 16);
   arrow.style.left = `${Math.round(tip - 6)}px`;
   arrow.style.top = below ? '-8px' : `${Math.round(size.height - 6)}px`;
@@ -191,12 +214,13 @@ function paint(): void {
 
   const id = typeof step.target === 'function' ? step.target(ctx) : step.target;
   const target = document.getElementById(id);
+  const ring = step.ring !== false ? target : null;
 
-  if (target !== highlighted) {
+  if (ring !== highlighted) {
     clearHighlight();
-    if (target) {
-      target.classList.add('guide-on');
-      highlighted = target;
+    if (ring) {
+      ring.classList.add('guide-on');
+      highlighted = ring;
     }
   }
   if (target) place(target);
@@ -230,6 +254,16 @@ export function startTutorial(): void {
   tick();
 }
 
+/**
+ * Ends it. Only a wipe calls this — there is no Skip.
+ *
+ * There was one, and it was a trap: waiting out a descent with nothing to
+ * click, the obvious use for a button labelled Skip is "make this card go
+ * away for now", and then the guide never came back for the part that
+ * actually teaches you something. The opening is nine steps of exactly what
+ * you were going to do anyway, so it isn't worth an escape hatch that only
+ * fires by accident.
+ */
 export function stopTutorial(): void {
   game.tutorialStep = null;
   clearHighlight();
@@ -239,8 +273,6 @@ export function stopTutorial(): void {
 export function initTutorial(state: GameState, ctx: () => GuideCtx): void {
   game = state;
   context = ctx;
-
-  ($('guide-skip') as HTMLButtonElement).onclick = stopTutorial;
 
   if (timer !== null) clearInterval(timer);
   timer = setInterval(tick, 250);

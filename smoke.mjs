@@ -138,7 +138,10 @@ assert(
   $('run-launch').classList.contains('guide-on'),
   'and it is the button that starts the game'
 );
-assert($('guide-skip') !== null, 'guidance can be dismissed');
+// No Skip. It only ever got pressed to dismiss the card during a descent —
+// where there is nothing to click — and the guide never came back for the
+// part that teaches you the loop.
+assert($('guide-skip') === null, 'there is no way to skip it');
 
 // The card floats over the popups rather than living in the shell — half its
 // steps point at things inside the bench.
@@ -147,11 +150,9 @@ assert(
   'the guide is not trapped inside the shell'
 );
 
-$('guide-skip').click();
-assert($('guide').hidden === true, 'skipping puts it away');
-assert(all('.guide-on').length === 0, 'and takes the highlight with it');
-
 $('dev-kit').click();
+assert($('guide').hidden === true, 'a wipe ends it');
+assert(all('.guide-on').length === 0, 'and takes the highlight with it');
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('bench').hidden === false, 'a stocked game opens on the bench');
 

@@ -406,9 +406,9 @@
     padding: 14px 16px 12px;
   }
   .guide__step { display: block; font-family: var(--display); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--citrine); margin-bottom: 6px; }
-  .guide__text { display: block; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
-  .guide__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .guide__hint { font-size: 11px; color: var(--dust); font-style: italic; }
+  .guide__text { display: block; font-size: 14px; line-height: 1.5; }
+  .guide__hint { display: block; font-size: 11px; color: var(--dust); font-style: italic; margin-top: 8px; }
+  .guide__hint:empty { display: none; }
 
   /* The arrow, drawn as a rotated square poking out of the card's edge.
      Which side it's on is set with the position, since that depends on where
@@ -795,12 +795,9 @@
      it spends half its steps pointing at things inside them. -->
 <div class="guide" id="guide" hidden>
   <div class="guide__arrow" id="guide-arrow"></div>
-  <span class="guide__step" id="guide-step">1 / 9</span>
+  <span class="guide__step" id="guide-step">Step 1 of 9</span>
   <span class="guide__text" id="guide-text"></span>
-  <div class="guide__foot">
-    <span class="guide__hint" id="guide-hint"></span>
-    <button class="mini" id="guide-skip">Skip</button>
-  </div>
+  <span class="guide__hint" id="guide-hint"></span>
 </div>
 
 <!-- Replaces the native title attribute: instant, and in the page's colours
