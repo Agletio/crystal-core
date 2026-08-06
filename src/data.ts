@@ -1431,12 +1431,21 @@ export const SKILLS: SkillDef[] = [
     range: 6.5,
     vfxKind: 'blight_field',
     /**
-     * 3.2 poisons ~2.4 enemies per cast, measured over 24 real runs rather
-     * than guessed at. That was already the right size; what was missing was
-     * anything to spend Area of Effect ON — the old version capped at five
-     * targets, so past the cap a bigger circle bought nothing.
+     * Measured against PACKS, not against every cast.
+     *
+     * Averaging over all casts is misleading here: most casts happen with one
+     * or two enemies nearby, which drags the mean down and makes a circle look
+     * modest when it is actually swallowing whole rooms. The number that
+     * matters is what it catches when there IS a crowd — enemies within 3.5
+     * tiles of the target — because that is the case the radius is for.
+     *
+     * At 0.9 a packed cast catches a median of 2 and an average of 1.96, up
+     * to 4 or 5 where bodies are genuinely stacked. The old 3.2 caught a
+     * median of 5 and as many as 19, which is not an area skill so much as a
+     * room clear. 3.2 is now where a heavily invested character ends up, not
+     * where everyone starts.
      */
-    params: { radius: 3.2, duration: 10 },
+    params: { radius: 0.9, duration: 10 },
   },
 ];
 

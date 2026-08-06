@@ -23,7 +23,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, poisonFieldRadius, toHexNumber, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, tileSize, toHexNumber, vfxColour } from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
 
 const FLOATER_LIFE = 1.1;
@@ -113,7 +113,7 @@ export async function createPixiRenderer(
     const w = viewW();
     const h = viewH();
     const fit = Math.min(w / map.grid.width, h / map.grid.height);
-    tile = fit * zoom;
+    tile = tileSize(zoom, fit);
 
     const mapW = tile * map.grid.width;
     const mapH = tile * map.grid.height;

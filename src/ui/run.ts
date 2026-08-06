@@ -29,7 +29,7 @@ import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
-import { ZOOM_MAX, ZOOM_MIN, clampZoom, readPalette } from '../render/renderer';
+import { ZOOM_MAX, ZOOM_MIN, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { note } from './history';
@@ -63,6 +63,16 @@ let seed = 0;
  */
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
+
+/**
+ * Starting zoom for the surface we actually got.
+ *
+ * 2x everywhere it fits, and only tighter when the canvas is too short to
+ * keep the hero's reach on screen. The rule is about the game — you should be
+ * able to see what you are shooting at — rather than about a phone, so it
+ * holds on a screen size nobody has tried.
+ */
+
 /** What's in the socket. Null is a plain, unempowered descent. */
 let chosen: Item | null = null;
 // ---------------------------------------------------------------------------
@@ -424,6 +434,16 @@ function setStartLabel(): void {
  * scrollbar over it. Measured off the row, not the stage box, because the
  * canvas we're about to size is what's inside the box.
  */
+/**
+ * Whether the player has chosen a zoom themselves.
+ *
+ * Until they do, the starting zoom is recomputed whenever the surface
+ * changes size — rotating a phone or opening a panel should re-pick a sane
+ * scale rather than leave a number that made sense for the old shape. Once
+ * they touch the control it is theirs and nothing moves it.
+ */
+let userZoomed = false;
+
 function fitCanvas(): void {
   const box = $('run-stage');
   const width = box.clientWidth;
@@ -435,9 +455,14 @@ function fitCanvas(): void {
   const available = !stacked && row ? row.clientHeight - 2 : 0;
   const height = available > 240 ? available : Math.max(320, Math.round(width * 0.66));
   renderer?.resize(width, height);
+
+  // Now that the surface has a real size, pick the scale that fits it. At
+  // startup the stage is still unmeasured, so this is the first honest chance.
+  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)), false);
 }
 
-function setZoom(next: number): void {
+function setZoom(next: number, byUser = true): void {
+  if (byUser) userZoomed = true;
   zoom = clampZoom(next);
   renderer?.setZoom(zoom);
   $('run-zoom-label').textContent = `${zoom.toFixed(1)}×`;
@@ -522,7 +547,7 @@ export function initRun(state: GameState): void {
 
   renderStatsPanel();
   renderMenu();
-  setZoom(DEFAULT_ZOOM);
+  setZoom(DEFAULT_ZOOM, false);
   setPhase('menu');
   requestAnimationFrame(frame);
 }
