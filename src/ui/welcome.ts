@@ -2,8 +2,9 @@
  * First run: pick a skill, then straight into the Fissure.
  *
  * The old first thirty seconds were a crafting bench you had no currency for
- * and a map list you had two entries in. This asks the one question that
- * actually matters — how do you want to fight — and then puts you in a fight.
+ * and a list of destinations you had two entries in. This asks the one
+ * question that matters — how do you want to fight — and then puts you in a
+ * fight.
  *
  * Nothing to buy and nothing to read first. The bench can wait until you have
  * something to spend.

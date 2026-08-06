@@ -143,8 +143,8 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
 // is one answer to "what is a run worth" instead of two that could disagree.
 //
 // It was also the only source of the rare sigils and Shard of Ruin. Until the
-// sim drops currency, those are unobtainable except from the starting wallet —
-// see STARTING_CURRENCY.
+// sim drops currency, those are unobtainable outside the dev kit — see
+// DEV_CURRENCY.
 // ---------------------------------------------------------------------------
 
 /** Fragments spent to make this crystal, for sustain accounting. */

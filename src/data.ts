@@ -933,7 +933,7 @@ export const HERO_BASE = {
    * Recovery between packs is what turns a run into a series of fights
    * rather than one attrition curve you always lose. But at 2.2% it
    * out-healed everything a low tier could do — a naked character finished
-   * the first map at full life, so nothing was ever at stake.
+   * their first descent at full life, so nothing was ever at stake.
    *
    * Tuned so an ungeared level 1 finishes the Fissure around a third of the
    * way down: visibly hurt, never actually threatened.
@@ -946,8 +946,9 @@ export const MONSTER_BASE = {
    * Raised sharply from 26.
    *
    * A naked character killed a tier 1 monster in about a third of a second,
-   * so a pack died before it landed two hits and the first map ended at full
-   * life. Nothing was at stake because nothing survived long enough to swing.
+   * so a pack died before it landed two hits and the first descent ended at
+   * full life. Nothing was at stake because nothing survived long enough to
+   * swing.
    */
   life: 46,
   damage: 2.9,
@@ -1055,18 +1056,18 @@ export const RANGED_PACK_CHANCE = 0.25;
 // ===========================================================================
 // FINALE
 //
-// Once the map is empty, something waits at the exit. Which something is
-// rolled per RUN and isn't shown beforehand — if you could see it coming
-// you'd pick maps that suit your build, which is the opposite of keeping it
-// fresh.
+// Once the floor is empty, something waits at the exit. Which something is
+// rolled per RUN and isn't shown beforehand — if you could see it coming you'd
+// socket the crystal that suits your build, which is the opposite of keeping
+// it fresh.
 //
 // Three shapes deliberately: one huge target, a handful of tough ones, and a
 // swarm. They stress different things — single-target damage, sustained
 // fighting, area clear — so no one build owns the ending. Equal weights: it
 // should feel like a coin toss, not a rare event.
 //
-// Multipliers apply to whatever the map's normal monsters already are, so a
-// finale on a dangerous crystal is dangerous for the same reasons.
+// Multipliers apply to whatever the descent's normal monsters already are, so
+// a finale under a dangerous crystal is dangerous for the same reasons.
 // ===========================================================================
 
 export interface EncounterDef {
@@ -1139,7 +1140,7 @@ export const MONSTER_RANGED_SKILL = 'bolt';
 // DANGER → REWARD
 //
 // Every crystal modifier is a DOWNSIDE. Reward is derived from how dangerous
-// the map has become, rather than being rolled separately.
+// the descent has become, rather than being rolled separately.
 //
 // The point is that no mod is simply good or simply bad: a roll becomes "how
 // much of this can my character eat", and a build that shrugs off one kind of
@@ -1228,47 +1229,42 @@ export const LOOT = {
  * which is a poor first thirty seconds.
  */
 /**
- * The free map. Always available, never consumed.
+ * The Fissure, unempowered — what you descend into with an empty socket.
  *
- * Without it the economy can strand you: a plain crystal banks less than it
- * costs, so a player who runs out of both crystals and fragments has no way
- * back in. This is the floor that makes that impossible, and it doubles as
- * the first thing a new player ever runs.
+ * There is only one place you ever go; a crystal empowers it rather than
+ * replacing it. These are the numbers for a descent with nothing socketed:
+ * always available, costs nothing, carries no danger, and therefore pays the
+ * base rate and nothing more.
  *
- * Deliberately unmodifiable and therefore unrewarding — it carries no danger,
- * so it pays the base rate and nothing more. It's a way back, not a place to
- * farm.
+ * Without this floor the economy can strand you — a plain crystal banks less
+ * than it costs, so a player out of both crystals and fragments would have no
+ * way back in. It's a way back, not a place to farm, and it doubles as the
+ * first descent anyone makes.
  */
-export const FREE_MAP = {
+export const FISSURE = {
   tier: 1,
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
   /**
-   * Thinner than a real tier 1 map.
+   * Thinner than a tier 1 crystal makes it.
    *
-   * It's the first thing anyone runs, so it should leave you visibly hurt
-   * without killing you. A plain T1 crystal killed an ungeared character
-   * roughly one run in five — acceptable for a map you chose and paid for,
+   * It's the first thing anyone descends into, so it should leave you visibly
+   * hurt without killing you. A plain T1 crystal killed an ungeared character
+   * roughly one run in five — acceptable for a descent you chose to empower,
    * not for the one the game hands you.
    */
   densityScale: 0.55,
   /**
-   * What clearing it the FIRST time hands you, on top of the map's own loot.
+   * What clearing it the FIRST time hands you, on top of the descent's own
+   * loot: a Shard of Awakening (10), a Shard of Chaos (12), and a Tier 1
+   * crystal (8) — the exact cost of everything the guided opening asks you to
+   * do, plus the crystal it points you at afterwards.
    *
-   * Without this the opening was: choose a skill, watch for a minute, and
-   * still not have enough for a crystal. A first clear should leave you
-   * holding something to make a decision about — which is what the fragments
-   * and the weapon are for.
-   */
-  /**
-   * A Shard of Awakening (10), a Shard of Chaos (12), and a Tier 1 crystal
-   * (8) — the exact cost of everything the guided opening asks you to do,
-   * plus the crystal it points you at afterwards.
-   *
-   * The tutorial teaches you to BUY these, so handing them over would skip
-   * the thing it's teaching. Covering the crystal too matters because the
-   * last step tells you that you can afford one: at 22 you finished on zero
-   * and it was a lie.
+   * Without it the opening was: choose a skill, watch for a minute, and still
+   * not have enough for a crystal. The tutorial teaches you to BUY these, so
+   * handing them over would skip the thing it's teaching. Covering the crystal
+   * matters because the last step tells you that you can afford one: at 22 you
+   * finished on zero and it was a lie.
    */
   firstClear: {
     fragments: 30,
@@ -1289,9 +1285,8 @@ export interface StartPreset {
 /**
  * Two starting states, because they answer different questions.
  *
- * `fresh` is what a new player actually gets: two Tier 1 crystals and
- * nothing else. `dev` is stocked, for exercising the bench and the tree
- * without grinding first.
+ * `fresh` is what a new player actually gets: nothing at all. `dev` is
+ * stocked, for exercising the bench and the tree without grinding first.
  *
  * The distinction matters more than it looks. Judging whether the loop is
  * engaging while starting with a full set of filled gear and 260 fragments
@@ -1317,8 +1312,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
   },
 };
 
-export const STARTING_FRAGMENTS = 260;
-export const STARTING_CURRENCY: Record<string, number> = {
+/** Dev kit only — nobody is handed these by playing. */
+export const DEV_CURRENCY: Record<string, number> = {
   shard_of_making: 6,
   shard_of_awakening: 3,
   shard_of_unmaking: 3,
@@ -1332,14 +1327,13 @@ export const STARTING_CURRENCY: Record<string, number> = {
   shard_of_ruin: 1,
   shard_of_chaos: 2,
 };
-export const STARTING_CRYSTALS = [1, 1, 2];
 
 /** One of each base at low ilvl, so every slot can be filled immediately. */
-export const STARTING_GEAR = GEAR_BASES.map((b) => ({ base: b.id, ilvl: 20 }));
+export const DEV_GEAR = GEAR_BASES.map((b) => ({ base: b.id, ilvl: 20 }));
 
-// Fill in the halves of the presets that depend on the constants above.
-START_PRESETS.dev.currency = STARTING_CURRENCY;
-START_PRESETS.dev.gear = STARTING_GEAR;
+// Fill in the halves of the preset that depend on the constants above.
+START_PRESETS.dev.currency = DEV_CURRENCY;
+START_PRESETS.dev.gear = DEV_GEAR;
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
@@ -1351,7 +1345,7 @@ export const LEVELLING = {
   /**
    * xpToNext(level) = curveBase * level ^ curveExponent
    *
-   * Tuned so a first cleared T1 map is worth roughly two levels and the curve
+   * Tuned so a first cleared T1 descent is worth roughly two levels and the curve
    * outruns a single run quickly after that. Higher tiers pay far more per
    * monster, so climbing tiers — not grinding T1 — is what levels you.
    */

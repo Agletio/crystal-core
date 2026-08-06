@@ -22,7 +22,7 @@ export interface SkillProgress {
 }
 
 export interface Character {
-  /** Chosen on the first run. Shown above the health bar during a map. */
+  /** Chosen on the first run. Shown above the health bar during a descent. */
   name: string;
   level: number;
   /** XP banked toward the NEXT level, not lifetime total. */

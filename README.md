@@ -504,7 +504,7 @@ to empower what's already down there. That framing does two jobs at once. It
 makes the next action obvious (there is one button, Enter, and it is never
 disabled), and it makes "no crystals" a lean run rather than a dead end.
 
-An empty socket is a legitimate descent, thinned by `FREE_MAP.densityScale`.
+An empty socket is a legitimate descent, thinned by `FISSURE.densityScale`.
 Socketing is a reference into the inventory, not a spend — you can pull the
 crystal back out — and the crystal is only consumed at the moment you enter.
 

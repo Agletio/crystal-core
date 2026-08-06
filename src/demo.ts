@@ -105,7 +105,7 @@ trinket = apply(trinket, 'shard_of_making'); // should be refused
 rule('AN ACTUAL RUN — headless, no browser');
 
 {
-  const mapCrystal = craft(
+  const socketed = craft(
     makeCrystal(3),
     CURRENCY_BY_ID.shard_of_awakening,
     pool,
@@ -114,14 +114,14 @@ rule('AN ACTUAL RUN — headless, no browser');
   const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
   const stats = characterStats(hero);
 
-  line(`Crystal: ${mapCrystal.mods.map((m) => m.name).join(', ')}`);
+  line(`Crystal: ${socketed.mods.map((m) => m.name).join(', ')}`);
   line(
     `Hero:    level ${hero.level} · ${Math.round(stats.maxLife)} life · ` +
       `${Math.round(stats.damage)} dmg · ${stats.attacksPerSecond.toFixed(2)}/s · ` +
       `${Math.round(stats.critChance)}% crit`
   );
 
-  const sim = new RunSim(mapCrystal, hero, new Rng(4242));
+  const sim = new RunSim(socketed, hero, new Rng(4242));
   const { grid } = sim.state.map;
   line(
     `Map:     ${grid.width}x${grid.height}, ${sim.state.map.rooms.length} rooms, ` +
@@ -274,14 +274,14 @@ for (const t of CRYSTAL_TIERS) {
   let life = 0;
 
   for (const seed of LADDER_SEEDS) {
-    const mapCrystal = craft(
+    const socketed = craft(
       makeCrystal(t.tier),
       CURRENCY_BY_ID.shard_of_awakening,
       pool,
       rng
     ).item;
     const sim = new RunSim(
-      mapCrystal,
+      socketed,
       makeCharacter(starterLoadout(new Rng(7)), 'strike'),
       new Rng(900 + seed * 7 + t.tier)
     );
@@ -351,7 +351,7 @@ rule('TERMINATION CHECK — does every run actually end?');
 // ===========================================================================
 rule('SUSTAIN CHECK — is reinvestment under 1.0?');
 
-// Measured by actually running maps, not by a formula. There used to be a
+// Measured by actually running descents, not by a formula. There used to be a
 // separate analytical model here (simulateRun) which meant the harness and
 // the game could disagree about what a run was worth; now there is one
 // answer. Fewer samples than the old formula allowed, since each of these is

@@ -21,7 +21,7 @@ import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { rewardRows } from '../sim/crystal';
-import { FREE_MAP } from '../data';
+import { FISSURE } from '../data';
 import { makeCrystal } from '../economy';
 import { removeItem, crystalsIn } from '../game/state';
 import type { GameState } from '../game/state';
@@ -100,7 +100,7 @@ export function onRunFocused(): void {
 /**
  * Only crystals, and only while choosing. Gear is still in the dock — it's
  * always in the dock — but there is nothing to do with a helmet here, so it
- * renders inert rather than pretending to be a map.
+ * renders inert rather than pretending to be socketable.
  */
 function runHandler() {
   return {
@@ -177,7 +177,7 @@ function launch(): void {
   // Fissure is generated fresh each time and never taken from you, which is
   // what makes running out of crystals a setback rather than an end.
   const empowered = chosen !== null;
-  const crystal = chosen ?? makeCrystal(FREE_MAP.tier);
+  const crystal = chosen ?? makeCrystal(FISSURE.tier);
 
   // A socketed crystal is consumed win or lose. It's the stake.
   if (empowered) removeItem(game, crystal);
@@ -188,7 +188,7 @@ function launch(): void {
     crystal,
     game.character,
     new Rng(seed),
-    empowered ? {} : { densityScale: FREE_MAP.densityScale }
+    empowered ? {} : { densityScale: FISSURE.densityScale }
   );
 
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);

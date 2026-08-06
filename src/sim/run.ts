@@ -158,16 +158,16 @@ export interface Vfx {
 /**
  * Nothing to configure yet.
  *
- * Clearing the map used to be a toggle. It's baseline now: the hero hunts
+ * Clearing the floor used to be a toggle. It's baseline now: the hero hunts
  * everything, then the finale spawns at the exit. A "leave early" option was
  * mostly a way to skip content and made every reward number conditional on
  * how it was played.
  */
 export interface RunOptions {
   /**
-   * Multiplier on how much spawns. The Fissure runs thinner than a real map
-   * of its tier, because it's the one the game hands you rather than one you
-   * chose.
+   * Multiplier on how much spawns. An unempowered Fissure runs thinner than a
+   * crystal of the same tier makes it, because it's the descent the game hands
+   * you rather than one you paid for.
    */
   densityScale?: number;
 }

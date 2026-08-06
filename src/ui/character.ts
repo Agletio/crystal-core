@@ -1,10 +1,10 @@
 /**
  * The character sheet, as a modal.
  *
- * A popup rather than a tab because this is reference you consult, not a
+ * A popup rather than a screen because this is reference you consult, not a
  * workspace you live in — and because you want to read your stats while
- * choosing a map or crafting gear, which a third tab would prevent. It's also
- * the genre convention, which is worth something on its own.
+ * socketing a crystal or crafting gear, which navigation would prevent. It's
+ * also the genre convention, which is worth something on its own.
  *
  * Clicking a filled slot takes the item off; clicking an empty one lists what
  * fits. Worn items live here rather than in the inventory, which is safe

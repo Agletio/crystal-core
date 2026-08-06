@@ -32,7 +32,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 export interface InventoryHandler {
   /** Null means "this screen can't use that item", and it renders disabled. */
   actionFor(item: Item): { label: string; run: () => void } | null;
-  /** Item currently spoken for by the active screen — bench item, chosen map. */
+  /** Item the active screen has claimed — on the bench, or in the socket. */
   highlighted?(item: Item): boolean;
 }
 

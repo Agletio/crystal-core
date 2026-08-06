@@ -8,7 +8,7 @@
  * so a format change can reset cleanly instead of crashing on old data.
  */
 import { Rng } from '../rng';
-import { EQUIP_SLOTS, FREE_MAP, START_PRESETS } from '../data';
+import { EQUIP_SLOTS, FISSURE, START_PRESETS } from '../data';
 import type { EquipSlotDef } from '../types';
 import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
@@ -35,7 +35,7 @@ export interface GameState {
   benchId: string | null;
   /** False until a skill has been chosen on the first run. */
   onboarded: boolean;
-  /** False until the first map has been cleared. Gates the opening payout. */
+  /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
   /** Index into the guided steps, or null when not running / finished. */
   tutorialStep: number | null;
@@ -91,7 +91,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
 }
 
 /**
- * The opening payout, granted once, when the first map is cleared.
+ * The opening payout, granted once, on the first cleared descent.
  *
  * Returns what was given so the results overlay can show it as loot rather
  * than having it appear silently in the inventory.
@@ -104,7 +104,7 @@ export function grantFirstClear(game: GameState): {
   if (game.firstClearDone) return null;
   game.firstClearDone = true;
 
-  const gift = FREE_MAP.firstClear;
+  const gift = FISSURE.firstClear;
   grant(game.wallet, 'fragment', gift.fragments);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
