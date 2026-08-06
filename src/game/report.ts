@@ -30,6 +30,10 @@ export interface RunReport {
   /** Currency actually banked, already rounded. Empty when the run was lost. */
   banked: Record<string, number>;
   items: Item[];
+  /** Banked, but into the stash because the bag was full. */
+  stashed: Item[];
+  /** Earned and then lost: bag full, stash full. */
+  dropped: Item[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   xp: number;
@@ -56,6 +60,8 @@ export function buildReport(game: GameState, run: RunState): RunReport {
 
   const banked: Record<string, number> = {};
   const gifts: Item[] = [];
+  const stashed: Item[] = [];
+  const dropped: Item[] = [];
 
   if (cleared) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
@@ -64,7 +70,14 @@ export function buildReport(game: GameState, run: RunState): RunReport {
       banked[id] = n;
       grant(game.wallet, id, n);
     }
-    for (const item of run.loot.items) addItem(game, item);
+    // A full bag sends loot to the stash, and a full stash loses it. Both get
+    // said out loud below — an item that silently fails to arrive reads as a
+    // bug, and nothing would teach you that the fix is to clear some space.
+    for (const item of run.loot.items) {
+      const where = addItem(game, item);
+      if (where === 'stashed') stashed.push(item);
+      if (where === 'lost') dropped.push(item);
+    }
 
     // The opening payout. Folded into the same banked/items shape so the
     // overlay shows it as loot rather than it appearing silently in the bag.
@@ -99,6 +112,13 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
+  if (stashed.length > 0) {
+    rows.push({ label: 'bag full — sent to stash', value: String(stashed.length) });
+  }
+  if (dropped.length > 0) {
+    rows.push({ label: 'no room — left behind', value: String(dropped.length), bad: true });
+  }
+
   // Damage taken, split by type. Nothing reads this yet beyond the overlay —
   // it's here as the worked example of a diagnostic stat.
   const totalTaken = Object.values(run.damageTaken).reduce((n, v) => n + v, 0);
@@ -117,6 +137,8 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     rows,
     banked,
     items: cleared ? [...run.loot.items, ...gifts] : [],
+    stashed,
+    dropped,
     lostLoot: !cleared && hadLoot,
     xp: Math.round(run.xpGained),
     levelsGained,

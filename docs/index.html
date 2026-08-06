@@ -268,18 +268,42 @@
   .coin__n { color: var(--citrine); font-weight: 600; }
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
-  /* Currency gets the widest column: there are thirteen kinds against two
-     item kinds, and it's the one you scan for a specific thing rather than
-     browse. Auto-fill does the rest, so the share is a hint, not a lockstep
-     count of slots per row. */
-  .dock__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr); gap: 16px; }
+  /* Sized to their contents, not to a share of the width. Each column draws
+     exactly its capacity, so the widths ARE the capacities: crystals and gear
+     get most of the dock, currency the rest. */
+  .dock__cols { display: flex; flex-wrap: wrap; gap: 20px; }
   .dockcol { min-width: 0; }
   .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
-  /* Two rows always visible; a hoard deeper than that scrolls inside its own
-     column rather than pushing the map off screen. */
+  /* A full bag is the moment the limit starts mattering, so it says so before
+     a run rather than in the report afterwards. */
+  .dockcol__label--full { color: var(--citrine); }
+  /*
+   * A fixed grid, and no scrollbar anywhere.
+   *
+   * This used to be two rows with `overflow-y: auto`, which made capacity
+   * invisible: ninety crystals looked exactly like twelve, so "what do I
+   * keep" was never a question anyone had to answer.
+   *
+   * Both dimensions are stated rather than auto-filled. auto-fill re-wraps as
+   * the window narrows, so the same slots would need five rows on a small
+   * screen and the fourth would be clipped — the height has to be a constant
+   * for "everything you own is on screen" to be true. --cols is written by the
+   * renderer from the carry limit, so the capacity lives in one place and the
+   * grid follows it.
+   */
   .slots {
-    display: grid; grid-template-columns: repeat(auto-fill, 40px);
-    gap: 5px; max-height: 90px; overflow-y: auto; align-content: start;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 8), 40px);
+    grid-template-rows: repeat(4, 40px);
+    gap: 5px;
+  }
+  /* The stash is a modal, not the dock: it can be as deep as you have paid
+     for, and scroll if it outgrows the card. */
+  .slots--stash {
+    grid-template-columns: repeat(auto-fill, 40px);
+    grid-template-rows: none;
+    max-height: 46vh; overflow-y: auto; align-content: start;
+    margin-top: 10px;
   }
   .slot {
     width: 40px; height: 40px; padding: 0;
@@ -314,23 +338,19 @@
   .icon { flex: none; display: block; }
   .zoomlabel { font-size: 11px; color: var(--quartz); min-width: 34px; text-align: center; }
 
-  /* Narrow: currency takes the full width on its own row, because it is the
-     column that actually needs one. */
-  @media (max-width: 900px) {
-    .dock__cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
-    .dockcol--wide { grid-column: 1 / -1; }
-  }
-  @media (max-width: 720px) {
-    .dock__cols { grid-template-columns: 1fr; }
-    .dockcol--wide { grid-column: auto; }
+  /* Narrow: the columns wrap rather than shrink, and the dock scrolls
+     sideways only if even one column won't fit. Four rows stay four rows —
+     the whole point is that the height is a constant. */
+  @media (max-width: 1120px) {
+    .dock__cols { gap: 14px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+    .dockcol { flex: none; }
   }
 
   /* Phones. The tablet rules above stack everything, which is right until the
-     screen is ~390px tall in the part that matters: stacking the dock's two
-     columns costs about 140px of height, and the dock is the one region that
-     does NOT need to grow. So on a real phone the dock goes back to two
-     columns and shrinks its slots, and the reclaimed height goes to the view.
-     Everything here is height, not width — the layout already fits across. */
+     screen is ~390px tall in the part that matters, and the dock is the one
+     region that does NOT need to grow. Slots shrink and the reclaimed height
+     goes to the view. The project is PC-first now, so this is about staying
+     usable on a phone rather than being tuned for one. */
   @media (max-width: 430px) {
     .wrap {
       padding: 10px 12px 12px; gap: 8px;
@@ -339,9 +359,9 @@
       padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
     .dock { padding: 8px 10px 10px; }
-    .dock__cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
-    .dockcol--wide { grid-column: 1 / -1; }
-    .slots { grid-template-columns: repeat(auto-fill, 34px); gap: 4px; max-height: 76px; }
+    .dock__cols { gap: 10px; }
+    .slots { grid-template-columns: repeat(var(--cols, 8), 34px); grid-template-rows: repeat(4, 34px); gap: 4px; }
+    .slots--stash { grid-template-columns: repeat(auto-fill, 34px); grid-template-rows: none; }
     .slot { width: 34px; height: 34px; }
     h1 { font-size: 17px; }
   }
@@ -366,6 +386,7 @@
   .buy__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .buy__name { font-size: 12px; }
   .buy__cost { font-size: 10px; color: var(--dust); }
+  .buy__why { font-size: 10px; color: var(--ember); }
   .buy:hover:not(:disabled) { background: var(--seam); }
   .buy--off { opacity: .38; }
 
@@ -612,6 +633,7 @@
     <div class="seedbar">
       <button class="mini" id="open-craft">Crafting</button>
       <button class="mini" id="open-shop">Shop</button>
+      <button class="mini" id="open-stash">Stash</button>
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
@@ -731,14 +753,14 @@
     </div>
     <div class="dock__cols">
       <div class="dockcol">
-        <div class="dockcol__label">Crystals</div>
+        <div class="dockcol__label" id="inv-crystal-label">Crystals</div>
         <div class="slots" id="inv-crystal"></div>
       </div>
       <div class="dockcol">
-        <div class="dockcol__label">Equipment</div>
+        <div class="dockcol__label" id="inv-gear-label">Equipment</div>
         <div class="slots" id="inv-gear"></div>
       </div>
-      <div class="dockcol dockcol--wide">
+      <div class="dockcol">
         <div class="dockcol__label">Currency</div>
         <div class="slots" id="inv-currency"></div>
       </div>
@@ -776,6 +798,31 @@
           <div id="sockets"></div>
           <div id="modlist"></div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The stash. Storage, not a second bag: nothing acts on a stashed item until
+     you carry it again, which is what makes the dock's carry limit mean
+     something. You move things IN by clicking them in the dock below — every
+     popup stops above it, so both halves of a move are on screen. -->
+<div class="modal" id="stash" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">Stash</h2>
+      <div class="seedbar">
+        <code id="stash-count">0 / 0</code>
+        <button class="mini" id="stash-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="panel">
+        <p class="empty" id="stash-hint"></p>
+        <div class="slots slots--stash" id="stash-slots"></div>
+      </div>
+      <div class="panel">
+        <button class="buy" id="stash-grow"></button>
       </div>
     </div>
   </div>

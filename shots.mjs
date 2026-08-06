@@ -53,14 +53,31 @@ const base = `http://127.0.0.1:${server.address().port}`;
 await rm(outDir, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
 
-/** Right edge past the viewport, which is what "the page drifts sideways" is. */
+/**
+ * Right edge past the viewport, which is what "the page drifts sideways" is.
+ *
+ * Content inside something that scrolls sideways ON PURPOSE doesn't count.
+ * The dock is wider than a phone by design — it holds a whole inventory at a
+ * fixed row count — and it carries its own `overflow-x: auto` so only the dock
+ * moves. Flagging its contents would report the feature as the bug, and the
+ * only way to satisfy it would be to break the thing the container is for.
+ */
 const overflowProbe = () => {
   const cw = document.documentElement.clientWidth;
+
+  const insideScroller = (el) => {
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      const x = getComputedStyle(p).overflowX;
+      if (x === 'auto' || x === 'scroll') return true;
+    }
+    return false;
+  };
+
   let worst = 0;
   let who = '';
   for (const el of document.querySelectorAll('*')) {
     const r = el.getBoundingClientRect();
-    if (r.right > cw + 0.5 && r.right > worst) {
+    if (r.right > cw + 0.5 && r.right > worst && !insideScroller(el)) {
       worst = r.right;
       who = el.className || el.tagName;
     }

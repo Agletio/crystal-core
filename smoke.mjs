@@ -388,6 +388,88 @@ assert(
 $('shop-close').click();
 assert($('shop').hidden === true, 'the shop closes');
 
+// --- the dock does not scroll, so capacity is visible ---------------------
+// It used to be two rows with overflow-y:auto, which made the limit invisible:
+// ninety crystals looked exactly like twelve. Every slot you can fill is now
+// drawn, which is only honest if the count of slots IS the capacity.
+const slotsIn = (sel) => all(`${sel} .slot`);
+assert(
+  slotsIn('#inv-crystal').length === slotsIn('#inv-gear').length,
+  'crystals and gear get the same room',
+  `${slotsIn('#inv-crystal').length} vs ${slotsIn('#inv-gear').length}`
+);
+assert(
+  slotsIn('#inv-crystal').length >= 24,
+  'the dock is deeper than the two rows it replaced',
+  String(slotsIn('#inv-crystal').length)
+);
+// Currency is the column that gave up the width: a stack is one slot however
+// deep it is, and there are only thirteen kinds.
+assert(
+  slotsIn('#inv-currency').length < slotsIn('#inv-crystal').length,
+  'currency takes less room than the items it is spent on',
+  `${slotsIn('#inv-currency').length} vs ${slotsIn('#inv-crystal').length}`
+);
+// Filling up is something you watch approaching, not something the report
+// tells you afterwards.
+assert(
+  /\d+\/\d+/.test(text('inv-crystal-label')),
+  'the column says how full it is',
+  text('inv-crystal-label')
+);
+
+// --- the stash ------------------------------------------------------------
+// A carry limit needs somewhere for the overflow to go that isn't the floor.
+assert($('stash').hidden === true, 'the stash starts closed');
+$('open-stash').click();
+assert($('stash').hidden === false, 'the stash opens');
+
+const stashSlots = () => all('#stash-slots .slot');
+const stashed = () => all('#stash-slots .slot:not(.slot--empty)');
+assert(stashSlots().length >= 10 && stashSlots().length <= 15,
+  'it starts at a usable size', String(stashSlots().length));
+assert(stashed().length === 0, 'and starts empty');
+
+// You move things in by clicking the DOCK, not a list inside the popup —
+// which only works because every popup stops above the dock.
+{
+  const before = dockItems().length;
+  const target = filled('#inv-crystal')[0];
+  assert(/stash/i.test(named(target)), 'the dock offers to stash it', named(target));
+  target.click();
+  assert(stashed().length === 1, 'the item is in the stash');
+  assert(dockItems().length === before - 1, 'and out of the bag', String(dockItems().length));
+  assert(text('stash-count').startsWith('1'), 'the count keeps up', text('stash-count'));
+
+  // And back out again. A stash you cannot empty is a bin.
+  stashed()[0].click();
+  assert(stashed().length === 0, 'it comes back out');
+  assert(dockItems().length === before, 'and returns to the bag', String(dockItems().length));
+}
+
+// Space is bought with fragments, from here, because here is where you find
+// out you need it.
+{
+  const slotsBefore = stashSlots().length;
+  const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
+  const before = purse();
+  const cost = Number($('stash-grow').textContent.match(/(\d+) fragments/)?.[1] ?? 0);
+  assert(cost > 0, 'the price is on the button', $('stash-grow').textContent);
+  assert($('stash-grow').disabled === false, 'and the dev kit can afford it');
+  $('stash-grow').click();
+  assert(stashSlots().length > slotsBefore, 'buying adds slots',
+    `${slotsBefore} -> ${stashSlots().length}`);
+  assert(purse() === before - cost, 'and costs what it said',
+    `${before} -> ${purse()}, asked ${cost}`);
+  // It gets steeper, so storage stays a decision against buying a crystal.
+  const next = Number($('stash-grow').textContent.match(/(\d+) fragments/)?.[1] ?? 0);
+  assert(next > cost, 'the next block costs more', `${cost} then ${next}`);
+}
+
+$('stash-close').click();
+assert($('stash').hidden === true, 'the stash closes');
+$('open-craft').click();
+
 // --- the map is the floor, crafting is a popup over it -------------------
 // The dock must stay reachable underneath every popup: it holds both the item
 // crafting works on AND the currency it is spent with, so covering it would

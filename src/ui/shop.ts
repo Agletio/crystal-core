@@ -13,14 +13,14 @@
  */
 import { CURRENCY_BY_ID, RECIPES } from '../data';
 import { balance, runRecipe } from '../economy';
-import { addItem } from '../game/state';
+import { addItem, carryRoom, stashRoom } from '../game/state';
 import type { GameState } from '../game/state';
 import { note } from './history';
 import { crystalIcon, currencyIcon } from './icons';
 import { renderInventory } from './inventory';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { recipeButtonId } from './tutorial';
-import type { Recipe } from '../types';
+import type { ItemKind, Recipe } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -33,7 +33,28 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 let game: GameState;
 
+/**
+ * Is there anywhere to put what this sells?
+ *
+ * Checked before the sale, not after. runRecipe spends first and hands back
+ * the item, so without this you could pay full price for a crystal and be
+ * told there was nowhere to put it — which is a refund conversation, not a
+ * game mechanic.
+ */
+function hasRoomFor(recipe: Recipe): boolean {
+  if (recipe.output.type !== 'item') return true;
+  const kind: ItemKind = recipe.output.base.startsWith('crystal_t') ? 'crystal' : 'gear';
+  return carryRoom(game, kind) > 0 || stashRoom(game) > 0;
+}
+
 function buy(recipeId: string): void {
+  const recipe = RECIPES.find((r) => r.id === recipeId);
+  if (recipe && !hasRoomFor(recipe)) {
+    note(`${recipe.name} — nowhere to put it. Your bag and stash are both full.`, 'fail');
+    render();
+    return;
+  }
+
   const result = runRecipe(game.wallet, recipeId);
   if (!result.ok) {
     note(result.error ?? 'cannot afford that', 'fail');
@@ -41,8 +62,16 @@ function buy(recipeId: string): void {
     return;
   }
   if (result.item) {
-    addItem(game, result.item);
-    note(`Bought ${result.item.name}`, 'add');
+    // Where it landed matters: a full bag routes it to the stash, and a full
+    // stash means you just paid for something you cannot have. Say so.
+    const where = addItem(game, result.item);
+    if (where === 'lost') {
+      note(`${result.item.name} — no room to carry it, and the stash is full`, 'fail');
+    } else if (where === 'stashed') {
+      note(`Bought ${result.item.name} — bag full, sent to the stash`, 'add');
+    } else {
+      note(`Bought ${result.item.name}`, 'add');
+    }
   } else {
     note('Bought currency', 'add');
   }
@@ -94,6 +123,7 @@ export function render(): void {
     const affordable = Object.entries(recipe.inputs).every(
       ([id, n]) => balance(game.wallet, id) >= n
     );
+    const room = hasRoomFor(recipe);
 
     const btn = el('button', 'buy') as HTMLButtonElement;
     // Stable id so the guided opening can point at one recipe rather than the
@@ -112,9 +142,12 @@ export function render(): void {
       if (def) attachTooltip(btn, () => `${def.name}\n${def.description}`);
     }
 
-    if (!affordable) {
+    if (!affordable || !room) {
       btn.disabled = true;
       btn.classList.add('buy--off');
+      if (affordable && !room) {
+        body.append(el('span', 'buy__why', 'nowhere to put it'));
+      }
     }
     btn.onclick = () => buy(recipe.id);
     host.append(btn);

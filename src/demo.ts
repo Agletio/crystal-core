@@ -30,12 +30,19 @@ import { starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
+  CARRY,
+  addItem,
+  buyStashSpace,
+  carryRoom,
   craftItem,
   createGame,
   equipItem,
   grantFirstClear,
   replaceItem,
   selectForCraft,
+  stashRoom,
+  stashUpgradeCost,
+  unequipItem,
 } from './game/state';
 import type { Item, Wallet } from './types';
 
@@ -164,6 +171,80 @@ rule('AN ACTUAL RUN — headless, no browser');
 }
 
 // ===========================================================================
+rule('CARRY LIMIT — where does loot go when the bag is full?');
+
+// The dock stopped scrolling, which turned capacity into a real rule. The
+// path that matters is the one you only hit after a long session: a full bag
+// on a cleared run. Silently dropping the item there would read as a bug, and
+// nothing would teach you that the fix was to clear some space — so every
+// caller reports what addItem did with it.
+{
+  const game = createGame('fresh');
+  const fill = (kind: 'crystal' | 'gear', n: number) => {
+    for (let i = 0; i < n; i++) {
+      addItem(game, kind === 'crystal' ? makeCrystal(1) : makeGear('wand_ash', 1));
+    }
+  };
+
+  fill('crystal', CARRY.crystal);
+  check(
+    carryRoom(game, 'crystal') === 0 && carryRoom(game, 'gear') === CARRY.gear,
+    'filling one bag leaves the other alone',
+    `crystal room ${carryRoom(game, 'crystal')}, gear room ${carryRoom(game, 'gear')}`
+  );
+
+  const overflow = makeCrystal(2);
+  check(
+    addItem(game, overflow) === 'stashed' && game.stash.includes(overflow),
+    'a full bag sends the next one to the stash',
+    'overflow did not reach the stash'
+  );
+
+  // Fill the stash too, and the next one has genuinely nowhere to go.
+  while (stashRoom(game) > 0) addItem(game, makeCrystal(1));
+  check(
+    addItem(game, makeCrystal(3)) === 'lost',
+    'a full stash on top of a full bag loses it — and says so',
+    'the item went somewhere it should not have'
+  );
+
+  // Buying space is the way out, and it is priced to compete with a crystal.
+  grant(game.wallet, 'fragment', 1000);
+  const before = game.stashSlots;
+  const first = stashUpgradeCost(before)!;
+  buyStashSpace(game);
+  const second = stashUpgradeCost(game.stashSlots)!;
+  line(`  stash upgrades: ${first} then ${second} fragments (T5 crystal is ${crystalCost(5)})`);
+  check(
+    game.stashSlots > before && second > first,
+    'buying space works and gets steeper',
+    `${before} -> ${game.stashSlots}, ${first} then ${second}`
+  );
+  check(
+    addItem(game, makeCrystal(4)) === 'stashed',
+    'and the bought space is usable',
+    'the new slots did not take an item'
+  );
+
+  // Taking gear off is a net addition to the bag, so it has to refuse rather
+  // than let addItem fall through to the stash. A helmet that vanishes on
+  // unequip is the worst possible reading of a carry limit.
+  const worn = createGame('dev');
+  worn.inventory = worn.inventory.filter((i) => i.kind !== 'gear');
+  fillGear(worn);
+  const slot = Object.keys(worn.character.equipment)[0];
+  check(
+    slot !== undefined && !unequipItem(worn, slot),
+    'unequipping refuses rather than losing the item',
+    'something came off with nowhere to go'
+  );
+}
+
+function fillGear(game: ReturnType<typeof createGame>): void {
+  while (carryRoom(game, 'gear') > 0) addItem(game, makeGear('wand_ash', 1));
+}
+
+// ===========================================================================
 rule('MAP SHAPE — do chambers, passages and veins survive generation?');
 
 // The renderer colours a corridor differently from a room, which only works
@@ -240,6 +321,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     { view: 'craft', phase: 'results', top: 'craft' },
     { view: 'craft', phase: 'results', top: 'shop' },
     { view: 'run', phase: 'results', top: 'shop' },
+    { view: 'run', phase: 'results', top: 'stash' },
     { view: 'run', phase: 'results', top: 'sheet' },
     { view: 'run', phase: 'menu', top: 'skills' },
   ];

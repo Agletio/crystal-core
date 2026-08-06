@@ -14,14 +14,60 @@ import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import type { Character } from '../sim/character';
-import type { Item, Wallet } from '../types';
+import type { Item, ItemKind, Wallet } from '../types';
 
 export const SAVE_VERSION = 1;
+
+/**
+ * What you can carry, per kind.
+ *
+ * The dock used to scroll, which made capacity invisible: a hoard of ninety
+ * crystals looked exactly like a hoard of twelve, so "what do I keep" was
+ * never a question anyone had to answer. Every carried item is on screen now,
+ * and these are the numbers that make that true — the dock draws exactly this
+ * many slots and never scrolls, so the limit is a thing you can see rather
+ * than a thing you discover.
+ *
+ * Four rows each, which is where the two-column grid stops eating the map.
+ */
+export const CARRY: Record<ItemKind, number> = {
+  crystal: 32,
+  gear: 32,
+};
+
+/** Stash slots you start with. */
+export const STASH_START = 12;
+/** Slots one purchase adds. */
+export const STASH_STEP = 6;
+/** Where buying more stops. */
+export const STASH_MAX = 60;
+
+/**
+ * What the next block of stash space costs, or null when there is no more.
+ *
+ * Steep on purpose. Fragments are the one contested resource — every fragment
+ * spent here is a crystal not bought — so storage has to be a real decision
+ * rather than a formality you clear on the second clear. The fourth purchase
+ * costs about as much as a Tier 5 crystal.
+ */
+export function stashUpgradeCost(slots: number): number | null {
+  if (slots >= STASH_MAX) return null;
+  const bought = Math.max(0, Math.round((slots - STASH_START) / STASH_STEP));
+  return Math.round(40 * Math.pow(1.6, bought));
+}
 
 export interface GameState {
   version: number;
   wallet: Wallet;
   inventory: Item[];
+  /**
+   * Long-term storage. Nothing acts on a stashed item — it cannot be crafted,
+   * socketed or worn until you carry it again, which is what makes the carry
+   * limit mean anything.
+   */
+  stash: Item[];
+  /** How big the stash currently is. Bought up with fragments. */
+  stashSlots: number;
   character: Character;
   /**
    * Id of the inventory item currently open for crafting.
@@ -48,6 +94,8 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     version: SAVE_VERSION,
     wallet: {},
     inventory: [],
+    stash: [],
+    stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
     craftId: null,
     onboarded: false,
@@ -75,6 +123,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
     ...preset.crystals.map((tier) => makeCrystal(tier)),
     ...preset.gear.map((g) => makeGear(g.base, g.ilvl)),
   ];
+  game.stash = [];
+  game.stashSlots = STASH_START;
 
   // A fresh character owns nothing and has worn nothing. The dev preset wears
   // a rolled set so the sheet and the stat pipeline have something in them.
@@ -114,8 +164,37 @@ export function grantFirstClear(game: GameState): {
   return { fragments: gift.fragments, currency: gift.currency, weapon };
 }
 
-export function addItem(game: GameState, item: Item): void {
-  game.inventory.push(item);
+export const carried = (game: GameState, kind: ItemKind): Item[] =>
+  game.inventory.filter((i) => i.kind === kind);
+
+export const carryRoom = (game: GameState, kind: ItemKind): number =>
+  CARRY[kind] - carried(game, kind).length;
+
+export const stashRoom = (game: GameState): number =>
+  game.stashSlots - game.stash.length;
+
+/** Where an item ended up. */
+export type Placement = 'carried' | 'stashed' | 'lost';
+
+/**
+ * Put an item somewhere, in the order you'd want it.
+ *
+ * Bags first, then the stash, then nowhere. The last case is the one that
+ * matters: a full bag and a full stash means loot you earned is gone, and it
+ * has to be SAID — an item that silently fails to arrive reads as a bug, and
+ * you'd never learn that the thing to do was clear some space first. Every
+ * caller reports what this returned.
+ */
+export function addItem(game: GameState, item: Item): Placement {
+  if (carryRoom(game, item.kind) > 0) {
+    game.inventory.push(item);
+    return 'carried';
+  }
+  if (stashRoom(game) > 0) {
+    game.stash.push(item);
+    return 'stashed';
+  }
+  return 'lost';
 }
 
 export function removeItem(game: GameState, item: Item): boolean {
@@ -128,6 +207,46 @@ export function removeItem(game: GameState, item: Item): boolean {
 
 export function findItem(game: GameState, id: string): Item | undefined {
   return game.inventory.find((i) => i.id === id);
+}
+
+// ---------------------------------------------------------------------------
+// The stash
+// ---------------------------------------------------------------------------
+
+/** Carried → stashed. Fails when the stash is full. */
+export function toStash(game: GameState, item: Item): boolean {
+  if (stashRoom(game) <= 0) return false;
+  if (!removeItem(game, item)) return false;
+  game.stash.push(item);
+  return true;
+}
+
+/** Stashed → carried. Fails when that kind's bag is full. */
+export function fromStash(game: GameState, item: Item): boolean {
+  const i = game.stash.indexOf(item);
+  if (i < 0) return false;
+  if (carryRoom(game, item.kind) <= 0) return false;
+  game.stash.splice(i, 1);
+  game.inventory.push(item);
+  return true;
+}
+
+/**
+ * Buy the next block of stash space.
+ *
+ * Lives here rather than in the shop because it changes the SHAPE of storage
+ * rather than adding to it — and because the stash tab is where you find out
+ * you need it.
+ */
+export function buyStashSpace(game: GameState): { ok: boolean; error?: string } {
+  const cost = stashUpgradeCost(game.stashSlots);
+  if (cost === null) return { ok: false, error: 'the stash is as large as it goes' };
+  if ((game.wallet.fragment ?? 0) < cost) {
+    return { ok: false, error: `costs ${cost} fragments` };
+  }
+  game.wallet.fragment = (game.wallet.fragment ?? 0) - cost;
+  game.stashSlots = Math.min(STASH_MAX, game.stashSlots + STASH_STEP);
+  return { ok: true };
 }
 
 /** The item crafting is working on, or null. */
@@ -155,8 +274,7 @@ export function replaceItem(game: GameState, item: Item): void {
   else game.inventory[i] = item;
 }
 
-export const crystalsIn = (game: GameState): Item[] =>
-  game.inventory.filter((i) => i.kind === 'crystal');
+export const crystalsIn = (game: GameState): Item[] => carried(game, 'crystal');
 
 /** Which slot type an item fits, if any. */
 export function gearKindOf(item: Item): string | null {
@@ -192,9 +310,20 @@ export function equipItem(game: GameState, item: Item, slotId: string): boolean 
   return true;
 }
 
+/**
+ * Take something off.
+ *
+ * Refuses when there is nowhere to put it, rather than taking it off and
+ * letting addItem fall through to the stash or to nothing. Equipping is safe
+ * without this check — it removes the incoming item before returning the
+ * outgoing one, so the count never rises — but taking something off is a net
+ * addition, and a helmet that vanishes on unequip is the worst version of a
+ * carry limit.
+ */
 export function unequipItem(game: GameState, slotId: string): boolean {
   const worn = game.character.equipment[slotId];
   if (!worn) return false;
+  if (carryRoom(game, worn.kind) <= 0) return false;
   delete game.character.equipment[slotId];
   addItem(game, worn);
   return true;

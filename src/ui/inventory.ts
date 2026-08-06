@@ -19,6 +19,7 @@ import { describeMod } from '../crafting';
 import { attachTooltip } from './tooltip';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
+import { CARRY } from '../game/state';
 import type { GameState } from '../game/state';
 import type { CurrencyDef, Item, ItemKind } from '../types';
 
@@ -54,8 +55,30 @@ export interface CurrencyHandler {
   blocked?(currency: CurrencyDef): string | null;
 }
 
-/** Kept full even when you own less, so the dock is a fixed shape. */
-const MIN_SLOTS = 12;
+/**
+ * Currency slots drawn, whether or not you hold that many.
+ *
+ * Currency has no carry limit — a stack is one slot however deep it is, and
+ * there are only thirteen kinds — so this is purely about the dock keeping a
+ * fixed shape. Items are different: their slot count IS their limit, and
+ * comes from CARRY.
+ */
+const CURRENCY_SLOTS = 16;
+
+/**
+ * Rows in every dock column.
+ *
+ * The grid states both dimensions rather than auto-filling, because an
+ * auto-filled grid re-wraps as the window narrows and the fourth row would be
+ * clipped on a small screen. Columns are derived from the capacity and
+ * written to the element, so the carry limit stays defined in exactly one
+ * place and the layout follows it.
+ */
+const DOCK_ROWS = 4;
+
+function sizeGrid(host: HTMLElement, slots: number): void {
+  host.style.setProperty('--cols', String(Math.ceil(slots / DOCK_ROWS)));
+}
 
 const HOSTS: Record<ItemKind, string> = {
   crystal: 'inv-crystal',
@@ -128,6 +151,7 @@ function renderCurrencies(): void {
   if (!game) return;
   const host = $('inv-currency');
   host.replaceChildren();
+  sizeGrid(host, CURRENCY_SLOTS);
 
   let owned = 0;
   for (const currency of CURRENCIES) {
@@ -154,7 +178,7 @@ function renderCurrencies(): void {
     host.append(btn);
   }
 
-  for (let i = owned; i < MIN_SLOTS; i++) {
+  for (let i = owned; i < CURRENCY_SLOTS; i++) {
     host.append(el('div', 'slot slot--empty'));
   }
 }
@@ -181,6 +205,12 @@ export function renderInventory(): void {
   for (const kind of Object.keys(HOSTS) as ItemKind[]) {
     const items = game.inventory.filter((i) => i.kind === kind);
     fill($(HOSTS[kind]), items, kind);
+    // The count is on the label, not hidden in a tooltip. The dock no longer
+    // scrolls, so the empty slots already say how much room is left — but the
+    // number is what you check before deciding whether to go back down.
+    const label = $(`${HOSTS[kind]}-label`);
+    label.textContent = `${kind === 'crystal' ? 'Crystals' : 'Equipment'} ${items.length}/${CARRY[kind]}`;
+    label.classList.toggle('dockcol__label--full', items.length >= CARRY[kind]);
   }
 }
 
@@ -198,6 +228,7 @@ function sorted(items: Item[], kind: ItemKind): Item[] {
 
 function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
   host.replaceChildren();
+  sizeGrid(host, CARRY[kind]);
 
   for (const item of sorted(items, kind)) {
     const action = handler?.actionFor(item) ?? null;
@@ -220,9 +251,10 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     host.append(btn);
   }
 
-  // Empty slots to the minimum, so an empty dock still reads as a container
-  // waiting to be filled rather than a blank strip.
-  for (let i = items.length; i < MIN_SLOTS; i++) {
+  // Every remaining slot, drawn. This is the carry limit made visible: the
+  // dock does not scroll, so what you see is genuinely all you can hold, and
+  // running out is something you watch approaching rather than discover.
+  for (let i = items.length; i < CARRY[kind]; i++) {
     host.append(el('div', 'slot slot--empty'));
   }
 }

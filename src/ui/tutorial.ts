@@ -23,16 +23,16 @@
  * site. The same tick repositions the card, which is what keeps it stuck to a
  * target that moved.
  */
-import { balance } from '../economy';
-import { craftItem } from '../game/state';
-import type { GameState } from '../game/state';
+import { balance } from "../economy";
+import { craftItem } from "../game/state";
+import type { GameState } from "../game/state";
 
 const $ = (id: string) => document.getElementById(id)!;
 
 /** What the shell knows that the game state doesn't. */
 export interface GuideCtx {
   /** Which surface has focus: the crafting popup, or the Fissure underneath. */
-  view: 'craft' | 'run';
+  view: "craft" | "run";
   /**
    * Where the Fissure itself is: choosing, descending, or reading the report.
    *
@@ -40,7 +40,7 @@ export interface GuideCtx {
    * so "Enter" is hidden until you dismiss it — a step pointing at Enter from
    * there points at nothing.
    */
-  phase: 'menu' | 'running' | 'results';
+  phase: "menu" | "running" | "results";
   /** Topmost popup, so a step can point at the right close button. */
   top: string | null;
 }
@@ -81,28 +81,28 @@ export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    id: 'enter',
-    text: 'This is the Fissure — the one place you go, always open and always free. Click Enter to descend.',
-    hint: 'You fight automatically. Nothing to time.',
-    target: 'run-launch',
-    done: (g, ctx) => ctx.phase !== 'menu' || g.firstClearDone,
+    id: "enter",
+    text: "This is the Fissure — the one place you go, always open and always free. Click Enter to descend.",
+    hint: "You fight automatically. Nothing to time.",
+    target: "run-launch",
+    done: (g, ctx) => ctx.phase !== "menu" || g.firstClearDone,
   },
   {
-    id: 'watch',
-    text: 'You fight on your own. Clear it and something will be waiting at the exit — and everything you find only banks if you make it out.',
-    hint: 'Nothing to click. What you are carrying shows here.',
+    id: "watch",
+    text: "You fight on your own. Clear it and something will be waiting at the exit — and everything you find only banks if you make it out.",
+    hint: "Nothing to click. What you are carrying shows here.",
     // Anchored beside the loot list rather than on the stage: there is
     // nothing to click, and a ring around the viewport of a zoomed-in camera
     // frames a random patch of rock rather than the fight.
-    target: 'run-loot',
+    target: "run-loot",
     ring: false,
     done: (g) => g.firstClearDone,
   },
   {
-    id: 'to_shop',
-    text: 'You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.',
-    target: 'open-shop',
-    done: (_g, ctx) => ctx.top === 'shop' || has(_g, 'shard_of_awakening'),
+    id: "to_shop",
+    text: "You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.",
+    target: "open-shop",
+    done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
   },
   /**
    * Same moving-target trick as the equip step below: from wherever the last
@@ -110,42 +110,45 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
    * at the button that gets you to the next click either way.
    */
   {
-    id: 'buy_awakening',
+    id: "buy_awakening",
     text: (ctx) =>
-      ctx.top === 'shop'
-        ? 'Buy a Shard of Awakening. It fills every empty slot on an item at once.'
-        : 'Open the Shop and buy a Shard of Awakening.',
-    hint: 'Costs 10 fragments. It lands in your inventory.',
+      ctx.top === "shop"
+        ? "Buy a Shard of Awakening. It fills every empty slot on an item at once."
+        : "Open the Shop and buy a Shard of Awakening.",
+    hint: "Costs 10 fragments. It lands in your inventory.",
     target: (ctx) =>
-      ctx.top === 'shop' ? recipeButtonId('make_shard_of_awakening') : 'open-shop',
-    done: (g) => has(g, 'shard_of_awakening'),
+      ctx.top === "shop"
+        ? recipeButtonId("make_shard_of_awakening")
+        : "open-shop",
+    done: (g) => has(g, "shard_of_awakening"),
   },
   {
-    id: 'select_weapon',
+    id: "select_weapon",
     text: (ctx) =>
-      ctx.view === 'craft'
-        ? 'Click your Ash Wand in the dock below to put it on the bench.'
-        : 'Open Crafting, then click your Ash Wand in the dock below.',
-    hint: 'The dock stays reachable under every popup.',
-    target: (ctx) => (ctx.view === 'craft' ? 'inv-gear' : 'open-craft'),
-    done: (g) => craftItem(g)?.kind === 'gear',
+      ctx.view === "craft"
+        ? "Click your Ash Wand in the dock below to put it on the bench."
+        : "Open Crafting, then click your Ash Wand in the dock below.",
+    hint: "The dock stays reachable under every popup.",
+    target: (ctx) => (ctx.view === "craft" ? "inv-gear" : "open-craft"),
+    done: (g) => craftItem(g)?.kind === "gear",
   },
   {
-    id: 'use_awakening',
-    text: 'Now click the Shard of Awakening in your Currency shelf. The wand keeps its base stat; the empty slots fill with modifiers.',
-    hint: 'Currency is spent from the dock, onto whatever is on the bench.',
-    target: 'inv-currency',
+    id: "use_awakening",
+    text: "Now click the Shard of Awakening in your Currency shelf. The wand keeps its base stat; the empty slots fill with modifiers.",
+    hint: "Currency is spent from the dock, onto whatever is on the bench.",
+    target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },
   {
-    id: 'buy_chaos',
+    id: "buy_chaos",
     text: (ctx) =>
-      ctx.top === 'shop'
-        ? 'Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor.'
-        : 'Back to the Shop for a Shard of Chaos.',
-    hint: 'Costs 12 fragments. Using it is your call.',
-    target: (ctx) => (ctx.top === 'shop' ? recipeButtonId('make_shard_of_chaos') : 'open-shop'),
-    done: (g) => has(g, 'shard_of_chaos'),
+      ctx.top === "shop"
+        ? "Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor."
+        : "Back to the Shop for a Shard of Chaos.",
+    hint: "Costs 12 fragments. Using it is your call.",
+    target: (ctx) =>
+      ctx.top === "shop" ? recipeButtonId("make_shard_of_chaos") : "open-shop",
+    done: (g) => has(g, "shard_of_chaos"),
   },
   /**
    * One step, three targets.
@@ -156,23 +159,25 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
    * target, the guide simply always points at the next click.
    */
   {
-    id: 'equip',
+    id: "equip",
     text: (ctx) =>
-      ctx.top === 'shop'
-        ? 'The wand is crafted. Close the Shop.'
-        : ctx.view === 'craft'
-          ? 'Close Crafting — the Character button is behind it.'
-          : ctx.top === 'sheet'
-            ? 'Click the Weapon slot, then pick the Ash Wand.'
-            : 'Open Character and put the wand in your weapon slot.',
+      ctx.top === "shop" || ctx.top === "stash"
+        ? "The wand is crafted. Close this and open Character."
+        : ctx.view === "craft"
+          ? "Close Crafting — the Character button is behind it."
+          : ctx.top === "sheet"
+            ? "Click the Weapon slot, then pick the Ash Wand."
+            : "Open Character and put the wand in your weapon slot.",
     target: (ctx) =>
-      ctx.top === 'shop'
-        ? 'shop-close'
-        : ctx.view === 'craft'
-          ? 'craft-close'
-          : ctx.top === 'sheet'
-            ? slotButtonId('weapon')
-            : 'open-character',
+      ctx.top === "shop"
+        ? "shop-close"
+        : ctx.top === "stash"
+          ? "stash-close"
+          : ctx.view === "craft"
+            ? "craft-close"
+            : ctx.top === "sheet"
+              ? slotButtonId("weapon")
+              : "open-character",
     done: (g) => !!g.character.equipment.weapon,
   },
   /**
@@ -181,39 +186,41 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
    * character sheet, under a bench. It points at whatever is in the way.
    */
   {
-    id: 'descend',
+    id: "descend",
     text: (ctx) =>
-      ctx.top === 'sheet'
-        ? 'That is the loop. Close the sheet — you can afford a crystal now.'
-        : ctx.top === 'shop'
-          ? 'That is the loop. Close the Shop and head back down.'
-          : ctx.top === 'craft'
-            ? 'That is the loop. Close Crafting and head back down.'
-            : ctx.phase === 'results'
-              ? 'Your report from last time is still open. Head back to the Fissure.'
-              : 'Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.',
-    hint: 'Crystals are spent on entry, win or lose.',
+      ctx.top === "sheet"
+        ? "That is the loop. Close the sheet — you can afford a crystal now."
+        : ctx.top === "shop" || ctx.top === "stash"
+          ? "That is the loop. Close this and head back down."
+          : ctx.top === "craft"
+            ? "That is the loop. Close Crafting and head back down."
+            : ctx.phase === "results"
+              ? "Your report from last time is still open. Head back to the Fissure."
+              : "Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.",
+    hint: "Crystals are spent on entry, win or lose.",
     target: (ctx) =>
-      ctx.top === 'sheet'
-        ? 'sheet-close'
-        : ctx.top === 'shop'
-          ? 'shop-close'
-          : ctx.top === 'craft'
-            ? 'craft-close'
-            : ctx.phase === 'results'
-              ? 'run-again'
-              : 'run-launch',
-    done: (_g, ctx) => ctx.phase === 'running',
+      ctx.top === "sheet"
+        ? "sheet-close"
+        : ctx.top === "shop"
+          ? "shop-close"
+          : ctx.top === "stash"
+            ? "stash-close"
+            : ctx.top === "craft"
+              ? "craft-close"
+              : ctx.phase === "results"
+                ? "run-again"
+                : "run-launch",
+    done: (_g, ctx) => ctx.phase === "running",
   },
 ];
 
 let game: GameState;
-let context: () => GuideCtx = () => ({ view: 'run', phase: 'menu', top: null });
+let context: () => GuideCtx = () => ({ view: "run", phase: "menu", top: null });
 let highlighted: Element | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 
 function clearHighlight(): void {
-  highlighted?.classList.remove('guide-on');
+  highlighted?.classList.remove("guide-on");
   highlighted = null;
 }
 
@@ -222,7 +229,10 @@ function scroller(node: Element): HTMLElement | null {
   let el = node.parentElement;
   while (el && el !== document.body) {
     const overflow = getComputedStyle(el).overflowY;
-    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+    if (
+      (overflow === "auto" || overflow === "scroll") &&
+      el.scrollHeight > el.clientHeight + 1
+    ) {
       return el;
     }
     el = el.parentElement;
@@ -237,7 +247,7 @@ function scroller(node: Element): HTMLElement | null {
  * with it, so the step vanished entirely and the only way to find out what to
  * do next was to scroll at random.
  */
-function outOfView(target: Element): 'up' | 'down' | null {
+function outOfView(target: Element): "up" | "down" | null {
   const box = target.getBoundingClientRect();
   // A display:none element measures 0x0 at the origin, which looks exactly
   // like "scrolled off the top" and isn't. Telling someone to scroll up to
@@ -246,10 +256,13 @@ function outOfView(target: Element): 'up' | 'down' | null {
 
   const box2 = scroller(target)?.getBoundingClientRect();
   const top = Math.max(0, box2?.top ?? 0);
-  const bottom = Math.min(globalThis.innerHeight, box2?.bottom ?? globalThis.innerHeight);
+  const bottom = Math.min(
+    globalThis.innerHeight,
+    box2?.bottom ?? globalThis.innerHeight,
+  );
 
-  if (box.bottom <= top + 2) return 'up';
-  if (box.top >= bottom - 2) return 'down';
+  if (box.bottom <= top + 2) return "up";
+  if (box.top >= bottom - 2) return "down";
   return null;
 }
 
@@ -269,9 +282,13 @@ const STACKED = 900;
  * can still sit next to the thing it is talking about should always do that.
  * Returns whether it took over the placement.
  */
-function parkOverDock(card: HTMLElement, arrow: HTMLElement, away: 'up' | 'down' | null): boolean {
+function parkOverDock(
+  card: HTMLElement,
+  arrow: HTMLElement,
+  away: "up" | "down" | null,
+): boolean {
   if (!away || globalThis.innerWidth > STACKED) return false;
-  const dock = document.getElementById('dock');
+  const dock = document.getElementById("dock");
   if (!dock) return false;
 
   const box = dock.getBoundingClientRect();
@@ -280,12 +297,14 @@ function parkOverDock(card: HTMLElement, arrow: HTMLElement, away: 'up' | 'down'
   // Clearing the map beats centring on the dock. On a short screen the dock
   // sits high enough that a dock-centred card still clips the canvas, and the
   // whole point of moving was to stop covering the fight.
-  const map = document.getElementById('run-canvas') ?? document.getElementById('run-stage');
+  const map =
+    document.getElementById("run-canvas") ??
+    document.getElementById("run-stage");
   const floor = map ? map.getBoundingClientRect().bottom + 8 : 0;
 
   const top = Math.min(
     Math.max(8, floor, box.top + (box.height - size.height) / 2),
-    globalThis.innerHeight - size.height - 8
+    globalThis.innerHeight - size.height - 8,
   );
   card.style.top = `${Math.round(top)}px`;
   card.style.left = `${Math.round(Math.max(8, (globalThis.innerWidth - size.width) / 2))}px`;
@@ -300,8 +319,8 @@ function parkOverDock(card: HTMLElement, arrow: HTMLElement, away: 'up' | 'down'
  * moves — panels re-render, popups open, the dock reflows.
  */
 function place(target: Element): void {
-  const card = $('guide');
-  const arrow = $('guide-arrow');
+  const card = $("guide");
+  const arrow = $("guide-arrow");
   const size = card.getBoundingClientRect();
   const GAP = 14;
 
@@ -324,26 +343,30 @@ function place(target: Element): void {
   // above otherwise. The middle case is what keeps the card off the health bar
   // during the descent: the loot panel has room to spare and the panels above
   // it are the ones you're being told to watch.
-  const below = !away && box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
+  const below =
+    !away && box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
   const inside = !below && box.height > size.height + GAP * 2;
   const raw = below
     ? box.bottom + GAP
     : inside
       ? // Hug the edge you're being sent towards, so the card and the scroll
         // it's asking for are in the same place.
-        away === 'down'
+        away === "down"
         ? box.bottom - size.height - GAP
         : box.top + GAP
       : box.top - GAP - size.height;
 
   // Clamped last, so the card is on screen whatever the target was doing.
-  const top = Math.min(Math.max(8, raw), globalThis.innerHeight - size.height - 8);
+  const top = Math.min(
+    Math.max(8, raw),
+    globalThis.innerHeight - size.height - 8,
+  );
 
   // Centred on the anchor, then pulled back inside the window.
   const wanted = box.left + box.width / 2 - size.width / 2;
   const left = Math.min(
     Math.max(8, wanted),
-    globalThis.innerWidth - size.width - 8
+    globalThis.innerWidth - size.width - 8,
   );
 
   card.style.top = `${Math.round(top)}px`;
@@ -353,24 +376,27 @@ function place(target: Element): void {
   // card's edge when the card had to slide away. Sitting inside the anchor,
   // there's nothing to point at.
   arrow.hidden = inside || !!away;
-  const tip = Math.min(Math.max(box.left + box.width / 2 - left, 16), size.width - 16);
+  const tip = Math.min(
+    Math.max(box.left + box.width / 2 - left, 16),
+    size.width - 16,
+  );
   arrow.style.left = `${Math.round(tip - 6)}px`;
-  arrow.style.top = below ? '-8px' : `${Math.round(size.height - 6)}px`;
-  arrow.style.transform = below ? 'rotate(45deg)' : 'rotate(225deg)';
+  arrow.style.top = below ? "-8px" : `${Math.round(size.height - 6)}px`;
+  arrow.style.transform = below ? "rotate(45deg)" : "rotate(225deg)";
 }
 
-function showScrollHint(away: 'up' | 'down' | null): void {
-  const hint = $('guide-scroll');
+function showScrollHint(away: "up" | "down" | null): void {
+  const hint = $("guide-scroll");
   hint.hidden = away === null;
   if (!away) return;
-  hint.classList.toggle('guide__scroll--up', away === 'up');
-  $('guide-scroll-text').textContent =
-    away === 'down' ? 'Scroll down to reach it' : 'Scroll up to reach it';
+  hint.classList.toggle("guide__scroll--up", away === "up");
+  $("guide-scroll-text").textContent =
+    away === "down" ? "Scroll down to reach it" : "Scroll up to reach it";
 }
 
 function paint(): void {
   const step = TUTORIAL_STEPS[game.tutorialStep ?? -1];
-  const card = $('guide');
+  const card = $("guide");
 
   if (!step) {
     card.hidden = true;
@@ -380,20 +406,20 @@ function paint(): void {
 
   const ctx = context();
   card.hidden = false;
-  $('guide-text').textContent =
-    typeof step.text === 'function' ? step.text(ctx) : step.text;
-  $('guide-hint').textContent = step.hint ?? '';
-  $('guide-step').textContent =
+  $("guide-text").textContent =
+    typeof step.text === "function" ? step.text(ctx) : step.text;
+  $("guide-hint").textContent = step.hint ?? "";
+  $("guide-step").textContent =
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;
 
-  const id = typeof step.target === 'function' ? step.target(ctx) : step.target;
+  const id = typeof step.target === "function" ? step.target(ctx) : step.target;
   const target = document.getElementById(id);
   const ring = step.ring !== false ? target : null;
 
   if (ring !== highlighted) {
     clearHighlight();
     if (ring) {
-      ring.classList.add('guide-on');
+      ring.classList.add("guide-on");
       highlighted = ring;
     }
   }
@@ -441,7 +467,7 @@ export function startTutorial(): void {
 export function stopTutorial(): void {
   game.tutorialStep = null;
   clearHighlight();
-  $('guide').hidden = true;
+  $("guide").hidden = true;
 }
 
 export function initTutorial(state: GameState, ctx: () => GuideCtx): void {

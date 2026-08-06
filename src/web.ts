@@ -1,7 +1,7 @@
 /**
  * Browser entry point. Owns the game state and wires the screens to it.
  *
- * One screen and five popups. The map is the floor — it's where the game
+ * One screen and six popups. The map is the floor — it's where the game
  * happens and the thing you come back to after everything else — so it isn't
  * behind a tab at all. Crafting, the shop, the character sheet, skills and
  * history are things you open, use, and close over the top of it, and a run
@@ -17,6 +17,7 @@ import type { StartMode } from './game/state';
 import { initInventory } from './ui/inventory';
 import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
+import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
@@ -49,6 +50,7 @@ function restart(mode: StartMode): void {
   else {
     closeCraft();
     closeShop();
+    closeStash();
     onRunFocused();
   }
   maybeShowWelcome();
@@ -70,6 +72,7 @@ function begin(): void {
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
 document.getElementById('open-shop')!.addEventListener('click', openShop);
+document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
@@ -82,6 +85,7 @@ globalThis.addEventListener('keydown', (event) => {
   if (isSkillsOpen()) closeSkills();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
+  else if (isStashOpen()) closeStash();
   else if (isShopOpen()) closeShop();
   else if (isCraftOpen()) closeCraft();
 });
@@ -113,6 +117,8 @@ initCharacter(game, refreshRunPanels);
 initSkills(game, refreshRunPanels);
 initCraft(game, onRunFocused);
 initShop(game);
+// Closing the stash hands the dock back to the map, same as crafting does.
+initStash(game, onRunFocused);
 initRun(game);
 /**
  * What the guide needs that the game state can't tell it: which surface has
@@ -124,11 +130,13 @@ function guideContext(): GuideCtx {
     ? 'skills'
     : isCharacterOpen()
       ? 'sheet'
-      : isShopOpen()
-        ? 'shop'
-        : isCraftOpen()
-          ? 'craft'
-          : null;
+      : isStashOpen()
+        ? 'stash'
+        : isShopOpen()
+          ? 'shop'
+          : isCraftOpen()
+            ? 'craft'
+            : null;
   return { view: isCraftOpen() ? 'craft' : 'run', phase: runPhase(), top };
 }
 

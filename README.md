@@ -549,7 +549,7 @@ The page never scrolls. `.wrap` fills the viewport, and only the active view
 grows — it scrolls inside itself, so the frame stays put like an application
 window rather than a document.
 
-**One screen, five popups, and a dock.** The map is the floor: it's where the
+**One screen, six popups, and a dock.** The map is the floor: it's where the
 game happens and the thing you return to after everything else, so it isn't
 behind navigation at all. Two tab bars — Bench/Fracture in one place,
 Character/Skills/History in another — were one set of destinations pretending
@@ -562,6 +562,9 @@ to be two.
   turns fragments into stock, the other spends stock on the item in front of
   you. Sharing a window meant that item scrolled out of sight exactly when you
   went to buy something for it.
+- **Stash** — where the overflow goes once the dock stopped scrolling. You move
+  things in by clicking them *in the dock*, which works because every popup
+  stops above it: both halves of a move are on screen.
 - **Character sheet** — reference you consult rather than a workspace you live
   in, and you want your stats while choosing a map *or* crafting gear.
 - **Skills** — the same, per-skill webs.
@@ -632,9 +635,48 @@ rendering all thirteen greyed out would rebuild the wall this replaced.
 
 It's icons in slots — crystals, equipment, currency — with the name and every
 modifier in the hover tooltip. Forty item names is a wall you read past; forty
-icons is something you scan. Slots pad out to a minimum so an empty dock still
-reads as a container rather than a blank strip, and a column deeper than two
-rows scrolls inside itself rather than pushing the Fissure off screen.
+icons is something you scan.
+
+**The dock does not scroll, and that is the carry limit.** It used to be two
+rows with `overflow-y: auto`, which made capacity invisible: ninety crystals
+looked exactly like twelve, so "what do I keep" was never a question anyone had
+to answer. Every slot you can fill is drawn — `CARRY` in `game/state.ts` is
+both the rule and the number of squares — so running out is something you watch
+approaching rather than discover in a report. The column label carries the
+count and turns citrine when it's full.
+
+Both grid dimensions are stated rather than auto-filled. An auto-filled grid
+re-wraps as the window narrows, so the same slots would need five rows on a
+small screen and the fourth would be clipped — the height has to be constant
+for "everything you own is on screen" to be true. `--cols` is written onto the
+element from the capacity, so the limit lives in one place and the layout
+follows it. Below about 1120px the dock scrolls sideways as a unit rather than
+reflowing; `shots.mjs` knows to ignore content inside a deliberate horizontal
+scroller, because otherwise the guard reports the feature as the bug.
+
+### The stash
+
+A carry limit needs somewhere for the overflow to go that isn't the floor.
+Stashed items are **inert** — not craftable, socketable or wearable until you
+carry them again. Storage that also worked as a bag would just be a bigger bag,
+and the limit would mean nothing.
+
+It starts at 12 slots and grows 6 at a time for fragments, priced steeply
+(40, then 64, 102, 164…) because fragments are the one contested resource:
+space competes with buying a crystal, which is the same decision everything
+else in the economy is made of. Buying happens on the stash tab, because that's
+where you find out you need it.
+
+`addItem()` returns where the item actually landed — bag, stash, or nowhere —
+and every caller reports it. That last case is the one that matters: a full bag
+and a full stash means loot you earned is gone, and it has to be *said*. An
+item that silently fails to arrive reads as a bug, and you'd never learn that
+the fix was to clear some space. The shop goes further and refuses the sale up
+front, since `runRecipe` spends before it hands the item back — paying full
+price for something with nowhere to go is a refund conversation, not a
+mechanic. Unequipping refuses for the same reason: it's a net addition to the
+bag, and a helmet that vanishes when you take it off is the worst possible
+reading of a carry limit.
 
 **The bench selects in place.** `craftId` is a reference into the inventory,
 not a move. Taking the item out made it look like crafting had eaten it — the
