@@ -48,6 +48,46 @@ export interface Renderer {
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 5;
 
+/**
+ * Pixels per tile at 1x, once you are past Fit.
+ *
+ * Zoom used to be a multiple of "whatever fits the whole map", which meant it
+ * measured something different on every screen AND on every map: 2x was ~37px
+ * a tile on a desktop and ~17px on a phone, so the same label produced a
+ * comfortable view on one and a distant one on the other. As an absolute
+ * scale, 2x is 2x everywhere and a small screen shows less world rather than
+ * smaller world — which is the thing that was actually wrong.
+ */
+export const TILE_AT_1X = 18;
+
+/**
+ * Tiles that must stay visible across the shorter axis.
+ *
+ * The hero's reach is about six and a half tiles, so a view tighter than this
+ * hides things it is already shooting at. Stated as a fact about the GAME
+ * rather than about any device, which is what makes it hold on hardware
+ * nobody has tested.
+ */
+export const MIN_TILES_VISIBLE = 16;
+
+/**
+ * Where to start on this surface: 2x when there is room for it, tighter only
+ * when the surface is too small to keep the hero's reach on screen.
+ */
+export function defaultZoom(shortAxisPx: number): number {
+  // An unmeasured surface says nothing about what fits on it — headless, or
+  // a panel that has not been laid out yet. Answering 1x there would mean
+  // booting at Fit, which is the one scale a fight is unreadable at.
+  if (!(shortAxisPx > 0)) return 2;
+  const affordable = shortAxisPx / MIN_TILES_VISIBLE / TILE_AT_1X;
+  return clampZoom(Math.min(2, affordable));
+}
+
+/** Tile size in CSS px. Fit and below shows the whole map; above is absolute. */
+export function tileSize(zoom: number, fit: number): number {
+  return zoom <= ZOOM_MIN ? fit * zoom : TILE_AT_1X * zoom;
+}
+
 export const clampZoom = (z: number): number =>
   Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
 

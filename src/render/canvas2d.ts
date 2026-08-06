@@ -13,7 +13,7 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, poisonDrops, poisonFieldRadius, spriteColour, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, spriteColour, tileSize, vfxColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -63,7 +63,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   function viewFor(state: RunState): View {
     const { grid } = state.map;
     const fit = Math.min(cssWidth / grid.width, cssHeight / grid.height);
-    const tile = fit * zoom;
+    const tile = tileSize(zoom, fit);
     const mapW = tile * grid.width;
     const mapH = tile * grid.height;
 

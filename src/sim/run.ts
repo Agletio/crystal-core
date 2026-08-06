@@ -732,6 +732,65 @@ export class RunSim {
    * The ignore/hopeless bookkeeping that used to live here existed only to
    * paper over euclidean picking things it couldn't reach, and went with it.
    */
+  /**
+   * The best thing to hit among those already within reach, or null if
+   * reaching anything means walking.
+   *
+   * "Best" is whichever one puts the most enemies inside the skill's area.
+   * Nearest-first kept picking the straggler on the near edge of a pack and
+   * clipping one or two, while a target a step deeper would have caught the
+   * whole knot — the circle was doing its job and being aimed badly.
+   *
+   * A skill with no area has nothing to compare, so every candidate scores 1
+   * and this falls through to the closest of them. Walking is still decided
+   * by path distance: this only ever chooses BETWEEN things already in reach,
+   * so it can never send the hero on a longer walk for a better angle.
+   */
+  private bestInReach(hero: Entity): Entity | null {
+    const radius = this.areaRadiusFor(hero);
+    const reach = hero.stats.attackRange;
+
+    const candidates = this.state.monsters.filter(
+      (m) => !m.dead && dist(hero, m) <= reach && this.canSee(hero, m)
+    );
+    if (candidates.length === 0) return null;
+
+    let best = candidates[0];
+    let bestScore = -1;
+    let bestDist = Infinity;
+    for (const c of candidates) {
+      const caught =
+        radius <= 0 ? 1 : candidates.filter((o) => dist(c, o) <= radius).length;
+      const d = dist(hero, c);
+      // Ties go to the closer one, which keeps single-target skills behaving
+      // exactly as they did.
+      if (caught > bestScore || (caught === bestScore && d < bestDist)) {
+        best = c;
+        bestScore = caught;
+        bestDist = d;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * A base radius after the user's Area of Effect.
+   *
+   * The one place the stat is turned into tiles. Targeting and the behaviour
+   * that actually applies the poison both come through here — if they used
+   * separate copies they could disagree, and the hero would be aiming at a
+   * circle that is not the one it draws or hits with.
+   */
+  private areaRadius(user: Entity, base: number): number {
+    if (base <= 0) return 0;
+    return base * Math.sqrt(1 + (user.stats.areaOfEffect ?? 0) / 100);
+  }
+
+  /** The equipped skill's area in tiles, for aiming. */
+  private areaRadiusFor(user: Entity): number {
+    return this.areaRadius(user, (this.skill.params?.radius as number) ?? 0);
+  }
+
   private acquireTarget(hero: Entity): Entity | null {
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
@@ -748,6 +807,15 @@ export class RunSim {
       if (!occupancy.has(key)) occupancy.set(key, m);
     }
     if (occupancy.size === 0) return null;
+
+    // Anything already in reach is free to choose between — walking is the
+    // only thing nearest-first is protecting, and none of these need it.
+    const best = this.bestInReach(hero);
+    if (best) {
+      hero.targetId = best.id;
+      hero.path = [];
+      return best;
+    }
 
     const key = nearestByPath(grid, hero, (k) => occupancy.has(k));
     if (key === null) return null;
@@ -839,7 +907,7 @@ export class RunSim {
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
-      areaRadius: (base) => base * Math.sqrt(1 + (user.stats.areaOfEffect ?? 0) / 100),
+      areaRadius: (base) => this.areaRadius(user, base),
       vfx: (kind, points, ttl = 0.3) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
     });
