@@ -14,6 +14,9 @@ on:
   push:
     branches: [main, dev]
   pull_request:
+  # A Run workflow button, which from the GitHub mobile app is the only way to
+  # ask for a rebuild without a commit.
+  workflow_dispatch:
 
 # Needed only by the bundle-commit step on main.
 permissions:
