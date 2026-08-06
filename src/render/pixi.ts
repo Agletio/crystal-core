@@ -23,7 +23,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, toHexNumber, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, toHexNumber, vfxColour } from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
 
 const FLOATER_LIFE = 1.1;
@@ -275,6 +275,33 @@ export async function createPixiRenderer(
       const from = fx.points[0];
       if (!from) continue;
       const to = fx.points[1] ?? from;
+
+      if (fx.kind === 'blight_field') {
+        // The second point IS the radius — see poisonDrops. Drawing anything
+        // else here would be lying about what the sim poisoned.
+        const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+
+        vfxLayer
+          .circle(cx(from.x), cy(from.y), radius)
+          .fill({ color: colour, alpha: Math.max(0, 0.22 * (1 - t)) });
+        // The rim has to stay legible as the circle grows, so it outlives the
+        // fill rather than fading with it.
+        vfxLayer
+          .circle(cx(from.x), cy(from.y), radius)
+          .stroke({
+            width: Math.max(hair, 0.07),
+            color: colour,
+            alpha: Math.max(0, 0.85 * (1 - t * 0.55)),
+          });
+
+        for (const d of poisonDrops(from.x, from.y, radius, t)) {
+          if (d.alpha <= 0) continue;
+          vfxLayer
+            .circle(cx(d.x), cy(d.y), d.r)
+            .fill({ color: colour, alpha: Math.min(1, d.alpha) });
+        }
+        continue;
+      }
 
       if (fx.kind === 'slash') {
         const angle = Math.atan2(to.y - from.y, to.x - from.x);

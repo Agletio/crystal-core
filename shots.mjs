@@ -106,11 +106,21 @@ for (const vp of VIEWPORTS) {
   await shoot('welcome');
 
   // Choosing a skill dismisses the welcome modal and drops you at the Fissure.
+  // Blight, when it's on offer, because its poison field is the effect most
+  // worth being able to see in a still.
   await page.evaluate(() => {
-    document.querySelector('#welcome-skills .welcomecard')?.click();
+    const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
+    const blight = cards.find((c) => /blight/i.test(c.textContent ?? ''));
+    (blight ?? cards[0])?.click();
   });
   await page.waitForTimeout(700);
   await shoot('fissure');
+
+  // And the run itself. A menu screenshot cannot show whether combat reads,
+  // which is the half of the UI that actually moves.
+  await page.evaluate(() => document.querySelector('#run-launch')?.click());
+  await page.waitForTimeout(4500);
+  await shoot('descent');
 
   if (errors.length) problems.push(`${vp.name}: console errors — ${errors.slice(0, 2).join(' | ')}`);
   await page.close();

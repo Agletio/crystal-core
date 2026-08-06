@@ -10,6 +10,13 @@
 # that is invisible on a desktop and, on a phone, feels like the page sliding
 # under your thumb rather than anything you would file.
 #
+# There is also a Run workflow button, because pull_request events are not
+# guaranteed to arrive. PR #4 opened with no checks at all: the commit was
+# pushed while no PR was open, so nothing fired, and neither opening the PR,
+# reopening it, nor two further pushes produced a run — while a manual dispatch
+# ran instantly. A review step you cannot re-trigger is a review step you will
+# eventually have to merge without.
+#
 # Note: pull requests from FORKS get a read-only token, so the push and comment
 # steps are skipped there. Branches in this repo — which is how the assistant
 # opens PRs — work.
@@ -17,20 +24,34 @@ name: pr shots
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Pull request number to photograph'
+        required: true
+        type: string
 
 permissions:
   contents: write
   pull-requests: write
 
 concurrency:
-  group: shots-${{ github.event.number }}
+  group: shots-${{ github.event.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   shots:
     runs-on: ubuntu-latest
+    # One name for the PR whichever way we got here, so no step below has to
+    # care which event started it.
+    env:
+      PR: ${{ github.event.number || inputs.pr }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On a manual run, photograph the PR's head — not whichever branch
+          # the Actions tab happened to be pointing at when the button was hit.
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', inputs.pr) || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -55,9 +76,10 @@ jobs:
       # only ever screenshots keeps them out of the source history and out of
       # the PR's own diff.
       - name: publish images
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         env:
-          PR: ${{ github.event.number }}
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
@@ -81,17 +103,28 @@ jobs:
           if git -C "$work" diff --cached --quiet; then
             echo "identical to last run, nothing to push"
           else
-            git -C "$work" commit -q -m "shots for PR #$PR (${GITHUB_SHA:0:7})"
+            # The checked-out HEAD, not GITHUB_SHA: on a manual run those are
+            # different commits, and the one we photographed is the true one.
+            git -C "$work" commit -q -m "shots for PR #$PR ($(git rev-parse --short HEAD))"
             git -C "$work" push -q origin ci-shots
           fi
 
       - name: comment on the PR
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
+        env:
+          PR: ${{ github.event.number || inputs.pr }}
         with:
           script: |
-            const pr = context.issue.number;
-            const sha = context.payload.pull_request.head.sha;
+            // Read the PR rather than the event payload: a manual run has no
+            // pull_request payload to read a head sha out of.
+            const pr = Number(process.env.PR);
+            const { data: info } = await github.rest.pulls.get({
+              ...context.repo, pull_number: pr,
+            });
+            const sha = info.head.sha;
             const raw = (f) =>
               `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}` +
               `/ci-shots/pr-${pr}/${f}?v=${sha.slice(0, 7)}`;

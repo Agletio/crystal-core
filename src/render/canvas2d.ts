@@ -13,7 +13,7 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
-import { clampZoom, spriteColour, vfxColour } from './renderer';
+import { clampZoom, poisonDrops, poisonFieldRadius, spriteColour, vfxColour } from './renderer';
 
 const FLOATER_LIFE = 1.1;
 
@@ -229,7 +229,34 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       ctx.fillStyle = colour;
       ctx.lineWidth = Math.max(1, v.tile * 0.1);
 
-      if (fx.kind === 'slash') {
+      if (fx.kind === 'blight_field') {
+        // The second point IS the radius — see poisonDrops. Drawing anything
+        // else here would be lying about what the sim poisoned.
+        const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        const px = cx(v, from.x);
+        const py = cy(v, from.y);
+
+        // Pool, then a hard rim. The rim is the part that has to stay legible
+        // as it grows, so it fades far slower than the fill.
+        ctx.globalAlpha = Math.max(0, 0.22 * (1 - t));
+        ctx.beginPath();
+        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = Math.max(0, 0.85 * (1 - t * 0.55));
+        ctx.lineWidth = Math.max(1.5, v.tile * 0.07);
+        ctx.beginPath();
+        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
+        ctx.stroke();
+
+        for (const d of poisonDrops(from.x, from.y, radius, t)) {
+          if (d.alpha <= 0) continue;
+          ctx.globalAlpha = Math.min(1, d.alpha);
+          ctx.beginPath();
+          ctx.arc(cx(v, d.x), cy(v, d.y), Math.max(1, d.r * v.tile), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (fx.kind === 'slash') {
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         const sweep = Math.PI * 0.75;
         const start = angle - sweep / 2 + sweep * t;

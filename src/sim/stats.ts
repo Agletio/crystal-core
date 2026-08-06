@@ -6,7 +6,7 @@
  * here the one that "poisons everything downstream and stays invisible for
  * months" — this is where that would show up.
  */
-import { computeStat } from '../mods';
+import { computeStat, percentStat } from '../mods';
 import {
   DAMAGE_TYPES,
   DEFENCE,
@@ -43,6 +43,15 @@ export interface CombatStats {
   armourReduction: number;
   /** Extra percent damage on a crit, on top of the base doubling. */
   critMultiplier: number;
+  /**
+   * Percent increase to the AREA of area effects, not the radius.
+   *
+   * Behaviours must not use this directly — `areaRadius` on SkillUse converts
+   * it, because +100% area is a 1.41x radius, not 2x. Keeping the conversion
+   * in one place is what stops two skills disagreeing about what the stat
+   * means.
+   */
+  areaOfEffect: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
@@ -150,8 +159,9 @@ export function heroStats(
     maxLife,
     lifeRegen: computeStat((maxLife * HERO_BASE.lifeRegenPercent) / 100, mods, 'lifeRegen'),
     critMultiplier: computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
-    rarity: computeStat(0, mods, 'rarity'),
-    currencyFind: computeStat(0, mods, 'currencyFind'),
+    // Percentages with no base to scale — see percentStat.
+    rarity: percentStat(mods, 'rarity'),
+    currencyFind: percentStat(mods, 'currencyFind'),
     damage: skillDamage(mods, base.weaponDamage, skill, grants),
     // Spells scale with cast speed, attacks with attack speed. A spell has no
     // business getting faster because you found a sharper sword.
@@ -162,6 +172,9 @@ export function heroStats(
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) * skill.rateMultiplier,
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
+    // Tagged by the skill, so a future "increased Area of Effect of Spells"
+    // filters exactly like every other tagged line.
+    areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
     armourReduction: armourReduction(computeStat(HERO_BASE.armour, mods, 'armour')),
@@ -236,13 +249,13 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
 
   // Crystal danger mods land here: armour blunts your hits, crit spikes
   // theirs, and fire changes what you're actually being killed by.
-  const fire = computeStat(0, crystal.mods, 'monsterFire');
+  const fire = percentStat(crystal.mods, 'monsterFire');
 
   return {
     maxLife: computeStat(life, crystal.mods, 'monsterLife'),
     damage: computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100),
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
-    critChance: computeStat(0, crystal.mods, 'monsterCrit'),
+    critChance: percentStat(crystal.mods, 'monsterCrit'),
     moveSpeed:
       computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour: computeStat(0, crystal.mods, 'monsterArmour'),
@@ -254,6 +267,9 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
     critMultiplier: 0,
+    // No monster has an area skill yet; when one does, this is where its
+    // crystal mod would land.
+    areaOfEffect: 0,
     rarity: 0,
     currencyFind: 0,
     /** What monsters on this map hurt you with. Shows in the results overlay. */

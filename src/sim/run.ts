@@ -77,10 +77,50 @@ export interface Ailment {
   /** Damage per second before resistance. */
   dps: number;
   remaining: number;
+  /**
+   * Countdown to the next discrete tick.
+   *
+   * Damage over time used to be applied per frame, which is smooth but leaves
+   * nowhere to hang a crit: "this poison critically ticked" needs a tick to be
+   * an event. Total damage is unchanged — the same dps, delivered in lumps.
+   */
+  tickIn: number;
+  /** Crit chance of whoever applied it, snapshotted. */
+  critChance: number;
+  /** Extra crit damage of whoever applied it, snapshotted. */
+  critMultiplier: number;
+  /**
+   * Contagion. Present only when the poison can propagate; absent poison is
+   * inert and just ticks.
+   */
+  spread?: {
+    source: Entity;
+    skill: SkillDef;
+    /** Total damage of the poison this plants, relative to the skill. */
+    multiplier: number;
+    duration: number;
+    /** Already scaled by Area of Effect at the time it was planted. */
+    radius: number;
+    /** How many jumps this poison is from the hero's own cast. */
+    generation: number;
+  };
 }
 
 /** Enough for stacking to matter, few enough that it can't run away. */
 const MAX_AILMENT_STACKS = 12;
+
+/** Poison lands in half-second lumps, which is also the crit cadence. */
+const AILMENT_TICK = 0.5;
+
+/**
+ * How far contagion may travel from the hero's own cast.
+ *
+ * Re-poisoning refreshes rather than duplicates, so the poisoned set already
+ * saturates at the size of the pack and cannot grow without bound. This is a
+ * belt-and-braces cap on WORK, not on state: without it a dense room could
+ * scan every enemy from every enemy on every tick.
+ */
+const MAX_CONTAGION_GENERATIONS = 3;
 
 /**
  * What an entity is visibly doing. The sim already knows this implicitly;
@@ -797,8 +837,9 @@ export class RunSim {
           : [this.state.hero],
       rng: this.rng,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
-      ailment: (target, multiplier, seconds) =>
-        this.applyAilment(user, target, multiplier, seconds, skill),
+      ailment: (target, multiplier, seconds, spread) =>
+        this.applyAilment(user, target, multiplier, seconds, skill, spread),
+      areaRadius: (base) => base * Math.sqrt(1 + (user.stats.areaOfEffect ?? 0) / 100),
       vfx: (kind, points, ttl = 0.3) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
     });
@@ -912,7 +953,8 @@ export class RunSim {
     target: Entity,
     multiplier: number,
     seconds: number,
-    skill: SkillDef
+    skill: SkillDef,
+    spread?: { radius: number; generation: number }
   ): void {
     if (target.dead || seconds <= 0) return;
 
@@ -922,17 +964,60 @@ export class RunSim {
     // Oldest stack falls off rather than refusing the new one, so re-applying
     // to a saturated target still refreshes rather than being wasted.
     if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
-    target.ailments.push({ type, dps: total / seconds, remaining: seconds });
+    target.ailments.push({
+      type,
+      dps: total / seconds,
+      remaining: seconds,
+      // Staggered by a partial tick so a burst of poison applied on the same
+      // frame doesn't then crit in lockstep forever after.
+      tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
+      critChance: attacker.stats.critChance,
+      critMultiplier: attacker.stats.critMultiplier,
+      spread: spread
+        ? {
+            source: attacker,
+            skill,
+            multiplier,
+            duration: seconds,
+            radius: spread.radius,
+            generation: spread.generation,
+          }
+        : undefined,
+    });
   }
 
-  /** Ticks every active stack. Resisted, never armoured. */
+  /**
+   * Ticks every active stack. Resisted, never armoured.
+   *
+   * A tick that crits deals crit damage, and — if the poison carries contagion
+   * — plants the same poison around its victim. That is the whole Contagion
+   * mechanic: the disease spreads on its own, not the cast.
+   */
   private stepAilments(e: Entity, dt: number): void {
     if (e.ailments.length === 0 || e.dead) return;
     let total = 0;
+    let contagious: Ailment['spread'][] = [];
 
     for (const ailment of e.ailments) {
       ailment.remaining -= dt;
-      const dealt = this.afterResistance(e, ailment.dps * dt, ailment.type);
+      ailment.tickIn -= dt;
+      if (ailment.tickIn > 0) continue;
+
+      // A stack that expires mid-tick still pays out the slice it lived for,
+      // so shortening a poison never refunds damage it had already earned.
+      const slice = Math.min(AILMENT_TICK, AILMENT_TICK + ailment.remaining);
+      ailment.tickIn += AILMENT_TICK;
+      if (slice <= 0) continue;
+
+      let raw = ailment.dps * slice;
+      const crit =
+        ailment.critChance > 0 && this.rng.chance(ailment.critChance / 100);
+      if (crit) {
+        raw *= 2 + ailment.critMultiplier / 100;
+        if (ailment.spread) contagious.push(ailment.spread);
+      }
+
+      const dealt = this.afterResistance(e, raw, ailment.type);
       total += dealt;
       if (e.kind === 'hero') {
         this.state.damageTaken[ailment.type] =
@@ -940,6 +1025,11 @@ export class RunSim {
       }
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);
+
+    // Spread BEFORE the victim can die, so a killing tick still infects the
+    // pack — the corpse is exactly when you want the disease to jump.
+    for (const s of contagious) this.spreadAilment(e, s!);
+
     if (total <= 0) return;
 
     // Poison counts as being hit. Without this an area ailment could kill
@@ -948,6 +1038,37 @@ export class RunSim {
 
     e.life -= total;
     if (e.life <= 0) this.kill(e);
+  }
+
+  /** Plants a fresh burst of the same poison around a critically-ticking victim. */
+  private spreadAilment(victim: Entity, spread: NonNullable<Ailment['spread']>): void {
+    if (spread.generation >= MAX_CONTAGION_GENERATIONS) return;
+
+    const pool =
+      victim.kind === 'hero' ? [this.state.hero] : this.state.monsters.filter((m) => !m.dead);
+
+    let jumped = false;
+    for (const other of pool) {
+      if (other === victim || other.dead) continue;
+      if (Math.hypot(other.x - victim.x, other.y - victim.y) > spread.radius) continue;
+      this.applyAilment(spread.source, other, spread.multiplier, spread.duration, spread.skill, {
+        radius: spread.radius,
+        generation: spread.generation + 1,
+      });
+      jumped = true;
+    }
+
+    // Draw the jump even when it lands on nobody: a Contagion proc you cannot
+    // see reads as the talent not working.
+    this.emit(
+      'blight_field',
+      [
+        { x: victim.x, y: victim.y },
+        { x: victim.x + spread.radius, y: victim.y },
+      ],
+      spread.skill.damageTypes[0] ?? 'poison',
+      jumped ? 0.5 : 0.3
+    );
   }
 
   private kill(victim: Entity): void {

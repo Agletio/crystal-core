@@ -175,6 +175,31 @@ export function aggregate(
   return out;
 }
 
+/**
+ * A stat that IS a percentage, rather than one that scales a base.
+ *
+ * computeStat multiplies, so an "increased" line on a stat whose base is zero
+ * produces zero no matter how large it is: (0 + 0) * 1.34 is still 0. That is
+ * silent — the mod rolls, displays and stacks exactly like a working one — and
+ * it had quietly killed increased Area of Effect, Currency Find, and three of
+ * the crystal danger mods.
+ *
+ * Anything with no natural base (an area bonus, a find bonus, a monster damage
+ * bonus) belongs here instead, where "increased" means "add these percentage
+ * points" and zero is a legitimate starting value rather than an absorbing one.
+ */
+export function percentStat(
+  mods: RolledMod[],
+  stat: string,
+  contextTags: string[] = []
+): number {
+  const b = aggregate(mods, stat, contextTags);
+  let v = b.flat + b.inc;
+  // A 'more' line still compounds, against the 100% you already have.
+  for (const m of b.more) v = (100 + v) * (1 + m / 100) - 100;
+  return v;
+}
+
 /** (base + flat) * (1 + sum(inc)/100) * prod(1 + more/100) */
 export function computeStat(
   base: number,

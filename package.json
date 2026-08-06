@@ -9,7 +9,8 @@
     "watch": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js --watch",
     "typecheck": "tsc --noEmit",
     "smoke": "node smoke.mjs",
-    "shots": "node shots.mjs"
+    "shots": "node shots.mjs",
+    "mods": "tsx src/mods-check.ts"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

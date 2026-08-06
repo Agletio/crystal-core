@@ -119,6 +119,8 @@ export function damageColour(palette: Palette, type: string): string {
       return palette.quartz;
     case 'lightning':
       return palette.amethyst;
+    case 'poison':
+      return palette.verdite;
     default:
       return palette.chalk;
   }
@@ -136,4 +138,77 @@ export function toHexNumber(colour: string): number {
       : hex;
   const n = Number.parseInt(full, 16);
   return Number.isNaN(n) ? 0xffffff : n;
+}
+
+// ---------------------------------------------------------------------------
+// Poison field
+// ---------------------------------------------------------------------------
+
+/**
+ * The falling-poison animation, as pure geometry.
+ *
+ * Both renderers call this so the effect is identical in each, and — more to
+ * the point — so the RADIUS drawn is the radius the sim actually used. The
+ * skill emits its true radius as a second point; nothing here invents a size.
+ * That is what makes the circle a readable statement about what you did and
+ * did not catch, and what makes Area of Effect visible as it grows.
+ *
+ * Everything is in tile units. Time `t` runs 0 to 1 over the effect's life.
+ */
+export interface PoisonDrop {
+  x: number;
+  y: number;
+  /** Radius of the droplet, in tiles. */
+  r: number;
+  alpha: number;
+}
+
+/** How many droplets fall per field. Enough to read as rain, cheap to draw. */
+const DROP_COUNT = 16;
+/** How far above the ground a droplet starts, in tiles. */
+const DROP_HEIGHT = 1.15;
+/** Fraction of the effect's life spent snapping open. */
+const OPEN = 0.16;
+
+/**
+ * The drawn radius, which snaps open and then holds at the true one.
+ *
+ * A circle that simply appears at full size and fades reads as an aura that
+ * belongs to whatever is standing there. Punching it open says something
+ * HAPPENED, at a moment, in a place — which is what a cast is. The hold is the
+ * important half: for most of its life the circle is exactly the radius the
+ * sim used, so it stays a statement about what got caught.
+ */
+export function poisonFieldRadius(radius: number, t: number): number {
+  if (t >= OPEN) return radius;
+  const p = t / OPEN;
+  return radius * (1 - (1 - p) * (1 - p));
+}
+
+export function poisonDrops(
+  centreX: number,
+  centreY: number,
+  radius: number,
+  t: number
+): PoisonDrop[] {
+  const drops: PoisonDrop[] = [];
+  for (let i = 0; i < DROP_COUNT; i++) {
+    // Golden-angle placement scatters without clumping, and sqrt keeps the
+    // density even rather than piling everything at the centre.
+    const angle = i * 2.399963;
+    const dist = radius * Math.sqrt(((i * 0.6180339887) % 1));
+    // Each droplet runs its own fall on a staggered phase, so the rain is
+    // continuous instead of every drop landing on the same frame.
+    const fall = (t * 2.1 + ((i * 0.37) % 1)) % 1;
+
+    drops.push({
+      x: centreX + Math.cos(angle) * dist,
+      y: centreY + Math.sin(angle) * dist - (1 - fall) * DROP_HEIGHT,
+      // Swells slightly as it lands, which reads as a splash without needing
+      // a second effect.
+      r: 0.05 + 0.035 * fall,
+      alpha: Math.min(1, fall * 4) * (1 - fall) * 1.5 * (1 - t),
+    });
+  }
+  return drops;
 }
