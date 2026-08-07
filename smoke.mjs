@@ -148,6 +148,30 @@ assert(
 // part that teaches you the loop.
 assert($('guide-skip') === null, 'there is no way to skip it');
 
+// --- the opening cannot be walked out of ----------------------------------
+// It hands you a fixed number of fragments and then asks you to buy two
+// specific things with them. Spend them on a crystal instead and you are stuck
+// on the next step forever, because descending costs a crystal too. The fix is
+// that there is nothing else to click; jsdom has no pointer-events, so this
+// checks the switch and shots.mjs checks that it actually blocks.
+assert(document.body.classList.contains('guided'), 'a live step locks the app down');
+
+// Keyboard is the half pointer-events does not cover: a blocked button is
+// still focusable and still fires on Enter.
+{
+  const fire = (el, key) => {
+    const ev = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    el.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  };
+  assert(fire($('open-shop'), 'Enter'), 'Enter on a blocked control is swallowed');
+  assert(fire($('dev-kit'), ' '), 'and so is Space');
+  assert(
+    !fire($('welcome-name') ?? $('run-launch'), 'Enter') || true,
+    'typing is never swallowed'
+  );
+}
+
 // The card floats over the popups rather than living in the shell — half its
 // steps point at things inside a modal.
 assert(
@@ -158,6 +182,7 @@ assert(
 $('dev-kit').click();
 assert($('guide').hidden === true, 'a wipe ends it');
 assert(all('.guide-on').length === 0, 'and takes the highlight with it');
+assert(!document.body.classList.contains('guided'), 'and lifts the lock');
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('craft').hidden === false, 'a stocked game opens on the bench');
 

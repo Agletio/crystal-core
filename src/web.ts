@@ -20,7 +20,7 @@ import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
-import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
+import { initTutorial, isGuided, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
@@ -82,6 +82,10 @@ document.getElementById('dev-kit')!.addEventListener('click', () => restart('dev
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
+  // Not while the opening is running. Every other way out is switched off, and
+  // a keyboard shortcut that closes the window a step is pointing into is the
+  // same escape hatch by another door.
+  if (isGuided()) return;
   if (isSkillsOpen()) closeSkills();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();

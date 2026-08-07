@@ -441,15 +441,65 @@ function showScrollHint(away: "up" | "down" | null): void {
     away === "down" ? "Scroll down to reach it" : "Scroll up to reach it";
 }
 
+/**
+ * While a step is up, the highlighted thing is the only live control.
+ *
+ * The opening has a budget: it hands you a fixed number of fragments and then
+ * asks you to buy two specific things with them. A player free to wander into
+ * the Shop and spend those fragments on a crystal is permanently stuck on the
+ * next step — there is nothing left to buy and no way to earn more, because
+ * descending costs a crystal too. The tutorial's own softlock, and no amount
+ * of better wording fixes it: the fix is that there is nothing else to click.
+ *
+ * The rule lives in CSS (pointer-events, switched off on the app and back on
+ * for the target) because that is one place rather than a disabled flag
+ * threaded through six render functions that don't know a tutorial exists.
+ */
+function setLock(on: boolean): void {
+  document.body.classList.toggle("guided", on);
+}
+
+/** True while the guided opening owns the screen. */
+export const isGuided = (): boolean => document.body.classList.contains("guided");
+
+/**
+ * The other half of the lock.
+ *
+ * `pointer-events: none` stops a mouse and stops a finger. It does NOT stop a
+ * keyboard: a blocked button is still focusable, still reachable with Tab, and
+ * still fires on Enter — so the whole thing would be walk-around-able by
+ * anyone who never touched the mouse. `inert` would cover both but cannot be
+ * undone on a descendant, so it can't be put on a subtree that contains the
+ * target.
+ *
+ * Capture phase, so it runs before the button's own handler. Tabbing around is
+ * still allowed — only activating something that isn't the step is not.
+ */
+function guardKeys(event: KeyboardEvent): void {
+  if (!isGuided()) return;
+  if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
+
+  const target = event.target as Element | null;
+  if (!target || !("closest" in target)) return;
+  // Typing in the name field is not activating a control.
+  if (target.matches("input, textarea")) return;
+  if (target.closest(".guide-on") || target.closest(".guide")) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function paint(): void {
   const step = TUTORIAL_STEPS[game.tutorialStep ?? -1];
   const card = $("guide");
 
   if (!step) {
     card.hidden = true;
+    setLock(false);
     clearHighlight();
     return;
   }
+  setLock(true);
 
   const ctx = context();
   card.hidden = false;
@@ -514,6 +564,7 @@ export function startTutorial(): void {
 export function stopTutorial(): void {
   game.tutorialStep = null;
   clearHighlight();
+  setLock(false);
   $("guide").hidden = true;
 }
 
@@ -523,5 +574,6 @@ export function initTutorial(state: GameState, ctx: () => GuideCtx): void {
 
   if (timer !== null) clearInterval(timer);
   timer = setInterval(tick, 250);
+  document.addEventListener("keydown", guardKeys, true);
   paint();
 }

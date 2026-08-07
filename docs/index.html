@@ -554,6 +554,33 @@
     transform: rotate(45deg);
   }
 
+  /*
+   * While the guided opening is running, the highlighted thing is the ONLY
+   * thing you can click.
+   *
+   * Not politeness — the opening has a budget. It hands you a fixed number of
+   * fragments and then asks you to buy two specific things with them, so a
+   * player free to wander into the Shop and spend them on a crystal ends up
+   * permanently stuck on step 4 with nothing left to buy and no way to earn
+   * more, because entering the Fissure is also a click they were free to make
+   * and it costs a crystal. The guide is the tutorial's own softlock.
+   *
+   * pointer-events is inherited but re-settable, so switching the whole app
+   * off and the target back on is two rules rather than an overlay stacked
+   * against six modal z-indexes. The card itself stays live so the step is
+   * always readable, and the dock label rings stay visible so nothing looks
+   * broken — just unclickable.
+   */
+  body.guided .wrap,
+  body.guided .modal,
+  body.guided .welcome { pointer-events: none; }
+  body.guided .guide-on,
+  body.guided .guide { pointer-events: auto; }
+  /* Everything switched off reads as switched off. Without this the buttons
+     look live and feel dead, which is worse than looking disabled. */
+  body.guided .wrap button:not(.guide-on):not(.guide-on *),
+  body.guided .modal button:not(.guide-on):not(.guide-on *) { opacity: .45; }
+
   /* The one thing to click next. Outline rather than a colour change, so it
      reads on buttons, panels and docks alike without restyling any of them.
      Heavier than it was: at 2px on a dim button people missed it. */

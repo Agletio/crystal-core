@@ -107,6 +107,27 @@ const guideProbe = () => {
   return covered > 0 ? { covered, who: target.id || target.className } : null;
 };
 
+/**
+ * With the opening running, is anything but the step reachable by a pointer?
+ *
+ * The lock is pure CSS — pointer-events off on the app, back on for the
+ * target — so nothing in jsdom can see it. elementFromPoint is the honest
+ * test: it answers what a real click would actually hit.
+ */
+const lockProbe = () => {
+  if (!document.body.classList.contains('guided')) return null;
+  const leaks = [];
+  for (const id of ['open-shop', 'open-craft', 'open-stash', 'open-character', 'dev-kit']) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0) continue;
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    if (hit === el || el.contains(hit)) leaks.push(id);
+  }
+  return leaks.length ? leaks : null;
+};
+
 const browser = await chromium.launch();
 const problems = [];
 const written = [];
@@ -140,6 +161,10 @@ for (const vp of VIEWPORTS) {
     written.push(file);
     const over = await page.evaluate(overflowProbe);
     if (over) problems.push(`${vp.name}/${state}: .${over.who} overflows by ${over.past}px`);
+    const leaks = await page.evaluate(lockProbe);
+    if (leaks) {
+      problems.push(`${vp.name}/${state}: the opening leaks — ${leaks.join(', ')} still clickable`);
+    }
     const covering = await page.evaluate(guideProbe);
     if (covering) {
       problems.push(
