@@ -11,6 +11,18 @@ export type StatForm = 'flat' | 'inc' | 'more';
 export type ItemKind = 'gear' | 'crystal';
 
 /**
+ * How many modifiers an item may carry.
+ *
+ * Deliberately separate from the base's slot table, which says which KINDS of
+ * modifier a piece can hold. One restriction is about identity — a body
+ * armour is a defensive piece — and the other is about how finished the item
+ * is. Collapsing them meant every item you ever found could be filled and
+ * re-rolled to perfection, so finding one was never a question of what it
+ * could become.
+ */
+export type Quality = 'rough' | 'seamed' | 'faceted' | 'brilliant';
+
+/**
  * Slot types are just strings, declared per item base. Crystals use a single
  * undifferentiated 'mod' slot; gear splits into 'main' and 'secondary'.
  * Prefix/suffix was only ever one instance of this pattern — generalising it
@@ -261,6 +273,17 @@ export interface SkillDef {
 export interface Recipe {
   id: string;
   name: string;
+  /**
+   * Character level the shop starts stocking this at. Omitted means level 1.
+   *
+   * The shop is a shelf that grows with you rather than a catalogue that was
+   * always complete: at level 1 it sells the plainest crystal and the two
+   * currencies you can actually use on a Rough item, and everything past that
+   * arrives as you do. It also stops the shop short-cutting the crystal-tier
+   * ladder — you cannot buy your way to a Faceted item before the maps that
+   * drop one are survivable.
+   */
+  level?: number;
   /** Currency id -> quantity consumed. */
   inputs: Record<string, number>;
   output:

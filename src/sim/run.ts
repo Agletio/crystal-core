@@ -23,6 +23,8 @@ import {
   CURRENCIES,
   CURRENCY_DROP,
   ENCOUNTERS,
+  GEAR_BASES,
+  ALL_MODS,
   HERO_BASE,
   LOOT,
   MONSTERS,
@@ -31,8 +33,21 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
+import { dropsForTier } from '../data';
 import type { EncounterDef } from '../data';
+import { ModPool } from '../mods';
+import { pickQuality, rollGear } from '../economy';
 import type { Item, SkillDef } from '../types';
+
+/**
+ * The mod pool the sim rolls drops from.
+ *
+ * Built once at module load rather than per run. It is derived purely from
+ * authored data and never mutated, so sharing it costs nothing and building
+ * it per descent would flatten the same ~200 entries every time you clicked
+ * Enter.
+ */
+const DROP_POOL = new ModPool(ALL_MODS);
 
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
 export const TICK = 1 / 30;
@@ -210,6 +225,15 @@ export interface RunOptions {
    * you rather than one you paid for.
    */
   densityScale?: number;
+  /**
+   * Which tier's drop table this map uses. Defaults to the crystal's own.
+   *
+   * The unempowered Fissure runs on a Tier 1 crystal it was handed rather than
+   * one you bought, so it needs to be told it is tier ZERO — otherwise the
+   * free descent would drop exactly what a crystal you paid for does, and the
+   * first thing you ever buy would be pointless.
+   */
+  dropTier?: number;
 }
 
 export type RunEvent =
@@ -290,6 +314,15 @@ export class RunSim {
     rarity: 0,
   };
   private byId = new Map<number, Entity>();
+  /**
+   * The socketed crystal's tier and item level, kept because drops need both.
+   *
+   * The tier decides what CLASS of thing this map can produce; the ilvl
+   * decides which tiers of modifier are reachable on it. Read once at spawn —
+   * the crystal is consumed on entry, so nothing can change them mid-run.
+   */
+  private readonly tier: number;
+  private readonly mapIlvl: number;
 
   constructor(
     crystal: Item,
@@ -301,6 +334,8 @@ export class RunSim {
     this.options = options;
     this.skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
     this.grants = treeGrants(character);
+    this.tier = options.dropTier ?? (crystal.meta.tier as number) ?? 0;
+    this.mapIlvl = crystal.ilvl;
 
     const map = generateMap(crystal, rng);
     const stats = characterStats(character);
@@ -1155,6 +1190,7 @@ export class RunSim {
     s.loot.currency.fragment =
       (s.loot.currency.fragment ?? 0) + this.fragmentsPerKill * victim.bounty;
     this.rollCurrency();
+    this.rollGearDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
   }
 
@@ -1166,6 +1202,34 @@ export class RunSim {
    * dangerous. This is also what finally gives the sigils a source — before
    * this they existed solely in the starting wallet.
    */
+  /**
+   * Gear drops.
+   *
+   * The crystal decides WHAT the map can give you, not just how much: quality
+   * comes off the tier table, so a Tier 1 map cannot hand you a Faceted piece
+   * however lucky you get. That is the thing that makes a tier a rung rather
+   * than a difficulty slider.
+   *
+   * Item level is the crystal's, so a high-tier map also unlocks the better
+   * tiers of every modifier it rolls. Rarity raises the CHANCE, never the
+   * ceiling — otherwise a rarity-stacked T1 would out-drop an honest T4.
+   */
+  private rollGearDrop(): void {
+    const drops = dropsForTier(this.tier);
+    const hero = this.state.hero.stats;
+    const chance = drops.gearChance * (1 + (this.rewards.rarity + hero.rarity) / 200);
+    if (!this.rng.chance(chance)) return;
+
+    const base = this.rng.pick(GEAR_BASES);
+    if (!base) return;
+
+    const quality = pickQuality(drops.quality, this.rng);
+    const mods = this.rng.int(drops.fill[0], drops.fill[1]);
+    this.state.loot.items.push(
+      rollGear(base.id, this.mapIlvl, quality, mods, DROP_POOL, this.rng)
+    );
+  }
+
   private rollCurrency(): void {
     // Gear stacks with the crystal: currency find changes HOW OFTEN, rarity
     // changes HOW GOOD. Two separate questions, so two separate stats.
@@ -1173,10 +1237,15 @@ export class RunSim {
     const chance = CURRENCY_DROP.chancePerKill * (1 + hero.currencyFind / 100);
     if (!this.rng.chance(chance)) return;
 
+    // The tier caps the class. Rarity decides how often you reach the ceiling;
+    // the crystal decides where the ceiling is. Without the cap, a T1 map with
+    // enough rarity would drop the currency that re-rolls a Brilliant item —
+    // which is the whole ladder skipped in one lucky kill.
+    const ceiling = CURRENCY_CLASSES.indexOf(dropsForTier(this.tier).currency);
     const rarity = this.rewards.rarity + hero.rarity;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
-    while (rank < CURRENCY_CLASSES.length - 1 && this.rng.chance(climb)) rank++;
+    while (rank < ceiling && this.rng.chance(climb)) rank++;
 
     const cls = CURRENCY_CLASSES[rank];
     const pool = CURRENCIES.filter((c) => c.class === cls);

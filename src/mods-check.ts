@@ -60,6 +60,20 @@ function maxRoll(entry: ModEntry): RolledMod {
   return mod;
 }
 
+/**
+ * A probe item: fully open, so quality never masks a genuine gap.
+ *
+ * Every question below is "can this modifier exist here at all", and a Rough
+ * item answers no to everything by definition. Asking it of a Brilliant one
+ * keeps the check measuring the mod pool rather than measuring the quality
+ * ladder — the ladder has its own checks in the demo.
+ */
+const open = (item: Item): Item => ({
+  ...item,
+  ilvl: 100,
+  meta: { ...item.meta, quality: 'brilliant' },
+});
+
 line('mods: does every modifier do what it says?\n');
 
 // ---------------------------------------------------------------------------
@@ -69,7 +83,7 @@ line('── REACHABILITY — can each mod roll on anything at all? ────
   const orphans: string[] = [];
   for (const entry of gearPool.entries) {
     const rollable = allBases.some((b) =>
-      gearPool.eligible(makeItem(b.id, 100), { slot: entry.slot }).some((e) => e.id === entry.id)
+      gearPool.eligible(open(makeItem(b.id, 100)), { slot: entry.slot }).some((e) => e.id === entry.id)
     );
     if (!rollable) orphans.push(`${entry.id} (slot ${entry.slot})`);
   }
@@ -81,7 +95,7 @@ line('── REACHABILITY — can each mod roll on anything at all? ────
 
   const crystal = makeCrystal(6);
   const crystalOrphans = crystalPool.entries.filter(
-    (e) => !crystalPool.eligible({ ...crystal, ilvl: 100 } as Item).some((c) => c.id === e.id)
+    (e) => !crystalPool.eligible(open(crystal)).some((c) => c.id === e.id)
   );
   check(
     crystalOrphans.length === 0,

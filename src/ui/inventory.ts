@@ -14,7 +14,7 @@
  * registers here. The dock itself has no opinion about what an item is for.
  */
 import { currencyIcon, itemIcon } from './icons';
-import { fillState } from '../mods';
+import { modCapacity, qualityName, qualityOf } from '../mods';
 import { describeMod } from '../crafting';
 import { attachTooltip } from './tooltip';
 import { balance } from '../economy';
@@ -184,7 +184,11 @@ function renderCurrencies(): void {
 }
 
 function tooltip(item: Item): string {
-  const lines = [item.name, `ilvl ${item.ilvl} · ${fillState(item)}`];
+  const lines = [
+    item.name,
+    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+      `${item.mods.length}/${modCapacity(item)} modifiers`,
+  ];
   if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
   for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
   if (item.mods.length === 0 && item.implicits.length === 0) {
@@ -232,7 +236,13 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
 
   for (const item of sorted(items, kind)) {
     const action = handler?.actionFor(item) ?? null;
-    const btn = el('button', `slot slot--${kind}`) as HTMLButtonElement;
+    // Quality colours the slot, the same way a currency's class does. Reading
+    // "is this worth looking at" off a wall of icons is the whole job of the
+    // dock, and the silhouette says what a piece IS, never how good it is.
+    const btn = el(
+      'button',
+      `slot slot--${kind} slot--q-${qualityOf(item)}`
+    ) as HTMLButtonElement;
 
     btn.append(itemIcon(item, 30));
     if (item.mods.length > 0) btn.classList.add('slot--modded');

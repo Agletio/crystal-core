@@ -614,6 +614,86 @@ The eventual history is filterable and much richer — xp, damage by source,
 regen, drops — enough to answer "why did I die" after the fact. Entries
 already carry a `kind` and a timestamp, which is what a filter would key off.
 
+## Item quality
+
+Every item carries a **quality** — Rough, Seamed, Faceted, Brilliant — capping
+how many modifiers it may hold at 0 / 2 / 4 / 6. That is deliberately a
+different axis from the base's slot table, which says which *kinds* it can
+hold. Collapsing the two was the original mistake: the slot table said both "a
+body armour is a defensive piece" and "every item holds four modifiers", so
+anything you ever found could be filled and re-rolled to perfection the moment
+you owned one currency. There was no such thing as an item you couldn't finish,
+so there was no such thing as an item worth finding.
+
+`modCapacity()` is the lower of the two, and either can bind: a Brilliant helmet
+is capped by its own six slots, a Seamed one by its quality. Bonus slots from
+Sigil of Excess raise *both* — counting them against the slot table alone would
+leave Excess silently doing nothing on the finished items it exists for.
+
+### The currency ladder
+
+Currencies are gated on quality, and quality is what a crystal tier drops. So
+the ladder reads bottom to top: early on you are adding a modifier to a two-slot
+piece; only much later are you re-rolling a six-slot one at will.
+
+| | opens | raises | re-rolls |
+|---|---|---|---|
+| **Rough** | Seaming (→ Seamed, 1 mod) · Cleaving (→ Faceted, 3 mods) | | |
+| **Seamed** | Making (+1, to 2) | Ascent (→ Faceted, keeps mods, +1) | Turning |
+| **Faceted** | Making · Awakening (fills) | Brilliance (→ Brilliant, +1) | Chaos |
+| **Brilliant** | Excess (+1 past the cap) | | Chaos |
+
+Ruin takes an item all the way back to **Rough**, not merely empty — a wipe that
+left it Faceted would be a free re-roll rather than a decision. Cleaving stops
+one short of full on purpose: skipping a rung should cost you the last slot.
+
+`set_quality` is one effect covering the whole ladder, because every rung is the
+same shape — raise the quality, optionally fill to a target count. It only ever
+moves upward; a currency that could quietly downgrade would delete modifiers as
+a side effect of a name that didn't say so.
+
+## What a tier drops
+
+`TIER_DROPS` in `data.ts` is the whole progression in one table. The crystal you
+socket decides what a map *can* give you, not just how much:
+
+| | gear quality | mods | currency ceiling |
+|---|---|---|---|
+| Fissure | Rough, sometimes Seamed | 1 | basic |
+| T1–T2 | Seamed | 1–2 | basic / uncommon |
+| T3 | Seamed, some Faceted | 2–3 | uncommon |
+| T4 | mostly Faceted, full | 3–4 | rare |
+| T5–T6 | Faceted → Brilliant | 3–6 | rare / exotic |
+
+Rarity raises the *chance*, never the ceiling. Without that cap a rarity-stacked
+T1 would out-drop an honest T4, which is the entire ladder skipped in one lucky
+kill. The unempowered Fissure passes `dropTier: 0` explicitly, because it runs
+on a Tier 1 crystal it was handed rather than one you bought — otherwise the
+free descent would drop exactly what a purchase does, and the first thing you
+ever buy would be pointless.
+
+`npm run demo` prints a **grid**, not a line: each grade of gear against each
+tier. Reading down a column says what a tier demands; across a row says what a
+grade of gear buys. The design wants roughly a diagonal.
+
+## The shop
+
+A shelf that grows with you rather than a catalogue that was always complete.
+Recipes carry a `level`, so at level 1 it sells a Tier 1 crystal and the two
+currencies you can actually use on a Rough item — nothing else. Gear stock is
+randomly rolled, one of each, and leaves the shelf when bought.
+
+It restocks **only on level-up**, seeded off the level. A shelf that re-rolled
+on every open would not be a shelf: you would reopen the window until the piece
+you wanted appeared, which is a deterministic shop with extra clicks. Stock is
+priced off item level and quality rather than off what rolled — the reason to
+buy from a shelf is that you can *see* what you are getting, and charging more
+for the good one turns that back into the gamble the maps already are.
+
+The shop never sells the top of the ladder. The best it stocks is a rung below
+what a map of the same era drops, so buying is the floor under your luck rather
+than a way around the crystal ladder.
+
 ## Equipment
 
 Eight slots from `EQUIP_SLOTS`, filled from `GEAR_BASES`. A full set from the

@@ -234,6 +234,27 @@ assert(
 // Icons only: the name and every modifier live in the tooltip.
 assert(text('inv-crystal') === '', 'the dock shows icons, not names', text('inv-crystal'));
 
+// A weapon must not look like a body armour. Weapon bases carry their FAMILY
+// as their art key, so a gearIcon that only knew 'weapon' silently rendered
+// every wand, sword, dagger and mace as the default plate.
+{
+  const shapeOf = (b) =>
+    [...b.querySelectorAll('.icon *')].map((n) => n.getAttribute('d') ?? n.getAttribute('points')).join('|');
+  const shapes = new Set(filled('#inv-gear').map(shapeOf));
+  assert(
+    shapes.size >= 6,
+    'gear has more than one silhouette',
+    `${shapes.size} shapes across ${filled('#inv-gear').length} pieces`
+  );
+}
+
+// Quality colours the slot. A dock is something you scan for "is any of this
+// worth looking at", and a silhouette can only say what a piece IS.
+assert(
+  filled('#inv-gear').every((b) => /slot--q-/.test(b.className)),
+  'every piece carries its quality on the slot'
+);
+
 // --- bench starts empty ---------------------------------------------------
 assert($('craft-empty').hidden === false, 'bench starts empty');
 assert($('craft-item').hidden === true, 'no item panel until something is placed');
@@ -287,14 +308,47 @@ const currencyButton = (name) =>
 const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
+// --- quality gates what a currency can touch ------------------------------
+// A blank item is Rough: no room for a modifier at all, whatever its base
+// declares. This is the whole point of the ladder — you cannot fill and
+// re-roll a fresh drop to perfection, because a fresh drop has nowhere to put
+// anything until you open it.
 const making = currencyButton('Shard of Making');
-assert(!!making && !making.disabled, 'Shard of Making usable on a blank crystal');
-assert(heldCount('Shard of Making') > 0, 'currency count shown on the stack');
+assert(!!making && making.disabled, 'Making cannot touch a Rough item');
+assert(
+  /rough/i.test(text('item-meta')),
+  'and the item says it is Rough',
+  text('item-meta')
+);
+
+const seaming = currencyButton('Shard of Seaming');
+assert(!!seaming && !seaming.disabled, 'Seaming is what opens it');
+assert(heldCount('Shard of Seaming') > 0, 'currency count shown on the stack');
+
+const seamStock = heldCount('Shard of Seaming');
+seaming.click();
+assert($('modlist').querySelectorAll('.mod').length === 1, 'Seaming lands one modifier');
+assert(/seamed/i.test(text('item-meta')), 'and raises the quality', text('item-meta'));
+assert(
+  heldCount('Shard of Seaming') === seamStock - 1,
+  'Seaming was spent',
+  `${heldCount('Shard of Seaming')} vs ${seamStock}`
+);
+
+// Now Making works, because there is somewhere to put a modifier.
+const making2 = currencyButton('Shard of Making');
+assert(!!making2 && !making2.disabled, 'Making works once the item is Seamed');
 
 const stockBefore = heldCount('Shard of Making');
-making.click();
+making2.click();
 
-assert($('modlist').querySelectorAll('.mod').length === 1, 'a modifier was added');
+assert($('modlist').querySelectorAll('.mod').length === 2, 'a second modifier was added');
+
+// Seamed holds two. A third has nowhere to go, whatever the base's slots say.
+assert(
+  currencyButton('Shard of Making')?.disabled === true,
+  'and a Seamed item stops at two'
+);
 
 // Every crystal mod is a downside now, so adding one must move danger up.
 const danger = () => Number(multRows()[0].split('=')[1]);
@@ -305,7 +359,7 @@ assert(
   `${heldCount('Shard of Making')} vs ${stockBefore}`
 );
 assert(
-  currencySlots().length >= 10,
+  currencySlots().length >= 12,
   'the dock holds the whole spread of currency',
   String(currencySlots().length)
 );
@@ -350,10 +404,12 @@ const implicitRows = () => all('#modlist .mod--implicit');
 assert(implicitRows().length === 1, 'the weapon shows its implicit');
 const implicitText = implicitRows()[0].textContent;
 
-const awaken2 = currencyButton('Shard of Awakening');
-if (awaken2 && !awaken2.disabled) awaken2.click();
-const ruin = currencyButton('Shard of Ruin');
-if (ruin && !ruin.disabled) ruin.click();
+// Cut it straight to Faceted, fill it, then wipe it. Nothing in that sequence
+// may reach the implicit — it is the base's identity, not a modifier.
+for (const name of ['Shard of Cleaving', 'Shard of Awakening', 'Shard of Ruin']) {
+  const btn = currencyButton(name);
+  if (btn && !btn.disabled) btn.click();
+}
 
 assert(
   implicitRows().length === 1 && implicitRows()[0].textContent === implicitText,
@@ -379,9 +435,42 @@ $('open-shop').click();
 assert($('shop').hidden === false, 'the shop opens');
 
 const buys = all('#workshop button.buy');
-assert(buys.length >= 6, 'the shop lists recipes', String(buys.length));
+assert(buys.length >= 2, 'the shop lists recipes', String(buys.length));
 const affordable = buys.find((b) => !b.disabled);
 assert(!!affordable, 'at least one recipe is affordable');
+
+// --- the shelf grows with you ---------------------------------------------
+// A level-1 shop that already sold a Tier 6 crystal would be selling a map
+// that kills you, and a Shard of Chaos you cannot use on anything you own.
+const buyNames = () => all('#workshop .buy__name').map((n) => n.textContent);
+assert(
+  !buyNames().some((n) => /Tier [3-6] Crystal/.test(n)),
+  'no high-tier crystals at level 1',
+  buyNames().join(', ')
+);
+assert(
+  !buyNames().some((n) => /Chaos|Awakening|Cleaving|Ascent/.test(n)),
+  'and none of the currencies you could not use yet',
+  buyNames().join(', ')
+);
+assert(
+  buyNames().some((n) => /Seaming/.test(n)),
+  'but the one that opens a Rough item is there from the start',
+  buyNames().join(', ')
+);
+
+// Random gear on the shelf, priced and one-of-each.
+const stock = () => all('#shop-stock button.buy');
+assert(stock().length >= 2, 'the shop stocks gear', String(stock().length));
+assert(
+  all('#shop-stock .buy__cost').every((n) => /\d+ fragments/.test(n.textContent)),
+  'every piece shows a price'
+);
+assert(
+  all('#shop-stock .buy__cost').every((n) => /Rough|Seamed|Faceted|Brilliant/.test(n.textContent)),
+  'and its quality',
+  all('#shop-stock .buy__cost')[0]?.textContent
+);
 
 // Prices were printing the raw wallet key, unpluralised — "8 fragment". Same
 // class of leak as a modifier rendering `areaOfEffect`, and just as invisible

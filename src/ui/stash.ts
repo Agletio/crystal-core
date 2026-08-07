@@ -24,7 +24,7 @@ import {
   toStash,
 } from '../game/state';
 import type { GameState } from '../game/state';
-import { fillState } from '../mods';
+import { modCapacity, qualityName, qualityOf } from '../mods';
 import { describeMod } from '../crafting';
 import { itemIcon } from './icons';
 import { renderInventory, setInventoryHandler } from './inventory';
@@ -46,7 +46,11 @@ let game: GameState;
 let onClosed: (() => void) | null = null;
 
 function tooltip(item: Item, action: string): string {
-  const lines = [item.name, `ilvl ${item.ilvl} · ${fillState(item)}`];
+  const lines = [
+    item.name,
+    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+      `${item.mods.length}/${modCapacity(item)} modifiers`,
+  ];
   if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
   for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
   for (const mod of item.mods) lines.push(describeMod(mod));

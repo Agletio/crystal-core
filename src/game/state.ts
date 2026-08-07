@@ -85,6 +85,16 @@ export interface GameState {
   firstClearDone: boolean;
   /** Index into the guided steps, or null when not running / finished. */
   tutorialStep: number | null;
+  /**
+   * What the shop currently has on the shelf, and the level it stocked for.
+   *
+   * Stored rather than generated on open, because a shelf that re-rolled every
+   * time you looked at it is not a shelf — you would simply reopen the window
+   * until the piece you wanted appeared, and a random shop with no cost to
+   * re-rolling is a deterministic one with extra clicks.
+   */
+  shopStock: Item[];
+  shopLevel: number;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -101,6 +111,8 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     onboarded: false,
     firstClearDone: false,
     tutorialStep: null,
+    shopStock: [],
+    shopLevel: 0,
   };
   resetGame(game, mode);
   return game;
@@ -138,6 +150,10 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.tutorialStep = null;
+  // Zero, not the character's level, so the next open restocks rather than
+  // showing whatever the previous game happened to be carrying.
+  game.shopStock = [];
+  game.shopLevel = 0;
 }
 
 /**

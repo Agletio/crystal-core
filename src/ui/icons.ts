@@ -133,6 +133,42 @@ export function gearIcon(art: string, size = 26): SVGSVGElement {
   const outline = { stroke: 'var(--void)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' };
 
   switch (art) {
+    // Weapon bases carry their FAMILY as their art key, not the word "weapon"
+    // — so without these four every wand, sword, dagger and mace fell through
+    // to the default and rendered as body armour. Invisible while gear only
+    // came from a dev kit; the moment a shop shelf and a drop table existed it
+    // meant a row of identical icons with different names.
+    case 'wand':
+      shape(node, 'rect', { x: 14, y: 10, width: 4, height: 19, fill: 'var(--dust)', ...outline });
+      shape(node, 'polygon', {
+        points: polygon(16, 8, 6, 4, 1.25),
+        fill: 'var(--amethyst)',
+        ...outline,
+      });
+      break;
+
+    case 'sword':
+      shape(node, 'path', { d: 'M16 2 L19 8 L19 19 L13 19 L13 8 Z', fill: steel, ...outline });
+      shape(node, 'rect', { x: 8, y: 19, width: 16, height: 3, fill: 'var(--dust)', ...outline });
+      shape(node, 'rect', { x: 15, y: 22, width: 2, height: 8, fill: 'var(--dust)' });
+      break;
+
+    case 'dagger':
+      // Short and off the vertical, so it never reads as a small sword.
+      shape(node, 'path', { d: 'M22 3 L25 7 L14 20 L11 16 Z', fill: steel, ...outline });
+      shape(node, 'path', { d: 'M8 14 L17 23', stroke: 'var(--dust)', 'stroke-width': 3 });
+      shape(node, 'path', { d: 'M6 20 L11 25', stroke: 'var(--dust)', 'stroke-width': 3.5 });
+      break;
+
+    case 'mace':
+      shape(node, 'rect', { x: 15, y: 12, width: 3, height: 18, fill: 'var(--dust)', ...outline });
+      shape(node, 'polygon', {
+        points: polygon(16, 9, 8, 6),
+        fill: 'var(--ember)',
+        ...outline,
+      });
+      break;
+
     case 'weapon':
       shape(node, 'path', {
         d: 'M16 3 L19 9 L19 20 L13 20 L13 9 Z',
@@ -280,8 +316,22 @@ const CLASS_COLOURS: Record<string, string> = {
  * a glance while function is learnable up close.
  */
 const CURRENCY_SHAPES: Record<string, string> = {
+  // Opens a Rough item — a stone coming apart along its seam.
+  shard_of_seaming: 'M14 3 L8 15 L11 28 L14 28 Z M18 3 L24 15 L21 28 L18 28 Z',
   // Fills ONE empty slot — a single shard rising.
   shard_of_making: 'M16 3 L22 14 L19 27 L13 27 L10 14 Z',
+  // Re-rolls which mods a Seamed item has — something turned around.
+  shard_of_turning:
+    'M16 5 A11 11 0 1 1 5 16 L9 16 A7 7 0 1 0 16 9 Z M13 1 L21 5 L13 9 Z',
+  // Rough straight to Faceted — one stone cut into three.
+  shard_of_cleaving:
+    'M8 5 L12 16 L9 28 L5 16 Z M16 2 L20 15 L17 30 L13 15 Z M24 6 L28 16 L25 27 L21 16 Z',
+  // Seamed up to Faceted — a step gained, not a leap.
+  sigil_of_ascent: 'M4 28 L4 21 L12 21 L12 14 L20 14 L20 7 L28 7 L28 28 Z',
+  // Faceted up to Brilliant — the most light any of them throws.
+  sigil_of_brilliance:
+    'M16 1 L18.5 12 L27 5 L20 13.5 L31 16 L20 18.5 L27 27 L18.5 20 L16 31 ' +
+    'L13.5 20 L5 27 L12 18.5 L1 16 L12 13.5 L5 5 L13.5 12 Z',
   // Removes one — the same shard with a chunk taken out of its edge. The
   // second subpath winds the other way, which is what makes it a hole rather
   // than a second blob sitting on top.
@@ -416,3 +466,11 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
   }
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }
+
+/** Quality → the CSS colour a slot border and a name should take. */
+export const QUALITY_COLOUR: Record<string, string> = {
+  rough: 'var(--dust)',
+  seamed: 'var(--quartz)',
+  faceted: 'var(--citrine)',
+  brilliant: 'var(--ember)',
+};

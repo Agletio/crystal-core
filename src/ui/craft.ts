@@ -14,7 +14,15 @@
  * returns the first.
  */
 import { Rng } from '../rng';
-import { ModPool, fillState, slotCapacity, slotTypes, slotUsed } from '../mods';
+import {
+  ModPool,
+  modCapacity,
+  qualityName,
+  qualityOf,
+  slotCapacity,
+  slotTypes,
+  slotUsed,
+} from '../mods';
 import { canApply, craft, describeMod } from '../crafting';
 import { ALL_MODS } from '../data';
 import { balance, spend } from '../economy';
@@ -118,8 +126,14 @@ function renderItem(): void {
   if (!item) return;
 
   $('item-name').textContent = item.name;
+  // Quality first, because it is the thing that decides what you can do next.
+  // "blank / partial / full" said how far along the item was without ever
+  // saying what its ceiling was, so a full Seamed item and a full Brilliant
+  // one read identically.
   $('item-meta').textContent =
-    `ilvl ${item.ilvl} · ${fillState(item)}` + (item.meta.corrupted ? ' · locked' : '');
+    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+    `${item.mods.length}/${modCapacity(item)} modifiers` +
+    (item.meta.corrupted ? ' · locked' : '');
   $('item-name').classList.toggle('locked', !!item.meta.corrupted);
 
   // What this crystal is worth, right under its name — the mods below say

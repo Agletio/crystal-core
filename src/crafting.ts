@@ -5,12 +5,17 @@ import {
   fillState,
   hasOpenSlot,
   instantiate,
+  modCapacity,
+  qualityName,
+  qualityOf,
+  qualityRank,
   rollRandomMod,
   rollValues,
   slotCapacity,
   slotTypes,
   slotUsed,
 } from './mods';
+import { QUALITIES } from './data';
 import type {
   Condition,
   CraftResult,
@@ -59,6 +64,16 @@ export const CONDITIONS: Record<string, ConditionImpl> = {
   ilvl_at_least: (item, p) => item.ilvl >= p.value,
 
   not_corrupted: (item) => item.meta.corrupted !== true,
+
+  /** Item is at exactly one of these qualities. */
+  quality_is: (item, p) => (p.any as string[]).includes(qualityOf(item)),
+
+  /** Item is at this quality or better. */
+  quality_at_least: (item, p) =>
+    qualityRank(qualityOf(item)) >= qualityRank(p.value),
+
+  /** Item is below this quality — the gate on every step-up currency. */
+  quality_below: (item, p) => qualityRank(qualityOf(item)) < qualityRank(p.value),
 };
 
 const CONDITION_MESSAGES: Record<string, string> = {
@@ -68,6 +83,9 @@ const CONDITION_MESSAGES: Record<string, string> = {
   has_slot_type: 'item has no such slot',
   mod_count: 'wrong number of modifiers',
   fill_state: 'wrong fill state',
+  quality_is: 'wrong quality',
+  quality_at_least: 'the item is not refined enough',
+  quality_below: 'the item is already that refined',
 };
 
 export function checkConditions(item: Item, conds: Condition[] = []): string | null {
@@ -232,6 +250,32 @@ export const EFFECTS: Record<string, EffectImpl> = {
   corrupt: (ctx) => {
     ctx.item.meta.corrupted = true;
     ctx.log.push('item is now corrupted');
+    return true;
+  },
+
+  /**
+   * Raise the item's quality, optionally filling it to a mod count.
+   *
+   * One effect covers the whole step-up ladder because the interesting part
+   * is always the same shape: a Rough piece becomes Seamed with one mod, a
+   * Seamed piece becomes Faceted keeping what it had. Only ever upward —
+   * a currency that could quietly downgrade an item would delete mods as a
+   * side effect of a name that didn't say so.
+   */
+  set_quality: (ctx, p) => {
+    const to = p.to as string;
+    if (qualityRank(qualityOf(ctx.item)) >= qualityRank(to as never)) return false;
+    if (!QUALITIES.some((q) => q.id === to)) return false;
+
+    ctx.item.meta.quality = to;
+    ctx.log.push(`now ${qualityName(to as never)}`);
+
+    // `fill` is a TARGET count, not an addition: the same currency used on a
+    // Rough item and on a Seamed one should land on the same shape.
+    if (p.fill !== undefined) {
+      const target = Math.min(p.fill as number, modCapacity(ctx.item));
+      fillAll(ctx, undefined, target);
+    }
     return true;
   },
 

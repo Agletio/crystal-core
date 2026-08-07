@@ -1,5 +1,7 @@
 import type {
+  CurrencyClass,
   CurrencyDef,
+  Quality,
   EquipSlotDef,
   GearBase,
   ModDef,
@@ -83,6 +85,32 @@ export const DEFENCE = {
 
 export const CRYSTAL_SLOTS = { mod: 3 };
 
+// ===========================================================================
+// ITEM QUALITY
+//
+// How many modifiers an item is ALLOWED to carry, independent of which kinds
+// its base can hold. Those are two different restrictions and were previously
+// one: the base's slot table said both "a body armour is a defensive piece"
+// and "every item holds four mods", so every piece you ever found could be
+// filled and re-rolled to perfection the moment you owned one currency.
+//
+// Quality is the second axis. A base still decides WHAT can go on it; quality
+// decides HOW MUCH, and is what a crystal tier actually gates — which is what
+// turns "found an item" into a ladder rather than a coin flip.
+//
+// Slot tables above sum to six so the top of the ladder has somewhere to go.
+// ===========================================================================
+
+export const QUALITIES: Array<{ id: Quality; name: string; mods: number }> = [
+  { id: 'rough', name: 'Rough', mods: 0 },
+  { id: 'seamed', name: 'Seamed', mods: 2 },
+  { id: 'faceted', name: 'Faceted', mods: 4 },
+  { id: 'brilliant', name: 'Brilliant', mods: 6 },
+];
+
+export const QUALITY_BY_ID: Record<string, (typeof QUALITIES)[number]> =
+  Object.fromEntries(QUALITIES.map((q) => [q.id, q]));
+
 /**
  * Gear mod groups.
  *
@@ -99,7 +127,7 @@ export const CRYSTAL_SLOTS = { mod: 3 };
 export const GEAR_SLOT_TYPES = ['offence', 'defence', 'damage', 'utility'] as const;
 
 /** Kept for crystals and any caller that still wants a default gear layout. */
-export const GEAR_SLOTS = { offence: 1, defence: 1, damage: 1, utility: 1 };
+export const GEAR_SLOTS = { offence: 2, defence: 2, damage: 1, utility: 1 };
 
 // ===========================================================================
 // EQUIPMENT
@@ -151,7 +179,7 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
  * Tiers within a family are gated by ilvl, so better bases are themselves a
  * progression rather than everything being available immediately.
  */
-const WEAPON_SLOTS = { offence: 2, defence: 1, damage: 1, utility: 0 };
+const WEAPON_SLOTS = { offence: 3, defence: 1, damage: 2, utility: 0 };
 
 const weapon = (
   id: string,
@@ -227,27 +255,27 @@ export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
   {
     id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet',
-    slots: { offence: 1, defence: 2, damage: 1, utility: 0 },
+    slots: { offence: 1, defence: 3, damage: 1, utility: 1 },
   },
   {
     id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body',
-    slots: { offence: 0, defence: 3, damage: 1, utility: 0 },
+    slots: { offence: 0, defence: 4, damage: 1, utility: 1 },
   },
   {
     id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves',
-    slots: { offence: 1, defence: 1, damage: 2, utility: 0 },
+    slots: { offence: 2, defence: 1, damage: 3, utility: 0 },
   },
   {
     id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots',
-    slots: { offence: 0, defence: 2, damage: 0, utility: 2 },
+    slots: { offence: 0, defence: 2, damage: 0, utility: 4 },
   },
   {
     id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet',
-    slots: { offence: 1, defence: 1, damage: 1, utility: 1 },
+    slots: { offence: 2, defence: 2, damage: 1, utility: 1 },
   },
   {
     id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring',
-    slots: { offence: 1, defence: 2, damage: 1, utility: 0 },
+    slots: { offence: 2, defence: 2, damage: 1, utility: 1 },
   },
 ];
 
@@ -745,8 +773,31 @@ export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
 // genuinely new kind of mutation.
 // ===========================================================================
 
+/**
+ * The crafting currencies, arranged as a ladder.
+ *
+ * Every one of these used to work on every item, which meant the whole system
+ * collapsed into one move: fill it, then re-roll until it is perfect. There
+ * was no such thing as an item you could not finish, so there was no such
+ * thing as an item worth finding.
+ *
+ * They are gated on QUALITY now, and quality is what a crystal tier drops. So
+ * the ladder reads bottom to top: early on you are adding a modifier to a
+ * two-slot piece, and only much later are you re-rolling a six-slot one at
+ * will. Each rung is a currency you cannot yet reach and an item you cannot
+ * yet improve, which is the shape the progression was missing.
+ */
 export const CURRENCIES: CurrencyDef[] = [
-  // --- basic: the ones that become effectively infinite ------------------
+  // --- basic: the first thing you ever craft with -------------------------
+  {
+    id: 'shard_of_seaming',
+    name: 'Shard of Seaming',
+    class: 'basic',
+    description: 'Opens a Rough item to Seamed, with one modifier.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['rough'] }],
+    effects: [{ kind: 'set_quality', to: 'seamed', fill: 1 }],
+  },
   {
     id: 'shard_of_making',
     name: 'Shard of Making',
@@ -774,26 +825,46 @@ export const CURRENCIES: CurrencyDef[] = [
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
     effects: [{ kind: 'reroll_values' }],
   },
+
+  // --- uncommon: reshaping something you already have ---------------------
   {
-    id: 'shard_of_awakening',
-    name: 'Shard of Awakening',
-    class: 'basic',
-    description: 'Fills every empty slot at once.',
+    id: 'shard_of_turning',
+    name: 'Shard of Turning',
+    class: 'uncommon',
+    description: 'Re-rolls which modifiers a Seamed item has. Seamed only.',
     targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
-    effects: [{ kind: 'fill_slots' }],
-  },
-  {
-    id: 'shard_of_chaos',
-    name: 'Shard of Chaos',
-    class: 'basic',
-    description: 'Re-rolls every modifier, keeping the same number of them.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
+    requires: [
+      { kind: 'not_corrupted' },
+      { kind: 'quality_is', any: ['seamed'] },
+      { kind: 'mod_count', min: 1 },
+    ],
     effects: [{ kind: 'reroll_mods' }],
   },
+  {
+    id: 'shard_of_cleaving',
+    name: 'Shard of Cleaving',
+    class: 'uncommon',
+    description: 'Cuts a Rough item straight to Faceted, with three modifiers.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['rough'] }],
+    // Three, not four. Skipping a rung should cost you the last slot — the
+    // fourth is what Making is for, and what makes a finished Faceted item a
+    // thing you assembled rather than a thing you bought.
+    effects: [{ kind: 'set_quality', to: 'faceted', fill: 3 }],
+  },
+  {
+    id: 'sigil_of_ascent',
+    name: 'Sigil of Ascent',
+    class: 'uncommon',
+    description: 'Raises a Seamed item to Faceted, keeping its modifiers and adding one.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['seamed'] }],
+    // The patient route. Keeps what you rolled, which is the whole reason to
+    // have curated a Seamed item rather than cleaving a fresh one.
+    effects: [{ kind: 'set_quality', to: 'faceted' }, { kind: 'add_mod', count: 1 }],
+  },
 
-  // --- specialised: the ones you actually care about later ---------------
+  // --- uncommon: guaranteed families -------------------------------------
   {
     id: 'essence_of_the_swarm',
     name: 'Essence of the Swarm',
@@ -816,8 +887,8 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'whetstone_of_might',
     name: 'Whetstone of Might',
     class: 'uncommon',
-    description: 'Fills a main slot with a guaranteed Damage modifier.',
-    targets: { kinds: ['gear'], slots: ['main'] },
+    description: 'Fills an offence slot with a guaranteed Damage modifier.',
+    targets: { kinds: ['gear'], slots: ['offence'] },
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'offence' }],
     effects: [{ kind: 'add_mod', slot: 'offence', tag: 'damage' }],
   },
@@ -825,13 +896,39 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'oil_of_swiftness',
     name: 'Oil of Swiftness',
     class: 'uncommon',
-    description: 'Fills a secondary slot with a guaranteed Speed modifier.',
-    targets: { kinds: ['gear'], slots: ['secondary'] },
+    description: 'Fills a utility slot with a guaranteed Speed modifier.',
+    targets: { kinds: ['gear'], slots: ['utility'] },
+    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'utility' }],
+    effects: [{ kind: 'add_mod', slot: 'utility', tag: 'speed' }],
+  },
+
+  // --- rare: working on a finished item ----------------------------------
+  {
+    id: 'shard_of_awakening',
+    name: 'Shard of Awakening',
+    class: 'rare',
+    description: 'Fills every empty slot at once. Faceted or better.',
+    targets: {},
     requires: [
       { kind: 'not_corrupted' },
-      { kind: 'has_open_slot', slot: 'utility' },
+      { kind: 'quality_at_least', value: 'faceted' },
+      { kind: 'has_open_slot' },
     ],
-    effects: [{ kind: 'add_mod', slot: 'utility', tag: 'speed' }],
+    effects: [{ kind: 'fill_slots' }],
+  },
+  {
+    id: 'shard_of_chaos',
+    name: 'Shard of Chaos',
+    class: 'rare',
+    description:
+      'Re-rolls every modifier on a Faceted or better item, keeping the same number.',
+    targets: {},
+    requires: [
+      { kind: 'not_corrupted' },
+      { kind: 'quality_at_least', value: 'faceted' },
+      { kind: 'mod_count', min: 1 },
+    ],
+    effects: [{ kind: 'reroll_mods' }],
   },
   {
     id: 'sigil_of_refinement',
@@ -843,12 +940,44 @@ export const CURRENCIES: CurrencyDef[] = [
     effects: [{ kind: 'upgrade_mod_tier' }],
   },
   {
+    // Deliberately scarce. As a cheap basic this was the single biggest thing
+    // devaluing bases: any good chest could be spammed back to blank and
+    // re-rolled for free, so no base was ever worth keeping. It resets quality
+    // too — a wipe that left the item Faceted would be a free re-roll rather
+    // than a decision.
+    id: 'shard_of_ruin',
+    name: 'Shard of Ruin',
+    class: 'rare',
+    description: 'Strips an item back to Rough. Everything is lost.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
+    effects: [{ kind: 'clear_mods' }, { kind: 'set_meta', key: 'quality', value: 'rough' }],
+  },
+
+  // --- exotic: the last thing you do to an item --------------------------
+  {
+    id: 'sigil_of_brilliance',
+    name: 'Sigil of Brilliance',
+    class: 'exotic',
+    description: 'Raises a Faceted item to Brilliant, adding one modifier.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['faceted'] }],
+    effects: [{ kind: 'set_quality', to: 'brilliant' }, { kind: 'add_mod', count: 1 }],
+  },
+  {
     id: 'sigil_of_excess',
     name: 'Sigil of Excess',
     class: 'exotic',
-    description: 'Grants one slot beyond the base limit. Only on a full item.',
+    description: 'Grants one modifier beyond the limit. Only on a finished Brilliant item.',
     targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'slots_full' }],
+    // Brilliant AND full. Without the quality gate a blank Rough item counts
+    // as "full" — it has no room by definition — so this would have been a
+    // way to put a seventh modifier on something that had never held one.
+    requires: [
+      { kind: 'not_corrupted' },
+      { kind: 'quality_at_least', value: 'brilliant' },
+      { kind: 'slots_full' },
+    ],
     effects: [{ kind: 'add_slot', count: 1 }],
   },
   {
@@ -866,19 +995,6 @@ export const CURRENCIES: CurrencyDef[] = [
       { kind: 'scale_values', magnitude: 0.25, optional: true },
       { kind: 'corrupt' },
     ],
-  },
-  {
-    // Deliberately exotic and drop-only. As a cheap basic this was the single
-    // biggest thing devaluing bases: any good chest could be spammed back to
-    // blank and re-rolled for free, so no base was ever worth keeping. Making
-    // a wipe scarce is what gives a well-rolled base its weight.
-    id: 'shard_of_ruin',
-    name: 'Shard of Ruin',
-    class: 'exotic',
-    description: 'Strips every modifier, emptying all slots. Rare — spend it carefully.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'clear_mods' }],
   },
 ];
 
@@ -1204,6 +1320,100 @@ export const CURRENCY_DROP = {
   upgradeChance: 0.17,
 };
 
+// ===========================================================================
+// WHAT A TIER DROPS
+//
+// The crystal you socket decides what the map can give you — not just how
+// much. That is what makes a tier a rung rather than a difficulty slider, and
+// it is the reason the currency ladder above has anything to climb: you
+// cannot re-roll a Faceted item at will until you are running maps that drop
+// the currency for it, and you have no reason to want that currency until you
+// are running maps that drop the item.
+//
+// `quality` is a weighted table, so a tier has a normal result and a good
+// one. `mods` is how filled a dropped piece arrives — T3 hands you a Faceted
+// item with room left, which is exactly the item Making and Awakening exist
+// for.
+//
+// `currency` is the best CLASS the map can drop. Below the class it rolls as
+// before, with rarity climbing it.
+// ===========================================================================
+
+export interface TierDrops {
+  /** Weighted quality table: [quality, weight]. */
+  quality: Array<[Quality, number]>;
+  /** Mods a dropped piece arrives with, as [min, max] of its cap. */
+  fill: [number, number];
+  /** Best currency class this map can produce. */
+  currency: CurrencyClass;
+  /** Chance per kill that a piece of gear drops at all. */
+  gearChance: number;
+}
+
+export const TIER_DROPS: Record<number, TierDrops> = {
+  // The unempowered Fissure. Mostly junk, occasionally a one-modifier piece —
+  // enough that the free descent has some upside without a crystal, which is
+  // the difference between a tutorial and a tax.
+  0: { quality: [['rough', 7], ['seamed', 3]], fill: [1, 1], currency: 'basic', gearChance: 0.05 },
+  1: { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.055 },
+  2: { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.06 },
+  // T3 is the first Faceted, and deliberately not a full one.
+  3: { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.065 },
+  // T4 is where a build becomes possible: full Faceted pieces, four modifiers.
+  4: { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.07 },
+  5: { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.075 },
+  6: { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.08 },
+};
+
+export const dropsForTier = (tier: number): TierDrops =>
+  TIER_DROPS[Math.max(0, Math.min(6, Math.round(tier)))] ?? TIER_DROPS[0];
+
+// ===========================================================================
+// THE SHOP'S SHELF
+//
+// A shelf that grows with you rather than a catalogue that was always
+// complete. At level 1 it holds one or two Rough pieces and the two currencies
+// you can actually use on them; by the time you have a build it is stocking
+// Faceted gear.
+//
+// It never reaches the top. The best a shop sells is one rung below what a
+// map of the same era drops, so buying is the floor under your luck rather
+// than a way around the crystal ladder.
+// ===========================================================================
+
+export const SHOP = {
+  /** Pieces on the shelf: grows one per this many levels, capped. */
+  slotsPerLevel: 4,
+  minSlots: 2,
+  maxSlots: 8,
+  /** Item level of stock, as a multiple of character level. */
+  ilvlPerLevel: 1.6,
+  /** Fragments per item level, before quality. */
+  pricePerIlvl: 2.4,
+  /** Price multiplier by quality. Steeper than the mod count, on purpose. */
+  priceByQuality: { rough: 1, seamed: 2.6, faceted: 7, brilliant: 18 } as Record<Quality, number>,
+};
+
+/**
+ * What the shop can stock at a given level, best last.
+ *
+ * Rough only until you have cleared a few maps, because the point of the early
+ * shop is a BASE — a wand you did not have — not a finished item.
+ */
+export const SHOP_QUALITY: Array<{ level: number; quality: Array<[Quality, number]> }> = [
+  { level: 1, quality: [['rough', 10]] },
+  { level: 5, quality: [['rough', 7], ['seamed', 3]] },
+  { level: 10, quality: [['rough', 4], ['seamed', 6]] },
+  { level: 18, quality: [['rough', 2], ['seamed', 7], ['faceted', 1]] },
+  { level: 28, quality: [['seamed', 6], ['faceted', 4]] },
+];
+
+export const shopQualityFor = (level: number): Array<[Quality, number]> => {
+  let table = SHOP_QUALITY[0].quality;
+  for (const row of SHOP_QUALITY) if (level >= row.level) table = row.quality;
+  return table;
+};
+
 export const LOOT = {
   /**
    * Fragments one monster is worth at tier 1. Accumulates fractionally and
@@ -1317,6 +1527,11 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
 
 /** Dev kit only — nobody is handed these by playing. */
 export const DEV_CURRENCY: Record<string, number> = {
+  shard_of_seaming: 6,
+  shard_of_turning: 3,
+  shard_of_cleaving: 3,
+  sigil_of_ascent: 2,
+  sigil_of_brilliance: 1,
   shard_of_making: 6,
   shard_of_awakening: 3,
   shard_of_unmaking: 3,
@@ -1461,43 +1676,87 @@ export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(
   SKILLS.map((s) => [s.id, s])
 );
 
+/**
+ * Crystal tiers unlock as you level, same as the currencies. A level-1 shop
+ * that already sold a Tier 6 crystal would be selling a map that kills you.
+ */
+const CRYSTAL_UNLOCK: Record<number, number> = { 1: 1, 2: 4, 3: 9, 4: 15, 5: 22, 6: 30 };
+
 export const RECIPES: Recipe[] = [
   ...CRYSTAL_TIERS.map((t) => ({
     id: `crystal_t${t.tier}`,
     name: `Tier ${t.tier} Crystal`,
+    level: CRYSTAL_UNLOCK[t.tier] ?? 1,
     inputs: { fragment: t.fragments },
     output: { type: 'item' as const, base: `crystal_t${t.tier}`, qty: 1 },
   })),
+
+  // Level 1: the two things you can do to a Rough item, and nothing else.
+  {
+    id: 'make_shard_of_seaming',
+    name: 'Shard of Seaming',
+    level: 1,
+    inputs: { fragment: 4 },
+    output: { type: 'currency', id: 'shard_of_seaming', qty: 1 },
+  },
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
+    level: 1,
     inputs: { fragment: 5 },
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
-  {
-    id: 'make_shard_of_unmaking',
-    name: 'Shard of Unmaking',
-    inputs: { fragment: 7 },
-    output: { type: 'currency', id: 'shard_of_unmaking', qty: 1 },
-  },
+
   {
     id: 'make_shard_of_change',
     name: 'Shard of Change',
+    level: 3,
     inputs: { fragment: 3 },
     output: { type: 'currency', id: 'shard_of_change', qty: 1 },
   },
   {
+    id: 'make_shard_of_unmaking',
+    name: 'Shard of Unmaking',
+    level: 4,
+    inputs: { fragment: 7 },
+    output: { type: 'currency', id: 'shard_of_unmaking', qty: 1 },
+  },
+  {
+    id: 'make_shard_of_turning',
+    name: 'Shard of Turning',
+    level: 6,
+    inputs: { fragment: 11 },
+    output: { type: 'currency', id: 'shard_of_turning', qty: 1 },
+  },
+  {
+    id: 'make_shard_of_cleaving',
+    name: 'Shard of Cleaving',
+    level: 10,
+    inputs: { fragment: 22 },
+    output: { type: 'currency', id: 'shard_of_cleaving', qty: 1 },
+  },
+  {
+    id: 'make_sigil_of_ascent',
+    name: 'Sigil of Ascent',
+    level: 12,
+    inputs: { fragment: 30 },
+    output: { type: 'currency', id: 'sigil_of_ascent', qty: 1 },
+  },
+  {
     id: 'make_shard_of_awakening',
     name: 'Shard of Awakening',
-    inputs: { fragment: 10 },
+    level: 16,
+    inputs: { fragment: 44 },
     output: { type: 'currency', id: 'shard_of_awakening', qty: 1 },
   },
-  // No recipe for Shard of Ruin — it's exotic and drop-only. If you could buy
-  // a wipe for fragments, bases would be disposable again.
   {
     id: 'make_shard_of_chaos',
     name: 'Shard of Chaos',
-    inputs: { fragment: 12 },
+    level: 18,
+    inputs: { fragment: 52 },
     output: { type: 'currency', id: 'shard_of_chaos', qty: 1 },
   },
+  // No recipe for Shard of Ruin or any of the sigils — those are drop-only.
+  // If you could buy a wipe for fragments, bases would be disposable again,
+  // and a purchasable Brilliant would make the top of the ladder a price.
 ];

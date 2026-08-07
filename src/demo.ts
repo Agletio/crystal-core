@@ -23,10 +23,11 @@ import {
   runRecipe,
 } from './economy';
 import { RunSim, runToCompletion } from './sim/run';
+import { hasOpenSlot, modCapacity, qualityOf } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
-import { starterLoadout } from './sim/loadout';
+import { loadoutMods, starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -44,7 +45,7 @@ import {
   stashUpgradeCost,
   unequipItem,
 } from './game/state';
-import type { Item, Wallet } from './types';
+import type { Item, Quality, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
@@ -167,6 +168,147 @@ rule('AN ACTUAL RUN — headless, no browser');
       `${final.killed}/${final.totalMonsters} killed, ` +
       `${Math.max(0, Math.round(final.hero.life))} life left, ` +
       `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
+  );
+}
+
+// ===========================================================================
+rule('QUALITY — does the ladder actually restrict anything?');
+
+// The whole point of quality is that an item has a ceiling you cannot craft
+// past. Every check here is a way that could quietly stop being true: an
+// effect that fills without asking, a currency that skips a rung, a drop table
+// that hands out the top of the ladder on a tier-1 map.
+{
+  const wand = () => makeGear('ash_wand', 60);
+
+  check(
+    modCapacity(wand()) === 0,
+    'a fresh item is Rough and holds nothing',
+    `capacity ${modCapacity(wand())}`
+  );
+
+  // Every step-up currency, in order, on its own fresh item.
+  const step = (from: Item, currency: string) =>
+    craft(from, CURRENCY_BY_ID[currency], pool, rng);
+
+  const seamed = step(wand(), 'shard_of_seaming');
+  check(
+    seamed.ok && qualityOf(seamed.item) === 'seamed' && seamed.item.mods.length === 1,
+    'Seaming opens a Rough item to one modifier',
+    `${qualityOf(seamed.item)} with ${seamed.item.mods.length}`
+  );
+
+  // Fill it, then prove the cap holds against the thing designed to fill.
+  let full = seamed.item;
+  for (let i = 0; i < 6; i++) {
+    const r = craft(full, CURRENCY_BY_ID.shard_of_making, pool, rng);
+    if (r.ok) full = r.item;
+  }
+  check(
+    full.mods.length === 2,
+    'and Making cannot push a Seamed item past two',
+    `${full.mods.length} modifiers`
+  );
+  check(
+    !craft(full, CURRENCY_BY_ID.shard_of_awakening, pool, rng).ok,
+    'nor can Awakening, which is gated to Faceted',
+    'Awakening reached a Seamed item'
+  );
+
+  const ascended = step(full, 'sigil_of_ascent');
+  check(
+    ascended.ok &&
+      qualityOf(ascended.item) === 'faceted' &&
+      ascended.item.mods.length === 3 &&
+      full.mods.every((m) => ascended.item.mods.some((k) => k.entryId === m.entryId)),
+    'Ascent raises Seamed to Faceted, keeping what was there and adding one',
+    `${qualityOf(ascended.item)} with ${ascended.item.mods.length}`
+  );
+
+  const cleaved = step(wand(), 'shard_of_cleaving');
+  check(
+    cleaved.ok && qualityOf(cleaved.item) === 'faceted' && cleaved.item.mods.length === 3,
+    'Cleaving skips a rung to Faceted, and stops one short of full',
+    `${qualityOf(cleaved.item)} with ${cleaved.item.mods.length}`
+  );
+
+  const wiped = step(cleaved.item, 'shard_of_ruin');
+  check(
+    wiped.ok && qualityOf(wiped.item) === 'rough' && wiped.item.mods.length === 0,
+    'Ruin takes it all the way back to Rough — not just empty',
+    `${qualityOf(wiped.item)} with ${wiped.item.mods.length}`
+  );
+
+  // A ceiling nothing can reach is the same as no ceiling. Prove the top rung
+  // is reachable and that it is genuinely the top.
+  let top = step(cleaved.item, 'shard_of_awakening').item;
+  top = step(top, 'sigil_of_brilliance').item;
+  while (hasOpenSlot(top)) {
+    const r = craft(top, CURRENCY_BY_ID.shard_of_making, pool, rng);
+    if (!r.ok) break;
+    top = r.item;
+  }
+  check(
+    qualityOf(top) === 'brilliant' && top.mods.length === 6,
+    'and a Brilliant item reaches six',
+    `${qualityOf(top)} with ${top.mods.length}`
+  );
+  check(
+    !craft(top, CURRENCY_BY_ID.shard_of_seaming, pool, rng).ok &&
+      !craft(top, CURRENCY_BY_ID.sigil_of_brilliance, pool, rng).ok,
+    'with nothing left to raise it',
+    'a step-up currency applied to a finished item'
+  );
+}
+
+// ===========================================================================
+rule('DROPS — does the crystal decide what the map can give you?');
+
+// Tier gates the CEILING, rarity only gates how often you reach it. Without
+// the cap a rarity-stacked Tier 1 would out-drop an honest Tier 4, which is
+// the ladder skipped in one lucky kill.
+{
+  const hero = makeCharacter(starterLoadout(new Rng(7), 30, 'faceted'), 'strike');
+  const seen = new Map<number, Set<string>>();
+  const counts = new Map<number, number>();
+
+  for (const tier of [0, 1, 3, 5]) {
+    const qualities = new Set<string>();
+    let items = 0;
+    for (const seed of [11, 29, 47]) {
+      const crystal = craft(
+        makeCrystal(Math.max(1, tier)),
+        CURRENCY_BY_ID.shard_of_cleaving,
+        pool,
+        rng
+      ).item;
+      const sim = new RunSim(crystal, hero, new Rng(seed * 31 + tier), { dropTier: tier });
+      const f = runToCompletion(sim, 400);
+      for (const item of f.loot.items) {
+        qualities.add(qualityOf(item));
+        items++;
+      }
+    }
+    seen.set(tier, qualities);
+    counts.set(tier, items);
+    line(`  tier ${tier}: ${items} pieces — ${[...qualities].sort().join(', ') || 'none'}`);
+  }
+
+  check(
+    [...counts.values()].every((n) => n > 0),
+    'every tier drops gear at all',
+    [...counts].map(([t, n]) => `T${t}=${n}`).join(' ')
+  );
+  const low = new Set([...(seen.get(0) ?? []), ...(seen.get(1) ?? [])]);
+  check(
+    !low.has('faceted') && !low.has('brilliant'),
+    'the Fissure and Tier 1 cannot produce a Faceted piece',
+    [...low].join(', ')
+  );
+  check(
+    (seen.get(5)?.has('faceted') || seen.get(5)?.has('brilliant')) === true,
+    'and Tier 5 can',
+    [...(seen.get(5) ?? [])].join(', ')
   );
 }
 
@@ -365,7 +507,7 @@ rule('GUIDED OPENING — does every step actually complete?');
       );
     },
     () => { ctx.top = 'shop'; },
-    () => { runRecipe(game.wallet, 'make_shard_of_awakening'); },
+    () => { runRecipe(game.wallet, 'make_shard_of_seaming'); },
     () => {
       // Currency is spent from the dock onto the bench, so getting to the
       // next step means leaving the shop for crafting.
@@ -376,10 +518,10 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     () => {
       const wand = craftItem(game)!;
-      const result = craft(wand, CURRENCY_BY_ID.shard_of_awakening, pool, rng);
+      const result = craft(wand, CURRENCY_BY_ID.shard_of_seaming, pool, rng);
       if (result.ok) replaceItem(game, result.item);
     },
-    () => { ctx.top = 'shop'; runRecipe(game.wallet, 'make_shard_of_chaos'); },
+    () => { ctx.top = 'shop'; runRecipe(game.wallet, 'make_shard_of_making'); },
     () => {
       const wand = craftItem(game)!;
       equipItem(game, wand, 'weapon');
@@ -491,56 +633,56 @@ rule('THE FINALE — what is waiting at the exit?');
 }
 
 // ===========================================================================
-rule('TIER LADDER — where does starter gear fall over?');
+rule('TIER LADDER — which tier does each grade of gear survive?');
 
-// Several seeds per tier — one run per tier is far too noisy to tune against,
-// and a ladder you can't trust is worse than no ladder.
+// Several seeds per cell — one run is far too noisy to tune against, and a
+// ladder you can't trust is worse than no ladder.
 const LADDER_SEEDS = [3, 17, 41, 58, 90];
 
-line('  tier   cleared   avg time   avg killed   avg life left');
-for (const t of CRYSTAL_TIERS) {
-  let cleared = 0;
-  let time = 0;
-  let killed = 0;
-  let life = 0;
+// A grid, not a line. The question was never "where does gear fall over" — it
+// was always "where does THIS gear fall over", and until quality existed there
+// was only one answer to give. Reading down a column tells you what a tier
+// demands; reading across a row tells you what a grade of gear buys you.
+const GRADES: Quality[] = ['rough', 'seamed', 'faceted', 'brilliant'];
 
-  for (const seed of LADDER_SEEDS) {
-    const socketed = craft(
-      makeCrystal(t.tier),
-      CURRENCY_BY_ID.shard_of_awakening,
-      pool,
-      rng
-    ).item;
-    const sim = new RunSim(
-      socketed,
-      makeCharacter(starterLoadout(new Rng(7)), 'strike'),
-      new Rng(900 + seed * 7 + t.tier)
-    );
-    const f = runToCompletion(sim, 400);
+line('  gear         T1     T2     T3     T4     T5     T6');
+for (const grade of GRADES) {
+  const kit = starterLoadout(new Rng(7), 30, grade);
+  const cells: string[] = [];
 
-    if (f.status === 'cleared') cleared++;
-    time += f.elapsed;
-    killed += f.killed;
-    life += Math.max(0, f.hero.life);
+  for (const t of CRYSTAL_TIERS) {
+    let cleared = 0;
+    for (const seed of LADDER_SEEDS) {
+      const socketed = craft(
+        makeCrystal(t.tier),
+        CURRENCY_BY_ID.shard_of_cleaving,
+        pool,
+        rng
+      ).item;
+      const sim = new RunSim(
+        socketed,
+        makeCharacter(kit, 'strike'),
+        new Rng(900 + seed * 7 + t.tier)
+      );
+      const f = runToCompletion(sim, 400);
+      if (f.status === 'cleared') cleared++;
+    }
+    cells.push(`${cleared}/${LADDER_SEEDS.length}`.padStart(6));
   }
 
-  const n = LADDER_SEEDS.length;
-  line(
-    `   T${t.tier}   ${`${cleared}/${n}`.padStart(7)}   ` +
-      `${(time / n).toFixed(0).padStart(7)}s   ` +
-      `${(killed / n).toFixed(0).padStart(10)}   ` +
-      `${(life / n).toFixed(0).padStart(13)}`
-  );
+  const mods = loadoutMods(kit);
+  line(`  ${grade.padEnd(10)}${cells.join(' ')}   (${mods} mods worn)`);
 }
 line();
-// Deliberately describes what to look FOR rather than asserting a result —
-// a hardcoded verdict goes stale the moment the numbers move and then the
+// Deliberately describes what to look FOR rather than asserting a result — a
+// hardcoded verdict goes stale the moment the numbers move and then the
 // harness is confidently lying to you.
-line('Read the cleared column, not the times. Somewhere on this ladder should');
-line('be the tier that stops being safe; that gap is what gear is for. If the');
-line('top row clears every time, there is nothing left to chase.');
-line('Gear is what moves that line up. If it never loses, gear does not matter');
-line('yet, and if it never wins the early game is unplayable — watch both ends.');
+line('Read down a column to see what a tier demands, across a row to see what');
+line('a grade of gear buys. The design wants roughly a diagonal: Rough gear');
+line('surviving the Fissure and little else, Seamed clearing T1-T2, Faceted');
+line('reaching T4, and T5-T6 needing more than gear alone can give.');
+line('A full row of 5/5 means that grade has nothing left to chase; a full');
+line('column of 0/5 means that tier is unreachable rather than hard.');
 
 // ===========================================================================
 rule('TERMINATION CHECK — does every run actually end?');

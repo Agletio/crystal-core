@@ -1,10 +1,12 @@
 import { Rng } from './rng';
+import { QUALITIES, QUALITY_BY_ID } from './data';
 import type {
   FillState,
   Item,
   ModDef,
   ModEntry,
   ModSlot,
+  Quality,
   RolledMod,
   StatRoll,
 } from './types';
@@ -25,19 +27,59 @@ export function slotUsed(item: Item, slot: ModSlot): number {
   return item.mods.filter((m) => m.slot === slot).length;
 }
 
-export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {
-  const types = slot ? [slot] : slotTypes(item);
-  return types.some((t) => slotUsed(item, t) < slotCapacity(item, t));
-}
-
 export function totalCapacity(item: Item): number {
   return slotTypes(item).reduce((n, t) => n + slotCapacity(item, t), 0);
+}
+
+// ---------------------------------------------------------------------------
+// Quality
+// ---------------------------------------------------------------------------
+
+/** Untagged items are Rough — the state everything starts in. */
+export function qualityOf(item: Item): Quality {
+  return (item.meta?.quality as Quality) ?? 'rough';
+}
+
+export function qualityRank(quality: Quality): number {
+  const i = QUALITIES.findIndex((q) => q.id === quality);
+  return i < 0 ? 0 : i;
+}
+
+export const qualityName = (quality: Quality): string =>
+  QUALITY_BY_ID[quality]?.name ?? quality;
+
+/**
+ * How many modifiers this item may hold, all in.
+ *
+ * The lower of two independent limits, and the pair is the whole point.
+ * Quality says how finished the item is; the slot table says what a body
+ * armour IS. Either can be the binding constraint — a Brilliant helmet is
+ * capped by its own six slots, a Seamed one by its quality — and neither
+ * subsumes the other.
+ */
+export function modCapacity(item: Item): number {
+  // Bonus slots raise BOTH limits. They are the one way past a quality cap,
+  // so counting them only against the slot table would leave Sigil of Excess
+  // silently doing nothing on the finished items it exists for.
+  const bonus = Object.values(
+    (item.meta?.bonusSlots as Record<string, number>) ?? {}
+  ).reduce((n, v) => n + v, 0);
+  const byQuality = (QUALITY_BY_ID[qualityOf(item)]?.mods ?? 0) + bonus;
+  return Math.min(byQuality, totalCapacity(item));
+}
+
+export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {
+  // Quality first: a Rough item has no room for anything regardless of how
+  // many slot types its base declares.
+  if (item.mods.length >= modCapacity(item)) return false;
+  const types = slot ? [slot] : slotTypes(item);
+  return types.some((t) => slotUsed(item, t) < slotCapacity(item, t));
 }
 
 /** Derived, never stored. Drives loot colouring and nothing else. */
 export function fillState(item: Item): FillState {
   if (item.mods.length === 0) return 'blank';
-  return item.mods.length >= totalCapacity(item) ? 'full' : 'partial';
+  return item.mods.length >= modCapacity(item) ? 'full' : 'partial';
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +123,11 @@ export class ModPool {
   ): ModEntry[] {
     const takenGroups = new Set(item.mods.map((m) => m.group));
     for (const g of opts.excludeGroups ?? []) takenGroups.add(g);
+
+    // Nothing is eligible on an item that is already as finished as its
+    // quality allows. Checked here rather than only at the call sites so a
+    // future effect cannot route around the cap by accident.
+    if (item.mods.length >= modCapacity(item)) return [];
 
     return this.entries.filter((e) => {
       if (e.ilvl > item.ilvl) return false;

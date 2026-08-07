@@ -132,19 +132,19 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
   },
   {
-    id: "buy_awakening",
+    id: "buy_seaming",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Buy a Shard of Awakening. It fills every empty slot on an item at once."
+        ? "Buy a Shard of Seaming. Your wand is Rough — it has no room for a modifier yet, and this is what opens it."
         : blocked(ctx)
           ? "Close this to get back to the Shop."
-          : "Open the Shop and buy a Shard of Awakening.",
-    hint: "Costs 10 fragments. It lands in your inventory.",
+          : "Open the Shop and buy a Shard of Seaming.",
+    hint: "Costs 4 fragments. It lands in your inventory.",
     target: (ctx) =>
       ctx.top === "shop"
-        ? recipeButtonId("make_shard_of_awakening")
+        ? recipeButtonId("make_shard_of_seaming")
         : viaHeader(ctx, "open-shop"),
-    done: (g) => has(g, "shard_of_awakening"),
+    done: (g) => has(g, "shard_of_seaming"),
   },
   {
     id: "select_weapon",
@@ -164,26 +164,26 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     done: (g) => craftItem(g)?.kind === "gear",
   },
   {
-    id: "use_awakening",
-    text: "Now click the Shard of Awakening in your Currency shelf. The wand keeps its base stat; the empty slots fill with modifiers.",
+    id: "use_seaming",
+    text: "Now click the Shard of Seaming in your Currency shelf. The wand keeps its base stat and gains its first modifier.",
     hint: "Currency is spent from the dock, onto whatever is on the bench.",
     target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },
   {
-    id: "buy_chaos",
+    id: "buy_making",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor."
+        ? "Buy a Shard of Making. A Seamed item holds two modifiers, and your wand is using one."
         : blocked(ctx)
           ? "Close Crafting — the Shop button is behind it."
-          : "Back to the Shop for a Shard of Chaos.",
-    hint: "Costs 12 fragments. Using it is your call.",
+          : "Back to the Shop for a Shard of Making.",
+    hint: "Costs 5 fragments. Using it is your call — better items hold more.",
     target: (ctx) =>
       ctx.top === "shop"
-        ? recipeButtonId("make_shard_of_chaos")
+        ? recipeButtonId("make_shard_of_making")
         : viaHeader(ctx, "open-shop"),
-    done: (g) => has(g, "shard_of_chaos"),
+    done: (g) => has(g, "shard_of_making"),
   },
   /**
    * One step, three targets.

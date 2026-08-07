@@ -11,16 +11,29 @@
  * Split out, crafting is only ever the item, and this is only ever the price
  * list. What you buy lands in the dock, which is where you spend it from.
  */
-import { CURRENCY_BY_ID, RECIPES } from '../data';
-import { balance, runRecipe } from '../economy';
+import {
+  ALL_MODS,
+  CURRENCY_BY_ID,
+  GEAR_BASES,
+  RECIPES,
+  SHOP,
+  shopQualityFor,
+} from '../data';
+import { Rng } from '../rng';
+import { ModPool, modCapacity, qualityName, qualityOf } from '../mods';
+import { balance, pickQuality, rollGear, runRecipe, spend } from '../economy';
 import { addItem, carryRoom, stashRoom } from '../game/state';
 import type { GameState } from '../game/state';
+import { describeMod } from '../crafting';
 import { note } from './history';
-import { crystalIcon, currencyIcon } from './icons';
+import { crystalIcon, currencyIcon, itemIcon } from './icons';
 import { renderInventory } from './inventory';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { recipeButtonId } from './tutorial';
-import type { ItemKind, Recipe } from '../types';
+import type { Item, ItemKind, Recipe } from '../types';
+
+/** Same pool the sim rolls drops from, for the same reason: authored data. */
+const POOL = new ModPool(ALL_MODS);
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -119,7 +132,11 @@ export function render(): void {
   const host = $('workshop');
   host.replaceChildren();
 
+  const level = game.character.level;
   for (const recipe of RECIPES) {
+    // A shelf that grows with you. A level-1 shop selling a Tier 6 crystal is
+    // selling a map that kills you.
+    if ((recipe.level ?? 1) > level) continue;
     const affordable = Object.entries(recipe.inputs).every(
       ([id, n]) => balance(game.wallet, id) >= n
     );
@@ -153,11 +170,135 @@ export function render(): void {
     host.append(btn);
   }
 
+  renderStock();
   $('shop-purse').textContent = `${balance(game.wallet, 'fragment')} fragments`;
+}
+
+/**
+ * What a piece is worth, in fragments.
+ *
+ * Priced off item level and quality rather than off what rolled on it. A shop
+ * that read the modifiers would price a good roll higher, which is exactly
+ * backwards: the reason to buy from a shelf is that you can SEE what you are
+ * getting, and paying more for the good one turns that into the same gamble
+ * the maps already are.
+ */
+export function priceOfItem(item: Item): number {
+  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
+  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byQuality));
+}
+
+/**
+ * Restocks the shelf, if the level it was stocked for has moved.
+ *
+ * Level-up is the only trigger. A shelf that re-rolled on every open would not
+ * be a shelf — you would reopen the window until the piece you wanted showed
+ * up, which is a deterministic shop with extra clicks.
+ */
+export function restockIfLevelled(): void {
+  const level = game.character.level;
+  if (level === game.shopLevel) return;
+
+  // Seeded off the level so the same character always sees the same shelf for
+  // a given level: reloading is not a re-roll.
+  const rng = new Rng(level * 7919 + 13);
+  const count = Math.max(
+    SHOP.minSlots,
+    Math.min(SHOP.maxSlots, Math.floor(level / SHOP.slotsPerLevel) + SHOP.minSlots)
+  );
+  const ilvl = Math.max(1, Math.round(level * SHOP.ilvlPerLevel));
+  const table = shopQualityFor(level);
+
+  const stock: Item[] = [];
+  for (let i = 0; i < count; i++) {
+    const base = rng.pick(GEAR_BASES);
+    if (!base) continue;
+    const quality = pickQuality(table, rng);
+    // Shop pieces arrive FULL for their quality. You are paying to skip the
+    // rolling, not to gamble a second time at the counter.
+    stock.push(rollGear(base.id, ilvl, quality, 6, POOL, rng));
+  }
+
+  game.shopStock = stock;
+  game.shopLevel = level;
+  if (level > 1) note(`The shop has restocked for level ${level}`);
+}
+
+function tooltip(item: Item): string {
+  const lines = [
+    item.name,
+    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+      `${item.mods.length}/${modCapacity(item)} modifiers`,
+  ];
+  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
+  for (const mod of item.mods) lines.push(describeMod(mod));
+  if (item.mods.length === 0) lines.push('no modifiers');
+  return lines.join('\n');
+}
+
+function buyItem(item: Item): void {
+  const cost = priceOfItem(item);
+  if (balance(game.wallet, 'fragment') < cost) {
+    note(`${item.name} — costs ${cost} fragments`, 'fail');
+    return;
+  }
+  if (carryRoom(game, 'gear') <= 0 && stashRoom(game) <= 0) {
+    note(`${item.name} — nowhere to put it. Your bag and stash are both full.`, 'fail');
+    return;
+  }
+
+  spend(game.wallet, { fragment: cost });
+  // Off the shelf. One of each: a level-up is a restock, not a catalogue you
+  // can grind for the same piece twice.
+  game.shopStock = game.shopStock.filter((i) => i.id !== item.id);
+  const where = addItem(game, item);
+  note(
+    where === 'stashed'
+      ? `Bought ${item.name} — bag full, sent to the stash`
+      : `Bought ${item.name}`,
+    'add'
+  );
+  render();
+  renderInventory();
+}
+
+function renderStock(): void {
+  const host = $('shop-stock');
+  host.replaceChildren();
+
+  if (game.shopStock.length === 0) {
+    host.append(el('p', 'empty', 'Sold out. The shelf restocks when you level.'));
+    return;
+  }
+
+  for (const item of game.shopStock) {
+    const cost = priceOfItem(item);
+    const btn = el('button', 'buy') as HTMLButtonElement;
+    btn.append(itemIcon(item, 26));
+    const body = el('span', 'buy__body');
+    body.append(el('span', 'buy__name', item.name));
+    body.append(
+      el(
+        'span',
+        'buy__cost',
+        `${cost} fragments · ${qualityName(qualityOf(item))} · ilvl ${item.ilvl}`
+      )
+    );
+    btn.append(body);
+    attachTooltip(btn, () => tooltip(item));
+
+    if (balance(game.wallet, 'fragment') < cost) {
+      btn.disabled = true;
+      btn.classList.add('buy--off');
+    }
+    btn.onclick = () => buyItem(item);
+    host.append(btn);
+  }
 }
 
 export function openShop(): void {
   $('shop').hidden = false;
+  restockIfLevelled();
   render();
 }
 
@@ -171,5 +312,6 @@ export const isShopOpen = (): boolean => !$('shop').hidden;
 export function initShop(state: GameState): void {
   game = state;
   ($('shop-close') as HTMLButtonElement).onclick = closeShop;
+  restockIfLevelled();
   render();
 }

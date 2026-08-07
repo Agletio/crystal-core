@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { computeStat } from './mods';
+import { ModPool, computeStat, modCapacity, rollRandomMod } from './mods';
 import {
   CRYSTAL_SLOTS,
   CRYSTAL_TIERS,
@@ -7,7 +7,15 @@ import {
   GEAR_SLOTS,
   RECIPES,
 } from './data';
-import type { GearBase, Item, ItemKind, Recipe, RolledMod, Wallet } from './types';
+import type {
+  GearBase,
+  Item,
+  ItemKind,
+  Quality,
+  Recipe,
+  RolledMod,
+  Wallet,
+} from './types';
 
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
@@ -29,7 +37,8 @@ export function makeCrystal(tier: number): Item {
     slots: { ...CRYSTAL_SLOTS },
     mods: [],
     implicits: [],
-    meta: { tier },
+    // A bought crystal is a blank stone. Everything it becomes, you do to it.
+    meta: { tier, quality: 'rough' as Quality },
   };
 }
 
@@ -61,7 +70,12 @@ function implicitsFor(def: GearBase | undefined): RolledMod[] {
   ];
 }
 
-export function makeGear(base: string, ilvl: number, name?: string): Item {
+export function makeGear(
+  base: string,
+  ilvl: number,
+  name?: string,
+  quality: Quality = 'rough'
+): Item {
   const def = GEAR_BASE_BY_ID[base];
   return {
     id: uid('gear'),
@@ -77,8 +91,47 @@ export function makeGear(base: string, ilvl: number, name?: string): Item {
     implicits: implicitsFor(def),
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
-    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },
+    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body', quality },
   };
+}
+
+/**
+ * A dropped or stocked piece: a base, a quality, and mods already rolled.
+ *
+ * Rolling happens HERE rather than in the sim so that a drop, a shop entry and
+ * a dev-kit grant all produce the same shape of item. The sim only decides
+ * which base and how good; it never learns what a modifier is.
+ */
+export function rollGear(
+  base: string,
+  ilvl: number,
+  quality: Quality,
+  mods: number,
+  pool: ModPool,
+  rng: Rng
+): Item {
+  const item = makeGear(base, ilvl, undefined, quality);
+  // modCapacity is the truth, not the caller: a Seamed item asked for four
+  // mods gets two, and a base with no utility slots gets whatever fits.
+  const want = Math.min(mods, modCapacity(item));
+  let guard = 24;
+  while (item.mods.length < want && guard-- > 0) {
+    const mod = rollRandomMod(item, pool, rng);
+    if (!mod) break;
+    item.mods.push(mod);
+  }
+  return item;
+}
+
+/** Picks a quality out of a weighted table. */
+export function pickQuality(table: Array<[Quality, number]>, rng: Rng): Quality {
+  const total = table.reduce((n, [, w]) => n + w, 0);
+  let roll = rng.next() * total;
+  for (const [quality, weight] of table) {
+    roll -= weight;
+    if (roll <= 0) return quality;
+  }
+  return table[table.length - 1]?.[0] ?? 'rough';
 }
 
 export function makeItem(base: string, ilvl = 1): Item {

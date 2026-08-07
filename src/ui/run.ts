@@ -200,7 +200,9 @@ function launch(): void {
     crystal,
     game.character,
     new Rng(seed),
-    empowered ? {} : { densityScale: FISSURE.densityScale }
+    // Tier 0 drops, not tier 1: the free descent is where you find the junk
+    // that makes buying a crystal worth it.
+    empowered ? {} : { densityScale: FISSURE.densityScale, dropTier: 0 }
   );
 
   note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
