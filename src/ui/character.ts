@@ -6,9 +6,12 @@
  * socketing a crystal or crafting gear, which navigation would prevent. It's
  * also the genre convention, which is worth something on its own.
  *
- * Clicking a filled slot takes the item off; clicking an empty one lists what
- * fits. Worn items live here rather than in the inventory, which is safe
- * precisely because this screen shows them.
+ * Clicking a filled slot takes the item off. Clicking an empty one lights up
+ * everything in the DOCK that fits it — which is where the gear already is, so
+ * a picker inside this window was a second copy of your inventory that you had
+ * to scroll to, laid over the first one you were already looking at. Worn items
+ * live here rather than in the dock, which is safe precisely because this
+ * screen shows them.
  */
 import { DAMAGE_TYPES, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
@@ -17,10 +20,11 @@ import { xpToNext } from '../sim/character';
 import { equipItem, fitsSlot, unequipItem } from '../game/state';
 import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
+import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { slotButtonId } from './tutorial';
-import { renderInventory } from './inventory';
-import type { Item } from '../types';
+import { setInventoryHandler } from './inventory';
+import type { EquipSlotDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -32,9 +36,11 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let game: GameState;
-/** Slot currently being filled, if the picker is open. */
+/** Slot currently being filled. Drives what lights up in the dock. */
 let picking: string | null = null;
 let onChanged: (() => void) | null = null;
+/** Hands the dock back to whatever is underneath when this closes. */
+let onClosed: (() => void) | null = null;
 
 function tooltip(item: Item): string {
   if (item.mods.length === 0) return `${item.name} — no modifiers`;
@@ -65,12 +71,24 @@ function renderSlots(): void {
       attachTooltip(btn, () => tooltip(worn));
       btn.classList.add('slotcell__btn--worn');
       btn.onclick = () => {
-        unequipItem(game, slot.id);
+        // Taking something off is a net addition to the bag, so it can be
+        // refused. Silently doing nothing would read as a broken button.
+        if (!unequipItem(game, slot.id)) {
+          note(`No room to carry ${worn.name} — your gear is full`, 'fail');
+          return;
+        }
+        note(`Took off ${worn.name}`);
         picking = null;
         render();
       };
     } else {
-      btn.append(el('span', 'slotcell__empty', 'empty'));
+      btn.append(
+        el(
+          'span',
+          'slotcell__empty',
+          picking === slot.id ? 'pick one below' : 'empty'
+        )
+      );
       btn.classList.toggle('slotcell__btn--picking', picking === slot.id);
       btn.onclick = () => {
         picking = picking === slot.id ? null : slot.id;
@@ -82,41 +100,50 @@ function renderSlots(): void {
   }
 }
 
-/** Only shown while a slot is selected — otherwise it's a wall of gear. */
-function renderPicker(): void {
-  const host = $('sheet-picker');
-  host.replaceChildren();
+/**
+ * What the dock does while the sheet is open.
+ *
+ * This replaced a picker panel inside the window. The panel listed the gear
+ * that fit — from the same inventory that was already on screen, two inches
+ * below it — so choosing a helmet meant scrolling past your own dock to reach
+ * a copy of it. Lighting up the real thing is shorter and teaches you where
+ * your gear actually lives.
+ *
+ * With no slot picked, nothing is actionable: there is nothing to do with a
+ * crystal here, and a live-looking button that does nothing is worse than a
+ * dim one.
+ */
+function sheetHandler() {
+  const slot: EquipSlotDef | undefined = EQUIP_SLOTS.find((s) => s.id === picking);
+  return {
+    actionFor: (item: Item) => {
+      if (!slot || !fitsSlot(item, slot)) return null;
+      return {
+        label: `Wear as ${slot.name.toLowerCase()}`,
+        run: () => {
+          equipItem(game, item, slot.id);
+          note(`Equipped ${item.name}`);
+          picking = null;
+          render();
+        },
+      };
+    },
+    highlighted: (item: Item) => !!slot && fitsSlot(item, slot),
+  };
+}
+
+/** Says what picking a slot did, since the answer is now outside this window. */
+function renderPickHint(): void {
+  const host = $('sheet-pick');
   const slot = EQUIP_SLOTS.find((s) => s.id === picking);
   host.hidden = !slot;
   if (!slot) return;
 
-  host.append(el('p', 'panel__title', `Fit a ${slot.name.toLowerCase()}`));
   const options = game.inventory.filter((i) => fitsSlot(i, slot));
-
-  if (options.length === 0) {
-    host.append(el('p', 'empty', `Nothing in your inventory fits this slot.`));
-    return;
-  }
-
-  const grid = el('div', 'inv__grid');
-  for (const item of options) {
-    const btn = el('button', 'invitem invitem--gear') as HTMLButtonElement;
-    btn.append(gearIcon((item.meta.art as string) ?? 'body', 24));
-    const body = el('span', 'invitem__body');
-    body.append(el('span', 'invitem__name', item.name));
-    body.append(
-      el('span', 'invitem__meta', `ilvl ${item.ilvl} · ${item.mods.length} mods`)
-    );
-    btn.append(body);
-    attachTooltip(btn, () => tooltip(item));
-    btn.onclick = () => {
-      equipItem(game, item, slot.id);
-      picking = null;
-      render();
-    };
-    grid.append(btn);
-  }
-  host.append(grid);
+  host.textContent =
+    options.length === 0
+      ? `Nothing you are carrying fits the ${slot.name.toLowerCase()} slot.`
+      : `${options.length} in your dock fit${options.length === 1 ? 's' : ''} the ${slot.name.toLowerCase()} slot — they are lit up below.`;
 }
 
 function renderStats(): void {
@@ -169,9 +196,12 @@ function renderStats(): void {
 function render(): void {
   hideTooltip();
   renderSlots();
-  renderPicker();
+  renderPickHint();
   renderStats();
-  renderInventory();
+  // The handler has to be re-registered on every render: it closes over
+  // `picking`, so a stale one keeps lighting up the slot you already filled.
+  // setInventoryHandler redraws the dock, so this covers that too.
+  setInventoryHandler(sheetHandler());
   onChanged?.();
 }
 
@@ -184,16 +214,26 @@ export function openCharacter(): void {
 export function closeCharacter(): void {
   $('sheet').hidden = true;
   picking = null;
+  hideTooltip();
+  onClosed?.();
 }
 
 export function isCharacterOpen(): boolean {
   return !$('sheet').hidden;
 }
 
-/** `changed` lets the views refresh derived readouts after an equip. */
-export function initCharacter(state: GameState, changed?: () => void): void {
+/**
+ * `changed` lets the views refresh derived readouts after an equip; `closed`
+ * hands the dock back, because this screen now claims it while it is open.
+ */
+export function initCharacter(
+  state: GameState,
+  changed?: () => void,
+  closed?: () => void
+): void {
   game = state;
   onChanged = changed ?? null;
+  onClosed = closed ?? null;
 
   ($('sheet-close') as HTMLButtonElement).onclick = closeCharacter;
   $('sheet').addEventListener('click', (event) => {

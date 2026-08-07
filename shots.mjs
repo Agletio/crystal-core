@@ -85,6 +85,28 @@ const overflowProbe = () => {
   return worst ? { past: Math.round(worst - cw), who: String(who).split(' ')[0] } : null;
 };
 
+/**
+ * Does the guide card sit on top of the thing it is telling you to click?
+ *
+ * This is the failure that made the dock's fourth row a bug: `place()` will
+ * sit the card INSIDE a target big enough to hold it, which was fine while the
+ * dock was two rows and became "click your wand" printed over the wand. Needs
+ * real layout, so it lives here rather than in smoke.
+ */
+const guideProbe = () => {
+  const card = document.getElementById('guide');
+  if (!card || card.hidden) return null;
+  const target = document.querySelector('.guide-on');
+  if (!target) return null;
+
+  const a = card.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  const x = Math.max(0, Math.min(a.right, t.right) - Math.max(a.left, t.left));
+  const y = Math.max(0, Math.min(a.bottom, t.bottom) - Math.max(a.top, t.top));
+  const covered = Math.round(x * y);
+  return covered > 0 ? { covered, who: target.id || target.className } : null;
+};
+
 const browser = await chromium.launch();
 const problems = [];
 const written = [];
@@ -118,6 +140,12 @@ for (const vp of VIEWPORTS) {
     written.push(file);
     const over = await page.evaluate(overflowProbe);
     if (over) problems.push(`${vp.name}/${state}: .${over.who} overflows by ${over.past}px`);
+    const covering = await page.evaluate(guideProbe);
+    if (covering) {
+      problems.push(
+        `${vp.name}/${state}: the guide covers ${covering.who} by ${covering.covered}px²`
+      );
+    }
   };
 
   await shoot('welcome');

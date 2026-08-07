@@ -113,7 +113,7 @@ initInventory(game);
 initHistory();
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
-initCharacter(game, refreshRunPanels);
+initCharacter(game, refreshRunPanels, onRunFocused);
 initSkills(game, refreshRunPanels);
 initCraft(game, onRunFocused);
 initShop(game);

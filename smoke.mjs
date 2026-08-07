@@ -692,19 +692,41 @@ assert(
 );
 assert(invItems().length === invBefore + 1, 'unequipped item returns to inventory');
 
-// Picking that slot should offer only things that fit it.
-assert($('sheet-picker').hidden === true, 'picker closed by default');
-all('#sheet-slots .slotcell__btn')[0].click();
-assert($('sheet-picker').hidden === false, 'picking a slot opens the picker');
+// Picking a slot lights up what fits it — in the DOCK, not in a second copy
+// of your inventory inside the window. The gear is already on screen; listing
+// it again is something you have to scroll past to reach the real thing.
+assert($('sheet-pick').hidden === true, 'no pick hint until you choose a slot');
+assert(all('.dock .slot--on').length === 0, 'and nothing is lit');
 
-const offered = all('#sheet-picker .invitem');
-assert(offered.length > 0, 'picker offers something that fits');
-offered[0].click();
+const emptySlot = all('#sheet-slots .slotcell__btn').find(
+  (b) => !b.classList.contains('slotcell__btn--worn')
+);
+assert(!!emptySlot, 'a slot is empty after unequipping');
+emptySlot.click();
+assert($('sheet-pick').hidden === false, 'picking a slot says what to do next');
+
+const lit = all('.dock .slot--on');
+assert(lit.length > 0, 'and lights up what fits, in the dock');
+assert(
+  lit.every((b) => b.closest('.dockcol').querySelector('#inv-gear')),
+  'only gear lights up — a crystal fits no equipment slot'
+);
+// Everything else in the dock goes inert: there is nothing to do with a
+// crystal on the character sheet.
+assert(
+  filled('#inv-crystal').every((b) => b.disabled),
+  'crystals are inert while equipping'
+);
+assert(/wear as/i.test(named(lit[0])), 'the lit slot says what clicking does', named(lit[0]));
+
+lit[0].click();
 assert(
   all('#sheet-slots .slotcell__btn--worn').length === 8,
   're-equipping fills the slot'
 );
 assert(invItems().length === invBefore, 'equipped item leaves the inventory');
+assert($('sheet-pick').hidden === true, 'and the pick hint clears');
+assert(all('.dock .slot--on').length === 0, 'along with the highlight');
 
 $('sheet-close').click();
 assert($('sheet').hidden === true, 'character sheet closes');

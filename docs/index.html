@@ -316,7 +316,15 @@
   .slot--crystal { border-color: rgba(157,120,214,.45); }
   .slot--gear { border-color: rgba(139,162,181,.4); }
   .slot:hover:not(:disabled) { background: var(--seam); border-color: var(--seam-lit); }
-  .slot--on { background: var(--seam); border-color: var(--citrine); }
+  /* Claimed by the active screen: on the bench, in the socket, or fitting the
+     equipment slot you just picked. Rings rather than just recolouring the
+     border, because an exotic currency's border is citrine too and "lit up"
+     has to be unmistakable next to it. */
+  .slot--on {
+    background: var(--seam);
+    border-color: var(--citrine);
+    box-shadow: 0 0 0 2px rgba(232,184,75,.4);
+  }
   .slot--off { opacity: .34; }
 
   /* Currency stacks. Class colours the border, matching the icon's fill, so
@@ -456,7 +464,16 @@
   .modal__body { padding: 16px 18px; overflow-y: auto; }
 
   .sheetcols { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 18px; align-items: start; }
-  @media (max-width: 720px) { .sheetcols { grid-template-columns: 1fr; } }
+  /* The gear column stays put and the stats scroll past it. What you are
+     equipping is the fixed reference for everything on the right — scrolling
+     it away to read a resistance meant losing sight of the thing you were
+     reading it about. Sticky rather than a second scroller, so a short window
+     can still reach the bottom of the slots. */
+  .sheetcols__gear { position: sticky; top: 0; background: var(--matrix); z-index: 1; }
+  @media (max-width: 720px) {
+    .sheetcols { grid-template-columns: 1fr; }
+    .sheetcols__gear { position: static; }
+  }
 
   .slotgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin-bottom: 3px; }
@@ -469,7 +486,7 @@
   .slotcell__meta { font-size: 10px; color: var(--dust); }
   .slotcell__empty { font-size: 11px; color: var(--dust); font-style: italic; }
 
-  #sheet-picker { margin-top: 16px; border-top: 1px solid var(--seam); padding-top: 12px; }
+  #sheet-pick { margin-top: 12px; border-top: 1px solid var(--seam); padding-top: 10px; color: var(--citrine); }
 
   /* --- guided opening ------------------------------------------------- */
   /* A card that follows the thing it's talking about, rather than a banner
@@ -858,10 +875,10 @@
     </div>
     <div class="modal__body">
       <div class="sheetcols">
-        <div>
+        <div class="sheetcols__gear">
           <p class="panel__title">Equipment</p>
           <div class="slotgrid" id="sheet-slots"></div>
-          <div id="sheet-picker" hidden></div>
+          <p class="empty" id="sheet-pick" hidden></p>
         </div>
         <div>
           <div class="levelrow">

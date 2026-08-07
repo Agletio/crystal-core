@@ -586,6 +586,30 @@ ratio that made the view taller than the window. The lock is a function of two
 facts — the map is showing, and it's showing a *map* — recomputed on every
 phase change, because leaving it on froze whatever came next.
 
+### The guided opening
+
+Steps are data with a `done` predicate, so the guide can't desynchronise: wander
+off and buy the shard early and the step is already satisfied. Two rules were
+learned the hard way and are now guarded.
+
+**A step never covers what it tells you to click.** `place()` will sit the card
+*inside* a target big enough to hold it, which is what keeps it off the health
+bar during a descent — but the moment the dock grew to four rows it became big
+enough to swallow the card, and "click your wand in the dock" got printed over
+the wand. That placement is now gated on the step having nothing to click
+(`ring: false`). `shots.mjs` fails the run if the card overlaps its own
+highlight, because it needs real layout to catch.
+
+**A step never points at something a popup is covering.** The header sits under
+every modal, so "Open the Shop" was aimed at a button behind the window you were
+standing in. `viaHeader()` returns the next click on the way there — a close
+button, then the header button once nothing is in the way. Same moving-target
+trick the equip step always used, factored out once three steps needed it.
+
+Card placement also anchors to the enclosing `.dockcol` rather than the slot
+grid, because a section's caption sits outside the grid it names and the card
+was landing on the word "CURRENCY".
+
 The eventual history is filterable and much richer — xp, damage by source,
 regen, drops — enough to answer "why did I die" after the fact. Entries
 already carry a `kind` and a timestamp, which is what a filter would key off.
@@ -600,9 +624,22 @@ Worn items leave the inventory. Unlike crafting — where taking the item out
 made it look destructive — equipping has somewhere obvious to show it,
 so the sheet *is* where that item now lives.
 
-Clicking a filled slot takes it off; clicking an empty one lists only what
-fits. Rings fit either ring slot, which is why bases declare a `kind` and
-slots declare what they `accept` rather than matching by name.
+Clicking a filled slot takes it off. Clicking an empty one lights up
+everything in the **dock** that fits it — the sheet registers an
+`InventoryHandler` like every other screen, so only fitting gear is clickable
+and everything else goes inert. This replaced a picker panel inside the window,
+which listed the gear that fit from the same inventory already on screen two
+inches below it: choosing a helmet meant scrolling past your own dock to reach
+a copy of it. Rings fit either ring slot, which is why bases declare a `kind`
+and slots declare what they `accept` rather than matching by name.
+
+The equipment column is `position: sticky` and the stats scroll past it. What
+you are wearing is the fixed reference for everything on the right, and
+scrolling it away to read a resistance meant losing sight of the thing you were
+reading it about.
+
+Taking gear off can be refused — see the carry limit below — so the button says
+so rather than silently doing nothing.
 
 ## Inventory, loot, and the loop
 

@@ -79,6 +79,30 @@ export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
 /** Id of an equipment slot's button on the character sheet. Same reason. */
 export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
+/**
+ * Getting to a button in the page header, from wherever you happen to be.
+ *
+ * The header sits UNDER every popup, so a step that simply points at "Shop"
+ * points at something you cannot see or click whenever anything is open. Both
+ * shopping steps hit this: you arrive at them from the bench, and the card
+ * would hover helpfully over a modal that was covering the button.
+ *
+ * Returns the next thing to click on the way there — a close button, or the
+ * header button itself once nothing is in the way. Same moving-target trick
+ * the equip step uses, factored out because three steps need it.
+ */
+function viaHeader(ctx: GuideCtx, button: string): string {
+  if (ctx.top === 'stash') return 'stash-close';
+  if (ctx.top === 'shop') return 'shop-close';
+  if (ctx.top === 'sheet') return 'sheet-close';
+  if (ctx.view === 'craft') return 'craft-close';
+  return button;
+}
+
+/** True when something is covering the header. */
+const blocked = (ctx: GuideCtx): boolean =>
+  ctx.top !== null || ctx.view === 'craft';
+
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "enter",
@@ -100,36 +124,43 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: "to_shop",
-    text: "You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.",
-    target: "open-shop",
+    text: (ctx) =>
+      blocked(ctx)
+        ? "You came back with fragments and a wand. Close this — the Shop button is behind it."
+        : "You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.",
+    target: (ctx) => viaHeader(ctx, "open-shop"),
     done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
   },
-  /**
-   * Same moving-target trick as the equip step below: from wherever the last
-   * step left you, the Shop may or may not still be open, so the guide points
-   * at the button that gets you to the next click either way.
-   */
   {
     id: "buy_awakening",
     text: (ctx) =>
       ctx.top === "shop"
         ? "Buy a Shard of Awakening. It fills every empty slot on an item at once."
-        : "Open the Shop and buy a Shard of Awakening.",
+        : blocked(ctx)
+          ? "Close this to get back to the Shop."
+          : "Open the Shop and buy a Shard of Awakening.",
     hint: "Costs 10 fragments. It lands in your inventory.",
     target: (ctx) =>
       ctx.top === "shop"
         ? recipeButtonId("make_shard_of_awakening")
-        : "open-shop",
+        : viaHeader(ctx, "open-shop"),
     done: (g) => has(g, "shard_of_awakening"),
   },
   {
     id: "select_weapon",
     text: (ctx) =>
-      ctx.view === "craft"
-        ? "Click your Ash Wand in the dock below to put it on the bench."
-        : "Open Crafting, then click your Ash Wand in the dock below.",
+      ctx.top === "shop"
+        ? "Bought. Close the Shop — the shard is in your dock now."
+        : ctx.view === "craft"
+          ? "Click your Ash Wand in the dock below to put it on the bench."
+          : "Open Crafting, then click your Ash Wand in the dock below.",
     hint: "The dock stays reachable under every popup.",
-    target: (ctx) => (ctx.view === "craft" ? "inv-gear" : "open-craft"),
+    target: (ctx) =>
+      ctx.top === "shop"
+        ? "shop-close"
+        : ctx.view === "craft"
+          ? "inv-gear"
+          : "open-craft",
     done: (g) => craftItem(g)?.kind === "gear",
   },
   {
@@ -144,10 +175,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === "shop"
         ? "Buy a Shard of Chaos. It re-rolls every modifier on an item — worth it when the ones you got are poor."
-        : "Back to the Shop for a Shard of Chaos.",
+        : blocked(ctx)
+          ? "Close Crafting — the Shop button is behind it."
+          : "Back to the Shop for a Shard of Chaos.",
     hint: "Costs 12 fragments. Using it is your call.",
     target: (ctx) =>
-      ctx.top === "shop" ? recipeButtonId("make_shard_of_chaos") : "open-shop",
+      ctx.top === "shop"
+        ? recipeButtonId("make_shard_of_chaos")
+        : viaHeader(ctx, "open-shop"),
     done: (g) => has(g, "shard_of_chaos"),
   },
   /**
@@ -318,7 +353,7 @@ function parkOverDock(
  * and clamped to the window either way. Runs every tick, because the target
  * moves — panels re-render, popups open, the dock reflows.
  */
-function place(target: Element): void {
+function place(target: Element, coverable: boolean): void {
   const card = $("guide");
   const arrow = $("guide-arrow");
   const size = card.getBoundingClientRect();
@@ -328,7 +363,12 @@ function place(target: Element): void {
   // and say which way to scroll. Following the target off-screen is how the
   // step managed to disappear completely.
   const away = outOfView(target);
-  const anchor = away ? (scroller(target) ?? target) : target;
+  // Placed ABOVE, the card has to clear the target's caption too — the dock's
+  // section labels sit outside the slot grid they name, so anchoring to the
+  // grid alone put the card straight through the word "CURRENCY".
+  const anchor = away
+    ? (scroller(target) ?? target)
+    : (target.closest('.dockcol') ?? target);
   const box = anchor.getBoundingClientRect();
   showScrollHint(away);
 
@@ -343,9 +383,16 @@ function place(target: Element): void {
   // above otherwise. The middle case is what keeps the card off the health bar
   // during the descent: the loot panel has room to spare and the panels above
   // it are the ones you're being told to watch.
+  //
+  // `coverable` is what stops that from backfiring. Sitting inside a target is
+  // only ever acceptable when the step has nothing to click — the moment the
+  // dock grew to four rows it became big enough to swallow the card, and the
+  // step that says "click your wand in the dock" started putting the card on
+  // top of the wand. A step you are meant to act on must never be covered by
+  // its own instructions.
   const below =
     !away && box.bottom + GAP + size.height <= globalThis.innerHeight - 8;
-  const inside = !below && box.height > size.height + GAP * 2;
+  const inside = coverable && !below && box.height > size.height + GAP * 2;
   const raw = below
     ? box.bottom + GAP
     : inside
@@ -423,7 +470,7 @@ function paint(): void {
       highlighted = ring;
     }
   }
-  if (target) place(target);
+  if (target) place(target, step.ring === false);
 }
 
 /** Advance past every step already satisfied, then repaint. */
