@@ -11,6 +11,8 @@ export interface SkillProgress {
   level: number;
   xp: number;
   allocated: string[];
+  /** Node id → chosen option, for nodes that offer one. */
+  choices?: Record<string, string>;
 }
 
 export interface Character {
@@ -37,7 +39,7 @@ export function makeCharacter(
 export function skillProgress(character: Character, skillId: string): SkillProgress {
   let progress = character.skills[skillId];
   if (!progress) {
-    progress = { level: 1, xp: 0, allocated: [] };
+    progress = { level: 1, xp: 0, allocated: [], choices: {} };
     character.skills[skillId] = progress;
   }
   return progress;

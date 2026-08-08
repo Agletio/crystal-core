@@ -1,79 +1,75 @@
 /**
- * Fireball's web — 100 nodes, 25 of them notable.
+ * Fireball's web — 100 nodes, 25 of them notable, laid out to be WALKED.
  *
- * Laid out as eight wedges around the skill, each one an idea: burning,
- * exploding, hitting more things, going through them, bouncing between them,
- * hurting the right ones more, reaching further, and turning the fire into
- * something else. A wedge runs outward through five rings, getting stronger
- * and more expensive, and neighbouring wedges are stitched together at two
- * depths so you can cross rather than start again.
+ * Five rings around the skill. The links outward are sparse and every ring's
+ * spokes are turned off the ring below's, so the way out is never straight: you
+ * come up a spoke, walk round a way, and go up the next one. That is what makes
+ * the minors worth buying — they are the road, not a tax on the destination.
  *
- * The geometry is generated, the CONTENT is not. Writing a hundred nodes'
- * coordinates by hand produces a hundred chances to put one in the wrong
- * place, and the interesting part of a tree is never where the dots are — it
- * is which dot does what, and how far in you have to be before it will open.
- * So the shape comes from a handful of numbers below and the notables are a
- * plain table naming exactly where each one sits.
- *
- * Two rules keep this from being a menu:
- *
- *   the walk    an outer node costs every node between it and the middle
- *   the gate    a notable refuses to open until you are that deep in the tree
- *
- * Cross links would defeat the first on their own — they are shortcuts by
- * definition — so anything worth crossing for carries the second.
+ * Notables are SCATTERED rather than stacked. A family's three nodes sit about
+ * 140 degrees apart, so a pierce build cannot be walked in a line, and picking
+ * up the second pierce means paying for whatever is on the way there. The
+ * placement is generated from that rule and checked in the demo, because
+ * twenty-five hand-chosen indices is twenty-five chances to put two of them
+ * next to each other.
  *
  * Minors are deliberately small. Thirty points of tree should decide HOW you
- * fight; the numbers come off your gear, where a single modifier can be worth
- * more than a whole wedge of these.
+ * fight; the numbers come off your gear.
  */
 import { CENTRE, stat } from './node';
 import type { NodeStat, SkillNodeDef } from './node';
 
 // --- shape -----------------------------------------------------------------
 
-/** Radius and how many nodes each wedge gets, ring by ring. */
 const RINGS = [
-  { r: 1.40, per: 1 },
-  { r: 2.65, per: 2 },
-  { r: 3.90, per: 3 },
-  { r: 5.15, per: 3 },
-  { r: 6.40, per: 3 },
+  { count: 8, r: 1.5 },
+  { count: 16, r: 2.9 },
+  { count: 20, r: 4.3 },
+  { count: 26, r: 5.7 },
+  { count: 26, r: 7.1 },
 ];
-const WEDGES = 8;
-/** The four deepest nodes hang past the outer ring, on these wedges. */
-const KEYSTONE_WEDGES = [0, 2, 4, 6];
-const KEYSTONE_R = 7.70;
+const KEYSTONE_R = 8.5;
 
-/** Rings where a wedge is stitched to the next one round. */
-const CROSSINGS = [2, 4];
-
-/** How deep you must already be for a ring's minors to open. */
-const MINOR_GATE: Record<number, number> = { 4: 8, 5: 14 };
+/**
+ * How many ways out of each ring, and how far round the previous ring's spokes
+ * they are turned. A turn of half a gap is what stops a spoke ever lining up
+ * with the one below it.
+ */
+const SPOKES = [
+  { count: 4, turn: 0 },
+  { count: 5, turn: 0.5 },
+  { count: 5, turn: 0.5 },
+  { count: 6, turn: 0.5 },
+  { count: 5, turn: 0.5 },
+];
 
 const TAU = Math.PI * 2;
-const WEDGE_ARC = TAU / WEDGES;
+const nodeId = (ring: number, i: number) => `fb_r${ring}s${i}`;
 
-/** Wedge centre, with 0 pointing straight up. */
-const wedgeAngle = (wedge: number) => wedge * WEDGE_ARC - Math.PI / 2;
+/** Stable 0..1 wobble for a slot. Perfect rings read as a dartboard. */
+const jitter = (ring: number, i: number, salt: number): number => {
+  const h = Math.sin(ring * 127.1 + i * 311.7 + salt * 74.7) * 43758.5453;
+  return h - Math.floor(h);
+};
 
-/** Spread `per` nodes across a wedge, centred. */
-function slotAngle(wedge: number, slot: number, per: number): number {
-  const spread = WEDGE_ARC * 0.70;
-  const offset = per === 1 ? 0 : (slot / (per - 1) - 0.5) * spread;
-  return wedgeAngle(wedge) + offset;
-}
+const angleOf = (ring: number, i: number) =>
+  ((i + (jitter(ring, i, 1) - 0.5) * 0.42) / RINGS[ring - 1].count) * TAU - Math.PI / 2;
 
-const minorId = (w: number, r: number, s: number) => `fb_w${w}r${r}s${s}`;
+const radiusOf = (ring: number, i: number) =>
+  RINGS[ring - 1].r + (jitter(ring, i, 2) - 0.5) * 0.5;
+
+/** Index on `ring` whose angle is closest to `turns` of the way round. */
+const nearest = (ring: number, turns: number): number => {
+  const count = RINGS[ring - 1].count;
+  return ((Math.round(turns * count) % count) + count) % count;
+};
 
 // --- content ---------------------------------------------------------------
 
 /**
- * What the filler in each wedge does.
- *
- * Two lines per wedge, alternating, so a wedge reads as one idea without
- * every node in it being the same node. Fire-tagged lines are the ones a
- * conversion notable rewrites — see `convertTree` in sim/stats.ts.
+ * Filler, by family. Two lines each so a stretch of road reads as one idea
+ * without every node on it being the same node. Fire-tagged lines are what a
+ * conversion rewrites — see `convertTree` in sim/stats.ts.
  */
 const FILLER: Array<{ theme: string; lines: Array<{ text: string; stats: NodeStat[] }> }> = [
   {
@@ -135,333 +131,412 @@ const FILLER: Array<{ theme: string; lines: Array<{ text: string; stats: NodeSta
 ];
 
 interface NotableSpec {
-  /** Where it sits: wedge, ring, slot. Ring 6 means the keystone past the edge. */
-  at: [number, number, number];
+  /** Which idea it belongs to. Members are pushed apart around the web. */
+  family: string;
+  /** 0-3 for the rings outward; 4 hangs past the edge as a keystone. */
+  depth: number;
   id: string;
   name: string;
   description: string;
   gate: number;
   stats?: NodeStat[];
   grants?: Record<string, unknown>;
+  choices?: SkillNodeDef['choices'];
 }
 
-/**
- * The twenty-five.
- *
- * Every one of these changes what Fireball IS, not how big its number is —
- * that is the difference between a notable and the filler leading to it. The
- * numbers in them are first drafts; the mechanisms are the point.
- */
+/** Ring each depth lands on, and how many notables that ring takes. */
+const DEPTH_RING = [2, 3, 4, 5];
+const GATE = [5, 11, 17, 23, 25];
+
 const NOTABLES: NotableSpec[] = [
-  // --- wedge 0: Ignition -------------------------------------------------
+  // --- burning ------------------------------------------------------------
   {
-    at: [0, 3, 1],
+    family: 'burn', depth: 0, gate: GATE[0],
     id: 'fb_kindling',
     name: 'Kindling',
     description:
       'Fireball can no longer critically strike. A cast that would have crit ' +
       'instead sets the target alight for 260% of the hit over 4s.',
-    gate: 6,
     grants: { critBurn: { multiplier: 2.6, seconds: 4 } },
   },
   {
-    at: [0, 4, 1],
+    family: 'burn', depth: 1, gate: GATE[1],
     id: 'fb_cauterise',
     name: 'Cauterise',
     description: 'Burns you apply deal 35% more damage over a 25% shorter time.',
-    gate: 12,
     grants: { burnMultiplier: 1.35, burnDuration: 0.75 },
   },
   {
-    at: [0, 5, 1],
+    family: 'burn', depth: 2, gate: GATE[2],
     id: 'fb_slowburn',
     name: 'Slow Burn',
     description: 'Burns you apply last 60% longer.',
-    gate: 18,
     grants: { burnDuration: 1.6 },
   },
-
-  // --- wedge 1: Detonation ------------------------------------------------
   {
-    at: [1, 3, 1],
+    family: 'burn', depth: 4, gate: GATE[4],
+    id: 'fb_wildfire',
+    name: 'Wildfire',
+    description: 'A burn that ticks critically sets everything within 2 tiles alight as well.',
+    grants: { burnSpread: 2 },
+  },
+
+  // --- bursting -----------------------------------------------------------
+  {
+    family: 'explode', depth: 0, gate: GATE[0],
     id: 'fb_detonation',
     name: 'Detonation',
     description:
       'Fireball bursts where it lands, dealing 55% damage to everything within ' +
       '1.8 tiles. Fireball gains the Area tag.',
-    gate: 6,
     grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'] },
   },
   {
-    at: [1, 4, 1],
+    family: 'explode', depth: 1, gate: GATE[1],
     id: 'fb_concussive',
     name: 'Concussive Blast',
     description: 'The burst covers 45% more ground.',
-    gate: 12,
     grants: { explodeRadius: 1.45 },
   },
   {
-    at: [1, 5, 1],
+    family: 'explode', depth: 2, gate: GATE[2],
     id: 'fb_fuelair',
     name: 'Fuel-Air Charge',
     description: 'The burst deals full damage rather than a fraction of it.',
-    gate: 18,
     grants: { explodeMultiplierAdd: 0.45 },
   },
-
-  // --- wedge 2: Volley ----------------------------------------------------
   {
-    at: [2, 3, 1],
+    family: 'explode', depth: 4, gate: GATE[4],
+    id: 'fb_chainreaction',
+    name: 'Chain Reaction',
+    description: 'An enemy killed by Fireball bursts, dealing 60% damage within 2.2 tiles.',
+    grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
+  },
+
+  // --- more targets -------------------------------------------------------
+  {
+    family: 'targets', depth: 0, gate: GATE[0],
     id: 'fb_splitcast',
     name: 'Split Cast',
     description: 'Fireball strikes one additional enemy near the target.',
-    gate: 6,
     grants: { extraTargets: 1 },
   },
   {
-    at: [2, 5, 1],
+    family: 'targets', depth: 1, gate: GATE[1],
     id: 'fb_volley',
     name: 'Volley',
     description: 'Fireball strikes another additional enemy.',
-    gate: 18,
     grants: { extraTargets: 1 },
   },
-
-  // --- wedge 3: Penetration -----------------------------------------------
   {
-    at: [3, 3, 1],
-    id: 'fb_piercing',
-    name: 'Piercing Flame',
-    description:
-      'Fireball passes through one enemy, carrying on to whatever is behind it.',
-    gate: 6,
-    grants: { pierce: 1 },
+    family: 'targets', depth: 2, gate: GATE[2],
+    id: 'fb_focused',
+    name: 'Focused Volley',
+    description: 'Additional targets take full damage instead of 70%.',
+    grants: { extraTargetDamage: 1 },
   },
   {
-    at: [3, 4, 1],
-    id: 'fb_momentum',
-    name: 'Momentum',
-    description: 'Enemies pierced take full damage instead of 70%.',
-    gate: 12,
-    grants: { pierceDamage: 1 },
-  },
-  {
-    at: [3, 5, 1],
-    id: 'fb_overpen',
-    name: 'Overpenetration',
-    description: 'Fireball passes through one more enemy.',
-    gate: 18,
-    grants: { pierce: 1 },
-  },
-
-  // --- wedge 4: Arc -------------------------------------------------------
-  {
-    at: [4, 3, 1],
-    id: 'fb_arcing',
-    name: 'Arcing Flame',
-    description:
-      'Fireball leaps from the enemy it hits to one more within 4.5 tiles.',
-    gate: 6,
-    grants: { chains: 1 },
-  },
-  {
-    at: [4, 4, 1],
-    id: 'fb_rebound',
-    name: 'Rebound',
-    description: 'Leaps deal full damage instead of 70%.',
-    gate: 12,
-    grants: { chainDamage: 1 },
-  },
-  {
-    at: [4, 5, 1],
-    id: 'fb_leaping',
-    name: 'Leaping Flame',
-    description: 'Fireball leaps one more time.',
-    gate: 18,
-    grants: { chains: 1 },
-  },
-
-  // --- wedge 5: Cruelty ---------------------------------------------------
-  {
-    at: [5, 3, 1],
-    id: 'fb_immolate',
-    name: 'Immolate',
-    description: 'Fireball deals 25% more damage to enemies that are already burning.',
-    gate: 6,
-    grants: { moreVsBurning: 0.25 },
-  },
-  {
-    at: [5, 4, 1],
-    id: 'fb_closequarters',
-    name: 'Close Quarters',
-    description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
-    gate: 12,
-    grants: { moreClose: { within: 2.5, more: 0.3 } },
-  },
-  {
-    at: [5, 5, 1],
-    id: 'fb_executioner',
-    name: 'Executioner',
-    description: 'Fireball deals 35% more damage to enemies below a third of their life.',
-    gate: 18,
-    grants: { moreVsLow: { below: 0.33, more: 0.35 } },
-  },
-
-  // --- wedge 6: Reach -----------------------------------------------------
-  {
-    at: [6, 3, 1],
-    id: 'fb_longfuse',
-    name: 'Long Fuse',
-    description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
-    gate: 6,
-    grants: { moreFar: { beyond: 5, more: 0.3 } },
-  },
-  {
-    at: [6, 5, 1],
-    id: 'fb_reserves',
-    name: 'Deep Reserves',
-    description: 'Fireball deals 45% more damage and is cast 20% slower.',
-    gate: 18,
-    stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
-  },
-
-  // --- wedge 7: Transmutation ---------------------------------------------
-  {
-    at: [7, 3, 1],
-    id: 'fb_frostfire',
-    name: 'Frostfire',
-    description:
-      'Fireball deals Cold damage instead of Fire. Fire modifiers in this tree ' +
-      'become Cold modifiers.',
-    gate: 6,
-    grants: { convertTree: 'cold' },
-  },
-  {
-    at: [7, 5, 1],
-    id: 'fb_stormfire',
-    name: 'Stormfire',
-    description:
-      'Fireball deals Lightning damage instead of Fire. Fire modifiers in this ' +
-      'tree become Lightning modifiers.',
-    gate: 18,
-    grants: { convertTree: 'lightning' },
-  },
-
-  // --- the keystones, past the edge ---------------------------------------
-  {
-    at: [0, 6, 0],
-    id: 'fb_wildfire',
-    name: 'Wildfire',
-    description:
-      'A burn that ticks critically sets everything within 2 tiles alight as well.',
-    gate: 25,
-    grants: { burnSpread: 2 },
-  },
-  {
-    at: [2, 6, 0],
+    family: 'targets', depth: 4, gate: GATE[4],
     id: 'fb_barrage',
     name: 'Barrage',
     description: 'Fireball strikes two more enemies near the target.',
-    gate: 25,
     grants: { extraTargets: 2 },
   },
+
+  // --- through them -------------------------------------------------------
   {
-    at: [4, 6, 0],
-    id: 'fb_chainreaction',
-    name: 'Chain Reaction',
-    description:
-      'An enemy killed by Fireball bursts, dealing 60% damage within 2.2 tiles.',
-    gate: 25,
-    grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
+    family: 'pierce', depth: 0, gate: GATE[0],
+    id: 'fb_piercing',
+    name: 'Piercing Flame',
+    description: 'Fireball passes through one enemy, carrying on to whatever is behind it.',
+    grants: { pierce: 1 },
   },
   {
-    at: [6, 6, 0],
+    family: 'pierce', depth: 1, gate: GATE[1],
+    id: 'fb_momentum',
+    name: 'Momentum',
+    description: 'Enemies pierced take full damage instead of 70%.',
+    grants: { pierceDamage: 1 },
+  },
+  {
+    family: 'pierce', depth: 2, gate: GATE[2],
+    id: 'fb_overpen',
+    name: 'Overpenetration',
+    description: 'Fireball passes through one more enemy.',
+    grants: { pierce: 1 },
+  },
+
+  // --- between them -------------------------------------------------------
+  {
+    family: 'chain', depth: 0, gate: GATE[0],
+    id: 'fb_arcing',
+    name: 'Arcing Flame',
+    description: 'Fireball leaps from the enemy it hits to one more within 4.5 tiles.',
+    grants: { chains: 1 },
+  },
+  {
+    family: 'chain', depth: 1, gate: GATE[1],
+    id: 'fb_rebound',
+    name: 'Rebound',
+    description: 'Leaps deal full damage instead of 70%.',
+    grants: { chainDamage: 1 },
+  },
+  {
+    family: 'chain', depth: 2, gate: GATE[2],
+    id: 'fb_leaping',
+    name: 'Leaping Flame',
+    description: 'Fireball leaps one more time.',
+    grants: { chains: 1 },
+  },
+
+  // --- the right ones harder ----------------------------------------------
+  {
+    family: 'cruelty', depth: 0, gate: GATE[0],
+    id: 'fb_immolate',
+    name: 'Immolate',
+    description: 'Fireball deals 25% more damage to enemies that are already burning.',
+    grants: { moreVsBurning: 0.25 },
+  },
+  {
+    family: 'cruelty', depth: 1, gate: GATE[1],
+    id: 'fb_closequarters',
+    name: 'Close Quarters',
+    description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
+    grants: { moreClose: { within: 2.5, more: 0.3 } },
+  },
+  {
+    family: 'cruelty', depth: 3, gate: GATE[3],
+    id: 'fb_executioner',
+    name: 'Executioner',
+    description: 'Fireball deals 35% more damage to enemies below a third of their life.',
+    grants: { moreVsLow: { below: 0.33, more: 0.35 } },
+  },
+
+  // --- further ------------------------------------------------------------
+  {
+    family: 'reach', depth: 1, gate: GATE[1],
+    id: 'fb_longfuse',
+    name: 'Long Fuse',
+    description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
+    grants: { moreFar: { beyond: 5, more: 0.3 } },
+  },
+  {
+    family: 'reach', depth: 3, gate: GATE[3],
+    id: 'fb_reserves',
+    name: 'Deep Reserves',
+    description: 'Fireball deals 45% more damage and is cast 20% slower.',
+    stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
+  },
+
+  // --- one node, one question ---------------------------------------------
+  {
+    family: 'transmute', depth: 2, gate: GATE[2],
+    id: 'fb_transmutation',
+    name: 'Transmutation',
+    description:
+      'Fireball stops dealing Fire. Pick what it deals instead — the Fire ' +
+      'modifiers in this tree change with it, the ones on your gear do not.',
+    grants: {},
+    choices: [
+      {
+        id: 'cold',
+        name: 'Frostfire',
+        description: 'Fireball deals Cold damage.',
+        grants: { convertTree: 'cold' },
+      },
+      {
+        id: 'lightning',
+        name: 'Stormfire',
+        description: 'Fireball deals Lightning damage.',
+        grants: { convertTree: 'lightning' },
+      },
+    ],
+  },
+
+  // --- every fifth one --------------------------------------------------
+  {
+    family: 'overload', depth: 4, gate: GATE[4],
     id: 'fb_overload',
     name: 'Overload',
     description: 'Every fifth cast of Fireball deals triple damage.',
-    gate: 25,
     grants: { everyNth: { n: 5, multiplier: 3 } },
   },
 ];
 
 // --- assembly --------------------------------------------------------------
 
+/** Families, in a stable order, so placement never depends on table order. */
+const FAMILIES = [...new Set(NOTABLES.map((n) => n.family))].sort();
+
+/**
+ * The ways outward, as slots. Worked out before anything is placed, because
+ * placement has to know which slots are radially joined — a notable directly
+ * up a spoke from another notable is the straight line this layout exists to
+ * avoid, and it is invisible if you only check along the ring.
+ */
+interface Spoke {
+  outer: { ring: number; index: number };
+  inner: { ring: number; index: number } | null;
+}
+
+function spokes(): Spoke[] {
+  const out: Spoke[] = [];
+  let turn = 0;
+  for (let level = 0; level < SPOKES.length; level++) {
+    const { count, turn: shift } = SPOKES[level];
+    turn += shift / count;
+    for (let s = 0; s < count; s++) {
+      const bearing = s / count + turn;
+      out.push({
+        outer: { ring: level + 1, index: nearest(level + 1, bearing) },
+        inner: level === 0 ? null : { ring: level, index: nearest(level, bearing) },
+      });
+    }
+  }
+  return out;
+}
+
+const SPOKE_LINKS = spokes();
+
+/**
+ * Where each notable goes: a family starts at its own bearing and every later
+ * member is turned most of the way round the web from the last. Collisions walk
+ * to the next free index, and no slot beside or up a spoke from a notable is
+ * ever taken — two notables touching is a shortcut past a whole stretch of road.
+ */
+function place(): Map<string, { ring: number; index: number }> {
+  const at = new Map<string, { ring: number; index: number }>();
+  const taken = new Map<number, Set<number>>();
+  for (let r = 1; r <= RINGS.length; r++) taken.set(r, new Set());
+
+  /** Slots one spoke away from this one, on either side. */
+  const across = (ring: number, index: number) =>
+    SPOKE_LINKS.flatMap((s) => {
+      if (s.outer.ring === ring && s.outer.index === index) return s.inner ? [s.inner] : [];
+      if (s.inner && s.inner.ring === ring && s.inner.index === index) return [s.outer];
+      return [];
+    });
+
+  const seen: Record<string, number> = {};
+  // Keystones hang past the outer ring and take no slot on it.
+  for (const spec of NOTABLES.filter((n) => n.depth < DEPTH_RING.length)) {
+    const step = seen[spec.family] ?? 0;
+    seen[spec.family] = step + 1;
+
+    const bearing =
+      FAMILIES.indexOf(spec.family) / FAMILIES.length + step * 0.382;
+    const ring = DEPTH_RING[Math.min(spec.depth, DEPTH_RING.length - 1)];
+    const count = RINGS[ring - 1].count;
+    const used = taken.get(ring)!;
+
+    // Both rules if the ring has room for them, and never the sideways one:
+    // two notables touching along a ring is the shortcut you can see.
+    const start = nearest(ring, bearing);
+    const free = (i: number) => ![-1, 0, 1].some((d) => used.has((i + d + count) % count));
+    const apart = (i: number) =>
+      !across(ring, i).some((slot) => taken.get(slot.ring)?.has(slot.index));
+
+    let index = start;
+    for (let pass = 0; pass < 2; pass++) {
+      let found = -1;
+      for (let step = 0; step < count; step++) {
+        const i = (start + step) % count;
+        if (free(i) && (pass === 1 || apart(i))) {
+          found = i;
+          break;
+        }
+      }
+      if (found >= 0) {
+        index = found;
+        break;
+      }
+    }
+    used.add(index);
+    at.set(spec.id, { ring, index });
+  }
+  return at;
+}
+
 function build(): SkillNodeDef[] {
+  const placed = place();
   const byPlace = new Map<string, NotableSpec>();
-  for (const n of NOTABLES) byPlace.set(n.at.join(':'), n);
+  for (const spec of NOTABLES) {
+    const p = placed.get(spec.id);
+    if (p) byPlace.set(`${p.ring}:${p.index}`, spec);
+  }
+  // A notable takes over its slot's identity, so every link has to be built
+  // through here or half of them point at ids that no longer exist.
+  const at = (ring: number, i: number) =>
+    byPlace.get(`${ring}:${i}`)?.id ?? nodeId(ring, i);
 
   const nodes: SkillNodeDef[] = [];
-  const place = (w: number, r: number, s: number) => byPlace.get(`${w}:${r}:${s}`);
+  const linkOut = new Map<string, string[]>();
+  const addLink = (from: string, to: string) => {
+    if (!linkOut.has(from)) linkOut.set(from, []);
+    linkOut.get(from)!.push(to);
+  };
 
-  for (let w = 0; w < WEDGES; w++) {
-    const filler = FILLER[w];
+  // Sideways, all the way round every ring.
+  for (let ring = 1; ring <= RINGS.length; ring++) {
+    const { count } = RINGS[ring - 1];
+    for (let i = 0; i < count; i++) addLink(at(ring, i), at(ring, (i + 1) % count));
+  }
 
-    for (let r = 1; r <= RINGS.length; r++) {
-      const ring = RINGS[r - 1];
-      const prev = RINGS[r - 2];
+  // Outward, only at the spokes — and each ring's are turned off the last's,
+  // so leaving a ring means walking round it first.
+  for (const spoke of SPOKE_LINKS) {
+    addLink(
+      at(spoke.outer.ring, spoke.outer.index),
+      spoke.inner ? at(spoke.inner.ring, spoke.inner.index) : CENTRE
+    );
+  }
 
-      for (let s = 0; s < ring.per; s++) {
-        const angle = slotAngle(w, s, ring.per);
-        const links: string[] = [];
+  for (let ring = 1; ring <= RINGS.length; ring++) {
+    const { count } = RINGS[ring - 1];
+    const filler = FILLER[(ring - 1) % FILLER.length];
 
-        // Inward. Ring 1 touches the skill itself; everything else fans back
-        // onto the slice of the previous ring sitting behind it, so a wide
-        // ring narrowing to a thin one still has a way home from every node.
-        if (r === 1) {
-          links.push(CENTRE);
-        } else {
-          const lo = Math.floor((s * prev.per) / ring.per);
-          const hi = Math.floor(((s + 1) * prev.per - 1) / ring.per);
-          for (let j = lo; j <= hi; j++) links.push(idAt(w, r - 1, j));
-        }
+    for (let i = 0; i < count; i++) {
+      const spec = byPlace.get(`${ring}:${i}`);
+      const id = at(ring, i);
+      const angle = angleOf(ring, i);
+      const reach = radiusOf(ring, i);
+      const x = Math.cos(angle) * reach;
+      const y = Math.sin(angle) * reach;
+      const links = linkOut.get(id) ?? [];
 
-        // Sideways within the ring.
-        if (s + 1 < ring.per) links.push(idAt(w, r, s + 1));
-
-        // And across to the next wedge, at two depths only. Every crossing is
-        // a shortcut past somebody's gate, which is why there are two of them
-        // and not one per ring.
-        if (CROSSINGS.includes(r) && s === ring.per - 1) {
-          links.push(idAt((w + 1) % WEDGES, r, 0));
-        }
-
-        const notable = place(w, r, s);
-        nodes.push(
-          notable
-            ? {
-                id: notable.id,
-                name: notable.name,
-                description: notable.description,
-                kind: 'notable',
-                x: Math.cos(angle) * ring.r,
-                y: Math.sin(angle) * ring.r,
-                links,
-                gate: notable.gate,
-                ...(notable.stats ? { stats: notable.stats } : {}),
-                ...(notable.grants ? { grants: notable.grants } : {}),
-              }
-            : {
-                id: minorId(w, r, s),
-                // Filler is named for the wedge it belongs to, so a hover
-                // anywhere on the way out still tells you where you are.
-                name: filler.theme,
-                description: filler.lines[s % filler.lines.length].text,
-                kind: 'minor',
-                x: Math.cos(angle) * ring.r,
-                y: Math.sin(angle) * ring.r,
-                links,
-                ...(MINOR_GATE[r] ? { gate: MINOR_GATE[r] } : {}),
-                stats: filler.lines[s % filler.lines.length].stats,
-              }
-        );
-      }
+      nodes.push(
+        spec
+          ? {
+              id: spec.id,
+              name: spec.name,
+              description: spec.description,
+              kind: 'notable',
+              x, y, links, gate: spec.gate,
+              ...(spec.stats ? { stats: spec.stats } : {}),
+              ...(spec.grants ? { grants: spec.grants } : {}),
+              ...(spec.choices ? { choices: spec.choices } : {}),
+            }
+          : {
+              id,
+              // Named for the ring it is on, so a hover anywhere on the way
+              // out still says where you are.
+              name: filler.theme,
+              description: filler.lines[i % filler.lines.length].text,
+              kind: 'minor',
+              x, y, links,
+              ...(ring >= 4 ? { gate: ring === 4 ? 7 : 13 } : {}),
+              stats: filler.lines[i % filler.lines.length].stats,
+            }
+      );
     }
   }
 
-  // The keystones, hanging off the middle of their wedge's outer ring.
-  for (const w of KEYSTONE_WEDGES) {
-    const spec = place(w, 6, 0)!;
-    const angle = wedgeAngle(w);
+  // The four keystones, hung off the outer ring a long way apart.
+  const outer = RINGS.length;
+  NOTABLES.filter((n) => n.depth === 4).forEach((spec, i) => {
+    const bearing = i / 4 + 0.125;
+    const anchor = nearest(outer, bearing);
+    const angle = angleOf(outer, anchor);
     nodes.push({
       id: spec.id,
       name: spec.name,
@@ -469,22 +544,18 @@ function build(): SkillNodeDef[] {
       kind: 'notable',
       x: Math.cos(angle) * KEYSTONE_R,
       y: Math.sin(angle) * KEYSTONE_R,
-      links: [idAt(w, RINGS.length, 1)],
+      links: [at(outer, anchor)],
       gate: spec.gate,
-      ...(spec.stats ? { stats: spec.stats } : {}),
       ...(spec.grants ? { grants: spec.grants } : {}),
     });
-  }
+  });
 
   return nodes;
 }
 
-/** Whatever is at a place — a notable's real id, or the generated filler id. */
-function idAt(w: number, r: number, s: number): string {
-  const notable = NOTABLES.find(
-    (n) => n.at[0] === w && n.at[1] === r && n.at[2] === s
-  );
-  return notable ? notable.id : minorId(w, r, s);
-}
-
 export const FIREBALL_TREE: SkillNodeDef[] = build();
+
+/** Which idea each notable belongs to. The demo checks they stay scattered. */
+export const FIREBALL_FAMILIES: Record<string, string> = Object.fromEntries(
+  NOTABLES.map((n) => [n.id, n.family])
+);

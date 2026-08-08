@@ -821,6 +821,12 @@ assert(
   'twenty-five of them notable',
   String(all('#skills-web .web__node--notable').length)
 );
+// No notable is adjacent to another, so none of them is a two-point hop from
+// the last. Checked on the geometry in the demo; this is the drawn version.
+assert(
+  all('#skills-web .web__node--notable.web__node--open').length === 0,
+  'and none of them is a first move'
+);
 assert(all('#skills-web .web__edge').length > 100, 'and it is a web, not a list');
 
 // The centre is an icon, not a word.
@@ -853,7 +859,9 @@ const allocated = () => all('#skills-web .web__node--on').length;
 // of points, and saying "locked" about both would hide the difference.
 const buyable = () => all('#skills-web .web__node--open');
 assert(allocated() === 0, 'nothing allocated to begin with');
-assert(buyable().length === 8, 'only the first ring can be bought', String(buyable().length));
+// Four ways in, not one per node: leaving a ring means walking round it to
+// find the next spoke, which is what makes the minors worth buying.
+assert(buyable().length === 4, 'four ways in', String(buyable().length));
 
 buyable()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 assert(allocated() === 1, 'a node can be allocated');
@@ -893,13 +901,73 @@ assert(allocated() === 0, 'and clicking it again refunds it');
   assert(allocated() === before, 'and none of them slipped through');
 }
 
-// The dev lever exists precisely so this is testable without grinding.
-$('skills-devlevel').click();
-assert(
-  /level 2/.test(text('skills-sub')),
-  'a granted level shows up in the header',
-  text('skills-sub')
-);
+// --- a node that asks a question -------------------------------------------
+// One node picks the element rather than two that fight over it: taking the
+// wrong one of a pair first would cost a point to undo, which taxes finding
+// out what a thing does.
+{
+  for (let i = 0; i < 30; i++) $('skills-devlevel').click();
+
+  // Walk straight at it, so this reaches the same node every run.
+  const centreOf = (el) => {
+    const c = el.querySelector('circle');
+    return { x: Number(c.getAttribute('cx')), y: Number(c.getAttribute('cy')) };
+  };
+  const target = () => all('#skills-web [data-node="fb_transmutation"]')[0];
+  for (let step = 0; step < 40; step++) {
+    if (target()?.classList.contains('web__node--open')) break;
+    const goal = centreOf(target());
+    const next = buyable().sort(
+      (a, b) =>
+        Math.hypot(centreOf(a).x - goal.x, centreOf(a).y - goal.y) -
+        Math.hypot(centreOf(b).x - goal.x, centreOf(b).y - goal.y)
+    )[0];
+    if (!next) break;
+    next.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  }
+  assert(
+    target().classList.contains('web__node--open'),
+    'the choice node is reachable',
+    target().getAttribute('class')
+  );
+
+  assert($('skills-choice').hidden === true, 'no menu until you ask for one');
+  target().dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert($('skills-choice').hidden === false, 'clicking it asks which element');
+  assert(
+    all('#skills-choice .webmenu__row').length === 2,
+    'with both answers offered',
+    String(all('#skills-choice .webmenu__row').length)
+  );
+  // Clicking it must NOT have spent the point on its own.
+  assert(
+    !target().classList.contains('web__node--on'),
+    'and nothing is allocated until you answer'
+  );
+
+  const before = allocated();
+  all('#skills-choice .webmenu__row')[1].click();
+  assert($('skills-choice').hidden === true, 'answering closes the menu');
+  assert(allocated() === before + 1, 'and takes the node');
+
+  // The answer is free to change, and the node stays allocated across it.
+  target().dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#skills-choice .webmenu__row--on').length === 1,
+    'reopening shows which answer is live'
+  );
+  all('#skills-choice .webmenu__row')[0].click();
+  assert(allocated() === before + 1, 'switching costs nothing');
+}
+
+// The dev lever exists precisely so all of the above is testable without
+// grinding out a hundred and thirty thousand xp.
+{
+  const levelNow = () => Number(text('skills-sub').match(/level (\d+)/)?.[1] ?? 0);
+  const was = levelNow();
+  $('skills-devlevel').click();
+  assert(levelNow() === was + 1, 'a granted level shows up in the header', text('skills-sub'));
+}
 
 // Escape steps back a level rather than closing outright — three screens deep,
 // one keypress out would lose your place every time.

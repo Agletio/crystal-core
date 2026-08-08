@@ -199,9 +199,13 @@ export function treeGrants(character: Character): Record<string, unknown> {
 
   const out: Record<string, unknown> = {};
   for (const id of progress.allocated) {
-    for (const [key, value] of Object.entries(
-      nodeById(character.skillId, id)?.grants ?? {}
-    )) {
+    const node = nodeById(character.skillId, id);
+    // A choice node contributes the option you picked, and nothing until you
+    // have picked one.
+    const chosen = node?.choices?.find((c) => c.id === progress.choices?.[id]);
+    const from = { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) };
+
+    for (const [key, value] of Object.entries(from)) {
       if (SUMMED_GRANTS.has(key)) {
         out[key] = ((out[key] as number) ?? 0) + (value as number);
       } else if (MULTIPLIED_GRANTS.has(key)) {

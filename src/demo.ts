@@ -38,8 +38,9 @@ import {
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
-import { characterStats } from './sim/stats';
+import { characterStats, convertedType, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
+import { FIREBALL_FAMILIES as FAMILY_OF } from './trees/fireball';
 import {
   CENTRE,
   MAX_TREE_POINTS,
@@ -774,15 +775,70 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   line(`  the most expensive node costs ${deepest} of ${MAX_TREE_POINTS} points`);
   check(deepest > MAX_TREE_POINTS * 0.6, 'the far side is a real commitment', `${deepest}`);
 
-  // Nothing opens on the first point except the ring touching the middle —
-  // otherwise the gates are decoration.
   const first = nodes.filter((n) => canAllocate('fireball', n.id, []));
-  check(first.length === 8, 'exactly one way in per wedge', String(first.length));
+  check(first.length === 4, 'four ways in, not one per node', String(first.length));
   check(
     first.every((n) => n.kind === 'minor'),
     'and no notable is a first move',
     first.filter((n) => n.kind === 'notable').map((n) => n.id).join(', ')
   );
+
+  // The whole point of the layout: notables are not strung in a line. Two of
+  // them touching is a shortcut past a stretch of road, and a straight radial
+  // run of them is why the minors were worth nothing.
+  const notableIds = new Set(notables.map((n) => n.id));
+  const touching = notables.filter((n) =>
+    [...neighboursOf('fireball', n.id)].some((id) => notableIds.has(id))
+  );
+  check(touching.length === 0, 'no notable touches another', touching.map((n) => n.id).join(', '));
+
+  // And a family is scattered, so a pierce build cannot be walked in a line.
+  // Measured in NODES BETWEEN rather than in degrees: what makes two notables
+  // a straight line is how cheaply you get from one to the other, and two on
+  // different rings at the same bearing are not near each other at all.
+  const between = (from: string, to: string): number => {
+    const seen = new Set([from]);
+    let edge = [from];
+    for (let steps = 1; steps < 40; steps++) {
+      const next: string[] = [];
+      for (const id of edge) {
+        for (const other of neighboursOf('fireball', id)) {
+          if (other === CENTRE || seen.has(other)) continue;
+          if (other === to) return steps;
+          seen.add(other);
+          next.push(other);
+        }
+      }
+      edge = next;
+    }
+    return Infinity;
+  };
+
+  const near: string[] = [];
+  let closest = Infinity;
+  for (let i = 0; i < notables.length; i++) {
+    for (let j = i + 1; j < notables.length; j++) {
+      const a = notables[i];
+      const b = notables[j];
+      if (!FAMILY_OF[a.id] || FAMILY_OF[a.id] !== FAMILY_OF[b.id]) continue;
+      const steps = between(a.id, b.id);
+      closest = Math.min(closest, steps);
+      // Four apart is three minors in between: you cannot have both without
+      // buying road, which is the whole point of moving them.
+      if (steps < 4) near.push(`${a.id}-${b.id} (${steps})`);
+    }
+  }
+  line(`  the closest two notables of one family are ${closest} nodes apart`);
+  check(near.length === 0, 'and a family is spread around the web', near.join(', '));
+
+  // Getting anywhere means buying road. If the walk to the deepest notable were
+  // mostly notables, the minors would be decoration again.
+  const furthest = notables.reduce((a, b) =>
+    (distance.get(a.id) ?? 0) >= (distance.get(b.id) ?? 0) ? a : b
+  );
+  const outward = distance.get(furthest.id) ?? 0;
+  line(`  the furthest notable is ${furthest.name}, ${outward} nodes out`);
+  check(outward >= 8, 'the far notables are a long walk', String(outward));
 
   // Refunding must never strand anything, and must always be possible for the
   // last thing you bought — a tree you can walk into and not out of is worse
@@ -929,63 +985,68 @@ rule('FIREBALL — do the notables actually change the cast?');
 }
 
 // ===========================================================================
-rule('CONVERSION — does it move the tree instead of doubling it?');
+rule('CONVERSION — one node, two answers, and it moves the tree');
 
-// The rule the whole conversion idea rests on: a converted skill scales off
-// its NEW type only. Keeping the old type live as well would make conversion
-// a free second damage stat rather than a decision. What stops that being a
-// punishment is that the tree's own fire nodes convert with it — the wedge you
-// walked to get there keeps working.
+// Conversion is a single node you pick an answer on, not two nodes that fight.
+// Two exclusive nodes would mean taking the wrong one first costs a point to
+// undo, which taxes finding out what a thing does.
+//
+// The rule underneath: a converted skill scales off its NEW type only. Keeping
+// the old one live as well would be a free second damage stat. What stops that
+// being a punishment is that the tree's own fire nodes convert with it.
 {
-  const withTree = (allocated: string[]) => {
+  const node = nodeById('fireball', 'fb_transmutation')!;
+  check(!!node.choices && node.choices.length === 2, 'one node offers both elements',
+    String(node.choices?.length));
+  check(
+    treeFor('fireball').filter((n) => n.grants?.convertTree).length === 0,
+    'and no node converts on its own',
+    'a standalone conversion node still exists'
+  );
+
+  const withChoice = (pick: string | null) => {
     const hero = makeCharacter({}, 'fireball');
-    hero.skills.fireball = { level: 30, xp: 0, allocated };
+    hero.skills.fireball = {
+      level: 30,
+      xp: 0,
+      allocated: pick ? ['fb_transmutation'] : [],
+      choices: pick ? { fb_transmutation: pick } : {},
+    };
     return hero;
   };
 
-  // A path out to Frostfire, picking up fire nodes on the way.
-  const path: string[] = [];
-  const nodes = treeFor('fireball');
-  while (!path.includes('fb_frostfire') && path.length < MAX_TREE_POINTS) {
-    const open = nodes.filter((n) => canAllocate('fireball', n.id, path));
-    // Head for the conversion wedge, taking whatever is nearest to it.
-    const target = nodeById('fireball', 'fb_frostfire')!;
-    const nearest = open.sort(
-      (a, b) =>
-        Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y)
-    )[0];
-    if (!nearest) break;
-    path.push(nearest.id);
-  }
-  check(path.includes('fb_frostfire'), 'Frostfire is reachable', `${path.length} points`);
-
-  const before = path.filter((id) => id !== 'fb_frostfire');
-  const plain = characterStats(withTree(before));
-  const cold = characterStats(withTree(path));
-
-  const fireGear = (type: string): RolledMod => ({
+  const probe = (type: string): RolledMod => ({
     entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
     name: 'probe', tier: 1, tags: [],
     stats: [{ stat: 'damage', form: 'inc', value: 300, tags: [type] }],
   });
 
-  const wearing = (hero: ReturnType<typeof withTree>, mod: RolledMod) => {
-    const worn = { ...hero, equipment: { weapon: { ...makeGear('ash_wand', 20), mods: [mod] } } };
-    return characterStats(worn as typeof hero).damage;
-  };
+  const wearing = (hero: ReturnType<typeof withChoice>, mod: RolledMod) =>
+    characterStats({
+      ...hero,
+      equipment: { weapon: { ...makeGear('ash_wand', 20), mods: [mod] } },
+    }).damage;
 
-  const converted = withTree(path);
-  const withFire = wearing(converted, fireGear('fire'));
-  const withCold = wearing(converted, fireGear('cold'));
+  const cold = withChoice('cold');
+  const withFire = wearing(cold, probe('fire'));
+  const withCold = wearing(cold, probe('cold'));
   line(`  Frostfire, +300% gear fire: ${Math.round(withFire)} · +300% gear cold: ${Math.round(withCold)}`);
-  check(withCold > withFire * 1.5, 'converted, your gear must be cold', `${Math.round(withCold)} vs ${Math.round(withFire)}`);
+  check(withCold > withFire * 1.5, 'picking Cold moves what your gear has to be',
+    `${Math.round(withCold)} vs ${Math.round(withFire)}`);
 
-  // And the tree's own fire nodes came along.
-  line(`  tree damage before conversion ${Math.round(plain.damage)} · after ${Math.round(cold.damage)}`);
+  const storm = withChoice('lightning');
   check(
-    cold.damage >= plain.damage * 0.98,
-    'and the fire nodes you walked through came with it',
-    `${Math.round(cold.damage)} vs ${Math.round(plain.damage)}`
+    wearing(storm, probe('lightning')) > wearing(storm, probe('cold')) * 1.5,
+    'and picking Lightning moves it somewhere else',
+    'the second answer did nothing'
+  );
+
+  const unpicked = makeCharacter({}, 'fireball');
+  unpicked.skills.fireball = { level: 30, xp: 0, allocated: ['fb_transmutation'], choices: {} };
+  check(
+    convertedType(SKILL_BY_ID.fireball, treeGrants(unpicked)) === null,
+    'until you answer it, Fireball is still Fire',
+    String(convertedType(SKILL_BY_ID.fireball, treeGrants(unpicked)))
   );
 }
 

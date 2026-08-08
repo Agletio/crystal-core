@@ -379,10 +379,12 @@ function renderWeb(): void {
         (!owned && !reachable ? ' web__node--locked' : ''),
       tabindex: '0',
       role: 'button',
+      'data-node': node.id,
     });
     group.append(svgEl('circle', { cx: pos.x, cy: pos.y, r }));
 
     attachTooltip(group, () => {
+      const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
       const spent = progress.allocated.length;
       const state = owned
         ? canDeallocate(skillId, node.id, progress.allocated)
@@ -395,12 +397,20 @@ function renderWeb(): void {
             : spare > 0
               ? 'available'
               : 'no points left';
-      return `${node.name}  (${state})\n${node.description}`;
+      const choice = node.choices
+        ? `\n${picked ? `chosen: ${picked.name} — ${picked.description}` : 'click to choose'}`
+        : '';
+      return `${node.name}  (${state})\n${node.description}${choice}`;
     });
 
     const act = () => {
       // A drag that ends over a node is a drag, not a click on the node.
       if (dragged) return;
+      // A node that asks a question never answers it for you.
+      if (node.choices && (owned || open)) {
+        openChoice(node, pos, owned);
+        return;
+      }
       if (owned) {
         if (canDeallocate(skillId, node.id, progress.allocated)) {
           progress.allocated = progress.allocated.filter((id) => id !== node.id);
@@ -426,6 +436,58 @@ function renderWeb(): void {
 
   renderTaken();
 }
+
+/**
+ * The menu a choice node opens over itself.
+ *
+ * A choice is free to change once taken. Two mutually exclusive nodes would
+ * mean picking the wrong one first costs a point to undo, which is a tax on
+ * finding out what a thing does rather than a decision about your build.
+ */
+function openChoice(node: SkillNodeDef, pos: { x: number; y: number }, owned: boolean): void {
+  const host = $('skills-choice');
+  const skillId = viewing!;
+  const progress = skillProgress(game.character, skillId);
+  host.replaceChildren();
+  host.hidden = false;
+  host.style.left = `${Math.round(pos.x + 18)}px`;
+  host.style.top = `${Math.round(pos.y - 12)}px`;
+
+  const pick = (id: string) => {
+    progress.choices ??= {};
+    progress.choices[node.id] = id;
+    if (!owned) progress.allocated.push(node.id);
+    host.hidden = true;
+    render();
+    renderWeb();
+  };
+
+  for (const choice of node.choices ?? []) {
+    const chosen = progress.choices?.[node.id] === choice.id;
+    const row = el('button', `webmenu__row${chosen ? ' webmenu__row--on' : ''}`);
+    row.append(el('span', 'webmenu__name', choice.name));
+    row.append(el('span', 'webmenu__desc', choice.description));
+    (row as HTMLButtonElement).onclick = () => pick(choice.id);
+    host.append(row);
+  }
+
+  if (owned && canDeallocate(skillId, node.id, progress.allocated)) {
+    const drop = el('button', 'webmenu__row webmenu__row--drop');
+    drop.append(el('span', 'webmenu__name', 'Refund this node'));
+    (drop as HTMLButtonElement).onclick = () => {
+      progress.allocated = progress.allocated.filter((id) => id !== node.id);
+      delete progress.choices?.[node.id];
+      host.hidden = true;
+      render();
+      renderWeb();
+    };
+    host.append(drop);
+  }
+}
+
+const closeChoice = (): void => {
+  $('skills-choice').hidden = true;
+};
 
 /**
  * What you have actually bought, as chips.
@@ -469,6 +531,7 @@ function render(): void {
   // removed node would hang around forever.
   hideTooltip();
 
+  closeChoice();
   const depth = viewing ? 3 : category ? 2 : 1;
   $('skills-cats').hidden = depth !== 1;
   $('skills-list').hidden = depth !== 2;
@@ -556,6 +619,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
       panX = before.x - px / scale;
       panY = before.y - py / scale;
       hideTooltip();
+      closeChoice();
       renderWeb();
     },
     { passive: false }
@@ -577,6 +641,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
     // A few pixels of slop, so a click with a shaky hand is still a click.
     if (!dragged && Math.hypot(dx, dy) < 4) return;
     dragged = true;
+    closeChoice();
     panX -= dx / scale;
     panY -= dy / scale;
     from = { x: e.clientX, y: e.clientY };

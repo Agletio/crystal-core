@@ -22,9 +22,13 @@ import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
-import type { Palette, Renderer } from './renderer';
+import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   burstRadius,
+  fireBolt,
+  fireBurst,
+  fireShades,
+  fireSparks,
   clampZoom,
   floorColour,
   floorPalette,
@@ -286,6 +290,18 @@ export async function createPixiRenderer(
     // Keep hairlines visible however far out we're zoomed.
     const hair = Math.max(0.05, 1 / tile);
 
+    /** Fire pixels, in world units. The layer is already scaled to tiles. */
+    const blocks = (pixels: FirePixel[], type: string, fade: number) => {
+      const shades = fireShades(palette, type);
+      for (const p of pixels) {
+        if (p.alpha <= 0) continue;
+        vfxLayer.rect(cx(p.x), cy(p.y), p.size, p.size).fill({
+          color: toHexNumber(shades[p.shade]),
+          alpha: Math.min(1, Math.max(0, p.alpha * fade)),
+        });
+      }
+    };
+
     const x = state.map.exit;
     const pulse = 0.75 + 0.25 * Math.sin(state.elapsed * 3);
     vfxLayer
@@ -363,13 +379,17 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'burst') {
         // Second point carries the radius, same contract as the poison field.
-        const radius = burstRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        // Dark, not tinted: a translucent flame-coloured disc muddies the floor.
         vfxLayer
-          .circle(cx(from.x), cy(from.y), radius)
-          .fill({ color: colour, alpha: Math.max(0, 0.3 * (1 - t)) });
-        vfxLayer
-          .circle(cx(from.x), cy(from.y), radius)
-          .stroke({ width: Math.max(hair, 0.09), color: colour, alpha });
+          .circle(cx(from.x), cy(from.y), burstRadius(radius, t))
+          .fill({ color: toHexNumber(palette.void), alpha: Math.max(0, 0.3 * (1 - t)) });
+        blocks(fireBurst(from, radius, t), fx.damageType, 1);
+        continue;
+      }
+
+      if (fx.kind === 'flame') {
+        blocks(fireBolt(from, to, t), fx.damageType, 1 - t);
         continue;
       }
 
@@ -407,9 +427,7 @@ export async function createPixiRenderer(
         for (const p of fx.points.slice(1)) vfxLayer.lineTo(cx(p.x), cy(p.y));
         vfxLayer.stroke({ width: Math.max(hair, 0.09), color: colour, alpha });
       } else {
-        vfxLayer
-          .circle(cx(from.x), cy(from.y), 0.16 + t * 0.3)
-          .stroke({ width: Math.max(hair, 0.08), color: colour, alpha });
+        blocks(fireSparks(from, t), fx.damageType, 1);
       }
     }
   }

@@ -43,6 +43,10 @@
     /** Solid rock beyond the visible wall. Also the colour behind the map. */
     --rock-deep: #33332E;
 
+    /* Fire is its own ramp: ember is a coral that reads pink at speed. */
+    --flame:     #E2521B;
+    --flame-core:#FFDC8C;
+
     --amethyst:  #A67BE8;
     --citrine:   #E8B84B;
     --quartz:    #6FC7E8;
@@ -685,6 +689,15 @@
   .webwrap { position: relative; height: min(50vh, 430px); border: 1px solid var(--seam); background: var(--void); overflow: hidden; }
   .web { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
   .web--drag { cursor: grabbing; }
+  /* A node that asks a question opens this over itself. */
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background: var(--matrix); border: 1px solid var(--seam-lit); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
+  .webmenu__row:hover { background: var(--seam); border-color: var(--citrine); }
+  .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
+  .webmenu__name { font-size: 11px; }
+  .webmenu__desc { font-size: 10px; color: var(--dust); line-height: 1.35; }
+  .webmenu__row--drop { color: var(--ember); }
+
   .webhud { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .webhud__hint { font-size: 10px; color: var(--dust); letter-spacing: .04em; }
   .webtaken { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 22px; }
@@ -1017,6 +1030,7 @@
              legible at once would be a hundred dots you cannot read. -->
         <div class="webwrap">
           <svg class="web" id="skills-web" role="img" aria-label="skill web"></svg>
+          <div class="webmenu" id="skills-choice" hidden></div>
           <div class="webhud">
             <button class="mini" id="skills-fit">Fit</button>
             <span class="webhud__hint">scroll to zoom · drag to move</span>

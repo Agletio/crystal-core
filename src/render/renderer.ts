@@ -5,6 +5,7 @@
  */
 import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
+import type { Vec2 } from '../sim/grid';
 
 export interface Palette {
   void: string;
@@ -25,6 +26,9 @@ export interface Palette {
   quartz: string;
   verdite: string;
   ember: string;
+  /** Fire's own ramp, hotter and less pink than ember. */
+  flame: string;
+  flameCore: string;
 }
 
 export interface Renderer {
@@ -80,6 +84,8 @@ const VARS: Array<[keyof Palette, string]> = [
   ['quartz', '--quartz'],
   ['verdite', '--verdite'],
   ['ember', '--ember'],
+  ['flame', '--flame'],
+  ['flameCore', '--flame-core'],
 ];
 
 /** Pulls the palette out of CSS so colours stay defined in one place. */
@@ -464,6 +470,166 @@ export function toHexNumber(colour: string): number {
       : hex;
   const n = Number.parseInt(full, 16);
   return Number.isNaN(n) ? 0xffffff : n;
+}
+
+/**
+ * Fire, on the same pixel grid as the sprites. A smooth line with a round head
+ * is a laser; a fireball is a lump of burning stuff with bits coming off it.
+ *
+ * Three shades off the damage type — outer body, hotter middle, near-white core
+ * — so a converted Fireball gets the same shapes in blue for free.
+ */
+export interface FirePixel {
+  x: number;
+  y: number;
+  size: number;
+  /** 0 outer, 1 middle, 2 core. */
+  shade: number;
+  alpha: number;
+}
+
+/** One logical fire pixel, in tiles. Matches the sprite grid at 16 per cell. */
+const FIRE_PX = 1 / 16;
+
+const onGrid = (n: number): number => Math.round(n / FIRE_PX) * FIRE_PX;
+
+export function fireShades(palette: Palette, type: string): [string, string, string] {
+  // Fire gets a real red → orange → yellow ramp; every other type is the same
+  // ramp tinted, so a converted Fireball keeps the shapes and changes colour.
+  const outer = type === 'fire' ? palette.flame : damageColour(palette, type);
+  return [
+    outer,
+    mix(outer, palette.flameCore, 0.5),
+    mix(outer, palette.flameCore, 0.88),
+  ];
+}
+
+/**
+ * The ball itself, authored the way the sprites are. `.` is nothing, 0 the
+ * outer body, 1 the middle, 2 the core.
+ */
+const BALL = [
+  '..0110..',
+  '.011110.',
+  '01122110',
+  '01222210',
+  '01222210',
+  '01122110',
+  '.011110.',
+  '..0110..',
+];
+
+/**
+ * The projectile: a burning ball with a tail that frays behind it. The head
+ * travels faster than `t`, so the tail is still burning after it lands. Flicker
+ * is hashed off position, never off real time, so both renderers agree.
+ */
+export function fireBolt(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const travel = Math.min(1, t * 1.8);
+  const hx = from.x + (to.x - from.x) * travel;
+  const hy = from.y + (to.y - from.y) * travel;
+  const pixels: FirePixel[] = [];
+
+  // Trailing embers, thinning and cooling with distance behind the head.
+  const TAIL = 9;
+  for (let i = TAIL; i >= 1; i--) {
+    const back = Math.max(0, travel - i * 0.05);
+    const px = from.x + (to.x - from.x) * back;
+    const py = from.y + (to.y - from.y) * back;
+    const wobble = tileNoise(Math.round(px * 12), Math.round(py * 12), 17 + i) - 0.5;
+    const spread = 0.05 + i * 0.022;
+    pixels.push({
+      x: onGrid(px + wobble * spread),
+      y: onGrid(py + wobble * spread - i * 0.01),
+      size: FIRE_PX * (i > 6 ? 1 : i > 3 ? 2 : 3),
+      shade: i > 6 ? 0 : i > 3 ? 1 : 2,
+      alpha: (1.15 - i / (TAIL + 1)) * (1 - t * 0.5),
+    });
+  }
+
+  // The head, drawn from the grid and centred on where it has got to.
+  const half = (BALL.length * FIRE_PX) / 2;
+  for (let row = 0; row < BALL.length; row++) {
+    for (let col = 0; col < BALL[row].length; col++) {
+      const ch = BALL[row][col];
+      if (ch === '.') continue;
+      pixels.push({
+        x: onGrid(hx - half + col * FIRE_PX),
+        y: onGrid(hy - half + row * FIRE_PX),
+        size: FIRE_PX,
+        shade: Number(ch),
+        alpha: 1,
+      });
+    }
+  }
+  return pixels;
+}
+
+/**
+ * The burst: a band of flame that punches out and burns down. A band rather
+ * than a filled disc — filled, it is a plate over whatever it caught, and the
+ * edge is the thing you want to read.
+ */
+export function fireBurst(centre: Vec2, radius: number, t: number): FirePixel[] {
+  const grown = burstRadius(radius, t);
+  const pixels: FirePixel[] = [];
+  const step = FIRE_PX * 2;
+  // Enough that the band closes at the biggest radius anyone reaches.
+  const count = Math.max(16, Math.round((grown * Math.PI * 2) / step));
+
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const noise = tileNoise(i, Math.round(grown * 24), 29);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    // Three blocks deep, hottest at the leading edge.
+    for (let depth = 0; depth < 3; depth++) {
+      const r = grown * (0.99 + noise * 0.1) - depth * step;
+      if (r <= 0) continue;
+      pixels.push({
+        x: onGrid(centre.x + cos * r),
+        y: onGrid(centre.y + sin * r),
+        size: step,
+        shade: depth === 0 ? 2 : depth === 1 ? 1 : 0,
+        alpha: (1 - t * 0.85) * (noise > 0.15 ? 1 : 0.4),
+      });
+    }
+  }
+
+  // A hot centre while it is going off, so the burst has an origin.
+  if (t < 0.55) {
+    for (let row = 0; row < BALL.length; row++) {
+      for (let col = 0; col < BALL[row].length; col++) {
+        if (BALL[row][col] === '.') continue;
+        pixels.push({
+          x: onGrid(centre.x - (BALL.length * FIRE_PX) / 2 + col * FIRE_PX),
+          y: onGrid(centre.y - (BALL.length * FIRE_PX) / 2 + row * FIRE_PX),
+          size: FIRE_PX,
+          shade: 2,
+          alpha: 1 - t * 1.8,
+        });
+      }
+    }
+  }
+  return pixels;
+}
+
+/** Sparks off a hit: a handful of blocks thrown out and falling. */
+export function fireSparks(at: Vec2, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  for (let i = 0; i < 9; i++) {
+    const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 41);
+    const angle = (i / 9) * Math.PI * 2 + noise;
+    const reach = 0.2 + noise * 0.34;
+    pixels.push({
+      x: onGrid(at.x + Math.cos(angle) * reach * t),
+      y: onGrid(at.y + Math.sin(angle) * reach * t - t * t * 0.2),
+      size: FIRE_PX * (noise > 0.45 ? 3 : 2),
+      shade: noise > 0.6 ? 2 : 1,
+      alpha: 1 - t * 0.8,
+    });
+  }
+  return pixels;
 }
 
 /**

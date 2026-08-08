@@ -1390,7 +1390,7 @@ export const SKILLS: SkillDef[] = [
     damageMultiplier: 1,
     rateMultiplier: 1,
     range: 6.5,
-    vfxKind: 'bolt',
+    vfxKind: 'flame',
   },
   {
     /** Monsters only — no category, so it never reaches your Skills screen. */

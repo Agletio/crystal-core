@@ -12,9 +12,13 @@
 import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
-import type { Palette, Renderer } from './renderer';
+import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   burstRadius,
+  fireBolt,
+  fireBurst,
+  fireShades,
+  fireSparks,
   clampZoom,
   floorColour,
   floorPalette,
@@ -248,6 +252,18 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     }
   }
 
+  /** Fire pixels as whole device pixels, so nothing lands half-lit. */
+  function blocks(v: View, pixels: FirePixel[], type: string, fade: number): void {
+    const shades = fireShades(palette, type);
+    for (const p of pixels) {
+      if (p.alpha <= 0) continue;
+      ctx.globalAlpha = Math.min(1, Math.max(0, p.alpha * fade));
+      ctx.fillStyle = shades[p.shade];
+      const size = Math.max(1, Math.round(p.size * v.tile));
+      ctx.fillRect(Math.round(cx(v, p.x)), Math.round(cy(v, p.y)), size, size);
+    }
+  }
+
   function drawVfx(v: View, state: RunState): void {
     for (const fx of state.vfx) {
       const t = Math.min(1, fx.age / fx.ttl);
@@ -290,20 +306,15 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         }
       } else if (fx.kind === 'burst') {
         // Second point carries the radius, same contract as the poison field.
-        const radius = burstRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
-        const px = cx(v, from.x);
-        const py = cy(v, from.y);
-
+        const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        // A scorch under the ring, so the blast leaves a footprint. Dark, not
+        // tinted: a translucent flame-coloured disc just muddies the floor.
         ctx.globalAlpha = Math.max(0, 0.3 * (1 - t));
+        ctx.fillStyle = palette.void;
         ctx.beginPath();
-        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
+        ctx.arc(cx(v, from.x), cy(v, from.y), burstRadius(radius, t) * v.tile, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.globalAlpha = Math.max(0, 1 - t);
-        ctx.lineWidth = Math.max(1.5, v.tile * 0.09);
-        ctx.beginPath();
-        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
-        ctx.stroke();
+        blocks(v, fireBurst(from, radius, t), fx.damageType, 1);
       } else if (fx.kind === 'slash') {
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         const sweep = Math.PI * 0.75;
@@ -312,6 +323,8 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         ctx.beginPath();
         ctx.arc(cx(v, from.x), cy(v, from.y), v.tile * 0.95, start, start + sweep * 0.45);
         ctx.stroke();
+      } else if (fx.kind === 'flame') {
+        blocks(v, fireBolt(from, to, t), fx.damageType, 1 - t);
       } else if (fx.kind === 'bolt') {
         const travel = Math.min(1, t * 1.5);
         const tail = Math.max(0, travel - 0.3);
@@ -330,9 +343,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         for (const p of fx.points.slice(1)) ctx.lineTo(cx(v, p.x), cy(v, p.y));
         ctx.stroke();
       } else {
-        ctx.beginPath();
-        ctx.arc(cx(v, from.x), cy(v, from.y), v.tile * (0.18 + t * 0.3), 0, Math.PI * 2);
-        ctx.stroke();
+        blocks(v, fireSparks(from, t), fx.damageType, 1);
       }
       ctx.globalAlpha = 1;
     }
