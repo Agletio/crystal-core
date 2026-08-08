@@ -37,7 +37,8 @@ let onClosed: (() => void) | null = null;
 
 function tooltip(item: Item): string {
   if (item.mods.length === 0) return `${item.name} — no modifiers`;
-  return `${item.name}\n${item.mods.map((m) => describeMod(m)).join('\n')}`;
+  const rating = item.armour ? [`Armour ${item.armour}`] : [];
+  return [item.name, ...rating, ...item.mods.map((m) => describeMod(m))].join('\n');
 }
 
 function renderSlots(): void {

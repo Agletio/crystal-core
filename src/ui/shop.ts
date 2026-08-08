@@ -204,6 +204,7 @@ function tooltip(item: Item): string {
     `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
       `${item.mods.length}/${modCapacity(item)} modifiers`,
   ];
+  if (item.armour) lines.push(`Armour ${item.armour}`);
   for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
   for (const mod of item.mods) lines.push(describeMod(mod));
   if (item.mods.length === 0) lines.push('no modifiers');

@@ -157,6 +157,8 @@ function tooltip(item: Item): string {
       `${item.mods.length}/${modCapacity(item)} modifiers`,
   ];
   if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
+  // The rating, not a modifier: it says what the piece IS, and increases scale it.
+  if (item.armour) lines.push(`Armour ${item.armour}`);
   for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
   if (item.mods.length === 0 && item.implicits.length === 0) {
     lines.push('no modifiers');

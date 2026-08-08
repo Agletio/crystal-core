@@ -76,8 +76,7 @@ export const DEFENCE = {
   armourHalfPoint: 300,
 };
 
-/** Slot layouts are declared per base; a crystal has one undifferentiated type. */
-export const CRYSTAL_SLOTS = { mod: 3 };
+export const CRYSTAL_SLOTS = { mod: 3 }; // a crystal has one undifferentiated type
 
 // --- item quality ----------------------------------------------------------
 //
@@ -125,15 +124,14 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
 ];
 
 /**
- * Item level at which each rung of a family starts dropping. Aligned with
- * CRYSTAL_TIERS, so a rung arrives with a crystal tier rather than at some
- * number of its own: tier 2 bases with T2 crystals, tier 3 with T4.
+ * Where each rung of a family starts dropping. Aligned with CRYSTAL_TIERS, so a
+ * rung arrives with a crystal tier: tier 2 bases with T2, tier 3 with T4.
  */
 export const BASE_TIER_ILVL = [1, 22, 46];
 
 // --- armour ----------------------------------------------------------------
 //
-// Six archetypes — three pure, three hybrid — in two versions each, so twelve
+// Six archetypes — three pure, three hybrid — in two versions each: twelve
 // families across four slots and three rungs.
 //
 // Every family spends the SAME budget, at the same exchange rate, and differs
@@ -141,9 +139,12 @@ export const BASE_TIER_ILVL = [1, 22, 46];
 // strictly better than the pure sets it borrows from: a hybrid is a
 // redistribution, never a surplus, and the demo re-adds the points to prove it.
 //
-// Slot capacities deliberately do NOT vary by family. They are the other axis
-// of power, and letting a family have both a better implicit split and more
-// openings is exactly how a "hybrid" becomes the only sensible choice.
+// ARMOUR comes out of that same budget but lands on the base as a rating, not
+// a line of implicit, so plate reads as plate and increases have something to
+// scale. Melee > hybrid > rogue > mage is a design claim the demo holds.
+//
+// Slot capacities deliberately do NOT vary by family: letting one have both a
+// better split and more openings is how a "hybrid" becomes the only choice.
 
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
@@ -161,12 +162,9 @@ const ARMOUR_SLOT_LAYOUT: Record<string, Record<string, number>> = {
 };
 
 /**
- * What one budget point buys, per stat. These are the exchange rates that make
- * the budget comparable across families — a point of move speed has to be
- * worth a point of armour or the whole invariant is decoration.
- *
- * Armour is POINTS against a 300 half-point, so it buys in sixes; crit is flat
- * against a 5% base, so a whole percent is dear.
+ * What one budget point buys. These rates are what make the budget comparable
+ * across families — a point of move speed has to be worth a point of armour or
+ * the invariant is decoration. Crit is flat on a 5% base, so it is the dearest.
  */
 const IMPLICIT_PER_POINT: Record<string, number> = {
   armour: 6,
@@ -206,7 +204,7 @@ interface ArmourFamily {
 }
 
 export const ARMOUR_FAMILIES: ArmourFamily[] = [
-  // --- melee: armour is the axis --------------------------------------
+  // --- melee: nearly the whole budget goes on the rating ---------------
   {
     id: 'bulwark', archetypes: ['melee'],
     mix: { armour: 1 },
@@ -220,35 +218,35 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
     nouns: { helmet: 'Barbute', body: 'Brigandine', gloves: 'Handguards', boots: 'Sabatons' },
   },
 
-  // --- spell: damage, and almost nothing to stand behind ---------------
+  // --- spell: the least armour in the game, and the most damage --------
   {
     id: 'arcanist', archetypes: ['spell'],
-    mix: { spellDamage: 0.9, armour: 0.1 },
+    mix: { armour: 0.08, spellDamage: 0.92 },
     words: ['Ashen', 'Sigil', 'Empyrean'],
     nouns: { helmet: 'Hood', body: 'Robe', gloves: 'Wraps', boots: 'Slippers' },
   },
   {
     id: 'oracle', archetypes: ['spell'],
-    mix: { spellDamage: 0.6, castSpeed: 0.2, armour: 0.2 },
+    mix: { armour: 0.15, spellDamage: 0.6, castSpeed: 0.25 },
     words: ['Chalk', 'Runed', 'Auger'],
     nouns: { helmet: 'Circlet', body: 'Vestment', gloves: 'Palms', boots: 'Sandals' },
   },
 
-  // --- rogue: speed and crit, bought with the armour it does not wear ---
+  // --- rogue: between the two, and spends the rest on speed and crit ---
   {
     id: 'shadow', archetypes: ['rogue'],
-    mix: { critChance: 0.45, moveSpeed: 0.35, armour: 0.2 },
+    mix: { armour: 0.3, critChance: 0.4, moveSpeed: 0.3 },
     words: ['Dusk', 'Umbral', 'Eclipse'],
     nouns: { helmet: 'Cowl', body: 'Shroud', gloves: 'Grips', boots: 'Slips' },
   },
   {
     id: 'skirmisher', archetypes: ['rogue'],
-    mix: { attackDamage: 0.35, moveSpeed: 0.25, critChance: 0.2, armour: 0.2 },
+    mix: { armour: 0.3, attackDamage: 0.35, moveSpeed: 0.2, critChance: 0.15 },
     words: ['Tanned', 'Studded', 'Reaver'],
     nouns: { helmet: 'Mask', body: 'Jerkin', gloves: 'Mitts', boots: 'Treads' },
   },
 
-  // --- hybrids ---------------------------------------------------------
+  // --- hybrids: rating lands between the two they borrow from ----------
   {
     id: 'templar', archetypes: ['melee', 'spell'],
     mix: { armour: 0.55, spellDamage: 0.45 },
@@ -263,25 +261,25 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'nightweave', archetypes: ['spell', 'rogue'],
-    mix: { spellDamage: 0.45, critChance: 0.3, moveSpeed: 0.25 },
+    mix: { armour: 0.18, spellDamage: 0.45, critChance: 0.22, moveSpeed: 0.15 },
     words: ['Gloam', 'Hexed', 'Voidspun'],
     nouns: { helmet: 'Veil', body: 'Mantle', gloves: 'Silks', boots: 'Striders' },
   },
   {
     id: 'whisper', archetypes: ['spell', 'rogue'],
-    mix: { spellDamage: 0.35, castSpeed: 0.25, moveSpeed: 0.25, armour: 0.15 },
+    mix: { armour: 0.22, spellDamage: 0.33, castSpeed: 0.25, moveSpeed: 0.2 },
     words: ['Hushed', 'Muted', 'Sibilant'],
     nouns: { helmet: 'Cap', body: 'Cloak', gloves: 'Fingers', boots: 'Padfeet' },
   },
   {
     id: 'raider', archetypes: ['melee', 'rogue'],
-    mix: { armour: 0.45, moveSpeed: 0.3, critChance: 0.25 },
+    mix: { armour: 0.6, moveSpeed: 0.22, critChance: 0.18 },
     words: ['Roving', 'Banded', 'Chieftain'],
     nouns: { helmet: 'Barhelm', body: 'Harness', gloves: 'Cuffs', boots: 'Runners' },
   },
   {
     id: 'duelist', archetypes: ['melee', 'rogue'],
-    mix: { armour: 0.35, attackDamage: 0.35, attackSpeed: 0.15, moveSpeed: 0.15 },
+    mix: { armour: 0.45, attackDamage: 0.3, attackSpeed: 0.13, moveSpeed: 0.12 },
     words: ['Fenced', 'Parried', 'Bladed'],
     nouns: { helmet: 'Visor', body: 'Doublet', gloves: 'Guards', boots: 'Stepplates' },
   },
@@ -289,19 +287,27 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
 
 const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
 
+/** What the balance harnesses wear. Middling armour, or they measure the tank. */
+export const REFERENCE_ARMOUR_FAMILY = 'skirmisher';
+
 /** Budget a family may spend on one slot at one rung. */
 export const armourBudget = (kind: string, tier: number): number =>
   ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1);
 
-const spend = (key: string, points: number): StatSpec => {
+/**
+ * toFixed, not the bare multiply: 7 * 0.1 is 0.7000000000000001 in binary
+ * floating point, and every digit of that reaches the player's tooltip.
+ */
+export const quantise = (key: string, points: number): number => {
   const step = IMPLICIT_STEP[key];
-  const value = Math.round((points * IMPLICIT_PER_POINT[key]) / step) * step;
+  return Number((Math.round((points * IMPLICIT_PER_POINT[key]) / step) * step).toFixed(4));
+};
+
+const spend = (key: string, points: number): StatSpec => {
   const { stat, form, tags } = IMPLICIT_STAT[key];
-  // Rounded to the step, so re-reading a value back into points is lossy by
-  // under a point per line. The demo allows for exactly that and no more.
   return {
     stat, form,
-    range: [value, value] as [number, number],
+    range: [quantise(key, points), quantise(key, points)] as [number, number],
     ...(tags ? { tags } : {}),
   };
 };
@@ -312,6 +318,9 @@ const armourBases = (): GearBase[] => {
     for (const kind of ARMOUR_SLOT_KINDS) {
       for (let tier = 1; tier <= 3; tier++) {
         const budget = armourBudget(kind, tier);
+        const implicit = Object.entries(family.mix)
+          .filter(([key, share]) => key !== 'armour' && share > 0)
+          .map(([key, share]) => spend(key, budget * share));
         out.push({
           id: `${family.id}_${kind}_t${tier}`,
           name: `${family.words[tier - 1]} ${family.nouns[kind]}`,
@@ -320,9 +329,10 @@ const armourBases = (): GearBase[] => {
           family: family.id,
           ilvl: BASE_TIER_ILVL[tier - 1],
           slots: { ...ARMOUR_SLOT_LAYOUT[kind] },
-          implicit: Object.entries(family.mix)
-            .filter(([, share]) => share > 0)
-            .map(([key, share]) => spend(key, budget * share)),
+          armour: quantise('armour', budget * (family.mix.armour ?? 0)),
+          // A family that spends everything on the rating has no implicit at
+          // all, and an empty array would draw an empty "Base" line.
+          ...(implicit.length > 0 ? { implicit } : {}),
         });
       }
     }
@@ -333,11 +343,12 @@ const armourBases = (): GearBase[] => {
 export const ARMOUR_BASES: GearBase[] = armourBases();
 
 /**
- * An implicit read back into budget points — the inverse of spend(), and the
- * only way to check that two families priced the same thing the same way.
- * Rounding to the step makes it lossy by under a point per line.
+ * A base read back into budget points — the inverse of spend(), and the only
+ * check that two families priced the same thing the same way. The rating counts;
+ * it comes out of the same budget. Lossy by under a point per line.
  */
 export const implicitSpend = (base: GearBase): number =>
+  (base.armour ?? 0) / IMPLICIT_PER_POINT.armour +
   (base.implicit ?? []).reduce((total, s) => {
     const key = Object.keys(IMPLICIT_STAT).find((k) => {
       const want = IMPLICIT_STAT[k];
@@ -1561,9 +1572,8 @@ export const DEV_CURRENCY: Record<string, number> = {
 };
 
 /**
- * Enough to fill every equip slot, show every icon, and hold one piece out of
- * each armour family. NOT one of every base: there are far more bases than the
- * dock has room for, and a kit that overflows the bag is a kit you cannot read.
+ * Every equip slot, every icon, and one piece per armour family. NOT one of
+ * every base: a kit that overflows the dock is a kit you cannot read.
  */
 export const DEV_GEAR = [
   ...new Set([

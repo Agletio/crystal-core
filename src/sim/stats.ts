@@ -46,8 +46,7 @@ export interface CombatStats {
 
 /**
  * Curved on POINTS rather than on the size of the hit, so it prints as one
- * honest number. A linear conversion has no good divisor: small and three mods
- * cap it, large and every mod feels like nothing.
+ * honest number. A linear conversion has no good divisor.
  */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
@@ -112,10 +111,14 @@ export function heroStats(
   mods: RolledMod[],
   level: number,
   skill: SkillDef,
-  grants: Record<string, unknown> = {}
+  grants: Record<string, unknown> = {},
+  baseArmour = 0
 ): CombatStats {
   const base = baseFor(level);
   const maxLife = computeStat(base.life, mods, 'life');
+  // Worn ratings are the BASE armour computes from, not a flat mod, so
+  // "Reinforced" scales the plate you wear rather than a number beside it.
+  const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
 
   return {
     maxLife,
@@ -136,8 +139,8 @@ export function heroStats(
     // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
-    armour: computeStat(HERO_BASE.armour, mods, 'armour'),
-    armourReduction: armourReduction(computeStat(HERO_BASE.armour, mods, 'armour')),
+    armour,
+    armourReduction: armourReduction(armour),
     resistances: resistancesFrom(mods),
     attackRange: computeStat(skill.range, mods, 'attackRange'),
     aggroRange: HERO_BASE.aggroRange,
@@ -240,7 +243,8 @@ export function characterStats(character: Character): CombatStats {
     ...items.flatMap((i) => [...i.mods, ...i.implicits]),
     ...(extra ? [extra] : []),
   ];
-  return heroStats(mods, character.level, skill, grants);
+  const baseArmour = items.reduce((n, i) => n + (i.armour ?? 0), 0);
+  return heroStats(mods, character.level, skill, grants, baseArmour);
 }
 
 /**

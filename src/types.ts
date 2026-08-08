@@ -92,6 +92,8 @@ export interface Item {
   mods: RolledMod[];
   /** Part of the base. Apart from `mods`, which is all crafting can reach. */
   implicits: RolledMod[];
+  /** Armour rating off the base. Increases scale it; crafting cannot reach it. */
+  armour?: number;
   meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 
@@ -145,6 +147,8 @@ export interface GearBase {
   family?: string;
   /** Lowest item level that may drop this base. Absent means from the start. */
   ilvl?: number;
+  /** Armour rating the piece carries before any modifier. */
+  armour?: number;
 }
 
 export interface EquipSlotDef {

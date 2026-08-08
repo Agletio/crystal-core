@@ -10,6 +10,7 @@ import {
   CRYSTAL_TIERS,
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
+  ARMOUR_BASES,
   ARMOUR_FAMILIES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
@@ -17,7 +18,6 @@ import {
   GEAR_BASE_BY_ID,
   QUALITIES,
   armourBudget,
-  familySpendOn,
   implicitSpend,
   RECIPES,
   SKILLS,
@@ -406,8 +406,15 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
       }
       const spread = Math.max(...spends.map((s) => s.points)) - Math.min(...spends.map((s) => s.points));
       worstSpread = Math.max(worstSpread, spread);
-      if (tier === 3) {
-        rows.push(`  ${kind.padEnd(7)} t${tier}  budget ${budget.toFixed(1).padStart(5)}  spread ${spread.toFixed(2)}`);
+      if (tier === 3 && kind === 'body') {
+        for (const f of ARMOUR_FAMILIES) {
+          const b = GEAR_BASE_BY_ID[`${f.id}_${kind}_t${tier}`];
+          rows.push(
+            `  ${f.id.padEnd(11)}${f.archetypes.join('/').padEnd(13)}` +
+              `armour ${String(b?.armour ?? 0).padStart(4)}   ` +
+              (b?.implicit ?? []).map((s) => `${s.range[0]} ${s.stat}`).join(', ')
+          );
+        }
       }
     }
   }
@@ -419,20 +426,40 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
   check(worstSpread <= 1, 'so no family out-earns another at the same slot and rung',
     `the widest spread between two families is ${worstSpread.toFixed(2)} points`);
 
-  // The archetypes have to still MEAN something. Pure melee buys the most
-  // armour, pure spell the least of it and the most damage — a table that
-  // balances perfectly but inverts these is balanced mush.
-  const armourOf = (id: string) => familySpendOn(id, 'body', 3, 'armour');
-  const spellOf = (id: string) => familySpendOn(id, 'body', 3, 'spellDamage');
+  // The archetypes have to still MEAN something. A table that balances
+  // perfectly but puts the mage in plate is balanced mush.
+  const rating = (id: string) => GEAR_BASE_BY_ID[`${id}_body_t3`]?.armour ?? 0;
+  const worst = (ids: string[]) => Math.min(...ids.map(rating));
+  const best = (ids: string[]) => Math.max(...ids.map(rating));
+  const melee = ['bulwark', 'vanguard'];
+  const rogue = ['shadow', 'skirmisher'];
+  const mage = ['arcanist', 'oracle'];
   check(
-    armourOf('bulwark') > armourOf('shadow') && armourOf('vanguard') > armourOf('skirmisher'),
-    'melee stands behind more armour than a rogue does',
-    `${armourOf('bulwark')} vs ${armourOf('shadow')}`
+    worst(melee) > best(rogue) && worst(rogue) > best(mage),
+    'melee wears the most armour, then rogue, then mage',
+    `melee ${worst(melee)} · rogue ${best(rogue)}/${worst(rogue)} · mage ${best(mage)}`
   );
   check(
-    armourOf('arcanist') < armourOf('shadow') && spellOf('arcanist') > armourOf('arcanist'),
-    'and a mage buys damage with armour it never wears',
-    `${armourOf('arcanist')} armour against ${spellOf('arcanist')} spell damage`
+    ['templar', 'runeguard', 'raider', 'duelist'].every(
+      (id) => rating(id) < best(melee) && rating(id) > best(mage)
+    ) && ['nightweave', 'whisper'].every((id) => rating(id) < worst(rogue)),
+    'and every hybrid sits between the archetypes it borrows from',
+    ['templar', 'runeguard', 'nightweave', 'whisper', 'raider', 'duelist']
+      .map((id) => `${id} ${rating(id)}`).join(' · ')
+  );
+  check(
+    ARMOUR_BASES.every((b) => (b.armour ?? 0) > 0)
+      && ARMOUR_BASES.every((b) => Number.isInteger(b.armour)),
+    'every armour base carries a whole-number rating',
+    'a base has no rating, or one with a fractional tail'
+  );
+  check(
+    ARMOUR_BASES.every((b) =>
+      (b.implicit ?? []).every((s) => Number((s.range[0] * 10).toFixed(0)) % 1 === 0)
+    ),
+    'and no implicit reaches the player with a floating-point tail',
+    ARMOUR_BASES.flatMap((b) => (b.implicit ?? []).map((s) => s.range[0]))
+      .filter((v) => String(v).length > 5).slice(0, 3).join(' ')
   );
   check(
     ARMOUR_FAMILIES.every((f) => Math.abs(Object.values(f.mix).reduce((a, b) => a + b, 0) - 1) < 1e-9),

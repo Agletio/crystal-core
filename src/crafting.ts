@@ -400,6 +400,9 @@ export function craft(
 
 export function describeMod(mod: RolledMod): string {
   const lines = mod.stats.map(describeStatLine).join(', ');
+  // An implicit has no tier to compare against and no name worth printing, and
+  // every caller already marks it as the base. "(T0 Base)" is noise twice over.
+  if (mod.slot === 'implicit') return lines;
   return `${lines}  (T${mod.tier} ${mod.name})`;
 }
 

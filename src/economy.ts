@@ -45,11 +45,8 @@ export function makeCrystal(tier: number): Item {
 }
 
 /**
- * Turns a base's authored implicit into a rolled mod.
- *
- * Implicits use fixed ranges, so there's nothing random about them — they're
- * built through the same shape as a mod purely so stat aggregation treats
- * them identically and needs no special case.
+ * Implicits use fixed ranges, so nothing here is random — they take a mod's
+ * shape purely so stat aggregation needs no special case for them.
  */
 function implicitsFor(def: GearBase | undefined): RolledMod[] {
   if (!def?.implicit?.length) return [];
@@ -92,11 +89,18 @@ export function pickGearBase(ilvl: number, rng: Rng): GearBase | undefined {
   return rng.pick(eligible.filter((b) => b.kind === kind));
 }
 
-/** Highest base of a kind an item level allows; ties to the first declared. */
-export function defaultGearBase(kind: string, ilvl: number): GearBase | undefined {
-  return GEAR_BASES.filter((b) => b.kind === kind && (b.ilvl ?? 1) <= ilvl).reduce<
-    GearBase | undefined
-  >((best, b) => (!best || (b.ilvl ?? 1) > (best.ilvl ?? 1) ? b : best), undefined);
+/** Highest base of a kind an item level allows, preferring a named family. */
+export function defaultGearBase(
+  kind: string,
+  ilvl: number,
+  family?: string
+): GearBase | undefined {
+  const fit = GEAR_BASES.filter((b) => b.kind === kind && (b.ilvl ?? 1) <= ilvl);
+  const preferred = family ? fit.filter((b) => b.family === family) : [];
+  return (preferred.length ? preferred : fit).reduce<GearBase | undefined>(
+    (best, b) => (!best || (b.ilvl ?? 1) > (best.ilvl ?? 1) ? b : best),
+    undefined
+  );
 }
 
 export function makeGear(
@@ -118,6 +122,7 @@ export function makeGear(
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
     implicits: implicitsFor(def),
+    ...(def?.armour ? { armour: def.armour } : {}), // the item outlives its base
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
     meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body', quality },
