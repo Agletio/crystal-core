@@ -54,6 +54,15 @@ jobs:
       - name: demo — does the sim still terminate and the opening still finish
         run: npm run demo
 
+      - name: mods — does every modifier do what it says
+        run: npm run mods
+
+      # The one check that plays by the player's rules. The demo proves each
+      # step CAN complete; this proves you can get there with a mouse while the
+      # opening has the rest of the app switched off.
+      - name: guide — can a new player actually finish the opening
+        run: npm run guide
+
       - name: commit the rebuilt bundle
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |

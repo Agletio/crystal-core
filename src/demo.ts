@@ -485,7 +485,7 @@ rule('GUIDED OPENING — does every step actually complete?');
 // invisible from the UI until someone sits there clicking.
 {
   const game = createGame('fresh');
-  const ctx: GuideCtx = { view: 'run', phase: 'menu', top: null };
+  const ctx: GuideCtx = { view: 'run', phase: 'menu', top: null, picking: null };
   let step = 0;
   const trace: string[] = [];
   const targetless: string[] = [];
@@ -493,15 +493,18 @@ rule('GUIDED OPENING — does every step actually complete?');
 
   /** Every surface a step could be pointing at when it fires. */
   const SITUATIONS: GuideCtx[] = [
-    { view: 'run', phase: 'menu', top: null },
-    { view: 'run', phase: 'running', top: null },
-    { view: 'run', phase: 'results', top: null },
-    { view: 'craft', phase: 'results', top: 'craft' },
-    { view: 'craft', phase: 'results', top: 'shop' },
-    { view: 'run', phase: 'results', top: 'shop' },
-    { view: 'run', phase: 'results', top: 'stash' },
-    { view: 'run', phase: 'results', top: 'sheet' },
-    { view: 'run', phase: 'menu', top: 'skills' },
+    { view: 'run', phase: 'menu', top: null, picking: null },
+    { view: 'run', phase: 'running', top: null, picking: null },
+    { view: 'run', phase: 'results', top: null, picking: null },
+    { view: 'craft', phase: 'results', top: 'craft', picking: null },
+    { view: 'craft', phase: 'results', top: 'shop', picking: null },
+    { view: 'run', phase: 'results', top: 'shop', picking: null },
+    { view: 'run', phase: 'results', top: 'stash', picking: null },
+    { view: 'run', phase: 'results', top: 'sheet', picking: null },
+    // The sheet with a slot already chosen. A distinct situation, because it
+    // is the one where the next click leaves this window for the dock.
+    { view: 'run', phase: 'results', top: 'sheet', picking: 'weapon' },
+    { view: 'run', phase: 'menu', top: 'skills', picking: null },
   ];
 
   const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>

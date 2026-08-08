@@ -22,7 +22,13 @@ import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initTutorial, isGuided, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
-import { initCharacter, openCharacter, closeCharacter, isCharacterOpen } from './ui/character';
+import {
+  initCharacter,
+  openCharacter,
+  closeCharacter,
+  isCharacterOpen,
+  pickingSlot,
+} from './ui/character';
 import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
 import {
   initHistory,
@@ -141,7 +147,12 @@ function guideContext(): GuideCtx {
           : isCraftOpen()
             ? 'craft'
             : null;
-  return { view: isCraftOpen() ? 'craft' : 'run', phase: runPhase(), top };
+  return {
+    view: isCraftOpen() ? 'craft' : 'run',
+    phase: runPhase(),
+    top,
+    picking: pickingSlot(),
+  };
 }
 
 initTutorial(game, guideContext);

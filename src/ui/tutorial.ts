@@ -43,6 +43,14 @@ export interface GuideCtx {
   phase: "menu" | "running" | "results";
   /** Topmost popup, so a step can point at the right close button. */
   top: string | null;
+  /**
+   * Equipment slot waiting to be filled, if the sheet has one selected.
+   *
+   * Here because picking a slot moves the next click out of the character
+   * sheet and into the dock, and a step that cannot tell has no way to follow
+   * it — which, under the lockdown, is a dead end rather than a bad hint.
+   */
+  picking: string | null;
 }
 
 export interface TutorialStep {
@@ -201,7 +209,9 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : ctx.view === "craft"
           ? "Close Crafting — the Character button is behind it."
           : ctx.top === "sheet"
-            ? "Click the Weapon slot, then pick the Ash Wand."
+            ? ctx.picking
+              ? "Now click the Ash Wand in the dock below to wear it."
+              : "Click the Weapon slot — everything that fits will light up."
             : "Open Character and put the wand in your weapon slot.",
     target: (ctx) =>
       ctx.top === "shop"
@@ -211,7 +221,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : ctx.view === "craft"
             ? "craft-close"
             : ctx.top === "sheet"
-              ? slotButtonId("weapon")
+              ? // Once a slot is chosen the gear is what you click, and it is
+                // in the dock. Ringing the slot here left the only live
+                // control being the one you had already pressed.
+                ctx.picking
+                ? "inv-gear"
+                : slotButtonId("weapon")
               : "open-character",
     done: (g) => !!g.character.equipment.weapon,
   },
@@ -250,7 +265,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 ];
 
 let game: GameState;
-let context: () => GuideCtx = () => ({ view: "run", phase: "menu", top: null });
+let context: () => GuideCtx = () => ({
+  view: "run",
+  phase: "menu",
+  top: null,
+  picking: null,
+});
 let highlighted: Element | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "smoke": "node smoke.mjs",
     "shots": "node shots.mjs",
-    "mods": "tsx src/mods-check.ts"
+    "mods": "tsx src/mods-check.ts",
+    "guide": "node guide.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

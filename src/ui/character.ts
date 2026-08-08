@@ -218,6 +218,17 @@ export function closeCharacter(): void {
   onClosed?.();
 }
 
+/**
+ * Which slot is waiting to be filled, if any.
+ *
+ * Exposed because the guided opening needs it. Picking a slot moves the thing
+ * you have to click next OUT of this window and into the dock — and while the
+ * opening is running, the only live control is the one it has ringed. A guide
+ * that could not see this pointed at the slot button forever while the gear it
+ * was asking for sat switched off two inches below.
+ */
+export const pickingSlot = (): string | null => picking;
+
 export function isCharacterOpen(): boolean {
   return !$('sheet').hidden;
 }
