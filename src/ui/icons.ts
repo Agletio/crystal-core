@@ -350,7 +350,334 @@ const BODY = [
   '....oooo....',
 ];
 
+/**
+ * Armour art: a silhouette set per archetype pairing, a palette per family.
+ *
+ * Both axes are needed. Shape alone would leave the two families of a pairing
+ * identical, and colour alone would leave a helm and a boot the same picture.
+ * Every sprite uses the same five keys, so any palette fits any silhouette.
+ */
+const ARMOUR_SHAPES: Record<string, Record<string, string[]>> = {
+  // Melee. Riveted and closed, with a crest and a central seam.
+  plate: {
+    helmet: [
+      '....oooo....',
+      '...occcco...',
+      '..oaaaaaao..',
+      '.oaawaaawao.',
+      '.oaaaaaaaao.',
+      '.obbbbbbbbo.',
+      '.oaaaaaaaao.',
+      '..oaaaaaao..',
+      '..oo....oo..',
+    ],
+    body: [
+      '.oo......oo.',
+      'oaaoooooaaao',
+      'oaaaaaaaaaao',
+      '.oaaawwaaao.',
+      '.oaaaccaaao.',
+      '.oaaaccaaao.',
+      '.oaaaccaaao.',
+      '..oaaaaaao..',
+      '...oooooo...',
+    ],
+    gloves: [
+      '..oo..oo....',
+      '.oaaooaaoo..',
+      '.oaaaaaaao..',
+      '.obbbbbbbo..',
+      '.oaawwaaao..',
+      '.oaaaaaaao..',
+      '..ooooooo...',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.obbbbo.....',
+      '.oaaaao.....',
+      '.oaaaaoooo..',
+      '.oaaaaaaaoo.',
+      '.oaawwwwaao.',
+      '..oooooooo..',
+    ],
+  },
+  // Spell. Soft and pointed, with a stole down the front.
+  weave: {
+    helmet: [
+      '.....oo.....',
+      '....oaao....',
+      '...oaaaao...',
+      '..oaaaaaao..',
+      '.oaabbbbaao.',
+      '.oaabbbbaao.',
+      '.oaaaaaaaao.',
+      '..occcccco..',
+      '...oooooo...',
+    ],
+    body: [
+      '...oo..oo...',
+      '..oaaooaao..',
+      '..oaaaaaao..',
+      '.oaaaccaaao.',
+      '.oaaaccaaao.',
+      'oaaaaccaaaao',
+      'oaaaaccaaaao',
+      'oaaaaaaaaaao',
+      '.oooooooooo.',
+    ],
+    gloves: [
+      '...oo.oo....',
+      '..oaaoaaoo..',
+      '..oaaaaaao..',
+      '..occcccco..',
+      '..oaaaaaao..',
+      '..occcccco..',
+      '...oaaaao...',
+      '....oooo....',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.occcco.....',
+      '.oaaaao.....',
+      '.oaaaaoo....',
+      '.oaaaaaaoo..',
+      '.oaaaaaaaao.',
+      '..oooooooo..',
+    ],
+  },
+  // Rogue. Strapped, eye slits, a low sole made for running.
+  hide: {
+    helmet: [
+      '....oooo....',
+      '...oaaaao...',
+      '..oaaaaaao..',
+      '.oaaaaaaaao.',
+      '.oabboobbao.',
+      '.oaaaaaaaao.',
+      '.occcccccco.',
+      '..oaaaaaao..',
+      '...oo..oo...',
+    ],
+    body: [
+      '..oo....oo..',
+      '.oaaooooaao.',
+      '.oaaaaaaaao.',
+      '.oaaaaaaaao.',
+      '.occcccccco.',
+      '.oaaaaaaaao.',
+      '..oaaaaaao..',
+      '..oaaaaaao..',
+      '...oo..oo...',
+    ],
+    gloves: [
+      '..o.o.o.....',
+      '.oaoaoaoo...',
+      '.oaaaaaaao..',
+      '.oaaaaaaao..',
+      '.occccccco..',
+      '.oaaaaaaao..',
+      '..oaaaaao...',
+      '...ooooo....',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.occcco.....',
+      '.oaaaao.....',
+      '.oaaaaoo....',
+      '.oaaaaaaoo..',
+      '.obbbbbbbbo.',
+      '..oooooooo..',
+    ],
+  },
+  // Melee and spell. Plate wearing a crown and a sigil.
+  sanctum: {
+    helmet: [
+      '...c.cc.c...',
+      '..occcccco..',
+      '.oaaaaaaaao.',
+      '.oaaaaaaaao.',
+      '.oaaccccaao.',
+      '.obbbbbbbbo.',
+      '.oaaaaaaaao.',
+      '..oaaaaaao..',
+      '..oo....oo..',
+    ],
+    body: [
+      '.oo......oo.',
+      'oaaoooooaaao',
+      'oaaaaccaaaao',
+      '.oaacccaaao.',
+      '.oaaaccaaao.',
+      '.oaaaccaaao.',
+      '..oaaccaao..',
+      '..oaaaaaao..',
+      '...oooooo...',
+    ],
+    gloves: [
+      '..oo..oo....',
+      '.oaaooaaoo..',
+      '.oaaaaaaao..',
+      '.oacccccao..',
+      '.oaaaaaaao..',
+      '.oaawwaaao..',
+      '..ooooooo...',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.oaccao.....',
+      '.oaaaao.....',
+      '.oaaaaoooo..',
+      '.oaaaaaccoo.',
+      '.oaaaaaaaao.',
+      '..oooooooo..',
+    ],
+  },
+  // Spell and rogue. Hanging cloth, a masked face, a cloak drawn across.
+  veil: {
+    helmet: [
+      '....oooo....',
+      '...oaaaao...',
+      '..oaaaaaao..',
+      '.oaaaaaaaao.',
+      '.oabbbbbbao.',
+      '.oaccccccao.',
+      '.oaaaaaaaao.',
+      '..oa.aa.ao..',
+      '..oo.oo.oo..',
+    ],
+    body: [
+      '...oo..oo...',
+      '..oaaooaao..',
+      '.oaaaaaaaao.',
+      '.occaaaaaao.',
+      '.oaccaaaaao.',
+      '.oaaccaaaao.',
+      'oaaaccaaaaao',
+      'oaaaaaaaaaao',
+      '.oooooooooo.',
+    ],
+    gloves: [
+      '...oo.oo....',
+      '..oaaoaaoo..',
+      '..oaaaaaao..',
+      '..oaaaaaao..',
+      '..occcccco..',
+      '..oaaaaaao..',
+      '..oaaaaaao..',
+      '...oo..oo...',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.oaaaao.....',
+      '.occcco.....',
+      '.oaaaaoo....',
+      '.oaaaaaaoo..',
+      '.oaaaaaaaao.',
+      '..oo.oo.oo..',
+    ],
+  },
+  // Melee and rogue. Open-faced and buckled, straps crossed at the chest.
+  harness: {
+    helmet: [
+      '...oooooo...',
+      '..oaaaaaao..',
+      '.oaaaaaaaao.',
+      '.occcccccco.',
+      '.oaabbbbaao.',
+      '.oaabaabaao.',
+      '..oaaaaaao..',
+      '...oooooo...',
+    ],
+    body: [
+      '..oo....oo..',
+      '.oaaooooaao.',
+      '.oaccaaccao.',
+      '.oaaccccaao.',
+      '.oaaaccaaao.',
+      '.oaaaccaaao.',
+      '..oaaccaao..',
+      '..oaaaaaao..',
+      '...oooooo...',
+    ],
+    gloves: [
+      '..oo..oo....',
+      '.oaaooaaoo..',
+      '.oaaaaaaao..',
+      '.occccccco..',
+      '.oaaaaaaao..',
+      '.occccccco..',
+      '..oaaaaao...',
+      '...ooooo....',
+    ],
+    boots: [
+      '..oooo......',
+      '.oaaaao.....',
+      '.occcco.....',
+      '.oaaaao.....',
+      '.occcco.....',
+      '.oaaaaoo....',
+      '.oaaaaaaoo..',
+      '.oaawwwwaoo.',
+      '..oooooooo..',
+    ],
+  },
+};
+
+/**
+ * Which silhouette a family wears, and what it is dyed. Colour carries the
+ * theme: the mundane world is steel and rust, the occult is amethyst and
+ * venom, and a hybrid wears both.
+ */
+const ARMOUR_ART: Record<string, { shape: string; palette: Record<string, string> }> = {
+  // Steel, and only steel — nothing on it that is not there to stop a hit.
+  bulwark: { shape: 'plate', palette: { o: INK, a: '#B9C2CC', b: '#4E5866', c: '#7A8492', w: '#EAF2FF' } },
+  // The same plate, heated: an ember crest and a bloodied edge.
+  vanguard: { shape: 'plate', palette: { o: INK, a: '#A8A093', b: '#57503F', c: 'var(--ember)', w: 'var(--flame-core)' } },
+
+  arcanist: { shape: 'weave', palette: { o: INK, a: 'var(--amethyst)', b: '#33194F', c: '#D9C4F5', w: '#EBD9FF' } },
+  oracle: { shape: 'weave', palette: { o: INK, a: 'var(--bone)', b: '#6E6552', c: 'var(--citrine)', w: '#FFF3D0' } },
+
+  shadow: { shape: 'hide', palette: { o: INK, a: '#2F2C3B', b: '#17151F', c: 'var(--venom)', w: '#8A85A0' } },
+  skirmisher: { shape: 'hide', palette: { o: INK, a: '#8A6236', b: '#4A3320', c: 'var(--ember)', w: '#C79A63' } },
+
+  templar: { shape: 'sanctum', palette: { o: INK, a: '#AEB6C4', b: '#414A5C', c: 'var(--amethyst)', w: '#EBD9FF' } },
+  runeguard: { shape: 'sanctum', palette: { o: INK, a: '#9AA2AE', b: '#3D434E', c: 'var(--citrine)', w: '#FFF3D0' } },
+
+  nightweave: { shape: 'veil', palette: { o: INK, a: 'var(--gloom)', b: '#1C1128', c: 'var(--venom)', w: '#B79BE0' } },
+  whisper: { shape: 'veil', palette: { o: INK, a: '#5E6B72', b: '#2B3237', c: 'var(--quartz)', w: '#D6EEF7' } },
+
+  raider: { shape: 'harness', palette: { o: INK, a: '#6E5334', b: '#3A2B1B', c: '#9AA2AE', w: '#C79A63' } },
+  duelist: { shape: 'harness', palette: { o: INK, a: '#59606B', b: '#2A2E36', c: 'var(--venom)', w: '#C2CAD6' } },
+};
+
+/** Whether a family has art for a slot. Pure, so the demo can hold the line. */
+export const hasArmourArt = (family: string, slot: string): boolean =>
+  ARMOUR_SHAPES[ARMOUR_ART[family]?.shape]?.[slot] !== undefined;
+
+function armourIcon(family: string, slot: string, size: number): SVGSVGElement | null {
+  const art = ARMOUR_ART[family];
+  const rows = art && ARMOUR_SHAPES[art.shape]?.[slot];
+  if (!art || !rows) return null;
+  return sprite(rows, art.palette, size, `${family}-${slot}`);
+}
+
 export function gearIcon(art: string, size = 26): SVGSVGElement {
+  // Armour keys are `family_slot`; every other base names one silhouette.
+  const cut = art.lastIndexOf('_');
+  if (cut > 0) {
+    const worn = armourIcon(art.slice(0, cut), art.slice(cut + 1), size);
+    if (worn) return worn;
+  }
   // Weapon bases carry their FAMILY as their art key, not the word "weapon",
   // so every family needs its own case or it falls through to body armour.
   switch (art) {

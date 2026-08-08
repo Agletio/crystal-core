@@ -31,6 +31,7 @@ import {
   makeGear,
   runRecipe,
 } from './economy';
+import { hasArmourArt } from './ui/icons';
 import { RunSim, runToCompletion } from './sim/run';
 import {
   declaredCapacity,
@@ -465,6 +466,20 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
     ARMOUR_FAMILIES.every((f) => Math.abs(Object.values(f.mix).reduce((a, b) => a + b, 0) - 1) < 1e-9),
     'every family splits exactly one budget, never more',
     'a family mix does not sum to 1'
+  );
+
+  // A family with no art of its own falls through to the plain body sprite, so
+  // a whole set would wear plate silently. Nothing on screen would say so.
+  const artless = ARMOUR_BASES.filter(
+    (b) => !hasArmourArt(b.family ?? '', b.kind)
+  ).map((b) => b.id);
+  check(artless.length === 0, 'every armour family has its own art, in every slot',
+    `${artless.length} bases fall through to the generic sprite: ${artless.slice(0, 3).join(', ')}`);
+  check(
+    new Set(ARMOUR_FAMILIES.map((f) => f.id)).size === ARMOUR_FAMILIES.length
+      && new Set(ARMOUR_BASES.map((b) => b.art)).size === ARMOUR_FAMILIES.length * 4,
+    'and no two family/slot pairs share an art key',
+    'two bases would draw the same icon'
   );
 
   // A rung is only progression if the map has to be deep enough to hand it over.

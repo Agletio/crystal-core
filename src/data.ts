@@ -325,7 +325,7 @@ const armourBases = (): GearBase[] => {
           id: `${family.id}_${kind}_t${tier}`,
           name: `${family.words[tier - 1]} ${family.nouns[kind]}`,
           kind: kind as GearBase['kind'],
-          art: kind,
+          art: `${family.id}_${kind}`,
           family: family.id,
           ilvl: BASE_TIER_ILVL[tier - 1],
           slots: { ...ARMOUR_SLOT_LAYOUT[kind] },
@@ -1572,15 +1572,19 @@ export const DEV_CURRENCY: Record<string, number> = {
 };
 
 /**
- * Every equip slot, every icon, and one piece per armour family. NOT one of
- * every base: a kit that overflows the dock is a kit you cannot read.
+ * One full set to wear, a body from every other family to look at, and one of
+ * each weapon family. NOT one of every base or icon: a kit that overflows the
+ * dock is a kit you cannot read.
  */
 export const DEV_GEAR = [
   ...new Set([
-    ...GEAR_BASES.filter(
-      (b, i) => GEAR_BASES.findIndex((o) => o.art === b.art) === i
-    ).map((b) => b.id),
+    ...ARMOUR_SLOT_KINDS.map((k) => `${REFERENCE_ARMOUR_FAMILY}_${k}_t2`),
     ...ARMOUR_FAMILIES.map((f) => `${f.id}_body_t2`),
+    ...WEAPON_BASES.filter(
+      (b, i) => WEAPON_BASES.findIndex((o) => o.family === b.family) === i
+    ).map((b) => b.id),
+    'amulet',
+    'ring',
   ]),
 ].map((base) => ({ base, ilvl: 20 }));
 
