@@ -3,7 +3,9 @@ import { ModPool, computeStat, modCapacity, rollRandomMod } from './mods';
 import {
   CRYSTAL_SLOTS,
   CRYSTAL_TIERS,
+  EQUIP_SLOTS,
   GEAR_BASE_BY_ID,
+  GEAR_BASES,
   GEAR_SLOTS,
   RECIPES,
 } from './data';
@@ -68,6 +70,33 @@ function implicitsFor(def: GearBase | undefined): RolledMod[] {
       })),
     },
   ];
+}
+
+/** Drop weight per kind: how many equip slots accept it. Two rings, twice as often. */
+const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
+  (acc, slot) => ({ ...acc, [slot.accepts]: (acc[slot.accepts] ?? 0) + 1 }),
+  {} as Record<string, number>
+);
+
+/**
+ * Kind first, base only within it: one uniform pick would make composition a
+ * side effect of content volume, and there are 144 armour bases to one ring.
+ * Bases above the item level are ineligible, which is what makes a family's
+ * rungs progression rather than three names for one drop.
+ */
+export function pickGearBase(ilvl: number, rng: Rng): GearBase | undefined {
+  const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl);
+  const kinds = [...new Set(eligible.map((b) => b.kind))];
+  const kind = rng.weighted(kinds, (k) => KIND_WEIGHT[k] ?? 1);
+  if (!kind) return undefined;
+  return rng.pick(eligible.filter((b) => b.kind === kind));
+}
+
+/** Highest base of a kind an item level allows; ties to the first declared. */
+export function defaultGearBase(kind: string, ilvl: number): GearBase | undefined {
+  return GEAR_BASES.filter((b) => b.kind === kind && (b.ilvl ?? 1) <= ilvl).reduce<
+    GearBase | undefined
+  >((best, b) => (!best || (b.ilvl ?? 1) > (best.ilvl ?? 1) ? b : best), undefined);
 }
 
 export function makeGear(

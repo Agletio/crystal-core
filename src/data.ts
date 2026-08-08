@@ -125,6 +125,236 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
 ];
 
 /**
+ * Item level at which each rung of a family starts dropping. Aligned with
+ * CRYSTAL_TIERS, so a rung arrives with a crystal tier rather than at some
+ * number of its own: tier 2 bases with T2 crystals, tier 3 with T4.
+ */
+export const BASE_TIER_ILVL = [1, 22, 46];
+
+// --- armour ----------------------------------------------------------------
+//
+// Six archetypes — three pure, three hybrid — in two versions each, so twelve
+// families across four slots and three rungs.
+//
+// Every family spends the SAME budget, at the same exchange rate, and differs
+// only in how it splits it. That is the whole defence against a hybrid being
+// strictly better than the pure sets it borrows from: a hybrid is a
+// redistribution, never a surplus, and the demo re-adds the points to prove it.
+//
+// Slot capacities deliberately do NOT vary by family. They are the other axis
+// of power, and letting a family have both a better implicit split and more
+// openings is exactly how a "hybrid" becomes the only sensible choice.
+
+/** Budget points per rung, before the slot share. */
+const ARMOUR_BUDGET = [20, 32, 46];
+
+/** How much of the budget a slot carries. Body armour is the armour piece. */
+const ARMOUR_SLOT_SHARE: Record<string, number> = {
+  helmet: 0.7, body: 1, gloves: 0.55, boots: 0.55,
+};
+
+const ARMOUR_SLOT_LAYOUT: Record<string, Record<string, number>> = {
+  helmet: { offence: 2, defence: 3, utility: 1 },
+  body: { offence: 1, defence: 4, utility: 1 },
+  gloves: { offence: 5, defence: 1, utility: 0 },
+  boots: { offence: 0, defence: 2, utility: 4 },
+};
+
+/**
+ * What one budget point buys, per stat. These are the exchange rates that make
+ * the budget comparable across families — a point of move speed has to be
+ * worth a point of armour or the whole invariant is decoration.
+ *
+ * Armour is POINTS against a 300 half-point, so it buys in sixes; crit is flat
+ * against a 5% base, so a whole percent is dear.
+ */
+const IMPLICIT_PER_POINT: Record<string, number> = {
+  armour: 6,
+  attackDamage: 1,
+  spellDamage: 1,
+  attackSpeed: 0.75,
+  castSpeed: 0.75,
+  moveSpeed: 0.5,
+  critChance: 0.25,
+};
+
+/** Armour and increases are whole numbers; the dear stats need a decimal. */
+const IMPLICIT_STEP: Record<string, number> = {
+  armour: 1, attackDamage: 1, spellDamage: 1,
+  attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 0.1,
+};
+
+const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
+  armour: { stat: 'armour', form: 'flat' },
+  attackDamage: { stat: 'damage', form: 'inc', tags: ['attack'] },
+  spellDamage: { stat: 'damage', form: 'inc', tags: ['spell'] },
+  attackSpeed: { stat: 'attackSpeed', form: 'inc' },
+  castSpeed: { stat: 'castSpeed', form: 'inc' },
+  moveSpeed: { stat: 'moveSpeed', form: 'inc' },
+  critChance: { stat: 'critChance', form: 'flat' },
+};
+
+interface ArmourFamily {
+  id: string;
+  /** Which archetypes it draws on. Two names is a hybrid. */
+  archetypes: string[];
+  /** Fractions of the budget, by IMPLICIT_PER_POINT key. Must sum to 1. */
+  mix: Record<string, number>;
+  /** Rung words, lowest first, and the noun each slot takes. */
+  words: [string, string, string];
+  nouns: Record<string, string>;
+}
+
+export const ARMOUR_FAMILIES: ArmourFamily[] = [
+  // --- melee: armour is the axis --------------------------------------
+  {
+    id: 'bulwark', archetypes: ['melee'],
+    mix: { armour: 1 },
+    words: ['Rusted', 'Tempered', 'Bastion'],
+    nouns: { helmet: 'Helm', body: 'Cuirass', gloves: 'Gauntlets', boots: 'Greaves' },
+  },
+  {
+    id: 'vanguard', archetypes: ['melee'],
+    mix: { armour: 0.7, attackDamage: 0.3 },
+    words: ['Scored', 'Honed', 'Warlord'],
+    nouns: { helmet: 'Barbute', body: 'Brigandine', gloves: 'Handguards', boots: 'Sabatons' },
+  },
+
+  // --- spell: damage, and almost nothing to stand behind ---------------
+  {
+    id: 'arcanist', archetypes: ['spell'],
+    mix: { spellDamage: 0.9, armour: 0.1 },
+    words: ['Ashen', 'Sigil', 'Empyrean'],
+    nouns: { helmet: 'Hood', body: 'Robe', gloves: 'Wraps', boots: 'Slippers' },
+  },
+  {
+    id: 'oracle', archetypes: ['spell'],
+    mix: { spellDamage: 0.6, castSpeed: 0.2, armour: 0.2 },
+    words: ['Chalk', 'Runed', 'Auger'],
+    nouns: { helmet: 'Circlet', body: 'Vestment', gloves: 'Palms', boots: 'Sandals' },
+  },
+
+  // --- rogue: speed and crit, bought with the armour it does not wear ---
+  {
+    id: 'shadow', archetypes: ['rogue'],
+    mix: { critChance: 0.45, moveSpeed: 0.35, armour: 0.2 },
+    words: ['Dusk', 'Umbral', 'Eclipse'],
+    nouns: { helmet: 'Cowl', body: 'Shroud', gloves: 'Grips', boots: 'Slips' },
+  },
+  {
+    id: 'skirmisher', archetypes: ['rogue'],
+    mix: { attackDamage: 0.35, moveSpeed: 0.25, critChance: 0.2, armour: 0.2 },
+    words: ['Tanned', 'Studded', 'Reaver'],
+    nouns: { helmet: 'Mask', body: 'Jerkin', gloves: 'Mitts', boots: 'Treads' },
+  },
+
+  // --- hybrids ---------------------------------------------------------
+  {
+    id: 'templar', archetypes: ['melee', 'spell'],
+    mix: { armour: 0.55, spellDamage: 0.45 },
+    words: ['Chapel', 'Consecrated', 'Cathedral'],
+    nouns: { helmet: 'Casque', body: 'Hauberk', gloves: 'Mitons', boots: 'Warboots' },
+  },
+  {
+    id: 'runeguard', archetypes: ['melee', 'spell'],
+    mix: { armour: 0.4, spellDamage: 0.35, castSpeed: 0.25 },
+    words: ['Etched', 'Warded', 'Aegis'],
+    nouns: { helmet: 'Crown', body: 'Scalemail', gloves: 'Bracers', boots: 'Sollerets' },
+  },
+  {
+    id: 'nightweave', archetypes: ['spell', 'rogue'],
+    mix: { spellDamage: 0.45, critChance: 0.3, moveSpeed: 0.25 },
+    words: ['Gloam', 'Hexed', 'Voidspun'],
+    nouns: { helmet: 'Veil', body: 'Mantle', gloves: 'Silks', boots: 'Striders' },
+  },
+  {
+    id: 'whisper', archetypes: ['spell', 'rogue'],
+    mix: { spellDamage: 0.35, castSpeed: 0.25, moveSpeed: 0.25, armour: 0.15 },
+    words: ['Hushed', 'Muted', 'Sibilant'],
+    nouns: { helmet: 'Cap', body: 'Cloak', gloves: 'Fingers', boots: 'Padfeet' },
+  },
+  {
+    id: 'raider', archetypes: ['melee', 'rogue'],
+    mix: { armour: 0.45, moveSpeed: 0.3, critChance: 0.25 },
+    words: ['Roving', 'Banded', 'Chieftain'],
+    nouns: { helmet: 'Barhelm', body: 'Harness', gloves: 'Cuffs', boots: 'Runners' },
+  },
+  {
+    id: 'duelist', archetypes: ['melee', 'rogue'],
+    mix: { armour: 0.35, attackDamage: 0.35, attackSpeed: 0.15, moveSpeed: 0.15 },
+    words: ['Fenced', 'Parried', 'Bladed'],
+    nouns: { helmet: 'Visor', body: 'Doublet', gloves: 'Guards', boots: 'Stepplates' },
+  },
+];
+
+const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
+
+/** Budget a family may spend on one slot at one rung. */
+export const armourBudget = (kind: string, tier: number): number =>
+  ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1);
+
+const spend = (key: string, points: number): StatSpec => {
+  const step = IMPLICIT_STEP[key];
+  const value = Math.round((points * IMPLICIT_PER_POINT[key]) / step) * step;
+  const { stat, form, tags } = IMPLICIT_STAT[key];
+  // Rounded to the step, so re-reading a value back into points is lossy by
+  // under a point per line. The demo allows for exactly that and no more.
+  return {
+    stat, form,
+    range: [value, value] as [number, number],
+    ...(tags ? { tags } : {}),
+  };
+};
+
+const armourBases = (): GearBase[] => {
+  const out: GearBase[] = [];
+  for (const family of ARMOUR_FAMILIES) {
+    for (const kind of ARMOUR_SLOT_KINDS) {
+      for (let tier = 1; tier <= 3; tier++) {
+        const budget = armourBudget(kind, tier);
+        out.push({
+          id: `${family.id}_${kind}_t${tier}`,
+          name: `${family.words[tier - 1]} ${family.nouns[kind]}`,
+          kind: kind as GearBase['kind'],
+          art: kind,
+          family: family.id,
+          ilvl: BASE_TIER_ILVL[tier - 1],
+          slots: { ...ARMOUR_SLOT_LAYOUT[kind] },
+          implicit: Object.entries(family.mix)
+            .filter(([, share]) => share > 0)
+            .map(([key, share]) => spend(key, budget * share)),
+        });
+      }
+    }
+  }
+  return out;
+};
+
+export const ARMOUR_BASES: GearBase[] = armourBases();
+
+/**
+ * An implicit read back into budget points — the inverse of spend(), and the
+ * only way to check that two families priced the same thing the same way.
+ * Rounding to the step makes it lossy by under a point per line.
+ */
+export const implicitSpend = (base: GearBase): number =>
+  (base.implicit ?? []).reduce((total, s) => {
+    const key = Object.keys(IMPLICIT_STAT).find((k) => {
+      const want = IMPLICIT_STAT[k];
+      const tag = want.tags?.[0];
+      return want.stat === s.stat && want.form === s.form
+        && (tag === undefined || (s.tags ?? []).includes(tag));
+    });
+    return key ? total + s.range[0] / IMPLICIT_PER_POINT[key] : total;
+  }, 0);
+
+/** Points a family spends on one stat key, at a slot and rung. */
+export const familySpendOn = (familyId: string, kind: string, tier: number, key: string): number => {
+  const family = ARMOUR_FAMILIES.find((f) => f.id === familyId);
+  return (family?.mix[key] ?? 0) * armourBudget(kind, tier);
+};
+
+/**
  * One-handed weapons, in four families. Every weapon carries an IMPLICIT no
  * craft can touch, which is the reason to want a wand over a sword before
  * either has rolled anything.
@@ -142,47 +372,50 @@ const weapon = (
   id: string,
   name: string,
   family: string,
+  ilvl: number,
   implicit: StatSpec[]
 ): GearBase => ({
-  id, name, kind: 'weapon', art: family, family,
+  id, name, kind: 'weapon', art: family, family, ilvl,
   slots: { ...WEAPON_SLOTS },
   implicit,
 });
 
 export const WEAPON_BASES: GearBase[] = [
   // --- wands: the spell family ---------------------------------------
-  weapon('ash_wand', 'Ash Wand', 'wand', [
+  weapon('ash_wand', 'Ash Wand', 'wand', BASE_TIER_ILVL[0], [
     { stat: 'damage', form: 'inc', range: [10, 10], tags: ['spell'] },
   ]),
-  weapon('carved_wand', 'Carved Wand', 'wand', [
+  weapon('carved_wand', 'Carved Wand', 'wand', BASE_TIER_ILVL[1], [
     { stat: 'damage', form: 'inc', range: [16, 16], tags: ['spell'] },
   ]),
-  weapon('quartz_wand', 'Quartz Wand', 'wand', [
+  weapon('quartz_wand', 'Quartz Wand', 'wand', BASE_TIER_ILVL[2], [
     { stat: 'damage', form: 'inc', range: [24, 24], tags: ['spell'] },
   ]),
-  weapon('whisper_wand', 'Whispering Wand', 'wand', [
+  // A side-grade rather than a fourth rung: it arrives beside the Carved Wand
+  // and trades every point of the ladder for speed.
+  weapon('whisper_wand', 'Whispering Wand', 'wand', BASE_TIER_ILVL[1], [
     { stat: 'castSpeed', form: 'inc', range: [12, 12] },
   ]),
 
   // --- swords: attack speed ------------------------------------------
-  weapon('rusted_sword', 'Rusted Sword', 'sword', [
+  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], [
     { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
   ]),
-  weapon('iron_sword', 'Iron Sword', 'sword', [
+  weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], [
     { stat: 'attackSpeed', form: 'inc', range: [13, 13] },
   ]),
-  weapon('steel_sword', 'Steel Sword', 'sword', [
+  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], [
     { stat: 'attackSpeed', form: 'inc', range: [18, 18] },
   ]),
 
   // --- daggers: crit --------------------------------------------------
-  weapon('shiv', 'Shiv', 'dagger', [
+  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], [
     { stat: 'critChance', form: 'flat', range: [3, 3] },
   ]),
-  weapon('stiletto', 'Stiletto', 'dagger', [
+  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], [
     { stat: 'critChance', form: 'flat', range: [5, 5] },
   ]),
-  weapon('fang', 'Fang', 'dagger', [
+  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], [
     { stat: 'critChance', form: 'flat', range: [8, 8] },
   ]),
 
@@ -191,41 +424,26 @@ export const WEAPON_BASES: GearBase[] = [
   // Tagged 'attack' as well as their type. Without it a mace's flat fire
   // damage would arm a spell too — a wand user could hold a mace for free
   // damage, which defeats the point of families.
-  weapon('cudgel', 'Cudgel', 'mace', [
+  weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], [
     { stat: 'damage', form: 'flat', range: [5, 5], tags: ['physical', 'attack'] },
   ]),
-  weapon('ember_maul', 'Ember Maul', 'mace', [
+  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['fire', 'attack'] },
   ]),
-  weapon('frost_maul', 'Frost Maul', 'mace', [
+  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['cold', 'attack'] },
   ]),
-  weapon('storm_maul', 'Storm Maul', 'mace', [
+  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['lightning', 'attack'] },
   ]),
-  weapon('skull_maul', 'Skull Maul', 'mace', [
+  weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], [
     { stat: 'damage', form: 'flat', range: [14, 14], tags: ['physical', 'attack'] },
   ]),
 ];
 
 export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
-  {
-    id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet',
-    slots: { offence: 2, defence: 3, utility: 1 },
-  },
-  {
-    id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body',
-    slots: { offence: 1, defence: 4, utility: 1 },
-  },
-  {
-    id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves',
-    slots: { offence: 5, defence: 1, utility: 0 },
-  },
-  {
-    id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots',
-    slots: { offence: 0, defence: 2, utility: 4 },
-  },
+  ...ARMOUR_BASES,
   {
     id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet',
     slots: { offence: 3, defence: 2, utility: 1 },
@@ -1342,8 +1560,19 @@ export const DEV_CURRENCY: Record<string, number> = {
   oil_of_swiftness: 2,
 };
 
-/** One of each base at low ilvl, so every slot can be filled immediately. */
-export const DEV_GEAR = GEAR_BASES.map((b) => ({ base: b.id, ilvl: 20 }));
+/**
+ * Enough to fill every equip slot, show every icon, and hold one piece out of
+ * each armour family. NOT one of every base: there are far more bases than the
+ * dock has room for, and a kit that overflows the bag is a kit you cannot read.
+ */
+export const DEV_GEAR = [
+  ...new Set([
+    ...GEAR_BASES.filter(
+      (b, i) => GEAR_BASES.findIndex((o) => o.art === b.art) === i
+    ).map((b) => b.id),
+    ...ARMOUR_FAMILIES.map((f) => `${f.id}_body_t2`),
+  ]),
+].map((base) => ({ base, ilvl: 20 }));
 
 // Fill in the halves of the preset that depend on the constants above.
 START_PRESETS.dev.currency = DEV_CURRENCY;

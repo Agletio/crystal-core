@@ -25,7 +25,6 @@ import {
   CURRENCIES,
   CURRENCY_DROP,
   ENCOUNTERS,
-  GEAR_BASES,
   ALL_MODS,
   HERO_BASE,
   LOOT,
@@ -38,7 +37,7 @@ import {
 import { dropsForTier } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
-import { pickQuality, rollGear } from '../economy';
+import { pickGearBase, pickQuality, rollGear } from '../economy';
 import type { Item, SkillDef } from '../types';
 
 /** Built once at load: derived from authored data and never mutated. */
@@ -1103,7 +1102,7 @@ export class RunSim {
     const chance = drops.gearChance * (1 + (this.rewards.rarity + hero.rarity) / 200);
     if (!this.rng.chance(chance)) return;
 
-    const base = this.rng.pick(GEAR_BASES);
+    const base = pickGearBase(this.mapIlvl, this.rng);
     if (!base) return;
 
     const quality = pickQuality(drops.quality, this.rng);

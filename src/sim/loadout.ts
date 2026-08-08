@@ -5,8 +5,8 @@
  */
 import { Rng } from '../rng';
 import { ModPool, modCapacity } from '../mods';
-import { ALL_MODS, EQUIP_SLOTS, GEAR_BASES } from '../data';
-import { rollGear } from '../economy';
+import { ALL_MODS, EQUIP_SLOTS } from '../data';
+import { defaultGearBase, rollGear } from '../economy';
 import type { Item, Quality } from '../types';
 
 /** One item per slot, filled to its quality, keyed by slot id. */
@@ -19,7 +19,7 @@ export function starterLoadout(
   const equipment: Record<string, Item> = {};
 
   for (const slot of EQUIP_SLOTS) {
-    const base = GEAR_BASES.find((b) => b.kind === slot.accepts);
+    const base = defaultGearBase(slot.accepts, ilvl);
     if (!base) continue;
     // Ask for more than any quality allows and let modCapacity decide — the
     // caller should not have to know the ladder's numbers to fill an item.

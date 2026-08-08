@@ -5,14 +5,13 @@
 import {
   ALL_MODS,
   CURRENCY_BY_ID,
-  GEAR_BASES,
   RECIPES,
   SHOP,
   shopQualityFor,
 } from '../data';
 import { Rng } from '../rng';
 import { ModPool, modCapacity, qualityName, qualityOf } from '../mods';
-import { balance, pickQuality, rollGear, runRecipe, spend } from '../economy';
+import { balance, pickGearBase, pickQuality, rollGear, runRecipe, spend } from '../economy';
 import { addItem, carryRoom, stashRoom } from '../game/state';
 import type { GameState } from '../game/state';
 import { describeMod } from '../crafting';
@@ -186,7 +185,7 @@ export function restockIfLevelled(): void {
 
   const stock: Item[] = [];
   for (let i = 0; i < count; i++) {
-    const base = rng.pick(GEAR_BASES);
+    const base = pickGearBase(ilvl, rng);
     if (!base) continue;
     const quality = pickQuality(table, rng);
     // Shop pieces arrive FULL for their quality. You are paying to skip the

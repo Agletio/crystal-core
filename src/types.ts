@@ -143,6 +143,8 @@ export interface GearBase {
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
   family?: string;
+  /** Lowest item level that may drop this base. Absent means from the start. */
+  ilvl?: number;
 }
 
 export interface EquipSlotDef {

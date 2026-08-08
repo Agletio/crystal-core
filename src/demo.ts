@@ -10,9 +10,15 @@ import {
   CRYSTAL_TIERS,
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
+  ARMOUR_FAMILIES,
+  BASE_TIER_ILVL,
   EQUIP_SLOTS,
   GEAR_BASES,
+  GEAR_BASE_BY_ID,
   QUALITIES,
+  armourBudget,
+  familySpendOn,
+  implicitSpend,
   RECIPES,
   SKILLS,
   SKILL_BY_ID,
@@ -134,7 +140,7 @@ line(describeItem(crystal));
 // ===========================================================================
 rule('THE ADD / REMOVE LOOP');
 
-let gear = makeGear('body_armour', 55, 'Runeplate');
+let gear = makeGear('bulwark_body_t3', 55, 'Runeplate');
 gear = apply(gear, 'shard_of_cleaving'); // straight to Faceted, three modifiers
 gear = apply(gear, 'shard_of_awakening'); // and fill the fourth
 line();
@@ -361,7 +367,7 @@ rule('OPENINGS — does the bench draw exactly what the item can hold?');
   // The bench reads capacity, not allocation, and capacity must never hide a
   // modifier the item is already wearing.
   const worn = craft(
-    craft(makeGear('boots', 60), CURRENCY_BY_ID.shard_of_cleaving, pool, rng).item,
+    craft(makeGear('bulwark_boots_t3', 60), CURRENCY_BY_ID.shard_of_cleaving, pool, rng).item,
     CURRENCY_BY_ID.shard_of_awakening,
     pool,
     rng
@@ -370,6 +376,77 @@ rule('OPENINGS — does the bench draw exactly what the item can hold?');
     slotTypes(worn).every((t) => slotCapacity(worn, t) >= slotUsed(worn, t)),
     'and a drawn slot always has room for the mod already in it',
     'an item wears a modifier in a slot the bench would not draw'
+  );
+}
+
+// ===========================================================================
+rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
+
+// Twelve families over one budget. A hybrid borrows from two archetypes, and
+// the only thing stopping it borrowing the good half of each is that every
+// family spends the SAME points at the same exchange rate. Read the implicits
+// back into points and the spread across families must be rounding and nothing
+// else — otherwise "hybrid" is just the correct answer.
+{
+  let overspent = 0;
+  let worstSpread = 0;
+  const rows: string[] = [];
+
+  for (const kind of ['helmet', 'body', 'gloves', 'boots']) {
+    for (let tier = 1; tier <= 3; tier++) {
+      const budget = armourBudget(kind, tier);
+      const spends = ARMOUR_FAMILIES.map((f) => {
+        const base = GEAR_BASE_BY_ID[`${f.id}_${kind}_t${tier}`];
+        return { id: f.id, points: base ? implicitSpend(base) : -1 };
+      });
+      for (const s of spends) {
+        // One line rounds by under a point, and no family authors more than
+        // four, so anything past this is a mix that does not sum to one.
+        if (Math.abs(s.points - budget) > 1) overspent++;
+      }
+      const spread = Math.max(...spends.map((s) => s.points)) - Math.min(...spends.map((s) => s.points));
+      worstSpread = Math.max(worstSpread, spread);
+      if (tier === 3) {
+        rows.push(`  ${kind.padEnd(7)} t${tier}  budget ${budget.toFixed(1).padStart(5)}  spread ${spread.toFixed(2)}`);
+      }
+    }
+  }
+  for (const r of rows) line(r);
+  line();
+
+  check(overspent === 0, 'every family spends its whole budget and no more',
+    `${overspent} family/slot/rung combinations are off budget`);
+  check(worstSpread <= 1, 'so no family out-earns another at the same slot and rung',
+    `the widest spread between two families is ${worstSpread.toFixed(2)} points`);
+
+  // The archetypes have to still MEAN something. Pure melee buys the most
+  // armour, pure spell the least of it and the most damage — a table that
+  // balances perfectly but inverts these is balanced mush.
+  const armourOf = (id: string) => familySpendOn(id, 'body', 3, 'armour');
+  const spellOf = (id: string) => familySpendOn(id, 'body', 3, 'spellDamage');
+  check(
+    armourOf('bulwark') > armourOf('shadow') && armourOf('vanguard') > armourOf('skirmisher'),
+    'melee stands behind more armour than a rogue does',
+    `${armourOf('bulwark')} vs ${armourOf('shadow')}`
+  );
+  check(
+    armourOf('arcanist') < armourOf('shadow') && spellOf('arcanist') > armourOf('arcanist'),
+    'and a mage buys damage with armour it never wears',
+    `${armourOf('arcanist')} armour against ${spellOf('arcanist')} spell damage`
+  );
+  check(
+    ARMOUR_FAMILIES.every((f) => Math.abs(Object.values(f.mix).reduce((a, b) => a + b, 0) - 1) < 1e-9),
+    'every family splits exactly one budget, never more',
+    'a family mix does not sum to 1'
+  );
+
+  // A rung is only progression if the map has to be deep enough to hand it over.
+  const rungs = [1, 2, 3].map((t) => GEAR_BASE_BY_ID[`bulwark_body_t${t}`]);
+  check(
+    rungs.every((b, i) => b && (b.ilvl ?? 1) === BASE_TIER_ILVL[i]) &&
+      rungs.every((b, i) => i === 0 || implicitSpend(b) > implicitSpend(rungs[i - 1])),
+    'and each rung is gated deeper than the one below it, and worth more',
+    rungs.map((b) => `${b?.ilvl}:${implicitSpend(b).toFixed(0)}`).join(' ')
   );
 }
 
@@ -436,7 +513,7 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
   const game = createGame('fresh');
   const fill = (kind: 'crystal' | 'gear', n: number) => {
     for (let i = 0; i < n; i++) {
-      addItem(game, kind === 'crystal' ? makeCrystal(1) : makeGear('wand_ash', 1));
+      addItem(game, kind === 'crystal' ? makeCrystal(1) : makeGear('ash_wand', 1));
     }
   };
 
@@ -495,7 +572,7 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
 }
 
 function fillGear(game: ReturnType<typeof createGame>): void {
-  while (carryRoom(game, 'gear') > 0) addItem(game, makeGear('wand_ash', 1));
+  while (carryRoom(game, 'gear') > 0) addItem(game, makeGear('ash_wand', 1));
 }
 
 // ===========================================================================
