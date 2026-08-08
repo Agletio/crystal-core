@@ -8,7 +8,8 @@
  */
 import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
-import { applySave, clearSave, loadGame, saveGame, startAutosave } from './game/save';
+import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
+import type { Healed } from './game/save';
 import { initInventory } from './ui/inventory';
 import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
@@ -42,7 +43,18 @@ const game = createGame('fresh');
 // Before any screen reads it: they all capture this object at init, and the
 // load fills it in place.
 const restored = loadGame();
-if (restored) applySave(game, restored);
+const healedOnBoot = restored ? applySave(game, restored) : null;
+
+/** What a load had to drop, in words, or null when it dropped nothing. */
+function healingNote(healed: Healed): string | null {
+  if (!healedAnything(healed)) return null;
+  const parts: string[] = [];
+  if (healed.points > 0) parts.push(`${healed.points} tree points refunded`);
+  if (healed.items > 0) parts.push(`${healed.items} items no longer exist`);
+  if (healed.currencies > 0) parts.push(`${healed.currencies} currencies no longer exist`);
+  if (healed.skill) parts.push('your skill was replaced');
+  return `The game changed since you last played — ${parts.join(', ')}.`;
+}
 
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
@@ -125,7 +137,9 @@ initInventory(game);
 initHistory();
 initConfirm();
 // A loaded backup replaces everything, so every screen has to look again.
-initSaveData(game, () => {
+initSaveData(game, (healed) => {
+  const said = healingNote(healed);
+  if (said) note(said);
   refreshRunPanels();
   onRunFocused();
   maybeShowWelcome();
@@ -168,3 +182,7 @@ if (game.onboarded) openCraft();
 else onRunFocused();
 initWelcome(game, begin);
 startAutosave(game);
+
+// After the history exists, so the line has somewhere to land.
+const bootNote = healedOnBoot ? healingNote(healedOnBoot) : null;
+if (bootNote) note(bootNote);

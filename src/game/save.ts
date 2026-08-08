@@ -7,6 +7,10 @@
  */
 import { SAVE_VERSION, createGame } from './state';
 import type { GameState } from './state';
+import { CURRENCY_BY_ID, GEAR_BASE_BY_ID, PLAYER_SKILLS, SKILL_BY_ID } from '../data';
+import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
+import type { Character } from '../sim/character';
+import type { Item } from '../types';
 
 const KEY = 'crystal-core.save';
 const STAMP = 'crystal-core.saved-at';
@@ -83,12 +87,120 @@ export function clearSave(): void {
   lastWritten = null;
 }
 
+// --- healing an old save ----------------------------------------------------
+//
+// A save is full of IDS pointing into the data tables and the trees, and those
+// move as the game is built. The shape looks after itself — a field added since
+// the save was written takes its default, one removed is simply never read
+// again — so what actually rots is a reference to something that is gone.
+//
+// Every one of them is dropped rather than trusted, and anything paid for is
+// handed back. A tree that was reshaped costs you a respec, not the character.
+
+/** What a load had to throw away. Empty when the save was already current. */
+export interface Healed {
+  items: number;
+  currencies: number;
+  points: number;
+  skill: boolean;
+}
+
+export const healedAnything = (h: Healed): boolean =>
+  h.items > 0 || h.currencies > 0 || h.points > 0 || h.skill;
+
+/** Crystals name their tier; gear names a base that has to still exist. */
+const baseExists = (item: Item): boolean =>
+  item.kind === 'crystal'
+    ? /^crystal_t\d+$/.test(item.base)
+    : GEAR_BASE_BY_ID[item.base] !== undefined;
+
+/**
+ * Re-walks the allocation with the game's own rule instead of trusting it.
+ *
+ * Anything that cannot be re-bought — its node is gone, its path home went
+ * through a node that is gone, or the gate it sits behind is now further out
+ * than the points left — falls out and is refunded. Order does not matter: the
+ * pass repeats until nothing more can be taken.
+ */
+function replayTree(character: Character, skillId: string): number {
+  const progress = character.skills[skillId];
+  if (!progress) return 0;
+
+  const wanted = progress.allocated.filter((id) => nodeById(skillId, id));
+  const cap = Math.min(treePointsFor(progress.level), wanted.length);
+  const kept: string[] = [];
+
+  for (let added = true; added && kept.length < cap; ) {
+    added = false;
+    for (const id of wanted) {
+      if (kept.includes(id)) continue;
+      if (!canAllocate(skillId, id, kept)) continue;
+      kept.push(id);
+      added = true;
+      if (kept.length >= cap) break;
+    }
+  }
+
+  const lost = progress.allocated.length - kept.length;
+  progress.allocated = kept;
+
+  for (const nodeId of Object.keys(progress.choices ?? {})) {
+    const node = nodeById(skillId, nodeId);
+    const picked = progress.choices?.[nodeId];
+    const valid = node?.choices?.some((c) => c.id === picked) ?? false;
+    if (!valid) delete progress.choices?.[nodeId];
+  }
+  return lost;
+}
+
+/** IN PLACE. Everything the current build cannot resolve, gone. */
+export function heal(game: GameState): Healed {
+  const out: Healed = { items: 0, currencies: 0, points: 0, skill: false };
+
+  const keep = (list: Item[]): Item[] => {
+    const ok = list.filter(baseExists);
+    out.items += list.length - ok.length;
+    return ok;
+  };
+  game.inventory = keep(game.inventory);
+  game.stash = keep(game.stash);
+
+  for (const [slot, worn] of Object.entries(game.character.equipment)) {
+    if (baseExists(worn)) continue;
+    delete game.character.equipment[slot];
+    out.items++;
+  }
+  if (game.craftId && !game.inventory.some((i) => i.id === game.craftId)) game.craftId = null;
+
+  // `fragment` is the feedstock rather than a currency, so it has no entry.
+  for (const id of Object.keys(game.wallet)) {
+    if (id === 'fragment' || CURRENCY_BY_ID[id]) continue;
+    delete game.wallet[id];
+    out.currencies++;
+  }
+
+  for (const skillId of Object.keys(game.character.skills)) {
+    if (treeFor(skillId).length === 0 && !SKILL_BY_ID[skillId]) {
+      delete game.character.skills[skillId];
+      continue;
+    }
+    out.points += replayTree(game.character, skillId);
+  }
+
+  if (!SKILL_BY_ID[game.character.skillId]) {
+    game.character.skillId = PLAYER_SKILLS[0]?.id ?? 'strike';
+    out.skill = true;
+  }
+  return out;
+}
+
 /**
  * IN PLACE: every screen captured the game object at init. Missing keys fall
  * back to a fresh game, so a save written before a field existed still opens.
  */
-export function applySave(game: GameState, save: GameState): void {
+export function applySave(game: GameState, save: GameState): Healed {
   Object.assign(game, createGame('fresh'), save);
+  return heal(game);
 }
 
 /** A file the player can keep. */

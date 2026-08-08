@@ -6,12 +6,13 @@
  * isn't.
  */
 import { applySave, backupName, canSave, clearSave, readSave, saveGame, savedAt } from '../game/save';
+import type { Healed } from '../game/save';
 import type { GameState } from '../game/state';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 let game: GameState;
-let onLoaded: (() => void) | null = null;
+let onLoaded: ((healed: Healed) => void) | null = null;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -84,11 +85,11 @@ async function restore(file: File): Promise<void> {
     say('That file is not a save this version can read.', true);
     return;
   }
-  applySave(game, save);
+  const healed = applySave(game, save);
   saveGame(game);
   say(`Loaded ${save.character.name}, level ${save.character.level}.`);
   render();
-  onLoaded?.();
+  onLoaded?.(healed);
 }
 
 export function openSaveData(): void {
@@ -103,7 +104,7 @@ export const closeSaveData = (): void => {
 
 export const isSaveDataOpen = (): boolean => !$('savedata').hidden;
 
-export function initSaveData(state: GameState, loaded: () => void): void {
+export function initSaveData(state: GameState, loaded: (healed: Healed) => void): void {
   game = state;
   onLoaded = loaded;
 

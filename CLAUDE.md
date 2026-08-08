@@ -43,6 +43,23 @@ mid-change. Also in CI, ahead of typecheck.
 **Fix a violation by cutting prose.** Adding code to raise the 20% is the one
 repair that makes the file worse.
 
+## Saves
+
+The save is `JSON.stringify(game)` in one localStorage key — there is no server
+behind the hosted build. `GameState` must stay plain data.
+
+A save is full of ids pointing into `data.ts` and the trees, and those move.
+`heal()` in `game/save.ts` runs on every load and drops what no longer resolves:
+items whose base is gone, retired currencies, a cut skill. Tree allocations are
+**replayed** through `canAllocate` rather than trusted, so a reshaped tree
+refunds the points it stranded instead of leaving a build that could never have
+been walked to.
+
+- **Adding a field** needs nothing: a missing key takes its default.
+- **Renaming an id** costs the player whatever pointed at it, and nothing else.
+- **Bump `SAVE_VERSION`** only when a save should be REFUSED — a change `heal()`
+  cannot repair. That wipes everyone's game, so it is the last resort.
+
 ## Shape
 
 ```

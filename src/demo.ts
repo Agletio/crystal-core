@@ -55,7 +55,7 @@ import {
   nodeById,
   treeFor,
 } from './skills-tree';
-import { makeCharacter, xpToNext } from './sim/character';
+import { makeCharacter, skillProgress, xpToNext } from './sim/character';
 import { loadoutMods, starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
@@ -74,6 +74,7 @@ import {
   stashUpgradeCost,
   unequipItem,
 } from './game/state';
+import { heal, readSave } from './game/save';
 import type { Item, Quality, RolledMod, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
@@ -1369,6 +1370,147 @@ line(
 line(
   `Queue is empty and you can't rebuild it fully — that's the resting state working.`
 );
+
+// ===========================================================================
+rule('THE SAVE — does a save survive the game changing under it?');
+{
+  const game = createGame('dev');
+  game.character.skillId = 'fireball';
+  const progress = skillProgress(game.character, 'fireball');
+  progress.level = 30;
+
+  // A real allocation, walked out from the middle the way a player would.
+  const tree = treeFor('fireball');
+  for (let i = 0; i < 12; i++) {
+    const next = tree.find((n) => canAllocate('fireball', n.id, progress.allocated));
+    if (!next) break;
+    progress.allocated.push(next.id);
+  }
+  const walked = progress.allocated.length;
+  line(`A build: ${walked} points, ${game.inventory.length} items, ` +
+    `${Object.keys(game.wallet).length} kinds of currency`);
+
+  // Now break it the way a month of development would: nodes renamed out from
+  // under it, a base deleted, a currency retired, a skill gone.
+  const kept = progress.allocated.slice(0, 4);
+  progress.allocated = [...kept, 'fb_a_node_that_moved', ...progress.allocated.slice(4)];
+  progress.choices = { fb_gone: 'cold', ...progress.choices };
+  game.inventory.push({ ...game.inventory[0], id: 'ghost', base: 'base_that_was_renamed' });
+  game.wallet.shard_of_something_removed = 9;
+  game.character.skillId = 'a_skill_that_was_cut';
+
+  const healed = heal(game);
+  line(`Healed: ${healed.points} points refunded, ${healed.items} items dropped, ` +
+    `${healed.currencies} currencies dropped, skill replaced: ${healed.skill}`);
+
+  check(
+    !game.inventory.some((i) => i.id === 'ghost'),
+    'an item whose base no longer exists is dropped',
+    'a dropped base is still in the bag'
+  );
+  check(
+    healed.currencies === 1,
+    'and so is a currency that no longer exists',
+    `dropped ${healed.currencies} currencies`
+  );
+  check(
+    SKILL_BY_ID[game.character.skillId] !== undefined,
+    'a cut skill is replaced by a real one',
+    game.character.skillId
+  );
+  check(
+    progress.allocated.every((id) => nodeById('fireball', id) !== undefined),
+    'every surviving allocation names a node that exists',
+    progress.allocated.filter((id) => !nodeById('fireball', id)).join(', ')
+  );
+  check(
+    progress.choices?.fb_gone === undefined,
+    'a choice on a node that is gone is forgotten',
+    'the choice survived its node'
+  );
+
+  // The point of the replay: what is left is not just present, it is BUYABLE
+  // in order from the middle — so no node is stranded and no gate is skipped.
+  const replay: string[] = [];
+  for (let i = 0; i < progress.allocated.length; i++) {
+    const next = progress.allocated.find(
+      (id) => !replay.includes(id) && canAllocate('fireball', id, replay)
+    );
+    if (!next) break;
+    replay.push(next);
+  }
+  check(
+    replay.length === progress.allocated.length,
+    'and what survives is a build you could have walked to',
+    `${replay.length} of ${progress.allocated.length}`
+  );
+  check(
+    progress.allocated.length <= walked,
+    'healing never hands out points you did not have',
+    `${progress.allocated.length} of ${walked}`
+  );
+
+  // The sharp case: a node vanishing from the MIDDLE of a path. Everything
+  // beyond it has no way home any more and has to come back as points.
+  {
+    const deep = createGame('dev');
+    deep.character.skillId = 'fireball';
+    const walk = skillProgress(deep.character, 'fireball');
+    walk.level = 30;
+
+    // The route to the furthest notable, one node at a time.
+    const far = treeFor('fireball')
+      .filter((n) => n.kind === 'notable')
+      .sort((a, b) => Math.hypot(b.x, b.y) - Math.hypot(a.x, a.y))[0];
+    const from = new Map<string, string>();
+    const queue = [CENTRE];
+    for (let i = 0; i < queue.length; i++) {
+      for (const next of neighboursOf('fireball', queue[i])) {
+        if (from.has(next) || next === CENTRE) continue;
+        from.set(next, queue[i]);
+        queue.push(next);
+      }
+    }
+    const path: string[] = [];
+    for (let at: string | undefined = far.id; at && at !== CENTRE; at = from.get(at)) {
+      path.unshift(at);
+    }
+    walk.allocated = [...path];
+    line(`A single path ${path.length} nodes long, out to ${far.name}`);
+
+    // The second node on it is renamed out from under the save.
+    walk.allocated[1] = 'fb_this_node_moved';
+    const cut = heal(deep);
+    check(
+      walk.allocated.length === 1,
+      'a node lost mid-path takes everything past it with it',
+      `${walk.allocated.length} nodes survived, expected 1`
+    );
+    check(
+      cut.points === path.length - 1,
+      'and every one of those points comes back',
+      `refunded ${cut.points} of ${path.length - 1}`
+    );
+  }
+
+  // A save from a version that no longer exists is refused, not half-read.
+  const stale = JSON.stringify({ ...game, version: 999 });
+  check(
+    readSave(stale) === null,
+    'a save from another format is refused outright',
+    'a stale save was read'
+  );
+  check(
+    readSave('not json at all') === null,
+    'and so is anything that is not a save',
+    'garbage parsed as a save'
+  );
+  check(
+    readSave(JSON.stringify(game)) !== null,
+    'a current save reads back',
+    'a fresh save was refused'
+  );
+}
 
 // ===========================================================================
 // The harness is a report you read AND a check that can fail. Everything
