@@ -64,6 +64,22 @@ const state = () =>
       text: document.getElementById('guide-text')?.textContent ?? '',
       ring: ring ? ring.id || ring.className : null,
       locked: document.body.classList.contains('guided'),
+      // A modal over the lit control, while the lockdown holds that modal's
+      // own Close switched off, is a room with no doors. The dock is never
+      // covered — popups stop above it — so an overlap is always a trap.
+      trapped: (() => {
+        if (!ring) return null;
+        const cards = [...document.querySelectorAll('.modal:not([hidden]) .modal__card')];
+        for (const card of cards) {
+          if (card.contains(ring)) continue;
+          const a = ring.getBoundingClientRect();
+          const b = card.getBoundingClientRect();
+          const wide = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const tall = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (wide > 2 && tall > 2) return card.closest('.modal')?.id ?? 'a popup';
+        }
+        return null;
+      })(),
     };
   });
 
@@ -71,6 +87,8 @@ const problems = [];
 const trace = [];
 let last = '';
 let stuck = 0;
+let reloaded = false;
+let escaped = false;
 
 // Generous: a descent takes a while, and one step is "watch it happen".
 for (let turn = 0; turn < 240; turn++) {
@@ -85,11 +103,43 @@ for (let turn = 0; turn < 240; turn++) {
     stuck++;
   }
 
+  if (now.trapped) {
+    problems.push(`${now.step}: ${now.trapped} covers the one thing you may click`);
+    break;
+  }
+
+  // On the very first step, reload. The opening resumes from the save, and the
+  // state it comes back into has to be one you can still play — this is the
+  // harshest version of that, with the lit control out on the Fissure panel
+  // where a popup would sit right on top of it.
+  if (!reloaded && /step 1/i.test(now.step)) {
+    reloaded = true;
+    await page.reload();
+    await page.waitForTimeout(900);
+    const back = await state();
+    trace.push(`Reload      resumed on ${back.step}, ring ${back.ring ?? 'none'}`);
+    if (back.done) problems.push('a reload mid-opening dropped the guide entirely');
+    if (back.trapped) problems.push(`a reload left ${back.trapped} over the lit control`);
+    continue;
+  }
+
   // Two minutes of clicking one ring without the step changing is a dead end.
   // The 'watch' step legitimately sits still, so this has to be generous.
   if (stuck > 120) {
     problems.push(`STUCK on ${now.step} — ring was ${now.ring}: ${now.text}`);
     break;
+  }
+
+  // Escape is the way out of a popup that has landed over the lit control, so
+  // pressing it at a step that lives inside one must not end the opening.
+  if (!escaped && /step 4/i.test(now.step)) {
+    escaped = true;
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    const back = await state();
+    trace.push(`Escape      still on ${back.step}, ring ${back.ring ?? 'none'}`);
+    if (back.done) problems.push('Escape during the opening ended it');
+    continue;
   }
 
   if (!now.ring) {

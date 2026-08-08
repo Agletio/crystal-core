@@ -17,7 +17,7 @@ import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
-import { initTutorial, isGuided, startTutorial, stopTutorial } from './ui/tutorial';
+import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
   initCharacter,
@@ -92,8 +92,7 @@ document.getElementById('open-character')!.addEventListener('click', openCharact
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', openSaveData);
-// Both of these wipe the save, and both sit in a row of buttons you click all
-// day. They ask first.
+// Both wipe the save, and both sit in a row you click all day. They ask first.
 const guard = (id: string, title: string, mode: StartMode) =>
   document.getElementById(id)!.addEventListener('click', async () => {
     if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
@@ -105,9 +104,9 @@ guard('dev-kit', 'Restart with the dev kit?', 'dev');
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  // Not while the opening runs: every other way out is switched off, and this
-  // would be the same escape hatch by another door.
-  if (isGuided()) return;
+  // Live during the opening too: closing a popup spends nothing and skips
+  // nothing, and it is the only way out of one that has landed over the lit
+  // control with its own Close switched off.
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
   else if (isSaveDataOpen()) closeSaveData();
@@ -175,11 +174,11 @@ function guideContext(): GuideCtx {
 }
 
 initTutorial(game, guideContext);
+onRunFocused();
 
-// A stocked game opens crafting, which is where a returning player wants to
-// be; a new one has nothing to spend and lands on the map.
-if (game.onboarded) openCraft();
-else onRunFocused();
+// The Fissure is home, and boot always lands there. Opening a screen over it
+// belongs to the dev kit's stocked start: a restored save can be mid-opening,
+// where a popup would cover the one control you are allowed to click.
 initWelcome(game, begin);
 startAutosave(game);
 
