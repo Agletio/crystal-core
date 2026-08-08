@@ -219,6 +219,16 @@ export function craftItem(game: GameState): Item | null {
   return findItem(game, game.craftId) ?? null;
 }
 
+/** Moves a carried item just before `before`, or last when that is null. */
+export function reorderItem(game: GameState, item: Item, before: Item | null): void {
+  const from = game.inventory.findIndex((i) => i.id === item.id);
+  if (from < 0 || item.id === before?.id) return;
+  game.inventory.splice(from, 1);
+  const to = before ? game.inventory.findIndex((i) => i.id === before.id) : -1;
+  if (to < 0) game.inventory.push(item);
+  else game.inventory.splice(to, 0, item);
+}
+
 export function selectForCraft(game: GameState, item: Item): void {
   game.craftId = item.id;
 }

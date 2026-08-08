@@ -1836,6 +1836,27 @@ rule('THE SAVE — does a save survive the game changing under it?');
     'a current save reads back',
     'a fresh save was refused'
   );
+
+  // Ids are minted from a counter that restarts with the page. Reading a save
+  // has to claim the numbers in it, or the next item minted wears an id an
+  // older one already has — and then one lookup answers for two items: the
+  // bench opens the wrong one and two dock slots light up together.
+  const held = { ...game, inventory: [makeGear('ash_wand', 1)], stash: [], craftId: null };
+  held.inventory[0].id = 'gear_99000';
+  const read = readSave(JSON.stringify(held));
+  const minted = makeGear('ash_wand', 1);
+  const mintedN = Number(/_(\d+)$/.exec(minted.id)?.[1] ?? 0);
+  check(
+    read !== null && mintedN > 99000,
+    'reading a save claims the ids in it, so the next item cannot collide',
+    `minted ${minted.id} after reading a save that already held gear_99000`
+  );
+  const after = [makeGear('ash_wand', 1), makeCrystal(1), makeGear('ash_wand', 1)];
+  check(
+    new Set(after.map((i) => i.id)).size === after.length,
+    'and every id it hands out after that is still its own',
+    after.map((i) => i.id).join(' ')
+  );
 }
 
 // ===========================================================================

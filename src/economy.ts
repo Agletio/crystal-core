@@ -22,6 +22,19 @@ import type {
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
 
+/**
+ * Ids come off a counter that restarts with the page, so a save from an earlier
+ * session holds ids this one would hand out again. Two items under one id is
+ * ONE item to every lookup: the bench opens whichever comes first, and both
+ * slots light up. Push the counter past what is already spoken for.
+ */
+export function reserveItemIds(items: Iterable<Item>): void {
+  for (const item of items) {
+    const n = Number(/_(\d+)$/.exec(item?.id ?? '')?.[1]);
+    if (Number.isFinite(n) && n >= nextId) nextId = n + 1;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Item factory
 // ---------------------------------------------------------------------------

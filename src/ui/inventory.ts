@@ -9,10 +9,10 @@
 import { currencyIcon, itemIcon } from './icons';
 import { modCapacity, qualityName, qualityOf } from '../mods';
 import { describeMod } from '../crafting';
-import { attachTooltip } from './tooltip';
+import { attachTooltip, hideTooltip } from './tooltip';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
-import { CARRY } from '../game/state';
+import { CARRY, reorderItem } from '../game/state';
 import type { GameState } from '../game/state';
 import type { CurrencyDef, Item, ItemKind } from '../types';
 
@@ -170,6 +170,142 @@ function tooltip(item: Item): string {
   return lines.join('\n');
 }
 
+// --- dragging ---------------------------------------------------------------
+//
+// Pointer events rather than HTML5 drag-and-drop, which does not fire on touch
+// at all. A press only becomes a drag once it has travelled far enough to not
+// be a click, so every existing click still works and nothing had to change
+// about what a click MEANS.
+
+/** Pixels a press must travel before it stops being a click. */
+const DRAG_SLOP = 6;
+
+interface Drag {
+  item: Item;
+  from: HTMLElement;
+  startX: number;
+  startY: number;
+  ghost: HTMLElement | null;
+  over: Element | null;
+}
+
+let drag: Drag | null = null;
+/** Set for exactly one click: the one a finished drag is about to fire. */
+let dragged = false;
+
+const itemById = (id: string | undefined): Item | null =>
+  (id && game?.inventory.find((i) => i.id === id)) || null;
+
+function press(event: PointerEvent, from: HTMLElement, item: Item): void {
+  // Left button or touch only; a right-click is not a drag.
+  if (event.button !== 0) return;
+  // A drag that ended on some OTHER slot fires no click at all, so the flag it
+  // set is still standing. Clearing it here, rather than on the click that may
+  // never come, is what stops it eating an honest click later.
+  dragged = false;
+  drag = { item, from, startX: event.clientX, startY: event.clientY, ghost: null, over: null };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', drop);
+  window.addEventListener('pointercancel', cancel);
+}
+
+function begin(event: PointerEvent): void {
+  if (!drag) return;
+  drag.ghost = el('div', 'dragghost');
+  drag.ghost.append(itemIcon(drag.item, 40));
+  document.body.append(drag.ghost);
+  drag.from.classList.add('slot--dragging');
+  document.body.classList.add('dragging');
+  hideTooltip();
+  position(event);
+}
+
+function position(event: PointerEvent): void {
+  if (!drag?.ghost) return;
+  drag.ghost.style.left = `${event.clientX}px`;
+  drag.ghost.style.top = `${event.clientY}px`;
+}
+
+/** What is under the pointer, ignoring the ghost — it has no pointer events. */
+function targetAt(event: PointerEvent): Element | null {
+  const under = document.elementFromPoint(event.clientX, event.clientY);
+  return under?.closest('.slot, [data-drop]') ?? null;
+}
+
+/**
+ * What dropping on `target` would do, or null for nothing. One answer for both
+ * the highlight and the drop, so the outline never promises a move that the
+ * drop then refuses — the stash draws slots of its own that carry no item.
+ */
+type Landing = { kind: 'bench' } | { kind: 'before'; onto: Item } | { kind: 'end' } | null;
+
+function landing(target: Element | null, item: Item): Landing {
+  if (!target || target === drag?.from) return null;
+  if (target.closest('[data-drop="bench"]')) return { kind: 'bench' };
+  if (!target.classList.contains('slot')) return null;
+  const slot = target as HTMLElement;
+  const onto = itemById(slot.dataset.itemId);
+  if (onto) return onto.kind === item.kind ? { kind: 'before', onto } : null;
+  return slot.dataset.dropKind === item.kind ? { kind: 'end' } : null;
+}
+
+function highlight(next: Element | null): void {
+  if (!drag || next === drag.over) return;
+  drag.over?.classList.remove('slot--over', 'drop--over');
+  const where = landing(next, drag.item);
+  if (next && where) {
+    next.classList.add(where.kind === 'bench' ? 'drop--over' : 'slot--over');
+  }
+  drag.over = next;
+}
+
+function move(event: PointerEvent): void {
+  if (!drag) return;
+  if (!drag.ghost) {
+    const far =
+      Math.abs(event.clientX - drag.startX) > DRAG_SLOP ||
+      Math.abs(event.clientY - drag.startY) > DRAG_SLOP;
+    if (!far) return;
+    begin(event);
+  }
+  position(event);
+  highlight(targetAt(event));
+}
+
+function teardown(): void {
+  window.removeEventListener('pointermove', move);
+  window.removeEventListener('pointerup', drop);
+  window.removeEventListener('pointercancel', cancel);
+  drag?.over?.classList.remove('slot--over', 'drop--over');
+  drag?.from.classList.remove('slot--dragging');
+  drag?.ghost?.remove();
+  document.body.classList.remove('dragging');
+  drag = null;
+}
+
+function cancel(): void {
+  if (drag?.ghost) dragged = true;
+  teardown();
+}
+
+function drop(event: PointerEvent): void {
+  const held = drag;
+  // Never travelled far enough to be a drag, so it is a click and nothing here
+  // should touch it.
+  if (!held?.ghost) { teardown(); return; }
+
+  const where = landing(targetAt(event), held.item);
+  // Dropping on the bench is the same intent as clicking one, so it runs the
+  // same action rather than inventing a second way to say it.
+  if (where?.kind === 'bench') handler?.actionFor(held.item)?.run();
+  else if (where?.kind === 'before' && game) reorderItem(game, held.item, where.onto);
+  else if (where?.kind === 'end' && game) reorderItem(game, held.item, null);
+
+  dragged = true;
+  teardown();
+  renderInventory();
+}
+
 export function renderInventory(): void {
   if (!game) return;
   renderWallet();
@@ -186,23 +322,11 @@ export function renderInventory(): void {
   }
 }
 
-/** Crystals sort by tier, gear by name — the orders you'd look for them in. */
-function sorted(items: Item[], kind: ItemKind): Item[] {
-  return [...items].sort((a, b) => {
-    if (kind === 'crystal') {
-      const at = (a.meta.tier as number) ?? 0;
-      const bt = (b.meta.tier as number) ?? 0;
-      if (at !== bt) return bt - at;
-    }
-    return a.name.localeCompare(b.name);
-  });
-}
-
 function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
   host.replaceChildren();
   sizeGrid(host, CARRY[kind]);
 
-  for (const item of sorted(items, kind)) {
+  for (const item of items) {
     const action = handler?.actionFor(item) ?? null;
     // Quality colours the slot; the silhouette says what a piece IS, never how
     // good it is.
@@ -214,11 +338,16 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     btn.append(itemIcon(item, 30));
     if (item.mods.length > 0) btn.classList.add('slot--modded');
     attachTooltip(btn, () => tooltip(item));
+    btn.dataset.itemId = item.id;
+    btn.addEventListener('pointerdown', (e) => press(e as PointerEvent, btn, item));
 
     if (handler?.highlighted?.(item)) btn.classList.add('slot--on');
 
     if (action) {
-      btn.onclick = action.run;
+      btn.onclick = () => {
+        if (dragged) { dragged = false; return; }
+        action.run();
+      };
       btn.setAttribute('aria-label', `${action.label}: ${item.name}`);
     } else {
       btn.disabled = true;
@@ -231,6 +360,8 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
   // The carry limit made visible: the dock never scrolls, so what you see is
   // all you can hold and running out is something you watch approaching.
   for (let i = items.length; i < CARRY[kind]; i++) {
-    host.append(el('div', 'slot slot--empty'));
+    const pad = el('div', 'slot slot--empty');
+    pad.dataset.dropKind = kind;
+    host.append(pad);
   }
 }

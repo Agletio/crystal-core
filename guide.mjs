@@ -246,6 +246,75 @@ if (finished) {
   }
   trace.push('Tree        a real pointer allocates a node, and a drag does not');
 }
+
+// --- the dock takes a drag as well as a click ------------------------------
+//
+// Both, not either: the click is what the guided opening teaches and what a
+// screen reader gets, and the drag is what a hand reaches for. A regression in
+// one is invisible from the other.
+{
+  const gearSlots = () => page.locator('#inv-gear .slot:not(.slot--empty)');
+  const labels = () =>
+    page.$$eval('#inv-gear .slot:not(.slot--empty)', (ns) =>
+      ns.map((n) => (n.getAttribute('aria-label') ?? '').replace(/^Open on bench: /, ''))
+    );
+  const drag = async (from, to) => {
+    const a = await gearSlots().nth(from).boundingBox();
+    const b = await gearSlots().nth(to).boundingBox();
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    // Past the slop, or the press is a click and nothing moves.
+    await page.mouse.move(a.x + 22, a.y + 2, { steps: 4 });
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+  };
+
+  // The opening leaves you with a wand and little else, so stock the dock. The
+  // guide has already made every assertion it is going to by this point.
+  if ((await gearSlots().count()) < 4) {
+    // The tree section above leaves the Skills web open, and a modal swallows
+    // every click meant for the bar behind it.
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(80);
+    }
+    await page.locator('#dev-kit').click();
+    await page.locator('#confirm-yes').click();
+    await page.waitForTimeout(300);
+  }
+
+  if ((await gearSlots().count()) < 4) {
+    problems.push('could not stock the dock, so the drag checks never ran');
+  } else {
+    const before = await labels();
+    await drag(0, 3);
+    const after = await labels();
+    if (before.join() === after.join()) problems.push('dragging a dock slot did not reorder it');
+    if (await page.locator('.dragghost').count()) problems.push('a drag left its ghost behind');
+
+    // The click the drag must not have eaten.
+    if (await page.locator('#craft').isHidden()) await page.locator('#open-craft').click();
+    const want = (await labels())[2];
+    await gearSlots().nth(2).click();
+    const bench = (await page.locator('#item-name').textContent())?.trim();
+    if (bench !== want) problems.push(`a click after a drag opened "${bench}", not "${want}"`);
+
+    // And a drop on the bench says the same thing as that click.
+    const wanted = (await labels())[1];
+    const src = await gearSlots().nth(1).boundingBox();
+    const zone = await page.locator('[data-drop="bench"]').boundingBox();
+    await page.mouse.move(src.x + src.width / 2, src.y + src.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(src.x + 22, src.y - 8, { steps: 4 });
+    await page.mouse.move(zone.x + zone.width / 2, zone.y + 40, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+    const dropped = (await page.locator('#item-name').textContent())?.trim();
+    if (dropped !== wanted) problems.push(`dropping on the bench opened "${dropped}", not "${wanted}"`);
+    trace.push('Dock        a slot reorders by drag, drops on the bench, and still clicks');
+  }
+}
 if (errors.length) problems.push(`console errors — ${errors.slice(0, 2).join(' | ')}`);
 
 console.log('guide: played the opening with a real pointer\n');

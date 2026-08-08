@@ -361,6 +361,23 @@
 
   #run-log { max-height: 240px; overflow-y: auto; font-size: 12px; }
 
+  /* --- dragging ---------------------------------------------------------- */
+  /* The slot you picked up stays in place, dimmed: the row must not reflow
+     under the pointer, or the gap you are aiming at moves as you aim. */
+  .slot--dragging { opacity: .3; }
+  /* Where it would land. An outline rather than a fill, so the item under it
+     is still readable while you decide. */
+  .slot--over { outline: 2px solid var(--citrine); outline-offset: -2px; }
+  [data-drop].drop--over { outline: 2px dashed var(--citrine); outline-offset: -4px; }
+  /* Follows the pointer and must never be hit-tested — elementFromPoint is how
+     the drop target is found, and the ghost sits exactly under the pointer. */
+  .dragghost {
+    position: fixed; z-index: 90; pointer-events: none;
+    transform: translate(-50%, -50%); opacity: .92;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.6));
+  }
+  body.dragging { cursor: grabbing; }
+
   /* --- the inventory dock --------------------------------------------- */
   /* Fixed height at the bottom of the frame. Icons in slots rather than rows
      of text: forty item names is a wall you read past, forty icons is a thing
@@ -405,6 +422,8 @@
     background: var(--void); border: 1px solid var(--seam);
     /* The stack count is positioned against this. */
     position: relative;
+    /* A press that turns into a drag must not scroll the page under it. */
+    touch-action: none;
   }
   .slot--empty { opacity: .5; }
   .slot--crystal { border-color: rgba(157,120,214,.45); }
@@ -982,10 +1001,10 @@
         <button class="mini" id="craft-close">Close</button>
       </div>
     </div>
-    <div class="modal__body">
+    <div class="modal__body" data-drop="bench">
       <div class="panel">
         <p class="empty" id="craft-empty">
-          Nothing on the bench. Click something in your inventory to work on it.
+          Drag something from your inventory onto the bench, or click it.
         </p>
         <div id="craft-item" hidden>
           <h2 id="item-name">—</h2>
