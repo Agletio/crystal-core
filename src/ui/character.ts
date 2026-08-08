@@ -6,9 +6,10 @@
  * DOCK that fits, which is where your gear already is. Worn items live here
  * rather than in the dock, which is safe because this screen shows them.
  */
-import { DAMAGE_TYPES, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
+import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
-import { characterStats } from '../sim/stats';
+import { characterStats, damageDetail } from '../sim/stats';
+import type { DamagePart } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
 import { wear } from './wear';
@@ -32,6 +33,8 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 /** Slot currently being filled. Drives what lights up in the dock. */
 let picking: string | null = null;
+/** Which stat row is unfolded. Only one, and it survives a redraw. */
+let openStat: string | null = null;
 let onChanged: (() => void) | null = null;
 /** Hands the dock back to whatever is underneath when this closes. */
 let onClosed: (() => void) | null = null;
@@ -131,29 +134,152 @@ function renderPickHint(): void {
       : `${options.length} in your dock fit${options.length === 1 ? 's' : ''} the ${slot.name.toLowerCase()} slot — they are lit up below.`;
 }
 
+const round = (n: number) => Math.round(n).toString();
+
+/** Where one damage type's contribution came from, in the order it was applied. */
+function partWorkings(part: DamagePart, multiplier: number): string {
+  const bits: string[] = [];
+  if (part.base) bits.push(`${round(part.base)} base`);
+  if (part.flat) bits.push(`${part.flat > 0 ? '+' : ''}${round(part.flat)} flat`);
+  if (part.increased) bits.push(`+${round(part.increased)}% inc`);
+  for (const m of part.more) bits.push(`×${(1 + m / 100).toFixed(2)} more`);
+  if (multiplier !== 1) bits.push(`×${multiplier} skill`);
+  return bits.join('  ');
+}
+
+/**
+ * The damage number, taken apart. Every line here is derived from the same
+ * pass the sim runs, so the sheet cannot describe a rule the fight does not
+ * follow.
+ */
+function damagePanel(): HTMLElement {
+  const detail = damageDetail(game.character);
+  const { breakdown } = detail;
+  const box = el('div', 'statdetail');
+  const nameOf = (id: string) => DAMAGE_TYPE_BY_ID[id]?.name ?? id;
+
+  for (const part of breakdown.parts) {
+    const row = el('div', `dmgrow${part.total === 0 ? ' dmgrow--nil' : ''}`);
+    row.append(el('span', 'dmgrow__n', part.total === 0 ? '0' : round(part.total)));
+    row.append(el('span', 'dmgrow__t', nameOf(part.type)));
+    row.append(
+      el(
+        'span',
+        'dmgrow__how',
+        part.total === 0
+          ? `nothing tagged ${nameOf(part.type)} for it to scale`
+          : partWorkings(part, breakdown.multiplier)
+      )
+    );
+    box.append(row);
+  }
+
+  const sum = el('p', 'dmgsum');
+  const dealt = nameOf(breakdown.dealtAs);
+  const mixed = breakdown.parts.some((p) => p.total > 0 && p.type !== breakdown.dealtAs);
+
+  const line = (html: string) => {
+    const p = el('div');
+    p.innerHTML = html;
+    sum.append(p);
+  };
+  const b = (t: string) => `<b>${t}</b>`;
+
+  line(`All ${b(round(breakdown.total))} of it lands as ${b(dealt)}.`);
+  // The question the tags invite and the numbers never answer on their own.
+  if (mixed) {
+    line(`A skill deals its own type whatever scaled it — the parts above are
+          how much got through, not what you are hitting with.`);
+  }
+  if (detail.seconds > 0) {
+    line(
+      `Applied over ${b(`${detail.seconds}s`)}, up to ${b(String(detail.maxStacks))} stacks
+       on one enemy. Damage over time is reduced by ${dealt} resistance and
+       ${b('never by armour')}.`
+    );
+  } else {
+    line(`One hit, reduced by ${dealt} resistance and then by armour.`);
+  }
+  box.append(sum);
+  return box;
+}
+
+interface StatRow {
+  key: string;
+  value: string;
+  /** Shown small beside the value: what the number is counted in. */
+  unit?: string;
+  why?: string;
+  detail?: () => HTMLElement;
+}
+
 function renderStats(): void {
   const s = characterStats(game.character);
+  const detail = damageDetail(game.character);
   const host = $('sheet-stats');
   host.replaceChildren();
 
-  const rows: Array<[string, string]> = [
-    ['life', Math.round(s.maxLife).toString()],
-    ['damage', Math.round(s.damage).toString()],
-    ['attacks/sec', s.attacksPerSecond.toFixed(2)],
-    ['crit chance', `${Math.round(s.critChance)}%`],
-    ['move speed', s.moveSpeed.toFixed(1)],
+  const cast = detail.skill.tags.includes('spell');
+  const rows: StatRow[] = [
+    { key: 'life', value: round(s.maxLife) },
+    {
+      key: 'damage',
+      value: round(detail.perApplication),
+      unit: detail.seconds > 0 ? 'per cast' : cast ? 'per cast' : 'per hit',
+      detail: damagePanel,
+    },
+    {
+      key: cast ? 'casts/sec' : 'attacks/sec',
+      value: s.attacksPerSecond.toFixed(2),
+      why: cast
+        ? 'Cast speed. A spell is not made faster by a sharper sword.'
+        : 'Attack speed, times the skill’s own rate.',
+    },
+    {
+      key: 'damage/sec',
+      value: round(detail.perSecond),
+      why:
+        detail.seconds > 0
+          ? 'Sustained on ONE enemy, stacks and all. A cloud caught on a pack is worth several times this.'
+          : 'Damage times rate. Before resistance, armour and crit.',
+    },
+    { key: 'crit chance', value: `${Math.round(s.critChance)}%` },
+    {
+      key: 'crit damage',
+      value: `×${(2 + s.critMultiplier / 100).toFixed(2)}`,
+      why: 'A crit doubles, and crit multiplier is added on top of that. Poison ticks roll it too.',
+    },
+    { key: 'move speed', value: s.moveSpeed.toFixed(1), unit: 'tiles/s' },
     // Armour shows points AND what they're worth — the whole reason it curves
     // on points rather than on hit size is that this number can be stated.
-    ['armour', `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`],
-    ['regen/sec', s.lifeRegen.toFixed(1)],
-    ['reach', s.attackRange.toFixed(1)],
+    {
+      key: 'armour',
+      value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
+      why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
+    },
+    { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
+    { key: 'reach', value: s.attackRange.toFixed(1), unit: 'tiles' },
   ];
 
-  for (const [k, v] of rows) {
-    const row = el('div', 'stat');
-    row.append(el('span', 'stat__k', k));
-    row.append(el('span', 'stat__v', v));
-    host.append(row);
+  for (const row of rows) {
+    const node = row.detail
+      ? (el('button', 'stat stat--open') as HTMLButtonElement)
+      : el('div', 'stat');
+    node.append(el('span', 'stat__k', row.key));
+    const value = el('span', 'stat__v', row.value);
+    if (row.unit) value.append(el('span', 'stat__unit', row.unit));
+    node.append(value);
+    if (row.why) attachTooltip(node, () => `${row.key}\n${row.why}`);
+
+    if (row.detail) {
+      node.classList.toggle('stat--on', openStat === row.key);
+      (node as HTMLButtonElement).onclick = () => {
+        openStat = openStat === row.key ? null : row.key;
+        render();
+      };
+    }
+    host.append(node);
+    if (row.detail && openStat === row.key) host.append(row.detail());
   }
 
   // Resistances, grouped as they're resisted. Zeroes are shown too — an
@@ -178,8 +304,32 @@ function renderStats(): void {
     `${Math.min(100, (game.character.xp / need) * 100)}%`;
 }
 
+/**
+ * What every number below is computed for. Damage without the skill beside it
+ * is a number with no units, and the tree can have changed the type since you
+ * picked it.
+ */
+function renderSkill(): void {
+  const host = $('sheet-skill');
+  host.replaceChildren();
+  const detail = damageDetail(game.character);
+  const dealt = DAMAGE_TYPE_BY_ID[detail.breakdown.dealtAs]?.name ?? detail.breakdown.dealtAs;
+
+  host.append(el('div', 'skillline__name', detail.skill.name));
+  host.append(
+    el(
+      'div',
+      'skillline__how',
+      detail.seconds > 0
+        ? `${dealt} over ${detail.seconds}s per cast · ${detail.skill.tags.join(', ')}`
+        : `${dealt} on hit · ${detail.skill.tags.join(', ')}`
+    )
+  );
+}
+
 function render(): void {
   hideTooltip();
+  renderSkill();
   renderSlots();
   renderPickHint();
   renderStats();

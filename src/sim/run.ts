@@ -8,6 +8,7 @@ import { Rng } from '../rng';
 import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
+import { AILMENT } from '../data';
 import {
   characterStats,
   effectiveSkill,
@@ -96,11 +97,8 @@ export interface Ailment {
   };
 }
 
-/** Enough for stacking to matter, few enough that it can't run away. */
-const MAX_AILMENT_STACKS = 12;
-
-/** Poison lands in half-second lumps, which is also the crit cadence. */
-const AILMENT_TICK = 0.5;
+const MAX_AILMENT_STACKS = AILMENT.maxStacks;
+const AILMENT_TICK = AILMENT.tick;
 
 /**
  * How far contagion may travel from the cast. A cap on WORK, not on state:

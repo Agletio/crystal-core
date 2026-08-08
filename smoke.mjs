@@ -861,6 +861,62 @@ assert(
   armourRow?.querySelector('.stat__v')?.textContent
 );
 
+// --- the sheet says what its numbers are for ------------------------------
+// Damage with no skill beside it is a number without units, and the tree can
+// have changed the type since you picked the skill.
+assert(text('sheet-skill').length > 0, 'the sheet names the skill it computed for');
+assert(
+  /on hit|over \d+s/.test(text('sheet-skill')),
+  'and how that skill delivers its damage',
+  text('sheet-skill')
+);
+
+// --- the damage number comes apart -----------------------------------------
+{
+  const rowFor = (k) =>
+    all('#sheet-stats .stat').find((r) => r.querySelector('.stat__k')?.textContent === k);
+  const dmg = rowFor('damage');
+  assert(dmg?.classList.contains('stat--open') === true, 'the damage row opens');
+  assert(
+    /per (hit|cast)/.test(dmg?.querySelector('.stat__unit')?.textContent ?? ''),
+    'and says what the number is counted in',
+    dmg?.querySelector('.stat__unit')?.textContent
+  );
+  assert(!document.querySelector('.statdetail'), 'it starts folded away');
+
+  dmg.click();
+  const detail = document.querySelector('.statdetail');
+  assert(!!detail, 'clicking it shows the breakdown');
+  const parts = all('.statdetail .dmgrow');
+  assert(parts.length > 0, 'with a row per damage type that contributed', String(parts.length));
+
+  // The whole point: the parts must name the ONE type it all lands as, since
+  // a skill deals its own type whatever the parts were tagged.
+  assert(
+    /lands as/.test(detail?.textContent ?? ''),
+    'and says what all of it lands as',
+    detail?.textContent?.slice(0, 80)
+  );
+  // Armour is the rule people get wrong, so a lasting skill has to state it.
+  assert(
+    /armour/i.test(detail?.textContent ?? ''),
+    'and how armour treats it',
+    detail?.textContent?.slice(-90)
+  );
+
+  // The breakdown must ADD UP to the row above it — the demo checks the
+  // arithmetic, this checks the sheet is showing that same arithmetic.
+  const sum = parts.reduce(
+    (n, r) => n + Number(r.querySelector('.dmgrow__n')?.textContent ?? 0),
+    0
+  );
+  const shown = Number((dmg.querySelector('.stat__v')?.textContent ?? '').replace(/\D+.*$/, ''));
+  assert(Math.abs(sum - shown) <= parts.length, 'and adds up to the row it opened', `${sum} vs ${shown}`);
+
+  dmg.click();
+  assert(!document.querySelector('.statdetail'), 'clicking again folds it back');
+}
+
 // One resistance row per damage type, none of them above the cap.
 const resRows = all('#sheet-res .stat');
 assert(resRows.length === 8, 'a resistance row per damage type', String(resRows.length));

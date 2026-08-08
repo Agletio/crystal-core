@@ -1,6 +1,7 @@
 /** Items into combat numbers. A subtle bug here poisons everything downstream. */
-import { computeStat, percentStat } from '../mods';
+import { aggregate, computeStat, percentStat } from '../mods';
 import {
+  AILMENT,
   DAMAGE_TYPES,
   DEFENCE,
   HERO_BASE,
@@ -65,37 +66,144 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   return out;
 }
 
+/** One damage pass: what a single type contributed, and out of what. */
+export interface DamagePart {
+  type: string;
+  base: number; // the skill's weapon damage, or zero for a type it does not deal
+  flat: number;
+  increased: number; // summed, unlike `more`
+  more: number[]; // each compounds
+  total: number; // this pass's share, after the skill's multiplier
+}
+
+export interface DamageBreakdown {
+  parts: DamagePart[];
+  multiplier: number;
+  total: number;
+  /** All of it lands as this: +5 Fire on a poison skill is five more POISON. */
+  dealtAs: string;
+}
+
 /**
  * Damage types are resolved separately and summed. In the fire pass the context
  * is [...skillTags, 'fire'], so "+12 fire damage" applies, "increased Physical
  * Damage" does not, and an untagged line applies to every pass. The skill's own
  * tags ride along, which is how "increased Melee Damage" finds a melee skill.
+ *
+ * The parts are kept rather than accumulated: the sheet has to show where the
+ * number came from, and working that out twice is two answers.
  */
-export function skillDamage(
+export function damageBreakdown(
   mods: RolledMod[],
   base: number,
   skill: SkillDef,
   grants: Record<string, unknown> = {}
-): number {
-  let total = 0;
-
+): DamageBreakdown {
   // Conversion replaces the type outright and does NOT keep the old one live:
   // scaling off both is a free second stat, not a choice. What stops that being
   // a punishment is that it rewrites the TREE too — see treeMod.
   const converted = convertedType(skill, grants);
   const active = converted ? [converted] : skill.damageTypes;
 
-  for (const type of DAMAGE_TYPES) {
-    const typeBase = active.includes(type.id) ? base : 0;
-    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type.id]);
-  }
-
+  const passes = [...DAMAGE_TYPES.map((t) => t.id)];
   // Typeless carries no type tag, so only untagged lines can reach it.
-  if (skill.damageTypes.includes(TYPELESS)) {
-    total += computeStat(base, mods, 'damage', [...skill.tags, TYPELESS]);
+  if (skill.damageTypes.includes(TYPELESS)) passes.push(TYPELESS);
+
+  // What every pass gets regardless of type, so a zero pass is only reported
+  // when something aimed AT that type is going to waste.
+  const generic = aggregate(mods, 'damage', skill.tags);
+
+  const parts: DamagePart[] = [];
+  // Multiplied once at the end, as one accumulator would: doing it per part is
+  // the same arithmetic in a different order, and that is a different last bit.
+  let raw = 0;
+  for (const type of passes) {
+    const typeBase = type === TYPELESS || active.includes(type) ? base : 0;
+    const tags = [...skill.tags, type];
+    const buckets = aggregate(mods, 'damage', tags);
+    const pass = computeStat(typeBase, mods, 'damage', tags);
+    raw += pass;
+    // "20% increased Fire Damage" doing nothing is the most confusing thing a
+    // sheet can hide, so a pass it reached is shown even at zero.
+    const aimed = buckets.inc !== generic.inc || buckets.more.length !== generic.more.length;
+    if (pass === 0 && !aimed) continue;
+    parts.push({
+      type,
+      base: typeBase,
+      flat: buckets.flat,
+      increased: buckets.inc,
+      more: buckets.more,
+      total: pass * skill.damageMultiplier,
+    });
   }
 
-  return total * skill.damageMultiplier;
+  return {
+    parts,
+    multiplier: skill.damageMultiplier,
+    total: raw * skill.damageMultiplier,
+    dealtAs: active[0] ?? skill.damageTypes[0] ?? 'physical',
+  };
+}
+
+export function skillDamage(
+  mods: RolledMod[],
+  base: number,
+  skill: SkillDef,
+  grants: Record<string, unknown> = {}
+): number {
+  return damageBreakdown(mods, base, skill, grants).total;
+}
+
+/** How long an ailment this skill applies lasts. Read by the sim and the sheet. */
+export function ailmentSeconds(skill: SkillDef, grants: Record<string, unknown>): number {
+  const multiplier = typeof grants.ailmentDuration === 'number' ? grants.ailmentDuration : 1;
+  return ((skill.params?.duration as number) ?? 10) * multiplier;
+}
+
+/** Everything the character sheet needs to explain one number. */
+export interface DamageDetail {
+  skill: SkillDef;
+  breakdown: DamageBreakdown;
+  /** Applications per second: casts for a spell, swings for an attack. */
+  rate: number;
+  /** Zero for a skill that hits. */
+  seconds: number;
+  maxStacks: number;
+  /** What a single application is worth, after the tree's ailment scaling. */
+  perApplication: number;
+  /** Sustained on ONE target. An area skill is worth more against a pack. */
+  perSecond: number;
+}
+
+export function damageDetail(character: Character): DamageDetail {
+  const stats = characterStats(character);
+  const grants = treeGrants(character);
+  const skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], grants);
+  const mods = statMods(character);
+  const breakdown = damageBreakdown(mods, baseFor(character.level).weaponDamage, skill, grants);
+
+  const overTime = skill.behaviour === 'ailment_burst';
+  const seconds = overTime ? ailmentSeconds(skill, grants) : 0;
+  const scale = typeof grants.ailmentMultiplier === 'number' ? grants.ailmentMultiplier : 1;
+  const perApplication = breakdown.total * (overTime ? scale : 1);
+
+  // A lasting skill stacks until the cap or until the oldest stack expires,
+  // whichever comes first: casting faster than that buys nothing on ONE target.
+  const stacks = overTime
+    ? Math.min(AILMENT.maxStacks, stats.attacksPerSecond * seconds)
+    : 0;
+
+  return {
+    skill,
+    breakdown,
+    rate: stats.attacksPerSecond,
+    seconds,
+    maxStacks: AILMENT.maxStacks,
+    perApplication,
+    perSecond: overTime
+      ? (stacks * perApplication) / seconds
+      : perApplication * stats.attacksPerSecond,
+  };
 }
 
 /** Base life and weapon damage before gear, after levelling. */
@@ -230,21 +338,25 @@ export function effectiveSkill(
   };
 }
 
+/**
+ * Every stat line acting on a character. Implicits count exactly like rolled
+ * mods — the only difference is that crafting can't reach them.
+ */
+export function statMods(character: Character): RolledMod[] {
+  const extra = treeMod(character);
+  return [
+    ...equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]),
+    ...(extra ? [extra] : []),
+  ];
+}
+
 /** Stats for a character, resolving its selected skill, gear and tree. */
 export function characterStats(character: Character): CombatStats {
   const base = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
-  const items = equippedItems(character);
-  const extra = treeMod(character);
-  // Implicits count exactly like rolled mods — the only difference is that
-  // crafting can't reach them.
-  const mods = [
-    ...items.flatMap((i) => [...i.mods, ...i.implicits]),
-    ...(extra ? [extra] : []),
-  ];
-  const baseArmour = items.reduce((n, i) => n + (i.armour ?? 0), 0);
-  return heroStats(mods, character.level, skill, grants, baseArmour);
+  const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);
+  return heroStats(statMods(character), character.level, skill, grants, baseArmour);
 }
 
 /**

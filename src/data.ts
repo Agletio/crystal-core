@@ -61,6 +61,12 @@ export const AILMENT_NAMES: Record<string, string> = {
 /** Damage that nothing scales and nothing resists. */
 export const TYPELESS = 'typeless';
 
+/** Damage over time. In data so the sheet states the same cap the sim enforces. */
+export const AILMENT = {
+  maxStacks: 12, // enough that stacking matters, few enough that it cannot run away
+  tick: 0.5, // poison lands in half-second lumps, which is also the crit cadence
+};
+
 /**
  * Resistance and armour are separate MULTIPLIERS — at both caps you take
  * 0.25 * 0.25 of a hit. Adding them would be immunity at 75 + 75.

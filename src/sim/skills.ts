@@ -8,6 +8,7 @@
  * armour, death and XP are the sim's business.
  */
 import { Rng } from '../rng';
+import { ailmentSeconds } from './stats';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -346,7 +347,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   ailment_burst: (use) => {
     const g = use.grants;
     const castMultiplier = castScale(g, use.castIndex);
-    const duration = ((use.skill.params?.duration as number) ?? 10) * num(g.ailmentDuration, 1);
+    const duration = ailmentSeconds(use.skill, g);
     const radius = use.areaRadius(
       ((use.skill.params?.radius as number) ?? 1.6) * num(g.fieldRadius, 1)
     );

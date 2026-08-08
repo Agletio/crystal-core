@@ -5,6 +5,7 @@ import { Rng } from './rng';
 import { ModPool } from './mods';
 import { craft, describeItem } from './crafting';
 import {
+  AILMENT,
   ALL_MODS,
   CURRENCY_BY_ID,
   CRYSTAL_TIERS,
@@ -45,7 +46,7 @@ import {
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
-import { characterStats, convertedType, treeGrants } from './sim/stats';
+import { characterStats, convertedType, damageDetail, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
 import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
@@ -1580,6 +1581,81 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
     offenders.length === 0,
     'every skill keeps its damage types out of its tags',
     `tag leak: ${offenders.join(', ')}`
+  );
+}
+
+// A flat damage line with no damage type on it is counted ONCE PER TYPE —
+// eight times over — because an untagged line satisfies every pass. "Increased"
+// survives it, since seven of the eight passes have a zero base to scale, so
+// this only bites flat. Nothing in the game does it today, and the sheet would
+// now show the eight rows, but the mod itself would still read "+10 Damage".
+{
+  const types = new Set(DAMAGE_TYPES.map((d) => d.id));
+  const untyped: string[] = [];
+  const scan = (where: string, lines: Array<{ stat: string; form: string; tags?: string[] }>) => {
+    for (const line of lines) {
+      if (line.stat !== 'damage' || line.form !== 'flat') continue;
+      if (!(line.tags ?? []).some((t) => types.has(t))) untyped.push(where);
+    }
+  };
+  for (const mod of ALL_MODS) {
+    for (const tier of mod.tiers) scan(`${mod.id} T${tier.ilvl}`, tier.stats);
+  }
+  // Implicits aggregate exactly like rolled mods, and every flat typed damage
+  // line in the game is one — a scan that skips them tests almost nothing.
+  for (const base of GEAR_BASES) scan(base.id, base.implicit ?? []);
+  for (const skill of SKILLS) {
+    for (const node of treeFor(skill.id)) scan(`${skill.id}/${node.id}`, node.stats ?? []);
+  }
+  check(
+    untyped.length === 0,
+    'no flat damage line is missing its damage type',
+    `counted once per type, so worth eight times its text: ${untyped.join(', ')}`
+  );
+}
+
+// The sheet takes the damage number apart. It has to be the SAME number: a
+// breakdown that does not add up to the stat is worse than no breakdown, and
+// the two are only one function apart.
+{
+  const game = createGame('dev');
+  for (const skillId of ['strike', 'fireball', 'blight']) {
+    game.character.skillId = skillId;
+    const detail = damageDetail(game.character);
+    const parts = detail.breakdown.parts.reduce((n, p) => n + p.total, 0);
+    check(
+      Math.abs(parts - characterStats(game.character).damage) < 1e-9,
+      `${skillId}: the parts add up to the damage stat`,
+      `${parts.toFixed(4)} in parts, sheet says ${characterStats(game.character).damage.toFixed(4)}`
+    );
+  }
+
+  // The question the tags invite: flat damage of a type your skill does not
+  // deal still counts, and it lands as the skill's own type. Poison is what
+  // Blight applies whatever the parts were tagged.
+  game.character.skillId = 'blight';
+  const blight = damageDetail(game.character);
+  check(
+    blight.breakdown.dealtAs === 'poison',
+    'Blight deals Poison however its damage was tagged',
+    `deals ${blight.breakdown.dealtAs}`
+  );
+  check(
+    blight.breakdown.parts.some((p) => p.total > 0 && p.type !== 'poison'),
+    'and off-type damage really does reach it, which is why the sheet says so',
+    'nothing off-type in the dev loadout, so the rule is untested here'
+  );
+  check(
+    blight.seconds > 0 && blight.maxStacks === AILMENT.maxStacks,
+    'a lasting skill reports the duration and the stack cap the sim enforces',
+    `${blight.seconds}s, ${blight.maxStacks} stacks`
+  );
+
+  game.character.skillId = 'strike';
+  check(
+    damageDetail(game.character).seconds === 0,
+    'and a skill that hits reports no duration at all',
+    'a hit claims a duration'
   );
 }
 

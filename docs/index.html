@@ -345,6 +345,27 @@
 
   .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
   .stat__k { color: var(--dust); }
+  .stat__unit { color: var(--seam-lit); font-size: 10px; margin-left: 5px; }
+
+  /* A row that opens. The whole row is the control, so the arrow is a marker
+     rather than a second thing to hit. */
+  .stat--open { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--seam); border-radius: 0; box-shadow: none; background: transparent; color: var(--chalk); font-family: inherit; align-items: baseline; }
+  .stat--open:hover { background: var(--seam); }
+  .stat--open .stat__k::after { content: ' ▸'; color: var(--seam-lit); }
+  .stat--on .stat__k::after { content: ' ▾'; color: var(--citrine); }
+
+  .statdetail { padding: 8px 0 10px; border-bottom: 1px solid var(--seam); font-size: 11px; }
+  .dmgrow { display: grid; grid-template-columns: 46px 62px 1fr; gap: 6px; padding: 2px 0; align-items: baseline; }
+  .dmgrow__n { text-align: right; font-family: var(--display); color: var(--chalk); }
+  .dmgrow__t { color: var(--dust); }
+  .dmgrow__how { color: var(--seam-lit); font-size: 10px; }
+  .dmgrow--nil .dmgrow__n, .dmgrow--nil .dmgrow__t { color: var(--ember); }
+  .dmgsum { margin: 7px 0 0; padding-top: 6px; border-top: 1px solid var(--seam); color: var(--dust); line-height: 1.5; }
+  .dmgsum b { color: var(--chalk); font-weight: normal; }
+
+  .skillline { margin: 0 0 14px; padding: 8px 10px; border-left: 3px solid var(--rust); background: var(--seam); }
+  .skillline__name { font-family: var(--display); font-size: 12px; }
+  .skillline__how { font-size: 10px; color: var(--dust); margin-top: 3px; line-height: 1.5; }
   .stat__v--capped { color: var(--citrine); }
   .stat__v--zero { color: var(--ember); }
 
@@ -631,7 +652,9 @@
   .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--rust); text-shadow: 2px 2px 0 #000; }
   .modal__body { padding: 16px 18px; overflow-y: auto; }
 
-  .sheetcols { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 18px; align-items: start; }
+  /* The stats side is the wider one now: it carries the damage workings, and a
+     line of those wrapped three times is not a breakdown anyone reads. */
+  .sheetcols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 18px; align-items: start; }
   /* The gear column stays put and the stats scroll past it. What you are
      equipping is the fixed reference for everything on the right — scrolling
      it away to read a resistance meant losing sight of the thing you were
@@ -1143,7 +1166,7 @@
 <!-- Character sheet. A modal because it's reference you consult, not a
      workspace — and you want it available from either tab. -->
 <div class="modal" id="sheet" hidden>
-  <div class="modal__card">
+  <div class="modal__card modal__card--wide">
     <div class="modal__head">
       <h2 class="modal__title">Character</h2>
       <button class="mini" id="sheet-close">Close</button>
@@ -1164,6 +1187,9 @@
             <div class="hp__fill hp__fill--xp" id="sheet-xp-fill"></div>
             <div class="hp__text" id="sheet-xp-text">0 / 0</div>
           </div>
+          <!-- Which skill every number below is for. Damage is meaningless
+               without it, and the sheet used to leave it unsaid. -->
+          <div class="skillline" id="sheet-skill"></div>
           <p class="panel__title">Stats</p>
           <div id="sheet-stats"></div>
           <p class="panel__title" style="margin-top:16px">Resistances</p>
