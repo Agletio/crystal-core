@@ -240,11 +240,19 @@ Zoom 1 fits the whole map. Above that it follows the hero, clamped to the map
 edges so it never pans into the void. Damage numbers live in screen space
 instead of the world, so zooming doesn't scale them into a blur.
 
+**Walls are lighter than the floor.** You're looking slightly down at a
+chamber, so its walls catch what light there is and the floor sits in their
+shadow. Drawn the other way round — dark walls, light floor — the rock reads as
+a *hole* rather than as mass, which is what an earlier attempt got wrong.
+`--rock` > `--floor` > `--rock-deep`, and the map is legible because those three
+values are far apart.
+
 **The map has its own palette, and it is not the panel one.** Panel colours are
 violet because they sit behind text and want to read as cut mineral. The map
 was borrowing them, and a whole level of violet rock read as a UI element you
-were walking around inside rather than as somewhere underground. Stone is grey
-— warm by a few points, because perfectly neutral grey reads as concrete — and
+were walking around inside rather than as somewhere underground. Stone is grey —
+cool-neutral, barely warm, because a properly warm pass came out khaki, like a
+desert rather than a cave — and
 the accents are what get to be coloured, which is also what makes a crystal's
 vein visible at all. `--floor`, `--rock` and `--rock-deep` are three clearly
 separated values: what you walk on, the wall you can see, and the solid rock

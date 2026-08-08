@@ -326,15 +326,15 @@ function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt |
   return {
     rows: frames[frame] ?? frames[0],
     key: {
-      '#': palette.rockDeep,
+      '#': mix(palette.rockDeep, palette.void, 0.6),
       // Pulled toward the rock so a monster sits in the rock rather than on
       // top of it. The old flat fills were brighter than the floor.
-      M: mix(base, palette.rockDeep, 0.28),
-      m: mix(base, palette.rockDeep, 0.52),
+      M: mix(base, palette.rockDeep, 0.14),
+      m: mix(base, palette.rockDeep, 0.42),
       // Interior shading: segment ridges, plate seams, joints. Between M and
       // m, so it reads as form rather than as an outline drawn inside the
       // outline — a second black line would just make the shape muddy.
-      s: mix(base, palette.rockDeep, 0.66),
+      s: mix(base, palette.rockDeep, 0.6),
       e: mix(base, palette.chalk, 0.55),
     },
   };
@@ -342,7 +342,9 @@ function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt |
 
 function heroArt(palette: Palette, frame: number): PixelArt {
   const key: Record<string, string> = {
-    '#': palette.rockDeep,
+    // Ink, not background. rockDeep is what the map is drawn ON; using it as
+    // an outline left every figure a shade away from the floor it stood on.
+    '#': mix(palette.rockDeep, palette.void, 0.6),
     // Cloth, in three tones off one hue. Grimy rather than coloured — the
     // brightest thing on him should be the eye, so everything else stays
     // pulled most of the way to black.

@@ -24,27 +24,26 @@
      * The map has its own palette entirely, and it is NOT the panel one.
      *
      * Panel colours are violet because they sit behind text and want to read
-     * as cut mineral. The map was borrowing them, and a whole level of violet
-     * rock read as a UI element you were walking around inside rather than as
-     * somewhere underground. Stone is grey; the accents are what get to be
-     * coloured, which is also what makes a crystal's vein visible at all.
+     * as cut mineral. A whole level of violet rock read as a UI element you
+     * were walking around inside. Stone is grey; the accents are what get to
+     * be coloured, which is also what makes a crystal's vein visible.
      *
-     * Warm rather than neutral grey, by a few points. Perfectly neutral stone
-     * reads as concrete.
-     */
-    --floor:     #6E6555;
-    --floor-lit: #918673;
-    /**
-     * Exposed rock face — the wall you can see from the room.
+     * Cool-neutral, barely warm. A first pass went properly warm and the map
+     * came out khaki — like a desert rather than a cave. Underground stone
+     * lit by nothing in particular is grey.
      *
-     * Far darker than the floor, deliberately. A first pass had the two within
-     * a few points of each other and the whole map read as one muddy field:
-     * the walls were being drawn, they just weren't SEPARATING anything. Value
-     * is what makes a room a room; hue barely participates.
+     * Note the order: the WALL is the lightest thing here, not the darkest.
+     * You are looking slightly down at a chamber, so its walls catch what
+     * light there is and the floor sits in their shadow. Drawn the other way
+     * round — dark walls, light floor — the rock reads as a hole rather than
+     * as mass, which is what the first attempt got wrong.
      */
-    --rock:      #464038;
-    /** Solid rock beyond it. Also the colour behind the whole map. */
-    --rock-deep: #1B1917;
+    --rock:      #6E6E68;
+    --rock-lit:  #8C8C85;
+    --floor:     #56564F;
+    --floor-lit: #6B6B63;
+    /** Solid rock beyond the visible wall. Also the colour behind the map. */
+    --rock-deep: #33332E;
 
     --amethyst:  #A67BE8;
     --citrine:   #E8B84B;

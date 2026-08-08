@@ -23,8 +23,13 @@ export interface Palette {
   /** Map-only. Stone is grey; the panel violet is a different vocabulary. */
   floor: string;
   floorLit: string;
-  /** Exposed rock face, and the solid rock behind everything. */
+  /**
+   * The wall you can see, its lit top, and the solid rock behind everything.
+   * `rock` is LIGHTER than `floor` — you are looking slightly down at a
+   * chamber, so its walls catch the light and the floor sits in their shadow.
+   */
   rock: string;
+  rockTop: string;
   rockDeep: string;
   chalk: string;
   dust: string;
@@ -103,6 +108,7 @@ const VARS: Array<[keyof Palette, string]> = [
   ['floor', '--floor'],
   ['floorLit', '--floor-lit'],
   ['rock', '--rock'],
+  ['rockTop', '--rock-lit'],
   ['rockDeep', '--rock-deep'],
   ['chalk', '--chalk'],
   ['dust', '--dust'],
@@ -352,8 +358,8 @@ export function floorPalette(palette: Palette, vein: number): FloorPalette {
     lit: mix(palette.floorLit, palette.chalk, 0.25),
     shade: mix(palette.floor, palette.rockDeep, 0.85),
     vein: veinColour(palette, vein),
-    rockLit: mix(palette.rock, palette.floorLit, 0.55),
-    rockShade: mix(palette.rock, palette.rockDeep, 0.7),
+    rockLit: palette.rockTop,
+    rockShade: mix(palette.rock, palette.rockDeep, 0.55),
   };
 }
 
@@ -423,42 +429,74 @@ export function tileDecals(
   if (tile === WALL) {
     if (!isWallFace(at, x, y)) return out;
 
-    // Rough, not coursed. Masonry on the WALLS was what tipped the whole map
-    // from cave into castle: a chamber cut out of rock has dressed paving at
-    // most, and the rock it was cut out of is just rock.
-    for (let i = 0; i < 3; i++) {
-      const roll = tileNoise(x, y, 60 + i);
-      if (roll > 0.7) continue;
+    // Blocks, but broken ones. The wall needs SOME structure or it is a flat
+    // grey band — but coursed masonry on the walls is what tipped the whole
+    // map from cave into castle, since a chamber cut out of rock has dressed
+    // paving at most and the rock it was cut from is just rock. So: block
+    // seams that skip, at three different heights, per tile.
+    const seams = tileNoise(x, y, 61);
+    if (seams < 0.8) {
+      out.push({ x: 0, y: 0.5, w: 1, h: U, colour: floor.rockShade, alpha: 0.55 });
+    }
+    if (seams < 0.55) {
       out.push({
-        x: snap(roll / 0.7),
-        y: snap(tileNoise(x, y, 70 + i)),
-        w: U * (roll < 0.25 ? 2 : 1),
-        h: U,
-        colour: i === 0 ? floor.rockLit : floor.rockShade,
-        alpha: 0.4,
+        x: snap(0.25 + tileNoise(x, y, 62) * 0.4),
+        y: 0.5,
+        w: U,
+        h: 0.5,
+        colour: floor.rockShade,
+        alpha: 0.55,
+      });
+    }
+    if (tileNoise(x, y, 63) < 0.6) {
+      out.push({
+        x: snap(0.2 + tileNoise(x, y, 64) * 0.5),
+        y: 0,
+        w: U,
+        h: 0.5,
+        colour: floor.rockShade,
+        alpha: 0.55,
       });
     }
 
-    // The face you can see. A wall with floor BELOW it is the one you are
-    // looking at, so that is the edge the light catches; the far side of the
-    // room gets the shadow instead. One pair, and the rooms stop being flat.
-    if (at(x, y + 1) !== WALL) {
-      out.push({ x: 0, y: 1 - U * 2, w: 1, h: U * 2, colour: floor.rockLit, alpha: 0.75 });
+    // Grit on the face, so the blocks read as rock rather than as brick.
+    for (let i = 0; i < 2; i++) {
+      const roll = tileNoise(x, y, 66 + i);
+      if (roll > 0.5) continue;
+      out.push({
+        x: snap(roll / 0.5),
+        y: snap(tileNoise(x, y, 72 + i)),
+        w: U,
+        h: U,
+        colour: i === 0 ? floor.rockLit : floor.rockShade,
+        alpha: 0.45,
+      });
     }
-    if (at(x, y - 1) !== WALL) {
-      out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.rockShade, alpha: 0.7 });
+
+    // The top of the wall, which is what an overhead light actually reaches.
+    // A wall with floor BELOW it is the face you are looking at.
+    if (at(x, y - 1) === WALL || at(x, y - 1) === undefined) {
+      out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.rockLit, alpha: 0.45 });
+    }
+    if (at(x, y + 1) !== WALL) {
+      out.push({ x: 0, y: 1 - U * 1.5, w: 1, h: U * 1.5, colour: floor.rockShade, alpha: 0.75 });
     }
     return out;
   }
 
   // --- floor --------------------------------------------------------------
-  const paved = tile !== TUNNEL;
+  //
+  // Not every chamber is paved. A coarse noise field — far wider than a room —
+  // decides which parts of the level were ever built in, so you cross from
+  // flagstone to bare cave floor and back without every room looking like
+  // every other one. That variety is most of what "a cave with a ruin in it"
+  // looks like, and it costs one extra noise lookup.
+  const built = patchNoise(x, y, 13, 9) > 0.42;
+  const paved = tile !== TUNNEL && built;
 
-  // A ruin far more than a building. Better than half the paving in a chamber
-  // is gone, and passages were never paved at all — so what you mostly walk on
-  // is cave, with worked stone as the thing that survived rather than the
-  // thing the place is made of.
-  const broken = tileNoise(x, y, 7) < 0.38;
+  // A ruin far more than a building. Better than a third of the paving in a
+  // chamber is gone, and passages were never paved at all.
+  const broken = tileNoise(x, y, 7) < 0.35;
 
   if (paved && !broken) {
     for (let course = 0; course < 2; course++) {
@@ -498,14 +536,17 @@ export function tileDecals(
   // The vein, as a square rather than a circle now — same reason as the rest.
   const fleck = tileNoise(x, y, 2);
   if (fleck < VEIN_DENSITY) {
-    const size = fleck < VEIN_DENSITY * 0.4 ? U * 2 : U;
+    const size = fleck < VEIN_DENSITY * 0.25 ? U * 2 : U;
     out.push({
       x: snap(tileNoise(x, y, 3)) * (1 - size),
       y: snap(tileNoise(x, y, 4)) * (1 - size),
       w: size,
       h: size,
       colour: floor.vein,
-      alpha: 0.8,
+      // Quieter than it was. Against violet rock the flecks were a texture;
+      // against grey they are the only saturated thing on screen, and at full
+      // strength a mineral seam competed with the monsters for attention.
+      alpha: 0.5,
     });
   }
 
