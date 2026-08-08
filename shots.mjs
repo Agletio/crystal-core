@@ -192,6 +192,48 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4500);
   await shoot('descent');
 
+  // The skill web, at every depth. It is the one screen with a hundred things
+  // on it and its own pan/zoom transform, which makes it the likeliest place
+  // for something to end up drawn outside the box it lives in.
+  await page.evaluate(() => document.querySelector('#run-abandon')?.click());
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('open-skills')?.click());
+  await page.waitForTimeout(300);
+  await shoot('skills');
+
+  await page.evaluate(() => {
+    document.querySelector('#skills-cats .catcard:not([disabled])')?.click();
+  });
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#skills-list .skillrow')];
+    (rows.find((r) => /Fireball/.test(r.textContent ?? '')) ?? rows[0])?.click();
+  });
+  await page.waitForTimeout(400);
+  // Points in it, so the shot shows a build rather than an empty lattice.
+  await page.evaluate(() => {
+    for (let i = 0; i < 12; i++) document.getElementById('skills-devlevel')?.click();
+    for (let i = 0; i < 12; i++) {
+      const open = document.querySelector('#skills-web .web__node--open');
+      if (!open) break;
+      open.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(300);
+  await shoot('skill-web');
+
+  const spilled = await page.evaluate(() => {
+    const wrap = document.querySelector('.webwrap')?.getBoundingClientRect();
+    const svg = document.getElementById('skills-web')?.getBoundingClientRect();
+    if (!wrap || !svg) return 'no web on screen';
+    // The transform lives inside the SVG, so nothing it draws may ever change
+    // the size of the box around it.
+    return svg.width > wrap.width + 1 || svg.height > wrap.height + 1
+      ? `web ${Math.round(svg.width)}x${Math.round(svg.height)} in ${Math.round(wrap.width)}x${Math.round(wrap.height)}`
+      : null;
+  });
+  if (spilled) problems.push(`${vp.name}/skill-web: ${spilled}`);
+
   if (errors.length) problems.push(`${vp.name}: console errors — ${errors.slice(0, 2).join(' | ')}`);
   await page.close();
 }

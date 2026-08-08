@@ -9,7 +9,7 @@
  * Nothing to buy and nothing to read first. The bench can wait until you have
  * something to spend.
  */
-import { SKILLS } from '../data';
+import { PLAYER_SKILLS } from '../data';
 import { skillIcon } from './icons';
 import type { GameState } from '../game/state';
 
@@ -29,7 +29,9 @@ function render(): void {
   const host = $('welcome-skills');
   host.replaceChildren();
 
-  for (const skill of SKILLS) {
+  // Yours only. Monsters have skills too, and offering a husk's fire bolt as
+  // a starting choice would be offering a skill with no tree behind it.
+  for (const skill of PLAYER_SKILLS) {
     const card = el('button', 'welcomecard') as HTMLButtonElement;
     card.append(skillIcon(skill.id, 52));
     card.append(el('span', 'welcomecard__name', skill.name));

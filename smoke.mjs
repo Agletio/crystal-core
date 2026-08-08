@@ -180,6 +180,8 @@ assert(
 );
 
 $('dev-kit').click();
+$('confirm-yes').click();
+await new Promise((r) => setTimeout(r, 0));
 assert($('guide').hidden === true, 'a wipe ends it');
 assert(all('.guide-on').length === 0, 'and takes the highlight with it');
 assert(!document.body.classList.contains('guided'), 'and lifts the lock');
@@ -748,77 +750,162 @@ const overCap = resRows.filter(
 );
 assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.length));
 
-// --- skills modal and tree ------------------------------------------------
+// --- skills: category, skill, web -----------------------------------------
+// Three depths now. The old screen put every skill and every node on one
+// page, which was fine at ten nodes and is a wall at a hundred.
 $('sheet-close').click();
 assert($('skills').hidden === true, 'skills modal starts closed');
 $('open-skills').click();
 assert($('skills').hidden === false, 'skills modal opens');
-assert(all('#skills-list .skillrow').length === 3, 'all skills listed');
 
-// The skill was renamed; nothing should still say Arcane Bolt anywhere.
-const pageText = document.body.textContent ?? '';
-assert(!/Arcane Bolt/.test(pageText), 'no stale "Arcane Bolt" naming');
-assert(/Fire Bolt/.test(pageText), 'Fire Bolt is named');
+assert($('skills-cats').hidden === false, 'it opens on the categories');
+assert($('skills-list').hidden === true, 'not on a skill list');
+assert($('skills-detail').hidden === true, 'and not on a web');
+assert(all('#skills-cats .catcard').length === 4, 'four categories offered');
+assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 
-// Opening a skill draws its web.
-all('#skills-list .skillrow')[0].click();
-assert($('skills-detail').hidden === false, 'selecting a skill shows its tree');
-assert(all('#skills-tree .web__node').length === 10, 'ten nodes drawn');
-assert(all('#skills-tree .web__edge').length === 10, 'every node is connected');
-assert(all('#skills-tree .web__node--major').length >= 1, 'tree has a major node');
-
-// The centre is an icon now, not a word.
+// Movement and Passive are listed and empty. Leaving them out until they have
+// something in them would move every shelf the day they arrive.
+const cats = all('#skills-cats .catcard');
+const emptyCats = cats.filter((c) => c.disabled);
+assert(emptyCats.length === 2, 'two shelves are still empty', String(emptyCats.length));
 assert(
-  $('skills-tree').querySelector('.web__centre svg') !== null,
+  cats.filter((c) => !c.disabled).length === 2,
+  'and two have something on them'
+);
+
+// Monster skills are not yours: Fire Bolt is what a husk throws, and it has no
+// tree, no level and no business being offered.
+assert(
+  !/Fire Bolt/.test($('skills').textContent ?? ''),
+  'monster skills are not listed'
+);
+
+cats[0].click();
+assert($('skills-cats').hidden === true, 'picking a category leaves the categories');
+assert($('skills-list').hidden === false, 'and shows what is on that shelf');
+assert($('skills-back').hidden === false, 'with a way back');
+assert(all('#skills-list .skillrow').length === 2, 'both spells listed');
+
+// Back really does go back.
+$('skills-back').click();
+assert($('skills-cats').hidden === false, 'back returns to the categories');
+cats[0].click();
+
+const fireballRow = all('#skills-list .skillrow').find((b) =>
+  /Fireball/.test(b.textContent ?? '')
+);
+assert(!!fireballRow, 'Fireball is on the spell shelf');
+fireballRow.click();
+assert($('skills-detail').hidden === false, 'opening a skill shows its web');
+assert($('skills-list').hidden === true, 'and leaves the list behind');
+
+// --- the web ---------------------------------------------------------------
+const webNodes = () => all('#skills-web .web__node');
+
+// It opens zoomed in, at a size where you can read a node — not fitted to the
+// box, which for a hundred nodes is a grey smear. So it starts partial, and
+// only Fit shows the whole thing.
+const zoomedIn = webNodes().length;
+assert(zoomedIn < 100, 'it opens on part of the web, not all of it', String(zoomedIn));
+
+$('skills-fit').click();
+assert(webNodes().length === 100, 'a hundred nodes, once fitted', String(webNodes().length));
+assert(
+  all('#skills-web .web__node--notable').length === 25,
+  'twenty-five of them notable',
+  String(all('#skills-web .web__node--notable').length)
+);
+assert(all('#skills-web .web__edge').length > 100, 'and it is a web, not a list');
+
+// The centre is an icon, not a word.
+assert(
+  $('skills-web').querySelector('.web__centre svg') !== null,
   'centre shows a skill icon'
 );
 
 // Tooltips are ours, not the browser's — nothing should rely on `title`,
 // which is delayed and drawn in the OS's colours.
 assert(
-  $('skills-tree').querySelectorAll('title').length === 0,
-  'tree uses custom tooltips, not native title'
+  $('skills-web').querySelectorAll('title').length === 0,
+  'web uses custom tooltips, not native title'
 );
 assert($('tooltip').hidden === true, 'tooltip starts hidden');
 
-const hub = $('skills-tree').querySelector('.web__centre');
+const hub = $('skills-web').querySelector('.web__centre');
 hub.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
 assert($('tooltip').hidden === false, 'hovering the skill shows a tooltip at once');
-assert(
-  /Fire Bolt|Strike|Creeping Blight/.test(text('tooltip')),
-  'tooltip names the skill',
-  text('tooltip').slice(0, 40)
-);
-assert(/damage per hit/.test(text('tooltip')), 'tooltip shows the damage breakdown');
+assert(/Fireball/.test(text('tooltip')), 'tooltip names the skill', text('tooltip').slice(0, 40));
 hub.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 assert($('tooltip').hidden === true, 'tooltip hides again');
 
-// Level 1 means one point, and outer nodes must be unreachable until their
-// inner one is paid for.
-const allocated = () => all('#skills-tree .web__node--on').length;
-const locked = () => all('#skills-tree .web__node--locked').length;
+// Level 1 is one point, and it can only be spent on the ring touching the
+// middle — a web with a hundred nodes where any of them is a first move is a
+// menu, not a tree.
+const allocated = () => all('#skills-web .web__node--on').length;
+// --open means reachable AND affordable, which are different questions with
+// different answers: a node next to one you own is still shut if you are out
+// of points, and saying "locked" about both would hide the difference.
+const buyable = () => all('#skills-web .web__node--open');
 assert(allocated() === 0, 'nothing allocated to begin with');
-assert(locked() >= 5, 'outer ring starts locked', String(locked()));
+assert(buyable().length === 8, 'only the first ring can be bought', String(buyable().length));
 
-const openNodes = all('#skills-tree .web__node').filter(
-  (n) => !n.classList.contains('web__node--locked')
-);
-assert(openNodes.length === 5, 'exactly the inner ring is reachable', String(openNodes.length));
-
-openNodes[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+buyable()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 assert(allocated() === 1, 'a node can be allocated');
-assert(locked() >= 9, 'spending the only point locks the rest', String(locked()));
+assert(
+  /1\/1 points spent/.test(text('skills-sub')),
+  'and the header counts it',
+  text('skills-sub')
+);
+assert(
+  all('#skills-taken .taken').length === 1,
+  'the allocated list picks it up',
+  String(all('#skills-taken .taken').length)
+);
+
+// Out of points: nothing is buyable, however much of the web you can now see.
+assert(
+  buyable().length === 0,
+  'with no points left, nothing can be bought',
+  String(buyable().length)
+);
+
+// Clicking it again refunds it — nothing hangs off it, so nothing is stranded.
+all('#skills-web .web__node--on')[0].dispatchEvent(
+  new window.MouseEvent('click', { bubbles: true })
+);
+assert(allocated() === 0, 'and clicking it again refunds it');
+
+// A notable this deep must refuse to open no matter what is next to it. That
+// gate is the only thing stopping a wide web from being a shopping list.
+{
+  const before = allocated();
+  const gated = all('#skills-web .web__node--notable');
+  assert(
+    gated.every((n) => n.classList.contains('web__node--locked')),
+    'every notable starts gated'
+  );
+  assert(allocated() === before, 'and none of them slipped through');
+}
 
 // The dev lever exists precisely so this is testable without grinding.
 $('skills-devlevel').click();
 assert(
-  all('#skills-tree .web__node').filter((n) => !n.classList.contains('web__node--locked'))
-    .length > 0,
-  'a granted level frees up another node'
+  /level 2/.test(text('skills-sub')),
+  'a granted level shows up in the header',
+  text('skills-sub')
 );
 
-$('skills-close').click();
-assert($('skills').hidden === true, 'skills modal closes');
+// Escape steps back a level rather than closing outright — three screens deep,
+// one keypress out would lose your place every time.
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('skills').hidden === false, 'escape does not close from inside a web');
+assert($('skills-list').hidden === false, 'it steps back to the skill list');
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('skills-cats').hidden === false, 'then to the categories');
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('skills').hidden === true, 'and only then closes');
+
 $('open-character').click();
 
 // Taking something off must return it to the inventory and free the slot.

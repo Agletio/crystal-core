@@ -24,6 +24,7 @@ import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { Palette, Renderer } from './renderer';
 import {
+  burstRadius,
   clampZoom,
   floorColour,
   floorPalette,
@@ -357,6 +358,18 @@ export async function createPixiRenderer(
             .circle(cx(d.x), cy(d.y), d.r)
             .fill({ color: colour, alpha: Math.min(1, d.alpha) });
         }
+        continue;
+      }
+
+      if (fx.kind === 'burst') {
+        // Second point carries the radius, same contract as the poison field.
+        const radius = burstRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        vfxLayer
+          .circle(cx(from.x), cy(from.y), radius)
+          .fill({ color: colour, alpha: Math.max(0, 0.3 * (1 - t)) });
+        vfxLayer
+          .circle(cx(from.x), cy(from.y), radius)
+          .stroke({ width: Math.max(hair, 0.09), color: colour, alpha });
         continue;
       }
 

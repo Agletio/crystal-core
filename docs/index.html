@@ -693,8 +693,14 @@
 
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
-  .skillcols { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 18px; align-items: start; }
-  @media (max-width: 780px) { .skillcols { grid-template-columns: 1fr; } }
+
+  .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .catcard { text-align: left; padding: 14px; display: flex; flex-direction: column; gap: 5px; }
+  .catcard:hover:not(:disabled) { background: var(--seam); border-color: var(--amethyst); }
+  .catcard:disabled { opacity: .5; }
+  .catcard__name { font-family: var(--display); font-size: 13px; }
+  .catcard__blurb { font-size: 11px; color: var(--dust); line-height: 1.4; }
+  .catcard__count { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
 
   .skilllist { display: grid; gap: 6px; }
   .skillrow { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; border-left-width: 3px; border-left-color: var(--seam-lit); }
@@ -709,9 +715,19 @@
   .skillhead__title { font-family: var(--display); font-size: 14px; margin: 0; }
   .skillhead__sub { font-size: 11px; color: var(--dust); }
 
-  .web { width: 100%; max-width: 420px; display: block; margin: 0 auto; }
-  .web__edge { stroke: var(--seam); stroke-width: 2; }
-  .web__edge--on { stroke: var(--amethyst); stroke-width: 3; }
+  /* The web is a map: it does not fit, and it is not supposed to. */
+  .webwrap { position: relative; height: min(50vh, 430px); border: 1px solid var(--seam); background: var(--void); overflow: hidden; }
+  .web { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  .web--drag { cursor: grabbing; }
+  .webhud { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .webhud__hint { font-size: 10px; color: var(--dust); letter-spacing: .04em; }
+  .webtaken { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 22px; }
+  .taken { font-size: 10px; padding: 3px 7px; border: 1px solid var(--seam-lit); color: var(--dust); }
+  .taken--notable { border-color: var(--citrine); color: var(--citrine); }
+  .taken--none { border: 0; padding-left: 0; }
+
+  .web__edge { stroke: var(--seam-lit); stroke-width: 1.5; opacity: .7; }
+  .web__edge--on { stroke: var(--citrine); stroke-width: 2.5; }
   .web__hub { fill: var(--matrix); stroke: var(--amethyst); stroke-width: 2; }
   .web__centre { cursor: help; }
 
@@ -727,20 +743,15 @@
 
   .web__node circle { fill: var(--matrix); stroke: var(--seam-lit); stroke-width: 2; cursor: pointer; }
   .web__node:hover circle { stroke: var(--chalk); }
-  .web__node--major circle { stroke-width: 3; stroke: var(--citrine); }
+  /* Notables are the reason to walk somewhere, so they have to be findable at
+     any zoom — a size difference alone vanishes when the web is small. */
+  .web__node--notable circle { stroke-width: 3; stroke: var(--citrine); }
   .web__node--on circle { fill: var(--amethyst); stroke: var(--chalk); }
-  .web__node--major.web__node--on circle { fill: var(--citrine); }
-  .web__node--locked circle { opacity: .35; cursor: not-allowed; }
-
-  .weblegend { display: grid; gap: 4px; margin-top: 14px; border-top: 1px solid var(--seam); padding-top: 12px; }
-  .weblegend__row { display: flex; gap: 8px; align-items: flex-start; opacity: .55; }
-  .weblegend__row--on { opacity: 1; }
-  .weblegend__dot { width: 9px; height: 9px; margin-top: 5px; flex: none; background: var(--seam-lit); border-radius: 50%; }
-  .weblegend__row--on .weblegend__dot { background: var(--amethyst); }
-  .weblegend__dot--major { width: 12px; height: 12px; background: var(--citrine); }
-  .weblegend__body { display: flex; flex-direction: column; min-width: 0; }
-  .weblegend__name { font-size: 12px; }
-  .weblegend__desc { font-size: 10px; color: var(--dust); }
+  .web__node--notable.web__node--on circle { fill: var(--citrine); }
+  /* Reachable but unaffordable, and reachable-and-affordable. Distinguished
+     because "why is this dim" has two different answers. */
+  .web__node--locked circle { opacity: .5; cursor: not-allowed; }
+  .web__node--open circle { stroke: var(--chalk); stroke-dasharray: 3 3; }
   #history-log { font-size: 12px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1013,25 +1024,39 @@
 <div class="modal" id="skills" hidden>
   <div class="modal__card modal__card--wide">
     <div class="modal__head">
-      <h2 class="modal__title">Skills</h2>
+      <h2 class="modal__title" id="skills-modal-title">Skills</h2>
       <div class="seedbar">
         <button class="mini" id="skills-devlevel" title="Dev only: grant a skill level">+1 level (dev)</button>
+        <button class="mini" id="skills-back" hidden>Back</button>
         <button class="mini" id="skills-close">Close</button>
       </div>
     </div>
     <div class="modal__body">
-      <div class="skillcols">
-        <div class="skilllist" id="skills-list"></div>
-        <div id="skills-detail" hidden>
-          <div class="skillhead">
-            <div>
-              <h3 class="skillhead__title" id="skills-title">—</h3>
-              <div class="skillhead__sub" id="skills-sub"></div>
-            </div>
-            <button class="mini" id="skills-equip">Equip</button>
+      <!-- Three depths, one at a time: what kind of skill, which skill, its
+           web. Showing all three at once is what made the old screen a wall;
+           you are only ever answering one of those questions. -->
+      <div id="skills-cats" class="catgrid"></div>
+
+      <div id="skills-list" class="skilllist" hidden></div>
+
+      <div id="skills-detail" hidden>
+        <div class="skillhead">
+          <div>
+            <h3 class="skillhead__title" id="skills-title">—</h3>
+            <div class="skillhead__sub" id="skills-sub"></div>
           </div>
-          <div id="skills-tree"></div>
+          <button class="mini" id="skills-equip">Equip</button>
         </div>
+        <!-- The web is bigger than the window on purpose: a hundred nodes
+             legible at once would be a hundred dots you cannot read. -->
+        <div class="webwrap">
+          <svg class="web" id="skills-web" role="img" aria-label="skill web"></svg>
+          <div class="webhud">
+            <button class="mini" id="skills-fit">Fit</button>
+            <span class="webhud__hint">scroll to zoom · drag to move</span>
+          </div>
+        </div>
+        <div class="webtaken" id="skills-taken"></div>
       </div>
     </div>
   </div>

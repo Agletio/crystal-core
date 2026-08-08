@@ -396,6 +396,7 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
   const outline = { stroke: 'var(--void)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' };
 
   switch (skillId) {
+    case 'fireball':
     case 'bolt': {
       // A fireball: hot core, trailing flame.
       shape(node, 'path', {

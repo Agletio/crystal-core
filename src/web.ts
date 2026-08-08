@@ -30,7 +30,7 @@ import {
   isCharacterOpen,
   pickingSlot,
 } from './ui/character';
-import { initSkills, openSkills, closeSkills, isSkillsOpen } from './ui/skills';
+import { initSkills, openSkills, closeSkills, isSkillsOpen, skillsEscape } from './ui/skills';
 import {
   initHistory,
   openHistory,
@@ -49,7 +49,7 @@ function restart(mode: StartMode): void {
   resetGame(game, mode);
   stopTutorial();
   clearHistory();
-  note(mode === 'fresh' ? 'New game — two crystals and nothing else.' : 'Dev kit granted.');
+  note(mode === 'fresh' ? 'New game — nothing but the Fissure.' : 'Dev kit granted.');
   refreshRunPanels();
   // Same rule as booting: a stocked game has something to spend, a fresh one
   // has a map to run.
@@ -83,20 +83,15 @@ document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
-// The only button here that cannot be undone, sitting in a row of buttons you
-// click all day. It asks first.
-document.getElementById('dev-fresh')!.addEventListener('click', async () => {
-  const ok = await ask({
-    title: 'Start a new game?',
-    text:
-      'Everything you own goes — every item, every crystal, your stash, your ' +
-      'level and your fragments. You start again with two Tier 1 crystals and ' +
-      'nothing else. There is no way back.',
-    confirm: 'Wipe and start over',
+// Both of these wipe the save, and both sit in a row of buttons you click all
+// day. They ask first.
+const guard = (id: string, title: string, mode: StartMode) =>
+  document.getElementById(id)!.addEventListener('click', async () => {
+    if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
   });
-  if (ok) restart('fresh');
-});
-document.getElementById('dev-kit')!.addEventListener('click', () => restart('dev'));
+
+guard('dev-fresh', 'Start a new game?', 'fresh');
+guard('dev-kit', 'Restart with the dev kit?', 'dev');
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
@@ -107,7 +102,9 @@ globalThis.addEventListener('keydown', (event) => {
   if (isGuided()) return;
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
-  else if (isSkillsOpen()) closeSkills();
+  // Skills is three screens deep, so Escape backs OUT of it a level at a
+  // time and only closes from the top — the same thing Back does.
+  else if (isSkillsOpen()) skillsEscape();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
   else if (isStashOpen()) closeStash();

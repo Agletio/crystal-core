@@ -158,7 +158,9 @@ export function spriteColour(palette: Palette, sprite: string): string {
  * the skill data.
  */
 export function vfxColour(palette: Palette, kind: string, damageType: string): string {
-  if (kind === 'bolt') return palette.amethyst;
+  // Only the neutral kinds get a fixed colour. A bolt used to be violet
+  // whatever it was made of, which was fine when the one bolt in the game was
+  // arcane and wrong the moment a tree could turn a fireball to ice.
   if (kind === 'slash') return palette.chalk;
   return damageColour(palette, damageType);
 }
@@ -629,6 +631,18 @@ export function poisonFieldRadius(radius: number, t: number): number {
   if (t >= OPEN) return radius;
   const p = t / OPEN;
   return radius * (1 - (1 - p) * (1 - p));
+}
+
+/**
+ * A burst: out fast, then gone.
+ *
+ * The opposite curve to a poison field, which eases OPEN and then sits there.
+ * An explosion that grew the same way would read as a circle being placed
+ * rather than something going off, and the whole point of drawing it is that
+ * you can tell what the burst caught.
+ */
+export function burstRadius(radius: number, t: number): number {
+  return radius * Math.min(1, Math.sqrt(t * 3.2));
 }
 
 export function poisonDrops(

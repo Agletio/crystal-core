@@ -240,10 +240,22 @@ export interface MonsterDef {
  * `damageTypes`, so "increased Physical Damage" can't leak onto a skill's fire
  * damage.
  */
+/**
+ * Which shelf of the Skills screen a skill lives on.
+ *
+ * Also what makes a skill YOURS. A skill with no category is one only a
+ * monster ever uses — it needs stats and a delivery like any other, but it is
+ * not something you pick, level or build a tree for, so it never appears in
+ * the menu.
+ */
+export type SkillCategory = 'spell' | 'attack' | 'passive' | 'movement';
+
 export interface SkillDef {
   id: string;
   name: string;
   description: string;
+  /** Omitted for monster-only skills — see SkillCategory. */
+  category?: SkillCategory;
   /** Modifier-engine tags: 'attack', 'spell', 'melee', 'area', 'chain', … */
   tags: string[];
   /** Key into the SKILL_BEHAVIOURS registry — how the hit is delivered. */

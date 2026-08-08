@@ -7,6 +7,7 @@ import type {
   ModDef,
   MonsterDef,
   Recipe,
+  SkillCategory,
   SkillDef,
   StatSpec,
 } from './types';
@@ -1602,6 +1603,7 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'strike',
     name: 'Strike',
+    category: 'attack',
     description:
       'A sweeping melee hit. Full damage to the target, 10% to everything else in reach.',
     tags: ['attack', 'melee'],
@@ -1616,12 +1618,38 @@ export const SKILLS: SkillDef[] = [
     params: { splashRadius: 2.2, splashMultiplier: 0.1 },
   },
   {
-    // Needed no new code — same single_target behaviour, longer range. That is
-    // the registry doing its job.
-    //
-    // `projectile` is a delivery tag and `fire` is a damage type: the tag
-    // goes in tags, the type in damageTypes. Putting the type in tags would
-    // make it satisfy every damage pass and scale the lot.
+    /**
+     * The one with a tree behind it.
+     *
+     * `projectile` is a delivery tag and `fire` is a damage type: the tag goes
+     * in tags, the type in damageTypes. Putting the type in tags would make it
+     * satisfy every damage pass and scale the lot.
+     *
+     * Bare, it is one enemy at range and nothing else — every interesting
+     * thing it can do (bursting, passing through, leaping, burning instead of
+     * critting) is a node you walked to. That is deliberate: the skill is the
+     * seed, the tree is the build.
+     */
+    id: 'fireball',
+    name: 'Fireball',
+    category: 'spell',
+    description:
+      'A ball of fire at range. One target, until its tree says otherwise.',
+    tags: ['spell', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['fire'],
+    damageMultiplier: 1,
+    rateMultiplier: 1,
+    range: 6.5,
+    vfxKind: 'bolt',
+  },
+  {
+    /**
+     * Monsters only — no category, so it never shows up in your Skills screen.
+     *
+     * A husk throwing fire needs a skill definition like anything else, but it
+     * is not a thing you pick, level or build a tree for.
+     */
     id: 'bolt',
     name: 'Fire Bolt',
     description: 'A bolt of fire at range. Single target, from much further away.',
@@ -1647,6 +1675,7 @@ export const SKILLS: SkillDef[] = [
      */
     id: 'blight',
     name: 'Creeping Blight',
+    category: 'spell',
     description:
       'Drops a circle of poison on the target for 10s. No target limit — ' +
       'Area of Effect is what makes it hit more.',
@@ -1682,6 +1711,30 @@ export const SKILLS: SkillDef[] = [
 export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(
   SKILLS.map((s) => [s.id, s])
 );
+
+/**
+ * The shelves of the Skills screen, in the order they are shown.
+ *
+ * Movement and Passive are empty for now and still listed. An empty shelf
+ * with a name is a promise about where something goes; leaving it out and
+ * adding it later moves everything the player had already learned.
+ */
+export const SKILL_CATEGORIES: Array<{
+  id: SkillCategory;
+  name: string;
+  blurb: string;
+}> = [
+  { id: 'spell', name: 'Spells', blurb: 'Cast. Scales with cast speed.' },
+  { id: 'attack', name: 'Attacks', blurb: 'Swung. Scales with attack speed.' },
+  { id: 'passive', name: 'Passive Skills', blurb: 'Always on. Nothing here yet.' },
+  { id: 'movement', name: 'Movement', blurb: 'Getting out of the way. Nothing here yet.' },
+];
+
+/** Skills you can actually pick. Monster-only entries have no category. */
+export const PLAYER_SKILLS = SKILLS.filter((s) => s.category);
+
+export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
+  SKILLS.filter((s) => s.category === category);
 
 /**
  * Crystal tiers unlock as you level, same as the currencies. A level-1 shop

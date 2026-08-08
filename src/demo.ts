@@ -15,6 +15,7 @@ import {
   QUALITIES,
   RECIPES,
   SKILLS,
+  SKILL_BY_ID,
 } from './data';
 import {
   balance,
@@ -38,6 +39,16 @@ import {
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats } from './sim/stats';
+import { SKILL_BEHAVIOURS } from './sim/skills';
+import {
+  CENTRE,
+  MAX_TREE_POINTS,
+  canAllocate,
+  canDeallocate,
+  neighboursOf,
+  nodeById,
+  treeFor,
+} from './skills-tree';
 import { makeCharacter, xpToNext } from './sim/character';
 import { loadoutMods, starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
@@ -57,7 +68,7 @@ import {
   stashUpgradeCost,
   unequipItem,
 } from './game/state';
-import type { Item, Quality, Wallet } from './types';
+import type { Item, Quality, RolledMod, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
@@ -708,6 +719,273 @@ rule('GUIDED OPENING — does every step actually complete?');
     left >= crystalCost,
     `${left} fragments left — a T1 crystal costs ${crystalCost}, as promised`,
     `only ${left} left but the last step promises a crystal at ${crystalCost}`
+  );
+}
+
+// ===========================================================================
+rule('THE WEB — is every node reachable, and is anything a trap?');
+
+// Two questions, and the second is the one that bites. A hundred-node web can
+// look fine and still contain a node nobody can ever buy: too far out to
+// afford, or gated behind more points than the cap allows. Neither is visible
+// by looking at it.
+{
+  const nodes = treeFor('fireball');
+  const notables = nodes.filter((n) => n.kind === 'notable');
+
+  line(`  ${nodes.length} nodes, ${notables.length} notable, ${MAX_TREE_POINTS} points to spend`);
+  check(nodes.length === 100, 'a hundred nodes', String(nodes.length));
+  check(notables.length === 25, 'twenty-five of them notable', String(notables.length));
+
+  // Cost to reach each node: how many nodes you must buy, this one included.
+  const distance = new Map<string, number>();
+  let edge = nodes.filter((n) => neighboursOf('fireball', n.id).has(CENTRE));
+  let step = 1;
+  for (const n of edge) distance.set(n.id, step);
+  while (edge.length) {
+    const next: typeof edge = [];
+    step++;
+    for (const at of edge) {
+      for (const id of neighboursOf('fireball', at.id)) {
+        if (id === CENTRE || distance.has(id)) continue;
+        const node = nodes.find((n) => n.id === id);
+        if (!node) continue;
+        distance.set(id, step);
+        next.push(node);
+      }
+    }
+    edge = next;
+  }
+
+  const orphans = nodes.filter((n) => !distance.has(n.id));
+  check(orphans.length === 0, 'every node connects to the middle', orphans.map((n) => n.id).join(', '));
+
+  // A node costs the walk to it, OR its gate plus itself, whichever is worse.
+  const cost = (n: (typeof nodes)[number]) =>
+    Math.max(distance.get(n.id) ?? Infinity, (n.gate ?? 0) + 1);
+  const unaffordable = nodes.filter((n) => cost(n) > MAX_TREE_POINTS);
+  check(
+    unaffordable.length === 0,
+    'and every node is affordable inside the cap',
+    unaffordable.map((n) => `${n.id} costs ${cost(n)}`).join(', ')
+  );
+
+  const deepest = Math.max(...nodes.map((n) => cost(n)));
+  line(`  the most expensive node costs ${deepest} of ${MAX_TREE_POINTS} points`);
+  check(deepest > MAX_TREE_POINTS * 0.6, 'the far side is a real commitment', `${deepest}`);
+
+  // Nothing opens on the first point except the ring touching the middle —
+  // otherwise the gates are decoration.
+  const first = nodes.filter((n) => canAllocate('fireball', n.id, []));
+  check(first.length === 8, 'exactly one way in per wedge', String(first.length));
+  check(
+    first.every((n) => n.kind === 'minor'),
+    'and no notable is a first move',
+    first.filter((n) => n.kind === 'notable').map((n) => n.id).join(', ')
+  );
+
+  // Refunding must never strand anything, and must always be possible for the
+  // last thing you bought — a tree you can walk into and not out of is worse
+  // than one with no refunds at all.
+  const walk: string[] = [];
+  const spendRng = new Rng(4242);
+  while (walk.length < MAX_TREE_POINTS) {
+    const open = nodes.filter((n) => canAllocate('fireball', n.id, walk));
+    if (open.length === 0) break;
+    walk.push(spendRng.pick(open)!.id);
+  }
+  check(walk.length === MAX_TREE_POINTS, 'thirty points can always be spent', String(walk.length));
+
+  // And unwound again, all the way to nothing. A build you can walk into and
+  // not out of is worse than one with no refunds at all — and the refund rule
+  // is a reachability test, which is exactly the kind of rule that can be
+  // correct for one node and wrong for a whole allocation.
+  let held = [...walk];
+  while (held.length > 0) {
+    const loose = held.find((id) => canDeallocate('fireball', id, held));
+    if (!loose) break;
+    held = held.filter((id) => id !== loose);
+  }
+  check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+}
+
+// ===========================================================================
+rule('FIREBALL — do the notables actually change the cast?');
+
+// The tree's whole claim is that it changes how the skill WORKS, which no
+// stat sheet can show. So this fires the behaviour directly at a fixed set of
+// dummies and counts who got hit.
+//
+// The dummies matter as much as the grants. There is one enemy straight ahead,
+// one behind it in line, one off to the side, and one across the room — and
+// the one across the room is the whole reason this section exists. The old
+// fork node hit "the nearest other enemy" with no distance limit at all, which
+// on an open map is a talent that reaches through walls.
+{
+  const dummy = (x: number, y: number, life = 1e6) =>
+    ({
+      x, y, life, dead: false, ailments: [] as unknown[],
+      stats: { maxLife: 1e6, attacksPerSecond: 1 },
+    }) as any;
+
+  const cast = (grants: Record<string, unknown>, crit = false) => {
+    const user = dummy(0, 0);
+    const ahead = dummy(3, 0);
+    const behind = dummy(5.5, 0);
+    const beside = dummy(3, 2.4);
+    const across = dummy(24, 0);
+    const enemies = [ahead, behind, beside, across];
+
+    const hits: Array<{ who: any; multiplier: number }> = [];
+    const burns: Array<{ who: any; seconds: number }> = [];
+
+    SKILL_BEHAVIOURS.projectile({
+      skill: SKILL_BY_ID.fireball,
+      user, primary: ahead, enemies,
+      rng: new Rng(9), grants, crit, castIndex: 0,
+      hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
+      ailment: (who: any, _m: number, seconds: number) => burns.push({ who, seconds }),
+      areaRadius: (base: number) => base,
+      vfx: () => {},
+    } as any);
+
+    const name = (e: any) =>
+      e === ahead ? 'ahead' : e === behind ? 'behind' : e === beside ? 'beside' : 'across';
+    return { hits, burns, names: hits.map((h) => name(h.who)) };
+  };
+
+  const bare = cast({});
+  line(`  bare               → ${bare.names.join(', ')}`);
+  check(bare.names.join() === 'ahead', 'bare Fireball hits one thing', bare.names.join());
+
+  const chained = cast({ chains: 3 });
+  line(`  chains 3           → ${chained.names.join(', ')}`);
+  check(
+    !chained.names.includes('across'),
+    'a leap cannot cross the room',
+    chained.names.join()
+  );
+  check(chained.names.length > 1, 'but it does leap', chained.names.join());
+
+  const spread = cast({ extraTargets: 3 });
+  line(`  extraTargets 3     → ${spread.names.join(', ')}`);
+  check(
+    !spread.names.includes('across'),
+    'nor can an extra target',
+    spread.names.join()
+  );
+
+  const pierced = cast({ pierce: 2 });
+  line(`  pierce 2           → ${pierced.names.join(', ')}`);
+  check(
+    pierced.names.includes('behind'),
+    'pierce carries on through the one in front',
+    pierced.names.join()
+  );
+  check(
+    !pierced.names.includes('beside'),
+    'and only through what is actually in the way',
+    pierced.names.join()
+  );
+
+  const burst = cast({ explode: { radius: 2.6, multiplier: 0.55 } });
+  line(`  explode            → ${burst.names.join(', ')}`);
+  check(
+    burst.names.includes('beside'),
+    'a burst catches what the shot did not',
+    burst.names.join()
+  );
+
+  // No target may be hit twice by one cast, whatever combination is on. This
+  // is what stops pierce, chain and spread from all piling onto the same
+  // three enemies and reading as raw damage instead of as coverage.
+  const everything = cast({ chains: 3, extraTargets: 3, pierce: 2 });
+  line(`  all three          → ${everything.names.join(', ')}`);
+  const seen = new Set(everything.hits.map((h) => h.who));
+  check(
+    seen.size === everything.hits.length,
+    'nothing is hit twice by one cast',
+    `${everything.hits.length} hits on ${seen.size} enemies`
+  );
+
+  // Kindling: the crit becomes a burn. The suppression of the crit itself
+  // lives in the sim, so what is checkable here is that the burn lands.
+  const kindled = cast({ critBurn: { multiplier: 2.6, seconds: 4 } }, true);
+  check(kindled.burns.length === 1, 'a Kindling crit sets the target alight', String(kindled.burns.length));
+  const uncrit = cast({ critBurn: { multiplier: 2.6, seconds: 4 } }, false);
+  check(uncrit.burns.length === 0, 'and a normal hit does not', String(uncrit.burns.length));
+  const longer = cast({ critBurn: { multiplier: 2.6, seconds: 4 }, burnDuration: 1.6 }, true);
+  check(
+    longer.burns[0].seconds > kindled.burns[0].seconds,
+    'Slow Burn lengthens it',
+    `${longer.burns[0]?.seconds} vs ${kindled.burns[0]?.seconds}`
+  );
+
+  // Overload counts casts, so the fifth one is the one that pays.
+  const overload = { everyNth: { n: 5, multiplier: 3 } };
+  const early = cast(overload).hits[0].multiplier;
+  line(`  overload cast 1    → x${early}`);
+  check(early === 1, 'the first cast is ordinary', String(early));
+}
+
+// ===========================================================================
+rule('CONVERSION — does it move the tree instead of doubling it?');
+
+// The rule the whole conversion idea rests on: a converted skill scales off
+// its NEW type only. Keeping the old type live as well would make conversion
+// a free second damage stat rather than a decision. What stops that being a
+// punishment is that the tree's own fire nodes convert with it — the wedge you
+// walked to get there keeps working.
+{
+  const withTree = (allocated: string[]) => {
+    const hero = makeCharacter({}, 'fireball');
+    hero.skills.fireball = { level: 30, xp: 0, allocated };
+    return hero;
+  };
+
+  // A path out to Frostfire, picking up fire nodes on the way.
+  const path: string[] = [];
+  const nodes = treeFor('fireball');
+  while (!path.includes('fb_frostfire') && path.length < MAX_TREE_POINTS) {
+    const open = nodes.filter((n) => canAllocate('fireball', n.id, path));
+    // Head for the conversion wedge, taking whatever is nearest to it.
+    const target = nodeById('fireball', 'fb_frostfire')!;
+    const nearest = open.sort(
+      (a, b) =>
+        Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y)
+    )[0];
+    if (!nearest) break;
+    path.push(nearest.id);
+  }
+  check(path.includes('fb_frostfire'), 'Frostfire is reachable', `${path.length} points`);
+
+  const before = path.filter((id) => id !== 'fb_frostfire');
+  const plain = characterStats(withTree(before));
+  const cold = characterStats(withTree(path));
+
+  const fireGear = (type: string): RolledMod => ({
+    entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
+    name: 'probe', tier: 1, tags: [],
+    stats: [{ stat: 'damage', form: 'inc', value: 300, tags: [type] }],
+  });
+
+  const wearing = (hero: ReturnType<typeof withTree>, mod: RolledMod) => {
+    const worn = { ...hero, equipment: { weapon: { ...makeGear('ash_wand', 20), mods: [mod] } } };
+    return characterStats(worn as typeof hero).damage;
+  };
+
+  const converted = withTree(path);
+  const withFire = wearing(converted, fireGear('fire'));
+  const withCold = wearing(converted, fireGear('cold'));
+  line(`  Frostfire, +300% gear fire: ${Math.round(withFire)} · +300% gear cold: ${Math.round(withCold)}`);
+  check(withCold > withFire * 1.5, 'converted, your gear must be cold', `${Math.round(withCold)} vs ${Math.round(withFire)}`);
+
+  // And the tree's own fire nodes came along.
+  line(`  tree damage before conversion ${Math.round(plain.damage)} · after ${Math.round(cold.damage)}`);
+  check(
+    cold.damage >= plain.damage * 0.98,
+    'and the fire nodes you walked through came with it',
+    `${Math.round(cold.damage)} vs ${Math.round(plain.damage)}`
   );
 }
 

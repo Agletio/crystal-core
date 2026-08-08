@@ -6,6 +6,7 @@
  * equipment arrive they belong here too.
  */
 import { LEVELLING } from '../data';
+import { treePointsFor } from '../skills-tree';
 import type { Item } from '../types';
 
 /**
@@ -52,7 +53,16 @@ export function skillProgress(character: Character, skillId: string): SkillProgr
 }
 
 export const pointsSpent = (p: SkillProgress): number => p.allocated.length;
-export const pointsAvailable = (p: SkillProgress): number => p.level - p.allocated.length;
+
+/**
+ * Points left to spend.
+ *
+ * Capped by the tree, not by your level: a tree that keeps growing forever is
+ * a tree you eventually fill in completely, and a completed tree stops being
+ * a set of decisions.
+ */
+export const pointsAvailable = (p: SkillProgress): number =>
+  treePointsFor(p.level) - p.allocated.length;
 
 /** Skills use the same curve as the character, so the numbers stay legible. */
 export function addSkillXp(character: Character, skillId: string, amount: number): number {

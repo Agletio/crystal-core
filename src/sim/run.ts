@@ -12,7 +12,13 @@ import { Rng } from '../rng';
 import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { characterStats, monsterStats, mapDensity, treeGrants } from './stats';
+import {
+  characterStats,
+  effectiveSkill,
+  mapDensity,
+  monsterStats,
+  treeGrants,
+} from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
@@ -303,6 +309,8 @@ export class RunSim {
   private readonly grants: Record<string, unknown>;
   /** Crit decided for the current skill use, so every target shares it. */
   private useCrit: boolean | null = null;
+  /** How many times the hero has cast, for nodes that count casts. */
+  private casts = 0;
   /** Set once the closing encounter has been spawned. */
   private finale: EncounterDef | null = null;
   /** Baseline monster stats for this map, scaled into the finale. */
@@ -332,8 +340,11 @@ export class RunSim {
   ) {
     this.rng = rng;
     this.options = options;
-    this.skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
     this.grants = treeGrants(character);
+    // The tree can change what the skill IS — its damage type, its tags — and
+    // the sim has to fight with the same skill the stat sheet described, or a
+    // converted Fireball scales off cold and is resisted as fire.
+    this.skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], this.grants);
     this.tier = options.dropTier ?? (crystal.meta.tier as number) ?? 0;
     this.mapIlvl = crystal.ilvl;
 
@@ -920,18 +931,27 @@ export class RunSim {
     user.action = 'attack';
     user.actionTimer = ATTACK_POSE;
 
+    const grants = user.kind === 'hero' ? this.grants : {};
+    const castIndex = user.kind === 'hero' ? this.casts++ : 0;
+
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
     const crit =
       user.stats.critChance > 0 && this.rng.chance(user.stats.critChance / 100);
-    this.useCrit = crit;
+
+    // Kindling and the like: the roll still HAPPENS — the behaviour needs to
+    // know a crit came up so it can do something else with it — but the hit
+    // itself lands as a normal hit. A behaviour cannot take a crit back after
+    // asking for the damage, so the suppression has to be here.
+    this.useCrit = grants.critBurn ? false : crit;
 
     behaviour({
       skill,
       user,
       primary,
-      grants: user.kind === 'hero' ? this.grants : {},
+      grants,
       crit,
+      castIndex,
       // Whose side you're on decides who counts as an enemy. Monsters only
       // ever have one, which is why this stays a list rather than a lookup.
       enemies:

@@ -47,6 +47,8 @@ export interface SkillUse {
   grants: Record<string, unknown>;
   /** Whether this whole use crit. */
   crit: boolean;
+  /** How many times this user has used this skill, counting from zero. */
+  castIndex: number;
   /**
    * Deal this skill's damage to one target.
    * `multiplier` is relative to the skill's own damage, so 0.6 means a
@@ -89,16 +91,64 @@ export function separation(a: Entity, b: Entity): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+/**
+ * How far the tree's targeting grants reach, in tiles. FIXED, on purpose.
+ *
+ * "Nearest other enemy" with no distance limit is not a talent, it is a
+ * teleport: the old fork node happily struck something on the far side of the
+ * map, through walls, because nearest-of-all-enemies is still nearest when
+ * the nearest is thirty tiles away. Every one of these is a hard radius, and
+ * none of them scales with Area of Effect — a build that stacked area would
+ * otherwise turn "one more target" into "the whole room".
+ */
+const REACH = {
+  /** Extra targets, measured from the primary. */
+  spread: 3.5,
+  /** Each leap, measured from the last thing hit. */
+  chain: 4.5,
+  /** How far past the primary a pierced shot carries. */
+  pierce: 4.5,
+  /** Half-width of the pierce corridor. Wider than a body, narrower than a cone. */
+  corridor: 0.85,
+};
+
+/** Fractions applied to secondary hits unless a node says otherwise. */
+const FALLOFF = { extra: 0.7, chain: 0.7, pierce: 0.7 };
+
+const num = (v: unknown, fallback: number): number =>
+  typeof v === 'number' ? v : fallback;
+
+/**
+ * Perpendicular distance from `e` to the ray from `origin` through `through`,
+ * and how far along that ray it sits. Behind the origin is negative.
+ */
+function alongRay(
+  origin: { x: number; y: number },
+  through: { x: number; y: number },
+  e: Entity
+): { along: number; off: number } {
+  const dx = through.x - origin.x;
+  const dy = through.y - origin.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return { along: 0, off: Math.hypot(e.x - origin.x, e.y - origin.y) };
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = e.x - origin.x;
+  const py = e.y - origin.y;
+  const along = px * ux + py * uy;
+  return { along, off: Math.abs(px * uy - py * ux) };
+}
+
 export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage. The floor every other behaviour builds on. */
   single_target: (use) => {
     use.hit(use.primary, 1);
 
-    // Fork and the like: nearest others, full damage.
+    // Fork and the like: nearest others, full damage, WITHIN REACH.
     const extra = (use.grants.extraTargets as number) ?? 0;
     if (extra > 0) {
       const others = use.enemies
-        .filter((e) => e !== use.primary)
+        .filter((e) => e !== use.primary && separation(use.primary, e) <= REACH.spread)
         .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
         .slice(0, extra);
       for (const other of others) {
@@ -115,6 +165,175 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       { x: use.user.x, y: use.user.y },
       { x: use.primary.x, y: use.primary.y },
     ]);
+  },
+
+  /**
+   * A thrown ball of fire, and everything a tree can make of one.
+   *
+   * Bare, this is `single_target` with a longer arm. Everything else here is
+   * switched on by a node, and the order matters: the thing you aimed at is
+   * hit first, then whatever the shot passed through, then whatever it leapt
+   * to, then anything close enough to be caught by the spread — and a burst,
+   * if it bursts, goes off around every one of them.
+   *
+   * One rule holds the whole thing together: nothing is hit twice by the same
+   * cast. Without it, pierce and chain and spread would all find the same
+   * clump of three enemies and stack on them, and the talents that are meant
+   * to make you hit MORE things would just make you hit the same things
+   * harder. Bursts are the exception — an explosion is area damage, and area
+   * damage overlapping is the point of area damage.
+   *
+   * grants: critBurn, burnMultiplier, burnDuration, burnSpread, explode,
+   *         explodeRadius, explodeMultiplierAdd, explodeOnKill, pierce,
+   *         pierceDamage, chains, chainDamage, extraTargets,
+   *         extraTargetDamage, moreVsBurning, moreClose, moreFar, moreVsLow,
+   *         everyNth
+   */
+  projectile: (use) => {
+    const g = use.grants;
+    const kind = use.skill.vfxKind ?? 'bolt';
+
+    // --- what this particular cast is worth, before any target is chosen ---
+    const nth = g.everyNth as { n: number; multiplier: number } | undefined;
+    const castMultiplier = nth && (use.castIndex + 1) % nth.n === 0 ? nth.multiplier : 1;
+
+    const burn = g.critBurn as { multiplier: number; seconds: number } | undefined;
+    const burnPower = num(g.burnMultiplier, 1);
+    const burnTime = num(g.burnDuration, 1);
+    const burnSpread = num(g.burnSpread, 0);
+
+    const explode = g.explode as { radius: number; multiplier: number } | undefined;
+    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
+
+    /**
+     * Per-target multipliers. Each one asks a question about the enemy in
+     * front of you rather than about your sheet, which is what makes them
+     * choices — Close Quarters is worthless on a build that never closes.
+     */
+    const conditional = (target: Entity): number => {
+      let m = 1;
+      const burning = g.moreVsBurning as number | undefined;
+      if (burning && target.ailments.length > 0) m *= 1 + burning;
+
+      const close = g.moreClose as { within: number; more: number } | undefined;
+      if (close && separation(use.user, target) <= close.within) m *= 1 + close.more;
+
+      const far = g.moreFar as { beyond: number; more: number } | undefined;
+      if (far && separation(use.user, target) > far.beyond) m *= 1 + far.more;
+
+      const low = g.moreVsLow as { below: number; more: number } | undefined;
+      if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;
+      return m;
+    };
+
+    const struck = new Set<Entity>();
+
+    /** Area damage around a point. Overlaps freely; see the note above. */
+    const blast = (at: Entity, radius: number, multiplier: number): void => {
+      if (multiplier <= 0 || radius <= 0) return;
+      for (const enemy of use.enemies) {
+        if (enemy === at || enemy.dead) continue;
+        if (separation(at, enemy) > radius) continue;
+        use.hit(enemy, multiplier * castMultiplier * conditional(enemy));
+      }
+      use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32);
+    };
+
+    const strike = (target: Entity, falloff: number): boolean => {
+      if (target.dead || struck.has(target)) return false;
+      struck.add(target);
+      use.hit(target, falloff * castMultiplier * conditional(target));
+
+      // Kindling: the cast that WOULD have crit sets it alight instead. The
+      // crit itself is suppressed upstream, in the sim — a behaviour cannot
+      // un-crit a hit it has already asked for.
+      if (burn && use.crit) {
+        use.ailment(
+          target,
+          burn.multiplier * burnPower * falloff,
+          burn.seconds * burnTime,
+          burnSpread > 0 ? { radius: burnSpread, generation: 0 } : undefined
+        );
+      }
+
+      if (explode) {
+        blast(
+          target,
+          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
+          (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff
+        );
+      }
+      // Checked after the burst, because the burst is what usually kills it.
+      if (onKill && target.dead) {
+        blast(target, use.areaRadius(onKill.radius), onKill.multiplier);
+      }
+      return true;
+    };
+
+    // --- the shot ---------------------------------------------------------
+    strike(use.primary, 1);
+    use.vfx(kind, [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
+
+    // Pierce: straight on, through whatever is standing behind it. This is
+    // the one grant that cares about GEOMETRY rather than proximity — that is
+    // what makes it different from chain, which would otherwise be the same
+    // talent with a different name on an auto-targeting skill.
+    const pierce = num(g.pierce, 0);
+    let last = use.primary;
+    if (pierce > 0) {
+      const behind = use.enemies
+        .filter((e) => e !== use.primary && !e.dead && !struck.has(e))
+        .map((e) => ({ e, ...alongRay(use.user, use.primary, e) }))
+        .filter(
+          (c) =>
+            c.off <= REACH.corridor &&
+            c.along > separation(use.user, use.primary) &&
+            c.along <= separation(use.user, use.primary) + REACH.pierce
+        )
+        .sort((a, b) => a.along - b.along)
+        .slice(0, pierce);
+
+      for (const { e } of behind) {
+        if (!strike(e, num(g.pierceDamage, FALLOFF.pierce))) continue;
+        use.vfx(kind, [{ x: last.x, y: last.y }, { x: e.x, y: e.y }]);
+        last = e;
+      }
+    }
+
+    // Chain: from the last thing hit to the nearest thing that hasn't been.
+    const chains = num(g.chains, 0);
+    for (let i = 0; i < chains; i++) {
+      const next = use.enemies
+        .filter((e) => !e.dead && !struck.has(e) && separation(last, e) <= REACH.chain)
+        .sort((a, b) => separation(last, a) - separation(last, b))[0];
+      if (!next) break;
+      const from = last;
+      if (!strike(next, num(g.chainDamage, FALLOFF.chain))) break;
+      use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }]);
+      last = next;
+    }
+
+    // Spread: everything else close to what you aimed at.
+    const extra = num(g.extraTargets, 0);
+    if (extra > 0) {
+      const others = use.enemies
+        .filter(
+          (e) => !e.dead && !struck.has(e) && separation(use.primary, e) <= REACH.spread
+        )
+        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
+        .slice(0, extra);
+
+      for (const other of others) {
+        if (!strike(other, num(g.extraTargetDamage, FALLOFF.extra))) continue;
+        use.vfx(kind, [
+          { x: use.user.x, y: use.user.y },
+          { x: other.x, y: other.y },
+        ]);
+      }
+    }
   },
 
   /**

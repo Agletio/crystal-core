@@ -111,20 +111,20 @@ export function skillDamage(
 ): number {
   let total = 0;
 
-  // Conversion replaces the skill's type but keeps the ORIGINAL type in
-  // context, so "increased Poison Damage" still scales a blight that now
-  // deals fire. Without that, converting would be a straight downgrade and
-  // nobody would take the node.
-  const convertTo = grants.convertTo as string | undefined;
-  const from = skill.damageTypes;
-  const active = convertTo ? [convertTo] : from;
-  const inherited = convertTo ? from : [];
+  // Conversion replaces the skill's type outright. It does NOT keep the old
+  // type live: a Fireball dealing cold that still scaled off fire modifiers
+  // would scale off both, which is not a choice, it is a free second stat.
+  //
+  // What stops that being a punishment is that conversion rewrites the TREE
+  // (see treeMod) — every fire node you walked through to reach the node
+  // becomes a cold node. The wedge you paid for keeps working; your gear is
+  // what has to change.
+  const converted = convertedType(skill, grants);
+  const active = converted ? [converted] : skill.damageTypes;
 
   for (const type of DAMAGE_TYPES) {
     const typeBase = active.includes(type.id) ? base : 0;
-    const context = [...skill.tags, type.id];
-    if (active.includes(type.id)) context.push(...inherited);
-    total += computeStat(typeBase, mods, 'damage', context);
+    total += computeStat(typeBase, mods, 'damage', [...skill.tags, type.id]);
   }
 
   // Typeless carries no type tag, so only untagged lines — generic
@@ -195,9 +195,24 @@ export function treeMod(character: Character): RolledMod | null {
   const progress = character.skills[character.skillId];
   if (!progress || progress.allocated.length === 0) return null;
 
+  const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  const grants = treeGrants(character);
+  const converted = convertedType(skill, grants);
+
   const stats = progress.allocated
     .flatMap((id) => nodeById(character.skillId, id)?.stats ?? [])
-    .map((s) => ({ stat: s.stat, form: s.form, value: s.value, tags: s.tags ?? [] }));
+    .map((s) => ({
+      stat: s.stat,
+      form: s.form,
+      value: s.value,
+      // Conversion retags the tree's own lines. A Frostfire build walked
+      // through a wedge of "increased Fire Damage" to get there; those nodes
+      // become cold nodes rather than dead weight, which is what lets a
+      // conversion sit deep in a fire tree without invalidating the path.
+      tags: (s.tags ?? []).map((t) =>
+        converted && skill.damageTypes.includes(t) ? converted : t
+      ),
+    }));
 
   if (stats.length === 0) return null;
   return {
@@ -212,20 +227,84 @@ export function treeMod(character: Character): RolledMod | null {
   };
 }
 
+/**
+ * Grants that STACK rather than replace.
+ *
+ * Two nodes granting `pierce: 1` must mean two pierces; two nodes granting
+ * `explodeRadius: 1.45` must mean 1.45 x 1.45. Plain assignment gets both
+ * wrong in the same silent way — the second node does nothing and looks like
+ * it worked — so the merge has to know which kind each key is.
+ */
+const SUMMED_GRANTS = new Set(['extraTargets', 'pierce', 'chains', 'explodeMultiplierAdd']);
+const MULTIPLIED_GRANTS = new Set([
+  'burnDuration',
+  'burnMultiplier',
+  'explodeRadius',
+]);
+/** Tag lists concatenate — Detonation adds Area without removing anything. */
+const APPENDED_GRANTS = new Set(['addTags']);
+
 /** Behaviour switches from every allocated node, merged. */
 export function treeGrants(character: Character): Record<string, unknown> {
   const progress = character.skills[character.skillId];
   if (!progress) return {};
+
   const out: Record<string, unknown> = {};
   for (const id of progress.allocated) {
-    Object.assign(out, nodeById(character.skillId, id)?.grants ?? {});
+    for (const [key, value] of Object.entries(
+      nodeById(character.skillId, id)?.grants ?? {}
+    )) {
+      if (SUMMED_GRANTS.has(key)) {
+        out[key] = ((out[key] as number) ?? 0) + (value as number);
+      } else if (MULTIPLIED_GRANTS.has(key)) {
+        out[key] = ((out[key] as number) ?? 1) * (value as number);
+      } else if (APPENDED_GRANTS.has(key)) {
+        out[key] = [...((out[key] as string[]) ?? []), ...(value as string[])];
+      } else {
+        out[key] = value;
+      }
+    }
   }
   return out;
 }
 
+/** The type a skill ends up dealing, after any conversion node. */
+export function convertedType(
+  skill: SkillDef,
+  grants: Record<string, unknown>
+): string | null {
+  return (grants.convertTree as string | undefined) ?? null;
+}
+
+/**
+ * The skill as the tree has made it.
+ *
+ * Nodes can change a skill's damage type and its tags, and BOTH have to be
+ * visible everywhere the skill is — the stat pass that decides which mods
+ * apply, and the sim that decides which resistance a hit runs into. Deriving
+ * it once, here, is what stops those two from disagreeing: for a while a
+ * converted skill scaled off cold modifiers and was still resisted as fire.
+ */
+export function effectiveSkill(
+  skill: SkillDef,
+  grants: Record<string, unknown>
+): SkillDef {
+  const converted = convertedType(skill, grants);
+  const added = (grants.addTags as string[] | undefined) ?? [];
+  if (!converted && added.length === 0) return skill;
+
+  return {
+    ...skill,
+    damageTypes: converted ? [converted] : skill.damageTypes,
+    tags: added.length ? [...new Set([...skill.tags, ...added])] : skill.tags,
+  };
+}
+
 /** Stats for a character, resolving its selected skill, gear and tree. */
 export function characterStats(character: Character): CombatStats {
-  const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  const base = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  const grants = treeGrants(character);
+  const skill = effectiveSkill(base, grants);
   const items = equippedItems(character);
   const extra = treeMod(character);
   // Implicits count exactly like rolled mods — the only difference is that
@@ -234,7 +313,7 @@ export function characterStats(character: Character): CombatStats {
     ...items.flatMap((i) => [...i.mods, ...i.implicits]),
     ...(extra ? [extra] : []),
   ];
-  return heroStats(mods, character.level, skill, treeGrants(character));
+  return heroStats(mods, character.level, skill, grants);
 }
 
 /**

@@ -14,6 +14,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { Palette, Renderer } from './renderer';
 import {
+  burstRadius,
   clampZoom,
   floorColour,
   floorPalette,
@@ -287,6 +288,22 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
           ctx.arc(cx(v, d.x), cy(v, d.y), Math.max(1, d.r * v.tile), 0, Math.PI * 2);
           ctx.fill();
         }
+      } else if (fx.kind === 'burst') {
+        // Second point carries the radius, same contract as the poison field.
+        const radius = burstRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        const px = cx(v, from.x);
+        const py = cy(v, from.y);
+
+        ctx.globalAlpha = Math.max(0, 0.3 * (1 - t));
+        ctx.beginPath();
+        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = Math.max(0, 1 - t);
+        ctx.lineWidth = Math.max(1.5, v.tile * 0.09);
+        ctx.beginPath();
+        ctx.arc(px, py, radius * v.tile, 0, Math.PI * 2);
+        ctx.stroke();
       } else if (fx.kind === 'slash') {
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         const sweep = Math.PI * 0.75;
