@@ -154,6 +154,16 @@
   .mini--dev:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
   .devsep { width: 1px; align-self: stretch; background: var(--seam); margin: 0 4px; }
 
+  /* The one dialog that stops you. Narrow on purpose — it has one question in
+     it, and a card the width of the Shop would read as another screen. */
+  .modal__card--ask { width: min(420px, 100%); }
+  .ask__text { color: var(--dust); font-size: 13px; line-height: 1.55; margin: 0 0 16px; }
+  .ask__row { display: flex; justify-content: flex-end; gap: 8px; }
+  /* The destructive answer is the one that looks dangerous, and it is not the
+     one focus lands on. */
+  .mini--danger { border-color: var(--seam-lit); color: var(--ember); }
+  .mini--danger:hover:not(:disabled) { border-color: var(--ember); background: var(--seam); }
+
   .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
   .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--dust); }
   .chip:hover { color: var(--chalk); border-color: var(--seam-lit); }
@@ -1079,6 +1089,23 @@
     </svg>
     <span id="guide-scroll-text">Scroll down to reach it</span>
   </span>
+</div>
+
+<!-- Are you sure? Only the buttons that throw away a save use it, and it sits
+     outside .wrap so it can cover whatever asked the question. -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal__card modal__card--ask">
+    <div class="modal__head">
+      <h2 class="modal__title" id="confirm-title">Are you sure?</h2>
+    </div>
+    <div class="modal__body">
+      <p class="ask__text" id="confirm-text"></p>
+      <div class="ask__row">
+        <button class="mini" id="confirm-no">Cancel</button>
+        <button class="mini mini--danger" id="confirm-yes">Confirm</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Replaces the native title attribute: instant, and in the page's colours

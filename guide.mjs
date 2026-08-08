@@ -149,4 +149,14 @@ if (problems.length) {
   for (const p of problems) console.error(`  ${p}`);
   process.exit(1);
 }
-console.log(`\nguide: finished all ${trace.length} steps, clicking only what was lit`);
+
+// Report the LAST step reached, not how many were seen. A click can land as
+// the guide is already advancing, so two steps occasionally pass between polls
+// — the trace misses one while the player sailed through both. Counting
+// observations made that read as "finished 8 of 9" on a run that finished.
+const reached = trace.at(-1)?.match(/Step (\d+) of (\d+)/);
+console.log(
+  reached
+    ? `\nguide: finished the opening — step ${reached[1]} of ${reached[2]}, clicking only what was lit`
+    : '\nguide: finished the opening, clicking only what was lit'
+);

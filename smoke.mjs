@@ -283,7 +283,11 @@ assert(
   String(all('.dock .slot--on').length)
 );
 assert($('craft-return').disabled === false, 'return is now available');
-assert($('sockets').querySelectorAll('.facet').length === 3, 'crystal shows 3 facets');
+// The bench draws openings, not the base's declared table. A fresh crystal is
+// Rough — it has no room for anything yet — so it draws nothing. Drawing three
+// dead sockets under a header reading 0/0 was the confusing part.
+const facets = () => $('sockets').querySelectorAll('.facet').length;
+assert(facets() === 0, 'a Rough crystal shows no facets at all', String(facets()));
 
 // Derived reward multipliers under the name. A blank crystal must read as
 // exactly baseline — no danger, no bonus.
@@ -329,6 +333,8 @@ const seamStock = heldCount('Shard of Seaming');
 seaming.click();
 assert($('modlist').querySelectorAll('.mod').length === 1, 'Seaming lands one modifier');
 assert(/seamed/i.test(text('item-meta')), 'and raises the quality', text('item-meta'));
+// Two, because Seamed is two. Not the three the base declares.
+assert(facets() === 2, 'and opens exactly two facets, not the base’s three', String(facets()));
 assert(
   heldCount('Shard of Seaming') === seamStock - 1,
   'Seaming was spent',
@@ -872,6 +878,53 @@ $('history-clear').click();
 assert(all('#history-log .logline').length === 0, 'clearing empties the history');
 $('history-close').click();
 assert($('history').hidden === true, 'history closes');
+
+// --- New game asks first ---------------------------------------------------
+// It is the one button in the game with no way back, and it sits in a row of
+// buttons you click all day. Left last on purpose: the confirming half of this
+// really does wipe everything.
+{
+  const owned = dockItems().length;
+  assert(owned > 0, 'there is something to lose', String(owned));
+
+  $('dev-fresh').click();
+  assert($('confirm').hidden === false, 'New game asks before it wipes');
+  assert(
+    document.activeElement === $('confirm-no'),
+    'and focus starts on Cancel, not the wipe',
+    document.activeElement?.id ?? '(none)'
+  );
+
+  $('confirm-no').click();
+  assert($('confirm').hidden === true, 'Cancel closes the question');
+  assert(
+    dockItems().length === owned,
+    'and nothing was touched',
+    `${dockItems().length} vs ${owned}`
+  );
+
+  // Escape is the same answer by another door.
+  $('dev-fresh').click();
+  document.dispatchEvent(
+    new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+  );
+  assert($('confirm').hidden === true, 'Escape answers it no');
+  assert(dockItems().length === owned, 'still untouched');
+
+  // And confirming actually does the thing — a guard that also blocked the
+  // button would be worse than no guard.
+  $('dev-fresh').click();
+  $('confirm-yes').click();
+  assert($('confirm').hidden === true, 'confirming closes it');
+  // The answer arrives as a resolved promise, so the wipe itself lands a
+  // microtask later than the click.
+  await new Promise((r) => setTimeout(r, 0));
+  assert(
+    dockItems().length < owned,
+    'and a confirmed New game really wipes',
+    `${dockItems().length} vs ${owned}`
+  );
+}
 
 // --- the page itself must not scroll --------------------------------------
 assert(

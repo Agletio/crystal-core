@@ -20,6 +20,7 @@ import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
+import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import { initTutorial, isGuided, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -82,7 +83,19 @@ document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
-document.getElementById('dev-fresh')!.addEventListener('click', () => restart('fresh'));
+// The only button here that cannot be undone, sitting in a row of buttons you
+// click all day. It asks first.
+document.getElementById('dev-fresh')!.addEventListener('click', async () => {
+  const ok = await ask({
+    title: 'Start a new game?',
+    text:
+      'Everything you own goes — every item, every crystal, your stash, your ' +
+      'level and your fragments. You start again with two Tier 1 crystals and ' +
+      'nothing else. There is no way back.',
+    confirm: 'Wipe and start over',
+  });
+  if (ok) restart('fresh');
+});
 document.getElementById('dev-kit')!.addEventListener('click', () => restart('dev'));
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
@@ -92,7 +105,9 @@ globalThis.addEventListener('keydown', (event) => {
   // a keyboard shortcut that closes the window a step is pointing into is the
   // same escape hatch by another door.
   if (isGuided()) return;
-  if (isSkillsOpen()) closeSkills();
+  // The question is on top of everything, and Escape can only answer it "no".
+  if (isConfirmOpen()) cancelConfirm();
+  else if (isSkillsOpen()) closeSkills();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
   else if (isStashOpen()) closeStash();
@@ -121,6 +136,7 @@ measureDock();
 
 initInventory(game);
 initHistory();
+initConfirm();
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels, onRunFocused);

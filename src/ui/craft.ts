@@ -154,9 +154,15 @@ function renderItem(): void {
   const host = $('sockets');
   host.replaceChildren();
 
+  // One facet per opening the item actually has — no more. Drawing the base's
+  // full declared table meant a Seamed item showing six sockets under a header
+  // that said 0/2, so the picture and the number disagreed and the picture is
+  // what you look at. A type with no room this quality is simply not drawn.
   for (const slot of slotTypes(item)) {
-    const group = el('div', 'slotgroup');
     const cap = slotCapacity(item, slot);
+    if (cap === 0) continue;
+
+    const group = el('div', 'slotgroup');
     group.append(el('div', 'slotgroup__label', `${slot} ${slotUsed(item, slot)}/${cap}`));
 
     const row = el('div', 'facets');
@@ -202,7 +208,18 @@ function renderItem(): void {
   }
 
   if (item.mods.length === 0) {
-    list.append(el('p', 'empty', 'No modifiers. Click a currency in the dock below to fill a slot.'));
+    // With no facets drawn at all, "click a currency to fill a slot" points at
+    // nothing. A Rough item's problem is that it has no slots yet, and the
+    // answer is a different currency than the one that fills them.
+    list.append(
+      el(
+        'p',
+        'empty',
+        modCapacity(item) === 0
+          ? 'No room for modifiers. Raise this item’s quality first — a Shard of Seaming opens its first slots.'
+          : 'No modifiers. Click a currency in the dock below to fill a slot.'
+      )
+    );
   }
   for (const mod of item.mods) {
     const row = el('div', 'mod');

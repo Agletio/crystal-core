@@ -119,15 +119,21 @@ export const QUALITY_BY_ID: Record<string, (typeof QUALITIES)[number]> =
  * zero utility slots simply cannot roll move speed; no per-mod base lists, no
  * eligibility special-casing.
  *
- *   offence  raw damage
+ *   offence  hurting things — flat damage, increases, speed, crit
  *   defence  staying alive
- *   damage   multipliers — attack speed and crit are not utility
- *   utility  everything that isn't damage
+ *   utility  everything that is neither
+ *
+ * There used to be a fourth, `damage`, holding the multipliers: attack speed,
+ * crit, area. It bought nothing. "Flat fire damage" and "increased attack
+ * speed" answer the same question — how hard do I hit — so splitting them
+ * just meant every item showed two offensive counters that a player had to
+ * add together themselves. One offence count per base, worth the sum of what
+ * the two used to be.
  */
-export const GEAR_SLOT_TYPES = ['offence', 'defence', 'damage', 'utility'] as const;
+export const GEAR_SLOT_TYPES = ['offence', 'defence', 'utility'] as const;
 
 /** Kept for crystals and any caller that still wants a default gear layout. */
-export const GEAR_SLOTS = { offence: 2, defence: 2, damage: 1, utility: 1 };
+export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
 // ===========================================================================
 // EQUIPMENT
@@ -179,7 +185,7 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
  * Tiers within a family are gated by ilvl, so better bases are themselves a
  * progression rather than everything being available immediately.
  */
-const WEAPON_SLOTS = { offence: 3, defence: 1, damage: 2, utility: 0 };
+const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
 const weapon = (
   id: string,
@@ -255,27 +261,27 @@ export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
   {
     id: 'helmet', name: 'Iron Helm', kind: 'helmet', art: 'helmet',
-    slots: { offence: 1, defence: 3, damage: 1, utility: 1 },
+    slots: { offence: 2, defence: 3, utility: 1 },
   },
   {
     id: 'body_armour', name: 'Plated Vest', kind: 'body', art: 'body',
-    slots: { offence: 0, defence: 4, damage: 1, utility: 1 },
+    slots: { offence: 1, defence: 4, utility: 1 },
   },
   {
     id: 'gloves', name: 'Leather Gloves', kind: 'gloves', art: 'gloves',
-    slots: { offence: 2, defence: 1, damage: 3, utility: 0 },
+    slots: { offence: 5, defence: 1, utility: 0 },
   },
   {
     id: 'boots', name: 'Worn Boots', kind: 'boots', art: 'boots',
-    slots: { offence: 0, defence: 2, damage: 0, utility: 4 },
+    slots: { offence: 0, defence: 2, utility: 4 },
   },
   {
     id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet',
-    slots: { offence: 2, defence: 2, damage: 1, utility: 1 },
+    slots: { offence: 3, defence: 2, utility: 1 },
   },
   {
     id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring',
-    slots: { offence: 2, defence: 2, damage: 1, utility: 1 },
+    slots: { offence: 3, defence: 2, utility: 1 },
   },
 ];
 
@@ -472,15 +478,16 @@ export const GEAR_MAIN_MODS: ModDef[] = [
   // Resistances are generated from DAMAGE_TYPES below, also into 'defence'.
 ];
 
-// --- gear: DAMAGE = multipliers --------------------------------------------
+// --- gear: OFFENCE, part two — the multipliers ------------------------------
 //
 // Attack speed and crit are not utility. They multiply your damage, and
 // grouping them with move speed made a "utility" slot the best damage slot on
-// the item.
+// the item. They are not their own slot type either — they compete with flat
+// damage for the same offence room, which is the choice worth having.
 export const GEAR_SECONDARY_MODS: ModDef[] = [
   {
     id: 'attack_speed',
-    slot: 'damage',
+    slot: 'offence',
     name: 'of Alacrity',
     appliesTo: ['gear'],
     tags: ['speed', 'damage'],
@@ -493,7 +500,7 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
     // Spells scale with cast speed, attacks with attack speed. A spell should
     // not be getting faster because you found a sharper sword.
     id: 'cast_speed',
-    slot: 'damage',
+    slot: 'offence',
     name: 'of Quickening',
     appliesTo: ['gear'],
     tags: ['speed', 'damage', 'spell'],
@@ -504,7 +511,7 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
   },
   {
     id: 'crit_chance',
-    slot: 'damage',
+    slot: 'offence',
     name: 'of Precision',
     appliesTo: ['gear'],
     tags: ['crit', 'damage'],
@@ -515,7 +522,7 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
   },
   {
     id: 'crit_multiplier',
-    slot: 'damage',
+    slot: 'offence',
     name: 'of Savagery',
     appliesTo: ['gear'],
     tags: ['crit', 'damage'],
@@ -526,7 +533,7 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
   },
   {
     id: 'aoe',
-    slot: 'damage',
+    slot: 'offence',
     name: 'of Reach',
     appliesTo: ['gear'],
     tags: ['area', 'clear'],
@@ -538,7 +545,7 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
   {
     // Untagged, so it scales every damage type including typeless.
     id: 'inc_damage_generic',
-    slot: 'damage',
+    slot: 'offence',
     name: 'Honed',
     appliesTo: ['gear'],
     tags: ['damage'],

@@ -11,6 +11,8 @@ import {
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
   EQUIP_SLOTS,
+  GEAR_BASES,
+  QUALITIES,
   RECIPES,
   SKILLS,
 } from './data';
@@ -23,7 +25,16 @@ import {
   runRecipe,
 } from './economy';
 import { RunSim, runToCompletion } from './sim/run';
-import { hasOpenSlot, modCapacity, qualityOf } from './mods';
+import {
+  declaredCapacity,
+  hasOpenSlot,
+  modCapacity,
+  qualityOf,
+  slotAllocation,
+  slotCapacity,
+  slotTypes,
+  slotUsed,
+} from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats } from './sim/stats';
@@ -94,10 +105,14 @@ let crystal = makeCrystal(3);
 line(describeItem(crystal));
 
 line();
-crystal = apply(crystal, 'essence_of_the_swarm'); // guaranteed density
-crystal = apply(crystal, 'shard_of_making');
-crystal = apply(crystal, 'shard_of_making');
-crystal = apply(crystal, 'shard_of_making'); // 4th — should be refused
+// Quality first. A fresh item is Rough and has nowhere to put anything, so
+// opening it is the first step of every craft — these sections used to skip
+// it and print nothing but refusals.
+crystal = apply(crystal, 'shard_of_seaming'); // Rough -> Seamed, one modifier
+crystal = apply(crystal, 'essence_of_the_swarm'); // guaranteed density, second slot
+crystal = apply(crystal, 'shard_of_making'); // refused — Seamed holds two
+crystal = apply(crystal, 'sigil_of_ascent'); // Seamed -> Faceted, and a third
+crystal = apply(crystal, 'shard_of_making'); // refused — three is all a crystal has
 line();
 line(describeItem(crystal));
 
@@ -105,22 +120,26 @@ line(describeItem(crystal));
 rule('THE ADD / REMOVE LOOP');
 
 let gear = makeGear('body_armour', 55, 'Runeplate');
-gear = apply(gear, 'shard_of_awakening'); // fill all four slots at once
+gear = apply(gear, 'shard_of_cleaving'); // straight to Faceted, three modifiers
+gear = apply(gear, 'shard_of_awakening'); // and fill the fourth
 line();
 line(describeItem(gear));
 
 line();
-line('Main and secondary never compete — target one directly:');
+line('Slots are typed, and each type is its own ceiling:');
 gear = apply(gear, 'shard_of_unmaking');
-gear = apply(gear, 'whetstone_of_might'); // main slot only
+gear = apply(gear, 'whetstone_of_might'); // offence slot only
 line();
 line(describeItem(gear));
 
 line();
-line('Refine a tier, then buy a 5th slot:');
+line('Finish it, then buy a slot past the ceiling:');
+gear = apply(gear, 'sigil_of_brilliance');
+gear = apply(gear, 'shard_of_making');
+gear = apply(gear, 'shard_of_making'); // six of six — Excess wants it finished
 gear = apply(gear, 'sigil_of_refinement');
 gear = apply(gear, 'sigil_of_excess');
-gear = apply(gear, 'shard_of_making');
+gear = apply(gear, 'shard_of_making'); // the seventh, which no quality grants
 line();
 line(describeItem(gear));
 
@@ -128,6 +147,7 @@ line(describeItem(gear));
 rule('CORRUPTION LOCKS THE ITEM');
 
 let trinket = makeGear('ring', 40, 'Band of Ash');
+trinket = apply(trinket, 'shard_of_cleaving');
 trinket = apply(trinket, 'shard_of_awakening');
 trinket = apply(trinket, 'sigil_of_finality');
 line();
@@ -139,12 +159,11 @@ trinket = apply(trinket, 'shard_of_making'); // should be refused
 rule('AN ACTUAL RUN — headless, no browser');
 
 {
-  const socketed = craft(
-    makeCrystal(3),
-    CURRENCY_BY_ID.shard_of_awakening,
-    pool,
-    rng
-  ).item;
+  // Cleave, then fill: Awakening needs Faceted, so a fresh crystal handed
+  // straight to it came back blank and the run below was measured against a
+  // crystal with no modifiers on it at all.
+  const opened = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_cleaving, pool, rng).item;
+  const socketed = craft(opened, CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
   const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
   const stats = characterStats(hero);
 
@@ -259,6 +278,83 @@ rule('QUALITY — does the ladder actually restrict anything?');
       !craft(top, CURRENCY_BY_ID.sigil_of_brilliance, pool, rng).ok,
     'with nothing left to raise it',
     'a step-up currency applied to a finished item'
+  );
+}
+
+// ===========================================================================
+rule('OPENINGS — does the bench draw exactly what the item can hold?');
+
+// The bench draws one facet per opening, so an opening that is not real is a
+// socket you can never fill sitting on screen forever. That is what shipped:
+// every base drew its full declared table, so a Seamed item showed six sockets
+// under a header that said 0/2.
+//
+// The invariant is one line — the openings across all slot types add up to the
+// item's modifier budget — and it has to hold for every base at every quality,
+// because it is the base that decides how the budget gets dealt out.
+{
+  let mismatched = 0;
+  let overDeclared = 0;
+  let starved = 0;
+  const table: string[] = [];
+
+  for (const base of GEAR_BASES) {
+    const row: string[] = [];
+    for (const q of QUALITIES) {
+      const item = makeGear(base.id, 60);
+      item.meta.quality = q.id;
+
+      const alloc = slotAllocation(item);
+      const drawn = slotTypes(item).reduce((n, t) => n + alloc[t], 0);
+      if (drawn !== modCapacity(item)) mismatched++;
+
+      for (const t of slotTypes(item)) {
+        // A base that declares no offence must never be dealt an offence
+        // opening — that restriction is the only thing making bases differ.
+        if (alloc[t] > declaredCapacity(item, t)) overDeclared++;
+      }
+
+      // Balance: with room for two or more, they must not all land on one
+      // type while another type the base has sits empty.
+      const spread = slotTypes(item).filter((t) => alloc[t] > 0).length;
+      const could = slotTypes(item).filter((t) => declaredCapacity(item, t) > 0).length;
+      if (drawn >= 2 && spread < Math.min(2, could)) starved++;
+
+      row.push(
+        slotTypes(item)
+          .filter((t) => alloc[t] > 0)
+          .map((t) => `${alloc[t]}${t[0]}`)
+          .join('')
+          .padEnd(7) || '—'.padEnd(7)
+      );
+    }
+    if (base.kind === 'weapon' && base.id !== 'ash_wand') continue;
+    table.push(`  ${base.id.padEnd(13)}${row.join(' ')}`);
+  }
+
+  line(`  ${'base'.padEnd(13)}${QUALITIES.map((q) => q.name.padEnd(7)).join(' ')}`);
+  for (const r of table) line(r);
+  line();
+
+  check(mismatched === 0, 'every base deals out exactly its budget, at every quality',
+    `${mismatched} base/quality pairs draw the wrong number of openings`);
+  check(overDeclared === 0, 'and never past what the base declares',
+    `${overDeclared} slot types were dealt more than the base has`);
+  check(starved === 0, 'two openings never both land on the same type',
+    `${starved} items put their whole budget on one slot type`);
+
+  // The bench reads capacity, not allocation, and capacity must never hide a
+  // modifier the item is already wearing.
+  const worn = craft(
+    craft(makeGear('boots', 60), CURRENCY_BY_ID.shard_of_cleaving, pool, rng).item,
+    CURRENCY_BY_ID.shard_of_awakening,
+    pool,
+    rng
+  ).item;
+  check(
+    slotTypes(worn).every((t) => slotCapacity(worn, t) >= slotUsed(worn, t)),
+    'and a drawn slot always has room for the mod already in it',
+    'an item wears a modifier in a slot the bench would not draw'
   );
 }
 

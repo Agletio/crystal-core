@@ -16,8 +16,14 @@ export function slotTypes(item: Item): ModSlot[] {
   return Object.keys(item.slots);
 }
 
-/** Capacity of a slot type, including any bonus slots granted by crafting. */
-export function slotCapacity(item: Item, slot: ModSlot): number {
+/**
+ * What the BASE says about this slot type, ignoring quality.
+ *
+ * The item's ceiling if it were finished — "a body armour is a defensive
+ * piece" — and the right question for "can this currency target this item at
+ * all", which is about what the base is, not how far along it is.
+ */
+export function declaredCapacity(item: Item, slot: ModSlot): number {
   const base = item.slots[slot] ?? 0;
   const bonus = (item.meta?.bonusSlots?.[slot] as number) ?? 0;
   return base + bonus;
@@ -28,7 +34,7 @@ export function slotUsed(item: Item, slot: ModSlot): number {
 }
 
 export function totalCapacity(item: Item): number {
-  return slotTypes(item).reduce((n, t) => n + slotCapacity(item, t), 0);
+  return slotTypes(item).reduce((n, t) => n + declaredCapacity(item, t), 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +72,62 @@ export function modCapacity(item: Item): number {
   ).reduce((n, v) => n + v, 0);
   const byQuality = (QUALITY_BY_ID[qualityOf(item)]?.mods ?? 0) + bonus;
   return Math.min(byQuality, totalCapacity(item));
+}
+
+/**
+ * Where this item's modifier budget actually sits, slot type by slot type.
+ *
+ * A Seamed body armour may hold two modifiers and declares seven slots across
+ * three types, and the bench used to draw all seven — six of them permanently
+ * dead, under a header that said 0/2. You were being shown room that did not
+ * exist. So the budget is DEALT OUT: as many openings as the item can hold,
+ * spread over the types the base actually has.
+ *
+ * Dealt one at a time, richest type first, so the base still decides its own
+ * character — a body armour's first opening is defensive, a glove's is
+ * offensive — but a two-modifier item never ends up with both openings on the
+ * same side. Balance first, identity as the tiebreak.
+ *
+ * Derived from the base alone, never from what is currently rolled: an
+ * allocation that shifted as you crafted would move slots around under your
+ * hands mid-craft.
+ */
+export function slotAllocation(item: Item): Record<ModSlot, number> {
+  const types = slotTypes(item);
+  const out: Record<ModSlot, number> = {};
+  for (const t of types) out[t] = 0;
+
+  // Richest declared type first; declaration order breaks ties, which is why
+  // the tables in data.ts list offence before defence before utility.
+  const order = [...types]
+    .filter((t) => declaredCapacity(item, t) > 0)
+    .sort((a, b) => declaredCapacity(item, b) - declaredCapacity(item, a));
+
+  let left = modCapacity(item);
+  while (left > 0) {
+    const before = left;
+    for (const t of order) {
+      if (left === 0) break;
+      if (out[t] >= declaredCapacity(item, t)) continue;
+      out[t]++;
+      left--;
+    }
+    // Everything is at its declared ceiling — the budget cannot be spent.
+    if (left === before) break;
+  }
+  return out;
+}
+
+/**
+ * Openings of this type the item has right now.
+ *
+ * Never less than what is already rolled there. Bonus slots and re-rolls can
+ * in principle leave a type over its allocation, and a capacity that hid a
+ * modifier the item is wearing would be worse than one that is briefly
+ * generous.
+ */
+export function slotCapacity(item: Item, slot: ModSlot): number {
+  return Math.max(slotAllocation(item)[slot] ?? 0, slotUsed(item, slot));
 }
 
 export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {
@@ -129,14 +191,20 @@ export class ModPool {
     // future effect cannot route around the cap by accident.
     if (item.mods.length >= modCapacity(item)) return [];
 
+    // Dealt once, not once per candidate. This filter runs over the whole pool
+    // on every roll, and every roll happens on a monster's death.
+    const alloc = slotAllocation(item);
+    const used: Record<ModSlot, number> = {};
+    for (const m of item.mods) used[m.slot] = (used[m.slot] ?? 0) + 1;
+
     return this.entries.filter((e) => {
       if (e.ilvl > item.ilvl) return false;
       if (takenGroups.has(e.group)) return false;
       if (opts.slot && e.slot !== opts.slot) return false;
       if (opts.tag && !e.tags.includes(opts.tag)) return false;
       if (!e.appliesTo.every((t) => item.tags.includes(t))) return false;
-      // The item must actually HAVE this slot type, with room left.
-      if (slotUsed(item, e.slot) >= slotCapacity(item, e.slot)) return false;
+      // The item must actually HAVE an opening of this type.
+      if ((used[e.slot] ?? 0) >= (alloc[e.slot] ?? 0)) return false;
       return true;
     });
   }

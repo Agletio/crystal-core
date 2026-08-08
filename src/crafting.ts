@@ -11,6 +11,7 @@ import {
   qualityRank,
   rollRandomMod,
   rollValues,
+  declaredCapacity,
   slotCapacity,
   slotTypes,
   slotUsed,
@@ -46,7 +47,10 @@ export const CONDITIONS: Record<string, ConditionImpl> = {
 
   slots_full: (item, p) => !hasOpenSlot(item, p.slot as ModSlot | undefined),
 
-  has_slot_type: (item, p) => slotCapacity(item, p.slot) > 0,
+  // Declared, not allocated: "is this the kind of item that has an offence
+  // slot" is a question about the base. A Rough item has no openings at all,
+  // and answering "no such slot" there would be a lie about what it is.
+  has_slot_type: (item, p) => declaredCapacity(item, p.slot) > 0,
 
   fill_state: (item, p) => (p.any as string[]).includes(fillState(item)),
 
@@ -319,7 +323,7 @@ export function canApply(item: Item, currency: CurrencyDef): string | null {
   if (t.kinds && !t.kinds.includes(item.kind)) {
     return `${currency.name} cannot be used on ${item.kind}`;
   }
-  if (t.slots && !t.slots.some((s) => slotCapacity(item, s) > 0)) {
+  if (t.slots && !t.slots.some((s) => declaredCapacity(item, s) > 0)) {
     return `${currency.name} requires a ${t.slots.join(' or ')} slot`;
   }
   if (t.tags && !t.tags.every((tag) => item.tags.includes(tag))) {
@@ -403,9 +407,13 @@ export function describeItem(item: Item): string {
   const head = `${item.name} [${fillState(item)}] ilvl ${item.ilvl}${
     item.meta.corrupted ? ' (corrupted)' : ''
   }`;
-  const caps = slotTypes(item)
-    .map((t) => `${slotUsed(item, t)}/${slotCapacity(item, t)} ${t}`)
-    .join(', ');
+  // Only the types this item currently has room in. A Rough item lists none,
+  // which is the truth about it.
+  const caps =
+    slotTypes(item)
+      .filter((t) => slotCapacity(item, t) > 0)
+      .map((t) => `${slotUsed(item, t)}/${slotCapacity(item, t)} ${t}`)
+      .join(', ') || 'no open slots';
 
   // Group the mod list by slot so the item reads the way it's structured.
   const body = slotTypes(item)
