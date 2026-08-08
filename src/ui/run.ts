@@ -46,6 +46,9 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 export type Phase = 'menu' | 'running' | 'results';
 
+/** Gear drops named in the report before it starts counting instead. */
+const LOOT_ROWS = 6;
+
 let game: GameState;
 let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
@@ -285,10 +288,21 @@ function renderCarrying(): void {
     line.append(el('span', 'lootline__v', row.value));
     host.append(line);
   }
-  for (const item of items) {
+  // Capped, same as the report. Gear drops are uncapped by design, so a good
+  // map turns a live readout into a list that outgrows the panel it lives in
+  // — and the panel is beside the map, so it grows over the fight.
+  const shown = items.slice(0, LOOT_ROWS);
+  for (const item of shown) {
     const line = el('div', 'lootline');
     line.append(el('span', 'lootline__k', item.name));
     line.append(el('span', 'lootline__v', '+1'));
+    host.append(line);
+  }
+  const rest = items.length - shown.length;
+  if (rest > 0) {
+    const line = el('div', 'lootline');
+    line.append(el('span', 'lootline__k', `and ${rest} more`));
+    line.append(el('span', 'lootline__v', `+${rest}`));
     host.append(line);
   }
 }
@@ -328,6 +342,13 @@ function renderResults(report: RunReport, run: RunState): void {
   const card = el('div', `resultcard resultcard--${report.status}`);
   card.append(el('h3', 'resultcard__head', report.headline));
 
+  // Two columns: what happened on the left, what you got on the right. As one
+  // stacked column a good run — several stat rows and a handful of drops —
+  // pushed the button that dismisses it off the bottom of the screen.
+  const cols = el('div', 'resultcard__cols');
+
+  const left = el('div');
+  left.append(el('p', 'resultcard__sub', 'The descent'));
   const grid = el('div', 'resultgrid');
   for (const row of report.rows) {
     const r = el('div', `resultrow${row.bad ? ' resultrow--bad' : ''}`);
@@ -335,13 +356,15 @@ function renderResults(report: RunReport, run: RunState): void {
     r.append(el('span', 'resultrow__v', row.value));
     grid.append(r);
   }
-  card.append(grid);
+  left.append(grid);
+  cols.append(left);
 
-  card.append(el('p', 'resultcard__sub', report.cleared ? 'Loot' : 'Loot lost'));
+  const right = el('div');
+  right.append(el('p', 'resultcard__sub', report.cleared ? 'Loot' : 'Loot lost'));
   const loot = el('div', 'lootlist');
   const rows = lootRows(run);
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && report.items.length === 0) {
     loot.append(el('p', 'empty', 'Nothing dropped.'));
   } else {
     for (const row of rows) {
@@ -350,14 +373,27 @@ function renderResults(report: RunReport, run: RunState): void {
       r.append(el('span', 'lootrow__v', row.value));
       loot.append(r);
     }
-    for (const item of report.items) {
+    // Gear drops are uncapped, and a good map can hand you a dozen. Listing
+    // every one turns the report into a receipt you have to scroll; the tail
+    // is a count, because the items themselves are already in your dock.
+    const shown = report.items.slice(0, LOOT_ROWS);
+    for (const item of shown) {
       const r = el('div', 'lootrow');
       r.append(el('span', 'lootrow__k', item.name));
       r.append(el('span', 'lootrow__v', '+1'));
       loot.append(r);
     }
+    const rest = report.items.length - shown.length;
+    if (rest > 0) {
+      const r = el('div', 'lootrow');
+      r.append(el('span', 'lootrow__k', `and ${rest} more`));
+      r.append(el('span', 'lootrow__v', `+${rest}`));
+      loot.append(r);
+    }
   }
-  card.append(loot);
+  right.append(loot);
+  cols.append(right);
+  card.append(cols);
 
   if (report.lostLoot) {
     card.append(

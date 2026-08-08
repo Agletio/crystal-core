@@ -12,13 +12,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    /* geode: cut mineral seen under low light */
-    --void:      #14111C;
-    --matrix:    #1E1A2B;
-    --seam:      #2E2842;
-    --seam-lit:  #443A63;
-    --chalk:     #D6CEE4;
-    --dust:      #8B819F;
+    /*
+     * The frame around the game: dark slate, barely cool.
+     *
+     * These were violet — properly violet, a geode seen under low light —
+     * which was a nice idea on its own and stopped being one the moment the
+     * map became grey stone. A violet frame around a grey cave reads as two
+     * pieces of software, and the eye reconciles them by deciding the UI is
+     * the "real" thing and the map is a picture of something else.
+     *
+     * So: the same near-neutral family as the rock, a few points cooler and a
+     * lot darker. Not brown — a brown UI would drag everything toward the same
+     * mud and lose the one thing the frame is for, which is being quiet.
+     * COLOUR is what the accents are for, and they are unchanged: amethyst,
+     * citrine, quartz, verdite and ember still carry every meaning that has
+     * one, and they read harder now that nothing else competes.
+     */
+    --void:      #15161A;
+    --matrix:    #1E2026;
+    --seam:      #2C2F36;
+    --seam-lit:  #464B56;
+    --chalk:     #D7D9DE;
+    --dust:      #8A8F99;
 
     /*
      * The map has its own palette entirely, and it is NOT the panel one.
@@ -158,12 +173,22 @@
   #item-meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
 
   /* --- the signature: slots as cut facets --------------------------- */
-  .slotgroup { margin-bottom: 14px; }
+  /*
+   * Groups side by side, not stacked.
+   *
+   * Four slot types stacked vertically, each with a label and a row of 62px
+   * facets, was 600px before the modifier list even started — so a finished
+   * item put every one of its modifiers below the fold and you had to scroll
+   * an item you were meant to be LOOKING at. Across, the whole socket display
+   * is one row of about ninety pixels and everything fits.
+   */
+  #sockets { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px; }
+  .slotgroup { min-width: 0; }
   .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
-  .facets { display: flex; gap: 8px; flex-wrap: wrap; }
+  .facets { display: flex; gap: 6px; flex-wrap: wrap; }
 
   .facet {
-    width: 54px; height: 62px; padding: 0;
+    width: 42px; height: 48px; padding: 0;
     position: relative;
     border: none; background: none;
     display: grid; place-items: center;
@@ -174,7 +199,7 @@
   .facet--set { box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
   .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
   .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
-  .facet__tier { font-family: var(--display); font-size: 11px; color: var(--void); }
+  .facet__tier { font-family: var(--display); font-size: 10px; color: var(--void); }
 
   .facet--amethyst { background: var(--amethyst); }
   .facet--citrine  { background: var(--citrine); }
@@ -182,12 +207,20 @@
   .facet--verdite  { background: var(--verdite); }
   .facet--ember    { background: var(--ember); }
 
-  .mod { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--seam); }
+  /* Two columns, because a Brilliant item carries six modifiers plus its
+     implicit and one column of those is taller than the window has left after
+     the sockets. The whole point of this screen is looking at an item; making
+     you scroll one is the one thing it must not do. */
+  #modlist { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0 18px; align-content: start; }
+  #modlist .empty { grid-column: 1 / -1; }
+  @media (max-width: 700px) { #modlist { grid-template-columns: 1fr; } }
+
+  .mod { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--seam); }
   .mod--focus { background: var(--seam); margin: 0 -8px; padding: 8px; }
   /* Part of the base, not something you rolled. */
   .mod--implicit .mod__stats { color: var(--citrine); }
-  .mod__stats { font-size: 13px; }
-  .mod__name { font-size: 11px; color: var(--dust); letter-spacing: .04em; }
+  .mod__stats { font-size: 12.5px; line-height: 1.35; }
+  .mod__name { font-size: 10px; color: var(--dust); letter-spacing: .04em; line-height: 1.3; }
   .dot { width: 8px; height: 8px; margin-top: 6px; flex: none; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
   .dot--amethyst { background: var(--amethyst); }
   .dot--citrine  { background: var(--citrine); }
@@ -457,8 +490,14 @@
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
-  .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(20,17,28,.86); padding: 16px; overflow-y: auto; }
-  .resultcard { background: var(--matrix); border: 1px solid var(--seam-lit); padding: 18px; width: min(360px, 100%); }
+  .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(21,22,26,.86); padding: 16px; overflow-y: auto; }
+  /* Two columns where there is room: what happened on the left, what you got
+     on the right. One 360px column meant a good run — several stat rows and a
+     handful of drops — pushed the button that dismisses it off the bottom. */
+  .resultcard { background: var(--matrix); border: 1px solid var(--seam-lit); padding: 18px; width: min(600px, 100%); }
+  .resultcard__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; align-items: start; }
+  @media (max-width: 620px) { .resultcard__cols { grid-template-columns: 1fr; gap: 10px; } }
+  .resultcard__sub:first-child { margin-top: 0; }
   .resultcard--cleared { border-color: var(--citrine); }
   .resultcard--died { border-color: var(--ember); }
   .resultcard__head { font-family: var(--display); font-size: 16px; margin: 0 0 12px; }
@@ -484,7 +523,7 @@
      covering it with the thing that needs it would be the one mistake this
      layout can't afford; the rest stop there too, for consistency. --dock-h
      is measured and written by the shell. */
-  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(20,17,28,.82); padding: 20px; }
+  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(21,22,26,.82); padding: 20px; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
@@ -849,7 +888,7 @@
      and what you are crafting it with are both on screen at once, and neither
      can scroll the other away. -->
 <div class="modal" id="craft" hidden>
-  <div class="modal__card">
+  <div class="modal__card modal__card--wide">
     <div class="modal__head">
       <h2 class="modal__title">Crafting</h2>
       <div class="seedbar">

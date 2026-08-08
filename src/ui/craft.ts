@@ -24,6 +24,7 @@ import {
   slotUsed,
 } from '../mods';
 import { canApply, craft, describeMod } from '../crafting';
+import { describeStatLine } from '../mod-text';
 import { ALL_MODS } from '../data';
 import { balance, spend } from '../economy';
 import { craftItem, clearCraft, replaceItem, selectForCraft } from '../game/state';
@@ -208,19 +209,13 @@ function renderItem(): void {
     if (focused === mod.entryId) row.classList.add('mod--focus');
     row.append(el('span', `dot dot--${facetOf(mod)}`));
     const b = el('div', 'mod__body');
-    b.append(
-      el(
-        'div',
-        'mod__stats',
-        mod.stats
-          .map((s) =>
-            s.form === 'flat'
-              ? `+${s.value} ${s.stat}`
-              : `+${s.value}% ${s.form === 'inc' ? 'increased' : 'more'} ${s.stat}`
-          )
-          .join(', ')
-      )
-    );
+    // describeStatLine, not a local format. This screen was building its own
+    // stat text out of the raw stat KEY, so the one place in the game you look
+    // hardest at an item was the one place printing "+14 coldRes" and
+    // "+5% increased castSpeed" — the exact identifier leak the mods check
+    // exists to catch, in the exact spot the check does not look, because the
+    // check tests the text layer and this bypassed it.
+    b.append(el('div', 'mod__stats', mod.stats.map(describeStatLine).join(', ')));
     b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
     row.append(b);
     list.append(row);

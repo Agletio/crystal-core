@@ -640,6 +640,33 @@ making maps more dangerous, and this is what finally gives the sigils a source
 Equipment rarity is the same idea and isn't built: fixed-stat legendaries with
 rarity tiers, where more rarity means better ones.
 
+## Checks
+
+Five, and each answers a question the others can't.
+
+| | asks |
+|---|---|
+| `npm run typecheck` | does it compile |
+| `npm run smoke` | does the page boot, and does the loop work (jsdom, no layout) |
+| `npm run demo` | does the sim terminate, does the economy hold, does every guided step's predicate become true |
+| `npm run mods` | does every modifier roll, do something, respect its tags, and read as English |
+| `npm run shots` | real Chromium: overflow, the guide covering its own target, the opening leaking clicks |
+| `npm run guide` | **plays the opening with a real pointer**, clicking only what's lit |
+
+`guide` exists because the others could not see a whole class of bug. The demo
+proves each step's `done` predicate *can* become true; that is not the same as
+"a player can get there". The opening leaves exactly one control live, so a step
+whose highlight isn't the thing you have to click is a dead end no predicate can
+detect — the failure is in the pointer, not in the game state. That shipped
+once: clicking the Weapon slot moved the next click into the dock while the ring
+stayed on the slot, and the tutorial ended there with Escape disabled.
+
+The same split runs through the rest. `mods` checks the text *layer*; smoke
+checks the *DOM*, because the crafting screen once formatted stat lines itself
+out of the raw stat key and printed `+14 coldRes` in the one place you look
+hardest at an item. A check that only tests the helper cannot see a screen that
+skipped the helper.
+
 ## The shell
 
 The page never scrolls. `.wrap` fills the viewport, and only the active view

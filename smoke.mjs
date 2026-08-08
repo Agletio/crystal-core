@@ -350,6 +350,24 @@ assert(
   'and a Seamed item stops at two'
 );
 
+// --- no identifier ever reaches the screen --------------------------------
+// `npm run mods` checks the TEXT LAYER. This checks the DOM, which is a
+// different question and the one that actually bit: the crafting screen was
+// formatting stat lines itself out of the raw stat key, so the one place you
+// look hardest at an item was the one place printing "+14 coldRes". A check
+// that only tests the helper cannot see a screen that skipped the helper.
+{
+  const camelCase = (text) => text.match(/\b[a-z]+[A-Z][a-zA-Z]*\b/g) ?? [];
+  const shown = all('#modlist .mod__stats');
+  assert(shown.length >= 2, 'the crafting screen is showing modifiers to check', String(shown.length));
+
+  const leaks = new Set();
+  for (const node of [...shown, $('item-meta')]) {
+    for (const word of camelCase(node.textContent ?? '')) leaks.add(word);
+  }
+  assert(leaks.size === 0, 'and none of them is a raw identifier', [...leaks].join(', '));
+}
+
 // Every crystal mod is a downside now, so adding one must move danger up.
 const danger = () => Number(multRows()[0].split('=')[1]);
 assert(danger() > 0, 'crafting a mod raises danger', String(danger()));
