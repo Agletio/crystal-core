@@ -25,6 +25,7 @@ import {
 import { RunSim, runToCompletion } from './sim/run';
 import { hasOpenSlot, modCapacity, qualityOf } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
+import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats } from './sim/stats';
 import { makeCharacter, xpToNext } from './sim/character';
 import { loadoutMods, starterLoadout } from './sim/loadout';
@@ -384,6 +385,41 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
 
 function fillGear(game: ReturnType<typeof createGame>): void {
   while (carryRoom(game, 'gear') > 0) addItem(game, makeGear('wand_ash', 1));
+}
+
+// ===========================================================================
+rule('SPRITES — is the pixel art well formed?');
+
+// The sprites are hand-authored character grids. A row one character short
+// does not fail loudly, it silently truncates the figure; one character long
+// draws outside the cell. Both look like "the art is slightly off" rather than
+// like the typo they are, which is the worst way for a bug to present. Checked
+// here because building the sheet needs a canvas and this does not.
+{
+  const problems = [
+    ...wellFormed(HERO_FRAMES).map((b) => `hero ${b}`),
+    ...Object.entries(MONSTER_FRAMES).flatMap(([name, frames]) =>
+      wellFormed(frames).map((b) => `${name} ${b}`)
+    ),
+  ];
+  const sheets = 1 + Object.keys(MONSTER_FRAMES).length;
+  check(
+    problems.length === 0,
+    `all ${sheets} sprites are 16x16 on every frame`,
+    problems.join('; ')
+  );
+
+  // Two frames that are identical are not a walk cycle. Cheap to write, and
+  // exactly the thing you would not notice from a still.
+  const same = [
+    ['hero', HERO_FRAMES] as const,
+    ...Object.entries(MONSTER_FRAMES).map((e) => e as readonly [string, string[][]]),
+  ].filter(([, frames]) => frames[0].join('') === frames[1].join(''));
+  check(
+    same.length === 0,
+    'and every one actually animates',
+    same.map(([n]) => n).join(', ')
+  );
 }
 
 // ===========================================================================

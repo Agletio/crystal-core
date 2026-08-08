@@ -275,15 +275,47 @@ that every carved tile is walkable (so nothing has started testing `=== FLOOR`
 and stranded the hero in a corridor), that a corridor never relabels the room
 it joins, and that the vein tracks the crystal.
 
-### Replacing the placeholder art
+### The sprites
 
-`render/sprites.ts` draws every creature at runtime onto offscreen canvases.
-That keeps binary assets out of the repo and means nothing needs redrawing
-when a colour changes. To use real art, replace `makeSheet()` with a loader
-and keep the same `{sprite, frame}` lookup — `pixi.ts` doesn't change.
+`render/sprites.ts` draws every creature at runtime onto offscreen canvases, so
+no binary assets live in the repo. Each is **authored as text** — rows of
+characters on a 16×16 grid with a key mapping each character to a palette
+colour:
+
+```
+'...#DFEF#...W...',    # outline  D/C/L cloth  F hood  E eye  W staff
+```
+
+Verbose next to three `ctx.ellipse` calls and worth every line: you can see the
+silhouette in the source, and moving a shoulder is moving a character rather
+than guessing at a control point. `CELL` divides by the grid exactly, so every
+logical pixel lands on a whole number of canvas pixels and nothing is ever
+half-lit — that is the entire difference between pixel art and a small smooth
+drawing. Pixi textures are forced to `scaleMode: 'nearest'`; under the default
+smoothing the grid gets interpolated away and you get back the blurry drawing
+the pixel art existed to not be.
+
+Sprites are authored facing right and **flipped** rather than rotated, which is
+what lets a pixel grid survive being pointed the other way.
+
+The hero is a traveller who has been down here far too long: hooded, hunched
+over a walking staff, cloak gone to rags, a bedroll still strapped to his back
+because he set out meaning to come home. The only bright thing on him is the
+eye. The monsters were converted in the same pass — a single figure in a
+different style doesn't read as "the hero got better", it reads as broken.
 
 Each creature has two walk frames; everything else (bob, lunge, recoil, death
 spin) is done with transforms, because transforms are free and frames are not.
+The hero's two frames differ by a leg swap *and* a one-pixel drop while the
+staff stays planted, which is what turns a walk cycle into a limp.
+
+`npm run demo` asserts every row of every frame is exactly 16 characters, and
+that no creature's two frames are identical. A short row doesn't fail loudly —
+it silently truncates the figure, which looks like "the art is a bit off"
+rather than the typo it is.
+
+To use real art, replace `makeSheet()` with a loader and keep the same
+`{sprite, frame}` lookup — `pixi.ts` doesn't change.
 
 ### What the sim exposes for animation
 

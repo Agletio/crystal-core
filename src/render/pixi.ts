@@ -58,7 +58,15 @@ export async function createPixiRenderer(
 
   const textures: Record<string, Texture[]> = {};
   for (const [name, frames] of Object.entries(sheet)) {
-    textures[name] = frames.map((canvas) => Texture.from(canvas));
+    textures[name] = frames.map((canvas) => {
+      const texture = Texture.from(canvas);
+      // Nearest, not linear. The hero is authored on a 16-pixel grid and is
+      // then drawn at whatever fraction of a tile the zoom works out to —
+      // under the default smoothing that grid is interpolated away and you get
+      // back the small blurry drawing pixel art exists to not be.
+      texture.source.scaleMode = 'nearest';
+      return texture;
+    });
   }
 
   const app = new Application();
