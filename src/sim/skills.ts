@@ -148,6 +148,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
       const low = g.moreVsLow as { below: number; more: number } | undefined;
       if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;
+
+      const full = g.moreVsFull as { above: number; more: number } | undefined;
+      if (full && target.life >= target.stats.maxLife * full.above) m *= 1 + full.more;
       return m;
     };
 

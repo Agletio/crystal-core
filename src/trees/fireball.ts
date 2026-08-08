@@ -22,13 +22,14 @@ import type { NodeChoice, NodeStat, SkillNodeDef } from './node';
 
 const TRUNK = [
   { count: 6, r: 1.35 },
-  { count: 12, r: 2.6 },
+  { count: 12, r: 2.7 },
 ];
 /** Ways off the centre. Fewer than the ring holds, so ring one is a walk too. */
 const TRUNK_WAYS_IN = 3;
-/** Trunk slots a branch hangs off, and the slots that hold a trunk notable. */
+/** Trunk slots a branch hangs off, and the ones a trunk spur grows from. */
 const ANCHORS = [0, 2, 4, 6, 8, 10];
-const TRUNK_NOTABLE_SLOTS = [1, 5, 9];
+const SPUR_SLOTS = [1, 3, 5, 7, 9, 11];
+const SPUR_R = [3.5, 4.4];
 
 const ENABLER_R = 3.8;
 /** How far out each step along a twig goes. */
@@ -211,7 +212,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_splitcast',
       name: 'Split Cast',
-      description: 'Fireball strikes one additional enemy near the target.',
+      description:
+        'Fireball strikes one additional enemy near the target, for 70% damage.',
       gate: GATE.enabler,
       grants: { extraTargets: 1 },
     },
@@ -231,7 +233,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_volley',
           name: 'Volley',
-          description: 'Fireball strikes another additional enemy.',
+          description: 'Fireball strikes another additional enemy, for 70% damage.',
           gate: GATE.deep,
           grants: { extraTargets: 1 },
         },
@@ -242,7 +244,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_barrage',
           name: 'Barrage',
-          description: 'Fireball strikes two more enemies near the target.',
+          description: 'Fireball strikes two more enemies near the target, for 70% damage.',
           gate: GATE.tip,
           grants: { extraTargets: 2 },
         },
@@ -256,7 +258,9 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_piercing',
       name: 'Piercing Flame',
-      description: 'Fireball passes through one enemy, carrying on to whatever is behind it.',
+      description:
+        'Fireball passes through one enemy for 70% damage, carrying on to ' +
+        'whatever is behind it.',
       gate: GATE.enabler,
       grants: { pierce: 1 },
     },
@@ -276,7 +280,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overpen',
           name: 'Overpenetration',
-          description: 'Fireball passes through one more enemy.',
+          description: 'Fireball passes through one more enemy, also for 70%.',
           gate: GATE.deep,
           grants: { pierce: 1 },
         },
@@ -290,7 +294,9 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_arcing',
       name: 'Arcing Flame',
-      description: 'Fireball leaps from the enemy it hits to one more within 4.5 tiles.',
+      description:
+        'Fireball leaps from the enemy it hits to one more within 4.5 tiles, ' +
+        'for 70% damage.',
       gate: GATE.enabler,
       grants: { chains: 1 },
     },
@@ -311,7 +317,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_leaping',
           name: 'Leaping Flame',
-          description: 'Fireball leaps one more time.',
+          description: 'Fireball leaps one more time, also for 70%.',
           gate: GATE.deep,
           grants: { chains: 1 },
         },
@@ -367,8 +373,9 @@ const BRANCHES: Branch[] = [
 ];
 
 /**
- * The trunk's own. Every one does something for any build, which is what earns
- * it a place where nothing has been unlocked yet.
+ * The trunk's own, each at the end of its own short spur. Every one does
+ * something for any build, which is what earns it a place out here where
+ * nothing has been unlocked — they are what a branch has to beat.
  */
 const TRUNK_NOTABLES: Notable[] = [
   {
@@ -407,6 +414,47 @@ const TRUNK_NOTABLES: Notable[] = [
     gate: 17,
     stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
   },
+  {
+    id: 'fb_opening',
+    name: 'Opening Salvo',
+    description: 'Fireball deals 35% more damage to enemies above four fifths of their life.',
+    gate: 7,
+    grants: { moreVsFull: { above: 0.8, more: 0.35 } },
+  },
+  {
+    id: 'fb_focus',
+    name: 'Sharpened Focus',
+    description: 'Fireball critically strikes far more often, and far harder.',
+    gate: 13,
+    stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
+  },
+  {
+    id: 'fb_emberstorm',
+    name: 'Ember Storm',
+    description: 'Fireball is cast 25% faster.',
+    gate: 21,
+    stats: [stat('castSpeed', 'inc', 25)],
+  },
+];
+
+/**
+ * Ways across between neighbouring spurs, as [spur, step] pairs.
+ *
+ * A cross link joins a node to one exactly one step further out, so reaching
+ * the far one costs the same either way: your own spur, or the neighbour's plus
+ * the step across. They are what makes the middle worth reading — two routes to
+ * the same node, at the same price, picking up different things on the way.
+ *
+ * Never into a branch. A branch is only worth anything behind its own node, so
+ * a way in that skipped it would put dead nodes back.
+ */
+const CROSSINGS: Array<[[number, number], [number, number]]> = [
+  [[0, 0], [1, 1]],
+  [[2, 0], [3, 1]],
+  [[4, 0], [5, 1]],
+  [[1, 0], [2, 1]],
+  [[3, 0], [4, 1]],
+  [[5, 0], [0, 1]],
 ];
 
 /**
@@ -440,12 +488,11 @@ function build(): SkillNodeDef[] {
     links.get(a)!.push(b);
   };
 
-  const trunkNotableAt = new Map<number, Notable>();
-  TRUNK_NOTABLE_SLOTS.forEach((slot, i) => {
-    if (TRUNK_NOTABLES[i]) trunkNotableAt.set(slot, TRUNK_NOTABLES[i]);
-  });
-  const trunkAt = (ring: number, i: number) =>
-    ring === 2 ? (trunkNotableAt.get(i)?.id ?? trunkId(ring, i)) : trunkId(ring, i);
+  const trunkAt = (ring: number, i: number) => trunkId(ring, i);
+  const spurId = (spur: number, step: number) =>
+    step === SPUR_R.length - 1
+      ? TRUNK_NOTABLES[spur].id
+      : `fb_spur${spur}_${step}`;
 
   // --- the trunk ----------------------------------------------------------
   for (let ring = 1; ring <= TRUNK.length; ring++) {
@@ -464,12 +511,35 @@ function build(): SkillNodeDef[] {
   for (let ring = 1; ring <= TRUNK.length; ring++) {
     const { count, r } = TRUNK[ring - 1];
     for (let i = 0; i < count; i++) {
-      const notable = ring === 2 ? trunkNotableAt.get(i) : undefined;
-      const angle = ((i + (jitter(ring, i, 1) - 0.5) * 0.4) / count) * TAU - Math.PI / 2;
-      const reach = r + (jitter(ring, i, 2) - 0.5) * 0.4;
-      const id = trunkAt(ring, i);
+      const angle = ((i + (jitter(ring, i, 1) - 0.5) * 0.3) / count) * TAU - Math.PI / 2;
+      const reach = r + (jitter(ring, i, 2) - 0.5) * 0.3;
       const common = COMMON[(ring * 3 + i) % COMMON.length];
+      nodes.push({
+        id: trunkAt(ring, i),
+        name: 'Ember',
+        description: common.text,
+        kind: 'minor',
+        x: Math.cos(angle) * reach,
+        y: Math.sin(angle) * reach,
+        links: links.get(trunkAt(ring, i)) ?? [],
+        stats: common.stats ?? [],
+      });
+    }
+  }
 
+  // Six short spurs off the trunk, each ending in a notable worth having
+  // whatever you go on to build.
+  SPUR_SLOTS.forEach((slot, spur) => {
+    const base = (slot / TRUNK[1].count) * TAU - Math.PI / 2;
+    for (let step = 0; step < SPUR_R.length; step++) {
+      const last = step === SPUR_R.length - 1;
+      const id = spurId(spur, step);
+      const notable = last ? TRUNK_NOTABLES[spur] : null;
+      const common = COMMON[(spur * 2 + step) % COMMON.length];
+      const angle = base + (jitter(spur, step, 5) - 0.5) * 0.12;
+      const reach = SPUR_R[step] + (jitter(spur, step, 6) - 0.5) * 0.2;
+
+      join(id, step === 0 ? trunkAt(2, slot) : spurId(spur, step - 1));
       nodes.push({
         id,
         name: notable?.name ?? 'Ember',
@@ -478,7 +548,7 @@ function build(): SkillNodeDef[] {
         x: Math.cos(angle) * reach,
         y: Math.sin(angle) * reach,
         links: links.get(id) ?? [],
-        ...(notable?.gate ? { gate: notable.gate } : {}),
+        ...(notable ? { gate: notable.gate } : {}),
         ...(notable
           ? {
               ...(notable.stats ? { stats: notable.stats } : {}),
@@ -488,6 +558,10 @@ function build(): SkillNodeDef[] {
           : { stats: common.stats ?? [] }),
       });
     }
+  });
+
+  for (const [[fromSpur, fromStep], [toSpur, toStep]] of CROSSINGS) {
+    join(spurId(fromSpur, fromStep), spurId(toSpur, toStep));
   }
 
   // --- the branches -------------------------------------------------------
@@ -569,6 +643,45 @@ function build(): SkillNodeDef[] {
     });
   });
 
+  // Links are collected while the shape is worked out, so every node picks up
+  // whatever named it after it was pushed.
+  return spread(nodes.map((n) => ({ ...n, links: links.get(n.id) ?? [] })));
+}
+
+/**
+ * Push apart anything that ended up on top of something else.
+ *
+ * Twigs aim where they like and two of them can converge; the wobble that stops
+ * the web looking like a diagram can close the last of the gap. A few passes of
+ * shoving overlapping pairs apart costs nothing and means no node is ever drawn
+ * under another one.
+ */
+function spread(nodes: SkillNodeDef[]): SkillNodeDef[] {
+  const APART = 0.92;
+  for (let pass = 0; pass < 24; pass++) {
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        if (d >= APART) continue;
+        moved = true;
+        // Straight away from each other, half the shortfall each, and never
+        // toward the middle — the rings have to stay rings.
+        const push = (APART - Math.max(d, 1e-3)) / 2;
+        const ux = d < 1e-3 ? 1 : dx / d;
+        const uy = d < 1e-3 ? 0 : dy / d;
+        a.x -= ux * push;
+        a.y -= uy * push;
+        b.x += ux * push;
+        b.y += uy * push;
+      }
+    }
+    if (!moved) break;
+  }
   return nodes;
 }
 
@@ -586,6 +699,19 @@ export const FIREBALL_BRANCH: Record<string, string> = Object.fromEntries(
       ),
     ]),
   ])
+);
+
+/**
+ * The ways across, as node pairs. Exported so the demo can prove they are free:
+ * removing every one of them must leave every node exactly as far from the
+ * middle as it was.
+ */
+export const FIREBALL_CROSSINGS: Array<[string, string]> = CROSSINGS.map(
+  ([[fs, ft], [ts, tt]]) =>
+    [
+      ft === SPUR_R.length - 1 ? TRUNK_NOTABLES[fs].id : `fb_spur${fs}_${ft}`,
+      tt === SPUR_R.length - 1 ? TRUNK_NOTABLES[ts].id : `fb_spur${ts}_${tt}`,
+    ] as [string, string]
 );
 
 /** The node that opens each branch. */

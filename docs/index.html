@@ -13,50 +13,71 @@
 <style>
   :root {
     /*
-     * The frame around the game: dark slate, barely cool — the same near-neutral
-     * family as the rock, cooler and much darker. A frame in a different colour
-     * family from the map reads as two pieces of software.
+     * The frame around the game: soot, ash and cold iron. Near-black and barely
+     * warm, so the map's stone and the frame read as the same world rather than
+     * as two pieces of software.
      *
-     * Not brown either: the frame's whole job is being quiet. COLOUR belongs to
-     * the accents below, which carry every meaning that has one.
+     * The frame's whole job is being quiet. COLOUR belongs to the accents below,
+     * which carry every meaning that has one.
      */
-    --void:      #15161A;
-    --matrix:    #1E2026;
-    --seam:      #2C2F36;
-    --seam-lit:  #464B56;
-    --chalk:     #D7D9DE;
-    --dust:      #8A8F99;
+    --void:      #0C0B0E;
+    --matrix:    #1B1922;
+    --seam:      #2E2B3A;
+    --seam-lit:  #3F3C4B;
+    --chalk:     #D8D2C4;
+    --dust:      #877F8C;
 
     /*
-     * The map's own palette, cool-neutral and barely warm. Underground stone lit
-     * by nothing in particular is grey; the accents are what get to be coloured,
-     * which is what makes a crystal's vein visible.
+     * The map's own palette: damp underground stone, warm-grey and unlit.
      *
      * Note the order: the WALL is the LIGHTEST thing here. You look slightly
      * down at a chamber, so its walls catch the light and the floor sits in
      * their shadow. Reversed, rock reads as a hole rather than as mass.
      */
-    --rock:      #6E6E68;
-    --rock-lit:  #8C8C85;
-    --floor:     #56564F;
-    --floor-lit: #6B6B63;
+    --rock:      #6B655B;
+    --rock-lit:  #8A8376;
+    --floor:     #4F4941;
+    --floor-lit: #635C52;
     /** Solid rock beyond the visible wall. Also the colour behind the map. */
-    --rock-deep: #33332E;
+    --rock-deep: #2A2722;
 
     /* Fire is its own ramp: ember is a coral that reads pink at speed. */
     --flame:     #E2521B;
     --flame-core:#FFDC8C;
 
-    --amethyst:  #A67BE8;
-    --citrine:   #E8B84B;
+    /*
+     * Three worlds meet in the Fissure and the palette says which is which.
+     * Crystal and light are quartz and bone; demonic rot is amethyst and venom;
+     * everything mundane — fire, lightning, cold, steel — is rust, citrine and
+     * ember. Anything the interface itself owns is rust, so the chrome belongs
+     * to the mundane world and colour stays a claim about content.
+     */
+    --amethyst:  #8B4FD1;
+    --citrine:   #D9A441;
     --quartz:    #6FC7E8;
-    --verdite:   #5FD9A4;
-    --ember:     #E8735F;
+    --verdite:   #6BBF6A;
+    --ember:     #C4483A;
+
+    --rust:      #C4631E;
+    --venom:     #9BD13A;
+    --gloom:     #3A2450;
+    --bone:      #C9BFA3;
 
     --display: 'Silkscreen', 'Courier New', monospace;
     --body: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
 
     --step: 4px;
+
+    /*
+     * Grime, in two layers of hard-stopped gradient: a dark 4px weave and a
+     * faint lit weave half a pixel off it. Hard stops rather than blends, so it
+     * dithers like a bitmap instead of smearing like a photograph.
+     */
+    --grit:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 2px, transparent 2px 4px);
+    /** A chiselled edge: lit from the top left, in whole pixels. */
+    --bevel: inset 2px 2px 0 rgba(255,255,255,.055), inset -2px -2px 0 rgba(0,0,0,.55);
   }
 
   * { box-sizing: border-box; }
@@ -72,14 +93,8 @@
      rather than a document. */
   html, body {
     margin: 0;
-    /*
-     * dvh, not vh. On mobile Safari `vh` is the height with the browser
-     * chrome COLLAPSED, so in a browser it over-states the space that
-     * actually exists — the layout is measured against a screen taller than
-     * the one you are holding. dvh tracks the real visible height, which also
-     * means a browser tab and an installed full-screen app lay out the same:
-     * tuning done in one carries over to the other instead of being redone.
-     */
+    /* dvh, not vh: on mobile Safari `vh` is the height with the browser chrome
+       COLLAPSED, so it lays out against a screen taller than the one you hold. */
     height: 100%;
     height: 100dvh;
     overflow: hidden;
@@ -90,17 +105,20 @@
     line-height: 1.5;
   }
 
-  /* faint facet grid, like light through a cut stone */
+  /* Cave wall behind everything: a dark dithered weave, a cold glow at the top
+     where the Fissure is and a heavy vignette at the corners. */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(var(--seam) 1px, transparent 1px),
-      linear-gradient(90deg, var(--seam) 1px, transparent 1px);
-    background-size: 48px 48px;
-    opacity: .22;
+      radial-gradient(ellipse 90% 60% at 50% 0%, rgba(139,79,209,.12), transparent 70%),
+      radial-gradient(ellipse 130% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.6)),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.5) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.014) 0 3px, transparent 3px 9px);
+    image-rendering: pixelated;
     z-index: 0;
   }
 
@@ -121,8 +139,8 @@
   .viewport { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
 
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-  h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--chalk); }
-  h1 span { color: var(--amethyst); }
+  h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--bone); text-shadow: 2px 2px 0 #000; }
+  h1 span { color: var(--rust); }
   .sub { font-size: 12px; color: var(--dust); }
   /* Wraps for the same reason <header> does. Six buttons on one unbreakable
      line is 404px, which is wider than a phone, and the overflow drags the
@@ -130,12 +148,20 @@
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
   .seedbar code { color: var(--quartz); }
 
-  button { font-family: var(--body); cursor: pointer; border: 1px solid var(--seam-lit); background: var(--matrix); color: var(--chalk); }
+  /* Stamped metal, not a web control: two whole pixels of border, a chiselled
+     bevel and no radius anywhere. Pressing it drops it into the frame. */
+  button {
+    font-family: var(--body); cursor: pointer;
+    border: 2px solid var(--seam-lit); background: var(--matrix); color: var(--chalk);
+    box-shadow: var(--bevel);
+    background-image: var(--grit);
+  }
+  button:active:not(:disabled) { box-shadow: inset 2px 2px 0 rgba(0,0,0,.55); transform: translateY(1px); }
   button:focus-visible { outline: 2px solid var(--citrine); outline-offset: 2px; }
   button:disabled { cursor: not-allowed; }
 
   .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; }
-  .mini:hover:not(:disabled) { border-color: var(--amethyst); color: var(--amethyst); }
+  .mini:hover:not(:disabled) { border-color: var(--rust); color: var(--rust); }
   /* Dev tools, marked so they read as scaffolding rather than features. */
   .mini--dev { border-style: dashed; color: var(--dust); }
   .mini--dev:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
@@ -156,14 +182,30 @@
   .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
   .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--dust); }
   .chip:hover { color: var(--chalk); border-color: var(--seam-lit); }
-  .chip--on { background: var(--seam); color: var(--chalk); border-color: var(--amethyst); }
+  .chip--on { background: var(--seam); color: var(--chalk); border-color: var(--rust); }
 
   .cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 20px; align-items: start; }
   @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
 
-  .panel { background: var(--matrix); border: 1px solid var(--seam); padding: 16px; }
+  /* A slab cut out of the wall: two-pixel edge, dark grain, sunk into the page
+     rather than floating above it. */
+  .panel {
+    background-color: var(--matrix);
+    background-image:
+      linear-gradient(var(--seam-lit) 0 0), linear-gradient(var(--seam-lit) 0 0),
+      linear-gradient(var(--seam-lit) 0 0), linear-gradient(var(--seam-lit) 0 0),
+      var(--grit);
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat;
+    background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, auto, auto;
+    background-position:
+      5px 5px, calc(100% - 5px) 5px, 5px calc(100% - 5px), calc(100% - 5px) calc(100% - 5px),
+      0 0, 0 0;
+    border: 2px solid var(--seam);
+    box-shadow: var(--bevel), 0 3px 0 rgba(0,0,0,.45);
+    padding: 16px;
+  }
   .panel + .panel { margin-top: 16px; }
-  .panel__title { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin: 0 0 12px; }
+  .panel__title { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--bone); margin: 0 0 12px; text-shadow: 1px 1px 0 #000; }
   /* A heading inside a panel, for when one panel holds two things. */
   .panel__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; border-top: 1px solid var(--seam); padding-top: 12px; }
 
@@ -172,10 +214,8 @@
   #item-meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
 
   /* --- the signature: slots as cut facets --------------------------- */
-  /*
-   * Groups across, not stacked: stacked, the sockets alone were 600px and put
-   * every modifier of a finished item below the fold.
-   */
+  /* Groups across, not stacked: stacked, the sockets alone are 600px and put
+     every modifier of a finished item below the fold. */
   #sockets { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px; }
   .slotgroup { min-width: 0; }
   .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
@@ -259,7 +299,8 @@
     #run-loot { overflow-y: visible; }
   }
 
-  .stage { background: var(--void); border: 1px solid var(--seam); line-height: 0; }
+  .stage { background: var(--void); border: 2px solid var(--seam); box-shadow: var(--bevel); line-height: 0; }
+  #run-canvas, .icon, .slot svg { image-rendering: pixelated; }
   #run-canvas { display: block; width: 100%; }
 
   .runbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
@@ -270,7 +311,7 @@
   .hp__fill { height: 100%; background: var(--verdite); }
   .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--chalk); }
   .hp--xp { height: 14px; margin-bottom: 14px; }
-  .hp__fill--xp { background: var(--amethyst); }
+  .hp__fill--xp { background: var(--rust); }
   .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
 
   .whoami { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
@@ -324,13 +365,9 @@
   /* A full bag is the moment the limit starts mattering, so it says so before
      a run rather than in the report afterwards. */
   .dockcol__label--full { color: var(--citrine); }
-  /*
-   * A fixed grid and no scrollbar, so capacity is visible: ninety crystals must
-   * not look like twelve. Both dimensions are stated rather than auto-filled —
-   * auto-fill re-wraps as the window narrows and clips the last row, and the
-   * height has to be constant for "everything you own is on screen" to hold.
-   * --cols is written from the carry limit, so capacity lives in one place.
-   */
+  /* A fixed grid and no scrollbar, so capacity is visible. Both dimensions are
+     stated: auto-fill re-wraps as the window narrows and clips the last row.
+     --cols is written from the carry limit. */
   .slots {
     display: grid;
     grid-template-columns: repeat(var(--cols, 8), 40px);
@@ -367,11 +404,9 @@
   }
   .slot--off { opacity: .34; }
 
-  /* Item quality, on the border. A dock is something you scan for "is any of
-     this worth looking at", and the silhouette can only ever say what a piece
-     IS. Rough is left at the plain slot colour on purpose — most of what you
-     pick up is rough, and a grid where everything is highlighted highlights
-     nothing. */
+  /* Item quality, on the border — the silhouette can only say what a piece IS.
+     Rough stays the plain slot colour: a grid where everything is highlighted
+     highlights nothing. */
   .slot--q-seamed    { border-color: rgba(111,199,232,.55); }
   .slot--q-faceted   { border-color: rgba(232,184,75,.6); }
   .slot--q-brilliant { border-color: rgba(232,115,95,.75); box-shadow: inset 0 0 0 1px rgba(232,115,95,.3); }
@@ -463,12 +498,12 @@
     padding: 14px; background: var(--void);
     border: 1px dashed var(--seam-lit);
   }
-  .socket:hover { border-color: var(--amethyst); }
-  .socket--full { border-style: solid; border-color: var(--amethyst); background: var(--matrix); }
+  .socket:hover { border-color: var(--rust); }
+  .socket--full { border-style: solid; border-color: var(--rust); background: var(--matrix); }
   .socket__hint { font-size: 11px; color: var(--dust); font-style: italic; }
   .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
 
-  .mini--go { border-color: var(--amethyst); color: var(--chalk); }
+  .mini--go { border-color: var(--rust); color: var(--bone); }
   .mini--go:hover:not(:disabled) { background: var(--seam); }
 
   .chosen__name { font-family: var(--display); font-size: 15px; }
@@ -477,11 +512,11 @@
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
-  .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(21,22,26,.86); padding: 16px; overflow-y: auto; }
+  .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(6,5,8,.88); padding: 16px; overflow-y: auto; }
   /* Two columns where there is room: what happened on the left, what you got
      on the right. One 360px column meant a good run — several stat rows and a
      handful of drops — pushed the button that dismisses it off the bottom. */
-  .resultcard { background: var(--matrix); border: 1px solid var(--seam-lit); padding: 18px; width: min(600px, 100%); }
+  .resultcard { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel); padding: 18px; width: min(600px, 100%); }
   .resultcard__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 620px) { .resultcard__cols { grid-template-columns: 1fr; gap: 10px; } }
   .resultcard__sub:first-child { margin-top: 0; }
@@ -510,12 +545,12 @@
      covering it with the thing that needs it would be the one mistake this
      layout can't afford; the rest stop there too, for consistency. --dock-h
      is measured and written by the shell. */
-  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(21,22,26,.82); padding: 20px; }
+  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(6,5,8,.86); padding: 20px; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
-  .modal__card { background: var(--matrix); border: 1px solid var(--seam-lit); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
-  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--seam); }
-  .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--amethyst); }
+  .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--seam); background-image: linear-gradient(rgba(196,99,30,.10), transparent); }
+  .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--rust); text-shadow: 2px 2px 0 #000; }
   .modal__body { padding: 16px 18px; overflow-y: auto; }
 
   .sheetcols { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 18px; align-items: start; }
@@ -550,9 +585,9 @@
   .guide {
     position: fixed; z-index: 50;
     width: min(340px, calc(100vw - 32px));
-    background: var(--matrix);
+    background-color: var(--matrix); background-image: var(--grit);
     border: 2px solid var(--citrine);
-    box-shadow: 0 10px 34px rgba(0,0,0,.65);
+    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.6);
     padding: 14px 16px 12px;
   }
   .guide__step { display: block; font-family: var(--display); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--citrine); margin-bottom: 6px; }
@@ -609,15 +644,9 @@
     transform: rotate(45deg);
   }
 
-  /*
-   * During the guided opening the highlighted thing is the ONLY thing you can
-   * click. The opening has a fixed fragment budget and asks you to buy two
-   * specific things with it, so anyone free to spend it elsewhere is stuck.
-   *
-   * pointer-events is inherited but re-settable, so switching the app off and
-   * the target back on is two rules rather than an overlay fighting six modal
-   * z-indexes. The card stays live, so the step is always readable.
-   */
+  /* During the guided opening the highlighted thing is the ONLY thing you can
+     click: the opening has a fixed fragment budget and asks you to spend it on
+     two specific things. The card stays live, so the step stays readable. */
   body.guided .wrap,
   body.guided .modal,
   body.guided .welcome { pointer-events: none; }
@@ -653,10 +682,10 @@
     background: var(--void); border: 1px solid var(--seam-lit);
     color: var(--chalk); font-family: var(--body); font-size: 13px;
   }
-  .namefield__input:focus { outline: none; border-color: var(--amethyst); }
+  .namefield__input:focus { outline: none; border-color: var(--rust); }
   .welcomegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
   .welcomecard { text-align: left; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .welcomecard:hover { background: var(--seam); border-color: var(--amethyst); }
+  .welcomecard:hover { background: var(--seam); border-color: var(--rust); }
   .welcomecard__name { font-family: var(--display); font-size: 13px; }
   .welcomecard__desc { font-size: 11px; color: var(--dust); text-align: center; line-height: 1.4; }
   .welcomedev { display: flex; justify-content: flex-end; margin-top: 12px; }
@@ -666,8 +695,9 @@
 
   .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .catcard { text-align: left; padding: 14px; display: flex; flex-direction: column; gap: 5px; }
-  .catcard:hover:not(:disabled) { background: var(--seam); border-color: var(--amethyst); }
+  .catcard:hover:not(:disabled) { background: var(--seam); border-color: var(--rust); }
   .catcard:disabled { opacity: .5; }
+  .catcard__head { display: flex; align-items: center; gap: 9px; }
   .catcard__name { font-family: var(--display); font-size: 13px; }
   .catcard__blurb { font-size: 11px; color: var(--dust); line-height: 1.4; }
   .catcard__count { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
@@ -675,7 +705,7 @@
   .skilllist { display: grid; gap: 6px; }
   .skillrow { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; border-left-width: 3px; border-left-color: var(--seam-lit); }
   .skillrow:hover { background: var(--seam); }
-  .skillrow--on { background: var(--seam); border-left-color: var(--amethyst); }
+  .skillrow--on { background: var(--seam); border-left-color: var(--rust); }
   .skillrow__head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
   .skillrow__name { font-size: 12px; }
   .skillrow__tag { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
@@ -685,12 +715,27 @@
   .skillhead__title { font-family: var(--display); font-size: 14px; margin: 0; }
   .skillhead__sub { font-size: 11px; color: var(--dust); }
 
-  /* The web is a map: it does not fit, and it is not supposed to. */
-  .webwrap { position: relative; height: min(50vh, 430px); border: 1px solid var(--seam); background: var(--void); overflow: hidden; }
+  /* The web is a map: it does not fit, and it is not supposed to. It hangs in
+     a lit cavern — dithered rock, a warm glow at the middle where the skill
+     itself sits, and the corners falling away into nothing. */
+  .webwrap {
+    position: relative; height: min(50vh, 430px);
+    border: 2px solid var(--seam); box-shadow: var(--bevel);
+    background-color: #08070A;
+    background-image:
+      radial-gradient(circle at 50% 50%, rgba(196,99,30,.16), transparent 42%),
+      radial-gradient(circle at 50% 50%, rgba(139,79,209,.09) 30%, transparent 68%),
+      radial-gradient(ellipse 130% 110% at 50% 50%, transparent 45%, rgba(0,0,0,.85)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.45) 0 5px, transparent 5px 10px);
+    image-rendering: pixelated;
+    overflow: hidden;
+  }
   .web { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
   .web--drag { cursor: grabbing; }
   /* A node that asks a question opens this over itself. */
-  .webmenu { position: absolute; z-index: 2; min-width: 190px; background: var(--matrix); border: 1px solid var(--seam-lit); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
   .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
   .webmenu__row:hover { background: var(--seam); border-color: var(--citrine); }
   .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
@@ -700,14 +745,17 @@
 
   .webhud { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .webhud__hint { font-size: 10px; color: var(--dust); letter-spacing: .04em; }
-  .webtaken { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 22px; }
-  .taken { font-size: 10px; padding: 3px 7px; border: 1px solid var(--seam-lit); color: var(--dust); }
-  .taken--notable { border-color: var(--citrine); color: var(--citrine); }
-  .taken--none { border: 0; padding-left: 0; }
 
-  .web__edge { stroke: var(--seam-lit); stroke-width: 1.5; opacity: .7; }
-  .web__edge--on { stroke: var(--citrine); stroke-width: 2.5; }
-  .web__hub { fill: var(--matrix); stroke: var(--amethyst); stroke-width: 2; }
+  /* Chains between nodes, drawn on the pixel grid rather than antialiased into
+     a smudge. The dark casing under each one is what keeps a lit chain
+     readable against the lit rock behind it. */
+  .web { shape-rendering: crispEdges; }
+  .web__edge { stroke: #0A090C; }
+  .web__edge--lit { stroke: #55506A; }
+  .web__edge--lit.web__edge--on { stroke: var(--citrine); }
+  .web__hub__rim { fill: #07060A; }
+  .web__hub__body { fill: var(--gloom); }
+  .web__hub__lit { fill: var(--rust); }
   .web__centre { cursor: help; }
 
   /* Tooltip. Instant, and in the page's own colours — the native title
@@ -715,22 +763,36 @@
   .tip {
     position: fixed; z-index: 40; pointer-events: none;
     max-width: 320px; padding: 8px 10px;
-    background: var(--matrix); border: 1px solid var(--seam-lit);
+    background-color: var(--matrix); background-image: var(--grit);
+    border: 2px solid var(--seam-lit);
     color: var(--chalk); font-size: 11px; line-height: 1.45;
-    white-space: pre-wrap; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+    white-space: pre-wrap; box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.55);
   }
 
-  .web__node circle { fill: var(--matrix); stroke: var(--seam-lit); stroke-width: 2; cursor: pointer; }
-  .web__node:hover circle { stroke: var(--chalk); }
-  /* Notables are the reason to walk somewhere, so they have to be findable at
-     any zoom — a size difference alone vanishes when the web is small. */
-  .web__node--notable circle { stroke-width: 3; stroke: var(--citrine); }
-  .web__node--on circle { fill: var(--amethyst); stroke: var(--chalk); }
-  .web__node--notable.web__node--on circle { fill: var(--citrine); }
+  /*
+   * A node is three stacked bitmaps: a dark casing, the stone itself, and a
+   * highlight on its upper left. Studs — a disc for a minor, a cut gem for a
+   * notable — because a size difference alone vanishes when the web is small
+   * and a notable is the reason to walk somewhere.
+   */
+  .web__node { cursor: pointer; }
+  .web__node__rim { fill: #07060A; }
+  .web__node__body { fill: #35323F; }
+  .web__node__lit { fill: #4E4A5C; }
+  .web__node--notable .web__node__body { fill: #4A3A28; }
+  .web__node--notable .web__node__lit { fill: #6D5533; }
+  .web__node:hover .web__node__body { fill: #4A4658; }
+  .web__node--notable:hover .web__node__body { fill: #6A5232; }
+
+  .web__node--on .web__node__body { fill: var(--rust); }
+  .web__node--on .web__node__lit { fill: #F0A055; }
+  .web__node--notable.web__node--on .web__node__body { fill: var(--citrine); }
+  .web__node--notable.web__node--on .web__node__lit { fill: #FBE49B; }
+
   /* Reachable but unaffordable, and reachable-and-affordable. Distinguished
      because "why is this dim" has two different answers. */
-  .web__node--locked circle { opacity: .5; cursor: not-allowed; }
-  .web__node--open circle { stroke: var(--chalk); stroke-dasharray: 3 3; }
+  .web__node--locked { opacity: .42; cursor: not-allowed; }
+  .web__node--open .web__node__rim { fill: var(--bone); }
   #history-log { font-size: 12px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1036,7 +1098,6 @@
             <span class="webhud__hint">scroll to zoom · drag to move</span>
           </div>
         </div>
-        <div class="webtaken" id="skills-taken"></div>
       </div>
     </div>
   </div>

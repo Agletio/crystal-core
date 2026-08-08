@@ -26,7 +26,7 @@ import {
   treeFor,
   treePointsFor,
 } from '../skills-tree';
-import { skillIcon } from './icons';
+import { categoryIcon, skillIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, treeGrants } from '../sim/stats';
@@ -49,6 +49,85 @@ function svgEl(tag: string, attrs: Record<string, string | number>): SVGElement 
   const node = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
   return node;
+}
+
+// --- pixel art -------------------------------------------------------------
+//
+// Every stud on the web is a bitmap, not a circle: a shape is rasterised once
+// onto an odd-sided grid and then emitted as one path of whole cells. Whatever
+// the zoom, the silhouette is the same handful of steps, so the web reads as
+// pixel art rather than as vector art that happens to be small.
+
+/** One horizontal run of lit cells. */
+interface Span { y: number; lo: number; hi: number }
+
+const GRIDS = new Map<string, Span[]>();
+
+function raster(key: string, n: number, halfWidth: (row: number) => number): Span[] {
+  const hit = GRIDS.get(key);
+  if (hit) return hit;
+  const centre = (n - 1) / 2;
+  const out: Span[] = [];
+  for (let y = 0; y < n; y++) {
+    const w = halfWidth(y - centre);
+    if (w < 0) continue;
+    out.push({ y, lo: Math.round(centre - w), hi: Math.round(centre + w) });
+  }
+  GRIDS.set(key, out);
+  return out;
+}
+
+const disc = (n: number): Span[] =>
+  raster(`d${n}`, n, (dy) => {
+    const r = n / 2;
+    const w = Math.sqrt(Math.max(0, r * r - dy * dy)) - 0.5;
+    return w < 0 ? -1 : w;
+  });
+
+/** A cut gem: flat top and bottom, faceted sides. */
+const gem = (n: number): Span[] =>
+  raster(`g${n}`, n, (dy) => (n - 1) / 2 - Math.abs(dy) * 0.72 - 0.5);
+
+/** Spans → one path, in whole cells, centred on a point and sized to a radius. */
+function stamp(spans: Span[], n: number, cx: number, cy: number, r: number): string {
+  const cell = (2 * r) / n;
+  const x0 = cx - r;
+  const y0 = cy - r;
+  let d = '';
+  for (const s of spans) {
+    const x = x0 + s.lo * cell;
+    const y = y0 + s.y * cell;
+    const w = (s.hi - s.lo + 1) * cell;
+    d += `M${x.toFixed(1)} ${y.toFixed(1)}h${w.toFixed(1)}v${cell.toFixed(1)}h${(-w).toFixed(1)}z`;
+  }
+  return d;
+}
+
+/** The upper-left corner of a shape, which is where the light comes from. */
+function shine(spans: Span[], n: number): Span[] {
+  const out: Span[] = [];
+  for (const s of spans) {
+    if (s.y < 1 || s.y > n * 0.42) continue;
+    const wide = Math.max(0, Math.round((s.hi - s.lo) * 0.42));
+    out.push({ y: s.y, lo: s.lo + 1, hi: s.lo + 1 + wide });
+  }
+  return out;
+}
+
+/** A stud: dark casing, stone, highlight. Returns the three paths in order. */
+function stud(
+  spans: Span[],
+  n: number,
+  pos: { x: number; y: number },
+  r: number,
+  prefix: string
+): SVGElement[] {
+  const cell = (2 * r) / n;
+  return [
+    svgEl('path', { class: `${prefix}__rim`, d: stamp(spans, n, pos.x, pos.y, r + cell) }),
+    svgEl('path', { class: `${prefix}__body`, d: stamp(spans, n, pos.x, pos.y, r) }),
+    svgEl('path', { class: `${prefix}__lit`, d: stamp(shine(spans, n), n, pos.x, pos.y, r) }),
+  ];
 }
 
 let game: GameState;
@@ -192,7 +271,10 @@ function renderCategories(): void {
   for (const cat of SKILL_CATEGORIES) {
     const skills = skillsInCategory(cat.id);
     const card = el('button', 'catcard') as HTMLButtonElement;
-    card.append(el('span', 'catcard__name', cat.name));
+    const head = el('span', 'catcard__head');
+    head.append(categoryIcon(cat.id, 26));
+    head.append(el('span', 'catcard__name', cat.name));
+    card.append(head);
     card.append(el('span', 'catcard__blurb', cat.blurb));
     card.append(
       el(
@@ -318,6 +400,8 @@ function renderWeb(): void {
   // whole web look twice as heavy as it is.
   const drawn = new Set<string>();
   const byId = new Map(nodes.map((n) => [n.id, n]));
+  type Seg = { a: { x: number; y: number }; b: { x: number; y: number }; live: boolean };
+  const links: Seg[] = [];
 
   for (const node of nodes) {
     for (const other of neighboursOf(skillId, node.id)) {
@@ -326,26 +410,53 @@ function renderWeb(): void {
       drawn.add(key);
 
       const from = at(node);
-      const to = other === CENTRE ? middle : byId.get(other) ? at(byId.get(other)!) : null;
+      const other_ = byId.get(other);
+      const to = other === CENTRE ? middle : other_ ? at(other_) : null;
       if (!to) continue;
+
+      // Trimmed to each end's edge. A line drawn centre to centre runs under
+      // the node, and a dimmed node lets it show through.
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.max(1e-3, Math.hypot(dx, dy));
+      const rFrom = (NODE_R[node.kind] * scale) / 46;
+      const rTo = other === CENTRE ? HUB_R * (scale / 46) : (NODE_R[other_!.kind] * scale) / 46;
+      const a = { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom };
+      const b = { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo };
 
       // A link reads as "live" only when both ends are yours — a lit edge into
       // a node you have not taken looks like a path you already own.
       const live =
         taken.has(node.id) && (other === CENTRE || taken.has(other));
-      svg.append(
-        svgEl('line', {
-          x1: from.x, y1: from.y, x2: to.x, y2: to.y,
-          class: `web__edge${live ? ' web__edge--on' : ''}`,
-        })
-      );
+      links.push({ a, b, live });
     }
+  }
+
+  // Casings first, then every chain: drawn interleaved, a later casing would
+  // cut across an earlier chain wherever two links cross.
+  const casing = Math.max(3, scale * 0.14);
+  for (const l of links) {
+    svg.append(
+      svgEl('line', {
+        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
+        class: 'web__edge', 'stroke-width': casing.toFixed(1),
+      })
+    );
+  }
+  for (const l of links) {
+    svg.append(
+      svgEl('line', {
+        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
+        class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
+        'stroke-width': (casing * (l.live ? 0.62 : 0.34)).toFixed(1),
+      })
+    );
   }
 
   // The middle: the skill itself, and the tooltip explaining its numbers.
   const hub = svgEl('g', { class: 'web__centre' });
   const hubR = HUB_R * (scale / 46);
-  hub.append(svgEl('circle', { cx: middle.x, cy: middle.y, r: hubR, class: 'web__hub' }));
+  for (const part of stud(gem(19), 19, middle, hubR, 'web__hub')) hub.append(part);
   const art = skillIcon(skillId, hubR * 1.25);
   art.setAttribute('x', String(middle.x - hubR * 0.62));
   art.setAttribute('y', String(middle.y - hubR * 0.62));
@@ -380,8 +491,13 @@ function renderWeb(): void {
       tabindex: '0',
       role: 'button',
       'data-node': node.id,
+      // A stud is a stack of paths with no centre of its own to read back.
+      'data-x': pos.x.toFixed(1),
+      'data-y': pos.y.toFixed(1),
     });
-    group.append(svgEl('circle', { cx: pos.x, cy: pos.y, r }));
+    const grid = node.kind === 'notable' ? 13 : 9;
+    const spans = node.kind === 'notable' ? gem(grid) : disc(grid);
+    for (const part of stud(spans, grid, pos, r, 'web__node')) group.append(part);
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
@@ -434,7 +550,6 @@ function renderWeb(): void {
     svg.append(group);
   }
 
-  renderTaken();
 }
 
 /**
@@ -488,41 +603,6 @@ function openChoice(node: SkillNodeDef, pos: { x: number; y: number }, owned: bo
 const closeChoice = (): void => {
   $('skills-choice').hidden = true;
 };
-
-/**
- * What you have actually bought, as chips.
- *
- * A legend listing all hundred nodes was the old answer and it is worse than
- * nothing at this size. What you want at a glance is the build — the notables
- * are the build, so they come first and read louder.
- */
-function renderTaken(): void {
-  const host = $('skills-taken');
-  host.replaceChildren();
-  if (!viewing) return;
-
-  const progress = skillProgress(game.character, viewing);
-  const nodes = treeFor(viewing);
-  const owned = progress.allocated
-    .map((id) => nodes.find((n) => n.id === id))
-    .filter((n): n is SkillNodeDef => !!n)
-    .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'notable' ? -1 : 1));
-
-  if (owned.length === 0) {
-    host.append(el('span', 'taken taken--none', 'Nothing allocated yet.'));
-    return;
-  }
-
-  for (const node of owned) {
-    const chip = el(
-      'span',
-      `taken${node.kind === 'notable' ? ' taken--notable' : ''}`,
-      node.name
-    );
-    attachTooltip(chip, () => `${node.name}\n${node.description}`);
-    host.append(chip);
-  }
-}
 
 // ---------------------------------------------------------------------------
 

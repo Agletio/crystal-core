@@ -29,6 +29,10 @@ export interface Palette {
   /** Fire's own ramp, hotter and less pink than ember. */
   flame: string;
   flameCore: string;
+  /** The three worlds: mundane forge-rust, demonic rot, crystal bone-light. */
+  rust: string;
+  venom: string;
+  bone: string;
 }
 
 export interface Renderer {
@@ -86,6 +90,9 @@ const VARS: Array<[keyof Palette, string]> = [
   ['ember', '--ember'],
   ['flame', '--flame'],
   ['flameCore', '--flame-core'],
+  ['rust', '--rust'],
+  ['venom', '--venom'],
+  ['bone', '--bone'],
 ];
 
 /** Pulls the palette out of CSS so colours stay defined in one place. */
@@ -124,6 +131,7 @@ export function vfxColour(palette: Palette, kind: string, damageType: string): s
   return damageColour(palette, damageType);
 }
 
+/** Damage reads as the world it comes from, not as a slot in a legend. */
 export function damageColour(palette: Palette, type: string): string {
   switch (type) {
     case 'fire':
@@ -131,9 +139,15 @@ export function damageColour(palette: Palette, type: string): string {
     case 'cold':
       return palette.quartz;
     case 'lightning':
-      return palette.amethyst;
+      return palette.citrine;
     case 'poison':
-      return palette.verdite;
+      return palette.venom;
+    case 'dark':
+      return palette.amethyst;
+    case 'light':
+      return palette.bone;
+    case 'crystal':
+      return palette.quartz;
     default:
       return palette.chalk;
   }

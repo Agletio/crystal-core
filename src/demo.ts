@@ -40,7 +40,12 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats, convertedType, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
-import { FIREBALL_BRANCH, FIREBALL_ENABLERS, NEEDS } from './trees/fireball';
+import {
+  FIREBALL_BRANCH,
+  FIREBALL_CROSSINGS,
+  FIREBALL_ENABLERS,
+  NEEDS,
+} from './trees/fireball';
 import {
   CENTRE,
   MAX_TREE_POINTS,
@@ -735,8 +740,8 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   const notables = nodes.filter((n) => n.kind === 'notable');
 
   line(`  ${nodes.length} nodes, ${notables.length} notable, ${MAX_TREE_POINTS} points to spend`);
-  check(nodes.length === 100, 'a hundred nodes', String(nodes.length));
-  check(notables.length === 25, 'twenty-five of them notable', String(notables.length));
+  check(nodes.length === 112, 'a hundred and twelve nodes', String(nodes.length));
+  check(notables.length === 28, 'twenty-eight of them notable', String(notables.length));
 
   // Cost to reach each node: how many nodes you must buy, this one included.
   const distance = new Map<string, number>();
@@ -851,7 +856,58 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
     }
   }
   line(`  ${edges.size} links between ${nodes.length} nodes`);
-  check(edges.size <= nodes.length + 12, 'and there are barely more links than nodes', String(edges.size));
+  check(edges.size <= nodes.length + 14, 'and there are barely more links than nodes', String(edges.size));
+
+  // The ways across the middle are free: two routes to the same node at the
+  // same price. A crossing that shortened anything would be a shortcut, and a
+  // shortcut past a gate is how a web turns back into a menu.
+  {
+    const cross = new Set(FIREBALL_CROSSINGS.map(([a, b]) => [a, b].sort().join('|')));
+    const walk = (skip: boolean) => {
+      const near = new Map<string, Set<string>>();
+      const add = (a: string, b: string) => {
+        if (!near.has(a)) near.set(a, new Set());
+        near.get(a)!.add(b);
+      };
+      for (const n of nodes) {
+        for (const other of n.links) {
+          if (skip && cross.has([n.id, other].sort().join('|'))) continue;
+          add(n.id, other);
+          add(other, n.id);
+        }
+      }
+      const out = new Map<string, number>();
+      let edge = nodes.filter((n) => near.get(n.id)?.has(CENTRE)).map((n) => n.id);
+      let step = 1;
+      for (const id of edge) out.set(id, step);
+      while (edge.length) {
+        const next: string[] = [];
+        step++;
+        for (const id of edge) {
+          for (const other of near.get(id) ?? []) {
+            if (other === CENTRE || out.has(other)) continue;
+            out.set(other, step);
+            next.push(other);
+          }
+        }
+        edge = next;
+      }
+      return out;
+    };
+    const withThem = walk(false);
+    const without = walk(true);
+    const cheapened = [...withThem].filter(([id, d]) => without.get(id) !== d);
+    line(`  ${FIREBALL_CROSSINGS.length} ways across the middle`);
+    check(
+      cheapened.length > 0 === false,
+      'and every one of them costs the same as going round',
+      cheapened.map(([id, d]) => `${id} ${without.get(id)}→${d}`).join(', ')
+    );
+    const intoBranch = FIREBALL_CROSSINGS.filter(
+      ([a, b]) => FIREBALL_BRANCH[a] || FIREBALL_BRANCH[b]
+    );
+    check(intoBranch.length === 0, 'and none of them reaches into a branch', intoBranch.join(', '));
+  }
 
   // The trunk is the opposite promise: everything on it works for any build.
   const trunk = nodes.filter((n) => !FIREBALL_BRANCH[n.id]);

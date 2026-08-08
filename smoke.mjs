@@ -245,8 +245,7 @@ assert(text('inv-crystal') === '', 'the dock shows icons, not names', text('inv-
 // as their art key, so a gearIcon that only knew 'weapon' silently rendered
 // every wand, sword, dagger and mace as the default plate.
 {
-  const shapeOf = (b) =>
-    [...b.querySelectorAll('.icon *')].map((n) => n.getAttribute('d') ?? n.getAttribute('points')).join('|');
+  const shapeOf = (b) => b.querySelector('.icon')?.getAttribute('data-sprite') ?? '?';
   const shapes = new Set(filled('#inv-gear').map(shapeOf));
   assert(
     shapes.size >= 6,
@@ -398,7 +397,7 @@ assert(
 // silhouette is what tells them apart before you have learned the names.
 {
   const shapes = new Set(
-    currencySlots().map((b) => b.querySelector('.icon path')?.getAttribute('d') ?? '?')
+    currencySlots().map((b) => b.querySelector('.icon')?.getAttribute('data-sprite') ?? '?')
   );
   assert(
     shapes.size === currencySlots().length,
@@ -815,10 +814,10 @@ const zoomedIn = webNodes().length;
 assert(zoomedIn < 100, 'it opens on part of the web, not all of it', String(zoomedIn));
 
 $('skills-fit').click();
-assert(webNodes().length === 100, 'a hundred nodes, once fitted', String(webNodes().length));
+assert(webNodes().length === 112, 'every node, once fitted', String(webNodes().length));
 assert(
-  all('#skills-web .web__node--notable').length === 25,
-  'twenty-five of them notable',
+  all('#skills-web .web__node--notable').length === 28,
+  'twenty-eight of them notable',
   String(all('#skills-web .web__node--notable').length)
 );
 // No notable is adjacent to another, so none of them is a two-point hop from
@@ -870,12 +869,6 @@ assert(
   'and the header counts it',
   text('skills-sub')
 );
-assert(
-  all('#skills-taken .taken').length === 1,
-  'the allocated list picks it up',
-  String(all('#skills-taken .taken').length)
-);
-
 // Out of points: nothing is buyable, however much of the web you can now see.
 assert(
   buyable().length === 0,
@@ -909,10 +902,10 @@ assert(allocated() === 0, 'and clicking it again refunds it');
   for (let i = 0; i < 30; i++) $('skills-devlevel').click();
 
   // Walk straight at it, so this reaches the same node every run.
-  const centreOf = (el) => {
-    const c = el.querySelector('circle');
-    return { x: Number(c.getAttribute('cx')), y: Number(c.getAttribute('cy')) };
-  };
+  const centreOf = (el) => ({
+    x: Number(el.getAttribute('data-x')),
+    y: Number(el.getAttribute('data-y')),
+  });
   const target = () => all('#skills-web [data-node="fb_transmutation"]')[0];
   for (let step = 0; step < 40; step++) {
     if (target()?.classList.contains('web__node--open')) break;
