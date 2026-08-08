@@ -10,80 +10,10 @@
  * burst, so it lives behind Detonation and cannot be bought without it. Burn
  * duration lives behind Kindling. That is the whole point of the shape — you
  * cannot spend a point on something that will not do anything.
- *
- * Everything below is data. The geometry is generated so a branch cannot be
- * accidentally wired to the trunk twice, and the demo holds the tree to the
- * rules rather than to any particular set of coordinates.
  */
-import { CENTRE, stat } from './node';
-import type { NodeChoice, NodeStat, SkillNodeDef } from './node';
-
-// --- shape -----------------------------------------------------------------
-
-const TRUNK = [
-  { count: 6, r: 1.35 },
-  { count: 12, r: 2.7 },
-];
-/** Ways off the centre. Fewer than the ring holds, so ring one is a walk too. */
-const TRUNK_WAYS_IN = 3;
-/** Trunk slots a branch hangs off, and the ones a trunk spur grows from. */
-const ANCHORS = [0, 2, 4, 6, 8, 10];
-const SPUR_SLOTS = [1, 3, 5, 7, 9, 11];
-const SPUR_R = [3.5, 4.4];
-
-const ENABLER_R = 3.8;
-/** How far out each step along a twig goes. */
-const TWIG_STEP = 1.05;
-/** How wide a branch spreads, as a fraction of the circle. */
-const BRANCH_ARC = 0.125;
-
-const TAU = Math.PI * 2;
-
-/** Stable 0..1 wobble. Perfect rows read as a diagram rather than a web. */
-const jitter = (a: number, b: number, salt: number): number => {
-  const h = Math.sin(a * 127.1 + b * 311.7 + salt * 74.7) * 43758.5453;
-  return h - Math.floor(h);
-};
-
-// --- content ---------------------------------------------------------------
-
-interface Minor {
-  text: string;
-  stats?: NodeStat[];
-  grants?: Record<string, unknown>;
-}
-
-interface Notable {
-  id: string;
-  name: string;
-  description: string;
-  gate: number;
-  stats?: NodeStat[];
-  grants?: Record<string, unknown>;
-  choices?: NodeChoice[];
-}
-
-/**
- * A run of minors ending in a notable, and nothing past it. The notable is the
- * point of the twig, so it is a DEAD END: getting a second one in a branch
- * means walking back and paying for another run of minors.
- */
-interface Twig {
-  minors: number;
-  notable: Notable;
-  /** Sprout off another twig this far along it, rather than off the enabler. */
-  forkFrom?: { twig: number; at: number };
-}
-
-interface Branch {
-  id: string;
-  theme: string;
-  enabler: Notable;
-  twigs: Twig[];
-  minors: Minor[];
-}
-
-const GATE = { enabler: 3, mid: 8, deep: 14, tip: 20 };
+import { stat } from './node';
+import { GATE, SPUR_GATES } from './spec';
+import type { Branch, Crossing, Minor, Notable, TreeSpec } from './spec';
 
 /**
  * Lines that help every build. The trunk is made of these, and so is the filler
@@ -109,7 +39,7 @@ const BRANCHES: Branch[] = [
         'Fireball can no longer critically strike. A cast that would have crit ' +
         'instead sets the target alight for 260% of the hit over 4s.',
       gate: GATE.enabler,
-      grants: { critBurn: { multiplier: 2.6, seconds: 4 } },
+      grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
     },
     twigs: [
       {
@@ -119,7 +49,7 @@ const BRANCHES: Branch[] = [
           name: 'Cauterise',
           description: 'Burns you apply deal 35% more damage over a 25% shorter time.',
           gate: GATE.mid,
-          grants: { burnMultiplier: 1.35, burnDuration: 0.75 },
+          grants: { ailmentMultiplier: 1.35, ailmentDuration: 0.75 },
         },
       },
       {
@@ -129,7 +59,7 @@ const BRANCHES: Branch[] = [
           name: 'Slow Burn',
           description: 'Burns you apply last 60% longer.',
           gate: GATE.deep,
-          grants: { burnDuration: 1.6 },
+          grants: { ailmentDuration: 1.6 },
         },
       },
       {
@@ -141,13 +71,13 @@ const BRANCHES: Branch[] = [
           description:
             'A burn that ticks critically sets everything within 2 tiles alight as well.',
           gate: GATE.tip,
-          grants: { burnSpread: 2 },
+          grants: { ailmentSpread: 2 },
         },
       },
     ],
     minors: [
-      { text: '+6% increased Burning Damage', grants: { burnMultiplier: 1.06 } },
-      { text: '+5% increased Burn Duration', grants: { burnDuration: 1.05 } },
+      { text: '+6% increased Burning Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: '+5% increased Burn Duration', grants: { ailmentDuration: 1.05 } },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],
@@ -333,7 +263,7 @@ const BRANCHES: Branch[] = [
       name: 'Immolate',
       description: 'Fireball deals 25% more damage to enemies that are already burning.',
       gate: GATE.enabler,
-      grants: { moreVsBurning: 0.25 },
+      grants: { moreVsAiling: 0.25 },
     },
     twigs: [
       {
@@ -382,7 +312,7 @@ const TRUNK_NOTABLES: Notable[] = [
     id: 'fb_longfuse',
     name: 'Long Fuse',
     description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
-    gate: 5,
+    gate: SPUR_GATES[0],
     grants: { moreFar: { beyond: 5, more: 0.3 } },
   },
   {
@@ -391,7 +321,7 @@ const TRUNK_NOTABLES: Notable[] = [
     description:
       'Fireball stops dealing Fire. Pick what it deals instead — the Fire ' +
       'modifiers in this tree change with it, the ones on your gear do not.',
-    gate: 11,
+    gate: SPUR_GATES[1],
     choices: [
       {
         id: 'cold',
@@ -411,44 +341,34 @@ const TRUNK_NOTABLES: Notable[] = [
     id: 'fb_reserves',
     name: 'Deep Reserves',
     description: 'Fireball deals 45% more damage and is cast 20% slower.',
-    gate: 17,
+    gate: SPUR_GATES[2],
     stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
   },
   {
     id: 'fb_opening',
     name: 'Opening Salvo',
     description: 'Fireball deals 35% more damage to enemies above four fifths of their life.',
-    gate: 7,
+    gate: SPUR_GATES[3],
     grants: { moreVsFull: { above: 0.8, more: 0.35 } },
   },
   {
     id: 'fb_focus',
     name: 'Sharpened Focus',
     description: 'Fireball critically strikes far more often, and far harder.',
-    gate: 13,
+    gate: SPUR_GATES[4],
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {
     id: 'fb_emberstorm',
     name: 'Ember Storm',
     description: 'Fireball is cast 25% faster.',
-    gate: 21,
+    gate: SPUR_GATES[5],
     stats: [stat('castSpeed', 'inc', 25)],
   },
 ];
 
-/**
- * Ways across between neighbouring spurs, as [spur, step] pairs.
- *
- * A cross link joins a node to one exactly one step further out, so reaching
- * the far one costs the same either way: your own spur, or the neighbour's plus
- * the step across. They are what makes the middle worth reading — two routes to
- * the same node, at the same price, picking up different things on the way.
- *
- * Never into a branch. A branch is only worth anything behind its own node, so
- * a way in that skipped it would put dead nodes back.
- */
-const CROSSINGS: Array<[[number, number], [number, number]]> = [
+/** Never into a branch: a way in that skipped the enabler puts dead nodes back. */
+const CROSSINGS: Crossing[] = [
   [[0, 0], [1, 1]],
   [[2, 0], [3, 1]],
   [[4, 0], [5, 1]],
@@ -457,264 +377,24 @@ const CROSSINGS: Array<[[number, number], [number, number]]> = [
   [[5, 0], [0, 1]],
 ];
 
-/**
- * What a stat or grant needs before it does anything, by the node that provides
- * it. Anything listed here may only appear inside that node's branch, which is
- * the rule that stops a point being spent on nothing. Checked in the demo.
- */
-export const NEEDS: Record<string, string> = {
-  areaOfEffect: 'fb_detonation',
-  explodeRadius: 'fb_detonation',
-  explodeMultiplierAdd: 'fb_detonation',
-  explodeOnKill: 'fb_detonation',
-  burnMultiplier: 'fb_kindling',
-  burnDuration: 'fb_kindling',
-  burnSpread: 'fb_kindling',
-  extraTargetDamage: 'fb_splitcast',
-  pierceDamage: 'fb_piercing',
-  chainDamage: 'fb_arcing',
+export const FIREBALL_SPEC: TreeSpec = {
+  skillId: 'fireball',
+  prefix: 'fb',
+  minorName: 'Ember',
+  common: COMMON,
+  branches: BRANCHES,
+  trunkNotables: TRUNK_NOTABLES,
+  crossings: CROSSINGS,
+  needs: {
+    areaOfEffect: 'fb_detonation',
+    explodeRadius: 'fb_detonation',
+    explodeMultiplierAdd: 'fb_detonation',
+    explodeOnKill: 'fb_detonation',
+    ailmentMultiplier: 'fb_kindling',
+    ailmentDuration: 'fb_kindling',
+    ailmentSpread: 'fb_kindling',
+    extraTargetDamage: 'fb_splitcast',
+    pierceDamage: 'fb_piercing',
+    chainDamage: 'fb_arcing',
+  },
 };
-
-// --- assembly --------------------------------------------------------------
-
-const trunkId = (ring: number, i: number) => `fb_t${ring}s${i}`;
-const branchId = (b: string, row: number, i: number) => `fb_${b}_${row}_${i}`;
-
-function build(): SkillNodeDef[] {
-  const nodes: SkillNodeDef[] = [];
-  const links = new Map<string, string[]>();
-  const join = (a: string, b: string) => {
-    if (!links.has(a)) links.set(a, []);
-    links.get(a)!.push(b);
-  };
-
-  const trunkAt = (ring: number, i: number) => trunkId(ring, i);
-  const spurId = (spur: number, step: number) =>
-    step === SPUR_R.length - 1
-      ? TRUNK_NOTABLES[spur].id
-      : `fb_spur${spur}_${step}`;
-
-  // --- the trunk ----------------------------------------------------------
-  for (let ring = 1; ring <= TRUNK.length; ring++) {
-    const { count } = TRUNK[ring - 1];
-    for (let i = 0; i < count; i++) join(trunkAt(ring, i), trunkAt(ring, (i + 1) % count));
-  }
-  for (let w = 0; w < TRUNK_WAYS_IN; w++) {
-    join(trunkAt(1, Math.round((w / TRUNK_WAYS_IN) * TRUNK[0].count)), CENTRE);
-  }
-  // Turned half a gap off the ways in, so leaving ring one is a walk as well.
-  for (let s = 0; s < TRUNK[0].count; s += 2) {
-    const outer = Math.round(((s + 1) / TRUNK[0].count) * TRUNK[1].count);
-    join(trunkAt(2, outer % TRUNK[1].count), trunkAt(1, s));
-  }
-
-  for (let ring = 1; ring <= TRUNK.length; ring++) {
-    const { count, r } = TRUNK[ring - 1];
-    for (let i = 0; i < count; i++) {
-      const angle = ((i + (jitter(ring, i, 1) - 0.5) * 0.3) / count) * TAU - Math.PI / 2;
-      const reach = r + (jitter(ring, i, 2) - 0.5) * 0.3;
-      const common = COMMON[(ring * 3 + i) % COMMON.length];
-      nodes.push({
-        id: trunkAt(ring, i),
-        name: 'Ember',
-        description: common.text,
-        kind: 'minor',
-        x: Math.cos(angle) * reach,
-        y: Math.sin(angle) * reach,
-        links: links.get(trunkAt(ring, i)) ?? [],
-        stats: common.stats ?? [],
-      });
-    }
-  }
-
-  // Six short spurs off the trunk, each ending in a notable worth having
-  // whatever you go on to build.
-  SPUR_SLOTS.forEach((slot, spur) => {
-    const base = (slot / TRUNK[1].count) * TAU - Math.PI / 2;
-    for (let step = 0; step < SPUR_R.length; step++) {
-      const last = step === SPUR_R.length - 1;
-      const id = spurId(spur, step);
-      const notable = last ? TRUNK_NOTABLES[spur] : null;
-      const common = COMMON[(spur * 2 + step) % COMMON.length];
-      const angle = base + (jitter(spur, step, 5) - 0.5) * 0.12;
-      const reach = SPUR_R[step] + (jitter(spur, step, 6) - 0.5) * 0.2;
-
-      join(id, step === 0 ? trunkAt(2, slot) : spurId(spur, step - 1));
-      nodes.push({
-        id,
-        name: notable?.name ?? 'Ember',
-        description: notable?.description ?? common.text,
-        kind: notable ? 'notable' : 'minor',
-        x: Math.cos(angle) * reach,
-        y: Math.sin(angle) * reach,
-        links: links.get(id) ?? [],
-        ...(notable ? { gate: notable.gate } : {}),
-        ...(notable
-          ? {
-              ...(notable.stats ? { stats: notable.stats } : {}),
-              ...(notable.grants ? { grants: notable.grants } : {}),
-              ...(notable.choices ? { choices: notable.choices } : {}),
-            }
-          : { stats: common.stats ?? [] }),
-      });
-    }
-  });
-
-  for (const [[fromSpur, fromStep], [toSpur, toStep]] of CROSSINGS) {
-    join(spurId(fromSpur, fromStep), spurId(toSpur, toStep));
-  }
-
-  // --- the branches -------------------------------------------------------
-  //
-  // Every twig is a CHAIN: each node hangs off exactly the one before it, and
-  // the notable at the tip has nothing past it. No sideways links, so there is
-  // no way to cut across to a notable — you buy the run of minors that leads to
-  // it, or you do not get it.
-  BRANCHES.forEach((branch, b) => {
-    const base = (ANCHORS[b] / TRUNK[1].count) * TAU - Math.PI / 2;
-    join(branch.enabler.id, trunkAt(2, ANCHORS[b]));
-    nodes.push({
-      id: branch.enabler.id,
-      name: branch.enabler.name,
-      description: branch.enabler.description,
-      kind: 'notable',
-      x: Math.cos(base) * ENABLER_R,
-      y: Math.sin(base) * ENABLER_R,
-      links: links.get(branch.enabler.id) ?? [],
-      gate: branch.enabler.gate,
-      ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
-    });
-
-    // Where each node of each twig ends up, so a fork can start from one.
-    const placed: Array<Array<{ id: string; depth: number; angle: number }>> = [];
-    let minorAt = 0;
-
-    branch.twigs.forEach((twig, t) => {
-      // Never off a twig's last node: that one is a notable, and a notable
-      // with something growing out of it is no longer a dead end.
-      const parent = twig.forkFrom
-        ? placed[twig.forkFrom.twig][
-            Math.min(twig.forkFrom.at, branch.twigs[twig.forkFrom.twig].minors - 1)
-          ]
-        : { id: branch.enabler.id, depth: 0, angle: base };
-      // Each twig aims somewhere of its own inside the wedge, and drifts there
-      // as it goes out, so a branch opens like a hand rather than a fan.
-      const aim =
-        base + (((t + 0.5) / branch.twigs.length - 0.5) * BRANCH_ARC + 0.012 * t) * TAU;
-
-      const chain: Array<{ id: string; depth: number; angle: number }> = [];
-      const length = twig.minors + 1;
-      for (let step = 0; step < length; step++) {
-        const last = step === length - 1;
-        const id = last ? twig.notable.id : branchId(branch.id, t, step);
-        const depth = parent.depth + step + 1;
-        const along = (step + 1) / length;
-        const angle =
-          parent.angle +
-          (aim - parent.angle) * along +
-          (jitter(b, t * 9 + step, 3) - 0.5) * 0.045;
-        const reach = ENABLER_R + depth * TWIG_STEP + (jitter(b, t * 9 + step, 4) - 0.5) * 0.35;
-
-        join(id, step === 0 ? parent.id : chain[step - 1].id);
-        const minor = branch.minors[minorAt++ % branch.minors.length];
-
-        nodes.push({
-          id,
-          name: last ? twig.notable.name : branch.theme,
-          description: last ? twig.notable.description : minor.text,
-          kind: last ? 'notable' : 'minor',
-          x: Math.cos(angle) * reach,
-          y: Math.sin(angle) * reach,
-          links: links.get(id) ?? [],
-          ...(last ? { gate: twig.notable.gate } : {}),
-          ...(last
-            ? {
-                ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),
-                ...(twig.notable.grants ? { grants: twig.notable.grants } : {}),
-              }
-            : {
-                ...(minor.stats ? { stats: minor.stats } : {}),
-                ...(minor.grants ? { grants: minor.grants } : {}),
-              }),
-        });
-        chain.push({ id, depth, angle });
-      }
-      placed.push(chain);
-    });
-  });
-
-  // Links are collected while the shape is worked out, so every node picks up
-  // whatever named it after it was pushed.
-  return spread(nodes.map((n) => ({ ...n, links: links.get(n.id) ?? [] })));
-}
-
-/**
- * Push apart anything that ended up on top of something else.
- *
- * Twigs aim where they like and two of them can converge; the wobble that stops
- * the web looking like a diagram can close the last of the gap. A few passes of
- * shoving overlapping pairs apart costs nothing and means no node is ever drawn
- * under another one.
- */
-function spread(nodes: SkillNodeDef[]): SkillNodeDef[] {
-  const APART = 0.92;
-  for (let pass = 0; pass < 24; pass++) {
-    let moved = false;
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i];
-        const b = nodes[j];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const d = Math.hypot(dx, dy);
-        if (d >= APART) continue;
-        moved = true;
-        // Straight away from each other, half the shortfall each, and never
-        // toward the middle — the rings have to stay rings.
-        const push = (APART - Math.max(d, 1e-3)) / 2;
-        const ux = d < 1e-3 ? 1 : dx / d;
-        const uy = d < 1e-3 ? 0 : dy / d;
-        a.x -= ux * push;
-        a.y -= uy * push;
-        b.x += ux * push;
-        b.y += uy * push;
-      }
-    }
-    if (!moved) break;
-  }
-  return nodes;
-}
-
-export const FIREBALL_TREE: SkillNodeDef[] = build();
-
-/** Which branch each node belongs to; trunk nodes are absent. */
-export const FIREBALL_BRANCH: Record<string, string> = Object.fromEntries(
-  BRANCHES.flatMap((branch) => [
-    [branch.enabler.id, branch.id] as [string, string],
-    ...branch.twigs.flatMap((twig, t) => [
-      [twig.notable.id, branch.id] as [string, string],
-      ...Array.from(
-        { length: twig.minors },
-        (_, step) => [branchId(branch.id, t, step), branch.id] as [string, string]
-      ),
-    ]),
-  ])
-);
-
-/**
- * The ways across, as node pairs. Exported so the demo can prove they are free:
- * removing every one of them must leave every node exactly as far from the
- * middle as it was.
- */
-export const FIREBALL_CROSSINGS: Array<[string, string]> = CROSSINGS.map(
-  ([[fs, ft], [ts, tt]]) =>
-    [
-      ft === SPUR_R.length - 1 ? TRUNK_NOTABLES[fs].id : `fb_spur${fs}_${ft}`,
-      tt === SPUR_R.length - 1 ? TRUNK_NOTABLES[ts].id : `fb_spur${ts}_${tt}`,
-    ] as [string, string]
-);
-
-/** The node that opens each branch. */
-export const FIREBALL_ENABLERS: Record<string, string> = Object.fromEntries(
-  BRANCHES.map((b) => [b.id, b.enabler.id])
-);

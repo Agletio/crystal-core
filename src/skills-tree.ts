@@ -7,9 +7,11 @@
  * `stats` are ordinary stat lines; `grants` are switches that CHANGE HOW THE
  * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
  */
-import { FIREBALL_TREE } from './trees/fireball';
+import { buildTree } from './trees/layout';
+import { FIREBALL_SPEC } from './trees/fireball';
 import { CENTRE } from './trees/node';
 import type { SkillNodeDef } from './trees/node';
+import type { BuiltTree } from './trees/spec';
 
 export { CENTRE } from './trees/node';
 export type { NodeStat, SkillNodeDef } from './trees/node';
@@ -17,9 +19,16 @@ export type { NodeStat, SkillNodeDef } from './trees/node';
 /** Thirty, whatever your level. A tree you can fill in is not a decision. */
 export const MAX_TREE_POINTS = 30;
 
-export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
-  fireball: FIREBALL_TREE,
-};
+/** Every tree, built. The demo holds all of them to the same rules. */
+export const BUILT_TREES: BuiltTree[] = [FIREBALL_SPEC].map(buildTree);
+
+export const TREE_BY_SKILL: Record<string, BuiltTree> = Object.fromEntries(
+  BUILT_TREES.map((t) => [t.spec.skillId, t])
+);
+
+export const SKILL_TREES: Record<string, SkillNodeDef[]> = Object.fromEntries(
+  BUILT_TREES.map((t) => [t.spec.skillId, t.nodes])
+);
 
 export const treeFor = (skillId: string): SkillNodeDef[] => SKILL_TREES[skillId] ?? [];
 

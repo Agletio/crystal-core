@@ -40,13 +40,10 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats, convertedType, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
+import { GRANT_BY_ID, STATS, behaviourReads } from './sim/grants';
+import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import {
-  FIREBALL_BRANCH,
-  FIREBALL_CROSSINGS,
-  FIREBALL_ENABLERS,
-  NEEDS,
-} from './trees/fireball';
-import {
+  BUILT_TREES,
   CENTRE,
   MAX_TREE_POINTS,
   canAllocate,
@@ -736,24 +733,57 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
 // look fine and still contain a node nobody can ever buy: too far out to
 // afford, or gated behind more points than the cap allows. Neither is visible
 // by looking at it.
-{
-  const nodes = treeFor('fireball');
+for (const tree of BUILT_TREES) {
+  const skillId = tree.spec.skillId;
+  const nodes = tree.nodes;
   const notables = nodes.filter((n) => n.kind === 'notable');
+  const branchOf = tree.branchOf;
+  const needs = tree.spec.needs;
 
-  line(`  ${nodes.length} nodes, ${notables.length} notable, ${MAX_TREE_POINTS} points to spend`);
-  check(nodes.length === 112, 'a hundred and twelve nodes', String(nodes.length));
-  check(notables.length === 28, 'twenty-eight of them notable', String(notables.length));
+  line(`  ${skillId}: ${nodes.length} nodes, ${notables.length} notable, ${MAX_TREE_POINTS} points`);
+
+  // Derived from the spec rather than written down, so a twig that quietly
+  // lost its minors is a failure here instead of a shorter walk nobody sees.
+  const expected =
+    TRUNK_NODES +
+    SPUR_COUNT * SPUR_STEPS +
+    tree.spec.branches.reduce(
+      (sum, b) => sum + 1 + b.twigs.reduce((t, twig) => t + twig.minors + 1, 0),
+      0
+    );
+  check(nodes.length === expected, 'every node the spec asks for is built', `${nodes.length} of ${expected}`);
+  check(new Set(nodes.map((n) => n.id)).size === nodes.length, 'and no id is used twice', 'duplicate ids');
+
+  // Every switch a node hands the sim must be one the sim reads, AND one this
+  // skill's own delivery reads. A tree asking a cloud to pierce is a point
+  // spent on nothing; a typo is the same thing without a name.
+  const behaviour = SKILL_BY_ID[skillId]?.behaviour ?? '';
+  const unread: string[] = [];
+  for (const n of nodes) {
+    const keys = [
+      ...Object.keys(n.grants ?? {}),
+      ...(n.choices ?? []).flatMap((c) => Object.keys(c.grants ?? {})),
+    ];
+    for (const key of keys) {
+      const def = GRANT_BY_ID[key];
+      if (!def) unread.push(`${n.id}: ${key} is not a declared grant`);
+      else if (!def.reads.includes(STATS) && !behaviourReads(behaviour, key)) {
+        unread.push(`${n.id}: ${behaviour} never reads ${key}`);
+      }
+    }
+  }
+  check(unread.length === 0, 'every grant is one this skill actually reads', unread.join(', '));
 
   // Cost to reach each node: how many nodes you must buy, this one included.
   const distance = new Map<string, number>();
-  let edge = nodes.filter((n) => neighboursOf('fireball', n.id).has(CENTRE));
+  let edge = nodes.filter((n) => neighboursOf(skillId, n.id).has(CENTRE));
   let step = 1;
   for (const n of edge) distance.set(n.id, step);
   while (edge.length) {
     const next: typeof edge = [];
     step++;
     for (const at of edge) {
-      for (const id of neighboursOf('fireball', at.id)) {
+      for (const id of neighboursOf(skillId, at.id)) {
         if (id === CENTRE || distance.has(id)) continue;
         const node = nodes.find((n) => n.id === id);
         if (!node) continue;
@@ -781,7 +811,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   line(`  the most expensive node costs ${deepest} of ${MAX_TREE_POINTS} points`);
   check(deepest > MAX_TREE_POINTS * 0.6, 'the far side is a real commitment', `${deepest}`);
 
-  const first = nodes.filter((n) => canAllocate('fireball', n.id, []));
+  const first = nodes.filter((n) => canAllocate(skillId, n.id, []));
   check(first.length === 3, 'three ways in, not one per node', String(first.length));
   check(
     first.every((n) => n.kind === 'minor'),
@@ -793,16 +823,16 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   // makes the rest of it worth anything. If any of it can be reached another
   // way, you can spend a point on something that does nothing.
   const leaks: string[] = [];
-  for (const [branch, enabler] of Object.entries(FIREBALL_ENABLERS)) {
+  for (const [branch, enabler] of Object.entries(tree.enablers)) {
     const reached = new Set<string>();
     let edge = nodes
-      .filter((n) => n.id !== enabler && neighboursOf('fireball', n.id).has(CENTRE))
+      .filter((n) => n.id !== enabler && neighboursOf(skillId, n.id).has(CENTRE))
       .map((n) => n.id);
     for (const id of edge) reached.add(id);
     while (edge.length) {
       const next: string[] = [];
       for (const id of edge) {
-        for (const other of neighboursOf('fireball', id)) {
+        for (const other of neighboursOf(skillId, id)) {
           if (other === CENTRE || other === enabler || reached.has(other)) continue;
           reached.add(other);
           next.push(other);
@@ -811,7 +841,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
       edge = next;
     }
     for (const n of nodes) {
-      if (FIREBALL_BRANCH[n.id] === branch && n.id !== enabler && reached.has(n.id)) {
+      if (branchOf[n.id] === branch && n.id !== enabler && reached.has(n.id)) {
         leaks.push(`${n.id} without ${enabler}`);
       }
     }
@@ -828,9 +858,9 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
       ...Object.keys(n.grants ?? {}),
     ];
     for (const key of keys) {
-      const enabler = NEEDS[key];
+      const enabler = needs[key];
       if (!enabler || n.id === enabler) continue;
-      if (FIREBALL_BRANCH[n.id] !== FIREBALL_BRANCH[enabler]) {
+      if (branchOf[n.id] !== branchOf[enabler]) {
         dead.push(`${n.id} has ${key}, which needs ${enabler}`);
       }
     }
@@ -840,10 +870,10 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   // Every notable past the entry one is a DEAD END. A notable with something
   // growing out of it is a node you walk THROUGH, which is how a branch turns
   // back into a corridor of things you did not want.
-  const entries = new Set(Object.values(FIREBALL_ENABLERS));
+  const entries = new Set(Object.values(tree.enablers));
   const throughs = notables.filter(
     (n) =>
-      FIREBALL_BRANCH[n.id] && !entries.has(n.id) && neighboursOf('fireball', n.id).size !== 1
+      branchOf[n.id] && !entries.has(n.id) && neighboursOf(skillId, n.id).size !== 1
   );
   check(throughs.length === 0, 'every notable past the entry is a dead end', throughs.map((n) => n.id).join(', '));
 
@@ -852,7 +882,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   // way round everything is a web you beeline across.
   const edges = new Set<string>();
   for (const n of nodes) {
-    for (const other of neighboursOf('fireball', n.id)) {
+    for (const other of neighboursOf(skillId, n.id)) {
       edges.add([n.id, other].sort().join('|'));
     }
   }
@@ -863,7 +893,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   // same price. A crossing that shortened anything would be a shortcut, and a
   // shortcut past a gate is how a web turns back into a menu.
   {
-    const cross = new Set(FIREBALL_CROSSINGS.map(([a, b]) => [a, b].sort().join('|')));
+    const cross = new Set(tree.crossings.map(([a, b]) => [a, b].sort().join('|')));
     const walk = (skip: boolean) => {
       const near = new Map<string, Set<string>>();
       const add = (a: string, b: string) => {
@@ -898,23 +928,23 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
     const withThem = walk(false);
     const without = walk(true);
     const cheapened = [...withThem].filter(([id, d]) => without.get(id) !== d);
-    line(`  ${FIREBALL_CROSSINGS.length} ways across the middle`);
+    line(`  ${tree.crossings.length} ways across the middle`);
     check(
       cheapened.length > 0 === false,
       'and every one of them costs the same as going round',
       cheapened.map(([id, d]) => `${id} ${without.get(id)}→${d}`).join(', ')
     );
-    const intoBranch = FIREBALL_CROSSINGS.filter(
-      ([a, b]) => FIREBALL_BRANCH[a] || FIREBALL_BRANCH[b]
+    const intoBranch = tree.crossings.filter(
+      ([a, b]) => branchOf[a] || branchOf[b]
     );
     check(intoBranch.length === 0, 'and none of them reaches into a branch', intoBranch.join(', '));
   }
 
   // The trunk is the opposite promise: everything on it works for any build.
-  const trunk = nodes.filter((n) => !FIREBALL_BRANCH[n.id]);
+  const trunk = nodes.filter((n) => !branchOf[n.id]);
   line(`  ${trunk.length} nodes on the trunk, ${nodes.length - trunk.length} out on branches`);
   const conditional = trunk.filter((n) =>
-    [...(n.stats ?? []).map((l) => l.stat), ...Object.keys(n.grants ?? {})].some((k) => NEEDS[k])
+    [...(n.stats ?? []).map((l) => l.stat), ...Object.keys(n.grants ?? {})].some((k) => needs[k])
   );
   check(conditional.length === 0, 'the trunk is useful whatever you build', conditional.map((n) => n.id).join(', '));
 
@@ -933,7 +963,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   const walk: string[] = [];
   const spendRng = new Rng(4242);
   while (walk.length < MAX_TREE_POINTS) {
-    const open = nodes.filter((n) => canAllocate('fireball', n.id, walk));
+    const open = nodes.filter((n) => canAllocate(skillId, n.id, walk));
     if (open.length === 0) break;
     walk.push(spendRng.pick(open)!.id);
   }
@@ -945,7 +975,7 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   // correct for one node and wrong for a whole allocation.
   let held = [...walk];
   while (held.length > 0) {
-    const loose = held.find((id) => canDeallocate('fireball', id, held));
+    const loose = held.find((id) => canDeallocate(skillId, id, held));
     if (!loose) break;
     held = held.filter((id) => id !== loose);
   }
@@ -1053,11 +1083,11 @@ rule('FIREBALL — do the notables actually change the cast?');
 
   // Kindling: the crit becomes a burn. The suppression of the crit itself
   // lives in the sim, so what is checkable here is that the burn lands.
-  const kindled = cast({ critBurn: { multiplier: 2.6, seconds: 4 } }, true);
+  const kindled = cast({ critAilment: { multiplier: 2.6, seconds: 4 } }, true);
   check(kindled.burns.length === 1, 'a Kindling crit sets the target alight', String(kindled.burns.length));
-  const uncrit = cast({ critBurn: { multiplier: 2.6, seconds: 4 } }, false);
+  const uncrit = cast({ critAilment: { multiplier: 2.6, seconds: 4 } }, false);
   check(uncrit.burns.length === 0, 'and a normal hit does not', String(uncrit.burns.length));
-  const longer = cast({ critBurn: { multiplier: 2.6, seconds: 4 }, burnDuration: 1.6 }, true);
+  const longer = cast({ critAilment: { multiplier: 2.6, seconds: 4 }, ailmentDuration: 1.6 }, true);
   check(
     longer.burns[0].seconds > kindled.burns[0].seconds,
     'Slow Burn lengthens it',

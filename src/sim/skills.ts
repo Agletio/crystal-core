@@ -64,6 +64,72 @@ const FALLOFF = { extra: 0.7, chain: 0.7, pierce: 0.7 };
 const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
+// --- the shared vocabulary --------------------------------------------------
+// A behaviour opts into a grant by calling these, and the demo holds each tree
+// to what its own behaviour actually reads.
+
+/** What this cast is worth before any target is chosen. */
+export function castScale(grants: Record<string, unknown>, castIndex: number): number {
+  const nth = grants.everyNth as { n: number; multiplier: number } | undefined;
+  return nth && (castIndex + 1) % nth.n === 0 ? nth.multiplier : 1;
+}
+
+/** Each asks about the enemy in front of you, not about your sheet. */
+export function targetScale(use: SkillUse, target: Entity): number {
+  const g = use.grants;
+  let m = 1;
+
+  const ailing = g.moreVsAiling as number | undefined;
+  if (ailing && target.ailments.length > 0) m *= 1 + ailing;
+
+  const close = g.moreClose as { within: number; more: number } | undefined;
+  if (close && separation(use.user, target) <= close.within) m *= 1 + close.more;
+
+  const far = g.moreFar as { beyond: number; more: number } | undefined;
+  if (far && separation(use.user, target) > far.beyond) m *= 1 + far.more;
+
+  const low = g.moreVsLow as { below: number; more: number } | undefined;
+  if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;
+
+  const full = g.moreVsFull as { above: number; more: number } | undefined;
+  if (full && target.life >= target.stats.maxLife * full.above) m *= 1 + full.more;
+  return m;
+}
+
+/**
+ * The ailment a crit leaves behind. Its element follows the skill, so a
+ * converted tree burns in its new type without any node saying so.
+ */
+export function critAilment(use: SkillUse, target: Entity, falloff: number): void {
+  const g = use.grants;
+  const on = g.critAilment as { multiplier: number; seconds: number } | undefined;
+  if (!on || !use.crit) return;
+  const spread = num(g.ailmentSpread, 0);
+  use.ailment(
+    target,
+    on.multiplier * num(g.ailmentMultiplier, 1) * falloff,
+    on.seconds * num(g.ailmentDuration, 1),
+    spread > 0 ? { radius: spread, generation: 0 } : undefined
+  );
+}
+
+/** Overlaps freely: overlapping is what area damage is for. */
+export function blastAround(
+  use: SkillUse,
+  at: Entity,
+  radius: number,
+  multiplier: number,
+  scale: (target: Entity) => number
+): void {
+  if (multiplier <= 0 || radius <= 0) return;
+  for (const enemy of use.enemies) {
+    if (enemy === at || enemy.dead) continue;
+    if (separation(at, enemy) > radius) continue;
+    use.hit(enemy, multiplier * scale(enemy));
+  }
+  use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32);
+}
+
 /** Distance along and off the ray origin→through. Behind the origin is negative. */
 function alongRay(
   origin: { x: number; y: number },
@@ -122,66 +188,20 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const g = use.grants;
     const kind = use.skill.vfxKind ?? 'bolt';
 
-    // What this cast is worth, before any target is chosen.
-    const nth = g.everyNth as { n: number; multiplier: number } | undefined;
-    const castMultiplier = nth && (use.castIndex + 1) % nth.n === 0 ? nth.multiplier : 1;
-
-    const burn = g.critBurn as { multiplier: number; seconds: number } | undefined;
-    const burnPower = num(g.burnMultiplier, 1);
-    const burnTime = num(g.burnDuration, 1);
-    const burnSpread = num(g.burnSpread, 0);
-
+    const castMultiplier = castScale(g, use.castIndex);
     const explode = g.explode as { radius: number; multiplier: number } | undefined;
     const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
 
-    /** Each asks about the enemy in front of you, not about your sheet. */
-    const conditional = (target: Entity): number => {
-      let m = 1;
-      const burning = g.moreVsBurning as number | undefined;
-      if (burning && target.ailments.length > 0) m *= 1 + burning;
-
-      const close = g.moreClose as { within: number; more: number } | undefined;
-      if (close && separation(use.user, target) <= close.within) m *= 1 + close.more;
-
-      const far = g.moreFar as { beyond: number; more: number } | undefined;
-      if (far && separation(use.user, target) > far.beyond) m *= 1 + far.more;
-
-      const low = g.moreVsLow as { below: number; more: number } | undefined;
-      if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;
-
-      const full = g.moreVsFull as { above: number; more: number } | undefined;
-      if (full && target.life >= target.stats.maxLife * full.above) m *= 1 + full.more;
-      return m;
-    };
-
     const struck = new Set<Entity>();
-
-    /** Overlaps freely — see the note above. */
-    const blast = (at: Entity, radius: number, multiplier: number): void => {
-      if (multiplier <= 0 || radius <= 0) return;
-      for (const enemy of use.enemies) {
-        if (enemy === at || enemy.dead) continue;
-        if (separation(at, enemy) > radius) continue;
-        use.hit(enemy, multiplier * castMultiplier * conditional(enemy));
-      }
-      use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32);
-    };
+    const blast = (at: Entity, radius: number, multiplier: number): void =>
+      blastAround(use, at, radius, multiplier, (e) => castMultiplier * targetScale(use, e));
 
     const strike = (target: Entity, falloff: number): boolean => {
       if (target.dead || struck.has(target)) return false;
       struck.add(target);
-      use.hit(target, falloff * castMultiplier * conditional(target));
+      use.hit(target, falloff * castMultiplier * targetScale(use, target));
 
-      // The crit itself is suppressed in the sim: a behaviour cannot un-crit
-      // a hit it has already asked for.
-      if (burn && use.crit) {
-        use.ailment(
-          target,
-          burn.multiplier * burnPower * falloff,
-          burn.seconds * burnTime,
-          burnSpread > 0 ? { radius: burnSpread, generation: 0 } : undefined
-        );
-      }
+      critAilment(use, target, falloff);
 
       if (explode) {
         blast(
@@ -263,22 +283,52 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
   /**
    * Full damage to the target, a fraction to everything in reach of the USER —
-   * it is a swing. params: { splashRadius, splashMultiplier }
+   * it is a swing, so the splash is centred on you rather than on what you hit.
+   * params: { splashRadius, splashMultiplier }
    */
   cleave: (use) => {
-    const radius = (use.skill.params?.splashRadius as number) ?? 2.2;
+    const g = use.grants;
+    const castMultiplier = castScale(g, use.castIndex);
+    const radius = use.areaRadius(
+      ((use.skill.params?.splashRadius as number) ?? 2.2) * num(g.splashRadius, 1)
+    );
     // Whirlwind and the like override the splash fraction outright.
     const splash =
-      (use.grants.splashMultiplier as number) ??
+      (g.splashMultiplier as number) ??
       (use.skill.params?.splashMultiplier as number) ??
       0.1;
 
-    use.hit(use.primary, 1);
+    const explode = g.explode as { radius: number; multiplier: number } | undefined;
+    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+
+    const swing = (target: Entity, falloff: number): void => {
+      if (target.dead) return;
+      use.hit(target, falloff * scale(target));
+      critAilment(use, target, falloff);
+
+      if (explode) {
+        blastAround(
+          use,
+          target,
+          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
+          (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff,
+          scale
+        );
+      }
+      if (onKill && target.dead) {
+        blastAround(use, target, use.areaRadius(onKill.radius), onKill.multiplier, scale);
+      }
+    };
+
+    swing(use.primary, 1);
+    // Extra swings land on what you aimed at, and stop once it is down.
+    for (let i = 0; i < num(g.doubleStrike, 0); i++) swing(use.primary, 1);
 
     if (splash > 0) {
       for (const enemy of use.enemies) {
         if (enemy === use.primary) continue;
-        if (separation(use.user, enemy) <= radius) use.hit(enemy, splash);
+        if (separation(use.user, enemy) <= radius) swing(enemy, splash);
       }
     }
 
@@ -291,36 +341,65 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /**
    * No hit at all — a circle of poison on the target, with no target cap, so
    * the way to poison more is a bigger circle.
-   * params: { radius, duration }   grants: { contagionRadius }
+   * params: { radius, duration }
    */
   ailment_burst: (use) => {
-    const duration = (use.skill.params?.duration as number) ?? 10;
-    const radius = use.areaRadius((use.skill.params?.radius as number) ?? 1.6);
+    const g = use.grants;
+    const castMultiplier = castScale(g, use.castIndex);
+    const duration = ((use.skill.params?.duration as number) ?? 10) * num(g.ailmentDuration, 1);
+    const radius = use.areaRadius(
+      ((use.skill.params?.radius as number) ?? 1.6) * num(g.fieldRadius, 1)
+    );
+    const power = castMultiplier * num(g.ailmentMultiplier, 1);
 
     // A critical TICK plants a fresh circle around whatever it ticked on. The
     // jump inherits Area of Effect, so area widens the cast and every jump.
-    const contagion = use.grants.contagionRadius as number | undefined;
+    const contagion = g.contagionRadius as number | undefined;
     const spread = contagion
       ? { radius: use.areaRadius(contagion), generation: 0 }
       : undefined;
 
-    const caught = use.enemies.filter((e) => separation(use.primary, e) <= radius);
-    // The primary is always poisoned, even if the radius somehow excludes it.
-    if (!caught.includes(use.primary)) caught.push(use.primary);
-
-    for (const enemy of caught) use.ailment(enemy, 1, duration, spread);
-
-    // Second point IS the radius, so the renderer draws what the sim used.
+    const explode = g.explode as { radius: number; multiplier: number } | undefined;
     // Half a cast, never a fixed time: a fixed one is on screen most of the
     // time at any real cast speed, and reads as an aura rather than a spell.
     const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
-    use.vfx(
-      use.skill.vfxKind ?? 'blight_field',
-      [
-        { x: use.primary.x, y: use.primary.y },
-        { x: use.primary.x + radius, y: use.primary.y },
-      ],
-      Math.min(0.75, cadence * 0.5)
-    );
+
+    const field = (at: Entity): void => {
+      const caught = use.enemies.filter((e) => separation(at, e) <= radius);
+      // Always poisoned, even if the radius somehow excludes it.
+      if (!caught.includes(at)) caught.push(at);
+      for (const enemy of caught) {
+        use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
+      }
+
+      if (explode) {
+        blastAround(
+          use,
+          at,
+          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
+          explode.multiplier + num(g.explodeMultiplierAdd, 0),
+          (e) => castMultiplier * targetScale(use, e)
+        );
+      }
+
+      // Second point IS the radius, so the renderer draws what the sim used.
+      use.vfx(
+        use.skill.vfxKind ?? 'blight_field',
+        [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }],
+        Math.min(0.75, cadence * 0.5)
+      );
+    };
+
+    field(use.primary);
+
+    // More clouds, on whatever else is close — never twice on the same enemy.
+    const extra = num(g.extraFields, 0);
+    if (extra > 0) {
+      const others = use.enemies
+        .filter((e) => e !== use.primary && !e.dead && separation(use.primary, e) <= REACH.spread)
+        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
+        .slice(0, extra);
+      for (const other of others) field(other);
+    }
   },
 };
