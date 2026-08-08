@@ -95,24 +95,38 @@ const guideProbe = () => {
 };
 
 /**
- * With the opening running, is anything but the step reachable by a pointer?
+ * With the opening running, is spending shut and everything else open?
  *
- * The lock is pure CSS — pointer-events off on the app, back on for the
- * target — so nothing in jsdom can see it. elementFromPoint is the honest
- * test: it answers what a real click would actually hit.
+ * The lock is pure CSS, so nothing in jsdom can see it. elementFromPoint is
+ * the honest test: it answers what a real click would actually hit.
+ *
+ * Both directions matter. A purchase that stays live can strand a new player
+ * on the fragment budget; a door that does not is worse, because a step with
+ * nothing lit then has no way out at all.
  */
 const lockProbe = () => {
   if (!document.body.classList.contains('guided')) return null;
-  const leaks = [];
-  for (const id of ['open-shop', 'open-craft', 'open-stash', 'open-character', 'dev-kit']) {
-    const el = document.getElementById(id);
-    if (!el) continue;
+  const reaches = (el) => {
     const r = el.getBoundingClientRect();
-    if (r.width === 0) continue;
+    if (r.width === 0) return null;
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    if (hit === el || el.contains(hit)) leaks.push(id);
+    return hit === el || el.contains(hit);
+  };
+
+  const wrong = [];
+  for (const el of document.querySelectorAll('.buy, #inv-currency .slot')) {
+    if (el.closest('.guide-on')) continue;
+    if (reaches(el)) wrong.push(`${el.id || el.className} spends and is live`);
   }
-  return leaks.length ? leaks : null;
+  // Only when the header is not under a popup, which is an ordinary state and
+  // not the lock. The guide rings a Close when something is on top.
+  if (!document.querySelector('.modal:not([hidden])')) {
+    for (const id of ['open-shop', 'open-craft', 'open-character', 'dev-fresh']) {
+      const el = document.getElementById(id);
+      if (el && reaches(el) === false) wrong.push(`${id} is a door that will not open`);
+    }
+  }
+  return wrong.length ? wrong : null;
 };
 
 const browser = await chromium.launch();
@@ -150,7 +164,7 @@ for (const vp of VIEWPORTS) {
     if (over) problems.push(`${vp.name}/${state}: .${over.who} overflows by ${over.past}px`);
     const leaks = await page.evaluate(lockProbe);
     if (leaks) {
-      problems.push(`${vp.name}/${state}: the opening leaks — ${leaks.join(', ')} still clickable`);
+      problems.push(`${vp.name}/${state}: the opening's lock is wrong — ${leaks.join('; ')}`);
     }
     const covering = await page.evaluate(guideProbe);
     if (covering) {

@@ -153,24 +153,35 @@ assert(
 // part that teaches you the loop.
 assert($('guide-skip') === null, 'there is no way to skip it');
 
-// --- the opening cannot be walked out of ----------------------------------
+// --- the opening locks spending, and only spending ------------------------
 // It hands you a fixed number of fragments and then asks you to buy two
-// specific things with them. Spend them on a crystal instead and you are stuck
-// on the next step forever, because descending costs a crystal too. The fix is
-// that there is nothing else to click; jsdom has no pointer-events, so this
-// checks the switch and shots.mjs checks that it actually blocks.
+// specific things with them. Spend them on a crystal instead and no wording
+// gets you back, so the shelves are switched off. Everything else stays live:
+// locking the lot meant a step with nothing lit — a reload during the fight —
+// was a room with no doors, New game included.
 assert(document.body.classList.contains('guided'), 'a live step locks the app down');
 
 // Keyboard is the half pointer-events does not cover: a blocked button is
-// still focusable and still fires on Enter.
+// still focusable and still fires on Enter. It has to narrow the same way, or
+// the two halves disagree about what is allowed.
 {
   const fire = (el, key) => {
     const ev = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
     el.dispatchEvent(ev);
     return ev.defaultPrevented;
   };
-  assert(fire($('open-shop'), 'Enter'), 'Enter on a blocked control is swallowed');
-  assert(fire($('dev-kit'), ' '), 'and so is Space');
+
+  $('open-shop').click();
+  const buy = all('#shop .buy').find((b) => !b.classList.contains('guide-on'));
+  assert(!!buy, 'the shop has a shelf to check');
+  assert(fire(buy, 'Enter'), 'Enter on a purchase is swallowed');
+  assert(fire(buy, ' '), 'and so is Space');
+  $('shop-close').click();
+
+  // The doors. Every one of these was dead under the old lock.
+  assert(!fire($('open-shop'), 'Enter'), 'but opening a screen is not');
+  assert(!fire($('open-skills'), 'Enter'), 'nor is any other screen');
+  assert(!fire($('dev-fresh'), ' '), 'and starting over always works');
   assert(
     !fire($('welcome-name') ?? $('run-launch'), 'Enter') || true,
     'typing is never swallowed'

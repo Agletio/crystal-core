@@ -616,6 +616,12 @@ rule('GUIDED OPENING — does every step actually complete?');
     // is the one where the next click leaves this window for the dock.
     { view: 'run', phase: 'results', top: 'sheet', picking: 'weapon' },
     { view: 'run', phase: 'menu', top: 'skills', picking: null },
+    // Screens the opening never sends you to. Reachable anyway now that only
+    // spending is locked, so every step has to know the way back out of them.
+    { view: 'run', phase: 'menu', top: 'history', picking: null },
+    { view: 'run', phase: 'menu', top: 'save', picking: null },
+    { view: 'run', phase: 'running', top: 'save', picking: null },
+    { view: 'craft', phase: 'running', top: 'craft', picking: null },
   ];
 
   const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
@@ -707,6 +713,52 @@ rule('GUIDED OPENING — does every step actually complete?');
     targetless.length === 0,
     'every step points at an element that exists',
     `points at nothing: ${targetless.join(', ')}`
+  );
+
+  // Existing is not the same as reachable. The header and the Fissure panel sit
+  // UNDER every popup, so a step still naming one of them while something is
+  // open is pointing through a modal at a button nobody can click. That is the
+  // shape of every hard lock this opening has had, and now only spending is
+  // switched off, any screen can be the one in the way.
+  const COVERED = new Set([
+    'run-launch',
+    'run-again',
+    'run-loot',
+    'dev-fresh',
+    'dev-kit',
+    ...['craft', 'shop', 'stash', 'character', 'skills', 'history', 'save'].map(
+      (s) => `open-${s}`
+    ),
+  ]);
+  const unreachable: string[] = [];
+  for (const step of TUTORIAL_STEPS) {
+    for (const ctx of SITUATIONS) {
+      if (ctx.top === null && ctx.view !== 'craft') continue;
+      const id = typeof step.target === 'function' ? step.target(ctx) : step.target;
+      if (COVERED.has(id)) {
+        unreachable.push(`${step.id} -> #${id} with ${ctx.top ?? ctx.view} open`);
+      }
+    }
+  }
+  check(
+    unreachable.length === 0,
+    'and never at one a popup is covering',
+    `unreachable: ${unreachable.join(', ')}`
+  );
+
+  // The other half of a dead end: a step with nothing lit that nothing can
+  // finish. Only 'watch' has no ring, and only while a run is actually going.
+  const unlit: string[] = [];
+  for (const step of TUTORIAL_STEPS) {
+    for (const ctx of SITUATIONS) {
+      const wants = typeof step.ring === 'function' ? step.ring(ctx) : step.ring !== false;
+      if (!wants && ctx.phase !== 'running') unlit.push(`${step.id} with phase ${ctx.phase}`);
+    }
+  }
+  check(
+    unlit.length === 0,
+    'and lights something whenever the sim is not doing the work',
+    `nothing to click: ${unlit.join(', ')}`
   );
   // The guide walks you into equipping the item that is sitting on the bench.
   // A stale craftId would leave the bench holding something you're wearing,

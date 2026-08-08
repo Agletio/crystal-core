@@ -64,6 +64,14 @@ const state = () =>
       text: document.getElementById('guide-text')?.textContent ?? '',
       ring: ring ? ring.id || ring.className : null,
       locked: document.body.classList.contains('guided'),
+      // Nothing lit is only ever legitimate while the sim is doing the work.
+      // Any other time it means the step is waiting on something no click can
+      // cause — which is what a reload during the fight used to leave behind.
+      phase: document.getElementById('run-results')?.hidden === false
+        ? 'results'
+        : document.getElementById('run-stagewrap')?.hidden === false
+          ? 'running'
+          : 'menu',
       // A modal over the lit control, while the lockdown holds that modal's
       // own Close switched off, is a room with no doors. The dock is never
       // covered — popups stop above it — so an overlap is always a trap.
@@ -88,6 +96,8 @@ const trace = [];
 let last = '';
 let stuck = 0;
 let reloaded = false;
+let reloadedMidRun = false;
+let dark = 0;
 let escaped = false;
 
 // Generous: a descent takes a while, and one step is "watch it happen".
@@ -107,6 +117,15 @@ for (let turn = 0; turn < 240; turn++) {
     problems.push(`${now.step}: ${now.trapped} covers the one thing you may click`);
     break;
   }
+  // Nothing lit is only legitimate while the sim is doing the work. Anywhere
+  // else it means the step waits on something no click can cause. The guide
+  // repaints on a timer, so a tick or two of it is the phase changing under
+  // the card rather than a dead end.
+  dark = !now.ring && now.phase !== 'running' ? dark + 1 : 0;
+  if (dark > 5) {
+    problems.push(`${now.step}: nothing lit at phase ${now.phase} — ${now.text.slice(0, 60)}`);
+    break;
+  }
 
   // On the very first step, reload. The opening resumes from the save, and the
   // state it comes back into has to be one you can still play — this is the
@@ -120,6 +139,20 @@ for (let turn = 0; turn < 240; turn++) {
     trace.push(`Reload      resumed on ${back.step}, ring ${back.ring ?? 'none'}`);
     if (back.done) problems.push('a reload mid-opening dropped the guide entirely');
     if (back.trapped) problems.push(`a reload left ${back.trapped} over the lit control`);
+    continue;
+  }
+
+  // And again mid-fight. A reload loses the run in progress, so the step that
+  // ends on a clear comes back with nothing to clear — the exact way a player
+  // got stuck with every button dead, New game included.
+  if (!reloadedMidRun && /step 2/i.test(now.step) && !now.ring) {
+    reloadedMidRun = true;
+    await page.reload();
+    await page.waitForTimeout(900);
+    const back = await state();
+    trace.push(`Reload      mid-fight, resumed on ${back.step}, ring ${back.ring ?? 'none'}`);
+    if (back.done) problems.push('a reload mid-fight dropped the guide entirely');
+    if (!back.ring) problems.push('a reload mid-fight left nothing to click');
     continue;
   }
 

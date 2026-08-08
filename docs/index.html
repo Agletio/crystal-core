@@ -644,18 +644,18 @@
     transform: rotate(45deg);
   }
 
-  /* During the guided opening the highlighted thing is the ONLY thing you can
-     click: the opening has a fixed fragment budget and asks you to spend it on
-     two specific things. The card stays live, so the step stays readable. */
-  body.guided .wrap,
-  body.guided .modal,
-  body.guided .welcome { pointer-events: none; }
-  body.guided .guide-on,
-  body.guided .guide { pointer-events: auto; }
-  /* Everything switched off reads as switched off. Without this the buttons
-     look live and feel dead, which is worse than looking disabled. */
-  body.guided .wrap button:not(.guide-on):not(.guide-on *),
-  body.guided .modal button:not(.guide-on):not(.guide-on *) { opacity: .45; }
+  /* The guided opening locks SPENDING, not navigation.
+     The opening hands out a fixed number of fragments and asks for two
+     specific purchases; spend them elsewhere and no wording gets you back.
+     Everything else — opening a screen, closing one, entering the Fissure,
+     starting over — is free or reversible, so it stays live and the guide
+     points you back instead. Locking the lot is what turned a refresh on a
+     step with nothing to click into a room with no doors. */
+  body.guided .buy:not(.guide-on):not(.guide-on *),
+  body.guided #inv-currency .slot:not(.guide-on):not(.guide-on *) {
+    pointer-events: none;
+    opacity: .45;
+  }
 
   /* The one thing to click next. Outline rather than a colour change, so it
      reads on buttons, panels and docks alike without restyling any of them.

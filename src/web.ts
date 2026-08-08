@@ -154,17 +154,22 @@ initStash(game, onRunFocused);
 initRun(game);
 /** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
 function guideContext(): GuideCtx {
-  const top = isSkillsOpen()
-    ? 'skills'
-    : isCharacterOpen()
-      ? 'sheet'
-      : isStashOpen()
-        ? 'stash'
-        : isShopOpen()
-          ? 'shop'
-          : isCraftOpen()
-            ? 'craft'
-            : null;
+  // Every popup: the guide can only walk you out of one it knows you are in.
+  const top = isSaveDataOpen()
+    ? 'save'
+    : isSkillsOpen()
+      ? 'skills'
+      : isCharacterOpen()
+        ? 'sheet'
+        : isHistoryOpen()
+          ? 'history'
+          : isStashOpen()
+            ? 'stash'
+            : isShopOpen()
+              ? 'shop'
+              : isCraftOpen()
+                ? 'craft'
+                : null;
   return {
     view: isCraftOpen() ? 'craft' : 'run',
     phase: runPhase(),

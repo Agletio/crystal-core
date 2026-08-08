@@ -1,7 +1,10 @@
 /**
- * The guided opening. Runs from the very first click: exactly one lit button at
- * a time and a card beside it saying why. The card is anchored to what it points
- * at, not pinned to the shell, so it follows targets inside popups.
+ * The guided opening: one lit control at a time and a card beside it saying
+ * why. The card is anchored to what it points at, not pinned to the shell, so
+ * it follows targets inside popups.
+ *
+ * The ring is a suggestion, not a cage: only SPENDING is switched off, so a
+ * step names the way back out of the wrong screen rather than refusing clicks.
  *
  * Steps are DATA with a `done` predicate, never a script of callbacks, so the
  * tutorial can never desynchronise — wander off and buy the shard early and the
@@ -22,10 +25,7 @@ export interface GuideCtx {
   phase: "menu" | "running" | "results";
   /** Topmost popup, so a step can point at the right close button. */
   top: string | null;
-  /**
-   * The slot waiting to be filled. Picking one moves the next click out of the
-   * sheet and into the dock; under the lockdown, missing that is a dead end.
-   */
+  /** The slot waiting to be filled: picking one moves the next click to the dock. */
   picking: string | null;
 }
 
@@ -36,7 +36,7 @@ export interface TutorialStep {
   /** Element to point at. A function when it depends on what's on top. */
   target: string | ((ctx: GuideCtx) => string);
   /** Default true; false for steps with nothing to click. */
-  ring?: boolean;
+  ring?: boolean | ((ctx: GuideCtx) => boolean);
   /** Optional aside under the text — what this costs, or what to expect. */
   hint?: string;
   done(game: GameState, ctx: GuideCtx): boolean;
@@ -50,16 +50,26 @@ export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
 /** Id of an equipment slot's button on the character sheet. Same reason. */
 export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
+/** Every popup's own way out, so a step can point at whichever one is up. */
+const CLOSES: Record<string, string> = {
+  stash: 'stash-close',
+  shop: 'shop-close',
+  sheet: 'sheet-close',
+  skills: 'skills-close',
+  history: 'history-close',
+  save: 'save-close',
+  craft: 'craft-close',
+};
+
 /**
  * Getting to a header button from wherever you are. The header sits UNDER every
  * popup, so pointing straight at "Shop" points at something you cannot click.
  * Returns the next click on the way: a close button, then the button itself.
+ * With only spending locked, this is what walks you out of the wrong screen.
  */
 function viaHeader(ctx: GuideCtx, button: string): string {
-  if (ctx.top === 'stash') return 'stash-close';
-  if (ctx.top === 'shop') return 'shop-close';
-  if (ctx.top === 'sheet') return 'sheet-close';
-  if (ctx.view === 'craft') return 'craft-close';
+  if (ctx.top && CLOSES[ctx.top]) return CLOSES[ctx.top];
+  if (ctx.view === 'craft') return CLOSES.craft;
   return button;
 }
 
@@ -70,20 +80,36 @@ const blocked = (ctx: GuideCtx): boolean =>
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "enter",
-    text: "This is the Fissure — the one place you go, always open and always free. Click Enter to descend.",
+    text: (ctx) =>
+      blocked(ctx)
+        ? "The Fissure is behind this. Close it and click Enter."
+        : "This is the Fissure — the one place you go, always open and always free. Click Enter to descend.",
     hint: "You fight automatically. Nothing to time.",
-    target: "run-launch",
+    target: (ctx) => viaHeader(ctx, "run-launch"),
     done: (g, ctx) => ctx.phase !== "menu" || g.firstClearDone,
   },
   {
     id: "watch",
-    text: "You fight on your own. Clear it and something will be waiting at the exit — and everything you find only banks if you make it out.",
-    hint: "Nothing to click. What you are carrying shows here.",
-    // Anchored beside the loot list rather than on the stage: there is
-    // nothing to click, and a ring around the viewport of a zoomed-in camera
-    // frames a random patch of rock rather than the fight.
-    target: "run-loot",
-    ring: false,
+    text: (ctx) =>
+      ctx.phase === "running"
+        ? blocked(ctx)
+          ? "The fight is carrying on behind this. Close it and watch."
+          : "You fight on your own. Clear it and something will be waiting at the exit."
+        : blocked(ctx)
+          ? "That run ended before it was cleared. Close this and head back down."
+          : "That run ended before it was cleared. Nothing was lost — go again.",
+    hint: "Everything you find only banks if you make it out.",
+    // Anchored beside the loot list rather than on the stage: there is nothing
+    // to click, and a ring around the viewport of a zoomed-in camera frames a
+    // random patch of rock rather than the fight.
+    target: (ctx) =>
+      ctx.phase === "running"
+        ? viaHeader(ctx, "run-loot")
+        : viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
+    // A reload loses the run in progress, and this step only ends on a clear —
+    // so whenever nothing is running there has to be something lit, or the
+    // step is one nobody can finish.
+    ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
     done: (g) => g.firstClearDone,
   },
   {
@@ -117,14 +143,16 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? "Bought. Close the Shop — the shard is in your dock now."
         : ctx.view === "craft"
           ? "Click your Ash Wand in the dock below to put it on the bench."
-          : "Open Crafting, then click your Ash Wand in the dock below.",
+          : blocked(ctx)
+            ? "Close this — Crafting is the next stop."
+            : "Open Crafting, then click your Ash Wand in the dock below.",
     hint: "The dock stays reachable under every popup.",
     target: (ctx) =>
       ctx.top === "shop"
         ? "shop-close"
         : ctx.view === "craft"
           ? "inv-gear"
-          : "open-craft",
+          : viaHeader(ctx, "open-craft"),
     done: (g) => craftItem(g)?.kind === "gear",
   },
   {
@@ -149,37 +177,25 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : viaHeader(ctx, "open-shop"),
     done: (g) => has(g, "shard_of_making"),
   },
-  /**
-   * One step, three targets. Equipping takes three clicks from inside the bench
-   * and the first two only exist because the bench covers the third.
-   */
   {
     id: "equip",
     text: (ctx) =>
-      ctx.top === "shop" || ctx.top === "stash"
-        ? "The wand is crafted. Close this and open Character."
-        : ctx.view === "craft"
-          ? "Close Crafting — the Character button is behind it."
-          : ctx.top === "sheet"
-            ? ctx.picking
-              ? "Now click the Ash Wand in the dock below to wear it."
-              : "Click the Weapon slot — everything that fits will light up."
-            : "Open Character and put the wand in your weapon slot.",
+      ctx.top === "sheet"
+        ? ctx.picking
+          ? "Now click the Ash Wand in the dock below to wear it."
+          : "Click the Weapon slot — everything that fits will light up."
+        : blocked(ctx)
+          ? "The wand is crafted. Close this and open Character."
+          : "Open Character and put the wand in your weapon slot.",
     target: (ctx) =>
-      ctx.top === "shop"
-        ? "shop-close"
-        : ctx.top === "stash"
-          ? "stash-close"
-          : ctx.view === "craft"
-            ? "craft-close"
-            : ctx.top === "sheet"
-              ? // Once a slot is chosen the gear is what you click, and it is
-                // in the dock. Ringing the slot here left the only live
-                // control being the one you had already pressed.
-                ctx.picking
-                ? "inv-gear"
-                : slotButtonId("weapon")
-              : "open-character",
+      ctx.top === "sheet"
+        ? // Once a slot is chosen the gear is what you click, and it is in the
+          // dock. Ringing the slot here left the only live control being the
+          // one you had already pressed.
+          ctx.picking
+          ? "inv-gear"
+          : slotButtonId("weapon")
+        : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,
   },
   /** Enter is under a report, a sheet and a bench: point at whatever is in the way. */
@@ -188,26 +204,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === "sheet"
         ? "That is the loop. Close the sheet — you can afford a crystal now."
-        : ctx.top === "shop" || ctx.top === "stash"
+        : blocked(ctx)
           ? "That is the loop. Close this and head back down."
-          : ctx.top === "craft"
-            ? "That is the loop. Close Crafting and head back down."
-            : ctx.phase === "results"
-              ? "Your report from last time is still open. Head back to the Fissure."
-              : "Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.",
+          : ctx.phase === "results"
+            ? "Your report from last time is still open. Head back to the Fissure."
+            : "Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.",
     hint: "Crystals are spent on entry, win or lose.",
     target: (ctx) =>
-      ctx.top === "sheet"
-        ? "sheet-close"
-        : ctx.top === "shop"
-          ? "shop-close"
-          : ctx.top === "stash"
-            ? "stash-close"
-            : ctx.top === "craft"
-              ? "craft-close"
-              : ctx.phase === "results"
-                ? "run-again"
-                : "run-launch",
+      viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
   },
 ];
@@ -382,13 +386,14 @@ function showScrollHint(away: "up" | "down" | null): void {
 }
 
 /**
- * While a step is up, the highlighted thing is the only live control. The
- * opening hands you a fixed number of fragments and asks you to buy two things
- * with them; spend them elsewhere and you are stuck forever, because descending
- * costs a crystal too. No wording fixes that — the fix is nothing else to click.
- *
- * In CSS rather than a flag threaded through six renders that know no tutorial.
+ * The whole of the lockdown: the shop's shelves, the stash upgrade, and the
+ * currency you spend from the dock. The opening hands out a fixed number of
+ * fragments and asks for two specific purchases, and no wording recovers from
+ * spending them elsewhere. Everything else is free or reversible.
  */
+const SPENDS = ".buy, #inv-currency .slot";
+
+/** In CSS rather than a flag threaded through six renders that know no tutorial. */
 function setLock(on: boolean): void {
   document.body.classList.toggle("guided", on);
 }
@@ -402,7 +407,7 @@ export const isGuided = (): boolean => document.body.classList.contains("guided"
  * Enter. `inert` covers both but cannot be undone on a descendant, so it cannot
  * wrap a subtree containing the target.
  *
- * Capture phase. Tabbing is still allowed; activating anything else is not.
+ * Capture phase. Tabbing is still allowed; spending by keyboard is not.
  */
 function guardKeys(event: KeyboardEvent): void {
   if (!isGuided()) return;
@@ -410,9 +415,9 @@ function guardKeys(event: KeyboardEvent): void {
 
   const target = event.target as Element | null;
   if (!target || !("closest" in target)) return;
-  // Typing in the name field is not activating a control.
-  if (target.matches("input, textarea")) return;
-  if (target.closest(".guide-on") || target.closest(".guide")) return;
+  // Only what CSS switched off, or the keyboard would be the stricter half.
+  if (!target.closest(SPENDS)) return;
+  if (target.closest(".guide-on")) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -440,7 +445,8 @@ function paint(): void {
 
   const id = typeof step.target === "function" ? step.target(ctx) : step.target;
   const target = document.getElementById(id);
-  const ring = step.ring !== false ? target : null;
+  const wants = typeof step.ring === "function" ? step.ring(ctx) : step.ring !== false;
+  const ring = wants ? target : null;
 
   if (ring !== highlighted) {
     clearHighlight();
@@ -449,7 +455,7 @@ function paint(): void {
       highlighted = ring;
     }
   }
-  if (target) place(target, step.ring === false);
+  if (target) place(target, !wants);
 }
 
 /** Advance past every step already satisfied, then repaint. */
