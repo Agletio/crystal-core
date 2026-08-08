@@ -831,6 +831,28 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   }
   check(dead.length === 0, 'and nothing conditional sits outside its branch', dead.join(', '));
 
+  // Every notable past the entry one is a DEAD END. A notable with something
+  // growing out of it is a node you walk THROUGH, which is how a branch turns
+  // back into a corridor of things you did not want.
+  const entries = new Set(Object.values(FIREBALL_ENABLERS));
+  const throughs = notables.filter(
+    (n) =>
+      FIREBALL_BRANCH[n.id] && !entries.has(n.id) && neighboursOf('fireball', n.id).size !== 1
+  );
+  check(throughs.length === 0, 'every notable past the entry is a dead end', throughs.map((n) => n.id).join(', '));
+
+  // And a twig is a chain, so the only way to a notable is the run of minors in
+  // front of it. Counting the links is the blunt version of that: a web with a
+  // way round everything is a web you beeline across.
+  const edges = new Set<string>();
+  for (const n of nodes) {
+    for (const other of neighboursOf('fireball', n.id)) {
+      edges.add([n.id, other].sort().join('|'));
+    }
+  }
+  line(`  ${edges.size} links between ${nodes.length} nodes`);
+  check(edges.size <= nodes.length + 12, 'and there are barely more links than nodes', String(edges.size));
+
   // The trunk is the opposite promise: everything on it works for any build.
   const trunk = nodes.filter((n) => !FIREBALL_BRANCH[n.id]);
   line(`  ${trunk.length} nodes on the trunk, ${nodes.length - trunk.length} out on branches`);

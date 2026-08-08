@@ -30,10 +30,11 @@ const TRUNK_WAYS_IN = 3;
 const ANCHORS = [0, 2, 4, 6, 8, 10];
 const TRUNK_NOTABLE_SLOTS = [1, 5, 9];
 
-const ENABLER_R = 3.9;
-const ROW_R = [5.0, 6.1, 7.2, 8.3, 9.4];
+const ENABLER_R = 3.8;
+/** How far out each step along a twig goes. */
+const TWIG_STEP = 1.05;
 /** How wide a branch spreads, as a fraction of the circle. */
-const BRANCH_ARC = 0.115;
+const BRANCH_ARC = 0.125;
 
 const TAU = Math.PI * 2;
 
@@ -61,14 +62,23 @@ interface Notable {
   choices?: NodeChoice[];
 }
 
+/**
+ * A run of minors ending in a notable, and nothing past it. The notable is the
+ * point of the twig, so it is a DEAD END: getting a second one in a branch
+ * means walking back and paying for another run of minors.
+ */
+interface Twig {
+  minors: number;
+  notable: Notable;
+  /** Sprout off another twig this far along it, rather than off the enabler. */
+  forkFrom?: { twig: number; at: number };
+}
+
 interface Branch {
   id: string;
   theme: string;
-  /** Nodes per row, outward from the enabler. */
-  rows: number[];
   enabler: Notable;
-  /** The rest, each pinned to a row so a branch deepens as it goes. */
-  notables: Array<{ row: number; node: Notable }>;
+  twigs: Twig[];
   minors: Minor[];
 }
 
@@ -91,7 +101,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'ignition',
     theme: 'Smoulder',
-    rows: [2, 3, 3, 3, 2],
     enabler: {
       id: 'fb_kindling',
       name: 'Kindling',
@@ -101,10 +110,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { critBurn: { multiplier: 2.6, seconds: 4 } },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 3,
+        notable: {
           id: 'fb_cauterise',
           name: 'Cauterise',
           description: 'Burns you apply deal 35% more damage over a 25% shorter time.',
@@ -113,8 +122,8 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 4,
+        notable: {
           id: 'fb_slowburn',
           name: 'Slow Burn',
           description: 'Burns you apply last 60% longer.',
@@ -123,8 +132,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 4,
-        node: {
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
+        notable: {
           id: 'fb_wildfire',
           name: 'Wildfire',
           description:
@@ -144,7 +154,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'detonation',
     theme: 'Blastwork',
-    rows: [2, 3, 3, 3, 2],
     enabler: {
       id: 'fb_detonation',
       name: 'Detonation',
@@ -154,10 +163,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'] },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 3,
+        notable: {
           id: 'fb_concussive',
           name: 'Concussive Blast',
           description: 'The burst covers 45% more ground.',
@@ -166,8 +175,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 3,
+        forkFrom: { twig: 0, at: 1 },
+        notable: {
           id: 'fb_fuelair',
           name: 'Fuel-Air Charge',
           description: 'The burst deals full damage rather than a fraction of it.',
@@ -176,8 +186,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 4,
-        node: {
+        minors: 3,
+        forkFrom: { twig: 1, at: 1 },
+        notable: {
           id: 'fb_chainreaction',
           name: 'Chain Reaction',
           description:
@@ -197,7 +208,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'volley',
     theme: 'Salvo',
-    rows: [2, 3, 3, 3, 2],
     enabler: {
       id: 'fb_splitcast',
       name: 'Split Cast',
@@ -205,10 +215,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { extraTargets: 1 },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 3,
+        notable: {
           id: 'fb_focused',
           name: 'Focused Volley',
           description: 'Additional targets take full damage instead of 70%.',
@@ -217,8 +227,8 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 3,
+        notable: {
           id: 'fb_volley',
           name: 'Volley',
           description: 'Fireball strikes another additional enemy.',
@@ -227,8 +237,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 4,
-        node: {
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
+        notable: {
           id: 'fb_barrage',
           name: 'Barrage',
           description: 'Fireball strikes two more enemies near the target.',
@@ -242,7 +253,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'penetration',
     theme: 'Bore',
-    rows: [2, 3, 3, 2, 2],
     enabler: {
       id: 'fb_piercing',
       name: 'Piercing Flame',
@@ -250,10 +260,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { pierce: 1 },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 5,
+        notable: {
           id: 'fb_momentum',
           name: 'Momentum',
           description: 'Enemies pierced take full damage instead of 70%.',
@@ -262,8 +272,8 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 5,
+        notable: {
           id: 'fb_overpen',
           name: 'Overpenetration',
           description: 'Fireball passes through one more enemy.',
@@ -277,7 +287,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'arc',
     theme: 'Leapfire',
-    rows: [2, 3, 3, 2, 2],
     enabler: {
       id: 'fb_arcing',
       name: 'Arcing Flame',
@@ -285,10 +294,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { chains: 1 },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 4,
+        notable: {
           id: 'fb_rebound',
           name: 'Rebound',
           description: 'Leaps deal full damage instead of 70%.',
@@ -297,8 +306,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 5,
+        forkFrom: { twig: 0, at: 2 },
+        notable: {
           id: 'fb_leaping',
           name: 'Leaping Flame',
           description: 'Fireball leaps one more time.',
@@ -312,7 +322,6 @@ const BRANCHES: Branch[] = [
   {
     id: 'cruelty',
     theme: 'Malice',
-    rows: [2, 3, 3, 3, 2],
     enabler: {
       id: 'fb_immolate',
       name: 'Immolate',
@@ -320,10 +329,10 @@ const BRANCHES: Branch[] = [
       gate: GATE.enabler,
       grants: { moreVsBurning: 0.25 },
     },
-    notables: [
+    twigs: [
       {
-        row: 1,
-        node: {
+        minors: 3,
+        notable: {
           id: 'fb_closequarters',
           name: 'Close Quarters',
           description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
@@ -332,8 +341,8 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 3,
-        node: {
+        minors: 4,
+        notable: {
           id: 'fb_executioner',
           name: 'Executioner',
           description: 'Fireball deals 35% more damage to enemies below a third of their life.',
@@ -342,8 +351,9 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        row: 4,
-        node: {
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
+        notable: {
           id: 'fb_overload',
           name: 'Overload',
           description: 'Every fifth cast of Fireball deals triple damage.',
@@ -481,87 +491,85 @@ function build(): SkillNodeDef[] {
   }
 
   // --- the branches -------------------------------------------------------
+  //
+  // Every twig is a CHAIN: each node hangs off exactly the one before it, and
+  // the notable at the tip has nothing past it. No sideways links, so there is
+  // no way to cut across to a notable — you buy the run of minors that leads to
+  // it, or you do not get it.
   BRANCHES.forEach((branch, b) => {
     const base = (ANCHORS[b] / TRUNK[1].count) * TAU - Math.PI / 2;
-    const notableAt = new Map(branch.notables.map((n) => [n.row, n.node]));
-
-    // The enabler is the ONLY way in. Everything past it is worth nothing
-    // without it, so nothing past it may be reachable another way.
-    const enabler = branch.enabler;
-    join(enabler.id, trunkAt(2, ANCHORS[b]));
+    join(branch.enabler.id, trunkAt(2, ANCHORS[b]));
     nodes.push({
-      id: enabler.id,
-      name: enabler.name,
-      description: enabler.description,
+      id: branch.enabler.id,
+      name: branch.enabler.name,
+      description: branch.enabler.description,
       kind: 'notable',
       x: Math.cos(base) * ENABLER_R,
       y: Math.sin(base) * ENABLER_R,
-      links: links.get(enabler.id) ?? [],
-      gate: enabler.gate,
-      ...(enabler.grants ? { grants: enabler.grants } : {}),
+      links: links.get(branch.enabler.id) ?? [],
+      gate: branch.enabler.gate,
+      ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
     });
 
-    branch.rows.forEach((count, row) => {
-      for (let i = 0; i < count; i++) {
-        const id = branchId(branch.id, row, i);
-        // Inward, onto the slice of the row behind this one.
-        if (row === 0) join(id, enabler.id);
-        else {
-          const prev = branch.rows[row - 1];
-          const j = Math.min(prev - 1, Math.floor((i * prev) / count));
-          join(id, branchId(branch.id, row - 1, j));
-        }
-        if (i + 1 < count) join(id, branchId(branch.id, row, i + 1));
-      }
-    });
+    // Where each node of each twig ends up, so a fork can start from one.
+    const placed: Array<Array<{ id: string; depth: number; angle: number }>> = [];
+    let minorAt = 0;
 
-    branch.rows.forEach((count, row) => {
-      for (let i = 0; i < count; i++) {
-        const id = branchId(branch.id, row, i);
-        // The row's notable sits in the middle of it; the rest is road.
-        const notable = i === Math.floor(count / 2) ? notableAt.get(row) : undefined;
-        const spread = ((i + 0.5) / count - 0.5) * BRANCH_ARC * TAU;
-        const angle = base + spread + (jitter(b, row * 5 + i, 3) - 0.5) * 0.05;
-        const reach = ROW_R[row] + (jitter(b, row * 5 + i, 4) - 0.5) * 0.4;
-        const minor = branch.minors[(row * 2 + i) % branch.minors.length];
+    branch.twigs.forEach((twig, t) => {
+      // Never off a twig's last node: that one is a notable, and a notable
+      // with something growing out of it is no longer a dead end.
+      const parent = twig.forkFrom
+        ? placed[twig.forkFrom.twig][
+            Math.min(twig.forkFrom.at, branch.twigs[twig.forkFrom.twig].minors - 1)
+          ]
+        : { id: branch.enabler.id, depth: 0, angle: base };
+      // Each twig aims somewhere of its own inside the wedge, and drifts there
+      // as it goes out, so a branch opens like a hand rather than a fan.
+      const aim =
+        base + (((t + 0.5) / branch.twigs.length - 0.5) * BRANCH_ARC + 0.012 * t) * TAU;
+
+      const chain: Array<{ id: string; depth: number; angle: number }> = [];
+      const length = twig.minors + 1;
+      for (let step = 0; step < length; step++) {
+        const last = step === length - 1;
+        const id = last ? twig.notable.id : branchId(branch.id, t, step);
+        const depth = parent.depth + step + 1;
+        const along = (step + 1) / length;
+        const angle =
+          parent.angle +
+          (aim - parent.angle) * along +
+          (jitter(b, t * 9 + step, 3) - 0.5) * 0.045;
+        const reach = ENABLER_R + depth * TWIG_STEP + (jitter(b, t * 9 + step, 4) - 0.5) * 0.35;
+
+        join(id, step === 0 ? parent.id : chain[step - 1].id);
+        const minor = branch.minors[minorAt++ % branch.minors.length];
 
         nodes.push({
-          id: notable?.id ?? id,
-          name: notable?.name ?? branch.theme,
-          description: notable?.description ?? minor.text,
-          kind: notable ? 'notable' : 'minor',
+          id,
+          name: last ? twig.notable.name : branch.theme,
+          description: last ? twig.notable.description : minor.text,
+          kind: last ? 'notable' : 'minor',
           x: Math.cos(angle) * reach,
           y: Math.sin(angle) * reach,
           links: links.get(id) ?? [],
-          ...(notable ? { gate: notable.gate } : {}),
-          ...(notable
+          ...(last ? { gate: twig.notable.gate } : {}),
+          ...(last
             ? {
-                ...(notable.stats ? { stats: notable.stats } : {}),
-                ...(notable.grants ? { grants: notable.grants } : {}),
+                ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),
+                ...(twig.notable.grants ? { grants: twig.notable.grants } : {}),
               }
             : {
                 ...(minor.stats ? { stats: minor.stats } : {}),
                 ...(minor.grants ? { grants: minor.grants } : {}),
               }),
         });
+        chain.push({ id, depth, angle });
       }
+      placed.push(chain);
     });
   });
 
-  // A notable takes over its slot's identity, so links made against the slot
-  // id have to be rewritten or half of them point at nothing.
-  const renamed = new Map<string, string>();
-  BRANCHES.forEach((branch) => {
-    branch.rows.forEach((count, row) => {
-      const notable = branch.notables.find((n) => n.row === row);
-      if (notable) {
-        renamed.set(branchId(branch.id, row, Math.floor(count / 2)), notable.node.id);
-      }
-    });
-  });
-  const resolve = (id: string) => renamed.get(id) ?? id;
-
-  return nodes.map((n) => ({ ...n, links: n.links.map(resolve) }));
+  return nodes;
 }
 
 export const FIREBALL_TREE: SkillNodeDef[] = build();
@@ -570,16 +578,13 @@ export const FIREBALL_TREE: SkillNodeDef[] = build();
 export const FIREBALL_BRANCH: Record<string, string> = Object.fromEntries(
   BRANCHES.flatMap((branch) => [
     [branch.enabler.id, branch.id] as [string, string],
-    ...branch.rows.flatMap((count, row) =>
-      Array.from({ length: count }, (_, i) => {
-        const notable = branch.notables.find((n) => n.row === row);
-        const id =
-          notable && i === Math.floor(count / 2)
-            ? notable.node.id
-            : branchId(branch.id, row, i);
-        return [id, branch.id] as [string, string];
-      })
-    ),
+    ...branch.twigs.flatMap((twig, t) => [
+      [twig.notable.id, branch.id] as [string, string],
+      ...Array.from(
+        { length: twig.minors },
+        (_, step) => [branchId(branch.id, t, step), branch.id] as [string, string]
+      ),
+    ]),
   ])
 );
 
