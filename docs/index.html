@@ -103,6 +103,23 @@
     font-family: var(--body);
     font-size: 14px;
     line-height: 1.5;
+    /* None of this is a document. Selectable text puts a caret and an I-beam
+       on every label and number, which reads as an invitation to type into
+       something that will never take text — and a drag across the map or the
+       skill web highlights half the screen instead of panning it. The two
+       real fields opt back in below. */
+    -webkit-user-select: none;
+    user-select: none;
+    /* iOS: the long press that would pop the selection handles and magnifier. */
+    -webkit-touch-callout: none;
+    cursor: default;
+  }
+
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+    cursor: text;
   }
 
   /* Cave wall behind everything: a dark dithered weave, a cold glow at the top
