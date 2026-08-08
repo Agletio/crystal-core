@@ -1,12 +1,8 @@
 /**
- * The run: deterministic, headless, fixed-timestep.
- *
- * Feed it the same crystal, gear and seed and you get the same run, tick for
- * tick. That's what makes a balance complaint reproducible — you keep the
- * seed, not a description of what happened.
- *
- * The caller owns real time. It accumulates elapsed milliseconds and calls
- * step(TICK) a whole number of times, so frame rate never changes outcomes.
+ * The run: deterministic, headless, fixed-timestep. Same crystal, gear and seed
+ * gives the same run tick for tick, so a balance complaint is a seed rather than
+ * a description. The caller owns real time and calls step(TICK) a whole number
+ * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
 import { generateMap, dist, hasLineOfSight } from './grid';
@@ -45,14 +41,7 @@ import { ModPool } from '../mods';
 import { pickQuality, rollGear } from '../economy';
 import type { Item, SkillDef } from '../types';
 
-/**
- * The mod pool the sim rolls drops from.
- *
- * Built once at module load rather than per run. It is derived purely from
- * authored data and never mutated, so sharing it costs nothing and building
- * it per descent would flatten the same ~200 entries every time you clicked
- * Enter.
- */
+/** Built once at load: derived from authored data and never mutated. */
 const DROP_POOL = new ModPool(ALL_MODS);
 
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
@@ -65,15 +54,8 @@ const ACTIVE_RANGE = 16;
 const SEPARATION_PASSES = 2;
 
 /**
- * How far waking one monster wakes its neighbours.
- *
- * Aggro used to be purely a line-of-sight range check, which meant an area
- * skill could poison something across the room and it would stand there
- * politely dying without ever noticing. Damage now always wakes the thing it
- * hit, and that wakes whoever is standing near it.
- *
- * Deliberately ONE hop. Letting the woken neighbours wake their own
- * neighbours would cascade across a dense map and pull everything at once.
+ * How far waking one monster wakes its neighbours. ONE hop: letting the woken
+ * wake their own would cascade across a dense map and pull everything at once.
  */
 const AGGRO_CHAIN_RADIUS = 4.5;
 
@@ -83,28 +65,16 @@ const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 export type EntityKind = 'hero' | 'monster';
 
 /**
- * A damage-over-time stack.
- *
- * Resisted like anything else, but NOT reduced by armour — that split is what
- * makes an ailment the answer to a target you can't punch through, and the
- * first place where how a monster is defended actually changes what you
- * should be using.
- *
- * Stacks are separate entries rather than a merged number, so each expires on
- * its own clock and the count is meaningful.
+ * A damage-over-time stack. Resisted, but NOT armoured, which is what makes an
+ * ailment the answer to a target you cannot punch through. Separate entries
+ * rather than a merged number, so each expires on its own clock.
  */
 export interface Ailment {
   type: string;
   /** Damage per second before resistance. */
   dps: number;
   remaining: number;
-  /**
-   * Countdown to the next discrete tick.
-   *
-   * Damage over time used to be applied per frame, which is smooth but leaves
-   * nowhere to hang a crit: "this poison critically ticked" needs a tick to be
-   * an event. Total damage is unchanged — the same dps, delivered in lumps.
-   */
+  /** Countdown to the next lump. Discrete, so a poison can critically TICK. */
   tickIn: number;
   /** Crit chance of whoever applied it, snapshotted. */
   critChance: number;
@@ -134,20 +104,13 @@ const MAX_AILMENT_STACKS = 12;
 const AILMENT_TICK = 0.5;
 
 /**
- * How far contagion may travel from the hero's own cast.
- *
- * Re-poisoning refreshes rather than duplicates, so the poisoned set already
- * saturates at the size of the pack and cannot grow without bound. This is a
- * belt-and-braces cap on WORK, not on state: without it a dense room could
- * scan every enemy from every enemy on every tick.
+ * How far contagion may travel from the cast. A cap on WORK, not on state:
+ * re-poisoning refreshes rather than duplicates, so the poisoned set already
+ * saturates, but a dense room could still scan every enemy from every enemy.
  */
 const MAX_CONTAGION_GENERATIONS = 3;
 
-/**
- * What an entity is visibly doing. The sim already knows this implicitly;
- * naming it is what lets a renderer pick an animation without guessing from
- * position deltas.
- */
+/** Named so a renderer picks an animation rather than guessing from deltas. */
 export type EntityAction = 'idle' | 'move' | 'attack' | 'hurt';
 
 /** How long a corpse stays on screen so a death animation can play out. */
@@ -201,12 +164,9 @@ export interface Floater {
 }
 
 /**
- * A transient visual event.
- *
- * The sim emits these because only the sim knows the shape of what happened —
- * a chain skill's arc is A→B→C, and no renderer could reconstruct that from
- * "three entities lost life". `points` is in tile units like everything else,
- * and `damageType` lets the renderer colour it without knowing any rules.
+ * A transient visual event. Only the sim knows the SHAPE of what happened — a
+ * chain's arc is A→B→C, which no renderer could rebuild from "three entities
+ * lost life". `points` is in tile units.
  */
 export interface Vfx {
   kind: string;
@@ -216,28 +176,14 @@ export interface Vfx {
   ttl: number;
 }
 
-/**
- * Nothing to configure yet.
- *
- * Clearing the floor used to be a toggle. It's baseline now: the hero hunts
- * everything, then the finale spawns at the exit. A "leave early" option was
- * mostly a way to skip content and made every reward number conditional on
- * how it was played.
- */
+/** The hero hunts everything, then the finale spawns at the exit. */
 export interface RunOptions {
-  /**
-   * Multiplier on how much spawns. An unempowered Fissure runs thinner than a
-   * crystal of the same tier makes it, because it's the descent the game hands
-   * you rather than one you paid for.
-   */
+  /** An unempowered Fissure runs thinner than a crystal of the same tier. */
   densityScale?: number;
   /**
-   * Which tier's drop table this map uses. Defaults to the crystal's own.
-   *
-   * The unempowered Fissure runs on a Tier 1 crystal it was handed rather than
-   * one you bought, so it needs to be told it is tier ZERO — otherwise the
-   * free descent would drop exactly what a crystal you paid for does, and the
-   * first thing you ever buy would be pointless.
+   * Which tier's drop table to use; defaults to the crystal's. The unempowered
+   * Fissure runs on a handed-out T1 crystal and must be told it is tier ZERO,
+   * or the free descent drops what a crystal you paid for does.
    */
   dropTier?: number;
 }
@@ -251,14 +197,7 @@ export type RunEvent =
 
 export type RunStatus = 'running' | 'cleared' | 'died';
 
-/**
- * What a run has picked up so far.
- *
- * Held by the run, not the player: it's only banked into the inventory if the
- * run is cleared. Currency is a map and items are a list, so adding shards,
- * gear or crystal drops later is a change to what gets pushed in — nothing
- * downstream needs to know what's in here.
- */
+/** Held by the run, not the player: banked only if the run is cleared. */
 export interface RunLoot {
   /** Currency id → amount. Fractional; rounds when banked. */
   currency: Record<string, number>;
@@ -281,14 +220,7 @@ export interface RunState {
   finale: string | null;
   /** Carried, not owned — lost entirely if the hero dies. */
   loot: RunLoot;
-  /**
-   * Damage the hero has taken, split by damage type.
-   *
-   * Nothing needs this yet. It exists because "where is my character actually
-   * struggling" is answered by stats like this one, and the results overlay
-   * renders whatever rows it's handed — so the next stat is a line here and a
-   * line where the report is built, not a UI change.
-   */
+  /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
 }
 
@@ -323,11 +255,8 @@ export class RunSim {
   };
   private byId = new Map<number, Entity>();
   /**
-   * The socketed crystal's tier and item level, kept because drops need both.
-   *
-   * The tier decides what CLASS of thing this map can produce; the ilvl
-   * decides which tiers of modifier are reachable on it. Read once at spawn —
-   * the crystal is consumed on entry, so nothing can change them mid-run.
+   * Tier decides what CLASS this map can produce, ilvl which modifier tiers are
+   * reachable. Read at spawn; the crystal is consumed on entry.
    */
   private readonly tier: number;
   private readonly mapIlvl: number;
@@ -520,15 +449,9 @@ export class RunSim {
   }
 
   /**
-   * Push overlapping bodies apart.
-   *
-   * Runs after everyone has moved, so pathing stays simple: entities steer as
-   * if the world were empty and then get shoved out of each other. Doing it
-   * the other way round — collision-aware pathfinding — is far more code for
-   * a result nobody watching could tell apart.
-   *
-   * Bucketed by tile so this stays linear rather than checking all pairs;
-   * sixty monsters in one room would otherwise be 1,800 comparisons a tick.
+   * Push overlapping bodies apart, after everyone has moved: entities steer as if
+   * the world were empty and then get shoved out of each other. Bucketed by tile
+   * so it stays linear — sixty monsters in a room is 1,800 pairs a tick.
    */
   private separate(): void {
     const s = this.state;
@@ -667,13 +590,7 @@ export class RunSim {
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
   }
 
-  /**
-   * Spawns the closing encounter at the exit.
-   *
-   * Rolled from the run's rng rather than the crystal, so the same crystal
-   * doesn't always end the same way. The hero walks over to it like anything
-   * else — the approach is the drama, no special casing needed.
-   */
+  /** Rolled from the run's rng, so the same crystal does not always end the same. */
   private spawnFinale(): void {
     const s = this.state;
     const def = this.rng.weighted(ENCOUNTERS, (e) => e.weight) ?? ENCOUNTERS[0];
@@ -734,11 +651,8 @@ export class RunSim {
     const d = dist(m, hero);
     if (d > ACTIVE_RANGE) return;
 
-    // Monsters wake to something they can actually see. Once woken they stay
-    // woken and will chase around corners — losing sight of you mid-fight
-    // shouldn't make a pack forget you exist.
-    // Seeing the hero wakes this one and whoever is beside it, so a pack
-    // turns together rather than trickling in one at a time.
+    // Woken by sight, and once woken they chase around corners. Waking one
+    // wakes whoever is beside it, so a pack turns together.
     if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) this.wake(m, true);
     if (!m.aggroed) return;
 
@@ -764,33 +678,15 @@ export class RunSim {
   }
 
   /**
-   * Hold the committed target until it dies; otherwise take the nearest by
-   * WALKING distance.
+   * Hold the committed target until it dies, else the nearest by WALKING
+   * distance. Straight-line picking sends the hero past a room full of things to
+   * reach whatever is closest through a wall; nearestByPath is also
+   * authoritative about reachability, so null honestly means nothing is left.
    *
-   * Straight-line distance was the bug: a monster three tiles away through a
-   * wall beat one twelve tiles down an open corridor, so the hero jogged past
-   * a room full of things to reach whatever was nearest as the crow flies.
-   * nearestByPath floods outward from the hero, so "nearest" means what it
-   * looks like it means on screen.
-   *
-   * It's also authoritative about reachability — a walled-off monster is
-   * never returned — so null here honestly means "nothing left to fight".
-   * The ignore/hopeless bookkeeping that used to live here existed only to
-   * paper over euclidean picking things it couldn't reach, and went with it.
-   */
-  /**
-   * The best thing to hit among those already within reach, or null if
-   * reaching anything means walking.
-   *
-   * "Best" is whichever one puts the most enemies inside the skill's area.
-   * Nearest-first kept picking the straggler on the near edge of a pack and
-   * clipping one or two, while a target a step deeper would have caught the
-   * whole knot — the circle was doing its job and being aimed badly.
-   *
-   * A skill with no area has nothing to compare, so every candidate scores 1
-   * and this falls through to the closest of them. Walking is still decided
-   * by path distance: this only ever chooses BETWEEN things already in reach,
-   * so it can never send the hero on a longer walk for a better angle.
+   * Among things already in REACH, "best" is whichever puts the most enemies
+   * inside the skill's area — nearest-first clips the straggler on the near edge
+   * of a pack. A skill with no area scores every candidate 1 and falls through
+   * to the closest, and this never chooses to walk further for a better angle.
    */
   private bestInReach(hero: Entity): Entity | null {
     const radius = this.areaRadiusFor(hero);
@@ -820,12 +716,8 @@ export class RunSim {
   }
 
   /**
-   * A base radius after the user's Area of Effect.
-   *
-   * The one place the stat is turned into tiles. Targeting and the behaviour
-   * that actually applies the poison both come through here — if they used
-   * separate copies they could disagree, and the hero would be aiming at a
-   * circle that is not the one it draws or hits with.
+   * The one place Area of Effect becomes tiles. Targeting and the behaviour both
+   * come through here, or the hero aims at a circle it does not hit with.
    */
   private areaRadius(user: Entity, base: number): number {
     if (base <= 0) return 0;
@@ -875,11 +767,8 @@ export class RunSim {
   }
 
   /**
-   * Walk along a cached path, repathing on a stagger so a whole pack never
-   * recomputes on the same tick.
-   *
-   * Returns false when there is no route to the goal, which callers treat as
-   * "pick something else" rather than looping forever.
+   * Walk a cached path, repathing on a stagger so a pack never recomputes on one
+   * tick. False means no route, which callers treat as "pick something else".
    */
   private advance(e: Entity, goal: Vec2, dt: number): boolean {
     e.pathTimer -= dt;
@@ -920,11 +809,7 @@ export class RunSim {
     return true;
   }
 
-  /**
-   * Use the character's skill. The behaviour decides WHO gets hit; the sim
-   * decides what a hit does. Adding chain lightning or a ground slam means
-   * adding a behaviour, not touching this method.
-   */
+  /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
   private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
     const behaviour = SKILL_BEHAVIOURS[skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
 
@@ -1042,12 +927,7 @@ export class RunSim {
     if (defender.life <= 0) this.kill(defender);
   }
 
-  /**
-   * Wake a monster, and optionally whoever is standing near it.
-   *
-   * `chain` is false on the second hop, so a pack comes together without the
-   * whole map coming with it.
-   */
+  /** `chain` is false on the second hop, so a pack wakes but the map does not. */
   private wake(m: Entity, chain: boolean): void {
     if (m.kind !== 'monster' || m.dead || m.aggroed) return;
     m.aggroed = true;
@@ -1065,12 +945,7 @@ export class RunSim {
     return amount * (1 - res / 100);
   }
 
-  /**
-   * Applies one stack of damage over time.
-   *
-   * `multiplier` is total damage across the whole duration relative to the
-   * skill's damage, so behaviours never have to reason in per-tick numbers.
-   */
+  /** `multiplier` is total damage across the duration, never per tick. */
   private applyAilment(
     attacker: Entity,
     target: Entity,
@@ -1110,11 +985,9 @@ export class RunSim {
   }
 
   /**
-   * Ticks every active stack. Resisted, never armoured.
-   *
-   * A tick that crits deals crit damage, and — if the poison carries contagion
-   * — plants the same poison around its victim. That is the whole Contagion
-   * mechanic: the disease spreads on its own, not the cast.
+   * Every active stack. Resisted, never armoured. A tick that crits deals crit
+   * damage and, with contagion, plants the poison around its victim — the
+   * disease spreads on its own, not the cast.
    */
   private stepAilments(e: Entity, dt: number): void {
     if (e.ailments.length === 0 || e.dead) return;
@@ -1215,24 +1088,14 @@ export class RunSim {
   }
 
   /**
-   * Currency drops, and the only thing rarity does.
+   * Gear and currency drops. A currency starts at `basic` and rarity gives it
+   * repeated chances to climb a class, so the scarce ones are reachable only by
+   * making the map more dangerous.
    *
-   * A drop starts at `basic` and rarity gives it repeated chances to climb a
-   * class, so the scarce currencies are reachable only by making the map more
-   * dangerous. This is also what finally gives the sigils a source — before
-   * this they existed solely in the starting wallet.
-   */
-  /**
-   * Gear drops.
-   *
-   * The crystal decides WHAT the map can give you, not just how much: quality
-   * comes off the tier table, so a Tier 1 map cannot hand you a Faceted piece
-   * however lucky you get. That is the thing that makes a tier a rung rather
-   * than a difficulty slider.
-   *
-   * Item level is the crystal's, so a high-tier map also unlocks the better
-   * tiers of every modifier it rolls. Rarity raises the CHANCE, never the
-   * ceiling — otherwise a rarity-stacked T1 would out-drop an honest T4.
+   * A piece's quality comes off the TIER table, so a T1 map cannot hand you a
+   * Faceted piece however lucky you get. Item level is the crystal's. Rarity
+   * raises the CHANCE, never the ceiling, or a rarity-stacked T1 out-drops an
+   * honest T4.
    */
   private rollGearDrop(): void {
     const drops = dropsForTier(this.tier);

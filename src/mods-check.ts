@@ -1,24 +1,11 @@
 /**
- * Does every modifier actually DO what it says?
+ * Does every modifier actually DO what it says? Run after any change to the mod
+ * tables, the stat pipeline, or a skill's tags.
  *
- * Run it after any change to the mod tables, the stat pipeline, or a skill's
- * tags: `npm run mods`. It is not part of the fast loop — smoke and demo are —
- * because it exists for the class of bug that is silent by construction.
- *
- * The bugs it was written against, all of which shipped:
- *
- *   - `areaOfEffect` was claimed by a gear mod and two tree nodes and read by
- *     nothing at all. Rolling "of Reach" did literally nothing, forever, and
- *     no test could have noticed because the mod rolled, displayed and stacked
- *     exactly like a working one.
- *   - Every typed damage mod (fire, cold, lightning, ...) rendered as plain
- *     "+18% increased damage", because the describer ignored the stat line's
- *     tags. The mods were rolling perfectly; they were merely indistinguishable,
- *     which reads to a player as "elemental mods don't exist".
- *
- * The shape of both is the same: the data was fine and the wiring was not. So
- * these checks deliberately avoid asserting on the tables — they assert that
- * the engine RESPONDS to the tables, which is the part that silently rots.
+ * It exists for the bug class that is silent by construction: a stat nothing
+ * reads, or a describer that drops tags. Both roll, display and stack exactly
+ * like working mods. So nothing here asserts on the tables — it asserts the
+ * engine RESPONDS to them, which is the part that rots.
  */
 import {
   CRYSTAL_MODS,
@@ -61,12 +48,8 @@ function maxRoll(entry: ModEntry): RolledMod {
 }
 
 /**
- * A probe item: fully open, so quality never masks a genuine gap.
- *
- * Every question below is "can this modifier exist here at all", and a Rough
- * item answers no to everything by definition. Asking it of a Brilliant one
- * keeps the check measuring the mod pool rather than measuring the quality
- * ladder — the ladder has its own checks in the demo.
+ * Fully open, so quality never masks a gap. Every question here is "can this
+ * modifier exist at all", and a Rough item answers no to everything.
  */
 const open = (item: Item): Item => ({
   ...item,
@@ -106,11 +89,8 @@ line('── REACHABILITY — can each mod roll on anything at all? ────
 
 // ---------------------------------------------------------------------------
 line('\n── EFFECT — does the engine actually read each stat? ───────────');
-// ---------------------------------------------------------------------------
-//
-// The heart of it. A mod is applied on its own and the resulting stats are
-// compared with the same character carrying nothing. If NOTHING moves, the mod
-// is decoration — which is exactly what "of Reach" was.
+// The heart of it: a mod applied on its own, against a character carrying
+// nothing. If NOTHING moves, the mod is decoration.
 {
   /** Every number a hero's stat block exposes, flattened for comparison. */
   const heroFingerprint = (mods: RolledMod[]): string => {

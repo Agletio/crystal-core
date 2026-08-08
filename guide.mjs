@@ -1,20 +1,11 @@
 /**
- * Plays the guided opening, in a real browser, using only the mouse.
+ * Plays the guided opening in a real browser, using only the mouse.
  *
- * The demo already walks the steps headlessly and proves each one's `done`
- * predicate can become true. That is not the same question. The opening also
- * LOCKS THE APP DOWN — the highlighted element is the only thing a pointer can
- * reach — and a step whose highlight is not the thing you have to click is a
- * dead end no predicate can see. Exactly that shipped: the equip step ringed
- * the Weapon slot, clicking it lit up your gear in the dock, and the dock was
- * switched off because the ring was still on the slot. Nothing to click, no way
- * back, tutorial over.
- *
- * So this clicks what a player can click — the ringed element and nothing else
- * — and fails if the guide ever stops advancing. It is the only test that can
- * answer "can a new player finish", because it plays by the same rules they do.
- *
- * Requires a current bundle: npm run build && npm run guide
+ * The demo proves each step's `done` predicate CAN become true. This is the
+ * other question: the opening locks the app down, so a step whose highlight is
+ * not the thing you must click is a dead end no predicate can see. Clicking
+ * only the ring, and failing when the guide stops advancing, is the only way to
+ * answer "can a new player finish". Requires a current bundle.
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -107,16 +98,10 @@ for (let turn = 0; turn < 240; turn++) {
     continue;
   }
 
-  // The whole point: click the ring the way a player would, with a real
-  // pointer. A programmatic .click() would sail straight through the
-  // pointer-events lock and prove nothing.
-  //
-  // A ring is either a control or a REGION. Clicking the centre of a region
-  // lands on whatever happens to be there — for the dock, an empty slot — and
-  // succeeds while doing nothing at all, which reads as "stuck" for a reason
-  // that is the harness's fault rather than the game's. So: a button gets
-  // clicked, and anything else gets the first live control inside it, which is
-  // what a player looking at a ringed panel actually does.
+  // A real pointer: a programmatic .click() sails through the pointer-events
+  // lock and proves nothing. A ring is either a control or a REGION, and the
+  // centre of a region lands on whatever is there — for the dock, an empty
+  // slot — so regions get their first live control instead.
   const isControl = await page.evaluate(() => {
     const ring = document.querySelector('.guide-on');
     return ring instanceof HTMLButtonElement;

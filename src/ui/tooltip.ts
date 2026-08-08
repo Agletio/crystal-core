@@ -1,12 +1,7 @@
 /**
- * Hover tooltips.
- *
- * Replaces the native `title` attribute, which has two problems you can't
- * style away: the browser delays it by about a second, and it renders in the
- * OS's own colours — a harsh white box over a dark page.
- *
- * This one appears on the first mouse-over and uses the page palette. It
- * follows the cursor and flips near the edges so it never runs off screen.
+ * Hover tooltips, in place of native `title` — which the browser delays by about
+ * a second and draws in the OS's colours. Appears on the first mouse-over,
+ * follows the cursor, and flips near the edges.
  */
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -45,13 +40,7 @@ export function hideTooltip(): void {
   element().hidden = true;
 }
 
-/**
- * Attaches a tooltip to an element.
- *
- * `text` is a function so the content is read at hover time — node
- * descriptions and damage numbers change as you allocate, and a string
- * captured at bind time would go stale.
- */
+/** `text` is a function so the content is read at hover time, never captured. */
 export function attachTooltip(target: Element, text: () => string): void {
   const show = (event: Event) => {
     const mouse = event as MouseEvent;

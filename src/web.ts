@@ -1,16 +1,10 @@
 /**
  * Browser entry point. Owns the game state and wires the screens to it.
  *
- * One screen and six popups. The map is the floor — it's where the game
- * happens and the thing you come back to after everything else — so it isn't
- * behind a tab at all. Crafting, the shop, the character sheet, skills and
- * history are things you open, use, and close over the top of it, and a run
- * keeps advancing underneath while you do.
- *
- * The inventory dock sits below all of it, uncovered by every popup, because
- * crafting works ON the dock — both the item and the currency come from it —
- * so covering it with the thing that needs it would be the one mistake this
- * layout can't afford.
+ * One screen and six popups: the map is the floor, and everything else opens
+ * over it while a run keeps advancing underneath. The dock sits below all of
+ * it, uncovered — crafting works ON the dock, so covering it is the one mistake
+ * this layout cannot afford.
  */
 import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
@@ -40,8 +34,7 @@ import {
   note,
 } from './ui/history';
 
-// Fresh by default. Judging whether the loop is engaging from a stocked
-// inventory is judging the endgame at the start.
+// Judging the loop from a stocked inventory is judging the endgame at the start.
 const game = createGame('fresh');
 
 /** Wipe and re-render everything. Both buttons are dev tools. */
@@ -63,14 +56,7 @@ function restart(mode: StartMode): void {
   maybeShowWelcome();
 }
 
-/**
- * After choosing a skill: straight to the Fissure, with the guide already
- * pointing at Enter.
- *
- * The opening used to start after the first clear, which left the first thing
- * anyone ever does — the descent itself — as the one unguided moment in the
- * game.
- */
+/** After choosing a skill: the Fissure, with the guide already pointing at Enter. */
 function begin(): void {
   refreshRunPanels();
   onRunFocused();
@@ -96,14 +82,12 @@ guard('dev-kit', 'Restart with the dev kit?', 'dev');
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  // Not while the opening is running. Every other way out is switched off, and
-  // a keyboard shortcut that closes the window a step is pointing into is the
-  // same escape hatch by another door.
+  // Not while the opening runs: every other way out is switched off, and this
+  // would be the same escape hatch by another door.
   if (isGuided()) return;
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
-  // Skills is three screens deep, so Escape backs OUT of it a level at a
-  // time and only closes from the top — the same thing Back does.
+  // Skills is three deep, so Escape backs out a level, like Back.
   else if (isSkillsOpen()) skillsEscape();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
@@ -112,21 +96,15 @@ globalThis.addEventListener('keydown', (event) => {
   else if (isCraftOpen()) closeCraft();
 });
 
-/**
- * Popups stop above the dock, and the dock's height depends on what's in it.
- * Measured rather than guessed: a hardcoded number would be wrong the first
- * time the wallet wrapped to two lines.
- */
+/** Measured, not guessed: a constant is wrong the first time the wallet wraps. */
 const dock = document.querySelector('.dock') as HTMLElement;
 function measureDock(): void {
-  // Distance from the dock's top edge to the bottom of the window, not the
-  // dock's own height — the shell's padding sits below it, and a popup that
-  // stopped short by exactly that much would still clip the top row of slots.
+  // To the bottom of the WINDOW, not the dock's own height: the shell's
+  // padding sits below it, and a popup stopping short would clip the top row.
   const gap = globalThis.innerHeight - dock.getBoundingClientRect().top;
   document.documentElement.style.setProperty('--dock-h', `${Math.max(0, Math.round(gap))}px`);
 }
-// ResizeObserver catches the dock growing a row; the resize listener covers
-// environments without one, which includes the headless smoke test.
+// The resize listener covers environments with no ResizeObserver, like jsdom.
 if (typeof ResizeObserver === 'function') new ResizeObserver(measureDock).observe(dock);
 globalThis.addEventListener('resize', measureDock);
 measureDock();
@@ -143,11 +121,7 @@ initShop(game);
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
 initRun(game);
-/**
- * What the guide needs that the game state can't tell it: which surface has
- * focus, whether a descent is under way, and what's on top — so a step that
- * says "close this" can point at the right close button.
- */
+/** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
 function guideContext(): GuideCtx {
   const top = isSkillsOpen()
     ? 'skills'

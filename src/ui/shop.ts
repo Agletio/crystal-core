@@ -1,15 +1,6 @@
 /**
- * The shop.
- *
- * This used to be a panel called "Workshop" sitting under the item inside the
- * crafting popup, and the two were doing unrelated jobs in one window: one
- * turns fragments into stock, the other spends stock on the thing in front of
- * you. Sharing a window meant the item you were crafting scrolled off the
- * screen every time you went to buy something for it — which is exactly the
- * moment you most need to look at it.
- *
- * Split out, crafting is only ever the item, and this is only ever the price
- * list. What you buy lands in the dock, which is where you spend it from.
+ * The shop: only ever a price list, the way crafting is only ever the item. What
+ * you buy lands in the dock, which is where you spend it from.
  */
 import {
   ALL_MODS,
@@ -47,12 +38,8 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 
 /**
- * Is there anywhere to put what this sells?
- *
- * Checked before the sale, not after. runRecipe spends first and hands back
- * the item, so without this you could pay full price for a crystal and be
- * told there was nowhere to put it — which is a refund conversation, not a
- * game mechanic.
+ * Checked BEFORE the sale: runRecipe spends first, so without this you could pay
+ * for a crystal and be told there was nowhere to put it.
  */
 function hasRoomFor(recipe: Recipe): boolean {
   if (recipe.output.type !== 'item') return true;
@@ -94,14 +81,7 @@ function buy(recipeId: string): void {
   renderInventory();
 }
 
-/**
- * A price, in words rather than in ids.
- *
- * This used to print the raw wallet key and never pluralise — "8 fragment",
- * "5 fragment" — which is the same class of thing as a modifier reading
- * `areaOfEffect`: an internal name leaking onto a button because nobody wrote
- * the one line that turns it into English.
- */
+/** A price in words, not in wallet keys, and pluralised. */
 function priceOf(recipe: Recipe): string {
   return Object.entries(recipe.inputs)
     .map(([id, n]) => {
@@ -175,13 +155,8 @@ export function render(): void {
 }
 
 /**
- * What a piece is worth, in fragments.
- *
- * Priced off item level and quality rather than off what rolled on it. A shop
- * that read the modifiers would price a good roll higher, which is exactly
- * backwards: the reason to buy from a shelf is that you can SEE what you are
- * getting, and paying more for the good one turns that into the same gamble
- * the maps already are.
+ * Priced off item level and quality, never off what rolled. Charging more for a
+ * good roll would turn a shelf you can SEE into the gamble maps already are.
  */
 export function priceOfItem(item: Item): number {
   const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;

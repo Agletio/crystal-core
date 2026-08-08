@@ -1,17 +1,8 @@
 /**
- * Crafting.
+ * Crafting. The window is the item and nothing else — currency lives in the
+ * dock, and this screen is what gives clicking a stack a meaning.
  *
- * The window is the item and nothing else. It used to also hold a shop and a
- * shelf of thirteen labelled currency buttons, which made it a control panel
- * that happened to have an item in it — and on any window narrow enough to
- * stack, the item scrolled out of sight the moment you reached for a
- * currency, so you were choosing what to apply without being able to see what
- * you were applying it to.
- *
- * Currency now lives in the dock as stacks you own, and this screen is what
- * gives clicking one a meaning: with an item open, a currency applies to it.
- * The bench holds exactly one item at a time; putting a second one down
- * returns the first.
+ * The bench holds exactly one item; putting a second down returns the first.
  */
 import { Rng } from '../rng';
 import {
@@ -71,10 +62,6 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-// ---------------------------------------------------------------------------
-// Actions
-// ---------------------------------------------------------------------------
-
 function use(currency: CurrencyDef): void {
   const item = craftItem(game);
   if (!item) return;
@@ -111,10 +98,6 @@ function reseed(): void {
   render();
 }
 
-// ---------------------------------------------------------------------------
-// Render
-// ---------------------------------------------------------------------------
-
 function renderItem(): void {
   const item = craftItem(game);
 
@@ -127,10 +110,8 @@ function renderItem(): void {
   if (!item) return;
 
   $('item-name').textContent = item.name;
-  // Quality first, because it is the thing that decides what you can do next.
-  // "blank / partial / full" said how far along the item was without ever
-  // saying what its ceiling was, so a full Seamed item and a full Brilliant
-  // one read identically.
+  // Quality first: it decides what you can do next, and it is the difference
+  // between a full Seamed item and a full Brilliant one.
   $('item-meta').textContent =
     `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
     `${item.mods.length}/${modCapacity(item)} modifiers` +
@@ -154,10 +135,9 @@ function renderItem(): void {
   const host = $('sockets');
   host.replaceChildren();
 
-  // One facet per opening the item actually has — no more. Drawing the base's
-  // full declared table meant a Seamed item showing six sockets under a header
-  // that said 0/2, so the picture and the number disagreed and the picture is
-  // what you look at. A type with no room this quality is simply not drawn.
+  // One facet per opening the item actually has. Drawing the base's declared
+  // table shows sockets that can never be filled, and the picture is what you
+  // look at, not the count. A type with no room is simply not drawn.
   for (const slot of slotTypes(item)) {
     const cap = slotCapacity(item, slot);
     if (cap === 0) continue;

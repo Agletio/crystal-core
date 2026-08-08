@@ -1,14 +1,7 @@
 /**
- * Little item icons, drawn as inline SVG.
- *
- * SVG rather than canvas because these live in the DOM next to text: they
- * scale with font size, inherit CSS colour where useful, and cost nothing to
- * re-render when a list redraws.
- *
- * Same deal as the creature sprites — procedural placeholders with a shape
- * that reads at a glance, not art. Crystals grow facets and points with tier
- * so a T6 is obviously worth more than a T1 without reading the label.
- * Replacing any of these with a real asset means swapping one function.
+ * Little item icons, as inline SVG so they scale with font size and cost nothing
+ * to re-render. Procedural placeholders: a shape that reads at a glance, not
+ * art, and swappable for a real asset one function at a time.
  */
 import { CRYSTAL_TIERS } from '../data';
 import type { CurrencyDef, Item } from '../types';
@@ -64,15 +57,10 @@ export function crystalIcon(tier: number, size = 26): SVGSVGElement {
   const t = Math.max(1, Math.min(CRYSTAL_TIERS.length, tier));
   const colour = CRYSTAL_COLOURS[t - 1] ?? 'var(--amethyst)';
 
-  // Grows on three axes at once — size, facet count, and elongation — so two
-  // adjacent tiers differ in silhouette and not only in colour. Colour alone
-  // was doing nearly all the work, which fails the moment two crystals are
-  // not side by side.
-  //
-  // The growth is deliberately gentle. A steeper ramp made a T6 fill the
-  // whole 32-unit box, which left no room for the halo or the shards — so
-  // the top of the ladder, the part that should look the most special, was
-  // the part that turned into a coloured blob.
+  // Grows on three axes — size, facets, elongation — so adjacent tiers differ
+  // in SILHOUETTE, which colour alone cannot do unless they are side by side.
+  // Gently: a steeper ramp fills the 32-unit box and leaves no room for the
+  // halo or the shards.
   const radius = 6.0 + t * 0.95;
   const sides = 3 + Math.min(5, t);
   const squash = 1.2 - t * 0.035;
@@ -252,13 +240,9 @@ export function gearIcon(art: string, size = 26): SVGSVGElement {
 }
 
 /**
- * Shading, applied to any silhouette.
- *
- * Every icon used to be a flat fill with one dot on it, which read as a
- * sticker rather than an object. Clipping a pale wedge and a dark wedge to
- * the shape gives it a light source — top-left — without anyone drawing two
- * more shapes per icon by hand. It is the same three tones everywhere, so a
- * set drawn months apart still looks like a set.
+ * Shading for any silhouette: a pale wedge and a dark wedge clipped to the shape
+ * give it a light source, top-left, without drawing them by hand. The same three
+ * tones everywhere, so a set drawn months apart still looks like a set.
  */
 let clipSeq = 0;
 function shaded(node: SVGSVGElement, d: string, colour: string): void {
@@ -303,17 +287,10 @@ const CLASS_COLOURS: Record<string, string> = {
 };
 
 /**
- * Silhouette per currency, colour per class.
- *
- * These were one polygon with a side count driven by class, which meant all
- * five basic shards were the SAME shape in the SAME colour — the icon said
- * "a currency" and nothing else, so the dock was thirteen identical pebbles.
- *
- * Each shape now says what the thing DOES, because that is what you are
- * choosing between: a spike that grows for the one that adds, a cleft one for
- * the one that removes, a ring for a re-roll, a burst for the one that fills
- * everything at once. Class still drives colour, so rarity stays learnable at
- * a glance while function is learnable up close.
+ * Silhouette per currency, colour per class. The shape says what the thing DOES,
+ * because that is what you choose between: a spike that grows for the one that
+ * adds, a cleft one for the one that removes, a ring for a re-roll. Class drives
+ * colour, so rarity reads at a glance and function reads up close.
  */
 const CURRENCY_SHAPES: Record<string, string> = {
   // Opens a Rough item — a stone coming apart along its seam.
@@ -384,13 +361,7 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
   return node;
 }
 
-/**
- * Skill icons, for the middle of a tree.
- *
- * A word in a circle told you nothing you didn't already know from the list
- * you clicked. Same placeholder rules as everything else: a shape that reads
- * at a glance, swappable for real art one function later.
- */
+/** Skill icons, for the middle of a tree. Placeholders, same as the rest. */
 export function skillIcon(skillId: string, size = 44): SVGSVGElement {
   const node = svg(size);
   const outline = { stroke: 'var(--void)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' };

@@ -1,34 +1,11 @@
 /**
- * Skill trees.
+ * Skill trees. A tree is a WEB: nodes name their neighbours, links run both
+ * ways, and there are several routes to anything. Distance and gates are what
+ * keep that from being a menu — every cross link is a shortcut past somebody's
+ * distance, so anything strong carries a gate.
  *
- * A tree is a WEB, not a hierarchy. Nodes name their neighbours and the links
- * run both ways, so there are usually several routes to anything and you pick
- * the one that pays for itself along the way. That is the whole reason to
- * spend a point on a node you do not want: it is standing between you and one
- * you do.
- *
- * Two things keep a web from collapsing into "take the five best nodes":
- *
- *   distance   a node far from the centre costs every node on the way there
- *   gate       a node that refuses to open until N points are already spent
- *
- * The second is what stops a wide web from being a menu. Without it, cross
- * links — the ones that make travel interesting — would also be shortcuts
- * straight to the payoff.
- *
- * A node has two channels:
- *
- *   stats   ordinary stat lines, exactly like a mod's
- *   grants  switches that CHANGE HOW THE SKILL WORKS
- *
- * The second is the point. Trees are meant to be transformative — most of
- * your numbers should come from gear, while the tree decides how you play.
- * "Crits burn instead of hitting harder" and "the projectile passes through"
- * are not expressible as stat lines, so they're grants the behaviour and the
- * damage resolution read.
- *
- * Same division as currencies: data says WHAT, a registry says HOW. See
- * sim/skills.ts for the grants the delivery layer understands.
+ * `stats` are ordinary stat lines; `grants` are switches that CHANGE HOW THE
+ * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
  */
 import { FIREBALL_TREE } from './trees/fireball';
 import { CENTRE } from './trees/node';
@@ -37,13 +14,7 @@ import type { SkillNodeDef } from './trees/node';
 export { CENTRE } from './trees/node';
 export type { NodeStat, SkillNodeDef } from './trees/node';
 
-/**
- * Thirty, whatever your level.
- *
- * A tree that keeps growing with level ends up fully allocated, and a fully
- * allocated tree is not a decision — it is a delay. The cap is what makes
- * "which twenty-five nodes" a question you answer rather than postpone.
- */
+/** Thirty, whatever your level. A tree you can fill in is not a decision. */
 export const MAX_TREE_POINTS = 30;
 
 export const SKILL_TREES: Record<string, SkillNodeDef[]> = {
@@ -57,11 +28,8 @@ export function nodeById(skillId: string, nodeId: string): SkillNodeDef | undefi
 }
 
 /**
- * Every node's neighbours, both directions, built once per tree.
- *
- * Links are declared one-way in the data because writing both ends by hand is
- * how a web ends up with a link that only works if you approach it from the
- * left. Cached because allocation asks for this on every hover of every node.
+ * Every node's neighbours, both directions. Links are declared one-way; naming
+ * both ends by hand is how a web ends up with one that only works left to right.
  */
 const adjacency = new Map<string, Map<string, Set<string>>>();
 
@@ -85,11 +53,7 @@ export function neighboursOf(skillId: string, nodeId: string): Set<string> {
   return table.get(nodeId) ?? new Set();
 }
 
-/**
- * Open if it touches something you already own, and you are deep enough in.
- *
- * "Touches the centre" counts, which is what gives every tree its first move.
- */
+/** Open if it touches the centre or something you own, and you are deep enough. */
 export function canAllocate(
   skillId: string,
   nodeId: string,
@@ -105,11 +69,8 @@ export function canAllocate(
 }
 
 /**
- * Refused when it would strand something.
- *
- * In a hierarchy that check is "does anything require this". In a web it is a
- * reachability question — a node with two routes home survives losing either
- * one — so this actually walks what would be left.
+ * Refused when it would strand something — a reachability question, not a
+ * dependency one, since a node with two routes home survives losing either.
  */
 export function canDeallocate(
   skillId: string,
@@ -121,7 +82,6 @@ export function canDeallocate(
   const left = new Set(allocated.filter((id) => id !== nodeId));
   if (left.size === 0) return true;
 
-  // Flood out from the centre through what remains.
   const seen = new Set<string>();
   const queue = [...left].filter((id) => neighboursOf(skillId, id).has(CENTRE));
   for (const id of queue) seen.add(id);
@@ -137,11 +97,5 @@ export function canDeallocate(
   return seen.size === left.size;
 }
 
-/**
- * Points spent, and the ceiling.
- *
- * Levels past the cap still arrive — they just stop buying tree points, which
- * is honest about what a level is worth rather than pretending the tree is
- * still growing.
- */
+/** Levels past the cap still arrive; they just stop buying tree points. */
 export const treePointsFor = (level: number): number => Math.min(level, MAX_TREE_POINTS);

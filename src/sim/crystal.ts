@@ -1,13 +1,6 @@
 /**
- * What a crystal is worth, derived from how dangerous it is.
- *
- * Every crystal modifier is a downside. Reward isn't rolled — it's computed
- * from the danger those downsides add, so a roll is always "how much of this
- * can I survive" rather than "did I get a good mod or a bad one".
- *
- * One consequence worth stating: a character built to ignore a kind of danger
- * gets paid for danger it isn't taking. That's the intended endgame, not a
- * loophole.
+ * What a crystal is worth, derived from how dangerous it is. A character built
+ * to ignore a kind of danger gets paid for danger it is not taking.
  */
 import { DANGER_STATS, REWARD } from '../data';
 import type { Item, RolledMod } from '../types';
@@ -23,13 +16,7 @@ export interface CrystalRewards {
   rarity: number;
 }
 
-/**
- * Sums a stat across mods without a context-tag filter.
- *
- * Deliberately NOT computeStat: these are authored percentages being scored
- * for difficulty, not combat numbers being resolved. Running them through
- * flat/increased/more would be applying a combat rule to a design metric.
- */
+/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
 function totalOf(mods: RolledMod[], stat: string): number {
   let total = 0;
   for (const mod of mods) {

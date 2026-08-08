@@ -1,17 +1,11 @@
 /**
- * Procedural placeholder sprite sheets.
+ * Procedural placeholder sprite sheets, drawn at runtime onto offscreen canvases
+ * so the repo carries no binary assets and a colour change redraws nothing.
  *
- * Real art is a folder of PNGs. Until that exists these are drawn at runtime
- * onto offscreen canvases, which keeps the repo free of binary assets and
- * means nothing has to be redrawn when a colour changes.
- *
- * Each creature gets two walk frames — enough for legs to alternate, which is
- * what makes a shape read as "walking" rather than "sliding". Everything else
- * (bob, lunge, recoil, death) is done with transforms by the renderer, since
- * transforms are free and frames are not.
- *
- * To swap in real art: replace makeSheet() with a loader and keep the same
- * {sprite, frame} → texture-source lookup. Nothing else changes.
+ * Two walk frames each — enough for legs to alternate, which is the difference
+ * between walking and sliding. Bob, lunge, recoil and death are transforms,
+ * because transforms are free and frames are not. Real art replaces makeSheet()
+ * with a loader behind the same {sprite, frame} lookup.
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
@@ -21,37 +15,23 @@ export const CELL = 48;
 export const WALK_FRAMES = 2;
 
 /**
- * Side of the pixel grid a hand-authored sprite is drawn on.
- *
- * CELL divides by this exactly, so every logical pixel lands on a whole number
- * of canvas pixels and nothing is ever half-lit. That is the entire difference
- * between pixel art and a small smooth drawing.
+ * Side of the pixel grid. CELL divides by it exactly, so every logical pixel
+ * lands on whole canvas pixels and nothing is ever half-lit.
  */
 const GRID = 16;
 const PX = CELL / GRID;
 
 /**
- * A sprite authored as text.
- *
- * Rows of characters, one per logical pixel, with a key mapping each character
- * to a colour. Verbose next to three ctx.ellipse calls and worth every line:
- * you can see the silhouette in the source, and changing a shoulder is moving
- * a character rather than guessing at a control point. It is also the format
- * real art would arrive in, so replacing this with a PNG loader later changes
- * nothing about how the renderer asks for a frame.
- *
- * `.` is transparent.
+ * A sprite authored as text: rows of characters, one per logical pixel, keyed to
+ * colours. `.` is transparent. Verbose, and worth it — you can see the
+ * silhouette in the source, and changing a shoulder is moving a character.
  */
 type PixelArt = { rows: string[]; key: Record<string, string> };
 
 /**
- * True when every row of every frame is exactly GRID characters.
- *
- * A short row does not fail loudly — it silently truncates the sprite, and a
- * long one silently draws outside the cell. Both look like "the art is a bit
- * off" rather than like a typo, which is the worst kind of bug to have in a
- * hand-authored grid. The demo asserts this headlessly, since building the
- * sheet needs a canvas and the check does not.
+ * Every row of every frame must be exactly GRID characters. A short row silently
+ * truncates and a long one silently draws outside the cell — both read as "the
+ * art is a bit off" rather than as the typo they are.
  */
 export function wellFormed(frames: string[][]): string[] {
   const bad: string[] = [];
@@ -78,16 +58,10 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
 }
 
 /**
- * The hero: a traveller who has been down here far too long.
- *
- * Hooded and hunched over a walking staff, cloak gone to rags at the hem, a
- * bedroll still strapped to his back because he set out meaning to come home.
- * The only bright thing on him is the eye under the hood.
- *
- * He was three ellipses and a line before — a snowman holding a stick, which
- * read as a placeholder because it was one. Nothing about the fiction was on
- * screen: this is the one figure you look at for the whole game, and it was
- * the one asset saying nothing.
+ * The hero: a traveller who has been down here far too long. Hooded and hunched
+ * over a walking staff, cloak gone to rags at the hem, a bedroll still strapped
+ * on because he set out meaning to come home. The only bright thing on him is
+ * the eye under the hood.
  */
 export const HERO_FRAMES: string[][] = [
   // Planted on the staff, trailing leg back.
@@ -133,16 +107,9 @@ export const HERO_FRAMES: string[][] = [
 ];
 
 /**
- * The monsters, on the same grid.
- *
- * Converted with the hero rather than after him, because a single figure in a
- * different style does not read as "the hero got better" — it reads as broken.
- * One pixel hero standing next to four smooth vector blobs is a worse screen
- * than five blobs were.
- *
- * Two frames each, differing only in the legs. Shape carries the identity —
- * low and wide, thin and hunched, a wedge, a slab — so each still reads at
- * three pixels a tile without relying on its colour.
+ * The monsters, on the same grid. Two frames each, differing only in the legs.
+ * SHAPE carries the identity — low and wide, thin and hunched, a wedge, a slab —
+ * so each reads at three pixels a tile without relying on its colour.
  */
 export const MONSTER_FRAMES: Record<string, string[][]> = {
   // Low, wide, segmented. Almost no vertical presence: it is the thing you
@@ -313,12 +280,7 @@ export const MONSTER_FRAMES: Record<string, string[][]> = {
   ],
 };
 
-/**
- * A monster's key: one hue, three tones, one lit eye.
- *
- * Built from spriteColour so the creature palette still lives in one place —
- * the shapes changed, the colour scheme did not.
- */
+/** One hue, three tones, one lit eye. Built from spriteColour, the one palette. */
 function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt | null {
   const frames = MONSTER_FRAMES[sprite];
   if (!frames) return null;
@@ -345,14 +307,9 @@ function heroArt(palette: Palette, frame: number): PixelArt {
     // Ink, not background. rockDeep is what the map is drawn ON; using it as
     // an outline left every figure a shade away from the floor it stood on.
     '#': mix(palette.rockDeep, palette.void, 0.6),
-    // Cloth, in three tones off one hue. Grimy rather than coloured — the
-    // brightest thing on him should be the eye, so everything else stays
-    // pulled most of the way to black.
-    //
-    // Pulled toward rockDeep rather than void. `dust` is a panel violet and
-    // the map is warm stone: against it he read as a blue figure rather than
-    // a filthy one. Value still separates him from the floor by a mile, so
-    // warming the hue costs no readability at all.
+    // Cloth in three tones off one hue, grimy rather than coloured: the eye
+    // should be the brightest thing on him. Pulled toward rockDeep rather than
+    // void, so he reads as filthy against the stone rather than as blue.
     D: mix(palette.dust, palette.rockDeep, 0.72),
     C: mix(palette.dust, palette.rockDeep, 0.5),
     L: mix(palette.dust, palette.chalk, 0.1),
@@ -389,11 +346,7 @@ function shade(ctx: CanvasRenderingContext2D, colour: string, dark: string): voi
   ctx.lineJoin = 'round';
 }
 
-/**
- * Sprites are drawn facing RIGHT (+x). The renderer flips them to face the
- * other way rather than rotating, which is why nothing here needs a direction
- * — and is what makes a pixel grid survive being pointed left.
- */
+/** Drawn facing RIGHT (+x). The renderer FLIPS rather than rotates. */
 function drawCreature(
   ctx: CanvasRenderingContext2D,
   sprite: string,

@@ -1,16 +1,10 @@
 /**
- * Renders the committed page in a real browser and writes PNGs to shots/.
+ * Renders the committed page in real Chromium and writes PNGs to shots/. jsdom
+ * has no layout engine, so smoke cannot tell you the header is 34px wider than
+ * a phone; this can.
  *
- * The smoke test proves the page BOOTS; jsdom has no layout engine, so it
- * cannot tell you the header is 34px wider than a phone. This is the other
- * half: real Chromium, real CSS, at the sizes people actually hold.
- *
- * It is also a guard, not just a camera. Any element whose right edge lands
- * past the viewport fails the run — that is the one bug class you cannot see
- * on a desktop and cannot feel on a phone except as the page drifting
- * sideways under your thumb.
- *
- * Requires a current bundle: npm run build && npm run shots
+ * A guard, not just a camera: any element whose right edge lands past the
+ * viewport fails the run. Requires a current bundle.
  */
 import { createServer } from 'node:http';
 import { readFile, mkdir, rm } from 'node:fs/promises';
@@ -54,13 +48,9 @@ await rm(outDir, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
 
 /**
- * Right edge past the viewport, which is what "the page drifts sideways" is.
- *
- * Content inside something that scrolls sideways ON PURPOSE doesn't count.
- * The dock is wider than a phone by design — it holds a whole inventory at a
- * fixed row count — and it carries its own `overflow-x: auto` so only the dock
- * moves. Flagging its contents would report the feature as the bug, and the
- * only way to satisfy it would be to break the thing the container is for.
+ * Right edge past the viewport. Content inside something that scrolls sideways
+ * ON PURPOSE does not count — the dock is wider than a phone by design, and
+ * flagging its contents would report the feature as the bug.
  */
 const overflowProbe = () => {
   const cw = document.documentElement.clientWidth;
@@ -86,12 +76,9 @@ const overflowProbe = () => {
 };
 
 /**
- * Does the guide card sit on top of the thing it is telling you to click?
- *
- * This is the failure that made the dock's fourth row a bug: `place()` will
- * sit the card INSIDE a target big enough to hold it, which was fine while the
- * dock was two rows and became "click your wand" printed over the wand. Needs
- * real layout, so it lives here rather than in smoke.
+ * Does the guide card sit on top of what it is telling you to click? `place()`
+ * puts the card INSIDE a target big enough to hold it, which is how "click your
+ * wand" ends up printed over the wand. Needs real layout.
  */
 const guideProbe = () => {
   const card = document.getElementById('guide');

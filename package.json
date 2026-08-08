@@ -11,9 +11,11 @@
     "smoke": "node smoke.mjs",
     "shots": "node shots.mjs",
     "mods": "tsx src/mods-check.ts",
-    "guide": "node guide.mjs"
+    "guide": "node guide.mjs",
+    "comments": "node tools/comment-budget.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "^8.0.4",
     "@types/node": "^26.1.2",
     "esbuild": "^0.28.1",
     "jsdom": "^30.0.1",

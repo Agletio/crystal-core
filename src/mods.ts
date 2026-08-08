@@ -17,11 +17,8 @@ export function slotTypes(item: Item): ModSlot[] {
 }
 
 /**
- * What the BASE says about this slot type, ignoring quality.
- *
- * The item's ceiling if it were finished — "a body armour is a defensive
- * piece" — and the right question for "can this currency target this item at
- * all", which is about what the base is, not how far along it is.
+ * What the BASE says, ignoring quality — the item's ceiling if it were finished,
+ * and the right question for "can this currency target this item at all".
  */
 export function declaredCapacity(item: Item, slot: ModSlot): number {
   const base = item.slots[slot] ?? 0;
@@ -37,10 +34,6 @@ export function totalCapacity(item: Item): number {
   return slotTypes(item).reduce((n, t) => n + declaredCapacity(item, t), 0);
 }
 
-// ---------------------------------------------------------------------------
-// Quality
-// ---------------------------------------------------------------------------
-
 /** Untagged items are Rough — the state everything starts in. */
 export function qualityOf(item: Item): Quality {
   return (item.meta?.quality as Quality) ?? 'rough';
@@ -55,18 +48,11 @@ export const qualityName = (quality: Quality): string =>
   QUALITY_BY_ID[quality]?.name ?? quality;
 
 /**
- * How many modifiers this item may hold, all in.
- *
- * The lower of two independent limits, and the pair is the whole point.
- * Quality says how finished the item is; the slot table says what a body
- * armour IS. Either can be the binding constraint — a Brilliant helmet is
- * capped by its own six slots, a Seamed one by its quality — and neither
- * subsumes the other.
+ * The lower of two independent limits: quality says how finished the item is,
+ * the slot table says what a body armour IS. Either can be the binding one.
  */
 export function modCapacity(item: Item): number {
-  // Bonus slots raise BOTH limits. They are the one way past a quality cap,
-  // so counting them only against the slot table would leave Sigil of Excess
-  // silently doing nothing on the finished items it exists for.
+  // Bonus slots raise BOTH limits — they are the one way past a quality cap.
   const bonus = Object.values(
     (item.meta?.bonusSlots as Record<string, number>) ?? {}
   ).reduce((n, v) => n + v, 0);
@@ -75,30 +61,22 @@ export function modCapacity(item: Item): number {
 }
 
 /**
- * Where this item's modifier budget actually sits, slot type by slot type.
+ * Where the item's modifier budget sits, slot type by slot type. DEALT OUT: as
+ * many openings as the item can hold, spread over the types the base has, one
+ * at a time, richest type first — so a body armour's first opening is defensive
+ * and a glove's is offensive, but a two-modifier item never puts both on the
+ * same side.
  *
- * A Seamed body armour may hold two modifiers and declares seven slots across
- * three types, and the bench used to draw all seven — six of them permanently
- * dead, under a header that said 0/2. You were being shown room that did not
- * exist. So the budget is DEALT OUT: as many openings as the item can hold,
- * spread over the types the base actually has.
- *
- * Dealt one at a time, richest type first, so the base still decides its own
- * character — a body armour's first opening is defensive, a glove's is
- * offensive — but a two-modifier item never ends up with both openings on the
- * same side. Balance first, identity as the tiebreak.
- *
- * Derived from the base alone, never from what is currently rolled: an
- * allocation that shifted as you crafted would move slots around under your
- * hands mid-craft.
+ * From the base alone, never from what is rolled: an allocation that shifted as
+ * you crafted would move slots around under your hands.
  */
 export function slotAllocation(item: Item): Record<ModSlot, number> {
   const types = slotTypes(item);
   const out: Record<ModSlot, number> = {};
   for (const t of types) out[t] = 0;
 
-  // Richest declared type first; declaration order breaks ties, which is why
-  // the tables in data.ts list offence before defence before utility.
+  // Richest declared type first, ties broken by declaration order — which is
+  // why data.ts lists offence, then defence, then utility.
   const order = [...types]
     .filter((t) => declaredCapacity(item, t) > 0)
     .sort((a, b) => declaredCapacity(item, b) - declaredCapacity(item, a));
@@ -119,20 +97,14 @@ export function slotAllocation(item: Item): Record<ModSlot, number> {
 }
 
 /**
- * Openings of this type the item has right now.
- *
- * Never less than what is already rolled there. Bonus slots and re-rolls can
- * in principle leave a type over its allocation, and a capacity that hid a
- * modifier the item is wearing would be worse than one that is briefly
- * generous.
+ * Openings of this type right now, never fewer than are already rolled there —
+ * a capacity that hid a modifier the item is wearing is worse than a generous one.
  */
 export function slotCapacity(item: Item, slot: ModSlot): number {
   return Math.max(slotAllocation(item)[slot] ?? 0, slotUsed(item, slot));
 }
 
 export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {
-  // Quality first: a Rough item has no room for anything regardless of how
-  // many slot types its base declares.
   if (item.mods.length >= modCapacity(item)) return false;
   const types = slot ? [slot] : slotTypes(item);
   return types.some((t) => slotUsed(item, t) < slotCapacity(item, t));
@@ -143,10 +115,6 @@ export function fillState(item: Item): FillState {
   if (item.mods.length === 0) return 'blank';
   return item.mods.length >= modCapacity(item) ? 'full' : 'partial';
 }
-
-// ---------------------------------------------------------------------------
-// Pool
-// ---------------------------------------------------------------------------
 
 export class ModPool {
   readonly entries: ModEntry[] = [];
@@ -175,10 +143,7 @@ export class ModPool {
     });
   }
 
-  /**
-   * Everything that could legally roll on this item right now.
-   * Filters on: item tags, item level, slot space, group exclusivity.
-   */
+  /** Filters on item tags, item level, slot space and group exclusivity. */
   eligible(
     item: Item,
     opts: { slot?: ModSlot; tag?: string; excludeGroups?: string[] } = {}
@@ -186,13 +151,11 @@ export class ModPool {
     const takenGroups = new Set(item.mods.map((m) => m.group));
     for (const g of opts.excludeGroups ?? []) takenGroups.add(g);
 
-    // Nothing is eligible on an item that is already as finished as its
-    // quality allows. Checked here rather than only at the call sites so a
-    // future effect cannot route around the cap by accident.
+    // Here rather than only at the call sites, so no future effect can route
+    // around the quality cap by accident.
     if (item.mods.length >= modCapacity(item)) return [];
 
-    // Dealt once, not once per candidate. This filter runs over the whole pool
-    // on every roll, and every roll happens on a monster's death.
+    // Dealt once, not per candidate: this runs over the whole pool per roll.
     const alloc = slotAllocation(item);
     const used: Record<ModSlot, number> = {};
     for (const m of item.mods) used[m.slot] = (used[m.slot] ?? 0) + 1;
@@ -209,10 +172,6 @@ export class ModPool {
     });
   }
 }
-
-// ---------------------------------------------------------------------------
-// Rolling
-// ---------------------------------------------------------------------------
 
 export function rollValues(entry: ModEntry, rng: Rng): StatRoll[] {
   return entry.stats.map((s) => {
@@ -263,11 +222,9 @@ export interface StatBuckets {
 }
 
 /**
- * Collects every stat line into flat / increased / more buckets.
- * `contextTags` is the tag set of the thing being calculated (a skill, or the
- * map generator). A stat line applies only if all of ITS tags are present in
- * the context — this is what makes "increased Fire Damage" work without any
- * special-case code.
+ * Every stat line into flat / increased / more buckets. A line applies only if
+ * all of ITS tags are in `contextTags`, which is what makes "increased Fire
+ * Damage" work with no special-case code.
  */
 export function aggregate(
   mods: RolledMod[],
@@ -291,17 +248,11 @@ export function aggregate(
 }
 
 /**
- * A stat that IS a percentage, rather than one that scales a base.
+ * A stat that IS a percentage rather than one scaling a base. computeStat
+ * multiplies, so an "increased" line on a zero base silently produces zero —
+ * the mod rolls, displays and stacks exactly like a working one.
  *
- * computeStat multiplies, so an "increased" line on a stat whose base is zero
- * produces zero no matter how large it is: (0 + 0) * 1.34 is still 0. That is
- * silent — the mod rolls, displays and stacks exactly like a working one — and
- * it had quietly killed increased Area of Effect, Currency Find, and three of
- * the crystal danger mods.
- *
- * Anything with no natural base (an area bonus, a find bonus, a monster damage
- * bonus) belongs here instead, where "increased" means "add these percentage
- * points" and zero is a legitimate starting value rather than an absorbing one.
+ * Anything with no natural base belongs here, where "increased" adds points.
  */
 export function percentStat(
   mods: RolledMod[],

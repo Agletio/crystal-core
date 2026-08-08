@@ -1,12 +1,7 @@
 /**
- * Turning a finished run into something the results overlay can display, and
- * banking what it earned.
- *
- * The overlay renders whatever rows it's handed and knows nothing about what
- * they mean. So a new stat — damage by type, time spent walking versus
- * fighting, largest hit taken — is a line in buildReport() and nothing else.
- * That was the point of asking for damage-taken up front: it proves the shape
- * holds more than one kind of thing.
+ * Turning a finished run into rows the results overlay can display, and banking
+ * what it earned. The overlay knows nothing about what the rows mean, so a new
+ * stat is a line in buildReport() and nothing else.
  */
 import { addItem, grantFirstClear } from './state';
 import type { GameState } from './state';
@@ -48,12 +43,7 @@ function currencyRows(currency: Record<string, number>): ReportRow[] {
     .map(([id, n]) => ({ label: id, value: `+${round(n)}` }));
 }
 
-/**
- * Banks a finished run into the game and describes what happened.
- *
- * Loot only transfers on a clear. Dying drops everything the run was
- * carrying, which is the entire reason the status matters.
- */
+/** Loot only transfers on a CLEAR. Dying drops everything the run carried. */
 export function buildReport(game: GameState, run: RunState): RunReport {
   const cleared = run.status === 'cleared';
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);

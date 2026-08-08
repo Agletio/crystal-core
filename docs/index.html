@@ -13,20 +13,12 @@
 <style>
   :root {
     /*
-     * The frame around the game: dark slate, barely cool.
+     * The frame around the game: dark slate, barely cool — the same near-neutral
+     * family as the rock, cooler and much darker. A frame in a different colour
+     * family from the map reads as two pieces of software.
      *
-     * These were violet — properly violet, a geode seen under low light —
-     * which was a nice idea on its own and stopped being one the moment the
-     * map became grey stone. A violet frame around a grey cave reads as two
-     * pieces of software, and the eye reconciles them by deciding the UI is
-     * the "real" thing and the map is a picture of something else.
-     *
-     * So: the same near-neutral family as the rock, a few points cooler and a
-     * lot darker. Not brown — a brown UI would drag everything toward the same
-     * mud and lose the one thing the frame is for, which is being quiet.
-     * COLOUR is what the accents are for, and they are unchanged: amethyst,
-     * citrine, quartz, verdite and ember still carry every meaning that has
-     * one, and they read harder now that nothing else competes.
+     * Not brown either: the frame's whole job is being quiet. COLOUR belongs to
+     * the accents below, which carry every meaning that has one.
      */
     --void:      #15161A;
     --matrix:    #1E2026;
@@ -36,22 +28,13 @@
     --dust:      #8A8F99;
 
     /*
-     * The map has its own palette entirely, and it is NOT the panel one.
+     * The map's own palette, cool-neutral and barely warm. Underground stone lit
+     * by nothing in particular is grey; the accents are what get to be coloured,
+     * which is what makes a crystal's vein visible.
      *
-     * Panel colours are violet because they sit behind text and want to read
-     * as cut mineral. A whole level of violet rock read as a UI element you
-     * were walking around inside. Stone is grey; the accents are what get to
-     * be coloured, which is also what makes a crystal's vein visible.
-     *
-     * Cool-neutral, barely warm. A first pass went properly warm and the map
-     * came out khaki — like a desert rather than a cave. Underground stone
-     * lit by nothing in particular is grey.
-     *
-     * Note the order: the WALL is the lightest thing here, not the darkest.
-     * You are looking slightly down at a chamber, so its walls catch what
-     * light there is and the floor sits in their shadow. Drawn the other way
-     * round — dark walls, light floor — the rock reads as a hole rather than
-     * as mass, which is what the first attempt got wrong.
+     * Note the order: the WALL is the LIGHTEST thing here. You look slightly
+     * down at a chamber, so its walls catch the light and the floor sits in
+     * their shadow. Reversed, rock reads as a hole rather than as mass.
      */
     --rock:      #6E6E68;
     --rock-lit:  #8C8C85;
@@ -184,13 +167,8 @@
 
   /* --- the signature: slots as cut facets --------------------------- */
   /*
-   * Groups side by side, not stacked.
-   *
-   * Four slot types stacked vertically, each with a label and a row of 62px
-   * facets, was 600px before the modifier list even started — so a finished
-   * item put every one of its modifiers below the fold and you had to scroll
-   * an item you were meant to be LOOKING at. Across, the whole socket display
-   * is one row of about ninety pixels and everything fits.
+   * Groups across, not stacked: stacked, the sockets alone were 600px and put
+   * every modifier of a finished item below the fold.
    */
   #sockets { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px; }
   .slotgroup { min-width: 0; }
@@ -341,18 +319,11 @@
      a run rather than in the report afterwards. */
   .dockcol__label--full { color: var(--citrine); }
   /*
-   * A fixed grid, and no scrollbar anywhere.
-   *
-   * This used to be two rows with `overflow-y: auto`, which made capacity
-   * invisible: ninety crystals looked exactly like twelve, so "what do I
-   * keep" was never a question anyone had to answer.
-   *
-   * Both dimensions are stated rather than auto-filled. auto-fill re-wraps as
-   * the window narrows, so the same slots would need five rows on a small
-   * screen and the fourth would be clipped — the height has to be a constant
-   * for "everything you own is on screen" to be true. --cols is written by the
-   * renderer from the carry limit, so the capacity lives in one place and the
-   * grid follows it.
+   * A fixed grid and no scrollbar, so capacity is visible: ninety crystals must
+   * not look like twelve. Both dimensions are stated rather than auto-filled —
+   * auto-fill re-wraps as the window narrows and clips the last row, and the
+   * height has to be constant for "everything you own is on screen" to hold.
+   * --cols is written from the carry limit, so capacity lives in one place.
    */
   .slots {
     display: grid;
@@ -633,21 +604,13 @@
   }
 
   /*
-   * While the guided opening is running, the highlighted thing is the ONLY
-   * thing you can click.
+   * During the guided opening the highlighted thing is the ONLY thing you can
+   * click. The opening has a fixed fragment budget and asks you to buy two
+   * specific things with it, so anyone free to spend it elsewhere is stuck.
    *
-   * Not politeness — the opening has a budget. It hands you a fixed number of
-   * fragments and then asks you to buy two specific things with them, so a
-   * player free to wander into the Shop and spend them on a crystal ends up
-   * permanently stuck on step 4 with nothing left to buy and no way to earn
-   * more, because entering the Fissure is also a click they were free to make
-   * and it costs a crystal. The guide is the tutorial's own softlock.
-   *
-   * pointer-events is inherited but re-settable, so switching the whole app
-   * off and the target back on is two rules rather than an overlay stacked
-   * against six modal z-indexes. The card itself stays live so the step is
-   * always readable, and the dock label rings stay visible so nothing looks
-   * broken — just unclickable.
+   * pointer-events is inherited but re-settable, so switching the app off and
+   * the target back on is two rules rather than an overlay fighting six modal
+   * z-indexes. The card stays live, so the step is always readable.
    */
   body.guided .wrap,
   body.guided .modal,

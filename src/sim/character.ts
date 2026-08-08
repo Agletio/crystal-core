@@ -1,20 +1,11 @@
-/**
- * The character: what persists between runs.
- *
- * Level and XP live here rather than in RunState because they survive a run —
- * the run reports XP earned, the character banks it. When inventory and
- * equipment arrive they belong here too.
- */
+/** The character: what persists between runs. A run reports XP, this banks it. */
 import { LEVELLING } from '../data';
 import { treePointsFor } from '../skills-tree';
 import type { Item } from '../types';
 
 /**
- * A skill's own progression.
- *
- * Levels come from USE — the active skill shares whatever XP a run generates
- * — so committing to one skill is what advances its tree. Points spent are
- * `allocated.length`, and the budget is the level.
+ * A skill's own progression. Levels come from USE — only the active skill takes
+ * a run's XP — so committing to one skill is what advances its tree.
  */
 export interface SkillProgress {
   level: number;
@@ -54,13 +45,7 @@ export function skillProgress(character: Character, skillId: string): SkillProgr
 
 export const pointsSpent = (p: SkillProgress): number => p.allocated.length;
 
-/**
- * Points left to spend.
- *
- * Capped by the tree, not by your level: a tree that keeps growing forever is
- * a tree you eventually fill in completely, and a completed tree stops being
- * a set of decisions.
- */
+/** Capped by the tree, not your level: a tree you can fill in is not a decision. */
 export const pointsAvailable = (p: SkillProgress): number =>
   treePointsFor(p.level) - p.allocated.length;
 
@@ -94,10 +79,7 @@ export function monsterXp(tier: number): number {
   return Math.max(1, Math.round(LEVELLING.perMonster * Math.pow(LEVELLING.tierScale, tier - 1)));
 }
 
-/**
- * Banks XP, levelling up as many times as it covers.
- * Returns how many levels were gained, so the UI can say so.
- */
+/** Banks XP and returns how many levels it covered. */
 export function addXp(character: Character, amount: number): number {
   if (amount <= 0) return 0;
 

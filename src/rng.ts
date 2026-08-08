@@ -1,13 +1,7 @@
 /**
- * Seeded RNG.
- *
- * Everything random in the engine goes through an instance of this — crafting,
- * rolling, run simulation. Nothing calls Math.random() below the UI layer, so
- * a seed replays a session exactly. That's what makes a balance regression
- * reproducible instead of a ghost story.
- *
- * mulberry32: 32-bit state, no dependencies, good enough distribution for loot.
- * Swap the core if you ever need more, but keep the surface identical.
+ * Seeded RNG. Everything random below the UI goes through one of these and
+ * nothing calls Math.random(), so a seed replays a session exactly. mulberry32;
+ * swap the core if you need more, but keep the surface identical.
  */
 export class Rng {
   private state: number;
@@ -48,10 +42,7 @@ export class Rng {
     return items[this.int(0, items.length - 1)];
   }
 
-  /**
-   * Weighted pick. Non-positive weights are skipped, so an entry can be
-   * disabled by zeroing its weight without removing it from the pool.
-   */
+  /** Non-positive weights are skipped, so zeroing one disables an entry. */
   weighted<T>(items: readonly T[], weightOf: (item: T) => number): T | undefined {
     let total = 0;
     for (const item of items) {

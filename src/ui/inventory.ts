@@ -1,17 +1,10 @@
 /**
- * The inventory dock, along the bottom of the frame.
+ * The inventory dock, along the bottom of the frame. Not a page: it is the thing
+ * every other screen acts on, so every popup stops above it.
  *
- * Deliberately not a page. It's the thing every other screen acts on — you
- * pull a crystal out of it to run, put gear into the bench, and watch it fill
- * up after a clear — so hiding it behind navigation would mean constantly
- * flipping back to check what you have. Every popup stops above it.
- *
- * Items are icons in slots — crystals, equipment, and the currency you spend
- * on both. Names and modifiers live in the hover tooltip: a stash is
- * something you scan, and forty lines of text is something you read past.
- *
- * Clicking anything does whatever the ACTIVE screen wants, which each screen
- * registers here. The dock itself has no opinion about what an item is for.
+ * Icons in slots, with names and modifiers in the tooltip — a stash is something
+ * you scan. Clicking does whatever the ACTIVE screen registered; the dock itself
+ * has no opinion about what an item is for.
  */
 import { currencyIcon, itemIcon } from './icons';
 import { modCapacity, qualityName, qualityOf } from '../mods';
@@ -40,14 +33,8 @@ export interface InventoryHandler {
 }
 
 /**
- * The same seam again, for currency.
- *
- * Currency used to be a wall of thirteen labelled buttons inside the crafting
- * popup, which said the quiet part out loud: a Shard of Making was a menu
- * command rather than a thing you own. It is a thing you own — you find it,
- * you count it, you run out of it — so it lives in the dock beside the items
- * it acts on, and crafting is just the screen that gives clicking one a
- * meaning.
+ * The same seam, for currency. A shard is a thing you own — you find it, count
+ * it, run out of it — so it lives in the dock beside the items it acts on.
  */
 export interface CurrencyHandler {
   actionFor(currency: CurrencyDef): { label: string; run: () => void } | null;
@@ -56,23 +43,15 @@ export interface CurrencyHandler {
 }
 
 /**
- * Currency slots drawn, whether or not you hold that many.
- *
- * Currency has no carry limit — a stack is one slot however deep it is, and
- * there are only thirteen kinds — so this is purely about the dock keeping a
- * fixed shape. Items are different: their slot count IS their limit, and
- * comes from CARRY.
+ * Currency slots drawn, held or not. There is no carry limit on currency, so
+ * this is only about a fixed shape; for items the slot count IS the limit.
  */
 const CURRENCY_SLOTS = 16;
 
 /**
- * Rows in every dock column.
- *
- * The grid states both dimensions rather than auto-filling, because an
- * auto-filled grid re-wraps as the window narrows and the fourth row would be
- * clipped on a small screen. Columns are derived from the capacity and
- * written to the element, so the carry limit stays defined in exactly one
- * place and the layout follows it.
+ * Rows in every dock column. The grid states both dimensions — an auto-filled
+ * one re-wraps as the window narrows and clips the last row. Columns are derived
+ * from CARRY, so the limit is defined once and the layout follows it.
  */
 const DOCK_ROWS = 4;
 
@@ -105,13 +84,8 @@ export function setCurrencyHandler(next: CurrencyHandler | null): void {
 }
 
 /**
- * Fragments only.
- *
- * Fragments are not a currency you apply to an item — they are the feedstock
- * every shop price is quoted in, so what you want from them is a number to
- * compare against a price, constantly. That is a readout, not an inventory
- * slot: hunting for a badge on one icon among fourteen would be strictly
- * worse. Everything you actually spend ON an item is down in the dock.
+ * Fragments only — the feedstock every price is quoted in, so what you want is a
+ * number to compare against a price. That is a readout, not an inventory slot.
  */
 function renderWallet(): void {
   if (!game) return;
@@ -139,14 +113,7 @@ function currencyTooltip(currency: CurrencyDef, stock: number): string {
   return lines.join('\n');
 }
 
-/**
- * Only what you own.
- *
- * A stack you have none of is not in your inventory, and rendering all
- * thirteen greyed out would rebuild the wall of buttons this replaced. The
- * empties below are the container, not a catalogue — the Shop is the
- * catalogue.
- */
+/** Only what you own: the empty slots are a container, not a catalogue. */
 function renderCurrencies(): void {
   if (!game) return;
   const host = $('inv-currency');
@@ -209,9 +176,8 @@ export function renderInventory(): void {
   for (const kind of Object.keys(HOSTS) as ItemKind[]) {
     const items = game.inventory.filter((i) => i.kind === kind);
     fill($(HOSTS[kind]), items, kind);
-    // The count is on the label, not hidden in a tooltip. The dock no longer
-    // scrolls, so the empty slots already say how much room is left — but the
-    // number is what you check before deciding whether to go back down.
+    // On the label, not in a tooltip: this is what you check before deciding
+    // whether to go back down.
     const label = $(`${HOSTS[kind]}-label`);
     label.textContent = `${kind === 'crystal' ? 'Crystals' : 'Equipment'} ${items.length}/${CARRY[kind]}`;
     label.classList.toggle('dockcol__label--full', items.length >= CARRY[kind]);
@@ -236,9 +202,8 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
 
   for (const item of sorted(items, kind)) {
     const action = handler?.actionFor(item) ?? null;
-    // Quality colours the slot, the same way a currency's class does. Reading
-    // "is this worth looking at" off a wall of icons is the whole job of the
-    // dock, and the silhouette says what a piece IS, never how good it is.
+    // Quality colours the slot; the silhouette says what a piece IS, never how
+    // good it is.
     const btn = el(
       'button',
       `slot slot--${kind} slot--q-${qualityOf(item)}`
@@ -261,9 +226,8 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     host.append(btn);
   }
 
-  // Every remaining slot, drawn. This is the carry limit made visible: the
-  // dock does not scroll, so what you see is genuinely all you can hold, and
-  // running out is something you watch approaching rather than discover.
+  // The carry limit made visible: the dock never scrolls, so what you see is
+  // all you can hold and running out is something you watch approaching.
   for (let i = items.length; i < CARRY[kind]; i++) {
     host.append(el('div', 'slot slot--empty'));
   }

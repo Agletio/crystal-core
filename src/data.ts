@@ -12,27 +12,11 @@ import type {
   StatSpec,
 } from './types';
 
-// ===========================================================================
-// SLOT LAYOUTS
+// --- damage types ----------------------------------------------------------
 //
-// Declared per base. Crystals use a single undifferentiated slot type;
-// gear splits power (main) from utility (secondary) so the two never compete.
-// ===========================================================================
-
-// ===========================================================================
-// DAMAGE TYPES
-//
-// A table, not a hardcoded list, so adding a type is a data entry: it starts
-// being resolved, resisted and displayed everywhere at once.
-//
-// Groups let a single mod cover several types at lower value — Elemental
-// covers fire/cold/lightning, Occult covers poison/dark/light. Physical and
-// Crystal stand alone, so their only cover is their own resistance.
-//
-// TYPELESS is deliberately absent from this table. Nothing type-specific
-// scales it and nothing resists it; generic "increased Damage" still applies,
-// because that carries no type tag to fail against.
-// ===========================================================================
+// A table, so adding a type resolves, resists and displays everywhere at once.
+// Groups let one mod cover several types at lower value. TYPELESS is absent on
+// purpose: nothing type-specific scales it and nothing resists it.
 
 export interface DamageTypeDef {
   id: string;
@@ -62,20 +46,12 @@ export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
 export const TYPELESS = 'typeless';
 
 /**
- * Defensive layers.
+ * Resistance and armour are separate MULTIPLIERS — at both caps you take
+ * 0.25 * 0.25 of a hit. Adding them would be immunity at 75 + 75.
  *
- * Resistance and armour are separate MULTIPLIERS, so at both caps you take
- * 0.25 * 0.25 = 6.25% of a hit. Adding them instead would mean immunity at
- * 75 + 75, which is why they don't add.
- *
- * Armour reduction curves with armour POINTS rather than with the size of the
- * hit. Hit-size scaling made armour impossible to display honestly — its
- * worth changed with every attacker. This way it's one number you can print,
- * while still avoiding the two failure modes of a linear conversion: mods
- * that do nothing, or three mods reaching the cap.
- *
- * Armour applies only to HITS. Damage over time goes through resistance
- * alone, which is what lets an ailment threaten a heavily armoured build.
+ * Armour curves with armour POINTS, not with the size of the hit, so it is one
+ * number you can print. It applies to HITS only: damage over time goes through
+ * resistance alone, which is what lets an ailment threaten an armoured build.
  */
 export const DEFENCE = {
   resistanceCap: 75,
@@ -84,23 +60,14 @@ export const DEFENCE = {
   armourHalfPoint: 300,
 };
 
+/** Slot layouts are declared per base; a crystal has one undifferentiated type. */
 export const CRYSTAL_SLOTS = { mod: 3 };
 
-// ===========================================================================
-// ITEM QUALITY
+// --- item quality ----------------------------------------------------------
 //
-// How many modifiers an item is ALLOWED to carry, independent of which kinds
-// its base can hold. Those are two different restrictions and were previously
-// one: the base's slot table said both "a body armour is a defensive piece"
-// and "every item holds four mods", so every piece you ever found could be
-// filled and re-rolled to perfection the moment you owned one currency.
-//
-// Quality is the second axis. A base still decides WHAT can go on it; quality
-// decides HOW MUCH, and is what a crystal tier actually gates — which is what
-// turns "found an item" into a ladder rather than a coin flip.
-//
-// Slot tables above sum to six so the top of the ladder has somewhere to go.
-// ===========================================================================
+// The second axis: the base decides WHAT can go on an item, quality decides
+// HOW MUCH. Quality is what a crystal tier gates, which is what makes finding
+// an item a ladder rather than a coin flip. Slot tables sum to six.
 
 export const QUALITIES: Array<{ id: Quality; name: string; mods: number }> = [
   { id: 'rough', name: 'Rough', mods: 0 },
@@ -113,40 +80,22 @@ export const QUALITY_BY_ID: Record<string, (typeof QUALITIES)[number]> =
   Object.fromEntries(QUALITIES.map((q) => [q.id, q]));
 
 /**
- * Gear mod groups.
- *
- * Slot types were always just strings declared per base — so restricting what
- * a piece can roll is a capacity table, not an engine feature. A base with
- * zero utility slots simply cannot roll move speed; no per-mod base lists, no
- * eligibility special-casing.
+ * Gear mod groups. Restricting what a piece can roll is a capacity table, not
+ * an engine feature: a base with zero utility slots cannot roll move speed.
  *
  *   offence  hurting things — flat damage, increases, speed, crit
  *   defence  staying alive
  *   utility  everything that is neither
- *
- * There used to be a fourth, `damage`, holding the multipliers: attack speed,
- * crit, area. It bought nothing. "Flat fire damage" and "increased attack
- * speed" answer the same question — how hard do I hit — so splitting them
- * just meant every item showed two offensive counters that a player had to
- * add together themselves. One offence count per base, worth the sum of what
- * the two used to be.
  */
 export const GEAR_SLOT_TYPES = ['offence', 'defence', 'utility'] as const;
 
 /** Kept for crystals and any caller that still wants a default gear layout. */
 export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
-// ===========================================================================
-// EQUIPMENT
+// --- equipment -------------------------------------------------------------
 //
-// A full slot set from the start, so the character sheet has its final shape
-// and adding a base later fills a hole rather than changing the layout.
-//
-// Gear mods declare appliesTo: ['gear'], so every base rolls from the same
-// pool and a new base needs no new mod content. Base-specific pools (weapons
-// getting damage, boots getting movement) are the obvious next step and cost
-// nothing to add later.
-// ===========================================================================
+// Gear mods declare appliesTo: ['gear'], so every base rolls from one pool and
+// a new base needs no new mod content.
 
 export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'weapon', name: 'Weapon', accepts: 'weapon' },
@@ -160,31 +109,16 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
 ];
 
 /**
- * Each base declares how many of each group it can hold. This is the whole
- * restriction mechanism.
- *
- * Only boots and amulets have utility slots, which is what confines move
- * speed to them — by construction rather than by rule. Body has no offence at
- * all and boots no multipliers, so those pieces have a defensive identity
- * instead of being generic stat sticks. Weapons keep one defence slot, so a
- * weapon can still roll armour or life.
- */
-/**
- * One-handed weapons, in four families.
- *
- * Every weapon carries an IMPLICIT — a stat it always has, which no craft can
- * add or remove. That's the reason to want a wand over a sword before either
- * has rolled anything, and it's what makes a weapon drop interesting rather
- * than being a mod container with a different name.
+ * One-handed weapons, in four families. Every weapon carries an IMPLICIT no
+ * craft can touch, which is the reason to want a wand over a sword before
+ * either has rolled anything.
  *
  *   wands    spell damage, or cast speed
  *   swords   attack speed
- *   daggers  flat critical chance — flat, because increases multiply a 5%
- *            base and would be worth almost nothing here
+ *   daggers  flat critical chance — increases would multiply a 5% base
  *   maces    flat damage of ONE type per base, so a mace commits you
  *
- * Tiers within a family are gated by ilvl, so better bases are themselves a
- * progression rather than everything being available immediately.
+ * Tiers within a family are gated by ilvl, so bases are themselves progression.
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
@@ -290,15 +224,10 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
   GEAR_BASES.map((b) => [b.id, b])
 );
 
-// ===========================================================================
-// MOD POOL
+// --- mod pool --------------------------------------------------------------
 //
-// Tiers are authored best-first. `ilvl` gates them, so a T1 crystal can only
-// ever roll the weak tiers — item level is your main progression dial.
-//
-// Keep each slot type meaningfully oversubscribed: more candidates than slots
-// is what makes a roll feel like a roll.
-// ===========================================================================
+// Tiers are authored best-first and gated by `ilvl`. Keep each slot type
+// oversubscribed: more candidates than slots is what makes a roll a roll.
 
 export const CRYSTAL_MODS: ModDef[] = [
   {
@@ -481,10 +410,8 @@ export const GEAR_MAIN_MODS: ModDef[] = [
 
 // --- gear: OFFENCE, part two — the multipliers ------------------------------
 //
-// Attack speed and crit are not utility. They multiply your damage, and
-// grouping them with move speed made a "utility" slot the best damage slot on
-// the item. They are not their own slot type either — they compete with flat
-// damage for the same offence room, which is the choice worth having.
+// Speed and crit compete with flat damage for the same offence room, which is
+// the choice worth having.
 export const GEAR_SECONDARY_MODS: ModDef[] = [
   {
     id: 'attack_speed',
@@ -642,15 +569,9 @@ const INC_DAMAGE_NAMES: Record<string, string> = {
 };
 
 /**
- * Delivery tags, not damage types.
- *
- * A damage type is WHAT (fire, cold); a delivery tag is HOW (projectile,
- * spell, melee). They're separate axes, and skill tags ride along in every
- * damage pass — so a mod tagged ['projectile'] scales any projectile skill
- * whatever its element, with no engine change.
- *
- * This is also why a damage type must NEVER appear in a skill's tags: it
- * would then satisfy every type pass and scale the lot.
+ * Delivery tags: HOW, where a damage type is WHAT. Skill tags ride along in
+ * every damage pass, so ['projectile'] scales any projectile skill whatever
+ * its element — and why a damage type must NEVER appear in a skill's tags.
  */
 export const DELIVERY_TAGS = ['melee', 'projectile', 'spell', 'area'] as const;
 
@@ -774,26 +695,13 @@ export const GEAR_MODS: ModDef[] = [
 ];
 export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
 
-// ===========================================================================
-// CURRENCIES
-//
-// Adding a currency = adding an entry here. No new code unless you need a
-// genuinely new kind of mutation.
-// ===========================================================================
-
 /**
- * The crafting currencies, arranged as a ladder.
+ * The crafting currencies, as a ladder. Adding one is an entry here; new code
+ * is only needed for a genuinely new kind of mutation.
  *
- * Every one of these used to work on every item, which meant the whole system
- * collapsed into one move: fill it, then re-roll until it is perfect. There
- * was no such thing as an item you could not finish, so there was no such
- * thing as an item worth finding.
- *
- * They are gated on QUALITY now, and quality is what a crystal tier drops. So
- * the ladder reads bottom to top: early on you are adding a modifier to a
- * two-slot piece, and only much later are you re-rolling a six-slot one at
- * will. Each rung is a currency you cannot yet reach and an item you cannot
- * yet improve, which is the shape the progression was missing.
+ * They are gated on QUALITY, and quality is what a crystal tier drops, so the
+ * ladder reads bottom to top: early on you add a modifier to a two-slot piece,
+ * and only much later re-roll a six-slot one at will.
  */
 export const CURRENCIES: CurrencyDef[] = [
   // --- basic: the first thing you ever craft with -------------------------
@@ -1010,12 +918,10 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
   CURRENCIES.map((c) => [c.id, c])
 );
 
-// ===========================================================================
-// RECIPES — fragments are the universal feedstock
+// --- recipes ---------------------------------------------------------------
 //
-// Every fragment spent on a crystal is a fragment not spent on gear crafting.
-// That contested single resource IS the endgame decision.
-// ===========================================================================
+// Fragments are the universal feedstock. One spent on a crystal is one not
+// spent on gear crafting, and that contested resource IS the endgame decision.
 
 export const CRYSTAL_TIERS = [
   { tier: 1, ilvl: 10, fragments: 8 },
@@ -1026,15 +932,10 @@ export const CRYSTAL_TIERS = [
   { tier: 6, ilvl: 70, fragments: 370 },
 ];
 
-// ===========================================================================
-// COMBAT BASELINES
+// --- combat baselines ------------------------------------------------------
 //
-// The character's stats before any gear, and a monster's before any crystal
-// mods. Every one of these is a dial you will want to turn while watching a
-// run, so they live here rather than buried in the sim.
-//
-// Distances are in tiles, speeds in tiles/second, rates in per-second.
-// ===========================================================================
+// Before any gear, and before any crystal mods. Distances in tiles, speeds in
+// tiles/second, rates per second.
 
 // Deliberately generous. A character that insta-dies makes the game
 // unwatchable, which blocks judging whether the loop is any fun — so when in
@@ -1055,28 +956,15 @@ export const HERO_BASE = {
   /** How far the hero will notice a monster and divert to fight it. */
   aggroRange: 9,
   /**
-   * Percent of max life per second.
-   *
-   * Recovery between packs is what turns a run into a series of fights
-   * rather than one attrition curve you always lose. But at 2.2% it
-   * out-healed everything a low tier could do — a naked character finished
-   * their first descent at full life, so nothing was ever at stake.
-   *
-   * Tuned so an ungeared level 1 finishes the Fissure around a third of the
-   * way down: visibly hurt, never actually threatened.
+   * Percent of max life per second. Recovery between packs is what makes a run
+   * a series of fights rather than one attrition curve. Tuned so an ungeared
+   * level 1 finishes the Fissure about a third down: hurt, never threatened.
    */
   lifeRegenPercent: 1.0,
 };
 
 export const MONSTER_BASE = {
-  /**
-   * Raised sharply from 26.
-   *
-   * A naked character killed a tier 1 monster in about a third of a second,
-   * so a pack died before it landed two hits and the first descent ended at
-   * full life. Nothing was at stake because nothing survived long enough to
-   * swing.
-   */
+  /** High enough that a pack survives long enough to swing back. */
   life: 46,
   damage: 2.9,
   attacksPerSecond: 0.8,
@@ -1086,31 +974,16 @@ export const MONSTER_BASE = {
 };
 
 /**
- * Per-tier monster scaling.
- *
- * Life outpaces damage so climbing tiers first reads as "this takes longer",
- * and only later as "this kills me". Starter gear comfortably clears T1-T3
- * and loses badly around T6 — that gap is the reason to craft.
- */
-/**
- * Flattened along with the base raise.
- *
- * Raising the base without lowering these would have made the top tiers
- * unreachable rather than the bottom one meaningful. The intent is a curve
- * that starts somewhere real and ends roughly where it already did.
+ * Per-tier monster scaling. Life outpaces damage, so climbing tiers first
+ * reads as "this takes longer" and only later as "this kills me".
  */
 export const MONSTER_TIER_SCALE = { life: 1.36, damage: 1.24 };
 
-// ===========================================================================
-// MONSTER KINDS
+// --- monster kinds ---------------------------------------------------------
 //
-// Multipliers on the tier-scaled baseline, so identity and tier scaling stay
-// independent. A pack rolls ONE kind and spawns all of it — mixed packs read
-// as noise on screen, uniform packs read as "that's a Brute pack, careful".
-//
-// Adding a kind is a data entry. `sprite` is a name the renderer maps to art;
-// the sim never knows what it looks like.
-// ===========================================================================
+// Multipliers on the tier-scaled baseline, so identity and tier stay
+// independent. A pack rolls ONE kind and spawns all of it: mixed packs read as
+// noise, uniform packs read as "that's a Brute pack, careful".
 
 export const MONSTERS: MonsterDef[] = [
   {
@@ -1171,31 +1044,15 @@ export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
   MONSTERS.map((m) => [m.id, m])
 );
 
-/**
- * Chance a pack spawns wielding the ranged skill instead of closing to melee.
- *
- * Rolled per PACK, not per monster, for the same reason kinds are: a pack that
- * hangs back and shoots is a thing you can recognise, where one archer mixed
- * into a melee pack is just an inconsistency.
- */
+/** Rolled per PACK, so "they shoot" is something you can recognise. */
 export const RANGED_PACK_CHANCE = 0.25;
 
-// ===========================================================================
-// FINALE
+// --- finale ----------------------------------------------------------------
 //
-// Once the floor is empty, something waits at the exit. Which something is
-// rolled per RUN and isn't shown beforehand — if you could see it coming you'd
-// socket the crystal that suits your build, which is the opposite of keeping
-// it fresh.
-//
-// Three shapes deliberately: one huge target, a handful of tough ones, and a
-// swarm. They stress different things — single-target damage, sustained
-// fighting, area clear — so no one build owns the ending. Equal weights: it
-// should feel like a coin toss, not a rare event.
-//
-// Multipliers apply to whatever the descent's normal monsters already are, so
-// a finale under a dangerous crystal is dangerous for the same reasons.
-// ===========================================================================
+// Rolled per RUN and never shown beforehand: seeing it coming would let you
+// socket the crystal that suits it. Three shapes — one huge target, a handful
+// of tough ones, a swarm — so no one build owns the ending. Multipliers apply
+// to whatever the descent's monsters already are.
 
 export interface EncounterDef {
   id: string;
@@ -1251,38 +1108,21 @@ export const ENCOUNTERS: EncounterDef[] = [
 /** Which skill a ranged pack uses. */
 export const MONSTER_RANGED_SKILL = 'bolt';
 
-// ===========================================================================
-// LOOT
+// --- loot ------------------------------------------------------------------
 //
-// Fragments are the only thing that drops today, but what the sim accumulates
-// is a currency map plus an item list — so adding shards, gear or crystals
-// later changes what gets pushed in, not the plumbing that carries it or the
-// overlay that displays it.
-//
-// Loot banks only when a run is CLEARED. Dying loses it, which is what makes
-// the clear/fail distinction worth anything.
-// ===========================================================================
+// Banks only when a run is CLEARED. Dying loses it, which is what makes the
+// clear/fail distinction worth anything.
 
-// ===========================================================================
-// DANGER → REWARD
+// --- danger → reward -------------------------------------------------------
 //
-// Every crystal modifier is a DOWNSIDE. Reward is derived from how dangerous
-// the descent has become, rather than being rolled separately.
+// Every crystal modifier is a DOWNSIDE, and reward is derived from how
+// dangerous the descent has become. So no mod is simply good or bad: a roll is
+// "how much of this can my character eat", and a build that shrugs off one
+// kind of danger is paid extra for it.
 //
-// The point is that no mod is simply good or simply bad: a roll becomes "how
-// much of this can my character eat", and a build that shrugs off one kind of
-// danger is being paid extra for it. That's the whole reason this model is
-// worth the plumbing.
-//
-// `weight` is how dangerous one point of a stat is, relative to monster
-// damage at 1.0. `rewards` is whether that danger PAYS.
-//
-// Density is the exception: more monsters is genuinely harder, so it counts
-// toward the displayed Danger, but it already pays you in extra kills — more
-// loot and more XP fall out of there being more things to kill. Letting it
-// also raise the multiplier would pay twice and make density the mod you
-// always want.
-// ===========================================================================
+// `weight` is how dangerous a point of a stat is, with monster damage at 1.0.
+// `rewards` is whether that danger PAYS — density does not, because more
+// monsters already pay you in extra kills.
 
 export interface DangerStat {
   weight: number;
@@ -1301,13 +1141,7 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   packSize: { weight: 0.5, rewards: false },
 };
 
-/**
- * What a point of rewarding danger is worth.
- *
- * Loot only, deliberately — XP stays per-kill. If a "juice XP at the cost of
- * loot" modifier arrives later, it belongs here as a second channel rather
- * than as a special case in the sim.
- */
+/** Loot only; XP stays per-kill. A second channel belongs here, not in the sim. */
 export const REWARD = {
   /** Fragment multiplier gained per danger point. 100 danger = +100%. */
   fragmentPerDanger: 0.01,
@@ -1316,11 +1150,8 @@ export const REWARD = {
 };
 
 /**
- * Currency drops, and what rarity does to them.
- *
- * A drop picks a class first and then a currency within it, so rarity
- * upgrading `basic → uncommon → rare → exotic` is the only thing that gets
- * you the scarce ones. This is also what finally gives the sigils a source.
+ * A drop picks a class first, then a currency within it, so rarity climbing
+ * `basic → uncommon → rare → exotic` is the only route to the scarce ones.
  */
 export const CURRENCY_DROP = {
   chancePerKill: 0.022,
@@ -1328,24 +1159,14 @@ export const CURRENCY_DROP = {
   upgradeChance: 0.17,
 };
 
-// ===========================================================================
-// WHAT A TIER DROPS
+// --- what a tier drops -----------------------------------------------------
 //
-// The crystal you socket decides what the map can give you — not just how
-// much. That is what makes a tier a rung rather than a difficulty slider, and
-// it is the reason the currency ladder above has anything to climb: you
-// cannot re-roll a Faceted item at will until you are running maps that drop
-// the currency for it, and you have no reason to want that currency until you
-// are running maps that drop the item.
+// The crystal decides what the map can GIVE you, not just how much, which is
+// what makes a tier a rung rather than a difficulty slider: you cannot re-roll
+// a Faceted item at will until you run maps that drop the currency for it.
 //
-// `quality` is a weighted table, so a tier has a normal result and a good
-// one. `mods` is how filled a dropped piece arrives — T3 hands you a Faceted
-// item with room left, which is exactly the item Making and Awakening exist
-// for.
-//
-// `currency` is the best CLASS the map can drop. Below the class it rolls as
-// before, with rarity climbing it.
-// ===========================================================================
+// `quality` is weighted, so a tier has a normal result and a good one. `mods`
+// is how filled a piece arrives. `currency` is the best CLASS available.
 
 export interface TierDrops {
   /** Weighted quality table: [quality, weight]. */
@@ -1376,18 +1197,12 @@ export const TIER_DROPS: Record<number, TierDrops> = {
 export const dropsForTier = (tier: number): TierDrops =>
   TIER_DROPS[Math.max(0, Math.min(6, Math.round(tier)))] ?? TIER_DROPS[0];
 
-// ===========================================================================
-// THE SHOP'S SHELF
+// --- the shop's shelf ------------------------------------------------------
 //
-// A shelf that grows with you rather than a catalogue that was always
-// complete. At level 1 it holds one or two Rough pieces and the two currencies
-// you can actually use on them; by the time you have a build it is stocking
-// Faceted gear.
-//
-// It never reaches the top. The best a shop sells is one rung below what a
-// map of the same era drops, so buying is the floor under your luck rather
-// than a way around the crystal ladder.
-// ===========================================================================
+// Grows with you. At level 1 it holds a Rough piece or two and the currencies
+// that work on them. It never reaches the top: the best a shop sells is a rung
+// below what a map of the same era drops, so buying is a floor under your luck
+// rather than a way around the crystal ladder.
 
 export const SHOP = {
   /** Pieces on the shelf: grows one per this many levels, capped. */
@@ -1402,12 +1217,7 @@ export const SHOP = {
   priceByQuality: { rough: 1, seamed: 2.6, faceted: 7, brilliant: 18 } as Record<Quality, number>,
 };
 
-/**
- * What the shop can stock at a given level, best last.
- *
- * Rough only until you have cleared a few maps, because the point of the early
- * shop is a BASE — a wand you did not have — not a finished item.
- */
+/** Best last. Rough only early: the point is a BASE, not a finished item. */
 export const SHOP_QUALITY: Array<{ level: number; quality: Array<[Quality, number]> }> = [
   { level: 1, quality: [['rough', 10]] },
   { level: 5, quality: [['rough', 7], ['seamed', 3]] },
@@ -1429,63 +1239,30 @@ export const LOOT = {
    */
   fragmentsPerKill: 0.115,
   /**
-   * Multiplier per crystal tier.
-   *
-   * Matched to how crystal COST scales (roughly 2.1x a tier). At 1.85 the
-   * yield fell behind the price every tier, so climbing was a losing trade
-   * however well you played — the deep tiers could never pay for themselves.
-   *
-   * Now a juiced crystal sustains its own tier with a little over, and a
-   * plain one does not, which is what makes crafting the crystal the point
-   * rather than an optional flourish.
+   * Matched to how crystal COST scales, roughly 2.1x a tier. A juiced crystal
+   * sustains its own tier with a little over; a plain one does not.
    */
   tierScale: 2.1,
 };
 
 /**
- * What a new game starts with, so there's something to do immediately.
+ * The Fissure, unempowered — a descent with an empty socket. There is only one
+ * place you ever go; a crystal empowers it rather than replacing it.
  *
- * The currency matters as much as the fragments: with an empty wallet the
- * bench is a shelf of disabled buttons until you've been to the workshop,
- * which is a poor first thirty seconds.
- */
-/**
- * The Fissure, unempowered — what you descend into with an empty socket.
- *
- * There is only one place you ever go; a crystal empowers it rather than
- * replacing it. These are the numbers for a descent with nothing socketed:
- * always available, costs nothing, carries no danger, and therefore pays the
- * base rate and nothing more.
- *
- * Without this floor the economy can strand you — a plain crystal banks less
- * than it costs, so a player out of both crystals and fragments would have no
- * way back in. It's a way back, not a place to farm, and it doubles as the
- * first descent anyone makes.
+ * Always available and free, so the economy can never strand you. A way back
+ * in, not a place to farm.
  */
 export const FISSURE = {
   tier: 1,
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
-  /**
-   * Thinner than a tier 1 crystal makes it.
-   *
-   * It's the first thing anyone descends into, so it should leave you visibly
-   * hurt without killing you. A plain T1 crystal killed an ungeared character
-   * roughly one run in five — acceptable for a descent you chose to empower,
-   * not for the one the game hands you.
-   */
+  /** The first thing anyone descends into: visibly hurt, not killed. */
   densityScale: 0.55,
   /**
-   * What clearing it the FIRST time hands you, on top of the descent's own
-   * loot: a Shard of Awakening (10), a Shard of Chaos (12), and a Tier 1
-   * crystal (8) — the exact cost of everything the guided opening asks you to
-   * do, plus the crystal it points you at afterwards.
-   *
-   * Without it the opening was: choose a skill, watch for a minute, and still
-   * not have enough for a crystal. The tutorial teaches you to BUY these, so
-   * handing them over would skip the thing it's teaching. Covering the crystal
-   * matters because the last step tells you that you can afford one: at 22 you
-   * finished on zero and it was a lie.
+   * What the FIRST clear hands you, on top of its own loot: exactly the cost of
+   * everything the guided opening asks you to buy, plus the crystal its last
+   * step says you can now afford. Fragments rather than the items, because
+   * buying them is the thing the opening is teaching.
    */
   firstClear: {
     fragments: 30,
@@ -1504,25 +1281,12 @@ export interface StartPreset {
 }
 
 /**
- * Two starting states, because they answer different questions.
- *
- * `fresh` is what a new player actually gets: nothing at all. `dev` is
- * stocked, for exercising the bench and the tree without grinding first.
- *
- * The distinction matters more than it looks. Judging whether the loop is
- * engaging while starting with a full set of filled gear and 260 fragments
- * is judging the endgame state at the start — no scarcity means nothing to
- * progress through.
+ * `fresh` is what a new player gets; `dev` is stocked, for exercising the bench
+ * and the tree without grinding. Judging the loop from the stocked one is
+ * judging the endgame at the start.
  */
 export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
-  /**
-   * Nothing at all — not even a crystal.
-   *
-   * Two starting crystals read as "use these now", and a brand-new character
-   * socketing one into their first descent died to it. The Fissure is always
-   * open and always free; crystals are what you spend the first clear's
-   * fragments ON, once you have something to spend.
-   */
+  /** Nothing at all. The Fissure is free; crystals are what the first clear buys. */
   fresh: { fragments: 0, currency: {}, crystals: [], gear: [], equipped: false },
   dev: {
     fragments: 260,
@@ -1577,27 +1341,19 @@ export const LEVELLING = {
   perMonster: 8,
   tierScale: 1.6,
   /**
-   * xpToNext(level) = curveBase * level ^ curveExponent
-   *
-   * Tuned so a first cleared T1 descent is worth roughly two levels and the curve
-   * outruns a single run quickly after that. Higher tiers pay far more per
-   * monster, so climbing tiers — not grinding T1 — is what levels you.
+   * xpToNext(level) = curveBase * level ^ curveExponent. Tuned so a first T1
+   * clear is worth about two levels and the curve outruns one run soon after,
+   * so climbing tiers rather than grinding T1 is what levels you.
    */
   curveBase: 260,
   curveExponent: 1.8,
 };
 
-// ===========================================================================
-// SKILLS
+// --- skills ----------------------------------------------------------------
 //
-// Adding a skill is normally a data entry here naming a behaviour from
-// SKILL_BEHAVIOURS in sim/skills.ts — same deal as currencies and effects.
-//
-// `tags` feed the modifier engine, so a skill tagged ['attack','melee'] picks
-// up "increased Melee Damage" with no special-casing. Damage types belong in
-// `damageTypes`, NOT in tags, or "increased Physical Damage" would leak onto
-// a skill's fire damage.
-// ===========================================================================
+// A data entry naming a behaviour from SKILL_BEHAVIOURS. `tags` feed the
+// modifier engine; damage types belong in `damageTypes` and NEVER in tags, or
+// "increased Physical Damage" leaks onto a skill's fire damage.
 
 export const SKILLS: SkillDef[] = [
   {
@@ -1619,16 +1375,9 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
-     * The one with a tree behind it.
-     *
-     * `projectile` is a delivery tag and `fire` is a damage type: the tag goes
-     * in tags, the type in damageTypes. Putting the type in tags would make it
-     * satisfy every damage pass and scale the lot.
-     *
-     * Bare, it is one enemy at range and nothing else — every interesting
-     * thing it can do (bursting, passing through, leaping, burning instead of
-     * critting) is a node you walked to. That is deliberate: the skill is the
-     * seed, the tree is the build.
+     * The one with a tree behind it. Bare, it is one enemy at range and nothing
+     * else; bursting, piercing, leaping and burning are all nodes you walked
+     * to. The skill is the seed, the tree is the build.
      */
     id: 'fireball',
     name: 'Fireball',
@@ -1644,12 +1393,7 @@ export const SKILLS: SkillDef[] = [
     vfxKind: 'bolt',
   },
   {
-    /**
-     * Monsters only — no category, so it never shows up in your Skills screen.
-     *
-     * A husk throwing fire needs a skill definition like anything else, but it
-     * is not a thing you pick, level or build a tree for.
-     */
+    /** Monsters only — no category, so it never reaches your Skills screen. */
     id: 'bolt',
     name: 'Fire Bolt',
     description: 'A bolt of fire at range. Single target, from much further away.',
@@ -1663,15 +1407,9 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
-     * The first skill that doesn't work by hitting things.
-     *
-     * Damage over time is resisted but NOT reduced by armour, so this is the
-     * answer to a target you can't punch through — and the first case where
-     * what a monster is armoured against actually matters.
-     *
-     * Low per-stack damage that stacks is deliberate: the payoff comes from
-     * applying it to a crowd early and letting it work while you fight, not
-     * from any single cast.
+     * Doesn't work by hitting things. Damage over time is resisted but NOT
+     * armoured, so this is the answer to a target you can't punch through. Low
+     * per-stack damage that stacks: the payoff is a crowd, not a cast.
      */
     id: 'blight',
     name: 'Creeping Blight',
@@ -1690,19 +1428,9 @@ export const SKILLS: SkillDef[] = [
     range: 6.5,
     vfxKind: 'blight_field',
     /**
-     * Measured against PACKS, not against every cast.
-     *
-     * Averaging over all casts is misleading here: most casts happen with one
-     * or two enemies nearby, which drags the mean down and makes a circle look
-     * modest when it is actually swallowing whole rooms. The number that
-     * matters is what it catches when there IS a crowd — enemies within 3.5
-     * tiles of the target — because that is the case the radius is for.
-     *
-     * At 0.9 a packed cast catches a median of 2 and an average of 1.96, up
-     * to 4 or 5 where bodies are genuinely stacked. The old 3.2 caught a
-     * median of 5 and as many as 19, which is not an area skill so much as a
-     * room clear. 3.2 is now where a heavily invested character ends up, not
-     * where everyone starts.
+     * Tuned against PACKS, not against the average cast — most casts have one
+     * or two enemies near and drag the mean down. At 0.9 a packed cast catches
+     * a median of 2; 3.2 is where a heavily invested character ends up.
      */
     params: { radius: 0.9, duration: 10 },
   },
@@ -1713,11 +1441,8 @@ export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(
 );
 
 /**
- * The shelves of the Skills screen, in the order they are shown.
- *
- * Movement and Passive are empty for now and still listed. An empty shelf
- * with a name is a promise about where something goes; leaving it out and
- * adding it later moves everything the player had already learned.
+ * The shelves of the Skills screen, in order. Empty ones are still listed: a
+ * named empty shelf is a promise about where something goes.
  */
 export const SKILL_CATEGORIES: Array<{
   id: SkillCategory;

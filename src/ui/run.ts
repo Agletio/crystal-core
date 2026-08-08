@@ -1,18 +1,11 @@
 /**
- * The Fissure, in three states: prepare, descend, read the result.
+ * The Fissure, in three states: prepare, descend, read the result. There is only
+ * one place you go; a crystal empowers it rather than replacing it, so Enter is
+ * never disabled and an empty socket is a legitimate run.
  *
- * There is only ever one place you go. A crystal isn't a destination, it's
- * something you socket to empower what's already down there — which is why
- * Enter is never disabled and an empty socket is a legitimate run rather than
- * an error state. That's the whole anti-stuck guarantee: no crystals is a
- * setback, never a dead end.
- *
- * Owns real time and nothing else. The sim advances in fixed TICK steps and
- * the renderer draws whatever state it finds, so pausing or a janky frame
- * can't change the outcome of a run — only how fast you watch it.
- *
- * A socketed crystal is CONSUMED, win or lose. That's what gives fragments a
- * purpose and stops one good crystal being farmed forever.
+ * Owns real time and nothing else — the sim advances in fixed TICK steps, so a
+ * janky frame changes how fast you watch a run, never its outcome. A socketed
+ * crystal is CONSUMED win or lose.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
@@ -67,14 +60,7 @@ let seed = 0;
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
 
-/**
- * Starting zoom for the surface we actually got.
- *
- * 2x everywhere it fits, and only tighter when the canvas is too short to
- * keep the hero's reach on screen. The rule is about the game — you should be
- * able to see what you are shooting at — rather than about a phone, so it
- * holds on a screen size nobody has tried.
- */
+/** 2x where it fits, tighter only to keep the hero's reach on screen. */
 
 /** What's in the socket. Null is a plain, unempowered descent. */
 let chosen: Item | null = null;
@@ -467,18 +453,9 @@ function setStartLabel(): void {
 }
 
 /**
- * The stage takes the height the frame has left rather than an aspect ratio.
- * An aspect ratio is what made the run view taller than the window and grew a
- * scrollbar over it. Measured off the row, not the stage box, because the
- * canvas we're about to size is what's inside the box.
- */
-/**
- * Whether the player has chosen a zoom themselves.
- *
- * Until they do, the starting zoom is recomputed whenever the surface
- * changes size — rotating a phone or opening a panel should re-pick a sane
- * scale rather than leave a number that made sense for the old shape. Once
- * they touch the control it is theirs and nothing moves it.
+ * Once the player picks a zoom it is theirs and nothing moves it. Until then the
+ * starting zoom is recomputed on every resize, so rotating a phone re-picks a
+ * sane scale rather than keeping one that suited the old shape.
  */
 let userZoomed = false;
 

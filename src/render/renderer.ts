@@ -1,16 +1,7 @@
 /**
- * The renderer boundary.
- *
- * This interface is the whole reason placeholder graphics are cheap to
- * replace. A renderer only ever READS RunState — it never writes back, and
- * the sim has no idea it exists. There are two implementations now
- * (canvas2d and pixi), which is the practical proof that the seam works.
- *
- * A renderer owns its own drawing surface and appends it to the host element,
- * because a WebGL context and a 2D context cannot share one canvas.
- *
- * Positions in RunState are in tile units, not pixels, so an implementation
- * is free to choose its own scale, camera, or projection.
+ * The renderer boundary. A renderer only READS RunState, owns its own surface
+ * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
+ * scale and camera are its own business.
  */
 import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
@@ -23,11 +14,7 @@ export interface Palette {
   /** Map-only. Stone is grey; the panel violet is a different vocabulary. */
   floor: string;
   floorLit: string;
-  /**
-   * The wall you can see, its lit top, and the solid rock behind everything.
-   * `rock` is LIGHTER than `floor` — you are looking slightly down at a
-   * chamber, so its walls catch the light and the floor sits in their shadow.
-   */
+  /** `rock` is LIGHTER than `floor`: walls catch the light, floors sit in shadow. */
   rock: string;
   rockTop: string;
   rockDeep: string;
@@ -44,11 +31,7 @@ export interface Renderer {
   /** CSS pixel dimensions. Implementations handle devicePixelRatio. */
   resize(width: number, height: number): void;
   draw(state: RunState): void;
-  /**
-   * 1 fits the whole map on screen. Above that the view zooms in and follows
-   * the hero, because a zoomed view that doesn't track the action just shows
-   * you an empty corner.
-   */
+  /** 1 fits the whole map. Above that the view follows the hero. */
   setZoom(zoom: number): void;
   /** Release the surface and any GPU resources. */
   destroy(): void;
@@ -57,36 +40,16 @@ export interface Renderer {
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 5;
 
-/**
- * Pixels per tile at 1x, once you are past Fit.
- *
- * Zoom used to be a multiple of "whatever fits the whole map", which meant it
- * measured something different on every screen AND on every map: 2x was ~37px
- * a tile on a desktop and ~17px on a phone, so the same label produced a
- * comfortable view on one and a distant one on the other. As an absolute
- * scale, 2x is 2x everywhere and a small screen shows less world rather than
- * smaller world — which is the thing that was actually wrong.
- */
+/** Pixels per tile at 1x. Absolute, so a small screen shows less world. */
 export const TILE_AT_1X = 18;
 
-/**
- * Tiles that must stay visible across the shorter axis.
- *
- * The hero's reach is about six and a half tiles, so a view tighter than this
- * hides things it is already shooting at. Stated as a fact about the GAME
- * rather than about any device, which is what makes it hold on hardware
- * nobody has tested.
- */
+/** The hero's reach is ~6.5 tiles; tighter hides what it is already shooting. */
 export const MIN_TILES_VISIBLE = 16;
 
-/**
- * Where to start on this surface: 2x when there is room for it, tighter only
- * when the surface is too small to keep the hero's reach on screen.
- */
+/** 2x when there is room, tighter only to keep the hero's reach on screen. */
 export function defaultZoom(shortAxisPx: number): number {
-  // An unmeasured surface says nothing about what fits on it — headless, or
-  // a panel that has not been laid out yet. Answering 1x there would mean
-  // booting at Fit, which is the one scale a fight is unreadable at.
+  // Unmeasured: headless, or not laid out yet. 1x here would boot at Fit,
+  // which is the one scale a fight is unreadable at.
   if (!(shortAxisPx > 0)) return 2;
   const affordable = shortAxisPx / MIN_TILES_VISIBLE / TILE_AT_1X;
   return clampZoom(Math.min(2, affordable));
@@ -129,11 +92,7 @@ export function readPalette(el: Element): Palette {
   return out;
 }
 
-/**
- * Art keys → colour. Shared so both renderers agree on what a Brute looks
- * like; a sprite-based renderer replaces this with a texture lookup and
- * nothing else changes.
- */
+/** Art keys → colour, shared so both renderers agree what a Brute looks like. */
 export function spriteColour(palette: Palette, sprite: string): string {
   switch (sprite) {
     case 'hero':
@@ -151,16 +110,10 @@ export function spriteColour(palette: Palette, sprite: string): string {
   }
 }
 
-/**
- * Colour for an effect. Kind wins over damage type, because telling two
- * attacks apart at a glance matters more than colour-coding the element —
- * and this is a presentation call, which is why it lives here and not in
- * the skill data.
- */
+/** Kind wins over damage type: telling two attacks apart matters more. */
 export function vfxColour(palette: Palette, kind: string, damageType: string): string {
-  // Only the neutral kinds get a fixed colour. A bolt used to be violet
-  // whatever it was made of, which was fine when the one bolt in the game was
-  // arcane and wrong the moment a tree could turn a fireball to ice.
+  // Only the neutral kinds get a fixed colour; anything elemental follows its
+  // damage type, so a converted fireball looks converted.
   if (kind === 'slash') return palette.chalk;
   return damageColour(palette, damageType);
 }
@@ -180,31 +133,11 @@ export function damageColour(palette: Palette, type: string): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// The floor
-// ---------------------------------------------------------------------------
-
 /**
- * Rock colour, per tile.
- *
- * The map used to be one flat fill across every walkable tile, which read as
- * a violet slab with a bright outline rather than a place — and it read the
- * same on every descent, so a crystal changed the numbers and nothing you
- * could see.
- *
- * Three things vary here, in rising order of how much they say:
- *
- *  - Grain. A deterministic per-tile wobble, small enough that you never
- *    catch a single tile being different and large enough that the surface
- *    stops looking printed.
- *  - Chambers against passages. A corridor is darker and cooler than a room,
- *    so the shape of the level is legible at Fit instead of having to be
- *    traced. This is the one that is worth more than decoration.
- *  - The vein. The mineral the crystal ran through the rock, as sparse flecks
- *    in that tier's colour. A T5 map is visibly not a T1 map.
- *
- * Everything is a pure function of (x, y, tile, vein) so both renderers agree
- * exactly, and re-drawing a frame can never make the floor shimmer.
+ * Rock colour, per tile. Grain is a per-tile wobble; passages read darker than
+ * chambers, so the level's shape is legible at Fit; the vein is the crystal's
+ * mineral, so a T5 map is visibly not a T1 map. Pure in (x, y, tile, vein), so
+ * both renderers agree and the floor never shimmers.
  */
 
 /** The seam colour for a crystal tier. Matches the icons' own ladder. */
@@ -222,13 +155,7 @@ export function veinColour(palette: Palette, vein: number): string {
   return palette[VEIN_COLOURS[i]];
 }
 
-/**
- * A stable 0..1 hash of a tile.
- *
- * Not the seeded Rng: this has to be answerable for one tile without having
- * generated every tile before it, because a renderer draws whatever is on
- * screen and nothing else.
- */
+/** Answerable for one tile without having generated any other — not the Rng. */
 function tileNoise(x: number, y: number, salt: number): number {
   let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
   h = (h ^ (h >>> 13)) * 1274126177;
@@ -236,13 +163,9 @@ function tileNoise(x: number, y: number, salt: number): number {
 }
 
 /**
- * The same hash, smoothed across a coarse lattice.
- *
- * Hashing each tile independently is the obvious thing and it looks like
- * television static: every tile differs from its neighbour, so the eye reads
- * noise rather than surface. Rock varies in PATCHES. Interpolating between
- * lattice points several tiles apart gives broad soft areas of lighter and
- * darker stone, which is what the flat fill was actually missing.
+ * The same hash, smoothed across a coarse lattice. Per-tile hashing reads as
+ * television static; rock varies in PATCHES, so interpolating between lattice
+ * points several tiles apart is what gives broad areas of lighter stone.
  */
 function patchNoise(x: number, y: number, scale: number, salt: number): number {
   const fx = x / scale;
@@ -288,11 +211,7 @@ const PATCH_DEPTH = 0.16;
 /** Fraction of tiles carrying a fleck of the vein. */
 const VEIN_DENSITY = 0.055;
 
-/**
- * Sub-tile pixels. Every decal below is a whole number of these, so the floor
- * is drawn on a grid in the same way the sprites are — a smooth blob on a
- * pixel-art floor is the seam you cannot stop noticing.
- */
+/** Sub-tile pixels. Every decal is a whole number of these, like the sprites. */
 const SUB = 8;
 const U = 1 / SUB;
 
@@ -310,18 +229,9 @@ export interface Decal {
 }
 
 /**
- * Every colour the floor can be, worked out once.
- *
- * This exists for speed and it is not a micro-optimisation. mix() parses two
- * hex strings and builds a third every time it is called, and the floor wanted
- * eight of them PER TILE — which on a full map is tens of thousands of string
- * round-trips on the single frame that starts a descent, and showed up as a
- * third of a second of hitch on the click.
- *
- * Nothing here depends on x or y. Quantising the grain to a handful of steps
- * is what makes that true, and it costs nothing visually: seven shades across
- * a range this narrow is already more than the eye separates, and it collapses
- * a thousand one-rectangle draw batches into a handful.
+ * Every colour the floor can be, worked out once: mix() parses two hex strings
+ * per call and the floor wants eight PER TILE. Quantising the grain to a few
+ * steps is what makes this independent of x and y.
  */
 export interface FloorPalette {
   /** Grain ramp, dark to light. Indexed by a quantised patch value. */
@@ -373,18 +283,9 @@ export function floorColour(floor: FloorPalette, tile: number, x: number, y: num
 }
 
 /**
- * Is this rock worth drawing?
- *
- * Only the wall you could actually see from a room. The map used to draw
- * nothing at all where the rock was, which left every chamber as a slab of
- * floor floating in the background — you could read where you could walk but
- * the place had no walls, and a room with no walls is a shape rather than a
- * room. Drawing EVERY wall tile is the other extreme: two thousand tiles of
- * solid rock that is the same colour as the background behind it.
- *
- * So: the band next to the floor gets drawn, and everything past it is the
- * background, which is the same rock a shade darker. That is the whole
- * difference and it costs a ring of tiles rather than a grid of them.
+ * Is this rock worth drawing? Only the band next to the floor: past it the
+ * background is the same rock a shade darker, so drawing every wall tile is two
+ * thousand tiles the colour of what is already behind them.
  */
 export function isWallFace(at: (x: number, y: number) => number, x: number, y: number): boolean {
   if (at(x, y) !== WALL) return false;
@@ -401,22 +302,10 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
 const snap = (n: number): number => Math.floor(n * SUB) * U;
 
 /**
- * Everything drawn ON a floor tile, past its base colour.
- *
- * The floor had grain and a tunnel/room split, which said where you could
- * walk but nothing about where you were. This is what makes it a place: rooms
- * are FLAGSTONE — two courses per tile, offset like brickwork — and passages
- * are bare rock, so the map reads as a building the cave got into rather than
- * as two shades of the same slab. Roughly a fifth of the paving is missing,
- * which is the whole difference between a castle and a ruin.
- *
- * Light comes from above: the edge below a wall is lit, the edge above one is
- * in shadow. That single pair does more for depth than the uniform outline it
- * replaces, which lit all four sides equally and so implied no light at all.
- *
- * Pure and deterministic per tile — a renderer can draw one tile without
- * having drawn any other, and re-drawing a frame can never make the floor
- * crawl.
+ * Everything drawn ON a floor tile past its base colour. Rooms are FLAGSTONE,
+ * two courses per tile offset like brickwork; passages are bare rock; a fifth
+ * of the paving is missing, which is castle against ruin. Light comes from
+ * above, so the edge below a wall is lit and the edge above one is shadowed.
  */
 export function tileDecals(
   floor: FloorPalette,
@@ -431,11 +320,8 @@ export function tileDecals(
   if (tile === WALL) {
     if (!isWallFace(at, x, y)) return out;
 
-    // Blocks, but broken ones. The wall needs SOME structure or it is a flat
-    // grey band — but coursed masonry on the walls is what tipped the whole
-    // map from cave into castle, since a chamber cut out of rock has dressed
-    // paving at most and the rock it was cut from is just rock. So: block
-    // seams that skip, at three different heights, per tile.
+    // Broken blocks, at three heights. A wall needs SOME structure or it is a
+    // flat grey band, but coursed masonry tips the map from cave into castle.
     const seams = tileNoise(x, y, 61);
     if (seams < 0.8) {
       out.push({ x: 0, y: 0.5, w: 1, h: U, colour: floor.rockShade, alpha: 0.55 });
@@ -486,13 +372,9 @@ export function tileDecals(
     return out;
   }
 
-  // --- floor --------------------------------------------------------------
-  //
-  // Not every chamber is paved. A coarse noise field — far wider than a room —
-  // decides which parts of the level were ever built in, so you cross from
-  // flagstone to bare cave floor and back without every room looking like
-  // every other one. That variety is most of what "a cave with a ruin in it"
-  // looks like, and it costs one extra noise lookup.
+  // A coarse noise field, far wider than a room, decides which parts of the
+  // level were ever built in — so you cross from flagstone to bare cave floor
+  // and back rather than every room looking like every other one.
   const built = patchNoise(x, y, 13, 9) > 0.42;
   const paved = tile !== TUNNEL && built;
 
@@ -545,19 +427,15 @@ export function tileDecals(
       w: size,
       h: size,
       colour: floor.vein,
-      // Quieter than it was. Against violet rock the flecks were a texture;
-      // against grey they are the only saturated thing on screen, and at full
-      // strength a mineral seam competed with the monsters for attention.
+      // Quiet: against grey these are the only saturated thing on screen, and
+      // at full strength a mineral seam competes with the monsters.
       alpha: 0.5,
     });
   }
 
-  // Where the floor meets rock. The wall itself carries the lit face now, so
-  // the floor only needs the contact shadow under it.
-  // A hard contact line wherever floor meets rock. This is the single thing
-  // that makes a chamber read as enclosed rather than as a patch of lighter
-  // ground: without it the wall is just a differently-coloured area, and the
-  // eye needs an EDGE to call something a boundary.
+  // A hard contact line wherever floor meets rock. Without an EDGE the wall is
+  // just a differently-coloured area, and a chamber reads as a patch of ground
+  // rather than as somewhere enclosed.
   if (at(x, y - 1) === WALL) {
     out.push({ x: 0, y: 0, w: 1, h: U * 1.5, colour: floor.shade, alpha: 0.9 });
   }
@@ -588,20 +466,10 @@ export function toHexNumber(colour: string): number {
   return Number.isNaN(n) ? 0xffffff : n;
 }
 
-// ---------------------------------------------------------------------------
-// Poison field
-// ---------------------------------------------------------------------------
-
 /**
- * The falling-poison animation, as pure geometry.
- *
- * Both renderers call this so the effect is identical in each, and — more to
- * the point — so the RADIUS drawn is the radius the sim actually used. The
- * skill emits its true radius as a second point; nothing here invents a size.
- * That is what makes the circle a readable statement about what you did and
- * did not catch, and what makes Area of Effect visible as it grows.
- *
- * Everything is in tile units. Time `t` runs 0 to 1 over the effect's life.
+ * The falling-poison animation, as pure geometry, so the radius DRAWN is the
+ * radius the sim used — the skill emits it as a second point and nothing here
+ * invents a size. Tile units; `t` runs 0 to 1 over the effect's life.
  */
 export interface PoisonDrop {
   x: number;
@@ -619,13 +487,8 @@ const DROP_HEIGHT = 1.15;
 const OPEN = 0.16;
 
 /**
- * The drawn radius, which snaps open and then holds at the true one.
- *
- * A circle that simply appears at full size and fades reads as an aura that
- * belongs to whatever is standing there. Punching it open says something
- * HAPPENED, at a moment, in a place — which is what a cast is. The hold is the
- * important half: for most of its life the circle is exactly the radius the
- * sim used, so it stays a statement about what got caught.
+ * Snaps open, then HOLDS at the true radius. Appearing at full size reads as an
+ * aura; the hold is what keeps it a statement about what got caught.
  */
 export function poisonFieldRadius(radius: number, t: number): number {
   if (t >= OPEN) return radius;
@@ -633,14 +496,7 @@ export function poisonFieldRadius(radius: number, t: number): number {
   return radius * (1 - (1 - p) * (1 - p));
 }
 
-/**
- * A burst: out fast, then gone.
- *
- * The opposite curve to a poison field, which eases OPEN and then sits there.
- * An explosion that grew the same way would read as a circle being placed
- * rather than something going off, and the whole point of drawing it is that
- * you can tell what the burst caught.
- */
+/** Out fast, then gone — the opposite curve to a poison field's ease-and-hold. */
 export function burstRadius(radius: number, t: number): number {
   return radius * Math.min(1, Math.sqrt(t * 3.2));
 }

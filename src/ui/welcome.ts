@@ -1,13 +1,6 @@
 /**
- * First run: pick a skill, then straight into the Fissure.
- *
- * The old first thirty seconds were a crafting bench you had no currency for
- * and a list of destinations you had two entries in. This asks the one
- * question that matters — how do you want to fight — and then puts you in a
- * fight.
- *
- * Nothing to buy and nothing to read first. The bench can wait until you have
- * something to spend.
+ * First run: one question — how do you want to fight — then straight into the
+ * Fissure. The bench waits until you have something to spend.
  */
 import { PLAYER_SKILLS } from '../data';
 import { skillIcon } from './icons';

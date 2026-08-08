@@ -1,15 +1,7 @@
 /**
- * A reference set of gear, for the dev kit and for the balance harnesses.
- *
- * The point is that the numbers on screen come from actual mods on actual
- * items from the first second — the gear → computeStat → combat path is live
- * before you equip anything yourself.
- *
- * Quality is a parameter because this is also what the tier ladder is measured
- * against, and "what does a Faceted set clear" is the question that ladder
- * exists to answer. It used to hand every slot a filled item unconditionally,
- * which is now a specific claim rather than the only possibility: a Seamed set
- * and a Brilliant set are different characters.
+ * A reference set of gear for the dev kit and the balance harnesses. Quality is
+ * a parameter because "what does a Faceted set clear" is what the tier ladder
+ * exists to answer.
  */
 import { Rng } from '../rng';
 import { ModPool, modCapacity } from '../mods';

@@ -1,13 +1,7 @@
 /**
- * Map geometry.
- *
- * Nothing in src/sim touches the DOM — the whole sim runs in Node, which is
- * what lets smoke.mjs and the demo assert on it. The renderer reads this
- * state and draws it; it never writes back.
- *
- * Map shape comes off the crystal's own mods through the same computeStat
- * path the character uses. That's the design promise from the README: a
- * crystal is an item whose mods feed the map generator.
+ * Map geometry. Nothing in src/sim touches the DOM, so the whole sim runs in
+ * Node and the harnesses can assert on it. Map shape comes off the crystal's own
+ * mods through the same computeStat path the character uses.
  */
 import { Rng } from '../rng';
 import { computeStat } from '../mods';
@@ -23,12 +17,9 @@ export const FLOOR = 1;
 export const ENTRANCE = 2;
 export const EXIT = 3;
 /**
- * Corridor floor.
- *
- * Walkable exactly like FLOOR — `walkable()` is "not a wall", so nothing in
- * the sim has to learn about it. It exists so a renderer can tell a chamber
- * from a passage without re-deriving it from the room rectangles every frame,
- * which is what turns a flat slab of one colour into somewhere with a shape.
+ * Corridor floor. Walkable exactly like FLOOR, since `walkable()` is "not a
+ * wall" — it exists so a renderer can tell a chamber from a passage without
+ * re-deriving it from the room rectangles every frame.
  */
 export const TUNNEL = 4;
 
@@ -42,11 +33,8 @@ export interface Room {
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 /**
- * Whole-tile centre, deliberately not fractional.
- *
- * Entrance and exit are derived from this, and the pathfinder works in whole
- * tiles — a fractional landmark leaves the hero permanently half a tile short
- * of a goal it believes it has reached.
+ * Whole-tile, never fractional: the pathfinder works in whole tiles, and a
+ * fractional landmark leaves the hero half a tile short of a goal forever.
  */
 export function roomCenter(r: Room): Vec2 {
   return { x: r.x + Math.floor((r.w - 1) / 2), y: r.y + Math.floor((r.h - 1) / 2) };
@@ -88,14 +76,10 @@ export class Grid {
 }
 
 /**
- * Can a straight line between two points be drawn without crossing a wall?
- *
- * Sampled along the segment rather than a Bresenham walk, because entities sit
- * at fractional positions and we care about the line between their actual
- * centres, not between the tiles they happen to round into.
- *
- * The step is well under a tile, so a one-tile wall can never be skipped over.
- * Only called once a range check has already passed, so it stays cheap.
+ * Can a straight line between two points avoid a wall? Sampled along the
+ * segment, not Bresenham: entities sit at fractional positions and the line
+ * between their real centres is what matters. The step is well under a tile, so
+ * a one-tile wall can never be stepped over.
  */
 export function hasLineOfSight(grid: Grid, a: Vec2, b: Vec2): boolean {
   const dx = b.x - a.x;
@@ -117,16 +101,9 @@ export interface GameMap {
   entrance: Vec2;
   exit: Vec2;
   /**
-   * Which mineral runs through this rock, as a tier index.
-   *
-   * Presentation reads it; the sim never does. It's here rather than in the
-   * renderer because it has to be a fact about the MAP — the same crystal
-   * must produce the same coloured seams every time, and a renderer inventing
-   * it would give the two implementations different maps.
-   *
-   * A descent should look like the crystal you paid for. Every Fissure being
-   * the same violet slab made the socket feel cosmetic, which is the opposite
-   * of what a crystal is meant to be.
+   * Which mineral runs through this rock. Presentation reads it, the sim never
+   * does — but it is a fact about the MAP, so the two renderers cannot invent
+   * different seams for the same crystal.
    */
   vein: number;
 }
@@ -147,12 +124,9 @@ function carveRoom(grid: Grid, r: Room): void {
 }
 
 /**
- * Carve one corridor tile, leaving a permanent wall border around the map.
- *
- * Only ever writes into rock. Corridors are carved after every room, so
- * without the guard a passage crossing a chamber would relabel the middle of
- * it as passage — and the map would draw a corridor-coloured stripe through
- * the room it connects to.
+ * One corridor tile, leaving a permanent wall border. Only ever writes into
+ * rock: corridors are carved after the rooms, so without the guard a passage
+ * would relabel the middle of the chamber it connects to.
  */
 function carve(grid: Grid, x: number, y: number): void {
   if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
@@ -182,13 +156,9 @@ function vLine(grid: Grid, y0: number, y1: number, x: number, width: number): vo
 }
 
 /**
- * L-shaped corridor. Both legs always get carved; leg ORDER is what the seed
- * picks, which is what makes layouts differ.
- *
- * Corridors are 2-3 tiles wide so a few units fit abreast. At one tile wide,
- * body collision turns every hallway into a single-file queue and the hero
- * fights one monster at a time forever — which looks less like a fight and
- * more like a checkout line.
+ * L-shaped corridor: both legs always carve, the seed picks their ORDER. Two to
+ * three tiles wide, because at one tile body collision turns every hallway into
+ * a single-file queue.
  */
 function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng): void {
   const ax = Math.round(a.x);

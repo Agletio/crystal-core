@@ -1,18 +1,7 @@
 /**
- * Turning a rolled stat line into the sentence a player actually reads.
- *
- * This exists because the old one-liner printed `s.stat` raw, which had two
- * consequences that looked like content bugs rather than display bugs:
- *
- *   1. It ignored the line's TAGS. Fire, cold, melee and generic damage are
- *      all `stat: 'damage'` and differ only by tag, so six distinct mods all
- *      rendered as "+18% increased damage". The elemental mods were rolling
- *      fine the whole time — they were simply invisible.
- *   2. It printed identifiers. "increased attackSpeed", "+9 critMultiplier",
- *      "+12 fireRes" — camelCase leaking into the fiction.
- *
- * Both are fixed here rather than at the call sites, so anything that grows a
- * new stat or tag gets readable text for free.
+ * Turning a rolled stat line into the sentence a player reads. It must never
+ * print an identifier, and must never drop the line's TAGS: fire, cold, melee
+ * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
 import { DAMAGE_TYPES, DAMAGE_GROUPS, DELIVERY_TAGS } from './data';
 import type { StatRoll } from './types';
@@ -59,11 +48,7 @@ function resistancePrefix(stat: string): string | null {
   return TAG_WORDS[key] ?? titled(key);
 }
 
-/**
- * The readable name of a stat on its own, before tags qualify it.
- * Falls back to splitting camelCase so a new stat is never unreadable, only
- * unpolished — which is the right way round for a table anyone can extend.
- */
+/** Falls back to splitting camelCase, so a new stat is unpolished, not unreadable. */
 export function statLabel(stat: string): string {
   const named = NAMED[stat];
   if (named) return named;
@@ -77,11 +62,8 @@ export function statLabel(stat: string): string {
 }
 
 /**
- * What a line's tags add to the stat's name.
- *
- * A line tagged ['fire'] on `damage` is Fire Damage. Tags the player has no
- * word for are dropped rather than printed raw — an internal grouping tag
- * leaking into an item description is worse than saying nothing.
+ * What a line's tags add: ['fire'] on `damage` is Fire Damage. Tags with no
+ * player-facing word are dropped rather than printed raw.
  */
 export function qualify(stat: string, tags: string[] = []): string {
   const base = statLabel(stat);

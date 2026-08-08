@@ -1,11 +1,4 @@
-/**
- * Turning items into combat numbers.
- *
- * Everything here goes through computeStat, so the flat/increased/more order
- * is exercised for real for the first time. The README calls a subtle bug
- * here the one that "poisons everything downstream and stays invisible for
- * months" — this is where that would show up.
- */
+/** Items into combat numbers. A subtle bug here poisons everything downstream. */
 import { computeStat, percentStat } from '../mods';
 import {
   DAMAGE_TYPES,
@@ -43,14 +36,7 @@ export interface CombatStats {
   armourReduction: number;
   /** Extra percent damage on a crit, on top of the base doubling. */
   critMultiplier: number;
-  /**
-   * Percent increase to the AREA of area effects, not the radius.
-   *
-   * Behaviours must not use this directly — `areaRadius` on SkillUse converts
-   * it, because +100% area is a 1.41x radius, not 2x. Keeping the conversion
-   * in one place is what stops two skills disagreeing about what the stat
-   * means.
-   */
+  /** AREA, not radius. Behaviours must go through `areaRadius`, never this. */
   areaOfEffect: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
@@ -58,13 +44,10 @@ export interface CombatStats {
 }
 
 /**
- * Armour points to a flat percentage.
- *
- * Curved on POINTS, not on the size of the hit. Hit-size scaling made armour
- * impossible to state honestly — its worth changed with every attacker — but
- * a straight linear conversion has no good answer either: pick a small
- * divisor and three mods reach the cap, pick a large one and every mod feels
- * like nothing. This keeps each point useful and still prints as one number.
+ * Armour points to a flat percentage, curved on POINTS rather than on the size
+ * of the hit, so it prints as one honest number. A linear conversion has no
+ * good divisor: small and three mods cap it, large and every mod feels like
+ * nothing.
  */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
@@ -72,11 +55,7 @@ export function armourReduction(armour: number): number {
   return Math.min(DEFENCE.armourCap, raw);
 }
 
-/**
- * Resistance per type: its own, plus its group's, capped together.
- *
- * Typeless is deliberately missing from the result — nothing resists it.
- */
+/** Own plus group, capped together. Typeless is absent: nothing resists it. */
 export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const type of DAMAGE_TYPES) {
@@ -87,21 +66,11 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   return out;
 }
 
-// Damage types now come from the DAMAGE_TYPES table in data.ts, so adding one
-// makes it resolvable, resistable and displayable everywhere at once.
-
 /**
- * Damage types are resolved separately and summed.
- *
- * This is what makes tagged mods work without special-casing: a stat line
- * applies only if all of ITS tags are in the context. So in the fire pass the
- * context is [...skillTags, 'fire'] — "+12 fire damage" (tags ['fire'])
- * applies, "increased Physical Damage" (tags ['physical']) does not, and an
- * untagged "+40% increased damage" applies to every pass because it has no
- * tags to satisfy.
- *
- * The skill's own tags ride along in every pass, which is how "increased
- * Melee Damage" finds a melee skill for free.
+ * Damage types are resolved separately and summed. In the fire pass the context
+ * is [...skillTags, 'fire'], so "+12 fire damage" applies, "increased Physical
+ * Damage" does not, and an untagged line applies to every pass. The skill's own
+ * tags ride along, which is how "increased Melee Damage" finds a melee skill.
  */
 export function skillDamage(
   mods: RolledMod[],
@@ -111,14 +80,9 @@ export function skillDamage(
 ): number {
   let total = 0;
 
-  // Conversion replaces the skill's type outright. It does NOT keep the old
-  // type live: a Fireball dealing cold that still scaled off fire modifiers
-  // would scale off both, which is not a choice, it is a free second stat.
-  //
-  // What stops that being a punishment is that conversion rewrites the TREE
-  // (see treeMod) — every fire node you walked through to reach the node
-  // becomes a cold node. The wedge you paid for keeps working; your gear is
-  // what has to change.
+  // Conversion replaces the type outright and does NOT keep the old one live:
+  // scaling off both is a free second stat, not a choice. What stops that being
+  // a punishment is that it rewrites the TREE too — see treeMod.
   const converted = convertedType(skill, grants);
   const active = converted ? [converted] : skill.damageTypes;
 
@@ -127,9 +91,7 @@ export function skillDamage(
     total += computeStat(typeBase, mods, 'damage', [...skill.tags, type.id]);
   }
 
-  // Typeless carries no type tag, so only untagged lines — generic
-  // "increased Damage" — can reach it. Nothing type-specific scales it, which
-  // is the entire point of having it.
+  // Typeless carries no type tag, so only untagged lines can reach it.
   if (skill.damageTypes.includes(TYPELESS)) {
     total += computeStat(base, mods, 'damage', [...skill.tags, TYPELESS]);
   }
@@ -163,8 +125,7 @@ export function heroStats(
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     damage: skillDamage(mods, base.weaponDamage, skill, grants),
-    // Spells scale with cast speed, attacks with attack speed. A spell has no
-    // business getting faster because you found a sharper sword.
+    // A spell has no business getting faster because you found a sharper sword.
     attacksPerSecond:
       computeStat(
         HERO_BASE.attacksPerSecond,
@@ -172,8 +133,7 @@ export function heroStats(
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) * skill.rateMultiplier,
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
-    // Tagged by the skill, so a future "increased Area of Effect of Spells"
-    // filters exactly like every other tagged line.
+    // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour: computeStat(HERO_BASE.armour, mods, 'armour'),
@@ -185,11 +145,8 @@ export function heroStats(
 }
 
 /**
- * Everything the allocated tree nodes contribute, as one synthetic mod.
- *
- * Reusing RolledMod means node stats go through the exact same aggregation as
- * gear — tags, flat/increased/more, all of it — rather than being a second
- * parallel system that drifts.
+ * The allocated nodes as one synthetic mod, so they go through the same
+ * aggregation as gear rather than a second parallel system that drifts.
  */
 export function treeMod(character: Character): RolledMod | null {
   const progress = character.skills[character.skillId];
@@ -205,10 +162,8 @@ export function treeMod(character: Character): RolledMod | null {
       stat: s.stat,
       form: s.form,
       value: s.value,
-      // Conversion retags the tree's own lines. A Frostfire build walked
-      // through a wedge of "increased Fire Damage" to get there; those nodes
-      // become cold nodes rather than dead weight, which is what lets a
-      // conversion sit deep in a fire tree without invalidating the path.
+      // Conversion retags the tree's own lines, so the fire wedge you walked
+      // through to reach it becomes a cold wedge rather than dead weight.
       tags: (s.tags ?? []).map((t) =>
         converted && skill.damageTypes.includes(t) ? converted : t
       ),
@@ -227,14 +182,7 @@ export function treeMod(character: Character): RolledMod | null {
   };
 }
 
-/**
- * Grants that STACK rather than replace.
- *
- * Two nodes granting `pierce: 1` must mean two pierces; two nodes granting
- * `explodeRadius: 1.45` must mean 1.45 x 1.45. Plain assignment gets both
- * wrong in the same silent way — the second node does nothing and looks like
- * it worked — so the merge has to know which kind each key is.
- */
+/** Grants that STACK: assignment would silently make the second node do nothing. */
 const SUMMED_GRANTS = new Set(['extraTargets', 'pierce', 'chains', 'explodeMultiplierAdd']);
 const MULTIPLIED_GRANTS = new Set([
   'burnDuration',
@@ -277,13 +225,9 @@ export function convertedType(
 }
 
 /**
- * The skill as the tree has made it.
- *
- * Nodes can change a skill's damage type and its tags, and BOTH have to be
- * visible everywhere the skill is — the stat pass that decides which mods
- * apply, and the sim that decides which resistance a hit runs into. Deriving
- * it once, here, is what stops those two from disagreeing: for a while a
- * converted skill scaled off cold modifiers and was still resisted as fire.
+ * The skill as the tree has made it. Nodes change damage type and tags, and both
+ * must be visible to the stat pass AND to the sim that picks a resistance —
+ * derived once here so the two can never disagree.
  */
 export function effectiveSkill(
   skill: SkillDef,
@@ -317,9 +261,8 @@ export function characterStats(character: Character): CombatStats {
 }
 
 /**
- * Monsters read their stats off the CRYSTAL's mods — same aggregation, other
- * side of the design. The kind's multipliers apply on top, so crystal mods and
- * monster identity compose instead of competing.
+ * Monsters read their stats off the CRYSTAL's mods, with the kind's multipliers
+ * on top, so crystal mods and monster identity compose instead of competing.
  */
 export function monsterStats(crystal: Item, tier: number, def: MonsterDef): CombatStats {
   const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1) * def.life;

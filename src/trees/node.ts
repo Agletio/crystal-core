@@ -1,10 +1,6 @@
 /**
- * What a tree node is.
- *
- * Its own module so the trees and the rules that walk them can both import it
- * without importing each other — a tree that reaches back into the registry
- * it is being registered into is a cycle, and a cycle here fails at load time
- * rather than at a call site you can find.
+ * What a tree node is. Its own module so a tree and the rules that walk it can
+ * both import it without a cycle through the registry.
  */
 import type { StatForm } from '../types';
 
@@ -24,16 +20,9 @@ export interface SkillNodeDef {
   /** Web coordinates. Units are arbitrary — the view fits whatever it gets. */
   x: number;
   y: number;
-  /**
-   * Neighbours, by id. Links are UNDIRECTED: naming a node here connects both
-   * ways, so only one end has to say so. CENTRE means "touches the skill".
-   */
+  /** UNDIRECTED, so only one end need say so. CENTRE means "touches the skill". */
   links: string[];
-  /**
-   * Points that must already be spent in this tree before this node will
-   * open. Distance alone cannot gate a web — every cross link is a shortcut —
-   * so anything strong says how deep into the tree it expects you to be.
-   */
+  /** Points that must already be spent. Distance alone cannot gate a web. */
   gate?: number;
   stats?: NodeStat[];
   grants?: Record<string, unknown>;

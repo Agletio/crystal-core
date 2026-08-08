@@ -1,39 +1,27 @@
 /**
  * Core types.
  *
- * Design note: gear and crystals are the SAME data structure. A crystal is an
- * item whose mods happen to affect map generation instead of your character.
- * This is why "add a mod" currency works on both without any special-casing,
- * and it's the single biggest reason this system stays small as it grows.
+ * Gear and crystals are the SAME structure — a crystal is an item whose mods
+ * affect map generation instead of your character — so every currency works on
+ * both with no special-casing.
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
 export type ItemKind = 'gear' | 'crystal';
 
 /**
- * How many modifiers an item may carry.
- *
- * Deliberately separate from the base's slot table, which says which KINDS of
- * modifier a piece can hold. One restriction is about identity — a body
- * armour is a defensive piece — and the other is about how finished the item
- * is. Collapsing them meant every item you ever found could be filled and
- * re-rolled to perfection, so finding one was never a question of what it
- * could become.
+ * How many modifiers an item may carry. Separate axis from the base's slot
+ * table, which says which KINDS it may carry: one is how finished the item is,
+ * the other is what the item is.
  */
 export type Quality = 'rough' | 'seamed' | 'faceted' | 'brilliant';
 
-/**
- * Slot types are just strings, declared per item base. Crystals use a single
- * undifferentiated 'mod' slot; gear splits into 'main' and 'secondary'.
- * Prefix/suffix was only ever one instance of this pattern — generalising it
- * means a future base can invent its own slot layout with no engine change.
- */
+/** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;
 
 /** Purely derived from how full an item is. Display only, never stored. */
 export type FillState = 'blank' | 'partial' | 'full';
 
-/** A concrete rolled stat line on an item. */
 export interface StatRoll {
   stat: string;
   form: StatForm;
@@ -46,22 +34,18 @@ export interface StatSpec {
   stat: string;
   form: StatForm;
   range: [number, number];
-  /** Tags for the modifier engine: ['fire'], ['projectile'], etc. */
-  tags?: string[];
+  tags?: string[]; // modifier-engine tags: ['fire'], ['projectile'], …
 }
 
-/** Authoring format for a mod family and all its tiers. */
+/** A mod family and all its tiers, as authored. */
 export interface ModDef {
   id: string;
-  /** Exclusion group. Two mods from the same group can't coexist on an item. */
-  group?: string;
+  group?: string; // two mods sharing a group can't coexist on an item
   slot: ModSlot;
   name: string;
-  /** Item must have ALL of these tags for the mod to be eligible. */
-  appliesTo: string[];
-  /** Mod tags, used by tag-filtered currencies ("adds a Density mod"). */
-  tags?: string[];
-  /** Author best tier first. ilvl is the minimum item level to roll it. */
+  appliesTo: string[]; // item must have ALL of these tags
+  tags?: string[]; // matched by tag-filtered currencies
+  /** Best tier first. ilvl is the minimum item level to roll it. */
   tiers: Array<{
     ilvl: number;
     weight: number;
@@ -70,7 +54,7 @@ export interface ModDef {
   }>;
 }
 
-/** A flattened, individually-rollable tier. The pool is a list of these. */
+/** One flattened, rollable tier. The pool is a list of these. */
 export interface ModEntry {
   id: string;
   defId: string;
@@ -85,7 +69,7 @@ export interface ModEntry {
   stats: StatSpec[];
 }
 
-/** A mod actually present on an item, with values already rolled. */
+/** A mod on an item, values already rolled. */
 export interface RolledMod {
   entryId: string;
   defId: string;
@@ -102,35 +86,22 @@ export interface Item {
   kind: ItemKind;
   base: string;
   name: string;
-  /** Item tags. Mods match against these. e.g. ['crystal','tier3'] */
-  tags: string[];
+  tags: string[]; // what mods match against: ['crystal','tier3']
   ilvl: number;
-  /** Slot capacity, declared by the base. e.g. { main: 2, secondary: 2 } */
-  slots: Record<ModSlot, number>;
+  slots: Record<ModSlot, number>; // capacity, declared by the base
   mods: RolledMod[];
-  /**
-   * Base stats that are part of the item itself.
-   *
-   * Kept apart from `mods` so crafting can't touch them: every effect in the
-   * registry operates on `mods` alone, so an implicit needs no special-casing
-   * to be safe from Ruin, Chaos or anything added later.
-   */
+  /** Part of the base. Apart from `mods`, which is all crafting can reach. */
   implicits: RolledMod[];
-  /** Escape hatch for one-off state: bonus slots, corruption, etc. */
-  meta: Record<string, any>;
+  meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 
-// ---------------------------------------------------------------------------
-// Currencies
-// ---------------------------------------------------------------------------
-
-/** A declarative gate. Resolved by the CONDITIONS registry. */
+/** A gate, resolved by the CONDITIONS registry. */
 export interface Condition {
   kind: string;
   [param: string]: any;
 }
 
-/** A declarative mutation. Resolved by the EFFECTS registry. */
+/** A mutation, resolved by the EFFECTS registry. */
 export interface Effect {
   kind: string;
   [param: string]: any;
@@ -143,25 +114,17 @@ export interface CurrencyDef {
   name: string;
   class: CurrencyClass;
   description: string;
-  /** What this currency is allowed to be used on. */
   targets: {
     kinds?: ItemKind[];
-    /** Item must have ALL of these tags. */
-    tags?: string[];
-    /** Item base must declare at least one of these slot types. */
-    slots?: ModSlot[];
+    tags?: string[]; // item must have ALL of these
+    slots?: ModSlot[]; // base must declare at least one of these slot types
   };
-  /** Extra gates beyond targets. All must pass. */
-  requires?: Condition[];
+  requires?: Condition[]; // all must pass
   /** Applied in order. If one fails, the whole craft is rolled back. */
   effects: Effect[];
 }
 
-// ---------------------------------------------------------------------------
-// Equipment
-// ---------------------------------------------------------------------------
-
-/** What kind of slot a base occupies. Rings fit either ring slot. */
+/** What slot a base occupies. Rings fit either ring slot. */
 export type GearKind =
   | 'weapon'
   | 'helmet'
@@ -175,19 +138,10 @@ export interface GearBase {
   id: string;
   name: string;
   kind: GearKind;
-  /** Icon family. Same idea as monster sprites — a name, not an asset. */
-  art: string;
-  /** Mod-group capacities. Zero in a group means it can never roll one. */
-  slots: Record<string, number>;
-  /**
-   * Always present, never rolled, never removable.
-   *
-   * This is what gives a base an identity — the reason to want a wand over a
-   * sword before either has rolled a single mod. Crafting only ever touches
-   * `mods`, so an implicit survives everything, including Shard of Ruin.
-   */
+  art: string; // icon family — a name, not an asset
+  slots: Record<string, number>; // zero in a slot type means it never rolls one
+  /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
-  /** Weapon family, for grouping in UI. */
   family?: string;
 }
 
@@ -197,18 +151,10 @@ export interface EquipSlotDef {
   accepts: GearKind;
 }
 
-// ---------------------------------------------------------------------------
-// Monsters
-// ---------------------------------------------------------------------------
-
 /**
- * A kind of monster. Stat fields are MULTIPLIERS on the tier-scaled baseline
- * in MONSTER_BASE, so tier scaling and monster identity stay independent —
- * a Brute is 2.2x whatever a monster is worth at that tier.
- *
- * `sprite` is the only renderer-facing field, and it's a name rather than any
- * kind of asset: the placeholder renderer draws a shape for it, a real one
- * looks up a sprite sheet. The sim never knows which.
+ * Stat fields are MULTIPLIERS on the tier-scaled baseline in MONSTER_BASE, so
+ * tier and identity stay independent: a Brute is 2.2x whatever a monster is
+ * worth at that tier. `sprite` is a name, not an asset.
  */
 export interface MonsterDef {
   id: string;
@@ -218,92 +164,45 @@ export interface MonsterDef {
   moveSpeed: number;
   attacksPerSecond: number;
   attackRange: number;
-  /** Body radius in tiles. Units push each other apart rather than stacking. */
-  radius: number;
+  radius: number; // in tiles; units push each other apart rather than stacking
   sprite: string;
-  /** Relative spawn weight. */
   weight: number;
   tags?: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Skills
-// ---------------------------------------------------------------------------
-
-/**
- * An authored skill. Same shape of idea as CurrencyDef: the data says WHAT,
- * a registry entry says HOW, and most new skills need no new code.
- *
- * `tags` are what the modifier engine matches against, exactly like mod tags —
- * a skill tagged ['attack','melee'] picks up "increased Melee Damage" for free.
- * Deliberately do NOT put damage types in `tags`; those come from
- * `damageTypes`, so "increased Physical Damage" can't leak onto a skill's fire
- * damage.
- */
-/**
- * Which shelf of the Skills screen a skill lives on.
- *
- * Also what makes a skill YOURS. A skill with no category is one only a
- * monster ever uses — it needs stats and a delivery like any other, but it is
- * not something you pick, level or build a tree for, so it never appears in
- * the menu.
- */
+/** Which shelf of the Skills screen a skill lives on. */
 export type SkillCategory = 'spell' | 'attack' | 'passive' | 'movement';
 
 export interface SkillDef {
   id: string;
   name: string;
   description: string;
-  /** Omitted for monster-only skills — see SkillCategory. */
-  category?: SkillCategory;
-  /** Modifier-engine tags: 'attack', 'spell', 'melee', 'area', 'chain', … */
+  category?: SkillCategory; // omitted for monster-only skills
+  /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */
   tags: string[];
-  /** Key into the SKILL_BEHAVIOURS registry — how the hit is delivered. */
-  behaviour: string;
-  /** Which damage types this skill's BASE damage is dealt as. */
-  damageTypes: string[];
-  /** Multiplier on base damage. */
+  behaviour: string; // key into SKILL_BEHAVIOURS
+  damageTypes: string[]; // what the BASE damage is dealt as
   damageMultiplier: number;
-  /** Multiplier on the character's attacks/sec. */
-  rateMultiplier: number;
-  /** Reach, in tiles. */
-  range: number;
-  /**
-   * Which visual the renderer draws for a hit: 'slash', 'bolt', …
-   * A name, not a shape — the renderer decides what it looks like, and the
-   * sim never knows. Skills that don't set one get a generic line.
-   */
-  vfxKind?: string;
-  /** Behaviour-specific knobs: chain count, radius, projectile count, … */
-  params?: Record<string, any>;
+  rateMultiplier: number; // on the character's attacks/sec
+  range: number; // in tiles
+  vfxKind?: string; // a name, not a shape. Unset draws a generic line
+  params?: Record<string, any>; // behaviour-specific knobs
 }
-
-// ---------------------------------------------------------------------------
-// Economy
-// ---------------------------------------------------------------------------
 
 export interface Recipe {
   id: string;
   name: string;
   /**
-   * Character level the shop starts stocking this at. Omitted means level 1.
-   *
-   * The shop is a shelf that grows with you rather than a catalogue that was
-   * always complete: at level 1 it sells the plainest crystal and the two
-   * currencies you can actually use on a Rough item, and everything past that
-   * arrives as you do. It also stops the shop short-cutting the crystal-tier
-   * ladder — you cannot buy your way to a Faceted item before the maps that
-   * drop one are survivable.
+   * Character level the shop starts stocking this at; omitted means 1. Also
+   * what stops the shop short-cutting the crystal ladder.
    */
   level?: number;
-  /** Currency id -> quantity consumed. */
-  inputs: Record<string, number>;
+  inputs: Record<string, number>; // currency id -> quantity consumed
   output:
     | { type: 'currency'; id: string; qty: number }
     | { type: 'item'; base: string; qty: number };
 }
 
-/** Player's stock of every currency. */
 export type Wallet = Record<string, number>;
 
 export interface CraftResult {

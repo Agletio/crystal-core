@@ -1,17 +1,10 @@
 /**
- * The character sheet, as a modal.
+ * The character sheet, as a modal — reference you consult while socketing a
+ * crystal or crafting gear, which navigating to a screen would prevent.
  *
- * A popup rather than a screen because this is reference you consult, not a
- * workspace you live in — and because you want to read your stats while
- * socketing a crystal or crafting gear, which navigation would prevent. It's
- * also the genre convention, which is worth something on its own.
- *
- * Clicking a filled slot takes the item off. Clicking an empty one lights up
- * everything in the DOCK that fits it — which is where the gear already is, so
- * a picker inside this window was a second copy of your inventory that you had
- * to scroll to, laid over the first one you were already looking at. Worn items
- * live here rather than in the dock, which is safe precisely because this
- * screen shows them.
+ * A filled slot takes the item off; an empty one lights up everything in the
+ * DOCK that fits, which is where your gear already is. Worn items live here
+ * rather than in the dock, which is safe because this screen shows them.
  */
 import { DAMAGE_TYPES, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
@@ -101,17 +94,8 @@ function renderSlots(): void {
 }
 
 /**
- * What the dock does while the sheet is open.
- *
- * This replaced a picker panel inside the window. The panel listed the gear
- * that fit — from the same inventory that was already on screen, two inches
- * below it — so choosing a helmet meant scrolling past your own dock to reach
- * a copy of it. Lighting up the real thing is shorter and teaches you where
- * your gear actually lives.
- *
- * With no slot picked, nothing is actionable: there is nothing to do with a
- * crystal here, and a live-looking button that does nothing is worse than a
- * dim one.
+ * What the dock does while the sheet is open. With no slot picked nothing is
+ * actionable — a live-looking button that does nothing is worse than a dim one.
  */
 function sheetHandler() {
   const slot: EquipSlotDef | undefined = EQUIP_SLOTS.find((s) => s.id === picking);
@@ -219,13 +203,9 @@ export function closeCharacter(): void {
 }
 
 /**
- * Which slot is waiting to be filled, if any.
- *
- * Exposed because the guided opening needs it. Picking a slot moves the thing
- * you have to click next OUT of this window and into the dock — and while the
- * opening is running, the only live control is the one it has ringed. A guide
- * that could not see this pointed at the slot button forever while the gear it
- * was asking for sat switched off two inches below.
+ * Which slot is waiting, if any. The guided opening needs it: picking a slot
+ * moves the next thing to click OUT of this window and into the dock, and a
+ * guide that cannot see that rings a slot while the gear sits switched off.
  */
 export const pickingSlot = (): string | null => picking;
 

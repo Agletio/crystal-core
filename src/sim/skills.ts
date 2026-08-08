@@ -1,27 +1,11 @@
 /**
- * Skill delivery registry.
+ * Skill delivery registry — the extension point for combat, same pattern as
+ * EFFECTS in crafting.ts. A skill is a data entry in SKILLS naming a behaviour
+ * here; new code is only needed for a genuinely new KIND of delivery.
  *
- * THIS is the extension point for combat, and it's deliberately the same
- * pattern as EFFECTS in crafting.ts: a skill is a data entry in SKILLS
- * (data.ts) that names a behaviour here. You only write code when you invent
- * a genuinely new *kind* of delivery — and then every future skill can
- * compose it.
- *
- * A behaviour never touches the sim directly. It gets candidate targets and a
- * `hit` callback, and decides who gets hit and for how much. Damage numbers,
- * crit, armour, death and XP are the sim's business, not the skill's.
- *
- * Sketches of what slots in here later, none of which need sim changes:
- *
- *   chain:        hit primary, then repeatedly the nearest unhit enemy within
- *                 params.chainRange, up to params.chains, multiplier decaying
- *                 by params.falloff each jump.
- *   ground_slam:  hit every enemy within params.radius of the user.
- *   projectile:   fire params.count lines toward the primary, hitting the
- *                 first enemy each one meets.
- *
- * All three are a handful of lines because targeting is the only thing that
- * differs between them.
+ * A behaviour never touches the sim. It gets candidate targets and a `hit`
+ * callback and decides who is hit and for how much; damage numbers, crit,
+ * armour, death and XP are the sim's business.
  */
 import { Rng } from '../rng';
 import type { SkillDef } from '../types';
@@ -30,37 +14,18 @@ import type { Vec2 } from './grid';
 
 export interface SkillUse {
   skill: SkillDef;
-  /** Who is using it. */
   user: Entity;
-  /** The target that triggered the use — the natural origin for area effects. */
-  primary: Entity;
-  /** Every living enemy on the map. Filter it yourself. */
-  enemies: Entity[];
+  primary: Entity; // what triggered the use, and the origin for area effects
+  enemies: Entity[]; // every living enemy on the map. Filter it yourself
   rng: Rng;
-  /**
-   * Behaviour switches from the skill tree.
-   *
-   * Rolled once per use rather than per target, so "crits spread" is a
-   * property of the cast — which is what makes it feel like an event instead
-   * of a per-enemy coin flip.
-   */
-  grants: Record<string, unknown>;
-  /** Whether this whole use crit. */
-  crit: boolean;
-  /** How many times this user has used this skill, counting from zero. */
-  castIndex: number;
-  /**
-   * Deal this skill's damage to one target.
-   * `multiplier` is relative to the skill's own damage, so 0.6 means a
-   * weakened chain jump rather than 60% of some other number.
-   */
+  grants: Record<string, unknown>; // behaviour switches from the skill tree
+  crit: boolean; // whether this whole use crit
+  castIndex: number; // uses so far by this user, from zero
+  /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
-   * Apply a damage-over-time stack.
-   *
-   * `multiplier` is the TOTAL damage across the whole duration, relative to
-   * the skill's damage — so 1.0 over 10 seconds is one hit's worth, spread
-   * thin. The sim divides it out; behaviours never deal in per-tick numbers.
+   * `multiplier` is TOTAL damage across the whole duration — 1.0 over 10s is
+   * one hit's worth spread thin. Behaviours never deal in per-tick numbers.
    */
   ailment(
     target: Entity,
@@ -68,19 +33,9 @@ export interface SkillUse {
     seconds: number,
     spread?: { radius: number; generation: number }
   ): void;
-  /**
-   * Scales a base radius by the user's Area of Effect.
-   *
-   * The stat increases AREA, so the radius grows by the square root — +100%
-   * area is a 1.41x radius, not 2x. Every behaviour goes through this so two
-   * area skills can never disagree about what the stat means.
-   */
+  /** Area of Effect grows AREA, so radius goes by the square root. */
   areaRadius(base: number): number;
-  /**
-   * Emit a visual event. Only the skill knows the SHAPE of what happened —
-   * a chain's arc is A→B→C, which no renderer could reconstruct from the
-   * damage alone. Points are in tile units.
-   */
+  /** Points are in tile units. Only the skill knows the shape of what it did. */
   vfx(kind: string, points: Vec2[], ttl?: number): void;
 }
 
@@ -92,24 +47,15 @@ export function separation(a: Entity, b: Entity): number {
 }
 
 /**
- * How far the tree's targeting grants reach, in tiles. FIXED, on purpose.
- *
- * "Nearest other enemy" with no distance limit is not a talent, it is a
- * teleport: the old fork node happily struck something on the far side of the
- * map, through walls, because nearest-of-all-enemies is still nearest when
- * the nearest is thirty tiles away. Every one of these is a hard radius, and
- * none of them scales with Area of Effect — a build that stacked area would
- * otherwise turn "one more target" into "the whole room".
+ * How far the tree's targeting grants reach, in tiles. Hard limits, and none
+ * of them scale: "nearest other enemy" with no distance limit is a teleport,
+ * and area scaling would turn "one more target" into "the whole room".
  */
 const REACH = {
-  /** Extra targets, measured from the primary. */
-  spread: 3.5,
-  /** Each leap, measured from the last thing hit. */
-  chain: 4.5,
-  /** How far past the primary a pierced shot carries. */
-  pierce: 4.5,
-  /** Half-width of the pierce corridor. Wider than a body, narrower than a cone. */
-  corridor: 0.85,
+  spread: 3.5, // extra targets, from the primary
+  chain: 4.5, // each leap, from the last thing hit
+  pierce: 4.5, // how far past the primary a pierced shot carries
+  corridor: 0.85, // half-width of the pierce corridor
 };
 
 /** Fractions applied to secondary hits unless a node says otherwise. */
@@ -118,10 +64,7 @@ const FALLOFF = { extra: 0.7, chain: 0.7, pierce: 0.7 };
 const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
-/**
- * Perpendicular distance from `e` to the ray from `origin` through `through`,
- * and how far along that ray it sits. Behind the origin is negative.
- */
+/** Distance along and off the ray origin→through. Behind the origin is negative. */
 function alongRay(
   origin: { x: number; y: number },
   through: { x: number; y: number },
@@ -144,7 +87,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   single_target: (use) => {
     use.hit(use.primary, 1);
 
-    // Fork and the like: nearest others, full damage, WITHIN REACH.
     const extra = (use.grants.extraTargets as number) ?? 0;
     if (extra > 0) {
       const others = use.enemies
@@ -160,7 +102,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       }
     }
 
-    // The skill names its visual; the renderer decides what that looks like.
     use.vfx(use.skill.vfxKind ?? 'swing', [
       { x: use.user.x, y: use.user.y },
       { x: use.primary.x, y: use.primary.y },
@@ -168,32 +109,20 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * A thrown ball of fire, and everything a tree can make of one.
+   * A thrown ball of fire, and everything a tree can make of one. Bare, it is
+   * `single_target` with a longer arm; order matters — aimed-at, then pierced,
+   * then leapt-to, then spread, with a burst around each.
    *
-   * Bare, this is `single_target` with a longer arm. Everything else here is
-   * switched on by a node, and the order matters: the thing you aimed at is
-   * hit first, then whatever the shot passed through, then whatever it leapt
-   * to, then anything close enough to be caught by the spread — and a burst,
-   * if it bursts, goes off around every one of them.
-   *
-   * One rule holds the whole thing together: nothing is hit twice by the same
-   * cast. Without it, pierce and chain and spread would all find the same
-   * clump of three enemies and stack on them, and the talents that are meant
-   * to make you hit MORE things would just make you hit the same things
-   * harder. Bursts are the exception — an explosion is area damage, and area
-   * damage overlapping is the point of area damage.
-   *
-   * grants: critBurn, burnMultiplier, burnDuration, burnSpread, explode,
-   *         explodeRadius, explodeMultiplierAdd, explodeOnKill, pierce,
-   *         pierceDamage, chains, chainDamage, extraTargets,
-   *         extraTargetDamage, moreVsBurning, moreClose, moreFar, moreVsLow,
-   *         everyNth
+   * Nothing is hit twice by one cast. Without that, pierce and chain and spread
+   * all find the same clump and stack on it, and talents meant to make you hit
+   * MORE things just make you hit the same things harder. Bursts are exempt:
+   * overlapping is what area damage is for.
    */
   projectile: (use) => {
     const g = use.grants;
     const kind = use.skill.vfxKind ?? 'bolt';
 
-    // --- what this particular cast is worth, before any target is chosen ---
+    // What this cast is worth, before any target is chosen.
     const nth = g.everyNth as { n: number; multiplier: number } | undefined;
     const castMultiplier = nth && (use.castIndex + 1) % nth.n === 0 ? nth.multiplier : 1;
 
@@ -205,11 +134,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const explode = g.explode as { radius: number; multiplier: number } | undefined;
     const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
 
-    /**
-     * Per-target multipliers. Each one asks a question about the enemy in
-     * front of you rather than about your sheet, which is what makes them
-     * choices — Close Quarters is worthless on a build that never closes.
-     */
+    /** Each asks about the enemy in front of you, not about your sheet. */
     const conditional = (target: Entity): number => {
       let m = 1;
       const burning = g.moreVsBurning as number | undefined;
@@ -228,7 +153,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
     const struck = new Set<Entity>();
 
-    /** Area damage around a point. Overlaps freely; see the note above. */
+    /** Overlaps freely — see the note above. */
     const blast = (at: Entity, radius: number, multiplier: number): void => {
       if (multiplier <= 0 || radius <= 0) return;
       for (const enemy of use.enemies) {
@@ -244,9 +169,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       struck.add(target);
       use.hit(target, falloff * castMultiplier * conditional(target));
 
-      // Kindling: the cast that WOULD have crit sets it alight instead. The
-      // crit itself is suppressed upstream, in the sim — a behaviour cannot
-      // un-crit a hit it has already asked for.
+      // The crit itself is suppressed in the sim: a behaviour cannot un-crit
+      // a hit it has already asked for.
       if (burn && use.crit) {
         use.ailment(
           target,
@@ -277,10 +201,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       { x: use.primary.x, y: use.primary.y },
     ]);
 
-    // Pierce: straight on, through whatever is standing behind it. This is
-    // the one grant that cares about GEOMETRY rather than proximity — that is
-    // what makes it different from chain, which would otherwise be the same
-    // talent with a different name on an auto-targeting skill.
+    // The one grant that cares about GEOMETRY rather than proximity, which is
+    // what keeps it distinct from chain on an auto-targeting skill.
     const pierce = num(g.pierce, 0);
     let last = use.primary;
     if (pierce > 0) {
@@ -337,14 +259,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * Full damage to the target, a fraction to everything else in reach.
-   *
-   * Centred on the USER rather than the target, because it models a swing
-   * around the attacker — which is also what the arc visual shows. Centring
-   * it on the target would let you clip enemies behind a monster you're
-   * barely touching.
-   *
-   * params: { splashRadius, splashMultiplier }
+   * Full damage to the target, a fraction to everything in reach of the USER —
+   * it is a swing. params: { splashRadius, splashMultiplier }
    */
   cleave: (use) => {
     const radius = (use.skill.params?.splashRadius as number) ?? 2.2;
@@ -370,23 +286,16 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * No hit at all — drops a circle of poison centred on the target.
-   *
-   * There is no target cap: the circle poisons whatever is standing in it, so
-   * the way to poison more things is to make the circle bigger. That is the
-   * whole reason this skill wants Area of Effect, and a cap would have quietly
-   * made the stat worthless past the fifth enemy.
-   *
-   * params: { radius, duration }
-   * grants: { contagionRadius } — see Contagion in the tree.
+   * No hit at all — a circle of poison on the target, with no target cap, so
+   * the way to poison more is a bigger circle.
+   * params: { radius, duration }   grants: { contagionRadius }
    */
   ailment_burst: (use) => {
     const duration = (use.skill.params?.duration as number) ?? 10;
     const radius = use.areaRadius((use.skill.params?.radius as number) ?? 1.6);
 
-    // Contagion turns the poison itself infectious: a critical TICK plants a
-    // fresh circle around whatever it ticked on. The jump inherits Area of
-    // Effect too, so investing in area widens both the cast and every jump.
+    // A critical TICK plants a fresh circle around whatever it ticked on. The
+    // jump inherits Area of Effect, so area widens the cast and every jump.
     const contagion = use.grants.contagionRadius as number | undefined;
     const spread = contagion
       ? { radius: use.areaRadius(contagion), generation: 0 }
@@ -398,15 +307,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
     for (const enemy of caught) use.ailment(enemy, 1, duration, spread);
 
-    // The field carries its true radius as a second point, so the renderer
-    // draws exactly what the sim used — you can see what you did and did not
-    // catch, and see it grow as Area of Effect goes up.
-    //
-    // It lives for half a cast, never a fixed time. At 0.85s against a 1.11s
-    // cadence the circle was on screen 77% of the time, which stops reading as
-    // "a spell landed here" and starts reading as an aura the caster is
-    // wearing — and any cast speed at all would have closed the gap entirely.
-    // Tying it to the user's own rate keeps the gap at every build speed.
+    // Second point IS the radius, so the renderer draws what the sim used.
+    // Half a cast, never a fixed time: a fixed one is on screen most of the
+    // time at any real cast speed, and reads as an aura rather than a spell.
     const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
     use.vfx(
       use.skill.vfxKind ?? 'blight_field',
