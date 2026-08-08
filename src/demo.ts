@@ -40,7 +40,7 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats, convertedType, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
-import { GRANT_BY_ID, STATS, behaviourReads } from './sim/grants';
+import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import {
   BUILT_TREES,
@@ -774,6 +774,18 @@ for (const tree of BUILT_TREES) {
   }
   check(unread.length === 0, 'every grant is one this skill actually reads', unread.join(', '));
 
+  // Two nodes handing out the same switch must say how it stacks. Left to
+  // `replace`, the second one silently overwrites the first and is a point
+  // spent on nothing — invisible on the sheet and invisible in the tooltip.
+  const handed = new Map<string, number>();
+  for (const n of nodes) {
+    for (const key of Object.keys(n.grants ?? {})) handed.set(key, (handed.get(key) ?? 0) + 1);
+  }
+  const lossy = [...handed]
+    .filter(([key, count]) => count > 1 && !GRANT_BY_ID[key]?.merge)
+    .map(([key, count]) => `${key} on ${count} nodes`);
+  check(lossy.length === 0, 'and anything granted twice says how it stacks', lossy.join(', '));
+
   // Cost to reach each node: how many nodes you must buy, this one included.
   const distance = new Map<string, number>();
   let edge = nodes.filter((n) => neighboursOf(skillId, n.id).has(CENTRE));
@@ -1099,6 +1111,117 @@ rule('FIREBALL — do the notables actually change the cast?');
   const early = cast(overload).hits[0].multiplier;
   line(`  overload cast 1    → x${early}`);
   check(early === 1, 'the first cast is ordinary', String(early));
+}
+
+// ===========================================================================
+rule('EVERY TREE — does every notable actually change the cast?');
+
+// The same promise `npm run mods` makes about modifiers, made about talents.
+// A notable that grants a switch nothing reads is invisible: it prints a nice
+// line, costs a point, and changes nothing about the fight. The only way to
+// know is to fire the behaviour twice and compare what came out.
+{
+  const dummy = (x: number, y: number, life: number) =>
+    ({
+      x, y, life, dead: false, ailments: [] as unknown[],
+      stats: { maxLife: 1e6, attacksPerSecond: 1 },
+    }) as any;
+
+  // A dense line of targets, so a radius that grew by any real amount crosses
+  // one, plus a few off the axis for anything that is not a straight shot.
+  // Every third is frail enough to die to one hit, which is the only way an
+  // on-kill burst can be seen at all.
+  const field = () => {
+    const out: any[] = [];
+    for (let i = 0; i < 20; i++) {
+      const at = 0.6 + i * 0.35;
+      const e = dummy(at, 0, i % 3 === 0 ? 1 : i % 3 === 1 ? 6e4 : 1e6);
+      // Some arrive already suffering, which is the ordinary case once your
+      // last cast landed — and the only way "more damage to ailing" can show.
+      if (i % 4 === 0) e.ailments.push(1);
+      out.push(e);
+    }
+    out.push(dummy(3, 1.1, 1e6), dummy(3, 2.2, 1), dummy(2, 2, 6e4));
+    return out;
+  };
+
+  /**
+   * What one set of grants does, as a string. Cast from several primaries, at
+   * several cast counts, critting and not — so a talent that only shows on the
+   * fifth cast, or only against something nearly dead, still shows.
+   */
+  const fingerprint = (skill: any, behave: any, grants: Record<string, unknown>): string => {
+    const marks: string[] = [];
+    for (const primaryAt of [0, 2, 13, 20]) {
+      for (let castIndex = 0; castIndex < 5; castIndex++) {
+        for (const crit of [false, true]) {
+          const enemies = field();
+          const user = dummy(0, 0, 1e6);
+          const primary = enemies[primaryAt];
+          behave({
+            skill, user, primary, enemies,
+            rng: new Rng(9), grants, crit, castIndex,
+            hit: (who: any, multiplier: number) => {
+              marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
+              who.life -= multiplier * 5e4;
+              if (who.life <= 0) who.dead = true;
+            },
+            ailment: (who: any, m: number, seconds: number, spread: any) => {
+              who.ailments.push(1);
+              marks.push(`a${enemies.indexOf(who)}:${m.toFixed(3)}:${seconds.toFixed(2)}:${spread?.radius ?? 0}`);
+            },
+            areaRadius: (base: number) => base,
+            vfx: (kind: string, points: any[]) =>
+              marks.push(`v${kind}:${points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|')}`),
+          } as any);
+        }
+      }
+    }
+    return marks.join(' ');
+  };
+
+  for (const tree of BUILT_TREES) {
+    const skill = SKILL_BY_ID[tree.spec.skillId];
+    const behave = SKILL_BEHAVIOURS[skill.behaviour];
+    const inert: string[] = [];
+
+    for (const node of tree.nodes) {
+      if (node.kind !== 'notable') continue;
+      // A choice node is inert only if EVERY answer is.
+      const answers: Array<Record<string, unknown>> = node.choices
+        ? node.choices.map((c) => c.grants ?? {})
+        : [node.grants ?? {}];
+
+      for (const answer of answers) {
+        // The stat layer is checked by the stat pipeline, not by casting.
+        const switches = Object.keys(answer).filter(
+          (k) => !GRANT_BY_ID[k]?.reads.includes(STATS)
+        );
+        if (switches.length === 0) continue;
+
+        // Whatever this node needs to do anything, so a burst modifier is
+        // measured against a build that already bursts.
+        const base: Record<string, unknown> = {};
+        for (const key of switches) {
+          const enabler = tree.spec.needs[key];
+          // Never the node itself: an enabler measured against itself is inert
+          // by construction, whatever it does.
+          if (!enabler || enabler === node.id) continue;
+          const from = nodeById(tree.spec.skillId, enabler)?.grants;
+          if (from) mergeGrants(base, from);
+        }
+        const withIt = mergeGrants({ ...base }, answer);
+        if (fingerprint(skill, behave, withIt) === fingerprint(skill, behave, base)) {
+          inert.push(`${node.id} (${switches.join(', ')})`);
+        }
+      }
+    }
+    check(
+      inert.length === 0,
+      `${tree.spec.skillId}: every notable that grants a switch changes the cast`,
+      inert.join(', ')
+    );
+  }
 }
 
 // ===========================================================================

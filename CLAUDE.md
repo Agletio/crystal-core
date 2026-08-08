@@ -67,10 +67,31 @@ src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
 src/skills-tree.ts allocation rules; src/trees/* are the webs
+src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
+src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/            one module per screen
 ```
+
+## Adding a skill tree
+
+A tree is a `TreeSpec` in `src/trees/` and a line in `BUILT_TREES`. Six
+branches, six trunk notables — `buildTree` refuses anything else rather than
+dropping the extras.
+
+Content only: `layout.ts` owns every coordinate. Give the tree a `prefix` no
+other tree uses, because node ids are what a save points at.
+
+A node's `grants` must be declared in `sim/grants.ts`, and the skill's own
+`behaviour` must be listed as reading it — a tree asking a cloud to pierce is
+a point spent on nothing, and the demo fails on it. Anything two nodes both
+grant needs a `merge`, or the second silently replaces the first.
+
+`needs` names what a grant is useless without, and the demo holds that line to
+its own branch. It is per-tree: Area of Effect lives behind Detonation on
+Fireball, which does not burst without it, and sits on the trunk for Blight,
+which is a circle already.
 
 Positions are in tile units, never pixels. Both renderers must agree exactly,
 so anything per-tile is a pure function in `render/renderer.ts`.

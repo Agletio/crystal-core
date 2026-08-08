@@ -14,6 +14,7 @@ import {
 import { equippedItems } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
+import { mergeGrants } from './grants';
 import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
@@ -44,10 +45,9 @@ export interface CombatStats {
 }
 
 /**
- * Armour points to a flat percentage, curved on POINTS rather than on the size
- * of the hit, so it prints as one honest number. A linear conversion has no
- * good divisor: small and three mods cap it, large and every mod feels like
- * nothing.
+ * Curved on POINTS rather than on the size of the hit, so it prints as one
+ * honest number. A linear conversion has no good divisor: small and three mods
+ * cap it, large and every mod feels like nothing.
  */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
@@ -182,16 +182,6 @@ export function treeMod(character: Character): RolledMod | null {
   };
 }
 
-/** Grants that STACK: assignment would silently make the second node do nothing. */
-const SUMMED_GRANTS = new Set(['extraTargets', 'pierce', 'chains', 'explodeMultiplierAdd']);
-const MULTIPLIED_GRANTS = new Set([
-  'burnDuration',
-  'burnMultiplier',
-  'explodeRadius',
-]);
-/** Tag lists concatenate — Detonation adds Area without removing anything. */
-const APPENDED_GRANTS = new Set(['addTags']);
-
 /** Behaviour switches from every allocated node, merged. */
 export function treeGrants(character: Character): Record<string, unknown> {
   const progress = character.skills[character.skillId];
@@ -200,22 +190,11 @@ export function treeGrants(character: Character): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const id of progress.allocated) {
     const node = nodeById(character.skillId, id);
-    // A choice node contributes the option you picked, and nothing until you
-    // have picked one.
+    // A choice node gives the option you picked, and nothing until you pick.
     const chosen = node?.choices?.find((c) => c.id === progress.choices?.[id]);
     const from = { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) };
 
-    for (const [key, value] of Object.entries(from)) {
-      if (SUMMED_GRANTS.has(key)) {
-        out[key] = ((out[key] as number) ?? 0) + (value as number);
-      } else if (MULTIPLIED_GRANTS.has(key)) {
-        out[key] = ((out[key] as number) ?? 1) * (value as number);
-      } else if (APPENDED_GRANTS.has(key)) {
-        out[key] = [...((out[key] as string[]) ?? []), ...(value as string[])];
-      } else {
-        out[key] = value;
-      }
-    }
+    mergeGrants(out, from);
   }
   return out;
 }

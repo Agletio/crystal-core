@@ -31,7 +31,7 @@ import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, treeGrants } from '../sim/stats';
 import { addSkillXp, skillProgress, xpToNext } from '../sim/character';
-import { DAMAGE_TYPE_BY_ID } from '../data';
+import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
@@ -243,18 +243,19 @@ function skillSummary(skill: SkillDef): string[] {
     `rate: ${stats.attacksPerSecond.toFixed(2)}/s  →  ${Math.round(
       stats.damage * stats.attacksPerSecond
     )} dps`,
-    grants.critBurn
-      ? 'crit: converted to burning'
+    grants.critAilment
+      ? `crit: converted to ${AILMENT_NAMES[dealt] ?? 'a lasting wound'}`
       : `crit: ${Math.round(stats.critChance)}% for ${(
           2 + stats.critMultiplier / 100
         ).toFixed(2)}x`
   );
 
   if (converted) {
+    const was = skill.damageTypes.map((t) => DAMAGE_TYPE_BY_ID[t]?.name ?? t).join(' and ');
     lines.push(
       '',
-      `Fire modifiers in this tree count as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}. ` +
-        'Fire modifiers on your gear no longer apply.'
+      `${was} modifiers in this tree count as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}. ` +
+        `${was} modifiers on your gear no longer apply.`
     );
   }
   return lines;

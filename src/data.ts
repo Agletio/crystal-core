@@ -42,6 +42,22 @@ export const DAMAGE_TYPE_BY_ID: Record<string, DamageTypeDef> = Object.fromEntri
 
 export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
 
+/**
+ * What a lasting version of each damage type is called. The sim has one ailment
+ * and takes its element from the skill, so this is naming rather than mechanics
+ * — a converted skill burns, bleeds or withers without any node saying so.
+ */
+export const AILMENT_NAMES: Record<string, string> = {
+  physical: 'bleeding',
+  fire: 'burning',
+  cold: 'frostbite',
+  lightning: 'arcing',
+  poison: 'poison',
+  dark: 'withering',
+  light: 'searing',
+  crystal: 'resonance',
+};
+
 /** Damage that nothing scales and nothing resists. */
 export const TYPELESS = 'typeless';
 

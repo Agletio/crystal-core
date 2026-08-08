@@ -828,7 +828,7 @@ export class RunSim {
     // know a crit came up so it can do something else with it — but the hit
     // itself lands as a normal hit. A behaviour cannot take a crit back after
     // asking for the damage, so the suppression has to be here.
-    this.useCrit = grants.critBurn ? false : crit;
+    this.useCrit = grants.critAilment ? false : crit;
 
     behaviour({
       skill,

@@ -972,6 +972,47 @@ assert($('skills-cats').hidden === false, 'then to the categories');
 document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 assert($('skills').hidden === true, 'and only then closes');
 
+// --- every tree, not just the one you happen to have equipped --------------
+// Three skills have webs now, built by the same layout out of three different
+// specs. What is worth checking is that each one reaches the screen: a spec
+// that lost a branch still builds, and still draws, just smaller.
+$('open-skills').click();
+for (const [skill, shelf, total, notables] of [
+  ['Strike', 'Attacks', 115, 29],
+  ['Fireball', 'Spells', 112, 28],
+  ['Creeping Blight', 'Spells', 119, 30],
+]) {
+  const card = all('#skills-cats .catcard').find((c) => c.textContent?.includes(shelf));
+  assert(!!card, `${shelf} is a shelf you can open`);
+  card.click();
+  const row = all('#skills-list .skillrow').find((b) => b.textContent?.includes(skill));
+  assert(!!row, `${skill} is on the ${shelf} shelf`);
+  row.click();
+
+  assert($('skills-detail').hidden === false, `${skill} opens onto its web`);
+  // The web opens zoomed in and draws only what is on screen, so Fit is what
+  // turns "it rendered" into a count worth asserting.
+  $('skills-fit').click();
+  assert(
+    all('#skills-web .web__node').length === total,
+    `${skill} draws all ${total} of its nodes`,
+    String(all('#skills-web .web__node').length)
+  );
+  assert(
+    all('#skills-web .web__node--notable').length === notables,
+    `${skill} has all ${notables} of its notables`,
+    String(all('#skills-web .web__node--notable').length)
+  );
+  assert(
+    $('skills-web').querySelector('.web__centre svg') !== null,
+    `${skill} sits at the middle of its own web`
+  );
+  $('skills-back').click();
+  $('skills-back').click();
+}
+$('skills-close').click();
+assert($('skills').hidden === true, 'and the skills screen closes again');
+
 $('open-character').click();
 
 // Taking something off must return it to the inventory and free the slot.
