@@ -13,7 +13,6 @@ export interface Notable {
   id: string;
   name: string;
   description: string;
-  gate: number;
   stats?: NodeStat[];
   grants?: Record<string, unknown>;
   choices?: NodeChoice[];
@@ -35,15 +34,6 @@ export interface Branch {
   minors: Minor[];
 }
 
-/** Spent-point gates, shared so depth means the same thing in every tree. */
-export const GATE = { enabler: 3, mid: 8, deep: 14, tip: 20 };
-
-/** Trunk notable gates in spur order, alternating so the cheap ones spread. */
-export const SPUR_GATES = [5, 11, 17, 7, 13, 21];
-
-/** [spur, step] pairs one step apart, so the far node costs the same either way. */
-export type Crossing = [[number, number], [number, number]];
-
 export interface TreeSpec {
   skillId: string;
   prefix: string; // node ids start `${prefix}_`, and must never be reused
@@ -51,7 +41,6 @@ export interface TreeSpec {
   common: Minor[];
   branches: Branch[]; // six; buildTree refuses anything else
   trunkNotables: Notable[]; // six
-  crossings: Crossing[];
   /** Grant or stat -> the node it needs, which is also the branch it lives in. */
   needs: Record<string, string>;
 }
@@ -61,6 +50,5 @@ export interface BuiltTree {
   spec: TreeSpec;
   nodes: SkillNodeDef[];
   branchOf: Record<string, string>; // trunk nodes are absent
-  crossings: Array<[string, string]>;
   enablers: Record<string, string>; // by branch id
 }

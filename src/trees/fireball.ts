@@ -12,8 +12,7 @@
  * cannot spend a point on something that will not do anything.
  */
 import { stat } from './node';
-import { GATE, SPUR_GATES } from './spec';
-import type { Branch, Crossing, Minor, Notable, TreeSpec } from './spec';
+import type { Branch, Minor, Notable, TreeSpec } from './spec';
 
 /**
  * Lines that help every build. The trunk is made of these, and so is the filler
@@ -38,7 +37,6 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball can no longer critically strike. A cast that would have crit ' +
         'instead sets the target alight for 260% of the hit over 4s.',
-      gate: GATE.enabler,
       grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
     },
     twigs: [
@@ -48,7 +46,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_cauterise',
           name: 'Cauterise',
           description: 'Burns you apply deal 35% more damage over a 25% shorter time.',
-          gate: GATE.mid,
           grants: { ailmentMultiplier: 1.35, ailmentDuration: 0.75 },
         },
       },
@@ -58,7 +55,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_slowburn',
           name: 'Slow Burn',
           description: 'Burns you apply last 60% longer.',
-          gate: GATE.deep,
           grants: { ailmentDuration: 1.6 },
         },
       },
@@ -70,7 +66,6 @@ const BRANCHES: Branch[] = [
           name: 'Wildfire',
           description:
             'A burn that ticks critically sets everything within 2 tiles alight as well.',
-          gate: GATE.tip,
           grants: { ailmentSpread: 2 },
         },
       },
@@ -91,7 +86,6 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball bursts where it lands, dealing 55% damage to everything within ' +
         '1.8 tiles. Fireball gains the Area tag.',
-      gate: GATE.enabler,
       grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'] },
     },
     twigs: [
@@ -101,7 +95,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_concussive',
           name: 'Concussive Blast',
           description: 'The burst covers 45% more ground.',
-          gate: GATE.mid,
           grants: { explodeRadius: 1.45 },
         },
       },
@@ -112,7 +105,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_fuelair',
           name: 'Fuel-Air Charge',
           description: 'The burst deals full damage rather than a fraction of it.',
-          gate: GATE.deep,
           grants: { explodeMultiplierAdd: 0.45 },
         },
       },
@@ -124,7 +116,6 @@ const BRANCHES: Branch[] = [
           name: 'Chain Reaction',
           description:
             'An enemy killed by Fireball bursts, dealing 60% damage within 2.2 tiles.',
-          gate: GATE.tip,
           grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
         },
       },
@@ -144,7 +135,6 @@ const BRANCHES: Branch[] = [
       name: 'Split Cast',
       description:
         'Fireball strikes one additional enemy near the target, for 70% damage.',
-      gate: GATE.enabler,
       grants: { extraTargets: 1 },
     },
     twigs: [
@@ -154,7 +144,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_focused',
           name: 'Focused Volley',
           description: 'Additional targets take full damage instead of 70%.',
-          gate: GATE.mid,
           grants: { extraTargetDamage: 1 },
         },
       },
@@ -164,7 +153,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_volley',
           name: 'Volley',
           description: 'Fireball strikes another additional enemy, for 70% damage.',
-          gate: GATE.deep,
           grants: { extraTargets: 1 },
         },
       },
@@ -175,7 +163,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_barrage',
           name: 'Barrage',
           description: 'Fireball strikes two more enemies near the target, for 70% damage.',
-          gate: GATE.tip,
           grants: { extraTargets: 2 },
         },
       },
@@ -191,7 +178,6 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball passes through one enemy for 70% damage, carrying on to ' +
         'whatever is behind it.',
-      gate: GATE.enabler,
       grants: { pierce: 1 },
     },
     twigs: [
@@ -201,7 +187,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_momentum',
           name: 'Momentum',
           description: 'Enemies pierced take full damage instead of 70%.',
-          gate: GATE.mid,
           grants: { pierceDamage: 1 },
         },
       },
@@ -211,7 +196,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_overpen',
           name: 'Overpenetration',
           description: 'Fireball passes through one more enemy, also for 70%.',
-          gate: GATE.deep,
           grants: { pierce: 1 },
         },
       },
@@ -227,7 +211,6 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball leaps from the enemy it hits to one more within 4.5 tiles, ' +
         'for 70% damage.',
-      gate: GATE.enabler,
       grants: { chains: 1 },
     },
     twigs: [
@@ -237,7 +220,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_rebound',
           name: 'Rebound',
           description: 'Leaps deal full damage instead of 70%.',
-          gate: GATE.mid,
           grants: { chainDamage: 1 },
         },
       },
@@ -248,7 +230,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_leaping',
           name: 'Leaping Flame',
           description: 'Fireball leaps one more time, also for 70%.',
-          gate: GATE.deep,
           grants: { chains: 1 },
         },
       },
@@ -262,7 +243,6 @@ const BRANCHES: Branch[] = [
       id: 'fb_immolate',
       name: 'Immolate',
       description: 'Fireball deals 25% more damage to enemies that are already burning.',
-      gate: GATE.enabler,
       grants: { moreVsAiling: 0.25 },
     },
     twigs: [
@@ -272,7 +252,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_closequarters',
           name: 'Close Quarters',
           description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
-          gate: GATE.mid,
           grants: { moreClose: { within: 2.5, more: 0.3 } },
         },
       },
@@ -282,7 +261,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_executioner',
           name: 'Executioner',
           description: 'Fireball deals 35% more damage to enemies below a third of their life.',
-          gate: GATE.deep,
           grants: { moreVsLow: { below: 0.33, more: 0.35 } },
         },
       },
@@ -293,7 +271,6 @@ const BRANCHES: Branch[] = [
           id: 'fb_overload',
           name: 'Overload',
           description: 'Every fifth cast of Fireball deals triple damage.',
-          gate: GATE.tip,
           grants: { everyNth: { n: 5, multiplier: 3 } },
         },
       },
@@ -312,7 +289,6 @@ const TRUNK_NOTABLES: Notable[] = [
     id: 'fb_longfuse',
     name: 'Long Fuse',
     description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
-    gate: SPUR_GATES[0],
     grants: { moreFar: { beyond: 5, more: 0.3 } },
   },
   {
@@ -321,7 +297,6 @@ const TRUNK_NOTABLES: Notable[] = [
     description:
       'Fireball stops dealing Fire. Pick what it deals instead — the Fire ' +
       'modifiers in this tree change with it, the ones on your gear do not.',
-    gate: SPUR_GATES[1],
     choices: [
       {
         id: 'cold',
@@ -341,40 +316,26 @@ const TRUNK_NOTABLES: Notable[] = [
     id: 'fb_reserves',
     name: 'Deep Reserves',
     description: 'Fireball deals 45% more damage and is cast 20% slower.',
-    gate: SPUR_GATES[2],
     stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
   },
   {
     id: 'fb_opening',
     name: 'Opening Salvo',
     description: 'Fireball deals 35% more damage to enemies above four fifths of their life.',
-    gate: SPUR_GATES[3],
     grants: { moreVsFull: { above: 0.8, more: 0.35 } },
   },
   {
     id: 'fb_focus',
     name: 'Sharpened Focus',
     description: 'Fireball critically strikes far more often, and far harder.',
-    gate: SPUR_GATES[4],
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {
     id: 'fb_emberstorm',
     name: 'Ember Storm',
     description: 'Fireball is cast 25% faster.',
-    gate: SPUR_GATES[5],
     stats: [stat('castSpeed', 'inc', 25)],
   },
-];
-
-/** Never into a branch: a way in that skipped the enabler puts dead nodes back. */
-const CROSSINGS: Crossing[] = [
-  [[0, 0], [1, 1]],
-  [[2, 0], [3, 1]],
-  [[4, 0], [5, 1]],
-  [[1, 0], [2, 1]],
-  [[3, 0], [4, 1]],
-  [[5, 0], [0, 1]],
 ];
 
 export const FIREBALL_SPEC: TreeSpec = {
@@ -384,7 +345,6 @@ export const FIREBALL_SPEC: TreeSpec = {
   common: COMMON,
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
-  crossings: CROSSINGS,
   needs: {
     areaOfEffect: 'fb_detonation',
     explodeRadius: 'fb_detonation',

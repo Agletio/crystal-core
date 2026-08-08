@@ -1,8 +1,8 @@
 /**
  * Skill trees. A tree is a WEB: nodes name their neighbours, links run both
- * ways, and there are several routes to anything. Distance and gates are what
- * keep that from being a menu — every cross link is a shortcut past somebody's
- * distance, so anything strong carries a gate.
+ * ways, and there are several routes to anything. DISTANCE is the whole price:
+ * a notable out on a twig costs the run of minors in front of it, and that is
+ * the only thing keeping the web from being a menu.
  *
  * `stats` are ordinary stat lines; `grants` are switches that CHANGE HOW THE
  * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
@@ -64,7 +64,7 @@ export function neighboursOf(skillId: string, nodeId: string): Set<string> {
   return table.get(nodeId) ?? new Set();
 }
 
-/** Open if it touches the centre or something you own, and you are deep enough. */
+/** Open if it touches the centre or something you own. Distance is the price. */
 export function canAllocate(
   skillId: string,
   nodeId: string,
@@ -72,7 +72,6 @@ export function canAllocate(
 ): boolean {
   const node = nodeById(skillId, nodeId);
   if (!node || allocated.includes(nodeId)) return false;
-  if (allocated.length < (node.gate ?? 0)) return false;
 
   const near = neighboursOf(skillId, nodeId);
   if (near.has(CENTRE)) return true;

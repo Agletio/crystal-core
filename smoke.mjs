@@ -893,14 +893,15 @@ all('#skills-web .web__node--on')[0].dispatchEvent(
 );
 assert(allocated() === 0, 'and clicking it again refunds it');
 
-// A notable this deep must refuse to open no matter what is next to it. That
-// gate is the only thing stopping a wide web from being a shopping list.
+// Distance is the whole price, so no notable is ever next to the middle: every
+// one of them is a run of minors away, and that walk is what stops a wide web
+// from being a shopping list.
 {
   const before = allocated();
-  const gated = all('#skills-web .web__node--notable');
+  const deep = all('#skills-web .web__node--notable');
   assert(
-    gated.every((n) => n.classList.contains('web__node--locked')),
-    'every notable starts gated'
+    deep.every((n) => n.classList.contains('web__node--locked')),
+    'no notable is reachable from a standing start'
   );
   assert(allocated() === before, 'and none of them slipped through');
 }

@@ -20,7 +20,6 @@ export interface SkillNodeDef {
   y: number;
   /** UNDIRECTED, so only one end need say so. CENTRE means "touches the skill". */
   links: string[];
-  gate?: number; // points that must already be spent; distance cannot gate a web
   stats?: NodeStat[];
   grants?: Record<string, unknown>;
   /**

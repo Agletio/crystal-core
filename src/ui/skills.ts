@@ -502,18 +502,15 @@ function renderWeb(): void {
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
-      const spent = progress.allocated.length;
       const state = owned
         ? canDeallocate(skillId, node.id, progress.allocated)
           ? 'allocated — click to refund'
           : 'allocated — refunding it would strand another node'
-        : spent < (node.gate ?? 0)
-          ? `locked until ${node.gate} points are spent (you have spent ${spent})`
-          : !reachable
-            ? 'not connected to anything you own'
-            : spare > 0
-              ? 'available'
-              : 'no points left';
+        : !reachable
+          ? 'not connected to anything you own'
+          : spare > 0
+            ? 'available'
+            : 'no points left';
       const choice = node.choices
         ? `\n${picked ? `chosen: ${picked.name} — ${picked.description}` : 'click to choose'}`
         : '';

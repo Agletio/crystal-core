@@ -83,6 +83,13 @@ dropping the extras.
 Content only: `layout.ts` owns every coordinate. Give the tree a `prefix` no
 other tree uses, because node ids are what a save points at.
 
+**Distance is the only price.** There are no spent-point gates: what a notable
+costs is the run of minors in front of it. A twig may only `forkFrom` the twig
+beside it — a fork from further away has to sweep across everything between,
+and `buildTree` refuses it. The demo holds every tree to the geometry: no link
+may cross another, and none may pass under a node it does not join, both of
+which read on screen as a link to somewhere it does not go.
+
 A node's `grants` must be declared in `sim/grants.ts`, and the skill's own
 `behaviour` must be listed as reading it — a tree asking a cloud to pierce is
 a point spent on nothing, and the demo fails on it. Anything two nodes both

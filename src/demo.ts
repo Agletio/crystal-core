@@ -861,9 +861,8 @@ for (const tree of BUILT_TREES) {
   const orphans = nodes.filter((n) => !distance.has(n.id));
   check(orphans.length === 0, 'every node connects to the middle', orphans.map((n) => n.id).join(', '));
 
-  // A node costs the walk to it, OR its gate plus itself, whichever is worse.
-  const cost = (n: (typeof nodes)[number]) =>
-    Math.max(distance.get(n.id) ?? Infinity, (n.gate ?? 0) + 1);
+  // Distance is the whole price now: what a node costs is the walk to it.
+  const cost = (n: (typeof nodes)[number]) => distance.get(n.id) ?? Infinity;
   const unaffordable = nodes.filter((n) => cost(n) > MAX_TREE_POINTS);
   check(
     unaffordable.length === 0,
@@ -871,9 +870,12 @@ for (const tree of BUILT_TREES) {
     unaffordable.map((n) => `${n.id} costs ${cost(n)}`).join(', ')
   );
 
+  // Distance is the only price, so this is what stops the web being a shopping
+  // list: a build can walk to two of the far tips and never to three.
   const deepest = Math.max(...nodes.map((n) => cost(n)));
-  line(`  the most expensive node costs ${deepest} of ${MAX_TREE_POINTS} points`);
-  check(deepest > MAX_TREE_POINTS * 0.6, 'the far side is a real commitment', `${deepest}`);
+  const tips = Math.floor(MAX_TREE_POINTS / deepest);
+  line(`  the deepest node costs ${deepest} of ${MAX_TREE_POINTS} — ${tips} such walks fit`);
+  check(tips <= 2, 'the far side is a real commitment', `${tips} deep walks fit in the budget`);
 
   const first = nodes.filter((n) => canAllocate(skillId, n.id, []));
   check(first.length === 3, 'three ways in, not one per node', String(first.length));
@@ -953,55 +955,55 @@ for (const tree of BUILT_TREES) {
   line(`  ${edges.size} links between ${nodes.length} nodes`);
   check(edges.size <= nodes.length + 14, 'and there are barely more links than nodes', String(edges.size));
 
-  // The ways across the middle are free: two routes to the same node at the
-  // same price. A crossing that shortened anything would be a shortcut, and a
-  // shortcut past a gate is how a web turns back into a menu.
+  // No line may cross another, and no line may run through a node it does not
+  // join. Both read as the same defect on screen — a link that appears to
+  // connect two nodes it has nothing to do with — and neither is visible from
+  // the data, so the check has to be geometric.
   {
-    const cross = new Set(tree.crossings.map(([a, b]) => [a, b].sort().join('|')));
-    const walk = (skip: boolean) => {
-      const near = new Map<string, Set<string>>();
-      const add = (a: string, b: string) => {
-        if (!near.has(a)) near.set(a, new Set());
-        near.get(a)!.add(b);
-      };
-      for (const n of nodes) {
-        for (const other of n.links) {
-          if (skip && cross.has([n.id, other].sort().join('|'))) continue;
-          add(n.id, other);
-          add(other, n.id);
+    const at = new Map<string, { x: number; y: number }>(
+      nodes.map((n) => [n.id, { x: n.x, y: n.y }])
+    );
+    at.set(CENTRE, { x: 0, y: 0 });
+    const pairs = [...edges].map((key) => key.split('|') as [string, string]);
+    type P = { x: number; y: number };
+    const side = (a: P, b: P, c: P) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+
+    const crossed: string[] = [];
+    for (let i = 0; i < pairs.length; i++) {
+      for (let j = i + 1; j < pairs.length; j++) {
+        const [a1, b1] = pairs[i];
+        const [a2, b2] = pairs[j];
+        // Sharing an end is a corner, not a crossing.
+        if (a1 === a2 || a1 === b2 || b1 === a2 || b1 === b2) continue;
+        const [p1, q1, p2, q2] = [at.get(a1)!, at.get(b1)!, at.get(a2)!, at.get(b2)!];
+        const d1 = side(p2, q2, p1);
+        const d2 = side(p2, q2, q1);
+        const d3 = side(p1, q1, p2);
+        const d4 = side(p1, q1, q2);
+        if (d1 > 0 !== d2 > 0 && d3 > 0 !== d4 > 0) crossed.push(`${a1}~${b1} over ${a2}~${b2}`);
+      }
+    }
+    check(crossed.length === 0, 'no link crosses another', crossed.join(', '));
+
+    // Roughly a notable's radius: closer than this and the line is drawn under
+    // the stud, which reads as a connection to it.
+    const CLEAR = 0.45;
+    const grazed: string[] = [];
+    for (const [a, b] of pairs) {
+      const p = at.get(a)!;
+      const q = at.get(b)!;
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
+      const span = dx * dx + dy * dy;
+      for (const [id, n] of at) {
+        if (id === a || id === b) continue;
+        const t = span === 0 ? 0 : Math.max(0, Math.min(1, ((n.x - p.x) * dx + (n.y - p.y) * dy) / span));
+        if (Math.hypot(n.x - (p.x + t * dx), n.y - (p.y + t * dy)) < CLEAR) {
+          grazed.push(`${a}~${b} through ${id}`);
         }
       }
-      const out = new Map<string, number>();
-      let edge = nodes.filter((n) => near.get(n.id)?.has(CENTRE)).map((n) => n.id);
-      let step = 1;
-      for (const id of edge) out.set(id, step);
-      while (edge.length) {
-        const next: string[] = [];
-        step++;
-        for (const id of edge) {
-          for (const other of near.get(id) ?? []) {
-            if (other === CENTRE || out.has(other)) continue;
-            out.set(other, step);
-            next.push(other);
-          }
-        }
-        edge = next;
-      }
-      return out;
-    };
-    const withThem = walk(false);
-    const without = walk(true);
-    const cheapened = [...withThem].filter(([id, d]) => without.get(id) !== d);
-    line(`  ${tree.crossings.length} ways across the middle`);
-    check(
-      cheapened.length > 0 === false,
-      'and every one of them costs the same as going round',
-      cheapened.map(([id, d]) => `${id} ${without.get(id)}→${d}`).join(', ')
-    );
-    const intoBranch = tree.crossings.filter(
-      ([a, b]) => branchOf[a] || branchOf[b]
-    );
-    check(intoBranch.length === 0, 'and none of them reaches into a branch', intoBranch.join(', '));
+    }
+    check(grazed.length === 0, 'and none runs through a node it does not join', grazed.join(', '));
   }
 
   // The trunk is the opposite promise: everything on it works for any build.

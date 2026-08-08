@@ -47,18 +47,34 @@ const jitter = (a: number, b: number, salt: number): number => {
   return h - Math.floor(h);
 };
 
+/** A node must sit this far from any other, and this far off any line it does
+ * not end. The second is the larger: a line under a stud reads as a link to it. */
+const APART = 0.92;
+const CLEAR = 0.55;
+
 /**
  * Push apart anything that ended up on top of something else.
  *
  * Twigs aim where they like and two of them can converge; the wobble that stops
  * the web looking like a diagram can close the last of the gap. A few passes of
- * shoving overlapping pairs apart costs nothing and means no node is ever drawn
- * under another one.
+ * shoving costs nothing and means no node is drawn under another one, and no
+ * line is drawn under a node — which on screen is a link to somewhere it does
+ * not go.
  */
-function spread(nodes: SkillNodeDef[]): SkillNodeDef[] {
-  const APART = 0.92;
-  for (let pass = 0; pass < 24; pass++) {
+function spread(nodes: SkillNodeDef[], links: Map<string, string[]>): SkillNodeDef[] {
+  const at = new Map(nodes.map((n) => [n.id, n]));
+  const edges: Array<[SkillNodeDef, SkillNodeDef]> = [];
+  for (const [from, list] of links) {
+    for (const to of list) {
+      const a = at.get(from);
+      const b = at.get(to);
+      if (a && b) edges.push([a, b]);
+    }
+  }
+
+  for (let pass = 0; pass < 60; pass++) {
     let moved = false;
+
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i];
@@ -79,6 +95,31 @@ function spread(nodes: SkillNodeDef[]): SkillNodeDef[] {
         b.y += uy * push;
       }
     }
+
+    // Only the node gives way. Moving the line's ends instead would drag the
+    // rings out of round to fix something growing off them.
+    for (const n of nodes) {
+      for (const [a, b] of edges) {
+        if (a === n || b === n) continue;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const span = dx * dx + dy * dy;
+        if (span < 1e-9) continue;
+        const t = Math.max(0, Math.min(1, ((n.x - a.x) * dx + (n.y - a.y) * dy) / span));
+        const footX = a.x + t * dx;
+        const footY = a.y + t * dy;
+        const d = Math.hypot(n.x - footX, n.y - footY);
+        if (d >= CLEAR) continue;
+        moved = true;
+        const push = CLEAR - Math.max(d, 1e-3);
+        const len = Math.sqrt(span);
+        const ux = d < 1e-3 ? -dy / len : (n.x - footX) / d;
+        const uy = d < 1e-3 ? dx / len : (n.y - footY) / d;
+        n.x += ux * push;
+        n.y += uy * push;
+      }
+    }
+
     if (!moved) break;
   }
   return nodes;
@@ -162,7 +203,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
         x: Math.cos(angle) * reach,
         y: Math.sin(angle) * reach,
         links: links.get(id) ?? [],
-        ...(notable ? { gate: notable.gate } : {}),
         ...(notable
           ? {
               ...(notable.stats ? { stats: notable.stats } : {}),
@@ -173,10 +213,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       });
     }
   });
-
-  for (const [[fromSpur, fromStep], [toSpur, toStep]] of spec.crossings) {
-    join(spurId(fromSpur, fromStep), spurId(toSpur, toStep));
-  }
 
   // --- the branches ---------------------------------------------------------
   spec.branches.forEach((branch, b) => {
@@ -190,7 +226,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       x: Math.cos(base) * ENABLER_R,
       y: Math.sin(base) * ENABLER_R,
       links: links.get(branch.enabler.id) ?? [],
-      gate: branch.enabler.gate,
       ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
     });
 
@@ -199,6 +234,14 @@ export function buildTree(spec: TreeSpec): BuiltTree {
     let minorAt = 0;
 
     branch.twigs.forEach((twig, t) => {
+      // Twigs are aimed across the wedge in the order they are written, so a
+      // fork from a twig further away than its neighbour has to sweep over
+      // everything between the two to get where it is pointing.
+      if (twig.forkFrom && Math.abs(twig.forkFrom.twig - t) !== 1) {
+        throw new Error(
+          `${spec.skillId}/${branch.id}: twig ${t} forks from ${twig.forkFrom.twig}, not its neighbour`
+        );
+      }
       // Never off a twig's last node: that one is a notable, and a notable
       // with something growing out of it is no longer a dead end.
       const parent = twig.forkFrom
@@ -235,7 +278,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           x: Math.cos(angle) * reach,
           y: Math.sin(angle) * reach,
           links: links.get(id) ?? [],
-          ...(last ? { gate: twig.notable.gate } : {}),
           ...(last
             ? {
                 ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),
@@ -254,7 +296,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
 
   // Links are collected while the shape is worked out, so every node picks up
   // whatever named it after it was pushed.
-  const built = spread(nodes.map((n) => ({ ...n, links: links.get(n.id) ?? [] })));
+  const built = spread(nodes.map((n) => ({ ...n, links: links.get(n.id) ?? [] })), links);
 
   return {
     spec,
@@ -270,9 +312,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           ),
         ]),
       ])
-    ),
-    crossings: spec.crossings.map(
-      ([[fs, ft], [ts, tt]]) => [spurId(fs, ft), spurId(ts, tt)] as [string, string]
     ),
     enablers: Object.fromEntries(spec.branches.map((b) => [b.id, b.enabler.id])),
   };
