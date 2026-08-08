@@ -861,7 +861,7 @@ const buyable = () => all('#skills-web .web__node--open');
 assert(allocated() === 0, 'nothing allocated to begin with');
 // Four ways in, not one per node: leaving a ring means walking round it to
 // find the next spoke, which is what makes the minors worth buying.
-assert(buyable().length === 4, 'four ways in', String(buyable().length));
+assert(buyable().length === 3, 'three ways in', String(buyable().length));
 
 buyable()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 assert(allocated() === 1, 'a node can be allocated');

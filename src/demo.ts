@@ -40,7 +40,7 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { characterStats, convertedType, treeGrants } from './sim/stats';
 import { SKILL_BEHAVIOURS } from './sim/skills';
-import { FIREBALL_FAMILIES as FAMILY_OF } from './trees/fireball';
+import { FIREBALL_BRANCH, FIREBALL_ENABLERS, NEEDS } from './trees/fireball';
 import {
   CENTRE,
   MAX_TREE_POINTS,
@@ -776,60 +776,68 @@ rule('THE WEB — is every node reachable, and is anything a trap?');
   check(deepest > MAX_TREE_POINTS * 0.6, 'the far side is a real commitment', `${deepest}`);
 
   const first = nodes.filter((n) => canAllocate('fireball', n.id, []));
-  check(first.length === 4, 'four ways in, not one per node', String(first.length));
+  check(first.length === 3, 'three ways in, not one per node', String(first.length));
   check(
     first.every((n) => n.kind === 'minor'),
     'and no notable is a first move',
     first.filter((n) => n.kind === 'notable').map((n) => n.id).join(', ')
   );
 
-  // The whole point of the layout: notables are not strung in a line. Two of
-  // them touching is a shortcut past a stretch of road, and a straight radial
-  // run of them is why the minors were worth nothing.
-  const notableIds = new Set(notables.map((n) => n.id));
-  const touching = notables.filter((n) =>
-    [...neighboursOf('fireball', n.id)].some((id) => notableIds.has(id))
-  );
-  check(touching.length === 0, 'no notable touches another', touching.map((n) => n.id).join(', '));
-
-  // And a family is scattered, so a pierce build cannot be walked in a line.
-  // Measured in NODES BETWEEN rather than in degrees: what makes two notables
-  // a straight line is how cheaply you get from one to the other, and two on
-  // different rings at the same bearing are not near each other at all.
-  const between = (from: string, to: string): number => {
-    const seen = new Set([from]);
-    let edge = [from];
-    for (let steps = 1; steps < 40; steps++) {
+  // The point of the shape: a branch hangs off one node, and that node is what
+  // makes the rest of it worth anything. If any of it can be reached another
+  // way, you can spend a point on something that does nothing.
+  const leaks: string[] = [];
+  for (const [branch, enabler] of Object.entries(FIREBALL_ENABLERS)) {
+    const reached = new Set<string>();
+    let edge = nodes
+      .filter((n) => n.id !== enabler && neighboursOf('fireball', n.id).has(CENTRE))
+      .map((n) => n.id);
+    for (const id of edge) reached.add(id);
+    while (edge.length) {
       const next: string[] = [];
       for (const id of edge) {
         for (const other of neighboursOf('fireball', id)) {
-          if (other === CENTRE || seen.has(other)) continue;
-          if (other === to) return steps;
-          seen.add(other);
+          if (other === CENTRE || other === enabler || reached.has(other)) continue;
+          reached.add(other);
           next.push(other);
         }
       }
       edge = next;
     }
-    return Infinity;
-  };
-
-  const near: string[] = [];
-  let closest = Infinity;
-  for (let i = 0; i < notables.length; i++) {
-    for (let j = i + 1; j < notables.length; j++) {
-      const a = notables[i];
-      const b = notables[j];
-      if (!FAMILY_OF[a.id] || FAMILY_OF[a.id] !== FAMILY_OF[b.id]) continue;
-      const steps = between(a.id, b.id);
-      closest = Math.min(closest, steps);
-      // Four apart is three minors in between: you cannot have both without
-      // buying road, which is the whole point of moving them.
-      if (steps < 4) near.push(`${a.id}-${b.id} (${steps})`);
+    for (const n of nodes) {
+      if (FIREBALL_BRANCH[n.id] === branch && n.id !== enabler && reached.has(n.id)) {
+        leaks.push(`${n.id} without ${enabler}`);
+      }
     }
   }
-  line(`  the closest two notables of one family are ${closest} nodes apart`);
-  check(near.length === 0, 'and a family is spread around the web', near.join(', '));
+  check(leaks.length === 0, 'a branch can only be entered through its own node', leaks.join(', '));
+
+  // And the reason that matters: a line that needs a grant to do anything is
+  // only ever inside the branch that grants it. This is the check that stops
+  // Area of Effect appearing where nothing bursts.
+  const dead: string[] = [];
+  for (const n of nodes) {
+    const keys = [
+      ...(n.stats ?? []).map((line) => line.stat),
+      ...Object.keys(n.grants ?? {}),
+    ];
+    for (const key of keys) {
+      const enabler = NEEDS[key];
+      if (!enabler || n.id === enabler) continue;
+      if (FIREBALL_BRANCH[n.id] !== FIREBALL_BRANCH[enabler]) {
+        dead.push(`${n.id} has ${key}, which needs ${enabler}`);
+      }
+    }
+  }
+  check(dead.length === 0, 'and nothing conditional sits outside its branch', dead.join(', '));
+
+  // The trunk is the opposite promise: everything on it works for any build.
+  const trunk = nodes.filter((n) => !FIREBALL_BRANCH[n.id]);
+  line(`  ${trunk.length} nodes on the trunk, ${nodes.length - trunk.length} out on branches`);
+  const conditional = trunk.filter((n) =>
+    [...(n.stats ?? []).map((l) => l.stat), ...Object.keys(n.grants ?? {})].some((k) => NEEDS[k])
+  );
+  check(conditional.length === 0, 'the trunk is useful whatever you build', conditional.map((n) => n.id).join(', '));
 
   // Getting anywhere means buying road. If the walk to the deepest notable were
   // mostly notables, the minors would be decoration again.
