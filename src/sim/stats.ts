@@ -2,6 +2,7 @@
 import { aggregate, computeStat, percentStat } from '../mods';
 import {
   AILMENT,
+  AILMENT_NAMES,
   DAMAGE_TYPES,
   DEFENCE,
   HERO_BASE,
@@ -76,9 +77,16 @@ export interface DamagePart {
   total: number; // this pass's share, after the skill's multiplier
 }
 
+/** A multiplier applied after the per-type pass, and what to call it. */
+export interface DamageStep {
+  label: string;
+  value: number;
+}
+
 export interface DamageBreakdown {
   parts: DamagePart[];
-  multiplier: number;
+  /** Every factor after the pass. A step missing here is a number that lies. */
+  steps: DamageStep[];
   total: number;
   /** All of it lands as this: +5 Fire on a poison skill is five more POISON. */
   dealtAs: string;
@@ -97,7 +105,8 @@ export function damageBreakdown(
   mods: RolledMod[],
   base: number,
   skill: SkillDef,
-  grants: Record<string, unknown> = {}
+  grants: Record<string, unknown> = {},
+  after: DamageStep[] = []
 ): DamageBreakdown {
   // Conversion replaces the type outright and does NOT keep the old one live:
   // scaling off both is a free second stat, not a choice. What stops that being
@@ -112,6 +121,14 @@ export function damageBreakdown(
   // What every pass gets regardless of type, so a zero pass is only reported
   // when something aimed AT that type is going to waste.
   const generic = aggregate(mods, 'damage', skill.tags);
+
+  const steps: DamageStep[] = [
+    ...(skill.damageMultiplier !== 1
+      ? [{ label: 'skill', value: skill.damageMultiplier }]
+      : []),
+    ...after,
+  ];
+  const factor = steps.reduce((n, s) => n * s.value, 1);
 
   const parts: DamagePart[] = [];
   // Multiplied once at the end, as one accumulator would: doing it per part is
@@ -133,14 +150,14 @@ export function damageBreakdown(
       flat: buckets.flat,
       increased: buckets.inc,
       more: buckets.more,
-      total: pass * skill.damageMultiplier,
+      total: pass * factor,
     });
   }
 
   return {
     parts,
-    multiplier: skill.damageMultiplier,
-    total: raw * skill.damageMultiplier,
+    steps,
+    total: raw * factor,
     dealtAs: active[0] ?? skill.damageTypes[0] ?? 'physical',
   };
 }
@@ -179,13 +196,24 @@ export function damageDetail(character: Character): DamageDetail {
   const stats = characterStats(character);
   const grants = treeGrants(character);
   const skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], grants);
-  const mods = statMods(character);
-  const breakdown = damageBreakdown(mods, baseFor(character.level).weaponDamage, skill, grants);
 
   const overTime = skill.behaviour === 'ailment_burst';
   const seconds = overTime ? ailmentSeconds(skill, grants) : 0;
   const scale = typeof grants.ailmentMultiplier === 'number' ? grants.ailmentMultiplier : 1;
-  const perApplication = breakdown.total * (overTime ? scale : 1);
+  // A tree that trades poison damage for a wider cloud is a factor like any
+  // other, and one applied where the workings cannot show it is a sheet whose
+  // parts do not add up to its own total.
+  const ailment: DamageStep[] =
+    overTime && scale !== 1 ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'ailment', value: scale }] : [];
+
+  const breakdown = damageBreakdown(
+    statMods(character),
+    baseFor(character.level).weaponDamage,
+    skill,
+    grants,
+    ailment
+  );
+  const perApplication = breakdown.total;
 
   // A lasting skill stacks until the cap or until the oldest stack expires,
   // whichever comes first: casting faster than that buys nothing on ONE target.

@@ -7,6 +7,9 @@ import { craft, describeItem } from './crafting';
 import {
   AILMENT,
   ALL_MODS,
+  HERO_BASE,
+  LEVELLING,
+  PLAYER_SKILLS,
   CURRENCY_BY_ID,
   CRYSTAL_TIERS,
   DAMAGE_GROUPS,
@@ -46,7 +49,16 @@ import {
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
-import { characterStats, convertedType, damageDetail, treeGrants } from './sim/stats';
+import {
+  characterStats,
+  convertedType,
+  damageBreakdown,
+  damageDetail,
+  effectiveSkill,
+  statMods,
+  treeGrants,
+} from './sim/stats';
+import { damageWorkings, readWorkings } from './damage-text';
 import { SKILL_BEHAVIOURS } from './sim/skills';
 import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
@@ -61,6 +73,7 @@ import {
   treeFor,
 } from './skills-tree';
 import { makeCharacter, skillProgress, xpToNext } from './sim/character';
+import type { Character } from './sim/character';
 import { loadoutMods, starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
@@ -1656,6 +1669,270 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
     damageDetail(game.character).seconds === 0,
     'and a skill that hits reports no duration at all',
     'a hit claims a duration'
+  );
+}
+
+// ===========================================================================
+rule('THE SHEET — does every number on it survive being checked?');
+
+// The sheet is the only place the rules are stated, so a number that is subtly
+// wrong there is worse than no sheet: it teaches a rule the fight does not
+// follow, and nothing else in the game contradicts it.
+//
+// So none of this trusts the same function twice. The parts are re-multiplied
+// from their own fields, the printed working is read back as algebra, and what
+// a cast is worth is checked against the multiplier the SIM actually asks for.
+{
+  /** Characters worth checking: every skill, bare and deep into its own tree. */
+  const subjects: Array<{ name: string; character: Character }> = [];
+  for (const skill of PLAYER_SKILLS) {
+    for (const [label, level, walkTo] of [
+      ['bare, level 1', 1, 0],
+      ['geared, level 20', 20, 0],
+      ['half a tree', 20, 14],
+      ['a deep tree', 40, 40],
+    ] as Array<[string, number, number]>) {
+      const character = createGame(walkTo === 0 && level === 1 ? 'fresh' : 'dev').character;
+      character.skillId = skill.id;
+      character.level = level;
+      const progress = skillProgress(character, skill.id);
+      // A real walk, not a random set: allocation rules are what decide which
+      // notables can be reached together, and an impossible build proves nothing.
+      const tree = treeFor(skill.id);
+      const rng = new Rng(4);
+      while (progress.allocated.length < walkTo) {
+        const open = tree.filter((n) => canAllocate(skill.id, n.id, progress.allocated));
+        if (open.length === 0) break;
+        const node = rng.pick(open)!;
+        progress.allocated.push(node.id);
+        // A choice node grants nothing until it is answered, and the ailment
+        // multipliers this section exists to catch live behind choices.
+        if (node.choices?.length) (progress.choices ??= {})[node.id] = rng.pick(node.choices)!.id;
+      }
+      subjects.push({ name: `${skill.name}, ${label}`, character });
+    }
+  }
+
+  /** The run of minors in front of a node, so a walk can be aimed rather than hoped for. */
+  const pathTo = (skillId: string, targetId: string): string[] => {
+    const from = new Map<string, string | null>([[CENTRE, null]]);
+    const queue: string[] = [CENTRE];
+    while (queue.length > 0) {
+      const at = queue.shift()!;
+      if (at === targetId) break;
+      for (const next of neighboursOf(skillId, at)) {
+        if (from.has(next)) continue;
+        from.set(next, at);
+        queue.push(next);
+      }
+    }
+    if (!from.has(targetId)) return [];
+    const out: string[] = [];
+    for (let at: string | null = targetId; at && at !== CENTRE; at = from.get(at) ?? null) {
+      out.unshift(at);
+    }
+    return out;
+  };
+
+  // A random walk found no node that scales an ailment DOWN, and one of those
+  // is exactly what made the sheet disagree with itself. Every node that
+  // touches a damage multiplier gets walked to on purpose, choices and all.
+  for (const skill of PLAYER_SKILLS) {
+    for (const node of treeFor(skill.id)) {
+      const options = node.choices?.length ? node.choices.map((c) => c.id) : [null];
+      for (const choice of options) {
+        const grants = { ...(node.grants ?? {}), ...(node.choices?.find((c) => c.id === choice)?.grants ?? {}) };
+        if (!('ailmentMultiplier' in grants) && !('convertTree' in grants)) continue;
+
+        const path = pathTo(skill.id, node.id);
+        if (path.length === 0) continue;
+        const character = createGame('dev').character;
+        character.skillId = skill.id;
+        character.level = 30;
+        const progress = skillProgress(character, skill.id);
+        progress.allocated = path;
+        if (choice) (progress.choices ??= {})[node.id] = choice;
+        subjects.push({ name: `${skill.name} → ${node.id}${choice ? `/${choice}` : ''}`, character });
+      }
+    }
+  }
+
+  const wrong: string[] = [];
+  const near = (a: number, b: number) => Math.abs(a - b) <= Math.max(1e-9, Math.abs(b) * 1e-9);
+
+  for (const { name, character } of subjects) {
+    const detail = damageDetail(character);
+    const stats = characterStats(character);
+    const { breakdown } = detail;
+
+    // 1. The parts add up to the total printed under them — AND to the number
+    //    in the row the breakdown opened. Only the second catches a factor
+    //    applied where the workings cannot show it: a breakdown can be
+    //    perfectly self-consistent and still not explain the row above it.
+    const summed = breakdown.parts.reduce((n, p) => n + p.total, 0);
+    if (!near(summed, breakdown.total)) {
+      wrong.push(`${name}: parts sum to ${summed.toFixed(4)}, total says ${breakdown.total.toFixed(4)}`);
+    }
+    if (!near(summed, detail.perApplication)) {
+      wrong.push(
+        `${name}: breakdown shows ${summed.toFixed(4)}, the damage row shows ${detail.perApplication.toFixed(4)}`
+      );
+    }
+
+    // 2. Each part is what its own fields say it is — re-multiplied here rather
+    //    than taken from the function that produced it.
+    const factor = breakdown.steps.reduce((n, s) => n * s.value, 1);
+    for (const part of breakdown.parts) {
+      const expect =
+        (part.base + part.flat) *
+        (1 + part.increased / 100) *
+        part.more.reduce((n, m) => n * (1 + m / 100), 1) *
+        factor;
+      if (!near(part.total, expect)) {
+        wrong.push(`${name}: ${part.type} shows ${part.total.toFixed(4)}, its own fields give ${expect.toFixed(4)}`);
+      }
+    }
+
+    // 3. The working PRINTED beside a part must come to the number printed with
+    //    it. This is the check that a hidden multiplier fails: the algebra on
+    //    screen has to be the algebra that produced the answer.
+    for (const part of breakdown.parts) {
+      if (part.total === 0) continue;
+      const said = readWorkings(damageWorkings(part, breakdown.steps));
+      // Its inputs are printed rounded, so this can only be close — but a
+      // factor left out of the text is never close.
+      if (Math.abs(said - part.total) > Math.max(1.5, part.total * 0.02)) {
+        wrong.push(
+          `${name}: "${damageWorkings(part, breakdown.steps)}" reads as ${said.toFixed(1)}, printed as ${Math.round(part.total)}`
+        );
+      }
+    }
+
+    // 4. The stat the SIM reads is the breakdown without the per-cast steps.
+    //    stats.damage is what a monster is hit with; the sheet's per-cast
+    //    number is that with the tree's ailment scaling on top.
+    const bare = damageBreakdown(
+      statMods(character),
+      HERO_BASE.weaponDamage + (character.level - 1) * LEVELLING.damagePerLevel,
+      effectiveSkill(SKILL_BY_ID[character.skillId], treeGrants(character)),
+      treeGrants(character)
+    );
+    if (!near(bare.total, stats.damage)) {
+      wrong.push(`${name}: sim reads ${stats.damage.toFixed(4)}, sheet computes ${bare.total.toFixed(4)}`);
+    }
+
+    // 5. damage/sec, recomputed from the rules rather than read back.
+    const stacks = detail.seconds > 0 ? Math.min(AILMENT.maxStacks, stats.attacksPerSecond * detail.seconds) : 0;
+    const dps =
+      detail.seconds > 0
+        ? (stacks * detail.perApplication) / detail.seconds
+        : detail.perApplication * stats.attacksPerSecond;
+    if (!near(dps, detail.perSecond)) {
+      wrong.push(`${name}: damage/sec says ${detail.perSecond.toFixed(4)}, rules give ${dps.toFixed(4)}`);
+    }
+  }
+
+  for (const entry of wrong.slice(0, 6)) line(`  ${entry}`);
+  check(
+    wrong.length === 0,
+    `every number on the sheet holds up, across ${subjects.length} characters`,
+    `${wrong.length} wrong — see above`
+  );
+
+  // A check that never meets the awkward case is not a check. These are the
+  // shapes the arithmetic above exists to police, and each has to appear in
+  // the matrix or the pass above is a pass over nothing.
+  const seen = subjects.map(({ character }) => damageDetail(character).breakdown);
+  const wants: Array<[string, boolean]> = [
+    ['a skill multiplier', seen.some((b) => b.steps.some((s) => s.label === 'skill'))],
+    ['a tree scaling the ailment', seen.some((b) => b.steps.length > 1)],
+    ['one that scales it DOWN', seen.some((b) => b.steps.some((s) => s.value < 1))],
+    ['a "more" line', seen.some((b) => b.parts.some((p) => p.more.length > 0))],
+    ['damage of a type the skill does not deal', seen.some((b) => b.parts.some((p) => p.total > 0 && p.type !== b.dealtAs))],
+    ['scaling with nothing to scale', seen.some((b) => b.parts.some((p) => p.total === 0))],
+  ];
+  const missing = wants.filter(([, met]) => !met).map(([what]) => what);
+  check(
+    missing.length === 0,
+    'and the characters checked actually cover every shape it polices',
+    `never exercised: ${missing.join(', ')}`
+  );
+}
+
+// The last question, and the only one that cannot be answered by arithmetic:
+// does the SIM ask for what the sheet promised? The sheet says a cast of Blight
+// is worth N over T seconds. The behaviour is what decides the multiplier the
+// sim then puts against stats.damage, so that is where the promise is kept or
+// broken.
+{
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+
+  /** What one cast asks the sim for, against a single enemy standing on you. */
+  const castOnce = (skillId: string, grants: Record<string, unknown>) => {
+    const skill = SKILL_BY_ID[skillId];
+    const user = dummy(0, 0);
+    const target = dummy(0.2, 0);
+    const asked: Array<{ multiplier: number; seconds: number }> = [];
+    SKILL_BEHAVIOURS[skill.behaviour]({
+      skill, user, primary: target, enemies: [target],
+      rng: new Rng(3), grants, crit: false, castIndex: 0,
+      hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
+      ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
+      areaRadius: (base: number) => base,
+      vfx: () => {},
+    } as any);
+    return asked[0];
+  };
+
+  const mismatched: string[] = [];
+  for (const skill of PLAYER_SKILLS) {
+    for (const walkTo of [0, 12, 30]) {
+      const character = createGame('dev').character;
+      character.skillId = skill.id;
+      character.level = 24;
+      const progress = skillProgress(character, skill.id);
+      const tree = treeFor(skill.id);
+      const rng = new Rng(11);
+      while (progress.allocated.length < walkTo) {
+        const open = tree.filter((n) => canAllocate(skill.id, n.id, progress.allocated));
+        if (open.length === 0) break;
+        const node = rng.pick(open)!;
+        progress.allocated.push(node.id);
+        if (node.choices?.length) (progress.choices ??= {})[node.id] = rng.pick(node.choices)!.id;
+      }
+
+      const grants = treeGrants(character);
+      const detail = damageDetail(character);
+      const stats = characterStats(character);
+      const asked = castOnce(skill.id, grants);
+      if (!asked) {
+        mismatched.push(`${skill.id}@${walkTo}: the behaviour asked for nothing`);
+        continue;
+      }
+
+      // What the sim will actually compute, from its own two numbers.
+      const simWorth = stats.damage * asked.multiplier;
+      const gap = Math.abs(simWorth - detail.perApplication);
+      if (gap > Math.max(1e-9, detail.perApplication * 1e-9)) {
+        mismatched.push(
+          `${skill.id}@${walkTo}: sheet promises ${detail.perApplication.toFixed(2)} per ` +
+            `${detail.seconds > 0 ? 'cast' : 'hit'}, sim asks for ${simWorth.toFixed(2)}`
+        );
+      }
+      if (detail.seconds > 0 && Math.abs(asked.seconds - detail.seconds) > 1e-9) {
+        mismatched.push(
+          `${skill.id}@${walkTo}: sheet says ${detail.seconds}s, sim applies ${asked.seconds}s`
+        );
+      }
+    }
+  }
+
+  for (const entry of mismatched.slice(0, 6)) line(`  ${entry}`);
+  check(
+    mismatched.length === 0,
+    'and the sim asks for exactly what the sheet promised',
+    `${mismatched.length} promises broken — see above`
   );
 }
 

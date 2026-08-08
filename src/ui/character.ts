@@ -9,7 +9,7 @@
 import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
 import { characterStats, damageDetail } from '../sim/stats';
-import type { DamagePart } from '../sim/stats';
+import { damageWorkings } from '../damage-text';
 import { xpToNext } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
 import { wear } from './wear';
@@ -136,17 +136,6 @@ function renderPickHint(): void {
 
 const round = (n: number) => Math.round(n).toString();
 
-/** Where one damage type's contribution came from, in the order it was applied. */
-function partWorkings(part: DamagePart, multiplier: number): string {
-  const bits: string[] = [];
-  if (part.base) bits.push(`${round(part.base)} base`);
-  if (part.flat) bits.push(`${part.flat > 0 ? '+' : ''}${round(part.flat)} flat`);
-  if (part.increased) bits.push(`+${round(part.increased)}% inc`);
-  for (const m of part.more) bits.push(`×${(1 + m / 100).toFixed(2)} more`);
-  if (multiplier !== 1) bits.push(`×${multiplier} skill`);
-  return bits.join('  ');
-}
-
 /**
  * The damage number, taken apart. Every line here is derived from the same
  * pass the sim runs, so the sheet cannot describe a rule the fight does not
@@ -168,7 +157,7 @@ function damagePanel(): HTMLElement {
         'dmgrow__how',
         part.total === 0
           ? `nothing tagged ${nameOf(part.type)} for it to scale`
-          : partWorkings(part, breakdown.multiplier)
+          : damageWorkings(part, breakdown.steps)
       )
     );
     box.append(row);

@@ -1183,6 +1183,73 @@ for (const [skill, shelf, total, notables] of [
   $('skills-back').click();
 }
 $('skills-close').click();
+
+// --- the breakdown holds for a skill that does not hit ---------------------
+// The check above ran on a skill that hits. A lasting skill takes another
+// multiplier from its tree on the way to the number in the row, and a factor
+// applied where the working cannot show it is how the two stop matching.
+{
+  $('open-skills').click();
+  all('#skills-cats .catcard').find((c) => c.textContent?.includes('Spells')).click();
+  all('#skills-list .skillrow').find((b) => b.textContent?.includes('Creeping Blight')).click();
+  $('skills-equip').click();
+
+  // Canopy is the node that made this necessary: it buys a wider cloud with
+  // 12% LESS poison damage. A bare tree applies no such factor, so a check run
+  // without it is a check that cannot fail.
+  for (let i = 0; i < 30; i++) $('skills-devlevel').click();
+  const centreOf = (el) => ({
+    x: Number(el.getAttribute('data-x')),
+    y: Number(el.getAttribute('data-y')),
+  });
+  const canopy = () => all('#skills-web [data-node="bl_canopy"]')[0];
+  for (let step = 0; step < 40; step++) {
+    if (canopy()?.classList.contains('web__node--on')) break;
+    const goal = centreOf(canopy());
+    const next = all('#skills-web .web__node--open').sort(
+      (a, b) =>
+        Math.hypot(centreOf(a).x - goal.x, centreOf(a).y - goal.y) -
+        Math.hypot(centreOf(b).x - goal.x, centreOf(b).y - goal.y)
+    )[0];
+    if (!next) break;
+    next.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  }
+  assert(
+    canopy().classList.contains('web__node--on'),
+    'a node that scales the poison down is allocated',
+    canopy().getAttribute('class')
+  );
+  $('skills-close').click();
+
+  $('open-character').click();
+  assert(
+    /over \d+s/.test(text('sheet-skill')),
+    'the sheet reports a lasting skill as lasting',
+    text('sheet-skill')
+  );
+
+  const dmg = all('#sheet-stats .stat').find(
+    (r) => r.querySelector('.stat__k')?.textContent === 'damage'
+  );
+  dmg.click();
+  const parts = all('.statdetail .dmgrow');
+  const sum = parts.reduce(
+    (n, r) => n + Number(r.querySelector('.dmgrow__n')?.textContent ?? 0),
+    0
+  );
+  const shown = Number((dmg.querySelector('.stat__v')?.textContent ?? '').replace(/\D+.*$/, ''));
+  // Rounding per row is the only slack allowed. Anything wider hides a factor.
+  assert(
+    Math.abs(sum - shown) <= parts.length,
+    'and its breakdown still adds up to the row it opened',
+    `${sum} in parts, row says ${shown}`
+  );
+  assert(
+    /never by armour/.test(document.querySelector('.statdetail')?.textContent ?? ''),
+    'and states the rule that damage over time skips armour'
+  );
+  $('sheet-close').click();
+}
 assert($('skills').hidden === true, 'and the skills screen closes again');
 
 $('open-character').click();
