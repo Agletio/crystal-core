@@ -17,6 +17,7 @@ import {
   clampZoom,
   floorColour,
   floorPalette,
+  isWallFace,
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
@@ -98,6 +99,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     // Every colour the floor can be, worked out once per draw rather than
     // eight hex round-trips per tile.
     const floor = floorPalette(palette, state.map.vein);
+    const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Only what is on screen. The floor carries a dozen small rectangles per
     // tile now; drawing the whole map every frame would spend most of it on
@@ -110,7 +112,10 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
         const tile = grid.at(x, y);
-        if (tile === WALL) continue;
+        // Rock gets drawn too now, but only the band you could see from a
+        // room — everything past it is the background, which is the same
+        // rock a shade darker.
+        if (tile === WALL && !isWallFace(at, x, y)) continue;
         ctx.fillStyle = floorColour(floor, tile, x, y);
         ctx.fillRect(
           v.offX + x * v.tile,
@@ -124,10 +129,8 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     // Flagstones, rubble, mineral and the lit lip under a wall. Everything
     // here is a whole number of sub-tile pixels, so the floor is drawn on a
     // grid the same way the sprites are.
-    const at = (gx: number, gy: number) => grid.at(gx, gy);
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
-        if (grid.at(x, y) === WALL) continue;
         for (const d of tileDecals(floor, at, x, y)) {
           ctx.globalAlpha = d.alpha;
           ctx.fillStyle = d.colour;
@@ -144,13 +147,25 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
     // Entrance
     const e = state.map.entrance;
-    ctx.fillStyle = palette.seamLit;
+    // The way in: a hole in the floor with a lit lip, not a coloured block.
+    // seamLit is a panel violet, and on stone it read as a UI element someone
+    // had dropped on the map.
+    ctx.fillStyle = palette.rockDeep;
     ctx.fillRect(
-      cx(v, e.x) - v.tile * 0.3,
-      cy(v, e.y) - v.tile * 0.3,
-      v.tile * 0.6,
-      v.tile * 0.6
+      cx(v, e.x) - v.tile * 0.32,
+      cy(v, e.y) - v.tile * 0.32,
+      v.tile * 0.64,
+      v.tile * 0.64
     );
+    ctx.fillStyle = floor.rockLit;
+    ctx.globalAlpha = 0.8;
+    ctx.fillRect(
+      cx(v, e.x) - v.tile * 0.32,
+      cy(v, e.y) + v.tile * 0.22,
+      v.tile * 0.64,
+      v.tile * 0.1
+    );
+    ctx.globalAlpha = 1;
 
     // Exit — a slow pulse so your eye finds the goal.
     const x = state.map.exit;

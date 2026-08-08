@@ -20,9 +20,12 @@ export interface Palette {
   matrix: string;
   seam: string;
   seamLit: string;
-  /** Map-only, and much brighter than the panel colours. */
+  /** Map-only. Stone is grey; the panel violet is a different vocabulary. */
   floor: string;
   floorLit: string;
+  /** Exposed rock face, and the solid rock behind everything. */
+  rock: string;
+  rockDeep: string;
   chalk: string;
   dust: string;
   amethyst: string;
@@ -99,6 +102,8 @@ const VARS: Array<[keyof Palette, string]> = [
   ['seamLit', '--seam-lit'],
   ['floor', '--floor'],
   ['floorLit', '--floor-lit'],
+  ['rock', '--rock'],
+  ['rockDeep', '--rock-deep'],
   ['chalk', '--chalk'],
   ['dust', '--dust'],
   ['amethyst', '--amethyst'],
@@ -314,12 +319,16 @@ export interface FloorPalette {
   /** Grain ramp, dark to light. Indexed by a quantised patch value. */
   room: string[];
   tunnel: string[];
+  rock: string[];
   mortar: string;
   rubble: string;
   chip: string;
   lit: string;
   shade: string;
   vein: string;
+  /** The face of an exposed wall, catching the light from above. */
+  rockLit: string;
+  rockShade: string;
 }
 
 export function floorPalette(palette: Palette, vein: number): FloorPalette {
@@ -335,21 +344,49 @@ export function floorPalette(palette: Palette, vein: number): FloorPalette {
 
   return {
     room: ramp(palette.floor),
-    tunnel: ramp(mix(palette.floor, palette.void, TUNNEL_DEPTH)),
-    mortar: mix(palette.floor, palette.void, 0.55),
-    rubble: mix(palette.floor, palette.void, 0.38),
+    tunnel: ramp(mix(palette.floor, palette.rockDeep, TUNNEL_DEPTH)),
+    rock: ramp(palette.rock),
+    mortar: mix(palette.floor, palette.rockDeep, 0.5),
+    rubble: mix(palette.floor, palette.rockDeep, 0.34),
     chip: mix(palette.floor, palette.floorLit, 0.75),
-    lit: mix(palette.floorLit, palette.chalk, 0.3),
-    shade: mix(palette.floor, palette.void, 0.75),
+    lit: mix(palette.floorLit, palette.chalk, 0.25),
+    shade: mix(palette.floor, palette.rockDeep, 0.85),
     vein: veinColour(palette, vein),
+    rockLit: mix(palette.rock, palette.floorLit, 0.55),
+    rockShade: mix(palette.rock, palette.rockDeep, 0.7),
   };
 }
 
 export function floorColour(floor: FloorPalette, tile: number, x: number, y: number): string {
-  const ramp = tile === TUNNEL ? floor.tunnel : floor.room;
+  const ramp = tile === WALL ? floor.rock : tile === TUNNEL ? floor.tunnel : floor.room;
   const patch = patchNoise(x, y, PATCH_SCALE, 1);
   const step = Math.min(PATCH_STEPS - 1, Math.floor(patch * PATCH_STEPS));
   return ramp[step];
+}
+
+/**
+ * Is this rock worth drawing?
+ *
+ * Only the wall you could actually see from a room. The map used to draw
+ * nothing at all where the rock was, which left every chamber as a slab of
+ * floor floating in the background — you could read where you could walk but
+ * the place had no walls, and a room with no walls is a shape rather than a
+ * room. Drawing EVERY wall tile is the other extreme: two thousand tiles of
+ * solid rock that is the same colour as the background behind it.
+ *
+ * So: the band next to the floor gets drawn, and everything past it is the
+ * background, which is the same rock a shade darker. That is the whole
+ * difference and it costs a ring of tiles rather than a grid of them.
+ */
+export function isWallFace(at: (x: number, y: number) => number, x: number, y: number): boolean {
+  if (at(x, y) !== WALL) return false;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (at(x + dx, y + dy) !== WALL) return true;
+    }
+  }
+  return false;
 }
 
 /** Snaps a 0..1 roll onto the sub-tile grid. */
@@ -380,19 +417,53 @@ export function tileDecals(
   y: number
 ): Decal[] {
   const tile = at(x, y);
-  if (tile === WALL) return [];
-
   const out: Decal[] = [];
+
+  // --- rock ---------------------------------------------------------------
+  if (tile === WALL) {
+    if (!isWallFace(at, x, y)) return out;
+
+    // Rough, not coursed. Masonry on the WALLS was what tipped the whole map
+    // from cave into castle: a chamber cut out of rock has dressed paving at
+    // most, and the rock it was cut out of is just rock.
+    for (let i = 0; i < 3; i++) {
+      const roll = tileNoise(x, y, 60 + i);
+      if (roll > 0.7) continue;
+      out.push({
+        x: snap(roll / 0.7),
+        y: snap(tileNoise(x, y, 70 + i)),
+        w: U * (roll < 0.25 ? 2 : 1),
+        h: U,
+        colour: i === 0 ? floor.rockLit : floor.rockShade,
+        alpha: 0.4,
+      });
+    }
+
+    // The face you can see. A wall with floor BELOW it is the one you are
+    // looking at, so that is the edge the light catches; the far side of the
+    // room gets the shadow instead. One pair, and the rooms stop being flat.
+    if (at(x, y + 1) !== WALL) {
+      out.push({ x: 0, y: 1 - U * 2, w: 1, h: U * 2, colour: floor.rockLit, alpha: 0.75 });
+    }
+    if (at(x, y - 1) !== WALL) {
+      out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.rockShade, alpha: 0.7 });
+    }
+    return out;
+  }
+
+  // --- floor --------------------------------------------------------------
   const paved = tile !== TUNNEL;
 
-  // Crumbling. A ruin is not evenly ruined, so this is per tile rather than a
-  // wear value smeared across the room.
-  const broken = tileNoise(x, y, 7) < 0.2;
+  // A ruin far more than a building. Better than half the paving in a chamber
+  // is gone, and passages were never paved at all — so what you mostly walk on
+  // is cave, with worked stone as the thing that survived rather than the
+  // thing the place is made of.
+  const broken = tileNoise(x, y, 7) < 0.38;
 
   if (paved && !broken) {
     for (let course = 0; course < 2; course++) {
       const top = course * 0.5;
-      out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.5 });
+      out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.55 });
       // Running bond: every other course is offset by half a stone, which is
       // what stops a grid of squares reading as graph paper.
       const shift = course % 2 === 0 ? 0 : 0.25;
@@ -403,14 +474,14 @@ export function tileDecals(
           w: U,
           h: 0.5,
           colour: floor.mortar,
-          alpha: 0.5,
+          alpha: 0.55,
         });
       }
     }
   }
 
   // Rubble. More of it where the paving has gone, and in the raw passages.
-  const bits = broken ? 4 : paved ? 1 : 2;
+  const bits = broken ? 4 : paved ? 1 : 3;
   for (let i = 0; i < bits; i++) {
     const roll = tileNoise(x, y, 20 + i);
     if (roll > 0.6) continue;
@@ -420,7 +491,7 @@ export function tileDecals(
       w: U,
       h: U,
       colour: i === 0 ? floor.chip : floor.rubble,
-      alpha: 0.55,
+      alpha: 0.5,
     });
   }
 
@@ -434,23 +505,27 @@ export function tileDecals(
       w: size,
       h: size,
       colour: floor.vein,
-      alpha: 0.75,
+      alpha: 0.8,
     });
   }
 
-  // Light from above. The lit lip goes on the edge BELOW a wall, because that
-  // is the face a light overhead would actually catch.
+  // Where the floor meets rock. The wall itself carries the lit face now, so
+  // the floor only needs the contact shadow under it.
+  // A hard contact line wherever floor meets rock. This is the single thing
+  // that makes a chamber read as enclosed rather than as a patch of lighter
+  // ground: without it the wall is just a differently-coloured area, and the
+  // eye needs an EDGE to call something a boundary.
   if (at(x, y - 1) === WALL) {
-    out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.lit, alpha: 0.55 });
+    out.push({ x: 0, y: 0, w: 1, h: U * 1.5, colour: floor.shade, alpha: 0.9 });
   }
   if (at(x, y + 1) === WALL) {
     out.push({ x: 0, y: 1 - U, w: 1, h: U, colour: floor.shade, alpha: 0.8 });
   }
   if (at(x - 1, y) === WALL) {
-    out.push({ x: 0, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.55 });
+    out.push({ x: 0, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.8 });
   }
   if (at(x + 1, y) === WALL) {
-    out.push({ x: 1 - U, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.55 });
+    out.push({ x: 1 - U, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.8 });
   }
 
   return out;

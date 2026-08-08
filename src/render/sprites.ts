@@ -326,15 +326,15 @@ function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt |
   return {
     rows: frames[frame] ?? frames[0],
     key: {
-      '#': palette.void,
-      // Pulled toward the void so a monster sits in the rock rather than on
+      '#': palette.rockDeep,
+      // Pulled toward the rock so a monster sits in the rock rather than on
       // top of it. The old flat fills were brighter than the floor.
-      M: mix(base, palette.void, 0.3),
-      m: mix(base, palette.void, 0.55),
+      M: mix(base, palette.rockDeep, 0.28),
+      m: mix(base, palette.rockDeep, 0.52),
       // Interior shading: segment ridges, plate seams, joints. Between M and
       // m, so it reads as form rather than as an outline drawn inside the
       // outline — a second black line would just make the shape muddy.
-      s: mix(base, palette.void, 0.68),
+      s: mix(base, palette.rockDeep, 0.66),
       e: mix(base, palette.chalk, 0.55),
     },
   };
@@ -342,22 +342,27 @@ function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt |
 
 function heroArt(palette: Palette, frame: number): PixelArt {
   const key: Record<string, string> = {
-    '#': palette.void,
+    '#': palette.rockDeep,
     // Cloth, in three tones off one hue. Grimy rather than coloured — the
     // brightest thing on him should be the eye, so everything else stays
     // pulled most of the way to black.
-    D: mix(palette.dust, palette.void, 0.68),
-    C: mix(palette.dust, palette.void, 0.46),
+    //
+    // Pulled toward rockDeep rather than void. `dust` is a panel violet and
+    // the map is warm stone: against it he read as a blue figure rather than
+    // a filthy one. Value still separates him from the floor by a mile, so
+    // warming the hue costs no readability at all.
+    D: mix(palette.dust, palette.rockDeep, 0.72),
+    C: mix(palette.dust, palette.rockDeep, 0.5),
     L: mix(palette.dust, palette.chalk, 0.1),
     // Under the hood. Not empty — darker than the outline, so the face reads
     // as a hollow rather than a hole punched in the sprite.
-    F: mix(palette.void, palette.matrix, 0.35),
+    F: mix(palette.rockDeep, palette.matrix, 0.3),
     E: palette.citrine,
     // Warm dark wood. One pixel wide: at three it read as a ladder, because
     // an outline down both sides of a 16-grid sprite is most of the staff.
-    W: mix(palette.ember, palette.void, 0.6),
+    W: mix(palette.ember, palette.rockDeep, 0.6),
     // The bedroll still strapped to his back. He set out meaning to return.
-    P: mix(palette.seam, palette.void, 0.15),
+    P: mix(palette.seam, palette.rockDeep, 0.2),
   };
 
   return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key };

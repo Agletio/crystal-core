@@ -20,10 +20,31 @@
     --chalk:     #D6CEE4;
     --dust:      #8B819F;
 
-    /* The map draws with its own, much brighter pair. Panel colours are meant
-       to sit behind text; a floor lit like that is unreadable at tile size. */
-    --floor:     #3B3357;
-    --floor-lit: #5E5188;
+    /*
+     * The map has its own palette entirely, and it is NOT the panel one.
+     *
+     * Panel colours are violet because they sit behind text and want to read
+     * as cut mineral. The map was borrowing them, and a whole level of violet
+     * rock read as a UI element you were walking around inside rather than as
+     * somewhere underground. Stone is grey; the accents are what get to be
+     * coloured, which is also what makes a crystal's vein visible at all.
+     *
+     * Warm rather than neutral grey, by a few points. Perfectly neutral stone
+     * reads as concrete.
+     */
+    --floor:     #6E6555;
+    --floor-lit: #918673;
+    /**
+     * Exposed rock face — the wall you can see from the room.
+     *
+     * Far darker than the floor, deliberately. A first pass had the two within
+     * a few points of each other and the whole map read as one muddy field:
+     * the walls were being drawn, they just weren't SEPARATING anything. Value
+     * is what makes a room a room; hue barely participates.
+     */
+    --rock:      #464038;
+    /** Solid rock beyond it. Also the colour behind the whole map. */
+    --rock-deep: #1B1917;
 
     --amethyst:  #A67BE8;
     --citrine:   #E8B84B;

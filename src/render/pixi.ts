@@ -27,6 +27,7 @@ import {
   clampZoom,
   floorColour,
   floorPalette,
+  isWallFace,
   poisonDrops,
   poisonFieldRadius,
   tileDecals,
@@ -74,7 +75,9 @@ export async function createPixiRenderer(
     await app.init({
       width: Math.max(1, host.clientWidth),
       height: Math.max(1, Math.round(host.clientWidth * 0.66)),
-      background: toHexNumber(palette.void),
+      // Solid rock, not void. The map is a place cut out of stone; a black
+      // background made every chamber a slab floating in nothing.
+      background: toHexNumber(palette.rockDeep),
       antialias: true,
       autoDensity: true,
       resolution: Math.min(globalThis.devicePixelRatio || 1, 2),
@@ -156,6 +159,7 @@ export async function createPixiRenderer(
     mapLayer.clear();
 
     const floor = floorPalette(palette, map.vein);
+    const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Same grouping as the decals below: the floor's grain gives many tiles
     // the same colour, so one fill per tile is mostly wasted batches.
@@ -163,7 +167,9 @@ export async function createPixiRenderer(
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         const tile = grid.at(x, y);
-        if (tile === WALL) continue;
+        // Rock gets drawn too now, but only the band you could see from a
+        // room — everything past it is already this colour behind the map.
+        if (tile === WALL && !isWallFace(at, x, y)) continue;
         const colour = floorColour(floor, tile, x, y);
         let rects = floors.get(colour);
         if (!rects) floors.set(colour, (rects = []));
@@ -185,11 +191,9 @@ export async function createPixiRenderer(
     // batches and a third of a second of hitch on the click that starts a
     // run; there are only a handful of distinct decal colours, so grouping
     // turns that into a handful of fills.
-    const at = (x: number, y: number) => grid.at(x, y);
     const batches = new Map<string, { colour: number; alpha: number; rects: number[][] }>();
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        if (grid.at(x, y) === WALL) continue;
         for (const d of tileDecals(floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
           let batch = batches.get(key);
@@ -206,10 +210,16 @@ export async function createPixiRenderer(
       mapLayer.fill({ color: batch.colour, alpha: batch.alpha });
     }
 
+    // The way in: a hole in the floor with a lit lip, not a coloured block.
+    // seamLit is a panel violet, and on stone it read as a UI element someone
+    // had dropped on the map.
     const e = map.entrance;
     mapLayer
-      .rect(cx(e.x) - 0.3, cy(e.y) - 0.3, 0.6, 0.6)
-      .fill(toHexNumber(palette.seamLit));
+      .rect(cx(e.x) - 0.32, cy(e.y) - 0.32, 0.64, 0.64)
+      .fill(toHexNumber(palette.rockDeep));
+    mapLayer
+      .rect(cx(e.x) - 0.38, cy(e.y) - 0.38, 0.76, 0.76)
+      .stroke({ width: 0.08, color: toHexNumber(floor.rockLit), alpha: 0.9 });
 
     builtMap = map;
   }

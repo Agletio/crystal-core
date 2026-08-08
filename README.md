@@ -240,9 +240,20 @@ Zoom 1 fits the whole map. Above that it follows the hero, clamped to the map
 edges so it never pans into the void. Damage numbers live in screen space
 instead of the world, so zooming doesn't scale them into a blur.
 
-The map draws with its own `--floor` / `--floor-lit` pair, much brighter than
-the panel colours. Panel colours are meant to sit behind text; a floor lit
-like that is unreadable at tile size.
+**The map has its own palette, and it is not the panel one.** Panel colours are
+violet because they sit behind text and want to read as cut mineral. The map
+was borrowing them, and a whole level of violet rock read as a UI element you
+were walking around inside rather than as somewhere underground. Stone is grey
+— warm by a few points, because perfectly neutral grey reads as concrete — and
+the accents are what get to be coloured, which is also what makes a crystal's
+vein visible at all. `--floor`, `--rock` and `--rock-deep` are three clearly
+separated values: what you walk on, the wall you can see, and the solid rock
+behind everything.
+
+The sprites mix toward `--rock-deep` rather than `--void` for the same reason.
+`dust` is a panel violet, and against warm stone the hero read as a *blue*
+figure rather than a filthy one. Value still separates him from the floor by a
+mile, so warming the hue costs no readability.
 
 ### The floor
 
@@ -250,13 +261,33 @@ like that is unreadable at tile size.
 are pure functions of `(tile, x, y)`, so both renderers agree exactly and a
 redraw can never make the floor shimmer.
 
+**Walls are drawn.** The map used to draw nothing where the rock was, which
+left every chamber as a slab of floor floating in the background — you could
+read where you could walk, but the place had no walls, and a room without walls
+is a shape rather than a room. Only the band you could actually see gets drawn
+(`isWallFace`, an eight-neighbour test); everything past it is the background,
+which is the same rock a shade darker. That costs a ring of tiles rather than a
+grid of them.
+
+A **hard contact line** runs wherever floor meets rock. This is the single
+thing that makes a chamber read as enclosed rather than as a patch of lighter
+ground: without an edge, the eye won't call a colour change a boundary. A first
+pass had floor and rock within a few points of each other and the whole map
+read as one muddy field — the walls were being drawn, they just weren't
+*separating* anything. Value does that work; hue barely participates.
+
 Rooms are **flagstone** — two courses per tile, offset like brickwork — and
-passages are bare rock, so the map reads as a building the cave got into rather
-than as two shades of the same slab. Roughly a fifth of the paving is missing,
-which is the whole difference between a castle and a ruin. Light comes from
-above: the edge *below* a wall is lit, the edge above one is in shadow. That
-single pair does more for depth than the uniform outline it replaced, which lit
-all four sides equally and so implied no light at all.
+passages are bare rock. Better than a third of the paving in a chamber is gone,
+so what you mostly walk on is cave, with worked stone as the thing that
+survived rather than the thing the place is made of. The walls themselves are
+rough, never coursed: masonry on the *walls* was what tipped the map from cave
+into castle, since a chamber cut out of rock has dressed paving at most and the
+rock it was cut from is just rock.
+
+Light comes from above: a wall with floor below it is the face you're looking
+at, so that edge catches the light and the far side of the room gets the
+shadow. That single pair does more for depth than the uniform outline it
+replaced, which lit all four sides equally and so implied no light at all.
 
 Every decal is a whole number of sub-tile pixels, on the same principle as the
 sprites — a smooth blob on a pixel-art floor is the seam you can't stop
