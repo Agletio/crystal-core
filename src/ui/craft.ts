@@ -20,7 +20,15 @@ import { ALL_MODS } from '../data';
 import { balance, spend } from '../economy';
 import { craftItem, clearCraft, replaceItem, selectForCraft } from '../game/state';
 import type { GameState } from '../game/state';
-import { renderInventory, setCurrencyHandler, setInventoryHandler } from './inventory';
+import { EQUIP_SLOTS } from '../data';
+import { gearIcon } from './icons';
+import {
+  consumeDrag,
+  pressItem,
+  renderInventory,
+  setCurrencyHandler,
+  setInventoryHandler,
+} from './inventory';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { rewardRows } from '../sim/crystal';
@@ -86,9 +94,10 @@ function use(currency: CurrencyDef): void {
     note(entry, entry.startsWith('-') ? 'remove' : 'add');
   }
   // The crafted item keeps its id, so it swaps back into the same inventory
-  // slot and stays selected.
+  // slot — or the same equip slot — and stays selected.
   replaceItem(game, result.item);
   render();
+  onChanged?.();
 }
 
 function reseed(): void {
@@ -109,13 +118,17 @@ function renderItem(): void {
 
   if (!item) return;
 
+  const worn = EQUIP_SLOTS.find((s) => game.character.equipment[s.id]?.id === item.id);
   $('item-name').textContent = item.name;
   // Quality first: it decides what you can do next, and it is the difference
   // between a full Seamed item and a full Brilliant one.
   $('item-meta').textContent =
     `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
     `${item.mods.length}/${modCapacity(item)} modifiers` +
-    (item.meta.corrupted ? ' · locked' : '');
+    (item.meta.corrupted ? ' · locked' : '') +
+    // Every currency here is live against something you are wearing, and a
+    // Shard of Ruin does not care that you are standing in it.
+    (worn ? ` · worn, ${worn.name.toLowerCase()}` : '');
   $('item-name').classList.toggle('locked', !!item.meta.corrupted);
 
   // What this crystal is worth, right under its name — the mods below say
@@ -219,10 +232,65 @@ function renderItem(): void {
   }
 }
 
+/** Opens a worn piece on the bench. It never comes off to be worked on. */
+function bench(item: Item): void {
+  selectForCraft(game, item);
+  focused = null;
+  note(`Bench: ${item.name}`);
+  render();
+}
+
+/**
+ * What you are wearing, beside the bench. Improving worn gear otherwise meant
+ * the sheet to take it off, the dock to bench it, and the sheet again to put
+ * it back on — three screens to spend one shard.
+ *
+ * Empty slots are drawn too: they are where a dragged piece lands.
+ */
+function renderWorn(): void {
+  const host = $('craft-worn');
+  host.replaceChildren();
+  const grid = el('div', 'worn__grid');
+
+  for (const slot of EQUIP_SLOTS) {
+    const item = game.character.equipment[slot.id];
+    const btn = el('button', 'wornslot') as HTMLButtonElement;
+    btn.dataset.equip = slot.id;
+
+    if (!item) {
+      btn.classList.add('wornslot--bare');
+      btn.append(el('span', 'wornslot__slot', slot.name));
+      btn.disabled = true;
+      btn.setAttribute('aria-label', `${slot.name} — empty`);
+      grid.append(btn);
+      continue;
+    }
+
+    btn.append(gearIcon((item.meta.art as string) ?? 'body', 22));
+    const body = el('span', 'wornslot__body');
+    body.append(el('span', 'wornslot__name', item.name));
+    body.append(el('span', 'wornslot__slot', slot.name));
+    btn.append(body);
+    if (item.id === game.craftId) btn.classList.add('wornslot--on');
+
+    attachTooltip(btn, () => `${item.name}\n${slot.name}, worn\n— click to open on the bench`);
+    btn.setAttribute('aria-label', `Open on bench: ${item.name}`);
+    btn.onclick = () => {
+      if (!consumeDrag()) bench(item);
+    };
+    btn.addEventListener('pointerdown', (e) =>
+      pressItem(e as PointerEvent, btn, item, () => bench(item))
+    );
+    grid.append(btn);
+  }
+  host.append(grid);
+}
+
 export function render(): void {
   // Re-rendering removes whatever the cursor was over; a tooltip bound to a
   // detached element would otherwise sit there forever.
   hideTooltip();
+  renderWorn();
   renderItem();
   $('seed').textContent = String(seed);
   // Currency counts and the "can this apply" test both live on dock slots
@@ -236,15 +304,7 @@ export function render(): void {
  */
 function itemHandler() {
   return {
-    actionFor: (item: Item) => ({
-      label: 'Open on bench',
-      run: () => {
-        selectForCraft(game, item);
-        focused = null;
-        note(`Bench: ${item.name}`);
-        render();
-      },
-    }),
+    actionFor: (item: Item) => ({ label: 'Open on bench', run: () => bench(item) }),
     highlighted: (item: Item) => item.id === game.craftId,
   };
 }
@@ -296,6 +356,8 @@ function currencyHandler() {
  * how every currency gets spent.
  */
 let onClosed: (() => void) | null = null;
+/** A craft can land on something you are wearing, and stats move when it does. */
+let onChanged: (() => void) | null = null;
 
 export function openCraft(): void {
   $('craft').hidden = false;
@@ -311,9 +373,15 @@ export function closeCraft(): void {
 
 export const isCraftOpen = (): boolean => !$('craft').hidden;
 
-export function initCraft(state: GameState, closed: () => void): void {
+/** Redraws if it is up, for an equip made somewhere else — the worn column moved. */
+export function refreshCraft(): void {
+  if (isCraftOpen()) render();
+}
+
+export function initCraft(state: GameState, closed: () => void, changed?: () => void): void {
   game = state;
   onClosed = closed;
+  onChanged = changed ?? null;
 
   ($('reseed') as HTMLButtonElement).onclick = reseed;
   ($('craft-close') as HTMLButtonElement).onclick = closeCraft;

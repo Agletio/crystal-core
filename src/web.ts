@@ -6,14 +6,16 @@
  * it, uncovered — crafting works ON the dock, so covering it is the one mistake
  * this layout cannot afford.
  */
-import { createGame, equipItem, resetGame, slotFor, stashRoom, toStash } from './game/state';
+import { createGame, resetGame, slotFor, stashRoom, toStash } from './game/state';
+import { onWearChanged, wear } from './ui/wear';
+import { dismissToast } from './ui/toast';
 import { EQUIP_SLOTS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
 import { initInventory, renderInventory, setItemActions } from './ui/inventory';
-import { initMenu } from './ui/menu';
-import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
+import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
+import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
@@ -112,6 +114,9 @@ globalThis.addEventListener('keydown', (event) => {
   // control with its own Close switched off.
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
+  // The item menu is above every window, so it is what Escape is aimed at
+  // while one is open — closing the window under it loses your place.
+  else if (isMenuOpen()) closeMenu();
   else if (isSaveDataOpen()) closeSaveData();
   // Skills is three deep, so Escape backs out a level, like Back.
   else if (isSkillsOpen()) skillsEscape();
@@ -120,6 +125,8 @@ globalThis.addEventListener('keydown', (event) => {
   else if (isStashOpen()) closeStash();
   else if (isShopOpen()) closeShop();
   else if (isCraftOpen()) closeCraft();
+  // Last, so it never eats the press that was meant to close a window.
+  else dismissToast();
 });
 
 /** Measured, not guessed: a constant is wrong the first time the wallet wraps. */
@@ -150,7 +157,11 @@ initSaveData(game, (healed) => {
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels, onRunFocused);
 initSkills(game, refreshRunPanels);
-initCraft(game, onRunFocused);
+// A craft can land on a worn piece now, so the map's readouts re-read after one.
+initCraft(game, onRunFocused, () => {
+  refreshRunPanels();
+  refreshCharacter();
+});
 initShop(game);
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
@@ -172,13 +183,7 @@ setItemActions({
       const worn = game.character.equipment[slotId];
       out.push({
         label: worn ? `Wear as ${slot.name} (swap)` : `Wear as ${slot.name}`,
-        run: () => {
-          if (!equipItem(game, item, slotId)) return;
-          note(`Equipped ${item.name}`);
-          refreshRunPanels();
-          refreshCharacter();
-          renderInventory();
-        },
+        run: () => wear(game, item, slotId),
       });
     }
     if (stashRoom(game) > 0) {
@@ -201,6 +206,17 @@ setItemActions({
     }
     return out;
   },
+  // Dragging onto a slot in the crafting window's worn column. A deliberate
+  // drag onto the picture of a body is the one equip nobody does by accident.
+  equipTo: (item, slotId) => wear(game, item, slotId),
+});
+
+// Every screen shows some part of what wearing something moved.
+onWearChanged(() => {
+  refreshRunPanels();
+  refreshCharacter();
+  refreshCraft();
+  renderInventory();
 });
 /** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
 function guideContext(): GuideCtx {

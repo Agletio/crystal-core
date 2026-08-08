@@ -76,6 +76,7 @@ import {
   selectForCraft,
   stashRoom,
   stashUpgradeCost,
+  toStash,
   unequipItem,
 } from './game/state';
 import { heal, readSave } from './game/save';
@@ -618,6 +619,97 @@ function fillGear(game: ReturnType<typeof createGame>): void {
 }
 
 // ===========================================================================
+rule('EQUIPPING — can you take it back, and can you craft what you wear?');
+
+// A click puts something on, so the whole safety net is that the same click is
+// reversible. Undo has to restore the bag EXACTLY: put the item back where it
+// was in the order, and put whatever it displaced back on.
+{
+  const game = createGame('fresh');
+  game.inventory = [];
+  const first = makeGear('bulwark_helmet_t1', 20);
+  const spacer = makeGear('bulwark_body_t1', 20);
+  const second = makeGear('bulwark_helmet_t2', 30);
+  for (const item of [first, spacer, second]) addItem(game, item);
+
+  const order = () => game.inventory.map((i) => i.id).join(',');
+  const before = order();
+  const undoFirst = equipItem(game, first, 'helmet');
+  check(
+    !!undoFirst && game.character.equipment.helmet?.id === first.id,
+    'a helmet goes on',
+    'equipping a fitting helmet failed'
+  );
+  check(
+    undoFirst?.() === true && order() === before,
+    'and undo puts it back in the slot it came from, not on the end',
+    `undo left the bag as ${order()}, was ${before}`
+  );
+
+  // Swapping is two moves, and undo has to reverse both.
+  equipItem(game, first, 'helmet');
+  const swapped = order();
+  const undoSwap = equipItem(game, second, 'helmet');
+  check(
+    game.character.equipment.helmet?.id === second.id && game.inventory.some((i) => i.id === first.id),
+    'swapping wears the new one and hands back the old',
+    'a swap lost one of the two helmets'
+  );
+  check(
+    undoSwap?.() === true &&
+      order() === swapped &&
+      game.character.equipment.helmet?.id === first.id,
+    'and undoing a swap puts both pieces back',
+    `undo left ${order()} with ${game.character.equipment.helmet?.name} worn`
+  );
+
+  // Stale undo. Wearing something else afterwards means the "back" this button
+  // points at no longer exists, and restoring would take off a later choice.
+  const undoStale = equipItem(game, second, 'helmet');
+  equipItem(game, first, 'helmet');
+  check(
+    undoStale?.() === false && game.character.equipment.helmet?.id === first.id,
+    'an undo the slot has moved past refuses instead of undressing you',
+    'a stale undo took off a piece chosen after it'
+  );
+}
+
+// The bench takes worn gear, so the crafting window can show what you are
+// wearing beside it. Two things have to hold: the bench must RESOLVE a worn
+// item, and a craft must land back in the equip slot rather than in the bag.
+{
+  const game = createGame('fresh');
+  game.inventory = [];
+  const wand = makeGear('ash_wand', 20);
+  addItem(game, wand);
+  equipItem(game, wand, 'weapon');
+  selectForCraft(game, wand);
+  check(
+    craftItem(game)?.id === wand.id,
+    'the bench opens something you are wearing',
+    'a worn item on the bench resolves to nothing'
+  );
+
+  const rolled = craft(wand, CURRENCY_BY_ID.shard_of_seaming, new ModPool(ALL_MODS), new Rng(7));
+  if (rolled.ok) replaceItem(game, rolled.item);
+  check(
+    game.character.equipment.weapon?.id === wand.id && game.inventory.length === 0,
+    'and crafting it swaps the worn copy rather than dropping one in the bag',
+    `crafting a worn item left ${game.inventory.length} in the bag`
+  );
+
+  // The other half: leaving is what clears the bench, and it clears by failing
+  // to resolve rather than by anything remembering to null the id.
+  unequipItem(game, 'weapon');
+  toStash(game, game.inventory[0]);
+  check(
+    craftItem(game) === null,
+    'and stashing it closes the bench',
+    'the bench still holds something that is not carried or worn'
+  );
+}
+
+// ===========================================================================
 rule('SPRITES — is the pixel art well formed?');
 
 // The sprites are hand-authored character grids. A row one character short
@@ -879,13 +971,14 @@ rule('GUIDED OPENING — does every step actually complete?');
     'and lights something whenever the sim is not doing the work',
     `nothing to click: ${unlit.join(', ')}`
   );
-  // The guide walks you into equipping the item that is sitting on the bench.
-  // A stale craftId would leave the bench holding something you're wearing,
-  // with every currency button live against it.
+  // The guide walks you into equipping the item on the bench. It stays there:
+  // the bench takes worn gear now, which is what the worn column beside it is
+  // for, so improving a weapon does not mean taking it off first.
+  const benched = craftItem(game);
   check(
-    craftItem(game) === null,
-    'equipping the benched item cleared the bench',
-    'the bench still holds an item you are now wearing'
+    benched !== null && game.character.equipment.weapon?.id === benched.id,
+    'the benched item stays on the bench once you wear it',
+    'wearing the benched item lost it — the bench resolves to nothing'
   );
   // The last step claims you can afford a crystal. It should be true.
   const left = balance(game.wallet, 'fragment');

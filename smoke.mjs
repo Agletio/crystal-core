@@ -675,6 +675,35 @@ assert(
   named(filled('#inv-gear')[0])
 );
 
+// --- equipping says so, and can be taken back ------------------------------
+// One click changes what you are wearing, so it has to be visible and it has
+// to be reversible. Undo rather than a question first: the question would land
+// on every deliberate equip to catch the rare one that was not.
+{
+  const ids = () => filled('#inv-gear').map((b) => b.dataset.itemId);
+  const before = ids();
+  const put = before[0];
+  filled('#inv-gear')[0].click();
+  const toast = $('toast');
+  assert(toast.hidden === false, 'wearing something says so on screen');
+  assert(/^Worn: /.test(toast.textContent ?? ''), 'and names it', toast.textContent);
+  // A swap hands one back, so the count can hold steady. The piece you put on
+  // is the thing that must be gone.
+  assert(!ids().includes(put), 'and it has left the dock');
+
+  const undo = toast.querySelector('.toast__do');
+  assert(!!undo && /undo/i.test(undo.textContent ?? ''), 'with one button that takes it back');
+  undo.click();
+  assert($('toast').hidden === true, 'undoing dismisses the line');
+  // Exactly back, not merely back: an undo that appends leaves your dock
+  // reshuffled, which is its own small mess to clean up.
+  assert(
+    ids().join('|') === before.join('|'),
+    'and puts the piece back in the slot it came from',
+    ids().join('|')
+  );
+}
+
 // --- the item menu carries what the click cannot ---------------------------
 // One click can only mean one thing, and the screen owns it. Everything else
 // an item can do has to be reachable, or it may as well not exist.
@@ -702,6 +731,15 @@ assert(
   assert($('itemmenu').hidden === false, 'the menu opens again');
   document.body.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
   assert($('itemmenu').hidden === true, 'and a press outside it closes it');
+
+  // The menu is above every window, so Escape has to mean the menu while one
+  // is open — closing the window under it loses your place instead.
+  $('open-craft').click();
+  filled('#inv-gear')[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert($('itemmenu').hidden === true, 'Escape closes the menu');
+  assert($('craft').hidden === false, 'and leaves the window under it alone');
+  $('craft-close').click();
 }
 assert(
   filled('#inv-crystal').every((b) => !b.disabled),
@@ -755,6 +793,34 @@ assert(
   'the dock answers to crafting while it is open',
   named(filled('#inv-gear')[0])
 );
+// --- the worn column, beside the bench ------------------------------------
+// Improving worn gear used to mean the sheet to take it off, the dock to bench
+// it, and the sheet again to put it back on. Three screens to spend one shard.
+{
+  const cells = all('#craft-worn .wornslot');
+  // Empty ones too: they are where a dragged piece lands.
+  assert(cells.length === 8, 'every equip slot is drawn', String(cells.length));
+  const live = cells.filter((b) => !b.disabled);
+  assert(live.length > 0, 'and what you are wearing is clickable', String(cells.length));
+
+  const name = live[0].querySelector('.wornslot__name').textContent;
+  live[0].click();
+  assert($('craft-empty').hidden === true, 'clicking a worn piece opens it on the bench');
+  assert(text('item-name') === name, 'and it is the piece you clicked', text('item-name'));
+  // The whole point. The bench holds a reference, and this one resolves to
+  // something still on your body.
+  assert(/worn/i.test(text('item-meta')), 'the bench says it is still on you', text('item-meta'));
+  assert(
+    all('#craft-worn .wornslot:not(:disabled)').length === live.length,
+    'and it really is — nothing came off to be worked on'
+  );
+  assert(
+    all('#craft-worn .wornslot--on').length === 1,
+    'the column marks which piece the bench holds'
+  );
+  $('craft-return').click();
+}
+
 $('craft-close').click();
 // Not "goes dead": the click hands back to what the item means with no screen
 // asking for it, which is wearing it.

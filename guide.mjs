@@ -313,6 +313,87 @@ if (finished) {
     const dropped = (await page.locator('#item-name').textContent())?.trim();
     if (dropped !== wanted) problems.push(`dropping on the bench opened "${dropped}", not "${wanted}"`);
     trace.push('Dock        a slot reorders by drag, drops on the bench, and still clicks');
+
+    // --- the worn column, both directions ---------------------------------
+    const worn = page.locator('#craft-worn .wornslot:not(:disabled)');
+    const wornCount = await worn.count();
+    if (wornCount === 0) {
+      problems.push('nothing is worn, so the worn column checks never ran');
+    } else {
+      const name = (await worn.first().locator('.wornslot__name').textContent())?.trim();
+      const w = await worn.first().boundingBox();
+      const zone2 = await page.locator('[data-drop="bench"]').boundingBox();
+      await page.mouse.move(w.x + w.width / 2, w.y + w.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(w.x + 40, w.y + 10, { steps: 4 });
+      await page.mouse.move(zone2.x + zone2.width - 60, zone2.y + 60, { steps: 10 });
+      await page.mouse.up();
+      await page.waitForTimeout(200);
+      const onBench = (await page.locator('#item-name').textContent())?.trim();
+      if (onBench !== name) {
+        problems.push(`dragging a worn piece opened "${onBench}", not "${name}"`);
+      }
+      // The point of the column: it never comes off to be worked on.
+      if ((await worn.count()) !== wornCount) problems.push('benching a worn piece took it off');
+      if (!/worn/i.test((await page.locator('#item-meta').textContent()) ?? '')) {
+        problems.push('the bench does not say the piece is still on you');
+      }
+
+      // And back the other way: a drag onto a slot is the one equip nobody
+      // does by accident, so it needs no undo to be safe — but it gets one.
+      const menuLabel = await (async () => {
+        await gearSlots().nth(0).click({ button: 'right' });
+        await page.waitForTimeout(120);
+        const t = await page.$$eval('#itemmenu .itemmenu__item', (ns) =>
+          ns.map((n) => n.textContent ?? '').find((s) => /wear as/i.test(s)) ?? ''
+        );
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(100);
+        return t;
+      })();
+      if (await page.locator('#craft').isHidden()) {
+        problems.push('Escape closed the window under the item menu instead of the menu');
+      }
+
+      const want2 = menuLabel.replace(/^Wear as /i, '').replace(/ \(swap\)$/i, '').trim();
+      const idx = await page.$$eval(
+        '#craft-worn .wornslot',
+        (ns, s) =>
+          ns.findIndex(
+            (n) => (n.querySelector('.wornslot__slot')?.textContent ?? '').toLowerCase() === s
+          ),
+        want2.toLowerCase()
+      );
+      if (idx < 0) problems.push(`the menu offers "${menuLabel}" but no worn slot is named that`);
+      else {
+        const ids = () =>
+          page.$$eval('#inv-gear .slot:not(.slot--empty)', (ns) => ns.map((n) => n.dataset.itemId));
+        const wasIds = await ids();
+        const s2 = await gearSlots().nth(0).boundingBox();
+        const t2 = await page.locator('#craft-worn .wornslot').nth(idx).boundingBox();
+        await page.mouse.move(s2.x + s2.width / 2, s2.y + s2.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(s2.x + 30, s2.y - 20, { steps: 4 });
+        await page.mouse.move(t2.x + t2.width / 2, t2.y + t2.height / 2, { steps: 10 });
+        if ((await page.locator('#craft-worn .drop--over').count()) !== 1) {
+          problems.push('a worn slot that accepts the piece does not light up');
+        }
+        await page.mouse.up();
+        await page.waitForTimeout(200);
+        if (await page.locator('#toast').isHidden()) {
+          problems.push('equipping by drag said nothing');
+        }
+        if (JSON.stringify(await ids()) === JSON.stringify(wasIds)) {
+          problems.push('dropping on a worn slot did not equip');
+        }
+        await page.locator('#toast .toast__do').click();
+        await page.waitForTimeout(200);
+        if (JSON.stringify(await ids()) !== JSON.stringify(wasIds)) {
+          problems.push('undo did not put the dock back exactly as it was');
+        }
+      }
+      trace.push('Worn        a worn piece benches by drag, and a drag onto a slot wears one');
+    }
   }
 }
 if (errors.length) problems.push(`console errors — ${errors.slice(0, 2).join(' | ')}`);

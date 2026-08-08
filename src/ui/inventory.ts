@@ -14,7 +14,8 @@ import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
-import { CARRY, reorderItem } from '../game/state';
+import { CARRY, fitsSlot, reorderItem } from '../game/state';
+import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
 import type { CurrencyDef, Item, ItemKind } from '../types';
 
@@ -73,6 +74,8 @@ const HOSTS: Record<ItemKind, string> = {
  */
 export interface ItemActions {
   extrasFor(item: Item): ItemAction[];
+  /** Dropping onto a worn slot. Knowing how to equip means knowing how to redraw. */
+  equipTo?(item: Item, slotId: string): void;
 }
 
 let game: GameState | null = null;
@@ -224,6 +227,8 @@ interface Drag {
   startY: number;
   ghost: HTMLElement | null;
   over: Element | null;
+  /** Set when the item is worn rather than carried, and does what a drop does. */
+  onBench: (() => void) | null;
 }
 
 let drag: Drag | null = null;
@@ -232,6 +237,13 @@ let dragged = false;
 let held: ReturnType<typeof setTimeout> | null = null;
 /** A long press opened the menu, so the click that follows is not a choice. */
 let heldOpen = false;
+
+/** True for the one click a finished drag fires, and clears itself saying so. */
+export function consumeDrag(): boolean {
+  if (!dragged) return false;
+  dragged = false;
+  return true;
+}
 
 const itemById = (id: string | undefined): Item | null =>
   (id && game?.inventory.find((i) => i.id === id)) || null;
@@ -244,24 +256,44 @@ function showMenu(item: Item, x: number, y: number): void {
   openMenu(x, y, item.name, actions);
 }
 
-function press(event: PointerEvent, from: HTMLElement, item: Item): void {
+/**
+ * Begins a press that may become a drag. `onBench` marks the item as worn: it
+ * is not in the bag, so the bench is the only place it can land, and the menu
+ * would offer to put on something already on.
+ */
+export function pressItem(
+  event: PointerEvent,
+  from: HTMLElement,
+  item: Item,
+  onBench?: () => void
+): void {
   // Left button or touch only; a right-click is not a drag.
   if (event.button !== 0) return;
   closeMenu();
   // Touch has no right-click. Holding still is the same intent, and it cannot
   // collide with a drag: moving past the slop cancels it.
-  held = globalThis.setTimeout(() => {
-    held = null;
-    if (!drag || drag.ghost) return;
-    heldOpen = true;
-    showMenu(item, event.clientX, event.clientY);
-    teardown();
-  }, HOLD_MS);
+  if (!onBench) {
+    held = globalThis.setTimeout(() => {
+      held = null;
+      if (!drag || drag.ghost) return;
+      heldOpen = true;
+      showMenu(item, event.clientX, event.clientY);
+      teardown();
+    }, HOLD_MS);
+  }
   // A drag that ended on some OTHER slot fires no click at all, so the flag it
   // set is still standing. Clearing it here, rather than on the click that may
   // never come, is what stops it eating an honest click later.
   dragged = false;
-  drag = { item, from, startX: event.clientX, startY: event.clientY, ghost: null, over: null };
+  drag = {
+    item,
+    from,
+    startX: event.clientX,
+    startY: event.clientY,
+    ghost: null,
+    over: null,
+    onBench: onBench ?? null,
+  };
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', drop);
   window.addEventListener('pointercancel', cancel);
@@ -287,7 +319,9 @@ function position(event: PointerEvent): void {
 /** What is under the pointer, ignoring the ghost — it has no pointer events. */
 function targetAt(event: PointerEvent): Element | null {
   const under = document.elementFromPoint(event.clientX, event.clientY);
-  return under?.closest('.slot, [data-drop]') ?? null;
+  // Nearest wins, and a worn slot sits inside the panel that is the bench, so
+  // the order of these three is what stops every equip reading as a bench drop.
+  return under?.closest('.slot, [data-equip], [data-drop]') ?? null;
 }
 
 /**
@@ -295,10 +329,23 @@ function targetAt(event: PointerEvent): Element | null {
  * the highlight and the drop, so the outline never promises a move that the
  * drop then refuses — the stash draws slots of its own that carry no item.
  */
-type Landing = { kind: 'bench' } | { kind: 'before'; onto: Item } | { kind: 'end' } | null;
+type Landing =
+  | { kind: 'bench' }
+  | { kind: 'equip'; slotId: string }
+  | { kind: 'before'; onto: Item }
+  | { kind: 'end' }
+  | null;
 
 function landing(target: Element | null, item: Item): Landing {
   if (!target || target === drag?.from) return null;
+  // A worn piece has no place in the bag until you take it off.
+  if (drag?.onBench) return target.closest('[data-drop="bench"]') ? { kind: 'bench' } : null;
+
+  const slotId = (target as HTMLElement).dataset?.equip;
+  if (slotId) {
+    const into = EQUIP_SLOTS.find((s) => s.id === slotId);
+    return into && fitsSlot(item, into) ? { kind: 'equip', slotId } : null;
+  }
   if (target.closest('[data-drop="bench"]')) return { kind: 'bench' };
   if (!target.classList.contains('slot')) return null;
   const slot = target as HTMLElement;
@@ -312,7 +359,8 @@ function highlight(next: Element | null): void {
   drag.over?.classList.remove('slot--over', 'drop--over');
   const where = landing(next, drag.item);
   if (next && where) {
-    next.classList.add(where.kind === 'bench' ? 'drop--over' : 'slot--over');
+    const inBag = where.kind === 'before' || where.kind === 'end';
+    next.classList.add(inBag ? 'slot--over' : 'drop--over');
   }
   drag.over = next;
 }
@@ -363,7 +411,8 @@ function drop(event: PointerEvent): void {
   const where = landing(targetAt(event), carried.item);
   // Dropping on the bench is the same intent as clicking one, so it runs the
   // same action rather than inventing a second way to say it.
-  if (where?.kind === 'bench') handler?.actionFor(carried.item)?.run();
+  if (where?.kind === 'bench') (carried.onBench ?? (() => handler?.actionFor(carried.item)?.run()))();
+  else if (where?.kind === 'equip') extras?.equipTo?.(carried.item, where.slotId);
   else if (where?.kind === 'before' && game) reorderItem(game, carried.item, where.onto);
   else if (where?.kind === 'end' && game) reorderItem(game, carried.item, null);
 
@@ -405,7 +454,7 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     if (item.mods.length > 0) btn.classList.add('slot--modded');
     attachTooltip(btn, () => tooltip(item));
     btn.dataset.itemId = item.id;
-    btn.addEventListener('pointerdown', (e) => press(e as PointerEvent, btn, item));
+    btn.addEventListener('pointerdown', (e) => pressItem(e as PointerEvent, btn, item));
     btn.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       showMenu(item, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
@@ -415,8 +464,7 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
 
     if (action) {
       btn.onclick = () => {
-        if (dragged) { dragged = false; return; }
-        action.run();
+        if (!consumeDrag()) action.run();
       };
       btn.setAttribute('aria-label', `${action.label}: ${item.name}`);
     } else {

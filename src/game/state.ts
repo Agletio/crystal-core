@@ -175,7 +175,6 @@ export function removeItem(game: GameState, item: Item): boolean {
   const i = game.inventory.indexOf(item);
   if (i < 0) return false;
   game.inventory.splice(i, 1);
-  if (game.craftId === item.id) game.craftId = null;
   return true;
 }
 
@@ -213,10 +212,21 @@ export function buyStashSpace(game: GameState): { ok: boolean; error?: string } 
   return { ok: true };
 }
 
-/** The item crafting is working on, or null. */
+export const wornItems = (game: GameState): Item[] =>
+  EQUIP_SLOTS.map((s) => game.character.equipment[s.id]).filter((i): i is Item => !!i);
+
+/** Carried or worn. The bench takes both, so it looks in both. */
+export function findAnywhere(game: GameState, id: string): Item | undefined {
+  return findItem(game, id) ?? wornItems(game).find((i) => i.id === id);
+}
+
+/**
+ * The item crafting is working on: a reference that resolves or does not,
+ * rather than an id something has to remember to clear.
+ */
 export function craftItem(game: GameState): Item | null {
   if (!game.craftId) return null;
-  return findItem(game, game.craftId) ?? null;
+  return findAnywhere(game, game.craftId) ?? null;
 }
 
 /** Moves a carried item just before `before`, or last when that is null. */
@@ -239,6 +249,11 @@ export function clearCraft(game: GameState): void {
 
 /** craft() returns a new object with the same id, so position and selection survive. */
 export function replaceItem(game: GameState, item: Item): void {
+  const slot = EQUIP_SLOTS.find((s) => game.character.equipment[s.id]?.id === item.id);
+  if (slot) {
+    game.character.equipment[slot.id] = item;
+    return;
+  }
   const i = game.inventory.findIndex((existing) => existing.id === item.id);
   if (i < 0) game.inventory.push(item);
   else game.inventory[i] = item;
@@ -256,21 +271,30 @@ export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
   return gearKindOf(item) === slot.accepts;
 }
 
+/** Puts an equip back. False once the slot holds something chosen since. */
+export type Undo = () => boolean;
+
 /** Worn items leave the inventory: the character sheet is where they now live. */
-export function equipItem(game: GameState, item: Item, slotId: string): boolean {
+export function equipItem(game: GameState, item: Item, slotId: string): Undo | null {
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
-  if (!slot || !fitsSlot(item, slot)) return false;
+  if (!slot || !fitsSlot(item, slot)) return null;
 
-  const previous = game.character.equipment[slotId];
-  if (!removeItem(game, item)) return false;
+  const previous = game.character.equipment[slotId] ?? null;
+  // Where it sat, so undo restores rather than appends. Removing first
+  // guarantees room, so what comes off is carried, never stashed.
+  const at = game.inventory.indexOf(item);
+  if (!removeItem(game, item)) return null;
   if (previous) addItem(game, previous);
-
-  // A stale craftId leaves the bench displaying something you are wearing,
-  // with every currency in the dock live against it.
-  if (game.craftId === item.id) game.craftId = null;
-
   game.character.equipment[slotId] = item;
-  return true;
+
+  return () => {
+    if (game.character.equipment[slotId] !== item) return false;
+    delete game.character.equipment[slotId];
+    if (previous) removeItem(game, previous);
+    game.inventory.splice(Math.min(Math.max(at, 0), game.inventory.length), 0, item);
+    if (previous) game.character.equipment[slotId] = previous;
+    return true;
+  };
 }
 
 /**

@@ -391,7 +391,26 @@
   /* Where it would land. An outline rather than a fill, so the item under it
      is still readable while you decide. */
   .slot--over { outline: 2px solid var(--citrine); outline-offset: -2px; }
-  [data-drop].drop--over { outline: 2px dashed var(--citrine); outline-offset: -4px; }
+  [data-drop].drop--over, [data-equip].drop--over { outline: 2px dashed var(--citrine); outline-offset: -4px; }
+
+  /* --- the toast --------------------------------------------------------- */
+  /* Above every popup, and clear of the dock: what it reports is usually a
+     thing you did to the dock, and it must not cover the answer. */
+  .toast {
+    position: fixed; z-index: 96; left: 50%; transform: translateX(-50%);
+    bottom: calc(var(--dock-h, 0px) + 14px);
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px 8px 14px; max-width: min(520px, calc(100vw - 24px));
+    background: var(--matrix); border: 2px solid var(--seam-lit);
+    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.45);
+  }
+  .toast__text { font-size: 12px; }
+  .toast__do {
+    padding: 5px 11px; font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; font-family: var(--display);
+    border-color: var(--citrine); color: var(--citrine);
+  }
+  .toast__x { padding: 3px 8px; font-size: 14px; line-height: 1; color: var(--dust); }
   /* Follows the pointer and must never be hit-tested — elementFromPoint is how
      the drop target is found, and the ghost sits exactly under the pointer. */
   .dragghost {
@@ -753,6 +772,27 @@
   .savenote { font-size: 11px; color: var(--verdite); min-height: 16px; margin: 12px 0 0; }
   .savenote--bad { color: var(--ember); }
 
+  /* --- the worn column, beside the bench --------------------------------- */
+  .craftcols { display: grid; grid-template-columns: 208px 1fr; gap: 12px; align-items: start; }
+  /* Stacked, the column would push the bench off the fold — and the bench is
+     what you opened the window for. It goes under it instead. */
+  @media (max-width: 720px) {
+    .craftcols { grid-template-columns: 1fr; }
+    .craftcols > .worn { order: 2; }
+  }
+
+  .worn { padding: 10px; }
+  .worn__label { font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 8px; }
+  .worn__hint { font-size: 10px; color: var(--dust); font-style: italic; line-height: 1.4; margin: 8px 0 0; }
+  .worn__grid { display: grid; gap: 4px; }
+  .wornslot { text-align: left; padding: 5px 7px; display: flex; align-items: center; gap: 7px; min-height: 34px; width: 100%; overflow: hidden; border-left-width: 3px; border-left-color: var(--seam-lit); }
+  .wornslot:hover:not(:disabled) { background: var(--seam); }
+  .wornslot--on { border-left-color: var(--citrine); background: var(--seam); }
+  .wornslot--bare { opacity: .55; }
+  .wornslot__body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .wornslot__name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wornslot__slot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); }
+
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
 
@@ -1025,16 +1065,25 @@
       </div>
     </div>
     <div class="modal__body" data-drop="bench">
-      <div class="panel">
-        <p class="empty" id="craft-empty">
-          Drag something from your inventory onto the bench, or click it.
-        </p>
-        <div id="craft-item" hidden>
-          <h2 id="item-name">—</h2>
-          <div id="item-meta"></div>
-          <div class="mults" id="item-rewards" hidden></div>
-          <div id="sockets"></div>
-          <div id="modlist"></div>
+      <div class="craftcols">
+        <!-- What you are wearing, so improving it costs no trip to the sheet
+             and back. Working on a worn piece never takes it off. -->
+        <div class="panel worn">
+          <div class="worn__label">Worn</div>
+          <div id="craft-worn"></div>
+          <p class="worn__hint">Click or drag a piece onto the bench — it stays on.</p>
+        </div>
+        <div class="panel">
+          <p class="empty" id="craft-empty">
+            Drag something from your inventory onto the bench, or click it.
+          </p>
+          <div id="craft-item" hidden>
+            <h2 id="item-name">—</h2>
+            <div id="item-meta"></div>
+            <div class="mults" id="item-rewards" hidden></div>
+            <div id="sockets"></div>
+            <div id="modlist"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1268,6 +1317,7 @@
      rather than the OS's white box. -->
 <div class="tip" id="tooltip" hidden></div>
 <div class="itemmenu" id="itemmenu" hidden></div>
+<div class="toast" id="toast" hidden></div>
 <script src="./app.js"></script>
 </body>
 </html>

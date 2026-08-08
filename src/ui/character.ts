@@ -10,7 +10,8 @@ import { DAMAGE_TYPES, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeMod } from '../crafting';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
-import { equipItem, fitsSlot, unequipItem } from '../game/state';
+import { fitsSlot, unequipItem } from '../game/state';
+import { wear } from './wear';
 import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
 import { note } from './history';
@@ -106,9 +107,8 @@ function sheetHandler() {
       return {
         label: `Wear as ${slot.name.toLowerCase()}`,
         run: () => {
-          equipItem(game, item, slot.id);
-          note(`Equipped ${item.name}`);
           picking = null;
+          wear(game, item, slot.id);
           render();
         },
       };
