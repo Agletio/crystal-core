@@ -6,11 +6,13 @@
  * it, uncovered — crafting works ON the dock, so covering it is the one mistake
  * this layout cannot afford.
  */
-import { createGame, resetGame } from './game/state';
+import { createGame, equipItem, resetGame, slotFor, stashRoom, toStash } from './game/state';
+import { EQUIP_SLOTS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
-import { initInventory } from './ui/inventory';
+import { initInventory, renderInventory, setItemActions } from './ui/inventory';
+import { initMenu } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
@@ -21,6 +23,7 @@ import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
   initCharacter,
+  refreshCharacter,
   openCharacter,
   closeCharacter,
   isCharacterOpen,
@@ -152,6 +155,53 @@ initShop(game);
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
 initRun(game);
+initMenu();
+
+/**
+ * What an item can do wherever you are standing. The dock's click belongs to
+ * the open screen — it is what the opening teaches — so wearing a helmet you
+ * just picked up used to mean walking to the sheet and picking its slot first.
+ * These are offered beside that click rather than instead of it.
+ */
+setItemActions({
+  extrasFor: (item) => {
+    const out = [];
+    const slotId = item.kind === 'gear' ? slotFor(game, item) : null;
+    const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
+    if (slotId && slot) {
+      const worn = game.character.equipment[slotId];
+      out.push({
+        label: worn ? `Wear as ${slot.name} (swap)` : `Wear as ${slot.name}`,
+        run: () => {
+          if (!equipItem(game, item, slotId)) return;
+          note(`Equipped ${item.name}`);
+          refreshRunPanels();
+          refreshCharacter();
+          renderInventory();
+        },
+      });
+    }
+    if (stashRoom(game) > 0) {
+      out.push({
+        label: 'Send to stash',
+        menuOnly: true,
+        run: () => {
+          if (!toStash(game, item)) return;
+          note(`Stashed ${item.name}`);
+          renderInventory();
+        },
+      });
+    } else {
+      out.push({
+        label: 'Send to stash',
+        menuOnly: true,
+        run: () => {},
+        blocked: 'the stash is full',
+      });
+    }
+    return out;
+  },
+});
 /** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
 function guideContext(): GuideCtx {
   // Every popup: the guide can only walk you out of one it knows you are in.

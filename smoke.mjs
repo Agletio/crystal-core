@@ -662,12 +662,47 @@ assert(!$('run-socket').classList.contains('socket--full'), 'the socket empties 
 assert($('run-launch').disabled === false, 'and you can still descend without one');
 runCrystal.click();
 
-// Gear stays in the dock — it's always in the dock — but there's nothing to
-// do with a helmet here, so it must render inert rather than look clickable.
+// Gear stays in the dock — it's always in the dock — and the Fissure has
+// nothing of its own to do with a helmet, so wearing it is what a click there
+// means. A dead slot was the old answer and it made gear look broken.
 assert(
-  filled('#inv-gear').every((b) => b.disabled),
-  'gear is inert at the Fissure'
+  filled('#inv-gear').every((b) => !b.disabled),
+  'gear can be worn straight from the Fissure'
 );
+assert(
+  filled('#inv-gear').every((b) => /wear as/i.test(named(b))),
+  'and says so',
+  named(filled('#inv-gear')[0])
+);
+
+// --- the item menu carries what the click cannot ---------------------------
+// One click can only mean one thing, and the screen owns it. Everything else
+// an item can do has to be reachable, or it may as well not exist.
+{
+  const slot = filled('#inv-gear')[0];
+  slot.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  const menu = $('itemmenu');
+  assert(menu.hidden === false, 'right-clicking an item opens its menu');
+  const labels = all('#itemmenu .itemmenu__item').map((b) => b.textContent ?? '');
+  assert(labels.length >= 2, 'with more than the click already offers', String(labels.length));
+  assert(labels.some((t) => /wear as/i.test(t)), 'wearing it is one of them', labels.join(' | '));
+  assert(labels.some((t) => /stash/i.test(t)), 'and so is putting it away', labels.join(' | '));
+
+  // Stashing must never be something a stray click can do.
+  const stash = all('#itemmenu .itemmenu__item').find((b) => /stash/i.test(b.textContent ?? ''));
+  assert(!/stash/i.test(named(filled('#inv-gear')[0])), 'but the plain click never stashes');
+
+  const carried = filled('#inv-gear').length;
+  stash.click();
+  assert($('itemmenu').hidden === true, 'choosing an action closes the menu');
+  assert(filled('#inv-gear').length === carried - 1, 'and the action ran', String(filled('#inv-gear').length));
+
+  // A click anywhere else dismisses it without also pressing what it landed on.
+  filled('#inv-gear')[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  assert($('itemmenu').hidden === false, 'the menu opens again');
+  document.body.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  assert($('itemmenu').hidden === true, 'and a press outside it closes it');
+}
 assert(
   filled('#inv-crystal').every((b) => !b.disabled),
   'crystals are not'
@@ -716,12 +751,15 @@ $('open-craft').click();
 assert($('craft').hidden === false, 'crafting opens over a live run');
 assert($('run-stagewrap').hidden === false, 'and the run is still going underneath');
 assert(
-  filled('#inv-gear').every((b) => !b.disabled),
-  'the dock answers to crafting while it is open'
+  filled('#inv-gear').every((b) => /bench/i.test(named(b))),
+  'the dock answers to crafting while it is open',
+  named(filled('#inv-gear')[0])
 );
 $('craft-close').click();
+// Not "goes dead": the click hands back to what the item means with no screen
+// asking for it, which is wearing it.
 assert(
-  filled('#inv-gear').every((b) => b.disabled),
+  filled('#inv-gear').every((b) => /wear as/i.test(named(b))),
   'and to the map again once it closes'
 );
 

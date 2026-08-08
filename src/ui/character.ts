@@ -190,6 +190,11 @@ function render(): void {
   onChanged?.();
 }
 
+/** Redraws the sheet if it is up, for an equip that happened somewhere else. */
+export function refreshCharacter(): void {
+  if (isCharacterOpen()) render();
+}
+
 export function openCharacter(): void {
   picking = null;
   render();

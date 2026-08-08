@@ -361,6 +361,29 @@
 
   #run-log { max-height: 240px; overflow-y: auto; font-size: 12px; }
 
+  /* --- the item menu ----------------------------------------------------- */
+  /* Above the modals: it is opened from the dock, which sits under them. */
+  .itemmenu {
+    position: fixed; z-index: 95; min-width: 168px;
+    background: var(--matrix); border: 2px solid var(--seam-lit);
+    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.45);
+    padding: 4px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .itemmenu__head {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--dust); padding: 5px 8px 6px; border-bottom: 1px solid var(--seam);
+    margin-bottom: 2px;
+  }
+  .itemmenu__item {
+    text-align: left; padding: 7px 9px; font-size: 12px;
+    border: 0; background: transparent; box-shadow: none; color: var(--chalk);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .itemmenu__item:hover:not(:disabled) { background: var(--seam); color: var(--rust); }
+  .itemmenu__item:focus-visible { outline: 2px solid var(--citrine); outline-offset: -2px; }
+  .itemmenu__item--off { color: var(--dust); }
+  .itemmenu__why { font-size: 10px; color: var(--seam-lit); }
+
   /* --- dragging ---------------------------------------------------------- */
   /* The slot you picked up stays in place, dimmed: the row must not reflow
      under the pointer, or the gap you are aiming at moves as you aim. */
@@ -1244,6 +1267,7 @@
 <!-- Replaces the native title attribute: instant, and in the page's colours
      rather than the OS's white box. -->
 <div class="tip" id="tooltip" hidden></div>
+<div class="itemmenu" id="itemmenu" hidden></div>
 <script src="./app.js"></script>
 </body>
 </html>

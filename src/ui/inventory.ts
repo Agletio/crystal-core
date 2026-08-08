@@ -10,6 +10,8 @@ import { currencyIcon, itemIcon } from './icons';
 import { modCapacity, qualityName, qualityOf } from '../mods';
 import { describeMod } from '../crafting';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { closeMenu, openMenu } from './menu';
+import type { ItemAction } from './menu';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
 import { CARRY, reorderItem } from '../game/state';
@@ -64,8 +66,37 @@ const HOSTS: Record<ItemKind, string> = {
   gear: 'inv-gear',
 };
 
+/**
+ * Actions an item has no matter which screen is up — wearing it, putting it
+ * away. Supplied by the shell, because knowing how to equip means knowing how
+ * to redraw the sheet, and the dock is not allowed to know that.
+ */
+export interface ItemActions {
+  extrasFor(item: Item): ItemAction[];
+}
+
 let game: GameState | null = null;
 let handler: InventoryHandler | null = null;
+let extras: ItemActions | null = null;
+
+export function setItemActions(next: ItemActions | null): void {
+  extras = next;
+}
+
+/** The screen's own action first, then everything true regardless of screen. */
+function actionsFor(item: Item): ItemAction[] {
+  const own = handler?.actionFor(item);
+  return [...(own ? [own] : []), ...(extras?.extrasFor(item) ?? [])];
+}
+
+/**
+ * What a plain click does. The screen gets first say, so the click the guided
+ * opening teaches keeps its meaning; where a screen has nothing to say about
+ * an item, the first of its own actions is better than a dead slot.
+ */
+function clickAction(item: Item): ItemAction | null {
+  return actionsFor(item).find((a) => !a.blocked && !a.menuOnly) ?? null;
+}
 let currencyHandler: CurrencyHandler | null = null;
 
 export function initInventory(state: GameState): void {
@@ -165,8 +196,12 @@ function tooltip(item: Item): string {
   }
   for (const mod of item.mods) lines.push(describeMod(mod));
 
-  const action = handler?.actionFor(item);
-  if (action) lines.push(`— click to ${action.label.toLowerCase()}`);
+  const all = actionsFor(item);
+  const click = clickAction(item);
+  if (click) lines.push(`— click to ${click.label.toLowerCase()}`);
+  // Nothing else on screen says the menu is there, and an action nobody can
+  // find is an action that does not exist.
+  if (all.length > (click ? 1 : 0)) lines.push('— hold or right-click for more');
   return lines.join('\n');
 }
 
@@ -179,6 +214,8 @@ function tooltip(item: Item): string {
 
 /** Pixels a press must travel before it stops being a click. */
 const DRAG_SLOP = 6;
+/** How long a still press waits before it means "show me everything". */
+const HOLD_MS = 450;
 
 interface Drag {
   item: Item;
@@ -192,13 +229,34 @@ interface Drag {
 let drag: Drag | null = null;
 /** Set for exactly one click: the one a finished drag is about to fire. */
 let dragged = false;
+let held: ReturnType<typeof setTimeout> | null = null;
+/** A long press opened the menu, so the click that follows is not a choice. */
+let heldOpen = false;
 
 const itemById = (id: string | undefined): Item | null =>
   (id && game?.inventory.find((i) => i.id === id)) || null;
 
+/** Every action this item has, at a point. Empty menus never open. */
+function showMenu(item: Item, x: number, y: number): void {
+  const actions = actionsFor(item);
+  if (actions.length === 0) return;
+  hideTooltip();
+  openMenu(x, y, item.name, actions);
+}
+
 function press(event: PointerEvent, from: HTMLElement, item: Item): void {
   // Left button or touch only; a right-click is not a drag.
   if (event.button !== 0) return;
+  closeMenu();
+  // Touch has no right-click. Holding still is the same intent, and it cannot
+  // collide with a drag: moving past the slop cancels it.
+  held = globalThis.setTimeout(() => {
+    held = null;
+    if (!drag || drag.ghost) return;
+    heldOpen = true;
+    showMenu(item, event.clientX, event.clientY);
+    teardown();
+  }, HOLD_MS);
   // A drag that ended on some OTHER slot fires no click at all, so the flag it
   // set is still standing. Clearing it here, rather than on the click that may
   // never come, is what stops it eating an honest click later.
@@ -266,6 +324,8 @@ function move(event: PointerEvent): void {
       Math.abs(event.clientX - drag.startX) > DRAG_SLOP ||
       Math.abs(event.clientY - drag.startY) > DRAG_SLOP;
     if (!far) return;
+    if (held) globalThis.clearTimeout(held);
+    held = null;
     begin(event);
   }
   position(event);
@@ -273,6 +333,8 @@ function move(event: PointerEvent): void {
 }
 
 function teardown(): void {
+  if (held) globalThis.clearTimeout(held);
+  held = null;
   window.removeEventListener('pointermove', move);
   window.removeEventListener('pointerup', drop);
   window.removeEventListener('pointercancel', cancel);
@@ -289,17 +351,21 @@ function cancel(): void {
 }
 
 function drop(event: PointerEvent): void {
-  const held = drag;
-  // Never travelled far enough to be a drag, so it is a click and nothing here
-  // should touch it.
-  if (!held?.ghost) { teardown(); return; }
+  const carried = drag;
+  // Never travelled far enough to be a drag, so it is a click — unless a long
+  // press already answered for this press, and then it is nothing at all.
+  if (!carried?.ghost) {
+    if (heldOpen) { heldOpen = false; dragged = true; }
+    teardown();
+    return;
+  }
 
-  const where = landing(targetAt(event), held.item);
+  const where = landing(targetAt(event), carried.item);
   // Dropping on the bench is the same intent as clicking one, so it runs the
   // same action rather than inventing a second way to say it.
-  if (where?.kind === 'bench') handler?.actionFor(held.item)?.run();
-  else if (where?.kind === 'before' && game) reorderItem(game, held.item, where.onto);
-  else if (where?.kind === 'end' && game) reorderItem(game, held.item, null);
+  if (where?.kind === 'bench') handler?.actionFor(carried.item)?.run();
+  else if (where?.kind === 'before' && game) reorderItem(game, carried.item, where.onto);
+  else if (where?.kind === 'end' && game) reorderItem(game, carried.item, null);
 
   dragged = true;
   teardown();
@@ -327,7 +393,7 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
   sizeGrid(host, CARRY[kind]);
 
   for (const item of items) {
-    const action = handler?.actionFor(item) ?? null;
+    const action = clickAction(item);
     // Quality colours the slot; the silhouette says what a piece IS, never how
     // good it is.
     const btn = el(
@@ -340,6 +406,10 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     attachTooltip(btn, () => tooltip(item));
     btn.dataset.itemId = item.id;
     btn.addEventListener('pointerdown', (e) => press(e as PointerEvent, btn, item));
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showMenu(item, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+    });
 
     if (handler?.highlighted?.(item)) btn.classList.add('slot--on');
 
