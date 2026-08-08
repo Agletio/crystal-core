@@ -1,7 +1,8 @@
 /**
- * The whole game, in one object. Nothing persists yet; saving should be roughly
- * `JSON.stringify(game)` plus a `version` check, so a format change resets
- * cleanly instead of crashing on old data.
+ * The whole game, in one object — and the whole save, since `game/save.ts` is
+ * `JSON.stringify(game)` plus a `version` check. Everything in here has to stay
+ * plain data, and `SAVE_VERSION` has to move whenever the shape does: a save
+ * from another version is refused rather than half-read.
  */
 import { Rng } from '../rng';
 import { EQUIP_SLOTS, FISSURE, START_PRESETS } from '../data';

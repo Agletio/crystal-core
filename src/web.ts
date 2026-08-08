@@ -8,6 +8,7 @@
  */
 import { createGame, resetGame } from './game/state';
 import type { StartMode } from './game/state';
+import { applySave, clearSave, loadGame, saveGame, startAutosave } from './game/save';
 import { initInventory } from './ui/inventory';
 import { initCraft, openCraft, closeCraft, isCraftOpen } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
@@ -33,13 +34,22 @@ import {
   clearHistory,
   note,
 } from './ui/history';
+import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
 const game = createGame('fresh');
 
+// Before any screen reads it: they all capture this object at init, and the
+// load fills it in place.
+const restored = loadGame();
+if (restored) applySave(game, restored);
+
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
   resetGame(game, mode);
+  // The old save outlives the wipe otherwise, and the next reload undoes it.
+  clearSave();
+  saveGame(game);
   stopTutorial();
   clearHistory();
   note(mode === 'fresh' ? 'New game — nothing but the Fissure.' : 'Dev kit granted.');
@@ -69,6 +79,7 @@ document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
+document.getElementById('open-save')!.addEventListener('click', openSaveData);
 // Both of these wipe the save, and both sit in a row of buttons you click all
 // day. They ask first.
 const guard = (id: string, title: string, mode: StartMode) =>
@@ -87,6 +98,7 @@ globalThis.addEventListener('keydown', (event) => {
   if (isGuided()) return;
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
+  else if (isSaveDataOpen()) closeSaveData();
   // Skills is three deep, so Escape backs out a level, like Back.
   else if (isSkillsOpen()) skillsEscape();
   else if (isCharacterOpen()) closeCharacter();
@@ -112,6 +124,12 @@ measureDock();
 initInventory(game);
 initHistory();
 initConfirm();
+// A loaded backup replaces everything, so every screen has to look again.
+initSaveData(game, () => {
+  refreshRunPanels();
+  onRunFocused();
+  maybeShowWelcome();
+});
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels, onRunFocused);
@@ -149,3 +167,4 @@ initTutorial(game, guideContext);
 if (game.onboarded) openCraft();
 else onRunFocused();
 initWelcome(game, begin);
+startAutosave(game);

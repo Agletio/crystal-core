@@ -121,6 +121,48 @@ const finished = (await state()).done;
 if (!finished && problems.length === 0) {
   problems.push('ran out of turns without finishing');
 }
+
+// The opening is over, so the app is unlocked and the tree can be worked with
+// a real pointer. A synthetic click lands on whatever element it is aimed at;
+// only a real one goes through hit-testing, which is the half that broke when
+// the map started capturing the pointer on the press.
+if (finished) {
+  await page.locator('#open-skills').click();
+  await page.locator('#skills-cats .catcard:not([disabled])').first().click();
+  await page.locator('#skills-list .skillrow').first().click();
+  await page.waitForTimeout(300);
+  for (let i = 0; i < 6; i++) await page.locator('#skills-devlevel').click();
+  await page.waitForTimeout(200);
+
+  const lit = () => page.locator('#skills-web .web__node--on').count();
+  const before = await lit();
+  const node = page.locator('#skills-web .web__node--open').first();
+  const box = await node.boundingBox();
+  try {
+    await node.click({ timeout: 1500 });
+  } catch {
+    /* the count check below reports it */
+  }
+  await page.waitForTimeout(250);
+  const after = await lit();
+  if (after !== before + 1) {
+    problems.push(`a pointer click on a node allocated ${after - before}, not 1`);
+  }
+
+  // And the other half: dragging the map is not a click on whatever the drag
+  // started over.
+  if (box) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    for (let i = 1; i <= 6; i++) {
+      await page.mouse.move(box.x + box.width / 2 + i * 12, box.y + box.height / 2 + i * 6);
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(250);
+    if ((await lit()) !== after) problems.push('dragging the map allocated a node');
+  }
+  trace.push('Tree        a real pointer allocates a node, and a drag does not');
+}
 if (errors.length) problems.push(`console errors — ${errors.slice(0, 2).join(' | ')}`);
 
 console.log('guide: played the opening with a real pointer\n');

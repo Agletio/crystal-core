@@ -706,12 +706,19 @@ export function initSkills(state: GameState, changed?: () => void): void {
   );
 
   let from: { x: number; y: number } | null = null;
+  /**
+   * The pointer is captured only once a DRAG has started, never on the press.
+   *
+   * A captured pointer sends its `pointerup` to the capturing element, and the
+   * browser then dispatches `click` on the nearest ancestor the press and the
+   * release have in common — the map itself. Capture from `pointerdown` and no
+   * click ever reaches a node again, which is the only thing this screen is for.
+   */
+  let held: number | null = null;
   svg.addEventListener('pointerdown', (event) => {
     const e = event as PointerEvent;
     from = { x: e.clientX, y: e.clientY };
     dragged = false;
-    svg.classList.add('web--drag');
-    svg.setPointerCapture?.(e.pointerId);
   });
   svg.addEventListener('pointermove', (event) => {
     if (!from) return;
@@ -720,6 +727,11 @@ export function initSkills(state: GameState, changed?: () => void): void {
     const dy = e.clientY - from.y;
     // A few pixels of slop, so a click with a shaky hand is still a click.
     if (!dragged && Math.hypot(dx, dy) < 4) return;
+    if (!dragged) {
+      svg.classList.add('web--drag');
+      svg.setPointerCapture?.(e.pointerId);
+      held = e.pointerId;
+    }
     dragged = true;
     closeChoice();
     panX -= dx / scale;
@@ -730,6 +742,8 @@ export function initSkills(state: GameState, changed?: () => void): void {
   });
   const release = () => {
     from = null;
+    if (held !== null) svg.releasePointerCapture?.(held);
+    held = null;
     svg.classList.remove('web--drag');
     // Cleared on the next frame: the click event that ends a drag has not
     // fired yet, and it is the one that must be ignored.

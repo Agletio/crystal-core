@@ -1079,6 +1079,37 @@ assert($('history').hidden === true, 'history closes');
   );
 }
 
+// --- the save ---------------------------------------------------------------
+// The hosted build has no server behind it, so localStorage is the whole save.
+// A reload that starts you over is the one bug this feature can have.
+{
+  const KEY = 'crystal-core.save';
+  const stored = () => {
+    const raw = window.localStorage.getItem(KEY);
+    return raw === null ? null : JSON.parse(raw);
+  };
+
+  assert(stored() !== null, 'the game writes a save');
+  assert(stored().version === 1, 'stamped with the format it was written in');
+
+  // The wipe above must reach the save too, or the next reload undoes it.
+  assert(
+    stored().onboarded === false,
+    'a New game wipes the save as well as the state',
+    JSON.stringify(stored().onboarded)
+  );
+
+  $('open-save').click();
+  assert($('savedata').hidden === false, 'the Save screen opens');
+  assert(
+    /this browser/i.test(text('save-where')),
+    'and says which browser your progress is in',
+    text('save-where').slice(0, 50)
+  );
+  $('save-close').click();
+  assert($('savedata').hidden === true, 'and closes');
+}
+
 // --- skipping the opening --------------------------------------------------
 // The wipe above put the welcome card back up, which is the only place the
 // lever exists. Choosing a skill with it off must start the game with no guide
