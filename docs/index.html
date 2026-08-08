@@ -144,6 +144,8 @@
   .ask__row { display: flex; justify-content: flex-end; gap: 8px; }
   /* The destructive answer is the one that looks dangerous, and it is not the
      one focus lands on. */
+  /* A dev toggle that is currently OFF, so its state reads without a label. */
+  .mini--off { border-style: solid; border-color: var(--ember); color: var(--ember); }
   .mini--danger { border-color: var(--seam-lit); color: var(--ember); }
   .mini--danger:hover:not(:disabled) { border-color: var(--ember); background: var(--seam); }
 
@@ -653,6 +655,7 @@
   .welcomecard:hover { background: var(--seam); border-color: var(--amethyst); }
   .welcomecard__name { font-family: var(--display); font-size: 13px; }
   .welcomecard__desc { font-size: 11px; color: var(--dust); text-align: center; line-height: 1.4; }
+  .welcomedev { display: flex; justify-content: flex-end; margin-top: 12px; }
 
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
@@ -1059,6 +1062,10 @@
         on its own as you use it.
       </p>
       <div class="welcomegrid" id="welcome-skills"></div>
+      <div class="welcomedev">
+        <button class="mini mini--dev" id="welcome-skip"
+                title="Dev only: start without the guided opening">Opening: on</button>
+      </div>
     </div>
   </div>
 </div>

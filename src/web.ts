@@ -57,10 +57,10 @@ function restart(mode: StartMode): void {
 }
 
 /** After choosing a skill: the Fissure, with the guide already pointing at Enter. */
-function begin(): void {
+function begin(guided: boolean): void {
   refreshRunPanels();
   onRunFocused();
-  startTutorial();
+  if (guided) startTutorial();
 }
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);

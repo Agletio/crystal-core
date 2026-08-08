@@ -81,6 +81,11 @@ assert($('welcome').hidden === false, 'a new game asks you to choose a skill');
 assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
 assert($('welcome-name') !== null, 'and asks who you are');
 
+// A dev lever on the welcome card: choose a skill without the opening running.
+// Off on every reload, so the default path is still the guided one.
+assert($('welcome-skip') !== null, 'the opening can be skipped');
+assert(/on/i.test(text('welcome-skip')), 'and is on by default', text('welcome-skip'));
+
 $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
@@ -1011,6 +1016,26 @@ assert($('history').hidden === true, 'history closes');
     'and a confirmed New game really wipes',
     `${dockItems().length} vs ${owned}`
   );
+}
+
+// --- skipping the opening --------------------------------------------------
+// The wipe above put the welcome card back up, which is the only place the
+// lever exists. Choosing a skill with it off must start the game with no guide
+// and no lockdown — a half-skipped opening would leave the app switched off.
+{
+  assert($('welcome').hidden === false, 'a wipe asks who you are again');
+
+  $('welcome-skip').click();
+  assert(/skip/i.test(text('welcome-skip')), 'the lever says so', text('welcome-skip'));
+
+  all('#welcome-skills .welcomecard')[0].click();
+  assert($('guide').hidden === true, 'choosing a skill runs no opening');
+  assert(all('.guide-on').length === 0, 'and highlights nothing', String(all('.guide-on').length));
+  assert(
+    !document.body.classList.contains('guided'),
+    'and leaves the app unlocked'
+  );
+  assert($('run-launch').disabled === false, 'the Fissure is ready anyway');
 }
 
 // --- the page itself must not scroll --------------------------------------

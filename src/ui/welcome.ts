@@ -16,7 +16,10 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let game: GameState;
-let onChosen: (() => void) | null = null;
+let onChosen: ((guided: boolean) => void) | null = null;
+
+/** Dev lever: start without the guided opening. Off on every reload. */
+let guided = true;
 
 function render(): void {
   const host = $('welcome-skills');
@@ -37,16 +40,24 @@ function render(): void {
       game.character.skillId = skill.id;
       game.onboarded = true;
       $('welcome').hidden = true;
-      onChosen?.();
+      onChosen?.(guided);
     };
     host.append(card);
   }
 }
 
 /** Shows only on a game that hasn't chosen yet. */
-export function initWelcome(state: GameState, chosen: () => void): void {
+export function initWelcome(state: GameState, chosen: (guided: boolean) => void): void {
   game = state;
   onChosen = chosen;
+
+  const skip = $('welcome-skip') as HTMLButtonElement;
+  skip.onclick = () => {
+    guided = !guided;
+    skip.textContent = guided ? 'Opening: on' : 'Opening: skipped';
+    skip.classList.toggle('mini--off', !guided);
+  };
+
   maybeShowWelcome();
 }
 
