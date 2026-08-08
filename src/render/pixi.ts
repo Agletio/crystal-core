@@ -26,12 +26,12 @@ import type { Palette, Renderer } from './renderer';
 import {
   clampZoom,
   floorColour,
+  floorPalette,
   poisonDrops,
   poisonFieldRadius,
-  tileFleck,
+  tileDecals,
   tileSize,
   toHexNumber,
-  veinColour,
   vfxColour,
 } from './renderer';
 import { CELL, WALK_FRAMES, makeSheet } from './sprites';
@@ -155,43 +155,56 @@ export async function createPixiRenderer(
     const { grid } = map;
     mapLayer.clear();
 
+    const floor = floorPalette(palette, map.vein);
+
+    // Same grouping as the decals below: the floor's grain gives many tiles
+    // the same colour, so one fill per tile is mostly wasted batches.
+    const floors = new Map<string, number[][]>();
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         const tile = grid.at(x, y);
         if (tile === WALL) continue;
+        const colour = floorColour(floor, tile, x, y);
+        let rects = floors.get(colour);
+        if (!rects) floors.set(colour, (rects = []));
         // Slight overdraw closes hairline seams between adjacent tiles.
-        mapLayer
-          .rect(x - 0.01, y - 0.01, 1.02, 1.02)
-          .fill(toHexNumber(floorColour(palette, tile, x, y)));
+        rects.push([x - 0.01, y - 0.01, 1.02, 1.02]);
       }
     }
+    for (const [colour, rects] of floors) {
+      for (const [rx, ry, rw, rh] of rects) mapLayer.rect(rx, ry, rw, rh);
+      mapLayer.fill(toHexNumber(colour));
+    }
 
-    // Mineral in the rock, in the socketed crystal's own colour. Drawn after
-    // the floor so a fleck sits ON the stone rather than replacing a tile of
-    // it, and before the wall edges so it never breaks the map's outline.
-    const vein = toHexNumber(veinColour(palette, map.vein));
+    // Flagstones, rubble, mineral and the lit lip under a wall. Built once per
+    // map alongside the floor, so the cost lands on entering a descent rather
+    // than on every frame of one.
+    //
+    // Grouped by colour before drawing. Graphics batches whatever paths are
+    // pending when fill() is called, so a fill PER RECTANGLE is ten thousand
+    // batches and a third of a second of hitch on the click that starts a
+    // run; there are only a handful of distinct decal colours, so grouping
+    // turns that into a handful of fills.
+    const at = (x: number, y: number) => grid.at(x, y);
+    const batches = new Map<string, { colour: number; alpha: number; rects: number[][] }>();
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         if (grid.at(x, y) === WALL) continue;
-        const fleck = tileFleck(x, y);
-        if (fleck) {
-          mapLayer.circle(fleck.x, fleck.y, fleck.r).fill({ color: vein, alpha: 0.5 });
+        for (const d of tileDecals(floor, at, x, y)) {
+          const key = `${d.colour}|${d.alpha}`;
+          let batch = batches.get(key);
+          if (!batch) {
+            batch = { colour: toHexNumber(d.colour), alpha: d.alpha, rects: [] };
+            batches.set(key, batch);
+          }
+          batch.rects.push([x + d.x, y + d.y, d.w, d.h]);
         }
       }
     }
-
-    // Bright edge where floor meets wall — gives the map readable shape
-    // without a tileset.
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
-        if (grid.at(x, y) === WALL) continue;
-        if (grid.at(x, y - 1) === WALL) mapLayer.moveTo(x, y).lineTo(x + 1, y);
-        if (grid.at(x, y + 1) === WALL) mapLayer.moveTo(x, y + 1).lineTo(x + 1, y + 1);
-        if (grid.at(x - 1, y) === WALL) mapLayer.moveTo(x, y).lineTo(x, y + 1);
-        if (grid.at(x + 1, y) === WALL) mapLayer.moveTo(x + 1, y).lineTo(x + 1, y + 1);
-      }
+    for (const batch of batches.values()) {
+      for (const [rx, ry, rw, rh] of batch.rects) mapLayer.rect(rx, ry, rw, rh);
+      mapLayer.fill({ color: batch.colour, alpha: batch.alpha });
     }
-    mapLayer.stroke({ width: 0.07, color: toHexNumber(palette.floorLit) });
 
     const e = map.entrance;
     mapLayer

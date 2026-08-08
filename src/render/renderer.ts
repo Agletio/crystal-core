@@ -12,7 +12,7 @@
  * Positions in RunState are in tile units, not pixels, so an implementation
  * is free to choose its own scale, camera, or projection.
  */
-import { TUNNEL } from '../sim/grid';
+import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 
 export interface Palette {
@@ -272,51 +272,188 @@ const TUNNEL_DEPTH = 0.34;
 const PATCH_SCALE = 5;
 /** How far a patch can push the floor colour either way. */
 const PATCH_DEPTH = 0.16;
-export function floorColour(palette: Palette, tile: number, x: number, y: number): string {
-  // Passages are further from the light than the chambers they join.
-  const base =
-    tile === TUNNEL ? mix(palette.floor, palette.void, TUNNEL_DEPTH) : palette.floor;
-
-  // Broad patches of lighter and darker stone.
-  const patch = patchNoise(x, y, PATCH_SCALE, 1);
-  return mix(
-    base,
-    patch > 0.5 ? palette.floorLit : palette.void,
-    Math.abs(patch - 0.5) * 2 * PATCH_DEPTH
-  );
-}
-
 /** Fraction of tiles carrying a fleck of the vein. */
 const VEIN_DENSITY = 0.055;
 
-export interface Fleck {
-  /** Centre, in tile units, absolute. */
+/**
+ * Sub-tile pixels. Every decal below is a whole number of these, so the floor
+ * is drawn on a grid in the same way the sprites are — a smooth blob on a
+ * pixel-art floor is the seam you cannot stop noticing.
+ */
+const SUB = 8;
+const U = 1 / SUB;
+
+/** Distinct shades the grain is quantised to, per surface. */
+const PATCH_STEPS = 7;
+
+/** A rectangle inside one tile. Offsets and size are in TILE units. */
+export interface Decal {
   x: number;
   y: number;
-  /** Radius in tiles. */
-  r: number;
+  w: number;
+  h: number;
+  colour: string;
+  alpha: number;
 }
 
 /**
- * The mineral in this tile, if any.
+ * Every colour the floor can be, worked out once.
  *
- * A fleck is deliberately SMALLER than a tile. Tinting the whole tile was the
- * first attempt and at any real zoom it reads as a square somebody forgot to
- * paint — the eye sees the grid, not the rock. A mark inside the tile, offset
- * so it doesn't line up with its neighbours, reads as something embedded in
- * the floor instead of as the floor.
+ * This exists for speed and it is not a micro-optimisation. mix() parses two
+ * hex strings and builds a third every time it is called, and the floor wanted
+ * eight of them PER TILE — which on a full map is tens of thousands of string
+ * round-trips on the single frame that starts a descent, and showed up as a
+ * third of a second of hitch on the click.
  *
- * Deterministic, so it never crawls between frames.
+ * Nothing here depends on x or y. Quantising the grain to a handful of steps
+ * is what makes that true, and it costs nothing visually: seven shades across
+ * a range this narrow is already more than the eye separates, and it collapses
+ * a thousand one-rectangle draw batches into a handful.
  */
-export function tileFleck(x: number, y: number): Fleck | null {
-  const roll = tileNoise(x, y, 2);
-  if (roll >= VEIN_DENSITY) return null;
-  const t = roll / VEIN_DENSITY;
-  return {
-    x: x + 0.25 + tileNoise(x, y, 3) * 0.5,
-    y: y + 0.25 + tileNoise(x, y, 4) * 0.5,
-    r: 0.09 + t * 0.09,
+export interface FloorPalette {
+  /** Grain ramp, dark to light. Indexed by a quantised patch value. */
+  room: string[];
+  tunnel: string[];
+  mortar: string;
+  rubble: string;
+  chip: string;
+  lit: string;
+  shade: string;
+  vein: string;
+}
+
+export function floorPalette(palette: Palette, vein: number): FloorPalette {
+  const ramp = (base: string): string[] => {
+    const out: string[] = [];
+    for (let i = 0; i < PATCH_STEPS; i++) {
+      // -1 at the dark end, +1 at the light end.
+      const t = (i / (PATCH_STEPS - 1)) * 2 - 1;
+      out.push(mix(base, t > 0 ? palette.floorLit : palette.void, Math.abs(t) * PATCH_DEPTH));
+    }
+    return out;
   };
+
+  return {
+    room: ramp(palette.floor),
+    tunnel: ramp(mix(palette.floor, palette.void, TUNNEL_DEPTH)),
+    mortar: mix(palette.floor, palette.void, 0.55),
+    rubble: mix(palette.floor, palette.void, 0.38),
+    chip: mix(palette.floor, palette.floorLit, 0.75),
+    lit: mix(palette.floorLit, palette.chalk, 0.3),
+    shade: mix(palette.floor, palette.void, 0.75),
+    vein: veinColour(palette, vein),
+  };
+}
+
+export function floorColour(floor: FloorPalette, tile: number, x: number, y: number): string {
+  const ramp = tile === TUNNEL ? floor.tunnel : floor.room;
+  const patch = patchNoise(x, y, PATCH_SCALE, 1);
+  const step = Math.min(PATCH_STEPS - 1, Math.floor(patch * PATCH_STEPS));
+  return ramp[step];
+}
+
+/** Snaps a 0..1 roll onto the sub-tile grid. */
+const snap = (n: number): number => Math.floor(n * SUB) * U;
+
+/**
+ * Everything drawn ON a floor tile, past its base colour.
+ *
+ * The floor had grain and a tunnel/room split, which said where you could
+ * walk but nothing about where you were. This is what makes it a place: rooms
+ * are FLAGSTONE — two courses per tile, offset like brickwork — and passages
+ * are bare rock, so the map reads as a building the cave got into rather than
+ * as two shades of the same slab. Roughly a fifth of the paving is missing,
+ * which is the whole difference between a castle and a ruin.
+ *
+ * Light comes from above: the edge below a wall is lit, the edge above one is
+ * in shadow. That single pair does more for depth than the uniform outline it
+ * replaces, which lit all four sides equally and so implied no light at all.
+ *
+ * Pure and deterministic per tile — a renderer can draw one tile without
+ * having drawn any other, and re-drawing a frame can never make the floor
+ * crawl.
+ */
+export function tileDecals(
+  floor: FloorPalette,
+  at: (x: number, y: number) => number,
+  x: number,
+  y: number
+): Decal[] {
+  const tile = at(x, y);
+  if (tile === WALL) return [];
+
+  const out: Decal[] = [];
+  const paved = tile !== TUNNEL;
+
+  // Crumbling. A ruin is not evenly ruined, so this is per tile rather than a
+  // wear value smeared across the room.
+  const broken = tileNoise(x, y, 7) < 0.2;
+
+  if (paved && !broken) {
+    for (let course = 0; course < 2; course++) {
+      const top = course * 0.5;
+      out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.5 });
+      // Running bond: every other course is offset by half a stone, which is
+      // what stops a grid of squares reading as graph paper.
+      const shift = course % 2 === 0 ? 0 : 0.25;
+      for (let stone = 0; stone < 2; stone++) {
+        out.push({
+          x: (shift + stone * 0.5) % 1,
+          y: top,
+          w: U,
+          h: 0.5,
+          colour: floor.mortar,
+          alpha: 0.5,
+        });
+      }
+    }
+  }
+
+  // Rubble. More of it where the paving has gone, and in the raw passages.
+  const bits = broken ? 4 : paved ? 1 : 2;
+  for (let i = 0; i < bits; i++) {
+    const roll = tileNoise(x, y, 20 + i);
+    if (roll > 0.6) continue;
+    out.push({
+      x: snap(roll / 0.6),
+      y: snap(tileNoise(x, y, 40 + i)),
+      w: U,
+      h: U,
+      colour: i === 0 ? floor.chip : floor.rubble,
+      alpha: 0.55,
+    });
+  }
+
+  // The vein, as a square rather than a circle now — same reason as the rest.
+  const fleck = tileNoise(x, y, 2);
+  if (fleck < VEIN_DENSITY) {
+    const size = fleck < VEIN_DENSITY * 0.4 ? U * 2 : U;
+    out.push({
+      x: snap(tileNoise(x, y, 3)) * (1 - size),
+      y: snap(tileNoise(x, y, 4)) * (1 - size),
+      w: size,
+      h: size,
+      colour: floor.vein,
+      alpha: 0.75,
+    });
+  }
+
+  // Light from above. The lit lip goes on the edge BELOW a wall, because that
+  // is the face a light overhead would actually catch.
+  if (at(x, y - 1) === WALL) {
+    out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.lit, alpha: 0.55 });
+  }
+  if (at(x, y + 1) === WALL) {
+    out.push({ x: 0, y: 1 - U, w: 1, h: U, colour: floor.shade, alpha: 0.8 });
+  }
+  if (at(x - 1, y) === WALL) {
+    out.push({ x: 0, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.55 });
+  }
+  if (at(x + 1, y) === WALL) {
+    out.push({ x: 1 - U, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.55 });
+  }
+
+  return out;
 }
 
 /** Hex string to a 0xRRGGBB number, for renderers that want numeric colours. */

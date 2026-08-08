@@ -246,9 +246,29 @@ like that is unreadable at tile size.
 
 ### The floor
 
-`floorColour()` and `tileFleck()` in `render/renderer.ts` are pure functions of
-`(tile, x, y)`, so both renderers agree exactly and a redraw can never make the
-floor shimmer. Three things vary, in rising order of how much they say:
+`floorPalette()`, `floorColour()` and `tileDecals()` in `render/renderer.ts`
+are pure functions of `(tile, x, y)`, so both renderers agree exactly and a
+redraw can never make the floor shimmer.
+
+Rooms are **flagstone** — two courses per tile, offset like brickwork — and
+passages are bare rock, so the map reads as a building the cave got into rather
+than as two shades of the same slab. Roughly a fifth of the paving is missing,
+which is the whole difference between a castle and a ruin. Light comes from
+above: the edge *below* a wall is lit, the edge above one is in shadow. That
+single pair does more for depth than the uniform outline it replaced, which lit
+all four sides equally and so implied no light at all.
+
+Every decal is a whole number of sub-tile pixels, on the same principle as the
+sprites — a smooth blob on a pixel-art floor is the seam you can't stop
+noticing.
+
+`floorPalette()` exists for speed and isn't a micro-optimisation: `mix()` parses
+two hex strings and builds a third, and the floor wanted eight per tile. Nothing
+in it depends on `x` or `y`; quantising the grain to seven steps is what makes
+that true, and it costs nothing visually while collapsing a thousand
+one-rectangle draw batches into a handful.
+
+Three things still vary underneath, in rising order of how much they say:
 
 - **Grain.** Value noise smoothed across a lattice five tiles wide. Hashing
   each tile independently is the obvious version and it looks like television
@@ -269,6 +289,12 @@ floor shimmer. Three things vary, in rising order of how much they say:
 Flecks are deliberately smaller than a tile. Tinting the whole tile was the
 first attempt, and at any real zoom it reads as a square somebody forgot to
 paint: you see the grid, not the rock.
+
+The detail costs about **15% of frame time** — 47 → 40 fps median with the sim
+paused, measured A/B on the same page with only the bundle swapped, under
+headless software GL. That is the worst case for a few thousand extra static
+triangles; it is also why `canvas2d` now culls the floor to the visible rect,
+which it never used to do.
 
 `npm run demo` guards all of it — that maps have both chambers and passages,
 that every carved tile is walkable (so nothing has started testing `=== FLOOR`

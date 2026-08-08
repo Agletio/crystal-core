@@ -16,12 +16,12 @@ import type { Palette, Renderer } from './renderer';
 import {
   clampZoom,
   floorColour,
+  floorPalette,
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
-  tileFleck,
+  tileDecals,
   tileSize,
-  veinColour,
   vfxColour,
 } from './renderer';
 
@@ -95,11 +95,23 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   function drawMap(state: RunState, v: View): void {
     const { grid } = state.map;
 
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
+    // Every colour the floor can be, worked out once per draw rather than
+    // eight hex round-trips per tile.
+    const floor = floorPalette(palette, state.map.vein);
+
+    // Only what is on screen. The floor carries a dozen small rectangles per
+    // tile now; drawing the whole map every frame would spend most of it on
+    // rock nobody can see.
+    const x0 = Math.max(0, Math.floor(-v.offX / v.tile));
+    const y0 = Math.max(0, Math.floor(-v.offY / v.tile));
+    const x1 = Math.min(grid.width, Math.ceil((cssWidth - v.offX) / v.tile) + 1);
+    const y1 = Math.min(grid.height, Math.ceil((cssHeight - v.offY) / v.tile) + 1);
+
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
         const tile = grid.at(x, y);
         if (tile === WALL) continue;
-        ctx.fillStyle = floorColour(palette, tile, x, y);
+        ctx.fillStyle = floorColour(floor, tile, x, y);
         ctx.fillRect(
           v.offX + x * v.tile,
           v.offY + y * v.tile,
@@ -109,57 +121,26 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       }
     }
 
-    // Mineral in the rock, in the socketed crystal's own colour. Drawn after
-    // the floor so a fleck sits ON the stone rather than replacing a tile of
-    // it, and before the wall edges so it never breaks the map's outline.
-    ctx.fillStyle = veinColour(palette, state.map.vein);
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
+    // Flagstones, rubble, mineral and the lit lip under a wall. Everything
+    // here is a whole number of sub-tile pixels, so the floor is drawn on a
+    // grid the same way the sprites are.
+    const at = (gx: number, gy: number) => grid.at(gx, gy);
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
         if (grid.at(x, y) === WALL) continue;
-        const fleck = tileFleck(x, y);
-        if (!fleck) continue;
-        ctx.moveTo(v.offX + (fleck.x + fleck.r) * v.tile, v.offY + fleck.y * v.tile);
-        ctx.arc(
-          v.offX + fleck.x * v.tile,
-          v.offY + fleck.y * v.tile,
-          fleck.r * v.tile,
-          0,
-          Math.PI * 2
-        );
+        for (const d of tileDecals(floor, at, x, y)) {
+          ctx.globalAlpha = d.alpha;
+          ctx.fillStyle = d.colour;
+          ctx.fillRect(
+            v.offX + (x + d.x) * v.tile,
+            v.offY + (y + d.y) * v.tile,
+            Math.max(1, Math.ceil(d.w * v.tile)),
+            Math.max(1, Math.ceil(d.h * v.tile))
+          );
+        }
       }
     }
-    ctx.fill();
     ctx.globalAlpha = 1;
-
-    // Bright edge where floor meets wall gives the map readable shape without
-    // needing tilesets.
-    ctx.strokeStyle = palette.floorLit;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
-        if (grid.at(x, y) === WALL) continue;
-        if (grid.at(x, y - 1) === WALL) {
-          ctx.moveTo(v.offX + x * v.tile, v.offY + y * v.tile);
-          ctx.lineTo(v.offX + (x + 1) * v.tile, v.offY + y * v.tile);
-        }
-        if (grid.at(x, y + 1) === WALL) {
-          ctx.moveTo(v.offX + x * v.tile, v.offY + (y + 1) * v.tile);
-          ctx.lineTo(v.offX + (x + 1) * v.tile, v.offY + (y + 1) * v.tile);
-        }
-        if (grid.at(x - 1, y) === WALL) {
-          ctx.moveTo(v.offX + x * v.tile, v.offY + y * v.tile);
-          ctx.lineTo(v.offX + x * v.tile, v.offY + (y + 1) * v.tile);
-        }
-        if (grid.at(x + 1, y) === WALL) {
-          ctx.moveTo(v.offX + (x + 1) * v.tile, v.offY + y * v.tile);
-          ctx.lineTo(v.offX + (x + 1) * v.tile, v.offY + (y + 1) * v.tile);
-        }
-      }
-    }
-    ctx.stroke();
 
     // Entrance
     const e = state.map.entrance;
