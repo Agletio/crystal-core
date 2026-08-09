@@ -638,6 +638,70 @@ assert($('haul-why').hidden === true, 'opening it yourself needs no explanation'
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 assert($('haul').hidden === true, 'Escape closes it');
 
+// --- the collection --------------------------------------------------------
+// Four sockets against everything you have ever been given. Nothing here is
+// spent, so this screen only ever grows, and it is where two crystals are
+// compared before one of them goes in.
+assert($('crystals').hidden === true, 'the collection starts closed');
+$('open-crystals').click();
+assert($('crystals').hidden === false, 'and opens from the header');
+
+const crystalCards = () => all('#crystals-list .crystal');
+assert(crystalCards().length > 0, 'the dev kit fills it', String(crystalCards().length));
+assert(
+  /\d+ owned · \d+\/\d+ socketed/.test(text('crystals-count')),
+  'it counts what you own against what is in use',
+  text('crystals-count')
+);
+// The one thing about the Lampwright a player cannot see by playing: the
+// chance falls as the collection fills, and the dev kit has passed the end.
+assert(
+  /nothing left to give you/i.test(text('crystals-npc')),
+  'a full collection is told the Lampwright is done',
+  text('crystals-npc')
+);
+assert(
+  all('#crystals-quests .quest').length === 4,
+  'every quest for the other two worlds is listed',
+  String(all('#crystals-quests .quest').length)
+);
+assert(
+  all('#crystals-quests .quest--done').length === 4,
+  'and the dev kit, which is handed every crystal, has them all answered'
+);
+// A crystal levels only while socketed, which is the reason to socket a blank
+// one at all — so the row has to say where it stands.
+assert(
+  /only levels while socketed/.test(text('crystals-list')),
+  'a crystal out of a socket says it is not growing'
+);
+
+const socketFirst = [...all('#crystals-list .crystal .mini')].find((b) =>
+  /^Socket/.test(b.textContent)
+);
+assert(!!socketFirst, 'a carried crystal offers the socket');
+const before = all('.socket--full').length;
+socketFirst.click();
+assert(
+  all('.socket--full').length === before + 1,
+  'clicking it fills a socket on the Fissure',
+  `${before} → ${all('.socket--full').length}`
+);
+const socketedCard = [...crystalCards()].find((c) => c.classList.contains('crystal--socket'));
+assert(!!socketedCard, 'and the row moves to the top marked as socketed');
+assert(
+  /to tier|as far as it goes/.test(socketedCard.textContent),
+  'showing how far it has levelled',
+  socketedCard.textContent
+);
+const back = [...socketedCard.querySelectorAll('.mini')].find((b) => /Take it back/.test(b.textContent));
+assert(!!back, 'a socketed crystal offers its way out');
+back.click();
+assert(all('.socket--full').length === before, 'and taking it back empties the socket again');
+
+window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('crystals').hidden === true, 'Escape closes the collection');
+
 // --- the stash ------------------------------------------------------------
 // A carry limit needs somewhere for the overflow to go that isn't the floor.
 assert($('stash').hidden === true, 'the stash starts closed');

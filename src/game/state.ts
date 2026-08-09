@@ -5,7 +5,7 @@
  * moving it wipes everyone's game.
  */
 import { Rng } from '../rng';
-import { EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
+import { CRYSTAL_QUESTS, EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
 import { canSell, grant, makeCrystal, makeGear, sellPrice } from '../economy';
 import { makeCharacter } from '../sim/character';
@@ -37,10 +37,8 @@ export const STASH_STEP = 6;
 /** Where buying more stops. */
 export const STASH_MAX = 60;
 
-/**
- * The next block of stash space, or null when there is no more. Steep: gold
- * spent here is gold not spent at the bench, so storage is a real decision.
- */
+/** The next block of stash space, or null at the top. Steep: gold spent on
+ *  storage is gold not spent at the bench. */
 export function stashUpgradeCost(slots: number): number | null {
   if (slots >= STASH_MAX) return null;
   const bought = Math.max(0, Math.round((slots - STASH_START) / STASH_STEP));
@@ -75,6 +73,8 @@ export interface GameState {
   firstClearDone: boolean;
   /** Index into the guided steps, or null when not running / finished. */
   tutorialStep: number | null;
+  /** Quest ids already paid out. What is not in here is still open. */
+  quests: string[];
   /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
   shopStock: Item[];
   shopLevel: number;
@@ -98,6 +98,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     onboarded: false,
     firstClearDone: false,
     tutorialStep: null,
+    quests: [],
     shopStock: [],
     shopLevel: 0,
     autoRepeat: true,
@@ -123,8 +124,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.stashSlots = STASH_START;
   game.autoRepeat = true;
 
-  // A fresh character owns nothing and has worn nothing. The dev preset wears
-  // a rolled set so the sheet and the stat pipeline have something in them.
+  // The dev preset wears a rolled set, so the stat pipeline has something in it.
   game.character = makeCharacter(
     preset.equipped ? starterLoadout(new Rng(1)) : {},
     'strike'
@@ -136,6 +136,9 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.tutorialStep = null;
+  // The dev kit is handed every crystal in the game, so its quests are already
+  // answered — left open, the first dangerous descent pays out four duplicates.
+  game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
   // Zero, not the character's level, so the next open restocks rather than
   // showing whatever the previous game happened to be carrying.
   game.shopStock = [];
@@ -146,8 +149,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
 export function grantFirstClear(game: GameState): {
   gold: number;
   currency: Record<string, number>;
-  weapon: Item | null;
-  crystal: Item | null;
+  weapon: Item;
+  where: GiftPlace;
 } | null {
   if (game.firstClearDone) return null;
   game.firstClearDone = true;
@@ -160,12 +163,13 @@ export function grantFirstClear(game: GameState): {
   // The guided opening points at THIS wand: its base drops, its quality is
   // half a first run's loot, its id is a counter. craft() deep-copies meta.
   weapon.meta.firstClear = true;
-  addItem(game, weapon);
 
-  const crystal = makeCrystal(gift.crystal);
-  addItem(game, crystal);
-
-  return { gold: gift.gold, currency: gift.currency, weapon, crystal };
+  return {
+    gold: gift.gold,
+    currency: gift.currency,
+    weapon,
+    where: giveGift(game, weapon),
+  };
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
@@ -194,6 +198,20 @@ export function addItem(game: GameState, item: Item): Placement {
     return 'stashed';
   }
   return 'lost';
+}
+
+/** Where a gift landed. No 'lost': see giveGift. */
+export type GiftPlace = 'carried' | 'stashed' | 'hauled';
+
+/**
+ * A gift refuses nowhere. Bags, then the stash, then the haul — which takes
+ * anything — so what you were handed is never quietly dropped.
+ */
+export function giveGift(game: GameState, item: Item): GiftPlace {
+  const where = addItem(game, item);
+  if (where !== 'lost') return where;
+  bankToHaul(game, [item]);
+  return 'hauled';
 }
 
 function takeFrom(list: Item[], item: Item): boolean {

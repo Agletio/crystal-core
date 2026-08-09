@@ -75,7 +75,9 @@ export function makeCrystal(tier: number, family: MonsterFamily = 'normal'): Ite
     slots: { mod: def.mods },
     mods: [],
     implicits: [],
-    meta: { tier, quality: def.quality, family },
+    // Experience starts at its tier's floor: a crystal handed out above T1 has
+    // had that climb paid for, and one whose xp disagrees would drop a tier.
+    meta: { tier, quality: def.quality, family, xp: def.xp },
   };
 }
 

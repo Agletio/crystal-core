@@ -3,8 +3,12 @@
  * what it earned. The overlay knows nothing about what the rows mean, so a new
  * stat is a line in buildReport() and nothing else.
  */
-import { addItem, bankToHaul, grantFirstClear, haulFull } from './state';
+import { bankToHaul, grantFirstClear, haulFull } from './state';
 import type { GameState } from './state';
+import { advanceSocketed, claimQuests, lampwrightGift } from './crystals';
+import type { CrystalGain } from './crystals';
+import type { GiftPlace } from './state';
+import { LAMPWRIGHT } from '../data';
 import { grant } from '../economy';
 import { addXp, addSkillXp } from '../sim/character';
 import type { RunState } from '../sim/run';
@@ -27,13 +31,22 @@ export interface RunReport {
   banked: Record<string, number>;
   items: Item[];
   /** Handed to you rather than dropped, and put in the dock rather than the haul. */
-  gifts: Item[];
+  gifts: Gift[];
+  /** Crystals that gained a tier for being socketed through this. */
+  levelled: CrystalGain[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   /** Whether the haul is at or over capacity now this run has banked. */
   haulFull: boolean;
   xp: number;
   levelsGained: number;
+}
+
+export interface Gift {
+  item: Item;
+  where: GiftPlace;
+  /** Who handed it over. The Fissure, the Lampwright, or a quest by name. */
+  from: string;
 }
 
 const round = (n: number) => Math.max(0, Math.round(n));
@@ -54,7 +67,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
-  const gifts: Item[] = [];
+  const gifts: Gift[] = [];
+  let levelled: CrystalGain[] = [];
 
   if (cleared) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
@@ -76,8 +90,22 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
       for (const [id, n] of Object.entries(first.currency)) {
         banked[id] = (banked[id] ?? 0) + n;
       }
-      if (first.weapon) gifts.push(first.weapon);
-      if (first.crystal) gifts.push(first.crystal);
+      gifts.push({ item: first.weapon, where: first.where, from: 'The Fissure' });
+    }
+
+    // Met down there, paid out up here: a meeting on a descent you die in is a
+    // meeting, and the crystal was never in your hands.
+    if (run.met) {
+      const given = lampwrightGift(game);
+      gifts.push({ item: given.crystal, where: given.where, from: LAMPWRIGHT.name });
+    }
+
+    // Socketed only. A crystal in a bag is a crystal that was not used, and
+    // this is what makes a socket spent on a fresh one cost something.
+    levelled = advanceSocketed(game, run.set);
+
+    for (const { quest, crystal, where } of claimQuests(game, run.set)) {
+      gifts.push({ item: crystal, where, from: quest.name });
     }
   }
 
@@ -105,6 +133,9 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   if (cleared && run.loot.items.length > 0) {
     rows.push({ label: 'sent to the haul', value: String(run.loot.items.length) });
   }
+  for (const gain of levelled) {
+    rows.push({ label: gain.crystal.name, value: `+${gain.tiers} tier` });
+  }
 
   // Damage taken, split by type. Nothing reads this yet beyond the overlay —
   // it's here as the worked example of a diagnostic stat.
@@ -125,6 +156,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     banked,
     items: cleared ? [...run.loot.items] : [],
     gifts,
+    levelled,
     lostLoot: !cleared && hadLoot,
     haulFull: haulFull(game),
     xp: Math.round(run.xpGained),

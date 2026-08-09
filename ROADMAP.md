@@ -382,16 +382,45 @@ Mechanism is specified in §4.
 
 ### Phase 5 — Progression
 
-- [ ] The NPC: a random event during a Fissure run that hands you a crystal, at a
-      falling chance as you collect more, until you hold all four Normal ones.
-      The first clear already gives one (`FISSURE.firstClear.crystal`) — that is
-      this NPC's first gift arriving early, and belongs inside it.
-- [ ] Crystals gain levels per cleared run, scaled by the set's danger, only
-      while socketed. T1 → T4, one mod slot per tier.
-- [ ] Quests for the Demonic and Prismatic crystals — objectives like clearing at a
-      given total danger.
-- [ ] Crystal storage — you will own more crystals than you have sockets, so they
-      need somewhere to live and a way to compare them.
+- [x] The NPC: **the Lampwright** (`LAMPWRIGHT`), met mid-descent at a chance
+      read off how many Normal crystals you hold — certain at none, nothing at
+      four. `FISSURE.firstClear.crystal` is gone: the first gift is certain, so
+      a first clear still comes back with one, and it now arrives through the
+      NPC rather than beside it. The sim is told only the number and rolls the
+      meeting off the run's own seed; the report pays it out, so a meeting on a
+      descent you die in was only a meeting.
+- [x] Crystals gain levels per cleared run, scaled by the set's danger
+      (`CRYSTAL_XP`, `advanceSocketed`), only while socketed. A tier rewrites
+      the base, name, quality and capacity together and never touches what is
+      rolled on it; a crystal whose stored progress lags its tier — an old save
+      — climbs from where it stands rather than being demoted.
+- [x] Quests for the Demonic and Prismatic crystals (`CRYSTAL_QUESTS`): clear at
+      a danger, then clear at a higher danger with one of that family already
+      socketed. Each pays once, and the demo holds every threshold to what the
+      crystals you own at that point can actually reach.
+- [x] Crystal storage — the **Crystals** screen (`src/ui/crystals.ts`): every
+      crystal you own wherever it is sitting, with danger, capacity and how far
+      it has levelled, plus the quest ladder and what the Lampwright is still
+      likely to do.
+
+> **Landed.** Storage came out as a view rather than a fifth container: the dock
+> already holds 32 crystals and the stash takes the overflow, so a new bag would
+> have been triage without a benefit. What the screen adds is the comparison,
+> which is the actual problem — four sockets against a collection that only ever
+> grows.
+>
+> One measurement forced a tuning change. The opening hands you a crystal and
+> then says to socket it, and that descent went from 21 monsters to 50 in one
+> step: played out honestly — clear once, roll the wand, wear it, spend the
+> level — the character died 28 times in 40. `SOCKET_SCALE.packSize` now keeps
+> some of the bare Fissure's thinning at one socket (40 monsters, 28/40
+> cleared), and `THE LADDER` grew a check for that exact rung, since it is the
+> one the game puts in front of a new player and nothing was watching it.
+>
+> The other repair was a check rather than the game: `BODIES` measured bodies in
+> rock over four seeds, where the figure swings between 0.04% and 1.40% on
+> seeds alone. Sixteen seeds and a bound set from the spread, so it catches the
+> failure it names — collision reading centres — instead of reporting a seed.
 
 ### Phase 6 — Themed maps
 

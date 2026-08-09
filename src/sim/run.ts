@@ -38,7 +38,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
-import { socketPackSize, socketPacks, socketSize } from '../data';
+import { LAMPWRIGHT, socketPackSize, socketPacks, socketSize } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
@@ -188,10 +188,13 @@ export interface Vfx {
 export interface RunOptions {
   /** Thins the packs without touching the map. Harness use only. */
   densityScale?: number;
+  /** Chance the Lampwright is met down here. The player's, not the run's. */
+  crystalGift?: number;
 }
 
 export type RunEvent =
   | { kind: 'finale'; name: string; herald: string }
+  | { kind: 'met'; who: string; said: string }
   | { kind: 'kill'; total: number; xp: number }
   | { kind: 'hurt'; life: number; maxLife: number }
   | { kind: 'cleared'; seconds: number; killed: number }
@@ -222,6 +225,10 @@ export interface RunState {
   finale: string | null;
   /** Carried, not owned — lost entirely if the hero dies. */
   loot: RunLoot;
+  /** The socketed set this was launched with. Never changes mid-descent. */
+  set: RunSet;
+  /** Whether the Lampwright turned up. The report is what pays it out. */
+  met: boolean;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
 }
@@ -247,6 +254,8 @@ export class RunSim {
   private casts = 0;
   /** Set once the closing encounter has been spawned. */
   private finale: EncounterDef | null = null;
+  /** Kill count the Lampwright turns up on, or null for a descent they miss. */
+  private meetAt: number | null = null;
   /** Baseline monster stats for this map, scaled into the finale. */
   private finaleStats!: CombatStats;
   private byId = new Map<number, Entity>();
@@ -325,8 +334,18 @@ export class RunSim {
       xpGained: 0,
       finale: null,
       loot: { currency: {}, items: [] },
+      set: this.set,
+      met: false,
       damageTaken: {},
     };
+
+    // Rolled only when there is something to give, so a harness that passes no
+    // chance draws exactly the stream it always did. Never on the last kills:
+    // a meeting the finale interrupts reads as having missed it.
+    const chance = options.crystalGift ?? 0;
+    if (chance > 0 && rng.chance(chance)) {
+      this.meetAt = rng.int(1, Math.max(1, Math.floor(monsters.length * 0.7)));
+    }
   }
 
   /** Packs land in rooms other than the entrance, so you always get a moment
@@ -1156,17 +1175,19 @@ export class RunSim {
     this.rollCurrency();
     this.rollGearDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
+
+    if (this.meetAt !== null && s.killed >= this.meetAt) {
+      this.meetAt = null;
+      s.met = true;
+      this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.met });
+    }
   }
 
   /**
-   * Gear and currency drops. A currency starts at `basic` and rarity gives it
-   * repeated chances to climb a class, so the scarce ones are reachable only by
-   * making the map more dangerous.
-   *
-   * A piece's quality comes off the TIER table, so a T1 map cannot hand you a
-   * Faceted piece however lucky you get. Item level is the crystal's. Rarity
-   * raises the CHANCE, never the ceiling, or a rarity-stacked T1 out-drops an
-   * honest T4.
+   * A piece's quality and item level come off the power band, so a weak set
+   * cannot hand you a Brilliant one however lucky you get. Rarity raises the
+   * CHANCE, never the ceiling, or a rarity-stacked bare run out-drops an
+   * honest set.
    */
   private rollGearDrop(): void {
     const drops = this.set.band;

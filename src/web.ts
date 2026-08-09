@@ -20,6 +20,7 @@ import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './u
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
+import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
@@ -81,6 +82,7 @@ function restart(mode: StartMode): void {
     closeShop();
     closeStash();
     closeHaul();
+    closeCrystals();
     onRunFocused();
   }
   maybeShowWelcome();
@@ -96,6 +98,7 @@ function begin(guided: boolean): void {
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
 document.getElementById('open-shop')!.addEventListener('click', openShop);
 document.getElementById('open-haul')!.addEventListener('click', () => openHaul());
+document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
 document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', openCharacter);
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
@@ -127,6 +130,7 @@ globalThis.addEventListener('keydown', (event) => {
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
   else if (isHaulOpen()) closeHaul();
+  else if (isCrystalsOpen()) closeCrystals();
   else if (isStashOpen()) closeStash();
   else if (isShopOpen()) closeShop();
   else if (isCraftOpen()) closeCraft();
@@ -175,6 +179,8 @@ initHaul(game, () => {
   refreshRunPanels();
   refreshShop();
 });
+// Socketing from here changes the set the Fissure is holding, so the map re-reads.
+initCrystals(game, refreshRunPanels);
 initRun(game);
 initMenu();
 
@@ -254,15 +260,17 @@ function guideContext(): GuideCtx {
         ? 'sheet'
         : isHistoryOpen()
           ? 'history'
-          : isHaulOpen()
-            ? 'haul'
-            : isStashOpen()
-              ? 'stash'
-              : isShopOpen()
-                ? 'shop'
-                : isCraftOpen()
-                  ? 'craft'
-                  : null;
+          : isCrystalsOpen()
+            ? 'crystals'
+            : isHaulOpen()
+              ? 'haul'
+              : isStashOpen()
+                ? 'stash'
+                : isShopOpen()
+                  ? 'shop'
+                  : isCraftOpen()
+                    ? 'craft'
+                    : null;
   return {
     view: isCraftOpen() ? 'craft' : 'run',
     phase: runPhase(),

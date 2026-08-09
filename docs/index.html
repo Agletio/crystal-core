@@ -620,6 +620,24 @@
   .setcomp { font-size: 11px; color: var(--dust); margin-top: 8px; }
   .setrows { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .socket__hint { font-size: 11px; color: var(--dust); font-style: italic; }
+  /* How far a crystal has levelled. Only moves while it is socketed. */
+  .grow { height: 4px; background: var(--void); border: 1px solid var(--seam); margin: 6px 0 3px; }
+  .grow__fill { height: 100%; background: var(--amethyst); }
+  .socket__grow, .crystal__grow { font-size: 10px; color: var(--dust); }
+
+  /* --- the collection -------------------------------------------------- */
+  .crystals { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+  .crystal { border: 1px solid var(--seam); border-left-width: 3px; border-left-color: var(--amethyst); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
+  /* The four that a run actually reads, told apart from the shelf behind them. */
+  .crystal--socket { background: var(--seam); border-left-color: var(--citrine); }
+  .crystal__head { display: flex; align-items: center; gap: 8px; }
+  .crystal__title { min-width: 0; }
+  .crystal__name { font-family: var(--display); font-size: 13px; }
+  .crystal .mini { margin-top: 6px; }
+  .quests { display: grid; gap: 8px; }
+  .quest { border: 1px solid var(--seam); border-left: 3px solid var(--rust); padding: 8px 9px; }
+  .quest--done { opacity: .45; border-left-color: var(--verdite); }
+  .quest__detail { font-size: 11px; color: var(--dust); margin: 3px 0 4px; }
   .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
 
   .mini--go { border-color: var(--rust); color: var(--bone); }
@@ -957,6 +975,7 @@
       <button class="mini" id="open-craft">Crafting</button>
       <button class="mini" id="open-shop">Shop</button>
       <button class="mini" id="open-haul">Haul</button>
+      <button class="mini" id="open-crystals">Crystals</button>
       <button class="mini" id="open-stash">Stash</button>
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
@@ -1164,6 +1183,31 @@
           <button class="buy" id="haul-take"></button>
           <button class="buy" id="haul-sell"></button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The collection. Sockets hold four and nothing is ever spent, so what you
+     own outgrows what you can use almost at once — this is where two crystals
+     are compared, and where the worlds you have not reached are listed. -->
+<div class="modal" id="crystals" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">Crystals</h2>
+      <div class="seedbar">
+        <code id="crystals-count">0 owned</code>
+        <button class="mini" id="crystals-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="panel">
+        <p class="empty" id="crystals-npc"></p>
+        <div class="crystals" id="crystals-list"></div>
+      </div>
+      <div class="panel">
+        <h3 class="panel__title">The other worlds</h3>
+        <div class="quests" id="crystals-quests"></div>
       </div>
     </div>
   </div>

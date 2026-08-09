@@ -16,7 +16,8 @@ import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
 import { crystalsIn, haulFull, socketFor, socketItem, socketed, unsocket } from '../game/state';
-import type { GameState } from '../game/state';
+import type { GameState, GiftPlace } from '../game/state';
+import { crystalProgress, giftChance } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
@@ -42,6 +43,13 @@ export type Phase = 'menu' | 'running' | 'results';
 
 /** Gear drops named in the report before it starts counting instead. */
 const LOOT_ROWS = 6;
+
+/** Where a gift ended up, said the way the screen it landed on is named. */
+const WHERE: Record<GiftPlace, string> = {
+  carried: 'in your bag',
+  stashed: 'in your stash',
+  hauled: 'in the haul',
+};
 
 let game: GameState;
 let sim: RunSim | null = null;
@@ -153,6 +161,23 @@ function renderMenu(): void {
       world.title = family.blurb;
       button.append(world);
       button.append(el('div', 'socket__mods', `${held.mods.length} modifiers`));
+      // What being socketed is FOR, beyond the run: a crystal only levels
+      // while it is in here, so the bar belongs where the choice is made.
+      const grown = crystalProgress(held);
+      const bar = el('div', 'grow');
+      const fill = el('div', 'grow__fill');
+      fill.style.width = `${Math.round(grown.fraction * 100)}%`;
+      bar.append(fill);
+      button.append(bar);
+      button.append(
+        el(
+          'div',
+          'socket__grow',
+          grown.need === null
+            ? 'Tier 4 — as far as it goes'
+            : `${Math.floor(grown.xp)} / ${grown.need} to tier ${grown.tier + 1}`
+        )
+      );
       for (const mod of held.mods) button.append(el('div', 'chosen__mod', describeMod(mod)));
     } else {
       button.append(el('div', 'socket__empty', slot.name));
@@ -218,7 +243,9 @@ function launch(): void {
   const set = socketed(game);
 
   seed = Math.floor(Math.random() * 1e9);
-  sim = new RunSim(set, game.character, new Rng(seed));
+  // Who you might meet is the player's business, not the set's: the chance
+  // falls as the collection fills, and the sim is only told the number.
+  sim = new RunSim(set, game.character, new Rng(seed), { crystalGift: giftChance(game) });
 
   note(
     `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
@@ -467,12 +494,12 @@ function renderResults(report: RunReport, run: RunState): void {
   // Handed over rather than dropped, and it goes to the dock: the opening
   // tells you to click the wand there, so it must not read as hauled.
   if (report.gifts.length > 0) {
-    right.append(el('p', 'resultcard__sub', 'The Fissure gave you'));
+    right.append(el('p', 'resultcard__sub', 'Given to you'));
     const given = el('div', 'lootlist');
-    for (const item of report.gifts) {
+    for (const gift of report.gifts) {
       const r = el('div', 'lootrow');
-      r.append(el('span', 'lootrow__k', item.name));
-      r.append(el('span', 'lootrow__v', 'in your bag'));
+      r.append(el('span', 'lootrow__k', `${gift.item.name} — ${gift.from}`));
+      r.append(el('span', 'lootrow__v', WHERE[gift.where]));
       given.append(r);
     }
     right.append(given);
@@ -514,6 +541,7 @@ function absorbEvents(): void {
   // actually explain a run, and the kill count is already on screen.
   for (const e of sim.drainEvents() as RunEvent[]) {
     if (e.kind === 'finale') note(e.herald, 'note', at);
+    else if (e.kind === 'met') note(e.said, 'add', at);
     else if (e.kind === 'cleared') {
       note(`Cleared in ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'add', at);
     } else if (e.kind === 'died') {

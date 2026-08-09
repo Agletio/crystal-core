@@ -1248,13 +1248,98 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
  *
  * `quality` rides along because the crafting currencies gate on it, so the
  * capacity a tier grants and the currencies that can reach it stay in step.
+ * `xp` is the TOTAL a crystal must have earned to sit at that tier.
  */
 export const CRYSTAL_TIERS = [
-  { tier: 1, mods: 0, quality: 'rough' as Quality },
-  { tier: 2, mods: 1, quality: 'seamed' as Quality },
-  { tier: 3, mods: 2, quality: 'faceted' as Quality },
-  { tier: 4, mods: 3, quality: 'brilliant' as Quality },
+  { tier: 1, mods: 0, quality: 'rough' as Quality, xp: 0 },
+  { tier: 2, mods: 1, quality: 'seamed' as Quality, xp: 5 },
+  { tier: 3, mods: 2, quality: 'faceted' as Quality, xp: 20 },
+  { tier: 4, mods: 3, quality: 'brilliant' as Quality, xp: 60 },
 ];
+
+/**
+ * What one cleared descent is worth to every crystal SOCKETED for it. Danger is
+ * the multiplier, so levelling a blank in a vicious set is fast and levelling
+ * four blanks together is slow — a socket spent on a fresh crystal is a socket
+ * not carrying danger, which is the whole cost.
+ *
+ * The flat term is why it is `1 + danger`, not `danger`: the crystals you are
+ * given are blank, four blanks are a set with no danger at all, and a game
+ * whose first crystals can never level is a game with no way up.
+ */
+export const CRYSTAL_XP = {
+  perClear: 1,
+  /** Danger points that add one clear's worth on top. */
+  perDanger: 55,
+};
+
+/**
+ * Who hands out the Normal crystals: met once mid-descent, at a chance read off
+ * how many Normal ones you already hold. Four ends it, and the rest of the
+ * collection is quests rather than luck.
+ *
+ * The first is certain. Four sockets with nothing that can reach them is not a
+ * slow start, it is a game that never begins.
+ */
+export const LAMPWRIGHT = {
+  name: 'the Lampwright',
+  met: 'The Lampwright is working a seam by lanternlight, and gives you what will not hold a flame.',
+  chance: [1, 0.34, 0.22, 0.14],
+  tier: 1,
+  family: 'normal' as MonsterFamily,
+};
+
+/**
+ * The other two worlds are not given, they are gone and got. Every objective is
+ * something a player who has been levelling crystals can already do — the point
+ * is knowing to go and do it on purpose.
+ *
+ * `share` is a floor on the composition, and a quarter is ONE socketed crystal
+ * of that family out of four: the second gift is earned by using the first.
+ */
+export interface CrystalQuest {
+  id: string;
+  name: string;
+  /** The objective, in words — this is also what the screen shows. */
+  detail: string;
+  need: { danger: number; family?: MonsterFamily; share?: number };
+  gives: { tier: number; family: MonsterFamily };
+}
+
+export const CRYSTAL_QUESTS: CrystalQuest[] = [
+  {
+    id: 'demonic_i',
+    name: 'The First Door',
+    detail: 'Clear a descent at 30 danger.',
+    need: { danger: 30 },
+    gives: { tier: 1, family: 'demonic' },
+  },
+  {
+    id: 'prismatic_i',
+    name: 'The Lit Seam',
+    detail: 'Clear a descent at 60 danger.',
+    need: { danger: 60 },
+    gives: { tier: 1, family: 'prismatic' },
+  },
+  {
+    id: 'demonic_ii',
+    name: 'Deeper In',
+    detail: 'Clear a descent at 110 danger with a Demonic crystal socketed.',
+    need: { danger: 110, family: 'demonic', share: 0.25 },
+    gives: { tier: 1, family: 'demonic' },
+  },
+  {
+    id: 'prismatic_ii',
+    name: 'Further Through',
+    detail: 'Clear a descent at 110 danger with a Prismatic crystal socketed.',
+    need: { danger: 110, family: 'prismatic', share: 0.25 },
+    gives: { tier: 1, family: 'prismatic' },
+  },
+];
+
+export const QUEST_BY_ID: Record<string, CrystalQuest> = Object.fromEntries(
+  CRYSTAL_QUESTS.map((q) => [q.id, q])
+);
 
 /** Every crystal rolls at the same item level, so tier buys room, never power. */
 export const CRYSTAL_ILVL = 70;
@@ -1313,8 +1398,13 @@ export const MONSTER_BASE = {
 export const SOCKET_SCALE = {
   size: [0.62, 1, 1.15, 1.3, 1.45],
   packs: [0.66, 1, 1.5, 2, 2.5],
-  /** The bare Fissure thins its packs as well; a socketed run never does. */
-  packSize: [0.66, 1, 1, 1, 1],
+  /**
+   * Thinner packs at the bottom. Every other rung adds LENGTH, which a level
+   * one character survives by walking out hurt — but the first crystal you are
+   * given lands on a character who has cleared the Fissure exactly once, and a
+   * full-sized pack at 50 monsters is what kills them.
+   */
+  packSize: [0.66, 0.8, 1, 1, 1],
 };
 
 const rung = (n: number, table: number[]): number =>
@@ -1971,13 +2061,12 @@ export const FISSURE = {
    * the shards themselves, because buying them is what the opening teaches, and
    * several times what it asks for so the rest is yours to place.
    *
-   * The crystal is GIVEN, never sold — and until the NPC exists it is the only
-   * one a fresh game can reach, without which four sockets are furniture.
+   * No crystal: that gift is the Lampwright's, and their first is certain, so a
+   * first clear still comes back with one.
    */
   firstClear: {
     gold: 30,
     weapon: 'ash_wand',
-    crystal: 1,
     currency: {} as Record<string, number>,
   },
 };
@@ -1997,7 +2086,7 @@ export interface StartPreset {
  * judging the endgame at the start.
  */
 export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
-  /** Nothing at all. The Fissure is free; crystals are what the first clear buys. */
+  /** Nothing at all. The Fissure is free, and the Lampwright brings the rest. */
   fresh: { gold: 0, currency: {}, crystals: [], gear: [], equipped: false },
   dev: {
     gold: 260,

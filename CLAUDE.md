@@ -67,6 +67,27 @@ Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
 XP and gold. Zero is the bare Fissure and the baseline for all four.
 
+## Where crystals come from
+
+Never a shop. **The Lampwright** is met mid-descent and hands you a Normal
+crystal, at a chance that falls as you collect — certain at none held, nothing
+at four (`LAMPWRIGHT`). The sim is told only the number, rolls the meeting off
+the run's own seed, and the report is what pays it out, so a meeting on a
+descent you die in was only ever a meeting.
+
+The Demonic and Prismatic ones are **quests** (`CRYSTAL_QUESTS`): clear at a
+given danger, and later clear at a danger with one of that family already
+socketed — the second gift earned by using the first. Each pays once.
+
+A crystal **levels only while socketed**, one clear at a time, multiplied by the
+set's danger (`CRYSTAL_XP`, `advanceSocketed`). That is the cost of levelling a
+blank: it is holding a socket that could have carried danger. A tier gained
+rewrites the base, name, quality and capacity together — nothing reads a crystal
+by fewer than all four — and never removes what is already rolled on it.
+
+`src/ui/crystals.ts` is where the collection is compared, since four sockets
+against everything you have ever been given is a comparison rather than a bag.
+
 ## Money
 
 **Gold** is the one currency prices are quoted in. It comes off corpses and out
@@ -128,6 +149,7 @@ src/skills-tree.ts allocation rules; src/trees/* are the webs
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
 src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation
+src/game/crystals.ts  gifts, quests, and a crystal's climb from T1 to T4
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/            one module per screen
 ```

@@ -6,6 +6,7 @@
  * story — a save from another one is refused rather than half-read.
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import { healQuests } from './crystals';
 import { qualityOf } from '../mods';
 import type { GameState } from './state';
 import {
@@ -180,17 +181,24 @@ export function heal(game: GameState): Healed {
   // Hand-edited saves reach here, and one that predates the haul has no key.
   game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
 
-  // A retired family costs the crystal its world, not the crystal.
   for (const item of [
     ...game.inventory,
     ...game.stash,
     ...game.haul,
     ...Object.values(game.sockets ?? {}),
   ]) {
-    if (item.kind !== 'crystal' || FAMILY_BY_ID[String(item.meta.family)]) continue;
-    item.meta.family = 'normal';
-    item.name = crystalName(Number(item.meta.tier), 'normal');
+    if (item.kind !== 'crystal') continue;
+    // A retired family costs the crystal its world, not the crystal.
+    if (!FAMILY_BY_ID[String(item.meta.family)]) {
+      item.meta.family = 'normal';
+      item.name = crystalName(Number(item.meta.tier), 'normal');
+    }
+    // Written before crystals levelled, or re-tuned since: xp starts at the
+    // floor of the tier it already holds, so nothing is ever demoted.
+    const floor = CRYSTAL_TIERS.find((t) => t.tier === Number(item.meta.tier))?.xp ?? 0;
+    if (!(Number(item.meta.xp) >= floor)) item.meta.xp = floor;
   }
+  healQuests(game);
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;

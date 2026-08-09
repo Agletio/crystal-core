@@ -232,8 +232,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? "Close this and go again."
         : ctx.phase === "results"
           ? "Back to the Fissure."
-          : "Go again. Socket the crystal the Fissure gave you first.",
-    hint: "A crystal makes the descent deadlier and pays for it. Socketing keeps it — you never spend one.",
+          : "Go again. Socket the crystal the Lampwright gave you first.",
+    hint: "Socketing keeps it — you never spend one, and a crystal only levels while it is in a socket.",
     target: (ctx) =>
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
