@@ -8,6 +8,7 @@
  * engine RESPONDS to them, which is the part that rots.
  */
 import {
+  ALL_MODS,
   CRYSTAL_MODS,
   GEAR_BASES,
   GEAR_MODS,
@@ -18,6 +19,8 @@ import { ModPool, instantiate } from './mods';
 import { makeItem, makeCrystal } from './economy';
 import { heroStats, monsterStats, mapDensity } from './sim/stats';
 import { describeMod } from './crafting';
+import { describeStatLine, tagWord } from './mod-text';
+import { treeFor } from './skills-tree';
 import { Rng } from './rng';
 import { MONSTER_BY_ID } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
@@ -231,6 +234,62 @@ line('\n── TEXT — does the player read words, not identifiers? ───�
     rendered.set(body, [...(rendered.get(body) ?? []), entry.defId]);
   }
   check(leaks.length === 0, 'no camelCase identifiers reach the player', leaks.slice(0, 3).join(' | '));
+
+  // A tag with no word is dropped in SILENCE, and a dropped tag is a lie: it
+  // is the tag that decides whether the line does anything for the skill you
+  // are holding. 'attack' had no word, so a mace's attack-only damage and a
+  // ring's read as the same sentence.
+  //
+  // Everywhere, not just the pool: every flat typed damage line in the game is
+  // a base implicit, which is precisely where nothing was looking.
+  const wordless = new Set<string>();
+  const seen = (lines: Array<{ tags?: string[] }>) => {
+    for (const line of lines) {
+      for (const tag of line.tags ?? []) if (!tagWord(tag)) wordless.add(tag);
+    }
+  };
+  for (const mod of ALL_MODS) for (const tier of mod.tiers) seen(tier.stats);
+  for (const base of GEAR_BASES) seen(base.implicit ?? []);
+  for (const skill of SKILLS) {
+    for (const node of treeFor(skill.id)) seen(node.stats ?? []);
+  }
+  check(
+    wordless.size === 0,
+    'every tag on every stat line has a word the player can read',
+    `dropped in silence: ${[...wordless].join(', ')}`
+  );
+
+  // The general form of that bug: two lines that READ the same must BEHAVE the
+  // same, because tags are the whole of how a line decides whether it applies.
+  // Values are normalised out, so this compares wording against tags and
+  // nothing else. A mace's attack-only damage and a ring's read identically
+  // and only one of them arms a spell.
+  const wording = new Map<string, Map<string, string[]>>();
+  const record = (where: string, lines: Array<{ stat: string; form: string; tags?: string[] }>) => {
+    for (const stat of lines) {
+      const tags = [...(stat.tags ?? [])].sort();
+      const text = describeStatLine({ stat: stat.stat, form: stat.form, value: 1, tags } as never);
+      if (!wording.has(text)) wording.set(text, new Map());
+      const byTags = wording.get(text)!;
+      byTags.set(tags.join('+'), [...(byTags.get(tags.join('+')) ?? []), where]);
+    }
+  };
+  for (const mod of ALL_MODS) for (const tier of mod.tiers) record(mod.id, tier.stats);
+  for (const base of GEAR_BASES) record(base.id, base.implicit ?? []);
+  for (const skill of SKILLS) {
+    for (const node of treeFor(skill.id)) record(`${skill.id}/${node.id}`, node.stats ?? []);
+  }
+  const ambiguous = [...wording.entries()].filter(([, byTags]) => byTags.size > 1);
+  check(
+    ambiguous.length === 0,
+    'and no two lines read alike while behaving differently',
+    ambiguous
+      .slice(0, 3)
+      .map(([text, byTags]) =>
+        `"${text}" is ${[...byTags.entries()].map(([t, w]) => `[${t}] on ${w[0]}`).join(' but ')}`
+      )
+      .join(' | ')
+  );
 
   // Two DIFFERENT mod families producing identical text is the fire/cold bug.
   const collisions = [...rendered.entries()].filter(

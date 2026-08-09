@@ -1248,6 +1248,31 @@ $('skills-close').click();
     /never by armour/.test(document.querySelector('.statdetail')?.textContent ?? ''),
     'and states the rule that damage over time skips armour'
   );
+
+  // A mace does nothing for a spell. That is correct, and it used to be
+  // invisible: a line that never applies never reaches a pass, so equipping one
+  // and seeing no number move reads as the sheet ignoring you.
+  const mace = filled('#inv-gear').find((b) => /cudgel|maul/i.test(named(b)));
+  assert(!!mace, 'the dev kit carries a mace to test with', named(filled('#inv-gear')[0]));
+
+  // The mod text is where this has to be answerable before you equip anything.
+  // A mace and a ring both granted "+5 Physical Damage" and only one of them
+  // arms a spell, because the tag that decided it had no word and was dropped.
+  mace.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(
+    /Damage to Attacks/.test(text('tooltip')),
+    'a mace says its damage is for Attacks, before you wear it',
+    text('tooltip')
+  );
+  mace.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+
+  mace.click();
+  const detailText = () => document.querySelector('.statdetail')?.textContent ?? '';
+  assert(
+    /needs Attack/.test(detailText()),
+    'wearing it for a spell says so rather than saying nothing',
+    detailText().slice(-160)
+  );
   $('sheet-close').click();
 }
 assert($('skills').hidden === true, 'and the skills screen closes again');

@@ -1832,6 +1832,30 @@ rule('THE SHEET — does every number on it survive being checked?');
     }
   }
 
+  // Holding a mace and casting with it changes nothing, which is right — and
+  // used to be invisible, because a line that never applies never reaches a
+  // pass and so leaves no row to look at.
+  {
+    const mace = GEAR_BASE_BY_ID.cudgel;
+    const flat = (mace.implicit ?? []).find((s) => s.stat === 'damage')?.range[0] ?? 0;
+    const armed = (skillId: string) => {
+      const character = createGame('fresh').character;
+      character.skillId = skillId;
+      character.equipment = { weapon: makeGear('cudgel', 10) };
+      return damageDetail(character).excluded;
+    };
+    check(
+      flat > 0 && armed('blight').flat === flat && armed('blight').needs.includes('attack'),
+      `a spell reports the mace's +${flat} as shut out, and says what it needs`,
+      JSON.stringify(armed('blight'))
+    );
+    check(
+      armed('strike').flat === 0,
+      'and an attack reports nothing shut out, because nothing is',
+      JSON.stringify(armed('strike'))
+    );
+  }
+
   for (const entry of wrong.slice(0, 6)) line(`  ${entry}`);
   check(
     wrong.length === 0,

@@ -10,6 +10,7 @@ import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '.
 import { describeMod } from '../crafting';
 import { characterStats, damageDetail } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
+import { tagWord } from '../mod-text';
 import { xpToNext } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
 import { wear } from './wear';
@@ -169,7 +170,10 @@ function damagePanel(): HTMLElement {
 
   const line = (html: string) => {
     const p = el('div');
-    p.innerHTML = html;
+    // Written across source lines, read as one sentence. HTML collapses the
+    // ragged whitespace on screen but textContent keeps it, and textContent is
+    // what a screen reader says out loud.
+    p.innerHTML = html.replace(/\s+/g, ' ').trim();
     sum.append(p);
   };
   const b = (t: string) => `<b>${t}</b>`;
@@ -179,6 +183,17 @@ function damagePanel(): HTMLElement {
   if (mixed) {
     line(`A skill deals its own type whatever scaled it — the parts above are
           how much got through, not what you are hitting with.`);
+  }
+  // The question the breakdown cannot answer by itself: gear whose damage never
+  // reaches a pass leaves no row, so equipping a mace to cast with looks like
+  // the sheet ignoring you.
+  if (detail.excluded.flat > 0) {
+    const needs = detail.excluded.needs.map((t) => tagWord(t) ?? t).join(' and ');
+    line(
+      `${b(`+${round(detail.excluded.flat)}`)} flat damage on your gear needs
+       ${b(needs)}, which ${detail.skill.name} is not — it is
+       ${b(detail.skill.tags.join(', '))}.`
+    );
   }
   if (detail.seconds > 0) {
     line(

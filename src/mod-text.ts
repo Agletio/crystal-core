@@ -39,7 +39,14 @@ const TAG_WORDS: Record<string, string> = Object.fromEntries([
   ...DAMAGE_TYPES.map((t) => [t.id, t.name]),
   ...DAMAGE_GROUPS.map((g) => [g, titled(g)]),
   ...DELIVERY_TAGS.map((t) => [t, titled(t)]),
+  ['attack', 'Attack'], // not in DELIVERY_TAGS: that list mints a mod per entry
 ]);
+
+/** Null when nothing here can say it, which is what the mods check refuses. */
+export const tagWord = (tag: string): string | null => TAG_WORDS[tag] ?? null;
+
+/** A suffix, not a prefix: "Attack Damage" reads as a kind of damage. */
+const FAMILY_WORDS: Record<string, string> = { attack: 'Attacks', spell: 'Spells' };
 
 /** `fireRes` → Fire, `occultRes` → Occult. Null when it isn't a resistance. */
 function resistancePrefix(stat: string): string | null {
@@ -76,8 +83,18 @@ export function qualify(stat: string, tags: string[] = []): string {
 
 /** One stat line, as text. */
 export function describeStatLine(line: StatRoll): string {
-  const name = qualify(line.stat, line.tags);
   const sign = line.value >= 0 ? '+' : '';
+
+  // Flat damage always names who can use it. A mace and a ring both grant
+  // "+5 Physical Damage" and only one of them arms a spell.
+  if (line.form === 'flat' && line.stat === 'damage') {
+    const families = line.tags.filter((t) => FAMILY_WORDS[t]);
+    const name = qualify(line.stat, line.tags.filter((t) => !FAMILY_WORDS[t]));
+    const reach = families.length ? families : Object.keys(FAMILY_WORDS);
+    return `${sign}${line.value} ${name} to ${reach.map((t) => FAMILY_WORDS[t]).join(' and ')}`;
+  }
+
+  const name = qualify(line.stat, line.tags);
   if (line.form === 'flat') return `${sign}${line.value} ${name}`;
   if (line.form === 'inc') return `${sign}${line.value}% increased ${name}`;
   return `${line.value}% more ${name}`;
