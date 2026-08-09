@@ -1710,7 +1710,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
   dev: {
     fragments: 260,
     currency: {},
-    crystals: [1, 1, 2],
+    // Off the table, so a new rung arrives in the kit without a second edit.
+    crystals: CRYSTAL_TIERS.flatMap((t) => [t.tier, t.tier, t.tier]),
     gear: [],
     equipped: true,
   },
