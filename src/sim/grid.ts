@@ -73,7 +73,25 @@ export class Grid {
   walkable(x: number, y: number): boolean {
     return this.at(Math.round(x), Math.round(y)) !== WALL;
   }
+
+  /**
+   * Whether a BODY of this radius fits, rather than whether its centre does: a
+   * centre-only test lets a sprite sit half a tile into the rock. Tile n covers
+   * [n-0.5, n+0.5], so the body spans the tiles its extent rounds to.
+   */
+  fits(x: number, y: number, radius: number): boolean {
+    const r = Math.min(radius, BODY_MAX);
+    for (let ty = Math.round(y - r); ty <= Math.round(y + r); ty++) {
+      for (let tx = Math.round(x - r); tx <= Math.round(x + r); tx++) {
+        if (this.at(tx, ty) === WALL) return false;
+      }
+    }
+    return true;
+  }
 }
+
+/** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
+const BODY_MAX = 0.45;
 
 /**
  * Can a straight line between two points avoid a wall? Sampled along the

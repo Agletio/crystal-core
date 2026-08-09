@@ -42,9 +42,22 @@ export interface SkillUse {
 
 export type SkillBehaviour = (use: SkillUse) => void;
 
-/** Distance between two entities, in tiles. */
+/** Distance between two entities' CENTRES, in tiles. */
 export function separation(a: Entity, b: Entity): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/**
+ * Whether a circle of `radius` drawn around `at` touches `enemy` AT ALL.
+ *
+ * Every area is drawn as that circle, so this has to be the body it overlaps
+ * rather than the centre it contains — a ring visibly over a monster that took
+ * no damage is the game contradicting the only picture of the rule it gives
+ * you. Only the victim's body counts: the circle is a geometric radius from a
+ * point, not a second body.
+ */
+export function within(at: Entity, enemy: Entity, radius: number): boolean {
+  return separation(at, enemy) - enemy.radius <= radius;
 }
 
 /**
@@ -125,7 +138,7 @@ export function blastAround(
   if (multiplier <= 0 || radius <= 0) return;
   for (const enemy of use.enemies) {
     if (enemy === at || enemy.dead) continue;
-    if (separation(at, enemy) > radius) continue;
+    if (!within(at, enemy, radius)) continue;
     use.hit(enemy, multiplier * scale(enemy));
   }
   use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32);
@@ -329,7 +342,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     if (splash > 0) {
       for (const enemy of use.enemies) {
         if (enemy === use.primary) continue;
-        if (separation(use.user, enemy) <= radius) swing(enemy, splash);
+        if (within(use.user, enemy, radius)) swing(enemy, splash);
       }
     }
 
@@ -366,7 +379,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
 
     const field = (at: Entity): void => {
-      const caught = use.enemies.filter((e) => separation(at, e) <= radius);
+      const caught = use.enemies.filter((e) => within(at, e, radius));
       // Always poisoned, even if the radius somehow excludes it.
       if (!caught.includes(at)) caught.push(at);
       for (const enemy of caught) {

@@ -1498,9 +1498,11 @@ rule('FIREBALL — do the notables actually change the cast?');
 // fork node hit "the nearest other enemy" with no distance limit at all, which
 // on an open map is a talent that reaches through walls.
 {
+  // radius 0: a POINT target, so what follows measures the mechanic rather
+  // than how fat the thing standing in it happens to be.
   const dummy = (x: number, y: number, life = 1e6) =>
     ({
-      x, y, life, dead: false, ailments: [] as unknown[],
+      x, y, life, radius: 0, dead: false, ailments: [] as unknown[],
       stats: { maxLife: 1e6, attacksPerSecond: 1 },
     }) as any;
 
@@ -1614,7 +1616,7 @@ rule('EVERY TREE — does every notable actually change the cast?');
 {
   const dummy = (x: number, y: number, life: number) =>
     ({
-      x, y, life, dead: false, ailments: [] as unknown[],
+      x, y, life, radius: 0, dead: false, ailments: [] as unknown[],
       stats: { maxLife: 1e6, attacksPerSecond: 1 },
     }) as any;
 
@@ -2128,7 +2130,7 @@ rule('THE SHEET — does every number on it survive being checked?');
 // broken.
 {
   const dummy = (x: number, y: number) =>
-    ({ x, y, life: 1e6, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+    ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
 
   /** What one cast asks the sim for, against a single enemy standing on you. */
   const castOnce = (skillId: string, grants: Record<string, unknown>) => {
@@ -2482,6 +2484,86 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     wall.length === 0,
     'every tier can be cleared in gear the tier below it drops',
     `${wall.join(', ')} cannot be entered in anything that tier hands out`
+  );
+}
+
+// ===========================================================================
+rule('BODIES — do they stay out of the rock, and does an area hit what it draws?');
+
+// Both of these are things you can only see, which is why both went unnoticed:
+// nothing here reads a position against a wall, and nothing reads a damage
+// radius against the circle drawn for it.
+{
+  // 1. Separation is what shoves things sideways — a path only ever runs down
+  //    tile centres — so a body ends up in rock by being pushed there.
+  let inRock = 0;
+  let samples = 0;
+  let worst = 0;
+  for (const seed of [3, 11, 29, 47]) {
+    const c = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
+    const sim = new RunSim(c, ladderCharacter(3, new Rng(seed)), new Rng(seed * 7));
+    const { grid } = sim.state.map;
+    for (let k = 0; k < 5000 && sim.state.status === 'running'; k++) {
+      sim.step(1 / 30);
+      if (k % 15) continue;
+      for (const e of [sim.state.hero, ...sim.state.monsters]) {
+        if (e.dead) continue;
+        samples++;
+        if (grid.fits(e.x, e.y, e.radius)) continue;
+        inRock++;
+        worst = Math.max(worst, e.radius);
+      }
+    }
+  }
+  const share = (inRock / Math.max(1, samples)) * 100;
+  line(`  ${share.toFixed(2)}% of bodies overlap rock (worst radius ${worst.toFixed(2)})`);
+  check(
+    share < 0.6,
+    `bodies stay out of the walls across ${samples} samples`,
+    `${share.toFixed(2)}% are standing in rock — collision is reading centres, not bodies`
+  );
+
+  // 2. Every area is DRAWN as a circle, and the vfx carries the radius the sim
+  //    used. A monster the circle covers has to be one the circle hit.
+  const dummy = (x: number, y: number, radius: number) =>
+    ({
+      x, y, radius, dead: false, kind: 'monster', ailments: [],
+      stats: { maxLife: 1e6, attacksPerSecond: 1, critChance: 0, critMultiplier: 0, damageByType: {} },
+    }) as any;
+
+  const skill = SKILL_BY_ID.blight;
+  const R = skill.params?.radius as number;
+  const user = dummy(-4, 0, 0.34);
+  // The cloud lands on the primary, so every distance below is from THAT.
+  const centre = dummy(0, 0, 0.3);
+  // Centre outside the circle, body inside it: drawn as a hit, resolved as a
+  // miss. `centre` itself is poisoned unconditionally, so it proves nothing.
+  const edge = dummy(R + 0.25, 0, 0.4);
+  const far = dummy(R + 1.4, 0, 0.4);
+  const poisoned: any[] = [];
+  let drawn = 0;
+
+  SKILL_BEHAVIOURS[skill.behaviour]({
+    skill, user, primary: centre, enemies: [centre, edge, far],
+    rng: new Rng(3), grants: {}, crit: false, castIndex: 0,
+    hit: () => {},
+    ailment: (t: any) => poisoned.push(t),
+    areaRadius: (base: number) => base,
+    vfx: (kind: string, points: any[]) => {
+      if (kind === 'blight_field') drawn = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+    },
+  } as any);
+
+  line(`  a ${drawn.toFixed(2)} tile circle; a body centred ${(R + 0.25).toFixed(2)} out, reaching ${(R + 0.25 - 0.4).toFixed(2)}`);
+  check(
+    drawn > 0 && poisoned.includes(edge),
+    'a monster the circle visibly covers is a monster the circle hit',
+    'the ring lands on it and nothing happens — the area is testing centres'
+  );
+  check(
+    !poisoned.includes(far),
+    'and one it does not reach is left alone',
+    'the area reaches past what it draws'
   );
 }
 

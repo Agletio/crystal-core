@@ -569,11 +569,23 @@ export class RunSim {
     this.nudge(b, nx * bw, ny * bw);
   }
 
-  /** Move an entity, refusing any component that would put it inside a wall. */
+  /**
+   * Move an entity, refusing any component that would put its BODY inside a
+   * wall. Separation is what pushes things into rock — a path only ever runs
+   * down tile centres — so this is where the clipping was.
+   *
+   * An entity already overlapping a wall (spawned at a room's edge, or scaled
+   * up by its rank where it stood) falls back to its centre, so it can always
+   * walk out of somewhere it should never have been.
+   */
   private nudge(e: Entity, dx: number, dy: number): void {
     const { grid } = this.state.map;
-    if (grid.walkable(e.x + dx, e.y)) e.x += dx;
-    if (grid.walkable(e.x, e.y + dy)) e.y += dy;
+    const stuck = !grid.fits(e.x, e.y, e.radius);
+    const ok = (x: number, y: number): boolean =>
+      stuck ? grid.walkable(x, y) : grid.fits(x, y, e.radius);
+
+    if (ok(e.x + dx, e.y)) e.x += dx;
+    if (ok(e.x, e.y + dy)) e.y += dy;
   }
 
   /** Decay the transient pose and fall back to whether it's moving. */
