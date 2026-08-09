@@ -200,7 +200,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? // Once a slot is picked the gear is what you click, and it is in the
           // dock — ringing the slot lights the button you just pressed.
           ctx.picking
-          ? dockSlotId(g.character.equipment.weapon?.id ?? roughGear(g)?.id ?? "")
+          ? // The one off the bench: it has been crafted, so it is no longer Rough.
+            dockSlotId(craftItem(g)?.id ?? roughGear(g)?.id ?? "")
           : slotButtonId("weapon")
         : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,

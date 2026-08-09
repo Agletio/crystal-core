@@ -50,8 +50,8 @@ export const BODY: Record<PoseId, string[]> = {
     '..#bb....#bb#...',
     '..###.....###...',
   ],
-  // Shoulders squared over the front foot. Feet stay where walk0 put them —
-  // the lunge is the whole figure going forward, and boots are one grid.
+  // walk1's legs exactly, so one boot drawing serves both: a lunge is a
+  // stride with the shoulders squared and the arm driving through it.
   attack: [
     '................',
     '................',
@@ -60,34 +60,34 @@ export const BODY: Record<PoseId, string[]> = {
     '....#hhhh#......',
     '....#hsse#......',
     '....#ssss#......',
-    '....#tttt##.....',
-    '..##tttttTt#....',
+    '....##ss#.......',
+    '...#tttttt##....',
+    '..#tTttttTtt#...',
     '..#sTttttTss#...',
     '...#TttttT#.....',
     '...#llllll#.....',
-    '...#lL##Ll#.....',
-    '...#lL..Ll#.....',
-    '...#bb..bb#.....',
-    '...###..###.....',
+    '..#lL#..#Ll#....',
+    '..#bb....#bb#...',
+    '..###.....###...',
   ],
-  // Casting arm up and locked to the shoulder, so it reads as an arm rather
-  // than as a brick floating beside the head.
+  // Braced back on the rear foot with the arm out in FRONT, not straight up.
+  // A raised arm reads as a signal; an extended one reads as aiming.
   cast: [
     '................',
-    '..........##....',
-    '.........#ss#...',
-    '.....####Tss#...',
-    '....#hhhh#s#....',
-    '....#hsse##.....',
-    '....#ssss#......',
-    '...##tttt#......',
+    '................',
+    '................',
+    '.....####.......',
+    '....#hhhh#......',
+    '....#hsse#.##...',
+    '....#ssss#ss#...',
+    '...##tttt##.....',
     '..#tTttttT#.....',
     '..#sTttttT#.....',
     '...#TttttT#.....',
     '...#llllll#.....',
     '...#lL##Ll#.....',
-    '...#lL..Ll#.....',
-    '...#bb..bb#.....',
-    '...###..###.....',
+    '..#lL...Ll#.....',
+    '..#bb...bb#.....',
+    '..###...###.....',
   ],
 };

@@ -9,7 +9,8 @@
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
-import { lookRows } from './look';
+import { lookRows, roleChar } from './look';
+import { FAMILY_ART } from './gear-art';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
 import type { Look } from '../types';
@@ -337,7 +338,7 @@ function heroArt(palette: Palette, frame: number): PixelArt {
  */
 export function lookKeyColours(palette: Palette): Record<string, string> {
   const ink = mix(palette.rockDeep, palette.void, 0.6);
-  return {
+  const out: Record<string, string> = {
     '#': ink,
     s: mix(palette.dust, palette.ember, 0.35),
     e: palette.citrine,
@@ -347,21 +348,23 @@ export function lookKeyColours(palette: Palette): Record<string, string> {
     l: mix(palette.seam, palette.rockDeep, 0.25),
     L: mix(palette.seam, palette.rockDeep, 0.5),
     b: mix(palette.ember, palette.rockDeep, 0.55),
-    // Plate reads as cold metal; the lit face is what gives it a shoulder.
-    p: mix(palette.quartz, palette.rockDeep, 0.35),
-    P: mix(palette.quartz, palette.chalk, 0.35),
-    d: mix(palette.quartz, palette.rockDeep, 0.6),
-    c: mix(palette.amethyst, palette.rockDeep, 0.45),
-    C: mix(palette.amethyst, palette.chalk, 0.25),
-    h2: mix(palette.ember, palette.rockDeep, 0.4),
     w: mix(palette.ember, palette.rockDeep, 0.55),
     m: mix(palette.chalk, palette.rockDeep, 0.45),
     M: palette.chalk,
     g: palette.amethyst,
-    // The rung, made visible: absent at tier 1, dull at 2, lit at 3.
-    x: mix(palette.citrine, palette.rockDeep, 0.45),
-    X: palette.citrine,
   };
+
+  // One entry per family and ink. Two sets never share a colour, which is the
+  // whole reason a family's art is rewritten into its own characters.
+  for (const [family, art] of Object.entries(FAMILY_ART)) {
+    const t = art.tone;
+    out[roleChar(family, 'p')] = t.mass(palette);
+    out[roleChar(family, 'P')] = t.lit(palette);
+    out[roleChar(family, 'd')] = t.dark(palette);
+    out[roleChar(family, 'x')] = t.trim(palette);
+    out[roleChar(family, 'X')] = t.trimLit(palette);
+  }
+  return out;
 }
 
 /** One pose of one loadout, painted. */

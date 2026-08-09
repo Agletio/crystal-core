@@ -15,13 +15,39 @@ const GRID = 16;
 const BLANK = '.'.repeat(GRID);
 
 /**
- * A rung is a rule, not a drawing: trim is absent at tier 1, dull at tier 2 and
- * lit at tier 3. One grid per piece, and three rungs that cannot drift apart.
+ * The five inks a family's art is drawn in, rewritten per family at
+ * composition — twelve sets share one alphabet in the source and none of them
+ * share a colour on screen. One cell holds one character, so the family has to
+ * live IN the character; `lookKeyColours` builds the matching table.
+ */
+export const ROLES = ['p', 'P', 'd', 'x', 'X'] as const;
+
+export function roleChar(family: string, role: string): string {
+  const f = FAMILY_KEYS.indexOf(family);
+  const r = ROLES.indexOf(role as (typeof ROLES)[number]);
+  return f < 0 || r < 0 ? role : String.fromCharCode(0xe000 + f * ROLES.length + r);
+}
+
+export const FAMILY_KEYS = Object.keys(FAMILY_ART);
+
+function inFamily(rows: string[], family: string): string[] {
+  return rows.map((row) =>
+    row
+      .split('')
+      .map((ch) => (ROLES.includes(ch as (typeof ROLES)[number]) ? roleChar(family, ch) : ch))
+      .join('')
+  );
+}
+
+/**
+ * A rung is a rule: trim absent at tier 1, dull at 2, lit at 3. BOTH trim inks
+ * at every rung — stripping one leaves bright accents burning on a tier 1.
  */
 function atTier(rows: string[], tier: number): string[] {
-  if (tier >= 3) return rows.map((r) => r.split(TRIM).join(TRIM_LIT));
-  if (tier === 2) return rows;
-  return rows.map((r) => r.split(TRIM).join('.'));
+  const swap = (row: string, from: string, to: string) => row.split(from).join(to);
+  if (tier >= 3) return rows.map((r) => swap(r, TRIM, TRIM_LIT));
+  if (tier === 2) return rows.map((r) => swap(r, TRIM_LIT, TRIM));
+  return rows.map((r) => swap(swap(r, TRIM_LIT, '.'), TRIM, '.'));
 }
 
 function shift(rows: string[], dx: number, dy: number): string[] {
@@ -63,8 +89,9 @@ function layerRows(look: Look, slot: LayerSlot, pose: PoseId): string[] | null {
   const family = FAMILY_ART[worn.family];
   if (!family) return null;
   // Feet are the one thing a shift cannot fake, so boots have a frame each.
-  const art = slot === 'boots' ? family.boots[pose === 'walk1' ? 1 : 0] : family[slot];
-  return atTier(art, worn.tier);
+  const stride = pose === 'walk1' || pose === 'attack';
+  const art = slot === 'boots' ? family.boots[stride ? 1 : 0] : family[slot];
+  return inFamily(atTier(art, worn.tier), worn.family);
 }
 
 /** One pose of one loadout, as a 16-row grid. */

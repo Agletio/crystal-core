@@ -25,8 +25,8 @@ export interface Pose {
 export const POSES: Record<PoseId, Pose> = {
   walk0: { all: [0, 0], boots: [0, 0], torso: [0, 0], hand: [0, 0], swing: false },
   walk1: { all: [0, 0], boots: [0, 0], torso: [0, 1], hand: [0, 1], swing: false },
-  attack: { all: [1, 0], boots: [0, 0], torso: [0, 0], hand: [0, 0], swing: true },
-  cast: { all: [0, 0], boots: [0, 0], torso: [0, 0], hand: [0, -7], swing: false },
+  attack: { all: [1, 0], boots: [0, 0], torso: [0, 1], hand: [0, 1], swing: true },
+  cast: { all: [-1, 0], boots: [0, 0], torso: [0, 0], hand: [0, -3], swing: false },
 };
 
 export const POSE_IDS = Object.keys(POSES) as PoseId[];

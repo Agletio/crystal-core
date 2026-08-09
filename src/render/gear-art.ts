@@ -8,16 +8,29 @@
  * Every grid is authored against the neutral pose. Boots get a frame per walk
  * step because feet are the one thing a shift cannot fake.
  */
+import { mix } from './renderer';
+import type { Palette } from './renderer';
 
 /**
- * `#` ink · `p` plate · `P` plate lit · `d` plate shadow · `c` cloth ·
- * `C` cloth lit · `h` hide · `w` haft · `m` metal · `M` metal lit ·
- * `g` gem · `x` TRIM (tier 2+) · `X` TRIM lit (tier 3)
+ * A piece is drawn in five inks — `p` mass, `P` lit, `d` shadow, `x` trim and
+ * `X` lit trim — and the FAMILY decides what those five are. Twelve sets share
+ * one alphabet in the source and none of them share a colour on screen.
+ *
+ * Outside a family: `#` ink · `w` haft · `m` metal · `M` metal lit · `g` gem.
  */
 export const TRIM = 'x';
 export const TRIM_LIT = 'X';
 
+export interface FamilyTone {
+  mass: (p: Palette) => string;
+  lit: (p: Palette) => string;
+  dark: (p: Palette) => string;
+  trim: (p: Palette) => string;
+  trimLit: (p: Palette) => string;
+}
+
 export interface FamilyArt {
+  tone: FamilyTone;
   helmet: string[];
   body: string[];
   gloves: string[];
@@ -26,20 +39,27 @@ export interface FamilyArt {
 }
 
 /**
- * Bulwark: full plate. The heaviest silhouette in the game — a closed helm
- * with a visor slit, a cuirass that squares off the shoulders, and sabatons
- * that read as blocks rather than feet.
+ * Bulwark: siege plate. Rust-dark iron with a hot forge glow in the trim — the
+ * heaviest silhouette in the game. A crested helm, pauldrons with a raised
+ * ridge, and tassets hanging past the belt.
  */
 const BULWARK: FamilyArt = {
+  tone: {
+    mass: (p) => mix(p.rust, p.rockDeep, 0.5),
+    lit: (p) => mix(p.rust, p.citrine, 0.35),
+    dark: (p) => mix(p.rust, p.void, 0.62),
+    trim: (p) => mix(p.ember, p.rockDeep, 0.4),
+    trimLit: (p) => p.flame,
+  },
   helmet: [
     '................',
-    '................',
-    '....######......',
+    '.....#pp#.......',
+    '....#pXXp#......',
     '...#pPPPPp#.....',
-    '...#p####p#.....',
-    '...#pxxxxp#.....',
-    '....#pppp#......',
-    '................',
+    '...#d####d#.....',
+    '...#pdxxdp#.....',
+    '....#dppd#......',
+    '.....#dd#.......',
     '................',
     '................',
     '................',
@@ -56,14 +76,14 @@ const BULWARK: FamilyArt = {
     '................',
     '................',
     '................',
-    '................',
-    '...##pppp##.....',
-    '..#pPddddPp#....',
+    '..#pppppp#......',
+    '.#PpddddpP#.....',
+    '.#Ppd##dpP#p....',
+    '..#pdXXdp#......',
     '..#pddddp#......',
-    '..#pddddp#......',
-    '...#pxxp#.......',
-    '....####........',
-    '................',
+    '..#pdxxdp#......',
+    '..#p#dd#p#......',
+    '...#.##.#.......',
     '................',
     '................',
   ],
@@ -76,9 +96,9 @@ const BULWARK: FamilyArt = {
     '................',
     '................',
     '................',
-    '................',
-    '..#pp....#PPp#..',
-    '..###.....#xx#..',
+    '.#pP#....#dPp#..',
+    '.#pd#....#PXXp#.',
+    '.####.....#pp#..',
     '................',
     '................',
     '................',
@@ -98,11 +118,11 @@ const BULWARK: FamilyArt = {
       '................',
       '................',
       '................',
-      '................',
-      '................',
-      '...#pp..pp#.....',
-      '...#PP..PP#.....',
-      '..#ppx..xpp#....',
+      '..#pd#..#dp#....',
+      '..#pX#..#Xp#....',
+      '..#pp#..#pp#....',
+      '.#dPPd..dPPd#...',
+      '.#####..#####...',
     ],
     [
       '................',
@@ -116,17 +136,125 @@ const BULWARK: FamilyArt = {
       '................',
       '................',
       '................',
+      '.#pd#....#dp#...',
+      '.#pX#....#Xp#...',
+      '.#pp#....#pp#...',
+      '#dPPd....dPPd#..',
+      '#####....#####..',
+    ],
+  ],
+};
+
+/**
+ * Templar: a warrior-priest. Plate under a hanging robe, a crowned helm with
+ * side wings, and a sigil burning on the chest — the fancy end of the range,
+ * and the shape the other hybrids are measured against.
+ */
+const TEMPLAR: FamilyArt = {
+  tone: {
+    mass: (p) => mix(p.amethyst, p.rockDeep, 0.42),
+    lit: (p) => mix(p.amethyst, p.chalk, 0.42),
+    dark: (p) => mix(p.amethyst, p.void, 0.62),
+    trim: (p) => mix(p.citrine, p.rockDeep, 0.38),
+    trimLit: (p) => p.citrine,
+  },
+  helmet: [
+    '................',
+    '....x#..#x......',
+    '...#Xp##pX#.....',
+    '..#XPpppPX#.....',
+    '..#xd####dx#....',
+    '...#pdxxdp#.....',
+    '....#dPPd#......',
+    '.....#dd#.......',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+  ],
+  body: [
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '.#Pp#pppp#pP#...',
+    '.#pd#dddd#dp#...',
+    '..#xdXXddx#p....',
+    '..#pdXXddp#.....',
+    '..#pdddddp#.....',
+    '..#xdddddx#.....',
+    '..#pd#.#dp#.....',
+    '..#P#...#P#.....',
+    '...#.....#......',
+    '................',
+  ],
+  gloves: [
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '.#pX#....#dPp#..',
+    '.#pd#....#PXXp#.',
+    '.####.....#pp#..',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+  ],
+  boots: [
+    [
       '................',
       '................',
-      '..#pp....pp#....',
-      '..#PP....PP#....',
-      '.#ppx....xpp#...',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '..#px#..#xp#....',
+      '..#pd#..#dp#....',
+      '..#pP#..#Pp#....',
+      '.#dPXd..dXPd#...',
+      '.#####..#####...',
+    ],
+    [
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '.#px#....#xp#...',
+      '.#pd#....#dp#...',
+      '.#pP#....#Pp#...',
+      '#dPXd....dXPd#..',
+      '#####....#####..',
     ],
   ],
 };
 
 export const FAMILY_ART: Record<string, FamilyArt> = {
   bulwark: BULWARK,
+  templar: TEMPLAR,
 };
 
 /**

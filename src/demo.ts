@@ -53,7 +53,7 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
 import { BODY } from './render/body';
 import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
-import { hasFamilyArt, hasWeaponArt, lookRows } from './render/look';
+import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
 import { POSE_IDS } from './render/pose';
 import {
   characterStats,
@@ -822,7 +822,17 @@ rule('THE MODEL — does the figure hold together in every pose?');
     const bad: string[] = [];
     if (at(1) === at(2)) bad.push(`${f.id}: tier 1 and 2 are identical`);
     if (at(2) === at(3)) bad.push(`${f.id}: tier 2 and 3 are identical`);
-    if (at(1).includes(TRIM) || at(1).includes(TRIM_LIT)) bad.push(`${f.id}: tier 1 has trim`);
+    // Against the family's OWN ink: composition rewrites the generic trim
+    // character, so looking for a literal 'x' finds nothing whatever the art
+    // does. That is a check that cannot fail.
+    if (at(1).includes(roleChar(f.id, TRIM)) || at(1).includes(roleChar(f.id, TRIM_LIT))) {
+      bad.push(`${f.id}: tier 1 has trim`);
+    }
+    // Trim is decoration ON a finished shape. Structural trim leaves tier 1
+    // with holes in it, which reads as a broken sprite rather than a plain one.
+    const holes = at(1).length - at(1).split('.').length;
+    const solid = at(3).length - at(3).split('.').length;
+    if (holes < solid - 40) bad.push(`${f.id}: tier 1 loses ${solid - holes} pixels of shape`);
     return bad;
   });
   check(ladder.length === 0, 'and every rung of a family differs from the one below', ladder.join('; '));
