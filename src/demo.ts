@@ -838,9 +838,25 @@ rule('THE MODEL — does the figure hold together in every pose?');
   check(ladder.length === 0, 'and every rung of a family differs from the one below', ladder.join('; '));
 
   // A weapon with no drawing is a hand holding nothing.
-  const kinds = [...new Set(WEAPON_BASES.map((b) => b.family ?? ''))];
-  const undrawn = kinds.filter((k) => !hasWeaponArt(k));
-  check(undrawn.length === 0, `all ${kinds.length} weapon kinds are drawn`, undrawn.join(', '));
+  const undrawn = WEAPON_BASES.filter((b) => !hasWeaponArt(b.id)).map((b) => b.id);
+  check(
+    undrawn.length === 0,
+    `all ${WEAPON_BASES.length} weapons are drawn, one shape each`,
+    undrawn.join(', ')
+  );
+
+  // Two weapons that draw the same are one weapon with two names.
+  const byShape = new Map<string, string[]>();
+  for (const base of WEAPON_BASES) {
+    const key = lookRows({ weapon: { kind: base.id } }, 'walk0').join('');
+    byShape.set(key, [...(byShape.get(key) ?? []), base.id]);
+  }
+  const shared = [...byShape.values()].filter((ids) => ids.length > 1);
+  check(
+    shared.length === 0,
+    'and no two of them draw the same silhouette',
+    shared.map((ids) => ids.join('=')).join(', ')
+  );
 
   // Not a failure: the families still to draw, named rather than left silent.
   const pending = ARMOUR_FAMILIES.filter((f) => !hasFamilyArt(f.id)).map((f) => f.id);

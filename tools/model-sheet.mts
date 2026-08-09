@@ -9,7 +9,7 @@ import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
 const { lookRows } = await import('../src/render/look');
 const { POSE_IDS } = await import('../src/render/pose');
-const { FAMILY_ART, WEAPON_SHAPE } = await import('../src/render/gear-art');
+const { FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
 const { roleChar } = await import('../src/render/look');
 const { lookKeyColours } = await import('../src/render/sprites');
 
@@ -46,13 +46,8 @@ function cellHtml(rows, label) {
   return `<div class="cell"><div class="art">${px.join('')}</div><span>${label}</span></div>`;
 }
 
-const sets: Array<[string, any]> = [
-  ['bare', {}],
-  ['wand', { weapon: { kind: 'wand' } }],
-  ['sword', { weapon: { kind: 'sword' } }],
-  ['dagger', { weapon: { kind: 'dagger' } }],
-  ['mace', { weapon: { kind: 'mace' } }],
-];
+const sets: Array<[string, any]> = [['bare', {}]];
+const arms: Array<[string, any]> = Object.keys(WEAPON_ART).map((id) => [id, { weapon: { kind: id } }]);
 const pieces: Array<[string, any]> = [];
 for (const family of Object.keys(FAMILY_ART)) {
   for (const tier of [1, 2, 3]) {
@@ -60,7 +55,7 @@ for (const family of Object.keys(FAMILY_ART)) {
       helmet: { family, tier }, body: { family, tier },
       gloves: { family, tier }, boots: { family, tier },
     };
-    sets.push([`${family} t${tier}`, { ...worn, weapon: { kind: 'mace' } }]);
+    sets.push([`${family} t${tier}`, { ...worn, weapon: { kind: 'steel_sword' } }]);
   }
   for (const slot of ['helmet', 'body', 'gloves', 'boots']) {
     pieces.push([`${family} ${slot}`, { [slot]: { family, tier: 3 } }]);
@@ -77,7 +72,23 @@ const sheet = (looks: Array<[string, any]>) => looks
   .join('');
 
 const page1 = sheet(sets);
-const page2 = sheet(pieces);
+const page2 = sheet(arms);
+
+/** Every family side by side at one rung, for judging the range at a glance. */
+const overview = (tier: number) =>
+  Object.keys(FAMILY_ART)
+    .map((family) => {
+      const look = {
+        helmet: { family, tier }, body: { family, tier },
+        gloves: { family, tier }, boots: { family, tier },
+        weapon: { kind: 'steel_sword' },
+      };
+      return `<div class="cell">${cellHtml(lookRows(look, 'walk0'), family)}</div>`;
+    })
+    .join('');
+const page3 = [1, 2, 3]
+  .map((t) => `<div class="row"><b>tier ${t}</b><div class="poses">${overview(t)}</div></div>`)
+  .join('');
 
 const html = (body: string) => `<!doctype html><meta charset="utf-8"><style>
   body { background:#0d0a10; color:#cfc7d8; font:12px monospace; margin:0; padding:16px; }
@@ -94,11 +105,15 @@ const html = (body: string) => `<!doctype html><meta charset="utf-8"><style>
 const out = process.argv[2] ?? '/tmp/model.png';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
-for (const [body, file] of [[page1, out], [page2, out.replace('.png', '-pieces.png')]]) {
+for (const [body, file] of [
+  [page3, out.replace('.png', '-all.png')],
+  [page1, out],
+  [page2, out.replace('.png', '-arms.png')],
+]) {
   await page.setContent(html(body));
   const box = await page.locator('#sheet').boundingBox();
-  await page.setViewportSize({ width: 1000, height: Math.ceil(box.height) + 32 });
+  await page.setViewportSize({ width: Math.ceil(box.width) + 40, height: Math.ceil(box.height) + 32 });
   writeFileSync(file, await page.screenshot({ fullPage: true }));
 }
 await browser.close();
-console.log(`${sets.length} sets, ${pieces.length} pieces x ${POSE_IDS.length} poses -> ${out}`);
+console.log(`${sets.length} sets, ${arms.length} weapons x ${POSE_IDS.length} poses -> ${out}`);

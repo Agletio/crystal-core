@@ -6,7 +6,7 @@
  * paints a monster.
  */
 import { BODY } from './body';
-import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART, WEAPON_SHAPE } from './gear-art';
+import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART, hasWeapon } from './gear-art';
 import { LAYER_ORDER, POSES, shiftFor } from './pose';
 import type { LayerSlot, PoseId } from './pose';
 import type { Look, WornPiece } from '../types';
@@ -79,8 +79,7 @@ function over(base: string[], top: string[]): string[] {
 
 function layerRows(look: Look, slot: LayerSlot, pose: PoseId): string[] | null {
   if (slot === 'weapon') {
-    const shape = look.weapon && WEAPON_SHAPE[look.weapon.kind];
-    const art = shape ? WEAPON_ART[shape] : undefined;
+    const art = look.weapon ? WEAPON_ART[look.weapon.kind] : undefined;
     if (!art) return null;
     return POSES[pose].swing ? art.strike : art.rest;
   }
@@ -122,4 +121,4 @@ export function lookKey(look: Look): string {
 
 /** Art the layering can actually draw. Anything else falls back to bare skin. */
 export const hasFamilyArt = (family: string): boolean => family in FAMILY_ART;
-export const hasWeaponArt = (kind: string): boolean => kind in WEAPON_SHAPE;
+export const hasWeaponArt = (base: string): boolean => hasWeapon(base);

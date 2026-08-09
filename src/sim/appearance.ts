@@ -23,8 +23,9 @@ export function lookOf(character: Character): Look {
     const base = GEAR_BASE_BY_ID[item.base];
     if (!base?.family) continue;
 
+    // The base, not the family: an Ember Maul is not a Cudgel with a tint.
     if (base.kind === 'weapon') {
-      if (hasWeaponArt(base.family)) look.weapon = { kind: base.family };
+      if (hasWeaponArt(item.base)) look.weapon = { kind: item.base };
       continue;
     }
     // A family with no art yet leaves the slot bare rather than drawing
