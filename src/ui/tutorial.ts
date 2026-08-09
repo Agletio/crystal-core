@@ -12,6 +12,7 @@
  * through six modules' renders, and the same tick repositions the card.
  */
 import { balance } from "../economy";
+import { qualityOf } from "../mods";
 import { craftItem } from "../game/state";
 import type { GameState } from "../game/state";
 
@@ -148,7 +149,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : ctx.view === "craft"
           ? "inv-gear"
           : viaHeader(ctx, "open-craft"),
-    done: (g) => craftItem(g)?.kind === "gear",
+    // Rough, not "any gear": a first run drops things, and benching a modded
+    // one satisfied this AND the next step, so the shard was never spent.
+    done: (g) => {
+      const item = craftItem(g);
+      return item?.kind === "gear" && qualityOf(item) === "rough";
+    },
   },
   {
     id: "use_seaming",
@@ -183,9 +189,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : "Open Character.",
     target: (ctx) =>
       ctx.top === "sheet"
-        ? // Once a slot is chosen the gear is what you click, and it is in the
-          // dock. Ringing the slot here left the only live control being the
-          // one you had already pressed.
+        ? // Once a slot is picked the gear is what you click, and it is in the
+          // dock — ringing the slot lights the button you just pressed.
           ctx.picking
           ? "inv-gear"
           : slotButtonId("weapon")

@@ -33,6 +33,7 @@ import {
   grant,
   makeCrystal,
   makeGear,
+  rollGear,
   runRecipe,
 } from './economy';
 import { hasArmourArt } from './ui/icons';
@@ -986,6 +987,34 @@ rule('GUIDED OPENING — does every step actually complete?');
     'and lights something whenever the sim is not doing the work',
     `nothing to click: ${unlit.join(', ')}`
   );
+  // A first run drops things. Benching a dropped item that already has
+  // modifiers used to satisfy "put your wand on the bench" AND the step after
+  // it, which waits for a modifier to appear — so the shard the guide just
+  // walked you to the shop for was never spent on anything.
+  {
+    const step = TUTORIAL_STEPS.find((s) => s.id === 'select_weapon')!;
+    const at = createGame('fresh');
+    const ctx: GuideCtx = { view: 'craft', top: 'craft', phase: 'menu', picking: null };
+
+    const modded = rollGear('cudgel', 20, 'faceted', 2, pool, new Rng(5));
+    at.inventory = [modded];
+    selectForCraft(at, modded);
+    check(
+      modded.mods.length > 0 && !step.done(at, ctx),
+      'a dropped item with modifiers does not pass for your Rough wand',
+      `${modded.mods.length} mods and the step counted it`
+    );
+
+    const wand = makeGear('ash_wand', 1);
+    at.inventory = [wand];
+    selectForCraft(at, wand);
+    check(
+      step.done(at, ctx) && TUTORIAL_STEPS.find((s) => s.id === 'use_seaming')!.done(at, ctx) === false,
+      'and the wand does, with the modifier step still waiting',
+      'the Rough wand did not satisfy the step it is meant to'
+    );
+  }
+
   // The guide walks you into equipping the item on the bench. It stays there:
   // the bench takes worn gear now, which is what the worn column beside it is
   // for, so improving a weapon does not mean taking it off first.
