@@ -2,6 +2,13 @@
 
 A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework.
 
+**`ROADMAP.md` is the to-do list.** This file describes the game as it is; that
+one describes where it is going and what to work on next. Read it before
+starting anything, and never guess at what it lists as open — ask.
+
+When you put a question to the user, stop and wait for the answer. Do not pick
+one and carry on.
+
 ## Commands
 
 | | |
