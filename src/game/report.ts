@@ -3,7 +3,7 @@
  * what it earned. The overlay knows nothing about what the rows mean, so a new
  * stat is a line in buildReport() and nothing else.
  */
-import { addItem, grantFirstClear } from './state';
+import { addItem, bankToHaul, grantFirstClear, haulFull } from './state';
 import type { GameState } from './state';
 import { grant } from '../economy';
 import { addXp, addSkillXp } from '../sim/character';
@@ -25,12 +25,12 @@ export interface RunReport {
   /** Currency actually banked, already rounded. Empty when the run was lost. */
   banked: Record<string, number>;
   items: Item[];
-  /** Banked, but into the stash because the bag was full. */
-  stashed: Item[];
-  /** Earned and then lost: bag full, stash full. */
-  dropped: Item[];
+  /** Handed to you rather than dropped, and put in the dock rather than the haul. */
+  gifts: Item[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
+  /** Whether the haul is at or over capacity now this run has banked. */
+  haulFull: boolean;
   xp: number;
   levelsGained: number;
 }
@@ -50,8 +50,6 @@ export function buildReport(game: GameState, run: RunState): RunReport {
 
   const banked: Record<string, number> = {};
   const gifts: Item[] = [];
-  const stashed: Item[] = [];
-  const dropped: Item[] = [];
 
   if (cleared) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
@@ -60,14 +58,10 @@ export function buildReport(game: GameState, run: RunState): RunReport {
       banked[id] = n;
       grant(game.wallet, id, n);
     }
-    // A full bag sends loot to the stash, and a full stash loses it. Both get
-    // said out loud below — an item that silently fails to arrive reads as a
-    // bug, and nothing would teach you that the fix is to clear some space.
-    for (const item of run.loot.items) {
-      const where = addItem(game, item);
-      if (where === 'stashed') stashed.push(item);
-      if (where === 'lost') dropped.push(item);
-    }
+    // Whole, into the haul: the bags are yours to arrange and a run is not
+    // allowed to fill them behind your back. Nothing is refused here, so
+    // capacity is a thing checked between runs rather than during one.
+    bankToHaul(game, run.loot.items);
 
     // The opening payout. Folded into the same banked/items shape so the
     // overlay shows it as loot rather than it appearing silently in the bag.
@@ -103,11 +97,8 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
-  if (stashed.length > 0) {
-    rows.push({ label: 'bag full — sent to stash', value: String(stashed.length) });
-  }
-  if (dropped.length > 0) {
-    rows.push({ label: 'no room — left behind', value: String(dropped.length), bad: true });
+  if (cleared && run.loot.items.length > 0) {
+    rows.push({ label: 'sent to the haul', value: String(run.loot.items.length) });
   }
 
   // Damage taken, split by type. Nothing reads this yet beyond the overlay —
@@ -127,10 +118,10 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     headline: cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
-    items: cleared ? [...run.loot.items, ...gifts] : [],
-    stashed,
-    dropped,
+    items: cleared ? [...run.loot.items] : [],
+    gifts,
     lostLoot: !cleared && hadLoot,
+    haulFull: haulFull(game),
     xp: Math.round(run.xpGained),
     levelsGained,
   };

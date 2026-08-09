@@ -100,6 +100,7 @@ import type { GuideCtx } from './ui/tutorial';
 import {
   CARRY,
   addItem,
+  bankToHaul,
   buyStashSpace,
   carryRoom,
   craftItem,
@@ -107,6 +108,8 @@ import {
   equipItem,
   grantFirstClear,
   giftWeapon,
+  HAUL_CAP,
+  haulFull,
   plainGear,
   replaceItem,
   selectForCraft,
@@ -114,9 +117,11 @@ import {
   socketItem,
   stashRoom,
   stashUpgradeCost,
+  takeWhatFits,
   toStash,
   unequipItem,
 } from './game/state';
+import { buildReport } from './game/report';
 import { heal, readSave } from './game/save';
 import type { GameState } from './game/state';
 import type { Item, MonsterDef, MonsterFamily, Quality, RolledMod, Wallet } from './types';
@@ -594,6 +599,81 @@ rule('DROPS — does the set decide what the map can give you?');
 }
 
 // ===========================================================================
+rule('THE HAUL — where does the loop stop, and can it wedge shut?');
+
+// The loop only ever ends in two places and both are this container. What has
+// to hold: a run never loses a drop, capacity is read between runs so nothing
+// is split, and there is always a way back under the limit — otherwise the
+// game has a state you cannot play out of.
+{
+  const game = createGame('fresh');
+  const drops = Array.from({ length: 20 }, (_, i) => makeGear('ash_wand', i + 1));
+  bankToHaul(game, drops);
+  check(
+    game.haul.length === 20 && game.inventory.length === 0,
+    'a cleared run banks into the haul and not into your bags',
+    `${game.haul.length} hauled, ${game.inventory.length} carried`
+  );
+
+  // Deliberately past the limit: the alternative is splitting a descent's
+  // drops, and the run that was cut in half is the one you remember.
+  const flood = HAUL_CAP + CARRY.gear;
+  bankToHaul(game, Array.from({ length: flood }, () => makeGear('ash_wand', 5)));
+  check(
+    game.haul.length === 20 + flood && haulFull(game),
+    'and overflows rather than dropping anything on the floor',
+    `${game.haul.length} of ${HAUL_CAP}`
+  );
+
+  const took = takeWhatFits(game);
+  check(
+    took === CARRY.gear && game.inventory.length === CARRY.gear,
+    'taking what fits fills the bag exactly once',
+    `${took} moved, ${game.inventory.length} carried`
+  );
+
+  // The wedge: haul over its limit, both bags full, stash full. Selling is the
+  // one move that needs room nowhere, which is what makes it the way out.
+  while (stashRoom(game) > 0) game.stash.push(makeGear('ash_wand', 1));
+  check(
+    takeWhatFits(game) === 0 && haulFull(game),
+    'with everything full there is nowhere left to put one',
+    `${game.haul.length} hauled, ${carryRoom(game, 'gear')} bag room`
+  );
+  const sold = sellAll(game, plainGear(game.haul));
+  check(
+    sold.count > 0 && !haulFull(game) && sold.gold > 0,
+    `and selling ${sold.count} pieces for ${sold.gold} gold reopens the Fissure`,
+    `${game.haul.length} still hauled after selling ${sold.count}`
+  );
+}
+
+// A real loop, measured rather than asserted: run the same set repeatedly and
+// see where it actually stops. Either terminus is fine; silently running
+// forever is not, and neither is stopping on the first clear.
+{
+  const game = createGame('fresh');
+  game.character = ladderCharacter(2, new Rng(31));
+  const set = ladderSet(2, new Rng(4141), pool);
+  let runs = 0;
+  let stop = 'never';
+
+  while (runs < 60) {
+    const final = runToCompletion(new RunSim(set, game.character, new Rng(9000 + runs)), 400);
+    runs++;
+    const report = buildReport(game, final);
+    if (!report.cleared) { stop = 'died'; break; }
+    if (report.haulFull) { stop = 'full'; break; }
+  }
+  line(`  the loop ran ${runs} descents and stopped: ${stop} (${game.haul.length} in the haul)`);
+  check(
+    stop !== 'never' && runs > 1,
+    'a loop stops on a death or a full haul, and never on the first clear',
+    `${stop} after ${runs}`
+  );
+}
+
+// ===========================================================================
 rule('CARRY LIMIT — where does loot go when the bag is full?');
 
 // The dock stopped scrolling, which turned capacity into a real rule. The
@@ -1054,10 +1134,19 @@ rule('GUIDED OPENING — does every step actually complete?');
       // That is why the last step has to point at "Back to the Fissure".
       ctx.phase = 'results';
       grantFirstClear(game);
+      // A cleared run banks into the haul, so the step after this one has
+      // something to take. Without it the step satisfies itself and proves
+      // nothing about the screen it is teaching.
+      bankToHaul(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
       line(
         `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
           `${game.inventory.length} items`
       );
+    },
+    () => {
+      // The drops went to the haul, not the bag. Taking them is the step.
+      ctx.top = 'haul';
+      takeWhatFits(game);
     },
     () => { ctx.top = 'shop'; },
     () => { runRecipe(game.wallet, 'make_shard_of_seaming'); },
@@ -2861,7 +2950,7 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
     const final = runToCompletion(new RunSim([], makeCharacter({}, 'strike'), new Rng(77 + i)), 400);
     earned += final.loot.currency.gold ?? 0;
     for (const item of final.loot.items) addItem(opening, item);
-    sold += sellAll(opening, plainGear(opening)).gold;
+    sold += sellAll(opening, plainGear(opening.inventory)).gold;
   }
   // What a level-1 shelf holds, which is the whole of what the opening asks for.
   const bench = RECIPES.filter((r) => (r.level ?? 1) === 1).reduce(
@@ -2902,6 +2991,11 @@ rule('THE SAVE — does a save survive the game changing under it?');
   progress.allocated = [...kept, 'fb_a_node_that_moved', ...progress.allocated.slice(4)];
   progress.choices = { fb_gone: 'cold', ...progress.choices };
   game.inventory.push({ ...game.inventory[0], id: 'ghost', base: 'base_that_was_renamed' });
+  // The haul is a container a save can sit in for a week, so it rots too.
+  bankToHaul(game, [
+    makeGear('ash_wand', 1),
+    { ...game.inventory[0], id: 'haul_ghost', base: 'base_that_was_renamed' },
+  ]);
   game.wallet.shard_of_something_removed = 9;
   game.character.skillId = 'a_skill_that_was_cut';
 
@@ -2922,6 +3016,11 @@ rule('THE SAVE — does a save survive the game changing under it?');
     !game.inventory.some((i) => i.id === 'ghost'),
     'an item whose base no longer exists is dropped',
     'a dropped base is still in the bag'
+  );
+  check(
+    game.haul.length === 1 && !game.haul.some((i) => i.id === 'haul_ghost'),
+    'and one sitting unsorted in the haul goes the same way',
+    `${game.haul.length} left in the haul`
   );
   check(
     game.sockets.s1?.id === good.id &&

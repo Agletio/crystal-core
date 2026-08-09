@@ -109,8 +109,9 @@ assert(
 // collapses and shoves the Fissure around.
 assert(all('#inv-crystal .slot--empty').length > 0, 'the dock keeps empty slots');
 
-// One place, always open. An empty set is a real descent, not a missing choice
-// — that's the anti-stuck guarantee, so Enter must never be disabled.
+// One place, always open. An empty set is a real descent, not a missing
+// choice, and the only thing that ever shuts the Fissure is a full haul —
+// which selling always empties, so there is no state you cannot play out of.
 const socketButtons = () => all('#run-sockets .socket');
 assert(socketButtons().length === 4, 'the Fissure has four sockets', String(socketButtons().length));
 assert(
@@ -605,6 +606,36 @@ assert(
   'the column says how full it is',
   text('inv-crystal-label')
 );
+
+// --- the haul -------------------------------------------------------------
+// One terminus for the loop: a death and a full haul both land here. Only its
+// shape is checked in jsdom — a run takes a minute of real time, so the loop
+// itself is walked headlessly in the demo and played for real in the guide.
+assert($('haul').hidden === true, 'the haul starts closed');
+$('open-haul').click();
+assert($('haul').hidden === false, 'and opens from the header');
+assert(
+  /^0 \/ \d+$/.test(text('haul-count')),
+  'a fresh haul is empty and says what it holds',
+  text('haul-count')
+);
+assert(all('#haul-slots .slot').length > 0, 'the grid draws the room it has');
+assert(
+  all('#haul-slots .slot:not(.slot--empty)').length === 0,
+  'and nothing is in it yet'
+);
+// The rule the slot counts cannot show, and the reason it is not a third bag.
+assert(
+  /worn, crafted or socketed/i.test(text('haul-hint')),
+  'it says nothing here can be used until you take it out',
+  text('haul-hint')
+);
+assert($('haul-take').disabled === true, 'with nothing to take');
+assert($('haul-sell').disabled === true, 'and nothing to sell');
+assert($('haul-why').hidden === true, 'opening it yourself needs no explanation');
+
+window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('haul').hidden === true, 'Escape closes it');
 
 // --- the stash ------------------------------------------------------------
 // A carry limit needs somewhere for the overflow to go that isn't the floor.

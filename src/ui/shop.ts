@@ -174,7 +174,7 @@ function renderSell(): void {
   const btn = $('shop-sell') as HTMLButtonElement;
   btn.replaceChildren();
 
-  const junk = plainGear(game);
+  const junk = plainGear(game.inventory);
   const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
   btn.append(el('span', 'buy__name', 'Sell unmodified gear'));
   btn.append(
@@ -191,7 +191,7 @@ function renderSell(): void {
 }
 
 async function sellJunk(): Promise<void> {
-  const junk = plainGear(game);
+  const junk = plainGear(game.inventory);
   if (junk.length === 0) return;
   const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
   const yes = await ask({

@@ -80,6 +80,22 @@ thing an item can do that cannot be undone. The bulk button in the shop takes
 every carried piece no currency has touched, which is why it can never eat a
 decision.
 
+## The loop
+
+You press Enter once. A cleared descent launches the next one by itself, and it
+keeps going until one of exactly two things happens: **you die**, or **the haul
+fills**. Both open the haul, which is the one place the loop ever stops — so
+there is one screen that means "the run is over, deal with your things".
+
+The **haul** (`GameState.haul`, `HAUL_CAP`) is where a cleared run's loot lands
+— never in your bags, which are yours to arrange. It is inert exactly as the
+stash is: take a piece out before it can be worn, crafted or socketed. Capacity
+is read BETWEEN runs and never during one, so `bankToHaul` refuses nothing and
+the haul ends up over its limit rather than a descent's drops being split.
+
+A full haul is the only thing that shuts the Fissure, and it can never wedge:
+selling needs room nowhere.
+
 ## Saves
 
 The save is `JSON.stringify(game)` in one localStorage key — there is no server

@@ -328,8 +328,8 @@ consumable, and `RECIPES` sold them. Both are gone.
       piece bought and sold back still loses — the demo checks every quality.
 - [x] Sell from the dock — one piece from its menu, never from the click, and a
       bulk button in the shop taking every carried piece no currency has
-      touched. Selling from the HAUL waits for Phase 4, which is where the haul
-      is built.
+      touched. *(Selling from the haul landed with Phase 4, which is where the
+      haul was built.)*
 - [x] Update the guided opening: gold, and a last step that no longer calls a
       crystal a stake you spend on entry.
 
@@ -349,15 +349,33 @@ consumable, and `RECIPES` sold them. Both are gone.
 
 Mechanism is specified in §4.
 
-- [ ] The haul: its own container in `GameState`, with capacity, saved and healed.
-- [ ] Loot from a cleared run banks into the haul; a death banks nothing.
-- [ ] The haul screen is a **grid you can act on**, not a list of names.
-      Replaces the `run-loot` rendering in `src/ui/run.ts` / `src/game/report.ts`.
-- [ ] Auto-repeat: clear, re-launch, repeat.
-- [ ] Stop on death, and say why. Stop when the haul is at capacity. Both land
-      on the haul screen — one terminus for the loop.
-- [ ] Launching is blocked while the haul is over capacity.
-- [ ] Update the guided opening for the changed run flow (`src/ui/tutorial.ts`).
+- [x] The haul: `GameState.haul`, `HAUL_CAP` 48, saved and healed like the stash.
+- [x] Loot from a cleared run banks into the haul; a death banks nothing. It is
+      pushed WHOLE — `bankToHaul` refuses nothing — so a run's drops are never
+      split and nothing is ever lost.
+- [x] The haul screen (`src/ui/haul.ts`) is a grid you can act on: click takes a
+      piece, the menu adds stash and sell, and two bulk buttons take what fits
+      or sell everything unmodified. The results card's list of names is gone;
+      the live `run-loot` panel stays, because "carried, not yet banked" is a
+      different fact from "banked and waiting".
+- [x] Auto-repeat: a cleared descent launches the next. Toggled by **Keep
+      going** on the Fissure panel (`game.autoRepeat`), and suppressed outright
+      while the guided opening is running — it teaches one descent at a time.
+- [x] Stop on death, and say why. Stop when the haul is at capacity. Both open
+      the haul with a line saying which, over the report for the last descent.
+- [x] Launching is blocked while the haul is at capacity, and the Fissure panel
+      says so. Never a dead end: selling needs room nowhere, so the haul can
+      always be emptied — the demo builds the wedge and checks the way out.
+- [x] The guided opening gained a step: your drops are in the Haul, open it and
+      take them. It sits right after the first clear, because that is when the
+      question "where did my loot go" first exists.
+
+> **Landed.** The loop is on by default and the toggle is there for the one
+> case it does not cover: testing a set for a single descent. What the phase
+> did not build is a per-item "keep" rule — every drop goes to the haul and
+> triage is manual, because a filter that hides a drop is the kind of thing you
+> only get right once you know what a good drop looks like. Phase 7's gating is
+> where that decision lives.
 
 ### Phase 5 — Progression
 

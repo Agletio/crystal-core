@@ -15,10 +15,12 @@ import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
-import { crystalsIn, socketFor, socketItem, socketed, unsocket } from '../game/state';
+import { crystalsIn, haulFull, socketFor, socketItem, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
+import { openHaul } from './haul';
+import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_MAX, ZOOM_MIN, clampZoom, defaultZoom, readPalette } from '../render/renderer';
@@ -49,6 +51,10 @@ let playing = false;
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
+/** Descents cleared without stopping. Reset by the click that starts the loop. */
+let streak = 0;
+/** Why the loop stopped, for the card that reports it. */
+let halt: 'died' | 'full' | 'once' = 'once';
 /**
  * Close enough to see what's happening.
  *
@@ -177,11 +183,31 @@ function renderMenu(): void {
           : 'Click a crystal in the dock to socket it.'
     )
   );
+
+  // The one thing that can shut the Fissure — and never a dead end, because
+  // selling out of the haul needs no room anywhere.
+  const blocked = haulFull(game);
+  const launcher = $('run-launch') as HTMLButtonElement;
+  launcher.disabled = blocked;
+  launcher.classList.toggle('mini--off', blocked);
+  $('run-blocked').textContent = blocked
+    ? 'Your haul is full. Empty some of it before you go back down.'
+    : '';
+  ($('run-repeat') as HTMLInputElement).checked = game.autoRepeat;
 }
 
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
+
+/**
+ * Whether a cleared descent starts the next one by itself.
+ *
+ * Off during the guided opening whatever the toggle says: the opening teaches
+ * one descent, and its later steps are written against a report that is still
+ * on screen. The loop begins once you have been shown the loop's parts.
+ */
+const looping = (): boolean => game.autoRepeat && !isGuided();
 
 function launch(): void {
   // An empty set is a real descent, not a missing choice: the bare Fissure is
@@ -210,14 +236,44 @@ function launch(): void {
   renderInventory();
 }
 
+/**
+ * A run ended. Bank it, then decide whether there is another one.
+ *
+ * Capacity is read HERE, between runs, and never during one — which is why the
+ * haul is allowed to end up over its limit rather than a descent's drops being
+ * split or thrown away.
+ */
 function finish(): void {
   if (!sim) return;
   const report = buildReport(game, sim.state);
   playing = false;
 
+  if (report.cleared) streak++;
+  halt = !report.cleared ? 'died' : report.haulFull ? 'full' : 'once';
+
+  if (report.cleared && !report.haulFull && looping()) {
+    launch();
+    return;
+  }
+
   renderResults(report, sim.state);
   setPhase('results');
   renderInventory();
+  // The one terminus. Nothing to sort is the one case where a grid of empty
+  // slots would be the wrong thing to put in front of you.
+  if (game.haul.length > 0) openHaul(haltLine(report));
+}
+
+/** What the haul screen says about why you are looking at it. */
+function haltLine(report: RunReport): string {
+  const runs = streak === 1 ? 'one descent' : `${streak} descents`;
+  if (halt === 'died') {
+    return streak === 0
+      ? 'You died. The loop stopped, and that run banked nothing.'
+      : `You died after ${runs}. The loop stopped; everything banked before it is here.`;
+  }
+  if (halt === 'full') return `The haul is full after ${runs}. Clear some of it to go again.`;
+  return `Cleared ${runs}.`;
 }
 
 function renderStatsPanel(): void {
@@ -328,6 +384,11 @@ function renderResults(report: RunReport, run: RunState): void {
 
   const card = el('div', `resultcard resultcard--${report.status}`);
   card.append(el('h3', 'resultcard__head', report.headline));
+  // The loop's own story, which the per-run rows cannot tell: this card is
+  // shown once at the END of a streak, not after every descent in it.
+  if (streak > 1 || halt === 'full') {
+    card.append(el('p', 'resultcard__sub', haltLine(report)));
+  }
 
   // Two columns: what happened on the left, what you got on the right. As one
   // stacked column a good run — several stat rows and a handful of drops —
@@ -347,7 +408,7 @@ function renderResults(report: RunReport, run: RunState): void {
   cols.append(left);
 
   const right = el('div');
-  right.append(el('p', 'resultcard__sub', report.cleared ? 'Loot' : 'Loot lost'));
+  right.append(el('p', 'resultcard__sub', report.cleared ? 'Into the haul' : 'Loot lost'));
   const loot = el('div', 'lootlist');
   const rows = lootRows(run);
 
@@ -379,6 +440,20 @@ function renderResults(report: RunReport, run: RunState): void {
     }
   }
   right.append(loot);
+
+  // Handed over rather than dropped, and it goes to the dock: the opening
+  // tells you to click the wand there, so it must not read as hauled.
+  if (report.gifts.length > 0) {
+    right.append(el('p', 'resultcard__sub', 'The Fissure gave you'));
+    const given = el('div', 'lootlist');
+    for (const item of report.gifts) {
+      const r = el('div', 'lootrow');
+      r.append(el('span', 'lootrow__k', item.name));
+      r.append(el('span', 'lootrow__v', 'in your bag'));
+      given.append(r);
+    }
+    right.append(given);
+  }
   cols.append(right);
   card.append(cols);
 
@@ -517,7 +592,16 @@ export function initRun(state: GameState): void {
   renderer = createCanvasRenderer(stage, palette);
   void upgradeRenderer(stage, palette);
 
-  ($('run-launch') as HTMLButtonElement).onclick = () => launch();
+  ($('run-launch') as HTMLButtonElement).onclick = () => {
+    if (haulFull(game)) return;
+    streak = 0;
+    launch();
+  };
+
+  ($('run-repeat') as HTMLInputElement).onchange = (event) => {
+    game.autoRepeat = (event.target as HTMLInputElement).checked;
+    renderMenu();
+  };
 
   ($('run-pause') as HTMLButtonElement).onclick = () => {
     if (!sim || sim.state.status !== 'running') return;

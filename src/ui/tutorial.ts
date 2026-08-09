@@ -70,6 +70,7 @@ const theWand = (g: GameState): string => {
 
 /** Every popup's own way out, so a step can point at whichever one is up. */
 const CLOSES: Record<string, string> = {
+  haul: 'haul-close',
   stash: 'stash-close',
   shop: 'shop-close',
   sheet: 'sheet-close',
@@ -126,6 +127,18 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     // step is one nobody can finish.
     ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
     done: (g) => g.firstClearDone,
+  },
+  {
+    id: "take_haul",
+    text: (ctx) =>
+      ctx.top === "haul"
+        ? "Take what fits."
+        : blocked(ctx)
+          ? "Close this — your loot is in the Haul."
+          : "Your drops went to the Haul. Open it.",
+    hint: "A cleared run banks there, never into your bags. Full haul, and the Fissure shuts until you clear it.",
+    target: (ctx) => (ctx.top === "haul" ? "haul-take" : viaHeader(ctx, "open-haul")),
+    done: (g) => g.haul.length === 0,
   },
   {
     id: "to_shop",

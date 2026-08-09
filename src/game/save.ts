@@ -177,9 +177,16 @@ export function heal(game: GameState): Healed {
   };
   game.inventory = keep(game.inventory);
   game.stash = keep(game.stash);
+  // Hand-edited saves reach here, and one that predates the haul has no key.
+  game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
 
   // A retired family costs the crystal its world, not the crystal.
-  for (const item of [...game.inventory, ...game.stash, ...Object.values(game.sockets ?? {})]) {
+  for (const item of [
+    ...game.inventory,
+    ...game.stash,
+    ...game.haul,
+    ...Object.values(game.sockets ?? {}),
+  ]) {
     if (item.kind !== 'crystal' || FAMILY_BY_ID[String(item.meta.family)]) continue;
     item.meta.family = 'normal';
     item.name = crystalName(Number(item.meta.tier), 'normal');

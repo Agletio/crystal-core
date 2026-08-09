@@ -24,6 +24,12 @@ export const CARRY: Record<ItemKind, number> = {
   gear: 32,
 };
 
+/**
+ * Bigger than either bag: a night's work waiting to be sorted. Read BETWEEN
+ * runs, so it overflows by one descent rather than splitting a run's drops.
+ */
+export const HAUL_CAP = 48;
+
 /** Stash slots you start with. */
 export const STASH_START = 12;
 /** Slots one purchase adds. */
@@ -47,6 +53,8 @@ export interface GameState {
   inventory: Item[];
   /** Nothing acts on a stashed item until you carry it again. */
   stash: Item[];
+  /** A cleared run's loot. Inert as the stash is: take it out to use it. */
+  haul: Item[];
   /** How big the stash currently is. Bought up with gold. */
   stashSlots: number;
   character: Character;
@@ -70,6 +78,8 @@ export interface GameState {
   /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
   shopStock: Item[];
   shopLevel: number;
+  /** Whether a cleared descent launches the next one by itself. */
+  autoRepeat: boolean;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -80,6 +90,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     wallet: {},
     inventory: [],
     stash: [],
+    haul: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
     sockets: {},
@@ -89,6 +100,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     tutorialStep: null,
     shopStock: [],
     shopLevel: 0,
+    autoRepeat: true,
   };
   resetGame(game, mode);
   return game;
@@ -107,7 +119,9 @@ export function resetGame(game: GameState, mode: StartMode): void {
     ...preset.gear.map((g) => makeGear(g.base, g.ilvl)),
   ];
   game.stash = [];
+  game.haul = [];
   game.stashSlots = STASH_START;
+  game.autoRepeat = true;
 
   // A fresh character owns nothing and has worn nothing. The dev preset wears
   // a rolled set so the sheet and the stat pipeline have something in them.
@@ -182,32 +196,71 @@ export function addItem(game: GameState, item: Item): Placement {
   return 'lost';
 }
 
-export function removeItem(game: GameState, item: Item): boolean {
-  const i = game.inventory.indexOf(item);
+function takeFrom(list: Item[], item: Item): boolean {
+  const i = list.indexOf(item);
   if (i < 0) return false;
-  game.inventory.splice(i, 1);
+  list.splice(i, 1);
   return true;
+}
+
+export function removeItem(game: GameState, item: Item): boolean {
+  return takeFrom(game.inventory, item);
+}
+
+export const haulRoom = (game: GameState): number => HAUL_CAP - game.haul.length;
+
+/** At or over. Over is legal — a run's drops are never split to fit. */
+export const haulFull = (game: GameState): boolean => haulRoom(game) <= 0;
+
+/** A cleared run's loot, banked whole. Nothing is refused and nothing is lost. */
+export function bankToHaul(game: GameState, items: Item[]): void {
+  game.haul.push(...items);
+}
+
+/** Haul → carried. Fails when that kind's bag is full, the same as the stash. */
+export function fromHaul(game: GameState, item: Item): boolean {
+  if (carryRoom(game, item.kind) <= 0) return false;
+  if (!takeFrom(game.haul, item)) return false;
+  game.inventory.push(item);
+  return true;
+}
+
+/** Haul → stashed, skipping the bag: triage should not need a spare slot. */
+export function haulToStash(game: GameState, item: Item): boolean {
+  if (stashRoom(game) <= 0) return false;
+  if (!takeFrom(game.haul, item)) return false;
+  game.stash.push(item);
+  return true;
+}
+
+/** As many as the bags will take, oldest first. Reports what actually moved. */
+export function takeWhatFits(game: GameState): number {
+  let moved = 0;
+  for (const item of [...game.haul]) {
+    if (fromHaul(game, item)) moved++;
+  }
+  return moved;
 }
 
 export function findItem(game: GameState, id: string): Item | undefined {
   return game.inventory.find((i) => i.id === id);
 }
 
-/** Carried gear → gold. 0 for anything else: only the bag is a counter. */
+/**
+ * Gear → gold, from the bag or the haul. A sale needs no room anywhere, which
+ * is the way out of a full haul on top of full bags: the loop cannot wedge.
+ */
 export function sellItem(game: GameState, item: Item): number {
   if (!canSell(item)) return 0;
   const paid = sellPrice(item);
-  if (!removeItem(game, item)) return 0;
+  if (!takeFrom(game.inventory, item) && !takeFrom(game.haul, item)) return 0;
   grant(game.wallet, 'gold', paid);
   return paid;
 }
 
-/**
- * Carried gear with nothing rolled on it: the one heap you can clear without
- * reading each piece. Anything a currency touched is a decision, never in here.
- */
-export const plainGear = (game: GameState): Item[] =>
-  carried(game, 'gear').filter((i) => i.mods.length === 0);
+/** Gear with nothing rolled on it: the heap you can clear without reading it. */
+export const plainGear = (items: Item[]): Item[] =>
+  items.filter((i) => i.kind === 'gear' && i.mods.length === 0);
 
 /** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
 export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {
