@@ -11,8 +11,18 @@ import {
 } from '../data';
 import { Rng } from '../rng';
 import { ModPool, modCapacity, qualityName, qualityOf } from '../mods';
-import { balance, pickGearBase, pickQuality, rollGear, runRecipe, spend } from '../economy';
-import { addItem, carryRoom, stashRoom } from '../game/state';
+import {
+  balance,
+  pickGearBase,
+  pickQuality,
+  priceOfItem,
+  rollGear,
+  runRecipe,
+  sellPrice,
+  spend,
+} from '../economy';
+import { addItem, carryRoom, plainGear, sellAll, stashRoom } from '../game/state';
+import { ask } from './confirm';
 import type { GameState } from '../game/state';
 import { describeMod } from '../crafting';
 import { note } from './history';
@@ -80,11 +90,12 @@ function buy(recipeId: string): void {
   renderInventory();
 }
 
-/** A price in words, not in wallet keys, and pluralised. */
+/** A price in words, not in wallet keys. Gold is a mass noun and takes no `s`. */
 function priceOf(recipe: Recipe): string {
   return Object.entries(recipe.inputs)
     .map(([id, n]) => {
-      const name = id === 'fragment' ? 'fragment' : (CURRENCY_BY_ID[id]?.name ?? id);
+      if (id === 'gold') return `${n} gold`;
+      const name = CURRENCY_BY_ID[id]?.name ?? id;
       return `${n} ${name}${n === 1 ? '' : 's'}`;
     })
     .join(', ');
@@ -106,7 +117,7 @@ function outputIcon(recipe: Recipe): SVGSVGElement | null {
   return Number.isFinite(tier) ? crystalIcon(tier, 26) : null;
 }
 
-/** Fragments are the universal feedstock; this is where they turn into things. */
+/** Gold is the universal feedstock; this is where it turns into things. */
 export function render(): void {
   const host = $('workshop');
   host.replaceChildren();
@@ -150,16 +161,50 @@ export function render(): void {
   }
 
   renderStock();
-  $('shop-purse').textContent = `${balance(game.wallet, 'fragment')} fragments`;
+  renderSell();
+  $('shop-purse').textContent = `${balance(game.wallet, 'gold')} gold`;
 }
 
 /**
- * Priced off item level and quality, never off what rolled. Charging more for a
- * good roll would turn a shelf you can SEE into the gamble maps already are.
+ * The counter you sell across. One button, because the alternative is picking
+ * thirty pieces out of the dock by hand — and what it takes is exactly the
+ * heap nothing has been spent on, so it can never eat a decision.
  */
-export function priceOfItem(item: Item): number {
-  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
-  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byQuality));
+function renderSell(): void {
+  const btn = $('shop-sell') as HTMLButtonElement;
+  btn.replaceChildren();
+
+  const junk = plainGear(game);
+  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
+  btn.append(el('span', 'buy__name', 'Sell unmodified gear'));
+  btn.append(
+    el(
+      'span',
+      'buy__cost',
+      junk.length === 0
+        ? 'nothing in the bag that no currency has touched'
+        : `${junk.length} pieces · +${worth} gold`
+    )
+  );
+  btn.disabled = junk.length === 0;
+  btn.classList.toggle('buy--off', junk.length === 0);
+}
+
+async function sellJunk(): Promise<void> {
+  const junk = plainGear(game);
+  if (junk.length === 0) return;
+  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
+  const yes = await ask({
+    title: `Sell ${junk.length} pieces for ${worth} gold?`,
+    text: 'Everything in your bag with no modifier on it. Worn and stashed gear stays.',
+    confirm: 'Sell',
+  });
+  if (!yes) return;
+
+  const sold = sellAll(game, junk);
+  note(`Sold ${sold.count} pieces for ${sold.gold} gold`, 'add');
+  render();
+  renderInventory();
 }
 
 /**
@@ -213,8 +258,8 @@ function tooltip(item: Item): string {
 
 function buyItem(item: Item): void {
   const cost = priceOfItem(item);
-  if (balance(game.wallet, 'fragment') < cost) {
-    note(`${item.name} — costs ${cost} fragments`, 'fail');
+  if (balance(game.wallet, 'gold') < cost) {
+    note(`${item.name} — costs ${cost} gold`, 'fail');
     return;
   }
   if (carryRoom(game, 'gear') <= 0 && stashRoom(game) <= 0) {
@@ -222,7 +267,7 @@ function buyItem(item: Item): void {
     return;
   }
 
-  spend(game.wallet, { fragment: cost });
+  spend(game.wallet, { gold: cost });
   // Off the shelf. One of each: a level-up is a restock, not a catalogue you
   // can grind for the same piece twice.
   game.shopStock = game.shopStock.filter((i) => i.id !== item.id);
@@ -256,13 +301,13 @@ function renderStock(): void {
       el(
         'span',
         'buy__cost',
-        `${cost} fragments · ${qualityName(qualityOf(item))} · ilvl ${item.ilvl}`
+        `${cost} gold · ${qualityName(qualityOf(item))} · ilvl ${item.ilvl}`
       )
     );
     btn.append(body);
     attachTooltip(btn, () => tooltip(item));
 
-    if (balance(game.wallet, 'fragment') < cost) {
+    if (balance(game.wallet, 'gold') < cost) {
       btn.disabled = true;
       btn.classList.add('buy--off');
     }
@@ -284,9 +329,15 @@ export function closeShop(): void {
 
 export const isShopOpen = (): boolean => !$('shop').hidden;
 
+/** A sale made from the dock changes what the counter is still offering to take. */
+export function refreshShop(): void {
+  if (isShopOpen()) render();
+}
+
 export function initShop(state: GameState): void {
   game = state;
   ($('shop-close') as HTMLButtonElement).onclick = closeShop;
+  ($('shop-sell') as HTMLButtonElement).onclick = () => void sellJunk();
   restockIfLevelled();
   render();
 }

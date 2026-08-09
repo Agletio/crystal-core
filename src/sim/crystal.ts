@@ -12,8 +12,8 @@ export interface CrystalRewards {
   danger: number;
   /** The part of danger that pays — density is excluded. */
   payingDanger: number;
-  /** Multiplier on fragments. 1 = base. */
-  fragmentYield: number;
+  /** Multiplier on gold. 1 = base. */
+  goldYield: number;
   /** Percent. Feeds the chance a dropped currency climbs a class. */
   rarity: number;
 }
@@ -44,7 +44,7 @@ export function crystalRewards(mods: RolledMod[]): CrystalRewards {
   return {
     danger,
     payingDanger,
-    fragmentYield: 1 + payingDanger * REWARD.fragmentPerDanger,
+    goldYield: 1 + payingDanger * REWARD.goldPerDanger,
     rarity: payingDanger * REWARD.rarityPerDanger,
   };
 }
@@ -144,7 +144,7 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
   const rows = [
     { label: 'family', value: FAMILY_BY_ID[crystalFamily(crystal)].name },
     { label: 'danger', value: Math.round(r.danger).toString() },
-    { label: 'fragments', value: `${Math.round((r.fragmentYield - 1) * 100)}%` },
+    { label: 'gold', value: `${Math.round((r.goldYield - 1) * 100)}%` },
     { label: 'rarity', value: `${Math.round(r.rarity)}%` },
   ];
 

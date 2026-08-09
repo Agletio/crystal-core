@@ -219,8 +219,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? "Close this and go again."
         : ctx.phase === "results"
           ? "Back to the Fissure."
-          : "Go again. Socket a crystal first if you have one.",
-    hint: "A crystal makes the Fissure deadlier and pays for it. Spent on entry, win or lose.",
+          : "Go again. Socket the crystal the Fissure gave you first.",
+    hint: "A crystal makes the descent deadlier and pays for it. Socketing keeps it — you never spend one.",
     target: (ctx) =>
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
@@ -398,9 +398,9 @@ function showScrollHint(away: "up" | "down" | null): void {
 
 /**
  * The whole of the lockdown: the shop's shelves, the stash upgrade, and the
- * currency you spend from the dock. The opening hands out a fixed number of
- * fragments and asks for two specific purchases, and no wording recovers from
- * spending them elsewhere. Everything else is free or reversible.
+ * currency you spend from the dock. The opening hands out a fixed amount of
+ * gold and asks for two specific purchases, and no wording recovers from
+ * spending it elsewhere. Everything else is free or reversible.
  */
 const SPENDS = ".buy, #inv-currency .slot";
 

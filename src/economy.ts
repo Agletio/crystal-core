@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { ModPool, computeStat, modCapacity, rollRandomMod } from './mods';
+import { ModPool, computeStat, modCapacity, qualityOf, rollRandomMod } from './mods';
 import {
   CRYSTAL_ILVL,
   CRYSTAL_TIERS,
@@ -8,6 +8,7 @@ import {
   GEAR_BASES,
   GEAR_SLOTS,
   RECIPES,
+  SHOP,
   crystalName,
 } from './data';
 import type {
@@ -215,6 +216,31 @@ export function balance(w: Wallet, id: string): number {
   return w[id] ?? 0;
 }
 
+/**
+ * Priced off item level and quality, never off what rolled. Charging more for a
+ * good roll would turn a shelf you can SEE into the gamble maps already are.
+ */
+export function priceOfItem(item: Item): number {
+  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
+  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byQuality));
+}
+
+/** Gear only. A crystal is a standing choice, not stock. */
+export const canSell = (item: Item): boolean => item.kind === 'gear';
+
+/**
+ * What a sale pays. The same base as a purchase, plus what is ON the piece —
+ * a shelf price ignores the roll, but the roll is the whole of what you are
+ * deciding to part with.
+ */
+export function sellPrice(item: Item): number {
+  if (!canSell(item)) return 0;
+  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
+  const worth =
+    item.ilvl * SHOP.pricePerIlvl * byQuality * (1 + item.mods.length * SHOP.pricePerMod);
+  return Math.max(1, Math.round(worth * SHOP.sellFraction));
+}
+
 export function canAfford(w: Wallet, inputs: Record<string, number>): boolean {
   return Object.entries(inputs).every(([id, n]) => balance(w, id) >= n);
 }
@@ -256,13 +282,9 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
   return { ok: true, item: makeItem(recipe.output.base) };
 }
 
-// ---------------------------------------------------------------------------
-// Crystal rewards
-//
-// What a run is worth is reported by the sim itself — see RunState.loot. The
-// sim drops no currency yet, so the rare sigils and the Shard of Ruin are
-// unobtainable outside the dev kit; see DEV_CURRENCY.
-// ---------------------------------------------------------------------------
+// A run reports what it was worth itself — see RunState.loot. It drops gold and
+// gear only, so the rare sigils and the Shard of Ruin have no source at all
+// outside the dev kit; see DEV_CURRENCY.
 
 export function kindOf(item: Item): ItemKind {
   return item.kind;

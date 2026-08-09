@@ -581,6 +581,8 @@
   .buy__why { font-size: 10px; color: var(--ember); }
   .buy:hover:not(:disabled) { background: var(--seam); }
   .buy--off { opacity: .38; }
+  /* Alone on its row and carrying a sentence, not a name. */
+  #shop-sell { grid-column: 1 / -1; justify-content: space-between; }
 
   /* --- the socketed crystal ------------------------------------------- */
   /* Derived reward multipliers, shown right under a crystal's name. */
@@ -757,8 +759,8 @@
   }
 
   /* The guided opening locks SPENDING, not navigation.
-     The opening hands out a fixed number of fragments and asks for two
-     specific purchases; spend them elsewhere and no wording gets you back.
+     The opening hands out a fixed amount of gold and asks for two specific
+     purchases; spend it elsewhere and no wording gets you back.
      Everything else — opening a screen, closing one, entering the Fissure,
      starting over — is free or reversible, so it stays live and the guide
      points you back instead. Locking the lot is what turned a refresh on a
@@ -950,8 +952,8 @@
       <button class="mini" id="open-history">History</button>
       <button class="mini" id="open-save">Save</button>
       <span class="devsep"></span>
-      <button class="mini mini--dev" id="dev-fresh" title="Wipe to a true new game: two T1 crystals, nothing else">New game</button>
-      <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, fragments and every currency">Dev kit</button>
+      <button class="mini mini--dev" id="dev-fresh" title="Wipe to a true new game: nothing at all">New game</button>
+      <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, gold and every currency">Dev kit</button>
     </div>
   </header>
 
@@ -1147,15 +1149,15 @@
   </div>
 </div>
 
-<!-- The shop. Fragments in, stock out. Separate from crafting because they do
-     unrelated jobs: this one turns what a run paid into things to spend, and
-     what you buy lands in the dock rather than here. -->
+<!-- The shop. Gold in, stock out, and the counter you sell across. Separate
+     from crafting because they do unrelated jobs: this one turns what a run
+     paid into things to spend, and what you buy lands in the dock. -->
 <div class="modal" id="shop" hidden>
   <div class="modal__card">
     <div class="modal__head">
       <h2 class="modal__title">Shop</h2>
       <div class="seedbar">
-        <code id="shop-purse">0 fragments</code>
+        <code id="shop-purse">0 gold</code>
         <button class="mini" id="shop-close">Close</button>
       </div>
     </div>
@@ -1167,6 +1169,13 @@
       <div class="panel">
         <p class="panel__title">Crafting supplies</p>
         <div class="buys" id="workshop"></div>
+      </div>
+      <div class="panel">
+        <p class="panel__title">Selling</p>
+        <div class="buys">
+          <button class="buy" id="shop-sell"></button>
+        </div>
+        <p class="empty">Any one piece: hold or right-click it in the dock.</p>
       </div>
     </div>
   </div>

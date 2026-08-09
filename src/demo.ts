@@ -41,10 +41,12 @@ import {
   balance,
   grant,
   makeCrystal,
+  priceOfItem,
   rollCrystal,
   makeGear,
   rollGear,
   runRecipe,
+  sellPrice,
 } from './economy';
 import { hasArmourArt } from './ui/icons';
 import { RunSim, runToCompletion } from './sim/run';
@@ -105,8 +107,10 @@ import {
   equipItem,
   grantFirstClear,
   giftWeapon,
+  plainGear,
   replaceItem,
   selectForCraft,
+  sellAll,
   socketItem,
   stashRoom,
   stashUpgradeCost,
@@ -628,12 +632,12 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
   );
 
   // Buying space is the way out, and it is priced to compete with a crystal.
-  grant(game.wallet, 'fragment', 1000);
+  grant(game.wallet, 'gold', 1000);
   const before = game.stashSlots;
   const first = stashUpgradeCost(before)!;
   buyStashSpace(game);
   const second = stashUpgradeCost(game.stashSlots)!;
-  line(`  stash upgrades: ${first} then ${second} fragments`);
+  line(`  stash upgrades: ${first} then ${second} gold`);
   check(
     game.stashSlots > before && second > first,
     'buying space works and gets steeper',
@@ -1051,7 +1055,7 @@ rule('GUIDED OPENING — does every step actually complete?');
       ctx.phase = 'results';
       grantFirstClear(game);
       line(
-        `  after the first clear: ${balance(game.wallet, 'fragment')} fragments, ` +
+        `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
           `${game.inventory.length} items`
       );
     },
@@ -1221,13 +1225,23 @@ rule('GUIDED OPENING — does every step actually complete?');
     'the benched item stays on the bench once you wear it',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  // The last step claims you can afford a crystal. It should be true.
-  const left = balance(game.wallet, 'fragment');
-  const crystalCost = CRYSTAL_TIERS[0].fragments;
+  // The gold it hands out has to cover the two purchases it then asks for,
+  // and the shelves are locked, so there is no recovering from a shortfall.
+  const asked = ['make_shard_of_seaming', 'make_shard_of_making'];
+  const bill = asked.reduce(
+    (n, id) => n + (RECIPES.find((r) => r.id === id)?.inputs.gold ?? 0),
+    0
+  );
   check(
-    left >= crystalCost,
-    `${left} fragments left — a T1 crystal costs ${crystalCost}, as promised`,
-    `only ${left} left but the last step promises a crystal at ${crystalCost}`
+    FISSURE.firstClear.gold >= bill,
+    `the first clear pays ${FISSURE.firstClear.gold} gold and asks for ${bill} of it`,
+    `it pays ${FISSURE.firstClear.gold} but asks for ${bill}`
+  );
+  // The last step tells you to socket a crystal. There has to be one.
+  check(
+    game.inventory.some((i) => i.kind === 'crystal'),
+    'and the crystal its last step names is in the bag',
+    'the opening ends by pointing at a crystal nobody was given'
   );
 }
 
@@ -2530,7 +2544,7 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
       // Only a cleared run banks anything, which is the point of the mechanic.
       if (final.status !== 'cleared') continue;
       cleared++;
-      banked += final.loot.currency.fragment ?? 0;
+      banked += final.loot.currency.gold ?? 0;
       killed += final.killed;
       xp += final.xpGained;
     }
@@ -2776,42 +2790,92 @@ rule('MITIGATION — is every reachable set answerable?');
 }
 
 // ===========================================================================
-rule('WHERE THE FRAGMENTS GO');
+rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
 
-const wallet: Wallet = {};
-grant(wallet, 'fragment', 300);
-line(`Start: ${balance(wallet, 'fragment')} fragments`);
+// Crystals are permanent and given, so there is no consumable to divide gold
+// by any more. What is left is the two taps a run opens — coin off the corpses
+// and gear you can sell — and whether either is worth having.
+{
+  const wallet: Wallet = {};
+  grant(wallet, 'gold', 300);
 
-const queue: Item[] = [];
-while (true) {
-  const res = runRecipe(wallet, 'crystal_t2');
-  if (!res.ok || !res.item) break;
-  let c = res.item;
-  c = craft(c, CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-  queue.push(c);
-}
-line(`Prepped ${queue.length} crystals, ${balance(wallet, 'fragment')} fragments left`);
-
-let elapsed = 0;
-let survived = 0;
-for (const c of queue) {
-  const sim = new RunSim([c], makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng);
-  const final = runToCompletion(sim, 400);
-  elapsed += final.elapsed;
-  if (final.status !== 'cleared') continue;
-  survived++;
-  for (const [id, n] of Object.entries(final.loot.currency)) {
-    grant(wallet, id, Math.round(n));
+  // Nothing may mint gold out of the shelf. A full Brilliant piece is the
+  // best case for the mod bonus, so it is the one that has to stay under.
+  const arbitrage: string[] = [];
+  for (const { id: quality } of QUALITIES) {
+    const piece = rollGear('bulwark_body_t3', 60, quality, 6, pool, new Rng(41));
+    if (sellPrice(piece) >= priceOfItem(piece)) {
+      arbitrage.push(`${quality} ${sellPrice(piece)} >= ${priceOfItem(piece)}`);
+    }
   }
-}
+  check(
+    arbitrage.length === 0,
+    'buying a piece and selling it straight back always loses',
+    arbitrage.join(', ')
+  );
 
-line(
-  `Ran ${queue.length} crystals (${survived} cleared) in ${Math.round(elapsed / 60)} min → ` +
-    `${balance(wallet, 'fragment')} fragments`
-);
-line(
-  `Queue is empty and you can't rebuild it fully — that's the resting state working.`
-);
+  line('  band   gold banked   drops   sale value   share from selling');
+  const shares: number[] = [];
+  for (let band = 0; band < DROP_BANDS.length; band += 2) {
+    const runs = 6;
+    let banked = 0;
+    let sold = 0;
+    let drops = 0;
+
+    for (let i = 0; i < runs; i++) {
+      const set = ladderSet(band, new Rng(8800 + i * 17 + band), pool);
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(910 + i)), new Rng(6400 + band * 29 + i));
+      const final = runToCompletion(sim, 400);
+      if (final.status !== 'cleared') continue;
+      banked += final.loot.currency.gold ?? 0;
+      drops += final.loot.items.length;
+      for (const item of final.loot.items) sold += sellPrice(item);
+    }
+
+    const share = banked + sold > 0 ? sold / (banked + sold) : 0;
+    shares.push(share);
+    line(
+      `   ${band}   ${banked.toFixed(0).padStart(11)}   ${(drops / runs).toFixed(1).padStart(5)}   ` +
+        `${sold.toFixed(0).padStart(10)}   ${(share * 100).toFixed(0).padStart(17)}%`
+    );
+  }
+
+  // Neither tap may be noise. Selling is the larger of the two at every band
+  // measured — which is a curve for Phase 7 to settle, not a bug — so the
+  // bound here is only what catches one of them going to nothing.
+  const lopsided = shares.filter((s) => s < 0.05 || s > 0.95);
+  check(
+    lopsided.length === 0,
+    'selling and killing both pay something at every band sampled',
+    shares.map((s) => `${(s * 100).toFixed(0)}%`).join(' → ')
+  );
+
+  // The free descent has to fund the bench, or a fresh character watches the
+  // one run they can reach pay for nothing. Averaged: a single seed's drops
+  // are the loosest number in the game.
+  const descents = 5;
+  let earned = 0;
+  let sold = 0;
+  for (let i = 0; i < descents; i++) {
+    const opening = createGame('fresh');
+    const final = runToCompletion(new RunSim([], makeCharacter({}, 'strike'), new Rng(77 + i)), 400);
+    earned += final.loot.currency.gold ?? 0;
+    for (const item of final.loot.items) addItem(opening, item);
+    sold += sellAll(opening, plainGear(opening)).gold;
+  }
+  // What a level-1 shelf holds, which is the whole of what the opening asks for.
+  const bench = RECIPES.filter((r) => (r.level ?? 1) === 1).reduce(
+    (n, r) => n + (r.inputs.gold ?? 0),
+    0
+  );
+  const perRun = (earned + sold) / descents;
+  line(`  a bare descent pays ${(earned / descents).toFixed(1)} gold and ${(sold / descents).toFixed(1)} in sellable drops`);
+  check(
+    perRun >= bench,
+    `and covers the level-1 shelf (${bench} gold) in one run`,
+    `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf`
+  );
+}
 
 // ===========================================================================
 rule('THE SAVE — does a save survive the game changing under it?');

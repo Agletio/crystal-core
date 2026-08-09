@@ -119,7 +119,7 @@ export function setCurrencyHandler(next: CurrencyHandler | null): void {
 }
 
 /**
- * Fragments only — the feedstock every price is quoted in, so what you want is a
+ * Gold only — the feedstock every price is quoted in, so what you want is a
  * number to compare against a price. That is a readout, not an inventory slot.
  */
 function renderWallet(): void {
@@ -128,8 +128,8 @@ function renderWallet(): void {
   host.replaceChildren();
 
   const chip = el('span', 'coin');
-  chip.append(el('span', 'coin__n', String(game.wallet.fragment ?? 0)));
-  chip.append(el('span', 'coin__id', 'fragments'));
+  chip.append(el('span', 'coin__n', String(game.wallet.gold ?? 0)));
+  chip.append(el('span', 'coin__id', 'gold'));
   host.append(chip);
 }
 

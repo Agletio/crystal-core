@@ -101,7 +101,7 @@ const guideProbe = () => {
  * the honest test: it answers what a real click would actually hit.
  *
  * Both directions matter. A purchase that stays live can strand a new player
- * on the fragment budget; a door that does not is worse, because a step with
+ * on the opening's gold; a door that does not is worse, because a step with
  * nothing lit then has no way out at all.
  */
 const lockProbe = () => {

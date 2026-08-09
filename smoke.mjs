@@ -98,7 +98,7 @@ assert($('run-launch').disabled === false, 'ready to enter immediately');
 // is judging the endgame at the start. No crystals either — two of them read
 // as "spend these now", and a new character who did that died to it.
 assert(dockItems().length === 0, 'a fresh game owns nothing at all', String(dockItems().length));
-assert(text('wallet').startsWith('0'), 'a fresh game has no fragments', text('wallet'));
+assert(text('wallet').startsWith('0'), 'a fresh game has no gold', text('wallet'));
 assert(
   currencySlots().length === 0,
   'an empty wallet puts no currency in the dock',
@@ -155,9 +155,9 @@ assert(
 assert($('guide-skip') === null, 'there is no way to skip it');
 
 // --- the opening locks spending, and only spending ------------------------
-// It hands you a fixed number of fragments and then asks you to buy two
-// specific things with them. Spend them on a crystal instead and no wording
-// gets you back, so the shelves are switched off. Everything else stays live:
+// It hands you a fixed amount of gold and then asks you to buy two specific
+// things with it. Spend it on stash space instead and no wording gets you
+// back, so the shelves are switched off. Everything else stays live:
 // locking the lot meant a step with nothing lit — a reload during the fight —
 // was a room with no doors, New game included.
 assert(document.body.classList.contains('guided'), 'a live step locks the app down');
@@ -214,11 +214,10 @@ assert(dupes.length === 0, 'no duplicate element ids', dupes.join(', '));
 const invItems = dockItems;
 assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 
-// Fragments only up top: they are the number you compare against a shop
-// price, not a thing you apply to an item. Everything you DO apply is a
-// stack in the dock.
-assert(all('#wallet .coin').length === 1, 'wallet shows fragments only', text('wallet'));
-assert(text('wallet').includes('fragments'), 'fragments are held', text('wallet'));
+// Gold only up top: it is the number you compare against a shop price, not a
+// thing you apply to an item. Everything you DO apply is a stack in the dock.
+assert(all('#wallet .coin').length === 1, 'wallet shows gold only', text('wallet'));
+assert(text('wallet').includes('gold'), 'gold is held', text('wallet'));
 assert(
   all('.dock .slot .icon').length === invItems().length + currencySlots().length,
   'every item and every stack has an icon'
@@ -318,7 +317,7 @@ const multRows = () =>
   );
 assert($('item-rewards').hidden === false, 'crystal shows reward multipliers');
 assert(
-  multRows().join(' ') === 'family=Normal danger=0 fragments=0% rarity=0%',
+  multRows().join(' ') === 'family=Normal danger=0 gold=0% rarity=0%',
   'a blank crystal is worth exactly base',
   multRows().join(' ')
 );
@@ -500,8 +499,8 @@ assert($('craft-empty').hidden === false, 'bench is empty again');
 assert(invItems().length === inventoryBefore, 'item is still in the dock');
 assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
-// --- the shop buys against fragments --------------------------------------
-// A separate window from crafting: one turns fragments into stock, the other
+// --- the shop buys against gold -------------------------------------------
+// A separate window from crafting: one turns gold into stock, the other
 // spends stock on the item in front of you, and sharing a window meant that
 // item scrolled away exactly when you went to buy something for it.
 assert($('shop').hidden === true, 'the shop starts closed');
@@ -515,12 +514,12 @@ const affordable = buys.find((b) => !b.disabled);
 assert(!!affordable, 'at least one recipe is affordable');
 
 // --- the shelf grows with you ---------------------------------------------
-// A level-1 shop that already sold a Tier 6 crystal would be selling a map
-// that kills you, and a Shard of Chaos you cannot use on anything you own.
+// A level-1 shop selling a Shard of Chaos is selling something you cannot use
+// on anything you own. Crystals are not on it at all: they are given.
 const buyNames = () => all('#workshop .buy__name').map((n) => n.textContent);
 assert(
-  !buyNames().some((n) => /Tier [3-6] Crystal/.test(n)),
-  'no high-tier crystals at level 1',
+  !buyNames().some((n) => /Crystal/.test(n)),
+  'the shop never sells a crystal',
   buyNames().join(', ')
 );
 assert(
@@ -538,7 +537,7 @@ assert(
 const stock = () => all('#shop-stock button.buy');
 assert(stock().length >= 2, 'the shop stocks gear', String(stock().length));
 assert(
-  all('#shop-stock .buy__cost').every((n) => /\d+ fragments/.test(n.textContent)),
+  all('#shop-stock .buy__cost').every((n) => /\d+ gold/.test(n.textContent)),
   'every piece shows a price'
 );
 assert(
@@ -547,14 +546,14 @@ assert(
   all('#shop-stock .buy__cost')[0]?.textContent
 );
 
-// Prices were printing the raw wallet key, unpluralised — "8 fragment". Same
-// class of leak as a modifier rendering `areaOfEffect`, and just as invisible
-// until someone reads the button.
+// Prices print words, not wallet keys — a modifier rendering `areaOfEffect`
+// is the same class of leak, and just as invisible until someone reads the
+// button. Gold is a mass noun, so the plural rule must leave it alone.
 const prices = buys.map((b) => b.querySelector('.buy__cost')?.textContent ?? '');
 assert(
-  prices.every((p) => !/\b1?\d+ fragment\b(?!s)/.test(p)),
-  'prices are pluralised, not raw ids',
-  prices.find((p) => /\b\d+ fragment\b(?!s)/.test(p)) ?? ''
+  prices.every((p) => /^\d+ gold$/.test(p)),
+  'prices read as gold, never as a wallet key',
+  prices.find((p) => !/^\d+ gold$/.test(p)) ?? ''
 );
 assert(
   buys.every((b) => b.querySelector('.icon')),
@@ -636,13 +635,13 @@ assert(stashed().length === 0, 'and starts empty');
   assert(dockItems().length === before, 'and returns to the bag', String(dockItems().length));
 }
 
-// Space is bought with fragments, from here, because here is where you find
-// out you need it.
+// Space is bought with gold, from here, because here is where you find out
+// you need it.
 {
   const slotsBefore = stashSlots().length;
   const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
   const before = purse();
-  const cost = Number($('stash-grow').textContent.match(/(\d+) fragments/)?.[1] ?? 0);
+  const cost = Number($('stash-grow').textContent.match(/(\d+) gold/)?.[1] ?? 0);
   assert(cost > 0, 'the price is on the button', $('stash-grow').textContent);
   assert($('stash-grow').disabled === false, 'and the dev kit can afford it');
   $('stash-grow').click();
@@ -650,8 +649,8 @@ assert(stashed().length === 0, 'and starts empty');
     `${slotsBefore} -> ${stashSlots().length}`);
   assert(purse() === before - cost, 'and costs what it said',
     `${before} -> ${purse()}, asked ${cost}`);
-  // It gets steeper, so storage stays a decision against buying a crystal.
-  const next = Number($('stash-grow').textContent.match(/(\d+) fragments/)?.[1] ?? 0);
+  // It gets steeper, so storage stays a decision against spending at the bench.
+  const next = Number($('stash-grow').textContent.match(/(\d+) gold/)?.[1] ?? 0);
   assert(next > cost, 'the next block costs more', `${cost} then ${next}`);
 }
 
@@ -1400,6 +1399,69 @@ assert(all('.dock .slot--on').length === 0, 'along with the highlight');
 
 $('sheet-close').click();
 assert($('sheet').hidden === true, 'character sheet closes');
+
+// --- selling -------------------------------------------------------------
+// The only way out of a full bag that isn't a bigger bag. Left this late
+// because the bulk button empties the gear column, and everything above it
+// wants something in there to click.
+const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
+{
+  // One piece at a time lives in the menu, never on the click: a sale is the
+  // one action here you cannot take back.
+  const slot = filled('#inv-gear')[0];
+  slot.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  const sell = all('#itemmenu .itemmenu__item').find((b) => /^sell for/i.test(b.textContent ?? ''));
+  assert(!!sell, 'the menu offers to sell a piece', all('#itemmenu .itemmenu__item').map((b) => b.textContent).join(' | '));
+  assert(/\d+ gold/.test(sell.textContent), 'and says what for', sell.textContent);
+  assert(!/sell/i.test(named(slot)), 'but a plain click never sells', named(slot));
+
+  const asked = Number(sell.textContent.match(/(\d+) gold/)?.[1] ?? 0);
+  const before = purse();
+  const carried = filled('#inv-gear').length;
+  sell.click();
+  assert(purse() === before + asked, 'selling pays exactly what it offered', `${before} -> ${purse()}, asked ${asked}`);
+  assert(filled('#inv-gear').length === carried - 1, 'and the piece is gone', String(filled('#inv-gear').length));
+}
+
+// Crystals are a standing choice, not stock, so nothing offers to buy one.
+{
+  filled('#inv-crystal')[0].dispatchEvent(
+    new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+  );
+  const labels = all('#itemmenu .itemmenu__item').map((b) => b.textContent ?? '');
+  assert(!labels.some((t) => /sell/i.test(t)), 'a crystal cannot be sold', labels.join(' | '));
+  document.body.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+}
+
+// The bulk button: thirty pieces one click at a time is what kills a loop.
+{
+  $('open-shop').click();
+  const label = () => text('shop-sell');
+  assert(/\d+ pieces/.test(label()), 'the shop counts what it would take', label());
+  assert(/\+\d+ gold/.test(label()), 'and prices the heap', label());
+
+  const offered = Number(label().match(/\+(\d+) gold/)?.[1] ?? 0);
+  const before = purse();
+  $('shop-sell').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert($('confirm').hidden === false, 'selling the lot asks first');
+  $('confirm-no').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(purse() === before, 'and answering no sells nothing', `${before} -> ${purse()}`);
+
+  $('shop-sell').click();
+  await new Promise((r) => setTimeout(r, 0));
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(purse() === before + offered, 'yes pays what the button said', `${before} -> ${purse()}, offered ${offered}`);
+  assert(
+    filled('#inv-gear').every((b) => b.classList.contains('slot--modded')),
+    'and leaves anything a currency has touched',
+    String(filled('#inv-gear').length)
+  );
+  assert($('shop-sell').disabled === true, 'with nothing left to take');
+  $('shop-close').click();
+}
 
 // --- history --------------------------------------------------------------
 assert($('history').hidden === true, 'history starts closed');

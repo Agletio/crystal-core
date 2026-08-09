@@ -73,11 +73,12 @@ export function buildReport(game: GameState, run: RunState): RunReport {
     // overlay shows it as loot rather than it appearing silently in the bag.
     const first = grantFirstClear(game);
     if (first) {
-      banked.fragment = (banked.fragment ?? 0) + first.fragments;
+      banked.gold = (banked.gold ?? 0) + first.gold;
       for (const [id, n] of Object.entries(first.currency)) {
         banked[id] = (banked[id] ?? 0) + n;
       }
       if (first.weapon) gifts.push(first.weapon);
+      if (first.crystal) gifts.push(first.crystal);
     }
   }
 

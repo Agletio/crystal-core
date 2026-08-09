@@ -7,7 +7,7 @@
 import { Rng } from '../rng';
 import { EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
-import { grant, makeCrystal, makeGear } from '../economy';
+import { canSell, grant, makeCrystal, makeGear, sellPrice } from '../economy';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import type { Character } from '../sim/character';
@@ -32,8 +32,8 @@ export const STASH_STEP = 6;
 export const STASH_MAX = 60;
 
 /**
- * The next block of stash space, or null when there is no more. Steep: every
- * fragment spent here is a crystal not bought, so storage is a real decision.
+ * The next block of stash space, or null when there is no more. Steep: gold
+ * spent here is gold not spent at the bench, so storage is a real decision.
  */
 export function stashUpgradeCost(slots: number): number | null {
   if (slots >= STASH_MAX) return null;
@@ -47,7 +47,7 @@ export interface GameState {
   inventory: Item[];
   /** Nothing acts on a stashed item until you carry it again. */
   stash: Item[];
-  /** How big the stash currently is. Bought up with fragments. */
+  /** How big the stash currently is. Bought up with gold. */
   stashSlots: number;
   character: Character;
   /**
@@ -99,7 +99,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   const preset = START_PRESETS[mode];
 
   game.wallet = {};
-  grant(game.wallet, 'fragment', preset.fragments);
+  grant(game.wallet, 'gold', preset.gold);
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
   game.inventory = [
@@ -130,15 +130,16 @@ export function resetGame(game: GameState, mode: StartMode): void {
 
 /** Granted once, on the first cleared descent. Returns what it gave. */
 export function grantFirstClear(game: GameState): {
-  fragments: number;
+  gold: number;
   currency: Record<string, number>;
   weapon: Item | null;
+  crystal: Item | null;
 } | null {
   if (game.firstClearDone) return null;
   game.firstClearDone = true;
 
   const gift = FISSURE.firstClear;
-  grant(game.wallet, 'fragment', gift.fragments);
+  grant(game.wallet, 'gold', gift.gold);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
   const weapon = makeGear(gift.weapon, 1);
@@ -147,7 +148,10 @@ export function grantFirstClear(game: GameState): {
   weapon.meta.firstClear = true;
   addItem(game, weapon);
 
-  return { fragments: gift.fragments, currency: gift.currency, weapon };
+  const crystal = makeCrystal(gift.crystal);
+  addItem(game, crystal);
+
+  return { gold: gift.gold, currency: gift.currency, weapon, crystal };
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
@@ -189,6 +193,35 @@ export function findItem(game: GameState, id: string): Item | undefined {
   return game.inventory.find((i) => i.id === id);
 }
 
+/** Carried gear → gold. 0 for anything else: only the bag is a counter. */
+export function sellItem(game: GameState, item: Item): number {
+  if (!canSell(item)) return 0;
+  const paid = sellPrice(item);
+  if (!removeItem(game, item)) return 0;
+  grant(game.wallet, 'gold', paid);
+  return paid;
+}
+
+/**
+ * Carried gear with nothing rolled on it: the one heap you can clear without
+ * reading each piece. Anything a currency touched is a decision, never in here.
+ */
+export const plainGear = (game: GameState): Item[] =>
+  carried(game, 'gear').filter((i) => i.mods.length === 0);
+
+/** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
+export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {
+  let count = 0;
+  let gold = 0;
+  for (const item of [...items]) {
+    const paid = sellItem(game, item);
+    if (paid <= 0) continue;
+    count++;
+    gold += paid;
+  }
+  return { count, gold };
+}
+
 /** Carried → stashed. Fails when the stash is full. */
 export function toStash(game: GameState, item: Item): boolean {
   if (stashRoom(game) <= 0) return false;
@@ -211,10 +244,10 @@ export function fromStash(game: GameState, item: Item): boolean {
 export function buyStashSpace(game: GameState): { ok: boolean; error?: string } {
   const cost = stashUpgradeCost(game.stashSlots);
   if (cost === null) return { ok: false, error: 'the stash is as large as it goes' };
-  if ((game.wallet.fragment ?? 0) < cost) {
-    return { ok: false, error: `costs ${cost} fragments` };
+  if ((game.wallet.gold ?? 0) < cost) {
+    return { ok: false, error: `costs ${cost} gold` };
   }
-  game.wallet.fragment = (game.wallet.fragment ?? 0) - cost;
+  game.wallet.gold = (game.wallet.gold ?? 0) - cost;
   game.stashSlots = Math.min(STASH_MAX, game.stashSlots + STASH_STEP);
   return { ok: true };
 }

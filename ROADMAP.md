@@ -136,11 +136,11 @@ Phase 1, both of which cost nothing today:
 Two things in the repo will fail loudly, and one will fail quietly, when this
 work lands. Expect them rather than discovering them.
 
-**The guided opening (`npm run guide`) walks the real UI with a real pointer and
-will break twice.** Phase 3 renames the currency it tells you to buy ("Buy a
-Shard of Seaming"), and Phase 4 changes the run flow its steps are written
-against. `src/ui/tutorial.ts` is data — steps with `done` predicates — so the
-fix is editing those steps, not the harness. Budget for it in both phases.
+**The guided opening (`npm run guide`) walks the real UI with a real pointer.**
+Phase 4 changes the run flow its steps are written against. `src/ui/tutorial.ts`
+is data — steps with `done` predicates — so the fix is editing those steps, not
+the harness. *(Phase 3 was expected to break it too and did not: the shards it
+names never changed id, only the wallet key their price is quoted in.)*
 
 **The demo's `THE LADDER` and `MITIGATION` checks are tier-shaped and cannot
 survive as written.** Do not delete them; restate the same two invariants
@@ -313,20 +313,37 @@ Separable from everything else and lands value immediately.
 Prerequisite for the idle loop: you cannot auto-repeat into a full bag without a
 way to empty it.
 
-Phase 1 left two things here on purpose, because both are this phase's job:
-the demo's `WHERE THE FRAGMENTS GO` section still buys and burns crystals as if
-they were consumable, and `RECIPES` still sells them.
+Phase 1 left two things here on purpose, because both were this phase's job:
+the demo's economy section bought and burned crystals as if they were
+consumable, and `RECIPES` sold them. Both are gone.
 
-- [ ] Replace `fragment` with `gold` everywhere. Touch list: `src/data.ts`
-      (`LOOT.fragmentsPerKill`, every `RECIPES` input, `START_PRESETS`,
-      `FISSURE.firstClear`), `src/game/state.ts`, `src/game/save.ts` (the
-      `heal()` special case), `src/ui/shop.ts`, `src/ui/icons.ts`. Old saves
-      lose their fragments — acceptable under the documented id-rename policy,
-      no `SAVE_VERSION` bump.
-- [ ] Remove crystal purchase recipes; crystals are not bought.
-- [ ] Sell an item for gold. Price derived from base, quality and mods.
-- [ ] Sell from the haul and from the dock, including a bulk action.
-- [ ] Update the guided opening for the currency rename (`src/ui/tutorial.ts`).
+- [x] Replace `fragment` with `gold` everywhere. Old saves lose their
+      fragments — acceptable under the documented id-rename policy, no
+      `SAVE_VERSION` bump.
+- [x] Remove crystal purchase recipes; crystals are not bought. The shop sells
+      crafting and nothing else.
+- [x] Sell an item for gold (`sellPrice` in `src/economy.ts`): the same base as
+      a purchase, plus what is rolled ON it, times `SHOP.sellFraction`. The
+      fraction is held under `1 / (1 + 6 × pricePerMod)`, so a full Brilliant
+      piece bought and sold back still loses — the demo checks every quality.
+- [x] Sell from the dock — one piece from its menu, never from the click, and a
+      bulk button in the shop taking every carried piece no currency has
+      touched. Selling from the HAUL waits for Phase 4, which is where the haul
+      is built.
+- [x] Update the guided opening: gold, and a last step that no longer calls a
+      crystal a stake you spend on entry.
+
+> **Landed.** Two things worth recording. The first clear now also hands you a
+> T1 crystal — without it, removing the purchase recipes leaves a fresh game
+> with no crystal at all until Phase 5's NPC, and four sockets nothing can
+> reach. It is the same "given, never bought" rule arriving early through a
+> gift that already existed, and Phase 5 should fold it into the NPC.
+>
+> The second is a measurement for Phase 7: sale value is 74–83% of what a run
+> is worth across the bands, so gear is the larger tap and coin is the smaller
+> one. `LOOT.goldPerKill` went 0.086 → 0.14 to keep the bare Fissure paying for
+> the level-1 shelf in one run; the split itself is a curve decision, not a bug,
+> and the demo only guards against either tap going to nothing.
 
 ### Phase 4 — The haul and the idle loop
 
@@ -346,6 +363,8 @@ Mechanism is specified in §4.
 
 - [ ] The NPC: a random event during a Fissure run that hands you a crystal, at a
       falling chance as you collect more, until you hold all four Normal ones.
+      The first clear already gives one (`FISSURE.firstClear.crystal`) — that is
+      this NPC's first gift arriving early, and belongs inside it.
 - [ ] Crystals gain levels per cleared run, scaled by the set's danger, only
       while socketed. T1 → T4, one mod slot per tier.
 - [ ] Quests for the Demonic and Prismatic crystals — objectives like clearing at a

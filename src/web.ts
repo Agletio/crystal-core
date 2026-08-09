@@ -6,7 +6,8 @@
  * it, uncovered — crafting works ON the dock, so covering it is the one mistake
  * this layout cannot afford.
  */
-import { createGame, resetGame, slotFor, stashRoom, toStash } from './game/state';
+import { createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './game/state';
+import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
 import { EQUIP_SLOTS } from './data';
@@ -16,7 +17,7 @@ import type { Healed } from './game/save';
 import { initInventory, renderInventory, setItemActions } from './ui/inventory';
 import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
-import { initShop, openShop, closeShop, isShopOpen } from './ui/shop';
+import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
@@ -202,6 +203,21 @@ setItemActions({
         menuOnly: true,
         run: () => {},
         blocked: 'the stash is full',
+      });
+    }
+    // Menu only, never the click: a sale is the one action here that cannot be
+    // taken back, and the dock's click belongs to whatever screen is open.
+    if (canSell(item)) {
+      out.push({
+        label: `Sell for ${sellPrice(item)} gold`,
+        menuOnly: true,
+        run: () => {
+          const paid = sellItem(game, item);
+          if (paid <= 0) return;
+          note(`Sold ${item.name} for ${paid} gold`, 'add');
+          renderInventory();
+          refreshShop();
+        },
       });
     }
     return out;

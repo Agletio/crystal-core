@@ -154,7 +154,7 @@ export interface Entity {
   pathTimer: number;
   /** Committed target, held across ticks so the hero doesn't thrash. */
   targetId: number | null;
-  /** Multiplier on the xp and fragments this one is worth. 1 for rank and file. */
+  /** Multiplier on the xp and gold this one is worth. 1 for rank and file. */
   bounty: number;
   aggroed: boolean;
   /** Seconds of "just got hit" left, for the renderer to flash. */
@@ -237,8 +237,8 @@ export class RunSim {
   private nextId = 1;
   /** XP one monster on this map is worth, fixed by crystal tier at spawn. */
   private xpPerKill = 1;
-  /** Fragments one monster is worth. Fractional; rounds when banked. */
-  private fragmentsPerKill = 0;
+  /** Gold one monster is worth. Fractional; rounds when banked. */
+  private goldPerKill = 0;
   /** Tree switches for the hero's skill, resolved once at spawn. */
   private readonly grants: Record<string, unknown>;
   /** Crit decided for the current skill use, so every target shares it. */
@@ -341,10 +341,10 @@ export class RunSim {
     const packSize = Math.max(1, Math.round(density.packSize * socketPackSize(filled)));
     // Run power pays here: it is the one number a reward reads.
     this.xpPerKill = monsterXp(this.set.power);
-    this.fragmentsPerKill =
-      LOOT.fragmentsPerKill *
+    this.goldPerKill =
+      LOOT.goldPerKill *
       Math.pow(LOOT.powerScale, this.set.power) *
-      this.set.rewards.fragmentYield;
+      this.set.rewards.goldYield;
 
     // One family per pack, for the same reason as one kind per pack.
     const plan = familyPlan(this.set.composition, packCount);
@@ -1151,8 +1151,8 @@ export class RunSim {
 
     s.killed++;
     s.xpGained += this.xpPerKill * victim.bounty;
-    s.loot.currency.fragment =
-      (s.loot.currency.fragment ?? 0) + this.fragmentsPerKill * victim.bounty;
+    s.loot.currency.gold =
+      (s.loot.currency.gold ?? 0) + this.goldPerKill * victim.bounty;
     this.rollCurrency();
     this.rollGearDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });

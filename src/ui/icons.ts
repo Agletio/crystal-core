@@ -902,10 +902,11 @@ const SIGILS: Record<string, string[]> = {
     '..cc..cc....',
     '...o...oo...',
   ],
-  fragment: [
+  gold: [
     '....cccc....',
     '...cccccc...',
-    '...ccwccc...',
+    '..cccwwccc..',
+    '..cccwwccc..',
     '...cccccc...',
     '....cccc....',
   ],
@@ -915,7 +916,7 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
   const colour = CLASS_COLOURS[currency.class] ?? 'var(--dust)';
   // An unknown currency still gets a shape rather than nothing, so adding one
   // to the table is a visual to-do rather than an invisible bug.
-  const rows = SIGILS[currency.id] ?? SIGILS.fragment;
+  const rows = SIGILS[currency.id] ?? SIGILS.gold;
   return sprite(rows, { o: INK, c: colour, w: 'var(--chalk)' }, size, currency.id);
 }
 

@@ -211,9 +211,9 @@ export function heal(game: GameState): Healed {
     if (pick) pick.meta.firstClear = true;
   }
 
-  // `fragment` is the feedstock rather than a currency, so it has no entry.
+  // `gold` is the feedstock rather than a currency, so it has no entry.
   for (const id of Object.keys(game.wallet)) {
-    if (id === 'fragment' || CURRENCY_BY_ID[id]) continue;
+    if (id === 'gold' || CURRENCY_BY_ID[id]) continue;
     delete game.wallet[id];
     out.currencies++;
   }

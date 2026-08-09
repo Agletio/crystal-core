@@ -526,10 +526,8 @@ export const CRYSTAL_MODS: ModDef[] = [
       { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [8, 18] }] },
     ],
   },
-  // Gilded (itemRarity) and Fractured (fragmentYield) used to live here as
-  // pure upside. They're gone: reward is now derived from danger, so a mod
-  // that only gave you something was a mod with no decision in it. Their
-  // slots are taken by the three below.
+  // Reward is derived from danger, so no crystal modifier is pure upside: a mod
+  // that only gave you something would be a mod with no decision in it.
   {
     id: 'monster_armour',
     slot: 'mod',
@@ -846,7 +844,7 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
   },
   {
     // Chance that currency drops at all, as opposed to how good it is.
-    // Fragments go stale; the scarce classes never do.
+    // Gold goes stale; the scarce classes never do.
     id: 'currency_find',
     slot: 'utility',
     name: 'of Avarice',
@@ -1239,8 +1237,9 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 
 // --- recipes ---------------------------------------------------------------
 //
-// Fragments are the universal feedstock. One spent on a crystal is one not
-// spent on gear crafting, and that contested resource IS the endgame decision.
+// Gold is the universal feedstock, and selling is where it comes from. One
+// spent on stash space is one not spent at the bench, and that contested
+// resource IS the endgame decision.
 
 /**
  * A crystal's tier is its MOD CAPACITY and nothing else. It is not a difficulty
@@ -1251,10 +1250,10 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
  * capacity a tier grants and the currencies that can reach it stay in step.
  */
 export const CRYSTAL_TIERS = [
-  { tier: 1, mods: 0, quality: 'rough' as Quality, fragments: 8 },
-  { tier: 2, mods: 1, quality: 'seamed' as Quality, fragments: 20 },
-  { tier: 3, mods: 2, quality: 'faceted' as Quality, fragments: 45 },
-  { tier: 4, mods: 3, quality: 'brilliant' as Quality, fragments: 95 },
+  { tier: 1, mods: 0, quality: 'rough' as Quality },
+  { tier: 2, mods: 1, quality: 'seamed' as Quality },
+  { tier: 3, mods: 2, quality: 'faceted' as Quality },
+  { tier: 4, mods: 3, quality: 'brilliant' as Quality },
 ];
 
 /** Every crystal rolls at the same item level, so tier buys room, never power. */
@@ -1763,7 +1762,7 @@ export interface EncounterDef {
   damage: number;
   /** Body radius multiplier — a boss should read as big before it hits you. */
   size: number;
-  /** Multiplier on the xp and fragments each one is worth. */
+  /** Multiplier on the xp and gold each one is worth. */
   bounty: number;
 }
 
@@ -1845,8 +1844,8 @@ export const DANGER_STATS: Record<string, DangerStat> = {
 
 /** Loot only; XP stays per-kill. A second channel belongs here, not in the sim. */
 export const REWARD = {
-  /** Fragment multiplier gained per danger point. 100 danger = +100%. */
-  fragmentPerDanger: 0.01,
+  /** Gold multiplier gained per danger point. 100 danger = +100%. */
+  goldPerDanger: 0.01,
   /** Rarity percent gained per danger point. */
   rarityPerDanger: 0.8,
 };
@@ -1916,10 +1915,18 @@ export const SHOP = {
   maxSlots: 8,
   /** Item level of stock, as a multiple of character level. */
   ilvlPerLevel: 1.6,
-  /** Fragments per item level, before quality. */
+  /** Gold per item level, before quality. */
   pricePerIlvl: 2.4,
   /** Price multiplier by quality. Steeper than the mod count, on purpose. */
   priceByQuality: { rough: 1, seamed: 2.6, faceted: 7, brilliant: 18 } as Record<Quality, number>,
+  /**
+   * What a SALE pays, against the same base. Six modifiers reach 1.9×, so the
+   * fraction has to stay under 1/1.9 or buying a full piece and selling it back
+   * would mint gold out of the shelf.
+   */
+  sellFraction: 0.35,
+  /** What one rolled modifier adds to a sale, as a fraction of the base. */
+  pricePerMod: 0.15,
 };
 
 /** Best last. Rough only early: the point is a BASE, not a finished item. */
@@ -1939,12 +1946,12 @@ export const shopQualityFor = (level: number): Array<[Quality, number]> => {
 
 export const LOOT = {
   /**
-   * Fragments one COMMON monster is worth in the bare Fissure. Accumulates
+   * Gold one COMMON monster is worth in the bare Fissure. Accumulates
    * fractionally and rounds when banked, so values below 1 still work. A magic
    * or rare one is worth several kills, so a pack pays about a third more than
    * its count — ranks redistribute the payout into spikes rather than raising it.
    */
-  fragmentsPerKill: 0.086,
+  goldPerKill: 0.14,
   /** Gold multiplier per point of run power. */
   powerScale: 2.1,
 };
@@ -1960,20 +1967,23 @@ export const FISSURE = {
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
   /**
-   * What the FIRST clear hands you, on top of its own loot: exactly the cost of
-   * everything the guided opening asks you to buy, plus the crystal its last
-   * step says you can now afford. Fragments rather than the items, because
-   * buying them is the thing the opening is teaching.
+   * What the FIRST clear hands you, on top of its own loot. Gold rather than
+   * the shards themselves, because buying them is what the opening teaches, and
+   * several times what it asks for so the rest is yours to place.
+   *
+   * The crystal is GIVEN, never sold — and until the NPC exists it is the only
+   * one a fresh game can reach, without which four sockets are furniture.
    */
   firstClear: {
-    fragments: 30,
+    gold: 30,
     weapon: 'ash_wand',
+    crystal: 1,
     currency: {} as Record<string, number>,
   },
 };
 
 export interface StartPreset {
-  fragments: number;
+  gold: number;
   currency: Record<string, number>;
   crystals: Array<{ tier: number; family: MonsterFamily }>;
   gear: Array<{ base: string; ilvl: number }>;
@@ -1988,9 +1998,9 @@ export interface StartPreset {
  */
 export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
   /** Nothing at all. The Fissure is free; crystals are what the first clear buys. */
-  fresh: { fragments: 0, currency: {}, crystals: [], gear: [], equipped: false },
+  fresh: { gold: 0, currency: {}, crystals: [], gear: [], equipped: false },
   dev: {
-    fragments: 260,
+    gold: 260,
     currency: {},
     // Off both tables, so a new rung or a new world arrives in the kit without
     // a second edit — every tier in every family, which is the whole grid.
@@ -2189,31 +2199,23 @@ export const PLAYER_SKILLS = SKILLS.filter((s) => s.category);
 export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
-/** Crystal tiers unlock as you level, same as the currencies. */
-const CRYSTAL_UNLOCK: Record<number, number> = { 1: 1, 2: 6, 3: 14, 4: 24 };
-
+// The shop sells crafting and nothing else. A crystal is given — by the Fissure
+// and, later, by a quest — because a price would make the whole socket set
+// something you shop for rather than something you earn.
 export const RECIPES: Recipe[] = [
-  ...CRYSTAL_TIERS.map((t) => ({
-    id: `crystal_t${t.tier}`,
-    name: `Tier ${t.tier} Crystal`,
-    level: CRYSTAL_UNLOCK[t.tier] ?? 1,
-    inputs: { fragment: t.fragments },
-    output: { type: 'item' as const, base: `crystal_t${t.tier}`, qty: 1 },
-  })),
-
   // Level 1: the two things you can do to a Rough item, and nothing else.
   {
     id: 'make_shard_of_seaming',
     name: 'Shard of Seaming',
     level: 1,
-    inputs: { fragment: 4 },
+    inputs: { gold: 4 },
     output: { type: 'currency', id: 'shard_of_seaming', qty: 1 },
   },
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
     level: 1,
-    inputs: { fragment: 5 },
+    inputs: { gold: 5 },
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
 
@@ -2221,52 +2223,52 @@ export const RECIPES: Recipe[] = [
     id: 'make_shard_of_change',
     name: 'Shard of Change',
     level: 3,
-    inputs: { fragment: 3 },
+    inputs: { gold: 3 },
     output: { type: 'currency', id: 'shard_of_change', qty: 1 },
   },
   {
     id: 'make_shard_of_unmaking',
     name: 'Shard of Unmaking',
     level: 4,
-    inputs: { fragment: 7 },
+    inputs: { gold: 7 },
     output: { type: 'currency', id: 'shard_of_unmaking', qty: 1 },
   },
   {
     id: 'make_shard_of_turning',
     name: 'Shard of Turning',
     level: 6,
-    inputs: { fragment: 11 },
+    inputs: { gold: 11 },
     output: { type: 'currency', id: 'shard_of_turning', qty: 1 },
   },
   {
     id: 'make_shard_of_cleaving',
     name: 'Shard of Cleaving',
     level: 10,
-    inputs: { fragment: 22 },
+    inputs: { gold: 22 },
     output: { type: 'currency', id: 'shard_of_cleaving', qty: 1 },
   },
   {
     id: 'make_sigil_of_ascent',
     name: 'Sigil of Ascent',
     level: 12,
-    inputs: { fragment: 30 },
+    inputs: { gold: 30 },
     output: { type: 'currency', id: 'sigil_of_ascent', qty: 1 },
   },
   {
     id: 'make_shard_of_awakening',
     name: 'Shard of Awakening',
     level: 16,
-    inputs: { fragment: 44 },
+    inputs: { gold: 44 },
     output: { type: 'currency', id: 'shard_of_awakening', qty: 1 },
   },
   {
     id: 'make_shard_of_chaos',
     name: 'Shard of Chaos',
     level: 18,
-    inputs: { fragment: 52 },
+    inputs: { gold: 52 },
     output: { type: 'currency', id: 'shard_of_chaos', qty: 1 },
   },
   // No recipe for Shard of Ruin or any of the sigils — those are drop-only.
-  // If you could buy a wipe for fragments, bases would be disposable again,
-  // and a purchasable Brilliant would make the top of the ladder a price.
+  // If you could buy a wipe, bases would be disposable again, and a
+  // purchasable Brilliant would make the top of the ladder a price.
 ];

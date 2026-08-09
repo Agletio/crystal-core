@@ -67,6 +67,19 @@ Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
 XP and gold. Zero is the bare Fissure and the baseline for all four.
 
+## Money
+
+**Gold** is the one currency prices are quoted in. It comes off corpses and out
+of selling gear, and it buys crafting shards and stash space — never a crystal,
+which is given rather than bought. `sellPrice()` in `src/economy.ts` reads the
+same base as a purchase plus what is rolled on the piece, times a fraction held
+low enough that buying and selling back always loses.
+
+Selling one piece is a menu action on the dock, never a click: it is the only
+thing an item can do that cannot be undone. The bulk button in the shop takes
+every carried piece no currency has touched, which is why it can never eat a
+decision.
+
 ## Saves
 
 The save is `JSON.stringify(game)` in one localStorage key — there is no server

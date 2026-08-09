@@ -10,8 +10,8 @@
  * carry it again. That's the whole point — storage that also worked as a bag
  * would just be a bigger bag, and the carry limit would mean nothing.
  *
- * Space is bought with fragments, from here, because here is where you find
- * out you need it.
+ * Space is bought with gold, from here, because here is where you find out you
+ * need it.
  */
 import {
   CARRY,
@@ -113,9 +113,9 @@ export function render(): void {
     grow.disabled = true;
     grow.classList.add('buy--off');
   } else {
-    const affordable = (game.wallet.fragment ?? 0) >= cost;
+    const affordable = (game.wallet.gold ?? 0) >= cost;
     grow.append(el('span', 'buy__name', 'Buy more space'));
-    grow.append(el('span', 'buy__cost', `${cost} fragments`));
+    grow.append(el('span', 'buy__cost', `${cost} gold`));
     grow.disabled = !affordable;
     grow.classList.toggle('buy--off', !affordable);
   }
