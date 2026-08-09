@@ -13,7 +13,7 @@
  */
 import { balance } from "../economy";
 import { qualityOf } from "../mods";
-import { craftItem, gearKindOf } from "../game/state";
+import { craftItem, gearKindOf, giftWeapon } from "../game/state";
 import type { GameState } from "../game/state";
 import type { Item } from "../types";
 
@@ -57,18 +57,14 @@ export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
 
 const isWeapon = (i: Item) => i.kind === 'gear' && gearKindOf(i) === 'weapon';
 
-/** Rough alone was too loose: a first run drops Rough HELMETS too. */
-export const roughWeapon = (g: GameState): Item | undefined =>
-  g.inventory.find((i) => isWeapon(i) && qualityOf(i) === 'rough');
+/** A fallback, for a save written before the wand was marked. */
+const anyWeapon = (g: GameState): Item | undefined =>
+  g.inventory.find((i) => isWeapon(i) && qualityOf(i) === 'rough') ?? g.inventory.find(isWeapon);
 
-/** By the equip step it is neither Rough nor necessarily still in the dock. */
+/** The wand itself, if it is still in the dock to be clicked. */
 const theWand = (g: GameState): string => {
-  const benched = craftItem(g);
-  const item =
-    (benched && g.inventory.includes(benched) ? benched : undefined) ??
-    roughWeapon(g) ??
-    g.inventory.find(isWeapon) ??
-    g.inventory.find((i) => i.kind === 'gear');
+  const gift = giftWeapon(g);
+  const item = (gift && g.inventory.includes(gift) ? gift : undefined) ?? anyWeapon(g);
   return item ? dockSlotId(item.id) : slotButtonId('weapon');
 };
 
@@ -119,9 +115,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           ? "Close this and go again."
           : "That run ended early. Go again.",
     hint: "Loot only banks if you make it out.",
-    // Anchored beside the loot list rather than on the stage: there is nothing
-    // to click, and a ring around the viewport of a zoomed-in camera frames a
-    // random patch of rock rather than the fight.
+    // Beside the loot list rather than on the stage: a ring around the viewport
+    // of a zoomed-in camera frames a random patch of rock rather than the fight.
     target: (ctx) =>
       ctx.phase === "running"
         ? viaHeader(ctx, "run-loot")
@@ -170,12 +165,10 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : ctx.view === "craft"
           ? theWand(g)
           : viaHeader(ctx, "open-craft"),
-    // A Rough WEAPON, not "any gear": a first run drops things, and benching a
-    // modded one satisfied this AND the next step, so the shard was never spent.
-    done: (g) => {
-      const item = craftItem(g);
-      return !!item && isWeapon(item) && qualityOf(item) === "rough";
-    },
+    // THE wand. Every looser reading — any gear, any Rough weapon — let a first
+    // run's drops satisfy this step, and with it the next one, which waits for
+    // a modifier that was already there.
+    done: (g) => craftItem(g)?.meta.firstClear === true,
   },
   {
     id: "use_seaming",

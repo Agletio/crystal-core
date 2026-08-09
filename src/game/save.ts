@@ -5,7 +5,8 @@
  * made it. `GameState` is plain data, so `version` is the entire compatibility
  * story — a save from another one is refused rather than half-read.
  */
-import { SAVE_VERSION, createGame, findAnywhere } from './state';
+import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import { qualityOf } from '../mods';
 import type { GameState } from './state';
 import { CURRENCY_BY_ID, GEAR_BASE_BY_ID, PLAYER_SKILLS, SKILL_BY_ID } from '../data';
 import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
@@ -174,6 +175,17 @@ export function heal(game: GameState): Healed {
     out.items++;
   }
   if (game.craftId && !findAnywhere(game, game.craftId)) game.craftId = null;
+
+  // A save written before the Fissure marked what it hands you. Guessing here
+  // is right where guessing in the opening's predicate was wrong: this runs
+  // ONCE, and afterwards the mark is exact for the rest of that save's life.
+  if (game.firstClearDone && !giftWeapon(game)) {
+    const weapons = [...game.inventory, ...wornItems(game)].filter(
+      (i) => GEAR_BASE_BY_ID[i.base]?.kind === 'weapon'
+    );
+    const pick = weapons.find((i) => qualityOf(i) === 'rough') ?? weapons[0];
+    if (pick) pick.meta.firstClear = true;
+  }
 
   // `fragment` is the feedstock rather than a currency, so it has no entry.
   for (const id of Object.keys(game.wallet)) {

@@ -94,6 +94,7 @@ import {
   createGame,
   equipItem,
   grantFirstClear,
+  giftWeapon,
   replaceItem,
   selectForCraft,
   stashRoom,
@@ -1140,22 +1141,53 @@ rule('GUIDED OPENING — does every step actually complete?');
     const at = createGame('fresh');
     const ctx: GuideCtx = { view: 'craft', top: 'craft', phase: 'menu', picking: null };
 
-    const modded = rollGear('cudgel', 20, 'faceted', 2, pool, new Rng(5));
-    at.inventory = [modded];
-    selectForCraft(at, modded);
+    // Everything a first run can drop, in the shapes that fooled every earlier
+    // reading of this step: a modded piece, a Rough helmet, and — the one that
+    // beat "any Rough weapon" — a Rough wand off the floor.
+    const impostors = [
+      rollGear('cudgel', 20, 'faceted', 2, pool, new Rng(5)),
+      makeGear('bulwark_helmet_t1', 20),
+      makeGear('ash_wand', 1),
+    ];
+    const fooled: string[] = [];
+    for (const item of impostors) {
+      at.inventory = [item];
+      selectForCraft(at, item);
+      if (step.done(at, ctx)) fooled.push(item.name);
+    }
+    check(fooled.length === 0, 'nothing a first run drops passes for your wand', fooled.join(', '));
+
+    // The one the Fissure hands you, marked by grantFirstClear.
+    const given = createGame('fresh');
+    given.firstClearDone = false;
+    const gift = grantFirstClear(given)!.weapon!;
+    selectForCraft(given, gift);
     check(
-      modded.mods.length > 0 && !step.done(at, ctx),
-      'a dropped item with modifiers does not pass for your Rough wand',
-      `${modded.mods.length} mods and the step counted it`
+      step.done(given, ctx) &&
+        TUTORIAL_STEPS.find((s) => s.id === 'use_seaming')!.done(given, ctx) === false,
+      'and the one it hands you does, with the modifier step still waiting',
+      'the gifted wand did not satisfy the step it is meant to'
     );
 
-    const wand = makeGear('ash_wand', 1);
-    at.inventory = [wand];
-    selectForCraft(at, wand);
+    // The mark has to survive being worked on, or the step it teaches breaks
+    // the moment you use the shard it just sent you to buy.
+    const seamed = craft(gift, CURRENCY_BY_ID.shard_of_seaming, pool, new Rng(3));
     check(
-      step.done(at, ctx) && TUTORIAL_STEPS.find((s) => s.id === 'use_seaming')!.done(at, ctx) === false,
-      'and the wand does, with the modifier step still waiting',
-      'the Rough wand did not satisfy the step it is meant to'
+      seamed.ok && seamed.item.meta.firstClear === true,
+      'and it keeps the mark through a craft',
+      'crafting the wand lost what identifies it'
+    );
+
+    // A save from before the mark: heal() picks one, ONCE, so an opening in
+    // progress is not left pointing at nothing.
+    const old = createGame('fresh');
+    old.firstClearDone = true;
+    old.inventory = [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 20)];
+    heal(old);
+    check(
+      giftWeapon(old)?.base === 'ash_wand',
+      'and a save that predates it is marked on load',
+      `heal marked ${giftWeapon(old)?.name ?? 'nothing'}`
     );
   }
 

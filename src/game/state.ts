@@ -134,6 +134,9 @@ export function grantFirstClear(game: GameState): {
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
   const weapon = makeGear(gift.weapon, 1);
+  // The guided opening points at THIS wand: its base drops, its quality is
+  // half a first run's loot, its id is a counter. craft() deep-copies meta.
+  weapon.meta.firstClear = true;
   addItem(game, weapon);
 
   return { fragments: gift.fragments, currency: gift.currency, weapon };
@@ -207,6 +210,10 @@ export function buyStashSpace(game: GameState): { ok: boolean; error?: string } 
   game.stashSlots = Math.min(STASH_MAX, game.stashSlots + STASH_STEP);
   return { ok: true };
 }
+
+/** The wand the Fissure hands you, wherever it has ended up. */
+export const giftWeapon = (game: GameState): Item | undefined =>
+  [...game.inventory, ...wornItems(game), ...game.stash].find((i) => i.meta.firstClear === true);
 
 export const wornItems = (game: GameState): Item[] =>
   EQUIP_SLOTS.map((s) => game.character.equipment[s.id]).filter((i): i is Item => !!i);
