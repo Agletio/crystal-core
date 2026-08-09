@@ -71,12 +71,26 @@ and the rest move to mods or to socket count. These all go:
 - `MONSTER_TIER_RESIST`, `MONSTER_TIER_ARMOUR` → **mods** (the wards and
   `monsterArmour`, which already exist)
 - `MAP_TIER_SCALE` → **socket count**
-- `TIER_DROPS` / `dropsForTier` keyed on tier → keyed on run power (§3)
 - `CRYSTAL_TIERS` as a purchase ladder → crystals are given, not bought
+
+And four more that are also keyed on tier and are easy to miss, because they are
+not difficulty — they are what a run is WORTH. All four move to **run power**:
+
+- `TIER_DROPS` / `dropsForTier` — drop quality, fill, currency class, gear chance
+- `monsterXp(tier)` via `LEVELLING.tierScale` (`src/sim/character.ts`) — XP per kill
+- `LOOT.tierScale` (`src/sim/run.ts`) — gold per kill
+- `mapIlvl` off `CRYSTAL_TIERS[].ilvl` — the **item level dropped gear rolls at**,
+  which is how mod tiers ladder. Losing this silently would flatten gear
+  progression to its lowest rung with nothing reporting a problem.
+
+**Because of those four, run power is needed in Phase 1, not Phase 7.** The
+moment tier stops being a difficulty axis, drops, XP, gold and ilvl all lose the
+number they read. Phase 1 introduces a minimal version (danger and socket count);
+Phase 7 refines the curve, adds composition, and adds gating.
 
 This is a large simplification: two overlapping difficulty axes become one. It
 also invalidates the tier tuning in the `MITIGATION` and `THE LADDER` checks in
-`src/demo.ts`, which need reframing around run power instead of tiers.
+`src/demo.ts` — see *What must not break* below.
 
 ### Families
 
@@ -112,6 +126,32 @@ Phase 1, both of which cost nothing today:
 2. Derive the family split from **the number of filled crystal sockets**, never
    from the constant 4. Otherwise a fifth socket silently rescales every
    composition in the game.
+
+### What must not break
+
+Two things in the repo will fail loudly, and one will fail quietly, when this
+work lands. Expect them rather than discovering them.
+
+**The guided opening (`npm run guide`) walks the real UI with a real pointer and
+will break twice.** Phase 3 renames the currency it tells you to buy ("Buy a
+Shard of Seaming"), and Phase 4 changes the run flow its steps are written
+against. `src/ui/tutorial.ts` is data — steps with `done` predicates — so the
+fix is editing those steps, not the harness. Budget for it in both phases.
+
+**The demo's `THE LADDER` and `MITIGATION` checks are tier-shaped and cannot
+survive as written.** Do not delete them; restate the same two invariants
+against run power, because both caught real bugs:
+
+- *The free descent stays beatable by a character that owns nothing* — no gear,
+  no points, level one — **and still costs it something.** This is the check
+  that fails at both ends, and it is what stops the game becoming unstartable.
+- *No reachable setup is a wall.* The tier version asked whether tier n was
+  clearable in what tier n-1 drops. The socket version asks whether a set the
+  player can actually assemble at power band N is clearable in gear farmed at
+  band N-1. Same question, different axis.
+
+**The single-socket UI already exists** (`run-socket` in `src/ui/run.ts`). Phase
+1 is extending it to a persistent set, not building socketing from nothing.
 
 ---
 
@@ -221,8 +261,13 @@ The heart of it. Everything else builds on this.
       and `CRYSTAL_SLOTS`.
 - [ ] `heal()` learns about sockets — a socketed crystal whose base is gone must
       be dropped and the socket emptied (`src/game/save.ts`).
+- [ ] A minimal **run power** number from danger and socket count, and point
+      `dropsForTier`, `monsterXp`, `LOOT.tierScale` and drop ilvl at it. Not the
+      final curve — that is Phase 7 — but without it those four silently lose
+      their scaling. See §2, *What this retires*.
 - [ ] Reframe the demo's `THE LADDER` and `MITIGATION` checks around run power
-      instead of tiers (`src/demo.ts`).
+      instead of tiers, keeping both invariants (`src/demo.ts`). See §2,
+      *What must not break*.
 
 ### Phase 2 — Families
 
@@ -250,6 +295,7 @@ way to empty it.
 - [ ] Remove crystal purchase recipes; crystals are not bought.
 - [ ] Sell an item for gold. Price derived from base, quality and mods.
 - [ ] Sell from the haul and from the dock, including a bulk action.
+- [ ] Update the guided opening for the currency rename (`src/ui/tutorial.ts`).
 
 ### Phase 4 — The haul and the idle loop
 
@@ -263,6 +309,7 @@ Mechanism is specified in §4.
 - [ ] Stop on death, and say why. Stop when the haul is at capacity. Both land
       on the haul screen — one terminus for the loop.
 - [ ] Launching is blocked while the haul is over capacity.
+- [ ] Update the guided opening for the changed run flow (`src/ui/tutorial.ts`).
 
 ### Phase 5 — Progression
 
@@ -284,8 +331,11 @@ Mechanism is specified in §4.
 
 ### Phase 7 — Rewards and gating
 
-- [ ] One derived **run power** number from tier, count, danger and composition;
-      drops read it (§3, *Rewards*).
+Phase 1 leaves a minimal run power number in place. This is where it becomes the
+real curve.
+
+- [ ] Run power takes **composition** and crystal tier as inputs too, and becomes
+      the tuned curve rather than a placeholder (§3, *Rewards*).
 - [ ] Drop gating: items that cannot appear below a threshold, so the best gear
       is only reachable at the top of every axis at once.
 - [ ] Rewards unique to each monster family, so choosing Demonic over Normal is a
