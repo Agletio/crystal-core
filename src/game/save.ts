@@ -8,7 +8,16 @@
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { qualityOf } from '../mods';
 import type { GameState } from './state';
-import { CRYSTAL_TIERS, CURRENCY_BY_ID, GEAR_BASE_BY_ID, PLAYER_SKILLS, RUN_SLOTS, SKILL_BY_ID } from '../data';
+import {
+  CRYSTAL_TIERS,
+  CURRENCY_BY_ID,
+  FAMILY_BY_ID,
+  GEAR_BASE_BY_ID,
+  PLAYER_SKILLS,
+  RUN_SLOTS,
+  SKILL_BY_ID,
+  crystalName,
+} from '../data';
 import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
 import { reserveItemIds } from '../economy';
 import type { Character } from '../sim/character';
@@ -168,6 +177,13 @@ export function heal(game: GameState): Healed {
   };
   game.inventory = keep(game.inventory);
   game.stash = keep(game.stash);
+
+  // A retired family costs the crystal its world, not the crystal.
+  for (const item of [...game.inventory, ...game.stash, ...Object.values(game.sockets ?? {})]) {
+    if (item.kind !== 'crystal' || FAMILY_BY_ID[String(item.meta.family)]) continue;
+    item.meta.family = 'normal';
+    item.name = crystalName(Number(item.meta.tier), 'normal');
+  }
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;

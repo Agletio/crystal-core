@@ -21,7 +21,7 @@ import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
 import type { Character } from './character';
-import { runSet } from './crystal';
+import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
 import {
   CURRENCIES,
@@ -31,6 +31,7 @@ import {
   HERO_BASE,
   LOOT,
   MONSTERS,
+  MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
   MONSTER_RANGED_SKILL,
   RANGED_PACK_CHANCE,
@@ -345,6 +346,9 @@ export class RunSim {
       Math.pow(LOOT.powerScale, this.set.power) *
       this.set.rewards.fragmentYield;
 
+    // One family per pack, for the same reason as one kind per pack.
+    const plan = familyPlan(this.set.composition, packCount);
+
     const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
     const monsters: Entity[] = [];
 
@@ -354,7 +358,8 @@ export class RunSim {
     const statsFor = new Map<string, CombatStats>();
 
     // Baseline for the finale, so it scales with the crystal like everything
-    // else rather than being a fixed lump of numbers.
+    // else rather than being a fixed lump of numbers. Fixed to one monster
+    // across every family: the closing fight is the same fight in all three.
     this.finaleStats = monsterStats(this.set.mods, MONSTERS[0]);
 
     for (let p = 0; p < packCount; p++) {
@@ -362,7 +367,8 @@ export class RunSim {
 
       // One kind per pack. Mixed packs read as noise; a uniform pack reads as
       // a thing you can recognise and react to.
-      const def = this.rng.weighted(MONSTERS, (m) => m.weight) ?? MONSTERS[0];
+      const pool = MONSTERS_BY_FAMILY[plan[p] ?? 'normal'];
+      const def = this.rng.weighted(pool, (m) => m.weight) ?? pool[0];
       const ranged = this.rng.chance(RANGED_PACK_CHANCE);
       const bolt = SKILL_BY_ID[MONSTER_RANGED_SKILL];
 
@@ -632,6 +638,13 @@ export class RunSim {
     const def = this.rng.weighted(ENCOUNTERS, (e) => e.weight) ?? ENCOUNTERS[0];
     this.finale = def;
 
+    // Whatever the run was mostly made of closes it: the family's biggest for
+    // a single target, its rank and file for a swarm. Who shows up, never how
+    // hard — the stats above come off one fixed baseline for every family.
+    const pool = MONSTERS_BY_FAMILY[dominantFamily(this.set.composition)];
+    const biggest = pool.reduce((a, b) => (b.scale > a.scale ? b : a));
+    const commonest = pool.reduce((a, b) => (b.weight > a.weight ? b : a));
+
     const base = this.finaleStats;
     const damage = base.damage * def.damage;
     const stats: CombatStats = {
@@ -651,10 +664,10 @@ export class RunSim {
       const entity: Entity = {
         id: this.nextId++,
         kind: 'monster',
-        sprite: def.count === 1 ? 'brute' : 'husk',
+        sprite: def.count === 1 ? biggest.sprite : commonest.sprite,
         // The finale is its own rank: gold-haloed, because a thing worth
         // fourteen kills should not look like the one worth a tenth of that.
-        scale: (def.count === 1 ? 1.25 : 1) * def.size,
+        scale: (def.count === 1 ? biggest.scale : commonest.scale) * def.size,
         rank: 'rare',
         radius: 0.34 * def.size,
         skillId: null,

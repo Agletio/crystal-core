@@ -8,11 +8,13 @@ import {
   GEAR_BASES,
   GEAR_SLOTS,
   RECIPES,
+  crystalName,
 } from './data';
 import type {
   GearBase,
   Item,
   ItemKind,
+  MonsterFamily,
   Quality,
   Recipe,
   RolledMod,
@@ -55,22 +57,24 @@ export const isItemId = (id: string): boolean => ITEM_ID.test(id);
 // Item factory
 // ---------------------------------------------------------------------------
 
-export function makeCrystal(tier: number): Item {
+export function makeCrystal(tier: number, family: MonsterFamily = 'normal'): Item {
   const def = CRYSTAL_TIERS.find((t) => t.tier === tier);
   if (!def) throw new Error(`no crystal tier ${tier}`);
   return {
     id: uid('crystal'),
     kind: 'crystal',
     base: `crystal_t${tier}`,
-    name: `Tier ${tier} Crystal`,
-    tags: ['crystal', `tier${tier}`],
+    name: crystalName(tier, family),
+    // The family is a tag as well as a meta field, so a modifier restricted to
+    // one world is a line in the mod table rather than an engine change.
+    tags: ['crystal', `tier${tier}`, family],
     ilvl: CRYSTAL_ILVL,
     // The tier IS the capacity. Quality rides along so the crafting currencies,
     // which gate on quality, can reach exactly the slots the tier granted.
     slots: { mod: def.mods },
     mods: [],
     implicits: [],
-    meta: { tier, quality: def.quality },
+    meta: { tier, quality: def.quality, family },
   };
 }
 
@@ -265,8 +269,13 @@ export function kindOf(item: Item): ItemKind {
 }
 
 /** A crystal with its tier's slots filled at random. */
-export function rollCrystal(tier: number, pool: ModPool, rng: Rng): Item {
-  const item = makeCrystal(tier);
+export function rollCrystal(
+  tier: number,
+  pool: ModPool,
+  rng: Rng,
+  family: MonsterFamily = 'normal'
+): Item {
+  const item = makeCrystal(tier, family);
   let guard = 12;
   while (item.mods.length < modCapacity(item) && guard-- > 0) {
     const mod = rollRandomMod(item, pool, rng);

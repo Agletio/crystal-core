@@ -103,7 +103,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
   game.inventory = [
-    ...preset.crystals.map((tier) => makeCrystal(tier)),
+    ...preset.crystals.map((c) => makeCrystal(c.tier, c.family)),
     ...preset.gear.map((g) => makeGear(g.base, g.ilvl)),
   ];
   game.stash = [];

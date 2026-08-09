@@ -286,13 +286,23 @@ The heart of it. Everything else builds on this.
 
 Separable from everything else and lands value immediately.
 
-- [ ] `family` field on `MonsterDef`; the nine existing monsters are Normal.
-- [ ] Crystal family field; the socketed set decides the spawn pool, each
-      crystal converting its share (`spawn()` in `src/sim/run.ts`).
-- [ ] Demonic monster set — data, art, a bestiary entry each.
-- [ ] Crystal monster set — same.
-- [ ] Family shows in the crystal's description and in the socket UI, so a
-      composition is readable before you commit to it.
+- [x] `family` field on `MonsterDef`; the nine existing monsters are Normal.
+      `MONSTER_FAMILIES` is the table, `MONSTERS_BY_FAMILY` the spawn pools.
+- [x] Crystal family field (`meta.family`, and a tag, so a modifier restricted
+      to one world is a line in the mod table). `RunSet.composition` is the
+      share map; `familyPlan` deals whole packs, exact rather than rolled, so a
+      half-demonic set is half demonic on every seed.
+- [x] Demonic monster set — six kinds, art and a bestiary entry each.
+- [x] Crystal monster set — same six-kind shape.
+- [x] Family shows on the crystal's header rows, on each socket, and as the
+      run's composition under the set chips.
+
+> **Landed.** Six per family rather than nine: enough for a pool that reads as
+> its own world without doubling the bestiary. The families are held to the
+> same threat — weighted life × damage × rate within 2% — and the demo also
+> clears four blank crystals of each with one character, which comes out 5%
+> apart. The closing encounter now wears the dominant family's face while
+> keeping one fixed stat baseline, so the finale is the same fight in all three.
 
 ### Phase 3 — Gold and disposal
 

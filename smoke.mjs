@@ -318,7 +318,7 @@ const multRows = () =>
   );
 assert($('item-rewards').hidden === false, 'crystal shows reward multipliers');
 assert(
-  multRows().join(' ') === 'danger=0 fragments=0% rarity=0%',
+  multRows().join(' ') === 'family=Normal danger=0 fragments=0% rarity=0%',
   'a blank crystal is worth exactly base',
   multRows().join(' ')
 );
@@ -425,7 +425,8 @@ assert(
   $('craft-return').click();
   roomy.click();
   assert(facets() === 3, 'and it has three facets to fill', String(facets()));
-  const danger = () => Number(multRows()[0].split('=')[1]);
+  const danger = () =>
+    Number(multRows().find((r) => r.startsWith('danger='))?.split('=')[1]);
   assert(danger() === 0, 'a blank one is worth exactly base', String(danger()));
   currencyButton('Shard of Making')?.click();
   assert(danger() > 0, 'crafting a mod raises danger', String(danger()));

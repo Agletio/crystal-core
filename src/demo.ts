@@ -22,12 +22,15 @@ import {
   ARMOUR_BASES,
   ARMOUR_FAMILIES,
   MONSTERS,
+  MONSTERS_BY_FAMILY,
+  MONSTER_FAMILIES,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
   GEAR_BASES,
   GEAR_BASE_BY_ID,
   QUALITIES,
+  RUN_SLOTS,
   armourBudget,
   implicitSpend,
   RECIPES,
@@ -89,7 +92,7 @@ import {
 import { makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
-import { runSet } from './sim/crystal';
+import { composition, familyPlan, runSet } from './sim/crystal';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -112,7 +115,7 @@ import {
 } from './game/state';
 import { heal, readSave } from './game/save';
 import type { GameState } from './game/state';
-import type { Item, Quality, RolledMod, Wallet } from './types';
+import type { Item, MonsterDef, MonsterFamily, Quality, RolledMod, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
@@ -2264,6 +2267,122 @@ rule('THE SHEET — does every number on it survive being checked?');
     ranks.size > 1 && ranged.size > 0 && sawFinale,
     'and the runs checked actually contained several ranks, a caster and a finale',
     `${ranks.size} ranks, ${ranged.size} casters, finale ${sawFinale ? 'seen' : 'never reached'}`
+  );
+}
+
+// ===========================================================================
+rule('FAMILIES — a different fight, or a harder one?');
+
+// A family decides WHICH monsters spawn and nothing else: difficulty is
+// socketed modifiers, all of it. So three sets that differ only in family have
+// to come out the same fight, which is asked twice — the pools have to weigh
+// the same on paper, and the same character has to clear them in the same time.
+{
+  const weighted = (kinds: MonsterDef[], of: (m: MonsterDef) => number): number =>
+    kinds.reduce((a, m) => a + m.weight * of(m), 0) / kinds.reduce((a, m) => a + m.weight, 0);
+  const threat = (m: MonsterDef) => m.life * m.damage * m.attacksPerSecond;
+
+  line('  family     kinds   threat     life   damage      aps    speed');
+  for (const f of MONSTER_FAMILIES) {
+    const kinds = MONSTERS_BY_FAMILY[f.id];
+    line(
+      `  ${f.id.padEnd(9)}  ${String(kinds.length).padStart(5)}   ` +
+        [threat, (m: MonsterDef) => m.life, (m: MonsterDef) => m.damage,
+         (m: MonsterDef) => m.attacksPerSecond, (m: MonsterDef) => m.moveSpeed]
+          .map((of) => weighted(kinds, of).toFixed(3).padStart(6))
+          .join('   ')
+    );
+  }
+
+  const empty = MONSTER_FAMILIES.filter((f) => MONSTERS_BY_FAMILY[f.id].length < 4);
+  check(
+    empty.length === 0,
+    `all ${MONSTER_FAMILIES.length} families field a pool of their own`,
+    `nothing to spawn for: ${empty.map((f) => f.id).join(', ')}`
+  );
+
+  // Threat is life × damage × rate: what one monster is worth as a fight. A
+  // family that beat the others on it would be a difficulty setting wearing a
+  // costume, which is the one thing the socket model does not allow.
+  const threats = MONSTER_FAMILIES.map((f) => weighted(MONSTERS_BY_FAMILY[f.id], threat));
+  const mean = threats.reduce((a, b) => a + b, 0) / threats.length;
+  const drift = Math.max(...threats.map((t) => Math.abs(t - mean) / mean));
+  check(
+    drift <= 0.1,
+    `and none of them weighs more than the others: ${(drift * 100).toFixed(1)}% off the mean`,
+    `${(drift * 100).toFixed(1)}% apart — one family is a difficulty axis`
+  );
+
+  // The paper version can be right while the fight is not — reach, speed and
+  // body size all land somewhere the stat table cannot see. So: four blank
+  // crystals, one family, same hero, same seeds. Blank because a modifier
+  // would be the difficulty this is trying to hold still.
+  line();
+  line('  a level 16 Strike character against four blank crystals of one family');
+  line('  family      time   taken   killed   deaths');
+  const clears: number[] = [];
+  for (const f of MONSTER_FAMILIES) {
+    let time = 0, taken = 0, killed = 0, deaths = 0;
+    const seeds = [3, 5, 7, 11, 13, 17];
+    for (const seed of seeds) {
+      const hero = ladderCharacter(2, new Rng(99));
+      const set = RUN_SLOTS.map(() => makeCrystal(1, f.id));
+      const s = runToCompletion(new RunSim(set, hero, new Rng(seed * 37)));
+      time += s.elapsed;
+      killed += s.killed;
+      taken += Object.values(s.damageTaken).reduce((a, b) => a + b, 0);
+      if (s.status === 'died') deaths++;
+    }
+    clears.push(time / seeds.length);
+    line(
+      `  ${f.id.padEnd(9)}  ${(time / seeds.length).toFixed(0).padStart(4)}s   ` +
+        `${Math.round(taken / seeds.length).toString().padStart(5)}   ` +
+        `${Math.round(killed / seeds.length).toString().padStart(6)}   ${String(deaths).padStart(6)}`
+    );
+  }
+  const clearMean = clears.reduce((a, b) => a + b, 0) / clears.length;
+  const spread = Math.max(...clears.map((t) => Math.abs(t - clearMean) / clearMean));
+  check(
+    spread <= 0.2,
+    `and the same character clears all three in the same time: ${(spread * 100).toFixed(0)}% apart`,
+    `${(spread * 100).toFixed(0)}% apart — a family is harder than the others in practice`
+  );
+
+  // Each socketed crystal converts its share, and the share is exact rather
+  // than rolled. Whole packs, so it lands on the nearest pack either way.
+  const share = composition([makeCrystal(1, 'demonic'), makeCrystal(1, 'demonic'),
+                             makeCrystal(1, 'demonic'), makeCrystal(1, 'normal')]);
+  const plan = familyPlan(share, 20);
+  const dealt = plan.filter((f) => f === 'demonic').length;
+  check(
+    plan.length === 20 && dealt === 15,
+    'three demonic and one normal takes exactly three quarters of the packs',
+    `${dealt} demonic packs of ${plan.length}, wanted 15 of 20`
+  );
+
+  const miscounted = [1, 3, 7, 12, 25, 40].filter(
+    (packs) => familyPlan(share, packs).length !== packs
+  );
+  check(
+    miscounted.length === 0,
+    'and every pack in the run belongs to somebody, however the shares divide',
+    `packs left unassigned at: ${miscounted.join(', ')}`
+  );
+
+  // What a set actually spawns, rather than what it planned to. Sprite ids are
+  // monster ids, which is what makes this readable from the entities.
+  const familyOf = new Map(MONSTERS.map((m) => [m.sprite, m.family]));
+  const strays: string[] = [];
+  for (const set of [['demonic'], ['crystal'], ['demonic', 'crystal']] as MonsterFamily[][]) {
+    const crystals = set.map((f) => makeCrystal(1, f));
+    const sim = new RunSim(crystals, makeCharacter(starterLoadout(new Rng(7)), 'strike'), new Rng(5));
+    const wrong = sim.state.monsters.filter((m) => !set.includes(familyOf.get(m.sprite)!));
+    if (wrong.length > 0) strays.push(`${set.join('+')} spawned ${wrong.length} outsiders`);
+  }
+  check(
+    strays.length === 0,
+    'and a socketed world is the only one that turns up in it',
+    strays.join('; ')
   );
 }
 

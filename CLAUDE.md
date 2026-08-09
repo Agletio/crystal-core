@@ -55,7 +55,13 @@ repair that makes the file worse.
 There is one place you go. Four **sockets** hold crystals permanently — a run
 reads them and never spends them. Their COUNT is how long the run is; their
 MODIFIERS are the whole of how hard it is; a crystal's TIER is only how many
-modifiers it can hold (T1–T4 → 0–3). Nothing else makes a monster stronger.
+modifiers it can hold (T1–T4 → 0–3); its FAMILY — Normal, Demonic or Crystal —
+is only WHICH monsters spawn, each socketed crystal converting its share of the
+packs. Nothing else makes a monster stronger.
+
+The three pools are held to the same threat, and the demo measures it both on
+paper and by clearing one of each with the same character. A family is an
+opponent, never a difficulty setting.
 
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,

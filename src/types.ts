@@ -180,9 +180,21 @@ export interface MonsterRankDef {
   scale: number;
 }
 
+/** Which world a monster belongs to, and which crystal calls it up. */
+export type MonsterFamily = 'normal' | 'demonic' | 'crystal';
+
+export interface MonsterFamilyDef {
+  id: MonsterFamily;
+  name: string;
+  /** Names a crystal of this family. Empty for Normal, which is unmarked. */
+  word: string;
+  blurb: string;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;
+  family: MonsterFamily;
   life: number;
   damage: number;
   moveSpeed: number;

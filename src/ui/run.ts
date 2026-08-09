@@ -13,8 +13,8 @@ import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
-import { setRows } from '../sim/crystal';
-import { RUN_SLOTS } from '../data';
+import { compositionText, crystalFamily, setRows } from '../sim/crystal';
+import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
 import { crystalsIn, socketFor, socketItem, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { buildReport, lootRows } from '../game/report';
@@ -139,7 +139,11 @@ function renderMenu(): void {
     };
 
     if (held) {
+      const family = FAMILY_BY_ID[crystalFamily(held)];
       button.append(el('div', 'socket__name', held.name));
+      const world = el('div', `socket__family socket__family--${family.id}`, family.name);
+      world.title = family.blurb;
+      button.append(world);
       button.append(el('div', 'socket__mods', `${held.mods.length} modifiers`));
       for (const mod of held.mods) button.append(el('div', 'chosen__mod', describeMod(mod)));
     } else {
@@ -160,6 +164,8 @@ function renderMenu(): void {
     chips.append(chip);
   }
   host.append(chips);
+  // What you will be fighting, before you commit to fighting it.
+  host.append(el('p', 'setcomp', compositionText(set)));
   host.append(
     el(
       'p',

@@ -6,6 +6,8 @@ import type {
   GearBase,
   ModDef,
   MonsterDef,
+  MonsterFamily,
+  MonsterFamilyDef,
   MonsterRankDef,
   Recipe,
   RunSlotDef,
@@ -1340,6 +1342,45 @@ export const POWER = {
 };
 
 
+// --- families --------------------------------------------------------------
+//
+// Which world a crystal opens onto. A family decides WHICH monsters you fight
+// and nothing about how hard they are — the three pools are held to the same
+// threat by the demo, so choosing Demonic is a change of opponent rather than
+// a difficulty setting. Difficulty is still socketed modifiers, all of it.
+
+export const MONSTER_FAMILIES: MonsterFamilyDef[] = [
+  {
+    id: 'normal',
+    name: 'Normal',
+    word: '',
+    blurb: 'What the rock already holds. Beasts, husks and the things that eat them.',
+  },
+  {
+    id: 'demonic',
+    name: 'Demonic',
+    word: 'Demonic',
+    blurb: 'Heavy, and it hits like it. Fewer swings, and none of them cheap.',
+  },
+  {
+    id: 'crystal',
+    name: 'Crystal',
+    // A crystal of the crystal family would otherwise be a Crystal Crystal.
+    word: 'Prismatic',
+    blurb: 'Fast and brittle. It gets its hits in first because it cannot take any.',
+  },
+];
+
+export const FAMILY_BY_ID: Record<string, MonsterFamilyDef> = Object.fromEntries(
+  MONSTER_FAMILIES.map((f) => [f.id, f])
+);
+
+/** What a crystal is called: the room it holds, and the world it opens onto. */
+export const crystalName = (tier: number, family: MonsterFamily): string => {
+  const word = FAMILY_BY_ID[family]?.word ?? '';
+  return `Tier ${tier} ${word ? `${word} ` : ''}Crystal`;
+};
+
 // --- monster kinds ---------------------------------------------------------
 //
 // Multipliers on MONSTER_BASE, so identity and difficulty stay independent. A
@@ -1350,6 +1391,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'grub',
     name: 'Grub',
+    family: 'normal',
     life: 0.8,
     damage: 0.85,
     moveSpeed: 0.85,
@@ -1364,6 +1406,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'husk',
     name: 'Husk',
+    family: 'normal',
     life: 1.1,
     damage: 1,
     moveSpeed: 1,
@@ -1378,6 +1421,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'stalker',
     name: 'Stalker',
+    family: 'normal',
     life: 0.6,
     damage: 1,
     moveSpeed: 1.45,
@@ -1392,6 +1436,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'brute',
     name: 'Brute',
+    family: 'normal',
     life: 2.2,
     damage: 1.6,
     moveSpeed: 0.7,
@@ -1406,6 +1451,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'cinder_hound',
     name: 'Cinder Hound',
+    family: 'normal',
     life: 0.9,
     damage: 1.15,
     moveSpeed: 1.3,
@@ -1420,6 +1466,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'shale_crawler',
     name: 'Shale Crawler',
+    family: 'normal',
     life: 1.6,
     damage: 0.9,
     moveSpeed: 0.75,
@@ -1434,6 +1481,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'gale_wisp',
     name: 'Gale Wisp',
+    family: 'normal',
     life: 0.5,
     damage: 0.95,
     moveSpeed: 1.6,
@@ -1448,6 +1496,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'rime_crab',
     name: 'Rime Crab',
+    family: 'normal',
     life: 1.9,
     damage: 1.25,
     moveSpeed: 0.65,
@@ -1462,6 +1511,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'sparkmite',
     name: 'Sparkmite',
+    family: 'normal',
     life: 0.45,
     damage: 0.8,
     moveSpeed: 1.7,
@@ -1473,7 +1523,210 @@ export const MONSTERS: MonsterDef[] = [
     weight: 700,
     tags: ['elemental'],
   },
+
+  // --- demonic: slower, and every swing is a real one ------------------
+  //
+  // More life and more damage per hit, paid for in attack speed. The pool
+  // weighs out to the same threat as the Normal one; what changes is that a
+  // demonic room punishes standing still rather than out-numbering you.
+  {
+    id: 'imp',
+    name: 'Imp',
+    family: 'demonic',
+    life: 0.65,
+    damage: 0.85,
+    moveSpeed: 1.4,
+    attacksPerSecond: 1.15,
+    attackRange: 1,
+    radius: 0.26,
+    sprite: 'imp',
+    scale: 0.85,
+    weight: 1000,
+    tags: ['demon'],
+  },
+  {
+    id: 'flenser',
+    name: 'Flenser',
+    family: 'demonic',
+    life: 0.75,
+    damage: 1.3,
+    moveSpeed: 1.35,
+    attacksPerSecond: 1,
+    attackRange: 1.05,
+    radius: 0.3,
+    sprite: 'flenser',
+    scale: 0.98,
+    weight: 650,
+    tags: ['demon'],
+  },
+  {
+    id: 'bloat',
+    name: 'Bloat',
+    family: 'demonic',
+    life: 2,
+    damage: 0.95,
+    moveSpeed: 0.6,
+    attacksPerSecond: 0.62,
+    attackRange: 1.1,
+    radius: 0.44,
+    sprite: 'bloat',
+    scale: 1.2,
+    weight: 430,
+    tags: ['demon'],
+  },
+  {
+    id: 'hornfiend',
+    name: 'Hornfiend',
+    family: 'demonic',
+    life: 2.3,
+    damage: 1.65,
+    moveSpeed: 0.75,
+    attacksPerSecond: 0.65,
+    attackRange: 1.15,
+    radius: 0.46,
+    sprite: 'hornfiend',
+    scale: 1.32,
+    weight: 240,
+    tags: ['demon'],
+  },
+  {
+    id: 'maw',
+    name: 'Maw',
+    family: 'demonic',
+    life: 1.15,
+    damage: 1.1,
+    moveSpeed: 0.95,
+    attacksPerSecond: 0.88,
+    attackRange: 1,
+    radius: 0.34,
+    sprite: 'maw',
+    scale: 1.05,
+    weight: 780,
+    tags: ['demon'],
+  },
+  {
+    id: 'chanter',
+    name: 'Chanter',
+    family: 'demonic',
+    life: 0.9,
+    damage: 0.85,
+    moveSpeed: 0.9,
+    attacksPerSecond: 0.8,
+    attackRange: 1.05,
+    radius: 0.3,
+    sprite: 'chanter',
+    scale: 1,
+    weight: 720,
+    tags: ['demon'],
+  },
+
+  // --- crystal: quick, numerous, and it dies to a stiff breeze ---------
+  //
+  // The mirror of the demonic pool: the same threat spent on attack speed and
+  // movement rather than on life. A crystal room is over fast in one direction
+  // or the other.
+  {
+    id: 'shardling',
+    name: 'Shardling',
+    family: 'crystal',
+    life: 0.4,
+    damage: 0.75,
+    moveSpeed: 1.75,
+    attacksPerSecond: 1.6,
+    attackRange: 1,
+    radius: 0.24,
+    sprite: 'shardling',
+    scale: 0.82,
+    weight: 1100,
+    tags: ['construct'],
+  },
+  {
+    id: 'lattice',
+    name: 'Lattice',
+    family: 'crystal',
+    life: 1.6,
+    damage: 0.85,
+    moveSpeed: 0.9,
+    attacksPerSecond: 0.95,
+    attackRange: 1.05,
+    radius: 0.36,
+    sprite: 'lattice',
+    scale: 1.05,
+    weight: 700,
+    tags: ['construct'],
+  },
+  {
+    id: 'geode',
+    name: 'Geode',
+    family: 'crystal',
+    life: 2.1,
+    damage: 1,
+    moveSpeed: 0.6,
+    attacksPerSecond: 0.7,
+    attackRange: 1.1,
+    radius: 0.42,
+    sprite: 'geode',
+    scale: 1.2,
+    weight: 380,
+    tags: ['construct'],
+  },
+  {
+    id: 'prism',
+    name: 'Prism',
+    family: 'crystal',
+    life: 0.6,
+    damage: 1.1,
+    moveSpeed: 1.5,
+    attacksPerSecond: 1.35,
+    attackRange: 1,
+    radius: 0.28,
+    sprite: 'prism',
+    scale: 0.95,
+    weight: 620,
+    tags: ['construct'],
+  },
+  {
+    id: 'spire',
+    name: 'Spire',
+    family: 'crystal',
+    life: 1.8,
+    damage: 1.45,
+    moveSpeed: 0.7,
+    attacksPerSecond: 0.75,
+    attackRange: 1.15,
+    radius: 0.4,
+    sprite: 'spire',
+    scale: 1.3,
+    weight: 250,
+    tags: ['construct'],
+  },
+  {
+    id: 'chime',
+    name: 'Chime',
+    family: 'crystal',
+    life: 0.55,
+    damage: 0.9,
+    moveSpeed: 1.6,
+    attacksPerSecond: 1.5,
+    attackRange: 1,
+    radius: 0.26,
+    sprite: 'chime',
+    scale: 0.88,
+    weight: 800,
+    tags: ['construct'],
+  },
 ];
+
+/**
+ * The spawn pool for one family. A run reads exactly one of these per pack, so
+ * a family that lost its last monster would spawn nothing rather than falling
+ * back to Normal — the demo holds every family to a pool.
+ */
+export const MONSTERS_BY_FAMILY: Record<MonsterFamily, MonsterDef[]> = {
+  normal: MONSTERS.filter((m) => m.family === 'normal'),
+  demonic: MONSTERS.filter((m) => m.family === 'demonic'),
+  crystal: MONSTERS.filter((m) => m.family === 'crystal'),
+};
 
 /**
  * What a monster can turn up as. Bigger, brighter, worth more — and haloed, so
@@ -1723,7 +1976,7 @@ export const FISSURE = {
 export interface StartPreset {
   fragments: number;
   currency: Record<string, number>;
-  crystals: number[];
+  crystals: Array<{ tier: number; family: MonsterFamily }>;
   gear: Array<{ base: string; ilvl: number }>;
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
@@ -1740,8 +1993,11 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
   dev: {
     fragments: 260,
     currency: {},
-    // Off the table, so a new rung arrives in the kit without a second edit.
-    crystals: CRYSTAL_TIERS.flatMap((t) => [t.tier, t.tier, t.tier]),
+    // Off both tables, so a new rung or a new world arrives in the kit without
+    // a second edit — every tier in every family, which is the whole grid.
+    crystals: CRYSTAL_TIERS.flatMap((t) =>
+      MONSTER_FAMILIES.map((f) => ({ tier: t.tier, family: f.id }))
+    ),
     gear: [],
     equipped: true,
   },
