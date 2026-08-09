@@ -157,6 +157,14 @@ export interface EquipSlotDef {
   accepts: GearKind;
 }
 
+/** A socket in the Fissure. `accepts` is an item kind, so a slot that takes
+ *  something other than a crystal is one more entry. */
+export interface RunSlotDef {
+  id: string;
+  name: string;
+  accepts: ItemKind;
+}
+
 /**
  * Stat fields are MULTIPLIERS on the tier-scaled baseline in MONSTER_BASE, so
  * tier and identity stay independent: a Brute is 2.2x whatever a monster is

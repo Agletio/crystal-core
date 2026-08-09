@@ -15,7 +15,7 @@ import {
   SKILLS,
   WEAPON_BASES,
 } from './data';
-import { ModPool, instantiate } from './mods';
+import { ModPool, computeStat, instantiate } from './mods';
 import { makeItem, makeCrystal } from './economy';
 import { heroStats, monsterStats, mapDensity } from './sim/stats';
 import { describeMod } from './crafting';
@@ -79,7 +79,7 @@ line('── REACHABILITY — can each mod roll on anything at all? ────
     orphans.join(', ')
   );
 
-  const crystal = makeCrystal(6);
+  const crystal = makeCrystal(4);
   const crystalOrphans = crystalPool.entries.filter(
     (e) => !crystalPool.eligible(open(crystal)).some((c) => c.id === e.id)
   );
@@ -161,16 +161,15 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
 
   // Crystal mods land on monsters and on the map generator instead.
   const crystalFingerprint = (mods: RolledMod[]): string => {
-    const c = { ...makeCrystal(3), mods } as Item;
-    const d = mapDensity(c);
-    const m = monsterStats(c, 3, MONSTER_BY_ID.grub);
+    const d = mapDensity(mods);
+    const m = monsterStats(mods, MONSTER_BY_ID.grub);
     return [
       d.packCount, d.packSize,
       m.maxLife, m.damage, m.critChance, m.moveSpeed, m.armour, m.armourReduction,
       // Per type: a ward hardens ONE of these, and a fingerprint that summed
       // them would call every ward inert.
       ...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0),
-      (c.meta?.layoutComplexity as number) ?? 0,
+      computeStat(1, mods, 'layoutComplexity'),
     ].join(',');
   };
   const crystalBase = crystalFingerprint([]);

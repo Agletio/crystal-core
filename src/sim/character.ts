@@ -76,9 +76,9 @@ export function xpToNext(level: number): number {
   return Math.round(LEVELLING.curveBase * Math.pow(level, LEVELLING.curveExponent));
 }
 
-/** XP a single monster of this crystal tier is worth. */
-export function monsterXp(tier: number): number {
-  return Math.max(1, Math.round(LEVELLING.perMonster * Math.pow(LEVELLING.tierScale, tier - 1)));
+/** XP a single monster at this run power is worth. */
+export function monsterXp(power: number): number {
+  return Math.max(1, Math.round(LEVELLING.perMonster * Math.pow(LEVELLING.powerScale, power)));
 }
 
 /** Banks XP and returns how many levels it covered. */

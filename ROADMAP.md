@@ -88,6 +88,10 @@ moment tier stops being a difficulty axis, drops, XP, gold and ilvl all lose the
 number they read. Phase 1 introduces a minimal version (danger and socket count);
 Phase 7 refines the curve, adds composition, and adds gating.
 
+> **Landed in Phase 1.** Power runs 0 (bare Fissure) to 6, and `DROP_BANDS`
+> replaced `TIER_DROPS` — same seven rows, keyed on power, with the drop ilvl
+> now an explicit column rather than something read off a crystal.
+
 This is a large simplification: two overlapping difficulty axes become one. It
 also invalidates the tier tuning in the `MITIGATION` and `THE LADDER` checks in
 `src/demo.ts` — see *What must not break* below.
@@ -152,6 +156,7 @@ against run power, because both caught real bugs:
 
 **The single-socket UI already exists** (`run-socket` in `src/ui/run.ts`). Phase
 1 is extending it to a persistent set, not building socketing from nothing.
+*(Done: it is now `#run-sockets`, a grid built from `RUN_SLOTS`.)*
 
 ---
 
@@ -247,27 +252,35 @@ dependency order.
 
 The heart of it. Everything else builds on this.
 
-- [ ] Sockets become a persistent part of `GameState`, not a per-run choice
-      (`src/game/state.ts`, `src/ui/run.ts`). A socketed crystal stays socketed.
-      Model them as a slot-def list — see §2, *Keeping room for a fifth socket*.
-- [ ] `RunSim` takes the socketed **set** rather than one crystal
-      (`src/sim/run.ts`). `mapDensity`, `crystalRewards` and `monsterStats` read
-      `crystal.mods` today — they read the merged mod list instead. The
-      aggregation already exists in `src/mods.ts`.
-- [ ] Socket count drives map size and monster count; retire `MAP_TIER_SCALE`.
-- [ ] Monster power comes from socketed mods only; retire `MONSTER_TIER_SCALE`,
-      `MONSTER_TIER_RESIST`, `MONSTER_TIER_ARMOUR`.
-- [ ] Crystal tier means mod capacity (T1–T4 → 0–3 mods). Update `modCapacity`
-      and `CRYSTAL_SLOTS`.
-- [ ] `heal()` learns about sockets — a socketed crystal whose base is gone must
-      be dropped and the socket emptied (`src/game/save.ts`).
-- [ ] A minimal **run power** number from danger and socket count, and point
-      `dropsForTier`, `monsterXp`, `LOOT.tierScale` and drop ilvl at it. Not the
-      final curve — that is Phase 7 — but without it those four silently lose
-      their scaling. See §2, *What this retires*.
-- [ ] Reframe the demo's `THE LADDER` and `MITIGATION` checks around run power
-      instead of tiers, keeping both invariants (`src/demo.ts`). See §2,
-      *What must not break*.
+- [x] Sockets are a persistent part of `GameState` (`RUN_SLOTS`, a slot-def
+      list, mirroring `EQUIP_SLOTS`). Socketing is a MOVE, like wearing a
+      helmet: the crystal leaves the bag, and a fifth one swaps rather than
+      being refused, so the dock never fills with dead slots.
+- [x] `RunSim` takes the socketed **set** (`RunSet` in `src/sim/crystal.ts`).
+      `mapDensity`, `crystalRewards`, `monsterStats` and `generateMap` all take
+      a merged `RolledMod[]` instead of one `Item`.
+- [x] Socket count drives map size and monster count (`SOCKET_SCALE`, indexed
+      by filled sockets, index 0 being the bare Fissure); `MAP_TIER_SCALE` gone.
+- [x] Monster power comes from socketed mods only; `MONSTER_TIER_SCALE`,
+      `MONSTER_TIER_RESIST` and `MONSTER_TIER_ARMOUR` gone. The Fissure's old
+      `powerScale` is folded into `MONSTER_BASE`, so the bare Fissure IS the
+      floor rather than a discount off tier 1.
+- [x] Crystal tier means mod capacity (T1–T4 → 0–3 mods), through the item's own
+      `slots` table. Quality is derived from tier so the quality-gated crafting
+      currencies reach exactly the room the tier granted.
+- [x] `heal()` empties a socket whose crystal is gone, and one whose SLOT is
+      gone (`src/game/save.ts`).
+- [x] **Run power** (`POWER` in `src/data.ts`, `runSet()` in
+      `src/sim/crystal.ts`): `filled × perSocket + danger / perDanger`, 0 being
+      the bare Fissure. `DROP_BANDS` replaces `TIER_DROPS` and carries the drop
+      ilvl; XP and gold scale continuously off power. Not the final curve —
+      that is Phase 7.
+- [x] The demo's `THE LADDER` and `MITIGATION` checks are restated against run
+      power, both invariants intact, plus three new guards: the top of what four
+      sockets can hold must reach the top drop band, a kill must be worth more
+      gold AND more XP at every band, and only the top of the ladder may roll
+      top-tier modifiers — the last of which is the silent ilvl failure §2
+      warned about.
 
 ### Phase 2 — Families
 
@@ -285,6 +298,10 @@ Separable from everything else and lands value immediately.
 
 Prerequisite for the idle loop: you cannot auto-repeat into a full bag without a
 way to empty it.
+
+Phase 1 left two things here on purpose, because both are this phase's job:
+the demo's `WHERE THE FRAGMENTS GO` section still buys and burns crystals as if
+they were consumable, and `RECIPES` still sells them.
 
 - [ ] Replace `fragment` with `gold` everywhere. Touch list: `src/data.ts`
       (`LOOT.fragmentsPerKill`, every `RECIPES` input, `START_PRESETS`,
@@ -333,6 +350,14 @@ Mechanism is specified in §4.
 
 Phase 1 leaves a minimal run power number in place. This is where it becomes the
 real curve.
+
+**What Phase 1 left for it, measured rather than guessed:** the difficulty
+ceiling now lives entirely in crystal modifiers, and it is LOWER than the tier
+tables it replaced. Twelve modifiers across four sockets have to span what
+`MONSTER_TIER_SCALE` used to span on its own, and the danger mods were widened
+but not to that. Reward scaling is intact — a kill at the top band is worth
+~240× the bare Fissure — so the game is loose in the direction §3 asks for.
+Retuning the danger mods so the top set is genuinely dangerous belongs here.
 
 - [ ] Run power takes **composition** and crystal tier as inputs too, and becomes
       the tuned curve rather than a placeholder (§3, *Rewards*).
@@ -402,8 +427,9 @@ Do not guess at these.
 Real, deferred by decision. Do not spend time here until the systems above stop
 moving — see §3, balance is deliberately loose.
 
-- Reinvestment runs above 1.0 at T3–T5. Left alone pending the redesign, which
-  removes crystal cost from the equation entirely.
+- ~~Reinvestment runs above 1.0 at T3–T5.~~ Gone: crystals are permanent, so
+  there is no per-run cost to divide by. The demo's `SUSTAIN CHECK` became
+  `WHAT A BAND IS WORTH`, which asks whether pushing power pays instead.
 - Blight clears T6 12/12 where Strike manages 3/12. A large skill imbalance that
   predates the difficulty work.
 - More tutorial steps for systems added since the opening was written.

@@ -11,7 +11,8 @@ import {
   FISSURE,
   HERO_BASE,
   MONSTER_BY_ID,
-  tierResist,
+  DROP_BANDS,
+  monsterResStat,
   LEVELLING,
   PLAYER_SKILLS,
   CURRENCY_BY_ID,
@@ -35,9 +36,9 @@ import {
 } from './data';
 import {
   balance,
-  crystalCost,
   grant,
   makeCrystal,
+  rollCrystal,
   makeGear,
   rollGear,
   runRecipe,
@@ -87,7 +88,8 @@ import {
 } from './skills-tree';
 import { makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
-import { ladderCharacter, loadoutMods, starterLoadout } from './sim/loadout';
+import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
+import { runSet } from './sim/crystal';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -102,6 +104,7 @@ import {
   giftWeapon,
   replaceItem,
   selectForCraft,
+  socketItem,
   stashRoom,
   stashUpgradeCost,
   toStash,
@@ -226,7 +229,7 @@ rule('AN ACTUAL RUN — headless, no browser');
       `${Math.round(stats.critChance)}% crit`
   );
 
-  const sim = new RunSim(socketed, hero, new Rng(4242));
+  const sim = new RunSim([socketed], hero, new Rng(4242));
   const { grid } = sim.state.map;
   line(
     `Map:     ${grid.width}x${grid.height}, ${sim.state.map.rooms.length} rooms, ` +
@@ -523,53 +526,63 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
 }
 
 // ===========================================================================
-rule('DROPS — does the crystal decide what the map can give you?');
+rule('DROPS — does the set decide what the map can give you?');
 
-// Tier gates the CEILING, rarity only gates how often you reach it. Without
-// the cap a rarity-stacked Tier 1 would out-drop an honest Tier 4, which is
-// the ladder skipped in one lucky kill.
+// Run power gates the CEILING, rarity only gates how often you reach it.
+// Without the cap a rarity-stacked bare Fissure would out-drop an honest
+// endgame set, which is the ladder skipped in one lucky kill.
 {
   const hero = makeCharacter(starterLoadout(new Rng(7), 30, 'faceted'), 'strike');
   const seen = new Map<number, Set<string>>();
   const counts = new Map<number, number>();
+  // The best modifier tier a band can produce. Item level is what gates these,
+  // and it is the one input here that would fail SILENTLY: gear would keep
+  // dropping, in the right quality, rolling nothing but the bottom rung.
+  const best = new Map<number, number>();
 
-  for (const tier of [0, 1, 3, 5]) {
+  for (const band of [0, 1, 3, 5]) {
     const qualities = new Set<string>();
     let items = 0;
+    let top = 99;
     for (const seed of [11, 29, 47]) {
-      const crystal = craft(
-        makeCrystal(Math.max(1, tier)),
-        CURRENCY_BY_ID.shard_of_cleaving,
-        pool,
-        rng
-      ).item;
-      const sim = new RunSim(crystal, hero, new Rng(seed * 31 + tier), { dropTier: tier });
+      const set = ladderSet(band, new Rng(400 + seed + band), pool);
+      const sim = new RunSim(set, hero, new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
       for (const item of f.loot.items) {
         qualities.add(qualityOf(item));
+        for (const mod of item.mods) top = Math.min(top, mod.tier);
         items++;
       }
     }
-    seen.set(tier, qualities);
-    counts.set(tier, items);
-    line(`  tier ${tier}: ${items} pieces — ${[...qualities].sort().join(', ') || 'none'}`);
+    seen.set(band, qualities);
+    counts.set(band, items);
+    best.set(band, top);
+    line(
+      `  band ${band}: ${items} pieces — ${[...qualities].sort().join(', ') || 'none'}` +
+        ` — best modifier T${top}`
+    );
   }
 
   check(
     [...counts.values()].every((n) => n > 0),
-    'every tier drops gear at all',
-    [...counts].map(([t, n]) => `T${t}=${n}`).join(' ')
+    'every band drops gear at all',
+    [...counts].map(([b, n]) => `B${b}=${n}`).join(' ')
   );
   const low = new Set([...(seen.get(0) ?? []), ...(seen.get(1) ?? [])]);
   check(
     !low.has('faceted') && !low.has('brilliant'),
-    'the Fissure and Tier 1 cannot produce a Faceted piece',
+    'the bare Fissure and the band above it cannot produce a Faceted piece',
     [...low].join(', ')
   );
   check(
     (seen.get(5)?.has('faceted') || seen.get(5)?.has('brilliant')) === true,
-    'and Tier 5 can',
+    'and the top of the ladder can',
     [...(seen.get(5) ?? [])].join(', ')
+  );
+  check(
+    best.get(5)! < best.get(0)! && best.get(5)! === 1,
+    'and only the top of the ladder rolls top-tier modifiers',
+    `band 0 reached T${best.get(0)}, band 5 reached T${best.get(5)}`
   );
 }
 
@@ -617,7 +630,7 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
   const first = stashUpgradeCost(before)!;
   buyStashSpace(game);
   const second = stashUpgradeCost(game.stashSlots)!;
-  line(`  stash upgrades: ${first} then ${second} fragments (T5 crystal is ${crystalCost(5)})`);
+  line(`  stash upgrades: ${first} then ${second} fragments`);
   check(
     game.stashSlots > before && second > first,
     'buying space works and gets steeper',
@@ -917,8 +930,8 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
   let roomsCutByCorridors = 0;
   const veins: number[] = [];
 
-  for (const tier of [1, 3, 6]) {
-    const map = generateMap(makeCrystal(tier), new Rng(1000 + tier));
+  for (const band of [1, 3, 6]) {
+    const map = generateMap([], new Rng(1000 + band), 1, band);
     veins.push(map.vein);
     const { grid } = map;
 
@@ -951,7 +964,7 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
   );
   check(
     veins.join(',') === '1,3,6',
-    'the vein tracks the crystal you socketed',
+    'the vein tracks the power of the set you socketed',
     `veins were ${veins.join(', ')}`
   );
 }
@@ -2213,7 +2226,7 @@ rule('THE SHEET — does every number on it survive being checked?');
 
   for (const seed of [3, 9, 21, 44]) {
     const c = craft(makeCrystal(4), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-    const sim = new RunSim(c, ladderCharacter(6, new Rng(seed)), new Rng(seed));
+    const sim = new RunSim([c], ladderCharacter(6, new Rng(seed)), new Rng(seed));
     for (const m of sim.state.monsters) if (m.skillId) ranged.add(m.id);
 
     // Run it out so the finale spawns and is checked with the rest.
@@ -2267,7 +2280,7 @@ rule('THE FINALE — what is waiting at the exit?');
   for (const seed of [11, 12, 13, 14, 15, 16]) {
     const c = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
     const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
-    const sim = new RunSim(c, hero, new Rng(seed * 101));
+    const sim = new RunSim([c], hero, new Rng(seed * 101));
     const f = runToCompletion(sim);
     const name = f.finale ?? '(never reached)';
     tally[name] = (tally[name] ?? 0) + 1;
@@ -2311,7 +2324,7 @@ for (const grade of GRADES) {
         rng
       ).item;
       const sim = new RunSim(
-        socketed,
+        [socketed],
         makeCharacter(kit, 'strike'),
         new Rng(900 + seed * 7 + t.tier)
       );
@@ -2348,22 +2361,13 @@ rule('TERMINATION CHECK — does every run actually end?');
   let checked = 0;
   const stuck: string[] = [];
 
-  for (const t of CRYSTAL_TIERS) {
+  for (let band = 0; band < DROP_BANDS.length; band++) {
     for (const seed of [11, 29, 47, 63]) {
-      const c = craft(
-        makeCrystal(t.tier),
-        CURRENCY_BY_ID.shard_of_awakening,
-        pool,
-        rng
-      ).item;
-      const sim = new RunSim(
-        c,
-        ladderCharacter(t.tier, new Rng(seed)),
-        new Rng(seed * 31 + t.tier)
-      );
+      const set = ladderSet(band, new Rng(200 + seed + band), pool);
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(seed)), new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
       checked++;
-      if (f.status === 'running') stuck.push(`T${t.tier} seed ${seed}`);
+      if (f.status === 'running') stuck.push(`band ${band} seed ${seed}`);
     }
   }
 
@@ -2376,52 +2380,83 @@ rule('TERMINATION CHECK — does every run actually end?');
 }
 
 // ===========================================================================
-rule('SUSTAIN CHECK — is reinvestment under 1.0?');
+rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
 
-// Measured by actually running descents, not by a formula. There used to be a
-// separate analytical model here (simulateRun) which meant the harness and
-// the game could disagree about what a run was worth; now there is one
-// answer. Fewer samples than the old formula allowed, since each of these is
-// a full simulation.
-line('  tier   cost   avg yield   ratio   (want < 1.00)   cleared');
-for (const t of CRYSTAL_TIERS) {
-  const runs = 12;
-  let banked = 0;
-  let cleared = 0;
+// Measured by running descents rather than by a formula, so the harness and
+// the game cannot disagree about what a run is worth. Crystals are permanent,
+// so there is no per-run cost to divide by any more: the question is whether
+// the curve rises at all, and whether it rises because of danger rather than
+// because a longer run has more things in it.
+{
+  line('  band   power   monsters   avg yield   per kill   xp/kill   cleared');
+  const perKill: number[] = [];
+  const perXp: number[] = [];
+  const reached: number[] = [];
 
-  for (let i = 0; i < runs; i++) {
-    const c = craft(
-      makeCrystal(t.tier),
-      CURRENCY_BY_ID.shard_of_awakening,
-      pool,
-      rng
-    ).item;
-    const sim = new RunSim(
-      c,
-      ladderCharacter(t.tier, new Rng(700 + i)),
-      new Rng(5000 + t.tier * 31 + i),
-      {}
-    );
-    const final = runToCompletion(sim, 400);
-    // Only a cleared run banks anything, which is the point of the mechanic.
-    if (final.status === 'cleared') {
+  for (let band = 0; band < DROP_BANDS.length; band++) {
+    const runs = 10;
+    let banked = 0;
+    let killed = 0;
+    let cleared = 0;
+    let power = 0;
+    let monsters = 0;
+    let xp = 0;
+
+    for (let i = 0; i < runs; i++) {
+      const set = ladderSet(band, new Rng(3300 + i * 13 + band), pool);
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(700 + i)), new Rng(5000 + band * 31 + i));
+      power += sim.set.power;
+      monsters += sim.state.totalMonsters;
+      const final = runToCompletion(sim, 400);
+      // Only a cleared run banks anything, which is the point of the mechanic.
+      if (final.status !== 'cleared') continue;
       cleared++;
       banked += final.loot.currency.fragment ?? 0;
+      killed += final.killed;
+      xp += final.xpGained;
     }
+
+    const avg = banked / runs;
+    const each = killed > 0 ? banked / killed : 0;
+    const eachXp = killed > 0 ? xp / killed : 0;
+    perKill.push(each);
+    perXp.push(eachXp);
+    reached.push(power / runs);
+    line(
+      `   ${band}    ${(power / runs).toFixed(2).padStart(5)}   ` +
+        `${Math.round(monsters / runs).toString().padStart(8)}   ` +
+        `${avg.toFixed(1).padStart(9)}   ${each.toFixed(3).padStart(8)}   ` +
+        `${eachXp.toFixed(1).padStart(7)}   ${cleared}/${runs}`
+    );
   }
 
-  const avg = banked / runs;
-  const cost = crystalCost(t.tier);
-  const ratio = avg / cost;
-  const flag = ratio >= 1 ? '  ← above 1.0' : '';
-  line(
-    `   T${t.tier}   ${String(cost).padStart(4)}   ${avg.toFixed(1).padStart(9)}   ` +
-      `${ratio.toFixed(2).padStart(5)}${flag.padEnd(15)}   ${cleared}/${runs}`
+  // Per KILL, not per run: a longer run pays more for being longer, and that
+  // is length being rewarded rather than difficulty. What has to climb is what
+  // one monster is worth, or filling sockets with blanks is the best farm in
+  // the game.
+  const flat = perKill.filter((n, i) => i > 0 && n <= perKill[i - 1]);
+  check(
+    flat.length === 0,
+    'a monster is worth more at every band than at the one below',
+    perKill.map((n) => n.toFixed(3)).join(' → ')
+  );
+  // XP reads the same number and would fail the same way — silently, since
+  // nothing about a run reports what a kill was worth in experience.
+  const flatXp = perXp.filter((n, i) => i > 0 && n <= perXp[i - 1]);
+  check(
+    flatXp.length === 0,
+    'and is worth more experience',
+    perXp.map((n) => n.toFixed(1)).join(' → ')
+  );
+  // The top of what four sockets can hold has to reach the top of the drop
+  // table. If it does not, the best gear in the game is behind a set nobody
+  // can assemble, and nothing else here would say so.
+  check(
+    reached[reached.length - 1] >= DROP_BANDS.length - 1.5,
+    'and the best set four sockets can hold reaches the top drop band',
+    `the ladder stops at power ${reached[reached.length - 1].toFixed(2)}`
   );
 }
-line();
-line('Yield is what a run BANKS, so dying scores zero — the deeper tiers are');
-line('self-limiting without needing the numbers tuned against them.');
 
 // ===========================================================================
 rule('THE LADDER — is every rung reachable from the one below it?');
@@ -2433,17 +2468,14 @@ rule('THE LADDER — is every rung reachable from the one below it?');
   // 1. The free descent. It is the first thing anyone does, it costs nothing,
   //    and the character doing it owns nothing: no gear, no points, level one.
   //    A Fissure that cannot be cleared is a game that cannot be started.
+  //    Empty sockets, so this is index zero of the same tables everything else
+  //    reads rather than a special case beside them.
   let cleared = 0;
   const runs = 24;
   let lifeLeft = 0;
   for (let i = 0; i < runs; i++) {
     const hero = makeCharacter({}, 'strike');
-    const sim = new RunSim(makeCrystal(FISSURE.tier), hero, new Rng(4100 + i * 7), {
-      densityScale: FISSURE.densityScale,
-      sizeScale: FISSURE.sizeScale,
-      powerScale: FISSURE.powerScale,
-      dropTier: 0,
-    });
+    const sim = new RunSim([], hero, new Rng(4100 + i * 7));
     const final = runToCompletion(sim, 400);
     if (final.status === 'cleared') {
       cleared++;
@@ -2465,25 +2497,27 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     'walks out barely touched — the Fissure is not teaching anything'
   );
 
-  // 2. The gear ladder. Tier n has to be clearable in what tier n-1 drops, or
-  //    the tier that hands out what you need is behind the thing you need.
+  // 2. The gear ladder. A set the player can actually assemble at band n has
+  //    to be clearable in what band n-1 drops, or the band that hands out what
+  //    you need sits behind the thing you need it for. Same question the tier
+  //    version asked, against the axis that replaced tiers.
   const wall: string[] = [];
-  line('  tier   cleared with what the tier below drops');
-  for (const t of CRYSTAL_TIERS) {
+  line('  band   cleared with what the band below drops');
+  for (let band = 1; band < DROP_BANDS.length; band++) {
     let ok = 0;
     const tries = 12;
     for (let i = 0; i < tries; i++) {
-      const c = craft(makeCrystal(t.tier), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-      const sim = new RunSim(c, ladderCharacter(t.tier, new Rng(700 + i)), new Rng(8100 + t.tier * 13 + i));
+      const set = ladderSet(band, new Rng(8800 + i * 17 + band), pool);
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(700 + i)), new Rng(8100 + band * 13 + i));
       if (runToCompletion(sim, 400).status === 'cleared') ok++;
     }
-    line(`   T${t.tier}    ${ok}/${tries}`);
-    if (ok === 0) wall.push(`T${t.tier}`);
+    line(`   ${band}    ${ok}/${tries}`);
+    if (ok === 0) wall.push(`band ${band}`);
   }
   check(
     wall.length === 0,
-    'every tier can be cleared in gear the tier below it drops',
-    `${wall.join(', ')} cannot be entered in anything that tier hands out`
+    'every band can be cleared in gear the band below it drops',
+    `${wall.join(', ')} cannot be entered in anything that band hands out`
   );
 }
 
@@ -2501,7 +2535,7 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
   let worst = 0;
   for (const seed of [3, 11, 29, 47]) {
     const c = craft(makeCrystal(3), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-    const sim = new RunSim(c, ladderCharacter(3, new Rng(seed)), new Rng(seed * 7));
+    const sim = new RunSim([c], ladderCharacter(3, new Rng(seed)), new Rng(seed * 7));
     const { grid } = sim.state.map;
     for (let k = 0; k < 5000 && sim.state.status === 'running'; k++) {
       sim.step(1 / 30);
@@ -2568,38 +2602,57 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
 }
 
 // ===========================================================================
-rule('MITIGATION — does the tier ladder hold its own shape?');
+rule('MITIGATION — is every reachable set answerable?');
 
-// Stated here because the two tables are easy to edit into a wall: resistance
-// and armour MULTIPLY, so a plausible-looking pair reduces a hit by more than
-// either number suggests.
+// Resistance and armour MULTIPLY, so a plausible-looking pair reduces a hit by
+// more than either number suggests. Nothing hands these out any more — every
+// point of both is rolled onto a crystal — so the question is whether a set
+// the player can actually build makes itself unhittable.
 {
   const bad: string[] = [];
-  line('  tier   resist   armour   a hit is worth');
-  for (const t of CRYSTAL_TIERS) {
-    const m = monsterStats(makeCrystal(t.tier), t.tier, MONSTER_BY_ID.grub);
-    const through = (1 - m.resistances.physical / 100) * (1 - m.armourReduction / 100);
+  line('  band   danger   worst resist   armour   a hit of that type is worth');
+  for (let band = 0; band < DROP_BANDS.length; band++) {
+    const set = ladderSet(band, new Rng(6600 + band), pool);
+    const mods = set.flatMap((c) => c.mods);
+    const m = monsterStats(mods, MONSTER_BY_ID.grub);
+    // The hardest type, not an arbitrary one: a set is answerable if the type
+    // it turns aside HARDEST still gets through.
+    const resist = Math.max(...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0));
+    const through = (1 - resist / 100) * (1 - m.armourReduction / 100);
     line(
-      `   T${t.tier}     ${m.resistances.physical.toFixed(0).padStart(3)}%    ` +
+      `   ${band}     ${Math.round(runSet(set).rewards.danger).toString().padStart(4)}          ` +
+        `${resist.toFixed(0).padStart(3)}%    ` +
         `${m.armourReduction.toFixed(0).padStart(3)}%    ${(through * 100).toFixed(0)}%`
     );
-    if (m.resistances.physical >= DEFENCE.resistanceCap && t.tier < 6) {
-      bad.push(`T${t.tier} already resists at the cap`);
-    }
-    if (through < 0.2) bad.push(`T${t.tier} eats ${((1 - through) * 100).toFixed(0)}% of every hit`);
+    if (through < 0.2) bad.push(`band ${band} eats ${((1 - through) * 100).toFixed(0)}% of every hit`);
   }
   for (const entry of bad) line(`  ${entry}`);
   check(
     bad.length === 0,
-    'no tier reaches the cap early, and none swallows four fifths of a hit',
+    'no set the ladder builds swallows four fifths of a hit',
     bad.join('; ')
   );
-  // A crystal is what takes the last step, and only from the top rungs.
-  const warded = craft(makeCrystal(6), CURRENCY_BY_ID.shard_of_awakening, pool, new Rng(3));
+
+  // An empty Fissure is the floor of the game, so it has to be the floor of
+  // this too: every point of resistance and armour is now something you chose
+  // to socket, which is what makes a hard map answerable rather than a wall.
+  const bare = monsterStats([], MONSTER_BY_ID.grub);
   check(
-    tierResist(6) > tierResist(5) && tierResist(1) === 0 && warded.item !== null,
-    'T1 resists nothing, and the climb to the cap is the crystal\'s last step',
-    `T1 ${tierResist(1)}%, T5 ${tierResist(5)}%, T6 ${tierResist(6)}%`
+    bare.resistances.physical === 0 && bare.armour === 0,
+    'nothing resists anything until a crystal says so',
+    `bare Fissure: ${bare.resistances.physical}% resist, ${bare.armour} armour`
+  );
+  // And the cap is still reachable: two crystals both warding one type is a
+  // set a player can hold, and it has to land somewhere real.
+  const ward = (value: number): RolledMod => ({
+    entryId: 'ward', defId: 'ward', group: 'ward', slot: 'mod', name: 'Ward', tier: 1,
+    tags: ['danger'], stats: [{ stat: monsterResStat('fire'), form: 'inc', value, tags: [] }],
+  });
+  const doubled = monsterStats([ward(50), ward(50)], MONSTER_BY_ID.grub);
+  check(
+    doubled.resistances.fire === DEFENCE.resistanceCap,
+    'and two crystals warding one type reach the cap, never past it',
+    `two 50% wards came to ${doubled.resistances.fire}%`
   );
 }
 
@@ -2623,7 +2676,7 @@ line(`Prepped ${queue.length} crystals, ${balance(wallet, 'fragment')} fragments
 let elapsed = 0;
 let survived = 0;
 for (const c of queue) {
-  const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng);
+  const sim = new RunSim([c], makeCharacter(starterLoadout(new Rng(7)), 'strike'), rng);
   const final = runToCompletion(sim, 400);
   elapsed += final.elapsed;
   if (final.status !== 'cleared') continue;
@@ -2669,6 +2722,15 @@ rule('THE SAVE — does a save survive the game changing under it?');
   game.wallet.shard_of_something_removed = 9;
   game.character.skillId = 'a_skill_that_was_cut';
 
+  // A socket is a place an item lives, so it rots the same way a worn slot
+  // does — and a run launched from a crystal whose tier was cut would be built
+  // on a base that resolves to nothing.
+  const good = makeCrystal(4);
+  addItem(game, good);
+  socketItem(game, good, 's1');
+  game.sockets.s2 = { ...good, id: 'socket_ghost', base: 'crystal_t9' };
+  game.sockets.s_that_was_removed = { ...good, id: 'orphan' };
+
   const healed = heal(game);
   line(`Healed: ${healed.points} points refunded, ${healed.items} items dropped, ` +
     `${healed.currencies} currencies dropped, skill replaced: ${healed.skill}`);
@@ -2677,6 +2739,13 @@ rule('THE SAVE — does a save survive the game changing under it?');
     !game.inventory.some((i) => i.id === 'ghost'),
     'an item whose base no longer exists is dropped',
     'a dropped base is still in the bag'
+  );
+  check(
+    game.sockets.s1?.id === good.id &&
+      game.sockets.s2 === undefined &&
+      game.sockets.s_that_was_removed === undefined,
+    'a socket empties when its crystal or the socket itself is gone',
+    Object.entries(game.sockets).map(([k, v]) => `${k}=${v.base}`).join(' ')
   );
   check(
     healed.currencies === 1,

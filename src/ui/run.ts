@@ -1,11 +1,11 @@
 /**
  * The Fissure, in three states: prepare, descend, read the result. There is only
- * one place you go; a crystal empowers it rather than replacing it, so Enter is
- * never disabled and an empty socket is a legitimate run.
+ * one place you go; crystals empower it rather than replacing it, so Enter is
+ * never disabled and an empty set is a legitimate run.
  *
  * Owns real time and nothing else — the sim advances in fixed TICK steps, so a
- * janky frame changes how fast you watch a run, never its outcome. A socketed
- * crystal is CONSUMED win or lose.
+ * janky frame changes how fast you watch a run, never its outcome. Sockets are
+ * PERMANENT: a run reads them and never spends them.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
@@ -13,10 +13,9 @@ import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
-import { rewardRows } from '../sim/crystal';
-import { FISSURE } from '../data';
-import { makeCrystal } from '../economy';
-import { removeItem, crystalsIn } from '../game/state';
+import { setRows } from '../sim/crystal';
+import { RUN_SLOTS } from '../data';
+import { crystalsIn, socketFor, socketItem, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -62,8 +61,6 @@ let zoom = DEFAULT_ZOOM;
 
 /** 2x where it fits, tighter only to keep the hero's reach on screen. */
 
-/** What's in the socket. Null is a plain, unempowered descent. */
-let chosen: Item | null = null;
 // ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
@@ -107,15 +104,18 @@ function runHandler() {
   return {
     actionFor: (item: Item) => {
       if (phase !== 'menu' || item.kind !== 'crystal') return null;
+      const slot = socketFor(game, item);
+      if (!slot) return null;
       return {
         label: 'Socket crystal',
         run: () => {
-          chosen = item;
+          socketItem(game, item, slot);
           renderMenu();
+          renderInventory();
         },
       };
     },
-    highlighted: (item: Item) => item === chosen,
+    highlighted: () => false,
   };
 }
 
@@ -124,49 +124,53 @@ function runHandler() {
 // ---------------------------------------------------------------------------
 
 function renderMenu(): void {
+  const grid = $('run-sockets');
+  grid.replaceChildren();
+
+  for (const slot of RUN_SLOTS) {
+    const held = game.sockets[slot.id];
+    const button = el('button', 'socket') as HTMLButtonElement;
+    button.id = `run-socket-${slot.id}`;
+    button.classList.toggle('socket--full', !!held);
+    button.onclick = () => {
+      if (!unsocket(game, slot.id)) return;
+      renderMenu();
+      renderInventory();
+    };
+
+    if (held) {
+      button.append(el('div', 'socket__name', held.name));
+      button.append(el('div', 'socket__mods', `${held.mods.length} modifiers`));
+      for (const mod of held.mods) button.append(el('div', 'chosen__mod', describeMod(mod)));
+    } else {
+      button.append(el('div', 'socket__empty', slot.name));
+    }
+    grid.append(button);
+  }
+
   const host = $('run-selected');
   host.replaceChildren();
 
-  const socket = $('run-socket');
-
-  // A crystal can leave the inventory behind our back — spent on the bench,
-  // or wiped by a restart. Socketing is a reference, not a reservation.
-  if (chosen && !game.inventory.includes(chosen)) chosen = null;
-  socket.classList.toggle('socket--full', chosen !== null);
-
-  if (!chosen) {
-    host.append(el('div', 'socket__empty', 'Empty socket'));
-    host.append(
-      el(
-        'p',
-        'socket__hint',
-        crystalsIn(game).length === 0
-          ? 'No crystals yet.'
-          : 'Click a crystal in the dock.'
-      )
-    );
-    return;
-  }
-
-  host.append(el('div', 'chosen__name', chosen.name));
-  host.append(el('div', 'chosen__meta', `ilvl ${chosen.ilvl} · ${chosen.mods.length} modifiers`));
-
-  const multipliers = el('div', 'mults');
-  for (const row of rewardRows(chosen)) {
+  const set = socketed(game);
+  const chips = el('div', 'setrows');
+  for (const row of setRows(set)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
     chip.append(el('span', 'mult__v', row.value));
-    multipliers.append(chip);
+    chips.append(chip);
   }
-  host.append(multipliers);
-
-  if (chosen.mods.length === 0) {
-    host.append(el('p', 'empty', 'Unmodified.'));
-  }
-  for (const mod of chosen.mods) {
-    host.append(el('div', 'chosen__mod', describeMod(mod)));
-  }
-  host.append(el('p', 'socket__hint', 'Click to take it back out.'));
+  host.append(chips);
+  host.append(
+    el(
+      'p',
+      'socket__hint',
+      set.length > 0
+        ? 'Sockets are permanent. Click one to take its crystal back.'
+        : crystalsIn(game).length === 0
+          ? 'No crystals yet. An empty Fissure is still a real descent.'
+          : 'Click a crystal in the dock to socket it.'
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -174,34 +178,18 @@ function renderMenu(): void {
 // ---------------------------------------------------------------------------
 
 function launch(): void {
-  // An empty socket is a real descent, not a missing choice: the unempowered
-  // Fissure is generated fresh each time and never taken from you, which is
-  // what makes running out of crystals a setback rather than an end.
-  const empowered = chosen !== null;
-  const crystal = chosen ?? makeCrystal(FISSURE.tier);
-
-  // A socketed crystal is consumed win or lose. It's the stake.
-  if (empowered) removeItem(game, crystal);
-  chosen = null;
+  // An empty set is a real descent, not a missing choice: the bare Fissure is
+  // generated fresh each time and never taken from you, which is what makes
+  // running out of crystals a setback rather than an end.
+  const set = socketed(game);
 
   seed = Math.floor(Math.random() * 1e9);
-  sim = new RunSim(
-    crystal,
-    game.character,
-    new Rng(seed),
-    // Tier 0 drops, not tier 1: the free descent is where you find the junk
-    // that makes buying a crystal worth it.
-    empowered
-      ? {}
-      : {
-          densityScale: FISSURE.densityScale,
-          sizeScale: FISSURE.sizeScale,
-          powerScale: FISSURE.powerScale,
-          dropTier: 0,
-        }
-  );
+  sim = new RunSim(set, game.character, new Rng(seed));
 
-  note(`${crystal.name} · seed ${seed} · ${sim.state.totalMonsters} monsters`);
+  note(
+    `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
+      `${sim.state.totalMonsters} monsters`
+  );
   accumulator = 0;
   playing = true;
   lootSig = '';
@@ -525,15 +513,6 @@ export function initRun(state: GameState): void {
 
   ($('run-launch') as HTMLButtonElement).onclick = () => launch();
 
-  // Clicking the socket empties it. Socketing is a reference into the
-  // inventory, so taking it back out costs nothing.
-  ($('run-socket') as HTMLButtonElement).onclick = () => {
-    if (!chosen) return;
-    chosen = null;
-    renderMenu();
-    renderInventory();
-  };
-
   ($('run-pause') as HTMLButtonElement).onclick = () => {
     if (!sim || sim.state.status !== 'running') return;
     playing = !playing;
@@ -541,7 +520,6 @@ export function initRun(state: GameState): void {
   };
 
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
-    // The crystal is already spent, so this is a forfeit, not an undo.
     if (!sim) return;
     playing = false;
     sim = null;

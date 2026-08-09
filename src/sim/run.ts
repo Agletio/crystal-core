@@ -21,8 +21,8 @@ import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { monsterXp } from './character';
 import type { Character } from './character';
-import { crystalRewards } from './crystal';
-import type { CrystalRewards } from './crystal';
+import { runSet } from './crystal';
+import type { RunSet } from './crystal';
 import {
   CURRENCIES,
   CURRENCY_DROP,
@@ -30,7 +30,6 @@ import {
   ALL_MODS,
   HERO_BASE,
   LOOT,
-  MAP_TIER_SCALE,
   MONSTERS,
   MONSTER_RANKS,
   MONSTER_RANGED_SKILL,
@@ -38,7 +37,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
-import { dropsForTier } from '../data';
+import { socketPackSize, socketPacks, socketSize } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
@@ -186,18 +185,8 @@ export interface Vfx {
 
 /** The hero hunts everything, then the finale spawns at the exit. */
 export interface RunOptions {
-  /** An unempowered Fissure runs thinner than a crystal of the same tier. */
+  /** Thins the packs without touching the map. Harness use only. */
   densityScale?: number;
-  /** And on a smaller map, so a T1 is already a longer trip than the Fissure. */
-  sizeScale?: number;
-  /** Monster life and damage, for the one descent that is below tier 1. */
-  powerScale?: number;
-  /**
-   * Which tier's drop table to use; defaults to the crystal's. The unempowered
-   * Fissure runs on a handed-out T1 crystal and must be told it is tier ZERO,
-   * or the free descent drops what a crystal you paid for does.
-   */
-  dropTier?: number;
 }
 
 export type RunEvent =
@@ -259,22 +248,15 @@ export class RunSim {
   private finale: EncounterDef | null = null;
   /** Baseline monster stats for this map, scaled into the finale. */
   private finaleStats!: CombatStats;
-  private rewards: CrystalRewards = {
-    danger: 0,
-    payingDanger: 0,
-    fragmentYield: 1,
-    rarity: 0,
-  };
   private byId = new Map<number, Entity>();
   /**
-   * Tier decides what CLASS this map can produce, ilvl which modifier tiers are
-   * reachable. Read at spawn; the crystal is consumed on entry.
+   * The socketed set: how long the run is, how dangerous, and what it pays.
+   * Read once at spawn — nothing about a set changes mid-descent.
    */
-  private readonly tier: number;
-  private readonly mapIlvl: number;
+  readonly set: RunSet;
 
   constructor(
-    crystal: Item,
+    crystals: Item[],
     character: Character,
     rng: Rng,
     options: RunOptions = {}
@@ -286,14 +268,16 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], this.grants);
-    this.tier = options.dropTier ?? (crystal.meta.tier as number) ?? 0;
-    this.mapIlvl = crystal.ilvl;
+    this.set = runSet(crystals);
 
-    // The tier lengthens the trip; the Fissure shortens it again.
-    const size =
-      Math.pow(MAP_TIER_SCALE.size, ((crystal.meta.tier as number) ?? 1) - 1) *
-      (options.sizeScale ?? 1);
-    const map = generateMap(crystal, rng, size);
+    // Sockets are the only thing that lengthens a descent. An empty Fissure is
+    // index zero of the same table, not a special case beside it.
+    const map = generateMap(
+      this.set.mods,
+      rng,
+      socketSize(this.set.filled),
+      Math.max(1, Math.round(this.set.power))
+    );
     const stats = characterStats(character);
 
     const hero: Entity = {
@@ -324,7 +308,7 @@ export class RunSim {
       dead: false,
     };
 
-    const monsters = this.spawn(crystal, map);
+    const monsters = this.spawn(map);
     this.byId = new Map(monsters.map((m) => [m.id, m]));
 
     this.state = {
@@ -346,24 +330,20 @@ export class RunSim {
 
   /** Packs land in rooms other than the entrance, so you always get a moment
    *  to look at the map before anything reaches you. */
-  private spawn(crystal: Item, map: GameMap): Entity[] {
-    const tier = (crystal.meta.tier as number) ?? 1;
-    const density = mapDensity(crystal);
+  private spawn(map: GameMap): Entity[] {
+    const filled = this.set.filled;
+    const density = mapDensity(this.set.mods);
     const thin = this.options.densityScale ?? 1;
-    // The tier adds PACKS, never bigger ones: a longer run rather than a harder
-    // room. Scaling both would square it — a T6 came out at eleven times a T1.
-    const packCount = Math.max(
-      1,
-      Math.round(density.packCount * thin * Math.pow(MAP_TIER_SCALE.packs, tier - 1))
-    );
-    const packSize = Math.max(1, Math.round(density.packSize * thin));
-    // Danger pays here: the crystal's own modifiers set what a kill is worth.
-    this.rewards = crystalRewards(crystal);
-    this.xpPerKill = monsterXp(tier);
+    // Sockets add PACKS, never bigger ones: a longer run rather than a harder
+    // room. Scaling both would square it.
+    const packCount = Math.max(1, Math.round(density.packCount * thin * socketPacks(filled)));
+    const packSize = Math.max(1, Math.round(density.packSize * socketPackSize(filled)));
+    // Run power pays here: it is the one number a reward reads.
+    this.xpPerKill = monsterXp(this.set.power);
     this.fragmentsPerKill =
       LOOT.fragmentsPerKill *
-      Math.pow(LOOT.tierScale, tier - 1) *
-      this.rewards.fragmentYield;
+      Math.pow(LOOT.powerScale, this.set.power) *
+      this.set.rewards.fragmentYield;
 
     const rooms = map.rooms.length > 1 ? map.rooms.slice(1) : map.rooms;
     const monsters: Entity[] = [];
@@ -375,13 +355,7 @@ export class RunSim {
 
     // Baseline for the finale, so it scales with the crystal like everything
     // else rather than being a fixed lump of numbers.
-    const power = this.options.powerScale ?? 1;
-    const bare = monsterStats(crystal, tier, MONSTERS[0]);
-    this.finaleStats = {
-      ...bare,
-      maxLife: bare.maxLife * power,
-      damage: bare.damage * power,
-    };
+    this.finaleStats = monsterStats(this.set.mods, MONSTERS[0]);
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -403,12 +377,11 @@ export class RunSim {
         const statsKey = `${def.id}:${ranged ? 'r' : 'm'}:${rank.id}`;
         let stats = statsFor.get(statsKey);
         if (!stats) {
-          const base = monsterStats(crystal, tier, def);
-          const power = this.options.powerScale ?? 1;
-          const damage = base.damage * rank.damage * power;
+          const base = monsterStats(this.set.mods, def);
+          const damage = base.damage * rank.damage;
           stats = {
             ...base,
-            maxLife: base.maxLife * rank.life * power,
+            maxLife: base.maxLife * rank.life,
             damage,
             // Beside `damage`, never derived from it later: a rank that scaled
             // one and not the other is a rare that hits like a common.
@@ -1183,18 +1156,18 @@ export class RunSim {
    * honest T4.
    */
   private rollGearDrop(): void {
-    const drops = dropsForTier(this.tier);
+    const drops = this.set.band;
     const hero = this.state.hero.stats;
-    const chance = drops.gearChance * (1 + (this.rewards.rarity + hero.rarity) / 200);
+    const chance = drops.gearChance * (1 + (this.set.rewards.rarity + hero.rarity) / 200);
     if (!this.rng.chance(chance)) return;
 
-    const base = pickGearBase(this.mapIlvl, this.rng);
+    const base = pickGearBase(drops.ilvl, this.rng);
     if (!base) return;
 
     const quality = pickQuality(drops.quality, this.rng);
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
     this.state.loot.items.push(
-      rollGear(base.id, this.mapIlvl, quality, mods, DROP_POOL, this.rng)
+      rollGear(base.id, drops.ilvl, quality, mods, DROP_POOL, this.rng)
     );
   }
 
@@ -1209,8 +1182,8 @@ export class RunSim {
     // the crystal decides where the ceiling is. Without the cap, a T1 map with
     // enough rarity would drop the currency that re-rolls a Brilliant item —
     // which is the whole ladder skipped in one lucky kill.
-    const ceiling = CURRENCY_CLASSES.indexOf(dropsForTier(this.tier).currency);
-    const rarity = this.rewards.rarity + hero.rarity;
+    const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
+    const rarity = this.set.rewards.rarity + hero.rarity;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
     while (rank < ceiling && this.rng.chance(climb)) rank++;

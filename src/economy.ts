@@ -1,7 +1,7 @@
 import { Rng } from './rng';
 import { ModPool, computeStat, modCapacity, rollRandomMod } from './mods';
 import {
-  CRYSTAL_SLOTS,
+  CRYSTAL_ILVL,
   CRYSTAL_TIERS,
   EQUIP_SLOTS,
   GEAR_BASE_BY_ID,
@@ -64,12 +64,13 @@ export function makeCrystal(tier: number): Item {
     base: `crystal_t${tier}`,
     name: `Tier ${tier} Crystal`,
     tags: ['crystal', `tier${tier}`],
-    ilvl: def.ilvl,
-    slots: { ...CRYSTAL_SLOTS },
+    ilvl: CRYSTAL_ILVL,
+    // The tier IS the capacity. Quality rides along so the crafting currencies,
+    // which gate on quality, can reach exactly the slots the tier granted.
+    slots: { mod: def.mods },
     mods: [],
     implicits: [],
-    // A bought crystal is a blank stone. Everything it becomes, you do to it.
-    meta: { tier, quality: 'rough' as Quality },
+    meta: { tier, quality: def.quality },
   };
 }
 
@@ -259,11 +260,18 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
 // unobtainable outside the dev kit; see DEV_CURRENCY.
 // ---------------------------------------------------------------------------
 
-/** Fragments spent to make this crystal, for sustain accounting. */
-export function crystalCost(tier: number): number {
-  return CRYSTAL_TIERS.find((t) => t.tier === tier)?.fragments ?? Infinity;
-}
-
 export function kindOf(item: Item): ItemKind {
   return item.kind;
+}
+
+/** A crystal with its tier's slots filled at random. */
+export function rollCrystal(tier: number, pool: ModPool, rng: Rng): Item {
+  const item = makeCrystal(tier);
+  let guard = 12;
+  while (item.mods.length < modCapacity(item) && guard-- > 0) {
+    const mod = rollRandomMod(item, pool, rng);
+    if (!mod) break;
+    item.mods.push(mod);
+  }
+  return item;
 }

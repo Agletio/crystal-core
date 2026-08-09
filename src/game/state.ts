@@ -5,8 +5,8 @@
  * moving it wipes everyone's game.
  */
 import { Rng } from '../rng';
-import { EQUIP_SLOTS, FISSURE, START_PRESETS } from '../data';
-import type { EquipSlotDef } from '../types';
+import { EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
+import type { EquipSlotDef, RunSlotDef } from '../types';
 import { grant, makeCrystal, makeGear } from '../economy';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
@@ -51,6 +51,12 @@ export interface GameState {
   stashSlots: number;
   character: Character;
   /**
+   * Crystals socketed into the Fissure, by slot id. PERMANENT — a run reads
+   * them and never spends them, so what is in here is a standing choice rather
+   * than a stake. Held like worn gear: the item lives here, not in the bag.
+   */
+  sockets: Record<string, Item>;
+  /**
    * The inventory item open for crafting. A REFERENCE, not a move: it stays in
    * the list, highlighted, and returning it is just dropping the reference.
    */
@@ -76,6 +82,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     stash: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
+    sockets: {},
     craftId: null,
     onboarded: false,
     firstClearDone: false,
@@ -108,6 +115,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
     preset.equipped ? starterLoadout(new Rng(1)) : {},
     'strike'
   );
+  game.sockets = {};
   game.craftId = null;
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
@@ -218,9 +226,13 @@ export const giftWeapon = (game: GameState): Item | undefined =>
 export const wornItems = (game: GameState): Item[] =>
   EQUIP_SLOTS.map((s) => game.character.equipment[s.id]).filter((i): i is Item => !!i);
 
-/** Carried or worn. The bench takes both, so it looks in both. */
+/** Carried, worn or socketed. The bench takes all three, so it looks in all three. */
 export function findAnywhere(game: GameState, id: string): Item | undefined {
-  return findItem(game, id) ?? wornItems(game).find((i) => i.id === id);
+  return (
+    findItem(game, id) ??
+    wornItems(game).find((i) => i.id === id) ??
+    socketed(game).find((i) => i.id === id)
+  );
 }
 
 /**
@@ -267,12 +279,53 @@ export function replaceItem(game: GameState, item: Item): void {
     game.character.equipment[slot.id] = item;
     return;
   }
+  const socket = RUN_SLOTS.find((s) => game.sockets[s.id]?.id === item.id);
+  if (socket) {
+    game.sockets[socket.id] = item;
+    return;
+  }
   const i = game.inventory.findIndex((existing) => existing.id === item.id);
   if (i < 0) game.inventory.push(item);
   else game.inventory[i] = item;
 }
 
 export const crystalsIn = (game: GameState): Item[] => carried(game, 'crystal');
+
+/** In slot order, so the set reads the same way it is drawn. */
+export const socketed = (game: GameState): Item[] =>
+  RUN_SLOTS.map((s) => game.sockets[s.id]).filter((i): i is Item => !!i);
+
+export function fitsSocket(item: Item, slot: RunSlotDef): boolean {
+  return item.kind === slot.accepts;
+}
+
+/** The first empty socket this item fits, else the first it fits at all. */
+export function socketFor(game: GameState, item: Item): string | null {
+  const fitting = RUN_SLOTS.filter((s) => fitsSocket(item, s));
+  if (fitting.length === 0) return null;
+  return (fitting.find((s) => !game.sockets[s.id]) ?? fitting[0]).id;
+}
+
+/** Bag → socket. Socketing is a MOVE, the same way wearing a helmet is. */
+export function socketItem(game: GameState, item: Item, slotId: string): boolean {
+  const slot = RUN_SLOTS.find((s) => s.id === slotId);
+  if (!slot || !fitsSocket(item, slot)) return false;
+  const previous = game.sockets[slotId] ?? null;
+  if (!removeItem(game, item)) return false;
+  if (previous) addItem(game, previous);
+  game.sockets[slotId] = item;
+  return true;
+}
+
+/** Refuses when there is nowhere to put it, the same as unequipping. */
+export function unsocket(game: GameState, slotId: string): boolean {
+  const held = game.sockets[slotId];
+  if (!held) return false;
+  if (carryRoom(game, held.kind) <= 0) return false;
+  delete game.sockets[slotId];
+  addItem(game, held);
+  return true;
+}
 
 /** Which slot type an item fits, if any. */
 export function gearKindOf(item: Item): string | null {

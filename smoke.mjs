@@ -109,17 +109,18 @@ assert(
 // collapses and shoves the Fissure around.
 assert(all('#inv-crystal .slot--empty').length > 0, 'the dock keeps empty slots');
 
-// One place, always open. An empty socket is a real descent, not a missing
-// choice — that's the anti-stuck guarantee, so Enter must never be disabled.
-assert($('run-socket') !== null, 'the Fissure has a socket');
+// One place, always open. An empty set is a real descent, not a missing choice
+// — that's the anti-stuck guarantee, so Enter must never be disabled.
+const socketButtons = () => all('#run-sockets .socket');
+assert(socketButtons().length === 4, 'the Fissure has four sockets', String(socketButtons().length));
 assert(
-  !$('run-socket').classList.contains('socket--full'),
-  'which starts empty'
+  socketButtons().every((b) => !b.classList.contains('socket--full')),
+  'which all start empty'
 );
 assert(
-  /empty socket/i.test(text('run-selected')),
-  'and says so',
-  text('run-selected').slice(0, 60)
+  /no crystals yet/i.test(text('run-selected')),
+  'and say so',
+  text('run-selected').slice(0, 80)
 );
 assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
 const beforeFissure = dockItems().length;
@@ -278,6 +279,8 @@ assert($('craft-item').hidden === true, 'no item panel until something is placed
 assert($('craft-return').disabled === true, 'return disabled with an empty bench');
 
 // --- putting a crystal on the bench ---------------------------------------
+// A Tier 1 crystal is the blank one: tier IS capacity, so this is the crystal
+// with nowhere to put anything, and nothing crafting can do changes that.
 const crystalChip = filled('#inv-crystal')[0];
 assert(!!crystalChip, 'a crystal is in the dock');
 
@@ -300,11 +303,11 @@ assert(
   String(all('.dock .slot--on').length)
 );
 assert($('craft-return').disabled === false, 'return is now available');
-// The bench draws openings, not the base's declared table. A fresh crystal is
-// Rough — it has no room for anything yet — so it draws nothing. Drawing three
-// dead sockets under a header reading 0/0 was the confusing part.
+// The bench draws openings, not the base's declared table. A Tier 1 crystal
+// has no room for anything, so it draws nothing. Drawing dead sockets under a
+// header reading 0/0 was the confusing part.
 const facets = () => $('sockets').querySelectorAll('.facet').length;
-assert(facets() === 0, 'a Rough crystal shows no facets at all', String(facets()));
+assert(facets() === 0, 'a Tier 1 crystal shows no facets at all', String(facets()));
 
 // Derived reward multipliers under the name. A blank crystal must read as
 // exactly baseline — no danger, no bonus.
@@ -329,11 +332,27 @@ const currencyButton = (name) =>
 const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
+// A crystal's room comes from its TIER, so no amount of crafting opens a Tier
+// 1 one. Everything below is the gear ladder instead, which is where quality
+// still decides how much a piece can hold.
+{
+  const making = currencyButton('Shard of Making');
+  assert(!!making && making.disabled, 'nothing can put a modifier on a Tier 1 crystal');
+  const seaming = currencyButton('Shard of Seaming');
+  seaming?.click();
+  assert(facets() === 0, 'and opening it does not give it room either', String(facets()));
+}
+$('craft-return').click();
+
 // --- quality gates what a currency can touch ------------------------------
-// A blank item is Rough: no room for a modifier at all, whatever its base
-// declares. This is the whole point of the ladder — you cannot fill and
+// A blank piece of gear is Rough: no room for a modifier at all, whatever its
+// base declares. This is the whole point of the ladder — you cannot fill and
 // re-roll a fresh drop to perfection, because a fresh drop has nowhere to put
 // anything until you open it.
+const roughGear = filled('#inv-gear').find((b) => /q-rough/.test(b.className));
+assert(!!roughGear, 'a Rough piece of gear is in the dock');
+roughGear.click();
+
 const making = currencyButton('Shard of Making');
 assert(!!making && making.disabled, 'Making cannot touch a Rough item');
 assert(
@@ -348,10 +367,11 @@ assert(heldCount('Shard of Seaming') > 0, 'currency count shown on the stack');
 
 const seamStock = heldCount('Shard of Seaming');
 seaming.click();
-assert($('modlist').querySelectorAll('.mod').length === 1, 'Seaming lands one modifier');
+const rolled = () => all('#modlist .mod').filter((m) => !m.classList.contains('mod--implicit'));
+assert(rolled().length === 1, 'Seaming lands one modifier', String(rolled().length));
 assert(/seamed/i.test(text('item-meta')), 'and raises the quality', text('item-meta'));
-// Two, because Seamed is two. Not the three the base declares.
-assert(facets() === 2, 'and opens exactly two facets, not the base’s three', String(facets()));
+// Two, because Seamed is two, whatever the base declares.
+assert(facets() === 2, 'and opens exactly two facets', String(facets()));
 assert(
   heldCount('Shard of Seaming') === seamStock - 1,
   'Seaming was spent',
@@ -365,7 +385,7 @@ assert(!!making2 && !making2.disabled, 'Making works once the item is Seamed');
 const stockBefore = heldCount('Shard of Making');
 making2.click();
 
-assert($('modlist').querySelectorAll('.mod').length === 2, 'a second modifier was added');
+assert(rolled().length === 2, 'a second modifier was added', String(rolled().length));
 
 // Seamed holds two. A third has nowhere to go, whatever the base's slots say.
 assert(
@@ -391,14 +411,27 @@ assert(
   assert(leaks.size === 0, 'and none of them is a raw identifier', [...leaks].join(', '));
 }
 
-// Every crystal mod is a downside now, so adding one must move danger up.
-const danger = () => Number(multRows()[0].split('=')[1]);
-assert(danger() > 0, 'crafting a mod raises danger', String(danger()));
 assert(
   heldCount('Shard of Making') === stockBefore - 1,
   'currency was spent',
   `${heldCount('Shard of Making')} vs ${stockBefore}`
 );
+
+// Every crystal mod is a downside now, so adding one must move danger up. A
+// Tier 4 is the one with room for it — tier is the only thing that grants any.
+{
+  const roomy = filled('#inv-crystal').find((b) => /Tier 4/.test(named(b)));
+  assert(!!roomy, 'a Tier 4 crystal is in the dock');
+  $('craft-return').click();
+  roomy.click();
+  assert(facets() === 3, 'and it has three facets to fill', String(facets()));
+  const danger = () => Number(multRows()[0].split('=')[1]);
+  assert(danger() === 0, 'a blank one is worth exactly base', String(danger()));
+  currencyButton('Shard of Making')?.click();
+  assert(danger() > 0, 'crafting a mod raises danger', String(danger()));
+  $('craft-return').click();
+  roughGear.click();
+}
 assert(
   currencySlots().length >= 12,
   'the dock holds the whole spread of currency',
@@ -645,22 +678,37 @@ assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
 // --- socketing a crystal --------------------------------------------------
-const runCrystal = filled('#inv-crystal')[0];
-assert(!!runCrystal, 'a crystal is socketable from the dock');
-assert(
-  /socket/i.test(named(runCrystal)),
-  'the dock offers to socket it',
-  named(runCrystal)
-);
-runCrystal.click();
-assert($('run-socket').classList.contains('socket--full'), 'the socket fills');
-assert(text('run-selected').includes('Crystal'), 'and describes the crystal');
+{
+  const crystals = () => filled('#inv-crystal');
+  const runCrystal = crystals()[0];
+  assert(!!runCrystal, 'a crystal is socketable from the dock');
+  assert(
+    /socket/i.test(named(runCrystal)),
+    'the dock offers to socket it',
+    named(runCrystal)
+  );
+  const carried = crystals().length;
+  runCrystal.click();
+  const full = () => socketButtons().filter((b) => b.classList.contains('socket--full'));
+  assert(full().length === 1, 'the first socket fills', String(full().length));
+  assert(/Crystal/.test(full()[0].textContent ?? ''), 'and names the crystal');
+  // Socketing is a MOVE, the way wearing a helmet is — it leaves the dock.
+  assert(crystals().length === carried - 1, 'and it has left the dock');
 
-// Taking it back out costs nothing — socketing is a reference, not a spend.
-$('run-socket').click();
-assert(!$('run-socket').classList.contains('socket--full'), 'the socket empties again');
-assert($('run-launch').disabled === false, 'and you can still descend without one');
-runCrystal.click();
+  // Taking it back out returns it, and the Fissure is still enterable empty.
+  full()[0].click();
+  assert(full().length === 0, 'the socket empties again');
+  assert(crystals().length === carried, 'and the crystal is back in the dock');
+  assert($('run-launch').disabled === false, 'and you can still descend without one');
+
+  // Fill every socket, then one more: four is the whole set, and a fifth
+  // crystal swaps into the first rather than being refused — the same thing a
+  // second helmet does, and it keeps the dock from filling with dead slots.
+  const held = crystals().length;
+  for (let i = 0; i < 5; i++) crystals()[0]?.click();
+  assert(full().length === 4, 'four sockets is the whole set', String(full().length));
+  assert(crystals().length === held - 4, 'and the fifth swapped rather than vanishing', String(crystals().length));
+}
 
 // Gear stays in the dock — it's always in the dock — and the Fissure has
 // nothing of its own to do with a helmet, so wearing it is what a click there
@@ -762,15 +810,17 @@ assert(
   'crystals are not'
 );
 
-// --- entering consumes the socketed crystal -------------------------------
+// --- entering keeps the socketed crystals ---------------------------------
+// Sockets are a standing choice, not a stake. A run reads them and gives them
+// back, which is what makes setting a harder set a decision you keep.
 const beforeLaunch = invItems().length;
 $('run-launch').click();
 
 assert($('run-stagewrap').hidden === false, 'the descent begins');
 assert($('run-menu').hidden === true, 'menu hides while running');
 assert(
-  invItems().length === beforeLaunch - 1,
-  'the crystal was consumed',
+  invItems().length === beforeLaunch,
+  'and costs you nothing to enter',
   `${invItems().length} vs ${beforeLaunch}`
 );
 assert(/^0\/\d+$/.test(text('run-killed')), 'run readout initialised', text('run-killed'));

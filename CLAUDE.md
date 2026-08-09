@@ -50,6 +50,17 @@ mid-change. Also in CI, ahead of typecheck.
 **Fix a violation by cutting prose.** Adding code to raise the 20% is the one
 repair that makes the file worse.
 
+## The Fissure
+
+There is one place you go. Four **sockets** hold crystals permanently — a run
+reads them and never spends them. Their COUNT is how long the run is; their
+MODIFIERS are the whole of how hard it is; a crystal's TIER is only how many
+modifiers it can hold (T1–T4 → 0–3). Nothing else makes a monster stronger.
+
+Danger and socket count fold into one **run power** number (`POWER`,
+`runSet()`), and every reward reads that and nothing else: drops, item level,
+XP and gold. Zero is the bare Fissure and the baseline for all four.
+
 ## Saves
 
 The save is `JSON.stringify(game)` in one localStorage key — there is no server

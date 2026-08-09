@@ -5,7 +5,7 @@
  */
 import { Rng } from '../rng';
 import { computeStat } from '../mods';
-import type { Item } from '../types';
+import type { RolledMod } from '../types';
 
 export interface Vec2 {
   x: number;
@@ -228,8 +228,8 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
  * own `sizeScale` both drive the map's size and its room count, so "of Winding
  * Ways" and a deeper tier each produce a genuinely longer walk.
  */
-export function generateMap(crystal: Item, rng: Rng, sizeScale = 1): GameMap {
-  const layout = computeStat(1, crystal.mods, 'layoutComplexity') * sizeScale;
+export function generateMap(mods: RolledMod[], rng: Rng, sizeScale = 1, vein = 1): GameMap {
+  const layout = computeStat(1, mods, 'layoutComplexity') * sizeScale;
 
   const width = clamp(Math.round(42 * Math.sqrt(layout)), 26, 104);
   const height = clamp(Math.round(28 * Math.sqrt(layout)), 20, 70);
@@ -285,5 +285,5 @@ export function generateMap(crystal: Item, rng: Rng, sizeScale = 1): GameMap {
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit, vein: (crystal.meta.tier as number) ?? 1 };
+  return { grid, rooms, entrance, exit, vein };
 }

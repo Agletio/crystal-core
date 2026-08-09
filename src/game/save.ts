@@ -8,7 +8,7 @@
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { qualityOf } from '../mods';
 import type { GameState } from './state';
-import { CURRENCY_BY_ID, GEAR_BASE_BY_ID, PLAYER_SKILLS, SKILL_BY_ID } from '../data';
+import { CRYSTAL_TIERS, CURRENCY_BY_ID, GEAR_BASE_BY_ID, PLAYER_SKILLS, RUN_SLOTS, SKILL_BY_ID } from '../data';
 import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
 import { reserveItemIds } from '../economy';
 import type { Character } from '../sim/character';
@@ -115,7 +115,7 @@ export const healedAnything = (h: Healed): boolean =>
 /** Crystals name their tier; gear names a base that has to still exist. */
 const baseExists = (item: Item): boolean =>
   item.kind === 'crystal'
-    ? /^crystal_t\d+$/.test(item.base)
+    ? CRYSTAL_TIERS.some((t) => item.base === `crystal_t${t.tier}`)
     : GEAR_BASE_BY_ID[item.base] !== undefined;
 
 /**
@@ -172,6 +172,14 @@ export function heal(game: GameState): Healed {
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;
     delete game.character.equipment[slot];
+    out.items++;
+  }
+  // A socket holding a crystal whose tier was retired empties rather than
+  // launching a run built on a base that no longer resolves.
+  game.sockets ??= {};
+  for (const [slot, held] of Object.entries(game.sockets)) {
+    if (baseExists(held) && RUN_SLOTS.some((s) => s.id === slot)) continue;
+    delete game.sockets[slot];
     out.items++;
   }
   if (game.craftId && !findAnywhere(game, game.craftId)) game.craftId = null;

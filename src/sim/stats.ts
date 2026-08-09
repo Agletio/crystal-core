@@ -9,11 +9,8 @@ import {
   LEVELLING,
   TYPELESS,
   MONSTER_BASE,
-  MONSTER_TIER_SCALE,
   SKILLS,
   monsterResStat,
-  tierArmour,
-  tierResist,
   SKILL_BY_ID,
 } from '../data';
 import { equippedItems } from './character';
@@ -382,38 +379,37 @@ export function characterStats(character: Character): CombatStats {
 }
 
 /**
- * Monsters read their stats off the CRYSTAL's mods, with the kind's multipliers
- * on top, so crystal mods and monster identity compose instead of competing.
+ * Monsters read their stats off the SOCKETED SET's merged mods, with the kind's
+ * multipliers on top, so danger and monster identity compose instead of
+ * competing. Nothing else makes a monster stronger: socket count is length.
  */
-export function monsterStats(crystal: Item, tier: number, def: MonsterDef): CombatStats {
-  const life = MONSTER_BASE.life * Math.pow(MONSTER_TIER_SCALE.life, tier - 1) * def.life;
-  const damage =
-    MONSTER_BASE.damage * Math.pow(MONSTER_TIER_SCALE.damage, tier - 1) * def.damage;
+export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
+  const life = MONSTER_BASE.life * def.life;
+  const damage = MONSTER_BASE.damage * def.damage;
 
-  // Crystal danger mods land here: armour blunts your hits, crit spikes
+  // Socketed danger mods land here: armour blunts your hits, crit spikes
   // theirs, and fire changes what you're actually being killed by.
-  const fire = percentStat(crystal.mods, 'monsterFire');
-  const dealt = computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100);
+  const fire = percentStat(mods, 'monsterFire');
+  const dealt = computeStat(damage, mods, 'monsterDamage') * (1 + fire / 100);
   const type = fire > 0 ? 'fire' : 'physical';
 
-  // The tier is the floor; a ward on the crystal is what makes one type worse
-  // than another. Both capped together, so no map is immune to anything.
+  // Nothing resists anything until a ward says so, and a ward is ONE type — a
+  // reason to carry a second damage type rather than a wall.
   const resistances: Record<string, number> = {};
   for (const t of DAMAGE_TYPES) {
-    const ward = percentStat(crystal.mods, monsterResStat(t.id));
-    resistances[t.id] = Math.min(DEFENCE.resistanceCap, tierResist(tier) + ward);
+    const ward = percentStat(mods, monsterResStat(t.id));
+    resistances[t.id] = Math.min(DEFENCE.resistanceCap, ward);
   }
-  const armour = computeStat(tierArmour(tier), crystal.mods, 'monsterArmour');
+  const armour = computeStat(0, mods, 'monsterArmour');
 
   return {
-    maxLife: computeStat(life, crystal.mods, 'monsterLife'),
+    maxLife: computeStat(life, mods, 'monsterLife'),
     damage: dealt,
     // One type, so the same delivery the hero uses reduces to a single pass.
     damageByType: { [type]: dealt },
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
-    critChance: percentStat(crystal.mods, 'monsterCrit'),
-    moveSpeed:
-      computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
+    critChance: percentStat(mods, 'monsterCrit'),
+    moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,
     armourReduction: armourReduction(armour),
     resistances,
@@ -430,10 +426,10 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
   };
 }
 
-/** Pack layout off the crystal. */
-export function mapDensity(crystal: Item): { packCount: number; packSize: number } {
+/** Pack layout off the socketed set. */
+export function mapDensity(mods: RolledMod[]): { packCount: number; packSize: number } {
   return {
-    packCount: Math.max(1, Math.round(computeStat(10, crystal.mods, 'packCount'))),
-    packSize: Math.max(1, Math.round(computeStat(5, crystal.mods, 'packSize'))),
+    packCount: Math.max(1, Math.round(computeStat(10, mods, 'packCount'))),
+    packSize: Math.max(1, Math.round(computeStat(5, mods, 'packSize'))),
   };
 }

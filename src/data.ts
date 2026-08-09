@@ -8,6 +8,7 @@ import type {
   MonsterDef,
   MonsterRankDef,
   Recipe,
+  RunSlotDef,
   SkillCategory,
   SkillDef,
   StatSpec,
@@ -87,13 +88,18 @@ export const DEFENCE = {
   armourHalfPoint: 300,
 };
 
-export const CRYSTAL_SLOTS = { mod: 3 }; // a crystal has one undifferentiated type
+/** Sockets in the Fissure. Count is run LENGTH; what is in them is difficulty. */
+export const RUN_SLOTS: RunSlotDef[] = [
+  { id: 's1', name: 'First socket', accepts: 'crystal' },
+  { id: 's2', name: 'Second socket', accepts: 'crystal' },
+  { id: 's3', name: 'Third socket', accepts: 'crystal' },
+  { id: 's4', name: 'Fourth socket', accepts: 'crystal' },
+];
 
 // --- item quality ----------------------------------------------------------
 //
 // The second axis: the base decides WHAT can go on an item, quality decides
-// HOW MUCH. Quality is what a crystal tier gates, which is what makes finding
-// an item a ladder rather than a coin flip. Slot tables sum to six.
+// HOW MUCH. Slot tables sum to six.
 
 export const QUALITIES: Array<{ id: Quality; name: string; mods: number }> = [
   { id: 'rough', name: 'Rough', mods: 0 },
@@ -134,10 +140,7 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'ring2', name: 'Ring II', accepts: 'ring' },
 ];
 
-/**
- * Where each rung of a family starts dropping. Aligned with CRYSTAL_TIERS, so a
- * rung arrives with a crystal tier: tier 2 bases with T2, tier 3 with T4.
- */
+/** Where each rung of a family starts dropping, against a run's drop ilvl. */
 export const BASE_TIER_ILVL = [1, 22, 46];
 
 // --- armour ----------------------------------------------------------------
@@ -536,6 +539,15 @@ export const CRYSTAL_MODS: ModDef[] = [
     // nothing at all; these same numbers are meaningful as flat armour.
     tiers: [
       {
+        ilvl: 60,
+        weight: 150,
+        name: 'of Scaled Hide',
+        stats: [
+          { stat: 'monsterArmour', form: 'flat', range: [110, 160] },
+          { stat: 'monsterArmour', form: 'inc', range: [50, 70] },
+        ],
+      },
+      {
         ilvl: 45,
         weight: 300,
         stats: [
@@ -553,6 +565,7 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
+      { ilvl: 60, weight: 130, name: 'of Malice', stats: [{ stat: 'monsterCrit', form: 'inc', range: [45, 65] }] },
       { ilvl: 50, weight: 250, stats: [{ stat: 'monsterCrit', form: 'inc', range: [25, 40] }] },
       { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCrit', form: 'inc', range: [10, 20] }] },
     ],
@@ -578,6 +591,7 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
+      { ilvl: 60, weight: 180, name: 'of Savagery', stats: [{ stat: 'monsterDamage', form: 'inc', range: [60, 85] }] },
       { ilvl: 40, weight: 400, stats: [{ stat: 'monsterDamage', form: 'inc', range: [35, 50] }] },
       { ilvl: 1, weight: 900, stats: [{ stat: 'monsterDamage', form: 'inc', range: [15, 30] }] },
     ],
@@ -589,6 +603,7 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
+      { ilvl: 60, weight: 180, name: 'of Endurance', stats: [{ stat: 'monsterLife', form: 'inc', range: [55, 75] }] },
       { ilvl: 40, weight: 400, stats: [{ stat: 'monsterLife', form: 'inc', range: [30, 45] }] },
       { ilvl: 1, weight: 900, stats: [{ stat: 'monsterLife', form: 'inc', range: [12, 25] }] },
     ],
@@ -630,6 +645,11 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal' as const],
     tags: ['danger'],
     tiers: [
+      {
+        ilvl: 60,
+        weight: 120,
+        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [40, 50] as [number, number] }],
+      },
       {
         ilvl: 40,
         weight: 260,
@@ -996,9 +1016,9 @@ export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
  * The crafting currencies, as a ladder. Adding one is an entry here; new code
  * is only needed for a genuinely new kind of mutation.
  *
- * They are gated on QUALITY, and quality is what a crystal tier drops, so the
- * ladder reads bottom to top: early on you add a modifier to a two-slot piece,
- * and only much later re-roll a six-slot one at will.
+ * They are gated on QUALITY, so the ladder reads bottom to top: early on you
+ * add a modifier to a two-slot piece, and only much later re-roll a six-slot
+ * one at will.
  */
 export const CURRENCIES: CurrencyDef[] = [
   // --- basic: the first thing you ever craft with -------------------------
@@ -1220,14 +1240,23 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 // Fragments are the universal feedstock. One spent on a crystal is one not
 // spent on gear crafting, and that contested resource IS the endgame decision.
 
+/**
+ * A crystal's tier is its MOD CAPACITY and nothing else. It is not a difficulty
+ * rung: two sockets holding blank T4s are exactly as dangerous as two blank T1s,
+ * and only what is rolled on them makes a run hard.
+ *
+ * `quality` rides along because the crafting currencies gate on it, so the
+ * capacity a tier grants and the currencies that can reach it stay in step.
+ */
 export const CRYSTAL_TIERS = [
-  { tier: 1, ilvl: 10, fragments: 8 },
-  { tier: 2, ilvl: 22, fragments: 20 },
-  { tier: 3, ilvl: 34, fragments: 45 },
-  { tier: 4, ilvl: 46, fragments: 95 },
-  { tier: 5, ilvl: 58, fragments: 190 },
-  { tier: 6, ilvl: 70, fragments: 370 },
+  { tier: 1, mods: 0, quality: 'rough' as Quality, fragments: 8 },
+  { tier: 2, mods: 1, quality: 'seamed' as Quality, fragments: 20 },
+  { tier: 3, mods: 2, quality: 'faceted' as Quality, fragments: 45 },
+  { tier: 4, mods: 3, quality: 'brilliant' as Quality, fragments: 95 },
 ];
+
+/** Every crystal rolls at the same item level, so tier buys room, never power. */
+export const CRYSTAL_ILVL = 70;
 
 // --- combat baselines ------------------------------------------------------
 //
@@ -1258,10 +1287,15 @@ export const HERO_BASE = {
   lifeRegenPercent: 0.55,
 };
 
+/**
+ * What a monster is before any crystal says anything — which is to say, what
+ * the bare Fissure is made of. Crystal modifiers are the whole climb from here,
+ * so these are the floor of the game rather than a rung on it.
+ */
 export const MONSTER_BASE = {
   /** High enough that a pack survives long enough to swing back. */
-  life: 46,
-  damage: 4.4,
+  life: 34,
+  damage: 3.26,
   attacksPerSecond: 0.8,
   moveSpeed: 2.3,
   attackRange: 1.3,
@@ -1269,40 +1303,48 @@ export const MONSTER_BASE = {
 };
 
 /**
- * Per-tier monster scaling. Life outpaces damage, so climbing tiers first
- * reads as "this takes longer" and only later as "this kills me".
+ * How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
+ * Fissure. Length only: monsters are exactly as strong in a four-socket run as
+ * in an empty one, so a long set is a long trip rather than a hard one.
+ *
+ * `size` is the linear dimension, so area goes as its square.
  */
-export const MONSTER_TIER_SCALE = { life: 1.24, damage: 1.42 };
+export const SOCKET_SCALE = {
+  size: [0.62, 1, 1.15, 1.3, 1.45],
+  packs: [0.66, 1, 1.5, 2, 2.5],
+  /** The bare Fissure thins its packs as well; a socketed run never does. */
+  packSize: [0.66, 1, 1, 1, 1],
+};
+
+const rung = (n: number, table: number[]): number =>
+  table[Math.min(Math.max(0, Math.round(n)), table.length - 1)];
+
+export const socketSize = (filled: number): number => rung(filled, SOCKET_SCALE.size);
+export const socketPacks = (filled: number): number => rung(filled, SOCKET_SCALE.packs);
+export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SCALE.packSize);
 
 /**
- * How much longer a descent gets per tier — the map, the rooms in it and the
- * packs in those rooms. Compounding, so a T6 is a different trip from a T1
- * rather than the same trip with bigger numbers on it.
+ * Run power: the one number every reward reads, so difficulty and payout cannot
+ * drift apart. 0 is the bare Fissure and the baseline for XP, gold, drops and
+ * item level; each further point is one rung of reward scaling.
+ *
+ * Danger carries most of it. Sockets add a little, so a long set is worth
+ * something — but never enough that filling sockets beats rolling danger, which
+ * is what stops a safe grind from being the best farm.
  */
-export const MAP_TIER_SCALE = { size: 1.2, packs: 1.31 };
-
-/**
- * What monsters resist, and the armour they carry, before the crystal says
- * anything. Indexed by tier, from T1. Reaching the 75% cap takes a T6, or a T5
- * a crystal has warded: a resistance you cannot answer is a wall, one you can
- * is a reason to carry a second damage type rather than more of the first.
- */
-export const MONSTER_TIER_RESIST = [0, 8, 16, 26, 38, 52];
-/** POINTS, which armourReduction curves. 280 is 48%; a hardened T6 nears the cap. */
-export const MONSTER_TIER_ARMOUR = [0, 25, 60, 110, 175, 280];
-
-const rung = (tier: number, table: number[]): number =>
-  table[Math.min(Math.max(1, Math.round(tier)), table.length) - 1];
-
-export const tierResist = (tier: number): number => rung(tier, MONSTER_TIER_RESIST);
-export const tierArmour = (tier: number): number => rung(tier, MONSTER_TIER_ARMOUR);
+export const POWER = {
+  perSocket: 0.3,
+  /** Danger points that buy one point of run power. */
+  perDanger: 55,
+  max: 6,
+};
 
 
 // --- monster kinds ---------------------------------------------------------
 //
-// Multipliers on the tier-scaled baseline, so identity and tier stay
-// independent. A pack rolls ONE kind and spawns all of it: mixed packs read as
-// noise, uniform packs read as "that's a Brute pack, careful".
+// Multipliers on MONSTER_BASE, so identity and difficulty stay independent. A
+// pack rolls ONE kind and spawns all of it: mixed packs read as noise, uniform
+// packs read as "that's a Brute pack, careful".
 
 export const MONSTERS: MonsterDef[] = [
   {
@@ -1567,43 +1609,46 @@ export const CURRENCY_DROP = {
   upgradeChance: 0.17,
 };
 
-// --- what a tier drops -----------------------------------------------------
+// --- what a run drops ------------------------------------------------------
 //
-// The crystal decides what the map can GIVE you, not just how much, which is
-// what makes a tier a rung rather than a difficulty slider: you cannot re-roll
-// a Faceted item at will until you run maps that drop the currency for it.
+// Indexed by run power, which decides what a map can GIVE you and not just how
+// much: you cannot re-roll a Faceted item at will until you run sets dangerous
+// enough to drop the currency for it.
 //
-// `quality` is weighted, so a tier has a normal result and a good one. `mods`
-// is how filled a piece arrives. `currency` is the best CLASS available.
+// `quality` is weighted, so a band has a normal result and a good one. `fill`
+// is how finished a piece arrives, `ilvl` the level it rolls at — the thing
+// that decides which modifier TIERS are reachable at all.
 
-export interface TierDrops {
+export interface DropBand {
   /** Weighted quality table: [quality, weight]. */
   quality: Array<[Quality, number]>;
   /** Mods a dropped piece arrives with, as [min, max] of its cap. */
   fill: [number, number];
-  /** Best currency class this map can produce. */
+  /** Best currency class this band can produce. */
   currency: CurrencyClass;
   /** Chance per kill that a piece of gear drops at all. */
   gearChance: number;
+  /** Item level dropped gear rolls at. */
+  ilvl: number;
 }
 
-export const TIER_DROPS: Record<number, TierDrops> = {
-  // The unempowered Fissure. Mostly junk, occasionally a one-modifier piece —
-  // enough that the free descent has some upside without a crystal, which is
-  // the difference between a tutorial and a tax.
-  0: { quality: [['rough', 7], ['seamed', 3]], fill: [1, 1], currency: 'basic', gearChance: 0.05 },
-  1: { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.055 },
-  2: { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.06 },
-  // T3 is the first Faceted, and deliberately not a full one.
-  3: { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.065 },
-  // T4 is where a build becomes possible: full Faceted pieces, four modifiers.
-  4: { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.07 },
-  5: { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.075 },
-  6: { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.08 },
-};
+export const DROP_BANDS: DropBand[] = [
+  // The bare Fissure. Mostly junk, occasionally a one-modifier piece — enough
+  // that the free descent has some upside, which is the difference between a
+  // tutorial and a tax.
+  { quality: [['rough', 7], ['seamed', 3]], fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
+  { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.055, ilvl: 10 },
+  { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.06, ilvl: 22 },
+  // The first Faceted, and deliberately not a full one.
+  { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.065, ilvl: 34 },
+  // Where a build becomes possible: full Faceted pieces, four modifiers.
+  { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.07, ilvl: 46 },
+  { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.075, ilvl: 58 },
+  { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.08, ilvl: 70 },
+];
 
-export const dropsForTier = (tier: number): TierDrops =>
-  TIER_DROPS[Math.max(0, Math.min(6, Math.round(tier)))] ?? TIER_DROPS[0];
+export const bandFor = (power: number): DropBand =>
+  DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];
 
 // --- the shop's shelf ------------------------------------------------------
 //
@@ -1642,20 +1687,14 @@ export const shopQualityFor = (level: number): Array<[Quality, number]> => {
 
 export const LOOT = {
   /**
-   * Fragments one COMMON monster is worth at tier 1. Accumulates fractionally
-   * and rounds when banked, so per-kill values below 1 still work.
-   *
-   * Cut when ranks arrived: a magic or rare one is worth several kills, so a
-   * pack now pays about a third more than its count. Ranks redistribute the
-   * payout into spikes — they are not meant to raise the total, which is what
-   * the sustain ratio was reporting when it went over 1.0 at tier 1.
+   * Fragments one COMMON monster is worth in the bare Fissure. Accumulates
+   * fractionally and rounds when banked, so values below 1 still work. A magic
+   * or rare one is worth several kills, so a pack pays about a third more than
+   * its count — ranks redistribute the payout into spikes rather than raising it.
    */
   fragmentsPerKill: 0.086,
-  /**
-   * Matched to how crystal COST scales, roughly 2.1x a tier. A juiced crystal
-   * sustains its own tier with a little over; a plain one does not.
-   */
-  tierScale: 2.1,
+  /** Gold multiplier per point of run power. */
+  powerScale: 2.1,
 };
 
 /**
@@ -1666,17 +1705,8 @@ export const LOOT = {
  * in, not a place to farm.
  */
 export const FISSURE = {
-  tier: 1,
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
-  /**
-   * The first thing anyone descends into: visibly hurt, not killed. A tier-1
-   * crystal is a long way past this — the free descent is thinner, smaller and
-   * one rung weaker, which is the gap that makes buying one mean something.
-   */
-  densityScale: 0.66,
-  sizeScale: 0.62,
-  powerScale: 0.74,
   /**
    * What the FIRST clear hands you, on top of its own loot: exactly the cost of
    * everything the guided opening asks you to buy, plus the crystal its last
@@ -1772,13 +1802,14 @@ export const LEVELLING = {
   lifePerLevel: 14,
   /** PERCENT of the skill's own base per level, so skills stay in proportion. */
   damagePerLevel: 2.2,
-  /** XP from one tier-1 COMMON monster. Cut alongside fragments when ranks arrived. */
+  /** XP from one COMMON monster in the bare Fissure. */
   perMonster: 6,
-  tierScale: 1.6,
+  /** XP multiplier per point of run power. */
+  powerScale: 1.6,
   /**
-   * xpToNext(level) = curveBase * level ^ curveExponent. Tuned so a first T1
-   * clear is worth about two levels and the curve outruns one run soon after,
-   * so climbing tiers rather than grinding T1 is what levels you.
+   * xpToNext(level) = curveBase * level ^ curveExponent. Tuned so a first
+   * cleared descent is worth about two levels and the curve outruns one run
+   * soon after, so raising run power is what levels you.
    */
   curveBase: 260,
   curveExponent: 1.8,
@@ -1903,11 +1934,8 @@ export const PLAYER_SKILLS = SKILLS.filter((s) => s.category);
 export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
-/**
- * Crystal tiers unlock as you level, same as the currencies. A level-1 shop
- * that already sold a Tier 6 crystal would be selling a map that kills you.
- */
-const CRYSTAL_UNLOCK: Record<number, number> = { 1: 1, 2: 4, 3: 9, 4: 15, 5: 22, 6: 30 };
+/** Crystal tiers unlock as you level, same as the currencies. */
+const CRYSTAL_UNLOCK: Record<number, number> = { 1: 1, 2: 6, 3: 14, 4: 24 };
 
 export const RECIPES: Recipe[] = [
   ...CRYSTAL_TIERS.map((t) => ({

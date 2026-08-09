@@ -600,6 +600,11 @@
   }
   .socket:hover { border-color: var(--rust); }
   .socket--full { border-style: solid; border-color: var(--rust); background: var(--matrix); }
+  .sockets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .socket { padding: 10px; }
+  .socket__name { font-family: var(--display); font-size: 13px; }
+  .socket__mods { font-size: 11px; color: var(--dust); }
+  .setrows { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .socket__hint { font-size: 11px; color: var(--dust); font-style: italic; }
   .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
 
@@ -959,16 +964,15 @@
             A thin place in the rock. Always open, always free.
           </p>
 
-          <button class="socket" id="run-socket">
-            <div id="run-selected"></div>
-          </button>
+          <div class="sockets" id="run-sockets"></div>
+          <div id="run-selected"></div>
 
           <div class="runbar" style="margin-top:16px">
             <button class="mini mini--go" id="run-launch">Enter the Fissure</button>
           </div>
           <p class="runsrc">
             Clear it all, then something waits at the exit.
-            A socketed crystal is spent win or lose.
+            A socketed crystal stays socketed.
           </p>
         </div>
 

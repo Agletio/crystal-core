@@ -208,9 +208,11 @@ function renderItem(): void {
       el(
         'p',
         'empty',
-        modCapacity(item) === 0
-          ? 'No slots yet. A Shard of Seaming opens the first.'
-          : 'No modifiers. Click a currency below.'
+        modCapacity(item) > 0
+          ? 'No modifiers. Click a currency below.'
+          : item.kind === 'crystal'
+            ? 'A Tier 1 crystal has no room. Tier is the only thing that grants it.'
+            : 'No slots yet. A Shard of Seaming opens the first.'
       )
     );
   }
