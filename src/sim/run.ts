@@ -30,6 +30,7 @@ import {
   ALL_MODS,
   HERO_BASE,
   LOOT,
+  MAP_TIER_SCALE,
   MONSTERS,
   MONSTER_RANKS,
   MONSTER_RANGED_SKILL,
@@ -187,6 +188,10 @@ export interface Vfx {
 export interface RunOptions {
   /** An unempowered Fissure runs thinner than a crystal of the same tier. */
   densityScale?: number;
+  /** And on a smaller map, so a T1 is already a longer trip than the Fissure. */
+  sizeScale?: number;
+  /** Monster life and damage, for the one descent that is below tier 1. */
+  powerScale?: number;
   /**
    * Which tier's drop table to use; defaults to the crystal's. The unempowered
    * Fissure runs on a handed-out T1 crystal and must be told it is tier ZERO,
@@ -284,7 +289,11 @@ export class RunSim {
     this.tier = options.dropTier ?? (crystal.meta.tier as number) ?? 0;
     this.mapIlvl = crystal.ilvl;
 
-    const map = generateMap(crystal, rng);
+    // The tier lengthens the trip; the Fissure shortens it again.
+    const size =
+      Math.pow(MAP_TIER_SCALE.size, ((crystal.meta.tier as number) ?? 1) - 1) *
+      (options.sizeScale ?? 1);
+    const map = generateMap(crystal, rng, size);
     const stats = characterStats(character);
 
     const hero: Entity = {
@@ -340,9 +349,14 @@ export class RunSim {
   private spawn(crystal: Item, map: GameMap): Entity[] {
     const tier = (crystal.meta.tier as number) ?? 1;
     const density = mapDensity(crystal);
-    const scale = this.options.densityScale ?? 1;
-    const packCount = Math.max(1, Math.round(density.packCount * scale));
-    const packSize = Math.max(1, Math.round(density.packSize * scale));
+    const thin = this.options.densityScale ?? 1;
+    // The tier adds PACKS, never bigger ones: a longer run rather than a harder
+    // room. Scaling both would square it — a T6 came out at eleven times a T1.
+    const packCount = Math.max(
+      1,
+      Math.round(density.packCount * thin * Math.pow(MAP_TIER_SCALE.packs, tier - 1))
+    );
+    const packSize = Math.max(1, Math.round(density.packSize * thin));
     // Danger pays here: the crystal's own modifiers set what a kill is worth.
     this.rewards = crystalRewards(crystal);
     this.xpPerKill = monsterXp(tier);
@@ -361,7 +375,13 @@ export class RunSim {
 
     // Baseline for the finale, so it scales with the crystal like everything
     // else rather than being a fixed lump of numbers.
-    this.finaleStats = monsterStats(crystal, tier, MONSTERS[0]);
+    const power = this.options.powerScale ?? 1;
+    const bare = monsterStats(crystal, tier, MONSTERS[0]);
+    this.finaleStats = {
+      ...bare,
+      maxLife: bare.maxLife * power,
+      damage: bare.damage * power,
+    };
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -384,10 +404,11 @@ export class RunSim {
         let stats = statsFor.get(statsKey);
         if (!stats) {
           const base = monsterStats(crystal, tier, def);
-          const damage = base.damage * rank.damage;
+          const power = this.options.powerScale ?? 1;
+          const damage = base.damage * rank.damage * power;
           stats = {
             ...base,
-            maxLife: base.maxLife * rank.life,
+            maxLife: base.maxLife * rank.life * power,
             damage,
             // Beside `damage`, never derived from it later: a rank that scaled
             // one and not the other is a rare that hits like a common.

@@ -22,7 +22,7 @@ import { describeMod } from './crafting';
 import { describeStatLine, tagWord } from './mod-text';
 import { treeFor } from './skills-tree';
 import { Rng } from './rng';
-import { MONSTER_BY_ID } from './data';
+import { DAMAGE_TYPES, MONSTER_BY_ID } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
 
 let failures = 0;
@@ -167,6 +167,9 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
     return [
       d.packCount, d.packSize,
       m.maxLife, m.damage, m.critChance, m.moveSpeed, m.armour, m.armourReduction,
+      // Per type: a ward hardens ONE of these, and a fingerprint that summed
+      // them would call every ward inert.
+      ...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0),
       (c.meta?.layoutComplexity as number) ?? 0,
     ].join(',');
   };

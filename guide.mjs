@@ -270,15 +270,18 @@ if (finished) {
     await page.waitForTimeout(150);
   };
 
+  // The tree section above leaves the Skills web open, and a modal swallows
+  // every click meant for the bar behind it. Unconditionally: this used to sit
+  // inside the stocking branch, so a run that happened to drop enough gear
+  // skipped it and every click below hit the modal instead.
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(80);
+  }
+
   // The opening leaves you with a wand and little else, so stock the dock. The
   // guide has already made every assertion it is going to by this point.
   if ((await gearSlots().count()) < 4) {
-    // The tree section above leaves the Skills web open, and a modal swallows
-    // every click meant for the bar behind it.
-    for (let i = 0; i < 4; i++) {
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(80);
-    }
     await page.locator('#dev-kit').click();
     await page.locator('#confirm-yes').click();
     await page.waitForTimeout(300);

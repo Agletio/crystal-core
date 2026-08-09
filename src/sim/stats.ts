@@ -11,6 +11,9 @@ import {
   MONSTER_BASE,
   MONSTER_TIER_SCALE,
   SKILLS,
+  monsterResStat,
+  tierArmour,
+  tierResist,
   SKILL_BY_ID,
 } from '../data';
 import { equippedItems } from './character';
@@ -393,6 +396,15 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
   const dealt = computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100);
   const type = fire > 0 ? 'fire' : 'physical';
 
+  // The tier is the floor; a ward on the crystal is what makes one type worse
+  // than another. Both capped together, so no map is immune to anything.
+  const resistances: Record<string, number> = {};
+  for (const t of DAMAGE_TYPES) {
+    const ward = percentStat(crystal.mods, monsterResStat(t.id));
+    resistances[t.id] = Math.min(DEFENCE.resistanceCap, tierResist(tier) + ward);
+  }
+  const armour = computeStat(tierArmour(tier), crystal.mods, 'monsterArmour');
+
   return {
     maxLife: computeStat(life, crystal.mods, 'monsterLife'),
     damage: dealt,
@@ -402,10 +414,9 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
     critChance: percentStat(crystal.mods, 'monsterCrit'),
     moveSpeed:
       computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
-    armour: computeStat(0, crystal.mods, 'monsterArmour'),
-    armourReduction: armourReduction(computeStat(0, crystal.mods, 'monsterArmour')),
-    // No monster resists anything yet; the crystal mod is the obvious next one.
-    resistances: {},
+    armour,
+    armourReduction: armourReduction(armour),
+    resistances,
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,

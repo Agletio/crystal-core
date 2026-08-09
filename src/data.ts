@@ -41,6 +41,10 @@ export const DAMAGE_TYPE_BY_ID: Record<string, DamageTypeDef> = Object.fromEntri
   DAMAGE_TYPES.map((d) => [d.id, d])
 );
 
+/** What a crystal hardens its monsters against one damage type with. */
+export const monsterResStat = (type: string): string =>
+  `monster${type[0].toUpperCase()}${type.slice(1)}Res`;
+
 export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
 
 /**
@@ -481,6 +485,18 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
 // Tiers are authored best-first and gated by `ilvl`. Keep each slot type
 // oversubscribed: more candidates than slots is what makes a roll a roll.
 
+/** A crystal's ward names the thing it turns aside, not the type by id. */
+const MONSTER_WARD_NAMES: Record<string, string> = {
+  physical: 'of Thick Hide',
+  fire: 'of Cinders',
+  cold: 'of Deep Frost',
+  lightning: 'of Earthing',
+  poison: 'of Clean Blood',
+  dark: 'of Lanterns',
+  light: 'of Long Shadow',
+  crystal: 'of Dull Facets',
+};
+
 export const CRYSTAL_MODS: ModDef[] = [
   {
     id: 'pack_size',
@@ -519,8 +535,15 @@ export const CRYSTAL_MODS: ModDef[] = [
     // percentage. Written as 'inc' it multiplied a base of zero and did
     // nothing at all; these same numbers are meaningful as flat armour.
     tiers: [
-      { ilvl: 45, weight: 300, stats: [{ stat: 'monsterArmour', form: 'flat', range: [50, 80] }] },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'flat', range: [20, 40] }] },
+      {
+        ilvl: 45,
+        weight: 300,
+        stats: [
+          { stat: 'monsterArmour', form: 'flat', range: [60, 90] },
+          { stat: 'monsterArmour', form: 'inc', range: [30, 45] },
+        ],
+      },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'flat', range: [25, 45] }] },
     ],
   },
   {
@@ -597,6 +620,28 @@ export const CRYSTAL_MODS: ModDef[] = [
       },
     ],
   },
+  // One ward per damage type, so a map can be hostile to what you deal rather
+  // than to everything at once. Uniform resistance is a wall; a named one is a
+  // reason to carry a second damage type.
+  ...DAMAGE_TYPES.map((type) => ({
+    id: `monster_${type.id}_ward`,
+    slot: 'mod' as const,
+    name: MONSTER_WARD_NAMES[type.id] ?? `of the ${type.name} Ward`,
+    appliesTo: ['crystal' as const],
+    tags: ['danger'],
+    tiers: [
+      {
+        ilvl: 40,
+        weight: 260,
+        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [26, 34] as [number, number] }],
+      },
+      {
+        ilvl: 1,
+        weight: 620,
+        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [10, 18] as [number, number] }],
+      },
+    ],
+  })),
 ];
 
 // --- gear: DEFENCE = staying alive -----------------------------------------
@@ -1210,13 +1255,13 @@ export const HERO_BASE = {
    * a series of fights rather than one attrition curve. Tuned so an ungeared
    * level 1 finishes the Fissure about a third down: hurt, never threatened.
    */
-  lifeRegenPercent: 1.0,
+  lifeRegenPercent: 0.55,
 };
 
 export const MONSTER_BASE = {
   /** High enough that a pack survives long enough to swing back. */
   life: 46,
-  damage: 2.9,
+  damage: 4.4,
   attacksPerSecond: 0.8,
   moveSpeed: 2.3,
   attackRange: 1.3,
@@ -1227,7 +1272,31 @@ export const MONSTER_BASE = {
  * Per-tier monster scaling. Life outpaces damage, so climbing tiers first
  * reads as "this takes longer" and only later as "this kills me".
  */
-export const MONSTER_TIER_SCALE = { life: 1.36, damage: 1.24 };
+export const MONSTER_TIER_SCALE = { life: 1.24, damage: 1.42 };
+
+/**
+ * How much longer a descent gets per tier — the map, the rooms in it and the
+ * packs in those rooms. Compounding, so a T6 is a different trip from a T1
+ * rather than the same trip with bigger numbers on it.
+ */
+export const MAP_TIER_SCALE = { size: 1.2, packs: 1.31 };
+
+/**
+ * What monsters resist, and the armour they carry, before the crystal says
+ * anything. Indexed by tier, from T1. Reaching the 75% cap takes a T6, or a T5
+ * a crystal has warded: a resistance you cannot answer is a wall, one you can
+ * is a reason to carry a second damage type rather than more of the first.
+ */
+export const MONSTER_TIER_RESIST = [0, 8, 16, 26, 38, 52];
+/** POINTS, which armourReduction curves. 280 is 48%; a hardened T6 nears the cap. */
+export const MONSTER_TIER_ARMOUR = [0, 25, 60, 110, 175, 280];
+
+const rung = (tier: number, table: number[]): number =>
+  table[Math.min(Math.max(1, Math.round(tier)), table.length) - 1];
+
+export const tierResist = (tier: number): number => rung(tier, MONSTER_TIER_RESIST);
+export const tierArmour = (tier: number): number => rung(tier, MONSTER_TIER_ARMOUR);
+
 
 // --- monster kinds ---------------------------------------------------------
 //
@@ -1465,6 +1534,10 @@ export interface DangerStat {
 }
 
 export const DANGER_STATS: Record<string, DangerStat> = {
+  // A ward is ONE type, so it costs a character that deals two almost nothing.
+  ...Object.fromEntries(
+    DAMAGE_TYPES.map((t) => [monsterResStat(t.id), { weight: 0.65, rewards: true }])
+  ),
   monsterDamage: { weight: 1.0, rewards: true },
   monsterLife: { weight: 0.7, rewards: true },
   monsterArmour: { weight: 0.55, rewards: true },
@@ -1596,8 +1669,14 @@ export const FISSURE = {
   tier: 1,
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
-  /** The first thing anyone descends into: visibly hurt, not killed. */
-  densityScale: 0.55,
+  /**
+   * The first thing anyone descends into: visibly hurt, not killed. A tier-1
+   * crystal is a long way past this — the free descent is thinner, smaller and
+   * one rung weaker, which is the gap that makes buying one mean something.
+   */
+  densityScale: 0.66,
+  sizeScale: 0.62,
+  powerScale: 0.74,
   /**
    * What the FIRST clear hands you, on top of its own loot: exactly the cost of
    * everything the guided opening asks you to buy, plus the crystal its last

@@ -7,7 +7,11 @@ import { craft, describeItem } from './crafting';
 import {
   AILMENT,
   ALL_MODS,
+  DEFENCE,
+  FISSURE,
   HERO_BASE,
+  MONSTER_BY_ID,
+  tierResist,
   LEVELLING,
   PLAYER_SKILLS,
   CURRENCY_BY_ID,
@@ -62,6 +66,7 @@ import {
   convertedType,
   damageBreakdown,
   damageDetail,
+  monsterStats,
   effectiveSkill,
   statMods,
   treeGrants,
@@ -82,7 +87,7 @@ import {
 } from './skills-tree';
 import { makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
-import { loadoutMods, starterLoadout } from './sim/loadout';
+import { ladderCharacter, loadoutMods, starterLoadout } from './sim/loadout';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -2206,7 +2211,7 @@ rule('THE SHEET — does every number on it survive being checked?');
 
   for (const seed of [3, 9, 21, 44]) {
     const c = craft(makeCrystal(4), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
-    const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), new Rng(seed));
+    const sim = new RunSim(c, ladderCharacter(6, new Rng(seed)), new Rng(seed));
     for (const m of sim.state.monsters) if (m.skillId) ranged.add(m.id);
 
     // Run it out so the finale spawns and is checked with the rest.
@@ -2351,7 +2356,7 @@ rule('TERMINATION CHECK — does every run actually end?');
       ).item;
       const sim = new RunSim(
         c,
-        makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+        ladderCharacter(t.tier, new Rng(seed)),
         new Rng(seed * 31 + t.tier)
       );
       const f = runToCompletion(sim, 400);
@@ -2391,7 +2396,7 @@ for (const t of CRYSTAL_TIERS) {
     ).item;
     const sim = new RunSim(
       c,
-      makeCharacter(starterLoadout(new Rng(7)), 'strike'),
+      ladderCharacter(t.tier, new Rng(700 + i)),
       new Rng(5000 + t.tier * 31 + i),
       {}
     );
@@ -2415,6 +2420,106 @@ for (const t of CRYSTAL_TIERS) {
 line();
 line('Yield is what a run BANKS, so dying scores zero — the deeper tiers are');
 line('self-limiting without needing the numbers tuned against them.');
+
+// ===========================================================================
+rule('THE LADDER — is every rung reachable from the one below it?');
+
+// Two ways to break this game with a balance number, both of which happened
+// while these numbers were being set, and neither of which anything else here
+// would have noticed.
+{
+  // 1. The free descent. It is the first thing anyone does, it costs nothing,
+  //    and the character doing it owns nothing: no gear, no points, level one.
+  //    A Fissure that cannot be cleared is a game that cannot be started.
+  let cleared = 0;
+  const runs = 24;
+  let lifeLeft = 0;
+  for (let i = 0; i < runs; i++) {
+    const hero = makeCharacter({}, 'strike');
+    const sim = new RunSim(makeCrystal(FISSURE.tier), hero, new Rng(4100 + i * 7), {
+      densityScale: FISSURE.densityScale,
+      sizeScale: FISSURE.sizeScale,
+      powerScale: FISSURE.powerScale,
+      dropTier: 0,
+    });
+    const final = runToCompletion(sim, 400);
+    if (final.status === 'cleared') {
+      cleared++;
+      lifeLeft += final.hero.life / final.hero.stats.maxLife;
+    }
+  }
+  const share = cleared / runs;
+  line(`  naked, level 1, no tree: ${cleared}/${runs} cleared, ${((lifeLeft / Math.max(1, cleared)) * 100).toFixed(0)}% life left`);
+  check(
+    share >= 0.85,
+    'a brand new character clears the Fissure',
+    `only ${cleared}/${runs} — the first descent in the game is unwinnable`
+  );
+  // The other half of the same knob: a Fissure nobody can lose teaches nothing
+  // about the fight, and the tier above it is where the lesson is meant to land.
+  check(
+    lifeLeft / Math.max(1, cleared) < 0.7,
+    'and is made to work for it',
+    'walks out barely touched — the Fissure is not teaching anything'
+  );
+
+  // 2. The gear ladder. Tier n has to be clearable in what tier n-1 drops, or
+  //    the tier that hands out what you need is behind the thing you need.
+  const wall: string[] = [];
+  line('  tier   cleared with what the tier below drops');
+  for (const t of CRYSTAL_TIERS) {
+    let ok = 0;
+    const tries = 12;
+    for (let i = 0; i < tries; i++) {
+      const c = craft(makeCrystal(t.tier), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
+      const sim = new RunSim(c, ladderCharacter(t.tier, new Rng(700 + i)), new Rng(8100 + t.tier * 13 + i));
+      if (runToCompletion(sim, 400).status === 'cleared') ok++;
+    }
+    line(`   T${t.tier}    ${ok}/${tries}`);
+    if (ok === 0) wall.push(`T${t.tier}`);
+  }
+  check(
+    wall.length === 0,
+    'every tier can be cleared in gear the tier below it drops',
+    `${wall.join(', ')} cannot be entered in anything that tier hands out`
+  );
+}
+
+// ===========================================================================
+rule('MITIGATION — does the tier ladder hold its own shape?');
+
+// Stated here because the two tables are easy to edit into a wall: resistance
+// and armour MULTIPLY, so a plausible-looking pair reduces a hit by more than
+// either number suggests.
+{
+  const bad: string[] = [];
+  line('  tier   resist   armour   a hit is worth');
+  for (const t of CRYSTAL_TIERS) {
+    const m = monsterStats(makeCrystal(t.tier), t.tier, MONSTER_BY_ID.grub);
+    const through = (1 - m.resistances.physical / 100) * (1 - m.armourReduction / 100);
+    line(
+      `   T${t.tier}     ${m.resistances.physical.toFixed(0).padStart(3)}%    ` +
+        `${m.armourReduction.toFixed(0).padStart(3)}%    ${(through * 100).toFixed(0)}%`
+    );
+    if (m.resistances.physical >= DEFENCE.resistanceCap && t.tier < 6) {
+      bad.push(`T${t.tier} already resists at the cap`);
+    }
+    if (through < 0.2) bad.push(`T${t.tier} eats ${((1 - through) * 100).toFixed(0)}% of every hit`);
+  }
+  for (const entry of bad) line(`  ${entry}`);
+  check(
+    bad.length === 0,
+    'no tier reaches the cap early, and none swallows four fifths of a hit',
+    bad.join('; ')
+  );
+  // A crystal is what takes the last step, and only from the top rungs.
+  const warded = craft(makeCrystal(6), CURRENCY_BY_ID.shard_of_awakening, pool, new Rng(3));
+  check(
+    tierResist(6) > tierResist(5) && tierResist(1) === 0 && warded.item !== null,
+    'T1 resists nothing, and the climb to the cap is the crystal\'s last step',
+    `T1 ${tierResist(1)}%, T5 ${tierResist(5)}%, T6 ${tierResist(6)}%`
+  );
+}
 
 // ===========================================================================
 rule('WHERE THE FRAGMENTS GO');

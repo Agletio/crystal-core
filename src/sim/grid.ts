@@ -206,21 +206,23 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
 }
 
 /**
- * Rooms joined by corridors. `layoutComplexity` off the crystal drives both
- * the map's size and its room count, so "of Winding Ways" produces a
- * genuinely longer walk rather than a cosmetic label.
+ * Rooms joined by corridors. `layoutComplexity` off the crystal and the tier's
+ * own `sizeScale` both drive the map's size and its room count, so "of Winding
+ * Ways" and a deeper tier each produce a genuinely longer walk.
  */
-export function generateMap(crystal: Item, rng: Rng): GameMap {
-  const layout = computeStat(1, crystal.mods, 'layoutComplexity');
+export function generateMap(crystal: Item, rng: Rng, sizeScale = 1): GameMap {
+  const layout = computeStat(1, crystal.mods, 'layoutComplexity') * sizeScale;
 
-  const width = clamp(Math.round(42 * Math.sqrt(layout)), 30, 72);
-  const height = clamp(Math.round(28 * Math.sqrt(layout)), 22, 48);
+  const width = clamp(Math.round(42 * Math.sqrt(layout)), 26, 104);
+  const height = clamp(Math.round(28 * Math.sqrt(layout)), 20, 70);
   const grid = new Grid(width, height);
 
-  const target = clamp(Math.round(7 * layout), 5, 16);
+  const target = clamp(Math.round(7 * layout), 4, 30);
   const rooms: Room[] = [];
 
-  for (let attempt = 0; attempt < 500 && rooms.length < target; attempt++) {
+  // Attempts scale with the target: a fixed budget quietly returned a T6 with
+  // a T1's room count once the map was big enough to need more tries.
+  for (let attempt = 0; attempt < 90 * target && rooms.length < target; attempt++) {
     const w = rng.int(5, 9);
     const h = rng.int(4, 7);
     const candidate: Room = {
