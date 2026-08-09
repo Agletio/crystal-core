@@ -48,8 +48,8 @@ function render(): void {
       el(
         'p',
         'ask__text',
-        'This browser will not let the page store anything — a private window, ' +
-          'usually. Nothing is being saved. Download a backup before you close the tab.'
+        'Nothing is being saved — this browser blocks storage, usually a ' +
+          'private window. Download a backup before you close the tab.'
       )
     );
     return;
@@ -59,9 +59,9 @@ function render(): void {
     el(
       'p',
       'ask__text',
-      'Your game saves itself into this browser every few seconds. It is here ' +
-        'and nowhere else: another browser, another device, or clearing this ' +
-        "site's data all start you over. A backup file is the way across."
+      'Saved to this browser every few seconds, and nowhere else. Another ' +
+        'browser, another device, or clearing site data starts you over. ' +
+        'A backup file is the way across.'
     )
   );
   host.append(el('p', 'savemeta', `Last saved ${when(savedAt())}.`));

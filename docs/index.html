@@ -360,8 +360,9 @@
   .dmgrow__t { color: var(--dust); }
   .dmgrow__how { color: var(--seam-lit); font-size: 10px; }
   .dmgrow--nil .dmgrow__n, .dmgrow--nil .dmgrow__t { color: var(--ember); }
-  .dmgsum { margin: 7px 0 0; padding-top: 6px; border-top: 1px solid var(--seam); color: var(--dust); line-height: 1.5; }
-  .dmgsum b { color: var(--chalk); font-weight: normal; }
+  .dmgrow--sum { margin-top: 5px; padding-top: 6px; border-top: 1px solid var(--seam); }
+  .dmgrow--sum .dmgrow__n { color: var(--citrine); }
+  .dmgrow--sum .dmgrow__t { color: var(--chalk); }
 
   .skillline { margin: 0 0 14px; padding: 8px 10px; border-left: 3px solid var(--rust); background: var(--seam); }
   .skillline__name { font-family: var(--display); font-size: 12px; }
@@ -955,8 +956,7 @@
         <div class="panel">
           <p class="panel__title">The Fissure</p>
           <p class="fissure">
-            A thin place in the rock. Always open, always free — and it pays
-            like it. Socket a crystal to make it worth the trip.
+            A thin place in the rock. Always open, always free.
           </p>
 
           <button class="socket" id="run-socket">
@@ -967,8 +967,8 @@
             <button class="mini mini--go" id="run-launch">Enter the Fissure</button>
           </div>
           <p class="runsrc">
-            You clear the whole Fissure, then something waits at the exit.
-            A socketed crystal is consumed, win or lose.
+            Clear it all, then something waits at the exit.
+            A socketed crystal is spent win or lose.
           </p>
         </div>
 
@@ -1094,11 +1094,11 @@
         <div class="panel worn">
           <div class="worn__label">Worn</div>
           <div id="craft-worn"></div>
-          <p class="worn__hint">Click or drag a piece onto the bench — it stays on.</p>
+          <p class="worn__hint">Stays equipped while you work on it.</p>
         </div>
         <div class="panel">
           <p class="empty" id="craft-empty">
-            Drag something from your inventory onto the bench, or click it.
+            Click or drag something from your dock.
           </p>
           <div id="craft-item" hidden>
             <h2 id="item-name">—</h2>
@@ -1294,8 +1294,7 @@
                placeholder="Wanderer" autocomplete="off" />
       </label>
       <p class="empty">
-        And how do you fight? You can change this later, and each skill levels
-        on its own as you use it.
+        How do you fight? Each skill levels on its own, and you can change later.
       </p>
       <div class="welcomegrid" id="welcome-skills"></div>
       <div class="welcomedev">

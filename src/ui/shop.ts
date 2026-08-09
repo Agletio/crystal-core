@@ -242,7 +242,7 @@ function renderStock(): void {
   host.replaceChildren();
 
   if (game.shopStock.length === 0) {
-    host.append(el('p', 'empty', 'Sold out. The shelf restocks when you level.'));
+    host.append(el('p', 'empty', 'Sold out. Restocks when you level.'));
     return;
   }
 

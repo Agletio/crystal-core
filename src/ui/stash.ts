@@ -120,10 +120,8 @@ export function render(): void {
     grow.classList.toggle('buy--off', !affordable);
   }
 
-  $('stash-hint').textContent =
-    `Carrying ${CARRY.crystal} crystals and ${CARRY.gear} pieces of gear at most. ` +
-    `Stashed items are stored, not carried — take one out before you can craft, ` +
-    `socket or wear it.`;
+  // The rule the slot counts cannot show: nothing acts on a stashed item.
+  $('stash-hint').textContent = 'Stored, not carried. Take one out to use it.';
 }
 
 /**

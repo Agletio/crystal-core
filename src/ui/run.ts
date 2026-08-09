@@ -141,8 +141,8 @@ function renderMenu(): void {
         'p',
         'socket__hint',
         crystalsIn(game).length === 0
-          ? 'No crystals yet. Descend as you are — the Fissure pays little, but it pays.'
-          : 'Click a crystal in the dock below to empower the Fissure.'
+          ? 'No crystals yet.'
+          : 'Click a crystal in the dock.'
       )
     );
     return;
@@ -161,7 +161,7 @@ function renderMenu(): void {
   host.append(multipliers);
 
   if (chosen.mods.length === 0) {
-    host.append(el('p', 'empty', 'Unmodified — craft it on the bench for a richer descent.'));
+    host.append(el('p', 'empty', 'Unmodified.'));
   }
   for (const mod of chosen.mods) {
     host.append(el('div', 'chosen__mod', describeMod(mod)));

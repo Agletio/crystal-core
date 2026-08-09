@@ -29,7 +29,7 @@ import {
 import { categoryIcon, skillIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, treeGrants } from '../sim/stats';
+import { characterStats, convertedType, damageDetail, treeGrants } from '../sim/stats';
 import { addSkillXp, skillProgress, xpToNext } from '../sim/character';
 import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
@@ -233,16 +233,19 @@ function skillSummary(skill: SkillDef): string[] {
   // Everything below is derived from what you are WEARING, which is only the
   // truth for the skill you actually have equipped.
   if (!mine) {
-    lines.push('', 'Equip it to see what it would do with your gear.');
+    lines.push('', 'Equip to see your numbers.');
     return lines;
   }
 
+  // Through damageDetail, so this and the character sheet cannot disagree.
+  // A lasting skill is worth its number over a duration, not per hit.
+  const detail = damageDetail(game.character);
   lines.push(
     '',
-    `damage per hit: ${Math.round(stats.damage)}`,
-    `rate: ${stats.attacksPerSecond.toFixed(2)}/s  →  ${Math.round(
-      stats.damage * stats.attacksPerSecond
-    )} dps`,
+    detail.seconds > 0
+      ? `damage per cast: ${Math.round(detail.perApplication)} over ${detail.seconds}s`
+      : `damage per hit: ${Math.round(detail.perApplication)}`,
+    `rate: ${detail.rate.toFixed(2)}/s  →  ${Math.round(detail.perSecond)} dps`,
     grants.critAilment
       ? `crit: converted to ${AILMENT_NAMES[dealt] ?? 'a lasting wound'}`
       : `crit: ${Math.round(stats.critChance)}% for ${(
@@ -254,8 +257,8 @@ function skillSummary(skill: SkillDef): string[] {
     const was = skill.damageTypes.map((t) => DAMAGE_TYPE_BY_ID[t]?.name ?? t).join(' and ');
     lines.push(
       '',
-      `${was} modifiers in this tree count as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}. ` +
-        `${was} modifiers on your gear no longer apply.`
+      `${was} in this tree counts as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}. ` +
+        `${was} on your gear no longer applies.`
     );
   }
   return lines;

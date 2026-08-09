@@ -887,21 +887,23 @@ assert(
   dmg.click();
   const detail = document.querySelector('.statdetail');
   assert(!!detail, 'clicking it shows the breakdown');
-  const parts = all('.statdetail .dmgrow');
+  const parts = all('.statdetail .dmgrow:not(.dmgrow--sum)');
   assert(parts.length > 0, 'with a row per damage type that contributed', String(parts.length));
 
-  // The whole point: the parts must name the ONE type it all lands as, since
-  // a skill deals its own type whatever the parts were tagged.
+  // A skill deals its own type whatever the parts were tagged. The total row
+  // is labelled with it, which says so without a sentence saying so.
+  const totalRow = document.querySelector('.dmgrow--sum');
+  assert(!!totalRow, 'and a total row under them');
   assert(
-    /lands as/.test(detail?.textContent ?? ''),
-    'and says what all of it lands as',
-    detail?.textContent?.slice(0, 80)
+    (totalRow?.querySelector('.dmgrow__t')?.textContent ?? '').length > 0,
+    'named with the one type it all lands as',
+    totalRow?.textContent
   );
-  // Armour is the rule people get wrong, so a lasting skill has to state it.
+  // Armour is the rule people get wrong, so the total has to state it.
   assert(
-    /armour/i.test(detail?.textContent ?? ''),
+    /armour/i.test(totalRow?.textContent ?? ''),
     'and how armour treats it',
-    detail?.textContent?.slice(-90)
+    totalRow?.textContent
   );
 
   // The breakdown must ADD UP to the row above it — the demo checks the
@@ -912,6 +914,11 @@ assert(
   );
   const shown = Number((dmg.querySelector('.stat__v')?.textContent ?? '').replace(/\D+.*$/, ''));
   assert(Math.abs(sum - shown) <= parts.length, 'and adds up to the row it opened', `${sum} vs ${shown}`);
+  assert(
+    Math.abs(Number(totalRow?.querySelector('.dmgrow__n')?.textContent) - shown) < 1,
+    'and the total row is that same number',
+    `${totalRow?.querySelector('.dmgrow__n')?.textContent} vs ${shown}`
+  );
 
   dmg.click();
   assert(!document.querySelector('.statdetail'), 'clicking again folds it back');
@@ -1232,7 +1239,7 @@ $('skills-close').click();
     (r) => r.querySelector('.stat__k')?.textContent === 'damage'
   );
   dmg.click();
-  const parts = all('.statdetail .dmgrow');
+  const parts = all('.statdetail .dmgrow:not(.dmgrow--sum)');
   const sum = parts.reduce(
     (n, r) => n + Number(r.querySelector('.dmgrow__n')?.textContent ?? 0),
     0
@@ -1245,19 +1252,18 @@ $('skills-close').click();
     `${sum} in parts, row says ${shown}`
   );
   assert(
-    /never by armour/.test(document.querySelector('.statdetail')?.textContent ?? ''),
-    'and states the rule that damage over time skips armour'
+    /never armoured/.test(document.querySelector('.dmgrow--sum')?.textContent ?? ''),
+    'and states the rule that damage over time skips armour',
+    document.querySelector('.dmgrow--sum')?.textContent
   );
 
-  // A mace does nothing for a spell. That is correct, and it used to be
-  // invisible: a line that never applies never reaches a pass, so equipping one
-  // and seeing no number move reads as the sheet ignoring you.
+  // A mace does nothing for a spell. The sheet no longer explains that in
+  // prose, so the mod line has to carry it — in the dock BEFORE you equip, and
+  // on the worn slot after. A cudgel has no rolled mods at all, which is how
+  // the sheet's tooltip came to print "no modifiers" over the only line on it.
   const mace = filled('#inv-gear').find((b) => /cudgel|maul/i.test(named(b)));
   assert(!!mace, 'the dev kit carries a mace to test with', named(filled('#inv-gear')[0]));
 
-  // The mod text is where this has to be answerable before you equip anything.
-  // A mace and a ring both granted "+5 Physical Damage" and only one of them
-  // arms a spell, because the tag that decided it had no word and was dropped.
   mace.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
     /Damage to Attacks/.test(text('tooltip')),
@@ -1267,11 +1273,11 @@ $('skills-close').click();
   mace.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 
   mace.click();
-  const detailText = () => document.querySelector('.statdetail')?.textContent ?? '';
+  $('slot-weapon').dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
-    /needs Attack/.test(detailText()),
-    'wearing it for a spell says so rather than saying nothing',
-    detailText().slice(-160)
+    /Damage to Attacks/.test(text('tooltip')),
+    'and still says so once it is worn',
+    text('tooltip')
   );
   $('sheet-close').click();
 }

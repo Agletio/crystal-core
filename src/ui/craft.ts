@@ -209,8 +209,8 @@ function renderItem(): void {
         'p',
         'empty',
         modCapacity(item) === 0
-          ? 'No room for modifiers. Raise this item’s quality first — a Shard of Seaming opens its first slots.'
-          : 'No modifiers. Click a currency in the dock below to fill a slot.'
+          ? 'No slots yet. A Shard of Seaming opens the first.'
+          : 'No modifiers. Click a currency below.'
       )
     );
   }

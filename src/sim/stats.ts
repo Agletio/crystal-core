@@ -177,36 +177,6 @@ export function ailmentSeconds(skill: SkillDef, grants: Record<string, unknown>)
   return ((skill.params?.duration as number) ?? 10) * multiplier;
 }
 
-/**
- * Flat damage on your gear that this skill's family shuts out — a mace arms
- * attacks, and holding one while casting changes nothing at all. Invisible in
- * the breakdown, because a line that never applies never reaches a pass.
- */
-export interface Excluded {
-  flat: number;
-  /** The tags that shut it out, as ids. */
-  needs: string[];
-}
-
-function excludedFlat(mods: RolledMod[], skill: SkillDef): Excluded {
-  const types = new Set<string>([...DAMAGE_TYPES.map((t) => t.id), TYPELESS]);
-  const has = new Set(skill.tags);
-  const needs = new Set<string>();
-  let flat = 0;
-
-  for (const mod of mods) {
-    for (const stat of mod.stats) {
-      if (stat.stat !== 'damage' || stat.form !== 'flat') continue;
-      // A type tag is supplied per pass; anything else has to be on the skill.
-      const blocking = stat.tags.filter((t) => !types.has(t) && !has.has(t));
-      if (blocking.length === 0) continue;
-      flat += stat.value;
-      for (const tag of blocking) needs.add(tag);
-    }
-  }
-  return { flat, needs: [...needs] };
-}
-
 /** Everything the character sheet needs to explain one number. */
 export interface DamageDetail {
   skill: SkillDef;
@@ -220,7 +190,6 @@ export interface DamageDetail {
   perApplication: number;
   /** Sustained on ONE target. An area skill is worth more against a pack. */
   perSecond: number;
-  excluded: Excluded;
 }
 
 export function damageDetail(character: Character): DamageDetail {
@@ -237,9 +206,8 @@ export function damageDetail(character: Character): DamageDetail {
   const ailment: DamageStep[] =
     overTime && scale !== 1 ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'ailment', value: scale }] : [];
 
-  const mods = statMods(character);
   const breakdown = damageBreakdown(
-    mods,
+    statMods(character),
     baseFor(character.level).weaponDamage,
     skill,
     grants,
@@ -263,7 +231,6 @@ export function damageDetail(character: Character): DamageDetail {
     perSecond: overTime
       ? (stacks * perApplication) / seconds
       : perApplication * stats.attacksPerSecond,
-    excluded: excludedFlat(mods, skill),
   };
 }
 

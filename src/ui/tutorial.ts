@@ -77,14 +77,12 @@ function viaHeader(ctx: GuideCtx, button: string): string {
 const blocked = (ctx: GuideCtx): boolean =>
   ctx.top !== null || ctx.view === 'craft';
 
+/** Text is the instruction; `hint` is a rule the screen cannot show. Nothing else. */
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "enter",
-    text: (ctx) =>
-      blocked(ctx)
-        ? "The Fissure is behind this. Close it and click Enter."
-        : "This is the Fissure — the one place you go, always open and always free. Click Enter to descend.",
-    hint: "You fight automatically. Nothing to time.",
+    text: (ctx) => (blocked(ctx) ? "Close this — the Fissure is behind it." : "Enter the Fissure."),
+    hint: "You fight on your own. Nothing to time.",
     target: (ctx) => viaHeader(ctx, "run-launch"),
     done: (g, ctx) => ctx.phase !== "menu" || g.firstClearDone,
   },
@@ -93,12 +91,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.phase === "running"
         ? blocked(ctx)
-          ? "The fight is carrying on behind this. Close it and watch."
-          : "You fight on your own. Clear it and something will be waiting at the exit."
+          ? "Close this and watch."
+          : "Clear it."
         : blocked(ctx)
-          ? "That run ended before it was cleared. Close this and head back down."
-          : "That run ended before it was cleared. Nothing was lost — go again.",
-    hint: "Everything you find only banks if you make it out.",
+          ? "Close this and go again."
+          : "That run ended early. Go again.",
+    hint: "Loot only banks if you make it out.",
     // Anchored beside the loot list rather than on the stage: there is nothing
     // to click, and a ring around the viewport of a zoomed-in camera frames a
     // random patch of rock rather than the fight.
@@ -115,9 +113,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "to_shop",
     text: (ctx) =>
-      blocked(ctx)
-        ? "You came back with fragments and a wand. Close this — the Shop button is behind it."
-        : "You came back with fragments and a wand. Open the Shop — fragments are what everything else is bought with.",
+      blocked(ctx) ? "Close this — the Shop is behind it." : "Open the Shop.",
+    hint: "Fragments buy everything else.",
     target: (ctx) => viaHeader(ctx, "open-shop"),
     done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
   },
@@ -125,11 +122,11 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: "buy_seaming",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Buy a Shard of Seaming. Your wand is Rough — it has no room for a modifier yet, and this is what opens it."
+        ? "Buy a Shard of Seaming."
         : blocked(ctx)
           ? "Close this to get back to the Shop."
           : "Open the Shop and buy a Shard of Seaming.",
-    hint: "Costs 4 fragments. It lands in your inventory.",
+    hint: "Your wand is Rough — it has no room for a modifier until this opens one.",
     target: (ctx) =>
       ctx.top === "shop"
         ? recipeButtonId("make_shard_of_seaming")
@@ -140,12 +137,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: "select_weapon",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Bought. Close the Shop — the shard is in your dock now."
+        ? "Close the Shop."
         : ctx.view === "craft"
-          ? "Click your Ash Wand in the dock below to put it on the bench."
+          ? "Click your Ash Wand in the dock."
           : blocked(ctx)
-            ? "Close this — Crafting is the next stop."
-            : "Open Crafting, then click your Ash Wand in the dock below.",
+            ? "Close this and open Crafting."
+            : "Open Crafting.",
     hint: "The dock stays reachable under every popup.",
     target: (ctx) =>
       ctx.top === "shop"
@@ -157,7 +154,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: "use_seaming",
-    text: "Now click the Shard of Seaming in your Currency shelf. The wand keeps its base stat and gains its first modifier.",
+    text: "Click the Shard of Seaming.",
     hint: "Currency is spent from the dock, onto whatever is on the bench.",
     target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
@@ -166,11 +163,11 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: "buy_making",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Buy a Shard of Making. A Seamed item holds two modifiers, and your wand is using one."
+        ? "Buy a Shard of Making."
         : blocked(ctx)
-          ? "Close Crafting — the Shop button is behind it."
-          : "Back to the Shop for a Shard of Making.",
-    hint: "Costs 5 fragments. Using it is your call — better items hold more.",
+          ? "Close this — the Shop is behind it."
+          : "Back to the Shop.",
+    hint: "A Seamed item holds two modifiers. Your wand is using one.",
     target: (ctx) =>
       ctx.top === "shop"
         ? recipeButtonId("make_shard_of_making")
@@ -182,11 +179,11 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === "sheet"
         ? ctx.picking
-          ? "Now click the Ash Wand in the dock below to wear it."
-          : "Click the Weapon slot — everything that fits will light up."
+          ? "Click the Ash Wand in the dock."
+          : "Click the Weapon slot."
         : blocked(ctx)
-          ? "The wand is crafted. Close this and open Character."
-          : "Open Character and put the wand in your weapon slot.",
+          ? "Close this and open Character."
+          : "Open Character.",
     target: (ctx) =>
       ctx.top === "sheet"
         ? // Once a slot is chosen the gear is what you click, and it is in the
@@ -202,14 +199,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "descend",
     text: (ctx) =>
-      ctx.top === "sheet"
-        ? "That is the loop. Close the sheet — you can afford a crystal now."
-        : blocked(ctx)
-          ? "That is the loop. Close this and head back down."
-          : ctx.phase === "results"
-            ? "Your report from last time is still open. Head back to the Fissure."
-            : "Descend again. Socket a crystal first if you have one — it makes the Fissure deadlier, and pays for it.",
-    hint: "Crystals are spent on entry, win or lose.",
+      ctx.top === "sheet" || blocked(ctx)
+        ? "Close this and go again."
+        : ctx.phase === "results"
+          ? "Back to the Fissure."
+          : "Go again. Socket a crystal first if you have one.",
+    hint: "A crystal makes the Fissure deadlier and pays for it. Spent on entry, win or lose.",
     target: (ctx) =>
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",

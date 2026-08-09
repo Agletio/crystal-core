@@ -46,7 +46,7 @@ export function renderHistory(): void {
   host.replaceChildren();
 
   if (entries.length === 0) {
-    host.append(el('p', 'empty', 'Nothing yet. Craft something or enter the Fissure.'));
+    host.append(el('p', 'empty', 'Nothing yet.'));
     return;
   }
 

@@ -10,7 +10,6 @@ import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '.
 import { describeMod } from '../crafting';
 import { characterStats, damageDetail } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
-import { tagWord } from '../mod-text';
 import { xpToNext } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
 import { wear } from './wear';
@@ -40,10 +39,17 @@ let onChanged: (() => void) | null = null;
 /** Hands the dock back to whatever is underneath when this closes. */
 let onClosed: (() => void) | null = null;
 
+/**
+ * Implicits too. A mace has no rolled mods at all, so the old early return
+ * showed "no modifiers" over the one line that says its damage is for attacks.
+ */
 function tooltip(item: Item): string {
-  if (item.mods.length === 0) return `${item.name} — no modifiers`;
-  const rating = item.armour ? [`Armour ${item.armour}`] : [];
-  return [item.name, ...rating, ...item.mods.map((m) => describeMod(m))].join('\n');
+  const lines = [item.name];
+  if (item.armour) lines.push(`Armour ${item.armour}`);
+  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
+  for (const mod of item.mods) lines.push(describeMod(mod));
+  if (lines.length === 1) lines.push('no modifiers');
+  return lines.join('\n');
 }
 
 function renderSlots(): void {
@@ -157,54 +163,29 @@ function damagePanel(): HTMLElement {
         'span',
         'dmgrow__how',
         part.total === 0
-          ? `nothing tagged ${nameOf(part.type)} for it to scale`
+          ? `${round(part.increased)}% increased, nothing to scale`
           : damageWorkings(part, breakdown.steps)
       )
     );
     box.append(row);
   }
 
-  const sum = el('p', 'dmgsum');
-  const dealt = nameOf(breakdown.dealtAs);
-  const mixed = breakdown.parts.some((p) => p.total > 0 && p.type !== breakdown.dealtAs);
-
-  const line = (html: string) => {
-    const p = el('div');
-    // Written across source lines, read as one sentence. HTML collapses the
-    // ragged whitespace on screen but textContent keeps it, and textContent is
-    // what a screen reader says out loud.
-    p.innerHTML = html.replace(/\s+/g, ' ').trim();
-    sum.append(p);
-  };
-  const b = (t: string) => `<b>${t}</b>`;
-
-  line(`All ${b(round(breakdown.total))} of it lands as ${b(dealt)}.`);
-  // The question the tags invite and the numbers never answer on their own.
-  if (mixed) {
-    line(`A skill deals its own type whatever scaled it — the parts above are
-          how much got through, not what you are hitting with.`);
-  }
-  // The question the breakdown cannot answer by itself: gear whose damage never
-  // reaches a pass leaves no row, so equipping a mace to cast with looks like
-  // the sheet ignoring you.
-  if (detail.excluded.flat > 0) {
-    const needs = detail.excluded.needs.map((t) => tagWord(t) ?? t).join(' and ');
-    line(
-      `${b(`+${round(detail.excluded.flat)}`)} flat damage on your gear needs
-       ${b(needs)}, which ${detail.skill.name} is not — it is
-       ${b(detail.skill.tags.join(', '))}.`
-    );
-  }
-  if (detail.seconds > 0) {
-    line(
-      `Applied over ${b(`${detail.seconds}s`)}, up to ${b(String(detail.maxStacks))} stacks
-       on one enemy. Damage over time is reduced by ${dealt} resistance and
-       ${b('never by armour')}.`
-    );
-  } else {
-    line(`One hit, reduced by ${dealt} resistance and then by armour.`);
-  }
-  box.append(sum);
+  // The total, in the same shape as the rows above it and labelled with the
+  // one type it lands as. Rows of Cold and Light adding up to a Poison total
+  // is the rule stated; a sentence saying so as well is a sentence.
+  const total = el('div', 'dmgrow dmgrow--sum');
+  total.append(el('span', 'dmgrow__n', round(breakdown.total)));
+  total.append(el('span', 'dmgrow__t', nameOf(breakdown.dealtAs)));
+  total.append(
+    el(
+      'span',
+      'dmgrow__how',
+      detail.seconds > 0
+        ? `per cast · ${detail.seconds}s · ${detail.maxStacks} stacks · resisted, never armoured`
+        : 'per hit · resisted, then armoured'
+    )
+  );
+  box.append(total);
   return box;
 }
 
@@ -236,7 +217,7 @@ function renderStats(): void {
       key: cast ? 'casts/sec' : 'attacks/sec',
       value: s.attacksPerSecond.toFixed(2),
       why: cast
-        ? 'Cast speed. A spell is not made faster by a sharper sword.'
+        ? 'Cast speed. Attack speed does nothing for a spell.'
         : 'Attack speed, times the skill’s own rate.',
     },
     {
@@ -244,14 +225,14 @@ function renderStats(): void {
       value: round(detail.perSecond),
       why:
         detail.seconds > 0
-          ? 'Sustained on ONE enemy, stacks and all. A cloud caught on a pack is worth several times this.'
-          : 'Damage times rate. Before resistance, armour and crit.',
+          ? 'Sustained on one enemy, stacks included. Worth more against a pack.'
+          : 'Damage times rate, before resistance, armour and crit.',
     },
     { key: 'crit chance', value: `${Math.round(s.critChance)}%` },
     {
       key: 'crit damage',
       value: `×${(2 + s.critMultiplier / 100).toFixed(2)}`,
-      why: 'A crit doubles, and crit multiplier is added on top of that. Poison ticks roll it too.',
+      why: 'A crit doubles, plus this. Damage over time rolls it per tick.',
     },
     { key: 'move speed', value: s.moveSpeed.toFixed(1), unit: 'tiles/s' },
     // Armour shows points AND what they're worth — the whole reason it curves
