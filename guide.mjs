@@ -293,6 +293,19 @@ if (finished) {
     if (before.join() === after.join()) problems.push('dragging a dock slot did not reorder it');
     if (await page.locator('.dragghost').count()) problems.push('a drag left its ghost behind');
 
+    // A SWAP, and specifically not an insert-before: inserting puts an item
+    // back exactly where it started whenever the target is its neighbour, so
+    // the first slot read as one nothing could be dragged out of.
+    if (!(after[0] === before[3] && after[3] === before[0])) {
+      problems.push(`dropping 0 on 3 gave ${after.slice(0, 4).join(' | ')}, not a swap`);
+    }
+    const adjacent = await labels();
+    await drag(0, 1);
+    const swapped = await labels();
+    if (!(swapped[0] === adjacent[1] && swapped[1] === adjacent[0])) {
+      problems.push('dropping an item on its own neighbour did nothing');
+    }
+
     // The click the drag must not have eaten.
     if (await page.locator('#craft').isHidden()) await page.locator('#open-craft').click();
     const want = (await labels())[2];

@@ -406,6 +406,18 @@ export function describeMod(mod: RolledMod): string {
   return `${lines}  (T${mod.tier} ${mod.name})`;
 }
 
+/**
+ * One line per stat, for somewhere with room. Three stats on one wrapped line
+ * is a paragraph you have to parse; the continuations are indented so a
+ * two-stat modifier still reads as one modifier.
+ */
+export function describeModLines(mod: RolledMod): string[] {
+  const tag = mod.slot === 'implicit' ? '  (base)' : `  (T${mod.tier} ${mod.name})`;
+  return mod.stats.map((s, i) =>
+    i === 0 ? `${describeStatLine(s)}${tag}` : `  ${describeStatLine(s)}`
+  );
+}
+
 export function describeItem(item: Item): string {
   const head = `${item.name} [${fillState(item)}] ilvl ${item.ilvl}${
     item.meta.corrupted ? ' (corrupted)' : ''

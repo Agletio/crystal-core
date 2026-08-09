@@ -114,7 +114,6 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: "to_shop",
     text: (ctx) =>
       blocked(ctx) ? "Close this — the Shop is behind it." : "Open the Shop.",
-    hint: "Fragments buy everything else.",
     target: (ctx) => viaHeader(ctx, "open-shop"),
     done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
   },
@@ -143,7 +142,6 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : blocked(ctx)
             ? "Close this and open Crafting."
             : "Open Crafting.",
-    hint: "The dock stays reachable under every popup.",
     target: (ctx) =>
       ctx.top === "shop"
         ? "shop-close"
@@ -155,7 +153,6 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "use_seaming",
     text: "Click the Shard of Seaming.",
-    hint: "Currency is spent from the dock, onto whatever is on the bench.",
     target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },

@@ -7,7 +7,7 @@
  * rather than in the dock, which is safe because this screen shows them.
  */
 import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
-import { describeMod } from '../crafting';
+import { describeModLines } from '../crafting';
 import { characterStats, damageDetail } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
 import { xpToNext } from '../sim/character';
@@ -46,8 +46,8 @@ let onClosed: (() => void) | null = null;
 function tooltip(item: Item): string {
   const lines = [item.name];
   if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
-  for (const mod of item.mods) lines.push(describeMod(mod));
+  for (const imp of item.implicits) lines.push(...describeModLines(imp));
+  for (const mod of item.mods) lines.push(...describeModLines(mod));
   if (lines.length === 1) lines.push('no modifiers');
   return lines.join('\n');
 }
@@ -134,11 +134,11 @@ function renderPickHint(): void {
   host.hidden = !slot;
   if (!slot) return;
 
+  // Only when there is nothing. Anything else is described by the slots
+  // lighting up in the dock, which you are already looking at.
   const options = game.inventory.filter((i) => fitsSlot(i, slot));
-  host.textContent =
-    options.length === 0
-      ? `Nothing you are carrying fits the ${slot.name.toLowerCase()} slot.`
-      : `${options.length} in your dock fit${options.length === 1 ? 's' : ''} the ${slot.name.toLowerCase()} slot — they are lit up below.`;
+  host.hidden = options.length > 0;
+  host.textContent = `Nothing you carry fits the ${slot.name.toLowerCase()} slot.`;
 }
 
 const round = (n: number) => Math.round(n).toString();

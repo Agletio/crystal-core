@@ -22,18 +22,34 @@ import type {
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
 
+const ITEM_ID = /^(crystal|gear)_(\d+)$/; // moves with uid's callers, never apart
+
 /**
  * Ids come off a counter that restarts with the page, so a save from an earlier
  * session holds ids this one would hand out again. Two items under one id is
  * ONE item to every lookup: the bench opens whichever comes first, and both
  * slots light up. Push the counter past what is already spoken for.
+ *
+ * Walks the whole save rather than a named list of collections — naming them
+ * is what let the shop's stored shelf through.
  */
-export function reserveItemIds(items: Iterable<Item>): void {
-  for (const item of items) {
-    const n = Number(/_(\d+)$/.exec(item?.id ?? '')?.[1]);
+export function reserveItemIds(value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const entry of value) reserveItemIds(entry);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+
+  const id = (value as { id?: unknown }).id;
+  if (typeof id === 'string') {
+    const n = Number(ITEM_ID.exec(id)?.[2]);
     if (Number.isFinite(n) && n >= nextId) nextId = n + 1;
   }
+  for (const nested of Object.values(value)) reserveItemIds(nested);
 }
+
+/** True for an id this module minted. The demo holds every factory to it. */
+export const isItemId = (id: string): boolean => ITEM_ID.test(id);
 
 // ---------------------------------------------------------------------------
 // Item factory
@@ -238,13 +254,9 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
 // ---------------------------------------------------------------------------
 // Crystal rewards
 //
-// There used to be a simulateRun() stub here that modelled a run analytically.
-// It's gone: the real sim reports its own loot (see RunState.loot), so there
-// is one answer to "what is a run worth" instead of two that could disagree.
-//
-// It was also the only source of the rare sigils and Shard of Ruin. Until the
-// sim drops currency, those are unobtainable outside the dev kit — see
-// DEV_CURRENCY.
+// What a run is worth is reported by the sim itself — see RunState.loot. The
+// sim drops no currency yet, so the rare sigils and the Shard of Ruin are
+// unobtainable outside the dev kit; see DEV_CURRENCY.
 // ---------------------------------------------------------------------------
 
 /** Fragments spent to make this crystal, for sustain accounting. */

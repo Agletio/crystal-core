@@ -704,6 +704,22 @@ assert(
   );
 }
 
+// --- one stat per line ------------------------------------------------------
+// Three stats joined by commas wrap into a paragraph, and an item tooltip is
+// something you scan rather than read.
+{
+  const slot = filled('#inv-gear').find((b) => named(b).length > 0);
+  slot.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  const lines = text('tooltip').split('\n');
+  assert(lines.length > 2, 'an item tooltip has a line per fact', String(lines.length));
+  assert(
+    lines.every((l) => !/[%\d]\s*,\s*[+-]/.test(l)),
+    'and never two stats on one line',
+    lines.find((l) => /[%\d]\s*,\s*[+-]/.test(l))
+  );
+  slot.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
 // --- the item menu carries what the click cannot ---------------------------
 // One click can only mean one thing, and the screen owns it. Everything else
 // an item can do has to be reachable, or it may as well not exist.
@@ -1305,10 +1321,11 @@ const emptySlot = all('#sheet-slots .slotcell__btn').find(
 );
 assert(!!emptySlot, 'a slot is empty after unequipping');
 emptySlot.click();
-assert($('sheet-pick').hidden === false, 'picking a slot says what to do next');
 
 const lit = all('.dock .slot--on');
-assert(lit.length > 0, 'and lights up what fits, in the dock');
+assert(lit.length > 0, 'picking a slot lights up what fits, in the dock');
+// The lit slots ARE the message, so the line only speaks when there are none.
+assert($('sheet-pick').hidden === true, 'and says nothing the dock already showed');
 assert(
   lit.every((b) => b.closest('.dockcol').querySelector('#inv-gear')),
   'only gear lights up — a crystal fits no equipment slot'

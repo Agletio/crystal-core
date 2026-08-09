@@ -94,6 +94,7 @@ import {
   unequipItem,
 } from './game/state';
 import { heal, readSave } from './game/save';
+import type { GameState } from './game/state';
 import type { Item, Quality, RolledMod, Wallet } from './types';
 
 const pool = new ModPool(ALL_MODS);
@@ -2287,8 +2288,9 @@ rule('THE SAVE — does a save survive the game changing under it?');
   // has to claim the numbers in it, or the next item minted wears an id an
   // older one already has — and then one lookup answers for two items: the
   // bench opens the wrong one and two dock slots light up together.
+  const HIGH = 99000;
   const held = { ...game, inventory: [makeGear('ash_wand', 1)], stash: [], craftId: null };
-  held.inventory[0].id = 'gear_99000';
+  held.inventory[0].id = `gear_${HIGH}`;
   const read = readSave(JSON.stringify(held));
   const minted = makeGear('ash_wand', 1);
   const mintedN = Number(/_(\d+)$/.exec(minted.id)?.[1] ?? 0);
@@ -2302,6 +2304,37 @@ rule('THE SAVE — does a save survive the game changing under it?');
     new Set(after.map((i) => i.id)).size === after.length,
     'and every id it hands out after that is still its own',
     after.map((i) => i.id).join(' ')
+  );
+
+  // The check above named the collections it looked in, and so did the code:
+  // the shop's shelf is stored so it does not re-roll on every open, and it
+  // was on neither list. So this asks the question of EVERY field that can
+  // hold an item, found by walking the save rather than by remembering.
+  const collections: Array<[string, (g: GameState, item: Item) => void]> = [
+    ['inventory', (g, item) => { g.inventory = [item]; }],
+    ['stash', (g, item) => { g.stash = [item]; }],
+    ['shopStock', (g, item) => { g.shopStock = [item]; }],
+    ['equipment', (g, item) => { g.character.equipment = { weapon: item }; }],
+  ];
+  const leaked: string[] = [];
+  collections.forEach(([where, put], i) => {
+    // Its own high-water mark, above anything minted so far. One shared number
+    // and the counter is already past it by the second case, which is a check
+    // that passes whatever the code does.
+    const mark = HIGH + (i + 1) * 1000;
+    const save = { ...createGame('fresh'), inventory: [], stash: [], shopStock: [], craftId: null };
+    save.character = { ...save.character, equipment: {} };
+    const item = makeGear('ash_wand', 1);
+    item.id = `gear_${mark}`;
+    put(save, item);
+    if (readSave(JSON.stringify(save)) === null) { leaked.push(`${where} (refused)`); return; }
+    const next = Number(/_(\d+)$/.exec(makeGear('ash_wand', 1).id)?.[1] ?? 0);
+    if (next <= mark) leaked.push(`${where} (minted gear_${next} against gear_${mark})`);
+  });
+  check(
+    leaked.length === 0,
+    `every collection a save can hold items in claims its ids: ${collections.map(([n]) => n).join(', ')}`,
+    `handed out again after: ${leaked.join(', ')}`
   );
 }
 

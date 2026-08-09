@@ -69,12 +69,8 @@ export function readSave(text: string): GameState | null {
   if (!Array.isArray(save.inventory) || !Array.isArray(save.stash)) return null;
   if (!save.character || typeof save.character !== 'object') return null;
   if (!save.wallet || typeof save.wallet !== 'object') return null;
-  // Before anything can mint an item beside these ones.
-  reserveItemIds([
-    ...save.inventory,
-    ...save.stash,
-    ...Object.values(save.character.equipment ?? {}),
-  ]);
+  // The whole save, before anything can mint an item beside what is in it.
+  reserveItemIds(save);
   return save as GameState;
 }
 

@@ -1,8 +1,8 @@
 /**
  * The whole game, in one object — and the whole save, since `game/save.ts` is
- * `JSON.stringify(game)` plus a `version` check. Everything in here has to stay
- * plain data, and `SAVE_VERSION` has to move whenever the shape does: a save
- * from another version is refused rather than half-read.
+ * `JSON.stringify(game)` plus a `version` check. Everything here stays plain
+ * data. `SAVE_VERSION` moves only for a change `heal()` cannot repair, since
+ * moving it wipes everyone's game.
  */
 import { Rng } from '../rng';
 import { EQUIP_SLOTS, FISSURE, START_PRESETS } from '../data';
@@ -61,10 +61,7 @@ export interface GameState {
   firstClearDone: boolean;
   /** Index into the guided steps, or null when not running / finished. */
   tutorialStep: number | null;
-  /**
-   * The shelf, and the level it stocked for. Stored, not generated on open: one
-   * you re-roll by closing the window is deterministic with extra clicks.
-   */
+  /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
   shopStock: Item[];
   shopLevel: number;
 }
@@ -156,8 +153,7 @@ export type Placement = 'carried' | 'stashed' | 'lost';
 
 /**
  * Bags first, then the stash, then nowhere. Every caller must report what this
- * returned: loot that silently fails to arrive reads as a bug, and you would
- * never learn the thing to do was clear some space.
+ * returned: loot that silently fails to arrive reads as a bug.
  */
 export function addItem(game: GameState, item: Item): Placement {
   if (carryRoom(game, item.kind) > 0) {
@@ -229,14 +225,24 @@ export function craftItem(game: GameState): Item | null {
   return findAnywhere(game, game.craftId) ?? null;
 }
 
-/** Moves a carried item just before `before`, or last when that is null. */
-export function reorderItem(game: GameState, item: Item, before: Item | null): void {
+/**
+ * Exchanges two carried items' places. A swap rather than an insert-before,
+ * which puts an item back where it started when you drop it on its neighbour.
+ */
+export function swapItems(game: GameState, a: Item, b: Item): void {
+  const i = game.inventory.findIndex((x) => x.id === a.id);
+  const j = game.inventory.findIndex((x) => x.id === b.id);
+  if (i < 0 || j < 0 || i === j) return;
+  game.inventory[i] = b;
+  game.inventory[j] = a;
+}
+
+/** The list is packed, so an empty slot means the end. */
+export function sendToEnd(game: GameState, item: Item): void {
   const from = game.inventory.findIndex((i) => i.id === item.id);
-  if (from < 0 || item.id === before?.id) return;
+  if (from < 0) return;
   game.inventory.splice(from, 1);
-  const to = before ? game.inventory.findIndex((i) => i.id === before.id) : -1;
-  if (to < 0) game.inventory.push(item);
-  else game.inventory.splice(to, 0, item);
+  game.inventory.push(item);
 }
 
 export function selectForCraft(game: GameState, item: Item): void {

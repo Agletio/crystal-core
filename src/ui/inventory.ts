@@ -8,13 +8,13 @@
  */
 import { currencyIcon, itemIcon } from './icons';
 import { modCapacity, qualityName, qualityOf } from '../mods';
-import { describeMod } from '../crafting';
+import { describeModLines } from '../crafting';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
-import { CARRY, fitsSlot, reorderItem } from '../game/state';
+import { CARRY, fitsSlot, sendToEnd, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
 import type { CurrencyDef, Item, ItemKind } from '../types';
@@ -193,11 +193,11 @@ function tooltip(item: Item): string {
   if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
   // The rating, not a modifier: it says what the piece IS, and increases scale it.
   if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
+  for (const imp of item.implicits) lines.push(...describeModLines(imp));
   if (item.mods.length === 0 && item.implicits.length === 0) {
     lines.push('no modifiers');
   }
-  for (const mod of item.mods) lines.push(describeMod(mod));
+  for (const mod of item.mods) lines.push(...describeModLines(mod));
 
   const all = actionsFor(item);
   const click = clickAction(item);
@@ -332,7 +332,7 @@ function targetAt(event: PointerEvent): Element | null {
 type Landing =
   | { kind: 'bench' }
   | { kind: 'equip'; slotId: string }
-  | { kind: 'before'; onto: Item }
+  | { kind: 'swap'; onto: Item }
   | { kind: 'end' }
   | null;
 
@@ -350,7 +350,7 @@ function landing(target: Element | null, item: Item): Landing {
   if (!target.classList.contains('slot')) return null;
   const slot = target as HTMLElement;
   const onto = itemById(slot.dataset.itemId);
-  if (onto) return onto.kind === item.kind ? { kind: 'before', onto } : null;
+  if (onto) return onto.kind === item.kind ? { kind: 'swap', onto } : null;
   return slot.dataset.dropKind === item.kind ? { kind: 'end' } : null;
 }
 
@@ -359,7 +359,7 @@ function highlight(next: Element | null): void {
   drag.over?.classList.remove('slot--over', 'drop--over');
   const where = landing(next, drag.item);
   if (next && where) {
-    const inBag = where.kind === 'before' || where.kind === 'end';
+    const inBag = where.kind === 'swap' || where.kind === 'end';
     next.classList.add(inBag ? 'slot--over' : 'drop--over');
   }
   drag.over = next;
@@ -413,8 +413,8 @@ function drop(event: PointerEvent): void {
   // same action rather than inventing a second way to say it.
   if (where?.kind === 'bench') (carried.onBench ?? (() => handler?.actionFor(carried.item)?.run()))();
   else if (where?.kind === 'equip') extras?.equipTo?.(carried.item, where.slotId);
-  else if (where?.kind === 'before' && game) reorderItem(game, carried.item, where.onto);
-  else if (where?.kind === 'end' && game) reorderItem(game, carried.item, null);
+  else if (where?.kind === 'swap' && game) swapItems(game, carried.item, where.onto);
+  else if (where?.kind === 'end' && game) sendToEnd(game, carried.item);
 
   dragged = true;
   teardown();
