@@ -11,6 +11,7 @@ const { lookRows } = await import('../src/render/look');
 const { POSE_IDS } = await import('../src/render/pose');
 const { FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
 const { roleChar } = await import('../src/render/look');
+const { BEASTIARY, HALO, haloed } = await import('../src/render/bestiary');
 const { lookKeyColours } = await import('../src/render/sprites');
 
 
@@ -34,11 +35,11 @@ const KEY: Record<string, string> = lookKeyColours(PALETTE);
 const SCALE = 16;
 const GRID = 16;
 
-function cellHtml(rows, label) {
+function cellHtml(rows, label, key = KEY) {
   const px = [];
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
-      const c = KEY[row[x]];
+      const c = key[row[x]];
       if (!c) continue;
       px.push(`<i style="left:${x * SCALE}px;top:${y * SCALE}px;background:${c}"></i>`);
     }
@@ -105,7 +106,40 @@ const html = (body: string) => `<!doctype html><meta charset="utf-8"><style>
 const out = process.argv[2] ?? '/tmp/model.png';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
+/** A creature's own inks, the way monsterArt builds them for the game. */
+const beastKey = (art: any, rank: string): Record<string, string> => ({
+  ...KEY,
+  M: art.tone.lit(PALETTE),
+  m: art.tone.mass(PALETTE),
+  s: art.tone.shade(PALETTE),
+  e: art.tone.eye(PALETTE),
+  x:
+    rank === 'rare'
+      ? '#ffffff'
+      : rank === 'magic'
+        ? art.tone.eye(PALETTE)
+        : art.tone.shade(PALETTE),
+  b: '#cfe0f5',
+  o: '#f0c46a',
+});
+
+/** Every creature at every rank, which is the only view that judges a halo. */
+const RANKS = ['common', 'magic', 'rare'] as const;
+const page4 = Object.entries(BEASTIARY)
+  .map(
+    ([id, art]) =>
+      `<div class="row"><b>${id}</b><div class="poses">` +
+      RANKS.map((r) =>
+        [0, 1]
+          .map((f) => cellHtml(haloed(art.frames[f], HALO[r]), `${r} ${f}`, beastKey(art, r)))
+          .join('')
+      ).join('') +
+      `</div></div>`
+  )
+  .join('');
+
 for (const [body, file] of [
+  [page4, out.replace('.png', '-beasts.png')],
   [page3, out.replace('.png', '-all.png')],
   [page1, out],
   [page2, out.replace('.png', '-arms.png')],

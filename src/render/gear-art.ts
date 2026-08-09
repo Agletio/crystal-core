@@ -8,6 +8,7 @@
  * Every grid is authored against the neutral pose. Boots get a frame per walk
  * step because feet are the one thing a shift cannot fake.
  */
+export { mix } from './renderer';
 import { mix } from './renderer';
 import type { Palette } from './renderer';
 

@@ -6,6 +6,7 @@ import type {
   GearBase,
   ModDef,
   MonsterDef,
+  MonsterRankDef,
   Recipe,
   SkillCategory,
   SkillDef,
@@ -1247,6 +1248,7 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1,
     radius: 0.3,
     sprite: 'grub',
+    scale: 0.95,
     weight: 1000,
     tags: ['beast'],
   },
@@ -1260,6 +1262,7 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1,
     radius: 0.32,
     sprite: 'husk',
+    scale: 1,
     weight: 800,
     tags: ['undead'],
   },
@@ -1273,6 +1276,7 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1,
     radius: 0.26,
     sprite: 'stalker',
+    scale: 0.85,
     weight: 600,
     tags: ['beast'],
   },
@@ -1286,9 +1290,91 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1.15,
     radius: 0.44,
     sprite: 'brute',
+    scale: 1.25,
     weight: 260,
     tags: ['humanoid'],
   },
+  {
+    id: 'cinder_hound',
+    name: 'Cinder Hound',
+    life: 0.9,
+    damage: 1.15,
+    moveSpeed: 1.3,
+    attacksPerSecond: 1.1,
+    attackRange: 1,
+    radius: 0.3,
+    sprite: 'cinder_hound',
+    scale: 1,
+    weight: 520,
+    tags: ['beast'],
+  },
+  {
+    id: 'shale_crawler',
+    name: 'Shale Crawler',
+    life: 1.6,
+    damage: 0.9,
+    moveSpeed: 0.75,
+    attacksPerSecond: 0.85,
+    attackRange: 1,
+    radius: 0.36,
+    sprite: 'shale_crawler',
+    scale: 1.05,
+    weight: 480,
+    tags: ['beast'],
+  },
+  {
+    id: 'gale_wisp',
+    name: 'Gale Wisp',
+    life: 0.5,
+    damage: 0.95,
+    moveSpeed: 1.6,
+    attacksPerSecond: 1.4,
+    attackRange: 1,
+    radius: 0.24,
+    sprite: 'gale_wisp',
+    scale: 0.9,
+    weight: 420,
+    tags: ['elemental'],
+  },
+  {
+    id: 'rime_crab',
+    name: 'Rime Crab',
+    life: 1.9,
+    damage: 1.25,
+    moveSpeed: 0.65,
+    attacksPerSecond: 0.75,
+    attackRange: 1.1,
+    radius: 0.38,
+    sprite: 'rime_crab',
+    scale: 1.1,
+    weight: 340,
+    tags: ['beast'],
+  },
+  {
+    id: 'sparkmite',
+    name: 'Sparkmite',
+    life: 0.45,
+    damage: 0.8,
+    moveSpeed: 1.7,
+    attacksPerSecond: 1.5,
+    attackRange: 1,
+    radius: 0.22,
+    sprite: 'sparkmite',
+    scale: 0.8,
+    weight: 700,
+    tags: ['elemental'],
+  },
+];
+
+/**
+ * What a monster can turn up as. Bigger, brighter, worth more — and haloed, so
+ * the thing that is about to hurt more looks different before it reaches you.
+ * Weights are per monster, so a pack can hold one of each.
+ */
+export const MONSTER_RANKS: MonsterRankDef[] = [
+  { id: 'common', weight: 1000, life: 1, damage: 1, bounty: 1, scale: 1 },
+  { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.18 },
+  { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.36 },
 ];
 
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
@@ -1485,10 +1571,15 @@ export const shopQualityFor = (level: number): Array<[Quality, number]> => {
 
 export const LOOT = {
   /**
-   * Fragments one monster is worth at tier 1. Accumulates fractionally and
-   * rounds when banked, so per-kill values below 1 still work.
+   * Fragments one COMMON monster is worth at tier 1. Accumulates fractionally
+   * and rounds when banked, so per-kill values below 1 still work.
+   *
+   * Cut when ranks arrived: a magic or rare one is worth several kills, so a
+   * pack now pays about a third more than its count. Ranks redistribute the
+   * payout into spikes — they are not meant to raise the total, which is what
+   * the sustain ratio was reporting when it went over 1.0 at tier 1.
    */
-  fragmentsPerKill: 0.115,
+  fragmentsPerKill: 0.086,
   /**
    * Matched to how crystal COST scales, roughly 2.1x a tier. A juiced crystal
    * sustains its own tier with a little over; a plain one does not.
@@ -1602,8 +1693,8 @@ START_PRESETS.dev.gear = DEV_GEAR;
 export const LEVELLING = {
   lifePerLevel: 14,
   damagePerLevel: 1.6,
-  /** XP from one tier-1 monster. */
-  perMonster: 8,
+  /** XP from one tier-1 COMMON monster. Cut alongside fragments when ranks arrived. */
+  perMonster: 6,
   tierScale: 1.6,
   /**
    * xpToNext(level) = curveBase * level ^ curveExponent. Tuned so a first T1

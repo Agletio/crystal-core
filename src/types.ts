@@ -162,6 +162,16 @@ export interface EquipSlotDef {
  * tier and identity stay independent: a Brute is 2.2x whatever a monster is
  * worth at that tier. `sprite` is a name, not an asset.
  */
+export interface MonsterRankDef {
+  id: 'common' | 'magic' | 'rare';
+  weight: number;
+  life: number;
+  damage: number;
+  bounty: number;
+  /** Visual size AND body radius: a rare should read as big before it lands. */
+  scale: number;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;
@@ -172,6 +182,8 @@ export interface MonsterDef {
   attackRange: number;
   radius: number; // in tiles; units push each other apart rather than stacking
   sprite: string;
+  /** How much of a tile the art covers. Nothing derives it from radius. */
+  scale: number;
   weight: number;
   tags?: string[];
 }

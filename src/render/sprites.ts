@@ -1,16 +1,17 @@
 /**
- * Procedural placeholder sprite sheets, drawn at runtime onto offscreen canvases
- * so the repo carries no binary assets and a colour change redraws nothing.
+ * Sprite sheets drawn at runtime onto offscreen canvases, so the repo carries
+ * no binary assets and a palette change redraws everything.
  *
  * Two walk frames each — enough for legs to alternate, which is the difference
- * between walking and sliding. Bob, lunge, recoil and death are transforms,
- * because transforms are free and frames are not. Real art replaces makeSheet()
- * with a loader behind the same {sprite, frame} lookup.
+ * between walking and sliding. Death and recoil are transforms, because
+ * transforms are free and frames are not.
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
 import { lookRows, roleChar } from './look';
 import { FAMILY_ART } from './gear-art';
+import { BEASTIARY, HALO, haloed } from './bestiary';
+import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
 import type { Look } from '../types';
@@ -26,11 +27,7 @@ export const WALK_FRAMES = 2;
 const GRID = 16;
 const PX = CELL / GRID;
 
-/**
- * A sprite authored as text: rows of characters, one per logical pixel, keyed to
- * colours. `.` is transparent. Verbose, and worth it — you can see the
- * silhouette in the source, and changing a shoulder is moving a character.
- */
+/** Rows of characters keyed to colours, `.` transparent: the shape is visible. */
 type PixelArt = { rows: string[]; key: Record<string, string> };
 
 /**
@@ -111,198 +108,32 @@ export const HERO_FRAMES: string[][] = [
   ],
 ];
 
-/**
- * The monsters, on the same grid. Two frames each, differing only in the legs.
- * SHAPE carries the identity — low and wide, thin and hunched, a wedge, a slab —
- * so each reads at three pixels a tile without relying on its colour.
- */
-export const MONSTER_FRAMES: Record<string, string[][]> = {
-  // Low, wide, segmented. Almost no vertical presence: it is the thing you
-  // walk over. Segment ridges down the back and a pair of mandibles are what
-  // stop it reading as a bean.
-  grub: [
-    [
-      '................',
-      '................',
-      '................',
-      '.....######.....',
-      '...##ssssss##...',
-      '..#mMsMMsMMsm#..',
-      '.#mMMsMMsMMsMe#.',
-      '.#MMMsMMsMMsMMe#',
-      '.#mMMsMMsMMsMe#.',
-      '..#mMsMMsMMsm#..',
-      '...##m##m##m#...',
-      '....#..#..#.....',
-      '................',
-      '................',
-      '................',
-      '................',
-    ],
-    [
-      '................',
-      '................',
-      '................',
-      '.....######.....',
-      '...##ssssss##...',
-      '..#mMsMMsMMsm#..',
-      '.#mMMsMMsMMsMe#.',
-      '.#MMMsMMsMMsMMe#',
-      '.#mMMsMMsMMsMe#.',
-      '..#mMsMMsMMsm#..',
-      '...#m##m##m##...',
-      '.....#..#..#....',
-      '................',
-      '................',
-      '................',
-      '................',
-    ],
-  ],
-
-  // Thin and hunched, leaning the way it walks. A person, badly: two sunken
-  // eyes, a rib showing through, and arms too long for it.
-  husk: [
-    [
-      '................',
-      '................',
-      '......####......',
-      '.....#mMMM#.....',
-      '.....#eMeM#.....',
-      '.....#mMMM#.....',
-      '......#MM#......',
-      '....##mMMm##....',
-      '...#MsMMMMsM#...',
-      '...#M#MsMM#M#...',
-      '...#M#MMsM#M#...',
-      '....##MMMM##....',
-      '.....#M##M#.....',
-      '.....#M##M#.....',
-      '.....#M##M#.....',
-      '.....##..##.....',
-    ],
-    [
-      '................',
-      '................',
-      '......####......',
-      '.....#mMMM#.....',
-      '.....#eMeM#.....',
-      '.....#mMMM#.....',
-      '......#MM#......',
-      '....##mMMm##....',
-      '...#MsMMMMsM#...',
-      '...#M#MsMM#M#...',
-      '...#M#MMsM#M#...',
-      '....##MMMM##....',
-      '.....#MM#M#.....',
-      '....#M#..#M#....',
-      '....#M#..#M#....',
-      '....##....##....',
-    ],
-  ],
-
-  // A wedge on long legs. Nothing on it is vertical; it only ever looks like
-  // it is already moving. A spine ridge and jointed legs, so the speed reads
-  // as anatomy rather than as a triangle.
-  stalker: [
-    [
-      '................',
-      '................',
-      '.......##.......',
-      '.....##sMs##....',
-      '..###mMsMsMm##..',
-      '.#mMMMMsMsMMMe#.',
-      '#mMMMMMMsMMMMMe#',
-      '.#mMMMMsMsMMMe#.',
-      '..###mMsMsMm##..',
-      '.....##sMs##....',
-      '......#M#M#.....',
-      '.....#M#.#M#....',
-      '.....#s#.#s#....',
-      '....#M#...#M#...',
-      '....#s#...#s#...',
-      '....##.....##...',
-    ],
-    [
-      '................',
-      '................',
-      '.......##.......',
-      '.....##sMs##....',
-      '..###mMsMsMm##..',
-      '.#mMMMMsMsMMMe#.',
-      '#mMMMMMMsMMMMMe#',
-      '.#mMMMMsMsMMMe#.',
-      '..###mMsMsMm##..',
-      '.....##sMs##....',
-      '......#M#M#.....',
-      '......#M#M#.....',
-      '.....#s#.#s#....',
-      '.....#M#.#M#....',
-      '....#s#...#s#...',
-      '...##.......##..',
-    ],
-  ],
-
-  // A slab with shoulders. Plated, strapped, and carrying one arm heavier than
-  // the other — the width across the chest is the only thing that has to read
-  // at three pixels, everything else is for when you are stood next to it.
-  brute: [
-    [
-      '................',
-      '..##########....',
-      '.#mmMMMMMMMm#...',
-      '.#msMMMMMMsMe#..',
-      '.#mMsMMMMsMMM#..',
-      '.#MMMsMMsMMMMe#.',
-      '.#mMMMssMMMMM#..',
-      '.#msMMMMMMsM#...',
-      '.#mMsMMMMsMm#...',
-      '.#mMMsMMsMMm#...',
-      '..##MM##MM##....',
-      '..#MMM##MMM#....',
-      '..#sMM##MMs#....',
-      '..#MMM##MMM#....',
-      '..####..####....',
-      '................',
-    ],
-    [
-      '................',
-      '..##########....',
-      '.#mmMMMMMMMm#...',
-      '.#msMMMMMMsMe#..',
-      '.#mMsMMMMsMMM#..',
-      '.#MMMsMMsMMMMe#.',
-      '.#mMMMssMMMMM#..',
-      '.#msMMMMMMsM#...',
-      '.#mMsMMMMsMm#...',
-      '.#mMMsMMsMMm#...',
-      '..##MM##MM##....',
-      '..#MMM##MMM#....',
-      '..#sMM##MMs#....',
-      '.#MMM####MMM#...',
-      '.###......###...',
-      '................',
-    ],
-  ],
-};
-
-/** One hue, three tones, one lit eye. Built from spriteColour, the one palette. */
-function monsterArt(palette: Palette, sprite: string, frame: number): PixelArt | null {
-  const frames = MONSTER_FRAMES[sprite];
-  if (!frames) return null;
-  const base = spriteColour(palette, sprite);
+/** Its own inks, plus the rank: the accent brightens and a halo goes round. */
+function monsterArt(
+  palette: Palette,
+  sprite: string,
+  frame: number,
+  rank: MonsterRank
+): PixelArt | null {
+  const art = BEASTIARY[sprite];
+  if (!art) return null;
+  const accent: Record<MonsterRank, string> = {
+    common: mix(art.tone.shade(palette), art.tone.mass(palette), 0.5),
+    magic: art.tone.eye(palette),
+    rare: mix(art.tone.eye(palette), palette.chalk, 0.45),
+  };
   return {
-    rows: frames[frame] ?? frames[0],
+    rows: haloed(art.frames[frame] ?? art.frames[0], HALO[rank]),
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),
-      // Pulled toward the rock so a monster sits in the rock rather than on
-      // top of it. The old flat fills were brighter than the floor.
-      M: mix(base, palette.rockDeep, 0.14),
-      m: mix(base, palette.rockDeep, 0.42),
-      // Interior shading: segment ridges, plate seams, joints. Between M and
-      // m, so it reads as form rather than as an outline drawn inside the
-      // outline — a second black line would just make the shape muddy.
-      s: mix(base, palette.rockDeep, 0.6),
-      e: mix(base, palette.chalk, 0.55),
+      M: art.tone.lit(palette),
+      m: art.tone.mass(palette),
+      s: art.tone.shade(palette),
+      e: art.tone.eye(palette),
+      x: accent[rank],
+      // Blue for magic, gold for rare, as every loot game has said it.
+      b: mix(palette.quartz, palette.chalk, 0.3),
+      o: palette.citrine,
     },
   };
 }
@@ -332,10 +163,7 @@ function heroArt(palette: Palette, frame: number): PixelArt {
   return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key };
 }
 
-/**
- * The hero's palette, shared by the base figure and everything worn. One key
- * table, so a gauntlet and the hand inside it are lit by the same light.
- */
+/** One table, so a gauntlet and the hand inside it are lit by the same light. */
 export function lookKeyColours(palette: Palette): Record<string, string> {
   const ink = mix(palette.rockDeep, palette.void, 0.6);
   const out: Record<string, string> = {
@@ -388,9 +216,14 @@ export function makeLookFrames(palette: Palette, look: Look): HTMLCanvasElement[
   return frames;
 }
 
+export const RANKS: MonsterRank[] = ['common', 'magic', 'rare'];
+
+/** How a creature and its rank name one set of frames. */
+export const rankedKey = (sprite: string, rank: MonsterRank): string => `${sprite}:${rank}`;
+
 export type SpriteSheet = Record<string, HTMLCanvasElement[]>;
 
-export const SPRITE_KINDS = ['hero', 'grub', 'husk', 'stalker', 'brute'] as const;
+export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY)] as const;
 
 function cell(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   const canvas = document.createElement('canvas');
@@ -412,28 +245,30 @@ function drawCreature(
   ctx: CanvasRenderingContext2D,
   sprite: string,
   frame: number,
-  palette: Palette
+  palette: Palette,
+  rank: MonsterRank
 ): void {
-  const art = sprite === 'hero' ? heroArt(palette, frame) : monsterArt(palette, sprite, frame);
+  const art = sprite === 'hero' ? heroArt(palette, frame) : monsterArt(palette, sprite, frame, rank);
   if (art) drawPixels(ctx, art);
 }
 
-/**
- * Builds every sprite for every frame. Returns null when there's no canvas at
- * all (headless), which callers treat as "use a different renderer".
- */
+/** Null when there is no canvas at all, which callers read as "another renderer". */
 export function makeSheet(palette: Palette): SpriteSheet | null {
   const sheet: SpriteSheet = {};
 
+  // One set of frames per creature AND rank: a halo is pixels, so it belongs
+  // in the texture rather than in a filter that would blur off the grid.
   for (const sprite of SPRITE_KINDS) {
-    const frames: HTMLCanvasElement[] = [];
-    for (let frame = 0; frame < WALK_FRAMES; frame++) {
-      const made = cell();
-      if (!made) return null;
-      drawCreature(made.ctx, sprite, frame, palette);
-      frames.push(made.canvas);
+    for (const rank of RANKS) {
+      const frames: HTMLCanvasElement[] = [];
+      for (let frame = 0; frame < WALK_FRAMES; frame++) {
+        const made = cell();
+        if (!made) return null;
+        drawCreature(made.ctx, sprite, frame, palette, rank);
+        frames.push(made.canvas);
+      }
+      sheet[rankedKey(sprite, rank)] = frames;
     }
-    sheet[sprite] = frames;
   }
   return sheet;
 }

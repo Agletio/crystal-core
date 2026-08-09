@@ -40,7 +40,7 @@ import {
   toHexNumber,
   vfxColour,
 } from './renderer';
-import { CELL, WALK_FRAMES, makeLookFrames, makeSheet } from './sprites';
+import { CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
 import { POSE_IDS } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
@@ -50,14 +50,6 @@ const FLOATER_LIFE = 1.1;
 
 /** Tiles per second of leg movement — how fast the walk cycle plays. */
 const WALK_CYCLE = 7;
-
-function sizeOf(sprite: string): number {
-  if (sprite === 'brute') return 1.25;
-  if (sprite === 'stalker') return 0.85;
-  if (sprite === 'grub') return 0.95;
-  if (sprite === 'hero') return 1.15;
-  return 1;
-}
 
 export async function createPixiRenderer(
   host: HTMLElement,
@@ -151,6 +143,15 @@ export async function createPixiRenderer(
     }
     if (e.action === 'move') return Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES ? 'walk1' : 'walk0';
     return 'walk0';
+  }
+
+  /** A creature's frames at its rank, falling back to the common ones. */
+  function framesFor(e: Entity): Texture[] {
+    return (
+      textures[rankedKey(e.sprite, e.rank)] ??
+      textures[rankedKey(e.sprite, 'common')] ??
+      textures[rankedKey('grub', 'common')]
+    );
   }
 
   const sprites = new Map<number, Sprite>();
@@ -268,7 +269,7 @@ export async function createPixiRenderer(
   function spriteFor(e: Entity): Sprite {
     let s = sprites.get(e.id);
     if (!s) {
-      const frames = textures[e.sprite] ?? textures.grub;
+      const frames = framesFor(e);
       s = new Sprite(frames[0]);
       s.anchor.set(0.5);
       entityLayer.addChild(s);
@@ -295,13 +296,13 @@ export async function createPixiRenderer(
     if (worn) {
       s.texture = worn[POSE_IDS.indexOf(poseOf(e, elapsed))] ?? worn[0];
     } else {
-      const frames = textures[e.sprite] ?? textures.grub;
+      const frames = framesFor(e);
       const frame = e.action === 'move' ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES : 0;
       s.texture = frames[frame];
     }
 
     // One texture cell should cover roughly one tile of world.
-    const scale = (1 / CELL) * sizeOf(e.sprite) * (1 - fade * 0.5);
+    const scale = (1 / CELL) * e.scale * (1 - fade * 0.5);
     s.scale.set(scale);
     s.alpha = 1 - fade;
     s.rotation = fade * 1.2;

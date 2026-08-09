@@ -31,6 +31,7 @@ import {
   HERO_BASE,
   LOOT,
   MONSTERS,
+  MONSTER_RANKS,
   MONSTER_RANGED_SKILL,
   RANGED_PACK_CHANCE,
   SKILLS,
@@ -41,6 +42,7 @@ import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
 import type { Item, Look, SkillDef } from '../types';
+import type { MonsterRank } from '../render/bestiary';
 
 /** Built once at load: derived from authored data and never mutated. */
 const DROP_POOL = new ModPool(ALL_MODS);
@@ -124,6 +126,10 @@ export interface Entity {
   sprite: string;
   /** Worn art keys, for anything the renderer draws in layers. */
   look?: Look;
+  /** How much of a tile the art covers. */
+  scale: number;
+  /** Common, magic or rare. Drives size, halo and what it is worth. */
+  rank: MonsterRank;
   x: number;
   y: number;
   /** Radians. Where the entity is looking — sprites need this, the sim doesn't. */
@@ -285,6 +291,8 @@ export class RunSim {
       kind: 'hero',
       sprite: 'hero',
       look: lookOf(character),
+      scale: 1.15,
+      rank: 'common',
       x: map.entrance.x,
       y: map.entrance.y,
       facing: 0,
@@ -366,23 +374,33 @@ export class RunSim {
       // Stats differ between the melee and ranged variants of a kind, so they
       // key separately — a ranged pack reaches much further and has to notice
       // the hero from beyond its own reach to ever open fire.
-      const statsKey = ranged ? `${def.id}:ranged` : def.id;
-      let stats = statsFor.get(statsKey);
-      if (!stats) {
-        const base = monsterStats(crystal, tier, def);
-        stats =
-          ranged && bolt
-            ? { ...base, attackRange: bolt.range, aggroRange: bolt.range + 2 }
-            : base;
-        statsFor.set(statsKey, stats);
-      }
-
       for (let i = 0; i < packSize; i++) {
+        // Per monster, not per pack: a pack with one blue thing in it is a
+        // pack you look at. Stats key on the rank too, or every rare in the
+        // run would share the common one's life.
+        const rank = this.rng.weighted(MONSTER_RANKS, (r) => r.weight) ?? MONSTER_RANKS[0];
+        const statsKey = `${def.id}:${ranged ? 'r' : 'm'}:${rank.id}`;
+        let stats = statsFor.get(statsKey);
+        if (!stats) {
+          const base = monsterStats(crystal, tier, def);
+          stats = {
+            ...base,
+            maxLife: base.maxLife * rank.life,
+            damage: base.damage * rank.damage,
+          };
+          if (ranged && bolt) {
+            stats = { ...stats, attackRange: bolt.range, aggroRange: bolt.range + 2 };
+          }
+          statsFor.set(statsKey, stats);
+        }
+
         monsters.push({
           id: this.nextId++,
           kind: 'monster',
           sprite: def.sprite,
-          radius: def.radius,
+          scale: def.scale * rank.scale,
+          rank: rank.id,
+          radius: def.radius * rank.scale,
           skillId: ranged && bolt ? MONSTER_RANGED_SKILL : null,
           x: this.rng.float(room.x, room.x + room.w - 1),
           y: this.rng.float(room.y, room.y + room.h - 1),
@@ -391,7 +409,7 @@ export class RunSim {
           actionTimer: 0,
           deathAge: 0,
           ailments: [],
-          bounty: 1,
+          bounty: rank.bounty,
           life: stats.maxLife,
           stats,
           cooldown: this.rng.float(0, 1),
@@ -615,6 +633,10 @@ export class RunSim {
         id: this.nextId++,
         kind: 'monster',
         sprite: def.count === 1 ? 'brute' : 'husk',
+        // The finale is its own rank: gold-haloed, because a thing worth
+        // fourteen kills should not look like the one worth a tenth of that.
+        scale: (def.count === 1 ? 1.25 : 1) * def.size,
+        rank: 'rare',
         radius: 0.34 * def.size,
         skillId: null,
         x: exit.x + Math.cos(angle) * spread,

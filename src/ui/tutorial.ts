@@ -13,7 +13,7 @@
  */
 import { balance } from "../economy";
 import { qualityOf } from "../mods";
-import { craftItem } from "../game/state";
+import { craftItem, gearKindOf } from "../game/state";
 import type { GameState } from "../game/state";
 import type { Item } from "../types";
 
@@ -55,9 +55,22 @@ export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 /** Id of one item's slot in the dock. Same reason again. */
 export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
 
-/** The Rough piece the opening is about to work on, if you are carrying one. */
-export const roughGear = (g: GameState): Item | undefined =>
-  g.inventory.find((i) => i.kind === 'gear' && qualityOf(i) === 'rough');
+const isWeapon = (i: Item) => i.kind === 'gear' && gearKindOf(i) === 'weapon';
+
+/** Rough alone was too loose: a first run drops Rough HELMETS too. */
+export const roughWeapon = (g: GameState): Item | undefined =>
+  g.inventory.find((i) => isWeapon(i) && qualityOf(i) === 'rough');
+
+/** By the equip step it is neither Rough nor necessarily still in the dock. */
+const theWand = (g: GameState): string => {
+  const benched = craftItem(g);
+  const item =
+    (benched && g.inventory.includes(benched) ? benched : undefined) ??
+    roughWeapon(g) ??
+    g.inventory.find(isWeapon) ??
+    g.inventory.find((i) => i.kind === 'gear');
+  return item ? dockSlotId(item.id) : slotButtonId('weapon');
+};
 
 /** Every popup's own way out, so a step can point at whichever one is up. */
 const CLOSES: Record<string, string> = {
@@ -155,13 +168,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       ctx.top === "shop"
         ? "shop-close"
         : ctx.view === "craft"
-          ? dockSlotId(roughGear(g)?.id ?? "")
+          ? theWand(g)
           : viaHeader(ctx, "open-craft"),
-    // Rough, not "any gear": a first run drops things, and benching a modded
-    // one satisfied this AND the next step, so the shard was never spent.
+    // A Rough WEAPON, not "any gear": a first run drops things, and benching a
+    // modded one satisfied this AND the next step, so the shard was never spent.
     done: (g) => {
       const item = craftItem(g);
-      return item?.kind === "gear" && qualityOf(item) === "rough";
+      return !!item && isWeapon(item) && qualityOf(item) === "rough";
     },
   },
   {
@@ -200,8 +213,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? // Once a slot is picked the gear is what you click, and it is in the
           // dock — ringing the slot lights the button you just pressed.
           ctx.picking
-          ? // The one off the bench: it has been crafted, so it is no longer Rough.
-            dockSlotId(craftItem(g)?.id ?? roughGear(g)?.id ?? "")
+          ? theWand(g)
           : slotButtonId("weapon")
         : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,

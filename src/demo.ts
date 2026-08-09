@@ -16,6 +16,7 @@ import {
   DAMAGE_TYPES,
   ARMOUR_BASES,
   ARMOUR_FAMILIES,
+  MONSTERS,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
@@ -50,7 +51,8 @@ import {
   slotUsed,
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
-import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
+import { HERO_FRAMES, wellFormed } from './render/sprites';
+import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
 import { BODY } from './render/body';
 import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
@@ -750,6 +752,35 @@ rule('SPRITES — is the pixel art well formed?');
     problems.length === 0,
     `all ${sheets} sprites are 16x16 on every frame`,
     problems.join('; ')
+  );
+
+  // Every monster the tables can spawn has to have a drawing, or a pack of
+  // them arrives as whatever the fallback happens to be.
+  const undrawn = MONSTERS.filter((m) => !MONSTER_FRAMES[m.sprite]).map((m) => m.id);
+  check(
+    undrawn.length === 0,
+    `all ${MONSTERS.length} monsters are drawn`,
+    undrawn.join(', ')
+  );
+
+  // A rank has to be visible before it reaches you: a halo that adds nothing,
+  // or one that eats the body it rings, is a rank you find out about by dying.
+  const rankProblems: string[] = [];
+  for (const [id, art] of Object.entries(BEASTIARY)) {
+    const bare = art.frames[0];
+    const body = bare.join('').split('').filter((c) => c !== '.').length;
+    for (const rank of ['magic', 'rare'] as const) {
+      const ring = haloed(bare, HALO[rank]);
+      if (wellFormed([ring]).length > 0) rankProblems.push(`${id} ${rank} is not 16x16`);
+      const kept = ring.join('').split('').filter((c, i) => bare.join('')[i] !== '.').length;
+      if (kept !== body) rankProblems.push(`${id} ${rank} halo ate ${body - kept} of the body`);
+      if (ring.join('') === bare.join('')) rankProblems.push(`${id} ${rank} looks the same`);
+    }
+  }
+  check(
+    rankProblems.length === 0,
+    'and a magic or rare one is ringed without losing a pixel of itself',
+    rankProblems.slice(0, 3).join('; ')
   );
 
   // Two frames that are identical are not a walk cycle. Cheap to write, and
