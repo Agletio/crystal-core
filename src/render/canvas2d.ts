@@ -103,7 +103,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
     // Every colour the floor can be, worked out once per draw rather than
     // eight hex round-trips per tile.
-    const floor = floorPalette(palette, state.map.vein);
+    const floor = floorPalette(palette, state.map.vein, state.map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Only what is on screen. The floor carries a dozen small rectangles per

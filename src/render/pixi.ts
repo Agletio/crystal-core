@@ -200,7 +200,7 @@ export async function createPixiRenderer(
     const { grid } = map;
     mapLayer.clear();
 
-    const floor = floorPalette(palette, map.vein);
+    const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Same grouping as the decals below: the floor's grain gives many tiles

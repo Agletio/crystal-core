@@ -286,7 +286,8 @@ export class RunSim {
       this.set.mods,
       rng,
       socketSize(this.set.filled),
-      Math.max(1, Math.round(this.set.power))
+      Math.max(1, Math.round(this.set.power)),
+      this.set.theme
     );
     const stats = characterStats(character);
 

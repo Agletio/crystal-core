@@ -187,6 +187,14 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(700);
   await shoot('fissure');
 
+  // The collection. Nothing is in it yet on a fresh game, but the quest ladder
+  // is text at full width, which is where a narrow screen tears.
+  await page.evaluate(() => document.getElementById('open-crystals')?.click());
+  await page.waitForTimeout(300);
+  await shoot('crystals');
+  await page.evaluate(() => document.getElementById('crystals-close')?.click());
+  await page.waitForTimeout(200);
+
   // And the run itself. A menu screenshot cannot show whether combat reads,
   // which is the half of the UI that actually moves.
   await page.evaluate(() => document.querySelector('#run-launch')?.click());

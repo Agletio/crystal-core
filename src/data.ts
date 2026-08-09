@@ -7,6 +7,7 @@ import type {
   ModDef,
   MonsterDef,
   MonsterFamily,
+  MapThemeDef,
   MonsterFamilyDef,
   MonsterRankDef,
   Recipe,
@@ -1461,6 +1462,38 @@ export const MONSTER_FAMILIES: MonsterFamilyDef[] = [
 
 export const FAMILY_BY_ID: Record<string, MonsterFamilyDef> = Object.fromEntries(
   MONSTER_FAMILIES.map((f) => [f.id, f])
+);
+
+/**
+ * Where the composition puts you. Half of one world is enough to make the rock
+ * that world's; two halves and no Normal is the Seam, which is neither parent
+ * and cannot be reached by accident — it takes exactly two and two.
+ */
+export const MAP_THEMES: MapThemeDef[] = [
+  {
+    id: 'fissure',
+    name: 'The Fissure',
+    blurb: 'Grey rock, flagstone and rubble. What the rock already held.',
+  },
+  {
+    id: 'demonic',
+    name: 'The Rot',
+    blurb: 'The rock has given way to something that grew here after it.',
+  },
+  {
+    id: 'prismatic',
+    name: 'The Cavern',
+    blurb: 'Crystal to the ceiling, and every surface holding light.',
+  },
+  {
+    id: 'seam',
+    name: 'The Seam',
+    blurb: 'Two worlds fused at a join that should not exist.',
+  },
+];
+
+export const THEME_BY_ID: Record<string, MapThemeDef> = Object.fromEntries(
+  MAP_THEMES.map((t) => [t.id, t])
 );
 
 /** What a crystal is called: the room it holds, and the world it opens onto. */

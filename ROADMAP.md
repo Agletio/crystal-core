@@ -424,10 +424,32 @@ Mechanism is specified in §4.
 
 ### Phase 6 — Themed maps
 
-- [ ] Map theme selected from family composition (thresholds in §2).
-- [ ] Demonic tileset.
-- [ ] Crystal cavern tileset.
-- [ ] The Seam — the 50/50 zone.
+- [x] Map theme selected from family composition (`mapTheme` in
+      `src/sim/crystal.ts`, thresholds exactly as §2 sets them). It rides on the
+      map (`GameMap.theme`) rather than being re-derived, so the two renderers
+      cannot disagree about which world you are in, and the Fissure panel names
+      the zone before you commit to it.
+- [x] Demonic tileset — **The Rot**: rock gone green, spurs of the same rot
+      climbing the walls with an ember tip.
+- [x] Crystal cavern tileset — **The Cavern**: violet-grey stone under pale
+      crystal growth.
+- [x] The Seam — the 50/50 zone. Demonic rock carrying BOTH growths, chosen per
+      tile rather than blended, so it reads as crystal erupting through demonic
+      architecture rather than as the average of two tilesets.
+
+> **Landed.** A tileset here is a palette and a decal rule, not an image: both
+> renderers already read the same pure functions out of `render/renderer.ts`, so
+> the whole phase is `THEME_INK` plus one growth function, and the canvas
+> fallback is themed for free. The ground tints are deliberately slight — the
+> monsters are already coloured by family and the map has to stay legible under
+> them — so what actually says where you are is what grows on the walls.
+>
+> The demo checks the thresholds case by case and then asks the harder question:
+> whether the four are actually distinguishable, by comparing each theme's floor
+> ramp and wall growth against the others. A tileset that renders identically to
+> another one is a tileset nobody added. It reads the real palette out of
+> `docs/index.html` through `paletteFrom`, since checking against invented
+> colours would prove nothing about what anyone sees.
 
 ### Phase 7 — Rewards and gating
 

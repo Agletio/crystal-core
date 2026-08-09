@@ -5,7 +5,7 @@
  */
 import { DANGER_STATS, FAMILY_BY_ID, MONSTER_FAMILIES, POWER, REWARD, bandFor } from '../data';
 import type { DropBand } from '../data';
-import type { Item, MonsterFamily, RolledMod } from '../types';
+import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
 
 export interface CrystalRewards {
   /** Total difficulty, including density. Display and comparison only. */
@@ -75,6 +75,16 @@ export function dominantFamily(share: Composition): MonsterFamily {
   );
 }
 
+/** Half of one family takes the rock; two halves and no Normal is the Seam,
+ *  which therefore takes exactly two of each and cannot be stumbled into. */
+export function mapTheme(share: Composition): MapTheme {
+  const half = 0.5 - 1e-6;
+  if (share.normal <= 1e-6 && share.demonic >= half && share.prismatic >= half) return 'seam';
+  if (share.demonic >= half) return 'demonic';
+  if (share.prismatic >= half) return 'prismatic';
+  return 'fissure';
+}
+
 /**
  * Which family each pack belongs to, exact rather than rolled: a set that came
  * out 30% demonic on the seed would make composition something you hope for.
@@ -117,6 +127,7 @@ export interface RunSet {
   power: number;
   band: DropBand;
   composition: Composition; // which monsters, in what share; never how hard
+  theme: MapTheme; // which world the rock is; follows the composition
 }
 
 export function runSet(crystals: Item[]): RunSet {
@@ -126,13 +137,15 @@ export function runSet(crystals: Item[]): RunSet {
     POWER.max,
     crystals.length * POWER.perSocket + rewards.danger / POWER.perDanger
   );
+  const share = composition(crystals);
   return {
     mods,
     filled: crystals.length,
     rewards,
     power,
     band: bandFor(power),
-    composition: composition(crystals),
+    composition: share,
+    theme: mapTheme(share),
   };
 }
 

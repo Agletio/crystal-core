@@ -13,8 +13,8 @@ import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
-import { compositionText, crystalFamily, setRows } from '../sim/crystal';
-import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
+import { compositionText, crystalFamily, runSet, setRows } from '../sim/crystal';
+import { FAMILY_BY_ID, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketFor, socketItem, socketed, unsocket } from '../game/state';
 import type { GameState, GiftPlace } from '../game/state';
 import { crystalProgress, giftChance } from '../game/crystals';
@@ -197,8 +197,14 @@ function renderMenu(): void {
     chips.append(chip);
   }
   host.append(chips);
-  // What you will be fighting, before you commit to fighting it.
+  // What you will be fighting, before you commit to fighting it — and where,
+  // since half of one world takes the rock as well as the packs.
   host.append(el('p', 'setcomp', compositionText(set)));
+  const zone = THEME_BY_ID[runSet(set).theme];
+  const where = el('p', 'setzone', zone.name);
+  where.title = zone.blurb;
+  where.append(el('span', 'setzone__blurb', ` — ${zone.blurb}`));
+  host.append(where);
   host.append(
     el(
       'p',

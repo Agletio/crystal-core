@@ -5,7 +5,7 @@
  */
 import { Rng } from '../rng';
 import { computeStat } from '../mods';
-import type { RolledMod } from '../types';
+import type { MapTheme, RolledMod } from '../types';
 
 export interface Vec2 {
   x: number;
@@ -124,6 +124,8 @@ export interface GameMap {
    * different seams for the same crystal.
    */
   vein: number;
+  /** Which world this rock belongs to. Presentation only, same as the vein. */
+  theme: MapTheme;
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -228,7 +230,13 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
  * own `sizeScale` both drive the map's size and its room count, so "of Winding
  * Ways" and a deeper tier each produce a genuinely longer walk.
  */
-export function generateMap(mods: RolledMod[], rng: Rng, sizeScale = 1, vein = 1): GameMap {
+export function generateMap(
+  mods: RolledMod[],
+  rng: Rng,
+  sizeScale = 1,
+  vein = 1,
+  theme: MapTheme = 'fissure'
+): GameMap {
   const layout = computeStat(1, mods, 'layoutComplexity') * sizeScale;
 
   const width = clamp(Math.round(42 * Math.sqrt(layout)), 26, 104);
@@ -285,5 +293,5 @@ export function generateMap(mods: RolledMod[], rng: Rng, sizeScale = 1, vein = 1
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit, vein };
+  return { grid, rooms, entrance, exit, vein, theme };
 }

@@ -191,6 +191,18 @@ export interface MonsterFamilyDef {
   blurb: string;
 }
 
+/**
+ * Which world you are standing in, read off the composition rather than chosen.
+ * A LOOK: same generator, same packs, different rock under them.
+ */
+export type MapTheme = 'fissure' | 'demonic' | 'prismatic' | 'seam';
+
+export interface MapThemeDef {
+  id: MapTheme;
+  name: string;
+  blurb: string;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;

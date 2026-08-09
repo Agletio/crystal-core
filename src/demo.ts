@@ -27,6 +27,7 @@ import {
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
+  MAP_THEMES,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
@@ -97,7 +98,8 @@ import {
 import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
-import { composition, familyPlan, runSet } from './sim/crystal';
+import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
+import { floorPalette, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -137,7 +139,15 @@ import {
 } from './game/crystals';
 import { heal, readSave } from './game/save';
 import type { GameState } from './game/state';
-import type { Item, MonsterDef, MonsterFamily, Quality, RolledMod, Wallet } from './types';
+import type {
+  Item,
+  MapTheme,
+  MonsterDef,
+  MonsterFamily,
+  Quality,
+  RolledMod,
+  Wallet,
+} from './types';
 
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
@@ -2502,6 +2512,107 @@ rule('FAMILIES — a different fight, or a harder one?');
     strays.length === 0,
     'and a socketed world is the only one that turns up in it',
     strays.join('; ')
+  );
+}
+
+// ===========================================================================
+rule('THEMES — does the composition change the rock you stand on?');
+
+// A theme is a LOOK, decided by the same shares that decide the packs. Two
+// things have to hold: the thresholds are what the design says, and the four
+// worlds are actually distinguishable — a tileset that renders identically to
+// another one is a tileset nobody added.
+{
+  const of = (...families: MonsterFamily[]) =>
+    mapTheme(composition(families.map((f) => makeCrystal(1, f))));
+
+  const cases: Array<[MapTheme, MonsterFamily[]]> = [
+    ['fissure', []],
+    ['fissure', ['normal', 'normal', 'demonic', 'prismatic']],
+    ['fissure', ['normal', 'normal', 'normal', 'demonic']],
+    ['demonic', ['demonic', 'demonic', 'normal', 'normal']],
+    ['demonic', ['demonic', 'demonic', 'demonic', 'prismatic']],
+    ['demonic', ['demonic']],
+    ['prismatic', ['prismatic', 'prismatic', 'normal', 'normal']],
+    ['seam', ['demonic', 'prismatic']],
+    ['seam', ['demonic', 'demonic', 'prismatic', 'prismatic']],
+    // One of each is a quarter Normal, so the join is not clean and the rock
+    // stays the Fissure's. The Seam takes exactly two and two.
+    ['fissure', ['demonic', 'prismatic', 'normal', 'normal']],
+  ];
+  const wrong = cases.filter(([want, set]) => of(...set) !== want);
+  for (const [want, set] of wrong) {
+    line(`  ${set.join('+') || 'nothing'} → ${of(...set)}, wanted ${want}`);
+  }
+  check(
+    wrong.length === 0,
+    `every composition lands in the world the thresholds name (${cases.length} cases)`,
+    `${wrong.length} land somewhere else — see above`
+  );
+
+  // The real palette, out of the stylesheet the page ships — checking themes
+  // against invented colours would prove nothing about what anyone sees.
+  const css = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
+  const PALETTE = paletteFrom((cssVar) => {
+    const found = new RegExp(`${cssVar}\\s*:\\s*([^;]+);`).exec(css);
+    return found?.[1] ?? '';
+  });
+
+  // The renderer's own vocabulary: floor colour, and what grows on a wall. If
+  // two themes agree on both, they are one tileset with two names.
+  // A wall with floor under it, which is the only rock either renderer draws.
+  const face = (gx: number, gy: number) => (gy === 1 ? FLOOR : WALL);
+  const swatch = (theme: MapTheme): string => {
+    const floor = floorPalette(PALETTE, 3, theme);
+    const growth = Array.from({ length: 60 }, (_, x) =>
+      tileDecals(floor, face, x, 0).map((d) => `${d.colour}@${d.x.toFixed(2)}`).join(',')
+    );
+    return `${floor.room.join(',')}|${growth.join('/')}`;
+  };
+  const seen = new Map<string, MapTheme>();
+  const twins: string[] = [];
+  for (const theme of MAP_THEMES) {
+    const key = swatch(theme.id);
+    const already = seen.get(key);
+    if (already) twins.push(`${theme.id} renders exactly like ${already}`);
+    seen.set(key, theme.id);
+    const floor = floorPalette(PALETTE, 3, theme.id);
+    line(
+      `  ${theme.name.padEnd(12)} floor ${floor.room[3]}  ` +
+        `growth ${floor.growth || 'none'}${floor.growthAlt ? ` + ${floor.growthAlt}` : ''}`
+    );
+  }
+  check(twins.length === 0, 'and each of the four is its own tileset', twins.join('; '));
+
+  // The Fissure is the one with bare stone walls: growth is what says you are
+  // somewhere else, so it has to be absent where you are not.
+  const bare = floorPalette(PALETTE, 3, 'fissure');
+  const rotten = floorPalette(PALETTE, 3, 'demonic');
+  const tiles = 1600;
+  const count = (floor: ReturnType<typeof floorPalette>): number => {
+    let n = 0;
+    for (let x = 0; x < tiles; x++) {
+      if (tileDecals(floor, face, x, 0).some((d) => d.colour === floor.growth)) n++;
+    }
+    return n;
+  };
+  const grown = count(rotten);
+  line(`  ${grown} of ${tiles} demonic wall tiles carry a spur; the Fissure carries ${count(bare)}`);
+  check(
+    count(bare) === 0 && grown > tiles * 0.2 && grown < tiles * 0.5,
+    'the Fissure grows nothing, and a world that does covers a fifth to a half of its walls',
+    `${count(bare)} bare, ${grown} demonic`
+  );
+
+  // Both renderers read the same pure functions, so a themed map cannot be one
+  // world in canvas and another in WebGL — but the map has to CARRY the theme
+  // for that to mean anything.
+  const set = [makeCrystal(1, 'demonic'), makeCrystal(1, 'prismatic')];
+  const sim = new RunSim(set, makeCharacter({}, 'strike'), new Rng(19));
+  check(
+    sim.state.map.theme === 'seam' && sim.state.set.theme === 'seam',
+    'and a run carries its world on the map itself, where both renderers read it',
+    `map ${sim.state.map.theme}, set ${sim.state.set.theme}`
   );
 }
 

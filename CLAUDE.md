@@ -63,6 +63,12 @@ The three pools are held to the same threat, and the demo measures it both on
 paper and by clearing one of each with the same character. A family is an
 opponent, never a difficulty setting.
 
+The composition also decides the **zone** (`mapTheme`, `MAP_THEMES`): half of one
+world takes the rock — The Rot, The Cavern — and two halves with no Normal is
+The Seam, which therefore takes exactly two crystals of each. A zone is a LOOK:
+same generator, same packs, different stone under them. It rides on `GameMap`,
+so both renderers read one answer.
+
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
 XP and gold. Zero is the bare Fissure and the baseline for all four.

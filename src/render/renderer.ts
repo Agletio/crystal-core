@@ -6,6 +6,7 @@
 import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Vec2 } from '../sim/grid';
+import type { MapTheme } from '../types';
 
 export interface Palette {
   void: string;
@@ -95,14 +96,16 @@ const VARS: Array<[keyof Palette, string]> = [
   ['bone', '--bone'],
 ];
 
-/** Pulls the palette out of CSS so colours stay defined in one place. */
+/** Custom properties from anywhere: a live element, or stylesheet text. */
+export function paletteFrom(lookup: (cssVar: string) => string): Palette {
+  const out = {} as Palette;
+  for (const [key, cssVar] of VARS) out[key] = lookup(cssVar).trim() || '#ffffff';
+  return out;
+}
+
 export function readPalette(el: Element): Palette {
   const style = getComputedStyle(el);
-  const out = {} as Palette;
-  for (const [key, cssVar] of VARS) {
-    out[key] = style.getPropertyValue(cssVar).trim() || '#ffffff';
-  }
-  return out;
+  return paletteFrom((cssVar) => style.getPropertyValue(cssVar));
 }
 
 /** Art keys → colour, shared so both renderers agree what a Brute looks like. */
@@ -153,14 +156,7 @@ export function damageColour(palette: Palette, type: string): string {
   }
 }
 
-/**
- * Rock colour, per tile. Grain is a per-tile wobble; passages read darker than
- * chambers, so the level's shape is legible at Fit; the vein is the crystal's
- * mineral, so a T5 map is visibly not a T1 map. Pure in (x, y, tile, vein), so
- * both renderers agree and the floor never shimmers.
- */
-
-/** The seam colour for a crystal tier. Matches the icons' own ladder. */
+/** The seam colour for a run's power. Matches the icons' own ladder. */
 const VEIN_COLOURS: Array<keyof Palette> = [
   'dust',
   'quartz',
@@ -267,9 +263,54 @@ export interface FloorPalette {
   /** The face of an exposed wall, catching the light from above. */
   rockLit: string;
   rockShade: string;
+  /** What this world grows on its walls, and how much of the rock carries it. */
+  growth: string;
+  /** A second growth, for the one zone made of two worlds. Empty otherwise. */
+  growthAlt: string;
+  glint: string;
+  growthDensity: number;
 }
 
-export function floorPalette(palette: Palette, vein: number): FloorPalette {
+/**
+ * What each world does to the rock. The ground tint is deliberately small —
+ * the map has to stay legible under monsters that are already coloured by
+ * family — so what actually says where you are is what grows on the walls.
+ */
+const THEME_INK: Record<
+  MapTheme,
+  {
+    ground: keyof Palette | null;
+    depth: number;
+    growth: keyof Palette | null;
+    growthAlt: keyof Palette | null;
+    glint: keyof Palette;
+    density: number;
+  }
+> = {
+  fissure: { ground: null, depth: 0, growth: null, growthAlt: null, glint: 'chalk', density: 0 },
+  demonic: { ground: 'venom', depth: 0.13, growth: 'venom', growthAlt: null, glint: 'ember', density: 0.34 },
+  prismatic: { ground: 'amethyst', depth: 0.11, growth: 'bone', growthAlt: null, glint: 'quartz', density: 0.38 },
+  // Crystal erupting through demonic rock, tile by tile rather than blended:
+  // a join, not the average of two worlds.
+  seam: {
+    ground: 'venom',
+    depth: 0.13,
+    growth: 'venom',
+    growthAlt: 'bone',
+    glint: 'ember',
+    density: 0.46,
+  },
+};
+
+export function floorPalette(
+  palette: Palette,
+  vein: number,
+  theme: MapTheme = 'fissure'
+): FloorPalette {
+  const ink = THEME_INK[theme] ?? THEME_INK.fissure;
+  const world = (base: string): string =>
+    ink.ground ? mix(base, palette[ink.ground], ink.depth) : base;
+
   const ramp = (base: string): string[] => {
     const out: string[] = [];
     for (let i = 0; i < PATCH_STEPS; i++) {
@@ -280,18 +321,25 @@ export function floorPalette(palette: Palette, vein: number): FloorPalette {
     return out;
   };
 
+  const floor = world(palette.floor);
+  const rock = world(palette.rock);
+
   return {
-    room: ramp(palette.floor),
-    tunnel: ramp(mix(palette.floor, palette.rockDeep, TUNNEL_DEPTH)),
-    rock: ramp(palette.rock),
-    mortar: mix(palette.floor, palette.rockDeep, 0.5),
-    rubble: mix(palette.floor, palette.rockDeep, 0.34),
-    chip: mix(palette.floor, palette.floorLit, 0.75),
+    room: ramp(floor),
+    tunnel: ramp(mix(floor, palette.rockDeep, TUNNEL_DEPTH)),
+    rock: ramp(rock),
+    mortar: mix(floor, palette.rockDeep, 0.5),
+    rubble: mix(floor, palette.rockDeep, 0.34),
+    chip: mix(floor, palette.floorLit, 0.75),
     lit: mix(palette.floorLit, palette.chalk, 0.25),
-    shade: mix(palette.floor, palette.rockDeep, 0.85),
+    shade: mix(floor, palette.rockDeep, 0.85),
     vein: veinColour(palette, vein),
-    rockLit: palette.rockTop,
-    rockShade: mix(palette.rock, palette.rockDeep, 0.55),
+    rockLit: world(palette.rockTop),
+    rockShade: mix(rock, palette.rockDeep, 0.55),
+    growth: ink.growth ? palette[ink.growth] : '',
+    growthAlt: ink.growthAlt ? palette[ink.growthAlt] : '',
+    glint: palette[ink.glint],
+    growthDensity: ink.density,
   };
 }
 
@@ -320,6 +368,45 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
 
 /** Snaps a 0..1 roll onto the sub-tile grid. */
 const snap = (n: number): number => Math.floor(n * SUB) * U;
+
+/**
+ * What the world has put on this piece of rock: a spur climbing the face, with
+ * a lit tip. Nothing at all in the Fissure, whose walls are only ever stone.
+ *
+ * It grows UP from the bottom of the tile so a run of them along a wall reads
+ * as one crust rather than as flecks, and it is drawn per tile from the tile's
+ * own hash, so both renderers put the same crystal in the same place.
+ */
+function wallGrowth(floor: FloorPalette, x: number, y: number): Decal[] {
+  if (floor.growthDensity <= 0 || !floor.growth) return [];
+  const roll = tileNoise(x, y, 81);
+  if (roll > floor.growthDensity) return [];
+
+  // The Seam alternates by tile: one world's growth or the other's, never a
+  // colour between them, which is what makes it read as fused.
+  const colour =
+    floor.growthAlt && tileNoise(x, y, 82) < 0.5 ? floor.growthAlt : floor.growth;
+  const height = U * (2 + Math.floor(tileNoise(x, y, 83) * 3));
+  const left = snap(0.15 + tileNoise(x, y, 84) * 0.65);
+
+  return [
+    { x: left, y: 1 - height, w: U, h: height, colour, alpha: 0.6 },
+    { x: left, y: 1 - height, w: U, h: U, colour: floor.glint, alpha: 0.75 },
+    // A shorter neighbour, so a spur has some width at its base.
+    ...(tileNoise(x, y, 85) < 0.55
+      ? [
+          {
+            x: Math.min(1 - U, left + U),
+            y: 1 - height + U,
+            w: U,
+            h: height - U,
+            colour,
+            alpha: 0.4,
+          },
+        ]
+      : []),
+  ];
+}
 
 /**
  * Everything drawn ON a floor tile past its base colour. Rooms are FLAGSTONE,
@@ -389,6 +476,7 @@ export function tileDecals(
     if (at(x, y + 1) !== WALL) {
       out.push({ x: 0, y: 1 - U * 1.5, w: 1, h: U * 1.5, colour: floor.rockShade, alpha: 0.75 });
     }
+    out.push(...wallGrowth(floor, x, y));
     return out;
   }
 
