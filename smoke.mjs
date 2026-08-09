@@ -133,6 +133,7 @@ assert(
   `${dockItems().length} vs ${beforeFissure}`
 );
 $('run-abandon').click();
+$('run-again').click();
 
 // --- the guided opening ----------------------------------------------------
 // It runs from the very first click now, so a new player is never looking at
@@ -926,13 +927,33 @@ assert(
   'and to the map again once it closes'
 );
 
-// --- abandoning returns to the menu ---------------------------------------
+// --- leaving, gently and otherwise ----------------------------------------
+// Pause is gone: there was nothing to do with a paused fight. What a running
+// descent needs instead is a way to say "this one, then stop", so the loop
+// ends on a clear rather than on a run you threw away.
+assert($('run-leave').disabled === false, 'a running descent can be told to be the last');
+assert(/leave after/i.test(text('run-leave')), 'and says so', text('run-leave'));
+$('run-leave').click();
+assert(/leaving after/i.test(text('run-leave')), 'arming it reads back', text('run-leave'));
+$('run-leave').click();
+assert(/leave after/i.test(text('run-leave')), 'and it un-arms', text('run-leave'));
+
+// Abandon is the hard version, and it ends where every other ending does: a
+// report, so what the earlier clears banked is something you can see rather
+// than something you hope happened.
 $('run-abandon').click();
+assert($('run-results').hidden === false, 'abandoning reports the run');
+assert(
+  /walked out/i.test(text('run-results')),
+  'and says you walked out rather than died',
+  text('run-results').slice(0, 60)
+);
+$('run-again').click();
 assert(
   !viewport.classList.contains('viewport--locked'),
   'the frame unfreezes once the map is gone'
 );
-assert($('run-menu').hidden === false, 'abandon returns to the menu');
+assert($('run-menu').hidden === false, 'and going back returns to the menu');
 assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
 
 // --- character sheet ------------------------------------------------------

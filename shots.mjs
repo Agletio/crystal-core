@@ -196,7 +196,11 @@ for (const vp of VIEWPORTS) {
   // The skill web, at every depth. It is the one screen with a hundred things
   // on it and its own pan/zoom transform, which makes it the likeliest place
   // for something to end up drawn outside the box it lives in.
+  // Abandon lands on the report now, so the way back to the menu is one more
+  // click — the same one every other ending uses.
   await page.evaluate(() => document.querySelector('#run-abandon')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('run-again')?.click());
   await page.waitForTimeout(300);
   await page.evaluate(() => document.getElementById('open-skills')?.click());
   await page.waitForTimeout(300);

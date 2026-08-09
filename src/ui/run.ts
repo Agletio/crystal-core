@@ -54,7 +54,9 @@ let seed = 0;
 /** Descents cleared without stopping. Reset by the click that starts the loop. */
 let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
-let halt: 'died' | 'full' | 'once' = 'once';
+let halt: 'died' | 'full' | 'once' | 'left' | 'chose' = 'once';
+/** Armed mid-descent: finish this one, bank it, and do not go back down. */
+let leaving = false;
 /**
  * Close enough to see what's happening.
  *
@@ -229,7 +231,7 @@ function launch(): void {
   setPhase('running');
   renderStatsPanel();
   fitCanvas();
-  setStartLabel();
+  setLeaveLabel();
   // Paint once up front rather than waiting for the first animation frame,
   // or everything reads as placeholder text until a frame lands.
   renderReadout();
@@ -243,15 +245,26 @@ function launch(): void {
  * haul is allowed to end up over its limit rather than a descent's drops being
  * split or thrown away.
  */
-function finish(): void {
+function finish(left = false): void {
   if (!sim) return;
-  const report = buildReport(game, sim.state);
+  const report = buildReport(game, sim.state, left);
   playing = false;
 
   if (report.cleared) streak++;
-  halt = !report.cleared ? 'died' : report.haulFull ? 'full' : 'once';
+  halt = left
+    ? 'left'
+    : !report.cleared
+      ? 'died'
+      : report.haulFull
+        ? 'full'
+        : leaving && looping()
+          ? 'chose'
+          : 'once';
 
-  if (report.cleared && !report.haulFull && looping()) {
+  // `leaving` is the only stop you choose while the fight is still on, so it
+  // is checked here rather than at the launch: the descent you armed it during
+  // still finishes and still banks.
+  if (report.cleared && !report.haulFull && !leaving && looping()) {
     launch();
     return;
   }
@@ -267,12 +280,19 @@ function finish(): void {
 /** What the haul screen says about why you are looking at it. */
 function haltLine(report: RunReport): string {
   const runs = streak === 1 ? 'one descent' : `${streak} descents`;
-  if (halt === 'died') {
-    return streak === 0
-      ? 'You died. The loop stopped, and that run banked nothing.'
-      : `You died after ${runs}. The loop stopped; everything banked before it is here.`;
-  }
+  // Losing the descent you were standing in is the whole cost, and the thing
+  // it is easiest to read as losing the lot — so say what is still yours.
+  const kept =
+    streak > 0
+      ? `Everything ${runs} banked is here; only the one you were in is gone.`
+      : game.haul.length > 0
+        ? 'That descent banked nothing, but what was already here is still yours.'
+        : 'A descent only pays if you finish it.';
+
+  if (halt === 'left') return `You walked out. ${kept}`;
+  if (halt === 'died') return `You died. ${kept}`;
   if (halt === 'full') return `The haul is full after ${runs}. Clear some of it to go again.`;
+  if (halt === 'chose') return `Cleared ${runs}, and stopped where you asked.`;
   return `Cleared ${runs}.`;
 }
 
@@ -372,9 +392,12 @@ function renderReadout(): void {
   $('run-hp-text').textContent =
     `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
 
+  // A walked-out run is still 'running' to the sim — it was never finished —
+  // so the chip reads the phase for that one case rather than the sim.
+  const left = phase === 'results' && s.status === 'running';
   const status = $('run-status');
-  status.textContent = s.status === 'running' ? (playing ? 'running' : 'paused') : s.status;
-  status.className = `run-status run-status--${s.status}`;
+  status.textContent = left ? 'left' : s.status;
+  status.className = `run-status run-status--${left ? 'died' : s.status}`;
 }
 
 /** The overlay. Rows come from the report, so a new stat needs nothing here. */
@@ -386,7 +409,7 @@ function renderResults(report: RunReport, run: RunState): void {
   card.append(el('h3', 'resultcard__head', report.headline));
   // The loop's own story, which the per-run rows cannot tell: this card is
   // shown once at the END of a streak, not after every descent in it.
-  if (streak > 1 || halt === 'full') {
+  if (streak > 1 || halt !== 'once') {
     card.append(el('p', 'resultcard__sub', haltLine(report)));
   }
 
@@ -459,7 +482,13 @@ function renderResults(report: RunReport, run: RunState): void {
 
   if (report.lostLoot) {
     card.append(
-      el('p', 'resultcard__warn', 'You died holding it. Nothing was banked.')
+      el(
+        'p',
+        'resultcard__warn',
+        report.status === 'left'
+          ? 'You left holding it. A descent only pays if you finish it.'
+          : 'You died holding it. Nothing was banked.'
+      )
     );
   }
 
@@ -511,7 +540,7 @@ function frame(now: number): void {
     absorbEvents();
 
     if (sim.state.status !== 'running') {
-      setStartLabel();
+      setLeaveLabel();
       finish();
     }
   }
@@ -521,11 +550,21 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
-function setStartLabel(): void {
-  const btn = $('run-pause') as HTMLButtonElement;
-  const done = !sim || sim.state.status !== 'running';
-  btn.textContent = playing ? 'Pause' : 'Resume';
-  btn.disabled = done;
+/**
+ * The gentle way out, and the only stop you can choose while the fight is on.
+ * Nothing to arm when this descent was already the last one — with the loop
+ * off, or with the haul about to shut the Fissure, it ends by itself.
+ */
+function setLeaveLabel(): void {
+  const btn = $('run-leave') as HTMLButtonElement;
+  const live = phase === 'running' && looping();
+  btn.textContent = !live
+    ? 'Last descent'
+    : leaving
+      ? 'Leaving after this one'
+      : 'Leave after this run';
+  btn.disabled = !live;
+  btn.classList.toggle('mini--on', live && leaving);
 }
 
 /**
@@ -595,6 +634,7 @@ export function initRun(state: GameState): void {
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (haulFull(game)) return;
     streak = 0;
+    leaving = false;
     launch();
   };
 
@@ -603,18 +643,19 @@ export function initRun(state: GameState): void {
     renderMenu();
   };
 
-  ($('run-pause') as HTMLButtonElement).onclick = () => {
-    if (!sim || sim.state.status !== 'running') return;
-    playing = !playing;
-    setStartLabel();
+  ($('run-leave') as HTMLButtonElement).onclick = () => {
+    if (phase !== 'running') return;
+    leaving = !leaving;
+    note(leaving ? 'Leaving after this descent.' : 'Staying down.');
+    setLeaveLabel();
   };
 
+  // The hard way out, and the only one that costs you something: this descent
+  // banks nothing, exactly as dying in it would. Every clear before it already
+  // banked as it happened, so it ends on the same card and the same haul.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
-    if (!sim) return;
-    playing = false;
-    sim = null;
-    setPhase('menu');
-    renderMenu();
+    if (!sim || phase !== 'running') return;
+    finish(true);
   };
 
 

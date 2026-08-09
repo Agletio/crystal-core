@@ -193,6 +193,7 @@
      one focus lands on. */
   /* A dev toggle that is currently OFF, so its state reads without a label. */
   .mini--off { border-style: solid; border-color: var(--ember); color: var(--ember); }
+  .mini--on { border-style: solid; border-color: var(--citrine); color: var(--citrine); }
   .mini--danger { border-color: var(--seam-lit); color: var(--ember); }
   .mini--danger:hover:not(:disabled) { border-color: var(--ember); background: var(--seam); }
 
@@ -640,9 +641,12 @@
   .resultcard__sub:first-child { margin-top: 0; }
   .resultcard--cleared { border-color: var(--citrine); }
   .resultcard--died { border-color: var(--ember); }
+  /* Walking out is not a death, but it costs the same descent. */
+  .resultcard--left { border-color: var(--dust); }
   .resultcard__head { font-family: var(--display); font-size: 16px; margin: 0 0 12px; }
   .resultcard--cleared .resultcard__head { color: var(--citrine); }
   .resultcard--died .resultcard__head { color: var(--ember); }
+  .resultcard--left .resultcard__head { color: var(--dust); }
   .resultcard__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; }
   .resultcard__warn { font-size: 11px; color: var(--ember); margin: 8px 0 0; }
   .resultcard .mini { margin-top: 14px; width: 100%; }
@@ -1009,7 +1013,7 @@
 
     <div id="run-stagewrap" hidden>
     <div class="runbar">
-      <button class="mini" id="run-pause">Pause</button>
+      <button class="mini" id="run-leave">Leave after this run</button>
       <button class="mini" id="run-abandon">Abandon</button>
       <span class="sub">zoom</span>
       <button class="chip" id="run-zoom-out" title="Zoom out">&minus;</button>
@@ -1017,7 +1021,7 @@
       <button class="chip" id="run-zoom-in" title="Zoom in">+</button>
       <button class="chip" id="run-zoom-fit" title="Fit the whole map">Fit</button>
       <span class="spacer"></span>
-      <span class="run-status" id="run-status">paused</span>
+      <span class="run-status" id="run-status">running</span>
     </div>
 
     <div class="runcols">

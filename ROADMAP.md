@@ -362,7 +362,10 @@ Mechanism is specified in §4.
       going** on the Fissure panel (`game.autoRepeat`), and suppressed outright
       while the guided opening is running — it teaches one descent at a time.
 - [x] Stop on death, and say why. Stop when the haul is at capacity. Both open
-      the haul with a line saying which, over the report for the last descent.
+      the haul with a line saying which, over the report for the last descent —
+      and so do the two you ask for: **Leave after this run**, which finishes
+      and banks the descent you are in, and **Abandon**, which forfeits it.
+      Pause is gone; there was nothing to do with a paused fight.
 - [x] Launching is blocked while the haul is at capacity, and the Fissure panel
       says so. Never a dead end: selling needs room nowhere, so the haul can
       always be emptied — the demo builds the wedge and checks the way out.

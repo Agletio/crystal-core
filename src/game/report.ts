@@ -18,7 +18,8 @@ export interface ReportRow {
 }
 
 export interface RunReport {
-  status: 'cleared' | 'died';
+  /** `left` is walking out mid-descent: it banks like a death, without one. */
+  status: 'cleared' | 'died' | 'left';
   cleared: boolean;
   headline: string;
   rows: ReportRow[];
@@ -43,9 +44,13 @@ function currencyRows(currency: Record<string, number>): ReportRow[] {
     .map(([id, n]) => ({ label: id, value: `+${round(n)}` }));
 }
 
-/** Loot only transfers on a CLEAR. Dying drops everything the run carried. */
-export function buildReport(game: GameState, run: RunState): RunReport {
-  const cleared = run.status === 'cleared';
+/**
+ * Loot only transfers on a CLEAR. Dying drops everything the run carried, and
+ * so does walking out — but only for THIS descent: every clear before it
+ * banked as it happened, and nothing reaches back for those.
+ */
+export function buildReport(game: GameState, run: RunState, left = false): RunReport {
+  const cleared = run.status === 'cleared' && !left;
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
@@ -113,9 +118,9 @@ export function buildReport(game: GameState, run: RunState): RunReport {
   }
 
   return {
-    status: cleared ? 'cleared' : 'died',
+    status: left ? 'left' : cleared ? 'cleared' : 'died',
     cleared,
-    headline: cleared ? 'Fissure cleared' : 'You died',
+    headline: left ? 'You walked out' : cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
     items: cleared ? [...run.loot.items] : [],

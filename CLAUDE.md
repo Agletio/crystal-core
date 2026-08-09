@@ -83,9 +83,14 @@ decision.
 ## The loop
 
 You press Enter once. A cleared descent launches the next one by itself, and it
-keeps going until one of exactly two things happens: **you die**, or **the haul
-fills**. Both open the haul, which is the one place the loop ever stops — so
-there is one screen that means "the run is over, deal with your things".
+keeps going until it is stopped: **you die**, **the haul fills**, or you say so.
+Saying so has two prices. **Leave after this run** finishes the descent you are
+in and banks it; **Abandon** walks out now, and that descent pays nothing — the
+same rule as dying in it. Every one of the four ends on the same report and
+opens the same haul, so there is one screen that means "the run is over, deal
+with your things", and what earlier clears banked is visible rather than
+assumed. Only the descent you are standing in can be lost; each clear banks as
+it happens and nothing reaches back for it.
 
 The **haul** (`GameState.haul`, `HAUL_CAP`) is where a cleared run's loot lands
 — never in your bags, which are yours to arrange. It is inert exactly as the
