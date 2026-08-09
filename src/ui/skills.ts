@@ -29,7 +29,7 @@ import {
 import { categoryIcon, skillIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, damageDetail, treeGrants } from '../sim/stats';
+import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { addSkillXp, skillProgress, xpToNext } from '../sim/character';
 import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
@@ -226,8 +226,10 @@ function skillSummary(skill: SkillDef): string[] {
     skill.description,
     '',
     `tags: ${skill.tags.join(', ')}`,
-    `deals: ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}` +
+    `base: ${Math.round(skillBase(skill, game.character.level))} ` +
+      `${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}` +
       (converted ? ` (converted from ${skill.damageTypes.join(', ')})` : ''),
+    `added damage: ${skill.addedEffectiveness}%, as its own type`,
   ];
 
   // Everything below is derived from what you are WEARING, which is only the
@@ -255,11 +257,7 @@ function skillSummary(skill: SkillDef): string[] {
 
   if (converted) {
     const was = skill.damageTypes.map((t) => DAMAGE_TYPE_BY_ID[t]?.name ?? t).join(' and ');
-    lines.push(
-      '',
-      `${was} in this tree counts as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}. ` +
-        `${was} on your gear no longer applies.`
-    );
+    lines.push('', `${was} in this tree counts as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}.`);
   }
   return lines;
 }

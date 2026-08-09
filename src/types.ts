@@ -199,8 +199,15 @@ export interface SkillDef {
   /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */
   tags: string[];
   behaviour: string; // key into SKILL_BEHAVIOURS
-  damageTypes: string[]; // what the BASE damage is dealt as
-  damageMultiplier: number;
+  damageTypes: string[]; // what the SKILL'S OWN damage is dealt as
+  /** The skill's own damage at level 1. Grows by LEVELLING.damagePerLevel. */
+  baseDamage: number;
+  /**
+   * Percent of flat damage from gear and the tree this skill takes on. 100 is
+   * a point for a point; the number is per skill because a lasting skill
+   * applies its flat once per stack and a hit applies it once.
+   */
+  addedEffectiveness: number;
   rateMultiplier: number; // on the character's attacks/sec
   range: number; // in tiles
   vfxKind?: string; // a name, not a shape. Unset draws a generic line

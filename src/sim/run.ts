@@ -73,9 +73,10 @@ export type EntityKind = 'hero' | 'monster';
  * rather than a merged number, so each expires on its own clock.
  */
 export interface Ailment {
+  /** What the ailment IS, for naming and for what contagion plants. */
   type: string;
-  /** Damage per second before resistance. */
-  dps: number;
+  /** Damage per second before resistance, per damage type. */
+  dps: Record<string, number>;
   remaining: number;
   /** Countdown to the next lump. Discrete, so a poison can critically TICK. */
   tickIn: number;
@@ -383,13 +384,23 @@ export class RunSim {
         let stats = statsFor.get(statsKey);
         if (!stats) {
           const base = monsterStats(crystal, tier, def);
+          const damage = base.damage * rank.damage;
           stats = {
             ...base,
             maxLife: base.maxLife * rank.life,
-            damage: base.damage * rank.damage,
+            damage,
+            // Beside `damage`, never derived from it later: a rank that scaled
+            // one and not the other is a rare that hits like a common.
+            damageByType: { [base.damageType ?? 'physical']: damage },
           };
           if (ranged && bolt) {
-            stats = { ...stats, attackRange: bolt.range, aggroRange: bolt.range + 2 };
+            stats = {
+              ...stats,
+              attackRange: bolt.range,
+              aggroRange: bolt.range + 2,
+              // What it throws, not what the map is made of.
+              damageByType: { [bolt.damageTypes[0] ?? 'physical']: damage },
+            };
           }
           statsFor.set(statsKey, stats);
         }
@@ -616,10 +627,12 @@ export class RunSim {
     this.finale = def;
 
     const base = this.finaleStats;
+    const damage = base.damage * def.damage;
     const stats: CombatStats = {
       ...base,
       maxLife: base.maxLife * def.life,
-      damage: base.damage * def.damage,
+      damage,
+      damageByType: { [base.damageType ?? 'physical']: damage },
     };
 
     const exit = s.map.exit;
@@ -895,20 +908,27 @@ export class RunSim {
       (attacker.stats.critChance > 0 &&
         this.rng.chance(attacker.stats.critChance / 100));
 
-    let dmg = attacker.stats.damage * multiplier * this.rng.float(0.9, 1.1);
-    if (crit) dmg *= 2 + attacker.stats.critMultiplier / 100;
-
-    const type = skill?.damageTypes[0] ?? attacker.stats.damageType ?? 'physical';
+    let scale = multiplier * this.rng.float(0.9, 1.1);
+    if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
 
     // Resistance first, then armour. They're both multipliers so the order
-    // between them doesn't change the result — but each must be applied to
-    // ONE type's damage, never to a summed total, or fire resistance would
-    // start reducing physical hits.
-    dmg = this.afterResistance(defender, dmg, type);
-
-    // Armour is a flat percentage against hits only. Damage over time skips
-    // this entirely, which is what lets an ailment threaten a tanky build.
-    dmg *= 1 - defender.stats.armourReduction / 100;
+    // between them doesn't change the result — but resistance must be applied
+    // to ONE type's damage, never to a summed total, or fire resistance would
+    // start reducing the physical half of the same hit.
+    //
+    // Armour is a flat percentage against hits only, and is typeless. Damage
+    // over time skips it entirely, which is what lets an ailment threaten a
+    // tanky build.
+    const armour = 1 - defender.stats.armourReduction / 100;
+    const byType: Record<string, number> = {};
+    let dmg = 0;
+    for (const [type, amount] of Object.entries(attacker.stats.damageByType)) {
+      const dealt = this.afterResistance(defender, amount * scale, type) * armour;
+      byType[type] = (byType[type] ?? 0) + dealt;
+      dmg += dealt;
+    }
+    // The floor is on the HIT, not per type: a hit split six ways would
+    // otherwise be worth six times the minimum.
     dmg = Math.max(1, dmg);
 
     // Being hit is the most reliable way to notice someone, whatever the
@@ -943,7 +963,9 @@ export class RunSim {
     });
 
     if (defender.kind === 'hero') {
-      s.damageTaken[type] = (s.damageTaken[type] ?? 0) + dmg;
+      for (const [type, dealt] of Object.entries(byType)) {
+        s.damageTaken[type] = (s.damageTaken[type] ?? 0) + dealt;
+      }
       this.events.push({ kind: 'hurt', life: Math.max(0, defender.life), maxLife: defender.stats.maxLife });
     }
 
@@ -979,15 +1001,19 @@ export class RunSim {
   ): void {
     if (target.dead || seconds <= 0) return;
 
-    const total = attacker.stats.damage * multiplier;
-    const type = skill.damageTypes[0] ?? 'physical';
+    // A cast's typed parts tick as themselves: a cold ring on Blight is cold
+    // damage over time, resisted as cold, not more poison.
+    const dps: Record<string, number> = {};
+    for (const [t, amount] of Object.entries(attacker.stats.damageByType)) {
+      dps[t] = (amount * multiplier) / seconds;
+    }
 
     // Oldest stack falls off rather than refusing the new one, so re-applying
     // to a saturated target still refreshes rather than being wasted.
     if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
     target.ailments.push({
-      type,
-      dps: total / seconds,
+      type: skill.damageTypes[0] ?? 'physical',
+      dps,
       remaining: seconds,
       // Staggered by a partial tick so a burst of poison applied on the same
       // frame doesn't then crit in lockstep forever after.
@@ -1028,19 +1054,22 @@ export class RunSim {
       ailment.tickIn += AILMENT_TICK;
       if (slice <= 0) continue;
 
-      let raw = ailment.dps * slice;
+      let scale = slice;
       const crit =
         ailment.critChance > 0 && this.rng.chance(ailment.critChance / 100);
       if (crit) {
-        raw *= 2 + ailment.critMultiplier / 100;
+        scale *= 2 + ailment.critMultiplier / 100;
         if (ailment.spread) contagious.push(ailment.spread);
       }
 
-      const dealt = this.afterResistance(e, raw, ailment.type);
-      total += dealt;
-      if (e.kind === 'hero') {
-        this.state.damageTaken[ailment.type] =
-          (this.state.damageTaken[ailment.type] ?? 0) + dealt;
+      // Resisted per type, never armoured — which is what lets an ailment
+      // threaten a build no hit can get through.
+      for (const [type, dps] of Object.entries(ailment.dps)) {
+        const dealt = this.afterResistance(e, dps * scale, type);
+        total += dealt;
+        if (e.kind === 'hero') {
+          this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + dealt;
+        }
       }
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);

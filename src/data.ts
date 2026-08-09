@@ -1194,8 +1194,6 @@ export const CRYSTAL_TIERS = [
 // doubt these go up, not down. Tune for real once the systems stop moving.
 export const HERO_BASE = {
   life: 320,
-  /** Physical damage per hit before gear. Elemental damage is gear-only. */
-  weaponDamage: 72,
   attacksPerSecond: 1.2,
   critChance: 5,
   /** Extra percent on a crit, on top of the base doubling. */
@@ -1692,7 +1690,8 @@ START_PRESETS.dev.gear = DEV_GEAR;
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
   lifePerLevel: 14,
-  damagePerLevel: 1.6,
+  /** PERCENT of the skill's own base per level, so skills stay in proportion. */
+  damagePerLevel: 2.2,
   /** XP from one tier-1 COMMON monster. Cut alongside fragments when ranks arrived. */
   perMonster: 6,
   tierScale: 1.6,
@@ -1721,7 +1720,8 @@ export const SKILLS: SkillDef[] = [
     tags: ['attack', 'melee'],
     behaviour: 'cleave',
     damageTypes: ['physical'],
-    damageMultiplier: 1,
+    baseDamage: 72,
+    addedEffectiveness: 100,
     rateMultiplier: 1,
     range: HERO_BASE.attackRange,
     vfxKind: 'slash',
@@ -1743,7 +1743,8 @@ export const SKILLS: SkillDef[] = [
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],
-    damageMultiplier: 1,
+    baseDamage: 72,
+    addedEffectiveness: 100,
     rateMultiplier: 1,
     range: 6.5,
     vfxKind: 'flame',
@@ -1756,7 +1757,9 @@ export const SKILLS: SkillDef[] = [
     tags: ['spell', 'projectile'],
     behaviour: 'single_target',
     damageTypes: ['fire'],
-    damageMultiplier: 1,
+    // Never read: a monster's damage comes off the crystal, not off a skill.
+    baseDamage: 72,
+    addedEffectiveness: 100,
     rateMultiplier: 1,
     range: 6.5,
     vfxKind: 'bolt',
@@ -1779,7 +1782,10 @@ export const SKILLS: SkillDef[] = [
     tags: ['spell', 'area'],
     behaviour: 'ailment_burst',
     damageTypes: ['poison'],
-    damageMultiplier: 1.6,
+    // Both high because a cast is spread over 10s and caps at 9 stacks at the
+    // base cast rate — 0.9 applications a second against a hit skill's 1.2.
+    baseDamage: 115,
+    addedEffectiveness: 160,
     rateMultiplier: 0.75,
     range: 6.5,
     vfxKind: 'blight_field',

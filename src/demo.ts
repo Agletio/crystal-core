@@ -1850,19 +1850,52 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
   }
 
   // The question the tags invite: flat damage of a type your skill does not
-  // deal still counts, and it lands as the skill's own type. Poison is what
-  // Blight applies whatever the parts were tagged.
+  // deal still counts, and it stays THAT type. Only the skill's own damage is
+  // poison, which is what makes a cold ring different from a fire one.
   game.character.skillId = 'blight';
   const blight = damageDetail(game.character);
   check(
-    blight.breakdown.dealtAs === 'poison',
-    'Blight deals Poison however its damage was tagged',
-    `deals ${blight.breakdown.dealtAs}`
+    blight.breakdown.baseType === 'poison',
+    "Blight's own damage is Poison",
+    `deals ${blight.breakdown.baseType}`
   );
   check(
     blight.breakdown.parts.some((p) => p.total > 0 && p.type !== 'poison'),
     'and off-type damage really does reach it, which is why the sheet says so',
     'nothing off-type in the dev loadout, so the rule is untested here'
+  );
+  check(
+    Object.keys(blight.breakdown.byType).filter((t) => t !== 'poison').length > 0,
+    'and it is delivered as its own type, not folded into the poison',
+    `delivered as ${Object.keys(blight.breakdown.byType).join(', ')}`
+  );
+
+  // The whole point of a damage type. Two rings, same number, different word:
+  // if the skill converted them they would be interchangeable, and picking one
+  // over the other would never be a decision.
+  const probe = (type: string, value: number): RolledMod => ({
+    entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
+    name: 'probe', tier: 1, tags: [],
+    stats: [{ stat: 'damage', form: 'flat', value, tags: [type] }],
+  });
+  const fireball = SKILL_BY_ID.fireball;
+  const asCold = damageBreakdown([probe('cold', 20)], 1, fireball);
+  const asFire = damageBreakdown([probe('fire', 20)], 1, fireball);
+
+  check(
+    Math.abs(asCold.total - asFire.total) < 1e-9,
+    'a ring of 20 Cold and a ring of 20 Fire are worth the same on paper',
+    `${asCold.total.toFixed(2)} against ${asFire.total.toFixed(2)}`
+  );
+  // Against something that resists fire, though — which is the only place the
+  // difference can show, and where it used to be invisible.
+  const versusFireResist = (b: typeof asCold) =>
+    Object.entries(b.byType).reduce((n, [t, v]) => n + v * (t === 'fire' ? 0.5 : 1), 0);
+  check(
+    versusFireResist(asCold) > versusFireResist(asFire) + 1e-9,
+    'and against something that resists Fire, the Cold one is plainly better',
+    `cold ${versusFireResist(asCold).toFixed(2)} vs fire ${versusFireResist(asFire).toFixed(2)} — ` +
+      'the skill is converting them, so the type is decoration'
   );
   check(
     blight.seconds > 0 && blight.maxStacks === AILMENT.maxStacks,
@@ -1990,7 +2023,7 @@ rule('THE SHEET — does every number on it survive being checked?');
     const factor = breakdown.steps.reduce((n, s) => n * s.value, 1);
     for (const part of breakdown.parts) {
       const expect =
-        (part.base + part.flat) *
+        (part.base + part.flat * part.added) *
         (1 + part.increased / 100) *
         part.more.reduce((n, m) => n * (1 + m / 100), 1) *
         factor;
@@ -2019,12 +2052,29 @@ rule('THE SHEET — does every number on it survive being checked?');
     //    number is that with the tree's ailment scaling on top.
     const bare = damageBreakdown(
       statMods(character),
-      HERO_BASE.weaponDamage + (character.level - 1) * LEVELLING.damagePerLevel,
+      character.level,
       effectiveSkill(SKILL_BY_ID[character.skillId], treeGrants(character)),
       treeGrants(character)
     );
     if (!near(bare.total, stats.damage)) {
       wrong.push(`${name}: sim reads ${stats.damage.toFixed(4)}, sheet computes ${bare.total.toFixed(4)}`);
+    }
+
+    // 4b. And what the sim DELIVERS is those parts, still typed. A total that
+    //     matches while the split does not is exactly the old bug: every point
+    //     arriving as one type, so no type was worth choosing over another.
+    const delivered = Object.values(stats.damageByType).reduce((n, v) => n + v, 0);
+    if (!near(delivered, stats.damage)) {
+      wrong.push(`${name}: delivers ${delivered.toFixed(4)} across types, damage says ${stats.damage.toFixed(4)}`);
+    }
+    for (const part of bare.parts) {
+      if (part.total === 0) continue;
+      if (!near(stats.damageByType[part.type] ?? 0, part.total)) {
+        wrong.push(
+          `${name}: ${part.type} is worth ${part.total.toFixed(4)} on the sheet, ` +
+            `${(stats.damageByType[part.type] ?? 0).toFixed(4)} to the sim`
+        );
+      }
     }
 
     // 5. damage/sec, recomputed from the rules rather than read back.
@@ -2050,11 +2100,12 @@ rule('THE SHEET — does every number on it survive being checked?');
   // the matrix or the pass above is a pass over nothing.
   const seen = subjects.map(({ character }) => damageDetail(character).breakdown);
   const wants: Array<[string, boolean]> = [
-    ['a skill multiplier', seen.some((b) => b.steps.some((s) => s.label === 'skill'))],
-    ['a tree scaling the ailment', seen.some((b) => b.steps.length > 1)],
+    ['added damage worth other than 100%', seen.some((b) => b.parts.some((p) => p.flat !== 0 && p.added !== 1))],
+    ['a tree scaling the ailment', seen.some((b) => b.steps.length > 0)],
     ['one that scales it DOWN', seen.some((b) => b.steps.some((s) => s.value < 1))],
     ['a "more" line', seen.some((b) => b.parts.some((p) => p.more.length > 0))],
-    ['damage of a type the skill does not deal', seen.some((b) => b.parts.some((p) => p.total > 0 && p.type !== b.dealtAs))],
+    ['damage of a type the skill does not deal', seen.some((b) => b.parts.some((p) => p.total > 0 && p.type !== b.baseType))],
+    ['more than one type delivered at once', seen.some((b) => Object.keys(b.byType).length > 1)],
     ['scaling with nothing to scale', seen.some((b) => b.parts.some((p) => p.total === 0))],
   ];
   const missing = wants.filter(([, met]) => !met).map(([what]) => what);
@@ -2139,6 +2190,60 @@ rule('THE SHEET — does every number on it survive being checked?');
     mismatched.length === 0,
     'and the sim asks for exactly what the sheet promised',
     `${mismatched.length} promises broken — see above`
+  );
+}
+
+// A hit is delivered from `damageByType`, so anything that scales `damage`
+// alone is a monster that hits for a number nothing on it claims. Rank and
+// finale multipliers both did exactly that, and nothing else here noticed:
+// every other check reads `damage`.
+{
+  const off: string[] = [];
+  const ranged = new Set<number>();
+  const wrongType: string[] = [];
+  const ranks = new Set<string>();
+  let sawFinale = false;
+
+  for (const seed of [3, 9, 21, 44]) {
+    const c = craft(makeCrystal(4), CURRENCY_BY_ID.shard_of_awakening, pool, rng).item;
+    const sim = new RunSim(c, makeCharacter(starterLoadout(new Rng(7)), 'strike'), new Rng(seed));
+    for (const m of sim.state.monsters) if (m.skillId) ranged.add(m.id);
+
+    // Run it out so the finale spawns and is checked with the rest.
+    for (let i = 0; i < 40000 && sim.state.status === 'running'; i++) sim.step(1 / 30);
+
+    for (const m of sim.state.monsters) {
+      if (m.rank) ranks.add(m.rank);
+      if (!ranged.has(m.id) && m.skillId) sawFinale = true;
+      const summed = Object.values(m.stats.damageByType).reduce((n, v) => n + v, 0);
+      if (Math.abs(summed - m.stats.damage) > 1e-9) {
+        off.push(`${m.sprite}/${m.rank}: hits for ${summed.toFixed(2)}, stats say ${m.stats.damage.toFixed(2)}`);
+      }
+      // A bolt is fire whatever the map is made of. Typed off the crystal it
+      // would arrive as physical and walk straight past your fire resistance.
+      const want = m.skillId ? SKILL_BY_ID[m.skillId]?.damageTypes[0] : m.stats.damageType;
+      if (want && !(want in m.stats.damageByType)) {
+        wrongType.push(`${m.sprite} should deal ${want}, deals ${Object.keys(m.stats.damageByType).join(', ')}`);
+      }
+    }
+    if (sim.state.finale) sawFinale = true;
+  }
+
+  for (const entry of [...off, ...wrongType].slice(0, 6)) line(`  ${entry}`);
+  check(
+    off.length === 0,
+    `what a monster hits for is what its stats say, across ${ranks.size} ranks and the finale`,
+    `${off.length} deal a number nothing on them claims — see above`
+  );
+  check(
+    wrongType.length === 0,
+    'and a monster casting a spell delivers the SPELL’s type, not the crystal’s',
+    `${wrongType.length} deal the wrong type — see above`
+  );
+  check(
+    ranks.size > 1 && ranged.size > 0 && sawFinale,
+    'and the runs checked actually contained several ranks, a caster and a finale',
+    `${ranks.size} ranks, ${ranged.size} casters, finale ${sawFinale ? 'seen' : 'never reached'}`
   );
 }
 

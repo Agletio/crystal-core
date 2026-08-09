@@ -23,6 +23,9 @@ export interface CombatStats {
   maxLife: number;
   /** Total damage per hit, summed across damage types. */
   damage: number;
+  /** The same damage kept apart by type. Summing before resistance would make
+   * a cold ring on a fire spell resist as fire. What the sim delivers. */
+  damageByType: Record<string, number>;
   attacksPerSecond: number;
   critChance: number;
   moveSpeed: number;
@@ -70,11 +73,12 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
 /** One damage pass: what a single type contributed, and out of what. */
 export interface DamagePart {
   type: string;
-  base: number; // the skill's weapon damage, or zero for a type it does not deal
-  flat: number;
+  base: number; // the skill's own damage, or zero for a type it does not deal
+  flat: number; // from gear and the tree, BEFORE `added`
+  added: number; // the skill's effectiveness, as a multiplier on `flat` alone
   increased: number; // summed, unlike `more`
   more: number[]; // each compounds
-  total: number; // this pass's share, after the skill's multiplier
+  total: number; // this pass's share, after every step
 }
 
 /** A multiplier applied after the per-type pass, and what to call it. */
@@ -88,68 +92,74 @@ export interface DamageBreakdown {
   /** Every factor after the pass. A step missing here is a number that lies. */
   steps: DamageStep[];
   total: number;
-  /** All of it lands as this: +5 Fire on a poison skill is five more POISON. */
-  dealtAs: string;
+  /** What the skill's OWN damage lands as. Added types keep their own. */
+  baseType: string;
+  /** What lands, per type. Sums to `total`; this is what the sim delivers. */
+  byType: Record<string, number>;
+}
+
+/** The skill's own damage at a level. Nothing worn is in here. */
+export function skillBase(skill: SkillDef, level: number): number {
+  const steps = Math.max(0, level - 1);
+  return skill.baseDamage * (1 + (steps * LEVELLING.damagePerLevel) / 100);
 }
 
 /**
- * Damage types are resolved separately and summed. In the fire pass the context
- * is [...skillTags, 'fire'], so "+12 fire damage" applies, "increased Physical
- * Damage" does not, and an untagged line applies to every pass. The skill's own
- * tags ride along, which is how "increased Melee Damage" finds a melee skill.
- *
- * The parts are kept rather than accumulated: the sheet has to show where the
- * number came from, and working that out twice is two answers.
+ * Damage types are resolved separately and STAY separate. In the fire pass the
+ * context is [...skillTags, 'fire'], so "+12 fire damage" applies, "increased
+ * Physical Damage" does not, and an untagged line applies to every pass — and
+ * the skill's own tags ride along, so "increased Melee Damage" finds a melee
+ * skill. `damageTypes` types the skill's OWN damage and nothing else.
  */
 export function damageBreakdown(
   mods: RolledMod[],
-  base: number,
+  level: number,
   skill: SkillDef,
   grants: Record<string, unknown> = {},
   after: DamageStep[] = []
 ): DamageBreakdown {
-  // Conversion replaces the type outright and does NOT keep the old one live:
-  // scaling off both is a free second stat, not a choice. What stops that being
-  // a punishment is that it rewrites the TREE too — see treeMod.
+  // Conversion moves the skill's own damage and does NOT keep the old type
+  // live: scaling off both is a free second stat. It rewrites the TREE too, so
+  // the wedge you walked through is not stranded — see treeMod.
   const converted = convertedType(skill, grants);
   const active = converted ? [converted] : skill.damageTypes;
+  const base = skillBase(skill, level);
+  const added = skill.addedEffectiveness / 100;
 
   const passes = [...DAMAGE_TYPES.map((t) => t.id)];
   // Typeless carries no type tag, so only untagged lines can reach it.
   if (skill.damageTypes.includes(TYPELESS)) passes.push(TYPELESS);
 
-  // What every pass gets regardless of type, so a zero pass is only reported
+  // What every pass gets regardless of type: a zero pass is only worth reporting
   // when something aimed AT that type is going to waste.
   const generic = aggregate(mods, 'damage', skill.tags);
 
-  const steps: DamageStep[] = [
-    ...(skill.damageMultiplier !== 1
-      ? [{ label: 'skill', value: skill.damageMultiplier }]
-      : []),
-    ...after,
-  ];
+  const steps = [...after];
   const factor = steps.reduce((n, s) => n * s.value, 1);
 
   const parts: DamagePart[] = [];
-  // Multiplied once at the end, as one accumulator would: doing it per part is
-  // the same arithmetic in a different order, and that is a different last bit.
+  const byType: Record<string, number> = {};
+  // Multiplied once at the end: per part is a different order, so a different bit.
   let raw = 0;
   for (const type of passes) {
     const typeBase = type === TYPELESS || active.includes(type) ? base : 0;
-    const tags = [...skill.tags, type];
-    const buckets = aggregate(mods, 'damage', tags);
-    const pass = computeStat(typeBase, mods, 'damage', tags);
+    const b = aggregate(mods, 'damage', [...skill.tags, type]);
+    // Effectiveness weighs the ADDED half only, so a skill that takes half your
+    // flat damage still gets full value from your increases.
+    let pass = (typeBase + b.flat * added) * (1 + b.inc / 100);
+    for (const m of b.more) pass *= 1 + m / 100;
     raw += pass;
-    // "20% increased Fire Damage" doing nothing is the most confusing thing a
-    // sheet can hide, so a pass it reached is shown even at zero.
-    const aimed = buckets.inc !== generic.inc || buckets.more.length !== generic.more.length;
+    // "20% increased Fire Damage" doing nothing is the worst thing to hide.
+    const aimed = b.inc !== generic.inc || b.more.length !== generic.more.length;
+    if (pass !== 0) byType[type] = pass * factor;
     if (pass === 0 && !aimed) continue;
     parts.push({
       type,
       base: typeBase,
-      flat: buckets.flat,
-      increased: buckets.inc,
-      more: buckets.more,
+      flat: b.flat,
+      added,
+      increased: b.inc,
+      more: b.more,
       total: pass * factor,
     });
   }
@@ -158,17 +168,9 @@ export function damageBreakdown(
     parts,
     steps,
     total: raw * factor,
-    dealtAs: active[0] ?? skill.damageTypes[0] ?? 'physical',
+    baseType: active[0] ?? skill.damageTypes[0] ?? 'physical',
+    byType,
   };
-}
-
-export function skillDamage(
-  mods: RolledMod[],
-  base: number,
-  skill: SkillDef,
-  grants: Record<string, unknown> = {}
-): number {
-  return damageBreakdown(mods, base, skill, grants).total;
 }
 
 /** How long an ailment this skill applies lasts. Read by the sim and the sheet. */
@@ -200,19 +202,12 @@ export function damageDetail(character: Character): DamageDetail {
   const overTime = skill.behaviour === 'ailment_burst';
   const seconds = overTime ? ailmentSeconds(skill, grants) : 0;
   const scale = typeof grants.ailmentMultiplier === 'number' ? grants.ailmentMultiplier : 1;
-  // A tree that trades poison damage for a wider cloud is a factor like any
-  // other, and one applied where the workings cannot show it is a sheet whose
-  // parts do not add up to its own total.
+  // A factor applied where the workings cannot show it is a sheet whose parts
+  // do not add up to its own total.
   const ailment: DamageStep[] =
     overTime && scale !== 1 ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'ailment', value: scale }] : [];
 
-  const breakdown = damageBreakdown(
-    statMods(character),
-    baseFor(character.level).weaponDamage,
-    skill,
-    grants,
-    ailment
-  );
+  const breakdown = damageBreakdown(statMods(character), character.level, skill, grants, ailment);
   const perApplication = breakdown.total;
 
   // A lasting skill stacks until the cap or until the oldest stack expires,
@@ -234,14 +229,9 @@ export function damageDetail(character: Character): DamageDetail {
   };
 }
 
-/** Base life and weapon damage before gear, after levelling. */
-function baseFor(level: number): { life: number; weaponDamage: number } {
-  const steps = Math.max(0, level - 1);
-  return {
-    life: HERO_BASE.life + steps * LEVELLING.lifePerLevel,
-    weaponDamage: HERO_BASE.weaponDamage + steps * LEVELLING.damagePerLevel,
-  };
-}
+/** Base life before gear, after levelling. Damage is per skill — see skillBase. */
+const lifeFor = (level: number): number =>
+  HERO_BASE.life + Math.max(0, level - 1) * LEVELLING.lifePerLevel;
 
 export function heroStats(
   mods: RolledMod[],
@@ -250,8 +240,8 @@ export function heroStats(
   grants: Record<string, unknown> = {},
   baseArmour = 0
 ): CombatStats {
-  const base = baseFor(level);
-  const maxLife = computeStat(base.life, mods, 'life');
+  const breakdown = damageBreakdown(mods, level, skill, grants);
+  const maxLife = computeStat(lifeFor(level), mods, 'life');
   // Worn ratings are the BASE armour computes from, not a flat mod, so
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
@@ -263,7 +253,8 @@ export function heroStats(
     // Percentages with no base to scale — see percentStat.
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
-    damage: skillDamage(mods, base.weaponDamage, skill, grants),
+    damage: breakdown.total,
+    damageByType: breakdown.byType,
     // A spell has no business getting faster because you found a sharper sword.
     attacksPerSecond:
       computeStat(
@@ -399,34 +390,36 @@ export function monsterStats(crystal: Item, tier: number, def: MonsterDef): Comb
   // Crystal danger mods land here: armour blunts your hits, crit spikes
   // theirs, and fire changes what you're actually being killed by.
   const fire = percentStat(crystal.mods, 'monsterFire');
+  const dealt = computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100);
+  const type = fire > 0 ? 'fire' : 'physical';
 
   return {
     maxLife: computeStat(life, crystal.mods, 'monsterLife'),
-    damage: computeStat(damage, crystal.mods, 'monsterDamage') * (1 + fire / 100),
+    damage: dealt,
+    // One type, so the same delivery the hero uses reduces to a single pass.
+    damageByType: { [type]: dealt },
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
     critChance: percentStat(crystal.mods, 'monsterCrit'),
     moveSpeed:
       computeStat(MONSTER_BASE.moveSpeed, crystal.mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour: computeStat(0, crystal.mods, 'monsterArmour'),
     armourReduction: armourReduction(computeStat(0, crystal.mods, 'monsterArmour')),
-    // Monsters carry no resistances yet — crystal mods that grant them are
-    // the obvious next danger family.
+    // No monster resists anything yet; the crystal mod is the obvious next one.
     resistances: {},
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
     critMultiplier: 0,
-    // No monster has an area skill yet; when one does, this is where its
-    // crystal mod would land.
+    // No monster has an area skill yet; its crystal mod would land here.
     areaOfEffect: 0,
     rarity: 0,
     currencyFind: 0,
     /** What monsters on this map hurt you with. Shows in the results overlay. */
-    damageType: fire > 0 ? 'fire' : 'physical',
+    damageType: type,
   };
 }
 
-/** Pack layout off the crystal — the same bases simulateRun() used as a stub. */
+/** Pack layout off the crystal. */
 export function mapDensity(crystal: Item): { packCount: number; packSize: number } {
   return {
     packCount: Math.max(1, Math.round(computeStat(10, crystal.mods, 'packCount'))),

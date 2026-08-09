@@ -8,7 +8,7 @@
  */
 import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
 import { describeModLines } from '../crafting';
-import { characterStats, damageDetail } from '../sim/stats';
+import { characterStats, damageDetail, skillBase } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
 import { xpToNext } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
@@ -170,19 +170,19 @@ function damagePanel(): HTMLElement {
     box.append(row);
   }
 
-  // The total, in the same shape as the rows above it and labelled with the
-  // one type it lands as. Rows of Cold and Light adding up to a Poison total
-  // is the rule stated; a sentence saying so as well is a sentence.
+  // Every row lands as its own type, so the total has none: each is resisted
+  // separately and the sum is only ever what you would deal to something that
+  // resists nothing.
   const total = el('div', 'dmgrow dmgrow--sum');
   total.append(el('span', 'dmgrow__n', round(breakdown.total)));
-  total.append(el('span', 'dmgrow__t', nameOf(breakdown.dealtAs)));
+  total.append(el('span', 'dmgrow__t', 'total'));
   total.append(
     el(
       'span',
       'dmgrow__how',
       detail.seconds > 0
-        ? `per cast · ${detail.seconds}s · ${detail.maxStacks} stacks · resisted, never armoured`
-        : 'per hit · resisted, then armoured'
+        ? `per cast · ${detail.seconds}s · ${detail.maxStacks} stacks · each type resisted, never armoured`
+        : 'per hit · each type resisted, then armoured'
     )
   );
   box.append(total);
@@ -298,7 +298,9 @@ function renderSkill(): void {
   const host = $('sheet-skill');
   host.replaceChildren();
   const detail = damageDetail(game.character);
-  const dealt = DAMAGE_TYPE_BY_ID[detail.breakdown.dealtAs]?.name ?? detail.breakdown.dealtAs;
+  const { baseType } = detail.breakdown;
+  const dealt = DAMAGE_TYPE_BY_ID[baseType]?.name ?? baseType;
+  const base = Math.round(skillBase(detail.skill, game.character.level));
 
   host.append(el('div', 'skillline__name', detail.skill.name));
   host.append(
@@ -306,8 +308,17 @@ function renderSkill(): void {
       'div',
       'skillline__how',
       detail.seconds > 0
-        ? `${dealt} over ${detail.seconds}s per cast · ${detail.skill.tags.join(', ')}`
-        : `${dealt} on hit · ${detail.skill.tags.join(', ')}`
+        ? `${base} ${dealt} over ${detail.seconds}s per cast · ${detail.skill.tags.join(', ')}`
+        : `${base} ${dealt} on hit · ${detail.skill.tags.join(', ')}`
+    )
+  );
+  // The one rule the rows below cannot show: what a point of flat damage from
+  // your gear is worth here, and that it arrives as its own type.
+  host.append(
+    el(
+      'div',
+      'skillline__how',
+      `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
     )
   );
 }
