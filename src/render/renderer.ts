@@ -146,7 +146,7 @@ export function damageColour(palette: Palette, type: string): string {
       return palette.amethyst;
     case 'light':
       return palette.bone;
-    case 'crystal':
+    case 'prismatic':
       return palette.quartz;
     default:
       return palette.chalk;

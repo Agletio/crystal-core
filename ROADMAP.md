@@ -44,7 +44,7 @@ redesign and everything else follows from it.
 | **Count** | How many sockets are filled | Run **length** — map size and total monsters. Not difficulty. |
 | **Tier** | A crystal's own rank, T1–T4 | **Mod capacity** only: T1 = 0 mods, T2 = 1, T3 = 2, T4 = 3. T4 is max. |
 | **Mods** | What is rolled on the crystal | **Difficulty**, and part of what a run is worth. Unchanged from today. |
-| **Family** | Normal, Demonic, or Crystal | **Which monsters** spawn, and which map you are in. |
+| **Family** | Normal, Demonic, or Prismatic | **Which monsters** spawn, and which map you are in. |
 
 Illustrative sizing (placeholders, to be tuned):
 
@@ -98,15 +98,15 @@ also invalidates the tier tuning in the `MITIGATION` and `THE LADDER` checks in
 
 ### Families
 
-A crystal is exactly one of Normal, Demonic, or Crystal. Each socketed crystal
+A crystal is exactly one of Normal, Demonic, or Prismatic. Each socketed crystal
 converts **its share** of the run's monsters to its family — with four sockets
 that is 25% each, so three Demonic + one Normal is 75% demonic.
 
 Map theme follows the composition:
 
 - Demonic ≥ 50% → dark demonic theme
-- Crystal ≥ 50% → crystal cavern theme
-- 50/50 Demonic/Crystal with no Normal → **the Seam**, a unique zone
+- Prismatic ≥ 50% → crystal cavern theme
+- 50/50 Demonic/Prismatic with no Normal → **the Seam**, a unique zone
 
 *(The Seam is named to fit the existing vocabulary — the Fissure is "a thin
 place in the rock", and a Shard of Seaming joins things. Visually: crystal
@@ -114,7 +114,7 @@ growth erupting through demonic architecture, two worlds fused at a join that
 should not exist. Distinct from both parents rather than a blend of their
 tilesets.)*
 
-The nine monsters in `MONSTERS` today are all Normal. Demonic and Crystal
+The nine monsters in `MONSTERS` today are all Normal. Demonic and Prismatic
 families need their own monsters and art (`src/render/bestiary.ts`).
 
 ### Keeping room for a fifth socket
@@ -185,7 +185,7 @@ tier.
 **Rewards scale off everything**, and some things are hard-gated. The rule the
 user wants held: *it must never be strictly better to run an easier map.* So
 drop quality and quantity scale off crystal tier, socket count, total danger,
-**and** family composition, with a 50/50 Demonic/Crystal split being the most
+**and** family composition, with a 50/50 Demonic/Prismatic split being the most
 rewarding of all. Beyond scaling, the best items are **gated**: they cannot drop
 at all below a threshold, so BIS gear is only reachable at the top of every
 axis at once.
@@ -204,7 +204,7 @@ upgrades all price in gold. Selling items is the new source.
 
 **Crystals are given, never bought.** An NPC hands out the first four (Normal)
 crystals at random during Fissure runs, with the chance falling as you collect
-more, until you have all four. The rest — Demonic and Crystal — come from
+more, until you have all four. The rest — Demonic and Prismatic — come from
 **explicit quests** instead ("clear a run at N total danger", and so on), so the
 first four are easy and everything after is something you have learnt enough to
 go and do on purpose.
@@ -292,8 +292,12 @@ Separable from everything else and lands value immediately.
       to one world is a line in the mod table). `RunSet.composition` is the
       share map; `familyPlan` deals whole packs, exact rather than rolled, so a
       half-demonic set is half demonic on every seed.
+- [x] The third family is **Prismatic**, not Crystal, and the `crystal` DAMAGE
+      TYPE was renamed with it — one word meaning both the item and a world was
+      the confusion worth spending an id rename on. The item is still a Crystal;
+      what it opens onto is Prismatic.
 - [x] Demonic monster set — six kinds, art and a bestiary entry each.
-- [x] Crystal monster set — same six-kind shape.
+- [x] Prismatic monster set — same six-kind shape.
 - [x] Family shows on the crystal's header rows, on each socket, and as the
       run's composition under the set chips.
 
@@ -344,7 +348,7 @@ Mechanism is specified in §4.
       falling chance as you collect more, until you hold all four Normal ones.
 - [ ] Crystals gain levels per cleared run, scaled by the set's danger, only
       while socketed. T1 → T4, one mod slot per tier.
-- [ ] Quests for the Demonic and Crystal crystals — objectives like clearing at a
+- [ ] Quests for the Demonic and Prismatic crystals — objectives like clearing at a
       given total danger.
 - [ ] Crystal storage — you will own more crystals than you have sockets, so they
       need somewhere to live and a way to compare them.
@@ -415,7 +419,7 @@ attacks *you* take.
 - [ ] Grant collection reads equipment as well as the tree — `treeGrants` in
       `src/sim/stats.ts` is the seam.
 - [ ] Drop-gated by zone: some uniques only from a full Demonic run, some from
-      full Crystal, some only from the Seam.
+      full Prismatic, some only from the Seam.
 
 ---
 

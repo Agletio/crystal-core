@@ -55,7 +55,7 @@ repair that makes the file worse.
 There is one place you go. Four **sockets** hold crystals permanently — a run
 reads them and never spends them. Their COUNT is how long the run is; their
 MODIFIERS are the whole of how hard it is; a crystal's TIER is only how many
-modifiers it can hold (T1–T4 → 0–3); its FAMILY — Normal, Demonic or Crystal —
+modifiers it can hold (T1–T4 → 0–3); its FAMILY — Normal, Demonic or Prismatic —
 is only WHICH monsters spawn, each socketed crystal converting its share of the
 packs. Nothing else makes a monster stronger.
 

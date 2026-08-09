@@ -61,7 +61,7 @@ export type Composition = Record<MonsterFamily, number>;
  * than off the socket count, so a fifth would not rescale every composition.
  */
 export function composition(crystals: Item[]): Composition {
-  const out: Composition = { normal: 0, demonic: 0, crystal: 0 };
+  const out: Composition = { normal: 0, demonic: 0, prismatic: 0 };
   if (crystals.length === 0) return { ...out, normal: 1 }; // the bare Fissure
   for (const crystal of crystals) out[crystalFamily(crystal)] += 1 / crystals.length;
   return out;

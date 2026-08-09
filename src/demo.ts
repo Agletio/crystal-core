@@ -2373,7 +2373,7 @@ rule('FAMILIES — a different fight, or a harder one?');
   // monster ids, which is what makes this readable from the entities.
   const familyOf = new Map(MONSTERS.map((m) => [m.sprite, m.family]));
   const strays: string[] = [];
-  for (const set of [['demonic'], ['crystal'], ['demonic', 'crystal']] as MonsterFamily[][]) {
+  for (const set of [['demonic'], ['prismatic'], ['demonic', 'prismatic']] as MonsterFamily[][]) {
     const crystals = set.map((f) => makeCrystal(1, f));
     const sim = new RunSim(crystals, makeCharacter(starterLoadout(new Rng(7)), 'strike'), new Rng(5));
     const wrong = sim.state.monsters.filter((m) => !set.includes(familyOf.get(m.sprite)!));

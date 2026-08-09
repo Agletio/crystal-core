@@ -181,7 +181,7 @@ export interface MonsterRankDef {
 }
 
 /** Which world a monster belongs to, and which crystal calls it up. */
-export type MonsterFamily = 'normal' | 'demonic' | 'crystal';
+export type MonsterFamily = 'normal' | 'demonic' | 'prismatic';
 
 export interface MonsterFamilyDef {
   id: MonsterFamily;

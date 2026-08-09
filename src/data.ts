@@ -37,7 +37,7 @@ export const DAMAGE_TYPES: DamageTypeDef[] = [
   { id: 'poison', name: 'Poison', group: 'occult' },
   { id: 'dark', name: 'Dark', group: 'occult' },
   { id: 'light', name: 'Light', group: 'occult' },
-  { id: 'crystal', name: 'Crystal', group: null },
+  { id: 'prismatic', name: 'Prismatic', group: null },
 ];
 
 export const DAMAGE_TYPE_BY_ID: Record<string, DamageTypeDef> = Object.fromEntries(
@@ -63,7 +63,7 @@ export const AILMENT_NAMES: Record<string, string> = {
   poison: 'poison',
   dark: 'withering',
   light: 'searing',
-  crystal: 'resonance',
+  prismatic: 'resonance',
 };
 
 /** Damage that nothing scales and nothing resists. */
@@ -499,7 +499,7 @@ const MONSTER_WARD_NAMES: Record<string, string> = {
   poison: 'of Clean Blood',
   dark: 'of Lanterns',
   light: 'of Long Shadow',
-  crystal: 'of Dull Facets',
+  prismatic: 'of Dull Facets',
 };
 
 export const CRYSTAL_MODS: ModDef[] = [
@@ -873,7 +873,7 @@ const FLAT_DAMAGE_NAMES: Record<string, string> = {
   poison: 'Venomous',
   dark: 'Shrouded',
   light: 'Radiant',
-  crystal: 'Faceted',
+  prismatic: 'Faceted',
 };
 
 const INC_DAMAGE_NAMES: Record<string, string> = {
@@ -884,7 +884,7 @@ const INC_DAMAGE_NAMES: Record<string, string> = {
   poison: 'Virulent',
   dark: 'Umbral',
   light: 'Brilliant',
-  crystal: 'Prismatic',
+  prismatic: 'Refracting',
 };
 
 /**
@@ -1363,9 +1363,8 @@ export const MONSTER_FAMILIES: MonsterFamilyDef[] = [
     blurb: 'Heavy, and it hits like it. Fewer swings, and none of them cheap.',
   },
   {
-    id: 'crystal',
-    name: 'Crystal',
-    // A crystal of the crystal family would otherwise be a Crystal Crystal.
+    id: 'prismatic',
+    name: 'Prismatic',
     word: 'Prismatic',
     blurb: 'Fast and brittle. It gets its hits in first because it cannot take any.',
   },
@@ -1620,7 +1619,7 @@ export const MONSTERS: MonsterDef[] = [
     tags: ['demon'],
   },
 
-  // --- crystal: quick, numerous, and it dies to a stiff breeze ---------
+  // --- prismatic: quick, numerous, and it dies to a stiff breeze -------
   //
   // The mirror of the demonic pool: the same threat spent on attack speed and
   // movement rather than on life. A crystal room is over fast in one direction
@@ -1628,7 +1627,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'shardling',
     name: 'Shardling',
-    family: 'crystal',
+    family: 'prismatic',
     life: 0.4,
     damage: 0.75,
     moveSpeed: 1.75,
@@ -1643,7 +1642,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'lattice',
     name: 'Lattice',
-    family: 'crystal',
+    family: 'prismatic',
     life: 1.6,
     damage: 0.85,
     moveSpeed: 0.9,
@@ -1658,7 +1657,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'geode',
     name: 'Geode',
-    family: 'crystal',
+    family: 'prismatic',
     life: 2.1,
     damage: 1,
     moveSpeed: 0.6,
@@ -1673,7 +1672,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'prism',
     name: 'Prism',
-    family: 'crystal',
+    family: 'prismatic',
     life: 0.6,
     damage: 1.1,
     moveSpeed: 1.5,
@@ -1688,7 +1687,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'spire',
     name: 'Spire',
-    family: 'crystal',
+    family: 'prismatic',
     life: 1.8,
     damage: 1.45,
     moveSpeed: 0.7,
@@ -1703,7 +1702,7 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'chime',
     name: 'Chime',
-    family: 'crystal',
+    family: 'prismatic',
     life: 0.55,
     damage: 0.9,
     moveSpeed: 1.6,
@@ -1725,7 +1724,7 @@ export const MONSTERS: MonsterDef[] = [
 export const MONSTERS_BY_FAMILY: Record<MonsterFamily, MonsterDef[]> = {
   normal: MONSTERS.filter((m) => m.family === 'normal'),
   demonic: MONSTERS.filter((m) => m.family === 'demonic'),
-  crystal: MONSTERS.filter((m) => m.family === 'crystal'),
+  prismatic: MONSTERS.filter((m) => m.family === 'prismatic'),
 };
 
 /**
