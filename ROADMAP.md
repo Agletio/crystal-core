@@ -119,11 +119,15 @@ Phase 1, both of which cost nothing today:
 
 Settled. Do not relitigate without the user saying so.
 
-**Death** costs the run's loot and **stops the idle loop**. Not the crystals,
-not the gear, and not the haul already banked from earlier clears. Stopping the
-loop is the real teeth: you cannot blindly re-run a set that kills you, so a set
-you cleared four times and died on the fifth is a setup problem you have to go
-and fix rather than eat repeatedly.
+**Death** costs **only the run you died in** and **stops the idle loop**. Not
+the crystals, not the gear, and not the haul already banked from earlier clears.
+Stopping the loop is the real teeth: you cannot blindly re-run a set that kills
+you, so a set you cleared four times and died on the fifth is a setup problem you
+have to go and fix rather than eat repeatedly.
+
+A death drops you on **the haul screen** — the same screen a full haul stops you
+on. The loop has one terminus regardless of why it ended, so there is one place
+that means "the run is over, deal with your things".
 
 **Crystals level by being used.** A crystal must be **socketed** to gain
 progress, and gains it **per run cleared, multiplied by the set's danger**. This
@@ -182,6 +186,8 @@ part with the most ways to go wrong.
   on death. Capacity is checked *between* runs, never mid-run, so a run's drops
   are never split or discarded — the haul simply ends up over by at most one
   run's worth.
+- Both endings land on **the same screen**. Full haul or dead, the loop has one
+  terminus.
 - You cannot launch again until the haul is back under capacity. That is the
   "deal with your items" step, and it is the only thing gating the loop.
 - Triage per item: send to dock, send to stash, or sell. Plus bulk actions —
@@ -254,7 +260,8 @@ Mechanism is specified in §4.
 - [ ] The haul screen is a **grid you can act on**, not a list of names.
       Replaces the `run-loot` rendering in `src/ui/run.ts` / `src/game/report.ts`.
 - [ ] Auto-repeat: clear, re-launch, repeat.
-- [ ] Stop on death, and say why. Stop when the haul is at capacity.
+- [ ] Stop on death, and say why. Stop when the haul is at capacity. Both land
+      on the haul screen — one terminus for the loop.
 - [ ] Launching is blocked while the haul is over capacity.
 
 ### Phase 5 — Progression
@@ -334,11 +341,7 @@ Do not guess at these.
 1. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. §2 says how to keep it cheap to add; nothing else should assume it.
-2. **Does death cost the whole haul, or only the run you died in?**
-   Recommendation: **only that run**. Earlier clears already banked, and losing a
-   full session to one bad run makes the idle loop feel punishing rather than
-   costly. §3 is written that way; confirm or overturn it.
-3. **What exactly does the run power formula look like?** §3 settles the inputs
+2. **What exactly does the run power formula look like?** §3 settles the inputs
    and that it should be one number. The shape of the curve is open, and it is
    the lever that decides whether pushing difficulty is correct or optional.
 
