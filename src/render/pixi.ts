@@ -40,7 +40,11 @@ import {
   toHexNumber,
   vfxColour,
 } from './renderer';
-import { CELL, WALK_FRAMES, makeSheet } from './sprites';
+import { CELL, WALK_FRAMES, makeLookFrames, makeSheet } from './sprites';
+import { POSE_IDS } from './pose';
+import { SKILL_BY_ID } from '../data';
+import { lookKey } from './look';
+import type { PoseId } from './pose';
 
 const FLOATER_LIFE = 1.1;
 
@@ -116,6 +120,38 @@ export async function createPixiRenderer(
   let tile = 1;
   let offX = 0;
   let offY = 0;
+
+  /**
+   * Hero textures per loadout. Built on demand and kept: gear changes rarely,
+   * and rebuilding four 48px canvases is cheaper than carrying every
+   * combination of twelve families and four slots up front.
+   */
+  const looks = new Map<string, Texture[]>();
+  function looked(e: Entity): Texture[] | null {
+    if (!e.look) return null;
+    const key = lookKey(e.look);
+    const held = looks.get(key);
+    if (held) return held;
+    const frames = makeLookFrames(palette, e.look);
+    if (!frames) return null;
+    const made = frames.map((canvas) => {
+      const texture = Texture.from(canvas);
+      texture.source.scaleMode = 'nearest';
+      return texture;
+    });
+    looks.set(key, made);
+    return made;
+  }
+
+  /** What the figure is doing, as a pose. Casting is an attack with a spell. */
+  function poseOf(e: Entity, elapsed: number): PoseId {
+    if (e.action === 'attack') {
+      const spell = e.skillId ? SKILL_BY_ID[e.skillId]?.tags.includes('spell') : false;
+      return spell ? 'cast' : 'attack';
+    }
+    if (e.action === 'move') return Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES ? 'walk1' : 'walk0';
+    return 'walk0';
+  }
 
   const sprites = new Map<number, Sprite>();
   const floaters: Text[] = [];
@@ -253,12 +289,16 @@ export async function createPixiRenderer(
     }
 
     const s = spriteFor(e);
-    const frames = textures[e.sprite] ?? textures.grub;
-
-    // Walk cycle only advances while actually moving, so idle monsters stand
-    // still instead of marching on the spot.
-    const frame = e.action === 'move' ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES : 0;
-    s.texture = frames[frame];
+    // A layered figure has a frame per POSE; everything else has a walk cycle
+    // that only advances while it is actually moving.
+    const worn = looked(e);
+    if (worn) {
+      s.texture = worn[POSE_IDS.indexOf(poseOf(e, elapsed))] ?? worn[0];
+    } else {
+      const frames = textures[e.sprite] ?? textures.grub;
+      const frame = e.action === 'move' ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES : 0;
+      s.texture = frames[frame];
+    }
 
     // One texture cell should cover roughly one tile of world.
     const scale = (1 / CELL) * sizeOf(e.sprite) * (1 - fade * 0.5);

@@ -9,6 +9,10 @@
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
+import { lookRows } from './look';
+import { POSE_IDS } from './pose';
+import type { PoseId } from './pose';
+import type { Look } from '../types';
 
 /** Pixels per sprite cell. Generous so the shapes stay crisp when scaled up. */
 export const CELL = 48;
@@ -325,6 +329,60 @@ function heroArt(palette: Palette, frame: number): PixelArt {
   };
 
   return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key };
+}
+
+/**
+ * The hero's palette, shared by the base figure and everything worn. One key
+ * table, so a gauntlet and the hand inside it are lit by the same light.
+ */
+export function lookKeyColours(palette: Palette): Record<string, string> {
+  const ink = mix(palette.rockDeep, palette.void, 0.6);
+  return {
+    '#': ink,
+    s: mix(palette.dust, palette.ember, 0.35),
+    e: palette.citrine,
+    h: mix(palette.rockDeep, palette.ember, 0.2),
+    t: mix(palette.dust, palette.rockDeep, 0.5),
+    T: mix(palette.dust, palette.rockDeep, 0.72),
+    l: mix(palette.seam, palette.rockDeep, 0.25),
+    L: mix(palette.seam, palette.rockDeep, 0.5),
+    b: mix(palette.ember, palette.rockDeep, 0.55),
+    // Plate reads as cold metal; the lit face is what gives it a shoulder.
+    p: mix(palette.quartz, palette.rockDeep, 0.35),
+    P: mix(palette.quartz, palette.chalk, 0.35),
+    d: mix(palette.quartz, palette.rockDeep, 0.6),
+    c: mix(palette.amethyst, palette.rockDeep, 0.45),
+    C: mix(palette.amethyst, palette.chalk, 0.25),
+    h2: mix(palette.ember, palette.rockDeep, 0.4),
+    w: mix(palette.ember, palette.rockDeep, 0.55),
+    m: mix(palette.chalk, palette.rockDeep, 0.45),
+    M: palette.chalk,
+    g: palette.amethyst,
+    // The rung, made visible: absent at tier 1, dull at 2, lit at 3.
+    x: mix(palette.citrine, palette.rockDeep, 0.45),
+    X: palette.citrine,
+  };
+}
+
+/** One pose of one loadout, painted. */
+export function drawLook(
+  ctx: CanvasRenderingContext2D,
+  palette: Palette,
+  look: Look,
+  pose: PoseId
+): void {
+  drawPixels(ctx, { rows: lookRows(look, pose), key: lookKeyColours(palette) });
+}
+
+export function makeLookFrames(palette: Palette, look: Look): HTMLCanvasElement[] | null {
+  const frames: HTMLCanvasElement[] = [];
+  for (const pose of POSE_IDS) {
+    const made = cell();
+    if (!made) return null;
+    drawLook(made.ctx, palette, look, pose);
+    frames.push(made.canvas);
+  }
+  return frames;
 }
 
 export type SpriteSheet = Record<string, HTMLCanvasElement[]>;

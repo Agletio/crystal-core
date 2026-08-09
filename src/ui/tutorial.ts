@@ -15,6 +15,7 @@ import { balance } from "../economy";
 import { qualityOf } from "../mods";
 import { craftItem } from "../game/state";
 import type { GameState } from "../game/state";
+import type { Item } from "../types";
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -34,8 +35,8 @@ export interface TutorialStep {
   id: string;
   /** A function when what to say depends on what's currently open. */
   text: string | ((ctx: GuideCtx) => string);
-  /** Element to point at. A function when it depends on what's on top. */
-  target: string | ((ctx: GuideCtx) => string);
+  /** Element to point at. A function when it depends on the state. */
+  target: string | ((ctx: GuideCtx, game: GameState) => string);
   /** Default true; false for steps with nothing to click. */
   ring?: boolean | ((ctx: GuideCtx) => boolean);
   /** Optional aside under the text — what this costs, or what to expect. */
@@ -50,6 +51,13 @@ export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
 
 /** Id of an equipment slot's button on the character sheet. Same reason. */
 export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
+
+/** Id of one item's slot in the dock. Same reason again. */
+export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
+
+/** The Rough piece the opening is about to work on, if you are carrying one. */
+export const roughGear = (g: GameState): Item | undefined =>
+  g.inventory.find((i) => i.kind === 'gear' && qualityOf(i) === 'rough');
 
 /** Every popup's own way out, so a step can point at whichever one is up. */
 const CLOSES: Record<string, string> = {
@@ -143,11 +151,11 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : blocked(ctx)
             ? "Close this and open Crafting."
             : "Open Crafting.",
-    target: (ctx) =>
+    target: (ctx, g) =>
       ctx.top === "shop"
         ? "shop-close"
         : ctx.view === "craft"
-          ? "inv-gear"
+          ? dockSlotId(roughGear(g)?.id ?? "")
           : viaHeader(ctx, "open-craft"),
     // Rough, not "any gear": a first run drops things, and benching a modded
     // one satisfied this AND the next step, so the shard was never spent.
@@ -187,12 +195,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : blocked(ctx)
           ? "Close this and open Character."
           : "Open Character.",
-    target: (ctx) =>
+    target: (ctx, g) =>
       ctx.top === "sheet"
         ? // Once a slot is picked the gear is what you click, and it is in the
           // dock — ringing the slot lights the button you just pressed.
           ctx.picking
-          ? "inv-gear"
+          ? dockSlotId(g.character.equipment.weapon?.id ?? roughGear(g)?.id ?? "")
           : slotButtonId("weapon")
         : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,
@@ -440,7 +448,7 @@ function paint(): void {
   $("guide-step").textContent =
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;
 
-  const id = typeof step.target === "function" ? step.target(ctx) : step.target;
+  const id = typeof step.target === "function" ? step.target(ctx, game) : step.target;
   const target = document.getElementById(id);
   const wants = typeof step.ring === "function" ? step.ring(ctx) : step.ring !== false;
   const ring = wants ? target : null;

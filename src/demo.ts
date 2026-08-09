@@ -16,6 +16,7 @@ import {
   DAMAGE_TYPES,
   ARMOUR_BASES,
   ARMOUR_FAMILIES,
+  WEAPON_BASES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
   GEAR_BASES,
@@ -50,6 +51,10 @@ import {
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, MONSTER_FRAMES, wellFormed } from './render/sprites';
+import { BODY } from './render/body';
+import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
+import { hasFamilyArt, hasWeaponArt, lookRows } from './render/look';
+import { POSE_IDS } from './render/pose';
 import {
   characterStats,
   convertedType,
@@ -76,7 +81,7 @@ import {
 import { makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { loadoutMods, starterLoadout } from './sim/loadout';
-import { TUTORIAL_STEPS, recipeButtonId, slotButtonId } from './ui/tutorial';
+import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
   CARRY,
@@ -761,6 +766,80 @@ rule('SPRITES — is the pixel art well formed?');
 }
 
 // ===========================================================================
+rule('THE MODEL — does the figure hold together in every pose?');
+
+// The figure is layers: a body, four pieces of armour and a weapon, each a
+// 16-grid authored against the neutral pose. Nothing here needs a canvas, so
+// every combination can be checked rather than eyeballed.
+{
+  const problems: string[] = [];
+  for (const pose of POSE_IDS) problems.push(...wellFormed([BODY[pose]]).map((b) => `body ${pose} ${b}`));
+  for (const [family, art] of Object.entries(FAMILY_ART)) {
+    problems.push(
+      ...wellFormed([art.helmet, art.body, art.gloves, ...art.boots]).map((b) => `${family} ${b}`)
+    );
+  }
+  for (const [kind, art] of Object.entries(WEAPON_ART)) {
+    problems.push(...wellFormed([art.rest, art.strike]).map((b) => `${kind} ${b}`));
+  }
+  check(problems.length === 0, 'every grid is 16x16', problems.slice(0, 4).join('; '));
+
+  // Composition must not push anything off the cell: a shift that runs a row
+  // long silently draws outside the sprite, which reads as art bleeding into
+  // the tile beside it.
+  const full = {
+    helmet: { family: 'bulwark', tier: 3 },
+    body: { family: 'bulwark', tier: 3 },
+    gloves: { family: 'bulwark', tier: 3 },
+    boots: { family: 'bulwark', tier: 3 },
+    weapon: { kind: 'mace' },
+  };
+  const composed = POSE_IDS.map((p) => lookRows(full, p));
+  check(
+    wellFormed(composed).length === 0,
+    'and a fully armed figure still composes to 16x16 in every pose',
+    wellFormed(composed).join('; ')
+  );
+
+  // Four poses that look the same are one pose drawn four times.
+  const seen = new Map<string, string[]>();
+  for (const pose of POSE_IDS) {
+    const key = lookRows(full, pose).join('');
+    seen.set(key, [...(seen.get(key) ?? []), pose]);
+  }
+  const twins = [...seen.values()].filter((p) => p.length > 1);
+  check(
+    twins.length === 0,
+    `all ${POSE_IDS.length} poses draw something different`,
+    twins.map((p) => p.join('=')).join(', ')
+  );
+
+  // The rung is a rule, so it has to actually do something at each step, and
+  // tier 1 must carry no trim at all.
+  const ladder = ARMOUR_FAMILIES.filter((f) => hasFamilyArt(f.id)).flatMap((f) => {
+    const at = (tier: number) =>
+      lookRows({ body: { family: f.id, tier }, helmet: { family: f.id, tier } }, 'walk0').join('');
+    const bad: string[] = [];
+    if (at(1) === at(2)) bad.push(`${f.id}: tier 1 and 2 are identical`);
+    if (at(2) === at(3)) bad.push(`${f.id}: tier 2 and 3 are identical`);
+    if (at(1).includes(TRIM) || at(1).includes(TRIM_LIT)) bad.push(`${f.id}: tier 1 has trim`);
+    return bad;
+  });
+  check(ladder.length === 0, 'and every rung of a family differs from the one below', ladder.join('; '));
+
+  // A weapon with no drawing is a hand holding nothing.
+  const kinds = [...new Set(WEAPON_BASES.map((b) => b.family ?? ''))];
+  const undrawn = kinds.filter((k) => !hasWeaponArt(k));
+  check(undrawn.length === 0, `all ${kinds.length} weapon kinds are drawn`, undrawn.join(', '));
+
+  // Not a failure: the families still to draw, named rather than left silent.
+  const pending = ARMOUR_FAMILIES.filter((f) => !hasFamilyArt(f.id)).map((f) => f.id);
+  if (pending.length) {
+    line(`  note ${pending.length} armour families still to draw: ${pending.join(', ')}`);
+  }
+}
+
+// ===========================================================================
 rule('MAP SHAPE — do chambers, passages and veins survive generation?');
 
 // The renderer colours a corridor differently from a room, which only works
@@ -854,7 +933,11 @@ rule('GUIDED OPENING — does every step actually complete?');
   const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
     typeof s.target === 'string'
       ? [s.target]
-      : [...new Set(SITUATIONS.map((c) => (s.target as (c: GuideCtx) => string)(c)))];
+      : [
+          ...new Set(
+            SITUATIONS.map((c) => (s.target as (c: GuideCtx, g: GameState) => string)(c, game))
+          ),
+        ];
 
   // Everything the UI assigns an id to at runtime — every ui module except
   // the one under test, since the guide quotes its own targets and would
@@ -872,7 +955,11 @@ rule('GUIDED OPENING — does every step actually complete?');
     MARKUP.includes(`id="${id}"`) ||
     UI_SRC.includes(`'${id}'`) ||
     RECIPES.some((r) => recipeButtonId(r.id) === id) ||
-    EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id);
+    EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id) ||
+    // Minted per item by the dock, so it exists exactly while that item does.
+    [...game.inventory, ...Object.values(game.character.equipment)].some(
+      (i) => dockSlotId(i.id) === id
+    );
 
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
@@ -961,7 +1048,7 @@ rule('GUIDED OPENING — does every step actually complete?');
   for (const step of TUTORIAL_STEPS) {
     for (const ctx of SITUATIONS) {
       if (ctx.top === null && ctx.view !== 'craft') continue;
-      const id = typeof step.target === 'function' ? step.target(ctx) : step.target;
+      const id = typeof step.target === 'function' ? step.target(ctx, game) : step.target;
       if (COVERED.has(id)) {
         unreachable.push(`${step.id} -> #${id} with ${ctx.top ?? ctx.view} open`);
       }

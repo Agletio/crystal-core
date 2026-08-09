@@ -9,6 +9,7 @@ import { generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT } from '../data';
+import { lookOf } from './appearance';
 import {
   characterStats,
   effectiveSkill,
@@ -39,7 +40,7 @@ import { dropsForTier } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
-import type { Item, SkillDef } from '../types';
+import type { Item, Look, SkillDef } from '../types';
 
 /** Built once at load: derived from authored data and never mutated. */
 const DROP_POOL = new ModPool(ALL_MODS);
@@ -121,6 +122,8 @@ export interface Entity {
   kind: EntityKind;
   /** Which monster kind this is; 'hero' for the hero. Renderer art key. */
   sprite: string;
+  /** Worn art keys, for anything the renderer draws in layers. */
+  look?: Look;
   x: number;
   y: number;
   /** Radians. Where the entity is looking — sprites need this, the sim doesn't. */
@@ -281,6 +284,7 @@ export class RunSim {
       id: 0,
       kind: 'hero',
       sprite: 'hero',
+      look: lookOf(character),
       x: map.entrance.x,
       y: map.entrance.y,
       facing: 0,

@@ -195,6 +195,21 @@ export interface SkillDef {
   params?: Record<string, any>; // behaviour-specific knobs
 }
 
+/** What the figure is wearing, as art keys. Empty slots are simply absent. */
+export interface WornPiece {
+  family: string;
+  tier: number;
+}
+
+export interface Look {
+  helmet?: WornPiece;
+  body?: WornPiece;
+  gloves?: WornPiece;
+  boots?: WornPiece;
+  /** A weapon's shape is its family: mace, sword, dagger, wand. */
+  weapon?: { kind: string };
+}
+
 export interface Recipe {
   id: string;
   name: string;
