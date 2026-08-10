@@ -4,9 +4,12 @@
 not been built yet. `CLAUDE.md` describes the game as it *is*; this describes
 where it is going.
 
-If you are picking this up with no other context: read §1 for where things
-stand, §2 for decisions that are settled, then start at the lowest unchecked
-phase in §5. §6 lists what is still undecided — do not guess at those, ask.
+If you are picking this up with no other context, read in this order: §1 for
+where things stand, §2 for decisions that are settled, **§3 and §4 for how the
+thing is actually built** — those two are the ones that stop you making a
+mistake this project has already paid for — then §8 for how to work, then start
+at the lowest unchecked phase in §5. §6 lists what is still undecided; do not
+guess at those, ask.
 
 Landed phases are deleted from this file rather than left checked, so everything
 below §5 is work. The numbers in here are intent, not tuning.
@@ -29,10 +32,17 @@ or stop it; every ending lands on the same report and the same haul screen. Gold
 is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
-**The art work is done.** What is left is a pass over the parts you touch with
-your hands — how a crystal is described, what a currency does, what a tooltip
-says, how you get rid of things — then one balance debt carried out of the
-systems work, then the next feature.
+**The art is done, and so is the pass over the parts you touch with your
+hands.** Crystals are levels and live on their own screen; capacity comes off
+the base's tier and the currencies were rebuilt around six kinds; tooltips are
+built cards with the rolled number coloured apart from the words; the dock
+sorts and lights up what an armed shard can reach; the counter sells in a mode
+and buys back; a descent hands over to the next one through a hole in the
+ground; and the Lampwright is a person you walk to.
+
+What is left is one balance debt carried out of the systems work, then the next
+feature. §7 is the deferred pile, and the first entry in it is now answerable
+rather than blocked.
 
 ### Keeping room for a fifth socket
 
@@ -86,18 +96,20 @@ base ids are still `crystal_t1`..`crystal_t4`, because a save points at them
 and renaming one costs the player that crystal for no gain.
 
 **Mod capacity comes from the BASE's tier**, and from nothing else: t1 holds 2,
-t2 holds 4, t3 holds 6. Item level still decides how good a roll can be. There
-is no currency that raises a base's capacity — you go and find a better base,
-which is what makes farming duplicates the thing the gambling currencies are
-for.
+t2 holds 4, t3 holds 6. Item level still decides how good a roll can be. No
+ORDINARY currency raises it — you go and find a better base, which is what
+makes farming duplicates the thing the gambling currencies are for. The one
+exception is `sigil_of_upheaval`, which may add a modifier past the cap and
+locks the item for doing it; the demo holds every other currency to the rule.
 
 **Only the adding currency is sold.** Everything else drops. A shop that stocks
 the whole bench is a shop that replaces the map.
 
 **Taking the Lampwright's crystal in person means you keep it**, even if you die
-later in that descent. This replaces the older rule that a meeting on a descent
-you die in was only ever a meeting: it was true while the report paid it out,
-and it reads as a bug the moment he hands it over on screen.
+later in that descent. It is handed over at the meeting, not paid out by the
+report — which is the whole reason the meeting is a body on the map rather than
+a line at the end. Everything else about dying is unchanged: that descent's
+loot is still gone.
 
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
@@ -133,11 +145,14 @@ gives 1.5 and the rect seams stop landing on pixel boundaries. **24 is the last
 integer step under the current cell.** Going to 32 means raising `CELL` to 96
 first, and is not wanted now.
 
-**Everything is at 24.** All 21 creatures in `src/render/bestiary.ts` carry
-`grid: 24`, two walk frames and an `attack` frame; the paper doll and the hooded
-traveller followed. `BeastArt.grid` is per-creature and `DOLL_GRID` is the
-doll's, and `wellFormed(frames, grid)` checks each against its own declaration,
-so a family can be redrawn without the pipeline caring.
+**Everything is at 24.** All 22 entries in `src/render/bestiary.ts` carry
+`grid: 24` and two frames; 21 of them are monsters with an `attack` frame, and
+the 22nd is `lampwright`, who is a person rather than a creature and has no
+swing. `BeastArt.grid` is per-creature and `DOLL_GRID` is the doll's, and
+`wellFormed(frames, grid)` checks each against its own declaration, so a family
+can be redrawn without the pipeline caring. Being in `BEASTIARY` does NOT make
+something a monster — `MONSTERS` is a separate table, and the demo only asks
+that every monster has art, not that every art is a monster.
 
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
@@ -162,6 +177,13 @@ HOW to draw a tile: `stone` is coursed masonry, `flesh` is lobes and pores,
 `crystal` is facets and growth, `seam` is one or the other tile by tile. Colours
 are CSS custom properties like everything else (`--flesh`, `--rose`, and their
 neighbours).
+
+**`floor.shade` is the dark in every zone; `floor.rock[0]` is not.** The rock
+ramp's first entry is `#a96c8f` in the Cavern — pale — so anything that needs
+to read as a HOLE and used it vanished into its own floor. `floor.glint` is the
+bright in every zone. At one tile across contrast is the only tool: `mouth()`
+is a bright rim, a mid ring and a `shade` pit, and the ladder or teeth or
+shards inside it are decoration on top of that, not the thing that reads.
 
 **`livingDecals` is the part that moves** — tendrils, spines, the pulse in a
 crystal — drawn every frame from the tile's own hash and the clock, never from
@@ -194,9 +216,10 @@ nobody can see.
 
 ## 4. What the game is made of
 
-The art section above covers the sprites and the map. This covers the parts the
-next few phases actually touch. Same purpose: a session that does not know these
-will make the same mistake twice.
+The art section above covers the sprites and the map. This covers everything
+else — the save, the items, the currencies, the screens and the loop. Same
+purpose: a session that does not know these will make the same mistake twice.
+It is long because it is the part that saves you reading the code.
 
 **`GameState` is plain data in one localStorage key** (`JSON.stringify(game)`),
 and `heal()` in `src/game/save.ts` runs on every load. Adding a field costs
@@ -210,10 +233,11 @@ exactly what it is for.
 1, 2 or 3; `BASE_TIER_MODS` is `[2, 4, 6]`; `modCapacity` is the lower of that
 and what the slot table declares. `GearBase.slots` says only WHERE a modifier
 may go — `slotAllocation` deals the tier's budget over those types, richest
-first. Nothing raises a tier: a bigger item is a better base, found. Item
-level decides how good a roll can be and which bases drop at all, so a drop
-band's `ilvl` is its ceiling twice over. A crystal's level is the same idea in
-one `mod` slot.
+first. A bigger item is a better base, found — the one thing that can put a
+modifier past the cap is `sigil_of_upheaval`, through a bonus slot, and it
+locks the item for doing it. Item level decides how good a roll can be AND
+which bases drop at all, so a drop band's `ilvl` is its ceiling twice over. A
+crystal's level is the same idea in one `mod` slot.
 
 **Currencies are DATA, not code.** `CURRENCIES` in `src/data.ts` is a list of
 `CurrencyDef` — `targets` (which items it may touch), `requires` (a list of
@@ -244,9 +268,23 @@ inventing a second one.
 **Containers.** `GameState` holds `inventory` (the dock — gear only, capped by
 `CARRY.gear`), `stash` (inert, capacity bought with gold), `haul` (a cleared
 run's loot, inert, `HAUL_CAP`), `crystals` (every crystal you own that is not
-socketed, UNCAPPED), `sockets` and `shopStock`. Inert means: nothing acts on
-the item until it is moved into the dock. `craftId` is a REFERENCE, not a move,
-and it resolves across the bag, the collection, the worn slots and the sockets.
+socketed, UNCAPPED), `sold` (the counter, `SOLD_CAP`), `sockets` and
+`shopStock`. Inert means: nothing acts on the item until it is moved into the
+dock. `craftId` is a REFERENCE, not a move, and it resolves across the bag, the
+collection, the worn slots and the sockets.
+
+**Adding a modal is three places, not one.** The markup in `docs/index.html`;
+the Escape chain in `src/web.ts`, which closes the topmost thing and must know
+where yours sits in that stack; and `guideContext()`'s `top`, which is what
+lets a tutorial step point at a button inside it. Miss the third and the guided
+opening will ring something a popup is covering, which is a failure `npm run
+guide` reports as being trapped.
+
+**Adding a container is three places, not one.** The field on `GameState`;
+`heal()`, which has to drop entries whose base no longer resolves; and the
+demo's "every collection a save can hold items in claims its ids" list, which
+walks each one through `readSave` and proves the id counter moved. Miss the
+third and a save can hand out an id the next item then reuses.
 
 **A crystal is never carried.** It is never spent, sold or moved anywhere, so
 there is no dock column for it and `carryRoom(game, 'crystal')` is `Infinity`.
@@ -269,6 +307,11 @@ NUMBER and the words around it, so `.rolled__v` can be one colour and
 the markup can never drift. `describeItem` in `src/crafting.ts` is the
 text-only version and is now the demo's alone.
 
+The class is `.rolled`, NOT `.stat`: the character sheet already owns `.stat`
+with `justify-content: space-between`, and a rolled line that inherited it
+pushed every label to the far edge of the tooltip. One stylesheet, no scoping —
+check `docs/index.html` for the name before inventing it.
+
 **Selling is undoable, and needs room nowhere.** `sellItem` puts the piece on
 the counter (`GameState.sold`, newest first, `SOLD_CAP` of them) at exactly
 what it paid; `buyBack` takes it off for the same number, so the pair is
@@ -287,6 +330,13 @@ The old flow is untouched: a benched item the shard accepts still fires on the
 click. `InventoryHandler` grew `dimmed(item)` beside `highlighted(item)`, which
 is the one mechanism both use.
 
+**UI state that must never be saved.** `armed` (the currency waiting to be
+pointed, `src/ui/craft.ts`), `selling` (sell mode, `src/ui/shop.ts`), and
+`handover` / `banked` / `pending` (the transition, `src/ui/run.ts`). Each one
+changes what a CLICK means, and a mode that survived a reload would turn the
+first click of a session into something nobody asked for. None of them is in
+`GameState` and none of them should be.
+
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
 starts ticking; `finish()` banks the report and decides whether another descent
 follows (`looping()` is `game.autoRepeat` and not the guided opening); `land()`
@@ -294,23 +344,27 @@ is the one terminus every ending arrives at. The sim in `src/sim/` never learns
 about presentation — a transition, a panel, a freeze, all of that is the UI
 holding off on ticking.
 
-**A meeting is the same pattern.** The Lampwright is `RunState.lampwright` —
-an `Entity`, deliberately NOT in `monsters`, so nothing in combat can see them.
+**A freeze is the UI declining to tick.** There is no pause state in the loop
+and there is not going to be one. Both of the things that stop a descent work
+the same way, and anything that stops one in future should too.
+
+**The handover between descents.** `HANDOVER` seconds where the sim does not
+tick at all: the hero drops into the hole at the exit, `#run-fade` goes black
+for the moment the map is swapped, and they climb out of the next entrance.
+`emerge` (1 standing, 0 underground) is passed to `Renderer.draw` and moves the
+hero sprite; the fade hides the swap. `banked` holds the report the drop is
+carrying so Abandon mid-drop lands THAT one rather than building a second and
+banking the loot twice. The hole itself is a `mouth()` decal on the ENTRANCE
+and EXIT tiles, per zone, so both renderers get it.
+
+**A meeting.** The Lampwright is `RunState.lampwright`, an `Entity` kept
+deliberately OUT of `monsters` so nothing in combat can ever see them.
 The hero breaks off and walks over; reaching them sets `meeting`, the UI stops
 ticking and puts `src/ui/met.ts` up, and the button grants the crystal and
 calls `RunSim.takeGift()`. The report never pays a meeting out, which is what
 makes it yours even if you die further down. `runToCompletion` takes an
 `onMeeting` callback because a headless run would otherwise stand there
 forever.
-
-**The handover is the pattern for that.** `HANDOVER` seconds where the sim does
-not tick at all: the hero drops into the hole at the exit, `#run-fade` goes
-black for the moment the map is swapped, and they climb out of the next
-entrance. `emerge` (1 standing, 0 underground) is passed to `Renderer.draw` and
-moves the hero sprite; the fade hides the swap. `banked` holds the report the
-drop is carrying so Abandon mid-drop lands THAT one rather than building a
-second and banking the loot twice. The hole itself is a `mouth()` decal on the
-ENTRANCE and EXIT tiles, per zone, so both renderers get it.
 
 ---
 
@@ -319,18 +373,47 @@ ENTRANCE and EXIT tiles, per zone, so both renderers get it.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
+**Writing a new phase.** The test is whether a session with no memory of this
+conversation could execute it. That takes four things, and the second is the
+one usually missing:
+
+1. **What is true today**, named in code — the constant, the function, the file.
+   "The shop sells too much" is not executable; "`RECIPES` in `src/data.ts` has
+   eleven entries and should have one" is.
+2. **Why it is wrong**, in one sentence a stranger would agree with. Without
+   this the next session optimises the wrong thing correctly.
+3. **Checkboxes that are decisions**, not tasks. "Border by base tier: white
+   t1, blue t2, yellow t3" can be done wrong and caught; "improve the tooltip"
+   cannot.
+4. **What must not break**, and which harness proves it. Every phase so far has
+   had one — the guided opening, the wedge, the ladder grid.
+
+Anything you are unsure about goes in §6 as a question, never into a phase as
+an assumption. A phase that guesses is a phase that has to be undone.
+
 ### Phase 1 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
 twice. The aura system exists now.
 
-**The debt, stated precisely.** Difficulty lives entirely in crystal modifiers,
-and twelve modifiers across four sockets have to span what the old
-`MONSTER_TIER_SCALE` spanned on its own. The danger mods were widened when tier
-was removed, but not that far, so **the top set is still clearable ten times out
-of ten**. The game is loose in the direction §2 asks for, which is why this
-waited rather than blocking anything.
+**The debt, stated precisely.** Difficulty lives entirely in crystal modifiers.
+There used to be a per-crystal monster scale (`MONSTER_TIER_SCALE`) doing most
+of the work; it is GONE — do not go looking for it — and twelve modifiers
+across four sockets now have to span what it spanned on its own. They were
+widened when it was removed, but not that far, so **the top set is still
+clearable ten times out of ten**. The game is loose in the direction §2 asks
+for, which is why this waited rather than blocking anything.
+
+The two harnesses that measure it are both in `src/demo.ts` and both print a
+grid rather than asserting a verdict, because a hardcoded verdict goes stale
+the moment the numbers move:
+
+- **ONE SOCKET** — crystal level against a rung of gear. Currently 5/5 in every
+  cell, which is the shallow end having nothing left to say. This is the rung
+  the guided opening puts in front of a new player.
+- **THE LADDER** — each power band cleared in gear the band below it drops.
+  Currently 12/12 at every band, which is the number this phase exists to move.
 
 - [ ] Widen the danger modifiers until the top of what four sockets can hold is
       genuinely a wall for gear farmed a band below it — measured, not felt.
@@ -419,15 +502,22 @@ moving — see §2, balance is deliberately loose.
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that
   answer again.
-- Blight clears the top of the ladder 12/12 where Strike manages 3/12. A large
-  skill imbalance that predates the difficulty work.
-- More tutorial steps for systems added since the opening was written.
-- Multiple item-disposal routes, so selling is not the only option.
+- **Blight and Strike are not the same game.** Last measured, Blight cleared
+  the top of the ladder 12/12 where Strike managed 3/12. That number is OLD —
+  it predates the capacity rework and everything since — so re-measure before
+  acting on it. The danger retune will move it again either way.
+- More tutorial steps for systems added since the opening was written: the
+  collection screen, the bench's crystals column, sell mode, the counter.
+- **A third way to get rid of a piece.** Selling is now a mode with a buy-back
+  behind it, which is enough that this is no longer urgent — but everything
+  still ends at the same counter, and a game where the only verb is "sell" has
+  one verb.
 - Four-frame walks for the bestiary, if the creatures ever grow legs worth
   animating.
-- A drawn recovery frame per creature. They have one `attack` grid each and
-  hold it for the whole swing — the same thing the hero's swing just stopped
-  doing — and fixing it is 21 more grids in `src/render/bestiary.ts`.
+- **A drawn recovery frame per creature.** They have one `attack` grid each and
+  hold it for the whole swing. The hero does not — `poseOf` indexes
+  `SWING_POSES` by how far through the swing the entity is — so the fix is that
+  same treatment plus 21 more grids in `src/render/bestiary.ts`.
 
 ---
 
@@ -441,21 +531,70 @@ moving — see §2, balance is deliberately loose.
 - Every phase should leave the full suite green: `comments`, `typecheck`,
   `demo`, `mods`, `build`, `smoke`, `shots`, `guide`. Build before `smoke`,
   `shots` or `guide` — they load the bundle, not the source.
+
+### How long the suite takes
+
+About **five minutes** end to end, and three of the eight are slow enough that
+a two-minute tool timeout will kill them mid-run:
+
+| | |
+|---|---|
+| `comments`, `typecheck`, `mods`, `build` | a second or two each |
+| `smoke` | ~10s |
+| `demo` | ~85s |
+| `shots` | ~90s |
+| `guide` | ~2min |
+
+None of them hangs. If one looks stuck it is one of the bottom three, and the
+answer is to wait or run it in the background, never to assume it broke.
+
+### Reading the demo's output
+
+`npm run demo` prints TWO kinds of `✗` and only one of them is a failure:
+
+- `✗ FAILED — <why>` is a check that did not hold. `grep '✗ FAILED'`.
+- `✗ Shard of Making: no open slot` is the crafting walkthrough printing a
+  currency's REFUSAL, on purpose. It is the only place a failure message is
+  ever read, so those lines are the point of that section.
+
+The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
+
+### The harnesses have their own rules
+
+- **`smoke.mjs` is ORDER-DEPENDENT.** Roughly a dozen assertions pick a dock
+  item by POSITION — `filled('#inv-gear')[0]` — so anything that reorders the
+  dock has to go at the END of the file, and anything that consumes an item has
+  to avoid the pieces later checks look for by name. The Sort test is last for
+  exactly this reason. Adding a test in the middle that sells, wears or sorts
+  will break checks hundreds of lines further down, and the failure will name a
+  piece rather than your change.
 - **The guided opening (`npm run guide`) walks the real UI with a real pointer.**
   `src/ui/tutorial.ts` is data — steps with `done` predicates — so when a change
-  breaks it, the fix is editing those steps, not the harness.
+  breaks it, the fix is editing those steps, not the harness. A step that is
+  already satisfied is SKIPPED and never comes back, so "do this thing that
+  happens at a random moment" belongs as a branch inside an existing step's
+  `text`/`target`, not as a step of its own. The meeting is the worked example.
+- **`npm run shots` can fail on content, not just on layout.** It waits for the
+  Lampwright panel and fails the run if a first descent never produces one.
+
+### Claims need evidence
+
 - Balance claims need a measurement, not an impression. `ladderCharacter` in
   `src/sim/loadout.ts` and the harnesses in `src/demo.ts` are the tools; a
-  throwaway probe script is fine for anything they do not cover.
-- Art claims need a screenshot. `tools/model-sheet.mts` draws every look and
-  every creature, `tools/model-peek.mts` draws a few of them large, and
-  `tools/zone-peek.mts` draws all four zones off a real generated map. None is
-  in the suite. The demo's sprite checks prove grids are square, not that
-  anything reads.
+  throwaway probe script is fine for anything they do not cover. Put probes in
+  the scratchpad or delete them — they are not part of the repo.
+- Art claims need a screenshot. None of these is in the suite, and the demo's
+  sprite checks prove grids are square, not that anything reads.
+  - `tools/model-sheet.mts out.png` — every look, and `out-beasts.png` beside
+    it with every creature at every rank. The only view that judges a halo.
+  - `tools/model-peek.mts out.png family[,family]` — a few looks, drawn large.
+  - `tools/zone-peek.mts out.png [px] [time] [span]` — all four zones off a
+    real generated map, centred on the entrance. **`span` must be EVEN**: it is
+    halved to find the corner, and an odd one lands the loop on half-tiles and
+    silently draws nothing where the landmark should be.
 - `npm run shots` covers the welcome, the Fissure, the collection, the
   HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH and an item
-  TOOLTIP at two sizes. The Lampwright shot waits for the meeting rather than
-  guessing a time, and FAILS the run if the first descent never has one. The bench shot catches a third column not fitting; the tooltip shot
-  rolls four modifiers onto a piece first, because a blank one shows none of
-  the grouping; the handover shot fires 180ms into a launch, which is the
-  hero half out of the entrance.
+  TOOLTIP at two sizes. The bench shot catches a third column not fitting; the
+  tooltip shot rolls four modifiers onto a piece first, because a blank one
+  shows none of the grouping; the handover shot fires 180ms into a launch,
+  which is the hero half out of the entrance.
