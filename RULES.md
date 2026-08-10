@@ -192,12 +192,16 @@ wide, trailing dots included.
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
 
-**A zone is CUT differently as well as coloured differently.** `CUT` in
-`src/sim/grid.ts` maps each theme to `built` (the Fissure's rectangles),
-`gullet` (rectangles with their corners off) or `grown` (an ellipse inscribed
-in the rectangle, ragged by a tile off `tileNoise`, with single pillars left
-standing). The `Room` RECTANGLE never changes — every spawn, the entrance and
-the exit are placed off it. Two traps, both paid for once already: an ellipse
+**A zone is CUT differently as well as coloured differently, and NOTHING is
+built.** `CUT` in `src/sim/grid.ts` maps each theme to `dug` (the Fissure: the
+rectangle with its corners off and its outer ring worried away tile by tile off
+`tileNoise`, so no run of edge is straight), `gullet` (corners off, nothing
+else) or `grown` (an ellipse inscribed in the rectangle, ragged, with single
+pillars left standing). A square corner exists nowhere in the game — do not
+reintroduce one. The `Room` RECTANGLE never changes — every spawn, the entrance
+and the exit are placed off it — but it is NOT all floor, so anything placing a
+body in a room has to check it fits (`RunSim.placeIn`, which retries off its own
+rng stream so placement never moves the draws that pick the next monster). Two traps, both paid for once already: an ellipse
 drawn round the OUTSIDE of the rectangle merges neighbouring rooms and the map
 loses its walls; and a room a fifth smaller with the same pack in it is a pack
 that arrives all at once, which turned the aura worlds into walls the demo
@@ -219,12 +223,17 @@ bright in every zone. At one tile across contrast is the only tool: `mouth()`
 is a bright rim, a mid ring and a `shade` pit, and the ladder or teeth or
 shards inside it are decoration on top of that, not the thing that reads.
 
-**`livingDecals` is the part that moves** — tendrils, spines, the pulse in a
-crystal — drawn every frame from the tile's own hash and the clock, never from
-stored state. It hangs off FLOOR tiles rather than the walls it grows from,
-because a wall's overhang is painted before the floor under it and vanishes.
-Pixi draws it into a `propLayer` over the map built once; canvas2d draws it in
-the same loop as everything else. Both clip to what is on screen.
+**`livingDecals` is the part that moves, and EVERY zone has some** — webs with
+something walking them and guttering candles in the Fissure, tendrils and spines
+in the Rot, creeping growth and light travelling a facet in the Cavern, both in
+the Seam. Drawn every frame from the tile's own hash and the clock, never from
+stored state, so both renderers agree and nothing has to be seeded. How much is
+`motionDensity`, per zone — a cave with a web on every tile is a web factory.
+It hangs off FLOOR tiles rather than the walls it grows from, because a wall's
+overhang is painted before the floor under it and vanishes, and never over a
+landmark: the two holes are how you read the room. Pixi draws it into a
+`propLayer` over the map built once; canvas2d draws it in the same loop as
+everything else. Both clip to what is on screen.
 
 **One light, from above and slightly in front** (every sprite faces +x). Mass
 takes the lit ink where nothing is above it and the shade where nothing is

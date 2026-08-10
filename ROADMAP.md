@@ -29,57 +29,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The Fissure is a cave, and every zone moves
-
-**What is true today.**
-
-- `CUT` in `src/sim/grid.ts` maps `fissure → 'built'`: rooms are rectangles with
-  square corners and corridors run straight. `paving()` in
-  `src/render/renderer.ts` then lays flagstone over better than half of it.
-- `livingDecals()` — the part of a zone that MOVES, drawn per frame off the
-  tile hash and the clock — returns `[]` for `surface === 'stone'`. The Rot has
-  swinging tendrils and spines that push out of the side walls and draw back.
-  The Cavern has a brightness pulse and nothing that moves.
-
-**Why it is wrong.** It is called the Fissure, it is a crack you climb down
-into, and it looks like a castle. And of three worlds only one is alive.
-
-**What it is.** ANSWERED: an **abandoned working**. A cave somebody tried to dig
-out a very long time ago and gave up on — the rock is natural and the shape of
-it is natural, but there are signs people were here: rotted props, a fallen
-plank, a rope going nowhere, a candle stub still burning. Not architecture, and
-nothing with a square corner. The webs and the spiders are what moved in after.
-
-- [ ] The Fissure stops being masonry. `CUT.fissure` leaves `'built'` — a cave
-      has no square corners — and the flagstone goes with it. What replaces it
-      is not more flagstone: it is bare rock with the odd worked thing in it,
-      off the same `patchNoise` field that decides where a passage was dug.
-- [ ] `MAP_THEMES.fissure.blurb` says what it is now. It currently reads "Grey
-      rock, flagstone and rubble. What the rock already held."
-- [ ] **No zone reads as man-made.** `'built'` should end up used by nothing, or
-      by one deliberate exception written down here.
-- [ ] The Fissure gets its own moving scenery, in the same shape the Rot's is
-      written: pure functions of `(tile hash, time)`, no stored state, so both
-      renderers agree and nothing needs seeding. **Cobwebs with something
-      crawling on them**, and **candles that gutter** — a light that moves is
-      what makes a dark room read as occupied rather than empty.
-- [ ] The Cavern gets movement of its own, not a brightness ramp: growth that
-      creeps, light that travels along a facet. Its own idea, not the Rot's
-      recoloured.
-- [ ] The Seam keeps taking whichever side a tile belongs to (`seamSide`), so
-      it inherits both for free. Check it: it is the one place two zones' art
-      is drawn a tile apart, and it is where a clash shows.
-- [ ] Density is a knob per zone, not a constant. A cave with a cobweb on every
-      tile is a cobweb factory.
-
-**What must not break.** `npm run shots` photographs all four zones and fails on
-console errors; `tools/zone-peek.mts` is the tool that actually judges this
-(`RULES.md` — **`span` must be EVEN**). The demo holds map generation to connectivity:
-every room reachable, entrance and exit connected. A rounder cut must not strand
-a room. Both renderers must agree, so anything per-tile stays a pure function in
-`render/renderer.ts` — see `RULES.md`.
-
-### Phase 2 — Walking out
+### Phase 1 — Walking out
 
 One moment of the game: what happens between the last monster and the next
 descent. It is currently three things happening on one tile at once.
@@ -137,7 +87,7 @@ a headless run reach a meeting it now has to walk to. The report reads
 `RunState.elapsed`, and `normal_iv` asks for a clear inside 90 seconds — a walk
 added to every descent moves that, and the demo measures it.
 
-### Phase 3 — Three save slots
+### Phase 2 — Three save slots
 
 **What is true today.** `src/game/save.ts` writes ONE localStorage key
 (`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
@@ -160,10 +110,11 @@ playing says so and has no Save button; the other rows offer **Copy here** and
       same `pagehide` flush. Switching slots is what changes where it writes.
 - [ ] The header button says **Save & Load** and opens a screen of three rows.
       Each row shows what is in it — character, level, how long ago — or that it
-      is empty, and offers Save here and Load.
-- [ ] An empty slot's action is to START one there. **`New game` leaves the
-      header**: a new game is a thing you do to a slot, which is also what stops
-      it wiping the game you are in.
+      is empty. The LIVE row says so and offers nothing; the others offer
+      **Copy here** and **Load**.
+- [ ] An empty slot's action is to START a new game there. **`New game` leaves
+      the header**: a new game is a thing you do to a slot, which is also what
+      stops it wiping the game you are in.
 - [ ] Copying over an occupied slot asks first (`src/ui/confirm.ts`), the same
       way `New game` does today. Loading asks too — it is the one action that
       puts a different game in front of you.
@@ -178,7 +129,7 @@ these functions, and its "every collection a save can hold items in claims its
 ids" list goes through `readSave`. The guided opening survives a reload twice
 (`RULES.md`) — that has to keep working with a live slot.
 
-### Phase 4 — Every number said out loud
+### Phase 3 — Every number said out loud
 
 The rule is in `RULES.md`. This is the sweep, and the check that keeps it swept.
 
