@@ -4,568 +4,354 @@
 not been built yet. `CLAUDE.md` describes the game as it *is*; this describes
 where it is going.
 
-If you are picking this up with no other context: read §1 for the target, §2 for
-the model that replaces the current tier system, §3 for decisions that are
-settled, then start at the lowest unchecked phase in §5. §6 lists what is still
-undecided — do not guess at those, ask.
+If you are picking this up with no other context: read §1 for where things
+stand, §2 for decisions that are settled, then start at the lowest unchecked
+phase in §4. §5 lists what is still undecided — do not guess at those, ask.
 
-Checked boxes are done and can be trusted. Everything else is a plan, not a
-promise: the numbers in here are intent, not tuning.
-
----
-
-## 1. The target
-
-The game becomes a loop you set up and then run, rather than one you feed.
-
-Today a crystal is a consumable stake: you craft it, socket it, and it is gone
-in about a minute whether you win or lose. That makes crystal crafting a chore
-gate — the investment is large and the payoff lasts one run.
-
-Instead: **crystals are permanent.** You own a small number, you socket them
-into the Fissure, and they stay there. They level up by being used. Crafting one
-is a build decision with a lasting home, exactly like crafting a piece of gear.
-
-The loop that falls out of it:
-
-> Set your sockets → send the character out → it clears repeatedly until your
-> bags are full or it dies → triage the haul, sell what you don't want, upgrade
-> gear, re-roll a crystal, socket a harder set → go again.
+Landed phases are deleted from this file rather than left checked, so everything
+below §4 is work. The numbers in here are intent, not tuning.
 
 ---
 
-## 2. The socket model
+## 1. Where things stand
 
-Four independent axes, one per thing a crystal has. This is the core of the
-redesign and everything else follows from it.
+The socket model is built and the game runs on it. `CLAUDE.md` is the accurate
+description; the short version, because the phases below assume it:
 
-| Axis | What it is | What it controls |
-|---|---|---|
-| **Count** | How many sockets are filled | Run **length** — map size and total monsters. Not difficulty. |
-| **Tier** | A crystal's own rank, T1–T4 | **Mod capacity** only: T1 = 0 mods, T2 = 1, T3 = 2, T4 = 3. T4 is max. |
-| **Mods** | What is rolled on the crystal | **Difficulty**, and part of what a run is worth. Unchanged from today. |
-| **Family** | Normal, Demonic, or Prismatic | **Which monsters** spawn, and which map you are in. |
+Four sockets hold permanent crystals. Their COUNT is run length, their MODIFIERS
+are the whole of difficulty, a crystal's TIER is only mod capacity (T1–T4 → 0–3)
+and its FAMILY — Normal, Demonic, Prismatic — is only which monsters spawn.
+Composition picks the zone. Everything a run pays reads one derived number
+(`POWER`, `runSet()`). Crystals are given, never bought: the Lampwright hands
+out the Normal ones, quests pay the other two, and a crystal levels only while
+socketed. A cleared descent launches the next one until you die, fill the haul,
+or stop it; every ending lands on the same report and the same haul screen. Gold
+is the one currency. Demonic and Prismatic carry auras and Normal does not, so
+the three worlds are a ladder as well as three opponents.
 
-Illustrative sizing (placeholders, to be tuned):
-
-| Sockets filled | Map | Monsters |
-|---|---|---|
-| 0 (bare Fissure) | 200 sq | 50 |
-| 1 | 300 sq | 75 |
-| 2 | 400 sq | 100 |
-| 3 | 500 sq | 125 |
-| 4 | 600 sq | 150 |
-
-**Monsters do not get stronger from count.** A four-socket run with no mods
-rolled is long and easy — and pays badly, because reward derives from what the
-set actually is (§3, *Rewards*). A long safe run is a valid strategy that earns
-less, which is self-limiting without needing a rule against it.
-
-### What this retires
-
-Tier currently drives seven things at once. Under the new model it drives one,
-and the rest move to mods or to socket count. These all go:
-
-- `MONSTER_TIER_SCALE` — monster life/damage by tier → **mods** (`monsterLife`,
-  `monsterDamage`, which already exist)
-- `MONSTER_TIER_RESIST`, `MONSTER_TIER_ARMOUR` → **mods** (the wards and
-  `monsterArmour`, which already exist)
-- `MAP_TIER_SCALE` → **socket count**
-- `CRYSTAL_TIERS` as a purchase ladder → crystals are given, not bought
-
-And four more that are also keyed on tier and are easy to miss, because they are
-not difficulty — they are what a run is WORTH. All four move to **run power**:
-
-- `TIER_DROPS` / `dropsForTier` — drop quality, fill, currency class, gear chance
-- `monsterXp(tier)` via `LEVELLING.tierScale` (`src/sim/character.ts`) — XP per kill
-- `LOOT.tierScale` (`src/sim/run.ts`) — gold per kill
-- `mapIlvl` off `CRYSTAL_TIERS[].ilvl` — the **item level dropped gear rolls at**,
-  which is how mod tiers ladder. Losing this silently would flatten gear
-  progression to its lowest rung with nothing reporting a problem.
-
-**Because of those four, run power is needed in Phase 1, not Phase 7.** The
-moment tier stops being a difficulty axis, drops, XP, gold and ilvl all lose the
-number they read. Phase 1 introduces a minimal version (danger and socket count);
-Phase 7 refines the curve, adds composition, and adds gating.
-
-> **Landed in Phase 1.** Power runs 0 (bare Fissure) to 6, and `DROP_BANDS`
-> replaced `TIER_DROPS` — same seven rows, keyed on power, with the drop ilvl
-> now an explicit column rather than something read off a crystal.
-
-This is a large simplification: two overlapping difficulty axes become one. It
-also invalidates the tier tuning in the `MITIGATION` and `THE LADDER` checks in
-`src/demo.ts` — see *What must not break* below.
-
-### Families
-
-A crystal is exactly one of Normal, Demonic, or Prismatic. Each socketed crystal
-converts **its share** of the run's monsters to its family — with four sockets
-that is 25% each, so three Demonic + one Normal is 75% demonic.
-
-Map theme follows the composition:
-
-- Demonic ≥ 50% → dark demonic theme
-- Prismatic ≥ 50% → crystal cavern theme
-- 50/50 Demonic/Prismatic with no Normal → **the Seam**, a unique zone
-
-*(The Seam is named to fit the existing vocabulary — the Fissure is "a thin
-place in the rock", and a Shard of Seaming joins things. Visually: crystal
-growth erupting through demonic architecture, two worlds fused at a join that
-should not exist. Distinct from both parents rather than a blend of their
-tilesets.)*
-
-The nine monsters in `MONSTERS` today are all Normal. Demonic and Prismatic
-families need their own monsters and art (`src/render/bestiary.ts`).
+**What is left is the art.** The systems stopped moving; the sprites did not
+keep up with them. Phases 1–6 are that work. Phase 7 is the one balance debt
+carried out of the systems work, and Phase 8 is the next feature.
 
 ### Keeping room for a fifth socket
 
-A fifth socket is wanted eventually as an endgame slot holding something
-entirely different — not a crystal, and not yet specified. **No structural work
-is needed for it now**, provided two rules are followed while building §5
-Phase 1, both of which cost nothing today:
+Still wanted eventually, still unspecified (§5). Two rules keep it cheap, and
+both are already followed — do not undo them:
 
-1. Model sockets as a **slot-def list** — `{ id, name, accepts }` — the way
-   `EQUIP_SLOTS` already does, not four named fields or a fixed array. A slot
-   that accepts something other than a crystal then costs one table entry.
-2. Derive the family split from **the number of filled crystal sockets**, never
-   from the constant 4. Otherwise a fifth socket silently rescales every
+1. Sockets are a **slot-def list** (`RUN_SLOTS`, mirroring `EQUIP_SLOTS`), never
+   four named fields. A slot accepting something other than a crystal is one
+   table entry.
+2. The family split is derived from **the number of filled crystal sockets**,
+   never from the constant 4. Otherwise a fifth socket silently rescales every
    composition in the game.
-
-### What must not break
-
-Two things in the repo will fail loudly, and one will fail quietly, when this
-work lands. Expect them rather than discovering them.
-
-**The guided opening (`npm run guide`) walks the real UI with a real pointer.**
-Phase 4 changes the run flow its steps are written against. `src/ui/tutorial.ts`
-is data — steps with `done` predicates — so the fix is editing those steps, not
-the harness. *(Phase 3 was expected to break it too and did not: the shards it
-names never changed id, only the wallet key their price is quoted in.)*
-
-**The demo's `THE LADDER` and `MITIGATION` checks are tier-shaped and cannot
-survive as written.** Do not delete them; restate the same two invariants
-against run power, because both caught real bugs:
-
-- *The free descent stays beatable by a character that owns nothing* — no gear,
-  no points, level one — **and still costs it something.** This is the check
-  that fails at both ends, and it is what stops the game becoming unstartable.
-- *No reachable setup is a wall.* The tier version asked whether tier n was
-  clearable in what tier n-1 drops. The socket version asks whether a set the
-  player can actually assemble at power band N is clearable in gear farmed at
-  band N-1. Same question, different axis.
-
-**The single-socket UI already exists** (`run-socket` in `src/ui/run.ts`). Phase
-1 is extending it to a persistent set, not building socketing from nothing.
-*(Done: it is now `#run-sockets`, a grid built from `RUN_SLOTS`.)*
 
 ---
 
-## 3. Standing decisions
+## 2. Standing decisions
 
 Settled. Do not relitigate without the user saying so.
 
-**The worlds are a ladder, not three equal opponents.** Settled in Phase 8: the
-pools weigh the same per monster, but Demonic and Prismatic carry auras and
-Normal does not, so they are harder — and they pay in currencies Normal does
-not. Normal keeps its own reason to exist through drops nothing else has.
+**The worlds are a ladder, not three equal opponents.** The pools weigh the same
+per monster, but Demonic and Prismatic carry auras and Normal does not, so they
+are harder — and they pay in currencies Normal does not. Normal keeps its own
+reason to exist through drops nothing else has, which is a debt Phase 8 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
-the crystals, not the gear, and not the haul already banked from earlier clears.
-Stopping the loop is the real teeth: you cannot blindly re-run a set that kills
-you, so a set you cleared four times and died on the fifth is a setup problem you
-have to go and fix rather than eat repeatedly.
+the crystals, not the gear, and not the haul banked from earlier clears.
+Stopping the loop is the real teeth: a set you cleared four times and died on
+the fifth is a setup problem you have to go and fix rather than eat repeatedly.
 
-A death drops you on **the haul screen** — the same screen a full haul stops you
-on. The loop has one terminus regardless of why it ended, so there is one place
-that means "the run is over, deal with your things".
+**Crystals level by being used**, only while socketed, per run cleared and
+multiplied by the set's danger. Levelling a blank costs a socket that could have
+carried danger.
 
-**Crystals level by being used.** A crystal must be **socketed** to gain
-progress, and gains it **per run cleared, multiplied by the set's danger**. This
-makes levelling a fresh T1 cost you something real — it takes a socket a good
-crystal could have held, and dilutes the danger multiplier feeding every other
-crystal in the set — while letting a far-progressed player level a new one
-quickly by carrying it in an otherwise vicious set. T1 → T4, one mod slot per
-tier.
+**It must never be strictly better to run an easier map.** Rewards read run
+power, and the best items are hard-gated by `DropGate` — below the threshold
+they are not in the pool at all, so no amount of rarity argues with it.
 
-**Rewards scale off everything**, and some things are hard-gated. The rule the
-user wants held: *it must never be strictly better to run an easier map.* So
-drop quality and quantity scale off crystal tier, socket count, total danger,
-**and** family composition, with a 50/50 Demonic/Prismatic split being the most
-rewarding of all. Beyond scaling, the best items are **gated**: they cannot drop
-at all below a threshold, so BIS gear is only reachable at the top of every
-axis at once.
-
-> Implementation note: fold those inputs into **one derived "run power" number**
-> and let drops read that, rather than four separate multipliers. Tier already
-> correlates with danger (more mods), so separate multipliers double-count and
-> get hard to reason about — which is the exact problem the socket model just
-> removed. One number, one place to tune it.
+**Power buys access; composition and modifiers buy payment.** Item level comes
+off power alone. Nothing else may move it.
 
 **Bags overflow rather than losing loot.** A run that drops five items into one
 free slot does not destroy four of them. You triage before continuing.
 
-**Fragments are removed entirely. Gold replaces them.** Shop, recipes and stash
-upgrades all price in gold. Selling items is the new source.
+**Crystals are given, never bought.**
 
-**Crystals are given, never bought.** An NPC hands out the first four (Normal)
-crystals at random during Fissure runs, with the chance falling as you collect
-more, until you have all four. The rest — Demonic and Prismatic — come from
-**explicit quests** instead ("clear a run at N total danger", and so on), so the
-first four are easy and everything after is something you have learnt enough to
-go and do on purpose.
-
-**Balance is deliberately loose for now.** Lean overpowered — too much currency,
-characters too strong. It makes testing faster. Reinvestment ratios and skill
-balance get dialled in once the systems stop moving. Do not spend time tuning
-what is about to be replaced.
+**Balance is deliberately loose.** Lean overpowered — too much currency,
+characters too strong. It makes testing faster. Do not spend time tuning what is
+about to be replaced.
 
 ---
 
-## 4. How the haul works
+## 3. What the art is made of
 
-Answering "what happens when one free slot meets five drops", because it is the
-part with the most ways to go wrong.
+Read this before starting any of Phases 1–6. A session that does not know these
+five things will make the same mistakes twice.
 
-- The **haul** is its own container in `GameState`, separate from the dock and
-  the stash, with its own capacity (larger than the dock).
-- A **cleared** run banks its loot into the haul. A run you die in banks nothing.
-- Items in the haul are **inert** — not equippable, not craftable, not sellable
-  from anywhere else — until you move them out. This mirrors the rule the stash
-  already follows, so there is one concept rather than two.
-- The loop **stops** when a cleared run leaves the haul at or over capacity, or
-  on death. Capacity is checked *between* runs, never mid-run, so a run's drops
-  are never split or discarded — the haul simply ends up over by at most one
-  run's worth.
-- Both endings land on **the same screen**. Full haul or dead, the loop has one
-  terminus.
-- You cannot launch again until the haul is back under capacity. That is the
-  "deal with your items" step, and it is the only thing gating the loop.
-- Triage per item: send to dock, send to stash, or sell. Plus bulk actions —
-  triaging thirty items one click at a time is what kills an idle loop.
+**There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
+`app.js` is committed because Cloudflare runs no build. Every sprite is a list
+of strings — one character per pixel — drawn at runtime onto an offscreen canvas
+by `drawPixels` in `src/render/sprites.ts`. Adding a binary asset is a change to
+how the game ships, not an art decision.
 
-This keeps the real inventory clean (nothing auto-fills it), makes the stop
-condition exact, and never destroys a drop.
+**Colours come from CSS at runtime.** `readPalette` pulls custom properties out
+of the document, and every art key maps a character to a `Palette` entry or a
+`mix()` of two. Never write a literal colour into art code: a palette change has
+to redraw everything, and that property is worth more than any single sprite.
+
+**Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
+`src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
+tick and has no sprites at all. None of Phases 1–5 is visible in the fallback,
+and that is correct — do not "fix" it. Phase 6 is the exception: map decals are
+shared pure functions, so both renderers get them.
+
+**`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
+grid has to divide it: 16 gives 3 device pixels per art pixel, 24 gives 2, 32
+gives 1.5 and the rect seams stop landing on pixel boundaries. **24 is the last
+integer step under the current cell.** Going to 32 means raising `CELL` to 96
+first, and is not wanted now.
+
+**The bestiary is already at 24.** All 21 creatures in `src/render/bestiary.ts`
+carry `grid: 24`, two walk frames and an `attack` frame. `BeastArt.grid` is
+per-creature and `wellFormed(frames, grid)` checks each against its own
+declaration, so the pipeline does not care that the doll is still at 16 — which
+is why the doll can move on its own.
 
 ---
 
-## 5. Work
+## 4. Work
 
-Phases are ordered so each leaves the game playable. Within a phase, roughly
-dependency order.
+Phases are ordered so each leaves the game playable and each is checkable on its
+own. Within a phase, roughly dependency order.
 
-### Phase 1 — The socket model
+### Phase 1 — The hero and his armour at 24
 
-The heart of it. Everything else builds on this.
+The player character is the only thing left at 16, and it is the sprite the
+player looks at most. Everything else on screen got finer and he did not.
 
-- [x] Sockets are a persistent part of `GameState` (`RUN_SLOTS`, a slot-def
-      list, mirroring `EQUIP_SLOTS`). Socketing is a MOVE, like wearing a
-      helmet: the crystal leaves the bag, and a fifth one swaps rather than
-      being refused, so the dock never fills with dead slots.
-- [x] `RunSim` takes the socketed **set** (`RunSet` in `src/sim/crystal.ts`).
-      `mapDensity`, `crystalRewards`, `monsterStats` and `generateMap` all take
-      a merged `RolledMod[]` instead of one `Item`.
-- [x] Socket count drives map size and monster count (`SOCKET_SCALE`, indexed
-      by filled sockets, index 0 being the bare Fissure); `MAP_TIER_SCALE` gone.
-- [x] Monster power comes from socketed mods only; `MONSTER_TIER_SCALE`,
-      `MONSTER_TIER_RESIST` and `MONSTER_TIER_ARMOUR` gone. The Fissure's old
-      `powerScale` is folded into `MONSTER_BASE`, so the bare Fissure IS the
-      floor rather than a discount off tier 1.
-- [x] Crystal tier means mod capacity (T1–T4 → 0–3 mods), through the item's own
-      `slots` table. Quality is derived from tier so the quality-gated crafting
-      currencies reach exactly the room the tier granted.
-- [x] `heal()` empties a socket whose crystal is gone, and one whose SLOT is
-      gone (`src/game/save.ts`).
-- [x] **Run power** (`POWER` in `src/data.ts`, `runSet()` in
-      `src/sim/crystal.ts`): `filled × perSocket + danger / perDanger`, 0 being
-      the bare Fissure. `DROP_BANDS` replaces `TIER_DROPS` and carries the drop
-      ilvl; XP and gold scale continuously off power. Not the final curve —
-      that is Phase 7.
-- [x] The demo's `THE LADDER` and `MITIGATION` checks are restated against run
-      power, both invariants intact, plus three new guards: the top of what four
-      sockets can hold must reach the top drop band, a kill must be worth more
-      gold AND more XP at every band, and only the top of the ladder may roll
-      top-tier modifiers — the last of which is the silent ilvl failure §2
-      warned about.
+**Two separate figures are at 16 and both have to move.**
 
-### Phase 2 — Families
+1. `HERO_FRAMES` in `src/render/sprites.ts` — the standalone hooded traveller
+   with the staff, two frames, drawn for the `hero` sprite kind.
+2. The paper doll, which is three files:
+   - `BODY` in `src/render/body.ts` — one grid per pose, four poses.
+   - `FAMILY_ART` in `src/render/gear-art.ts` — 12 families × helmet, body,
+     gloves and two boot frames = 60 grids.
+   - `WEAPON_ART` in the same file — 15 weapons × `rest` and `strike` = 30 grids.
 
-Separable from everything else and lands value immediately.
+94 authored grids in total. **The phase is atomic**: layers composite
+pixel-for-pixel, so a 16 helmet over a 24 body is not slightly off, it is a
+helmet in the figure's chest. Nothing renders correctly until all of them move.
 
-- [x] `family` field on `MonsterDef`; the nine existing monsters are Normal.
-      `MONSTER_FAMILIES` is the table, `MONSTERS_BY_FAMILY` the spawn pools.
-- [x] Crystal family field (`meta.family`, and a tag, so a modifier restricted
-      to one world is a line in the mod table). `RunSet.composition` is the
-      share map; `familyPlan` deals whole packs, exact rather than rolled, so a
-      half-demonic set is half demonic on every seed.
-- [x] The third family is **Prismatic**, not Crystal, and the `crystal` DAMAGE
-      TYPE was renamed with it — one word meaning both the item and a world was
-      the confusion worth spending an id rename on. The item is still a Crystal;
-      what it opens onto is Prismatic.
-- [x] Demonic monster set — six kinds, art and a bestiary entry each.
-- [x] Prismatic monster set — same six-kind shape.
-- [x] Family shows on the crystal's header rows, on each socket, and as the
-      run's composition under the set chips.
+**What is free, and must stay free.** Do not author tiers and do not author
+families. `atTier()` in `src/render/look.ts` derives all three tiers from one
+drawing by swapping `TRIM` → `TRIM_LIT` → nothing, and `roleChar` rewrites the
+five role inks (`p P d x X`) per family, so 12 families × 4 slots × 3 tiers =
+144 gear bases come out of 60 drawings. Anything that breaks that multiplies the
+work by twelve.
 
-> **Landed.** Six per family rather than nine: enough for a pool that reads as
-> its own world without doubling the bestiary. The families are held to the
-> same threat — weighted life × damage × rate within 2% — and the demo also
-> clears four blank crystals of each with one character, which comes out 5%
-> apart. The closing encounter now wears the dominant family's face while
-> keeping one fixed stat baseline, so the finale is the same fight in all three.
+- [ ] `DOLL_GRID` in `src/render/gear-art.ts` goes 16 → 24. It is the one
+      constant: `rows = gridRows(DOLL_GRID)` feeds every grid in the file, and
+      `look.ts`, `sprites.ts` and `demo.ts` all read it rather than a literal.
+- [ ] Redraw `BODY`, every `FAMILY_ART` grid, `WEAPON_ART` and `HERO_FRAMES`.
+- [ ] Restate the grip. `body.ts` documents it at (11, 9) on the 16 grid and
+      every weapon is drawn against that one point; at 24 it moves and every
+      weapon has to be re-registered to it, or all fifteen float.
+- [ ] Rescale `POSES` in `src/render/pose.ts`. Those shifts are absolute whole
+      pixels and they are fractions of the figure — `cast`'s `hand: [0, -3]` is
+      3/16 of the body and wants roughly `[0, -5]`. Multiply by 1.5, then look
+      at each one, because a shift that was one pixel of slop at 16 is two now.
+- [ ] Fix the demo's literal: the sprites section asserts `'every grid is
+      16x16'` as a message string while checking against `DOLL_GRID`.
 
-### Phase 3 — Gold and disposal
+**The technique, and the mistake that cost the bestiary a pass.** The first 24
+attempt drew the same-sized creature with finer pixels, so at matched display
+size everything read *smaller* than the 16 it replaced, and one creature lost
+the claw that made it a crab. **The extra 8 rows are height, not margin — fill
+the frame.** What worked: upscale the 16 art 1.5× nearest-neighbour as a
+scaffold (destination → source, `src = Math.floor(dest * 16 / 24)`), then draw
+over it. Never ship the scaffold; it has 1-and-2-wide steps on every edge.
 
-Prerequisite for the idle loop: you cannot auto-repeat into a full bag without a
-way to empty it.
+**How to know it worked.** `npm run demo` checks that every grid is square at
+its declared size, that a fully armed figure composes to `DOLL_GRID` in every
+pose, that all poses draw something different, that every family and tier is
+distinct, and that every weapon is distinct. Those catch typos, not art. For the
+art, `npm run build && npm run shots` and look at the screenshots.
 
-Phase 1 left two things here on purpose, because both were this phase's job:
-the demo's economy section bought and burned crystals as if they were
-consumable, and `RECIPES` sold them. Both are gone.
+### Phase 2 — A walk that walks
 
-- [x] Replace `fragment` with `gold` everywhere. Old saves lose their
-      fragments — acceptable under the documented id-rename policy, no
-      `SAVE_VERSION` bump.
-- [x] Remove crystal purchase recipes; crystals are not bought. The shop sells
-      crafting and nothing else.
-- [x] Sell an item for gold (`sellPrice` in `src/economy.ts`): the same base as
-      a purchase, plus what is rolled ON it, times `SHOP.sellFraction`. The
-      fraction is held under `1 / (1 + 6 × pricePerMod)`, so a full Brilliant
-      piece bought and sold back still loses — the demo checks every quality.
-- [x] Sell from the dock — one piece from its menu, never from the click, and a
-      bulk button in the shop taking every carried piece no currency has
-      touched. *(Selling from the haul landed with Phase 4, which is where the
-      haul was built.)*
-- [x] Update the guided opening: gold, and a last step that no longer calls a
-      crystal a stake you spend on entry.
+The current walk cycle reads as the figure doing the splits on the spot, and the
+reason is exact: **both frames have both feet planted.** `walk0` puts the feet
+2 apart, `walk1` puts them 6 apart and drops the whole figure a row. Nothing
+ever passes. A cycle needs a frame where the legs are TOGETHER and one foot is
+off the ground — that is the frame that turns two poses into a step.
 
-> **Landed.** Two things worth recording. The first clear now also hands you a
-> T1 crystal — without it, removing the purchase recipes leaves a fresh game
-> with no crystal at all until Phase 5's NPC, and four sockets nothing can
-> reach. It is the same "given, never bought" rule arriving early through a
-> gift that already existed, and Phase 5 should fold it into the NPC.
->
-> The second is a measurement for Phase 7: sale value is 74–83% of what a run
-> is worth across the bands, so gear is the larger tap and coin is the smaller
-> one. `LOOT.goldPerKill` went 0.086 → 0.14 to keep the bare Fissure paying for
-> the level-1 shelf in one run; the split itself is a curve decision, not a bug,
-> and the demo only guards against either tap going to nothing.
+The fix is the standard four-frame cycle: **contact** (feet apart, weight
+landing) → **pass** (legs together, rear foot lifted, body up one pixel) →
+**contact** (the other leg leading) → **pass** (the other foot lifted). Two of
+the four are new drawings; the contacts are the existing pair with the leading
+leg swapped.
 
-### Phase 4 — The haul and the idle loop
+- [ ] `PoseId` in `src/render/pose.ts` gains `walk2` and `walk3`, with shifts in
+      `POSES`. Everything keyed on `PoseId` follows for free — `POSE_IDS` drives
+      `makeLookFrames`, so a look becomes six textures instead of four.
+- [ ] `poseOf` in `src/render/pixi.ts` currently reads
+      `Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES ? 'walk1' : 'walk0'` — a
+      boolean. It has to index a walk-pose list instead.
+- [ ] **Split `WALK_FRAMES`.** It lives in `sprites.ts` and is shared with
+      creatures: `ATTACK_FRAME = WALK_FRAMES` and `CREATURE_FRAMES =
+      WALK_FRAMES + 1`. Creatures have two walk frames and are not getting four;
+      bumping the shared constant allocates creature frames nothing draws. The
+      doll's cycle length comes from its pose list, and the creature count stays
+      its own.
+- [ ] **Boots do not quadruple.** `layerRows` in `look.ts` picks a boot frame
+      with `const stride = pose === 'walk1' || pose === 'attack'`. Replace the
+      boolean with an explicit `Record<PoseId, 0 | 1>` mapping both contacts to
+      the apart drawing and both passes to the together drawing. That holds
+      boots at 24 grids instead of 48.
+- [ ] Arm swing comes from `POSES[...].hand`, not from new drawings. That is
+      what the shift system is for, and it is why a body tweak does not strand
+      sixty pieces of armour.
+- [ ] Check the bob. `pixi.ts` lifts the sprite by
+      `|sin(elapsed * WALK_CYCLE * π)| * 0.06`; with four frames it has to peak
+      on the passes and trough on the contacts, or the figure rises as it lands.
 
-Mechanism is specified in §4.
+Creatures walk on two frames and read fine, having no legs to speak of. Do not
+four-frame the bestiary here.
 
-- [x] The haul: `GameState.haul`, `HAUL_CAP` 48, saved and healed like the stash.
-- [x] Loot from a cleared run banks into the haul; a death banks nothing. It is
-      pushed WHOLE — `bankToHaul` refuses nothing — so a run's drops are never
-      split and nothing is ever lost.
-- [x] The haul screen (`src/ui/haul.ts`) is a grid you can act on: click takes a
-      piece, the menu adds stash and sell, and two bulk buttons take what fits
-      or sell everything unmodified. The results card's list of names is gone;
-      the live `run-loot` panel stays, because "carried, not yet banked" is a
-      different fact from "banked and waiting".
-- [x] Auto-repeat: a cleared descent launches the next. Toggled by **Keep
-      going** on the Fissure panel (`game.autoRepeat`), and suppressed outright
-      while the guided opening is running — it teaches one descent at a time.
-- [x] Stop on death, and say why. Stop when the haul is at capacity. Both open
-      the haul with a line saying which, over the report for the last descent —
-      and so do the two you ask for: **Leave after this run**, which finishes
-      and banks the descent you are in, and **Abandon**, which forfeits it.
-      Pause is gone; there was nothing to do with a paused fight.
-- [x] Launching is blocked while the haul is at capacity, and the Fissure panel
-      says so. Never a dead end: selling needs room nowhere, so the haul can
-      always be emptied — the demo builds the wedge and checks the way out.
-- [x] The guided opening gained a step: your drops are in the Haul, open it and
-      take them. It sits right after the first clear, because that is when the
-      question "where did my loot go" first exists.
+### Phase 3 — Attack and cast are frames, not shifts
 
-> **Landed.** The loop is on by default and the toggle is there for the one
-> case it does not cover: testing a set for a single descent. What the phase
-> did not build is a per-item "keep" rule — every drop goes to the haul and
-> triage is manual, because a filter that hides a drop is the kind of thing you
-> only get right once you know what a good drop looks like. Phase 7's gating is
-> where that decision lives.
+Melee looks like nothing happens because, on the body, nothing does. `attack` is
+`walk1`'s legs with `all: [1, 0]` and `swing: true`; the WEAPON has two drawings
+(`WEAPON_ART[kind].rest` and `.strike`) so the sword moves, but the figure under
+it is a walking pose nudged one pixel forward. `cast` is one frame with the hand
+shifted up.
 
-### Phase 5 — Progression
+- [ ] A swing is two body frames: wind-up with the shoulder rotated back and
+      weight on the rear foot, then follow-through driven through with weight
+      forward. The weapon already has the two drawings to hang off them.
+- [ ] A cast is two frames: gather, then release.
+- [ ] **Pick the frame from the swing, not from the clock.** An attack has a
+      duration in `src/sim/run.ts`; `poseOf` receives the `Entity`, so the frame
+      must come from how far through its own attack the entity is. Driving it
+      off `elapsed` makes a fast attack and a slow one look identical, which is
+      the bug this phase is meant to fix rather than move.
+- [ ] Optional half: monsters got exactly one attack frame in the bestiary pass
+      (`BeastArt.attack`, drawn at `ATTACK_FRAME`) and hold it for the whole
+      swing — the same problem in miniature. A second frame each is 21 more
+      grids and can be taken separately.
 
-- [x] The NPC: **the Lampwright** (`LAMPWRIGHT`), met mid-descent at a chance
-      read off how many Normal crystals you hold — certain at none, nothing at
-      four. `FISSURE.firstClear.crystal` is gone: the first gift is certain, so
-      a first clear still comes back with one, and it now arrives through the
-      NPC rather than beside it. The sim is told only the number and rolls the
-      meeting off the run's own seed; the report pays it out, so a meeting on a
-      descent you die in was only a meeting.
-- [x] Crystals gain levels per cleared run, scaled by the set's danger
-      (`CRYSTAL_XP`, `advanceSocketed`), only while socketed. A tier rewrites
-      the base, name, quality and capacity together and never touches what is
-      rolled on it; a crystal whose stored progress lags its tier — an old save
-      — climbs from where it stands rather than being demoted.
-- [x] Quests for the Demonic and Prismatic crystals (`CRYSTAL_QUESTS`): clear at
-      a danger, then clear at a higher danger with one of that family already
-      socketed. Each pays once, and the demo holds every threshold to what the
-      crystals you own at that point can actually reach.
-- [x] Crystal storage — the **Crystals** screen (`src/ui/crystals.ts`): every
-      crystal you own wherever it is sitting, with danger, capacity and how far
-      it has levelled, plus the quest ladder and what the Lampwright is still
-      likely to do.
+### Phase 4 — One light, every key
 
-> **Landed.** Storage came out as a view rather than a fifth container: the dock
-> already holds 32 crystals and the stash takes the overflow, so a new bag would
-> have been triage without a benefit. What the screen adds is the comparison,
-> which is the actual problem — four sockets against a collection that only ever
-> grows.
->
-> One measurement forced a tuning change. The opening hands you a crystal and
-> then says to socket it, and that descent went from 21 monsters to 50 in one
-> step: played out honestly — clear once, roll the wand, wear it, spend the
-> level — the character died 28 times in 40. `SOCKET_SCALE.packSize` now keeps
-> some of the bare Fissure's thinning at one socket (40 monsters, 28/40
-> cleared), and `THE LADDER` grew a check for that exact rung, since it is the
-> one the game puts in front of a new player and nothing was watching it.
->
-> The other repair was a check rather than the game: `BODIES` measured bodies in
-> rock over four seeds, where the figure swings between 0.04% and 1.40% on
-> seeds alone. Sixteen seeds and a bound set from the spread, so it catches the
-> failure it names — collision reading centres — instead of reporting a seed.
+The cheapest depth in the project, and the thing that will make 24 look like a
+decision rather than a bigger 16. `TRIM`/`TRIM_LIT` already set the precedent:
+two characters for one material, the lit one where the light lands, swapped by
+`atTier`.
 
-### Phase 6 — Themed maps
+The inks already exist everywhere — `BeastTone` is mass/lit/shade/eye,
+`FamilyTone` is mass/lit/dark/trim/trimLit. What does not exist is a **rule**
+about where they go, so families are lit from different directions and some are
+not lit at all.
 
-- [x] Map theme selected from family composition (`mapTheme` in
-      `src/sim/crystal.ts`, thresholds exactly as §2 sets them). It rides on the
-      map (`GameMap.theme`) rather than being re-derived, so the two renderers
-      cannot disagree about which world you are in, and the Fissure panel names
-      the zone before you commit to it.
-- [x] Demonic tileset — **The Rot**: rock gone green, spurs of the same rot
-      climbing the walls with an ember tip.
-- [x] Crystal cavern tileset — **The Cavern**: violet-grey stone under pale
-      crystal growth.
-- [x] The Seam — the 50/50 zone. Demonic rock carrying BOTH growths, chosen per
-      tile rather than blended, so it reads as crystal erupting through demonic
-      architecture rather than as the average of two tilesets.
+- [ ] Adopt one law and hold everything to it: **light from above and slightly
+      in front** (every sprite is drawn facing +x; the renderer flips rather
+      than rotates). Top surfaces and forward edges take the lit ink, undersides
+      and trailing edges take the shade ink, one pixel deep, no gradients.
+- [ ] Apply it across `FAMILY_ART`, `BODY`, `HERO_FRAMES` and `BEASTIARY`. It is
+      a handful of characters per sprite, not a redraw.
+- [ ] Keep `lookKeyColours` in `sprites.ts` as the single table it is — it is
+      what makes the gauntlet and the hand inside it lit by the same source.
+- [ ] Worth a demo check, if it can be stated without false positives: a lit
+      pixel sitting directly under a mass pixel in the same column is light from
+      underneath. Set any allowance from the measured spread rather than by
+      guess, the way the `BODIES` bound was set.
 
-> **Landed.** A tileset here is a palette and a decal rule, not an image: both
-> renderers already read the same pure functions out of `render/renderer.ts`, so
-> the whole phase is `THEME_INK` plus one growth function, and the canvas
-> fallback is themed for free. The ground tints are deliberately slight — the
-> monsters are already coloured by family and the map has to stay legible under
-> them — so what actually says where you are is what grows on the walls.
->
-> The demo checks the thresholds case by case and then asks the harder question:
-> whether the four are actually distinguishable, by comparing each theme's floor
-> ramp and wall growth against the others. A tileset that renders identically to
-> another one is a tileset nobody added. It reads the real palette out of
-> `docs/index.html` through `paletteFrom`, since checking against invented
-> colours would prove nothing about what anyone sees.
+### Phase 5 — Silhouette rules per family
 
-### Phase 7 — Rewards and gating
+Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
+around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
+size is mush and shape is not. Today each creature was designed on its own, so
+the three worlds do not read as three worlds at a glance.
 
-Phase 1 leaves a minimal run power number in place. This is where it becomes the
-real curve.
+- [ ] Give each family a silhouette law and hold every member to it:
+      - **Normal** — the baseline. Upright, roughly as tall as wide, nothing
+        overhanging.
+      - **Demonic** — heavy and LOW. Mass in the bottom third, wide base,
+        shoulders forward. Reads as something that hits hard from close.
+      - **Prismatic** — angular and TALL. Narrow base, mass high, straight edges
+        and points rather than curves. Reads as something brittle at range.
+- [ ] Make it a check rather than an intention. Both numbers come off the
+      character grids with no canvas: the occupied-pixel centroid height, and
+      the base width (occupied columns in the bottom quarter), each as a
+      fraction of the grid. Demonic sits low and wide, Prismatic high and
+      narrow, Normal between. Put it beside the existing bestiary checks in
+      `src/demo.ts` and set the bounds from the measured spread.
+- [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
+      conformance is the work.
 
-**What Phase 1 left for it, measured rather than guessed:** the difficulty
-ceiling now lives entirely in crystal modifiers, and it is LOWER than the tier
-tables it replaced. Twelve modifiers across four sockets have to span what
-`MONSTER_TIER_SCALE` used to span on its own, and the danger mods were widened
-but not to that. Reward scaling is intact — a kill at the top band is worth
-~240× the bare Fissure — so the game is loose in the direction §3 asks for.
-Retuning the danger mods so the top set is genuinely dangerous belongs here.
+### Phase 6 — Zone props
 
-- [x] The curve, tuned against a number the user set: **the top band pays about
-      four times the middle**, not twenty. Gold lost its second multiplier —
-      danger was already inside power, so `REWARD.goldPerDanger` was the same
-      climb counted twice — `LOOT.powerScale` came 2.1 → 1.45, sales price
-      quality on a flatter table than purchases (`SHOP.sellByQuality`), and the
-      top bands drop FEWER, better pieces. Composition is in as **yield**
-      rather than as power: an even split of the two other worlds pays 25% more
-      (`REWARD.mixYield`), and paying it through power would have moved the item
-      level, which is access rather than payment.
-- [x] Drop gating: `DropGate` on a currency — `minPower`, `zone`, or both — read
-      before the pick, so what a run cannot reach was never in the pool. The
-      Sigil of Finality is the Seam's alone, which is the top of both axes at
-      once; the Shard of Ruin is the Rot's and the Sigil of Refinement the
-      Cavern's.
-- [x] Rewards unique to each family (`FAMILY_YIELD`), read off the SHARE of the
-      run each holds: Normal pays gold, Demonic pays crafting currency,
-      Prismatic pays rarity. Three different currencies deliberately — they
-      cannot be compared, so no world is the correct one.
-- [x] Targeted farming: three crystal modifiers (`DROP_GROUPS`, "of the
-      Armoury / Foundry / Reliquary") that weight which KIND of gear drops.
-      They carry no danger and cost a mod slot a danger modifier is not using.
-      One of them takes weapons from 12% of drops to 24%, and never touches
-      item level, quality or count — a preference, never a shortcut.
+The best world identity per byte in the project, and the only art work that
+reaches both renderers.
 
-> **Landed.** Crystal tier is deliberately NOT a separate input to power. §3
-> lists it, but a tier only buys mod capacity and mods are already danger, so
-> reading tier again would count the same climb twice — the exact mistake the
-> section's own implementation note warns about.
->
-> Two things fell out of the retune and are worth recording. Adding modifiers
-> that carry no danger diluted the crystal pool enough that `ladderSet` stopped
-> reaching the top band on four random rolls, which is a harness modelling luck
-> where a player would re-roll; it takes twelve tries now. And with the harness
-> exploring further it built a set that turned aside 80% of every hit — two
-> caps of 75% multiply to a map you cannot hurt. `DEFENCE.monsterHitFloor` now
-> holds armour back to whatever the wards left room for, so hardening one type
-> costs the blunting of every other and a quarter of a hit always lands.
->
-> What this phase did NOT do is the danger retune its own opening asks for — the
-> top set is still clearable ten times out of ten. That is deliberate: Phase 8
-> is the mechanism that makes a mixed room lethal, and setting the danger
-> modifiers before it exists is setting them twice.
+`tileDecals(floor, at, x, y)` in `src/render/renderer.ts` is pure and per-tile,
+and Pixi and the canvas fallback both read it, so anything added here is themed
+for free and shows up in the fallback too.
 
-### Phase 8 — Cross-family monster interactions
+- [ ] Props are placed by `tileNoise(x, y, salt)` — a hash of the coordinate, so
+      both renderers put the same prop on the same tile with no state and no
+      seed threaded through. Pick unused salts; wall growth uses 81–85.
+- [ ] Draw in palette colours only. `floorPalette` already carries each theme's
+      inks (`growth`, `growthAlt`, `glint`, `growthDensity`) and `THEME_INK` is
+      where a new one goes.
+- [ ] Sizes are fractions of a tile (`U`, `SUB`, `snap`), never pixels — tile
+      size changes with zoom.
+- [ ] Roughly in value order: bones and skulls on the Fissure floor; braziers
+      with an ember glint in the Rot; crystal clusters growing out of the FLOOR
+      as well as the walls in the Cavern; and for the Seam, the prop that can
+      only exist where two worlds meet — crystal growing through a bone or
+      through a brazier.
+- [ ] Keep the density low. `tileDecals` runs for every visible tile every frame
+      in the fallback, and a floor covered in props is a floor you cannot see
+      monsters on. The wall-growth densities (0.34–0.46, and only on wall faces)
+      are a ceiling, not a target.
+- [ ] Extend the demo's theme-distinguishability check to props, so a prop table
+      that renders identically in two zones fails the way a duplicate tileset
+      already does.
 
-**Why 50/50 is the hardest run, and therefore the best-paying one.** The
-families are designed to be dangerous *together* in a way neither is alone.
+### Phase 7 — The danger retune
 
-The shape: one family carries auras that grant nearby monsters **flat** damage
-but has no percentage scaling of its own; the other carries **percentage**
-buffs but no flat. Separately each is mild. Mixed, the percentages land on the
-flat and the room becomes lethal. Defensive variants of the same idea — one
-family granting flat armour, the other multiplying it.
+Carried out of the rewards work, where it was deferred on purpose: setting the
+danger modifiers before the aura system existed would have meant setting them
+twice. The aura system exists now.
 
-- [x] Monster aura/buff system in the sim (`AURAS`, `AURA`, `Entity.boost`).
-      One carrier per PACK, never buffing itself, re-read four times a second
-      so a carrier that died stops mattering. Flats and percentages are summed
-      apart and multiplied once at the point of use, so order never changes the
-      answer.
-- [x] Offensive aura pair — the Chanter adds a fixed weight to every swing
-      nearby, the Chime multiplies nearby damage.
-- [x] Defensive aura pair — the Bloat adds armour points, the Lattice
-      multiplies armour. Sharper than the offensive pair: nothing multiplies an
-      armour nobody granted, so the Cavern's half is worth nothing until the
-      Rot's has landed.
-- [x] Auras are visible: every carrier draws its reach on the floor in its
-      world's ink, under the bodies rather than as a badge on them, from one
-      pure function both renderers read.
-- [x] The demo proves it on the arithmetic, where it is unambiguous, and then
-      looks for it in a real room: Normal is the shallow end, the two aura
-      worlds are ~60–70% more damage a second, and the Seam is worse than
-      either at ~75%.
+**The debt, stated precisely.** Difficulty lives entirely in crystal modifiers,
+and twelve modifiers across four sockets have to span what the old
+`MONSTER_TIER_SCALE` spanned on its own. The danger mods were widened when tier
+was removed, but not that far, so **the top set is still clearable ten times out
+of ten**. The game is loose in the direction §2 asks for, which is why this
+waited rather than blocking anything.
 
-> **Landed, and it cost a standing decision.** An aura lands on a whole pack, so
-> it is never small: with auras on two of the three worlds, those worlds are
-> simply harder than Normal, which "a family is an opponent, never a difficulty
-> setting" forbade. Asked, and the user chose to let the worlds be harder — it
-> reads better thematically, and Normal is what you are given first, so the
-> ladder matches the order you meet them in. Phase 9 owes the Fissure something
-> back: uniques that drop only in Normal, so the shallow end stays worth
-> visiting.
->
-> The other thing measured rather than assumed: a mixed room holds HALF as many
-> of each carrier, so the cross term has to beat that halving before the Seam is
-> worse than either parent. With symmetric auras the margin is exactly a quarter
-> of the flat times the percentage, which is why the numbers are large (a chant
-> is worth 1.75 baseline swings) rather than the gentle values tried first —
-> those made the Seam the middle of the three rather than the worst.
+- [ ] Widen the danger modifiers until the top of what four sockets can hold is
+      genuinely a wall for gear farmed a band below it — measured, not felt.
+- [ ] Hold both ends of `THE LADDER` while doing it. The free descent must stay
+      beatable by a character that owns nothing and still cost it something, and
+      the rung the guided opening puts in front of a new player — one socket,
+      first crystal — must stay clearable most of the time. That rung has its
+      own check because it is the one the game shows first and nothing was
+      watching it.
+- [ ] Respect `DEFENCE.monsterHitFloor`. Two caps of 75% multiply into a map
+      that cannot hurt you; the floor holds armour back to whatever the wards
+      left room for, and a quarter of every hit lands regardless.
 
-### Phase 9 — Unique gear
+### Phase 8 — Unique gear
 
-Items with fixed identity and a behaviour attached, closer to a tree passive than
-to a rolled mod, but broad enough to work across builds.
+Items with fixed identity and a behaviour attached, closer to a tree passive
+than to a rolled mod, but broad enough to work across builds.
 
 Examples given: gloves that make projectiles arc to one extra target but deal
-slightly less damage; a helmet granting a lot of flat damage that also adds it to
-attacks *you* take.
+slightly less damage; a helmet granting a lot of flat damage that also adds it
+to attacks *you* take.
 
 - [ ] Unique item concept — fixed mods, optionally with ranges on flat stats.
 - [ ] Uniques grant **behaviours through the existing `GRANTS` table**
@@ -574,53 +360,57 @@ attacks *you* take.
       read by some behaviour then apply to gear for free.
 - [ ] Grant collection reads equipment as well as the tree — `treeGrants` in
       `src/sim/stats.ts` is the seam.
-- [ ] Drop-gated by zone through `DropGate`, which Phase 7 built: some uniques
-      only from a full Demonic run, some from full Prismatic, some only from
-      the Seam — **and some only from Normal**, which is what the Fissure gets
-      in exchange for being the easy world (see Phase 8).
+- [ ] Drop-gated by zone through `DropGate`: some uniques only from a full
+      Demonic run, some from full Prismatic, some only from the Seam — **and
+      some only from Normal**, which is what the Fissure gets in exchange for
+      being the easy world (§2).
 
 ---
 
-## 6. Open questions
+## 5. Open questions
 
 Do not guess at these.
 
 1. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
-   about it. §2 says how to keep it cheap to add; nothing else should assume it.
-2. ~~**What exactly does the run power formula look like?**~~ Settled in Phase 7.
-   The user chose the slope by what it means at the table rather than by a
-   formula: **an hour on your hardest set is worth about four times an hour on
-   a set you have outgrown** — pushing is always correct, and a set you can run
-   fast and safely stays a legitimate farm. Composition sits outside power as
-   yield, at **25%** for an even split of the two other worlds. What remains
-   open is only whether those numbers feel right in play.
+   about it. §1 says how to keep it cheap to add; nothing else should assume it.
 
 ---
 
-## 7. Backlog
+## 6. Backlog
 
 Real, deferred by decision. Do not spend time here until the systems above stop
-moving — see §3, balance is deliberately loose.
+moving — see §2, balance is deliberately loose.
 
-- ~~Reinvestment runs above 1.0 at T3–T5.~~ Gone: crystals are permanent, so
-  there is no per-run cost to divide by. The demo's `SUSTAIN CHECK` became
-  `WHAT A BAND IS WORTH`, which asks whether pushing power pays instead.
-- Blight clears T6 12/12 where Strike manages 3/12. A large skill imbalance that
-  predates the difficulty work.
+- **No per-item "keep" rule for the haul.** Every drop goes to the haul and
+  triage is manual. A filter that hides a drop is the kind of thing you only get
+  right once you know what a good drop looks like, and uniques will move that
+  answer again.
+- Blight clears the top of the ladder 12/12 where Strike manages 3/12. A large
+  skill imbalance that predates the difficulty work.
 - More tutorial steps for systems added since the opening was written.
 - Multiple item-disposal routes, so selling is not the only option.
+- Four-frame walks for the bestiary, if the creatures ever grow legs worth
+  animating.
 
 ---
 
-## 8. Conventions for work done from this document
+## 7. Conventions for work done from this document
 
 - Everything in `CLAUDE.md` still applies — the comment budget, the save rules,
   the tree rules. Read it first.
-- Check boxes as they land, and move anything that turns out to be wrong into §6
+- Check boxes as they land. Delete a phase once it is finished rather than
+  leaving it checked, and move anything that turns out to be wrong into §5
   rather than silently doing something else.
 - Every phase should leave the full suite green: `comments`, `typecheck`,
-  `demo`, `mods`, `build`, `smoke`, `shots`, `guide`.
+  `demo`, `mods`, `build`, `smoke`, `shots`, `guide`. Build before `smoke`,
+  `shots` or `guide` — they load the bundle, not the source.
+- **The guided opening (`npm run guide`) walks the real UI with a real pointer.**
+  `src/ui/tutorial.ts` is data — steps with `done` predicates — so when a change
+  breaks it, the fix is editing those steps, not the harness.
 - Balance claims need a measurement, not an impression. `ladderCharacter` in
   `src/sim/loadout.ts` and the harnesses in `src/demo.ts` are the tools; a
   throwaway probe script is fine for anything they do not cover.
+- Art claims need a screenshot. `npm run shots` after a build, and look at the
+  output — the demo's sprite checks prove grids are square, not that anything
+  reads.
