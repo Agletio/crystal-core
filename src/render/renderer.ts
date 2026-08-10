@@ -3,7 +3,7 @@
  * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
  * scale and camera are its own business.
  */
-import { TUNNEL, WALL } from '../sim/grid';
+import { ENTRANCE, EXIT, TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Vec2 } from '../sim/grid';
 import type { AuraDef, MapTheme } from '../types';
@@ -54,7 +54,12 @@ export interface Palette {
 export interface Renderer {
   /** CSS pixel dimensions. Implementations handle devicePixelRatio. */
   resize(width: number, height: number): void;
-  draw(state: RunState): void;
+  /**
+   * `emerge` is how far out of the ground the hero is: 1 standing, 0 gone.
+   * Only the handover between descents moves it, and only the UI knows about
+   * that — nothing in the sim has an opinion about where the hero's feet are.
+   */
+  draw(state: RunState, emerge?: number): void;
   /** 1 fits the whole map. Above that the view follows the hero. */
   setZoom(zoom: number): void;
   /** Release the surface and any GPU resources. */
@@ -699,6 +704,71 @@ function rubble(floor: FloorPalette, x: number, y: number, paved: boolean, broke
 }
 
 /**
+ * The way down, and the way you came out. Both ends are the same hole: you
+ * climbed out of one and you drop into the next, and a descent that ended at
+ * something other than what it began at would be two different games.
+ *
+ * A zone owns its own. The Fissure is a shaft with a ladder in it, the Rot a
+ * mouth that has opened, the Cavern a throat of facets. Drawn from the middle
+ * out, so the black is the deepest thing on the tile whatever rings it.
+ */
+export function mouth(floor: FloorPalette, surface: Surface, x: number, y: number): Decal[] {
+  // The darkest ink the zone has, and its brightest. A hole reads as a hole
+  // from across the room by CONTRAST, not by shape — at one tile across there
+  // is no room for shape. `shade` is the dark in every zone; `rock[0]` is not,
+  // and a pale one made the Cavern's hole vanish into its own floor.
+  const out: Decal[] = [
+    { x: 0.08, y: 0.08, w: 0.84, h: 0.84, colour: floor.glint, alpha: 0.9 },
+    { x: 0.16, y: 0.16, w: 0.68, h: 0.68, colour: floor.rockShade, alpha: 1 },
+    { x: 0.22, y: 0.22, w: 0.56, h: 0.56, colour: floor.shade, alpha: 1 },
+  ];
+
+  if (surface === 'flesh') {
+    // Teeth around the rim, leaning in. Six, because five reads as a star.
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + tileNoise(x, y, 60) * 2;
+      out.push({
+        x: snap(0.5 + Math.cos(a) * 0.3 - U),
+        y: snap(0.5 + Math.sin(a) * 0.3 - U),
+        w: U * 3,
+        h: U * 3,
+        colour: floor.glint,
+        alpha: 1,
+      });
+    }
+    return out;
+  }
+
+  if (surface === 'crystal') {
+    // Shards standing round a well with no bottom, tall enough to break the
+    // square and stop the hole reading as one more facet of floor.
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + tileNoise(x, y, 61) * 2;
+      const r = 0.3 + tileNoise(x, y, 62 + i) * 0.06;
+      out.push({
+        x: snap(0.5 + Math.cos(a) * r - U),
+        y: snap(0.5 + Math.sin(a) * r - U * 3),
+        w: U * 2,
+        h: U * 6,
+        colour: i % 2 === 0 ? floor.glint : floor.rockLit,
+        alpha: 1,
+      });
+    }
+    return out;
+  }
+
+  // A shaft with a ladder down it. Two rails and three rungs is the whole of
+  // what says "you can climb this" at one tile across.
+  for (const rail of [0.36, 0.6]) {
+    out.push({ x: rail, y: 0.26, w: U, h: 0.48, colour: floor.glint, alpha: 1 });
+  }
+  for (let i = 0; i < 3; i++) {
+    out.push({ x: 0.36, y: snap(0.32 + i * 0.16), w: 0.26, h: U, colour: floor.glint, alpha: 0.9 });
+  }
+  return out;
+}
+
+/**
  * Everything drawn ON a tile past its base colour. What gets drawn is the
  * zone's `surface`: the Fissure is masonry and rubble, the Rot is meat, the
  * Cavern is growth, and the Seam is one or the other tile by tile. Light comes
@@ -732,6 +802,13 @@ export function tileDecals(
       out.push({ x: 0, y: 1 - U * 1.5, w: 1, h: U * 1.5, colour: floor.rockShade, alpha: 0.75 });
     }
     if (floor.surface === 'seam') out.push(...wallGrowth(floor, x, y));
+    return out;
+  }
+
+  // The two landmarks, over whatever the floor already is: you have to be able
+  // to find the way on before you have crossed the room.
+  if (tile === ENTRANCE || tile === EXIT) {
+    out.push(...mouth(floor, surface, x, y));
     return out;
   }
 

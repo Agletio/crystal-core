@@ -66,12 +66,26 @@ let streak = 0;
 let halt: 'died' | 'full' | 'once' | 'left' | 'chose' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
 let leaving = false;
+
 /**
- * Close enough to see what's happening.
- *
- * Fit (1×) shows the whole Fissure, which is useful for orienting and useless
- * for watching a fight — at that scale a monster is four pixels. Start where
- * the action is legible; Fit is one click away.
+ * The handover between descents: down the hole at the exit, dark for the
+ * moment the map is swapped, out of the entrance of the next one. Short,
+ * because it plays twenty times in a session. Nothing in `src/sim` knows it
+ * exists — this is the UI declining to tick for a moment while it draws.
+ */
+const HANDOVER = 1.2;
+/** How much of it is going down. The rest is climbing out of the next one. */
+const DESCEND = 0.45;
+/** Seconds into the handover, or 0 when there is not one. */
+let handover = 0;
+/** The descent the handover is leaving, already built and already banked. */
+let banked: RunReport | null = null;
+/** Set to `banked` when the loop is stopping and the drop has still to play. */
+let pending: RunReport | null = null;
+/**
+ * Close enough to see what's happening. Fit (1×) shows the whole Fissure,
+ * which is useless for watching a fight — at that scale a monster is four
+ * pixels. Start where the action is legible; Fit is one click away.
  */
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
@@ -92,11 +106,10 @@ function setPhase(next: Phase): void {
 }
 
 /**
- * The stage sizes itself to the frame, so the scroll container has to stop
- * scrolling while a map is up — otherwise the two fight over the height.
- *
- * It belongs to the run view SHOWING A MAP, not to the app. Left on while you
- * tabbed to the bench, it froze that page with its items out of reach.
+ * The stage sizes itself to the frame, so the scroll container stops scrolling
+ * while a map is up or the two fight over the height. It belongs to the run
+ * view SHOWING A MAP: left on while you tabbed to the bench, it froze that
+ * page with its items out of reach.
  */
 export function syncViewportLock(): void {
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', phase !== 'menu');
@@ -231,11 +244,9 @@ function renderMenu(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Whether a cleared descent starts the next one by itself.
- *
- * Off during the guided opening whatever the toggle says: the opening teaches
- * one descent, and its later steps are written against a report that is still
- * on screen. The loop begins once you have been shown the loop's parts.
+ * Whether a cleared descent starts the next one by itself. Off during the
+ * guided opening whatever the toggle says: its later steps are written
+ * against a report that is still on screen.
  */
 const looping = (): boolean => game.autoRepeat && !isGuided();
 
@@ -258,6 +269,10 @@ function launch(): void {
   playing = true;
   lootSig = '';
 
+  // Climbing out. From the menu that is the whole handover; out of a cleared
+  // descent the drop has already played.
+  if (handover === 0) handover = HANDOVER * DESCEND;
+
   setPhase('running');
   renderStatsPanel();
   fitCanvas();
@@ -269,11 +284,9 @@ function launch(): void {
 }
 
 /**
- * A run ended. Bank it, then decide whether there is another one.
- *
- * Capacity is read HERE, between runs, and never during one — which is why the
- * haul is allowed to end up over its limit rather than a descent's drops being
- * split or thrown away.
+ * A run ended. Bank it, then decide whether there is another one. Capacity is
+ * read HERE and never during a run, which is why the haul may end up over its
+ * limit rather than a descent's drops being split.
  */
 function finish(left = false): void {
   if (!sim) return;
@@ -295,16 +308,34 @@ function finish(left = false): void {
   // is checked here rather than at the launch: the descent you armed it during
   // still finishes and still banks.
   if (report.cleared && !report.haulFull && !leaving && looping()) {
-    launch();
+    // Drop into the hole first. The next descent is built at the bottom of it.
+    handover = 0.0001;
+    banked = report;
+    pending = null;
     return;
   }
 
+  land(report);
+}
+
+
+function land(report: RunReport): void {
+  if (!sim) return;
+  handover = 0;
+  pending = null;
+  banked = null;
   renderResults(report, sim.state);
   setPhase('results');
   renderInventory();
-  // The one terminus. Nothing to sort is the one case where a grid of empty
-  // slots would be the wrong thing to put in front of you.
+  // Nothing to sort is the one case a grid of empty slots is wrong for.
   if (game.haul.length > 0) openHaul(haltLine(report));
+}
+
+/** 1 standing, 0 underground. Drives the sprite and the dark over it. */
+function emergeNow(): number {
+  if (handover === 0) return 1;
+  const t = Math.min(1, handover / HANDOVER);
+  return t < DESCEND ? 1 - t / DESCEND : Math.min(1, (t - DESCEND) / (1 - DESCEND));
 }
 
 /** What the haul screen says about why you are looking at it. */
@@ -352,11 +383,9 @@ function renderStatsPanel(): void {
 }
 
 /**
- * What the run is currently carrying — redrawn only when it changes.
- *
- * This runs inside the animation frame, so rebuilding the list sixty times a
- * second for loot that moves every few kills would be pure waste. A signature
- * of the rows is cheaper than the DOM work it avoids.
+ * What the run is carrying — redrawn only when it changes. This runs inside
+ * the animation frame, and a signature of the rows is cheaper than rebuilding
+ * the list sixty times a second for loot that moves every few kills.
  */
 let lootSig = '';
 
@@ -557,7 +586,20 @@ function frame(now: number): void {
   const dt = lastFrame === 0 ? 0 : Math.min(0.25, (now - lastFrame) / 1000);
   lastFrame = now;
 
-  if (playing && sim && sim.state.status === 'running') {
+  // The sim does not tick at all while this runs: you are climbing.
+  if (handover > 0) {
+    handover += dt;
+    if (playing === false && handover >= HANDOVER * DESCEND) {
+      // The bottom of the hole.
+      if (pending) land(pending);
+      else launch();
+    }
+    if (handover >= HANDOVER) handover = 0;
+  }
+  const emerge = emergeNow();
+  $('run-fade').style.opacity = String(1 - emerge);
+
+  if (playing && handover === 0 && sim && sim.state.status === 'running') {
     // One pace, always. Speed multipliers were papering over combat that
     // will change as the character scales; tuning the real pace is the
     // honest fix.
@@ -576,7 +618,7 @@ function frame(now: number): void {
     }
   }
 
-  if (sim && renderer && phase !== 'menu') renderer.draw(sim.state);
+  if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge);
   if (sim) renderReadout();
   requestAnimationFrame(frame);
 }
@@ -686,6 +728,14 @@ export function initRun(state: GameState): void {
   // banked as it happened, so it ends on the same card and the same haul.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
     if (!sim || phase !== 'running') return;
+    // Mid-drop the descent is already over and banked, so this means "do not
+    // go back down": the report lands at the bottom instead of a new map.
+    if (handover > 0 && !playing && banked) {
+      halt = 'chose';
+      // Never a second report: building one banks the loot again.
+      pending = banked;
+      return;
+    }
     finish(true);
   };
 

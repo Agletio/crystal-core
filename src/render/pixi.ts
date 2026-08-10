@@ -293,7 +293,7 @@ export async function createPixiRenderer(
     return s;
   }
 
-  function drawEntity(e: Entity, elapsed: number): void {
+  function drawEntity(e: Entity, elapsed: number, sunk = 0): void {
     const fade = e.dead ? Math.min(1, e.deathAge / DEATH_FADE) : 0;
     if (e.dead && fade >= 1) {
       const stale = sprites.get(e.id);
@@ -325,7 +325,7 @@ export async function createPixiRenderer(
     // One texture cell should cover roughly one tile of world.
     const scale = (1 / CELL) * e.scale * (1 - fade * 0.5);
     s.scale.set(scale);
-    s.alpha = 1 - fade;
+    s.alpha = (1 - fade) * (1 - sunk);
     s.rotation = fade * 1.2;
 
     // Lunge toward whatever it's hitting; recoil when hit.
@@ -334,7 +334,9 @@ export async function createPixiRenderer(
     if (e.action === 'hurt') lunge = -0.12;
 
     s.x = cx(e.x) + Math.cos(e.facing) * lunge;
-    s.y = cy(e.y) + Math.sin(e.facing) * lunge;
+    // Down into the hole, not simply away: a figure that only faded would read
+    // as a bug rather than as a climb.
+    s.y = cy(e.y) + Math.sin(e.facing) * lunge + sunk * 0.8;
 
     // A bob under the frames. The doll rises on its two PASS frames, so its
     // bob runs at half the frame rate or the two fight each other; a creature
@@ -569,7 +571,7 @@ export async function createPixiRenderer(
     }
   }
 
-  function draw(state: RunState): void {
+  function draw(state: RunState, emerge = 1): void {
     if (state.map !== builtMap) {
       // New run: drop every sprite, the ids belong to a dead sim.
       for (const s of sprites.values()) s.destroy();
@@ -584,7 +586,7 @@ export async function createPixiRenderer(
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawEntity(m, state.elapsed);
     }
-    if (!state.hero.dead) drawEntity(state.hero, state.elapsed);
+    if (!state.hero.dead) drawEntity(state.hero, state.elapsed, 1 - emerge);
 
     drawOverlays(state);
     drawFloaters(state);

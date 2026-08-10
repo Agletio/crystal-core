@@ -197,8 +197,14 @@ for (const vp of VIEWPORTS) {
 
   // And the run itself. A menu screenshot cannot show whether combat reads,
   // which is the half of the UI that actually moves.
+  // The handover, caught in the middle: the hero climbing out of the entrance
+  // with the dark still receding. It plays on every launch, so the first
+  // moments of a descent ARE it.
   await page.evaluate(() => document.querySelector('#run-launch')?.click());
-  await page.waitForTimeout(4500);
+  await page.waitForTimeout(180);
+  await shoot('handover');
+
+  await page.waitForTimeout(4300);
   await shoot('descent');
 
   // The skill web, at every depth. It is the one screen with a hundred things

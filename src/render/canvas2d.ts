@@ -362,10 +362,11 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     }
   }
 
-  function drawHero(v: View, hero: Entity): void {
-    const r = v.tile * 0.38;
+  function drawHero(v: View, hero: Entity, emerge: number): void {
+    const r = v.tile * 0.38 * emerge;
     const x = cx(v, hero.x);
-    const y = cy(v, hero.y);
+    const y = cy(v, hero.y) + v.tile * 0.8 * (1 - emerge);
+    if (r < 0.5) return;
 
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -410,7 +411,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
   }
 
-  function draw(state: RunState): void {
+  function draw(state: RunState, emerge = 1): void {
     const v = viewFor(state);
 
     ctx.fillStyle = palette.void;
@@ -422,7 +423,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
     }
-    if (!state.hero.dead) drawHero(v, state.hero);
+    if (!state.hero.dead) drawHero(v, state.hero, emerge);
     drawVfx(v, state);
     for (const f of state.floaters) drawFloater(v, f);
   }

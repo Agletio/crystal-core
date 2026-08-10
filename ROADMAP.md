@@ -289,9 +289,19 @@ is the one mechanism both use.
 
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
 starts ticking; `finish()` banks the report and decides whether another descent
-follows (`looping()` is `game.autoRepeat` and not the guided opening). The sim
-in `src/sim/` never learns about presentation — a transition, a panel, a
-freeze, all of that is the UI holding off on ticking.
+follows (`looping()` is `game.autoRepeat` and not the guided opening); `land()`
+is the one terminus every ending arrives at. The sim in `src/sim/` never learns
+about presentation — a transition, a panel, a freeze, all of that is the UI
+holding off on ticking.
+
+**The handover is the pattern for that.** `HANDOVER` seconds where the sim does
+not tick at all: the hero drops into the hole at the exit, `#run-fade` goes
+black for the moment the map is swapped, and they climb out of the next
+entrance. `emerge` (1 standing, 0 underground) is passed to `Renderer.draw` and
+moves the hero sprite; the fade hides the swap. `banked` holds the report the
+drop is carrying so Abandon mid-drop lands THAT one rather than building a
+second and banking the loot twice. The hole itself is a `mouth()` decal on the
+ENTRANCE and EXIT tiles, per zone, so both renderers get it.
 
 ---
 
@@ -300,26 +310,7 @@ freeze, all of that is the UI holding off on ticking.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — The descent transition
-
-A cleared descent swaps the map between two frames and it reads as a glitch.
-
-- [ ] About **1.2 seconds**, and on every launch including the first: the hero
-      steps into a hole at the exit, a short fade, then climbs out of the
-      entrance in the new map. Short enough that you never wait on it — this
-      plays twenty times in a session.
-- [ ] **The hole belongs to the zone.** The Fissure is a ladder into the rock,
-      the Cavern a crystal throat, the Rot a mouth that opens. It is a decal
-      keyed on the EXIT tile and the theme, so it goes in
-      `tileDecals` / `livingDecals` in `src/render/renderer.ts` and both
-      renderers get it (§3).
-- [ ] **Nothing in `src/sim` learns about this.** The report is built and the
-      loot banked exactly as now; the transition is the UI declining to tick
-      for a moment while it draws. `launch()` and `finish()` in `src/ui/run.ts`
-      are the two seams.
-- [ ] Input is never blocked. Leave and Abandon do what they say mid-transition.
-
-### Phase 2 — Meeting the Lampwright
+### Phase 1 — Meeting the Lampwright
 
 Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
 pushes a `met` event, and the REPORT pays the crystal out at the end.
@@ -342,7 +333,7 @@ pushes a `met` event, and the REPORT pays the crystal out at the end.
 - [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
       through it.
 
-### Phase 3 — The danger retune
+### Phase 2 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -367,7 +358,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 4 — Unique gear
+### Phase 3 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -469,7 +460,9 @@ moving — see §2, balance is deliberately loose.
   `tools/zone-peek.mts` draws all four zones off a real generated map. None is
   in the suite. The demo's sprite checks prove grids are square, not that
   anything reads.
-- `npm run shots` covers the welcome, the Fissure, the collection, a descent,
-  the skill web, the BENCH and an item TOOLTIP at two sizes. The bench shot
-  catches a third column not fitting; the tooltip shot rolls four modifiers
-  onto a piece first, because a blank one shows none of the grouping.
+- `npm run shots` covers the welcome, the Fissure, the collection, the
+  HANDOVER, a descent, the skill web, the BENCH and an item TOOLTIP at two
+  sizes. The bench shot catches a third column not fitting; the tooltip shot
+  rolls four modifiers onto a piece first, because a blank one shows none of
+  the grouping; the handover shot fires 180ms into a launch, which is the
+  hero half out of the entrance.

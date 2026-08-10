@@ -1043,6 +1043,23 @@ assert(
 }
 
 
+// --- the handover between descents ----------------------------------------
+// A cleared descent used to swap the map between two frames, which reads as a
+// glitch. The hero drops into the hole at the exit, the screen goes dark for
+// the moment the swap happens, and they climb out of the next entrance.
+{
+  assert($('run-fade') !== null, 'the stage has something to fade behind');
+  assert(
+    window.getComputedStyle($('run-fade')).pointerEvents === 'none',
+    'which never takes a click — Leave and Abandon stay live through it',
+    window.getComputedStyle($('run-fade')).pointerEvents
+  );
+  assert(
+    !$('run-fade').contains($('run-leave')) && !$('run-fade').contains($('run-abandon')),
+    'and the two ways out are not behind it'
+  );
+}
+
 // --- entering keeps the socketed crystals ---------------------------------
 // Sockets are a standing choice, not a stake. A run reads them and gives them
 // back, which is what makes setting a harder set a decision you keep.

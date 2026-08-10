@@ -13,12 +13,9 @@
 <style>
   :root {
     /*
-     * The frame around the game: soot, ash and cold iron. Near-black and barely
-     * warm, so the map's stone and the frame read as the same world rather than
-     * as two pieces of software.
-     *
-     * The frame's whole job is being quiet. COLOUR belongs to the accents below,
-     * which carry every meaning that has one.
+     * The frame around the game: soot, ash and cold iron. Near-black and
+     * barely warm, so the frame and the map's stone read as one world. The
+     * frame's whole job is being quiet — COLOUR belongs to the accents below.
      */
     --void:      #0C0B0E;
     --matrix:    #1B1922;
@@ -28,11 +25,10 @@
     --dust:      #877F8C;
 
     /*
-     * The map's own palette: damp underground stone, warm-grey and unlit.
-     *
-     * Note the order: the WALL is the LIGHTEST thing here. You look slightly
-     * down at a chamber, so its walls catch the light and the floor sits in
-     * their shadow. Reversed, rock reads as a hole rather than as mass.
+     * The map's own palette: damp underground stone, warm-grey and unlit. Note
+     * the order — the WALL is the LIGHTEST thing here, because you look
+     * slightly down at a chamber and its walls catch the light. Reversed, rock
+     * reads as a hole rather than as mass.
      */
     --rock:      #6B655B;
     --rock-lit:  #8A8376;
@@ -73,12 +69,10 @@
     --bone:      #C9BFA3;
 
     /*
-     * A zone is not a tint over the Fissure's stone — it is its own rock. Each
-     * of these is a whole surface: what the ground is, what catches the light
-     * on it, and what the dark between them is.
-     *
-     * The Rot is meat. Deep reds against a near-black, with tendon and bile as
-     * the only bright things, so a chamber reads as the inside of something.
+     * A zone is not a tint over the Fissure's stone — it is its own rock: what
+     * the ground is, what catches the light on it, what the dark between them
+     * is. The Rot is meat, deep reds against near-black with tendon and bile
+     * as the only bright things, so a chamber reads as the inside of a thing.
      */
     --flesh:     #7A2028;
     --flesh-lit: #A93A3C;
@@ -700,6 +694,9 @@
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
+  /* The handover: dark at the swap, which is what hides one map becoming
+     another. Never takes a click. */
+  .fade { position: absolute; inset: 0; background: var(--void); opacity: 0; pointer-events: none; }
   .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(6,5,8,.88); padding: 16px; overflow-y: auto; }
   /* Two columns where there is room: what happened on the left, what you got
      on the right. One 360px column meant a good run — several stat rows and a
@@ -1141,6 +1138,10 @@
            results overlay sits on top of it when a run ends. -->
       <div class="stagebox">
         <div class="stage" id="run-stage"></div>
+        <!-- The handover between descents. Full dark for a moment at the
+             swap, which is the only thing that hides one map becoming
+             another. Never takes a click: the buttons are outside it. -->
+        <div class="fade" id="run-fade"></div>
         <div class="results" id="run-results" hidden></div>
       </div>
 
