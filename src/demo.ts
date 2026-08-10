@@ -64,6 +64,7 @@ import {
 } from './economy';
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion } from './sim/run';
+import type { RunState } from './sim/run';
 import {
   declaredCapacity,
   hasOpenSlot,
@@ -109,7 +110,7 @@ import {
 import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
-import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
+import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
@@ -150,15 +151,17 @@ import {
 import { buildReport } from './game/report';
 import {
   addCrystalXp,
-  claimQuests,
   crystalXp,
   giftWaiting,
   giftSchedule,
+  questDanger,
+  QUEST_CONDITIONS,
   ownedCrystals,
   takeHandover,
   questMet,
   xpForClear,
 } from './game/crystals';
+import type { QuestFacts } from './game/crystals';
 import { heal, readSave } from './game/save';
 import type { GameState } from './game/state';
 import type {
@@ -1464,7 +1467,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     () => {
       // The panel's one button: the weapon is handed over and it closes.
-      takeHandover(game, 'weapon');
+      takeHandover(game, { weapon: true, crystal: false, quests: [] });
       ctx.top = null;
     },
     () => {
@@ -1498,7 +1501,10 @@ rule('GUIDED OPENING — does every step actually complete?');
       game.character.level = INTRO.firstCrystalLevel;
       ctx.top = 'met';
     },
-    () => { takeHandover(game, 'crystal'); ctx.top = null; },
+    () => {
+      takeHandover(game, { weapon: false, crystal: true, quests: [] });
+      ctx.top = null;
+    },
     () => {
       ctx.view = 'craft';
       ctx.top = 'craft';
@@ -3800,6 +3806,13 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
 // ===========================================================================
 rule('THE COLLECTION — do crystals arrive, and do they grow?');
 
+/** What a cleared descent was, in the shape an objective is asked about. */
+const facts = (g: GameState, run: RunState): QuestFacts => ({
+  set: run.set,
+  elapsed: run.elapsed,
+  socketed: socketed(g),
+});
+
 // Nothing here can be bought, so if the giving is wrong the game has no way
 // up at all. Three things have to hold: the first four arrive, a socketed
 // crystal levels, and the other two worlds are reachable on purpose.
@@ -3809,9 +3822,9 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   // only decision the game asks them to make.
   const fresh = createGame('fresh');
   check(
-    giftWaiting(fresh) === 'weapon',
+    giftWaiting(fresh)?.weapon === true,
     'a character who has never cleared anything is owed a weapon at the mouth',
-    String(giftWaiting(fresh))
+    JSON.stringify(giftWaiting(fresh))
   );
 
   // A weapon picked off the SKILL. A Strike character handed a wand is the
@@ -3847,12 +3860,12 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       `${sim.state.status}, lampwright ${sim.state.lampwright ? 'placed' : 'absent'}`
     );
 
-    const waiting = giftWaiting(g);
     buildReport(g, sim.state);
+    const waiting = giftWaiting(g, facts(g, sim.state));
     check(
-      waiting === 'weapon' && sim.greetAtExit() && sim.state.meeting,
+      waiting?.weapon === true && sim.greetAtExit() && sim.state.meeting,
       'and climbs out of the exit once it is cleared',
-      `waiting ${waiting}, meeting ${sim.state.meeting}`
+      `waiting ${JSON.stringify(waiting)}, meeting ${sim.state.meeting}`
     );
     check(
       Math.round(sim.state.lampwright!.x) === Math.round(sim.state.map.exit.x) &&
@@ -3863,7 +3876,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 
     // What the panel does. The run is already banked, so this is a handover
     // and not a payout — nothing about it can be lost.
-    const hand = takeHandover(g, 'weapon');
+    const hand = takeHandover(g, waiting!);
     sim.takeGift();
     const weapon = hand.items[0];
     check(
@@ -3875,7 +3888,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     check(
       giftWaiting(g) === null,
       'and is not waiting again the next time you come up',
-      String(giftWaiting(g))
+      JSON.stringify(giftWaiting(g))
     );
 
     // The crystal is the SECOND meeting, and it is gated on the character
@@ -3889,9 +3902,10 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       giftSchedule(g)
     );
     g.character.level = INTRO.firstCrystalLevel;
-    check(giftWaiting(g) === 'crystal', 'and is waiting with one at it', String(giftWaiting(g)));
+    const owed = giftWaiting(g);
+    check(owed?.crystal === true, 'and is waiting with one at it', JSON.stringify(owed));
 
-    const second = takeHandover(g, 'crystal');
+    const second = takeHandover(g, owed!);
     const crystal = second.items[0];
     check(
       crystal?.kind === 'crystal' &&
@@ -3917,8 +3931,8 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       made.ok ? String(made.item.meta.scripted) : '—'
     );
     check(
-      giftWaiting(g) === null && giftSchedule(g).includes('nothing left'),
-      'and there is nothing left at the mouth afterwards',
+      giftWaiting(g) === null && giftSchedule(g).includes('earned below'),
+      'and everything after that is a quest rather than a schedule',
       giftSchedule(g)
     );
   }
@@ -3997,21 +4011,64 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 // The quests. Each one is a wall if its objective is out of reach of the
 // crystals you hold when it is the next thing in front of you.
 {
-  for (const quest of CRYSTAL_QUESTS) {
-    // What you can assemble at that point: the given crystals, levelled to the
-    // top and rolled full. Nothing here is bought, so this IS the ceiling.
+  // Every clause has to name something in the registry. A kind that is not in
+  // it is never met, so a typo here is a socket nobody can ever open.
+  const unknown = CRYSTAL_QUESTS.flatMap((q) =>
+    q.need.filter((c) => !QUEST_CONDITIONS[c.kind]).map((c) => `${q.id}:${c.kind}`)
+  );
+  check(
+    unknown.length === 0,
+    `every clause of all ${CRYSTAL_QUESTS.length} quests names a condition that exists`,
+    `no such condition: ${unknown.join(', ')}`
+  );
+
+  // Walked in table order, which is the worst case: at rung i you have been
+  // given i crystals on top of the one the opening hands you, so the CEILING
+  // is that many sockets, levelled to the top and rolled full. Nothing here is
+  // bought, so a threshold above this line is a wall rather than a climb.
+  CRYSTAL_QUESTS.forEach((quest, i) => {
+    const want = questDanger(quest);
+    const sockets = Math.min(RUN_SLOTS.length, 1 + i);
+    const family = quest.need.find((c) => c.kind === 'composition')?.family as
+      | MonsterFamily
+      | undefined;
     const dangers: number[] = [];
-    for (let i = 0; i < 60; i++) {
-      const set = Array.from({ length: RUN_SLOTS.length }, () => rollCrystal(4, pool, rng));
-      if (quest.need.family) set[0] = makeCrystal(1, quest.need.family);
+    for (let n = 0; n < 60; n++) {
+      const set = Array.from({ length: sockets }, () => rollCrystal(4, pool, rng));
+      if (family) set[0] = makeCrystal(1, family);
       dangers.push(runSet(set).rewards.danger);
     }
     dangers.sort((a, b) => a - b);
     const median = dangers[30];
     check(
-      median >= quest.need.danger,
-      `${quest.name}: ${quest.need.danger} danger against a median reachable ${Math.round(median)}`,
-      `${quest.name} needs ${quest.need.danger} and a full set medians ${Math.round(median)}`
+      median >= want,
+      `${quest.name}: ${want} danger against ${Math.round(median)} reachable on ${sockets} sockets`,
+      `${quest.name} needs ${want} and ${sockets} sockets median ${Math.round(median)}`
+    );
+  });
+
+  // A clock is the one objective that can be failed by succeeding — pile on
+  // danger and the room takes longer — so it is played rather than reasoned
+  // about, at the danger its own quest asks for.
+  for (const quest of CRYSTAL_QUESTS) {
+    const clock = quest.need.find((c) => c.kind === 'under_seconds');
+    if (!clock) continue;
+    const limit = Number(clock.value);
+    const times: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const set = Array.from({ length: RUN_SLOTS.length - 1 }, () => rollCrystal(4, pool, rng));
+      const hero = makeCharacter(starterLoadout(new Rng(200 + i)), 'strike');
+      hero.level = 20;
+      const sim = new RunSim(set, hero, new Rng(880 + i));
+      runToCompletion(sim, 900);
+      if (sim.state.status === 'cleared') times.push(sim.state.elapsed);
+    }
+    times.sort((a, b) => a - b);
+    const median = times[Math.floor(times.length / 2)] ?? Infinity;
+    check(
+      median <= limit,
+      `${quest.name}: ${limit}s against a median clear of ${median.toFixed(0)}s at that danger`,
+      `${quest.name} allows ${limit}s and the room takes ${median.toFixed(0)}s`
     );
   }
 
@@ -4020,31 +4077,59 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   const game = createGame('fresh');
   const demonic = [makeCrystal(1, 'demonic'), ...Array.from({ length: 3 }, () => makeCrystal(4))];
   const set = runSet(demonic);
+  const at = (danger: number): QuestFacts => ({
+    set: { ...set, rewards: { ...set.rewards, danger } },
+    elapsed: 0,
+    socketed: demonic,
+  });
   check(
-    questMet(QUEST_BY_ID.demonic_ii, { ...set, rewards: { ...set.rewards, danger: 110 } }) &&
-      !questMet(QUEST_BY_ID.prismatic_ii, { ...set, rewards: { ...set.rewards, danger: 110 } }),
+    questMet(QUEST_BY_ID.demonic_ii, at(110)) && !questMet(QUEST_BY_ID.prismatic_ii, at(110)),
     'one Demonic crystal in four sockets answers the Demonic quest and not the Prismatic one',
     `composition ${JSON.stringify(set.composition)}`
   );
 
-  // Paid once. A quest that pays every clear is four crystals a minute.
-  const rich = runSet([
-    makeCrystal(1, 'demonic'),
-    makeCrystal(1, 'prismatic'),
-    ...Array.from({ length: 2 }, () => rollCrystal(4, pool, rng)),
-  ]);
-  const forced = { ...rich, rewards: { ...rich.rewards, danger: 400 } };
-  const first = claimQuests(game, forced);
-  const again = claimQuests(game, forced);
+  // A crystal's own level is an objective too, and only a SOCKETED one counts.
+  const grown: QuestFacts = { ...at(0), socketed: [makeCrystal(3)] };
   check(
-    first.length === CRYSTAL_QUESTS.length && again.length === 0,
-    `a set past every threshold pays all ${first.length} quests once and never again`,
-    `${first.length} then ${again.length}`
+    questMet(QUEST_BY_ID.normal_ii, grown) &&
+      !questMet(QUEST_BY_ID.normal_ii, { ...grown, socketed: [makeCrystal(2)] }),
+    'a rung that asks for a levelled crystal reads the sockets and nothing else',
+    'the level objective does not answer to a socketed crystal'
+  );
+
+  // Paid once, and paid AT THE MOUTH. A quest that pays every clear is four
+  // crystals a minute; one that pays into a report is one you can die holding.
+  const everything: QuestFacts = {
+    set: runSet([
+      makeCrystal(1, 'demonic'),
+      makeCrystal(1, 'prismatic'),
+      ...Array.from({ length: 2 }, () => rollCrystal(4, pool, rng)),
+    ]),
+    elapsed: 0,
+    socketed: [makeCrystal(4)],
+  };
+  const past = { ...everything, set: { ...everything.set, rewards: { ...everything.set.rewards, danger: 400 } } };
+  game.given = ['weapon', 'crystal'];
+  const first = giftWaiting(game, past);
+  takeHandover(game, first!);
+  const again = giftWaiting(game, past);
+  check(
+    first?.quests.length === CRYSTAL_QUESTS.length && again === null,
+    `a set past every threshold pays all ${CRYSTAL_QUESTS.length} quests once and never again`,
+    `${first?.quests.length} then ${again === null ? 'none' : again.quests.length}`
   );
   check(
     ownedCrystals(game).length === CRYSTAL_QUESTS.length,
     'and the crystals they pay are actually in your hands',
     `${ownedCrystals(game).length} owned`
+  );
+  // Four sockets, and the Normal ladder is what opens them. Every rung after
+  // the opening is a quest, so a player who finishes them has a full set.
+  const normals = ownedCrystals(game).filter((c) => crystalFamily(c) === 'normal').length;
+  check(
+    normals + 1 >= RUN_SLOTS.length,
+    `the Normal rungs plus the one you are given fill all ${RUN_SLOTS.length} sockets`,
+    `${normals} Normal crystals from quests, plus the opening's one`
   );
 }
 

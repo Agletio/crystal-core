@@ -30,53 +30,79 @@ export function ownedCrystals(game: GameState): Item[] {
 
 // --- the Lampwright ---------------------------------------------------------
 
-/** What is waiting at the mouth of a cleared descent, or null. SCHEDULED off
- *  what has been given and the character sheet, never rolled. */
-export type Waiting = 'weapon' | 'crystal';
-
-export function giftWaiting(game: GameState): Waiting | null {
-  const given = game.given ?? [];
-  if (!given.includes('weapon')) return 'weapon';
-  if (!given.includes('crystal') && game.character.level >= INTRO.firstCrystalLevel) {
-    return 'crystal';
-  }
-  return null;
+/**
+ * Everything owed at the mouth of a cleared descent. SCHEDULED off what has
+ * been given, the character sheet and the clear itself — never rolled, so a
+ * screen can quote it rather than describe it.
+ */
+export interface Waiting {
+  weapon: boolean;
+  crystal: boolean;
+  quests: CrystalQuest[];
 }
 
-/** What the collection screen says about the next meeting. A schedule can be
- *  quoted exactly; a chance could only be described. */
+export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
+  const given = game.given ?? [];
+  const weapon = !given.includes('weapon');
+  const crystal =
+    !weapon &&
+    !given.includes('crystal') &&
+    game.character.level >= INTRO.firstCrystalLevel;
+  const quests = clear ? openQuests(game).filter((q) => questMet(q, clear)) : [];
+  if (!weapon && !crystal && quests.length === 0) return null;
+  return { weapon, crystal, quests };
+}
+
+/** What the collection screen says about the next meeting. */
 export function giftSchedule(game: GameState): string {
   const who = LAMPWRIGHT.name;
-  const waiting = giftWaiting(game);
-  if (waiting === 'weapon') return `${who} meets you at the mouth of your first cleared descent.`;
-  if (waiting === 'crystal') return `${who} is waiting at the mouth of your next cleared descent.`;
-  if (!(game.given ?? []).includes('crystal')) {
-    const away = INTRO.firstCrystalLevel - game.character.level;
-    return `${who} brings your first crystal at level ${INTRO.firstCrystalLevel} — ${away} to go.`;
+  const given = game.given ?? [];
+  if (!given.includes('weapon')) {
+    return `${who} meets you at the mouth of your first cleared descent.`;
   }
-  return `${who} has nothing left to hand over. The other two worlds are earned below.`;
+  if (!given.includes('crystal')) {
+    const away = INTRO.firstCrystalLevel - game.character.level;
+    return away > 0
+      ? `${who} brings your first crystal at level ${INTRO.firstCrystalLevel} — ${away} to go.`
+      : `${who} is waiting at the mouth of your next cleared descent.`;
+  }
+  return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;
 }
 
-/** Everything one meeting puts in your hands. Currency is not an item and has
- *  no slot, so it is granted rather than placed. */
+/** Everything one meeting puts in your hands. Currency has no slot. */
 export interface Handover {
   items: Item[];
   currency: Record<string, number>;
 }
 
 export function takeHandover(game: GameState, waiting: Waiting): Handover {
-  game.given = [...(game.given ?? []), waiting];
-  if (waiting === 'weapon') {
+  const items: Item[] = [];
+  const currency: Record<string, number> = {};
+
+  if (waiting.weapon) {
+    game.given = [...(game.given ?? []), 'weapon'];
     const gift = lampwrightWeapon(game);
-    return { items: gift ? [gift.item] : [], currency: {} };
+    if (gift) items.push(gift.item);
   }
-  const crystal = makeCrystal(LAMPWRIGHT.level, LAMPWRIGHT.family);
-  // The one arranged roll in the game, and it rides on the crystal so the
-  // shard behaves the same way everywhere else.
-  crystal.meta.scripted = INTRO.scriptedMod;
-  giveGift(game, crystal);
-  grant(game.wallet, INTRO.scriptedCurrency, 1);
-  return { items: [crystal], currency: { [INTRO.scriptedCurrency]: 1 } };
+  if (waiting.crystal) {
+    game.given = [...(game.given ?? []), 'crystal'];
+    const crystal = makeCrystal(LAMPWRIGHT.level, LAMPWRIGHT.family);
+    // The one arranged roll in the game, and it rides on the crystal so the
+    // shard behaves the same way everywhere else.
+    crystal.meta.scripted = INTRO.scriptedMod;
+    giveGift(game, crystal);
+    grant(game.wallet, INTRO.scriptedCurrency, 1);
+    currency[INTRO.scriptedCurrency] = 1;
+    items.push(crystal);
+  }
+  // Marked as they are handed over, never at the report.
+  for (const quest of waiting.quests) {
+    game.quests = [...(game.quests ?? []), quest.id];
+    const crystal = makeCrystal(quest.gives.level, quest.gives.family);
+    giveGift(game, crystal);
+    items.push(crystal);
+  }
+  return { items, currency };
 }
 
 // --- levelling --------------------------------------------------------------
@@ -176,39 +202,44 @@ export const questDone = (game: GameState, id: string): boolean =>
 /** Float shares: one crystal of four is 0.25 and must not miss its own gate. */
 const EPSILON = 1e-6;
 
-export function questMet(quest: CrystalQuest, set: RunSet): boolean {
-  if (set.rewards.danger < quest.need.danger) return false;
-  if (quest.need.family !== undefined) {
-    const share = set.composition[quest.need.family] ?? 0;
-    if (share + EPSILON < (quest.need.share ?? 0)) return false;
-  }
-  return true;
+/** What one cleared descent was, for an objective to be asked about. */
+export interface QuestFacts {
+  set: RunSet;
+  /** Seconds it took. */
+  elapsed: number;
+  /** The crystals it was launched with, already paid their experience. */
+  socketed: Item[];
 }
+
+export type QuestConditionImpl = (facts: QuestFacts, params: any) => boolean;
+
+/**
+ * THIS is the extension point, the same way `CONDITIONS` is for the bench: a
+ * new objective is an entry here plus a row in `CRYSTAL_QUESTS`. A clause
+ * naming a kind that is not in here is never met, and the demo holds the table
+ * to the registry so a typo cannot become a quest nobody can finish.
+ */
+export const QUEST_CONDITIONS: Record<string, QuestConditionImpl> = {
+  danger: (f, p) => f.set.rewards.danger >= p.value,
+
+  composition: (f, p) =>
+    ((f.set.composition as Record<string, number>)[p.family] ?? 0) + EPSILON >= (p.share ?? 0),
+
+  crystal_level: (f, p) => f.socketed.some((c) => crystalLevel(c) >= p.value),
+
+  under_seconds: (f, p) => f.elapsed <= p.value,
+};
+
+export const questMet = (quest: CrystalQuest, facts: QuestFacts): boolean =>
+  quest.need.every((clause) => QUEST_CONDITIONS[clause.kind]?.(facts, clause) === true);
+
+/** The danger a quest asks for, or 0. For harnesses that have to reach it. */
+export const questDanger = (quest: CrystalQuest): number =>
+  Math.max(0, ...quest.need.filter((c) => c.kind === 'danger').map((c) => Number(c.value) || 0));
 
 /** Still open, in table order: the screen shows them as a ladder. */
 export const openQuests = (game: GameState): CrystalQuest[] =>
   CRYSTAL_QUESTS.filter((q) => !questDone(game, q.id));
-
-/**
- * Everything this cleared descent just finished, paid out. Called once per
- * clear, so a quest can only ever be claimed the run it was completed on.
- */
-export interface QuestPaid {
-  quest: CrystalQuest;
-  crystal: Item;
-  where: GiftPlace;
-}
-
-export function claimQuests(game: GameState, set: RunSet): QuestPaid[] {
-  const out: QuestPaid[] = [];
-  for (const quest of openQuests(game)) {
-    if (!questMet(quest, set)) continue;
-    game.quests = [...(game.quests ?? []), quest.id];
-    const crystal = makeCrystal(quest.gives.level, quest.gives.family);
-    out.push({ quest, crystal, where: giveGift(game, crystal) });
-  }
-  return out;
-}
 
 /** A quest id that no longer exists costs its entry and nothing else. */
 export function healQuests(game: GameState): void {

@@ -1218,7 +1218,7 @@ export const LAMPWRIGHT = {
   },
   again: {
     title: 'The Lampwright',
-    said: ['You came back up again. Here.'],
+    said: ['You came back up again, and you went and got this one. Here.'],
     button: 'Take it',
   },
 };
@@ -1237,47 +1237,92 @@ export const INTRO = {
 };
 
 /**
- * The other two worlds are not given, they are gone and got — every objective
- * is something a player who has been levelling crystals can already do.
- * `share` is a floor on the composition, and a quarter is ONE socketed crystal
- * of that family out of four: the second gift is earned by using the first.
+ * Every crystal past the first is gone and got. One clause of an objective:
+ * `kind` names an entry in `QUEST_CONDITIONS` and everything else on it is
+ * that condition's own parameters, so a new objective is a registry entry and
+ * a row here rather than a change to anything that reads quests.
  */
+export interface QuestNeed {
+  kind: string;
+  [param: string]: unknown;
+}
+
+/** ALL of `need`. `detail` is the objective in words, and the screen shows it,
+ *  so it and the clauses have to be changed together. */
 export interface CrystalQuest {
   id: string;
   name: string;
-  /** The objective, in words — this is also what the screen shows. */
   detail: string;
-  need: { danger: number; family?: MonsterFamily; share?: number };
+  need: QuestNeed[];
   gives: { level: number; family: MonsterFamily };
 }
 
+/**
+ * Two ladders in one list, walkable in any order. The Normal rungs open the
+ * sockets; the other two worlds are the opponents you take into them. A share
+ * of 0.25 is ONE socketed crystal of that family out of four, so the second
+ * gift of a world is earned by using its first.
+ *
+ * Every rung has to be plausible to a character that has just done the one
+ * before it — the demo measures that, which is why the numbers can be soft.
+ */
 export const CRYSTAL_QUESTS: CrystalQuest[] = [
+  {
+    id: 'normal_ii',
+    name: 'A Second Lamp',
+    detail: 'Bring a socketed crystal to level 3.',
+    need: [{ kind: 'crystal_level', value: 3 }],
+    gives: { level: 1, family: 'normal' },
+  },
   {
     id: 'demonic_i',
     name: 'The First Door',
     detail: 'Clear a descent at 30 danger.',
-    need: { danger: 30 },
+    need: [{ kind: 'danger', value: 30 }],
     gives: { level: 1, family: 'demonic' },
+  },
+  {
+    id: 'normal_iii',
+    name: 'Wider Ground',
+    detail: 'Clear a descent at 40 danger.',
+    need: [{ kind: 'danger', value: 40 }],
+    gives: { level: 1, family: 'normal' },
   },
   {
     id: 'prismatic_i',
     name: 'The Lit Seam',
     detail: 'Clear a descent at 60 danger.',
-    need: { danger: 60 },
+    need: [{ kind: 'danger', value: 60 }],
     gives: { level: 1, family: 'prismatic' },
+  },
+  {
+    id: 'normal_iv',
+    name: 'Before The Lamp Dies',
+    detail: 'Clear a descent at 70 danger in under 90 seconds.',
+    need: [
+      { kind: 'danger', value: 70 },
+      { kind: 'under_seconds', value: 90 },
+    ],
+    gives: { level: 1, family: 'normal' },
   },
   {
     id: 'demonic_ii',
     name: 'Deeper In',
     detail: 'Clear a descent at 110 danger with a Demonic crystal socketed.',
-    need: { danger: 110, family: 'demonic', share: 0.25 },
+    need: [
+      { kind: 'danger', value: 110 },
+      { kind: 'composition', family: 'demonic', share: 0.25 },
+    ],
     gives: { level: 1, family: 'demonic' },
   },
   {
     id: 'prismatic_ii',
     name: 'Further Through',
     detail: 'Clear a descent at 110 danger with a Prismatic crystal socketed.',
-    need: { danger: 110, family: 'prismatic', share: 0.25 },
+    need: [
+      { kind: 'danger', value: 110 },
+      { kind: 'composition', family: 'prismatic', share: 0.25 },
+    ],
     gives: { level: 1, family: 'prismatic' },
   },
 ];

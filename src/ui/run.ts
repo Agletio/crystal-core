@@ -16,7 +16,7 @@ import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
-import type { GameState, GiftPlace } from '../game/state';
+import type { GameState } from '../game/state';
 import { crystalProgress, giftWaiting } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -45,13 +45,6 @@ export type Phase = 'menu' | 'running' | 'results';
 
 /** Gear drops named in the report before it starts counting instead. */
 const LOOT_ROWS = 6;
-
-/** Where a gift ended up, said the way the screen it landed on is named. */
-const WHERE: Record<GiftPlace, string> = {
-  carried: 'in your bag',
-  stashed: 'in your stash',
-  hauled: 'in the haul',
-};
 
 let game: GameState;
 let sim: RunSim | null = null;
@@ -306,9 +299,15 @@ function finish(left = false): void {
 
   if (report.cleared) streak++;
 
-  // AFTER the report, so the level this descent just bought counts towards the
-  // meeting it schedules.
-  const waiting = report.cleared ? giftWaiting(game) : null;
+  // AFTER the report, so the level and the crystal experience this descent
+  // just bought both count towards the meeting it schedules.
+  const waiting = report.cleared
+    ? giftWaiting(game, {
+        set: sim.state.set,
+        elapsed: sim.state.elapsed,
+        socketed: socketed(game),
+      })
+    : null;
 
   // Somebody at the mouth. Already banked, so it is a reason the loop stopped
   // rather than a new ending — same `land()`, same report.
@@ -549,19 +548,6 @@ function renderResults(report: RunReport, run: RunState): void {
   }
   right.append(loot);
 
-  // Handed over rather than dropped, and it goes to the dock: the opening
-  // tells you to click the wand there, so it must not read as hauled.
-  if (report.gifts.length > 0) {
-    right.append(el('p', 'resultcard__sub', 'Given to you'));
-    const given = el('div', 'lootlist');
-    for (const gift of report.gifts) {
-      const r = el('div', 'lootrow');
-      r.append(el('span', 'lootrow__k', `${gift.item.name} — ${gift.from}`));
-      r.append(el('span', 'lootrow__v', WHERE[gift.where]));
-      given.append(r);
-    }
-    right.append(given);
-  }
   cols.append(right);
   card.append(cols);
 

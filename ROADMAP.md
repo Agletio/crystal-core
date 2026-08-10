@@ -25,9 +25,9 @@ Four sockets hold permanent crystals. Their COUNT is run length, their MODIFIERS
 are the whole of difficulty, a crystal's LEVEL is only mod capacity (1–4 → 0–3)
 and its FAMILY — Normal, Demonic, Prismatic — is only which monsters spawn.
 Composition picks the zone. Everything a run pays reads one derived number
-(`POWER`, `runSet()`). Crystals are given, never bought: the Lampwright hands
-out the Normal ones, quests pay the other two, and a crystal levels only while
-socketed. A cleared descent launches the next one until you die, fill the haul,
+(`POWER`, `runSet()`). Crystals are given, never bought: the first is scheduled
+and every one after it is a quest, all of them handed over in person at the
+mouth of a cleared descent, and a crystal levels only while socketed. A cleared descent launches the next one until you die, fill the haul,
 or stop it; every ending lands on the same report and the same haul screen. Gold
 is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
@@ -39,13 +39,13 @@ built cards with the rolled number coloured apart from the words; the dock
 sorts and lights up what an armed shard can reach; the counter sells in a mode
 and buys back; a descent hands over to the next one through a hole in the
 ground; and the Lampwright is a person waiting at the mouth of a cleared one,
-holding first the weapon your skill can actually swing and then, at
-`INTRO.firstCrystalLevel`, the crystal and the shard to roll it.
+holding whatever is owed — the weapon your skill can actually swing, then the
+first crystal and the shard to roll it, then every quest you have just finished.
+Nothing is a coin flip and nothing is a line in a report.
 
-What is left of the OPENING is the other three Normal crystals, which are still
-a coin flip's worth of nothing — then one balance debt carried out of the
-systems work, then the next feature. §7 is the deferred pile, and the first
-entry in it is now answerable rather than blocked.
+The OPENING is done. What is left is one balance debt carried out of the systems
+work, then the next feature. §7 is the deferred pile, and the first entry in it
+is now answerable rather than blocked.
 
 ### Keeping room for a fifth socket
 
@@ -378,9 +378,12 @@ is the same answer in words, for the collection screen. A meeting is a HALT of
 the idle loop — `halt = 'met'` — landing on the same report as any other ending,
 so the clear is banked before anyone is standing there.
 
-**What is scheduled.** `GameState.given` is what has already been handed over,
-and it is the whole of the schedule with `character.level` and `INTRO`. Order
-cannot break it: nothing reads a flag another step in the same report sets.
+**What is owed.** `Waiting` is everything the mouth is holding — a weapon, the
+scheduled crystal, and every quest the clear just finished — and `takeHandover`
+grants the lot in one panel. `GameState.given` is what has already been handed
+over; with `character.level` and `INTRO` it is the whole of the schedule, and
+order cannot break it since nothing reads a flag another step of the same
+report sets.
 
 - The **weapon**, on the first clear. `STARTER_WEAPON` in `src/data.ts` maps
   `SkillDef.category` to a base and `SkillDef.weapon` overrides it, so it is one
@@ -389,6 +392,14 @@ cannot break it: nothing reads a flag another step in the same report sets.
 - The **first crystal**, at `INTRO.firstCrystalLevel`, with a Shard of Making
   beside it. It is a LEVEL 2 crystal: level 1 holds no modifiers at all, and the
   meeting is followed by the craft that teaches what one does to a room.
+- Every **quest** in `CRYSTAL_QUESTS`, which is the other three Normal crystals
+  as well as the two other worlds. `CrystalQuest.need` is a list of clauses
+  ANDed together; `kind` names an entry in `QUEST_CONDITIONS` in
+  `src/game/crystals.ts` and the rest of the clause is that condition's
+  parameters — so a new objective is one registry entry and one table row. A
+  clause naming a kind that is not in the registry is never met, and the demo
+  holds the table to it. The report pays no crystal at all: `buildReport` banks
+  loot and levels sockets, and everything given is given at the panel.
 
 **The one arranged roll.** `crystal.meta.scripted` names a mod family;
 `scriptedMod` in `src/crafting.ts` is consulted by `add_mod` before the random
@@ -422,49 +433,7 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The rest of the Normal crystals are quests
-
-**What is true today.** The chance table is gone and nothing replaced it, so
-Normal crystals two, three and four **cannot be got at all** — `giftWaiting`
-in `src/game/crystals.ts` answers `weapon`, then `crystal`, then null forever.
-`CRYSTAL_QUESTS` in `src/data.ts` has four entries, all Demonic or Prismatic,
-and every one of them is `need: { danger, family?, share? }` and nothing else.
-`claimQuests` walks every open quest on every clear, so order is already free.
-
-**Why it is wrong.** Three of the four sockets have no way to be filled, and
-before that they were filled by luck — which decided when the game's biggest
-difficulty step arrived, eight runs apart for two players who played the same.
-
-- [ ] Every Normal crystal after the first is a quest, completable in ANY order,
-      and each pays once. `giftWaiting` gains a `Waiting` for them, so they are
-      handed over at the mouth like everything else.
-- [ ] `CrystalQuest.need` widens past `danger` into a `QUEST_CONDITIONS`
-      registry — same shape as `CONDITIONS` in `src/crafting.ts`, a named
-      behaviour taking the cleared `RunSet` and the run's own numbers. A new
-      objective is then one registry entry plus a table row, which is the point:
-      these are meant to be changed without a session reading any code.
-- [ ] Three objectives to start with. **Numbers here are intent, not tuning** —
-      the ladder they sit on is what matters, not the values:
-      a socketed crystal reaching level 4 (`crystalLevel`); a clear at a given
-      danger; a clear inside a given number of seconds (`RunState.elapsed` is
-      already carried, so this costs a field on the report and nothing in the sim).
-- [ ] Every objective must be plausible to a character that has just done the
-      one before it, with the crystal count it has when it gets there. That is
-      the whole test of this table and the reason the numbers are soft.
-- [ ] All four existing quests pay through the MEETING as well, Demonic
-      and Prismatic included. A crystal is never a line in a report.
-- [ ] The collection screen (`src/ui/crystals.ts`) already draws quests as a
-      ladder; the Normal ones join it, and `giftSchedule` gains a line for them
-      so the screen still says exactly what the next meeting is waiting on.
-
-**What must not break.** `game.quests` is a list of ids in the save, so new ids
-only ever add — `healQuests` drops one that stops existing and costs nothing
-else. The dev preset marks every quest done (`src/game/state.ts`) so a stocked
-game does not pay out four duplicates on its first dangerous descent; three more
-quests have to be in that set. The demo's quest checks and `npm run guide` both
-walk this.
-
-### Phase 2 — The danger retune
+### Phase 1 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -500,7 +469,7 @@ the moment the numbers move:
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 3 — Unique gear
+### Phase 2 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.

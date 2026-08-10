@@ -739,8 +739,8 @@ assert(
 // Nothing about a gift is a probability any more, so the screen states a fact.
 // A percentage here would be the one thing on it a player cannot act on.
 assert(
-  /nothing left to hand over/i.test(text('crystals-npc')),
-  'the collection says what is coming next — nothing, for a kit handed everything',
+  /at the mouth of a cleared descent/i.test(text('crystals-npc')),
+  'the collection says where whatever is owed gets handed over',
   text('crystals-npc')
 );
 assert(
@@ -749,12 +749,12 @@ assert(
   text('crystals-npc')
 );
 assert(
-  all('#crystals-quests .quest').length === 4,
-  'every quest for the other two worlds is listed',
+  all('#crystals-quests .quest').length === 7,
+  'every rung of both ladders is listed',
   String(all('#crystals-quests .quest').length)
 );
 assert(
-  all('#crystals-quests .quest--done').length === 4,
+  all('#crystals-quests .quest--done').length === 7,
   'and the dev kit, which is handed every crystal, has them all answered'
 );
 // A crystal levels only while socketed, which is the reason to socket a blank

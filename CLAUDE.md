@@ -58,8 +58,8 @@ repair that makes the file worse.
 
 There is one place you go. Four **sockets** hold crystals permanently — a run
 reads them and never spends them. Their COUNT is how long the run is; their
-MODIFIERS are the whole of how hard it is; a crystal's TIER is only how many
-modifiers it can hold (T1–T4 → 0–3); its FAMILY — Normal, Demonic or Prismatic —
+MODIFIERS are the whole of how hard it is; a crystal's LEVEL is only how many
+modifiers it can hold (1–4 → 0–3); its FAMILY — Normal, Demonic or Prismatic —
 is only WHICH monsters spawn, each socketed crystal converting its share of the
 packs. Nothing else makes a monster stronger.
 
@@ -84,7 +84,7 @@ lethal for a reason you cannot see reads as a bug.
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
 XP and gold. Zero is the bare Fissure and the baseline for all four. Nothing is
-counted twice — a crystal's tier is capacity, capacity is modifiers, modifiers
+counted twice — a crystal's level is capacity, capacity is modifiers, modifiers
 are danger, and danger is already in power.
 
 **Power buys access; composition and modifiers buy payment.** Item level and
@@ -100,15 +100,26 @@ rarity argues with it. The Sigil of Finality drops only in the Seam.
 
 ## Where crystals come from
 
-Never a shop. **The Lampwright** is met mid-descent and hands you a Normal
-crystal, at a chance that falls as you collect — certain at none held, nothing
-at four (`LAMPWRIGHT`). The sim is told only the number, rolls the meeting off
-the run's own seed, and the report is what pays it out, so a meeting on a
-descent you die in was only ever a meeting.
+Never a shop, never a report, and never a roll. **The Lampwright** climbs out of
+the hole at the exit of a CLEARED descent holding whatever is owed, and that
+meeting ends the run — so a gift is never a thing standing next to the monsters,
+and the loot it walks you out with is already banked. `giftWaiting` is what is
+owed, `takeHandover` is the panel granting it, and `giftSchedule` is the same
+answer in words for the collection screen.
 
-The Demonic and Prismatic ones are **quests** (`CRYSTAL_QUESTS`): clear at a
-given danger, and later clear at a danger with one of that family already
-socketed — the second gift earned by using the first. Each pays once.
+Two things are SCHEDULED, off `GameState.given` and the character sheet: the
+first weapon on the first clear, picked off the skill (`STARTER_WEAPON`), and
+the first Normal crystal at `INTRO.firstCrystalLevel` — a level 2, with a Shard
+of Making beside it, because the meeting is followed by the craft that teaches
+what a modifier does to a room. That roll is the one arranged thing in the game:
+`crystal.meta.scripted` names the family, `add_mod` takes its cheapest tier and
+clears the mark. It rides on the CRYSTAL so the currency lies to nobody.
+
+Everything else is a **quest** (`CRYSTAL_QUESTS`) — the other three Normal
+crystals as much as the two other worlds, completable in any order, each paying
+once. `need` is a list of clauses ANDed together; `kind` names an entry in
+`QUEST_CONDITIONS` and the rest of the clause is that condition's parameters, so
+a new objective is one registry entry and one table row.
 
 A crystal **levels only while socketed**, one clear at a time, multiplied by the
 set's danger (`CRYSTAL_XP`, `advanceSocketed`). That is the cost of levelling a

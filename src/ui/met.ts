@@ -48,7 +48,11 @@ export function openMet(waiting: Waiting): void {
   if (hand.items.length === 0 && Object.keys(hand.currency).length === 0) return;
   taken = hand;
 
-  const words = waiting === 'weapon' ? LAMPWRIGHT.first : LAMPWRIGHT.crystal;
+  const words = waiting.weapon
+    ? LAMPWRIGHT.first
+    : waiting.crystal
+      ? LAMPWRIGHT.crystal
+      : LAMPWRIGHT.again;
   // The same sprite standing on the map. Who is speaking should be something
   // you recognise rather than something you read.
   const face = $('met-face');

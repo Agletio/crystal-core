@@ -5,9 +5,8 @@
  */
 import { bankToHaul, grantFirstClear, haulFull } from './state';
 import type { GameState } from './state';
-import { advanceSocketed, claimQuests } from './crystals';
+import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
-import type { GiftPlace } from './state';
 import { grant } from '../economy';
 import { addXp, addSkillXp } from '../sim/character';
 import type { RunState } from '../sim/run';
@@ -29,8 +28,6 @@ export interface RunReport {
   /** Currency actually banked, already rounded. Empty when the run was lost. */
   banked: Record<string, number>;
   items: Item[];
-  /** Handed to you rather than dropped, and put in the dock rather than the haul. */
-  gifts: Gift[];
   /** Crystals that gained a tier for being socketed through this. */
   levelled: CrystalGain[];
   /** True when there was loot and the hero died holding it. */
@@ -39,13 +36,6 @@ export interface RunReport {
   haulFull: boolean;
   xp: number;
   levelsGained: number;
-}
-
-export interface Gift {
-  item: Item;
-  where: GiftPlace;
-  /** Who handed it over. The Fissure, the Lampwright, or a quest by name. */
-  from: string;
 }
 
 const round = (n: number) => Math.max(0, Math.round(n));
@@ -66,7 +56,6 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
-  const gifts: Gift[] = [];
   let levelled: CrystalGain[] = [];
 
   if (cleared) {
@@ -94,10 +83,6 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // Socketed only. A crystal in a bag is a crystal that was not used, and
     // this is what makes a socket spent on a fresh one cost something.
     levelled = advanceSocketed(game, run.set);
-
-    for (const { quest, crystal, where } of claimQuests(game, run.set)) {
-      gifts.push({ item: crystal, where, from: quest.name });
-    }
   }
 
   // XP is earned either way — you learned something on the way to dying.
@@ -146,7 +131,6 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows,
     banked,
     items: cleared ? [...run.loot.items] : [],
-    gifts,
     levelled,
     lostLoot: !cleared && hadLoot,
     haulFull: haulFull(game),
