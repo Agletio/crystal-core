@@ -29,9 +29,8 @@ or stop it; every ending lands on the same report and the same haul screen. Gold
 is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
-**What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phase 1 is what is left of it. Phase 2 is the one balance debt
-carried out of the systems work, and Phase 3 is the next feature.
+**The art work is done.** What is left is one balance debt carried out of the
+systems work (Phase 1) and the next feature (Phase 2).
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +53,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 3 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 2 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,8 +84,8 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting Phase 1. A session that does not know these
-five things will make the same mistakes twice.
+Read this before touching any of it. A session that does not know these things
+will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
 `app.js` is committed because Cloudflare runs no build. Every sprite is a list
@@ -120,6 +119,18 @@ so a family can be redrawn without the pipeline caring.
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
+
+**A zone is CUT differently as well as coloured differently.** `CUT` in
+`src/sim/grid.ts` maps each theme to `built` (the Fissure's rectangles),
+`gullet` (rectangles with their corners off) or `grown` (an ellipse inscribed
+in the rectangle, ragged by a tile off `tileNoise`, with single pillars left
+standing). The `Room` RECTANGLE never changes — every spawn, the entrance and
+the exit are placed off it. Two traps, both paid for once already: an ellipse
+drawn round the OUTSIDE of the rectangle merges neighbouring rooms and the map
+loses its walls; and a room a fifth smaller with the same pack in it is a pack
+that arrives all at once, which turned the aura worlds into walls the demo
+caught. A wandering corridor may drift at most ONE tile per step, or
+consecutive bands stop sharing a row and the halves are only diagonally joined.
 
 **A zone is its own rock, not a tint over the Fissure's.** `THEME_INK` in
 `render/renderer.ts` names each zone's whole surface — ground, wall, the dark
@@ -163,39 +174,7 @@ nobody can see.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — The zones are shaped differently
-
-The Rot and the Cavern now LOOK like different worlds. They are still built
-like the same one: rectangular chambers joined by L-shaped corridors, which is
-a castle floor plan wearing two different skins.
-
-`generateMap` in `src/sim/grid.ts` is where this lives, and it is short. Rooms
-are carved as rectangles by `carveRoom`; corridors are two straight legs by
-`carveCorridor`, and the seed picks only their order.
-
-- [ ] `generateMap` already takes the theme. Carve per theme rather than
-      per map: the `Room` rectangles stay exactly as they are — every spawn,
-      the entrance and the exit are placed off them — and only what gets cut
-      out of the rock changes.
-- [ ] **The Cavern has no straight lines.** Carve an irregular blob inside each
-      room rectangle, and leave crystal pillars standing inside the bigger
-      ones. Corridors wander: keep the two legs so connectivity is guaranteed,
-      but jitter each step by a tile off `tileNoise`, and widen at random.
-- [ ] **The Rot is chambers and gullets.** Rooms rounded rather than square,
-      corridors narrow and constant-width — an intestine, not a hall.
-- [ ] The Fissure keeps its rectangles. It is the built world; that is what
-      makes the other two read as grown.
-- [ ] **What must not break.** Every room's centre has to stay walkable —
-      corridors join centres. `npm run demo` checks connectivity, the fraction
-      of the map that is walkable, rooms cut by corridors, and bodies ending up
-      inside rock (`BODIES`, which is measured over sixteen seeds because the
-      rate swings on seeds alone). Pathing is `src/sim/pathfind.ts` and does
-      not care about shape, but a cavern with more wall surface has more places
-      to snag on, so watch the monster-stuck checks.
-- [ ] Look at it: `npx tsx tools/zone-peek.mts out.png` draws all four zones
-      from a real generated map with the real palette.
-
-### Phase 2 — The danger retune
+### Phase 1 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -220,7 +199,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 3 — Unique gear
+### Phase 2 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.

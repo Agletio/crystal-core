@@ -5,6 +5,7 @@
  */
 import { Rng } from '../rng';
 import { computeStat } from '../mods';
+import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 
 export interface Vec2 {
@@ -16,11 +17,8 @@ export const WALL = 0;
 export const FLOOR = 1;
 export const ENTRANCE = 2;
 export const EXIT = 3;
-/**
- * Corridor floor. Walkable exactly like FLOOR, since `walkable()` is "not a
- * wall" — it exists so a renderer can tell a chamber from a passage without
- * re-deriving it from the room rectangles every frame.
- */
+/** Corridor floor. Walkable exactly like FLOOR — it exists so a renderer can
+ *  tell a chamber from a passage without re-deriving it from the rectangles. */
 export const TUNNEL = 4;
 
 export interface Room {
@@ -32,10 +30,8 @@ export interface Room {
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-/**
- * Whole-tile, never fractional: the pathfinder works in whole tiles, and a
- * fractional landmark leaves the hero half a tile short of a goal forever.
- */
+/** Whole-tile: the pathfinder works in whole tiles, and a fractional landmark
+ *  leaves the hero half a tile short of a goal forever. */
 export function roomCenter(r: Room): Vec2 {
   return { x: r.x + Math.floor((r.w - 1) / 2), y: r.y + Math.floor((r.h - 1) / 2) };
 }
@@ -137,17 +133,66 @@ function overlaps(a: Room, b: Room, pad: number): boolean {
   );
 }
 
-function carveRoom(grid: Grid, r: Room): void {
-  for (let y = r.y; y < r.y + r.h; y++) {
-    for (let x = r.x; x < r.x + r.w; x++) grid.set(x, y, FLOOR);
+/**
+ * How a zone is cut out of the rock. The Fissure was BUILT, which is what makes
+ * the other two read as grown. The Seam is grown throughout rather than a room
+ * of each: alternating made it the average of its two parents, and the average
+ * of two hard rooms is not the hardest room going.
+ */
+export type Cut = 'built' | 'grown' | 'gullet';
+
+const CUT: Record<MapTheme, Cut> = {
+  fissure: 'built',
+  demonic: 'gullet',
+  prismatic: 'grown',
+  seam: 'grown',
+};
+
+/** A room, cut the way its world cuts. The `Room` RECTANGLE never changes —
+ *  every spawn, the entrance and the exit are placed off it. */
+function carveRoom(grid: Grid, r: Room, cut: Cut): void {
+  if (cut !== 'grown') {
+    // A gullet is the rectangle with its corners off: rounded, but the SAME
+    // ROOM. An inscribed ellipse is a fifth smaller, and a fifth smaller with
+    // the same pack in it is a pack that arrives all at once — which turned
+    // the aura worlds into walls.
+    const corner = cut === 'gullet' ? (Math.min(r.w, r.h) >= 6 ? 2 : 1) : 0;
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const inset =
+          Math.min(x - r.x, r.x + r.w - 1 - x) + Math.min(y - r.y, r.y + r.h - 1 - y);
+        if (inset < corner) continue;
+        grid.set(x, y, FLOOR);
+      }
+    }
+    return;
+  }
+
+  const cx = r.x + (r.w - 1) / 2;
+  const cy = r.y + (r.h - 1) / 2;
+  // INSCRIBED. An ellipse round the OUTSIDE of the rectangle is bigger than
+  // the room it replaces, and rooms are packed two tiles apart: they merge and
+  // the map loses its walls.
+  const rx = r.w / 2;
+  const ry = r.h / 2;
+
+  for (let y = r.y - 1; y < r.y + r.h + 1; y++) {
+    for (let x = r.x - 1; x < r.x + r.w + 1; x++) {
+      if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) continue;
+      const dx = (x - cx) / rx;
+      const dy = (y - cy) / ry;
+      const d = dx * dx + dy * dy;
+      if (d > 0.8 + tileNoise(x, y, 50) * 0.35) continue; // ragged by a tile
+      // A pillar, never near the edge and never more than one tile, so it is
+      // something to walk round rather than something to be caught on.
+      if (d < 0.4 && tileNoise(x, y, 51) < 0.08) continue;
+      grid.set(x, y, FLOOR);
+    }
   }
 }
 
-/**
- * One corridor tile, leaving a permanent wall border. Only ever writes into
- * rock: corridors are carved after the rooms, so without the guard a passage
- * would relabel the middle of the chamber it connects to.
- */
+/** One corridor tile, leaving a permanent wall border. Only ever writes into
+ *  rock, or a passage would relabel the middle of the chamber it joins. */
 function carve(grid: Grid, x: number, y: number): void {
   if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
   if (grid.at(x, y) === WALL) grid.set(x, y, TUNNEL);
@@ -161,38 +206,50 @@ function band(width: number): number[] {
   return out;
 }
 
-function hLine(grid: Grid, x0: number, x1: number, y: number, width: number): void {
-  const offsets = band(width);
+/** At most ONE tile per step: any more and consecutive bands stop sharing a
+ *  row, leaving the halves diagonally adjacent — connected to the eye, and not
+ *  at all to a flood fill. */
+function drift(at: number, x: number, y: number, wobble: number): number {
+  if (wobble === 0) return 0;
+  const roll = tileNoise(x, y, 52);
+  const step = roll < 0.3 ? -1 : roll > 0.7 ? 1 : 0;
+  return clamp(at + step, -wobble, wobble);
+}
+
+function hLine(grid: Grid, x0: number, x1: number, y: number, w: number, wobble = 0): void {
+  let off = 0;
   for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {
-    for (const d of offsets) carve(grid, x, y + d);
+    off = drift(off, x, y, wobble);
+    for (const d of band(w)) carve(grid, x, y + off + d);
   }
 }
 
-function vLine(grid: Grid, y0: number, y1: number, x: number, width: number): void {
-  const offsets = band(width);
+function vLine(grid: Grid, y0: number, y1: number, x: number, w: number, wobble = 0): void {
+  let off = 0;
   for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) {
-    for (const d of offsets) carve(grid, x + d, y);
+    off = drift(off, x, y, wobble);
+    for (const d of band(w)) carve(grid, x + off + d, y);
   }
 }
 
-/**
- * L-shaped corridor: both legs always carve, the seed picks their ORDER. Two to
- * three tiles wide, because at one tile body collision turns every hallway into
- * a single-file queue.
- */
-function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng): void {
+/** L-shaped: both legs always carve, the seed picks their ORDER, and two to
+ *  three tiles wide because at one, body collision turns a hallway into a
+ *  queue. A grown world wanders across the legs; it never drops them, since
+ *  connectivity is the one thing a passage owes the run. */
+function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, cut: Cut): void {
   const ax = Math.round(a.x);
   const ay = Math.round(a.y);
   const bx = Math.round(b.x);
   const by = Math.round(b.y);
   const width = rng.int(2, 3);
+  const wobble = cut === 'grown' ? 1 : 0;
 
   if (rng.chance(0.5)) {
-    hLine(grid, ax, bx, ay, width);
-    vLine(grid, ay, by, bx, width);
+    hLine(grid, ax, bx, ay, width, wobble);
+    vLine(grid, ay, by, bx, width, wobble);
   } else {
-    vLine(grid, ay, by, ax, width);
-    hLine(grid, ax, bx, by, width);
+    vLine(grid, ay, by, ax, width, wobble);
+    hLine(grid, ax, bx, by, width, wobble);
   }
 }
 
@@ -261,9 +318,10 @@ export function generateMap(
     rooms.push(candidate);
   }
 
-  for (const room of rooms) carveRoom(grid, room);
+  const cut = CUT[theme] ?? 'built';
+  for (const room of rooms) carveRoom(grid, room, cut);
   for (let i = 1; i < rooms.length; i++) {
-    carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng);
+    carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, cut);
   }
 
   const entrance = roomCenter(rooms[0]);
@@ -287,7 +345,7 @@ export function generateMap(
   // if the generator somehow failed.
   const exitKey = Math.round(exit.y) * grid.width + Math.round(exit.x);
   if (!reachable(grid, entrance).has(exitKey)) {
-    carveCorridor(grid, entrance, exit, rng);
+    carveCorridor(grid, entrance, exit, rng, 'built'); // straight, whatever the world
   }
 
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);

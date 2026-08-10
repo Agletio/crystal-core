@@ -7,6 +7,7 @@ import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Vec2 } from '../sim/grid';
 import type { AuraDef, MapTheme } from '../types';
+import { tileNoise } from '../noise';
 
 export interface Palette {
   void: string;
@@ -206,13 +207,6 @@ export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alp
   // A percentage aura is the one that needs the other to be worth much, so it
   // reads as the fainter of the two.
   return { colour, alpha: aura.incDamage || aura.incArmour ? 0.07 : 0.09 };
-}
-
-/** Answerable for one tile without having generated any other — not the Rng. */
-function tileNoise(x: number, y: number, salt: number): number {
-  let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
-  h = (h ^ (h >>> 13)) * 1274126177;
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 /**
