@@ -2,9 +2,8 @@
  * Sprite sheets drawn at runtime onto offscreen canvases, so the repo carries
  * no binary assets and a palette change redraws everything.
  *
- * Two walk frames each — enough for legs to alternate, which is the difference
- * between walking and sliding. Death and recoil are transforms, because
- * transforms are free and frames are not.
+ * Death and recoil are transforms, because transforms are free and frames are
+ * not.
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
@@ -21,6 +20,8 @@ import type { Look } from '../types';
  * divisible by every grid art is authored on: 48/16 is 3, 48/24 is 2.
  */
 export const CELL = 48;
+/** A CREATURE's cycle, and its own: the doll walks on `WALK_POSES`, which is
+ *  longer. Two is enough for legs to alternate on something with none. */
 export const WALK_FRAMES = 2;
 /** After the walk cycle: the swing. */
 export const ATTACK_FRAME = WALK_FRAMES;

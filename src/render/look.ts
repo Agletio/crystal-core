@@ -87,13 +87,11 @@ function layerRows(look: Look, slot: LayerSlot, pose: PoseId): string[] | null {
   if (!worn) return null;
   const family = FAMILY_ART[worn.family];
   if (!family) return null;
-  // Feet are the one thing a shift cannot fake, so boots have a frame each.
-  const stride = pose === 'walk1' || pose === 'attack';
-  const art = slot === 'boots' ? family.boots[stride ? 1 : 0] : family[slot];
+  const art = slot === 'boots' ? family.boots[POSES[pose].boot] : family[slot];
   return inFamily(atTier(art, worn.tier), worn.family);
 }
 
-/** One pose of one loadout, as a 16-row grid. */
+/** One pose of one loadout, as one grid. */
 export function lookRows(look: Look, pose: PoseId): string[] {
   // The figure moves with `all` too: a lunge is the whole body going forward,
   // not the armour sliding off it.

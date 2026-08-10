@@ -4,6 +4,11 @@
  *
  * The grip is at (17, 14) and `POSES[..].hand` moves it. Every weapon is drawn
  * against that one point.
+ *
+ * The walk is contact, pass, contact, pass. A pass has the legs TOGETHER with
+ * one foot off the ground and the whole figure a pixel higher — without it two
+ * planted frames alternate and the figure reads as doing the splits on the
+ * spot. `POSES` lifts the armour by that pixel so the two stay together.
  */
 import type { PoseId } from './pose';
 
@@ -12,6 +17,7 @@ import type { PoseId } from './pose';
  * `l` trouser · `L` trouser shadow · `b` bare foot
  */
 export const BODY: Record<PoseId, string[]> = {
+  // Contact: weight landing, the near leg leading and lit.
   walk0: [
     '........................',
     '........................',
@@ -30,19 +36,16 @@ export const BODY: Record<PoseId, string[]> = {
     '...#ssTtttttttTsss#.....',
     '.....#TtttttttT#........',
     '.....#TtttttttT#........',
-    '.....#lllllllll#........',
-    '.....#llL###Lll#........',
-    '.....#llL###Lll#........',
-    '.....#llL...Lll#........',
-    '.....#bbb...bbb#........',
-    '.....#bbb...bbb#........',
-    '.....####...####........',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#lll.....LLL#.......',
+    '....#lll.....LLL#.......',
+    '....#bbb.....bbb#.......',
+    '....####.....####.......',
   ],
-  // A row lower with the legs swept apart, so the figure sinks into the step.
-  // Baked in rather than shifted: the cell has no row 24.
+  // Pass: legs together, rear foot off the ground, everything a pixel up.
   walk1: [
-    '........................',
-    '........................',
     '........................',
     '........................',
     '........######..........',
@@ -60,16 +63,70 @@ export const BODY: Record<PoseId, string[]> = {
     '.....#TtttttttT#........',
     '.....#TtttttttT#........',
     '.....#lllllllll#........',
-    '....#llL#....#Lll#......',
-    '....#llL#....#Lll#......',
-    '....#bbb#....#bbb#......',
-    '....#bbb#....#bbb#......',
-    '....#####....#####......',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#lll##bbb#.........',
+    '.....#bbb######.........',
+    '.....#####..............',
   ],
-  // walk1's legs exactly, so one boot drawing serves both: a lunge is a
-  // stride with the shoulders squared and the arm driving through it.
-  attack: [
+  // Contact again, the other leg leading: the shading is what says which.
+  walk2: [
     '........................',
+    '........................',
+    '........................',
+    '........######..........',
+    '.......#hhhhhh#.........',
+    '.......#hhhhhh#.........',
+    '.......#hhssse#.........',
+    '.......#hsssse#.........',
+    '.......#ssssss#.........',
+    '........#ssss#..........',
+    '........#sss#...........',
+    '.....##ttttttt##........',
+    '...#ttTtttttttTttt#.....',
+    '...#ssTtttttttTttt#.....',
+    '...#ssTtttttttTsss#.....',
+    '.....#TtttttttT#........',
+    '.....#TtttttttT#........',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#LLL.....lll#.......',
+    '....#LLL.....lll#.......',
+    '....#bbb.....bbb#.......',
+    '....####.....####.......',
+  ],
+  // Pass, the other foot up.
+  walk3: [
+    '........................',
+    '........................',
+    '........######..........',
+    '.......#hhhhhh#.........',
+    '.......#hhhhhh#.........',
+    '.......#hhssse#.........',
+    '.......#hsssse#.........',
+    '.......#ssssss#.........',
+    '........#ssss#..........',
+    '........#sss#...........',
+    '.....##ttttttt##........',
+    '...#ttTtttttttTttt#.....',
+    '...#ssTtttttttTttt#.....',
+    '...#ssTtttttttTsss#.....',
+    '.....#TtttttttT#........',
+    '.....#TtttttttT#........',
+    '.....#lllllllll#........',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#lll##lll#.........',
+    '.....#bbb##lll#.........',
+    '.....######bbb#.........',
+    '..........#####.........',
+  ],
+  // A contact stance with the shoulders squared and the arm driving through.
+  attack: [
     '........................',
     '........................',
     '........................',
@@ -83,16 +140,17 @@ export const BODY: Record<PoseId, string[]> = {
     '........#sss#...........',
     '.....#ttttttttt#........',
     '...#ttTtttttttTttt#.....',
-    '...#ssTtttttttTttt#.....',
-    '...#ssTtttttttTsss#.....',
+    '...#ssTtttttttTtttt#....',
+    '...#ssTtttttttTssss#....',
     '.....#TtttttttT#........',
     '.....#TtttttttT#........',
-    '.....#lllllllll#........',
-    '....#llL#....#Lll#......',
-    '....#llL#....#Lll#......',
-    '....#bbb#....#bbb#......',
-    '....#bbb#....#bbb#......',
-    '....#####....#####......',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#lll.....LLL#.......',
+    '....#lll.....LLL#.......',
+    '....#bbb.....bbb#.......',
+    '....####.....####.......',
   ],
   // Braced back on the rear foot with the arm out in FRONT, not straight up.
   // A raised arm reads as a signal; an extended one reads as aiming.
@@ -114,11 +172,11 @@ export const BODY: Record<PoseId, string[]> = {
     '...#ssTtttttttT#........',
     '.....#TtttttttT#........',
     '.....#TtttttttT#........',
-    '.....#lllllllll#........',
-    '.....#llL###Lll#........',
-    '.....#llL###Lll#........',
-    '....#llL.....Lll#.......',
-    '....#bbb.....bbb#.......',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#lll.....LLL#.......',
+    '....#lll.....LLL#.......',
     '....#bbb.....bbb#.......',
     '....####.....####.......',
   ],

@@ -30,8 +30,8 @@ is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
 **What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phases 1–5 are that work. Phase 6 is the one balance debt
-carried out of the systems work, and Phase 7 is the next feature.
+keep up with them. Phases 1–4 are that work. Phase 5 is the one balance debt
+carried out of the systems work, and Phase 6 is the next feature.
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +54,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 7 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 6 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,7 +85,7 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting any of Phases 1–5. A session that does not know these
+Read this before starting any of Phases 1–4. A session that does not know these
 five things will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
@@ -101,8 +101,8 @@ to redraw everything, and that property is worth more than any single sprite.
 
 **Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
-tick and has no sprites at all. None of Phases 1–4 is visible in the fallback,
-and that is correct — do not "fix" it. Phase 5 is the exception: map decals are
+tick and has no sprites at all. None of Phases 1–3 is visible in the fallback,
+and that is correct — do not "fix" it. Phase 4 is the exception: map decals are
 shared pure functions, so both renderers get them.
 
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
@@ -121,6 +121,14 @@ so a family can be redrawn without the pipeline caring.
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
 
+**The walk is contact, pass, contact, pass** (`WALK_POSES`). A pass has the legs
+together, one foot off the ground, and the whole figure a pixel higher — the
+`POSES` entry lifts the armour by the same pixel. Feet are the one thing a shift
+cannot fake, so `POSES[pose].boot` picks one of four boot grids per family and
+nothing else may index `FamilyArt.boots`. Under armour the two CONTACTS are told
+apart by the boots trading places, not by the bare figure's leg shading, which
+nobody can see.
+
 ---
 
 ## 4. Work
@@ -128,48 +136,7 @@ anything that changes the figure's size changes all of them.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — A walk that walks
-
-The current walk cycle reads as the figure doing the splits on the spot, and the
-reason is exact: **both frames have both feet planted.** `walk0` puts the feet
-2 apart, `walk1` puts them 6 apart and drops the whole figure a row. Nothing
-ever passes. A cycle needs a frame where the legs are TOGETHER and one foot is
-off the ground — that is the frame that turns two poses into a step.
-
-The fix is the standard four-frame cycle: **contact** (feet apart, weight
-landing) → **pass** (legs together, rear foot lifted, body up one pixel) →
-**contact** (the other leg leading) → **pass** (the other foot lifted). Two of
-the four are new drawings; the contacts are the existing pair with the leading
-leg swapped.
-
-- [ ] `PoseId` in `src/render/pose.ts` gains `walk2` and `walk3`, with shifts in
-      `POSES`. Everything keyed on `PoseId` follows for free — `POSE_IDS` drives
-      `makeLookFrames`, so a look becomes six textures instead of four.
-- [ ] `poseOf` in `src/render/pixi.ts` currently reads
-      `Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES ? 'walk1' : 'walk0'` — a
-      boolean. It has to index a walk-pose list instead.
-- [ ] **Split `WALK_FRAMES`.** It lives in `sprites.ts` and is shared with
-      creatures: `ATTACK_FRAME = WALK_FRAMES` and `CREATURE_FRAMES =
-      WALK_FRAMES + 1`. Creatures have two walk frames and are not getting four;
-      bumping the shared constant allocates creature frames nothing draws. The
-      doll's cycle length comes from its pose list, and the creature count stays
-      its own.
-- [ ] **Boots do not quadruple.** `layerRows` in `look.ts` picks a boot frame
-      with `const stride = pose === 'walk1' || pose === 'attack'`. Replace the
-      boolean with an explicit `Record<PoseId, 0 | 1>` mapping both contacts to
-      the apart drawing and both passes to the together drawing. That holds
-      boots at 24 grids instead of 48.
-- [ ] Arm swing comes from `POSES[...].hand`, not from new drawings. That is
-      what the shift system is for, and it is why a body tweak does not strand
-      sixty pieces of armour.
-- [ ] Check the bob. `pixi.ts` lifts the sprite by
-      `|sin(elapsed * WALK_CYCLE * π)| * 0.06`; with four frames it has to peak
-      on the passes and trough on the contacts, or the figure rises as it lands.
-
-Creatures walk on two frames and read fine, having no legs to speak of. Do not
-four-frame the bestiary here.
-
-### Phase 2 — Attack and cast are frames, not shifts
+### Phase 1 — Attack and cast are frames, not shifts
 
 Melee looks like nothing happens because, on the body, nothing does. `attack` is
 `walk1`'s legs with `all: [2, 0]` and `swing: true`; the WEAPON has two drawings
@@ -191,7 +158,7 @@ shifted up.
       swing — the same problem in miniature. A second frame each is 21 more
       grids and can be taken separately.
 
-### Phase 3 — One light, every key
+### Phase 2 — One light, every key
 
 The cheapest depth in the project, and the thing that will make 24 look like a
 decision rather than a bigger 16. `TRIM`/`TRIM_LIT` already set the precedent:
@@ -216,7 +183,7 @@ not lit at all.
       underneath. Set any allowance from the measured spread rather than by
       guess, the way the `BODIES` bound was set.
 
-### Phase 4 — Silhouette rules per family
+### Phase 3 — Silhouette rules per family
 
 Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
 around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
@@ -239,7 +206,7 @@ the three worlds do not read as three worlds at a glance.
 - [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
       conformance is the work.
 
-### Phase 5 — Zone props
+### Phase 4 — Zone props
 
 The best world identity per byte in the project, and the only art work that
 reaches both renderers.
@@ -269,7 +236,7 @@ for free and shows up in the fallback too.
       that renders identically in two zones fails the way a duplicate tileset
       already does.
 
-### Phase 6 — The danger retune
+### Phase 5 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -294,7 +261,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 7 — Unique gear
+### Phase 6 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.

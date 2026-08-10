@@ -43,7 +43,7 @@ import {
   vfxColour,
 } from './renderer';
 import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
-import { POSE_IDS } from './pose';
+import { POSE_IDS, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
 import type { PoseId } from './pose';
@@ -145,8 +145,8 @@ export async function createPixiRenderer(
       const spell = e.skillId ? SKILL_BY_ID[e.skillId]?.tags.includes('spell') : false;
       return spell ? 'cast' : 'attack';
     }
-    if (e.action === 'move') return Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES ? 'walk1' : 'walk0';
-    return 'walk0';
+    if (e.action !== 'move') return 'walk0';
+    return WALK_POSES[Math.floor(elapsed * WALK_CYCLE) % WALK_POSES.length];
   }
 
   /** A creature's frames at its rank, falling back to the common ones. */
@@ -325,9 +325,12 @@ export async function createPixiRenderer(
     s.x = cx(e.x) + Math.cos(e.facing) * lunge;
     s.y = cy(e.y) + Math.sin(e.facing) * lunge;
 
-    // A gentle bob while walking sells motion more than the frames do.
+    // A bob under the frames. The doll rises on its two PASS frames, so its
+    // bob runs at half the frame rate or the two fight each other; a creature
+    // has a frame per step and bobs on every one.
     if (e.action === 'move') {
-      s.y -= Math.abs(Math.sin(elapsed * WALK_CYCLE * Math.PI)) * 0.06;
+      const beat = worn ? 0.5 : 1;
+      s.y -= Math.abs(Math.sin((elapsed * WALK_CYCLE - 0.5) * beat * Math.PI)) * 0.05;
     }
 
     // Sprites are authored facing right; flip rather than rotate so they

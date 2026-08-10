@@ -79,7 +79,8 @@ import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
-import { POSE_IDS } from './render/pose';
+import { POSE_IDS, WALK_POSES } from './render/pose';
+import type { PoseId } from './render/pose';
 import {
   characterStats,
   convertedType,
@@ -1011,6 +1012,19 @@ rule('THE MODEL — does the figure hold together in every pose?');
     twins.length === 0,
     `all ${POSE_IDS.length} poses draw something different`,
     twins.map((p) => p.join('=')).join(', ')
+  );
+
+  // A walk is contact, pass, contact, pass, and a pass is the frame where the
+  // figure is on ONE foot. Two planted frames alternating is the splits.
+  const soles = (pose: PoseId): number => {
+    const rows = lookRows(full, pose).filter((r) => r.trim() !== '.'.repeat(DOLL_GRID));
+    return (rows[rows.length - 1].match(/[^.]+/g) ?? []).length;
+  };
+  const standing = WALK_POSES.map(soles);
+  check(
+    standing.join() === '2,1,2,1',
+    'and the walk puts the figure on one foot every other frame',
+    WALK_POSES.map((p, i) => `${p} on ${standing[i]}`).join(', ')
   );
 
   // The rung is a rule, so it has to actually do something at each step, and

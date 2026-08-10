@@ -1,16 +1,17 @@
 /**
  * A piece of armour is ONE grid, authored against the neutral figure, and a
- * pose MOVES it: motion is the base figure's own art plus a whole-pixel shift
- * per slot, so a body tweak takes every piece with it rather than leaving
- * forty-eight hand-aligned to a torso that moved. A pose cannot deform a
- * piece, so no cloak billows mid-swing.
+ * pose MOVES it: a whole-pixel shift per slot, so a body tweak takes all
+ * forty-eight with it instead of stranding them on a torso that moved. A pose
+ * cannot deform a piece, so no cloak billows mid-swing.
  */
-export type PoseId = 'walk0' | 'walk1' | 'attack' | 'cast';
+export type PoseId = 'walk0' | 'walk1' | 'walk2' | 'walk3' | 'attack' | 'cast';
 
 export type LayerSlot = 'boots' | 'body' | 'gloves' | 'helmet' | 'weapon';
 
-/** Painted in this order, over the base figure. */
 export const LAYER_ORDER: LayerSlot[] = ['boots', 'body', 'gloves', 'helmet', 'weapon'];
+
+/** Contact, pass, contact, pass. Indexed by the renderer, never a boolean. */
+export const WALK_POSES: PoseId[] = ['walk0', 'walk1', 'walk2', 'walk3'];
 
 export type Shift = readonly [number, number]; // whole pixels, or the grid slips
 
@@ -20,13 +21,21 @@ export interface Pose {
   torso: Shift; // rides the chest, and the head with it
   hand: Shift; // where the grip lands, and the gloved hand with it
   swing: boolean; // weapons are drawn at rest and mid-swing, to stay on the grid
+  /** Feet are the one thing a shift cannot fake, so boots have a grid each. */
+  boot: number;
 }
 
+const CONTACT = { all: [0, 0], boots: [0, 0], torso: [0, 0], hand: [0, 0], swing: false } as const;
+// A pass lifts the figure a pixel; the armour goes with it.
+const PASS = { all: [0, 0], boots: [0, 0], torso: [0, -1], hand: [0, -1], swing: false } as const;
+
 export const POSES: Record<PoseId, Pose> = {
-  walk0: { all: [0, 0], boots: [0, 0], torso: [0, 0], hand: [0, 0], swing: false },
-  walk1: { all: [0, 0], boots: [0, 0], torso: [0, 1], hand: [0, 1], swing: false },
-  attack: { all: [2, 0], boots: [0, 0], torso: [0, 1], hand: [0, 1], swing: true },
-  cast: { all: [-2, 0], boots: [0, 0], torso: [0, 0], hand: [0, -5], swing: false },
+  walk0: { ...CONTACT, boot: 0 },
+  walk1: { ...PASS, boot: 1 },
+  walk2: { ...CONTACT, boot: 3 },
+  walk3: { ...PASS, boot: 2 },
+  attack: { all: [2, 0], boots: [0, 0], torso: [0, 0], hand: [0, 1], swing: true, boot: 0 },
+  cast: { all: [-2, 0], boots: [0, 0], torso: [0, 0], hand: [0, -5], swing: false, boot: 0 },
 };
 
 export const POSE_IDS = Object.keys(POSES) as PoseId[];
