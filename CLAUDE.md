@@ -13,10 +13,12 @@ A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework.
 **Start every session by reading `RULES.md`, then `ROADMAP.md`.** This file is
 loaded for you; those two are not.
 
-One phase per context: take the lowest-numbered phase in the roadmap that is not
-blocked on an open question, do the WHOLE of it, leave the suite green, commit
-and push, then update `ROADMAP.md` and `RULES.md` to match what you did. The
-cycle is written out in `RULES.md` and it is the authority on it.
+One phase at a time, and **no stop between them**: take the lowest-numbered
+phase in the roadmap that is not blocked on an open question, do the WHOLE of
+it, leave the suite green, commit and push, update `ROADMAP.md` and `RULES.md`
+to match what you did — and then start the next phase in the same breath.
+Finishing one is not a stopping point and is never a reason to ask whether to
+continue. The cycle is written out in `RULES.md` and it is the authority on it.
 
 When the roadmap holds nothing but questions, say so and list them rather than
 inventing work.
@@ -24,8 +26,8 @@ inventing work.
 **Ask in a plain message, never through the multiple-choice popup tool.** The
 popup is not always being watched and times out, which loses the question. Write
 it in the reply, stop, and wait for the answer — do not pick one and carry on.
-Once it is answered, carry on without stopping again: pausing between phases is
-not wanted; a question is.
+Once it is answered, carry on without stopping again: a question is the only
+thing worth pausing for, and pausing between phases is not.
 
 ## Commands
 

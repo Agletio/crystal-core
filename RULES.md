@@ -13,7 +13,7 @@ does not exist.
 
 ## The cycle
 
-One phase per context. Every pass:
+One phase at a time, and **no stop between them**. Every pass:
 
 1. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 2. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
@@ -26,11 +26,21 @@ One phase per context. Every pass:
    turned out to be wrong into its Open questions, and write down anything the
    next session would otherwise have to rediscover. Update this file if a rule
    changed or a new invariant now holds.
-6. Clear context and go again.
+6. **Start the next phase immediately.** Same turn, same context, no pause.
 
-When the roadmap holds nothing but questions, say so and list them. Do not
-invent work to fill the gap, and do not promote something out of the backlog
-without being asked.
+**Finishing a phase is not a stopping point.** It is the signal to begin the
+next one. Do not end the turn to report what was done, do not ask whether to
+carry on, and do not wait to be told to. Say what the phase did in a couple of
+lines if it is worth saying, and keep working in the same breath. A pass that
+ends with "Phase N is complete — shall I continue?" has broken this rule.
+
+Exactly three things end a session, and none of them is a finished phase:
+
+- **The roadmap holds nothing but questions.** Say so and list them. Do not
+  invent work to fill the gap, and do not promote something out of the backlog
+  without being asked.
+- **A question needs answering** — see below.
+- **The context runs out.** That is the harness's call, not a decision.
 
 **Ask in a plain message, never through the multiple-choice popup tool.** It is
 not always being watched and it times out, which loses the question. Write it in
