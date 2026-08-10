@@ -138,6 +138,18 @@ by fewer than all four — and never removes what is already rolled on it.
 `src/ui/crystals.ts` is where the collection is compared, since four sockets
 against everything you have ever been given is a comparison rather than a bag.
 
+## Uniques
+
+`UNIQUES` in `data.ts` is a table of named pieces: a base it is a version of,
+fixed lines rolled once by `makeUnique`, a `grants` bag out of the SAME table
+the skill trees hand switches to the sim through, and a `DropGate`. Nothing at a
+bench reaches one — the lines are implicits and the item declares no modifier
+slots, so capacity is zero and every currency refuses it. `treeGrants` merges
+what is worn after the tree, so a unique reaches the sim by a tree's own path
+rather than a second one. Every one is a TRADE, paid for by a downside on the
+item, and the demo holds that line. Every world drops something of its own, and
+the Fissure gets two for being the shallow end.
+
 ## Money
 
 **Gold** is the one currency prices are quoted in. It comes off corpses and out

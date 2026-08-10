@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Rng } from './rng';
 import { ModPool } from './mods';
-import { craft, describeItem } from './crafting';
+import { canApply, craft, describeItem } from './crafting';
 import {
   AILMENT,
   ALL_MODS,
@@ -49,6 +49,8 @@ import {
   RECIPES,
   SKILLS,
   SKILL_BY_ID,
+  UNIQUES,
+  UNIQUE_BY_ID,
 } from './data';
 import {
   balance,
@@ -58,6 +60,7 @@ import {
   priceOfItem,
   rollCrystal,
   makeGear,
+  makeUnique,
   rollGear,
   runRecipe,
   sellPrice,
@@ -4172,6 +4175,128 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     `the Normal rungs plus the one you are given fill all ${RUN_SLOTS.length} sockets`,
     `${normals} Normal crystals from quests, plus the opening's one`
   );
+}
+
+// ===========================================================================
+rule('UNIQUES — is every named piece real, reachable and unbreakable?');
+
+// A unique is a fixed identity plus a switch out of the same table the trees
+// use, so the rules that hold a tree together hold here: declared, read by
+// something, and stacking said out loud.
+{
+  const undeclared: string[] = [];
+  const unread: string[] = [];
+  const behaviours = new Set(PLAYER_SKILLS.map((s) => s.behaviour));
+  for (const u of UNIQUES) {
+    for (const key of Object.keys(u.grants ?? {})) {
+      const def = GRANT_BY_ID[key];
+      if (!def) {
+        undeclared.push(`${u.id}: ${key}`);
+        continue;
+      }
+      // Worn by anyone, so the test is whether ANY skill you can pick reads it.
+      const reachable =
+        def.reads.includes(STATS) || [...behaviours].some((b) => behaviourReads(b, key));
+      if (!reachable) unread.push(`${u.id}: nothing reads ${key}`);
+    }
+  }
+  check(undeclared.length === 0, `all ${UNIQUES.length} uniques grant only declared switches`, undeclared.join(', '));
+  check(unread.length === 0, 'and every one of them is read by a skill you can pick', unread.join(', '));
+
+  const noBase = UNIQUES.filter((u) => !GEAR_BASE_BY_ID[u.base]).map((u) => u.id);
+  check(noBase.length === 0, 'and every one is a version of a base that exists', noBase.join(', '));
+
+  // Every unique is a TRADE. A named piece that is strictly better than a
+  // rolled one is not a decision, it is an upgrade with a story on it.
+  const oneSided = UNIQUES.filter((u) => !u.stats.some((line) => line.range[0] < 0)).map((u) => u.id);
+  check(oneSided.length === 0, 'and every one is paid for on the item itself', `no downside: ${oneSided.join(', ')}`);
+
+  // Nothing at a bench may reach one. The slot table is empty, so capacity is
+  // zero — including through the one currency that adds a slot past the cap.
+  const rng2 = new Rng(77);
+  const piece = makeUnique(UNIQUES[0], 70, rng2);
+  const refusals = CURRENCIES.map((c) => canApply(piece, c)).filter((r) => r === null);
+  check(
+    modCapacity(piece) === 0 && refusals.length === 0,
+    `and all ${CURRENCIES.length} currencies refuse one`,
+    `capacity ${modCapacity(piece)}, ${refusals.length} would apply`
+  );
+
+  // The lines are real: worn, they move the sheet.
+  const bare = makeCharacter({}, 'fireball');
+  const armed = makeCharacter({}, 'fireball');
+  armed.equipment.helmet = makeUnique(UNIQUE_BY_ID.hollow_crown, 70, new Rng(5));
+  check(
+    characterStats(armed).damage > characterStats(bare).damage &&
+      characterStats(armed).maxLife < characterStats(bare).maxLife,
+    'wearing one both gives and takes, on the sheet',
+    `damage ${characterStats(armed).damage.toFixed(0)} vs ${characterStats(bare).damage.toFixed(0)}, ` +
+      `life ${characterStats(armed).maxLife.toFixed(0)} vs ${characterStats(bare).maxLife.toFixed(0)}`
+  );
+
+  // And the switch reaches the sim, which is the whole point of routing it
+  // through GRANTS rather than inventing a second path.
+  const worn = makeCharacter({}, 'fireball');
+  worn.equipment.gloves = makeUnique(UNIQUE_BY_ID.long_reach, 70, new Rng(6));
+  check(
+    treeGrants(worn).pierce === 2 && treeGrants(bare).pierce === undefined,
+    'and the switch on it lands in the same grants the tree hands over',
+    JSON.stringify(treeGrants(worn))
+  );
+
+  // Zone gates. Every world has something of its own, the Fissure included —
+  // which is what the shallow end gets for being the shallow end.
+  const zones = MAP_THEMES.map((t) => {
+    const here = UNIQUES.filter((u) => opensHere(u.gate, 6, t.id));
+    return `${t.name} ${here.length}`;
+  });
+  line(`  named pieces by world: ${zones.join(' · ')}`);
+  const barren = MAP_THEMES.filter((t) => !UNIQUES.some((u) => opensHere(u.gate, 6, t.id)));
+  check(
+    barren.length === 0,
+    'every world drops something that exists nowhere else',
+    `nothing of their own: ${barren.map((t) => t.name).join(', ')}`
+  );
+
+  // A gate is a wall, not a weighting: played out, the Fissure never hands
+  // over the Seam's piece however many kills it takes.
+  {
+    const set = deepestSet(new Rng(11), pool);
+    const bare2 = new RunSim([], ladderCharacter(6, new Rng(3)), new Rng(21));
+    runToCompletion(bare2, 600);
+    const wrong = bare2.state.loot.items.filter(
+      (i) => i.meta.unique !== undefined && UNIQUE_BY_ID[String(i.meta.unique)].gate?.zone !== 'fissure'
+    );
+    check(wrong.length === 0, 'and a run never drops one gated to a world it is not', `${wrong.length} out of place`);
+
+    // And they DO drop, or the whole table is decoration.
+    let found = 0;
+    for (let i = 0; i < 8; i++) {
+      const sim = new RunSim(set, ladderCharacter(6, new Rng(40 + i)), new Rng(600 + i));
+      runToCompletion(sim, 600);
+      found += sim.state.loot.items.filter((it) => it.meta.unique !== undefined).length;
+    }
+    check(found > 0, `and the deep end actually hands them out — ${found} in 8 descents`, 'none dropped at all');
+  }
+
+  // The bulk button takes every carried piece no currency has touched, which
+  // is the whole reason it can never eat a decision — and a unique is nothing
+  // but a decision, however few modifiers it rolls.
+  const kit = createGame('dev');
+  const named = kit.inventory.filter((i) => i.meta.unique !== undefined);
+  const swept = plainGear(kit.inventory).filter((i) => i.meta.unique !== undefined);
+  check(
+    named.length === UNIQUES.length && swept.length === 0,
+    `the kit carries all ${UNIQUES.length}, and Sell all takes none of them`,
+    `${named.length} carried, ${swept.length} would be swept up`
+  );
+
+  // A cut unique costs the item and nothing else, the same as a cut base.
+  const rotted = createGame('fresh');
+  rotted.inventory = [makeUnique(UNIQUES[0], 70, new Rng(8))];
+  rotted.inventory[0].meta.unique = 'a_unique_that_was_cut';
+  heal(rotted);
+  check(rotted.inventory.length === 0, 'and a save naming one that was cut drops it on load', `${rotted.inventory.length} left`);
 }
 
 // ===========================================================================

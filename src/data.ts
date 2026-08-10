@@ -18,6 +18,7 @@ import type {
   SkillCategory,
   SkillDef,
   StatSpec,
+  UniqueDef,
 } from './types';
 
 // --- damage types ----------------------------------------------------------
@@ -2079,6 +2080,106 @@ export const bandFor = (power: number): DropBand =>
 export const opensHere = (gate: DropGate | undefined, power: number, zone: MapTheme): boolean =>
   !gate || ((gate.minPower ?? 0) <= power && (gate.zone === undefined || gate.zone === zone));
 
+// --- uniques ---------------------------------------------------------------
+//
+// A named piece whose lines are fixed and whose real content is a `grants`
+// entry — the same table the trees hand switches to the sim through, so the
+// merge rules and the demo's "declared, and read by something" rule apply to
+// gear for free. Every one is a TRADE: the switch is paid for on the item.
+//
+// A unique declares no modifier slots, so no currency reaches it. The whole
+// point is a fixed thing you build around rather than a canvas.
+
+export const UNIQUES: UniqueDef[] = [
+  // The Fissure's own, which is what it gets for being the shallow end: two
+  // pieces that exist nowhere else, so the easy world is still a place you go.
+  {
+    id: 'hollow_crown',
+    name: 'The Hollow Crown',
+    base: 'bulwark_helmet_t2',
+    flavour: 'Worn thin from the inside. Whoever had it last was not wearing it for the protection.',
+    stats: [
+      { stat: 'damage', form: 'flat', range: [20, 30] },
+      { stat: 'life', form: 'inc', range: [-35, -25] },
+    ],
+    grants: { moreVsFull: 1.35 },
+    gate: { zone: 'fissure', minPower: 1 },
+  },
+  {
+    id: 'long_reach',
+    name: 'The Long Reach',
+    base: 'arcanist_gloves_t2',
+    flavour: 'It does not stop where you stop.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-25, -15] },
+      { stat: 'attackSpeed', form: 'inc', range: [12, 20] },
+      { stat: 'castSpeed', form: 'inc', range: [12, 20] },
+    ],
+    grants: { pierce: 2, pierceDamage: true },
+    gate: { zone: 'fissure', minPower: 2 },
+  },
+  // The Rot: everything here is about what a corpse is still good for.
+  {
+    id: 'rotcallers_grasp',
+    name: "Rotcaller's Grasp",
+    base: 'shadow_gloves_t2',
+    flavour: 'The dead are a resource. It is only manners to say so.',
+    stats: [
+      { stat: 'life', form: 'inc', range: [-30, -20] },
+      { stat: 'critChance', form: 'flat', range: [6, 10] },
+    ],
+    grants: { explodeOnKill: true },
+    gate: { zone: 'demonic', minPower: 2 },
+  },
+  {
+    id: 'second_mouth',
+    name: 'The Second Mouth',
+    base: 'jade_amulet',
+    flavour: 'One of them is yours.',
+    stats: [
+      { stat: 'attackSpeed', form: 'inc', range: [-25, -18] },
+      { stat: 'castSpeed', form: 'inc', range: [-25, -18] },
+      { stat: 'life', form: 'flat', range: [40, 70] },
+    ],
+    grants: { ailmentMultiplier: 1.6, ailmentDuration: 1.4 },
+    gate: { zone: 'demonic', minPower: 3 },
+  },
+  // The Cavern: light goes through everything, and so does what you throw.
+  {
+    id: 'splintered_eye',
+    name: 'The Splintered Eye',
+    base: 'oracle_helmet_t2',
+    flavour: 'You see all of them at once. You cannot look at any of them.',
+    stats: [
+      { stat: 'armour', form: 'inc', range: [-40, -30] },
+      { stat: 'rarity', form: 'flat', range: [18, 30] },
+    ],
+    grants: { extraTargets: 2, extraTargetDamage: true, extraFields: 1 },
+    gate: { zone: 'prismatic', minPower: 3 },
+  },
+  // The Seam, and the only piece that asks for both worlds at once.
+  {
+    id: 'what_the_seam_left',
+    name: 'What The Seam Left',
+    base: 'vanguard_body_t3',
+    flavour: 'Two rooms fused and this was in both of them.',
+    stats: [
+      { stat: 'life', form: 'inc', range: [-45, -35] },
+      { stat: 'damage', form: 'inc', range: [40, 60] },
+    ],
+    grants: { explode: true, explodeRadius: 1.5, explodeMultiplierAdd: 0.4 },
+    gate: { zone: 'seam', minPower: 4 },
+  },
+];
+
+export const UNIQUE_BY_ID: Record<string, UniqueDef> = Object.fromEntries(
+  UNIQUES.map((u) => [u.id, u])
+);
+
+/** How often a piece of gear that drops is a named one instead. Rarity moves
+ *  the chance the same way it moves everything else; a gate is still a wall. */
+export const UNIQUE_DROP = { chance: 0.015 };
+
 // --- the shop's shelf ------------------------------------------------------
 //
 // Grows with you. At level 1 it holds a Rough piece or two and the currencies
@@ -2168,6 +2269,7 @@ export interface StartPreset {
   currency: Record<string, number>;
   crystals: Array<{ level: number; family: MonsterFamily }>;
   gear: Array<{ base: string; ilvl: number }>;
+  uniques?: string[];
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -2189,6 +2291,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
       MONSTER_FAMILIES.map((f) => ({ level: t.level, family: f.id }))
     ),
     gear: [],
+    // One of each, so the kit can look at a named piece without farming for it.
+    uniques: UNIQUES.map((u) => u.id),
     equipped: true,
   },
 };

@@ -14,6 +14,7 @@ import {
   findStat,
   monsterResStat,
   SKILL_BY_ID,
+  UNIQUE_BY_ID,
 } from '../data';
 import { equippedItems } from './character';
 import type { Character } from './character';
@@ -108,10 +109,9 @@ export function skillBase(skill: SkillDef, level: number): number {
 
 /**
  * Damage types are resolved separately and STAY separate. In the fire pass the
- * context is [...skillTags, 'fire'], so "+12 fire damage" applies, "increased
- * Physical Damage" does not, and an untagged line applies to every pass — and
- * the skill's own tags ride along, so "increased Melee Damage" finds a melee
- * skill. `damageTypes` types the skill's OWN damage and nothing else.
+ * context is [...skillTags, 'fire'], so "+12 fire damage" applies and
+ * "increased Physical Damage" does not; an untagged line reaches every pass,
+ * and the skill's own tags ride along. `damageTypes` types its OWN damage.
  */
 export function damageBreakdown(
   mods: RolledMod[],
@@ -315,18 +315,21 @@ export function treeMod(character: Character): RolledMod | null {
 }
 
 /** Behaviour switches from every allocated node, merged. */
+/** Every switch the sim is holding: the tree, then what is WORN — gear merges
+ *  last, so a unique bought with a downside wins a tie against a node. */
 export function treeGrants(character: Character): Record<string, unknown> {
-  const progress = character.skills[character.skillId];
-  if (!progress) return {};
-
   const out: Record<string, unknown> = {};
-  for (const id of progress.allocated) {
+  const progress = character.skills[character.skillId];
+
+  for (const id of progress?.allocated ?? []) {
     const node = nodeById(character.skillId, id);
     // A choice node gives the option you picked, and nothing until you pick.
-    const chosen = node?.choices?.find((c) => c.id === progress.choices?.[id]);
-    const from = { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) };
-
-    mergeGrants(out, from);
+    const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
+    mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
+  }
+  for (const worn of equippedItems(character)) {
+    const def = UNIQUE_BY_ID[String(worn.meta.unique)];
+    if (def?.grants) mergeGrants(out, def.grants);
   }
   return out;
 }

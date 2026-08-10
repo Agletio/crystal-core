@@ -452,7 +452,9 @@ function fill(host: HTMLElement, items: Item[]): void {
     // never how much it can hold.
     const btn = el(
       'button',
-      `slot slot--gear slot--t${baseTier(item)}${item.meta.corrupted ? ' slot--locked' : ''}`
+      `slot slot--gear slot--t${baseTier(item)}` +
+        (item.meta.corrupted ? ' slot--locked' : '') +
+        (item.meta.unique !== undefined ? ' slot--unique' : '')
     ) as HTMLButtonElement;
 
     btn.append(itemIcon(item, 30));

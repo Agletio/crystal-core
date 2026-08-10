@@ -12,10 +12,12 @@ import {
   RUN_SLOTS,
   SKILL_BY_ID,
   START_PRESETS,
+  CRYSTAL_ILVL,
+  UNIQUE_BY_ID,
   starterWeapon,
 } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
-import { canSell, grant, makeCrystal, makeGear, sellPrice } from '../economy';
+import { canSell, grant, makeCrystal, makeGear, makeUnique, sellPrice } from '../economy';
 import { baseTier } from '../mods';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
@@ -144,6 +146,11 @@ export function resetGame(game: GameState, mode: StartMode): void {
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
   game.inventory = preset.gear.map((g) => makeGear(g.base, g.ilvl));
+  const rng = new Rng(7);
+  for (const id of preset.uniques ?? []) {
+    const def = UNIQUE_BY_ID[id];
+    if (def) game.inventory.push(makeUnique(def, CRYSTAL_ILVL, rng));
+  }
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.stash = [];
   game.haul = [];
@@ -330,9 +337,11 @@ export function buyBack(game: GameState, entry: SoldEntry): { ok: boolean; error
   return { ok: true };
 }
 
-/** Gear with nothing rolled on it: the heap you can clear without reading it. */
+/** Gear with nothing rolled on it: the heap you can clear without reading it.
+ *  A named piece rolls nothing and is never in it — the bulk button exists
+ *  because it cannot eat a decision, and a unique is only a decision. */
 export const plainGear = (items: Item[]): Item[] =>
-  items.filter((i) => i.kind === 'gear' && i.mods.length === 0);
+  items.filter((i) => i.kind === 'gear' && i.mods.length === 0 && i.meta.unique === undefined);
 
 /** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
 export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {

@@ -18,6 +18,7 @@ import {
   PLAYER_SKILLS,
   RUN_SLOTS,
   SKILL_BY_ID,
+  UNIQUE_BY_ID,
   crystalName,
 } from '../data';
 import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
@@ -123,11 +124,15 @@ export interface Healed {
 export const healedAnything = (h: Healed): boolean =>
   h.items > 0 || h.currencies > 0 || h.points > 0 || h.skill;
 
-/** Crystals name their level; gear names a base that has to still exist. */
-const baseExists = (item: Item): boolean =>
-  item.kind === 'crystal'
-    ? CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`)
-    : GEAR_BASE_BY_ID[item.base] !== undefined;
+/** Crystals name their level; gear names a base that has to still exist, and a
+ *  named piece names a unique — its lines are the def, so a cut one is gone. */
+const baseExists = (item: Item): boolean => {
+  if (item.kind === 'crystal') {
+    return CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`);
+  }
+  if (item.meta.unique !== undefined && !UNIQUE_BY_ID[String(item.meta.unique)]) return false;
+  return GEAR_BASE_BY_ID[item.base] !== undefined;
+};
 
 /**
  * Re-walks the allocation with the game's own rule instead of trusting it.

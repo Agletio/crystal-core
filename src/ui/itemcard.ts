@@ -9,7 +9,8 @@ import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID } from '../data';
+import { FAMILY_BY_ID, UNIQUE_BY_ID } from '../data';
+import { GRANT_BY_ID } from '../sim/grants';
 import type { Item, RolledMod } from '../types';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -54,18 +55,25 @@ function group(label: string): HTMLElement {
  */
 export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   const locked = item.meta.corrupted === true;
+  const unique = UNIQUE_BY_ID[String(item.meta.unique)];
   const card = el(
     'div',
-    `tip__card tip__card--t${baseTier(item)}${locked ? ' tip__card--locked' : ''}`
+    `tip__card tip__card--t${baseTier(item)}` +
+      (locked ? ' tip__card--locked' : '') +
+      (unique ? ' tip__card--unique' : '')
   );
 
-  card.append(el('div', 'tip__name', item.name));
+  const name = el('div', 'tip__name', item.name);
+  if (unique) name.classList.add('tip__name--unique');
+  card.append(name);
 
   const facts = [tierName(item), `ilvl ${item.ilvl}`];
   if (item.kind === 'crystal') {
     facts[1] = FAMILY_BY_ID[crystalFamily(item)]?.name ?? 'Normal';
   }
-  facts.push(`${item.mods.length}/${modCapacity(item)} modifiers`);
+  // A named piece holds nothing and never will, so a count out of zero is a
+  // fact about a ladder it is not on.
+  if (!unique) facts.push(`${item.mods.length}/${modCapacity(item)} modifiers`);
   card.append(el('div', 'tip__sub', facts.join(' · ')));
 
   // Locked is the one state worth saying twice: the border carries it across
@@ -110,7 +118,19 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     card.append(box);
   }
 
-  if (item.mods.length === 0) {
+  // What the piece DOES, in the words the grant table already carries — and
+  // why it can never be crafted, which is otherwise a currency refusing it for
+  // no reason the card gives.
+  if (unique) {
+    const box = group('it does this');
+    for (const id of Object.keys(unique.grants ?? {})) {
+      const what = GRANT_BY_ID[id]?.what;
+      if (what) box.append(el('div', 'tip__grant', what));
+    }
+    box.append(el('div', 'tip__none', 'Fixed. Nothing at a bench can change it.'));
+    card.append(box);
+    card.append(el('div', 'tip__flavour', unique.flavour));
+  } else if (item.mods.length === 0) {
     card.append(el('div', 'tip__none', 'No modifiers'));
   }
 

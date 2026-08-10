@@ -43,9 +43,14 @@ holding whatever is owed — the weapon your skill can actually swing, then the
 first crystal and the shard to roll it, then every quest you have just finished.
 Nothing is a coin flip and nothing is a line in a report.
 
-The OPENING is done, and so is the danger retune it was queued behind. What is
-left is the next feature. §7 is the deferred pile, and the first entry in it is
-now answerable rather than blocked.
+The OPENING is done, and so are the two things queued behind it: the danger
+retune — the deep end is a wall now, and danger stops paying for what a cap has
+already eaten — and unique gear, six named pieces that grant switches through
+the same table the trees use, one world at a time.
+
+**There is no phase in §5.** What is next comes out of §7, which is real work
+deferred by decision rather than a queue — or out of playing it. Write the next
+phase to the standard §5 describes.
 
 ### Keeping room for a fifth socket
 
@@ -68,8 +73,8 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt the unique-gear
-phase owes it.
+reason to exist through drops nothing else has: it is the only world with TWO
+uniques of its own, which is the debt that paid.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -305,6 +310,17 @@ danger, so a set stacking four wards of one type is paid for one, and difficulty
 and payment cannot drift apart through a ceiling in the sim. A new danger stat
 that saturates anywhere needs its `cap` written down with it.
 
+**Uniques are gear that grants.** `UNIQUES` in `src/data.ts` is a table of
+`UniqueDef` — a base it is a version of, fixed `stats` rolled once by
+`makeUnique`, a `grants` bag out of the same `GRANTS` table the trees use, and a
+`gate`. `treeGrants` in `src/sim/stats.ts` merges what is WORN after the tree,
+so a unique's switch reaches the sim by the one path a tree's does. The lines
+live in `implicits`, and the item declares NO modifier slots — `modCapacity` is
+zero and every currency refuses it, `sigil_of_upheaval` included. `plainGear`
+excludes them, or the bulk sell would eat one. The demo holds each to the same
+rules as a tree node: declared, read by a skill you can pick, and paid for by a
+downside on the item. Every world drops something of its own, the Fissure two.
+
 **The deep end is not a band.** Power is clamped at `POWER.max`, so the top drop
 band is reached long before danger runs out — the hardest set in the game is
 nobody's target, and `deepestSet` in `src/sim/loadout.ts` is the only thing that
@@ -449,26 +465,9 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Unique gear
-
-Items with fixed identity and a behaviour attached, closer to a tree passive
-than to a rolled mod, but broad enough to work across builds.
-
-Examples given: gloves that make projectiles arc to one extra target but deal
-slightly less damage; a helmet granting a lot of flat damage that also adds it
-to attacks *you* take.
-
-- [ ] Unique item concept — fixed mods, optionally with ranges on flat stats.
-- [ ] Uniques grant **behaviours through the existing `GRANTS` table**
-      (`src/sim/grants.ts`), not a parallel system. The merge rules
-      (`mergeGrants`) and the demo's rule that every grant must be declared and
-      read by some behaviour then apply to gear for free.
-- [ ] Grant collection reads equipment as well as the tree — `treeGrants` in
-      `src/sim/stats.ts` is the seam.
-- [ ] Drop-gated by zone through `DropGate`: some uniques only from a full
-      Demonic run, some from full Prismatic, some only from the Seam — **and
-      some only from Normal**, which is what the Fissure gets in exchange for
-      being the easy world (§2).
+**Nothing is queued.** Every phase written down has landed. §7 is where the next
+one comes from; ask before turning one of those into a phase, because §7 is a
+pile of things deferred by decision rather than a list of things to do next.
 
 ---
 
@@ -493,11 +492,11 @@ Do not guess at these.
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
-   to nothing. §2 says a world should have a reason to be entered, and the
-   unique-gear phase already owes the Fissure one — so this may be the same
-   debt rather than a second. **Provisional, and mine, not the user's:** left
-   as it is rather than inventing a gate. Ask before gating an existing
-   currency to the Cavern — it would make a staple zone-locked.
+   to nothing. §2 says a world should have a reason to be entered, and every
+   world now has uniques of its own — the Fissure two — so this may already be
+   paid. **Provisional, and mine, not the user's:** left as it is rather than
+   inventing a gate. Ask before gating an existing currency to the Cavern; it
+   would make a staple zone-locked.
 
 ---
 
@@ -531,8 +530,8 @@ moving — see §2, balance is deliberately loose.
   first drop rather than a change to the step.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
-  right once you know what a good drop looks like, and uniques will move that
-  answer again.
+  right once you know what a good drop looks like — and now that uniques drop,
+  the answer has moved.
 - **Blight and Strike are not the same game.** Last measured, Blight cleared
   the top of the ladder 12/12 where Strike managed 3/12. That number is OLD —
   it predates the capacity rework, the retune and everything since — so

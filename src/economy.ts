@@ -19,6 +19,7 @@ import type {
   MonsterFamily,
   Recipe,
   RolledMod,
+  UniqueDef,
   Wallet,
 } from './types';
 
@@ -187,6 +188,38 @@ export function rollGear(
     if (!mod) break;
     item.mods.push(mod);
   }
+  return item;
+}
+
+/**
+ * A named piece, rolled once and then fixed. Its lines live in `implicits`,
+ * which nothing at the bench can reach, and it declares NO modifier slots — so
+ * `modCapacity` is zero and every currency refuses it, including the one that
+ * adds a slot past the cap.
+ */
+export function makeUnique(def: UniqueDef, ilvl: number, rng: Rng): Item {
+  const item = makeGear(def.base, ilvl, def.name);
+  item.tags = [...item.tags, 'unique', def.id];
+  item.slots = {};
+  item.implicits = [
+    ...item.implicits,
+    {
+      entryId: `${def.id}_unique`,
+      defId: `${def.id}_unique`,
+      group: 'unique',
+      slot: 'implicit',
+      name: def.name,
+      tier: 0,
+      tags: ['unique'],
+      stats: def.stats.map((line) => ({
+        stat: line.stat,
+        form: line.form,
+        value: rng.int(line.range[0], line.range[1]),
+        tags: line.tags ?? [],
+      })),
+    },
+  ];
+  item.meta.unique = def.id;
   return item;
 }
 

@@ -991,6 +991,29 @@ assert(
   slot.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 }
 
+// A named piece is the same card again, saying what it DOES and why nothing at
+// a bench will touch it — a currency that refuses with no reason on the card is
+// the item looking broken.
+{
+  const slots = filled('#inv-gear');
+  const one = slots.find((b) => b.className.includes('slot--unique'));
+  assert(!!one, 'the dock marks a named piece apart from a rolled one');
+  one.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  const card = $('tooltip').querySelector('.tip__card');
+  assert(
+    !!card.querySelector('.tip__name--unique'),
+    'and its card names it in its own colour'
+  );
+  assert(all('#tooltip .tip__grant').length > 0, 'and says what it does in words');
+  assert(
+    /nothing at a bench/i.test($('tooltip').textContent),
+    'and that nothing at a bench can change it',
+    $('tooltip').textContent
+  );
+  assert(!!$('tooltip').querySelector('.tip__flavour'), 'and carries its own line');
+  one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
 // A crystal is the same card, saying the things a crystal has instead: which
 // world it opens, what the danger buys, and how far it has left to level.
 {

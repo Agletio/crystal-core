@@ -45,13 +45,16 @@ import {
   SKILLS,
   SKILL_BY_ID,
   opensHere,
+  GEAR_BASE_BY_ID,
+  UNIQUES,
+  UNIQUE_DROP,
   socketPackSize,
   socketPacks,
   socketSize,
 } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool, computeStat } from '../mods';
-import { pickGearBase, rollGear } from '../economy';
+import { makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -1332,6 +1335,19 @@ export class RunSim {
     const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
     const chance = drops.gearChance * this.set.yield * (1 + rarity / 200);
     if (!this.rng.chance(chance)) return;
+
+    // A named piece instead of a rolled one. A gate is a wall, so the pool is
+    // filtered before the pick and no amount of rarity argues with it.
+    const named = UNIQUES.filter(
+      (u) =>
+        opensHere(u.gate, this.set.power, this.set.theme) &&
+        (GEAR_BASE_BY_ID[u.base]?.ilvl ?? 1) <= drops.ilvl
+    );
+    if (named.length > 0 && this.rng.chance(UNIQUE_DROP.chance * (1 + rarity / 200))) {
+      const def = this.rng.pick(named)!;
+      this.state.loot.items.push(makeUnique(def, drops.ilvl, this.rng));
+      return;
+    }
 
     const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods));
     if (!base) return;

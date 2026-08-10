@@ -112,6 +112,19 @@ export interface DropGate {
   zone?: MapTheme;
 }
 
+/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`,
+ *  closer to a tree passive than to a rolled modifier. A version of a BASE, so
+ *  slot, art and armour come from there. */
+export interface UniqueDef {
+  id: string;
+  name: string;
+  base: string;
+  stats: StatSpec[]; // rolled ONCE, when it drops
+  grants?: Record<string, unknown>; // every id declared in GRANTS and read by a skill
+  flavour: string; // the line under the name
+  gate?: DropGate;
+}
+
 export interface CurrencyDef {
   id: string;
   name: string;
