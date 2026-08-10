@@ -30,8 +30,8 @@ is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
 **What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phases 1–3 are that work. Phase 4 is the one balance debt
-carried out of the systems work, and Phase 5 is the next feature.
+keep up with them. Phases 1–2 are that work. Phase 3 is the one balance debt
+carried out of the systems work, and Phase 4 is the next feature.
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +54,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 5 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 4 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,7 +85,7 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting any of Phases 1–3. A session that does not know these
+Read this before starting any of Phases 1–2. A session that does not know these
 five things will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
@@ -101,8 +101,8 @@ to redraw everything, and that property is worth more than any single sprite.
 
 **Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
-tick and has no sprites at all. None of Phases 1–2 is visible in the fallback,
-and that is correct — do not "fix" it. Phase 3 is the exception: map decals are
+tick and has no sprites at all. Phase 1 is not visible in the fallback,
+and that is correct — do not "fix" it. Phase 2 is the exception: map decals are
 shared pure functions, so both renderers get them.
 
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
@@ -120,6 +120,13 @@ so a family can be redrawn without the pipeline caring.
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
+
+**One light, from above and slightly in front** (every sprite faces +x). Mass
+takes the lit ink where nothing is above it and the shade where nothing is
+below or behind it; a highlight sitting directly under a shadow is light from
+underneath and the demo fails on it. Cloth — the bare figure's shirt and
+trousers — has no lit ink at all and takes only the shade half: plate catches a
+highlight, a filthy traveller's clothes do not.
 
 **A pose is picked from what the entity is doing, not from the clock.**
 `poseOf` divides `actionTimer` by `ATTACK_POSE` to get how far through its own
@@ -141,32 +148,7 @@ nobody can see.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — One light, every key
-
-The cheapest depth in the project, and the thing that will make 24 look like a
-decision rather than a bigger 16. `TRIM`/`TRIM_LIT` already set the precedent:
-two characters for one material, the lit one where the light lands, swapped by
-`atTier`.
-
-The inks already exist everywhere — `BeastTone` is mass/lit/shade/eye,
-`FamilyTone` is mass/lit/dark/trim/trimLit. What does not exist is a **rule**
-about where they go, so families are lit from different directions and some are
-not lit at all.
-
-- [ ] Adopt one law and hold everything to it: **light from above and slightly
-      in front** (every sprite is drawn facing +x; the renderer flips rather
-      than rotates). Top surfaces and forward edges take the lit ink, undersides
-      and trailing edges take the shade ink, one pixel deep, no gradients.
-- [ ] Apply it across `FAMILY_ART`, `BODY`, `HERO_FRAMES` and `BEASTIARY`. It is
-      a handful of characters per sprite, not a redraw.
-- [ ] Keep `lookKeyColours` in `sprites.ts` as the single table it is — it is
-      what makes the gauntlet and the hand inside it lit by the same source.
-- [ ] Worth a demo check, if it can be stated without false positives: a lit
-      pixel sitting directly under a mass pixel in the same column is light from
-      underneath. Set any allowance from the measured spread rather than by
-      guess, the way the `BODIES` bound was set.
-
-### Phase 2 — Silhouette rules per family
+### Phase 1 — Silhouette rules per family
 
 Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
 around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
@@ -189,7 +171,7 @@ the three worlds do not read as three worlds at a glance.
 - [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
       conformance is the work.
 
-### Phase 3 — Zone props
+### Phase 2 — Zone props
 
 The best world identity per byte in the project, and the only art work that
 reaches both renderers.
@@ -219,7 +201,7 @@ for free and shows up in the fallback too.
       that renders identically in two zones fails the way a duplicate tileset
       already does.
 
-### Phase 4 — The danger retune
+### Phase 3 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -244,7 +226,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 5 — Unique gear
+### Phase 4 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.

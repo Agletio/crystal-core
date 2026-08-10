@@ -933,6 +933,27 @@ rule('SPRITES — is the pixel art well formed?');
     rankProblems.slice(0, 3).join('; ')
   );
 
+  // One light, from above. A highlight sitting directly under a shadow is lit
+  // from underneath, and a sprite lit from underneath reads as belonging to a
+  // different game than the one beside it.
+  const upsideDown = (grid: string[], lit: string, shade: string): number => {
+    let bad = 0;
+    for (let y = 1; y < grid.length; y++) {
+      for (let x = 0; x < grid[y].length; x++) {
+        if (grid[y][x] === lit && grid[y - 1][x] === shade) bad++;
+      }
+    }
+    return bad;
+  };
+  const wrongWay =
+    Object.values(BEASTIARY)
+      .flatMap((a) => [...a.frames, ...(a.attack ? [a.attack] : [])])
+      .reduce((n, g) => n + upsideDown(g, 'M', 's'), 0) +
+    Object.values(FAMILY_ART)
+      .flatMap((a) => [a.helmet, a.body, a.gloves, ...a.boots])
+      .reduce((n, g) => n + upsideDown(g, 'P', 'd'), 0);
+  check(wrongWay === 0, 'and every one of them is lit from above', `${wrongWay} pixels are not`);
+
   // Two frames that are identical are not a walk cycle. Cheap to write, and
   // exactly the thing you would not notice from a still.
   const same = [
