@@ -694,6 +694,12 @@
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
+  .modal__card--narrow { width: min(460px, 100%); }
+  .met { padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .met__gift { display: flex; gap: 10px; align-items: center; }
+  .met__name { font-size: 13px; color: var(--citrine); }
+  .met__said { line-height: 1.6; }
+  .met__said + .met__said { margin-top: 9px; }
   /* The handover: dark at the swap, which is what hides one map becoming
      another. Never takes a click. */
   .fade { position: absolute; inset: 0; background: var(--void); opacity: 0; pointer-events: none; }
@@ -1264,6 +1270,24 @@
 <!-- The haul. One terminus for the loop: a death and a full haul both land
      here, because both mean the same thing — the run is over, deal with your
      things. Inert like the stash, and the only container the Fissure fills. -->
+<!-- The Lampwright. A body on the map you walk to, not a line in a report:
+     the crystal is handed over here and is yours from that moment, whatever
+     happens further down. -->
+<div class="modal" id="met" hidden>
+  <div class="modal__card modal__card--narrow">
+    <div class="modal__head">
+      <h2 class="modal__title" id="met-title">The Lampwright</h2>
+    </div>
+    <div class="modal__body">
+      <div class="panel met">
+        <div class="met__gift" id="met-gift"></div>
+        <div id="met-said"></div>
+        <button class="mini mini--go" id="met-take">Take it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="haul" hidden>
   <div class="modal__card modal__card--wide">
     <div class="modal__head">

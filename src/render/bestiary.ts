@@ -896,6 +896,63 @@ export const BEASTIARY: Record<string, BeastArt> = {
       15: '...##....##...##...##...',
     }),
   },
+  /**
+   * Not a creature. A stooped figure in a heavy coat with a lantern held out
+   * to one side — the only warm thing on any map, which is how you find them.
+   * Two frames of the lantern swinging, because a person who never moves at
+   * all reads as a prop.
+   */
+  /**
+   * Not a creature. A stooped figure in a heavy coat with a lantern held out
+   * to one side — the only warm thing on any map, which is how you find them.
+   */
+  lampwright: {
+    tone: {
+      mass: (p) => mix(p.rust, p.void, 0.55),
+      lit: (p) => mix(p.citrine, p.rust, 0.35),
+      shade: (p) => mix(p.rust, p.void, 0.75),
+      eye: (p) => p.citrine,
+    },
+    grid: 24,
+    frames: [
+      rows({
+        3: '.......########.........',
+        4: '.......#MMMMMM#.........',
+        5: '.......#MeeeeM#.........',
+        6: '.......#mmmmmm#.........',
+        7: '.....####MMMM####..##...',
+        8: '.....#mMMMMMMMMm#..#e#..',
+        9: '....#mMMMMMMMMMMm#.#e#..',
+        10: '....#MMMMmmmmMMMM#.#e#..',
+        11: '....#mMMMMMMMMMMm#.###..',
+        12: '.....#MMMMMMMMMM#..#e#..',
+        13: '.....#mMMMMMMMMm#.#eee#.',
+        14: '.....#MMMMMMMMMM#.#eee#.',
+        15: '.....#mMMMMMMMMm#..#e#..',
+        16: '.....#MMMMMMMMMM#...##..',
+        17: '.....#ssssssssss#.......',
+        18: '.....############.......',
+      }),
+      rows({
+        3: '.......########.........',
+        4: '.......#MMMMMM#.........',
+        5: '.......#MeeeeM#.........',
+        6: '.......#mmmmmm#.........',
+        7: '.....####MMMM####.##....',
+        8: '.....#mMMMMMMMMm#.#e#...',
+        9: '....#mMMMMMMMMMMm##e#...',
+        10: '....#MMMMmmmmMMMM#.###..',
+        11: '....#mMMMMMMMMMMm#.#e#..',
+        12: '.....#MMMMMMMMMM#..#e#..',
+        13: '.....#mMMMMMMMMm#..#e#..',
+        14: '.....#MMMMMMMMMM#.#eee#.',
+        15: '.....#mMMMMMMMMm#.#eee#.',
+        16: '.....#MMMMMMMMMM#..#e#..',
+        17: '.....#ssssssssss#...##..',
+        18: '.....############.......',
+      }),
+    ],
+  },
   /** Robed and hooded, arms held out. Whatever it is saying is not for you. */
   chanter: {
     tone: {

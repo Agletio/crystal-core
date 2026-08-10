@@ -423,6 +423,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
     }
+    if (state.lampwright) drawMonster(v, state.lampwright);
     if (!state.hero.dead) drawHero(v, state.hero, emerge);
     drawVfx(v, state);
     for (const f of state.floaters) drawFloater(v, f);

@@ -17,10 +17,11 @@ import { compositionText, crystalFamily, farmingText, runSet, setRows } from '..
 import { FAMILY_BY_ID, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState, GiftPlace } from '../game/state';
-import { crystalProgress, giftChance } from '../game/crystals';
+import { crystalProgress, giftChance, ownedCrystals } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
+import { isMetOpen, openMet } from './met';
 import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
@@ -117,6 +118,11 @@ export function syncViewportLock(): void {
 
 /** Which of the three states the Fissure is in. The guide branches on it. */
 export const runPhase = (): Phase => phase;
+
+/** The panel is done: the crystal is granted, so the descent may run again. */
+export function metTaken(): void {
+  sim?.takeGift();
+}
 
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
@@ -599,7 +605,11 @@ function frame(now: number): void {
   const emerge = emergeNow();
   $('run-fade').style.opacity = String(1 - emerge);
 
-  if (playing && handover === 0 && sim && sim.state.status === 'running') {
+  // Someone is standing in front of you. Not a pause state — the sim is simply
+  // not ticked while the panel is up, and the panel is what ends the meeting.
+  if (sim?.state.meeting && !isMetOpen()) openMet(ownedCrystals(game).length === 0);
+
+  if (playing && handover === 0 && !isMetOpen() && sim && sim.state.status === 'running') {
     // One pace, always. Speed multipliers were papering over combat that
     // will change as the character scales; tuning the real pace is the
     // honest fix.

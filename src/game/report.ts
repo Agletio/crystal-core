@@ -5,10 +5,9 @@
  */
 import { bankToHaul, grantFirstClear, haulFull } from './state';
 import type { GameState } from './state';
-import { advanceSocketed, claimQuests, lampwrightGift } from './crystals';
+import { advanceSocketed, claimQuests } from './crystals';
 import type { CrystalGain } from './crystals';
 import type { GiftPlace } from './state';
-import { LAMPWRIGHT } from '../data';
 import { grant } from '../economy';
 import { addXp, addSkillXp } from '../sim/character';
 import type { RunState } from '../sim/run';
@@ -91,13 +90,6 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
         banked[id] = (banked[id] ?? 0) + n;
       }
       gifts.push({ item: first.weapon, where: first.where, from: 'The Fissure' });
-    }
-
-    // Met down there, paid out up here: a meeting on a descent you die in is a
-    // meeting, and the crystal was never in your hands.
-    if (run.met) {
-      const given = lampwrightGift(game);
-      gifts.push({ item: given.crystal, where: given.where, from: LAMPWRIGHT.name });
     }
 
     // Socketed only. A crystal in a bag is a crystal that was not used, and

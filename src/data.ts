@@ -1193,10 +1193,31 @@ export const CRYSTAL_XP = {
  */
 export const LAMPWRIGHT = {
   name: 'the Lampwright',
-  met: 'The Lampwright is working a seam by lanternlight, and gives you what will not hold a flame.',
+  /** Said in the log the moment they appear, before you have walked over. */
+  seen: 'A lantern, further back than you have been. Someone is waiting.',
   chance: [1, 0.34, 0.22, 0.14],
   level: 1,
   family: 'normal' as MonsterFamily,
+
+  /** What is said at the meeting. The FIRST one teaches: a crystal with no
+   *  explanation is four sockets nobody fills, and the thing new players get
+   *  wrong is thinking a socket makes the descent harder. */
+  first: {
+    title: 'The Lampwright',
+    said: [
+      'You have been down here long enough to be worth talking to. Here — it will not hold a flame, so it is no use to me.',
+      'It goes in a socket at the Fissure. A socketed crystal makes the descent LONGER, not harder; what makes it harder is what is rolled ON it, and that one has nothing rolled on it yet.',
+      'It levels while it is in a socket, and never anywhere else. Take it down with you.',
+    ],
+    button: 'Take it',
+  },
+  again: {
+    title: 'The Lampwright',
+    said: [
+      'Another one that will not light. You will find a use for it.',
+    ],
+    button: 'Take it',
+  },
 };
 
 /**

@@ -207,6 +207,18 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4300);
   await shoot('descent');
 
+  // The Lampwright. The first meeting is certain, but it fires on a kill
+  // count the run rolled, so this waits for it rather than assuming a time.
+  try {
+    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+      timeout: 20000,
+    });
+    await shoot('lampwright');
+    await page.evaluate(() => document.getElementById('met-take')?.click());
+  } catch {
+    problems.push(`${vp.name}: the first descent never met the Lampwright`);
+  }
+
   // The skill web, at every depth. It is the one screen with a hundred things
   // on it and its own pan/zoom transform, which makes it the likeliest place
   // for something to end up drawn outside the box it lives in.

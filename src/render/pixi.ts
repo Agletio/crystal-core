@@ -586,6 +586,8 @@ export async function createPixiRenderer(
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawEntity(m, state.elapsed);
     }
+    // Not a monster and not in the monster list, so it is drawn by name.
+    if (state.lampwright) drawEntity(state.lampwright, state.elapsed);
     if (!state.hero.dead) drawEntity(state.hero, state.elapsed, 1 - emerge);
 
     drawOverlays(state);

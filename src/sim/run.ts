@@ -5,7 +5,7 @@
  * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
-import { generateMap, dist, hasLineOfSight } from './grid';
+import { WALL, generateMap, dist, hasLineOfSight } from './grid';
 import type { GameMap, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT } from '../data';
@@ -238,7 +238,15 @@ export interface RunState {
   loot: RunLoot;
   /** The socketed set this was launched with. Never changes mid-descent. */
   set: RunSet;
-  /** Whether the Lampwright turned up. The report is what pays it out. */
+  /**
+   * The Lampwright, standing where they turned up, or null. Deliberately NOT
+   * in `monsters`: nothing in combat should ever be able to see them.
+   */
+  lampwright: Entity | null;
+  /** True from the moment the hero reaches them until the panel is dismissed. */
+  meeting: boolean;
+  /** Whether the crystal has been handed over. Granted on the spot, not in the
+   *  report — you keep it even if you die further down. */
   met: boolean;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
@@ -351,6 +359,8 @@ export class RunSim {
       finale: null,
       loot: { currency: {}, items: [] },
       set: this.set,
+      lampwright: null,
+      meeting: false,
       met: false,
       damageTaken: {},
     };
@@ -654,6 +664,22 @@ export class RunSim {
       hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
     }
 
+    // Someone is waiting, and it comes before the fight. Monsters keep
+    // swinging on the way over, so it still costs something.
+    if (s.lampwright && !s.meeting) {
+      if (dist(hero, s.lampwright) <= 1.1) {
+        hero.path = [];
+        this.face(hero, s.lampwright.x, s.lampwright.y);
+        this.settleAction(hero, false);
+        s.meeting = true;
+        return;
+      }
+      hero.targetId = null;
+      // Unreachable: forget it rather than walk at a wall all descent.
+      if (!this.advance(hero, s.lampwright, dt)) s.lampwright = null;
+      return;
+    }
+
     const target = this.acquireTarget(hero);
 
     if (target) {
@@ -684,6 +710,67 @@ export class RunSim {
     // Finale down too — that's the run.
     s.status = 'cleared';
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
+  }
+
+  /**
+   * A few tiles off, so walking over is a moment rather than a trek, and never
+   * inside a pack: the meeting is not a fight you have to win first.
+   */
+  private placeLampwright(): Entity | null {
+    const { grid } = this.state.map;
+    const hero = this.state.hero;
+
+    for (let tries = 0; tries < 48; tries++) {
+      const angle = this.rng.float(0, Math.PI * 2);
+      const reach = 3 + this.rng.float(0, 2.5);
+      const at = {
+        x: Math.round(hero.x + Math.cos(angle) * reach),
+        y: Math.round(hero.y + Math.sin(angle) * reach),
+      };
+      const tile = grid.at(at.x, at.y);
+      if (tile === undefined || tile === WALL) continue;
+      if (this.state.monsters.some((m) => !m.dead && dist(m, at) < 2.5)) continue;
+      if (findPath(grid, hero, at).length === 0) continue;
+
+      return {
+        id: this.nextId++,
+        kind: 'monster',
+        sprite: 'lampwright',
+        scale: 0.9,
+        rank: 'common',
+        radius: 0.3,
+        skillId: null,
+        x: at.x,
+        y: at.y,
+        // Facing the hero, because they came to find you.
+        facing: Math.atan2(hero.y - at.y, hero.x - at.x),
+        action: 'idle',
+        actionTimer: 0,
+        deathAge: 0,
+        ailments: [],
+        bounty: 0,
+        life: 1,
+        stats: this.state.hero.stats,
+        cooldown: 0,
+        path: [],
+        pathTimer: 0,
+        targetId: null,
+        aggroed: false,
+        hitFlash: 0,
+        dead: false,
+      };
+    }
+    return null;
+  }
+
+  /** The meeting is over and the crystal is in hand — granted by whoever calls
+   *  this, BEFORE calling it. The report never pays a meeting out. */
+  takeGift(): void {
+    const s = this.state;
+    if (!s.meeting) return;
+    s.meeting = false;
+    s.lampwright = null;
+    s.met = true;
   }
 
   /** Rolled from the run's rng, so the same crystal does not always end the same. */
@@ -1268,8 +1355,10 @@ export class RunSim {
 
     if (this.meetAt !== null && s.killed >= this.meetAt) {
       this.meetAt = null;
-      s.met = true;
-      this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.met });
+      s.lampwright = this.placeLampwright();
+      if (s.lampwright) {
+        this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.seen });
+      }
     }
   }
 
@@ -1326,8 +1415,22 @@ export class RunSim {
 }
 
 /** Convenience for the headless callers (demo, smoke): run to completion. */
-export function runToCompletion(sim: RunSim, maxSeconds = 600): RunState {
+/**
+ * `onMeeting` is what the UI's panel does, for a harness with no UI: the hero
+ * stands there until someone takes the crystal, so a run without it never ends.
+ */
+export function runToCompletion(
+  sim: RunSim,
+  maxSeconds = 600,
+  onMeeting?: () => void
+): RunState {
   let guard = Math.ceil(maxSeconds / TICK);
-  while (sim.state.status === 'running' && guard-- > 0) sim.step(TICK);
+  while (sim.state.status === 'running' && guard-- > 0) {
+    if (sim.state.meeting) {
+      onMeeting?.();
+      sim.takeGift();
+    }
+    sim.step(TICK);
+  }
   return sim.state;
 }

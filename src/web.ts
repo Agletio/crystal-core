@@ -20,8 +20,9 @@ import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './u
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
+import { closeMet, initMet, isMetOpen } from './ui/met';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
-import { initRun, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
+import { initRun, metTaken, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
@@ -121,6 +122,9 @@ globalThis.addEventListener('keydown', (event) => {
   // control with its own Close switched off.
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
+  // The crystal is already granted by the time this is on screen, so Escape
+  // takes it rather than refusing it.
+  else if (isMetOpen()) closeMet();
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.
   else if (isMenuOpen()) closeMenu();
@@ -181,6 +185,12 @@ initHaul(game, () => {
 });
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
 initCrystals(game, refreshRunPanels);
+// The crystal is in your hands the moment the panel closes, so the collection
+// and the Fissure's own counts are both already out of date.
+initMet(game, () => {
+  metTaken();
+  refreshRunPanels();
+});
 initRun(game);
 initMenu();
 
@@ -252,8 +262,10 @@ onWearChanged(() => {
 /** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
 function guideContext(): GuideCtx {
   // Every popup: the guide can only walk you out of one it knows you are in.
-  const top = isSaveDataOpen()
-    ? 'save'
+  const top = isMetOpen()
+    ? 'met'
+    : isSaveDataOpen()
+      ? 'save'
     : isSkillsOpen()
       ? 'skills'
       : isCharacterOpen()

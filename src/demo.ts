@@ -3788,7 +3788,9 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       const sim = new RunSim([], g.character, new Rng(6100 + trial * 97 + descents), {
         crystalGift: giftChance(g),
       });
-      runToCompletion(sim, 400);
+      // What the panel does: the crystal is handed over at the meeting and is
+      // yours from that moment, so this is not waiting for a clear.
+      runToCompletion(sim, 400, () => lampwrightGift(g));
       descents++;
       if (sim.state.status === 'cleared') buildReport(g, sim.state);
     }
@@ -3801,6 +3803,37 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     'and four bare descents is the floor, with the tail still finite',
     `${runs[0]}–${runs[runs.length - 1]}`
   );
+
+  // The rule that changed with the meeting: it is handed over on the spot, so
+  // a descent you die in still leaves you holding it. Everything else about
+  // dying is unchanged — that descent's loot is still gone.
+  {
+    const g = createGame('fresh');
+    const sim = new RunSim([], g.character, new Rng(5150), { crystalGift: 1 });
+    let handed = false;
+    for (let i = 0; i < 4000 && !handed; i++) {
+      if (sim.state.meeting) {
+        lampwrightGift(g);
+        sim.takeGift();
+        handed = true;
+        break;
+      }
+      sim.step(TICK);
+    }
+    check(handed, 'the Lampwright turns up as a body on the map and is walked to',
+      'nobody was ever standing there');
+
+    // Now kill the descent outright and bank nothing.
+    sim.state.hero.life = 0;
+    sim.state.status = 'died';
+    const held = ownedCrystals(g).length;
+    buildReport(g, sim.state);
+    check(
+      held === 1 && ownedCrystals(g).length === 1,
+      'and the crystal is yours even though you died further down',
+      `${held} at the meeting, ${ownedCrystals(g).length} after dying`
+    );
+  }
 
   const full = createGame('fresh');
   for (let i = 0; i < 4; i++) addItem(full, makeCrystal(1));

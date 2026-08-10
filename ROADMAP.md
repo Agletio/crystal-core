@@ -294,6 +294,15 @@ is the one terminus every ending arrives at. The sim in `src/sim/` never learns
 about presentation — a transition, a panel, a freeze, all of that is the UI
 holding off on ticking.
 
+**A meeting is the same pattern.** The Lampwright is `RunState.lampwright` —
+an `Entity`, deliberately NOT in `monsters`, so nothing in combat can see them.
+The hero breaks off and walks over; reaching them sets `meeting`, the UI stops
+ticking and puts `src/ui/met.ts` up, and the button grants the crystal and
+calls `RunSim.takeGift()`. The report never pays a meeting out, which is what
+makes it yours even if you die further down. `runToCompletion` takes an
+`onMeeting` callback because a headless run would otherwise stand there
+forever.
+
 **The handover is the pattern for that.** `HANDOVER` seconds where the sim does
 not tick at all: the hero drops into the hole at the exit, `#run-fade` goes
 black for the moment the map is swapped, and they climb out of the next
@@ -310,30 +319,7 @@ ENTRANCE and EXIT tiles, per zone, so both renderers get it.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Meeting the Lampwright
-
-Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
-pushes a `met` event, and the REPORT pays the crystal out at the end.
-
-- [ ] He is a **body on the map**. When the kill count is crossed he appears in
-      a room already cleared, the hero walks to him, and the descent freezes
-      when they meet.
-- [ ] A **panel**: his line, the crystal he is holding drawn as an item, and one
-      button. Dismissing it grants the crystal **immediately** and unfreezes.
-- [ ] **You keep it even if you die later in that descent** (§2 — this replaced
-      the older rule and the older rule is gone).
-- [ ] The freeze is not a pause. The loop has no pause state and is not getting
-      one; the UI simply stops ticking the sim while the panel is up.
-- [ ] **The first meeting teaches**: what a crystal is, that it goes in a
-      socket, and that a socket makes the run LONGER rather than harder — which
-      is the single thing new players get wrong. Later meetings are two lines
-      and no lesson.
-- [ ] His words live in `LAMPWRIGHT` in `src/data.ts`, next to the name and the
-      gift chance, never in the UI module.
-- [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
-      through it.
-
-### Phase 2 — The danger retune
+### Phase 1 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -358,7 +344,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 3 — Unique gear
+### Phase 2 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -423,6 +409,12 @@ moving — see §2, balance is deliberately loose.
   buy-back mean a heap of drops is a few clicks rather than a chore. So the
   question is now answerable rather than deferred: play it, and if it still
   feels like too much, measure the rate before changing it.
+- **The opening can skip the haul step.** `take_haul` is satisfied when the
+  haul is empty, and a first descent drops gear at 5% a kill — so about a
+  third of the time there is nothing to take and the step the opening exists
+  to teach is silently skipped. `npm run guide` passes either way, which is
+  the part that makes it worth writing down. The fix is probably a guaranteed
+  first drop rather than a change to the step.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that
@@ -461,8 +453,9 @@ moving — see §2, balance is deliberately loose.
   in the suite. The demo's sprite checks prove grids are square, not that
   anything reads.
 - `npm run shots` covers the welcome, the Fissure, the collection, the
-  HANDOVER, a descent, the skill web, the BENCH and an item TOOLTIP at two
-  sizes. The bench shot catches a third column not fitting; the tooltip shot
+  HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH and an item
+  TOOLTIP at two sizes. The Lampwright shot waits for the meeting rather than
+  guessing a time, and FAILS the run if the first descent never has one. The bench shot catches a third column not fitting; the tooltip shot
   rolls four modifiers onto a piece first, because a blank one shows none of
   the grouping; the handover shot fires 180ms into a launch, which is the
   hero half out of the entrance.

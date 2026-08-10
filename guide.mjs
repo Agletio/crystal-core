@@ -99,6 +99,8 @@ let reloaded = false;
 let reloadedMidRun = false;
 let dark = 0;
 let escaped = false;
+/** The opening now contains a meeting, and it has to be walked through. */
+let met = false;
 
 // Generous: a descent takes a while, and one step is "watch it happen".
 for (let turn = 0; turn < 240; turn++) {
@@ -111,6 +113,15 @@ for (let turn = 0; turn < 240; turn++) {
     stuck = 0;
   } else {
     stuck++;
+  }
+
+  // The Lampwright freezes the descent and hands the crystal over in person.
+  // The guide has to click that button like any other, and the step it lands
+  // in is the one that says "clear it" — so a meeting nobody could dismiss
+  // would show up as being stuck, not as being skipped.
+  if (now.ring === 'met-take') {
+    if (!met) trace.push(`Met         the Lampwright, mid-descent`);
+    met = true;
   }
 
   if (now.trapped) {
@@ -204,6 +215,9 @@ const finished = (await state()).done;
 if (!finished && problems.length === 0) {
   problems.push('ran out of turns without finishing');
 }
+// The first meeting is certain — the chance is 1 while you hold none — so an
+// opening that did not contain one is the meeting having stopped happening.
+if (finished && !met) problems.push('the opening never met the Lampwright');
 
 // The opening is over, so the app is unlocked and the tree can be worked with
 // a real pointer. A synthetic click lands on whatever element it is aimed at;
