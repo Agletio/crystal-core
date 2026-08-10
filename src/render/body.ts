@@ -125,8 +125,10 @@ export const BODY: Record<PoseId, string[]> = {
     '.....######bbb#.........',
     '..........#####.........',
   ],
-  // A contact stance with the shoulders squared and the arm driving through.
-  attack: [
+  // The strike: shoulders squared, weight driven through, arm at full reach.
+  // The sim deals its damage the instant this pose starts, so this is the
+  // extreme rather than a wind-up toward one.
+  attack0: [
     '........................',
     '........................',
     '........................',
@@ -152,9 +154,36 @@ export const BODY: Record<PoseId, string[]> = {
     '....#bbb.....bbb#.......',
     '....####.....####.......',
   ],
+  // The follow-through: the arm carried down past the swing, weight settling.
+  attack1: [
+    '........................',
+    '........................',
+    '........................',
+    '........######..........',
+    '.......#hhhhhh#.........',
+    '.......#hhhhhh#.........',
+    '.......#hhssse#.........',
+    '.......#hsssse#.........',
+    '.......#ssssss#.........',
+    '........#ssss#..........',
+    '........#sss#...........',
+    '.....##ttttttt##........',
+    '...#ttTtttttttTtt#......',
+    '...#ssTtttttttTtt#......',
+    '...#ssTtttttttTtt#......',
+    '.....#TtttttttTsss#.....',
+    '.....#TtttttttT#........',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#LLL.....lll#.......',
+    '....#LLL.....lll#.......',
+    '....#bbb.....bbb#.......',
+    '....####.....####.......',
+  ],
   // Braced back on the rear foot with the arm out in FRONT, not straight up.
   // A raised arm reads as a signal; an extended one reads as aiming.
-  cast: [
+  cast0: [
     '........................',
     '........................',
     '........................',
@@ -177,6 +206,33 @@ export const BODY: Record<PoseId, string[]> = {
     '....#llL#####Lll#.......',
     '....#lll.....LLL#.......',
     '....#lll.....LLL#.......',
+    '....#bbb.....bbb#.......',
+    '....####.....####.......',
+  ],
+  // The hand coming down off the release, the weight coming back over the feet.
+  cast1: [
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+    '........######..........',
+    '.......#hhhhhh#.........',
+    '.......#hhhhhh#.........',
+    '.......#hhssse#.........',
+    '.......#hsssse#.........',
+    '.......#ssssss#.........',
+    '........#ssss#.####.....',
+    '........#sss#.#sss#.....',
+    '.....##ttttttt#sss#.....',
+    '...#ttTtttttttTss#......',
+    '...#ssTtttttttTs#.......',
+    '.....#TtttttttT#........',
+    '.....#TtttttttT#........',
+    '....#lllllllllll#.......',
+    '....#llL#####Lll#.......',
+    '....#llL#####Lll#.......',
+    '....#LLL.....lll#.......',
+    '....#LLL.....lll#.......',
     '....#bbb.....bbb#.......',
     '....####.....####.......',
   ],

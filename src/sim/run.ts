@@ -122,7 +122,10 @@ export type EntityAction = 'idle' | 'move' | 'attack' | 'hurt';
 /** How long a corpse stays on screen so a death animation can play out. */
 export const DEATH_FADE = 0.6;
 
-const ATTACK_POSE = 0.22;
+/** How long an entity holds the swing. Exported because the renderer
+ *  divides by it: a frame has to come off how far through its OWN attack a
+ *  thing is, or a fast swing and a slow one look the same. */
+export const ATTACK_POSE = 0.22;
 const HURT_POSE = 0.16;
 
 export interface Entity {

@@ -20,7 +20,7 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
 import { WALL } from '../sim/grid';
-import { DEATH_FADE } from '../sim/run';
+import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
@@ -43,7 +43,7 @@ import {
   vfxColour,
 } from './renderer';
 import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
-import { POSE_IDS, WALK_POSES } from './pose';
+import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
 import type { PoseId } from './pose';
@@ -139,11 +139,16 @@ export async function createPixiRenderer(
     return made;
   }
 
+  /** How far through its own swing, 0 to 1. */
+  const through = (e: Entity): number =>
+    Math.max(0, Math.min(1, 1 - e.actionTimer / ATTACK_POSE));
+
   /** What the figure is doing, as a pose. Casting is an attack with a spell. */
   function poseOf(e: Entity, elapsed: number): PoseId {
     if (e.action === 'attack') {
       const spell = e.skillId ? SKILL_BY_ID[e.skillId]?.tags.includes('spell') : false;
-      return spell ? 'cast' : 'attack';
+      const swing = spell ? CAST_POSES : SWING_POSES;
+      return swing[Math.min(swing.length - 1, Math.floor(through(e) * swing.length))];
     }
     if (e.action !== 'move') return 'walk0';
     return WALK_POSES[Math.floor(elapsed * WALK_CYCLE) % WALK_POSES.length];
@@ -319,7 +324,7 @@ export async function createPixiRenderer(
 
     // Lunge toward whatever it's hitting; recoil when hit.
     let lunge = 0;
-    if (e.action === 'attack') lunge = 0.22 * Math.max(0, e.actionTimer / 0.22);
+    if (e.action === 'attack') lunge = 0.22 * (1 - through(e));
     if (e.action === 'hurt') lunge = -0.12;
 
     s.x = cx(e.x) + Math.cos(e.facing) * lunge;

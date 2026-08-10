@@ -30,8 +30,8 @@ is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
 **What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phases 1–4 are that work. Phase 5 is the one balance debt
-carried out of the systems work, and Phase 6 is the next feature.
+keep up with them. Phases 1–3 are that work. Phase 4 is the one balance debt
+carried out of the systems work, and Phase 5 is the next feature.
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +54,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 6 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 5 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,7 +85,7 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting any of Phases 1–4. A session that does not know these
+Read this before starting any of Phases 1–3. A session that does not know these
 five things will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
@@ -101,8 +101,8 @@ to redraw everything, and that property is worth more than any single sprite.
 
 **Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
-tick and has no sprites at all. None of Phases 1–3 is visible in the fallback,
-and that is correct — do not "fix" it. Phase 4 is the exception: map decals are
+tick and has no sprites at all. None of Phases 1–2 is visible in the fallback,
+and that is correct — do not "fix" it. Phase 3 is the exception: map decals are
 shared pure functions, so both renderers get them.
 
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
@@ -121,6 +121,11 @@ so a family can be redrawn without the pipeline caring.
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
 
+**A pose is picked from what the entity is doing, not from the clock.**
+`poseOf` divides `actionTimer` by `ATTACK_POSE` to get how far through its own
+swing an entity is, and indexes `SWING_POSES` / `CAST_POSES` with that. Driving
+it off elapsed time makes a fast attack and a slow one look identical.
+
 **The walk is contact, pass, contact, pass** (`WALK_POSES`). A pass has the legs
 together, one foot off the ground, and the whole figure a pixel higher — the
 `POSES` entry lifts the armour by the same pixel. Feet are the one thing a shift
@@ -136,29 +141,7 @@ nobody can see.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Attack and cast are frames, not shifts
-
-Melee looks like nothing happens because, on the body, nothing does. `attack` is
-`walk1`'s legs with `all: [2, 0]` and `swing: true`; the WEAPON has two drawings
-(`WEAPON_ART[kind].rest` and `.strike`) so the sword moves, but the figure under
-it is a walking pose nudged one pixel forward. `cast` is one frame with the hand
-shifted up.
-
-- [ ] A swing is two body frames: wind-up with the shoulder rotated back and
-      weight on the rear foot, then follow-through driven through with weight
-      forward. The weapon already has the two drawings to hang off them.
-- [ ] A cast is two frames: gather, then release.
-- [ ] **Pick the frame from the swing, not from the clock.** An attack has a
-      duration in `src/sim/run.ts`; `poseOf` receives the `Entity`, so the frame
-      must come from how far through its own attack the entity is. Driving it
-      off `elapsed` makes a fast attack and a slow one look identical, which is
-      the bug this phase is meant to fix rather than move.
-- [ ] Optional half: monsters got exactly one attack frame in the bestiary pass
-      (`BeastArt.attack`, drawn at `ATTACK_FRAME`) and hold it for the whole
-      swing — the same problem in miniature. A second frame each is 21 more
-      grids and can be taken separately.
-
-### Phase 2 — One light, every key
+### Phase 1 — One light, every key
 
 The cheapest depth in the project, and the thing that will make 24 look like a
 decision rather than a bigger 16. `TRIM`/`TRIM_LIT` already set the precedent:
@@ -183,7 +166,7 @@ not lit at all.
       underneath. Set any allowance from the measured spread rather than by
       guess, the way the `BODIES` bound was set.
 
-### Phase 3 — Silhouette rules per family
+### Phase 2 — Silhouette rules per family
 
 Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
 around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
@@ -206,7 +189,7 @@ the three worlds do not read as three worlds at a glance.
 - [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
       conformance is the work.
 
-### Phase 4 — Zone props
+### Phase 3 — Zone props
 
 The best world identity per byte in the project, and the only art work that
 reaches both renderers.
@@ -236,7 +219,7 @@ for free and shows up in the fallback too.
       that renders identically in two zones fails the way a duplicate tileset
       already does.
 
-### Phase 5 — The danger retune
+### Phase 4 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -261,7 +244,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 6 — Unique gear
+### Phase 5 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -309,6 +292,9 @@ moving — see §2, balance is deliberately loose.
 - Multiple item-disposal routes, so selling is not the only option.
 - Four-frame walks for the bestiary, if the creatures ever grow legs worth
   animating.
+- A drawn recovery frame per creature. They have one `attack` grid each and
+  hold it for the whole swing — the same thing the hero's swing just stopped
+  doing — and fixing it is 21 more grids in `src/render/bestiary.ts`.
 
 ---
 

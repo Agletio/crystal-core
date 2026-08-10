@@ -4,7 +4,15 @@
  * forty-eight with it instead of stranding them on a torso that moved. A pose
  * cannot deform a piece, so no cloak billows mid-swing.
  */
-export type PoseId = 'walk0' | 'walk1' | 'walk2' | 'walk3' | 'attack' | 'cast';
+export type PoseId =
+  | 'walk0'
+  | 'walk1'
+  | 'walk2'
+  | 'walk3'
+  | 'attack0'
+  | 'attack1'
+  | 'cast0'
+  | 'cast1';
 
 export type LayerSlot = 'boots' | 'body' | 'gloves' | 'helmet' | 'weapon';
 
@@ -12,6 +20,10 @@ export const LAYER_ORDER: LayerSlot[] = ['boots', 'body', 'gloves', 'helmet', 'w
 
 /** Contact, pass, contact, pass. Indexed by the renderer, never a boolean. */
 export const WALK_POSES: PoseId[] = ['walk0', 'walk1', 'walk2', 'walk3'];
+/** The strike lands on the first frame — the sim deals its damage the instant
+ *  the pose starts — so what follows it is the follow-through, not a wind-up. */
+export const SWING_POSES: PoseId[] = ['attack0', 'attack1'];
+export const CAST_POSES: PoseId[] = ['cast0', 'cast1'];
 
 export type Shift = readonly [number, number]; // whole pixels, or the grid slips
 
@@ -34,8 +46,10 @@ export const POSES: Record<PoseId, Pose> = {
   walk1: { ...PASS, boot: 1 },
   walk2: { ...CONTACT, boot: 3 },
   walk3: { ...PASS, boot: 2 },
-  attack: { all: [2, 0], boots: [0, 0], torso: [0, 0], hand: [0, 1], swing: true, boot: 0 },
-  cast: { all: [-2, 0], boots: [0, 0], torso: [0, 0], hand: [0, -5], swing: false, boot: 0 },
+  attack0: { all: [2, 0], boots: [0, 0], torso: [0, 0], hand: [0, 0], swing: true, boot: 0 },
+  attack1: { all: [0, 0], boots: [0, 0], torso: [0, 0], hand: [0, 1], swing: true, boot: 3 },
+  cast0: { all: [-2, 0], boots: [0, 0], torso: [0, 0], hand: [0, -5], swing: false, boot: 0 },
+  cast1: { all: [-1, 0], boots: [0, 0], torso: [0, 0], hand: [0, -2], swing: false, boot: 3 },
 };
 
 export const POSE_IDS = Object.keys(POSES) as PoseId[];
