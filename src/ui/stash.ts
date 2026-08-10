@@ -24,8 +24,7 @@ import {
   toStash,
 } from '../game/state';
 import type { GameState } from '../game/state';
-import { baseTier, modCapacity, tierName } from '../mods';
-import { describeMod } from '../crafting';
+import { itemCard } from './itemcard';
 import { itemIcon } from './icons';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { note } from './history';
@@ -45,18 +44,7 @@ let game: GameState;
 /** The dock answers to whatever screen is underneath once this closes. */
 let onClosed: (() => void) | null = null;
 
-function tooltip(item: Item, action: string): string {
-  const lines = [
-    item.name,
-    `${tierName(item)} · ilvl ${item.ilvl} · ` +
-      `${item.mods.length}/${modCapacity(item)} modifiers`,
-  ];
-  if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
-  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
-  for (const mod of item.mods) lines.push(describeMod(mod));
-  lines.push(`— ${action}`);
-  return lines.join('\n');
-}
+const tooltip = (item: Item, action: string): HTMLElement => itemCard(item, [action]);
 
 export function render(): void {
   hideTooltip();

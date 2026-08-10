@@ -90,29 +90,6 @@ const WHERE: Record<Held, string> = {
   held: 'unsocketed',
 };
 
-/**
- * What a crystal is, in one hoverable block: what it opens, how far it has
- * levelled, what it costs you to run, and what is rolled on it. No quality
- * word — a crystal's ladder is its level and there is no second one.
- */
-export function crystalTooltip(item: Item): string {
-  const family = FAMILY_BY_ID[crystalFamily(item)];
-  const grown = crystalProgress(item);
-  const lines = [
-    item.name,
-    `${family?.name ?? 'Normal'} · level ${grown.level} · ` +
-      `${item.mods.length}/${modCapacity(item)} modifiers`,
-    `danger ${Math.round(crystalRewards(item.mods).danger)}`,
-  ];
-  for (const mod of item.mods) lines.push(describeMod(mod));
-  if (item.mods.length === 0) lines.push('no modifiers');
-  lines.push(
-    grown.need === null
-      ? 'as far as it levels'
-      : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}`
-  );
-  return lines.join('\n');
-}
 
 function renderRow(row: Row): HTMLElement {
   const { item } = row;

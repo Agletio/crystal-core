@@ -301,6 +301,13 @@
   @media (max-width: 700px) { #modlist { grid-template-columns: 1fr; } }
 
   .mod { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--seam); }
+
+  /* One rolled stat, wherever it is drawn. The whole point is the split: the
+     number is one colour and the words around it are another, so the good roll
+     is a glance rather than a read. */
+  .rolled { display: flex; gap: 5px; align-items: baseline; }
+  .rolled__v { color: var(--citrine); font-weight: 600; flex: none; }
+  .rolled__k { color: var(--chalk); }
   .mod--focus { background: var(--seam); margin: 0 -8px; padding: 8px; }
   /* Part of the base, not something you rolled. */
   .mod--implicit .mod__stats { color: var(--citrine); }
@@ -978,12 +985,42 @@
      attribute is delayed by the browser and drawn in the OS's white box. */
   .tip {
     position: fixed; z-index: 40; pointer-events: none;
-    max-width: 320px; padding: 8px 10px;
+    max-width: 340px; padding: 10px 12px;
     background-color: var(--matrix); background-image: var(--grit);
     border: 2px solid var(--seam-lit);
-    color: var(--chalk); font-size: 11px; line-height: 1.45;
-    white-space: pre-wrap; box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.55);
+    color: var(--chalk); font-size: 11px; line-height: 1.5;
+    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.55);
   }
+  /* A sentence per line, for a currency or a skill. An item card lays itself
+     out and must not have its own newlines honoured on top of that. */
+  .tip--text { white-space: pre-wrap; max-width: 320px; }
+
+  /* An item. The border says the base's tier from across the screen, the same
+     four colours the dock slots use. */
+  .tip__card { border-left: 3px solid var(--tier1); padding-left: 9px; margin: -1px 0; }
+  .tip__card--t2 { border-left-color: var(--tier2); }
+  .tip__card--t3 { border-left-color: var(--tier3); }
+  .tip__card--locked { border-left-color: var(--locked); }
+
+  .tip__name { font-size: 13px; letter-spacing: .02em; margin-bottom: 1px; }
+  .tip__card--t2 > .tip__name { color: var(--tier2); }
+  .tip__card--t3 > .tip__name { color: var(--tier3); }
+  .tip__card--locked > .tip__name { color: var(--locked); }
+  .tip__sub { font-size: 10px; color: var(--dust); letter-spacing: .04em; text-transform: uppercase; }
+  .tip__locked { font-size: 10px; color: var(--locked); letter-spacing: .04em; margin-top: 3px; }
+  .tip__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+  /* One rule per group, so the base and each slot type read as blocks rather
+     than as a wall. The gap is doing as much work as the line. */
+  .tip__group { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--seam); }
+  .tip__label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--dust); margin-bottom: 3px; }
+  .tip__mod + .tip__mod { margin-top: 5px; }
+
+  .tip__modname { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--dust); }
+
+  .tip__none { margin-top: 7px; font-size: 10px; color: var(--dust); font-style: italic; }
+  .tip__note { margin-top: 7px; font-size: 10px; color: var(--dust); font-style: italic; }
+  .tip__note + .tip__note { margin-top: 2px; }
 
   /*
    * A node is three stacked bitmaps: a dark casing, the stone itself, and a

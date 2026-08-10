@@ -250,6 +250,28 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('bench');
 
+  // An item tooltip, on a piece with something rolled on it — the densest
+  // thing the game draws, and the one most likely to run off a phone. A blank
+  // piece would show none of the grouping this shot exists to check.
+  await page.evaluate(() => {
+    const piece = document.querySelector('#inv-gear .slot:not(.slot--empty)');
+    piece?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    for (let i = 0; i < 6; i++) {
+      const making = [...document.querySelectorAll('#inv-currency .slot')].find((b) =>
+        /Making/.test(b.getAttribute('aria-label') ?? '')
+      );
+      if (!making || making.disabled) break;
+      making.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(200);
+  const modded = await page.$('#inv-gear .slot--modded');
+  if (modded) {
+    await modded.hover();
+    await page.waitForTimeout(200);
+    await shoot('tooltip');
+  }
+
   const spilled = await page.evaluate(() => {
     const wrap = document.querySelector('.webwrap')?.getBoundingClientRect();
     const svg = document.getElementById('skills-web')?.getBoundingClientRect();

@@ -4,7 +4,8 @@
  */
 import { ALL_MODS, CURRENCY_BY_ID, RECIPES, SHOP } from '../data';
 import { Rng } from '../rng';
-import { ModPool, modCapacity, tierName } from '../mods';
+import { ModPool, tierName } from '../mods';
+import { itemCard } from './itemcard';
 import {
   balance,
   pickGearBase,
@@ -17,7 +18,6 @@ import {
 import { addItem, carryRoom, plainGear, sellAll, stashRoom } from '../game/state';
 import { ask } from './confirm';
 import type { GameState } from '../game/state';
-import { describeMod } from '../crafting';
 import { note } from './history';
 import { crystalIcon, currencyIcon, itemIcon } from './icons';
 import { renderInventory } from './inventory';
@@ -236,18 +236,8 @@ export function restockIfLevelled(): void {
   if (level > 1) note(`The shop has restocked for level ${level}`);
 }
 
-function tooltip(item: Item): string {
-  const lines = [
-    item.name,
-    `${tierName(item)} · ilvl ${item.ilvl} · ` +
-      `${item.mods.length}/${modCapacity(item)} modifiers`,
-  ];
-  if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
-  for (const mod of item.mods) lines.push(describeMod(mod));
-  if (item.mods.length === 0) lines.push('no modifiers');
-  return lines.join('\n');
-}
+const tooltip = (item: Item): HTMLElement =>
+  itemCard(item, [`${priceOfItem(item)} gold — click to buy`]);
 
 function buyItem(item: Item): void {
   const cost = priceOfItem(item);

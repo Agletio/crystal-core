@@ -7,8 +7,9 @@
  * has no opinion about what an item is for.
  */
 import { currencyIcon, itemIcon } from './icons';
-import { baseTier, modCapacity, tierName } from '../mods';
-import { describeModLines, locksItem } from '../crafting';
+import { baseTier } from '../mods';
+import { locksItem } from '../crafting';
+import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
@@ -186,28 +187,15 @@ function renderCurrencies(): void {
   }
 }
 
-function tooltip(item: Item): string {
-  const lines = [
-    item.name,
-    `${tierName(item)} · ilvl ${item.ilvl} · ` +
-      `${item.mods.length}/${modCapacity(item)} modifiers`,
-  ];
-  if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
-  // The rating, not a modifier: it says what the piece IS, and increases scale it.
-  if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(...describeModLines(imp));
-  if (item.mods.length === 0 && item.implicits.length === 0) {
-    lines.push('no modifiers');
-  }
-  for (const mod of item.mods) lines.push(...describeModLines(mod));
-
+function tooltip(item: Item): HTMLElement {
+  const notes: string[] = [];
   const all = actionsFor(item);
   const click = clickAction(item);
-  if (click) lines.push(`— click to ${click.label.toLowerCase()}`);
+  if (click) notes.push(`click to ${click.label.toLowerCase()}`);
   // Nothing else on screen says the menu is there, and an action nobody can
   // find is an action that does not exist.
-  if (all.length > (click ? 1 : 0)) lines.push('— hold or right-click for more');
-  return lines.join('\n');
+  if (all.length > (click ? 1 : 0)) notes.push('hold or right-click for more');
+  return itemCard(item, notes);
 }
 
 // --- dragging ---------------------------------------------------------------

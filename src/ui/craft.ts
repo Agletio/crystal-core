@@ -14,7 +14,6 @@ import {
   slotUsed,
 } from '../mods';
 import { canApply, craft, describeMod, isTargeted } from '../crafting';
-import { describeStatLine } from '../mod-text';
 import { ALL_MODS } from '../data';
 import { balance, spend } from '../economy';
 import { craftItem, clearCraft, replaceItem, selectForCraft } from '../game/state';
@@ -31,7 +30,7 @@ import {
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { crystalFamily, rewardRows } from '../sim/crystal';
-import { crystalTooltip } from './crystals';
+import { itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
 import { FAMILY_BY_ID } from '../data';
@@ -216,7 +215,9 @@ function renderItem(): void {
     const row = el('div', 'mod mod--implicit');
     row.append(el('span', 'dot dot--citrine'));
     const b = el('div', 'mod__body');
-    b.append(el('div', 'mod__stats', describeMod(imp)));
+    const stats = el('div', 'mod__stats');
+    stats.append(...statLines(imp));
+    b.append(stats);
     b.append(el('div', 'mod__name', 'base — cannot be changed'));
     row.append(b);
     list.append(row);
@@ -249,13 +250,13 @@ function renderItem(): void {
     if (focused === mod.entryId) row.classList.add('mod--focus');
     row.append(el('span', `dot dot--${facetOf(mod)}`));
     const b = el('div', 'mod__body');
-    // describeStatLine, not a local format. This screen was building its own
-    // stat text out of the raw stat KEY, so the one place in the game you look
-    // hardest at an item was the one place printing "+14 coldRes" and
-    // "+5% increased castSpeed" — the exact identifier leak the mods check
-    // exists to catch, in the exact spot the check does not look, because the
-    // check tests the text layer and this bypassed it.
-    b.append(el('div', 'mod__stats', mod.stats.map(describeStatLine).join(', ')));
+    // The shared stat row, not a local format. This screen once built its own
+    // text out of the raw stat KEY, so the one place you look hardest at an
+    // item was the one place printing "+14 coldRes" — the exact leak the mods
+    // check exists to catch, in the exact spot it does not look.
+    const stats = el('div', 'mod__stats');
+    stats.append(...statLines(mod));
+    b.append(stats);
     b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
     row.append(b);
     list.append(row);
@@ -294,7 +295,7 @@ function renderCrystals(): void {
     btn.append(body);
     if (item.id === game.craftId) btn.classList.add('wornslot--on');
 
-    attachTooltip(btn, () => `${crystalTooltip(item)}\n— click to open on the bench`);
+    attachTooltip(btn, () => itemCard(item, ['click to open on the bench']));
     btn.setAttribute('aria-label', `Open on bench: ${item.name}`);
     btn.onclick = () => {
       if (!consumeDrag()) bench(item);
@@ -350,7 +351,7 @@ function renderWorn(): void {
     btn.append(body);
     if (item.id === game.craftId) btn.classList.add('wornslot--on');
 
-    attachTooltip(btn, () => `${item.name}\n${slot.name}, worn\n— click to open on the bench`);
+    attachTooltip(btn, () => itemCard(item, [`worn, ${slot.name.toLowerCase()}`, 'click to open on the bench']));
     btn.setAttribute('aria-label', `Open on bench: ${item.name}`);
     btn.onclick = () => {
       if (!consumeDrag()) bench(item);

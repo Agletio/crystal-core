@@ -255,10 +255,19 @@ makes a gift unable to fail. Two screens read that list: `src/ui/crystals.ts`,
 where the collection is compared against four sockets, and the bench's own
 crystals column, which is the only route to crafting one.
 
-**Tooltips are plain text today.** `src/ui/tooltip.ts` is 58 lines and does
-`textContent = text()`. `attachTooltip(el, () => string)` is how every screen
-uses it, and `describeItem` in `src/crafting.ts` builds the string. Anything
-that wants colour or layout has to change that seam, not work around it.
+**An item is drawn in exactly one place.** `itemCard(item, notes)` in
+`src/ui/itemcard.ts` builds the card every screen hovers — the dock, the haul,
+the stash, the shelf, the sheet and both of the bench's columns. `notes` is the
+only thing that differs per screen: the lines about what a click does, or why
+it cannot. Adding a fact about an item means editing one function.
+
+`showTooltip` takes a string OR an element. A currency or a skill is still a
+string — every line of those is a sentence. `statParts` in `src/mod-text.ts` is
+the seam that makes the card worth having: it splits a rolled line into the
+NUMBER and the words around it, so `.rolled__v` can be one colour and
+`.rolled__k` another. `describeStatLine` is derived from it, so the text and
+the markup can never drift. `describeItem` in `src/crafting.ts` is the
+text-only version and is now the demo's alone.
 
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
 starts ticking; `finish()` banks the report and decides whether another descent
@@ -273,37 +282,7 @@ freeze, all of that is the UI holding off on ticking.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Tooltips you can read
-
-The information is right and the presentation is a wall of monospace. Other
-ARPGs solved this; copy them.
-
-**The seam.** `src/ui/tooltip.ts` sets `textContent`, so there is no markup in
-a tooltip anywhere in the game. `describeItem` in `src/crafting.ts` builds one
-string, and `describeStatLine` flattens a rolled value and its stat name into
-one run of text. Both have to hand back parts.
-
-- [ ] `showTooltip` takes structured content as well as a string. Everything
-      that passes a string keeps working — currency and skill tooltips can stay
-      text — so this is additive, not a rewrite of every caller.
-- [ ] A bigger box with real padding, and a rule between sections.
-- [ ] **Colour separates what varies from what does not.** The rolled number is
-      one colour, the stat's name another. That contrast is most of the win, and
-      it is exactly what `describeStatLine` currently destroys.
-- [ ] Modifiers grouped and spaced: implicit lines under a Base heading, then
-      rolled mods grouped by slot type with a gap between groups, each showing
-      its tier and name the way it does now.
-- [x] **Border by base tier**: white t1, blue t2, yellow t3, orange for a
-      locked item. `--tier1`/`--tier2`/`--tier3`/`--locked` in
-      `docs/index.html`; the dock and the haul already wear them as
-      `.slot--t2`, `.slot--t3`, `.slot--locked`. The tooltip should use the
-      same four.
-- [ ] Anything else that reads better is welcome. It is a presentation phase;
-      the check is whether you can find the good modifier in under a second.
-- [ ] `npm run shots` for overflow at both sizes, `npm run smoke` for console
-      errors. A tooltip that runs off the screen is the failure this catches.
-
-### Phase 2 — Inventory management
+### Phase 1 — Inventory management
 
 - [ ] A **sort by kind** button on the dock. It reorders `game.inventory` in
       place, and the order is saved, so it sticks.
@@ -313,9 +292,11 @@ one run of text. Both have to hand back parts.
       crafting selection — extend that one rather than adding a second
       mechanism, and light every item the armed currency would accept.
 - [ ] The same highlight answers "why can I not use this" without a click, so
-      the dimmed items should carry the `WHY` sentence in their tooltip.
+      the dimmed items should carry that sentence in their tooltip.
+      `canApply` returns it, and `itemCard`'s `notes` is where it goes — the
+      dock already passes notes for what a click does.
 
-### Phase 3 — The shop sells and buys back, and the haul empties
+### Phase 2 — The shop sells and buys back, and the haul empties
 
 - [ ] Replace **Sell unmodified gear** in `src/ui/shop.ts` with a **Sell mode**
       toggle. While it is on, a left-click on a dock item sells it. Mode is UI
@@ -333,7 +314,7 @@ one run of text. Both have to hand back parts.
       is what stops a full haul wedging the loop, and the demo builds the wedge
       and checks the way out.
 
-### Phase 4 — The descent transition
+### Phase 3 — The descent transition
 
 A cleared descent swaps the map between two frames and it reads as a glitch.
 
@@ -352,7 +333,7 @@ A cleared descent swaps the map between two frames and it reads as a glitch.
       are the two seams.
 - [ ] Input is never blocked. Leave and Abandon do what they say mid-transition.
 
-### Phase 5 — Meeting the Lampwright
+### Phase 4 — Meeting the Lampwright
 
 Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
 pushes a `met` event, and the REPORT pays the crystal out at the end.
@@ -375,7 +356,7 @@ pushes a `met` event, and the REPORT pays the crystal out at the end.
 - [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
       through it.
 
-### Phase 6 — The danger retune
+### Phase 5 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -400,7 +381,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 7 — Unique gear
+### Phase 6 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -462,7 +443,7 @@ moving — see §2, balance is deliberately loose.
   one must never read as a demotion. Deferred deliberately: it may only feel bad
   because the opening hands you everything at once, and readable tooltips plus
   real selling may fix the feeling without touching the rate. Revisit after
-  Phases 1 and 3, and measure before changing anything.
+  Phase 2, and measure before changing anything.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that
@@ -501,5 +482,6 @@ moving — see §2, balance is deliberately loose.
   in the suite. The demo's sprite checks prove grids are square, not that
   anything reads.
 - `npm run shots` covers the welcome, the Fissure, the collection, a descent,
-  the skill web and the BENCH at two sizes. The bench shot is the one that
-  catches a third column not fitting — it is the widest screen in the game.
+  the skill web, the BENCH and an item TOOLTIP at two sizes. The bench shot
+  catches a third column not fitting; the tooltip shot rolls four modifiers
+  onto a piece first, because a blank one shows none of the grouping.

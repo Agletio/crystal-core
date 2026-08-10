@@ -891,20 +891,57 @@ assert(
   );
 }
 
-// --- one stat per line ------------------------------------------------------
+// --- one stat per line, and the roll told apart from the name --------------
 // Three stats joined by commas wrap into a paragraph, and an item tooltip is
-// something you scan rather than read.
+// something you scan rather than read. The rolled NUMBER carries its own
+// element so it can be coloured — that split is most of what makes a
+// six-modifier piece readable at a glance.
 {
   const slot = filled('#inv-gear').find((b) => named(b).length > 0);
   slot.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
-  const lines = text('tooltip').split('\n');
-  assert(lines.length > 2, 'an item tooltip has a line per fact', String(lines.length));
+
+  const card = $('tooltip').querySelector('.tip__card');
+  assert(!!card, 'an item tooltip is a built card, not a run of text');
+  assert(!!card.querySelector('.tip__name'), 'which names the item');
+  assert(/tier \d/i.test($('tooltip').querySelector('.tip__sub').textContent), 'and says its tier',
+    $('tooltip').querySelector('.tip__sub').textContent);
+  assert(/tip__card--t\d|tip__card--locked/.test(card.className), 'and carries the tier on its edge', card.className);
+
+  const stats = all('#tooltip .rolled');
+  assert(stats.length > 0, 'it lists stats one per line', String(stats.length));
   assert(
-    lines.every((l) => !/[%\d]\s*,\s*[+-]/.test(l)),
+    stats.every((n) => n.querySelector('.rolled__v') && n.querySelector('.rolled__k')),
+    'and every one splits the rolled value from the words around it'
+  );
+  assert(
+    stats.every((n) => /^[+-]?[\d.]+%?$/.test(n.querySelector('.rolled__v').textContent)),
+    'the value half is only ever a number',
+    stats.map((n) => n.querySelector('.rolled__v').textContent).join(' | ')
+  );
+  assert(
+    stats.every((n) => !/[%\d]\s*,\s*[+-]/.test(n.textContent)),
     'and never two stats on one line',
-    lines.find((l) => /[%\d]\s*,\s*[+-]/.test(l))
+    stats.map((n) => n.textContent).find((t) => /[%\d]\s*,\s*[+-]/.test(t))
   );
   slot.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
+// A crystal is the same card, saying the things a crystal has instead: which
+// world it opens, what the danger buys, and how far it has left to level.
+{
+  $('open-craft').click();
+  const chip = benchCrystals()[0];
+  chip.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  const sub = $('tooltip').querySelector('.tip__sub')?.textContent ?? '';
+  assert(/level \d/i.test(sub), 'a crystal card says its level', sub);
+  assert(/normal|demonic|prismatic/i.test(sub), 'and which world it opens', sub);
+  assert(all('#tooltip .tip__chips .mult').length > 0, 'and what the danger buys');
+  assert(
+    /to level \d|as far as it levels/.test($('tooltip').textContent),
+    'and how far it has left to go',
+    $('tooltip').textContent
+  );
+  chip.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 }
 
 // --- the item menu carries what the click cannot ---------------------------

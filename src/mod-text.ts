@@ -92,8 +92,19 @@ export function qualify(stat: string, tags: string[] = []): string {
   return words.length ? `${words.join(' ')} ${base}` : base;
 }
 
-/** One stat line, as text. */
-export function describeStatLine(line: StatRoll): string {
+/**
+ * A stat line split at the seam that matters. Two rolls of the same modifier
+ * differ only in `value`, so colouring the two apart is how you find the good
+ * number without reading the sentence.
+ */
+export interface StatParts {
+  /** The rolled number, with its sign and its unit. */
+  value: string;
+  /** Everything that does not vary between two rolls of the same modifier. */
+  label: string;
+}
+
+export function statParts(line: StatRoll): StatParts {
   const sign = line.value >= 0 ? '+' : '';
 
   // Flat damage always names who can use it. A mace and a ring both grant
@@ -102,11 +113,20 @@ export function describeStatLine(line: StatRoll): string {
     const families = line.tags.filter((t) => FAMILY_WORDS[t]);
     const name = qualify(line.stat, line.tags.filter((t) => !FAMILY_WORDS[t]));
     const reach = families.length ? families : Object.keys(FAMILY_WORDS);
-    return `${sign}${line.value} ${name} to ${reach.map((t) => FAMILY_WORDS[t]).join(' and ')}`;
+    return {
+      value: `${sign}${line.value}`,
+      label: `${name} to ${reach.map((t) => FAMILY_WORDS[t]).join(' and ')}`,
+    };
   }
 
   const name = qualify(line.stat, line.tags);
-  if (line.form === 'flat') return `${sign}${line.value} ${name}`;
-  if (line.form === 'inc') return `${sign}${line.value}% increased ${name}`;
-  return `${line.value}% more ${name}`;
+  if (line.form === 'flat') return { value: `${sign}${line.value}`, label: name };
+  if (line.form === 'inc') return { value: `${sign}${line.value}%`, label: `increased ${name}` };
+  return { value: `${line.value}%`, label: `more ${name}` };
+}
+
+/** The same line as one run of text, for anywhere without room for markup. */
+export function describeStatLine(line: StatRoll): string {
+  const { value, label } = statParts(line);
+  return `${value} ${label}`;
 }

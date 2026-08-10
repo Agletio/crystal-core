@@ -10,8 +10,8 @@
 import { HAUL_CAP, carryRoom, fromHaul, haulToStash, plainGear, sellAll, sellItem, stashRoom, takeWhatFits } from '../game/state';
 import type { GameState } from '../game/state';
 import { canSell, sellPrice } from '../economy';
-import { baseTier, modCapacity, tierName } from '../mods';
-import { describeMod } from '../crafting';
+import { baseTier } from '../mods';
+import { itemCard } from './itemcard';
 import { itemIcon } from './icons';
 import { openMenu } from './menu';
 import type { ItemAction } from './menu';
@@ -41,18 +41,8 @@ function changed(): void {
   onChanged?.();
 }
 
-function tooltip(item: Item, action: string): string {
-  const lines = [
-    item.name,
-    `${tierName(item)} · ilvl ${item.ilvl} · ` +
-      `${item.mods.length}/${modCapacity(item)} modifiers`,
-  ];
-  if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(`${describeMod(imp)}  (base)`);
-  for (const mod of item.mods) lines.push(describeMod(mod));
-  lines.push(`— ${action}`);
-  lines.push('— hold or right-click for more');
-  return lines.join('\n');
+function tooltip(item: Item, action: string): HTMLElement {
+  return itemCard(item, [action, 'hold or right-click for more']);
 }
 
 /** Take, keep, or turn into gold. The whole of triage, per item. */

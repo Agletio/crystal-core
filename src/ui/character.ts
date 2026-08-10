@@ -7,7 +7,6 @@
  * rather than in the dock, which is safe because this screen shows them.
  */
 import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
-import { describeModLines } from '../crafting';
 import { characterStats, damageDetail, skillBase } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
 import { xpToNext } from '../sim/character';
@@ -17,6 +16,7 @@ import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { itemCard } from './itemcard';
 import { slotButtonId } from './tutorial';
 import { setInventoryHandler } from './inventory';
 import type { EquipSlotDef, Item } from '../types';
@@ -43,14 +43,7 @@ let onClosed: (() => void) | null = null;
  * Implicits too. A mace has no rolled mods at all, so the old early return
  * showed "no modifiers" over the one line that says its damage is for attacks.
  */
-function tooltip(item: Item): string {
-  const lines = [item.name];
-  if (item.armour) lines.push(`Armour ${item.armour}`);
-  for (const imp of item.implicits) lines.push(...describeModLines(imp));
-  for (const mod of item.mods) lines.push(...describeModLines(mod));
-  if (lines.length === 1) lines.push('no modifiers');
-  return lines.join('\n');
-}
+const tooltip = (item: Item): HTMLElement => itemCard(item, ['click to take it off']);
 
 function renderSlots(): void {
   const host = $('sheet-slots');
