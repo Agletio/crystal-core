@@ -53,9 +53,13 @@ the same table the trees use, one world at a time.
 The Lampwright has a face now — a portrait at its own grid, a hood and a lamp
 on a crook — and he talks like someone who lives down there rather than like a
 manual. **§5 holds four phases**, all of them the user's: a Fissure that reads
-as a cave and three worlds that move, a walk to the way out with the finale
-climbing out of it, three save slots, and a sweep that puts a figure on every
-number the game describes in words. The last is also a standing rule — §2.
+as a cave and three worlds that move, the whole end of a descent as something
+you walk to, three save slots, and a sweep that puts a figure on every number
+the game describes in words. The last is also a standing rule — §2.
+
+**Two of them are blocked on a question in §6** — 3 for the Fissure's art and 4
+for what a save slot does. Everything else in the list can be built without
+asking.
 
 ### Keeping room for a fifth socket
 
@@ -545,23 +549,38 @@ a room. Both renderers must agree, so anything per-tile stays a pure function in
 
 ### Phase 2 — Walking out
 
-**What is true today.** `spawnFinale()` in `src/sim/run.ts` fires the moment the
-flood finds nothing reachable left, and rings the whole encounter around
-`map.exit` at once — `count` entities on a circle of radius `0.8 + count*0.09`.
-A Swarm is 20 bodies on one point. The hero is already standing at the exit when
-the last one dies, so the handover drops it where it stood.
+One moment of the game: what happens between the last monster and the next
+descent. It is currently three things happening on one tile at once.
 
-**Why it is wrong.** Twenty monsters spawning inside each other reads as two.
-And the run ends the instant the fight does, on the same tile, so the exit is
-somewhere you were already standing rather than somewhere you go.
+**What is true today.**
 
+- **A citrine square, pulsing, drawn on the VFX layer** — `state.map.exit` in
+  both `src/render/pixi.ts` and `src/render/canvas2d.ts`. The vfx layer is above
+  the entities, so it paints over monsters and over the Lampwright. It predates
+  `mouth()`, which now draws the exit as the hole it is.
+- `spawnFinale()` in `src/sim/run.ts` fires the moment the flood finds nothing
+  reachable left, and rings the whole encounter around `map.exit` at once —
+  `count` entities on a circle of radius `0.8 + count*0.09`. A Swarm is 20
+  bodies on one point.
+- `greetAtExit()` puts the Lampwright ON `map.exit`, sets `meeting` in the same
+  call, and `src/ui/run.ts` opens the panel immediately. The hero is already
+  standing there, so the fight ends, a panel appears, and the descent is over —
+  all without moving.
+
+**Why it is wrong.** A marker that clips over the thing you are fighting is a
+bug on screen. Twenty monsters spawning inside each other reads as two. And the
+end of a descent is a place you should walk to rather than a tile you were
+already standing on.
+
+- [ ] **The exit marker goes.** The exit is the `mouth()` decal, the same one
+      the entrance has — you came out of one and you drop into the next, and
+      they should look alike. Nothing on the vfx layer marks a tile.
 - [ ] The finale arena and the EXIT are near each other and not the same place.
       Clearing the map leaves you with a walk, short enough to be a beat and not
       a chore.
 - [ ] The finale is triggered by the hero coming NEAR the exit, not by the map
       going empty — so it is a thing that happens to you on the way out.
-- [ ] They come OUT of the exit — the `mouth()` hole is already drawn there, and
-      the same hole the Lampwright climbs out of is what they climb out of.
+- [ ] They come OUT of the exit — the same hole the Lampwright climbs out of.
 - [ ] Arrival is STAGGERED, per encounter (`ENCOUNTERS` in `src/data.ts`):
       the Warden is one and arrives alone; the Honour Guard's four come out one
       at a time; the Swarm's twenty come in groups. A `wave` shape on
@@ -569,13 +588,22 @@ somewhere you were already standing rather than somewhere you go.
       data rather than a special case per encounter.
 - [ ] `s.totalMonsters` still counts the whole encounter the moment it starts,
       or the readout counts down and then goes back up.
+- [ ] The Lampwright **climbs out and steps clear** — a tile or two off the
+      hole, not standing in it — and the hero **walks to him**. `greetAtExit`
+      stops setting `meeting`; reaching him does. That is the pre-existing
+      walk-to-him behaviour, at the end of a cleared descent where it is safe
+      rather than in the middle of one where it was not.
+- [ ] The panel opening is what ends the run, so a meeting is still the same
+      halt (`halt = 'met'`) landing on the same report.
 
 **What must not break.** `runToCompletion` has a seconds guard and the demo's
-TERMINATION CHECK runs 28 of them: a finale that waits on the hero reaching a
-place must not be able to wait forever. `npm run guide` and `npm run shots` both
-play whole descents. The report reads `RunState.elapsed`, and a quest asks for a
-clear inside 90 seconds (`normal_iv`) — a walk added to every descent moves that
-number, and the demo measures it.
+TERMINATION CHECK runs 28 of them: nothing that waits on the hero reaching a
+place may wait forever — not the finale, and not the meeting. `npm run guide`
+clicks `met-take` twice and `npm run shots` waits a minute for the panel; both
+now depend on a walk finishing first. `runToCompletion` also needs a way to let
+a headless run reach a meeting it now has to walk to. The report reads
+`RunState.elapsed`, and `normal_iv` asks for a clear inside 90 seconds — a walk
+added to every descent moves that, and the demo measures it.
 
 ### Phase 3 — Three save slots
 
@@ -663,7 +691,27 @@ Do not guess at these.
    phase named it. Say which number the opening should cost and it is one
    constant.
 
-3. **The Cavern and the Fissure have no currency of their own.** Retiring the
+3. **Is the Fissure a raw cave, or old workings?** Phase 1 takes the masonry
+   out, and the two readings want different art. RAW: bare rock, and the
+   candles and webs are just things that have found their way in. WORKINGS: it
+   was dug, and there are props, planks and rope down there — which is what a
+   candle burning implies, and it is also where the Lampwright lives. §2 says
+   no zone should read as man-made, so this is a question about SIGNS of people
+   rather than about architecture. **Blocking:** it decides half of what gets
+   drawn, and `MAP_THEMES.fissure.blurb` currently says "Grey rock, flagstone
+   and rubble."
+
+4. **Do save slots autosave, or only save when you press Save?** Today
+   `startAutosave` writes every 4 seconds. A screen called Save & Load implies
+   pressing Save means something, and if a slot only moves when you press it, a
+   player can lose an hour. If instead the live slot autosaves, "Save here" only
+   means "copy this game into that slot". **Blocking:** it is the whole shape of
+   Phase 3, and the two answers give opposite screens. My guess, if you want me
+   to pick: the live slot autosaves as it does now, and the buttons on the other
+   two rows are Copy here and Load — so nothing is ever lost and slots are for
+   keeping a build rather than for saving.
+
+5. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
