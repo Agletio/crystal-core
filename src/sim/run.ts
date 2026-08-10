@@ -5,8 +5,8 @@
  * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
-import { WALL, generateMap, dist, hasLineOfSight } from './grid';
-import type { GameMap, Vec2 } from './grid';
+import { WALL, generateMap, dist, hasLineOfSight, roomCenter } from './grid';
+import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT } from '../data';
 import { lookOf } from './appearance';
@@ -258,6 +258,8 @@ const FLOATER_LIFE = 1.1;
 export class RunSim {
   readonly state: RunState;
   private readonly rng: Rng;
+  /** Placement retries only. Fixed, so the same map places the same way. */
+  private readonly retry = new Rng(7919);
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -366,8 +368,23 @@ export class RunSim {
 
   }
 
-  /** Packs land in rooms other than the entrance, so you always get a moment
-   *  to look at the map before anything reaches you. */
+  /**
+   * Somewhere in the room a body of this size actually FITS: no world carves
+   * the whole rectangle, and a monster dropped in the rock stands in it. The
+   * first draw is the run's own and every retry comes off a stream of its own,
+   * so where a body ends up never moves the draws that pick the next one.
+   */
+  private placeIn(grid: Grid, room: Room, radius: number): Vec2 {
+    let x = this.rng.float(room.x, room.x + room.w - 1);
+    let y = this.rng.float(room.y, room.y + room.h - 1);
+    for (let tries = 0; tries < 20 && !grid.fits(x, y, radius); tries++) {
+      x = this.retry.float(room.x, room.x + room.w - 1);
+      y = this.retry.float(room.y, room.y + room.h - 1);
+    }
+    return grid.fits(x, y, radius) ? { x, y } : roomCenter(room);
+  }
+
+  /** Packs land in rooms other than the entrance: a moment to look first. */
   private spawn(map: GameMap): Entity[] {
     const filled = this.set.filled;
     const density = mapDensity(this.set.mods);
@@ -452,17 +469,19 @@ export class RunSim {
           statsFor.set(statsKey, stats);
         }
 
+        const radius = def.radius * rank.scale;
+        const at = this.placeIn(map.grid, room, radius);
         monsters.push({
           id: this.nextId++,
           kind: 'monster',
           sprite: def.sprite,
           scale: def.scale * rank.scale,
           rank: rank.id,
-          radius: def.radius * rank.scale,
+          radius,
           skillId: ranged && bolt ? MONSTER_RANGED_SKILL : null,
           ...(def.aura && i === carrier ? { aura: def.aura } : {}),
-          x: this.rng.float(room.x, room.x + room.w - 1),
-          y: this.rng.float(room.y, room.y + room.h - 1),
+          x: at.x,
+          y: at.y,
           facing: this.rng.float(0, Math.PI * 2),
           action: 'idle',
           actionTimer: 0,

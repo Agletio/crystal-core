@@ -134,34 +134,41 @@ function overlaps(a: Room, b: Room, pad: number): boolean {
 }
 
 /**
- * How a zone is cut out of the rock. The Fissure was BUILT, which is what makes
- * the other two read as grown. The Seam is grown throughout rather than a room
- * of each: alternating made it the average of its two parents, and the average
+ * How a zone is cut out of the rock. NOTHING is built: the Fissure is a
+ * working dug at and given up on, so a square corner exists nowhere in the
+ * game. The Seam is grown throughout rather than a room of each — the average
  * of two hard rooms is not the hardest room going.
  */
-export type Cut = 'built' | 'grown' | 'gullet';
+export type Cut = 'dug' | 'grown' | 'gullet';
 
 const CUT: Record<MapTheme, Cut> = {
-  fissure: 'built',
+  fissure: 'dug',
   demonic: 'gullet',
   prismatic: 'grown',
   seam: 'grown',
 };
 
+/** How far a passage wanders off the line between the rooms it joins. */
+const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 1 };
+
+/** How much of a dug room's outer ring the rock never gave up. */
+const RAG = 0.22;
+
 /** A room, cut the way its world cuts. The `Room` RECTANGLE never changes —
  *  every spawn, the entrance and the exit are placed off it. */
 function carveRoom(grid: Grid, r: Room, cut: Cut): void {
   if (cut !== 'grown') {
-    // A gullet is the rectangle with its corners off: rounded, but the SAME
-    // ROOM. An inscribed ellipse is a fifth smaller, and a fifth smaller with
-    // the same pack in it is a pack that arrives all at once — which turned
-    // the aura worlds into walls.
-    const corner = cut === 'gullet' ? (Math.min(r.w, r.h) >= 6 ? 2 : 1) : 0;
+    // Both of these keep the rectangle's AREA. A fifth smaller with the same
+    // pack in it is a pack that arrives all at once, which turned the aura
+    // worlds into walls.
+    const corner = cut === 'gullet' ? (Math.min(r.w, r.h) >= 6 ? 2 : 1) : 1;
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
-        const inset =
-          Math.min(x - r.x, r.x + r.w - 1 - x) + Math.min(y - r.y, r.y + r.h - 1 - y);
-        if (inset < corner) continue;
+        const dx = Math.min(x - r.x, r.x + r.w - 1 - x);
+        const dy = Math.min(y - r.y, r.y + r.h - 1 - y);
+        if (dx + dy < corner) continue;
+        // Worried at the edge rather than rounded off: no run of it is straight
+        if (cut === 'dug' && Math.min(dx, dy) === 0 && tileNoise(x, y, 53) < RAG) continue;
         grid.set(x, y, FLOOR);
       }
     }
@@ -234,15 +241,14 @@ function vLine(grid: Grid, y0: number, y1: number, x: number, w: number, wobble 
 
 /** L-shaped: both legs always carve, the seed picks their ORDER, and two to
  *  three tiles wide because at one, body collision turns a hallway into a
- *  queue. A grown world wanders across the legs; it never drops them, since
+ *  queue. A wandering world drifts across the legs; it never drops them, since
  *  connectivity is the one thing a passage owes the run. */
-function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, cut: Cut): void {
+function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, wobble: number): void {
   const ax = Math.round(a.x);
   const ay = Math.round(a.y);
   const bx = Math.round(b.x);
   const by = Math.round(b.y);
   const width = rng.int(2, 3);
-  const wobble = cut === 'grown' ? 1 : 0;
 
   if (rng.chance(0.5)) {
     hLine(grid, ax, bx, ay, width, wobble);
@@ -318,10 +324,10 @@ export function generateMap(
     rooms.push(candidate);
   }
 
-  const cut = CUT[theme] ?? 'built';
+  const cut = CUT[theme] ?? 'dug';
   for (const room of rooms) carveRoom(grid, room, cut);
   for (let i = 1; i < rooms.length; i++) {
-    carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, cut);
+    carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, WOBBLE[cut]);
   }
 
   const entrance = roomCenter(rooms[0]);
@@ -345,7 +351,7 @@ export function generateMap(
   // if the generator somehow failed.
   const exitKey = Math.round(exit.y) * grid.width + Math.round(exit.x);
   if (!reachable(grid, entrance).has(exitKey)) {
-    carveCorridor(grid, entrance, exit, rng, 'built'); // straight, whatever the world
+    carveCorridor(grid, entrance, exit, rng, 0); // straight, whatever the world
   }
 
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);

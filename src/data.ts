@@ -1463,7 +1463,7 @@ export const MAP_THEMES: MapThemeDef[] = [
   {
     id: 'fissure',
     name: 'The Fissure',
-    blurb: 'Grey rock, flagstone and rubble. What the rock already held.',
+    blurb: 'A working somebody gave up on. Rotted props, webs, a candle still going.',
   },
   {
     id: 'demonic',

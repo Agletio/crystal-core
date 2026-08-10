@@ -535,7 +535,7 @@ export async function createPixiRenderer(
   function drawProps(state: RunState): void {
     propLayer.clear();
     const floor = livingFloor;
-    if (!floor || floor.surface === 'stone') return;
+    if (!floor) return;
     const { grid } = state.map;
     const at = (gx: number, gy: number) => grid.at(gx, gy);
     const tile = world.scale.x;

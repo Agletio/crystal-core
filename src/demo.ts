@@ -78,7 +78,7 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
@@ -1381,9 +1381,12 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
       }
     }
 
+    // The INSIDE of the rectangle: no world carves the outer ring whole, and
+    // the lip a passage breaks through to get in is a passage. What must never
+    // be one is the middle of the chamber.
     for (const room of map.rooms) {
-      for (let y = room.y; y < room.y + room.h; y++) {
-        for (let x = room.x; x < room.x + room.w; x++) {
+      for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
           if (grid.at(x, y) === TUNNEL) roomsCutByCorridors++;
         }
       }
@@ -1395,8 +1398,8 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
   check(unwalkable === 0, 'every carved tile is walkable', `${unwalkable} carved tiles block the hero`);
   check(
     roomsCutByCorridors === 0,
-    'a corridor never relabels the room it joins',
-    `${roomsCutByCorridors} room tiles marked as passage`
+    'a corridor never relabels the inside of the room it joins',
+    `${roomsCutByCorridors} chamber tiles marked as passage`
   );
   check(
     veins.join(',') === '1,3,6',
@@ -3070,18 +3073,18 @@ rule('THEMES — does the composition change the rock you stand on?');
   check(twins.length === 0, 'and each of the four is its own tileset', twins.join('; '));
 
   // A zone is its own rock, not stone with something growing on it, so what
-  // has to hold is that no two are BUILT the same way and that only the
-  // Fissure could be mistaken for a building.
+  // has to hold is that no two are CUT the same way.
   const tiles = 1600;
   const surfaces = MAP_THEMES.map((t) => floorPalette(PALETTE, 3, t.id).surface);
   check(
     new Set(surfaces).size === MAP_THEMES.length && surfaces[0] === 'stone',
-    'no two are made of the same thing, and only the Fissure is made of masonry',
+    'no two are made of the same thing, and the Fissure is bare rock',
     surfaces.join(', ')
   );
 
-  // The Rot and the Cavern MOVE. That is drawn every frame from the tile and
-  // the clock, so a zone whose living layer is empty is a zone standing still.
+  // EVERY zone moves, drawn each frame off the tile and the clock. A zone whose
+  // living layer is empty is standing still; one where every tile carries
+  // something is a factory, which is what `motionDensity` is a knob against.
   const stirring = (theme: MapTheme): number => {
     const floor = floorPalette(PALETTE, 3, theme);
     let n = 0;
@@ -3093,12 +3096,28 @@ rule('THEMES — does the composition change the rock you stand on?');
   const moving = MAP_THEMES.map((t) => `${t.name} ${stirring(t.id)}`);
   line(`  of ${tiles} floor tiles under rock, these many carry something alive:`);
   line(`  ${moving.join(' · ')}`);
+  const quiet = MAP_THEMES.filter((t) => stirring(t.id) < tiles * 0.05);
+  const busy = MAP_THEMES.filter((t) => stirring(t.id) > tiles * 0.9);
   check(
-    stirring('fissure') === 0 &&
-      stirring('demonic') > tiles * 0.2 &&
-      stirring('prismatic') > tiles * 0.05,
-    'and the two living worlds move where the Fissure is dead rock',
-    moving.join(', ')
+    quiet.length === 0 && busy.length === 0,
+    'and all four move, none of them on every tile it owns',
+    `still: ${quiet.map((t) => t.name).join(', ') || 'none'} · ` +
+      `on everything: ${busy.map((t) => t.name).join(', ') || 'none'}`
+  );
+
+  // Nothing living may grow over the way on. Both landmarks are one tile and
+  // the run is read off them.
+  const overgrown = MAP_THEMES.filter((t) => {
+    const floor = floorPalette(PALETTE, 3, t.id);
+    const hole = (gx: number, gy: number) => (gy === 1 ? (gx % 2 ? ENTRANCE : EXIT) : WALL);
+    return Array.from({ length: tiles }, (_, x) =>
+      livingDecals(floor, hole, x, 1, 0.4).length
+    ).some((n) => n > 0);
+  });
+  check(
+    overgrown.length === 0,
+    'and no zone grows anything over its entrance or its exit',
+    overgrown.map((t) => t.name).join(', ')
   );
 
   // Both renderers read the same pure functions, so a themed map cannot be one

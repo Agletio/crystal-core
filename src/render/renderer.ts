@@ -307,6 +307,14 @@ export interface FloorPalette {
   growthAlt: string;
   glint: string;
   growthDensity: number;
+  /** What an abandoned working left standing, and what is still burning in it.
+   *  Fire is fire in every zone, so neither comes off the theme's ink. */
+  timber: string;
+  flame: string;
+  flameCore: string;
+  /** How much of this zone's floor carries something that MOVES. A knob per
+   *  zone: a cave with a cobweb on every tile is a cobweb factory. */
+  motionDensity: number;
 }
 
 /**
@@ -328,6 +336,9 @@ interface ThemeInk {
   growthAlt: keyof Palette | null;
   glint: keyof Palette;
   density: number;
+  /** How much of the floor carries something that moves. Turned down where a
+   *  zone is quiet rather than dead: the Fissure is occupied, not busy. */
+  motion: number;
   surface: Surface;
 }
 
@@ -342,6 +353,7 @@ const THEME_INK: Record<MapTheme, ThemeInk> = {
     growthAlt: null,
     glint: 'chalk',
     density: 0,
+    motion: 0.5,
     surface: 'stone',
   },
   // Meat. The walls are not stone with something on them, they are the thing.
@@ -355,6 +367,7 @@ const THEME_INK: Record<MapTheme, ThemeInk> = {
     growthAlt: null,
     glint: 'sinew',
     density: 0.5,
+    motion: 1,
     surface: 'flesh',
   },
   // The other end of every register: pale where the Rot is dark, cool where it
@@ -369,6 +382,7 @@ const THEME_INK: Record<MapTheme, ThemeInk> = {
     growthAlt: null,
     glint: 'pearl',
     density: 0.55,
+    motion: 1,
     surface: 'crystal',
   },
   // Crystal erupting through demonic rock, tile by tile rather than blended:
@@ -383,6 +397,7 @@ const THEME_INK: Record<MapTheme, ThemeInk> = {
     growthAlt: 'blush',
     glint: 'pearl',
     density: 0.6,
+    motion: 1,
     surface: 'seam',
   },
 };
@@ -426,6 +441,10 @@ export function floorPalette(
     growthAlt: ink.growthAlt ? palette[ink.growthAlt] : '',
     glint: palette[ink.glint],
     growthDensity: ink.density,
+    timber: mix(palette.rust, deep, 0.45),
+    flame: palette.flame,
+    flameCore: palette.flameCore,
+    motionDensity: ink.motion,
   };
 }
 
@@ -460,49 +479,61 @@ const seamSide = (surface: Surface, x: number, y: number): Surface =>
   surface !== 'seam' ? surface : tileNoise(x, y, 82) < 0.5 ? 'flesh' : 'crystal';
 
 /**
- * Coursed masonry, broken. A wall needs SOME structure or it is a flat grey
- * band; this is what tips a cave into a castle, which is the Fissure's whole
- * character and nowhere else's.
+ * Where somebody dug. A field far wider than a room, so a working runs THROUGH
+ * a level rather than every room carrying the same evidence.
  */
-function stoneWall(floor: FloorPalette, x: number, y: number): Decal[] {
+const worked = (x: number, y: number): boolean => patchNoise(x, y, 13, 9) > 0.42;
+
+/**
+ * Rock a pick was taken to and then left. A wall needs SOME structure or it is
+ * a flat grey band, and every piece of this one is crooked: a crack that steps
+ * as it falls, a ledge where a lump came away, and — only where the field says
+ * this stretch was worked — a prop rotted in place. Nothing lines up with the
+ * tile beside it, which is the whole difference between a cave and a castle.
+ */
+function dugWall(floor: FloorPalette, x: number, y: number): Decal[] {
   const out: Decal[] = [];
-  const seams = tileNoise(x, y, 61);
-  if (seams < 0.8) {
-    out.push({ x: 0, y: 0.5, w: 1, h: U, colour: floor.rockShade, alpha: 0.55 });
-  }
-  if (seams < 0.55) {
-    out.push({
-      x: snap(0.25 + tileNoise(x, y, 62) * 0.4),
-      y: 0.5,
-      w: U,
-      h: 0.5,
-      colour: floor.rockShade,
-      alpha: 0.55,
-    });
-  }
-  if (tileNoise(x, y, 63) < 0.6) {
-    out.push({
-      x: snap(0.2 + tileNoise(x, y, 64) * 0.5),
-      y: 0,
-      w: U,
-      h: 0.5,
-      colour: floor.rockShade,
-      alpha: 0.55,
-    });
+
+  for (let i = 0; i < 2; i++) {
+    if (tileNoise(x, y, 61 + i) > 0.7) continue;
+    let at = snap(0.1 + tileNoise(x, y, 63 + i) * 0.7);
+    const top = snap(tileNoise(x, y, 65 + i) * 0.4);
+    const len = 3 + Math.floor(tileNoise(x, y, 67 + i) * 4);
+    for (let s = 0; s < len; s++) {
+      out.push({ x: at, y: top + s * U, w: U, h: U, colour: floor.shade, alpha: 0.7 });
+      // A step sideways every few pixels: a straight crack is a mortar joint.
+      if (tileNoise(x + s, y, 69 + i) < 0.4) {
+        at = Math.max(0, Math.min(1 - U, at + (tileNoise(x, y + s, 71 + i) < 0.5 ? -U : U)));
+      }
+    }
   }
 
-  // Grit on the face, so the blocks read as rock rather than as brick.
+  if (tileNoise(x, y, 73) < 0.55) {
+    const left = snap(tileNoise(x, y, 74) * 0.5);
+    const top = snap(0.3 + tileNoise(x, y, 75) * 0.4);
+    const w = U * (3 + Math.floor(tileNoise(x, y, 76) * 3));
+    out.push({ x: left, y: top, w, h: U, colour: floor.rockLit, alpha: 0.55 });
+    out.push({ x: left, y: top + U, w, h: U, colour: floor.rockShade, alpha: 0.5 });
+  }
+
   for (let i = 0; i < 2; i++) {
-    const roll = tileNoise(x, y, 66 + i);
+    const roll = tileNoise(x, y, 77 + i);
     if (roll > 0.5) continue;
     out.push({
       x: snap(roll / 0.5),
-      y: snap(tileNoise(x, y, 72 + i)),
+      y: snap(tileNoise(x, y, 79 + i)),
       w: U,
       h: U,
       colour: i === 0 ? floor.rockLit : floor.rockShade,
       alpha: 0.45,
     });
+  }
+
+  if (worked(x, y) && tileNoise(x, y, 86) < 0.22) {
+    const left = snap(0.3 + tileNoise(x, y, 87) * 0.35);
+    out.push({ x: left, y: 0.12, w: U, h: 0.88, colour: floor.timber, alpha: 0.9 });
+    out.push({ x: left - U * 2, y: 0.12, w: U * 5, h: U, colour: floor.timber, alpha: 0.85 });
+    out.push({ x: left + U, y: 0.12, w: U, h: 0.88, colour: floor.shade, alpha: 0.5 });
   }
   return out;
 }
@@ -597,23 +628,47 @@ function wallGrowth(floor: FloorPalette, x: number, y: number): Decal[] {
   ];
 }
 
-/** Flagstone: two courses per tile, offset like brickwork. Fissure only. */
-function paving(floor: FloorPalette): Decal[] {
+/**
+ * What was dropped where the rock was worked, and never picked up: a plank off
+ * a prop, or a rope coiled where it was put down. Two things and both rare —
+ * an abandoned working is empty, and a floor strewn with tools is a workshop.
+ */
+function leavings(floor: FloorPalette, x: number, y: number): Decal[] {
+  const roll = tileNoise(x, y, 8);
   const out: Decal[] = [];
-  for (let course = 0; course < 2; course++) {
-    const top = course * 0.5;
-    out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.55 });
-    // Running bond: every other course is offset by half a stone, which is
-    // what stops a grid of squares reading as graph paper.
-    const shift = course % 2 === 0 ? 0 : 0.25;
-    for (let stone = 0; stone < 2; stone++) {
+
+  if (roll < 0.09) {
+    const left = snap(0.05 + tileNoise(x, y, 9) * 0.35);
+    const top = snap(0.3 + tileNoise(x, y, 10) * 0.35);
+    const len = 4 + Math.floor(tileNoise(x, y, 11) * 3);
+    // Stepped every second pixel, so it lies at an angle rather than square to
+    // a grid nothing else in the room is square to.
+    const rise = tileNoise(x, y, 12) < 0.5 ? -U : U;
+    for (let s = 0; s < len; s++) {
       out.push({
-        x: (shift + stone * 0.5) % 1,
-        y: top,
+        x: left + s * U,
+        y: top + Math.floor(s / 2) * rise,
         w: U,
-        h: 0.5,
-        colour: floor.mortar,
-        alpha: 0.55,
+        h: U * 2,
+        colour: floor.timber,
+        alpha: 0.85,
+      });
+    }
+    return out;
+  }
+
+  if (roll < 0.14) {
+    const cx = 0.25 + tileNoise(x, y, 9) * 0.4;
+    const cy = 0.25 + tileNoise(x, y, 10) * 0.4;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      out.push({
+        x: snap(cx + Math.cos(a) * 0.12),
+        y: snap(cy + Math.sin(a) * 0.12),
+        w: U,
+        h: U,
+        colour: floor.chip,
+        alpha: 0.7,
       });
     }
   }
@@ -670,9 +725,10 @@ function crystalFloor(floor: FloorPalette, x: number, y: number): Decal[] {
 
 /** Loose stone, and the mineral fleck in it. Fissure only: nothing crumbles
  *  off meat, and a crystal floor grows rather than sheds. */
-function rubble(floor: FloorPalette, x: number, y: number, paved: boolean, broken: boolean): Decal[] {
+function rubble(floor: FloorPalette, x: number, y: number, spoil: boolean): Decal[] {
   const out: Decal[] = [];
-  const bits = broken ? 4 : paved ? 1 : 3;
+  // More of it where a pick was swung: what came off the wall is on the floor.
+  const bits = spoil ? 4 : 2;
   for (let i = 0; i < bits; i++) {
     const roll = tileNoise(x, y, 20 + i);
     if (roll > 0.6) continue;
@@ -791,7 +847,7 @@ export function tileDecals(
 
     if (surface === 'flesh') out.push(...fleshWall(floor, x, y));
     else if (surface === 'crystal') out.push(...crystalWall(floor, x, y));
-    else out.push(...stoneWall(floor, x, y));
+    else out.push(...dugWall(floor, x, y));
 
     // The top of the wall, which is what an overhead light actually reaches.
     // A wall with floor BELOW it is the face you are looking at.
@@ -817,16 +873,12 @@ export function tileDecals(
   } else if (surface === 'crystal') {
     out.push(...crystalFloor(floor, x, y));
   } else {
-    // A coarse noise field, far wider than a room, decides which parts of the
-    // level were ever built in — so you cross from flagstone to bare cave
-    // floor and back rather than every room looking like every other one.
-    const built = patchNoise(x, y, 13, 9) > 0.42;
-    const paved = tile !== TUNNEL && built;
-    // A ruin far more than a building. Better than a third of the paving in a
-    // chamber is gone, and passages were never paved at all.
-    const broken = tileNoise(x, y, 7) < 0.35;
-    if (paved && !broken) out.push(...paving(floor));
-    out.push(...rubble(floor, x, y, paved, broken));
+    // Bare rock everywhere, and the evidence only where the field says a pick
+    // reached: you cross from a stretch somebody dug at into one nobody ever
+    // did, rather than every room carrying the same props.
+    const dug = worked(x, y);
+    out.push(...rubble(floor, x, y, dug));
+    if (dug && tile !== TUNNEL) out.push(...leavings(floor, x, y));
   }
 
   // A hard contact line wherever floor meets rock. Without an EDGE the wall is
@@ -851,10 +903,11 @@ export function tileDecals(
 /**
  * The part of a zone that MOVES: drawn every frame from the tile's own hash and
  * the clock, never from stored state, so both renderers agree and nothing has
- * to be seeded. The Fissure is dead rock and has none of it.
+ * to be seeded. Every zone has some — how much is `motionDensity`.
  *
  * Everything here hangs off a FLOOR tile rather than the wall it grows from.
  * A wall's overhang would be painted before the floor under it and disappear.
+ * Never over a landmark: the two holes are how you read the room.
  */
 export function livingDecals(
   floor: FloorPalette,
@@ -863,9 +916,65 @@ export function livingDecals(
   y: number,
   time: number
 ): Decal[] {
+  const tile = at(x, y);
+  if (tile === WALL || tile === ENTRANCE || tile === EXIT) return [];
   const surface = seamSide(floor.surface, x, y);
-  if (surface === 'stone' || at(x, y) === WALL) return [];
+  const density = floor.motionDensity;
   const out: Decal[] = [];
+
+  if (surface === 'stone') {
+    // A web across a corner, and the thing that spun it walking its own
+    // threads. Corners only — a web in the open is a net.
+    for (const side of [-1, 1]) {
+      if (at(x, y - 1) !== WALL || at(x + side, y) !== WALL) continue;
+      if (tileNoise(x, y, 90 + side) > 0.55 * density) continue;
+      const dir = side < 0 ? 1 : -1;
+      const corner = side < 0 ? 0 : 1 - U;
+      for (const r of [0.24, 0.44, 0.64]) {
+        for (let i = 0; i <= 3; i++) {
+          const a = (i / 3) * (Math.PI / 2);
+          out.push({
+            x: snap(corner + dir * Math.cos(a) * r),
+            y: snap(Math.sin(a) * r),
+            w: U,
+            h: U,
+            colour: floor.glint,
+            alpha: 0.3,
+          });
+        }
+      }
+      // Back and forth along the middle thread rather than round and round: a
+      // spider patrols its web, it does not orbit.
+      const walk = Math.abs(((time * 0.22 + tileNoise(x, y, 92 + side)) % 2) - 1);
+      const a = walk * (Math.PI / 2);
+      out.push({
+        x: snap(corner + dir * Math.cos(a) * 0.44) - U,
+        y: snap(Math.sin(a) * 0.44),
+        w: U * 2,
+        h: U * 2,
+        colour: floor.shade,
+        alpha: 0.95,
+      });
+    }
+
+    // A candle somebody lit and did not come back for. Only where the working
+    // was: a light that moves is what makes a dark room read as occupied.
+    if (worked(x, y) && at(x, y - 1) === WALL && tileNoise(x, y, 94) < 0.3 * density) {
+      const px = snap(0.25 + tileNoise(x, y, 95) * 0.5);
+      const foot = 0.75;
+      const phase = tileNoise(x, y, 96) * Math.PI * 2;
+      // Two rates that share no period, so the gutter never lands on a beat
+      // you can count.
+      const flick = Math.sin(time * 9.1 + phase) * 0.5 + Math.sin(time * 3.3 + phase * 2) * 0.5;
+      const lean = Math.round(flick) * U;
+      const tall = U * (flick > 0.35 ? 3 : 2);
+      out.push({ x: px - U * 2, y: foot - U * 6, w: U * 6, h: U * 7, colour: floor.flame, alpha: 0.06 + Math.abs(flick) * 0.05 });
+      out.push({ x: px, y: foot - U * 2, w: U * 2, h: U * 2, colour: floor.chip, alpha: 0.95 });
+      out.push({ x: px + lean, y: foot - U * 2 - tall, w: U, h: tall, colour: floor.flame, alpha: 0.9 });
+      out.push({ x: px + lean, y: foot - U * 3, w: U, h: U, colour: floor.flameCore, alpha: 1 });
+    }
+    return out;
+  }
 
   if (surface === 'flesh') {
     // A tendril hanging off the ceiling edge, swinging from the root down.
@@ -903,19 +1012,37 @@ export function livingDecals(
     return out;
   }
 
-  // Crystal catches the light and lets it go. Nothing moves; the brightness
-  // does, which at this size reads as the same thing.
-  if (tileNoise(x, y, 90) < 0.14) {
-    const phase = tileNoise(x, y, 91) * Math.PI * 2;
-    const pulse = Math.sin(time * 1.1 + phase) * 0.5 + 0.5;
-    out.push({
-      x: snap(0.1 + tileNoise(x, y, 92) * 0.8),
-      y: snap(0.1 + tileNoise(x, y, 93) * 0.8),
-      w: U,
-      h: U,
-      colour: floor.glint,
-      alpha: 0.1 + pulse * 0.55,
-    });
+  // Growth that CREEPS: a spur that gains and loses a pixel at a time, so the
+  // ground is never quite the shape it was a moment ago.
+  if (tileNoise(x, y, 90) < 0.3 * density) {
+    const px = snap(0.1 + tileNoise(x, y, 91) * 0.7);
+    const foot = snap(0.55 + tileNoise(x, y, 92) * 0.35);
+    const phase = tileNoise(x, y, 93) * Math.PI * 2;
+    const h = U * (2 + Math.round((Math.sin(time * 0.5 + phase) * 0.5 + 0.5) * 3));
+    out.push({ x: px, y: foot - h, w: U, h, colour: floor.growth || floor.glint, alpha: 0.75 });
+    out.push({ x: px, y: foot - h, w: U, h: U, colour: floor.glint, alpha: 0.95 });
+  }
+
+  // Light TRAVELLING along a facet, with a short trail behind it. The rock
+  // carries it from one end of the tile to the other rather than glowing where
+  // it stands, which is the difference between a facet and a lamp.
+  if (tileNoise(x, y, 94) < 0.22 * density) {
+    const down = tileNoise(x, y, 95) < 0.5;
+    const across = snap(0.15 + tileNoise(x, y, 96) * 0.7);
+    const head = (time * 0.45 + tileNoise(x, y, 97)) % 1;
+    for (let i = 0; i < 3; i++) {
+      const step = head - i * 0.09;
+      if (step < 0 || step > 1) continue;
+      const along = snap(0.08 + step * 0.84);
+      out.push({
+        x: down ? across : along,
+        y: down ? along : across,
+        w: U,
+        h: U,
+        colour: floor.glint,
+        alpha: 0.85 - i * 0.25,
+      });
+    }
   }
   return out;
 }

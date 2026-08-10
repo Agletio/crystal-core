@@ -134,7 +134,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       }
     }
 
-    // Flagstones, rubble, mineral and the lit lip under a wall. Everything
+    // Rubble, mineral, what a working left and the lit lip under a wall. All
     // here is a whole number of sub-tile pixels, so the floor is drawn on a
     // grid the same way the sprites are.
     for (let y = y0; y < y1; y++) {
