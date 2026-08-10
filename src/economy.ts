@@ -7,6 +7,7 @@ import {
   GEAR_BASE_BY_ID,
   GEAR_BASES,
   GEAR_SLOTS,
+  GROUP_OF_KIND,
   RECIPES,
   SHOP,
   crystalName,
@@ -115,13 +116,19 @@ const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
 /**
  * Kind first, base only within it: one uniform pick would make composition a
  * side effect of content volume, and there are 144 armour bases to one ring.
- * Bases above the item level are ineligible, which is what makes a family's
- * rungs progression rather than three names for one drop.
+ * Bases above the item level are ineligible.
  */
-export function pickGearBase(ilvl: number, rng: Rng): GearBase | undefined {
+export function pickGearBase(
+  ilvl: number,
+  rng: Rng,
+  bias: Record<string, number> = {}
+): GearBase | undefined {
   const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl);
   const kinds = [...new Set(eligible.map((b) => b.kind))];
-  const kind = rng.weighted(kinds, (k) => KIND_WEIGHT[k] ?? 1);
+  // A crystal hunting weapons weights the KIND pick and nothing else, so it
+  // cannot conjure a base the item level does not already allow.
+  // dropBias is already a multiplier: 1 is untouched.
+  const kind = rng.weighted(kinds, (k) => (KIND_WEIGHT[k] ?? 1) * (bias[GROUP_OF_KIND[k]] ?? 1));
   if (!kind) return undefined;
   return rng.pick(eligible.filter((b) => b.kind === kind));
 }
@@ -167,11 +174,9 @@ export function makeGear(
 }
 
 /**
- * A dropped or stocked piece: a base, a quality, and mods already rolled.
- *
- * Rolling happens HERE rather than in the sim so that a drop, a shop entry and
- * a dev-kit grant all produce the same shape of item. The sim only decides
- * which base and how good; it never learns what a modifier is.
+ * Rolling happens HERE rather than in the sim, so a drop, a shop entry and a
+ * dev-kit grant produce the same shape of item. The sim decides which base and
+ * how good; it never learns what a modifier is.
  */
 export function rollGear(
   base: string,
@@ -237,7 +242,7 @@ export const canSell = (item: Item): boolean => item.kind === 'gear';
  */
 export function sellPrice(item: Item): number {
   if (!canSell(item)) return 0;
-  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
+  const byQuality = SHOP.sellByQuality[qualityOf(item)] ?? 1;
   const worth =
     item.ilvl * SHOP.pricePerIlvl * byQuality * (1 + item.mods.length * SHOP.pricePerMod);
   return Math.max(1, Math.round(worth * SHOP.sellFraction));

@@ -78,10 +78,8 @@ const LADDER_SHAPES: Array<[number, number]> = [
 ];
 
 /**
- * A socketed set aimed at a power band, for asking what a run at that band is
- * like. Rolled toward the target rather than derived from it: what a set is
- * WORTH is what its modifiers happened to be, so a shape that usually lands on
- * a band sometimes does not, and the nearest roll is the honest answer.
+ * A socketed set aimed at a power band. Rolled toward the target rather than
+ * derived from it, so the nearest roll is the honest answer.
  */
 export function ladderSet(band: number, rng: Rng, pool: ModPool): Item[] {
   const target = Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(band)));
@@ -90,7 +88,9 @@ export function ladderSet(band: number, rng: Rng, pool: ModPool): Item[] {
 
   for (const [filled, tier] of LADDER_SHAPES) {
     if (filled > RUN_SLOTS.length || tier > CRYSTAL_TIERS.length) continue;
-    for (let attempt = 0; attempt < 4; attempt++) {
+    // Twelve tries, not four: some of what a crystal rolls carries no danger,
+    // and a player aiming at a band re-rolls those away.
+    for (let attempt = 0; attempt < 12; attempt++) {
       const set = Array.from({ length: filled }, () => rollCrystal(tier, pool, rng));
       const gap = Math.abs(runSet(set).power - target);
       if (gap >= closest) continue;

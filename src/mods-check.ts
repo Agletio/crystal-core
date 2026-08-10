@@ -17,7 +17,7 @@ import {
 } from './data';
 import { ModPool, computeStat, instantiate } from './mods';
 import { makeItem, makeCrystal } from './economy';
-import { heroStats, monsterStats, mapDensity } from './sim/stats';
+import { dropBias, heroStats, monsterStats, mapDensity } from './sim/stats';
 import { describeMod } from './crafting';
 import { describeStatLine, tagWord } from './mod-text';
 import { treeFor } from './skills-tree';
@@ -170,6 +170,9 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
       // them would call every ward inert.
       ...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0),
       computeStat(1, mods, 'layoutComplexity'),
+      // What a run is pointed at is a thing the engine reads too: a crystal
+      // that hunts weapons changes no monster and no room.
+      ...Object.values(dropBias(mods)),
     ].join(',');
   };
   const crystalBase = crystalFingerprint([]);

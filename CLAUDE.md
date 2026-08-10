@@ -71,7 +71,20 @@ so both renderers read one answer.
 
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
-XP and gold. Zero is the bare Fissure and the baseline for all four.
+XP and gold. Zero is the bare Fissure and the baseline for all four. Nothing is
+counted twice — a crystal's tier is capacity, capacity is modifiers, modifiers
+are danger, and danger is already in power.
+
+**Power buys access; composition and modifiers buy payment.** Item level and
+what a band can drop at all come off power alone. An even split of the two
+other worlds pays 25% more (`REWARD.mixYield`), each world pays in its own
+currency (`FAMILY_YIELD` — Normal gold, Demonic crafting currency, Prismatic
+rarity), and the finding modifiers weight WHICH kind of gear drops. None of
+those touch item level, so no amount of arranging skips a rung.
+
+A `DropGate` says a thing does not exist in this run at all — `minPower`, a
+`zone`, or both — and the pool is filtered before the pick, so no amount of
+rarity argues with it. The Sigil of Finality drops only in the Seam.
 
 ## Where crystals come from
 

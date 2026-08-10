@@ -15,6 +15,7 @@ import {
   monsterResStat,
   LEVELLING,
   PLAYER_SKILLS,
+  CURRENCIES,
   CURRENCY_BY_ID,
   CRYSTAL_QUESTS,
   CRYSTAL_TIERS,
@@ -28,6 +29,10 @@ import {
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
   MAP_THEMES,
+  POWER,
+  REWARD,
+  findStat,
+  opensHere,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   EQUIP_SLOTS,
@@ -45,6 +50,7 @@ import {
   balance,
   grant,
   makeCrystal,
+  pickGearBase,
   priceOfItem,
   rollCrystal,
   makeGear,
@@ -99,6 +105,7 @@ import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
+import { dropBias } from './sim/stats';
 import { floorPalette, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
@@ -3117,6 +3124,212 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
     perRun >= bench,
     `and covers the level-1 shelf (${bench} gold) in one run`,
     `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf`
+  );
+}
+
+// ===========================================================================
+rule('WHAT A SET FARMS — is where you go a decision or a formality?');
+
+// Three claims to hold: pushing pays but does not make everything below it
+// worthless, each world pays in its own currency, and what a set is pointed at
+// is something you can actually aim.
+{
+  const perMinute = (band: number): { gold: number; sale: number; total: number } => {
+    let secs = 0;
+    let gold = 0;
+    let sale = 0;
+    for (let i = 0; i < 8; i++) {
+      const set = ladderSet(band, new Rng(4000 + band * 31 + i), pool);
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(200 + i)), new Rng(700 + band * 17 + i));
+      const s = runToCompletion(sim, 600);
+      if (s.status !== 'cleared') continue;
+      secs += s.elapsed;
+      gold += s.loot.currency.gold ?? 0;
+      sale += s.loot.items.reduce((n, it) => n + sellPrice(it), 0);
+    }
+    const minutes = Math.max(0.01, secs / 60);
+    return { gold: gold / minutes, sale: sale / minutes, total: (gold + sale) / minutes };
+  };
+
+  line('  band   gold/min   drops sell for   everything');
+  const paid = DROP_BANDS.map((_, band) => {
+    const rate = perMinute(band);
+    line(
+      `   ${band}    ${rate.gold.toFixed(0).padStart(7)}   ${rate.sale.toFixed(0).padStart(14)}` +
+        `   ${rate.total.toFixed(0).padStart(10)}`
+    );
+    return rate;
+  });
+
+  // The hard hour against the hour you have outgrown. Steeper than this and a
+  // set you can no longer be bothered with is worth literally nothing; flatter
+  // and there is no reason to push at all.
+  const goldStep = paid[6].gold / paid[3].gold;
+  const totalStep = paid[6].total / paid[3].total;
+  line(`  the top band pays ${goldStep.toFixed(1)}x the gold of the middle, ${totalStep.toFixed(1)}x counting drops`);
+  check(
+    goldStep > 2.5 && goldStep < 6.5,
+    'the top band pays a few times the middle, not a hundred times it',
+    `${goldStep.toFixed(1)}x`
+  );
+  check(
+    paid.every((rate, i) => i === 0 || rate.total > paid[i - 1].total),
+    'and every band still pays more than the one below — pushing is never wrong',
+    paid.map((r) => r.total.toFixed(0)).join(' → ')
+  );
+
+  // Both taps have to matter. All of it from corpses makes drops decoration;
+  // all of it from selling makes killing things decoration.
+  const shares = paid.map((r) => r.sale / r.total);
+  line(`  share of income from selling: ${shares.map((s) => `${Math.round(s * 100)}%`).join(' ')}`);
+  check(
+    shares.every((s) => s > 0.1 && s < 0.95),
+    'gold comes off corpses early and out of the haul late, and neither ever stops',
+    shares.map((s) => `${Math.round(s * 100)}%`).join(' ')
+  );
+
+  // The Seam. §3 asks for the 50/50 to be the best-paying set there is, and it
+  // is paid as YIELD rather than as power, so it can never skip an item level.
+  const four = (families: MonsterFamily[]) => runSet(families.map((f) => makeCrystal(1, f)));
+  const single = four(['demonic', 'demonic', 'demonic', 'demonic']);
+  const seam = four(['demonic', 'demonic', 'prismatic', 'prismatic']);
+  const lean = four(['demonic', 'demonic', 'demonic', 'prismatic']);
+  line(
+    `  yield: one world ${single.yield.toFixed(2)}x, three to one ${lean.yield.toFixed(2)}x, ` +
+      `the Seam ${seam.yield.toFixed(2)}x`
+  );
+  check(
+    Math.abs(seam.yield - (1 + REWARD.mixYield)) < 1e-6 &&
+      single.yield === 1 &&
+      lean.yield > 1 &&
+      lean.yield < seam.yield,
+    `an even split pays ${Math.round(REWARD.mixYield * 100)}% more, and a lopsided one pays part of it`,
+    `${single.yield} / ${lean.yield} / ${seam.yield}`
+  );
+  check(
+    seam.band.ilvl === single.band.ilvl,
+    'and pays it without moving the item level — payment, never access',
+    `${single.band.ilvl} vs ${seam.band.ilvl}`
+  );
+
+  // Each world pays in something the others do not, so no set is strictly best.
+  const rows: string[] = [];
+  for (const family of MONSTER_FAMILIES) {
+    const set = four([family.id, family.id, family.id, family.id]);
+    rows.push(
+      `${family.name}: gold x${set.pays.gold.toFixed(2)}, currency x${set.pays.currency.toFixed(2)}, ` +
+        `rarity +${Math.round(set.pays.rarity)}%`
+    );
+  }
+  for (const row of rows) line(`  ${row}`);
+  const best = MONSTER_FAMILIES.map((f) => four([f.id, f.id, f.id, f.id])).map((s) => s.pays);
+  check(
+    best.every((pays, i) =>
+      best.some((other, j) => j !== i && (other.gold > pays.gold || other.currency > pays.currency || other.rarity > pays.rarity))
+    ) && new Set(best.map((p) => `${p.gold}|${p.currency}|${p.rarity}`)).size === best.length,
+    'no world pays in the same thing as another, so none of them is the correct one',
+    rows.join('; ')
+  );
+}
+
+// ===========================================================================
+rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
+
+// Two mechanisms with the same shape: a gate says a thing does not exist here
+// at all, and a finding modifier says which of what does exist you would like.
+{
+  const gated = CURRENCIES.filter((c) => c.gate);
+  line(`  ${gated.length} currencies are gated: ${gated.map((c) => `${c.name} → ${c.gate!.zone ?? `power ${c.gate!.minPower}`}`).join(', ')}`);
+  check(gated.length > 0, 'the table gates something at all', 'nothing is gated');
+
+  // A gate is a WALL: the run either has it in the pool or does not, and no
+  // amount of rarity argues with it.
+  const wrong = gated.filter((c) => opensHere(c.gate, POWER.max, 'fissure'));
+  check(
+    wrong.length === 0,
+    'and nothing gated to a world drops in the bare Fissure, however powerful the set',
+    wrong.map((c) => c.name).join(', ')
+  );
+  const unreachable = gated.filter(
+    (c) => !MAP_THEMES.some((t) => opensHere(c.gate, POWER.max, t.id))
+  );
+  check(
+    unreachable.length === 0,
+    'and every gate opens somewhere — a gate nothing satisfies is content nobody can have',
+    unreachable.map((c) => c.name).join(', ')
+  );
+
+  const seamOnly = CURRENCIES.filter((c) => c.gate?.zone === 'seam').map((c) => c.id);
+
+  // Played out: the world-gated currency, in its world and out of it. The pool
+  // is filtered before the pick, so what is missing was never rollable.
+  const seen = (crystals: Item[], seeds: number): Set<string> => {
+    const out = new Set<string>();
+    for (let i = 0; i < seeds; i++) {
+      const sim = new RunSim(crystals, ladderCharacter(6, new Rng(90 + i)), new Rng(300 + i));
+      const s = runToCompletion(sim, 600);
+      for (const id of Object.keys(s.loot.currency)) out.add(id);
+    }
+    return out;
+  };
+  const top = (family: MonsterFamily) => rollCrystal(4, pool, rng, family);
+  const rot = seen([top('demonic'), top('demonic'), top('demonic'), top('demonic')], 14);
+  const cavern = seen([top('prismatic'), top('prismatic'), top('prismatic'), top('prismatic')], 14);
+  line(`  the Rot dropped ${rot.size} kinds of currency, the Cavern ${cavern.size}`);
+  check(
+    rot.has('shard_of_ruin') && !cavern.has('shard_of_ruin'),
+    'a world-gated currency comes out of its own world and out of nowhere else',
+    `rot ${[...rot].join(',')} | cavern ${[...cavern].join(',')}`
+  );
+
+  // The Seam's own currency is exotic, so it needs the top band as well as the
+  // zone — rare enough that sampling it would be measuring luck. What has to
+  // hold is the POOL: at the top of both axes it is there, and nowhere else is.
+  const poolAt = (zone: MapTheme) =>
+    CURRENCIES.filter((c) => c.class === 'exotic' && opensHere(c.gate, POWER.max, zone)).map((c) => c.id);
+  const seamPool = poolAt('seam');
+  const elsewhere = MAP_THEMES.filter((t) => t.id !== 'seam').flatMap((t) => poolAt(t.id));
+  line(`  the top of the Seam rolls from ${seamPool.join(', ')}`);
+  check(
+    seamOnly.every((id) => seamPool.includes(id) && !elsewhere.includes(id)),
+    'and the Seam is the only place its own is in the pool at all',
+    `${seamPool.join(',')} against ${[...new Set(elsewhere)].join(',')}`
+  );
+
+  // Hunting. A crystal pointed at weapons has to actually change what turns up.
+  const hunting = (group: string): RolledMod => ({
+    entryId: `find_${group}`, defId: `find_${group}`, group: `find_${group}`, slot: 'mod',
+    name: 'Hunting', tier: 1, tags: ['finding'],
+    stats: [{ stat: findStat(group), form: 'inc', value: 120, tags: [] }],
+  });
+  const hunt = (group: string | null): number => {
+    const bias = dropBias(group ? [hunting(group)] : []);
+    let weapons = 0;
+    let all = 0;
+    const roll = new Rng(4242);
+    for (let i = 0; i < 4000; i++) {
+      const base = pickGearBase(70, roll, bias);
+      if (!base) continue;
+      all++;
+      if (base.kind === 'weapon') weapons++;
+    }
+    return (weapons / all) * 100;
+  };
+  const plain = hunt(null);
+  const aimed = hunt('weapons');
+  line(`  weapons are ${plain.toFixed(1)}% of drops, ${aimed.toFixed(1)}% with one crystal hunting them`);
+  check(
+    aimed > plain * 1.5,
+    'a crystal that hunts weapons visibly changes what the run hands you',
+    `${plain.toFixed(1)}% → ${aimed.toFixed(1)}%`
+  );
+  // And it must not be a way around the ladder: the bias moves WHICH, never
+  // how good — an ilvl 10 run hunting weapons still drops ilvl 10 weapons.
+  const cheap = pickGearBase(10, new Rng(5), dropBias([hunting('weapons')]));
+  check(
+    (cheap?.ilvl ?? 1) <= 10,
+    'and hunts only what the item level already allows',
+    `${cheap?.id} at ilvl ${cheap?.ilvl}`
   );
 }
 

@@ -9,11 +9,8 @@
 export type StatForm = 'flat' | 'inc' | 'more';
 export type ItemKind = 'gear' | 'crystal';
 
-/**
- * How many modifiers an item may carry. Separate axis from the base's slot
- * table, which says which KINDS it may carry: one is how finished the item is,
- * the other is what the item is.
- */
+/** How many modifiers an item may carry — the base's slot table says which
+ *  KINDS. How finished it is, against what it is. */
 export type Quality = 'rough' | 'seamed' | 'faceted' | 'brilliant';
 
 /** Declared per base, so a new base can invent its own layout. */
@@ -111,10 +108,20 @@ export interface Effect {
 
 export type CurrencyClass = 'basic' | 'uncommon' | 'rare' | 'exotic';
 
+/** A wall, never a weight: below it the thing does not exist at all. */
+export interface DropGate {
+  /** Run power below which this never drops. */
+  minPower?: number;
+  /** The one world it comes out of. */
+  zone?: MapTheme;
+}
+
 export interface CurrencyDef {
   id: string;
   name: string;
   class: CurrencyClass;
+  /** Where this can drop. Absent means anywhere the class is reachable. */
+  gate?: DropGate;
   description: string;
   targets: {
     kinds?: ItemKind[];
@@ -191,10 +198,8 @@ export interface MonsterFamilyDef {
   blurb: string;
 }
 
-/**
- * Which world you are standing in, read off the composition rather than chosen.
- * A LOOK: same generator, same packs, different rock under them.
- */
+/** Which world you stand in, off the composition. A LOOK: same generator,
+ *  same packs, different rock under them. */
 export type MapTheme = 'fissure' | 'demonic' | 'prismatic' | 'seam';
 
 export interface MapThemeDef {

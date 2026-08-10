@@ -5,11 +5,13 @@ import {
   AILMENT_NAMES,
   DAMAGE_TYPES,
   DEFENCE,
+  DROP_GROUPS,
   HERO_BASE,
   LEVELLING,
   TYPELESS,
   MONSTER_BASE,
   SKILLS,
+  findStat,
   monsterResStat,
   SKILL_BY_ID,
 } from '../data';
@@ -400,7 +402,12 @@ export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
     const ward = percentStat(mods, monsterResStat(t.id));
     resistances[t.id] = Math.min(DEFENCE.resistanceCap, ward);
   }
+  // Held back to whatever the wards left room for: the two multiply, and both
+  // at their caps is a map that eats nine tenths of every hit.
   const armour = computeStat(0, mods, 'monsterArmour');
+  const hardest = Math.max(0, ...Object.values(resistances)) / 100;
+  const room = 1 - DEFENCE.monsterHitFloor / Math.max(0.01, 1 - hardest);
+  const blunted = Math.max(0, Math.min(armourReduction(armour), room * 100));
 
   return {
     maxLife: computeStat(life, mods, 'monsterLife'),
@@ -411,7 +418,7 @@ export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
     critChance: percentStat(mods, 'monsterCrit'),
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,
-    armourReduction: armourReduction(armour),
+    armourReduction: blunted,
     resistances,
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
@@ -432,4 +439,13 @@ export function mapDensity(mods: RolledMod[]): { packCount: number; packSize: nu
     packCount: Math.max(1, Math.round(computeStat(10, mods, 'packCount'))),
     packSize: Math.max(1, Math.round(computeStat(5, mods, 'packSize'))),
   };
+}
+
+/** A preference: it moves WHICH piece drops, never how many or how good. */
+export type DropBias = Record<string, number>;
+
+export function dropBias(mods: RolledMod[]): DropBias {
+  const out: DropBias = {};
+  for (const group of DROP_GROUPS) out[group.id] = computeStat(1, mods, findStat(group.id));
+  return out;
 }

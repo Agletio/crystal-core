@@ -3,8 +3,17 @@
  * print an identifier, and must never drop the line's TAGS: fire, cold, melee
  * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
-import { DAMAGE_TYPES, DAMAGE_GROUPS, DELIVERY_TAGS, monsterResStat } from './data';
+import {
+  DAMAGE_TYPES,
+  DAMAGE_GROUPS,
+  DELIVERY_TAGS,
+  DROP_GROUPS,
+  findStat,
+  monsterResStat,
+} from './data';
 import type { StatRoll } from './types';
+
+const titled = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Stats whose name is not simply their identifier with spaces. */
 const NAMED: Record<string, string> = {
@@ -33,9 +42,8 @@ const NAMED: Record<string, string> = {
   ...Object.fromEntries(
     DAMAGE_TYPES.map((t) => [monsterResStat(t.id), `Monster ${t.name} Resistance`])
   ),
+  ...Object.fromEntries(DROP_GROUPS.map((g) => [findStat(g.id), `Chance to Find ${titled(g.id)}`])),
 };
-
-const titled = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Every tag that names a thing worth putting in front of "Damage". */
 const TAG_WORDS: Record<string, string> = Object.fromEntries([

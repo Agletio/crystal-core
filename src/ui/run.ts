@@ -13,7 +13,7 @@ import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
-import { compositionText, crystalFamily, runSet, setRows } from '../sim/crystal';
+import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketFor, socketItem, socketed, unsocket } from '../game/state';
 import type { GameState, GiftPlace } from '../game/state';
@@ -205,6 +205,11 @@ function renderMenu(): void {
   where.title = zone.blurb;
   where.append(el('span', 'setzone__blurb', ` — ${zone.blurb}`));
   host.append(where);
+
+  // What the set is FOR. Every world pays in its own currency and no two are
+  // comparable, so this is the difference between choosing and guessing.
+  const farms = farmingText(set);
+  if (farms) host.append(el('p', 'setcomp', farms));
   host.append(
     el(
       'p',

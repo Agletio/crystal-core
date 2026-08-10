@@ -319,7 +319,7 @@ const multRows = () =>
   );
 assert($('item-rewards').hidden === false, 'crystal shows reward multipliers');
 assert(
-  multRows().join(' ') === 'family=Normal danger=0 gold=0% rarity=0%',
+  multRows().join(' ') === 'family=Normal danger=0 rarity=0%',
   'a blank crystal is worth exactly base',
   multRows().join(' ')
 );

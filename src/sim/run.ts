@@ -12,6 +12,7 @@ import { AILMENT } from '../data';
 import { lookOf } from './appearance';
 import {
   characterStats,
+  dropBias,
   effectiveSkill,
   mapDensity,
   monsterStats,
@@ -38,7 +39,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
 } from '../data';
-import { LAMPWRIGHT, socketPackSize, socketPacks, socketSize } from '../data';
+import { LAMPWRIGHT, opensHere, socketPackSize, socketPacks, socketSize } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
@@ -361,10 +362,12 @@ export class RunSim {
     const packSize = Math.max(1, Math.round(density.packSize * socketPackSize(filled)));
     // Run power pays here: it is the one number a reward reads.
     this.xpPerKill = monsterXp(this.set.power);
+    // Power is the whole of it, times what the worlds in the set pay.
     this.goldPerKill =
       LOOT.goldPerKill *
       Math.pow(LOOT.powerScale, this.set.power) *
-      this.set.rewards.goldYield;
+      this.set.yield *
+      this.set.pays.gold;
 
     // One family per pack, for the same reason as one kind per pack.
     const plan = familyPlan(this.set.composition, packCount);
@@ -1193,10 +1196,11 @@ export class RunSim {
   private rollGearDrop(): void {
     const drops = this.set.band;
     const hero = this.state.hero.stats;
-    const chance = drops.gearChance * (1 + (this.set.rewards.rarity + hero.rarity) / 200);
+    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
+    const chance = drops.gearChance * this.set.yield * (1 + rarity / 200);
     if (!this.rng.chance(chance)) return;
 
-    const base = pickGearBase(drops.ilvl, this.rng);
+    const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods));
     if (!base) return;
 
     const quality = pickQuality(drops.quality, this.rng);
@@ -1210,7 +1214,8 @@ export class RunSim {
     // Gear stacks with the crystal: currency find changes HOW OFTEN, rarity
     // changes HOW GOOD. Two separate questions, so two separate stats.
     const hero = this.state.hero.stats;
-    const chance = CURRENCY_DROP.chancePerKill * (1 + hero.currencyFind / 100);
+    const chance =
+      CURRENCY_DROP.chancePerKill * (1 + hero.currencyFind / 100) * this.set.pays.currency;
     if (!this.rng.chance(chance)) return;
 
     // The tier caps the class. Rarity decides how often you reach the ceiling;
@@ -1218,13 +1223,17 @@ export class RunSim {
     // enough rarity would drop the currency that re-rolls a Brilliant item —
     // which is the whole ladder skipped in one lucky kill.
     const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
-    const rarity = this.set.rewards.rarity + hero.rarity;
+    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
     while (rank < ceiling && this.rng.chance(climb)) rank++;
 
+    // A gate is a wall: what this run cannot reach does not exist here, so the
+    // pool is filtered before the pick rather than the pick being rerolled.
     const cls = CURRENCY_CLASSES[rank];
-    const pool = CURRENCIES.filter((c) => c.class === cls);
+    const pool = CURRENCIES.filter(
+      (c) => c.class === cls && opensHere(c.gate, this.set.power, this.set.theme)
+    );
     const dropped = this.rng.pick(pool);
     if (!dropped) return;
 

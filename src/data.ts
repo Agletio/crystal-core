@@ -7,6 +7,9 @@ import type {
   ModDef,
   MonsterDef,
   MonsterFamily,
+  DropGate,
+  GearKind,
+  MapTheme,
   MapThemeDef,
   MonsterFamilyDef,
   MonsterRankDef,
@@ -20,8 +23,7 @@ import type {
 // --- damage types ----------------------------------------------------------
 //
 // A table, so adding a type resolves, resists and displays everywhere at once.
-// Groups let one mod cover several types at lower value. TYPELESS is absent on
-// purpose: nothing type-specific scales it and nothing resists it.
+// Groups let one mod cover several types at lower value.
 
 export interface DamageTypeDef {
   id: string;
@@ -50,6 +52,21 @@ export const monsterResStat = (type: string): string =>
   `monster${type[0].toUpperCase()}${type.slice(1)}Res`;
 
 export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
+
+/** What a run can be pointed AT. Three groups rather than seven slots: a
+ *  crystal that hunts boots is one you socket for a day. */
+export const DROP_GROUPS: Array<{ id: string; mod: string; kinds: GearKind[] }> = [
+  { id: 'weapons', mod: 'of the Armoury', kinds: ['weapon'] },
+  { id: 'armour', mod: 'of the Foundry', kinds: ['helmet', 'body', 'gloves', 'boots'] },
+  { id: 'trinkets', mod: 'of the Reliquary', kinds: ['amulet', 'ring'] },
+];
+
+/** The stat a crystal states its hunting in. Weight on that group's kinds. */
+export const findStat = (group: string): string => `find${group[0].toUpperCase()}${group.slice(1)}`;
+
+export const GROUP_OF_KIND: Record<string, string> = Object.fromEntries(
+  DROP_GROUPS.flatMap((g) => g.kinds.map((k) => [k, g.id]))
+);
 
 /**
  * What a lasting version of each damage type is called. The sim has one ailment
@@ -89,6 +106,12 @@ export const DEFENCE = {
   armourCap: 75,
   /** Armour points at which reduction reaches half the cap. */
   armourHalfPoint: 300,
+  /**
+   * The least of a hit that must still reach a MONSTER. Resistance and armour
+   * multiply, and a map you cannot hurt is a wall rather than a hard map.
+   * Armour gives way to the wards, so hardening one type costs the other.
+   */
+  monsterHitFloor: 0.25,
 };
 
 /** Sockets in the Fissure. Count is run LENGTH; what is in them is difficulty. */
@@ -148,20 +171,12 @@ export const BASE_TIER_ILVL = [1, 22, 46];
 
 // --- armour ----------------------------------------------------------------
 //
-// Six archetypes — three pure, three hybrid — in two versions each: twelve
-// families across four slots and three rungs.
-//
-// Every family spends the SAME budget, at the same exchange rate, and differs
-// only in how it splits it. That is the whole defence against a hybrid being
-// strictly better than the pure sets it borrows from: a hybrid is a
-// redistribution, never a surplus, and the demo re-adds the points to prove it.
-//
-// ARMOUR comes out of that same budget but lands on the base as a rating, not
-// a line of implicit, so plate reads as plate and increases have something to
-// scale. Melee > hybrid > rogue > mage is a design claim the demo holds.
-//
-// Slot capacities deliberately do NOT vary by family: letting one have both a
-// better split and more openings is how a "hybrid" becomes the only choice.
+// Twelve families across four slots and three rungs. Every family spends the
+// SAME budget at the same rate and differs only in how it splits it, so a
+// hybrid is a redistribution rather than a surplus — the demo re-adds the
+// points to prove it. Armour comes out of that budget as a rating on the base,
+// so increases have something to scale. Slot capacities never vary by family:
+// a better split AND more openings is how one becomes the only choice.
 
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
@@ -663,6 +678,30 @@ export const CRYSTAL_MODS: ModDef[] = [
       },
     ],
   })),
+
+  // What the rock gives up, rather than what it holds. These carry no danger
+  // and never raise a drop's ilvl or its quality: the run pays exactly what it
+  // paid, in a shape you chose. The cost is the socket, and the mod slot in it
+  // that a danger modifier is not using.
+  ...DROP_GROUPS.map((group) => ({
+    id: `find_${group.id}`,
+    slot: 'mod' as const,
+    name: group.mod,
+    appliesTo: ['crystal' as const],
+    tags: ['finding'],
+    tiers: [
+      {
+        ilvl: 55,
+        weight: 180,
+        stats: [{ stat: findStat(group.id), form: 'inc' as const, range: [90, 130] as [number, number] }],
+      },
+      {
+        ilvl: 1,
+        weight: 480,
+        stats: [{ stat: findStat(group.id), form: 'inc' as const, range: [35, 70] as [number, number] }],
+      },
+    ],
+  })),
 ];
 
 // --- gear: DEFENCE = staying alive -----------------------------------------
@@ -804,9 +843,8 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
 
 // --- gear: UTILITY = everything that isn't damage --------------------------
 //
-// Only boots and amulets have these slots, so this is where move speed lives
-// and where it competes for room. Three slots on the whole character, which
-// is what stops universally-useful mods from being free power.
+// Only boots and amulets have these slots — three on the whole character —
+// which is what stops universally-useful mods from being free power.
 export const GEAR_UTILITY_MODS: ModDef[] = [
   {
     id: 'move_speed',
@@ -860,8 +898,7 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
 
 // --- generated: one family per damage type ---------------------------------
 //
-// Written as a loop rather than eighteen near-identical blocks. Adding a
-// damage type to DAMAGE_TYPES gives it flat damage, increased damage and a
+// A new entry in DAMAGE_TYPES gets flat damage, increased damage and a
 // resistance automatically, which is the whole point of the table.
 
 const FLAT_DAMAGE_NAMES: Record<string, string> = {
@@ -1168,6 +1205,9 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'sigil_of_refinement',
     name: 'Sigil of Refinement',
     class: 'rare',
+    // Polishing what is already there is the Cavern's whole character, and a
+    // world nobody has a reason to enter is a world nobody enters.
+    gate: { zone: 'prismatic' },
     description: 'Upgrades one modifier to a higher tier.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
@@ -1182,6 +1222,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'shard_of_ruin',
     name: 'Shard of Ruin',
     class: 'rare',
+    gate: { zone: 'demonic' },
     description: 'Strips an item back to Rough. Everything is lost.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
@@ -1218,6 +1259,9 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'sigil_of_finality',
     name: 'Sigil of Finality',
     class: 'exotic',
+    // The last thing you do to an item comes from the one place that takes
+    // two of each crystal to open: the top of both axes at once.
+    gate: { zone: 'seam' },
     description:
       'Empowers or diminishes every modifier by 25% at random, then locks the item permanently.',
     targets: {},
@@ -1238,18 +1282,13 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 
 // --- recipes ---------------------------------------------------------------
 //
-// Gold is the universal feedstock, and selling is where it comes from. One
-// spent on stash space is one not spent at the bench, and that contested
-// resource IS the endgame decision.
+// Gold is the universal feedstock and selling is where it comes from. One
+// spent on stash space is one not spent at the bench.
 
 /**
- * A crystal's tier is its MOD CAPACITY and nothing else. It is not a difficulty
- * rung: two sockets holding blank T4s are exactly as dangerous as two blank T1s,
- * and only what is rolled on them makes a run hard.
- *
- * `quality` rides along because the crafting currencies gate on it, so the
- * capacity a tier grants and the currencies that can reach it stay in step.
- * `xp` is the TOTAL a crystal must have earned to sit at that tier.
+ * A crystal's tier is its MOD CAPACITY and nothing else: two blank T4s are as
+ * dangerous as two blank T1s. `quality` rides along because the crafting
+ * currencies gate on it; `xp` is the total needed to sit at that tier.
  */
 export const CRYSTAL_TIERS = [
   { tier: 1, mods: 0, quality: 'rough' as Quality, xp: 0 },
@@ -1965,12 +2004,27 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   packSize: { weight: 0.5, rewards: false },
 };
 
+/**
+ * What each world pays in, on top of what every world pays, read off the SHARE
+ * of the run it holds. Three different currencies deliberately: they cannot be
+ * compared, so no world is strictly best and what you want decides where to go.
+ */
+export const FAMILY_YIELD: Record<MonsterFamily, { gold: number; currency: number; rarity: number }> = {
+  normal: { gold: 0.6, currency: 0, rarity: 0 },
+  demonic: { gold: 0, currency: 1.1, rarity: 0 },
+  prismatic: { gold: 0, currency: 0, rarity: 34 },
+};
+
 /** Loot only; XP stays per-kill. A second channel belongs here, not in the sim. */
 export const REWARD = {
-  /** Gold multiplier gained per danger point. 100 danger = +100%. */
-  goldPerDanger: 0.01,
   /** Rarity percent gained per danger point. */
   rarityPerDanger: 0.8,
+  /**
+   * What a set fully MIXED between the two other worlds pays over one made of
+   * a single world. Not difficulty and not access: the same monsters, the same
+   * item level, more of what they carry — so it can never skip a rung.
+   */
+  mixYield: 0.25,
 };
 
 /**
@@ -2011,18 +2065,22 @@ export const DROP_BANDS: DropBand[] = [
   // that the free descent has some upside, which is the difference between a
   // tutorial and a tax.
   { quality: [['rough', 7], ['seamed', 3]], fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
-  { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.055, ilvl: 10 },
-  { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.06, ilvl: 22 },
+  { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.075, ilvl: 10 },
+  { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.068, ilvl: 22 },
   // The first Faceted, and deliberately not a full one.
-  { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.065, ilvl: 34 },
+  { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.06, ilvl: 34 },
   // Where a build becomes possible: full Faceted pieces, four modifiers.
-  { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.07, ilvl: 46 },
-  { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.075, ilvl: 58 },
-  { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.08, ilvl: 70 },
+  { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.052, ilvl: 46 },
+  { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.045, ilvl: 58 },
+  { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
 ];
 
 export const bandFor = (power: number): DropBand =>
   DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];
+
+/** Whether a gated thing exists in this run at all. No gate opens everywhere. */
+export const opensHere = (gate: DropGate | undefined, power: number, zone: MapTheme): boolean =>
+  !gate || ((gate.minPower ?? 0) <= power && (gate.zone === undefined || gate.zone === zone));
 
 // --- the shop's shelf ------------------------------------------------------
 //
@@ -2050,6 +2108,12 @@ export const SHOP = {
   sellFraction: 0.35,
   /** What one rolled modifier adds to a sale, as a fraction of the base. */
   pricePerMod: 0.15,
+  /**
+   * What a SALE pays for quality, flatter than what a purchase charges for it:
+   * a good piece is worth having, not worth selling. Every entry stays at or
+   * under its purchase multiplier, or the counter would mint gold.
+   */
+  sellByQuality: { rough: 1, seamed: 1.8, faceted: 3.2, brilliant: 5 } as Record<Quality, number>,
 };
 
 /** Best last. Rough only early: the point is a BASE, not a finished item. */
@@ -2074,9 +2138,13 @@ export const LOOT = {
    * or rare one is worth several kills, so a pack pays about a third more than
    * its count — ranks redistribute the payout into spikes rather than raising it.
    */
-  goldPerKill: 0.14,
-  /** Gold multiplier per point of run power. */
-  powerScale: 2.1,
+  goldPerKill: 0.6,
+  /**
+   * Gold multiplier per point of run power, and the ONLY thing gold scales on
+   * — danger is already inside power, so a second multiplier for it was the
+   * same climb counted twice.
+   */
+  powerScale: 1.45,
 };
 
 /**

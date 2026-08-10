@@ -3,7 +3,17 @@
  * character built to ignore a kind of danger gets paid for danger it is not
  * taking.
  */
-import { DANGER_STATS, FAMILY_BY_ID, MONSTER_FAMILIES, POWER, REWARD, bandFor } from '../data';
+import {
+  DANGER_STATS,
+  DROP_GROUPS,
+  FAMILY_BY_ID,
+  FAMILY_YIELD,
+  MONSTER_FAMILIES,
+  POWER,
+  REWARD,
+  bandFor,
+} from '../data';
+import { dropBias } from './stats';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
 
@@ -12,8 +22,6 @@ export interface CrystalRewards {
   danger: number;
   /** The part of danger that pays — density is excluded. */
   payingDanger: number;
-  /** Multiplier on gold. 1 = base. */
-  goldYield: number;
   /** Percent. Feeds the chance a dropped currency climbs a class. */
   rarity: number;
 }
@@ -41,12 +49,7 @@ export function crystalRewards(mods: RolledMod[]): CrystalRewards {
     if (def.rewards) payingDanger += scored;
   }
 
-  return {
-    danger,
-    payingDanger,
-    goldYield: 1 + payingDanger * REWARD.goldPerDanger,
-    rarity: payingDanger * REWARD.rarityPerDanger,
-  };
+  return { danger, payingDanger, rarity: payingDanger * REWARD.rarityPerDanger };
 }
 
 /** A crystal from before families, or one naming a family that was retired. */
@@ -128,6 +131,12 @@ export interface RunSet {
   band: DropBand;
   composition: Composition; // which monsters, in what share; never how hard
   theme: MapTheme; // which world the rock is; follows the composition
+  /** 1 when the two other worlds are split evenly, 0 when neither is here. */
+  mix: number;
+  /** Multiplier on what drops. Never on item level: payment, not access. */
+  yield: number;
+  /** What the worlds in this set pay in, each in its own currency. */
+  pays: { gold: number; currency: number; rarity: number };
 }
 
 export function runSet(crystals: Item[]): RunSet {
@@ -138,6 +147,8 @@ export function runSet(crystals: Item[]): RunSet {
     crystals.length * POWER.perSocket + rewards.danger / POWER.perDanger
   );
   const share = composition(crystals);
+  // Evenly split between the two other worlds is 1; three to one is a half.
+  const mix = 2 * Math.min(share.demonic, share.prismatic);
   return {
     mods,
     filled: crystals.length,
@@ -146,7 +157,23 @@ export function runSet(crystals: Item[]): RunSet {
     band: bandFor(power),
     composition: share,
     theme: mapTheme(share),
+    mix,
+    yield: 1 + mix * REWARD.mixYield,
+    pays: familyPays(share),
   };
+}
+
+/** Each world's bonus, in the share it holds. Multipliers on gold and currency
+ *  frequency; rarity is percent, which is how everything else states it. */
+export function familyPays(share: Composition): { gold: number; currency: number; rarity: number } {
+  const out = { gold: 1, currency: 1, rarity: 0 };
+  for (const family of MONSTER_FAMILIES) {
+    const pays = FAMILY_YIELD[family.id];
+    out.gold += share[family.id] * pays.gold;
+    out.currency += share[family.id] * pays.currency;
+    out.rarity += share[family.id] * pays.rarity;
+  }
+  return out;
 }
 
 /** Rows for the crystal header, in display order. */
@@ -157,7 +184,6 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
   const rows = [
     { label: 'family', value: FAMILY_BY_ID[crystalFamily(crystal)].name },
     { label: 'danger', value: Math.round(r.danger).toString() },
-    { label: 'gold', value: `${Math.round((r.goldYield - 1) * 100)}%` },
     { label: 'rarity', value: `${Math.round(r.rarity)}%` },
   ];
 
@@ -177,6 +203,29 @@ export function setRows(crystals: Item[]): Array<{ label: string; value: string 
     { label: 'power', value: set.power.toFixed(1) },
     { label: 'item level', value: String(set.band.ilvl) },
   ];
+}
+
+/**
+ * What this set is FOR, in words: what the worlds in it pay, what a mixed set
+ * adds, and what its modifiers point the drops at. Empty for a set that is
+ * simply a set — there is nothing to say about the bare Fissure.
+ */
+export function farmingText(crystals: Item[]): string {
+  const set = runSet(crystals);
+  const said: string[] = [];
+  if (set.pays.gold > 1.02) said.push(`+${Math.round((set.pays.gold - 1) * 100)}% gold`);
+  if (set.pays.currency > 1.02) {
+    said.push(`+${Math.round((set.pays.currency - 1) * 100)}% currency`);
+  }
+  if (set.pays.rarity >= 1) said.push(`+${Math.round(set.pays.rarity)}% rarity`);
+  if (set.mix > 0) said.push(`+${Math.round((set.yield - 1) * 100)}% for the mix`);
+
+  const bias = dropBias(set.mods);
+  for (const group of DROP_GROUPS) {
+    const aimed = (bias[group.id] ?? 1) - 1;
+    if (aimed > 0.01) said.push(`+${Math.round(aimed * 100)}% ${group.id}`);
+  }
+  return said.join(' · ');
 }
 
 /** What you will be fighting, biggest share first. Readable before you commit. */

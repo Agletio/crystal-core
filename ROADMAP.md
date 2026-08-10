@@ -464,14 +464,48 @@ but not to that. Reward scaling is intact — a kill at the top band is worth
 ~240× the bare Fissure — so the game is loose in the direction §3 asks for.
 Retuning the danger mods so the top set is genuinely dangerous belongs here.
 
-- [ ] Run power takes **composition** and crystal tier as inputs too, and becomes
-      the tuned curve rather than a placeholder (§3, *Rewards*).
-- [ ] Drop gating: items that cannot appear below a threshold, so the best gear
-      is only reachable at the top of every axis at once.
-- [ ] Rewards unique to each monster family, so choosing Demonic over Normal is a
-      farming decision rather than a cosmetic one.
-- [ ] Targeted farming: a crystal set that biases toward a specific armour family
-      or item type, through family plus mods.
+- [x] The curve, tuned against a number the user set: **the top band pays about
+      four times the middle**, not twenty. Gold lost its second multiplier —
+      danger was already inside power, so `REWARD.goldPerDanger` was the same
+      climb counted twice — `LOOT.powerScale` came 2.1 → 1.45, sales price
+      quality on a flatter table than purchases (`SHOP.sellByQuality`), and the
+      top bands drop FEWER, better pieces. Composition is in as **yield**
+      rather than as power: an even split of the two other worlds pays 25% more
+      (`REWARD.mixYield`), and paying it through power would have moved the item
+      level, which is access rather than payment.
+- [x] Drop gating: `DropGate` on a currency — `minPower`, `zone`, or both — read
+      before the pick, so what a run cannot reach was never in the pool. The
+      Sigil of Finality is the Seam's alone, which is the top of both axes at
+      once; the Shard of Ruin is the Rot's and the Sigil of Refinement the
+      Cavern's.
+- [x] Rewards unique to each family (`FAMILY_YIELD`), read off the SHARE of the
+      run each holds: Normal pays gold, Demonic pays crafting currency,
+      Prismatic pays rarity. Three different currencies deliberately — they
+      cannot be compared, so no world is the correct one.
+- [x] Targeted farming: three crystal modifiers (`DROP_GROUPS`, "of the
+      Armoury / Foundry / Reliquary") that weight which KIND of gear drops.
+      They carry no danger and cost a mod slot a danger modifier is not using.
+      One of them takes weapons from 12% of drops to 24%, and never touches
+      item level, quality or count — a preference, never a shortcut.
+
+> **Landed.** Crystal tier is deliberately NOT a separate input to power. §3
+> lists it, but a tier only buys mod capacity and mods are already danger, so
+> reading tier again would count the same climb twice — the exact mistake the
+> section's own implementation note warns about.
+>
+> Two things fell out of the retune and are worth recording. Adding modifiers
+> that carry no danger diluted the crystal pool enough that `ladderSet` stopped
+> reaching the top band on four random rolls, which is a harness modelling luck
+> where a player would re-roll; it takes twelve tries now. And with the harness
+> exploring further it built a set that turned aside 80% of every hit — two
+> caps of 75% multiply to a map you cannot hurt. `DEFENCE.monsterHitFloor` now
+> holds armour back to whatever the wards left room for, so hardening one type
+> costs the blunting of every other and a quarter of a hit always lands.
+>
+> What this phase did NOT do is the danger retune its own opening asks for — the
+> top set is still clearable ten times out of ten. That is deliberate: Phase 8
+> is the mechanism that makes a mixed room lethal, and setting the danger
+> modifiers before it exists is setting them twice.
 
 ### Phase 8 — Cross-family monster interactions
 
@@ -521,9 +555,13 @@ Do not guess at these.
 1. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. §2 says how to keep it cheap to add; nothing else should assume it.
-2. **What exactly does the run power formula look like?** §3 settles the inputs
-   and that it should be one number. The shape of the curve is open, and it is
-   the lever that decides whether pushing difficulty is correct or optional.
+2. ~~**What exactly does the run power formula look like?**~~ Settled in Phase 7.
+   The user chose the slope by what it means at the table rather than by a
+   formula: **an hour on your hardest set is worth about four times an hour on
+   a set you have outgrown** — pushing is always correct, and a set you can run
+   fast and safely stays a legitimate farm. Composition sits outside power as
+   yield, at **25%** for an even split of the two other worlds. What remains
+   open is only whether those numbers feel right in play.
 
 ---
 
