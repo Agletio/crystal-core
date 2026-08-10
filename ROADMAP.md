@@ -50,9 +50,11 @@ retune — the deep end is a wall now, and danger stops paying for what a cap ha
 already eaten — and unique gear, six named pieces that grant switches through
 the same table the trees use, one world at a time.
 
-**There is no phase in §5.** What is next comes out of §7, which is real work
-deferred by decision rather than a queue — or out of playing it. Write the next
-phase to the standard §5 describes.
+**§5 holds five phases**, all of them the user's: how the Lampwright looks and
+talks, a Fissure that reads as a cave and three worlds that move, a walk to the
+way out with the finale climbing out of it, three save slots, and a sweep that
+puts a figure on every number the game currently describes in words. The last
+one is also a standing rule now — §2.
 
 ### Keeping room for a fifth socket
 
@@ -128,6 +130,17 @@ waiting is a condition you can read on a screen — your level, a quest you
 finished — and never a per-descent chance. A player who cannot tell whether the
 next crystal is two runs away or twenty has no way to plan the only decision
 the game asks them to make.
+
+**Every number is said out loud.** Nothing the player reads may describe a
+quantity in words when it has a figure behind it. Never "more damage" — "35%
+more damage". Never "another cast" or "an extra cloud" — "+1 cloud". Never "a
+third more ground", "hits harder", "grows again". If a line cannot name its
+number, the line is describing the wrong thing.
+
+This is about MECHANICS, not about voice. Flavour has no number behind it and is
+not covered: the Lampwright says what he sees, a unique's own line is a line
+about a dead man, and neither is a stat. The test is whether a player could act
+differently knowing the figure — if yes, the figure goes in.
 
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
@@ -475,9 +488,203 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-**Nothing is queued.** Every phase written down has landed. §7 is where the next
-one comes from; ask before turning one of those into a phase, because §7 is a
-pile of things deferred by decision rather than a list of things to do next.
+Anything in §7 is deferred by decision rather than queued; ask before turning
+one of those into a phase.
+
+### Phase 1 — The Lampwright, drawn and speaking
+
+Two halves of one character: what he looks like when he talks to you, and what
+he says. They go together because the words have to suit the picture.
+
+**What is true today.**
+
+- The panel's portrait is `beastIcon(LAMPWRIGHT.sprite, 44)` in `src/ui/met.ts`,
+  which is `monsterArt` — the SAME 24×24 map sprite, blown up. It is a figure at
+  map scale, so at 44px it is a blob with two eye pixels.
+- The map sprite itself (`lampwright` in `src/render/bestiary.ts`, `grid: 24`,
+  two frames) is a rectangle with a lamp beside it. It is not a person and it is
+  not hooded.
+- `LAMPWRIGHT.first`, `.crystal` and `.again` in `src/data.ts` are RULES read
+  aloud: "spend a Shard of Making on it: one modifier, rolled", "socket it and
+  the descent runs longer". The screens already say all of that.
+
+**Why it is wrong.** He is the only person in the game and the only one who
+ever speaks, and he currently reads as a crate with a lantern reciting the
+manual. A talking head is worth drawing properly precisely because there is one.
+
+- [ ] A PORTRAIT is a different asset from a map sprite, at its own grid.
+      Shoulders-up, one frame, in a new `PORTRAITS` table (`src/render/portraits.ts`)
+      keyed the same way the bestiary is, drawn by the same `rows`/`Tone`
+      machinery so colours still come from the palette at call time (§3).
+- [ ] The grid is **48**, not 24. `CELL = 48` binds the map's offscreen canvas
+      and nothing else; a portrait is inline SVG through `sprite()` in
+      `src/ui/icons.ts`, which takes any grid. This is the one place in the game
+      that gets detail, and it should look like a face rather than a silhouette.
+- [ ] `src/ui/met.ts` draws the portrait, falling back to `beastIcon` if a
+      speaker has no portrait — so a second speaker is one table entry.
+- [ ] THEN the map sprite is redrawn from it, at 24, so the two are the same
+      person: a **hooded figure** carrying a **lantern on a staff**, gone strange
+      from living down there. The lamp is the read at map scale — it is what
+      `LAMPWRIGHT.seen` already promises ("A lantern, further back than you have
+      been").
+- [ ] The speeches become FLAVOUR. He describes what he has seen the rock do,
+      not what the button does: carrying a crystal makes the Fissure go on and
+      on; a crystal changes the longer you hold it; something about the shard
+      that reads as a thing he does rather than a step you take. Nothing in his
+      mouth names a screen, a currency's effect or a number — §2's numbers rule
+      is about mechanics and does not reach him.
+- [ ] The guided opening keeps teaching the mechanics, because it is the thing
+      that points at buttons. Moving that job off the dialogue is the point:
+      the tutorial says what to click, the Lampwright says what the place is.
+
+**What must not break.** `npm run shots` fails the run if a first descent never
+produces the panel, and photographs it at two sizes — a 48-grid portrait must
+not push the panel out of its card. `npm run guide` clicks `met-take` twice, and
+`npm run smoke` checks `#met-face` holds a sprite and sits left of the title.
+The demo's art checks hold every bestiary entry to `wellFormed(frames, grid)`;
+whatever table portraits live in needs the same check or it has none.
+
+### Phase 2 — The Fissure is a cave, and every zone moves
+
+**What is true today.**
+
+- `CUT` in `src/sim/grid.ts` maps `fissure → 'built'`: rooms are rectangles with
+  square corners and corridors run straight. `paving()` in
+  `src/render/renderer.ts` then lays flagstone over better than half of it.
+- `livingDecals()` — the part of a zone that MOVES, drawn per frame off the
+  tile hash and the clock — returns `[]` for `surface === 'stone'`. The Rot has
+  swinging tendrils and spines that push out of the side walls and draw back.
+  The Cavern has a brightness pulse and nothing that moves.
+
+**Why it is wrong.** It is called the Fissure, it is a crack you climb down
+into, and it looks like a castle. And of three worlds only one is alive.
+
+- [ ] The Fissure stops being masonry. `CUT.fissure` leaves `'built'` — a cave
+      has no square corners — and the flagstone goes back to being rare rather
+      than the default: `patchNoise` currently opens it at `> 0.42`.
+- [ ] **No zone reads as man-made.** `'built'` should end up used by nothing, or
+      by one deliberate exception written down here.
+- [ ] The Fissure gets its own moving scenery, in the same shape the Rot's is
+      written: pure functions of `(tile hash, time)`, no stored state, so both
+      renderers agree and nothing needs seeding. **Cobwebs with something
+      crawling on them**, and **candles that gutter** — a light that moves is
+      what makes a dark room read as occupied rather than empty.
+- [ ] The Cavern gets movement of its own, not a brightness ramp: growth that
+      creeps, light that travels along a facet. Its own idea, not the Rot's
+      recoloured.
+- [ ] The Seam keeps taking whichever side a tile belongs to (`seamSide`), so
+      it inherits both for free. Check it: it is the one place two zones' art
+      is drawn a tile apart, and it is where a clash shows.
+- [ ] Density is a knob per zone, not a constant. A cave with a cobweb on every
+      tile is a cobweb factory.
+
+**What must not break.** `npm run shots` photographs all four zones and fails on
+console errors; `tools/zone-peek.mts` is the tool that actually judges this
+(§8 — **`span` must be EVEN**). The demo holds map generation to connectivity:
+every room reachable, entrance and exit connected. A rounder cut must not strand
+a room. Both renderers must agree, so anything per-tile stays a pure function in
+`render/renderer.ts` (§3).
+
+### Phase 3 — Walking out
+
+**What is true today.** `spawnFinale()` in `src/sim/run.ts` fires the moment the
+flood finds nothing reachable left, and rings the whole encounter around
+`map.exit` at once — `count` entities on a circle of radius `0.8 + count*0.09`.
+A Swarm is 20 bodies on one point. The hero is already standing at the exit when
+the last one dies, so the handover drops it where it stood.
+
+**Why it is wrong.** Twenty monsters spawning inside each other reads as two.
+And the run ends the instant the fight does, on the same tile, so the exit is
+somewhere you were already standing rather than somewhere you go.
+
+- [ ] The finale arena and the EXIT are near each other and not the same place.
+      Clearing the map leaves you with a walk, short enough to be a beat and not
+      a chore.
+- [ ] The finale is triggered by the hero coming NEAR the exit, not by the map
+      going empty — so it is a thing that happens to you on the way out.
+- [ ] They come OUT of the exit — the `mouth()` hole is already drawn there, and
+      the same hole the Lampwright climbs out of is what they climb out of.
+- [ ] Arrival is STAGGERED, per encounter (`ENCOUNTERS` in `src/data.ts`):
+      the Warden is one and arrives alone; the Honour Guard's four come out one
+      at a time; the Swarm's twenty come in groups. A `wave` shape on
+      `EncounterDef` — how many at once and how long between — so the pacing is
+      data rather than a special case per encounter.
+- [ ] `s.totalMonsters` still counts the whole encounter the moment it starts,
+      or the readout counts down and then goes back up.
+
+**What must not break.** `runToCompletion` has a seconds guard and the demo's
+TERMINATION CHECK runs 28 of them: a finale that waits on the hero reaching a
+place must not be able to wait forever. `npm run guide` and `npm run shots` both
+play whole descents. The report reads `RunState.elapsed`, and a quest asks for a
+clear inside 90 seconds (`normal_iv`) — a walk added to every descent moves that
+number, and the demo measures it.
+
+### Phase 4 — Three save slots
+
+**What is true today.** `src/game/save.ts` writes ONE localStorage key
+(`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
+says where your progress lives and offers a file backup, a file load and a
+delete. `New game` is a separate header button (`dev-fresh`) that wipes.
+
+**Why it is wrong.** One save means trying anything costs you the game you have,
+and the only way to keep two is to download a file and remember which is which.
+
+- [ ] Three slots. The key becomes one per slot; `readSave`/`saveGame`/
+      `clearSave`/`savedAt` take a slot, and one stored key remembers which slot
+      is live so a reload comes back to the same game.
+- [ ] The header button says **Save & Load** and opens a screen of three rows.
+      Each row shows what is in it — character, level, how long ago — or that it
+      is empty, and offers Save here and Load.
+- [ ] An empty slot's action is to START one there. **`New game` leaves the
+      header**: a new game is a thing you do to a slot, which is also what stops
+      it wiping the game you are in.
+- [ ] Overwriting an occupied slot asks first (`src/ui/confirm.ts`), the same
+      way `New game` does today. Loading over an unsaved game asks too.
+- [ ] The file backup and the file load stay — they are the only thing that
+      survives clearing the browser — and a loaded file lands in a slot.
+- [ ] `SAVE_VERSION` does not move. `heal()` already drops what no longer
+      resolves, and a save written before slots existed loads into slot 1.
+
+**What must not break.** `npm run smoke` walks the Save screen and asserts what
+it says; the demo's save round-trip and `heal()` checks read and write through
+these functions, and its "every collection a save can hold items in claims its
+ids" list goes through `readSave`. The guided opening survives a reload twice
+(§8) — that has to keep working with a live slot.
+
+### Phase 5 — Every number said out loud
+
+The rule is §2. This is the sweep, and the check that keeps it swept.
+
+**What is true today.** Most tree nodes already carry figures. What does not:
+fractions written as words — "a third more ground", "a quarter more", "below a
+third of their life", "above four fifths of their life"; counts written as
+words — "And a third cloud", "And a third swing", "another additional enemy";
+and bare comparatives — "hits harder", "reach grows again", "wider again".
+`GRANTS[].what` in `src/sim/grants.ts` is worse: "more damage to enemies near
+you", "extra swings at the target", "more enemies near the target are hit" —
+generic by design, and since uniques landed those strings are printed verbatim
+on a unique's card.
+
+**Why it is wrong.** Every one of those is a decision the player is being asked
+to make with the number withheld.
+
+- [ ] Every node `description` in `src/trees/*` names its figures. Fractions
+      become percentages; "another" becomes "+1"; a comparative names its
+      amount.
+- [ ] A unique's card prints the VALUE off the unique's own `grants` bag, not
+      the generic sentence from `GRANTS[].what`. `what` stays what it is — a
+      description of the SWITCH for the demo and for `src/ui/skills.ts` — but it
+      stops being the thing a player reads about a specific item.
+- [ ] Currency descriptions, quest `detail`, `AURAS`, encounter `herald`, the
+      report's rows and every tooltip note get the same pass.
+- [ ] **A demo check, or it rots in a month.** Player-facing text with no digit
+      in it fails, with an allow-list for the lines that genuinely have no
+      number — flavour, and the Lampwright.
+
+**What must not break.** `npm run mods` proves every modifier reads; `npm run
+smoke` asserts the shapes of several of these strings, including that a stat
+line splits its value from its words. The tree demo checks descriptions exist;
+they now also have to contain a figure.
 
 ---
 
