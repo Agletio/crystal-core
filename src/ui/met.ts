@@ -1,20 +1,18 @@
 /**
- * Meeting the Lampwright: a panel over a frozen descent — their words, the
- * crystal drawn as the item it is, and one button. The crystal is granted
- * HERE, never in the report, so it is yours from the moment you are handed it
- * and dying further down costs you only that descent. The freeze is not a
- * pause: the loop has no pause state, the UI just stops ticking the sim.
+ * Meeting the Lampwright: a panel over a finished descent — their words, what
+ * they are holding drawn as the things they are, and one button. It is granted
+ * HERE, never in the report, so it is yours from the moment you are handed it.
+ * The freeze is not a pause: the loop has no pause state, the UI just stops
+ * ticking the sim.
  */
-import { LAMPWRIGHT } from '../data';
-import type { Waiting } from '../game/crystals';
-import { lampwrightGift } from '../game/crystals';
-import { lampwrightWeapon } from '../game/state';
+import { CURRENCY_BY_ID, LAMPWRIGHT } from '../data';
+import type { Handover, Waiting } from '../game/crystals';
+import { takeHandover } from '../game/crystals';
 import type { GameState } from '../game/state';
 import { itemCard } from './itemcard';
-import { beastIcon, itemIcon } from './icons';
+import { beastIcon, currencyIcon, itemIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { note } from './history';
-import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -26,11 +24,19 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let game: GameState;
-/** Called once the crystal is in hand and the descent may run again. */
+/** Called once what was held is in hand and the loop may go on. */
 let onTaken: (() => void) | null = null;
-let held: Item | null = null;
+let taken: Handover | null = null;
 
 export const isMetOpen = (): boolean => !$('met').hidden;
+
+function row(icon: SVGElement, name: string, card: () => HTMLElement | string): HTMLElement {
+  const line = el('div', 'met__row');
+  line.append(icon);
+  line.append(el('span', 'met__name', name));
+  attachTooltip(line, card);
+  return line;
+}
 
 /**
  * `waiting` says what they are holding. Granted BEFORE the panel, so what you
@@ -38,10 +44,11 @@ export const isMetOpen = (): boolean => !$('met').hidden;
  * of the same thing.
  */
 export function openMet(waiting: Waiting): void {
-  held = waiting === 'weapon' ? (lampwrightWeapon(game)?.item ?? null) : lampwrightGift(game).crystal;
-  if (!held) return;
+  const hand = takeHandover(game, waiting);
+  if (hand.items.length === 0 && Object.keys(hand.currency).length === 0) return;
+  taken = hand;
 
-  const words = waiting === 'weapon' ? LAMPWRIGHT.first : LAMPWRIGHT.again;
+  const words = waiting === 'weapon' ? LAMPWRIGHT.first : LAMPWRIGHT.crystal;
   // The same sprite standing on the map. Who is speaking should be something
   // you recognise rather than something you read.
   const face = $('met-face');
@@ -53,10 +60,14 @@ export function openMet(waiting: Waiting): void {
 
   const gift = $('met-gift');
   gift.replaceChildren();
-  gift.append(itemIcon(held, 34));
-  gift.append(el('span', 'met__name', held.name));
-  const shown = held;
-  attachTooltip(gift, () => itemCard(shown));
+  for (const item of hand.items) {
+    gift.append(row(itemIcon(item, 34), item.name, () => itemCard(item)));
+  }
+  for (const [id, n] of Object.entries(hand.currency)) {
+    const def = CURRENCY_BY_ID[id];
+    if (!def) continue;
+    gift.append(row(currencyIcon(def, 28), `${def.name} \u00d7${n}`, () => def.description));
+  }
 
   const said = $('met-said');
   said.replaceChildren();
@@ -67,8 +78,11 @@ export function openMet(waiting: Waiting): void {
 }
 
 export function closeMet(): void {
-  if (held) note(`${LAMPWRIGHT.name} gave you ${held.name}`, 'add');
-  held = null;
+  for (const item of taken?.items ?? []) note(`${LAMPWRIGHT.name} gave you ${item.name}`, 'add');
+  for (const [id, n] of Object.entries(taken?.currency ?? {})) {
+    note(`${LAMPWRIGHT.name} gave you ${n} ${CURRENCY_BY_ID[id]?.name ?? id}`, 'add');
+  }
+  taken = null;
   $('met').hidden = true;
   hideTooltip();
   onTaken?.();

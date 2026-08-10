@@ -86,6 +86,8 @@ export interface GameState {
   onboarded: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
+  /** What the Lampwright has already handed over. `giftWaiting` reads it. */
+  given: string[];
   /** Index into the guided steps, or null when not running / finished. */
   tutorialStep: number | null;
   /** Quest ids already paid out. What is not in here is still open. */
@@ -121,6 +123,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     craftId: null,
     onboarded: false,
     firstClearDone: false,
+    given: [],
     tutorialStep: null,
     quests: [],
     sold: [],
@@ -158,6 +161,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
+  // The dev kit is armed and holds every crystal: nothing waits at the mouth.
+  game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
   game.tutorialStep = null;
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
@@ -181,8 +186,7 @@ export function grantFirstClear(game: GameState): {
   grant(game.wallet, 'gold', gift.gold);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
-  // No weapon: gold is a number on a report and a weapon is a thing someone
-  // puts in your hands. `lampwrightWeapon` is where that happens.
+  // No weapon here: `lampwrightWeapon` is where one is put in your hands.
   return { gold: gift.gold, currency: gift.currency };
 }
 
@@ -515,8 +519,7 @@ export function equipItem(game: GameState, item: Item, slotId: string): Undo | n
   if (!slot || !fitsSlot(item, slot)) return null;
 
   const previous = game.character.equipment[slotId] ?? null;
-  // Where it sat, so undo restores rather than appends. Removing first
-  // guarantees room, so what comes off is carried, never stashed.
+  // Removing first guarantees room, so what comes off is carried, never stashed.
   const at = game.inventory.indexOf(item);
   if (!removeItem(game, item)) return null;
   if (previous) addItem(game, previous);

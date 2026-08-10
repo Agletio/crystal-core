@@ -12,8 +12,11 @@
  * through six modules' renders, and the same tick repositions the card.
  */
 import { balance } from "../economy";
-import { craftItem, gearKindOf, giftWeapon } from "../game/state";
+import { INTRO } from "../data";
+import { craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
+import { crystalMoveId } from "./crystals";
+import { crystalSlotId } from "./craft";
 import type { Item } from "../types";
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -67,6 +70,17 @@ const theWand = (g: GameState): string => {
   return item ? dockSlotId(item.id) : slotButtonId('weapon');
 };
 
+/** The crystal beside the bench, and the same one's row on the collection. */
+const theCrystal = (g: GameState): string => {
+  const held = crystalsIn(g)[0];
+  return held ? crystalSlotId(held.id) : "craft-crystals";
+};
+
+const theCrystalRow = (g: GameState): string => {
+  const held = crystalsIn(g)[0];
+  return held ? crystalMoveId(held.id) : "crystals-list";
+};
+
 /** Every popup's own way out, so a step can point at whichever one is up. */
 const CLOSES: Record<string, string> = {
   haul: 'haul-close',
@@ -77,6 +91,7 @@ const CLOSES: Record<string, string> = {
   history: 'history-close',
   save: 'save-close',
   craft: 'craft-close',
+  crystals: 'crystals-close',
 };
 
 /**
@@ -230,6 +245,63 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     target: (ctx) =>
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
+  },
+  // A gap of several descents. The loop runs itself, so there is nothing to
+  // click and nothing to teach until the level arrives.
+  {
+    id: "level",
+    text: (ctx) =>
+      blocked(ctx)
+        ? "Close this and keep going."
+        : ctx.phase === "running"
+          ? "Keep going."
+          : "Go again.",
+    hint: `Coming back up is what levels you. At level ${INTRO.firstCrystalLevel} someone is waiting with a crystal.`,
+    target: (ctx) =>
+      ctx.phase === "running"
+        ? viaHeader(ctx, "run-loot")
+        : viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
+    ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
+    done: (g, ctx) => ctx.top === "met" || (g.given ?? []).includes("crystal"),
+  },
+  {
+    id: "meet_crystal",
+    text: "Take what they are holding.",
+    target: "met-take",
+    done: (_g, ctx) => ctx.top !== "met",
+  },
+  {
+    id: "bench_crystal",
+    text: (ctx) =>
+      ctx.view === "craft"
+        ? "Click your crystal, beside the bench."
+        : blocked(ctx)
+          ? "Close this and open Crafting."
+          : "Open Crafting.",
+    hint: "A crystal is never carried, so the column beside the bench is the only way one gets worked on.",
+    target: (ctx, g) =>
+      ctx.view === "craft" ? theCrystal(g) : viaHeader(ctx, "open-craft"),
+    done: (g) => craftItem(g)?.kind === "crystal",
+  },
+  {
+    id: "craft_crystal",
+    text: "Click the Shard of Making.",
+    hint: "One modifier. Every crystal modifier is a downside, and what the descent pays is derived from it.",
+    target: "inv-currency",
+    done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
+  },
+  {
+    id: "socket",
+    text: (ctx) =>
+      ctx.top === "crystals"
+        ? "Socket it."
+        : blocked(ctx)
+          ? "Close this and open Crystals."
+          : "Open Crystals.",
+    hint: "Four sockets, permanent. Their count is how long a descent is; what is rolled on them is the whole of how hard.",
+    target: (ctx, g) =>
+      ctx.top === "crystals" ? theCrystalRow(g) : viaHeader(ctx, "open-crystals"),
+    done: (g) => socketed(g).length > 0,
   },
 ];
 

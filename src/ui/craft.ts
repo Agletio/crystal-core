@@ -268,6 +268,9 @@ function renderItem(): void {
   }
 }
 
+/** Id of one crystal's button beside the bench, so the guide can ring it. */
+export const crystalSlotId = (itemId: string): string => `bench-${itemId}`;
+
 /**
  * Every crystal you own, beside the bench. They are never carried, so the dock
  * cannot hand one over and this column is the only way one gets worked on.
@@ -284,6 +287,7 @@ function renderCrystals(): void {
   for (const item of all) {
     const family = FAMILY_BY_ID[crystalFamily(item)];
     const btn = el('button', 'wornslot') as HTMLButtonElement;
+    btn.id = crystalSlotId(item.id);
     btn.append(itemIcon(item, 22));
     const body = el('span', 'wornslot__body');
     // The family, not the full name: the level is on the line under it, so

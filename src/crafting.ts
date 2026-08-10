@@ -44,9 +44,7 @@ export const CONDITIONS: Record<string, ConditionImpl> = {
 
   slots_full: (item, p) => !hasOpenSlot(item, p.slot as ModSlot | undefined),
 
-  // Declared, not allocated: "is this the kind of item that has an offence
-  // slot" is a question about the base. A Rough item has no openings at all,
-  // and answering "no such slot" there would be a lie about what it is.
+  // Declared, not allocated: whether the BASE has this kind of slot at all.
   has_slot_type: (item, p) => declaredCapacity(item, p.slot) > 0,
 
   fill_state: (item, p) => (p.any as string[]).includes(fillState(item)),
@@ -112,13 +110,28 @@ function matching(mods: RolledMod[], p: any): RolledMod[] {
   });
 }
 
+/**
+ * The one arranged roll: `meta.scripted` names a family, and the next modifier
+ * added is that family's cheapest tier — authored best-first, so the last entry
+ * is the bottom. Cleared as it fires. On the ITEM, never on the currency: a
+ * Shard of Making that behaved differently for one crystal is a tooltip lying.
+ */
+function scriptedMod(ctx: CraftContext): RolledMod | null {
+  const want = ctx.item.meta.scripted;
+  if (typeof want !== 'string') return null;
+  delete ctx.item.meta.scripted;
+  const tiers = ctx.pool.entries.filter((e) => e.defId === want);
+  const entry = tiers[tiers.length - 1];
+  return entry ? instantiate(entry, ctx.rng) : null;
+}
+
 export const EFFECTS: Record<string, EffectImpl> = {
   /** Add one or more random mods. Optionally constrained by tag or slot. */
   add_mod: (ctx, p) => {
     const count = p.count ?? 1;
     let added = 0;
     for (let i = 0; i < count; i++) {
-      const mod = rollRandomMod(ctx.item, ctx.pool, ctx.rng, {
+      const mod = scriptedMod(ctx) ?? rollRandomMod(ctx.item, ctx.pool, ctx.rng, {
         slot: p.slot,
         tag: p.tag,
       });
@@ -135,9 +148,7 @@ export const EFFECTS: Record<string, EffectImpl> = {
    * and the caller named one in `ctx.chosen` — the one piece of targeting on
    * the bench, and it is targeting what LEAVES rather than what arrives.
    *
-   * A `chosen` currency with nothing named refuses rather than picking for
-   * you: spending it on a random removal you did not ask for is the worst
-   * possible reading of a click.
+   * A `chosen` currency with nothing named refuses rather than picking for you.
    */
   remove_mod: (ctx, p) => {
     const count = p.count ?? 1;

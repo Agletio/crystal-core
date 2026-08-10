@@ -7,11 +7,11 @@
  * what separates two of them is danger, family and how far they have levelled,
  * and none of that is a silhouette.
  */
-import { CRYSTAL_QUESTS, FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS } from '../data';
+import { CRYSTAL_QUESTS, FAMILY_BY_ID, RUN_SLOTS } from '../data';
 import type { CrystalQuest } from '../data';
 import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress, questDone } from '../game/crystals';
+import { crystalProgress, giftSchedule, questDone } from '../game/crystals';
 import { crystalFamily, crystalRewards } from '../sim/crystal';
 import { modCapacity } from '../mods';
 import { describeMod } from '../crafting';
@@ -85,6 +85,9 @@ function action(row: Row): { label: string; run: () => void } {
   };
 }
 
+/** Id of the one button a crystal's row offers, so the guide can ring it. */
+export const crystalMoveId = (itemId: string): string => `crystal-move-${itemId}`;
+
 const WHERE: Record<Held, string> = {
   socket: 'socketed',
   held: 'unsocketed',
@@ -142,6 +145,7 @@ function renderRow(row: Row): HTMLElement {
 
   const move = action(row);
   const button = el('button', 'mini', move.label) as HTMLButtonElement;
+  button.id = crystalMoveId(item.id);
   button.onclick = move.run;
   card.append(button);
   return card;
@@ -180,11 +184,7 @@ export function render(): void {
     all.filter((r) => r.held === 'socket').length
   }/${RUN_SLOTS.length} socketed`;
 
-  // Every gift is scheduled rather than rolled, so this is a fact rather than
-  // a probability — but the schedule for the Normal ones is not written yet.
-  $('crystals-npc').textContent =
-    `${LAMPWRIGHT.name} meets you at the mouth of a cleared descent when there ` +
-    'is something to hand over. The other two worlds are earned below.';
+  $('crystals-npc').textContent = giftSchedule(game);
 }
 
 export function openCrystals(): void {

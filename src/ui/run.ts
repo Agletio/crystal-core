@@ -86,14 +86,11 @@ let pending: RunReport | null = null;
 /** Held while the Lampwright's panel is up, for `land()` to take afterwards. */
 let greeted: RunReport | null = null;
 /**
- * Close enough to see what's happening. Fit (1×) shows the whole Fissure,
- * which is useless for watching a fight — at that scale a monster is four
- * pixels. Start where the action is legible; Fit is one click away.
+ * Close enough to see what's happening. Fit (1×) shows the whole Fissure, and
+ * at that scale a monster is four pixels. Fit is one click away.
  */
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
-
-/** 2x where it fits, tighter only to keep the hero's reach on screen. */
 
 // ---------------------------------------------------------------------------
 // Phase
@@ -304,16 +301,18 @@ function launch(): void {
  */
 function finish(left = false): void {
   if (!sim) return;
-  const waiting =
-    sim.state.status === 'cleared' && !left ? giftWaiting(game) : null;
   const report = buildReport(game, sim.state, left);
   playing = false;
 
   if (report.cleared) streak++;
 
+  // AFTER the report, so the level this descent just bought counts towards the
+  // meeting it schedules.
+  const waiting = report.cleared ? giftWaiting(game) : null;
+
   // Somebody at the mouth. Already banked, so it is a reason the loop stopped
   // rather than a new ending — same `land()`, same report.
-  if (waiting && report.cleared && sim.greetAtExit()) {
+  if (waiting && sim.greetAtExit()) {
     halt = 'met';
     greeted = report;
     openMet(waiting);

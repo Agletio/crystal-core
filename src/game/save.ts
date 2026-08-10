@@ -6,9 +6,11 @@
  * story — a save from another one is refused rather than half-read.
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
-import { healQuests } from './crystals';
+import { healQuests, ownedCrystals } from './crystals';
+import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
+  ALL_MODS,
   CRYSTAL_LEVELS,
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
@@ -216,8 +218,18 @@ export function heal(game: GameState): Healed {
     // floor of the level it already holds, so nothing is ever demoted.
     const floor = CRYSTAL_LEVELS.find((t) => t.level === Number(item.meta.level))?.xp ?? 0;
     if (!(Number(item.meta.xp) >= floor)) item.meta.xp = floor;
+    // A scripted roll with nowhere left to land expires rather than waiting.
+    if (item.mods.length > 0 || !ALL_MODS.some((m) => m.id === item.meta.scripted)) {
+      delete item.meta.scripted;
+    }
   }
   healQuests(game);
+
+  // Before meetings were scheduled: read off what the save already holds.
+  if (!Array.isArray(game.given)) {
+    game.given = game.firstClearDone ? ['weapon'] : [];
+    if (ownedCrystals(game).some((c) => crystalFamily(c) === 'normal')) game.given.push('crystal');
+  }
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;

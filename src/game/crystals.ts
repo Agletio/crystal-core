@@ -10,14 +10,15 @@ import {
   CRYSTAL_QUESTS,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
+  INTRO,
   LAMPWRIGHT,
   QUEST_BY_ID,
   crystalName,
 } from '../data';
 import type { CrystalQuest } from '../data';
-import { giveGift } from './state';
+import { giveGift, lampwrightWeapon } from './state';
 import type { GameState, GiftPlace } from './state';
-import { makeCrystal } from '../economy';
+import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
 import type { RunSet } from '../sim/crystal';
 import type { Item } from '../types';
@@ -29,17 +30,53 @@ export function ownedCrystals(game: GameState): Item[] {
 
 // --- the Lampwright ---------------------------------------------------------
 
-/** What is waiting at the mouth of a cleared descent, or null. SCHEDULED,
- *  never rolled, and read BEFORE the report, which sets the flag it reads. */
-export type Waiting = 'weapon';
+/** What is waiting at the mouth of a cleared descent, or null. SCHEDULED off
+ *  what has been given and the character sheet, never rolled. */
+export type Waiting = 'weapon' | 'crystal';
 
 export function giftWaiting(game: GameState): Waiting | null {
-  return game.firstClearDone ? null : 'weapon';
+  const given = game.given ?? [];
+  if (!given.includes('weapon')) return 'weapon';
+  if (!given.includes('crystal') && game.character.level >= INTRO.firstCrystalLevel) {
+    return 'crystal';
+  }
+  return null;
 }
 
-export function lampwrightGift(game: GameState): { crystal: Item; where: GiftPlace } {
+/** What the collection screen says about the next meeting. A schedule can be
+ *  quoted exactly; a chance could only be described. */
+export function giftSchedule(game: GameState): string {
+  const who = LAMPWRIGHT.name;
+  const waiting = giftWaiting(game);
+  if (waiting === 'weapon') return `${who} meets you at the mouth of your first cleared descent.`;
+  if (waiting === 'crystal') return `${who} is waiting at the mouth of your next cleared descent.`;
+  if (!(game.given ?? []).includes('crystal')) {
+    const away = INTRO.firstCrystalLevel - game.character.level;
+    return `${who} brings your first crystal at level ${INTRO.firstCrystalLevel} — ${away} to go.`;
+  }
+  return `${who} has nothing left to hand over. The other two worlds are earned below.`;
+}
+
+/** Everything one meeting puts in your hands. Currency is not an item and has
+ *  no slot, so it is granted rather than placed. */
+export interface Handover {
+  items: Item[];
+  currency: Record<string, number>;
+}
+
+export function takeHandover(game: GameState, waiting: Waiting): Handover {
+  game.given = [...(game.given ?? []), waiting];
+  if (waiting === 'weapon') {
+    const gift = lampwrightWeapon(game);
+    return { items: gift ? [gift.item] : [], currency: {} };
+  }
   const crystal = makeCrystal(LAMPWRIGHT.level, LAMPWRIGHT.family);
-  return { crystal, where: giveGift(game, crystal) };
+  // The one arranged roll in the game, and it rides on the crystal so the
+  // shard behaves the same way everywhere else.
+  crystal.meta.scripted = INTRO.scriptedMod;
+  giveGift(game, crystal);
+  grant(game.wallet, INTRO.scriptedCurrency, 1);
+  return { items: [crystal], currency: { [INTRO.scriptedCurrency]: 1 } };
 }
 
 // --- levelling --------------------------------------------------------------

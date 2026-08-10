@@ -22,6 +22,7 @@ import {
   CURRENCY_BY_ID,
   CRYSTAL_QUESTS,
   CRYSTAL_LEVELS,
+  INTRO,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -112,6 +113,8 @@ import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
+import { crystalMoveId } from './ui/crystals';
+import { crystalSlotId } from './ui/craft';
 import type { GuideCtx } from './ui/tutorial';
 import {
   CARRY,
@@ -123,6 +126,7 @@ import {
   carryRoom,
   craftItem,
   createGame,
+  crystalsIn,
   equipItem,
   grantFirstClear,
   lampwrightWeapon,
@@ -134,7 +138,9 @@ import {
   selectForCraft,
   sellAll,
   sellItem,
+  socketFor,
   socketItem,
+  socketed,
   stashRoom,
   stashUpgradeCost,
   takeWhatFits,
@@ -147,8 +153,9 @@ import {
   claimQuests,
   crystalXp,
   giftWaiting,
-  lampwrightGift,
+  giftSchedule,
   ownedCrystals,
+  takeHandover,
   questMet,
   xpForClear,
 } from './game/crystals';
@@ -1430,7 +1437,9 @@ rule('GUIDED OPENING — does every step actually complete?');
     // Minted per item by the dock, so it exists exactly while that item does.
     [...game.inventory, ...Object.values(game.character.equipment)].some(
       (i) => dockSlotId(i.id) === id
-    );
+    ) ||
+    // Minted per crystal by the bench column and by the collection.
+    crystalsIn(game).some((i) => crystalSlotId(i.id) === id || crystalMoveId(i.id) === id);
 
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
@@ -1455,7 +1464,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     () => {
       // The panel's one button: the weapon is handed over and it closes.
-      lampwrightWeapon(game);
+      takeHandover(game, 'weapon');
       ctx.top = null;
     },
     () => {
@@ -1484,6 +1493,28 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     // Close the sheet, dismiss the report, enter again.
     () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
+    // Several descents of the loop running itself. The LEVEL is what ends it.
+    () => {
+      game.character.level = INTRO.firstCrystalLevel;
+      ctx.top = 'met';
+    },
+    () => { takeHandover(game, 'crystal'); ctx.top = null; },
+    () => {
+      ctx.view = 'craft';
+      ctx.top = 'craft';
+      selectForCraft(game, crystalsIn(game)[0]);
+    },
+    () => {
+      const crystal = craftItem(game)!;
+      const result = craft(crystal, CURRENCY_BY_ID[INTRO.scriptedCurrency], pool, rng);
+      if (result.ok) replaceItem(game, result.item);
+    },
+    () => {
+      ctx.view = 'run';
+      ctx.top = 'crystals';
+      const crystal = crystalsIn(game)[0];
+      socketItem(game, crystal, socketFor(game, crystal)!);
+    },
   ];
 
   for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
@@ -1526,7 +1557,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     'run-loot',
     'dev-fresh',
     'dev-kit',
-    ...['craft', 'shop', 'stash', 'character', 'skills', 'history', 'save'].map(
+    ...['craft', 'shop', 'stash', 'character', 'skills', 'history', 'save', 'crystals'].map(
       (s) => `open-${s}`
     ),
   ]);
@@ -1619,13 +1650,20 @@ rule('GUIDED OPENING — does every step actually complete?');
     );
   }
 
-  // The guide walks you into equipping the item on the bench. It stays there:
-  // the bench takes worn gear now, which is what the worn column beside it is
-  // for, so improving a weapon does not mean taking it off first.
+  // The guide walks you into wearing one benched item and socketing another.
+  // Neither move may lose the bench: worn gear and socketed crystals are both
+  // worked on where they live, which is what the two columns beside it are for.
   const benched = craftItem(game);
   check(
-    benched !== null && game.character.equipment.weapon?.id === benched.id,
-    'the benched item stays on the bench once you wear it',
+    benched !== null && socketed(game).some((c) => c.id === benched.id),
+    'the benched crystal stays on the bench once you socket it',
+    'socketing the benched crystal lost it — the bench resolves to nothing'
+  );
+  const armed = game.character.equipment.weapon!;
+  selectForCraft(game, armed);
+  check(
+    craftItem(game)?.id === armed.id,
+    'and it reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
   // The gold it hands out has to cover the two purchases it then asks for,
@@ -1640,13 +1678,14 @@ rule('GUIDED OPENING — does every step actually complete?');
     `the first clear pays ${FISSURE.firstClear.gold} gold and asks for ${bill} of it`,
     `it pays ${FISSURE.firstClear.gold} but asks for ${bill}`
   );
-  // The opening ends with a weapon on and a modifier in it, and no crystal at
-  // all: a level 1 character with a socket filled is running twice the descent
-  // it just barely survived.
+  // Where it leaves you: armed, and one socket filled with a crystal that has
+  // a modifier on it — every screen the game asks you to use, used once.
+  const set = socketed(game);
   check(
-    game.crystals.length === 0 && !!game.character.equipment.weapon,
-    'the opening ends armed and with nothing socketed',
-    `${game.crystals.length} crystals, weapon ${game.character.equipment.weapon?.base ?? 'none'}`
+    !!game.character.equipment.weapon && set.length === 1 && set[0].mods.length === 1,
+    'the opening ends armed, with one crystal socketed and rolled',
+    `weapon ${game.character.equipment.weapon?.base ?? 'none'}, ` +
+      `${set.length} socketed, ${set[0]?.mods.length ?? 0} modifiers`
   );
 }
 
@@ -3824,18 +3863,63 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 
     // What the panel does. The run is already banked, so this is a handover
     // and not a payout — nothing about it can be lost.
-    const given = lampwrightWeapon(g)!;
+    const hand = takeHandover(g, 'weapon');
     sim.takeGift();
+    const weapon = hand.items[0];
     check(
-      given.item.meta.firstClear === true &&
-        [...g.inventory, ...g.stash].some((i) => i.id === given.item.id),
+      weapon?.meta.firstClear === true &&
+        [...g.inventory, ...g.stash].some((i) => i.id === weapon.id),
       'and hands over a marked weapon the guided opening can point at',
-      `${given.item.base} landed ${given.where}`
+      `${weapon?.base}`
     );
     check(
       giftWaiting(g) === null,
       'and is not waiting again the next time you come up',
       String(giftWaiting(g))
+    );
+
+    // The crystal is the SECOND meeting, and it is gated on the character
+    // sheet: a level 1 character with a crystal socketed is running twice the
+    // descent it just barely survived.
+    g.character.level = INTRO.firstCrystalLevel - 1;
+    check(
+      giftWaiting(g) === null &&
+        giftSchedule(g).includes(`level ${INTRO.firstCrystalLevel}`),
+      `and says how far off the first crystal is below level ${INTRO.firstCrystalLevel}`,
+      giftSchedule(g)
+    );
+    g.character.level = INTRO.firstCrystalLevel;
+    check(giftWaiting(g) === 'crystal', 'and is waiting with one at it', String(giftWaiting(g)));
+
+    const second = takeHandover(g, 'crystal');
+    const crystal = second.items[0];
+    check(
+      crystal?.kind === 'crystal' &&
+        modCapacity(crystal) > 0 &&
+        balance(g.wallet, INTRO.scriptedCurrency) > 0,
+      'handing over a crystal with room in it and the shard to fill it',
+      `level ${crystal?.meta.level}, room ${modCapacity(crystal!)}, ` +
+        `${balance(g.wallet, INTRO.scriptedCurrency)} shards`
+    );
+
+    // The one arranged roll in the game. It rides on the CRYSTAL, so the
+    // currency behaves the same way on everything else.
+    const shard = CURRENCY_BY_ID[INTRO.scriptedCurrency];
+    const made = craft(crystal!, shard, new ModPool(ALL_MODS), new Rng(11));
+    check(
+      made.ok && made.item.mods[0]?.defId === INTRO.scriptedMod,
+      `and the first shard spent on it rolls ${INTRO.scriptedMod} and nothing else`,
+      made.ok ? String(made.item.mods[0]?.defId) : String(made.error)
+    );
+    check(
+      made.ok && made.item.meta.scripted === undefined,
+      'and the arrangement is spent as it fires, so the next one is a real roll',
+      made.ok ? String(made.item.meta.scripted) : '—'
+    );
+    check(
+      giftWaiting(g) === null && giftSchedule(g).includes('nothing left'),
+      'and there is nothing left at the mouth afterwards',
+      giftSchedule(g)
     );
   }
 }

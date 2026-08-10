@@ -585,9 +585,7 @@ export const CRYSTAL_MODS: ModDef[] = [
     ],
   },
   {
-    // Makes monsters deal fire instead of physical, which is the first mod
-    // that a character could be built to shrug off — and it shows up in the
-    // results overlay's damage-by-type breakdown immediately.
+    // Physical instead of fire: the first mod a character can be built to shrug off.
     id: 'monster_fire',
     slot: 'mod',
     name: 'of Cinders',
@@ -1192,8 +1190,9 @@ export const LAMPWRIGHT = {
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   /** Said in the log the moment they appear, before you have walked over. */
   seen: 'A lantern, further back than you have been. Someone is waiting.',
-  chance: [1, 0.34, 0.22, 0.14],
-  level: 1,
+  /** Level 2, because a level 1 crystal holds nothing and the crystal meeting
+   *  is followed by the craft that teaches what a modifier does to a room. */
+  level: 2,
   family: 'normal' as MonsterFamily,
 
   /** What is said at the mouth. The FIRST is the weapon, and teaches the two
@@ -1207,11 +1206,34 @@ export const LAMPWRIGHT = {
     ],
     button: 'Take it',
   },
+  /** The crystal, which is the first thing that changes what a descent IS. */
+  crystal: {
+    title: 'The Lampwright',
+    said: [
+      'You have walked out of there enough times to be worth this one. It is a crystal, and it is what the Fissure is for.',
+      'Socket it and the descent runs longer. Longer is harder, and that is the whole of it — nothing down there makes a monster stronger.',
+      'Spend the shard on it first, at a bench. One modifier, and you will see what a modifier does to a room.',
+    ],
+    button: 'Take it',
+  },
   again: {
     title: 'The Lampwright',
     said: ['You came back up again. Here.'],
     button: 'Take it',
   },
+};
+
+/** The opening, in numbers: the one stretch where what happens next is
+ *  scheduled rather than earned. */
+export const INTRO = {
+  /** Below this a socketed crystal is only a longer run than the one you
+   *  barely survived. */
+  firstCrystalLevel: 5,
+  /** Forced onto that crystal by the first Shard of Making spent on it, at its
+   *  cheapest tier, so a first crystal can never be what walls the game. */
+  scriptedMod: 'layout_maze',
+  /** Handed over with it: a taught craft nobody can afford teaches nothing. */
+  scriptedCurrency: 'shard_of_making',
 };
 
 /**
@@ -2154,7 +2176,6 @@ export const DEV_GEAR = [
   ]),
 ].map((base) => ({ base, ilvl: 20 }));
 
-// Fill in the halves of the preset that depend on the constants above.
 START_PRESETS.dev.currency = DEV_CURRENCY;
 START_PRESETS.dev.gear = DEV_GEAR;
 
@@ -2197,8 +2218,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     range: HERO_BASE.attackRange,
     vfxKind: 'slash',
-    // Splash is placeholder-cheap on purpose. The mechanism is what matters;
-    // 10% is a number to look at, not a number that has been balanced.
+    // Splash is placeholder-cheap: the mechanism is the point, not the 10%.
     params: { splashRadius: 2.2, splashMultiplier: 0.1 },
   },
   {
@@ -2295,9 +2315,6 @@ export const PLAYER_SKILLS = SKILLS.filter((s) => s.category);
 export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
-// The shop sells crafting and nothing else. A crystal is given — by the Fissure
-// and, later, by a quest — because a price would make the whole socket set
-// something you shop for rather than something you earn.
 export const RECIPES: Recipe[] = [
   // The whole shelf. Everything else drops, because a shop that stocks the
   // bench is a shop that replaces the map — and adding a modifier is the one

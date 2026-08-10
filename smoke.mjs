@@ -739,8 +739,8 @@ assert(
 // Nothing about a gift is a probability any more, so the screen states a fact.
 // A percentage here would be the one thing on it a player cannot act on.
 assert(
-  /at the mouth of a cleared descent/i.test(text('crystals-npc')),
-  'the collection says where the Lampwright is met',
+  /nothing left to hand over/i.test(text('crystals-npc')),
+  'the collection says what is coming next — nothing, for a kit handed everything',
   text('crystals-npc')
 );
 assert(
