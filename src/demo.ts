@@ -960,7 +960,7 @@ rule('SPRITES — is the pixel art well formed?');
 rule('THE MODEL — does the figure hold together in every pose?');
 
 // The figure is layers: a body, four pieces of armour and a weapon, each a
-// 16-grid authored against the neutral pose. Nothing here needs a canvas, so
+// grid authored against the neutral pose. Nothing here needs a canvas, so
 // every combination can be checked rather than eyeballed.
 {
   const problems: string[] = [];
@@ -977,7 +977,11 @@ rule('THE MODEL — does the figure hold together in every pose?');
   for (const [kind, art] of Object.entries(WEAPON_ART)) {
     problems.push(...wellFormed([art.rest, art.strike], DOLL_GRID).map((b) => `${kind} ${b}`));
   }
-  check(problems.length === 0, 'every grid is 16x16', problems.slice(0, 4).join('; '));
+  check(
+    problems.length === 0,
+    `every grid is ${DOLL_GRID}x${DOLL_GRID}`,
+    problems.slice(0, 4).join('; ')
+  );
 
   // Composition must not push anything off the cell: a shift that runs a row
   // long silently draws outside the sprite, which reads as art bleeding into

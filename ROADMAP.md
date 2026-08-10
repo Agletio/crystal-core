@@ -30,8 +30,8 @@ is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
 **What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phases 1–6 are that work. Phase 7 is the one balance debt
-carried out of the systems work, and Phase 8 is the next feature.
+keep up with them. Phases 1–5 are that work. Phase 6 is the one balance debt
+carried out of the systems work, and Phase 7 is the next feature.
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +54,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 8 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 7 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,7 +85,7 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting any of Phases 1–6. A session that does not know these
+Read this before starting any of Phases 1–5. A session that does not know these
 five things will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
@@ -101,8 +101,8 @@ to redraw everything, and that property is worth more than any single sprite.
 
 **Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
-tick and has no sprites at all. None of Phases 1–5 is visible in the fallback,
-and that is correct — do not "fix" it. Phase 6 is the exception: map decals are
+tick and has no sprites at all. None of Phases 1–4 is visible in the fallback,
+and that is correct — do not "fix" it. Phase 5 is the exception: map decals are
 shared pure functions, so both renderers get them.
 
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
@@ -111,11 +111,15 @@ gives 1.5 and the rect seams stop landing on pixel boundaries. **24 is the last
 integer step under the current cell.** Going to 32 means raising `CELL` to 96
 first, and is not wanted now.
 
-**The bestiary is already at 24.** All 21 creatures in `src/render/bestiary.ts`
-carry `grid: 24`, two walk frames and an `attack` frame. `BeastArt.grid` is
-per-creature and `wellFormed(frames, grid)` checks each against its own
-declaration, so the pipeline does not care that the doll is still at 16 — which
-is why the doll can move on its own.
+**Everything is at 24.** All 21 creatures in `src/render/bestiary.ts` carry
+`grid: 24`, two walk frames and an `attack` frame; the paper doll and the hooded
+traveller followed. `BeastArt.grid` is per-creature and `DOLL_GRID` is the
+doll's, and `wellFormed(frames, grid)` checks each against its own declaration,
+so a family can be redrawn without the pipeline caring.
+
+**The doll's grip is (17, 14)** and every weapon is drawn against that one
+point. `POSES` shifts move it: those numbers are absolute whole pixels, so
+anything that changes the figure's size changes all of them.
 
 ---
 
@@ -124,61 +128,7 @@ is why the doll can move on its own.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — The hero and his armour at 24
-
-The player character is the only thing left at 16, and it is the sprite the
-player looks at most. Everything else on screen got finer and he did not.
-
-**Two separate figures are at 16 and both have to move.**
-
-1. `HERO_FRAMES` in `src/render/sprites.ts` — the standalone hooded traveller
-   with the staff, two frames, drawn for the `hero` sprite kind.
-2. The paper doll, which is three files:
-   - `BODY` in `src/render/body.ts` — one grid per pose, four poses.
-   - `FAMILY_ART` in `src/render/gear-art.ts` — 12 families × helmet, body,
-     gloves and two boot frames = 60 grids.
-   - `WEAPON_ART` in the same file — 15 weapons × `rest` and `strike` = 30 grids.
-
-94 authored grids in total. **The phase is atomic**: layers composite
-pixel-for-pixel, so a 16 helmet over a 24 body is not slightly off, it is a
-helmet in the figure's chest. Nothing renders correctly until all of them move.
-
-**What is free, and must stay free.** Do not author tiers and do not author
-families. `atTier()` in `src/render/look.ts` derives all three tiers from one
-drawing by swapping `TRIM` → `TRIM_LIT` → nothing, and `roleChar` rewrites the
-five role inks (`p P d x X`) per family, so 12 families × 4 slots × 3 tiers =
-144 gear bases come out of 60 drawings. Anything that breaks that multiplies the
-work by twelve.
-
-- [ ] `DOLL_GRID` in `src/render/gear-art.ts` goes 16 → 24. It is the one
-      constant: `rows = gridRows(DOLL_GRID)` feeds every grid in the file, and
-      `look.ts`, `sprites.ts` and `demo.ts` all read it rather than a literal.
-- [ ] Redraw `BODY`, every `FAMILY_ART` grid, `WEAPON_ART` and `HERO_FRAMES`.
-- [ ] Restate the grip. `body.ts` documents it at (11, 9) on the 16 grid and
-      every weapon is drawn against that one point; at 24 it moves and every
-      weapon has to be re-registered to it, or all fifteen float.
-- [ ] Rescale `POSES` in `src/render/pose.ts`. Those shifts are absolute whole
-      pixels and they are fractions of the figure — `cast`'s `hand: [0, -3]` is
-      3/16 of the body and wants roughly `[0, -5]`. Multiply by 1.5, then look
-      at each one, because a shift that was one pixel of slop at 16 is two now.
-- [ ] Fix the demo's literal: the sprites section asserts `'every grid is
-      16x16'` as a message string while checking against `DOLL_GRID`.
-
-**The technique, and the mistake that cost the bestiary a pass.** The first 24
-attempt drew the same-sized creature with finer pixels, so at matched display
-size everything read *smaller* than the 16 it replaced, and one creature lost
-the claw that made it a crab. **The extra 8 rows are height, not margin — fill
-the frame.** What worked: upscale the 16 art 1.5× nearest-neighbour as a
-scaffold (destination → source, `src = Math.floor(dest * 16 / 24)`), then draw
-over it. Never ship the scaffold; it has 1-and-2-wide steps on every edge.
-
-**How to know it worked.** `npm run demo` checks that every grid is square at
-its declared size, that a fully armed figure composes to `DOLL_GRID` in every
-pose, that all poses draw something different, that every family and tier is
-distinct, and that every weapon is distinct. Those catch typos, not art. For the
-art, `npm run build && npm run shots` and look at the screenshots.
-
-### Phase 2 — A walk that walks
+### Phase 1 — A walk that walks
 
 The current walk cycle reads as the figure doing the splits on the spot, and the
 reason is exact: **both frames have both feet planted.** `walk0` puts the feet
@@ -219,10 +169,10 @@ leg swapped.
 Creatures walk on two frames and read fine, having no legs to speak of. Do not
 four-frame the bestiary here.
 
-### Phase 3 — Attack and cast are frames, not shifts
+### Phase 2 — Attack and cast are frames, not shifts
 
 Melee looks like nothing happens because, on the body, nothing does. `attack` is
-`walk1`'s legs with `all: [1, 0]` and `swing: true`; the WEAPON has two drawings
+`walk1`'s legs with `all: [2, 0]` and `swing: true`; the WEAPON has two drawings
 (`WEAPON_ART[kind].rest` and `.strike`) so the sword moves, but the figure under
 it is a walking pose nudged one pixel forward. `cast` is one frame with the hand
 shifted up.
@@ -241,7 +191,7 @@ shifted up.
       swing — the same problem in miniature. A second frame each is 21 more
       grids and can be taken separately.
 
-### Phase 4 — One light, every key
+### Phase 3 — One light, every key
 
 The cheapest depth in the project, and the thing that will make 24 look like a
 decision rather than a bigger 16. `TRIM`/`TRIM_LIT` already set the precedent:
@@ -266,7 +216,7 @@ not lit at all.
       underneath. Set any allowance from the measured spread rather than by
       guess, the way the `BODIES` bound was set.
 
-### Phase 5 — Silhouette rules per family
+### Phase 4 — Silhouette rules per family
 
 Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
 around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
@@ -289,7 +239,7 @@ the three worlds do not read as three worlds at a glance.
 - [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
       conformance is the work.
 
-### Phase 6 — Zone props
+### Phase 5 — Zone props
 
 The best world identity per byte in the project, and the only art work that
 reaches both renderers.
@@ -319,7 +269,7 @@ for free and shows up in the fallback too.
       that renders identically in two zones fails the way a duplicate tileset
       already does.
 
-### Phase 7 — The danger retune
+### Phase 6 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -344,7 +294,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 8 — Unique gear
+### Phase 7 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -411,6 +361,7 @@ moving — see §2, balance is deliberately loose.
 - Balance claims need a measurement, not an impression. `ladderCharacter` in
   `src/sim/loadout.ts` and the harnesses in `src/demo.ts` are the tools; a
   throwaway probe script is fine for anything they do not cover.
-- Art claims need a screenshot. `npm run shots` after a build, and look at the
-  output — the demo's sprite checks prove grids are square, not that anything
-  reads.
+- Art claims need a screenshot. `tools/model-sheet.mts` draws every look and
+  every creature; `tools/model-peek.mts` draws a few of them large, which is the
+  view that answers whether a piece reads. Neither is in the suite. The demo's
+  sprite checks prove grids are square, not that anything reads.

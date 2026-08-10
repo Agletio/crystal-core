@@ -9,7 +9,7 @@ import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
 const { lookRows } = await import('../src/render/look');
 const { POSE_IDS } = await import('../src/render/pose');
-const { FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
+const { DOLL_GRID, FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
 const { roleChar } = await import('../src/render/look');
 const { BEASTIARY, HALO, haloed } = await import('../src/render/bestiary');
 const { lookKeyColours } = await import('../src/render/sprites');
@@ -32,8 +32,8 @@ const PALETTE = {
 } as never;
 const KEY: Record<string, string> = lookKeyColours(PALETTE);
 
-const SCALE = 16;
-const GRID = 16;
+const SCALE = 12;
+const GRID = DOLL_GRID;
 
 function cellHtml(rows, label, key = KEY) {
   const px = [];
@@ -44,7 +44,7 @@ function cellHtml(rows, label, key = KEY) {
       px.push(`<i style="left:${x * SCALE}px;top:${y * SCALE}px;background:${c}"></i>`);
     }
   });
-  return `<div class="cell"><div class="art">${px.join('')}</div><span>${label}</span></div>`;
+  return `<div class="cell"><div class="art" style="width:${(rows[0]?.length ?? GRID) * SCALE}px;height:${rows.length * SCALE}px">${px.join('')}</div><span>${label}</span></div>`;
 }
 
 const sets: Array<[string, any]> = [['bare', {}]];
@@ -130,8 +130,8 @@ const page4 = Object.entries(BEASTIARY)
     ([id, art]) =>
       `<div class="row"><b>${id}</b><div class="poses">` +
       RANKS.map((r) =>
-        [0, 1]
-          .map((f) => cellHtml(haloed(art.frames[f], HALO[r]), `${r} ${f}`, beastKey(art, r)))
+        [0, 1, 2]
+          .map((f) => cellHtml(haloed(f === 2 ? (art.attack ?? art.frames[0]) : art.frames[f], HALO[r]), `${r} ${f}`, beastKey(art, r)))
           .join('')
       ).join('') +
       `</div></div>`
