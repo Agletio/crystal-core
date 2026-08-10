@@ -37,6 +37,7 @@ import {
   isWallFace,
   poisonDrops,
   poisonFieldRadius,
+  livingDecals,
   tileDecals,
   tileSize,
   toHexNumber,
@@ -102,16 +103,20 @@ export async function createPixiRenderer(
 
   const world = new Container();
   const mapLayer = new Graphics();
+  // What the zone does rather than what it is: redrawn every frame, over the
+  // map that was built once.
+  const propLayer = new Graphics();
   // Under the bodies: an aura is a field on the floor, not a badge on a monster.
   const auraLayer = new Graphics();
   const vfxLayer = new Graphics();
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(mapLayer, auraLayer, entityLayer, vfxLayer);
+  world.addChild(mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
+  let livingFloor: ReturnType<typeof floorPalette> | null = null;
   let zoom = 1;
   let tile = 1;
   let offX = 0;
@@ -272,6 +277,7 @@ export async function createPixiRenderer(
       .rect(cx(e.x) - 0.38, cy(e.y) - 0.38, 0.76, 0.76)
       .stroke({ width: 0.08, color: toHexNumber(floor.rockLit), alpha: 0.9 });
 
+    livingFloor = floor;
     builtMap = map;
   }
 
@@ -520,6 +526,33 @@ export async function createPixiRenderer(
     }
   }
 
+  /**
+   * The zone's moving parts. Only what is on screen: a whole map of tendrils
+   * every frame is most of a frame spent on rock nobody can see.
+   */
+  function drawProps(state: RunState): void {
+    propLayer.clear();
+    const floor = livingFloor;
+    if (!floor || floor.surface === 'stone') return;
+    const { grid } = state.map;
+    const at = (gx: number, gy: number) => grid.at(gx, gy);
+    const tile = world.scale.x;
+    const x0 = Math.max(0, Math.floor(-world.position.x / tile));
+    const y0 = Math.max(0, Math.floor(-world.position.y / tile));
+    const x1 = Math.min(grid.width, Math.ceil((app.renderer.width - world.position.x) / tile) + 1);
+    const y1 = Math.min(grid.height, Math.ceil((app.renderer.height - world.position.y) / tile) + 1);
+
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        for (const d of livingDecals(floor, at, x, y, state.elapsed)) {
+          propLayer
+            .rect(x + d.x, y + d.y, d.w, d.h)
+            .fill({ color: toHexNumber(d.colour), alpha: d.alpha });
+        }
+      }
+    }
+  }
+
   /** In tile units, like everything else in the world container. */
   function drawAuras(state: RunState): void {
     auraLayer.clear();
@@ -545,6 +578,7 @@ export async function createPixiRenderer(
     }
 
     camera(state.map, state.hero);
+    drawProps(state);
     drawAuras(state);
 
     for (const m of state.monsters) {

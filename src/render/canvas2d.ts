@@ -28,6 +28,7 @@ import {
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
+  livingDecals,
   tileDecals,
   tileSize,
   vfxColour,
@@ -139,6 +140,16 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
         for (const d of tileDecals(floor, at, x, y)) {
+          ctx.globalAlpha = d.alpha;
+          ctx.fillStyle = d.colour;
+          ctx.fillRect(
+            v.offX + (x + d.x) * v.tile,
+            v.offY + (y + d.y) * v.tile,
+            Math.max(1, Math.ceil(d.w * v.tile)),
+            Math.max(1, Math.ceil(d.h * v.tile))
+          );
+        }
+        for (const d of livingDecals(floor, at, x, y, state.elapsed)) {
           ctx.globalAlpha = d.alpha;
           ctx.fillStyle = d.colour;
           ctx.fillRect(

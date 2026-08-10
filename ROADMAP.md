@@ -30,8 +30,8 @@ is the one currency. Demonic and Prismatic carry auras and Normal does not, so
 the three worlds are a ladder as well as three opponents.
 
 **What is left is the art.** The systems stopped moving; the sprites did not
-keep up with them. Phases 1–2 are that work. Phase 3 is the one balance debt
-carried out of the systems work, and Phase 4 is the next feature.
+keep up with them. Phase 1 is what is left of it. Phase 2 is the one balance debt
+carried out of the systems work, and Phase 3 is the next feature.
 
 ### Keeping room for a fifth socket
 
@@ -54,7 +54,7 @@ Settled. Do not relitigate without the user saying so.
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
-reason to exist through drops nothing else has, which is a debt Phase 4 owes it.
+reason to exist through drops nothing else has, which is a debt Phase 3 owes it.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul banked from earlier clears.
@@ -85,7 +85,7 @@ about to be replaced.
 
 ## 3. What the art is made of
 
-Read this before starting any of Phases 1–2. A session that does not know these
+Read this before starting Phase 1. A session that does not know these
 five things will make the same mistakes twice.
 
 **There are no image files.** `docs/` is exactly `index.html` and `app.js`, and
@@ -101,8 +101,8 @@ to redraw everything, and that property is worth more than any single sprite.
 
 **Only Pixi draws sprites.** `src/render/pixi.ts` is the real renderer;
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a facing
-tick and has no sprites at all. Phase 1 is not visible in the fallback,
-and that is correct — do not "fix" it. Phase 2 is the exception: map decals are
+tick and has no sprites at all. Sprite work is not visible in the fallback,
+and that is correct — do not "fix" it. MAP work is the exception: decals are
 shared pure functions, so both renderers get them.
 
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
@@ -120,6 +120,21 @@ so a family can be redrawn without the pipeline caring.
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
+
+**A zone is its own rock, not a tint over the Fissure's.** `THEME_INK` in
+`render/renderer.ts` names each zone's whole surface — ground, wall, the dark
+between them, what grows, what glints — and a `surface` telling `tileDecals`
+HOW to draw a tile: `stone` is coursed masonry, `flesh` is lobes and pores,
+`crystal` is facets and growth, `seam` is one or the other tile by tile. Colours
+are CSS custom properties like everything else (`--flesh`, `--rose`, and their
+neighbours).
+
+**`livingDecals` is the part that moves** — tendrils, spines, the pulse in a
+crystal — drawn every frame from the tile's own hash and the clock, never from
+stored state. It hangs off FLOOR tiles rather than the walls it grows from,
+because a wall's overhang is painted before the floor under it and vanishes.
+Pixi draws it into a `propLayer` over the map built once; canvas2d draws it in
+the same loop as everything else. Both clip to what is on screen.
 
 **One light, from above and slightly in front** (every sprite faces +x). Mass
 takes the lit ink where nothing is above it and the shade where nothing is
@@ -148,60 +163,39 @@ nobody can see.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Silhouette rules per family
+### Phase 1 — The zones are shaped differently
 
-Legibility at play zoom is an outline problem, not a pixel-count one. A tile is
-around 47px at zoom 2, so one art pixel is two screen pixels — detail at that
-size is mush and shape is not. Today each creature was designed on its own, so
-the three worlds do not read as three worlds at a glance.
+The Rot and the Cavern now LOOK like different worlds. They are still built
+like the same one: rectangular chambers joined by L-shaped corridors, which is
+a castle floor plan wearing two different skins.
 
-- [ ] Give each family a silhouette law and hold every member to it:
-      - **Normal** — the baseline. Upright, roughly as tall as wide, nothing
-        overhanging.
-      - **Demonic** — heavy and LOW. Mass in the bottom third, wide base,
-        shoulders forward. Reads as something that hits hard from close.
-      - **Prismatic** — angular and TALL. Narrow base, mass high, straight edges
-        and points rather than curves. Reads as something brittle at range.
-- [ ] Make it a check rather than an intention. Both numbers come off the
-      character grids with no canvas: the occupied-pixel centroid height, and
-      the base width (occupied columns in the bottom quarter), each as a
-      fraction of the grid. Demonic sits low and wide, Prismatic high and
-      narrow, Normal between. Put it beside the existing bestiary checks in
-      `src/demo.ts` and set the bounds from the measured spread.
-- [ ] Redraw whatever fails. That is the phase — the rule is cheap, the
-      conformance is the work.
+`generateMap` in `src/sim/grid.ts` is where this lives, and it is short. Rooms
+are carved as rectangles by `carveRoom`; corridors are two straight legs by
+`carveCorridor`, and the seed picks only their order.
 
-### Phase 2 — Zone props
+- [ ] `generateMap` already takes the theme. Carve per theme rather than
+      per map: the `Room` rectangles stay exactly as they are — every spawn,
+      the entrance and the exit are placed off them — and only what gets cut
+      out of the rock changes.
+- [ ] **The Cavern has no straight lines.** Carve an irregular blob inside each
+      room rectangle, and leave crystal pillars standing inside the bigger
+      ones. Corridors wander: keep the two legs so connectivity is guaranteed,
+      but jitter each step by a tile off `tileNoise`, and widen at random.
+- [ ] **The Rot is chambers and gullets.** Rooms rounded rather than square,
+      corridors narrow and constant-width — an intestine, not a hall.
+- [ ] The Fissure keeps its rectangles. It is the built world; that is what
+      makes the other two read as grown.
+- [ ] **What must not break.** Every room's centre has to stay walkable —
+      corridors join centres. `npm run demo` checks connectivity, the fraction
+      of the map that is walkable, rooms cut by corridors, and bodies ending up
+      inside rock (`BODIES`, which is measured over sixteen seeds because the
+      rate swings on seeds alone). Pathing is `src/sim/pathfind.ts` and does
+      not care about shape, but a cavern with more wall surface has more places
+      to snag on, so watch the monster-stuck checks.
+- [ ] Look at it: `npx tsx tools/zone-peek.mts out.png` draws all four zones
+      from a real generated map with the real palette.
 
-The best world identity per byte in the project, and the only art work that
-reaches both renderers.
-
-`tileDecals(floor, at, x, y)` in `src/render/renderer.ts` is pure and per-tile,
-and Pixi and the canvas fallback both read it, so anything added here is themed
-for free and shows up in the fallback too.
-
-- [ ] Props are placed by `tileNoise(x, y, salt)` — a hash of the coordinate, so
-      both renderers put the same prop on the same tile with no state and no
-      seed threaded through. Pick unused salts; wall growth uses 81–85.
-- [ ] Draw in palette colours only. `floorPalette` already carries each theme's
-      inks (`growth`, `growthAlt`, `glint`, `growthDensity`) and `THEME_INK` is
-      where a new one goes.
-- [ ] Sizes are fractions of a tile (`U`, `SUB`, `snap`), never pixels — tile
-      size changes with zoom.
-- [ ] Roughly in value order: bones and skulls on the Fissure floor; braziers
-      with an ember glint in the Rot; crystal clusters growing out of the FLOOR
-      as well as the walls in the Cavern; and for the Seam, the prop that can
-      only exist where two worlds meet — crystal growing through a bone or
-      through a brazier.
-- [ ] Keep the density low. `tileDecals` runs for every visible tile every frame
-      in the fallback, and a floor covered in props is a floor you cannot see
-      monsters on. The wall-growth densities (0.34–0.46, and only on wall faces)
-      are a ceiling, not a target.
-- [ ] Extend the demo's theme-distinguishability check to props, so a prop table
-      that renders identically in two zones fails the way a duplicate tileset
-      already does.
-
-### Phase 3 — The danger retune
+### Phase 2 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -226,7 +220,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 4 — Unique gear
+### Phase 3 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -297,6 +291,7 @@ moving — see §2, balance is deliberately loose.
   `src/sim/loadout.ts` and the harnesses in `src/demo.ts` are the tools; a
   throwaway probe script is fine for anything they do not cover.
 - Art claims need a screenshot. `tools/model-sheet.mts` draws every look and
-  every creature; `tools/model-peek.mts` draws a few of them large, which is the
-  view that answers whether a piece reads. Neither is in the suite. The demo's
+  every creature, `tools/model-peek.mts` draws a few of them large, and
+  `tools/zone-peek.mts` draws all four zones off a real generated map. None is
+  in the suite. The demo's
   sprite checks prove grids are square, not that anything reads.

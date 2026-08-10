@@ -110,7 +110,7 @@ import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
-import { auraLook, floorPalette, paletteFrom, tileDecals } from './render/renderer';
+import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -2777,24 +2777,36 @@ rule('THEMES — does the composition change the rock you stand on?');
   }
   check(twins.length === 0, 'and each of the four is its own tileset', twins.join('; '));
 
-  // The Fissure is the one with bare stone walls: growth is what says you are
-  // somewhere else, so it has to be absent where you are not.
-  const bare = floorPalette(PALETTE, 3, 'fissure');
-  const rotten = floorPalette(PALETTE, 3, 'demonic');
+  // A zone is its own rock, not stone with something growing on it, so what
+  // has to hold is that no two are BUILT the same way and that only the
+  // Fissure could be mistaken for a building.
   const tiles = 1600;
-  const count = (floor: ReturnType<typeof floorPalette>): number => {
+  const surfaces = MAP_THEMES.map((t) => floorPalette(PALETTE, 3, t.id).surface);
+  check(
+    new Set(surfaces).size === MAP_THEMES.length && surfaces[0] === 'stone',
+    'no two are made of the same thing, and only the Fissure is made of masonry',
+    surfaces.join(', ')
+  );
+
+  // The Rot and the Cavern MOVE. That is drawn every frame from the tile and
+  // the clock, so a zone whose living layer is empty is a zone standing still.
+  const stirring = (theme: MapTheme): number => {
+    const floor = floorPalette(PALETTE, 3, theme);
     let n = 0;
     for (let x = 0; x < tiles; x++) {
-      if (tileDecals(floor, face, x, 0).some((d) => d.colour === floor.growth)) n++;
+      if (livingDecals(floor, face, x, 1, 0).length > 0) n++;
     }
     return n;
   };
-  const grown = count(rotten);
-  line(`  ${grown} of ${tiles} demonic wall tiles carry a spur; the Fissure carries ${count(bare)}`);
+  const moving = MAP_THEMES.map((t) => `${t.name} ${stirring(t.id)}`);
+  line(`  of ${tiles} floor tiles under rock, these many carry something alive:`);
+  line(`  ${moving.join(' · ')}`);
   check(
-    count(bare) === 0 && grown > tiles * 0.2 && grown < tiles * 0.5,
-    'the Fissure grows nothing, and a world that does covers a fifth to a half of its walls',
-    `${count(bare)} bare, ${grown} demonic`
+    stirring('fissure') === 0 &&
+      stirring('demonic') > tiles * 0.2 &&
+      stirring('prismatic') > tiles * 0.05,
+    'and the two living worlds move where the Fissure is dead rock',
+    moving.join(', ')
   );
 
   // Both renderers read the same pure functions, so a themed map cannot be one

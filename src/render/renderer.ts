@@ -34,6 +34,20 @@ export interface Palette {
   rust: string;
   venom: string;
   bone: string;
+  /** A violet so dark it reads as the absence of light. */
+  gloom: string;
+  /** The Rot's own rock: meat, and the near-black between it. */
+  flesh: string;
+  fleshLit: string;
+  gore: string;
+  char: string;
+  sinew: string;
+  /** The Cavern's, cool and pale where the Rot is dark and red. */
+  rose: string;
+  blush: string;
+  lilac: string;
+  orchid: string;
+  pearl: string;
 }
 
 export interface Renderer {
@@ -94,6 +108,17 @@ const VARS: Array<[keyof Palette, string]> = [
   ['rust', '--rust'],
   ['venom', '--venom'],
   ['bone', '--bone'],
+  ['gloom', '--gloom'],
+  ['flesh', '--flesh'],
+  ['fleshLit', '--flesh-lit'],
+  ['gore', '--gore'],
+  ['char', '--char'],
+  ['sinew', '--sinew'],
+  ['rose', '--rose'],
+  ['blush', '--blush'],
+  ['lilac', '--lilac'],
+  ['orchid', '--orchid'],
+  ['pearl', '--pearl'],
 ];
 
 /** Custom properties from anywhere: a live element, or stylesheet text. */
@@ -262,6 +287,8 @@ export interface Decal {
  * steps is what makes this independent of x and y.
  */
 export interface FloorPalette {
+  /** How a tile is drawn, which is the part a colour cannot carry. */
+  surface: Surface;
   /** Grain ramp, dark to light. Indexed by a quantised patch value. */
   room: string[];
   tunnel: string[];
@@ -284,33 +311,80 @@ export interface FloorPalette {
 }
 
 /**
- * What each world does to the rock. The ground tint is deliberately small —
- * the map has to stay legible under monsters that are already coloured by
- * family — so what actually says where you are is what grows on the walls.
+ * A zone is its own rock, not a tint over the Fissure's. Each entry names the
+ * whole surface — ground, wall, the dark between them, what grows and what
+ * glints — and `surface` says how the tile is DRAWN, which is the part a
+ * palette cannot carry: masonry, meat or crystal.
  */
-const THEME_INK: Record<
-  MapTheme,
-  {
-    ground: keyof Palette | null;
-    depth: number;
-    growth: keyof Palette | null;
-    growthAlt: keyof Palette | null;
-    glint: keyof Palette;
-    density: number;
-  }
-> = {
-  fissure: { ground: null, depth: 0, growth: null, growthAlt: null, glint: 'chalk', density: 0 },
-  demonic: { ground: 'venom', depth: 0.13, growth: 'venom', growthAlt: null, glint: 'ember', density: 0.34 },
-  prismatic: { ground: 'amethyst', depth: 0.11, growth: 'bone', growthAlt: null, glint: 'quartz', density: 0.38 },
+export type Surface = 'stone' | 'flesh' | 'crystal' | 'seam';
+
+interface ThemeInk {
+  ground: keyof Palette;
+  groundLit: keyof Palette;
+  rock: keyof Palette;
+  rockTop: keyof Palette;
+  /** The darkest thing in the zone: contact lines, mortar, the gaps. */
+  deep: keyof Palette;
+  growth: keyof Palette | null;
+  growthAlt: keyof Palette | null;
+  glint: keyof Palette;
+  density: number;
+  surface: Surface;
+}
+
+const THEME_INK: Record<MapTheme, ThemeInk> = {
+  fissure: {
+    ground: 'floor',
+    groundLit: 'floorLit',
+    rock: 'rock',
+    rockTop: 'rockTop',
+    deep: 'rockDeep',
+    growth: null,
+    growthAlt: null,
+    glint: 'chalk',
+    density: 0,
+    surface: 'stone',
+  },
+  // Meat. The walls are not stone with something on them, they are the thing.
+  demonic: {
+    ground: 'gore',
+    groundLit: 'flesh',
+    rock: 'flesh',
+    rockTop: 'fleshLit',
+    deep: 'char',
+    growth: 'flesh',
+    growthAlt: null,
+    glint: 'sinew',
+    density: 0.5,
+    surface: 'flesh',
+  },
+  // The other end of every register: pale where the Rot is dark, cool where it
+  // is red, and lit from inside the rock rather than from above it.
+  prismatic: {
+    ground: 'gloom',
+    groundLit: 'orchid',
+    rock: 'rose',
+    rockTop: 'blush',
+    deep: 'void',
+    growth: 'blush',
+    growthAlt: null,
+    glint: 'pearl',
+    density: 0.55,
+    surface: 'crystal',
+  },
   // Crystal erupting through demonic rock, tile by tile rather than blended:
   // a join, not the average of two worlds.
   seam: {
-    ground: 'venom',
-    depth: 0.13,
-    growth: 'venom',
-    growthAlt: 'bone',
-    glint: 'ember',
-    density: 0.46,
+    ground: 'gore',
+    groundLit: 'flesh',
+    rock: 'flesh',
+    rockTop: 'fleshLit',
+    deep: 'char',
+    growth: 'flesh',
+    growthAlt: 'blush',
+    glint: 'pearl',
+    density: 0.6,
+    surface: 'seam',
   },
 };
 
@@ -320,34 +394,35 @@ export function floorPalette(
   theme: MapTheme = 'fissure'
 ): FloorPalette {
   const ink = THEME_INK[theme] ?? THEME_INK.fissure;
-  const world = (base: string): string =>
-    ink.ground ? mix(base, palette[ink.ground], ink.depth) : base;
+  const deep = palette[ink.deep];
+  const lit = palette[ink.groundLit];
 
   const ramp = (base: string): string[] => {
     const out: string[] = [];
     for (let i = 0; i < PATCH_STEPS; i++) {
       // -1 at the dark end, +1 at the light end.
       const t = (i / (PATCH_STEPS - 1)) * 2 - 1;
-      out.push(mix(base, t > 0 ? palette.floorLit : palette.void, Math.abs(t) * PATCH_DEPTH));
+      out.push(mix(base, t > 0 ? lit : palette.void, Math.abs(t) * PATCH_DEPTH));
     }
     return out;
   };
 
-  const floor = world(palette.floor);
-  const rock = world(palette.rock);
+  const floor = palette[ink.ground];
+  const rock = palette[ink.rock];
 
   return {
+    surface: ink.surface,
     room: ramp(floor),
-    tunnel: ramp(mix(floor, palette.rockDeep, TUNNEL_DEPTH)),
+    tunnel: ramp(mix(floor, deep, TUNNEL_DEPTH)),
     rock: ramp(rock),
-    mortar: mix(floor, palette.rockDeep, 0.5),
-    rubble: mix(floor, palette.rockDeep, 0.34),
-    chip: mix(floor, palette.floorLit, 0.75),
-    lit: mix(palette.floorLit, palette.chalk, 0.25),
-    shade: mix(floor, palette.rockDeep, 0.85),
+    mortar: mix(floor, deep, 0.5),
+    rubble: mix(floor, deep, 0.34),
+    chip: mix(floor, lit, 0.75),
+    lit: mix(lit, palette.chalk, 0.25),
+    shade: mix(floor, deep, 0.85),
     vein: veinColour(palette, vein),
-    rockLit: world(palette.rockTop),
-    rockShade: mix(rock, palette.rockDeep, 0.55),
+    rockLit: palette[ink.rockTop],
+    rockShade: mix(rock, deep, 0.55),
     growth: ink.growth ? palette[ink.growth] : '',
     growthAlt: ink.growthAlt ? palette[ink.growthAlt] : '',
     glint: palette[ink.glint],
@@ -381,21 +456,124 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
 /** Snaps a 0..1 roll onto the sub-tile grid. */
 const snap = (n: number): number => Math.floor(n * SUB) * U;
 
+/** Which of a Seam tile's two worlds this one belongs to. Never a blend. */
+const seamSide = (surface: Surface, x: number, y: number): Surface =>
+  surface !== 'seam' ? surface : tileNoise(x, y, 82) < 0.5 ? 'flesh' : 'crystal';
+
 /**
- * What the world has put on this piece of rock: a spur climbing the face, with
- * a lit tip. Nothing at all in the Fissure, whose walls are only ever stone.
- *
- * It grows UP from the bottom of the tile so a run of them along a wall reads
- * as one crust rather than as flecks, and it is drawn per tile from the tile's
- * own hash, so both renderers put the same crystal in the same place.
+ * Coursed masonry, broken. A wall needs SOME structure or it is a flat grey
+ * band; this is what tips a cave into a castle, which is the Fissure's whole
+ * character and nowhere else's.
+ */
+function stoneWall(floor: FloorPalette, x: number, y: number): Decal[] {
+  const out: Decal[] = [];
+  const seams = tileNoise(x, y, 61);
+  if (seams < 0.8) {
+    out.push({ x: 0, y: 0.5, w: 1, h: U, colour: floor.rockShade, alpha: 0.55 });
+  }
+  if (seams < 0.55) {
+    out.push({
+      x: snap(0.25 + tileNoise(x, y, 62) * 0.4),
+      y: 0.5,
+      w: U,
+      h: 0.5,
+      colour: floor.rockShade,
+      alpha: 0.55,
+    });
+  }
+  if (tileNoise(x, y, 63) < 0.6) {
+    out.push({
+      x: snap(0.2 + tileNoise(x, y, 64) * 0.5),
+      y: 0,
+      w: U,
+      h: 0.5,
+      colour: floor.rockShade,
+      alpha: 0.55,
+    });
+  }
+
+  // Grit on the face, so the blocks read as rock rather than as brick.
+  for (let i = 0; i < 2; i++) {
+    const roll = tileNoise(x, y, 66 + i);
+    if (roll > 0.5) continue;
+    out.push({
+      x: snap(roll / 0.5),
+      y: snap(tileNoise(x, y, 72 + i)),
+      w: U,
+      h: U,
+      colour: i === 0 ? floor.rockLit : floor.rockShade,
+      alpha: 0.45,
+    });
+  }
+  return out;
+}
+
+/**
+ * Meat. Lobes bulging off the face with the dark wet between them, a vein
+ * running down, and the spines that make a corridor something you would
+ * rather not brush against. No seams anywhere: nothing here was built.
+ */
+function fleshWall(floor: FloorPalette, x: number, y: number): Decal[] {
+  const out: Decal[] = [];
+
+  // Two or three big lobes, each a wet crown over a black crevice. Rounded by
+  // stepping the width in and out, which is all the grid can say about a curve.
+  const lobes = 2 + (tileNoise(x, y, 61) < 0.5 ? 1 : 0);
+  for (let i = 0; i < lobes; i++) {
+    // Allowed off the left edge: a lobe that stops at every tile boundary is
+    // a brick, and the one thing this surface must not read as is masonry.
+    const left = snap(tileNoise(x, y, 62 + i) * 0.6) - U * 2;
+    const top = snap(tileNoise(x, y, 66 + i) * 0.5);
+    const w = U * (4 + Math.floor(tileNoise(x, y, 70 + i) * 3));
+    const h = U * 4;
+    out.push({ x: left, y: top, w, h, colour: floor.rockLit, alpha: 0.9 });
+    out.push({ x: left + U, y: top - U, w: w - U * 2, h: U, colour: floor.rockLit, alpha: 0.7 });
+    out.push({ x: left + U, y: top + h, w: w - U * 2, h: U, colour: floor.shade, alpha: 0.9 });
+    // The shine. One pixel of tendon-pale, and the whole face turns wet.
+    out.push({ x: left + U, y: top + U, w: U * 2, h: U, colour: floor.glint, alpha: 0.45 });
+    // The crevice this lobe sits against.
+    out.push({ x: left - U, y: top, w: U, h: h + U, colour: floor.shade, alpha: 0.75 });
+  }
+
+  // One vein, always vertical, always the darkest thing on the face.
+  const vein = snap(0.15 + tileNoise(x, y, 74) * 0.7);
+  out.push({ x: vein, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.7 });
+
+  return out;
+}
+
+/**
+ * Facets. Long shards leaning off the rock, each narrowing to a lit tip —
+ * the opposite construction to a course of masonry, and the reason the Cavern
+ * reads as grown rather than built.
+ */
+function crystalWall(floor: FloorPalette, x: number, y: number): Decal[] {
+  const out: Decal[] = [];
+  const shards = 2 + (tileNoise(x, y, 61) < 0.5 ? 1 : 0);
+  for (let i = 0; i < shards; i++) {
+    const left = snap(0.05 + tileNoise(x, y, 62 + i) * 0.65);
+    const foot = snap(0.45 + tileNoise(x, y, 66 + i) * 0.5);
+    const h = U * (3 + Math.floor(tileNoise(x, y, 70 + i) * 4));
+    // Three courses, each a pixel narrower and a step higher: a taper, drawn
+    // as steps because the grid has no other way to say one.
+    out.push({ x: left, y: foot - h, w: U * 3, h, colour: floor.rockLit, alpha: 0.85 });
+    out.push({ x: left + U, y: foot - h - U, w: U * 2, h: U, colour: floor.glint, alpha: 0.8 });
+    out.push({ x: left + U, y: foot - h - U * 2, w: U, h: U, colour: floor.glint, alpha: 0.95 });
+    out.push({ x: left + U * 2, y: foot - h, w: U, h, colour: floor.rockShade, alpha: 0.7 });
+    out.push({ x: left - U, y: foot - h + U, w: U, h: h - U, colour: floor.shade, alpha: 0.5 });
+  }
+  return out;
+}
+
+/**
+ * What the world has put on this piece of rock — the Fissure's own spur, kept
+ * for the Seam, where one tile in two belongs to the other world entirely.
  */
 function wallGrowth(floor: FloorPalette, x: number, y: number): Decal[] {
   if (floor.growthDensity <= 0 || !floor.growth) return [];
   const roll = tileNoise(x, y, 81);
   if (roll > floor.growthDensity) return [];
 
-  // The Seam alternates by tile: one world's growth or the other's, never a
-  // colour between them, which is what makes it read as fused.
   const colour =
     floor.growthAlt && tileNoise(x, y, 82) < 0.5 ? floor.growthAlt : floor.growth;
   const height = U * (2 + Math.floor(tileNoise(x, y, 83) * 3));
@@ -420,109 +598,81 @@ function wallGrowth(floor: FloorPalette, x: number, y: number): Decal[] {
   ];
 }
 
-/**
- * Everything drawn ON a floor tile past its base colour. Rooms are FLAGSTONE,
- * two courses per tile offset like brickwork; passages are bare rock; a fifth
- * of the paving is missing, which is castle against ruin. Light comes from
- * above, so the edge below a wall is lit and the edge above one is shadowed.
- */
-export function tileDecals(
-  floor: FloorPalette,
-  at: (x: number, y: number) => number,
-  x: number,
-  y: number
-): Decal[] {
-  const tile = at(x, y);
+/** Flagstone: two courses per tile, offset like brickwork. Fissure only. */
+function paving(floor: FloorPalette): Decal[] {
   const out: Decal[] = [];
-
-  // --- rock ---------------------------------------------------------------
-  if (tile === WALL) {
-    if (!isWallFace(at, x, y)) return out;
-
-    // Broken blocks, at three heights. A wall needs SOME structure or it is a
-    // flat grey band, but coursed masonry tips the map from cave into castle.
-    const seams = tileNoise(x, y, 61);
-    if (seams < 0.8) {
-      out.push({ x: 0, y: 0.5, w: 1, h: U, colour: floor.rockShade, alpha: 0.55 });
-    }
-    if (seams < 0.55) {
+  for (let course = 0; course < 2; course++) {
+    const top = course * 0.5;
+    out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.55 });
+    // Running bond: every other course is offset by half a stone, which is
+    // what stops a grid of squares reading as graph paper.
+    const shift = course % 2 === 0 ? 0 : 0.25;
+    for (let stone = 0; stone < 2; stone++) {
       out.push({
-        x: snap(0.25 + tileNoise(x, y, 62) * 0.4),
-        y: 0.5,
+        x: (shift + stone * 0.5) % 1,
+        y: top,
         w: U,
         h: 0.5,
-        colour: floor.rockShade,
+        colour: floor.mortar,
         alpha: 0.55,
       });
     }
-    if (tileNoise(x, y, 63) < 0.6) {
-      out.push({
-        x: snap(0.2 + tileNoise(x, y, 64) * 0.5),
-        y: 0,
-        w: U,
-        h: 0.5,
-        colour: floor.rockShade,
-        alpha: 0.55,
-      });
-    }
-
-    // Grit on the face, so the blocks read as rock rather than as brick.
-    for (let i = 0; i < 2; i++) {
-      const roll = tileNoise(x, y, 66 + i);
-      if (roll > 0.5) continue;
-      out.push({
-        x: snap(roll / 0.5),
-        y: snap(tileNoise(x, y, 72 + i)),
-        w: U,
-        h: U,
-        colour: i === 0 ? floor.rockLit : floor.rockShade,
-        alpha: 0.45,
-      });
-    }
-
-    // The top of the wall, which is what an overhead light actually reaches.
-    // A wall with floor BELOW it is the face you are looking at.
-    if (at(x, y - 1) === WALL || at(x, y - 1) === undefined) {
-      out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.rockLit, alpha: 0.45 });
-    }
-    if (at(x, y + 1) !== WALL) {
-      out.push({ x: 0, y: 1 - U * 1.5, w: 1, h: U * 1.5, colour: floor.rockShade, alpha: 0.75 });
-    }
-    out.push(...wallGrowth(floor, x, y));
-    return out;
   }
+  return out;
+}
 
-  // A coarse noise field, far wider than a room, decides which parts of the
-  // level were ever built in — so you cross from flagstone to bare cave floor
-  // and back rather than every room looking like every other one.
-  const built = patchNoise(x, y, 13, 9) > 0.42;
-  const paved = tile !== TUNNEL && built;
+/** Pores, and the wet ring round each one. You are standing on something. */
+function fleshFloor(floor: FloorPalette, x: number, y: number): Decal[] {
+  const out: Decal[] = [];
+  // Pores: a hole with a raised rim, drawn as a ring rather than a square,
+  // because a square at this size is a tile and the ground is not tiled.
+  for (let i = 0; i < 2; i++) {
+    const roll = tileNoise(x, y, 20 + i);
+    if (roll > 0.4) continue;
+    const px = snap((roll / 0.4) * 0.6 + 0.1);
+    const py = snap(tileNoise(x, y, 40 + i) * 0.6 + 0.1);
+    out.push({ x: px - U, y: py, w: U * 4, h: U * 2, colour: floor.rockLit, alpha: 0.45 });
+    out.push({ x: px, y: py - U, w: U * 2, h: U * 4, colour: floor.rockLit, alpha: 0.45 });
+    out.push({ x: px, y: py, w: U * 2, h: U * 2, colour: floor.shade, alpha: 0.9 });
+    out.push({ x: px, y: py - U, w: U * 2, h: U, colour: floor.glint, alpha: 0.35 });
+  }
+  return out;
+}
 
-  // A ruin far more than a building. Better than a third of the paving in a
-  // chamber is gone, and passages were never paved at all.
-  const broken = tileNoise(x, y, 7) < 0.35;
-
-  if (paved && !broken) {
-    for (let course = 0; course < 2; course++) {
-      const top = course * 0.5;
-      out.push({ x: 0, y: top, w: 1, h: U, colour: floor.mortar, alpha: 0.55 });
-      // Running bond: every other course is offset by half a stone, which is
-      // what stops a grid of squares reading as graph paper.
-      const shift = course % 2 === 0 ? 0 : 0.25;
-      for (let stone = 0; stone < 2; stone++) {
-        out.push({
-          x: (shift + stone * 0.5) % 1,
-          y: top,
-          w: U,
-          h: 0.5,
-          colour: floor.mortar,
-          alpha: 0.55,
-        });
-      }
+/** Growth coming up THROUGH the ground, not only down the walls. */
+function crystalFloor(floor: FloorPalette, x: number, y: number): Decal[] {
+  const out: Decal[] = [];
+  const roll = tileNoise(x, y, 20);
+  if (roll < 0.42) {
+    const px = snap(0.05 + tileNoise(x, y, 40) * 0.65);
+    const foot = snap(0.5 + tileNoise(x, y, 41) * 0.45);
+    const h = U * (2 + Math.floor(tileNoise(x, y, 42) * 4));
+    out.push({ x: px, y: foot - h, w: U * 2, h, colour: floor.growth || floor.chip, alpha: 0.8 });
+    out.push({ x: px, y: foot - h - U, w: U, h: U, colour: floor.glint, alpha: 0.9 });
+    out.push({ x: px + U * 2, y: foot - h + U * 2, w: U, h: h - U * 2, colour: floor.shade, alpha: 0.5 });
+    // A shorter neighbour in the rock's own colour: a cluster, not a spike.
+    if (tileNoise(x, y, 43) < 0.6) {
+      const g = U * (1 + Math.floor(tileNoise(x, y, 44) * 3));
+      out.push({ x: px - U * 2, y: foot - g, w: U * 2, h: g, colour: floor.rockLit, alpha: 0.7 });
     }
   }
+  if (tileNoise(x, y, 21) < 0.12) {
+    out.push({
+      x: snap(0.1 + tileNoise(x, y, 43) * 0.8),
+      y: snap(0.1 + tileNoise(x, y, 44) * 0.8),
+      w: U,
+      h: U,
+      colour: floor.glint,
+      alpha: 0.65,
+    });
+  }
+  return out;
+}
 
-  // Rubble. More of it where the paving has gone, and in the raw passages.
+/** Loose stone, and the mineral fleck in it. Fissure only: nothing crumbles
+ *  off meat, and a crystal floor grows rather than sheds. */
+function rubble(floor: FloorPalette, x: number, y: number, paved: boolean, broken: boolean): Decal[] {
+  const out: Decal[] = [];
   const bits = broken ? 4 : paved ? 1 : 3;
   for (let i = 0; i < bits; i++) {
     const roll = tileNoise(x, y, 20 + i);
@@ -537,7 +687,6 @@ export function tileDecals(
     });
   }
 
-  // The vein, as a square rather than a circle now — same reason as the rest.
   const fleck = tileNoise(x, y, 2);
   if (fleck < VEIN_DENSITY) {
     const size = fleck < VEIN_DENSITY * 0.25 ? U * 2 : U;
@@ -551,6 +700,62 @@ export function tileDecals(
       // at full strength a mineral seam competes with the monsters.
       alpha: 0.5,
     });
+  }
+  return out;
+}
+
+/**
+ * Everything drawn ON a tile past its base colour. What gets drawn is the
+ * zone's `surface`: the Fissure is masonry and rubble, the Rot is meat, the
+ * Cavern is growth, and the Seam is one or the other tile by tile. Light comes
+ * from above everywhere, so the edge below a wall is lit and the edge above
+ * one is shadowed.
+ */
+export function tileDecals(
+  floor: FloorPalette,
+  at: (x: number, y: number) => number,
+  x: number,
+  y: number
+): Decal[] {
+  const tile = at(x, y);
+  const out: Decal[] = [];
+  const surface = seamSide(floor.surface, x, y);
+
+  // --- rock ---------------------------------------------------------------
+  if (tile === WALL) {
+    if (!isWallFace(at, x, y)) return out;
+
+    if (surface === 'flesh') out.push(...fleshWall(floor, x, y));
+    else if (surface === 'crystal') out.push(...crystalWall(floor, x, y));
+    else out.push(...stoneWall(floor, x, y));
+
+    // The top of the wall, which is what an overhead light actually reaches.
+    // A wall with floor BELOW it is the face you are looking at.
+    if (at(x, y - 1) === WALL || at(x, y - 1) === undefined) {
+      out.push({ x: 0, y: 0, w: 1, h: U, colour: floor.rockLit, alpha: 0.45 });
+    }
+    if (at(x, y + 1) !== WALL) {
+      out.push({ x: 0, y: 1 - U * 1.5, w: 1, h: U * 1.5, colour: floor.rockShade, alpha: 0.75 });
+    }
+    if (floor.surface === 'seam') out.push(...wallGrowth(floor, x, y));
+    return out;
+  }
+
+  if (surface === 'flesh') {
+    out.push(...fleshFloor(floor, x, y));
+  } else if (surface === 'crystal') {
+    out.push(...crystalFloor(floor, x, y));
+  } else {
+    // A coarse noise field, far wider than a room, decides which parts of the
+    // level were ever built in — so you cross from flagstone to bare cave
+    // floor and back rather than every room looking like every other one.
+    const built = patchNoise(x, y, 13, 9) > 0.42;
+    const paved = tile !== TUNNEL && built;
+    // A ruin far more than a building. Better than a third of the paving in a
+    // chamber is gone, and passages were never paved at all.
+    const broken = tileNoise(x, y, 7) < 0.35;
+    if (paved && !broken) out.push(...paving(floor));
+    out.push(...rubble(floor, x, y, paved, broken));
   }
 
   // A hard contact line wherever floor meets rock. Without an EDGE the wall is
@@ -569,6 +774,78 @@ export function tileDecals(
     out.push({ x: 1 - U, y: 0, w: U, h: 1, colour: floor.shade, alpha: 0.8 });
   }
 
+  return out;
+}
+
+/**
+ * The part of a zone that MOVES: drawn every frame from the tile's own hash and
+ * the clock, never from stored state, so both renderers agree and nothing has
+ * to be seeded. The Fissure is dead rock and has none of it.
+ *
+ * Everything here hangs off a FLOOR tile rather than the wall it grows from.
+ * A wall's overhang would be painted before the floor under it and disappear.
+ */
+export function livingDecals(
+  floor: FloorPalette,
+  at: (x: number, y: number) => number,
+  x: number,
+  y: number,
+  time: number
+): Decal[] {
+  const surface = seamSide(floor.surface, x, y);
+  if (surface === 'stone' || at(x, y) === WALL) return [];
+  const out: Decal[] = [];
+
+  if (surface === 'flesh') {
+    // A tendril hanging off the ceiling edge, swinging from the root down.
+    if (at(x, y - 1) === WALL && tileNoise(x, y, 90) < 0.45) {
+      const root = snap(0.15 + tileNoise(x, y, 91) * 0.7);
+      const len = 3 + Math.floor(tileNoise(x, y, 92) * 4);
+      const phase = tileNoise(x, y, 93) * Math.PI * 2;
+      for (let i = 1; i <= len; i++) {
+        const sway = Math.round(Math.sin(time * 1.7 + phase - i * 0.5) * (i / len) * 2);
+        out.push({
+          x: Math.max(0, Math.min(1 - U, root + sway * U)),
+          y: i * U,
+          w: U,
+          h: U,
+          colour: i === len ? floor.glint : floor.rockLit,
+          alpha: i === len ? 0.95 : 0.8,
+        });
+      }
+    }
+    // Spines through the side walls, extending and drawing back.
+    for (const side of [-1, 1]) {
+      if (at(x + side, y) !== WALL || tileNoise(x, y, 94 + side) > 0.3) continue;
+      const phase = tileNoise(x, y, 96 + side) * Math.PI * 2;
+      const reach = 1 + Math.round((Math.sin(time * 2.3 + phase) * 0.5 + 0.5) * 3);
+      const top = snap(0.2 + tileNoise(x, y, 98 + side) * 0.6);
+      out.push({
+        x: side < 0 ? 0 : 1 - reach * U,
+        y: top,
+        w: reach * U,
+        h: U,
+        colour: floor.glint,
+        alpha: 0.85,
+      });
+    }
+    return out;
+  }
+
+  // Crystal catches the light and lets it go. Nothing moves; the brightness
+  // does, which at this size reads as the same thing.
+  if (tileNoise(x, y, 90) < 0.14) {
+    const phase = tileNoise(x, y, 91) * Math.PI * 2;
+    const pulse = Math.sin(time * 1.1 + phase) * 0.5 + 0.5;
+    out.push({
+      x: snap(0.1 + tileNoise(x, y, 92) * 0.8),
+      y: snap(0.1 + tileNoise(x, y, 93) * 0.8),
+      w: U,
+      h: U,
+      colour: floor.glint,
+      alpha: 0.1 + pulse * 0.55,
+    });
+  }
   return out;
 }
 
