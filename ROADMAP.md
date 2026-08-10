@@ -40,9 +40,10 @@ sorts and lights up what an armed shard can reach; the counter sells in a mode
 and buys back; a descent hands over to the next one through a hole in the
 ground; and the Lampwright is a person you walk to.
 
-What is left is one balance debt carried out of the systems work, then the next
-feature. §7 is the deferred pile, and the first entry in it is now answerable
-rather than blocked.
+What is left is the OPENING — the first hour hands out crystals faster than a
+character can carry them — then one balance debt carried out of the systems
+work, then the next feature. §7 is the deferred pile, and the first entry in it
+is now answerable rather than blocked.
 
 ### Keeping room for a fifth socket
 
@@ -105,11 +106,19 @@ locks the item for doing it; the demo holds every other currency to the rule.
 **Only the adding currency is sold.** Everything else drops. A shop that stocks
 the whole bench is a shop that replaces the map.
 
-**Taking the Lampwright's crystal in person means you keep it**, even if you die
-later in that descent. It is handed over at the meeting, not paid out by the
-report — which is the whole reason the meeting is a body on the map rather than
-a line at the end. Everything else about dying is unchanged: that descent's
-loot is still gone.
+**Every crystal is handed over in person, at the mouth of a cleared descent.**
+The Lampwright climbs out of the hole you would have dropped through, hands the
+thing over and walks you out — so a meeting is always the END of a run and
+never a hazard inside one. It is granted at the panel rather than paid out by
+the report, which is what keeps a gift a gift; and because the run is already
+cleared when he appears, that loot is already banked. Nothing about a crystal
+arrives as a line in a report.
+
+**A gift is scheduled, never rolled.** What decides whether the Lampwright is
+waiting is a condition you can read on a screen — your level, a quest you
+finished — and never a per-descent chance. A player who cannot tell whether the
+next crystal is two runs away or twenty has no way to plan the only decision
+the game asks them to make.
 
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
@@ -391,7 +400,146 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The danger retune
+### Phase 1 — The Lampwright at the mouth
+
+The three phases that follow are one idea in three landable pieces: **the
+opening hands out crystals faster than a character can carry them.** A crystal
+socketed the moment it is given makes the descent LONGER, and longer is harder
+even with nothing rolled on it — you have to survive all of it. So most skills
+die on the run after their first gift, and the honest move is to leave the gift
+out, which reads as the game handing you a trap. This phase moves the meeting;
+Phase 2 moves the first crystal off it; Phase 3 replaces the coin flip that
+pays for the rest.
+
+**What is true today.**
+
+- The Lampwright is met MID-descent. `RunSim` picks a kill count (`meetAt`),
+  and `placeLampwright` in `src/sim/run.ts` drops a body three to six tiles
+  from the hero; walking to it sets `meeting`, the UI freezes and `src/ui/met.ts`
+  hands over a crystal. The descent then carries on.
+- The first clear pays at the REPORT: `grantFirstClear` in `src/game/state.ts`
+  reads `FISSURE.firstClear` and grants 30 gold and an `ash_wand` — the same
+  wand whatever skill was chosen.
+
+**Why it is wrong.** A Strike character is handed a wand, which is the first
+item the game gives you and the first one it teaches you to craft. And a meeting
+in the middle of a descent is a gift you can walk away from with a corpse: it is
+the only good thing on the map, and it is standing next to the monsters.
+
+- [ ] The meeting moves to the END of a cleared descent. The Lampwright climbs
+      out of the hole the hero would have dropped into — the `mouth()` decal on
+      the EXIT tile — rather than being placed mid-map. `placeLampwright` and
+      the `meetAt` kill count go.
+- [ ] A meeting ENDS the run rather than pausing it. It banks as the clear it
+      is, lands on the usual report, and stops the idle loop: the same terminus
+      as **Leave after this run** (`land()` in `src/ui/run.ts`), not a fifth
+      ending. He guides you out; that is what the words say and what the loop
+      does.
+- [ ] The first cleared descent always has one, and what it hands over is a
+      WEAPON. `FISSURE.firstClear.weapon` — one base id — becomes `STARTER_WEAPON`,
+      a table from what the skill IS to a weapon base, so a new skill is one row
+      and never a silent wand.
+- [ ] Keyed off `SkillDef.category`, which is already `'attack' | 'spell'`, with
+      an optional `weapon` field on `SkillDef` overriding it when a skill wants a
+      specific family. Today that is `spell → ash_wand` and `attack →
+      rusted_sword`; the point of the table is the rows that are not written yet
+      — a bow skill and a two-hander each add one. A skill that resolves to no
+      base is a demo failure, not a fallback.
+- [ ] The 30 gold stays a report line. Gold is not a thing that is handed over,
+      and the opening needs it to buy the shard it already asks for.
+- [ ] `LAMPWRIGHT.first` is the WEAPON speech now, and teaches equipping and
+      crafting rather than sockets. The crystal speech moves to Phase 2.
+- [ ] The guided opening's `select_weapon` / `use_making` / `equip` steps hang
+      off this meeting instead of off a report payout, and `descend`'s "Socket
+      the crystal you were given first" goes with the crystal (Phase 2).
+
+**What must not break.** `npm run guide` walks the real opening with a real
+pointer, and `npm run shots` fails the run if a first descent never produces a
+Lampwright panel — both are about to be load-bearing for this phase rather than
+incidental to it. `runToCompletion` takes an `onMeeting` callback so a headless
+run does not stand there forever; a meeting that ends the run has to leave that
+harness with a cleared run rather than a stuck one.
+
+### Phase 2 — The first crystal, at character level 5
+
+**What is true today.** `LAMPWRIGHT.chance` is `[1, 0.34, 0.22, 0.14]`, indexed
+by how many Normal crystals you hold — so the first one is CERTAIN, and lands
+on the first cleared descent. The last guided step tells you to socket it.
+
+**Why it is wrong.** Stated above: a level 1 character with one blank crystal
+socketed is running twice the descent it just barely survived, for a reward
+that reads as nothing because a blank crystal rolls no danger. You should have
+to level in the bare Fissure before the run gets longer.
+
+- [ ] The first Normal crystal is gated on CHARACTER level — `character.level`
+      in `src/sim/character.ts` — at `INTRO.firstCrystalLevel`, 5 to begin with.
+      The first cleared descent at or above it is a meeting.
+- [ ] Nothing about it is rolled. It is scheduled off a number on the character
+      sheet, so the collection screen can say exactly how far away it is.
+- [ ] The meeting is followed by a scripted craft: the guided steps put a
+      `shard_of_making` on the crystal, and it teaches sockets by having you
+      fill one. It looks like crafting because it IS crafting — the only thing
+      arranged is which modifier comes out.
+- [ ] The roll is forced to one named modifier at its lowest tier, so a first
+      crystal can never be the thing that walls the game. `layout_maze` is the
+      pick: `layoutComplexity` carries weight `0.2` in `DANGER_STATS`, the
+      cheapest danger in the game, and its `ilvl: 1` tier is the bottom of that.
+- [ ] The forcing lives on the CRYSTAL, not on the currency — `crystal.meta.scripted`,
+      read once by `add_mod` in `src/crafting.ts` and cleared as it fires. A
+      Shard of Making that behaves differently for one item is a currency whose
+      tooltip lies.
+- [ ] The shard for it is handed over at the meeting, as a `gifts` entry. Bought,
+      the step can be blocked by an empty wallet, and a tutorial step nobody can
+      satisfy is the one failure mode the guide cannot report its way out of.
+
+**What must not break.** `npm run mods` proves every modifier rolls, does
+something and reads — a scripted roll must go through the same path rather than
+around it. The demo's save round-trip has to carry `meta.scripted`, and `heal()`
+has to drop it on a crystal that already has its modifier. `npm run guide` grows
+the steps that teach the socket.
+
+### Phase 3 — The rest of the Normal crystals are quests
+
+**What is true today.** `LAMPWRIGHT.chance[1..3]` — crystals two, three and four
+are a per-clear coin flip at 34%, 22% and 14%. `CRYSTAL_QUESTS` in `src/data.ts`
+has four entries, all Demonic or Prismatic, and every one of them is
+`need: { danger, family?, share? }` and nothing else. `claimQuests` in
+`src/game/crystals.ts` walks every open quest on every clear, so order is
+already free.
+
+**Why it is wrong.** Luck decides when the game's biggest difficulty step
+arrives. Two players who play identically get it eight runs apart, and neither
+of them can see it coming.
+
+- [ ] `LAMPWRIGHT.chance` goes. Every Normal crystal after the first is a quest,
+      completable in ANY order, and each pays once.
+- [ ] `CrystalQuest.need` widens past `danger` into a `QUEST_CONDITIONS`
+      registry — same shape as `CONDITIONS` in `src/crafting.ts`, a named
+      behaviour taking the cleared `RunSet` and the run's own numbers. A new
+      objective is then one registry entry plus a table row, which is the point:
+      these are meant to be changed without a session reading any code.
+- [ ] Three objectives to start with. **Numbers here are intent, not tuning** —
+      the ladder they sit on is what matters, not the values:
+      a socketed crystal reaching level 4 (`crystalLevel`); a clear at a given
+      danger; a clear inside a given number of seconds (`RunState.elapsed` is
+      already carried, so this costs a field on the report and nothing in the sim).
+- [ ] Every objective must be plausible to a character that has just done the
+      one before it, with the crystal count it has when it gets there. That is
+      the whole test of this table and the reason the numbers are soft.
+- [ ] All four existing quests pay through Phase 1's MEETING as well, Demonic
+      and Prismatic included. A crystal is never a line in a report.
+- [ ] The collection screen (`src/ui/crystals.ts`) already draws quests as a
+      ladder; the Normal ones join it, and the sentence about meeting the
+      Lampwright on some percentage of clears goes with the chance table.
+
+**What must not break.** `game.quests` is a list of ids in the save, so new ids
+only ever add — `healQuests` drops one that stops existing and costs nothing
+else. The dev preset marks every quest done (`src/game/state.ts`) so a stocked
+game does not pay out four duplicates on its first dangerous descent; three more
+quests have to be in that set. The demo's quest checks and `npm run guide` both
+walk this.
+
+### Phase 4 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -427,7 +575,7 @@ the moment the numbers move:
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 2 — Unique gear
+### Phase 5 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
