@@ -6,8 +6,12 @@ A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework.
 one describes where it is going and what to work on next. Read it before
 starting anything, and never guess at what it lists as open — ask.
 
-When you put a question to the user, stop and wait for the answer. Do not pick
-one and carry on.
+**Ask in a plain message, never through the multiple-choice popup tool.** The
+popup is not always being watched and times out, which loses the question. Write
+it in the reply, stop, and wait for the answer — do not pick one and carry on.
+
+Once it is answered, carry on down `ROADMAP.md` without stopping again. Pausing
+between phases is not wanted; a question is.
 
 ## Commands
 
