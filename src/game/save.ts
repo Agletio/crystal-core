@@ -10,7 +10,7 @@ import { healQuests } from './crystals';
 import { qualityOf } from '../mods';
 import type { GameState } from './state';
 import {
-  CRYSTAL_TIERS,
+  CRYSTAL_LEVELS,
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
   GEAR_BASE_BY_ID,
@@ -122,10 +122,10 @@ export interface Healed {
 export const healedAnything = (h: Healed): boolean =>
   h.items > 0 || h.currencies > 0 || h.points > 0 || h.skill;
 
-/** Crystals name their tier; gear names a base that has to still exist. */
+/** Crystals name their level; gear names a base that has to still exist. */
 const baseExists = (item: Item): boolean =>
   item.kind === 'crystal'
-    ? CRYSTAL_TIERS.some((t) => item.base === `crystal_t${t.tier}`)
+    ? CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`)
     : GEAR_BASE_BY_ID[item.base] !== undefined;
 
 /**
@@ -180,22 +180,36 @@ export function heal(game: GameState): Healed {
   game.stash = keep(game.stash);
   // Hand-edited saves reach here, and one that predates the haul has no key.
   game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
+  game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
 
-  for (const item of [
-    ...game.inventory,
-    ...game.stash,
-    ...game.haul,
-    ...Object.values(game.sockets ?? {}),
-  ]) {
+  // Crystals used to live in the bags. They are never carried anywhere now, so
+  // a save written before that moves its collection across rather than leaving
+  // it holding gear slots it can never free.
+  const container = (list: Item[]): Item[] => {
+    const stays = list.filter((i) => i.kind !== 'crystal');
+    game.crystals.push(...list.filter((i) => i.kind === 'crystal'));
+    return stays;
+  };
+  game.inventory = container(game.inventory);
+  game.stash = container(game.stash);
+  game.haul = container(game.haul);
+
+  for (const item of [...game.crystals, ...Object.values(game.sockets ?? {})]) {
     if (item.kind !== 'crystal') continue;
+    // `tier` was the word before levels; the base id never moved, so this is
+    // the whole of that rename's cost.
+    if (item.meta.level === undefined && item.meta.tier !== undefined) {
+      item.meta.level = item.meta.tier;
+      delete item.meta.tier;
+    }
     // A retired family costs the crystal its world, not the crystal.
     if (!FAMILY_BY_ID[String(item.meta.family)]) {
       item.meta.family = 'normal';
-      item.name = crystalName(Number(item.meta.tier), 'normal');
+      item.name = crystalName(Number(item.meta.level), 'normal');
     }
     // Written before crystals levelled, or re-tuned since: xp starts at the
-    // floor of the tier it already holds, so nothing is ever demoted.
-    const floor = CRYSTAL_TIERS.find((t) => t.tier === Number(item.meta.tier))?.xp ?? 0;
+    // floor of the level it already holds, so nothing is ever demoted.
+    const floor = CRYSTAL_LEVELS.find((t) => t.level === Number(item.meta.level))?.xp ?? 0;
     if (!(Number(item.meta.xp) >= floor)) item.meta.xp = floor;
   }
   healQuests(game);
@@ -205,7 +219,7 @@ export function heal(game: GameState): Healed {
     delete game.character.equipment[slot];
     out.items++;
   }
-  // A socket holding a crystal whose tier was retired empties rather than
+  // A socket holding a crystal whose level was retired empties rather than
   // launching a run built on a base that no longer resolves.
   game.sockets ??= {};
   for (const [slot, held] of Object.entries(game.sockets)) {

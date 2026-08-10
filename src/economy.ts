@@ -2,7 +2,7 @@ import { Rng } from './rng';
 import { ModPool, computeStat, modCapacity, qualityOf, rollRandomMod } from './mods';
 import {
   CRYSTAL_ILVL,
-  CRYSTAL_TIERS,
+  CRYSTAL_LEVELS,
   EQUIP_SLOTS,
   GEAR_BASE_BY_ID,
   GEAR_BASES,
@@ -59,26 +59,26 @@ export const isItemId = (id: string): boolean => ITEM_ID.test(id);
 // Item factory
 // ---------------------------------------------------------------------------
 
-export function makeCrystal(tier: number, family: MonsterFamily = 'normal'): Item {
-  const def = CRYSTAL_TIERS.find((t) => t.tier === tier);
-  if (!def) throw new Error(`no crystal tier ${tier}`);
+export function makeCrystal(level: number, family: MonsterFamily = 'normal'): Item {
+  const def = CRYSTAL_LEVELS.find((t) => t.level === level);
+  if (!def) throw new Error(`no crystal level ${level}`);
   return {
     id: uid('crystal'),
     kind: 'crystal',
-    base: `crystal_t${tier}`,
-    name: crystalName(tier, family),
+    base: `crystal_t${level}`,
+    name: crystalName(level, family),
     // The family is a tag as well as a meta field, so a modifier restricted to
     // one world is a line in the mod table rather than an engine change.
-    tags: ['crystal', `tier${tier}`, family],
+    tags: ['crystal', `level${level}`, family],
     ilvl: CRYSTAL_ILVL,
-    // The tier IS the capacity. Quality rides along so the crafting currencies,
-    // which gate on quality, can reach exactly the slots the tier granted.
+    // The level IS the capacity. Quality rides along so the crafting
+    // currencies, which gate on quality, reach exactly the slots it granted.
     slots: { mod: def.mods },
     mods: [],
     implicits: [],
-    // Experience starts at its tier's floor: a crystal handed out above T1 has
-    // had that climb paid for, and one whose xp disagrees would drop a tier.
-    meta: { tier, quality: def.quality, family, xp: def.xp },
+    // Experience starts at its level's floor: a crystal handed out above 1 has
+    // had that climb paid for, and one whose xp disagrees would drop a level.
+    meta: { level, quality: def.quality, family, xp: def.xp },
   };
 }
 
@@ -297,14 +297,14 @@ export function kindOf(item: Item): ItemKind {
   return item.kind;
 }
 
-/** A crystal with its tier's slots filled at random. */
+/** A crystal with its level's slots filled at random. */
 export function rollCrystal(
-  tier: number,
+  level: number,
   pool: ModPool,
   rng: Rng,
   family: MonsterFamily = 'normal'
 ): Item {
-  const item = makeCrystal(tier, family);
+  const item = makeCrystal(level, family);
   let guard = 12;
   while (item.mods.length < modCapacity(item) && guard-- > 0) {
     const mod = rollRandomMod(item, pool, rng);

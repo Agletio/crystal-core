@@ -9,17 +9,7 @@
  */
 import { CRYSTAL_QUESTS, FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS } from '../data';
 import type { CrystalQuest } from '../data';
-import {
-  carryRoom,
-  crystalsIn,
-  fromHaul,
-  fromStash,
-  socketFor,
-  socketItem,
-  stashRoom,
-  toStash,
-  unsocket,
-} from '../game/state';
+import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, giftChance, questDone } from '../game/crystals';
 import { crystalFamily, crystalRewards } from '../sim/crystal';
@@ -41,8 +31,8 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let onChanged: (() => void) | null = null;
 
-/** Where a crystal is standing, which is the whole of what you can do with it. */
-type Held = 'socket' | 'bag' | 'stash' | 'haul';
+/** Socketed, or in the collection. There is nowhere else a crystal can be. */
+type Held = 'socket' | 'held';
 
 interface Row {
   item: Item;
@@ -57,11 +47,7 @@ function rows(): Row[] {
     const held = game.sockets[slot.id];
     if (held) out.push({ item: held, held: 'socket', slot: slot.id });
   }
-  const rest: Row[] = [
-    ...crystalsIn(game).map((item): Row => ({ item, held: 'bag' })),
-    ...game.stash.filter((i) => i.kind === 'crystal').map((item): Row => ({ item, held: 'stash' })),
-    ...game.haul.filter((i) => i.kind === 'crystal').map((item): Row => ({ item, held: 'haul' })),
-  ];
+  const rest: Row[] = crystalsIn(game).map((item): Row => ({ item, held: 'held' }));
   // Socketed first, because that is the set a run is launched with; the rest
   // by what they would add to it, which is the reason to be looking.
   rest.sort((a, b) => crystalRewards(b.item.mods).danger - crystalRewards(a.item.mods).danger);
@@ -73,13 +59,12 @@ function changed(): void {
   onChanged?.();
 }
 
-/** The one move that row offers, and why it cannot be made. */
-function action(row: Row): { label: string; run: () => void; blocked?: string } {
+/** The one move that row offers. Neither can ever be refused. */
+function action(row: Row): { label: string; run: () => void } {
   const { item } = row;
   if (row.held === 'socket') {
     return {
       label: 'Take it back',
-      blocked: carryRoom(game, 'crystal') > 0 ? undefined : 'your crystal bag is full',
       run: () => {
         if (!unsocket(game, row.slot!)) return;
         note(`Unsocketed ${item.name}`);
@@ -88,27 +73,13 @@ function action(row: Row): { label: string; run: () => void; blocked?: string } 
     };
   }
 
-  if (row.held === 'bag') {
-    const slot = socketFor(game, item);
-    const into = RUN_SLOTS.find((s) => s.id === slot);
-    return {
-      label: game.sockets[slot ?? ''] ? `Socket (swaps ${into?.name})` : 'Socket it',
-      run: () => {
-        if (!slot || !socketItem(game, item, slot)) return;
-        note(`Socketed ${item.name}`);
-        changed();
-      },
-    };
-  }
-
-  const room = carryRoom(game, 'crystal') > 0;
+  const slot = socketFor(game, item);
+  const into = RUN_SLOTS.find((s) => s.id === slot);
   return {
-    label: 'Take it',
-    blocked: room ? undefined : 'your crystal bag is full',
+    label: game.sockets[slot ?? ''] ? `Socket (swaps ${into?.name})` : 'Socket it',
     run: () => {
-      const moved = row.held === 'stash' ? fromStash(game, item) : fromHaul(game, item);
-      if (!moved) return;
-      note(`Took ${item.name}`);
+      if (!slot || !socketItem(game, item, slot)) return;
+      note(`Socketed ${item.name}`);
       changed();
     },
   };
@@ -116,10 +87,32 @@ function action(row: Row): { label: string; run: () => void; blocked?: string } 
 
 const WHERE: Record<Held, string> = {
   socket: 'socketed',
-  bag: 'in your bag',
-  stash: 'in your stash',
-  haul: 'in the haul',
+  held: 'unsocketed',
 };
+
+/**
+ * What a crystal is, in one hoverable block: what it opens, how far it has
+ * levelled, what it costs you to run, and what is rolled on it. No quality
+ * word — a crystal's ladder is its level and there is no second one.
+ */
+export function crystalTooltip(item: Item): string {
+  const family = FAMILY_BY_ID[crystalFamily(item)];
+  const grown = crystalProgress(item);
+  const lines = [
+    item.name,
+    `${family?.name ?? 'Normal'} · level ${grown.level} · ` +
+      `${item.mods.length}/${modCapacity(item)} modifiers`,
+    `danger ${Math.round(crystalRewards(item.mods).danger)}`,
+  ];
+  for (const mod of item.mods) lines.push(describeMod(mod));
+  if (item.mods.length === 0) lines.push('no modifiers');
+  lines.push(
+    grown.need === null
+      ? 'as far as it levels'
+      : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}`
+  );
+  return lines.join('\n');
+}
 
 function renderRow(row: Row): HTMLElement {
   const { item } = row;
@@ -141,6 +134,7 @@ function renderRow(row: Row): HTMLElement {
 
   const chips = el('div', 'setrows');
   for (const [k, v] of [
+    ['level', String(grown.level)],
     ['danger', String(danger)],
     ['modifiers', `${item.mods.length}/${modCapacity(item)}`],
   ]) {
@@ -161,8 +155,8 @@ function renderRow(row: Row): HTMLElement {
       'div',
       'crystal__grow',
       grown.need === null
-        ? 'Tier 4 — as far as it goes'
-        : `${Math.floor(grown.xp)} / ${grown.need} to tier ${grown.tier + 1}` +
+        ? `Level ${grown.level} — as far as it goes`
+        : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}` +
             (row.held === 'socket' ? '' : ' — only levels while socketed')
     )
   );
@@ -170,25 +164,9 @@ function renderRow(row: Row): HTMLElement {
   for (const mod of item.mods) card.append(el('div', 'chosen__mod', describeMod(mod)));
 
   const move = action(row);
-  const button = el('button', 'mini', move.blocked ?? move.label) as HTMLButtonElement;
-  button.disabled = !!move.blocked;
-  button.classList.toggle('mini--off', !!move.blocked);
-  if (!move.blocked) button.onclick = move.run;
+  const button = el('button', 'mini', move.label) as HTMLButtonElement;
+  button.onclick = move.run;
   card.append(button);
-
-  // Storage is the stash, and this is the only screen that knows a crystal is
-  // sitting in a bag it could be out of.
-  if (row.held === 'bag') {
-    const away = el('button', 'mini', 'Send to stash') as HTMLButtonElement;
-    away.disabled = stashRoom(game) <= 0;
-    away.classList.toggle('mini--off', stashRoom(game) <= 0);
-    away.onclick = () => {
-      if (!toStash(game, item)) return;
-      note(`Stashed ${item.name}`);
-      changed();
-    };
-    card.append(away);
-  }
   return card;
 }
 

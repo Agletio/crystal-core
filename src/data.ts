@@ -1287,15 +1287,15 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 // spent on stash space is one not spent at the bench.
 
 /**
- * A crystal's tier is its MOD CAPACITY and nothing else: two blank T4s are as
- * dangerous as two blank T1s. `quality` rides along because the crafting
- * currencies gate on it; `xp` is the total needed to sit at that tier.
+ * A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
+ * are as dangerous as two blank level 1s. `quality` rides along because the
+ * crafting currencies gate on it; `xp` is the total to sit at that level.
  */
-export const CRYSTAL_TIERS = [
-  { tier: 1, mods: 0, quality: 'rough' as Quality, xp: 0 },
-  { tier: 2, mods: 1, quality: 'seamed' as Quality, xp: 5 },
-  { tier: 3, mods: 2, quality: 'faceted' as Quality, xp: 20 },
-  { tier: 4, mods: 3, quality: 'brilliant' as Quality, xp: 60 },
+export const CRYSTAL_LEVELS = [
+  { level: 1, mods: 0, quality: 'rough' as Quality, xp: 0 },
+  { level: 2, mods: 1, quality: 'seamed' as Quality, xp: 5 },
+  { level: 3, mods: 2, quality: 'faceted' as Quality, xp: 20 },
+  { level: 4, mods: 3, quality: 'brilliant' as Quality, xp: 60 },
 ];
 
 /**
@@ -1326,7 +1326,7 @@ export const LAMPWRIGHT = {
   name: 'the Lampwright',
   met: 'The Lampwright is working a seam by lanternlight, and gives you what will not hold a flame.',
   chance: [1, 0.34, 0.22, 0.14],
-  tier: 1,
+  level: 1,
   family: 'normal' as MonsterFamily,
 };
 
@@ -1344,7 +1344,7 @@ export interface CrystalQuest {
   /** The objective, in words — this is also what the screen shows. */
   detail: string;
   need: { danger: number; family?: MonsterFamily; share?: number };
-  gives: { tier: number; family: MonsterFamily };
+  gives: { level: number; family: MonsterFamily };
 }
 
 export const CRYSTAL_QUESTS: CrystalQuest[] = [
@@ -1353,28 +1353,28 @@ export const CRYSTAL_QUESTS: CrystalQuest[] = [
     name: 'The First Door',
     detail: 'Clear a descent at 30 danger.',
     need: { danger: 30 },
-    gives: { tier: 1, family: 'demonic' },
+    gives: { level: 1, family: 'demonic' },
   },
   {
     id: 'prismatic_i',
     name: 'The Lit Seam',
     detail: 'Clear a descent at 60 danger.',
     need: { danger: 60 },
-    gives: { tier: 1, family: 'prismatic' },
+    gives: { level: 1, family: 'prismatic' },
   },
   {
     id: 'demonic_ii',
     name: 'Deeper In',
     detail: 'Clear a descent at 110 danger with a Demonic crystal socketed.',
     need: { danger: 110, family: 'demonic', share: 0.25 },
-    gives: { tier: 1, family: 'demonic' },
+    gives: { level: 1, family: 'demonic' },
   },
   {
     id: 'prismatic_ii',
     name: 'Further Through',
     detail: 'Clear a descent at 110 danger with a Prismatic crystal socketed.',
     need: { danger: 110, family: 'prismatic', share: 0.25 },
-    gives: { tier: 1, family: 'prismatic' },
+    gives: { level: 1, family: 'prismatic' },
   },
 ];
 
@@ -1382,7 +1382,7 @@ export const QUEST_BY_ID: Record<string, CrystalQuest> = Object.fromEntries(
   CRYSTAL_QUESTS.map((q) => [q.id, q])
 );
 
-/** Every crystal rolls at the same item level, so tier buys room, never power. */
+/** Every crystal rolls at the same item level, so a level buys room, never power. */
 export const CRYSTAL_ILVL = 70;
 
 // --- combat baselines ------------------------------------------------------
@@ -1537,9 +1537,9 @@ export const THEME_BY_ID: Record<string, MapThemeDef> = Object.fromEntries(
 );
 
 /** What a crystal is called: the room it holds, and the world it opens onto. */
-export const crystalName = (tier: number, family: MonsterFamily): string => {
+export const crystalName = (level: number, family: MonsterFamily): string => {
   const word = FAMILY_BY_ID[family]?.word ?? '';
-  return `Tier ${tier} ${word ? `${word} ` : ''}Crystal`;
+  return `Level ${level} ${word ? `${word} ` : ''}Crystal`;
 };
 
 /**
@@ -2231,7 +2231,7 @@ export const FISSURE = {
 export interface StartPreset {
   gold: number;
   currency: Record<string, number>;
-  crystals: Array<{ tier: number; family: MonsterFamily }>;
+  crystals: Array<{ level: number; family: MonsterFamily }>;
   gear: Array<{ base: string; ilvl: number }>;
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
@@ -2249,9 +2249,9 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     gold: 260,
     currency: {},
     // Off both tables, so a new rung or a new world arrives in the kit without
-    // a second edit — every tier in every family, which is the whole grid.
-    crystals: CRYSTAL_TIERS.flatMap((t) =>
-      MONSTER_FAMILIES.map((f) => ({ tier: t.tier, family: f.id }))
+    // a second edit — every level in every family, which is the whole grid.
+    crystals: CRYSTAL_LEVELS.flatMap((t) =>
+      MONSTER_FAMILIES.map((f) => ({ level: t.level, family: f.id }))
     ),
     gear: [],
     equipped: true,

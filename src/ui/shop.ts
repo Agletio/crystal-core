@@ -113,8 +113,8 @@ function outputIcon(recipe: Recipe): SVGSVGElement | null {
     const def = CURRENCY_BY_ID[recipe.output.id];
     return def ? currencyIcon(def, 26) : null;
   }
-  const tier = Number(/crystal_t(\d)/.exec(recipe.output.base)?.[1]);
-  return Number.isFinite(tier) ? crystalIcon(tier, 26) : null;
+  const level = Number(/crystal_t(\d)/.exec(recipe.output.base)?.[1]);
+  return Number.isFinite(level) ? crystalIcon(level, 26) : null;
 }
 
 /** Gold is the universal feedstock; this is where it turns into things. */
@@ -124,7 +124,7 @@ export function render(): void {
 
   const level = game.character.level;
   for (const recipe of RECIPES) {
-    // A shelf that grows with you. A level-1 shop selling a Tier 6 crystal is
+    // A shelf that grows with you. A level-1 shop selling top-end stock is
     // selling a map that kills you.
     if ((recipe.level ?? 1) > level) continue;
     const affordable = Object.entries(recipe.inputs).every(

@@ -72,7 +72,11 @@ const filled = (sel) => all(`${sel} .slot:not(.slot--empty)`);
 // Items only. Currency shares the dock now, and a craft that empties a stack
 // removes a slot — folding the two together would make every "the item count
 // did not change" assertion below quietly depend on what you just spent.
-const dockItems = () => [...filled('#inv-crystal'), ...filled('#inv-gear')];
+const dockItems = () => filled('#inv-gear');
+// Crystals are never carried, so they are not in the dock at all. The bench's
+// own column is the only place one can be picked up and worked on.
+const benchCrystals = () => all('#craft-crystals .wornslot');
+const crystalCards = () => all('#crystals-list .crystal');
 const currencySlots = () => filled('#inv-currency');
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
@@ -107,7 +111,7 @@ assert(
 
 // The dock is a fixed shape whether or not you own anything, so it never
 // collapses and shoves the Fissure around.
-assert(all('#inv-crystal .slot--empty').length > 0, 'the dock keeps empty slots');
+assert(all('#inv-gear .slot--empty').length > 0, 'the dock keeps empty slots');
 
 // One place, always open. An empty set is a real descent, not a missing
 // choice, and the only thing that ever shuts the Fissure is a full haul —
@@ -240,19 +244,17 @@ assert(
 );
 assert(text('inv-currency').replace(/[0-9]/g, '') === '', 'currency is icons and counts, not names', text('inv-currency'));
 
-// Crystals left, equipment right — always, on every screen.
-assert(filled('#inv-crystal').length > 0, 'crystals have their own column');
+// Gear and currency, and nothing else. A crystal is never spent, sold or
+// carried, so a dock column for it would be triage with nothing to triage.
 assert(filled('#inv-gear').length > 0, 'equipment has its own column');
-assert(
-  filled('#inv-crystal').every((b) => b.classList.contains('slot--crystal')),
-  'the crystal column holds only crystals'
-);
+assert($('inv-crystal') === null, 'and crystals have no dock column at all');
 assert(
   filled('#inv-gear').every((b) => b.classList.contains('slot--gear')),
   'the equipment column holds only equipment'
 );
 // Icons only: the name and every modifier live in the tooltip.
-assert(text('inv-crystal') === '', 'the dock shows icons, not names', text('inv-crystal'));
+assert(text('inv-gear') === '', 'the dock shows icons, not names', text('inv-gear'));
+assert(benchCrystals().length > 0, 'the bench keeps a crystals column instead');
 
 // A weapon must not look like a body armour. Weapon bases carry their FAMILY
 // as their art key, so a gearIcon that only knew 'weapon' silently rendered
@@ -280,10 +282,10 @@ assert($('craft-item').hidden === true, 'no item panel until something is placed
 assert($('craft-return').disabled === true, 'return disabled with an empty bench');
 
 // --- putting a crystal on the bench ---------------------------------------
-// A Tier 1 crystal is the blank one: tier IS capacity, so this is the crystal
-// with nowhere to put anything, and nothing crafting can do changes that.
-const crystalChip = filled('#inv-crystal')[0];
-assert(!!crystalChip, 'a crystal is in the dock');
+// A level 1 crystal is the blank one: the level IS capacity, so this is the
+// crystal with nowhere to put anything, and no craft changes that.
+const crystalChip = benchCrystals().find((b) => /Level 1/.test(named(b)));
+assert(!!crystalChip, 'a level 1 crystal is in the bench column');
 
 const inventoryBefore = invItems().length;
 crystalChip.click();
@@ -299,16 +301,16 @@ assert(
   `${invItems().length} vs ${inventoryBefore}`
 );
 assert(
-  all('.dock .slot--on').length === 1,
-  'the selected item is highlighted',
-  String(all('.dock .slot--on').length)
+  all('#craft-crystals .wornslot--on').length === 1,
+  'the selected crystal is highlighted',
+  String(all('#craft-crystals .wornslot--on').length)
 );
 assert($('craft-return').disabled === false, 'return is now available');
-// The bench draws openings, not the base's declared table. A Tier 1 crystal
+// The bench draws openings, not the base's declared table. A level 1 crystal
 // has no room for anything, so it draws nothing. Drawing dead sockets under a
 // header reading 0/0 was the confusing part.
 const facets = () => $('sockets').querySelectorAll('.facet').length;
-assert(facets() === 0, 'a Tier 1 crystal shows no facets at all', String(facets()));
+assert(facets() === 0, 'a level 1 crystal shows no facets at all', String(facets()));
 
 // Derived reward multipliers under the name. A blank crystal must read as
 // exactly baseline — no danger, no bonus.
@@ -333,12 +335,12 @@ const currencyButton = (name) =>
 const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
-// A crystal's room comes from its TIER, so no amount of crafting opens a Tier
-// 1 one. Everything below is the gear ladder instead, which is where quality
-// still decides how much a piece can hold.
+// A crystal's room comes from its LEVEL, so no amount of crafting opens a
+// level 1 one. Everything below is the gear ladder instead, which is where
+// quality still decides how much a piece can hold.
 {
   const making = currencyButton('Shard of Making');
-  assert(!!making && making.disabled, 'nothing can put a modifier on a Tier 1 crystal');
+  assert(!!making && making.disabled, 'nothing can put a modifier on a level 1 crystal');
   const seaming = currencyButton('Shard of Seaming');
   seaming?.click();
   assert(facets() === 0, 'and opening it does not give it room either', String(facets()));
@@ -420,10 +422,10 @@ assert(
 
 // Adding a modifier has to CHANGE the crystal's header. Most raise danger; the
 // finding ones carry none at all and state what the run is pointed at instead.
-// A Tier 4 is the one with room for it — tier is the only thing that grants any.
+// A level 4 has room for it — levelling is the only thing that grants any.
 {
-  const roomy = filled('#inv-crystal').find((b) => /Tier 4/.test(named(b)));
-  assert(!!roomy, 'a Tier 4 crystal is in the dock');
+  const roomy = benchCrystals().find((b) => /Level 4/.test(named(b)));
+  assert(!!roomy, 'a level 4 crystal is in the bench column');
   $('craft-return').click();
   roomy.click();
   assert(facets() === 3, 'and it has three facets to fill', String(facets()));
@@ -595,28 +597,23 @@ assert($('shop').hidden === true, 'the shop closes');
 // drawn, which is only honest if the count of slots IS the capacity.
 const slotsIn = (sel) => all(`${sel} .slot`);
 assert(
-  slotsIn('#inv-crystal').length === slotsIn('#inv-gear').length,
-  'crystals and gear get the same room',
-  `${slotsIn('#inv-crystal').length} vs ${slotsIn('#inv-gear').length}`
-);
-assert(
-  slotsIn('#inv-crystal').length >= 24,
+  slotsIn('#inv-gear').length >= 24,
   'the dock is deeper than the two rows it replaced',
-  String(slotsIn('#inv-crystal').length)
+  String(slotsIn('#inv-gear').length)
 );
 // Currency is the column that gave up the width: a stack is one slot however
 // deep it is, and there are only thirteen kinds.
 assert(
-  slotsIn('#inv-currency').length < slotsIn('#inv-crystal').length,
+  slotsIn('#inv-currency').length < slotsIn('#inv-gear').length,
   'currency takes less room than the items it is spent on',
-  `${slotsIn('#inv-currency').length} vs ${slotsIn('#inv-crystal').length}`
+  `${slotsIn('#inv-currency').length} vs ${slotsIn('#inv-gear').length}`
 );
 // Filling up is something you watch approaching, not something the report
 // tells you afterwards.
 assert(
-  /\d+\/\d+/.test(text('inv-crystal-label')),
+  /\d+\/\d+/.test(text('inv-gear-label')),
   'the column says how full it is',
-  text('inv-crystal-label')
+  text('inv-gear-label')
 );
 
 // --- the haul -------------------------------------------------------------
@@ -657,7 +654,6 @@ assert($('crystals').hidden === true, 'the collection starts closed');
 $('open-crystals').click();
 assert($('crystals').hidden === false, 'and opens from the header');
 
-const crystalCards = () => all('#crystals-list .crystal');
 assert(crystalCards().length > 0, 'the dev kit fills it', String(crystalCards().length));
 assert(
   /\d+ owned · \d+\/\d+ socketed/.test(text('crystals-count')),
@@ -701,9 +697,16 @@ assert(
 const socketedCard = [...crystalCards()].find((c) => c.classList.contains('crystal--socket'));
 assert(!!socketedCard, 'and the row moves to the top marked as socketed');
 assert(
-  /to tier|as far as it goes/.test(socketedCard.textContent),
+  /to level \d|as far as it goes/.test(socketedCard.textContent),
   'showing how far it has levelled',
   socketedCard.textContent
+);
+// A crystal has levels and nothing else. Rough / Seamed / Faceted / Brilliant
+// describe a crafting ladder it was never on, and Tier is three other things.
+assert(
+  !/rough|seamed|faceted|brilliant|tier/i.test(text('crystals-list')),
+  'and never a quality word or a tier',
+  text('crystals-list')
 );
 const back = [...socketedCard.querySelectorAll('.mini')].find((b) => /Take it back/.test(b.textContent));
 assert(!!back, 'a socketed crystal offers its way out');
@@ -729,7 +732,7 @@ assert(stashed().length === 0, 'and starts empty');
 // which only works because every popup stops above the dock.
 {
   const before = dockItems().length;
-  const target = filled('#inv-crystal')[0];
+  const target = filled('#inv-gear')[0];
   assert(/stash/i.test(named(target)), 'the dock offers to stash it', named(target));
   target.click();
   assert(stashed().length === 1, 'the item is in the stash');
@@ -771,7 +774,7 @@ $('open-craft').click();
 // break the only way to do either.
 assert($('craft').hidden === false, 'crafting is a popup, not a page');
 assert(
-  !$('craft').contains($('inv-crystal')),
+  !$('craft').contains($('inv-gear')),
   'the dock lives outside every popup'
 );
 assert(
@@ -785,36 +788,49 @@ assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
 assert(all('#run-stats .stat').length >= 6, 'character stats shown');
 
 // --- socketing a crystal --------------------------------------------------
+// One screen holds every crystal you own, socketed or not, because four
+// sockets against a collection is a comparison rather than a bag.
 {
-  const crystals = () => filled('#inv-crystal');
-  const runCrystal = crystals()[0];
-  assert(!!runCrystal, 'a crystal is socketable from the dock');
-  assert(
-    /socket/i.test(named(runCrystal)),
-    'the dock offers to socket it',
-    named(runCrystal)
-  );
-  const carried = crystals().length;
-  runCrystal.click();
+  // An empty socket is the question "what goes in here", and the answer is a
+  // screen: crystals are compared against each other before one goes in.
+  socketButtons()[0].click();
+  assert($('crystals').hidden === false, 'an empty socket opens the collection');
+  const owned = crystalCards().length;
+  assert(owned > 4, 'and lists every crystal you own', String(owned));
+
+  const move = (card) => card.querySelector('button.mini');
+  const loose = () => crystalCards().filter((c) => /socket it|swaps/i.test(move(c).textContent));
+  const runCrystal = loose()[0];
+  assert(!!runCrystal, 'an unsocketed one offers to be socketed');
+  move(runCrystal).click();
+
   const full = () => socketButtons().filter((b) => b.classList.contains('socket--full'));
   assert(full().length === 1, 'the first socket fills', String(full().length));
   assert(/Crystal/.test(full()[0].textContent ?? ''), 'and names the crystal');
-  // Socketing is a MOVE, the way wearing a helmet is — it leaves the dock.
-  assert(crystals().length === carried - 1, 'and it has left the dock');
+  // Socketing is a MOVE, but the collection never loses the crystal — it is
+  // the same screen, saying it is somewhere else.
+  assert(crystalCards().length === owned, 'and the collection still holds it');
+  assert(
+    crystalCards().filter((c) => /take it back/i.test(move(c).textContent)).length === 1,
+    'now offering to take it back instead'
+  );
 
-  // Taking it back out returns it, and the Fissure is still enterable empty.
-  full()[0].click();
+  const back = crystalCards().find((c) => /take it back/i.test(move(c).textContent));
+  move(back).click();
   assert(full().length === 0, 'the socket empties again');
-  assert(crystals().length === carried, 'and the crystal is back in the dock');
   assert($('run-launch').disabled === false, 'and you can still descend without one');
 
   // Fill every socket, then one more: four is the whole set, and a fifth
   // crystal swaps into the first rather than being refused — the same thing a
-  // second helmet does, and it keeps the dock from filling with dead slots.
-  const held = crystals().length;
-  for (let i = 0; i < 5; i++) crystals()[0]?.click();
+  // second helmet does.
+  for (let i = 0; i < 5; i++) move(loose()[0]).click();
   assert(full().length === 4, 'four sockets is the whole set', String(full().length));
-  assert(crystals().length === held - 4, 'and the fifth swapped rather than vanishing', String(crystals().length));
+  assert(
+    crystalCards().length === owned,
+    'and the fifth swapped rather than vanishing',
+    String(crystalCards().length)
+  );
+  $('crystals-close').click();
 }
 
 // Gear stays in the dock — it's always in the dock — and the Fissure has
@@ -912,10 +928,7 @@ assert(
   assert($('craft').hidden === false, 'and leaves the window under it alone');
   $('craft-close').click();
 }
-assert(
-  filled('#inv-crystal').every((b) => !b.disabled),
-  'crystals are not'
-);
+
 
 // --- entering keeps the socketed crystals ---------------------------------
 // Sockets are a standing choice, not a stake. A run reads them and gives them
@@ -1505,13 +1518,7 @@ assert(lit.length > 0, 'picking a slot lights up what fits, in the dock');
 assert($('sheet-pick').hidden === true, 'and says nothing the dock already showed');
 assert(
   lit.every((b) => b.closest('.dockcol').querySelector('#inv-gear')),
-  'only gear lights up — a crystal fits no equipment slot'
-);
-// Everything else in the dock goes inert: there is nothing to do with a
-// crystal on the character sheet.
-assert(
-  filled('#inv-crystal').every((b) => b.disabled),
-  'crystals are inert while equipping'
+  'only gear lights up — nothing else is in the dock to light'
 );
 assert(/wear as/i.test(named(lit[0])), 'the lit slot says what clicking does', named(lit[0]));
 
@@ -1550,14 +1557,16 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
   assert(filled('#inv-gear').length === carried - 1, 'and the piece is gone', String(filled('#inv-gear').length));
 }
 
-// Crystals are a standing choice, not stock, so nothing offers to buy one.
+// Crystals are a standing choice, not stock, so nothing offers to buy or sell
+// one — and the screen that holds them has no route to either.
 {
-  filled('#inv-crystal')[0].dispatchEvent(
-    new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+  $('open-crystals').click();
+  const labels = crystalCards().flatMap((c) =>
+    [...c.querySelectorAll('button')].map((b) => b.textContent ?? '')
   );
-  const labels = all('#itemmenu .itemmenu__item').map((b) => b.textContent ?? '');
-  assert(!labels.some((t) => /sell/i.test(t)), 'a crystal cannot be sold', labels.join(' | '));
-  document.body.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  assert(labels.length > 0, 'the crystals screen offers something', String(labels.length));
+  assert(!labels.some((t) => /sell/i.test(t)), 'and never a sale', labels.join(' | '));
+  $('crystals-close').click();
 }
 
 // The bulk button: thirty pieces one click at a time is what kills a loop.

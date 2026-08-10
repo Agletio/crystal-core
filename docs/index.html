@@ -482,8 +482,8 @@
   .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
 
   /* Sized to their contents, not to a share of the width. Each column draws
-     exactly its capacity, so the widths ARE the capacities: crystals and gear
-     get most of the dock, currency the rest. */
+     exactly its capacity, so the widths ARE the capacities: gear gets most of
+     the dock, currency the rest. */
   .dock__cols { display: flex; flex-wrap: wrap; gap: 20px; }
   .dockcol { min-width: 0; }
   .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
@@ -865,15 +865,19 @@
   .savenote--bad { color: var(--ember); }
 
   /* --- the worn column, beside the bench --------------------------------- */
-  .craftcols { display: grid; grid-template-columns: 208px 1fr; gap: 12px; align-items: start; }
+  .craftcols { display: grid; grid-template-columns: 190px 208px 1fr; gap: 12px; align-items: start; }
   /* Stacked, the column would push the bench off the fold — and the bench is
      what you opened the window for. It goes under it instead. */
   @media (max-width: 720px) {
     .craftcols { grid-template-columns: 1fr; }
     .craftcols > .worn { order: 2; }
+    .craftcols > .worn--crystals { order: 3; }
   }
 
   .worn { padding: 10px; }
+  /* The collection only ever grows, so it gets its own scroll rather than
+     making the whole bench taller than the window. */
+  #craft-crystals { max-height: min(52vh, 430px); overflow-y: auto; }
   .worn__label { font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 8px; }
   .worn__hint { font-size: 10px; color: var(--dust); font-style: italic; line-height: 1.4; margin: 8px 0 0; }
   .worn__grid { display: grid; gap: 4px; }
@@ -1129,10 +1133,6 @@
     </div>
     <div class="dock__cols">
       <div class="dockcol">
-        <div class="dockcol__label" id="inv-crystal-label">Crystals</div>
-        <div class="slots" id="inv-crystal"></div>
-      </div>
-      <div class="dockcol">
         <div class="dockcol__label" id="inv-gear-label">Equipment</div>
         <div class="slots" id="inv-gear"></div>
       </div>
@@ -1164,6 +1164,12 @@
     </div>
     <div class="modal__body" data-drop="bench">
       <div class="craftcols">
+        <!-- Crystals are never carried, so the dock cannot hand one to the
+             bench. This column is the only route to crafting one. -->
+        <div class="panel worn worn--crystals">
+          <div class="worn__label">Crystals</div>
+          <div id="craft-crystals"></div>
+        </div>
         <!-- What you are wearing, so improving it costs no trip to the sheet
              and back. Working on a worn piece never takes it off. -->
         <div class="panel worn">

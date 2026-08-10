@@ -15,12 +15,13 @@ import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, RUN_SLOTS, THEME_BY_ID } from '../data';
-import { crystalsIn, haulFull, socketFor, socketItem, socketed, unsocket } from '../game/state';
+import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState, GiftPlace } from '../game/state';
 import { crystalProgress, giftChance } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
+import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
@@ -112,25 +113,13 @@ export function onRunFocused(): void {
 }
 
 /**
- * Only crystals, and only while choosing. Gear is still in the dock — it's
- * always in the dock — but there is nothing to do with a helmet here, so it
- * renders inert rather than pretending to be socketable.
+ * Nothing. Crystals are socketed from the collection, and the dock holds only
+ * gear — which the Fissure has nothing of its own to do with, so the shell's
+ * own actions (wear it, stash it) are what a click there means.
  */
 function runHandler() {
   return {
-    actionFor: (item: Item) => {
-      if (phase !== 'menu' || item.kind !== 'crystal') return null;
-      const slot = socketFor(game, item);
-      if (!slot) return null;
-      return {
-        label: 'Socket crystal',
-        run: () => {
-          socketItem(game, item, slot);
-          renderMenu();
-          renderInventory();
-        },
-      };
-    },
+    actionFor: () => null,
     highlighted: () => false,
   };
 }
@@ -148,7 +137,10 @@ function renderMenu(): void {
     const button = el('button', 'socket') as HTMLButtonElement;
     button.id = `run-socket-${slot.id}`;
     button.classList.toggle('socket--full', !!held);
+    // An empty socket is the question "what goes in here", and the answer is
+    // a screen, not a bag: crystals are compared before one of them goes in.
     button.onclick = () => {
+      if (!held) return openCrystals();
       if (!unsocket(game, slot.id)) return;
       renderMenu();
       renderInventory();
@@ -174,8 +166,8 @@ function renderMenu(): void {
           'div',
           'socket__grow',
           grown.need === null
-            ? 'Tier 4 — as far as it goes'
-            : `${Math.floor(grown.xp)} / ${grown.need} to tier ${grown.tier + 1}`
+            ? `Level ${grown.level} — as far as it goes`
+            : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}`
         )
       );
       for (const mod of held.mods) button.append(el('div', 'chosen__mod', describeMod(mod)));
@@ -218,7 +210,7 @@ function renderMenu(): void {
         ? 'Sockets are permanent. Click one to take its crystal back.'
         : crystalsIn(game).length === 0
           ? 'No crystals yet. An empty Fissure is still a real descent.'
-          : 'Click a crystal in the dock to socket it.'
+          : 'Click an empty socket to choose a crystal.'
     )
   );
 

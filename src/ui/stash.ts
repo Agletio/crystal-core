@@ -3,8 +3,8 @@
  *
  * The dock stopped scrolling, which turned "how much can I carry" from a
  * detail into a real question — and a real question needs an answer that
- * isn't "throw it away". This is that answer: somewhere to put the crystal
- * you are saving for later without it costing you a slot you need now.
+ * isn't "throw it away". This is that answer: somewhere to put the piece you
+ * are saving for later without it costing you a slot you need now.
  *
  * A stashed item is INERT. It cannot be crafted, socketed or worn until you
  * carry it again. That's the whole point — storage that also worked as a bag
@@ -64,12 +64,7 @@ export function render(): void {
   const host = $('stash-slots');
   host.replaceChildren();
 
-  // Crystals first, then gear, each newest last — the order you put them in,
-  // grouped the way the dock groups them.
-  const items = [...game.stash].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'crystal' ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
+  const items = [...game.stash].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const item of items) {
     const room = carryRoom(game, item.kind) > 0;

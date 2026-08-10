@@ -134,7 +134,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: 'sent to the haul', value: String(run.loot.items.length) });
   }
   for (const gain of levelled) {
-    rows.push({ label: gain.crystal.name, value: `+${gain.tiers} tier` });
+    rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
   }
 
   // Damage taken, split by type. Nothing reads this yet beyond the overlay —

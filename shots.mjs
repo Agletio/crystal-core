@@ -235,6 +235,21 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('skill-web');
 
+  // The bench, stocked. It is the widest thing in the game — a crystals
+  // column, a worn column and the item — and the only screen where three
+  // panels have to fit side by side on a phone.
+  await page.evaluate(() => document.getElementById('skills-close')?.click());
+  await page.evaluate(() => document.getElementById('dev-kit')?.click());
+  await page.evaluate(() => document.getElementById('confirm-yes')?.click());
+  await page.waitForTimeout(500);
+  await page.evaluate(() => {
+    document.getElementById('open-craft')?.click();
+    const first = document.querySelector('#craft-crystals .wornslot');
+    first?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await page.waitForTimeout(300);
+  await shoot('bench');
+
   const spilled = await page.evaluate(() => {
     const wrap = document.querySelector('.webwrap')?.getBoundingClientRect();
     const svg = document.getElementById('skills-web')?.getBoundingClientRect();

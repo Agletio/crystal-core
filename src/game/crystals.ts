@@ -3,12 +3,12 @@
  * Lampwright gives you the Normal ones, and the other two worlds are quests.
  *
  * A crystal is never spent, so this is the only thing that changes one without
- * a currency being poured on it — which is why the tier, the quality, the base
+ * a currency being poured on it — which is why the level, the quality, the base
  * and the name are all rewritten together.
  */
 import {
   CRYSTAL_QUESTS,
-  CRYSTAL_TIERS,
+  CRYSTAL_LEVELS,
   CRYSTAL_XP,
   LAMPWRIGHT,
   QUEST_BY_ID,
@@ -22,14 +22,9 @@ import { crystalFamily } from '../sim/crystal';
 import type { RunSet } from '../sim/crystal';
 import type { Item } from '../types';
 
-/** Every crystal you own, wherever it is sitting. */
+/** Every crystal you own: socketed, or in the collection. */
 export function ownedCrystals(game: GameState): Item[] {
-  return [
-    ...Object.values(game.sockets ?? {}),
-    ...game.inventory,
-    ...game.stash,
-    ...game.haul,
-  ].filter((i) => i.kind === 'crystal');
+  return [...Object.values(game.sockets ?? {}), ...(game.crystals ?? [])];
 }
 
 // --- the Lampwright ---------------------------------------------------------
@@ -41,7 +36,7 @@ export function giftChance(game: GameState): number {
 }
 
 export function lampwrightGift(game: GameState): { crystal: Item; where: GiftPlace } {
-  const crystal = makeCrystal(LAMPWRIGHT.tier, LAMPWRIGHT.family);
+  const crystal = makeCrystal(LAMPWRIGHT.level, LAMPWRIGHT.family);
   return { crystal, where: giveGift(game, crystal) };
 }
 
@@ -49,33 +44,39 @@ export function lampwrightGift(game: GameState): { crystal: Item; where: GiftPla
 
 export const crystalXp = (crystal: Item): number => Number(crystal.meta.xp) || 0;
 
-/** The highest tier that much experience has paid for. */
-export function tierForXp(xp: number): number {
-  let tier = CRYSTAL_TIERS[0].tier;
-  for (const def of CRYSTAL_TIERS) {
-    if (xp >= def.xp) tier = def.tier;
+/** The highest level that much experience has paid for. */
+export function levelForXp(xp: number): number {
+  let level = CRYSTAL_LEVELS[0].level;
+  for (const def of CRYSTAL_LEVELS) {
+    if (xp >= def.xp) level = def.level;
   }
-  return tier;
+  return level;
 }
 
+/** The level a crystal is standing at, whatever its stored fields say. */
+export const crystalLevel = (crystal: Item): number =>
+  Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
+
+export const topLevel = (): number => CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+
 export interface CrystalProgress {
-  tier: number;
+  level: number;
   xp: number;
-  /** Total needed for the next tier, or null at the top. */
+  /** Total needed for the next level, or null at the top. */
   need: number | null;
-  /** 0–1 through the current tier. 1 at the top. */
+  /** 0–1 through the current level. 1 at the top. */
   fraction: number;
 }
 
 export function crystalProgress(crystal: Item): CrystalProgress {
   const xp = crystalXp(crystal);
-  const tier = Number(crystal.meta.tier) || tierForXp(xp);
-  const at = CRYSTAL_TIERS.find((t) => t.tier === tier);
-  const next = CRYSTAL_TIERS.find((t) => t.tier === tier + 1);
-  if (!next) return { tier, xp, need: null, fraction: 1 };
+  const level = crystalLevel(crystal);
+  const at = CRYSTAL_LEVELS.find((t) => t.level === level);
+  const next = CRYSTAL_LEVELS.find((t) => t.level === level + 1);
+  if (!next) return { level, xp, need: null, fraction: 1 };
   const floor = at?.xp ?? 0;
   return {
-    tier,
+    level,
     xp,
     need: next.xp,
     fraction: Math.max(0, Math.min(1, (xp - floor) / (next.xp - floor))),
@@ -87,44 +88,44 @@ export const xpForClear = (danger: number): number =>
   CRYSTAL_XP.perClear * (1 + Math.max(0, danger) / CRYSTAL_XP.perDanger);
 
 /**
- * IN PLACE, and every derived field with it. Returns the tiers gained, so a
+ * IN PLACE, and every derived field with it. Returns the levels gained, so a
  * crystal that jumped two rungs on one enormous run reports both.
  */
 export function addCrystalXp(crystal: Item, xp: number): number {
   if (crystal.kind !== 'crystal') return 0;
-  const was = Number(crystal.meta.tier) || tierForXp(crystalXp(crystal));
+  const was = crystalLevel(crystal);
   crystal.meta.xp = crystalXp(crystal) + xp;
 
-  // Never down. A crystal whose stored xp is behind its tier — one granted
+  // Never down. A crystal whose stored xp is behind its level — one granted
   // before xp was tracked — climbs from where it stands.
-  const now = tierForXp(crystalXp(crystal));
+  const now = levelForXp(crystalXp(crystal));
   if (now <= was) return 0;
 
-  const def = CRYSTAL_TIERS.find((t) => t.tier === now)!;
+  const def = CRYSTAL_LEVELS.find((t) => t.level === now)!;
   const family = crystalFamily(crystal);
-  crystal.meta.tier = now;
+  crystal.meta.level = now;
   crystal.meta.quality = def.quality;
   crystal.base = `crystal_t${now}`;
   crystal.name = crystalName(now, family);
-  crystal.tags = ['crystal', `tier${now}`, family];
-  // Capacity, which is the whole of what a tier is. Nothing rolled is touched:
-  // room is added above what is already on it.
+  crystal.tags = ['crystal', `level${now}`, family];
+  // Capacity, which is the whole of what a level is. Nothing rolled is
+  // touched: room is added above what is already on it.
   crystal.slots = { ...crystal.slots, mod: def.mods };
   return now - was;
 }
 
 export interface CrystalGain {
   crystal: Item;
-  tiers: number;
+  levels: number;
 }
 
-/** Only while socketed — a crystal in a bag is a crystal not being used. */
+/** Only while socketed — a crystal in the collection is one not being used. */
 export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
   const xp = xpForClear(set.rewards.danger);
   const out: CrystalGain[] = [];
   for (const crystal of Object.values(game.sockets ?? {})) {
-    const tiers = addCrystalXp(crystal, xp);
-    if (tiers > 0) out.push({ crystal, tiers });
+    const levels = addCrystalXp(crystal, xp);
+    if (levels > 0) out.push({ crystal, levels });
   }
   return out;
 }
@@ -165,7 +166,7 @@ export function claimQuests(game: GameState, set: RunSet): QuestPaid[] {
   for (const quest of openQuests(game)) {
     if (!questMet(quest, set)) continue;
     game.quests = [...(game.quests ?? []), quest.id];
-    const crystal = makeCrystal(quest.gives.tier, quest.gives.family);
+    const crystal = makeCrystal(quest.gives.level, quest.gives.family);
     out.push({ quest, crystal, where: giveGift(game, crystal) });
   }
   return out;

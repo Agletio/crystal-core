@@ -16,11 +16,12 @@ import type { Item, ItemKind, Wallet } from '../types';
 export const SAVE_VERSION = 1;
 
 /**
- * What you can carry, per kind. The dock draws exactly this many and never
- * scrolls, so the limit is visible rather than discovered. Four rows each.
+ * What you can carry. The dock draws exactly this many and never scrolls, so
+ * the limit is visible rather than discovered. Crystals are not in here: they
+ * are never spent, sold or carried, so a container for them is triage with
+ * nothing to triage, and `GameState.crystals` takes every one uncapped.
  */
-export const CARRY: Record<ItemKind, number> = {
-  crystal: 32,
+export const CARRY: Record<'gear', number> = {
   gear: 32,
 };
 
@@ -51,6 +52,8 @@ export interface GameState {
   inventory: Item[];
   /** Nothing acts on a stashed item until you carry it again. */
   stash: Item[];
+  /** Every crystal you own that is not socketed. Uncapped, and never gear. */
+  crystals: Item[];
   /** A cleared run's loot. Inert as the stash is: take it out to use it. */
   haul: Item[];
   /** How big the stash currently is. Bought up with gold. */
@@ -90,6 +93,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     wallet: {},
     inventory: [],
     stash: [],
+    crystals: [],
     haul: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
@@ -115,10 +119,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
   grant(game.wallet, 'gold', preset.gold);
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
-  game.inventory = [
-    ...preset.crystals.map((c) => makeCrystal(c.tier, c.family)),
-    ...preset.gear.map((g) => makeGear(g.base, g.ilvl)),
-  ];
+  game.inventory = preset.gear.map((g) => makeGear(g.base, g.ilvl));
+  game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.stash = [];
   game.haul = [];
   game.stashSlots = STASH_START;
@@ -173,10 +175,10 @@ export function grantFirstClear(game: GameState): {
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
-  game.inventory.filter((i) => i.kind === kind);
+  kind === 'crystal' ? (game.crystals ?? []) : game.inventory.filter((i) => i.kind === kind);
 
 export const carryRoom = (game: GameState, kind: ItemKind): number =>
-  CARRY[kind] - carried(game, kind).length;
+  kind === 'crystal' ? Infinity : CARRY.gear - carried(game, 'gear').length;
 
 export const stashRoom = (game: GameState): number =>
   game.stashSlots - game.stash.length;
@@ -189,6 +191,10 @@ export type Placement = 'carried' | 'stashed' | 'lost';
  * returned: loot that silently fails to arrive reads as a bug.
  */
 export function addItem(game: GameState, item: Item): Placement {
+  if (item.kind === 'crystal') {
+    game.crystals.push(item);
+    return 'carried';
+  }
   if (carryRoom(game, item.kind) > 0) {
     game.inventory.push(item);
     return 'carried';
@@ -222,6 +228,7 @@ function takeFrom(list: Item[], item: Item): boolean {
 }
 
 export function removeItem(game: GameState, item: Item): boolean {
+  if (item.kind === 'crystal') return takeFrom(game.crystals, item);
   return takeFrom(game.inventory, item);
 }
 
@@ -261,7 +268,7 @@ export function takeWhatFits(game: GameState): number {
 }
 
 export function findItem(game: GameState, id: string): Item | undefined {
-  return game.inventory.find((i) => i.id === id);
+  return game.inventory.find((i) => i.id === id) ?? game.crystals?.find((i) => i.id === id);
 }
 
 /**
@@ -388,12 +395,13 @@ export function replaceItem(game: GameState, item: Item): void {
     game.sockets[socket.id] = item;
     return;
   }
-  const i = game.inventory.findIndex((existing) => existing.id === item.id);
-  if (i < 0) game.inventory.push(item);
-  else game.inventory[i] = item;
+  const list = item.kind === 'crystal' ? game.crystals : game.inventory;
+  const i = list.findIndex((existing) => existing.id === item.id);
+  if (i < 0) list.push(item);
+  else list[i] = item;
 }
 
-export const crystalsIn = (game: GameState): Item[] => carried(game, 'crystal');
+export const crystalsIn = (game: GameState): Item[] => game.crystals ?? [];
 
 /** In slot order, so the set reads the same way it is drawn. */
 export const socketed = (game: GameState): Item[] =>
@@ -410,7 +418,7 @@ export function socketFor(game: GameState, item: Item): string | null {
   return (fitting.find((s) => !game.sockets[s.id]) ?? fitting[0]).id;
 }
 
-/** Bag → socket. Socketing is a MOVE, the same way wearing a helmet is. */
+/** Collection → socket. Socketing is a MOVE, the same way wearing a helmet is. */
 export function socketItem(game: GameState, item: Item, slotId: string): boolean {
   const slot = RUN_SLOTS.find((s) => s.id === slotId);
   if (!slot || !fitsSocket(item, slot)) return false;
@@ -421,11 +429,9 @@ export function socketItem(game: GameState, item: Item, slotId: string): boolean
   return true;
 }
 
-/** Refuses when there is nowhere to put it, the same as unequipping. */
 export function unsocket(game: GameState, slotId: string): boolean {
   const held = game.sockets[slotId];
   if (!held) return false;
-  if (carryRoom(game, held.kind) <= 0) return false;
   delete game.sockets[slotId];
   addItem(game, held);
   return true;

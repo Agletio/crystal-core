@@ -18,7 +18,7 @@ import { CARRY, fitsSlot, sendToEnd, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
 import { dockSlotId } from './tutorial';
-import type { CurrencyDef, Item, ItemKind } from '../types';
+import type { CurrencyDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -63,10 +63,8 @@ function sizeGrid(host: HTMLElement, slots: number): void {
   host.style.setProperty('--cols', String(Math.ceil(slots / DOCK_ROWS)));
 }
 
-const HOSTS: Record<ItemKind, string> = {
-  crystal: 'inv-crystal',
-  gear: 'inv-gear',
-};
+/** Gear only. Crystals never enter the dock — `src/ui/crystals.ts` holds them. */
+const GEAR_HOST = 'inv-gear';
 
 /**
  * Actions an item has no matter which screen is up — wearing it, putting it
@@ -427,20 +425,18 @@ export function renderInventory(): void {
   renderWallet();
   renderCurrencies();
 
-  for (const kind of Object.keys(HOSTS) as ItemKind[]) {
-    const items = game.inventory.filter((i) => i.kind === kind);
-    fill($(HOSTS[kind]), items, kind);
-    // On the label, not in a tooltip: this is what you check before deciding
-    // whether to go back down.
-    const label = $(`${HOSTS[kind]}-label`);
-    label.textContent = `${kind === 'crystal' ? 'Crystals' : 'Equipment'} ${items.length}/${CARRY[kind]}`;
-    label.classList.toggle('dockcol__label--full', items.length >= CARRY[kind]);
-  }
+  const items = game.inventory.filter((i) => i.kind === 'gear');
+  fill($(GEAR_HOST), items);
+  // On the label, not in a tooltip: this is what you check before deciding
+  // whether to go back down.
+  const label = $(`${GEAR_HOST}-label`);
+  label.textContent = `Equipment ${items.length}/${CARRY.gear}`;
+  label.classList.toggle('dockcol__label--full', items.length >= CARRY.gear);
 }
 
-function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
+function fill(host: HTMLElement, items: Item[]): void {
   host.replaceChildren();
-  sizeGrid(host, CARRY[kind]);
+  sizeGrid(host, CARRY.gear);
 
   for (const item of items) {
     const action = clickAction(item);
@@ -448,7 +444,7 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
     // good it is.
     const btn = el(
       'button',
-      `slot slot--${kind} slot--q-${qualityOf(item)}`
+      `slot slot--gear slot--q-${qualityOf(item)}`
     ) as HTMLButtonElement;
 
     btn.append(itemIcon(item, 30));
@@ -481,9 +477,9 @@ function fill(host: HTMLElement, items: Item[], kind: ItemKind): void {
 
   // The carry limit made visible: the dock never scrolls, so what you see is
   // all you can hold and running out is something you watch approaching.
-  for (let i = items.length; i < CARRY[kind]; i++) {
+  for (let i = items.length; i < CARRY.gear; i++) {
     const pad = el('div', 'slot slot--empty');
-    pad.dataset.dropKind = kind;
+    pad.dataset.dropKind = 'gear';
     host.append(pad);
   }
 }

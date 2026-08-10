@@ -174,8 +174,8 @@ const CRYSTAL = { o: INK, c: '#3E7F99', q: 'var(--quartz)', w: '#EAF9FF' };
 const LEATHER = { o: INK, b: '#7A5A34', d: '#4A3A22' };
 
 /**
- * A gem that grows with tier on three axes — size, facets and a halo of loose
- * shards — so adjacent tiers differ in SILHOUETTE, which colour alone cannot do
+ * A gem that grows with level on three axes — size, facets and a halo of loose
+ * shards — so adjacent levels differ in SILHOUETTE, which colour alone cannot do
  * unless they are side by side.
  */
 const GEMS: string[][] = [
@@ -235,8 +235,8 @@ const GEMS: string[][] = [
   ],
 ];
 
-export function crystalIcon(tier: number, size = 26): SVGSVGElement {
-  const t = Math.max(1, Math.min(GEMS.length, tier));
+export function crystalIcon(level: number, size = 26): SVGSVGElement {
+  const t = Math.max(1, Math.min(GEMS.length, level));
   const colour = CRYSTAL_COLOURS[t - 1] ?? 'var(--amethyst)';
   return sprite(GEMS[t - 1], { o: INK, c: colour, w: 'var(--chalk)', l: '#00000066' }, size, `crystal-t${t}`);
 }
@@ -950,7 +950,7 @@ export function categoryIcon(id: string, size = 22): SVGSVGElement {
 /** Whatever this item is, give me something to put next to its name. */
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
-    return crystalIcon((item.meta.tier as number) ?? 1, size);
+    return crystalIcon((item.meta.level as number) ?? 1, size);
   }
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }

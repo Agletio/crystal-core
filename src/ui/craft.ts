@@ -21,7 +21,7 @@ import { balance, spend } from '../economy';
 import { craftItem, clearCraft, replaceItem, selectForCraft } from '../game/state';
 import type { GameState } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
-import { gearIcon } from './icons';
+import { gearIcon, itemIcon } from './icons';
 import {
   consumeDrag,
   pressItem,
@@ -31,7 +31,11 @@ import {
 } from './inventory';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
-import { rewardRows } from '../sim/crystal';
+import { crystalFamily, rewardRows } from '../sim/crystal';
+import { crystalTooltip } from './crystals';
+import { crystalProgress } from '../game/crystals';
+import { crystalsIn, socketed } from '../game/state';
+import { FAMILY_BY_ID } from '../data';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
@@ -120,11 +124,14 @@ function renderItem(): void {
 
   const worn = EQUIP_SLOTS.find((s) => game.character.equipment[s.id]?.id === item.id);
   $('item-name').textContent = item.name;
-  // Quality first: it decides what you can do next, and it is the difference
-  // between a full Seamed item and a full Brilliant one.
+  // Quality first for gear: it decides what you can do next, and it is the
+  // difference between a full Seamed item and a full Brilliant one. A crystal
+  // has no quality ladder — its level is the whole of what grants it room.
   $('item-meta').textContent =
-    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
-    `${item.mods.length}/${modCapacity(item)} modifiers` +
+    (item.kind === 'crystal'
+      ? `level ${crystalProgress(item).level}`
+      : qualityName(qualityOf(item))) +
+    ` · ilvl ${item.ilvl} · ${item.mods.length}/${modCapacity(item)} modifiers` +
     (item.meta.corrupted ? ' · locked' : '') +
     // Every currency here is live against something you are wearing, and a
     // Shard of Ruin does not care that you are standing in it.
@@ -211,7 +218,7 @@ function renderItem(): void {
         modCapacity(item) > 0
           ? 'No modifiers. Click a currency below.'
           : item.kind === 'crystal'
-            ? 'A Tier 1 crystal has no room. Tier is the only thing that grants it.'
+            ? 'A level 1 crystal has no room. Levelling is the only thing that grants it.'
             : 'No slots yet. A Shard of Seaming opens the first.'
       )
     );
@@ -232,6 +239,52 @@ function renderItem(): void {
     row.append(b);
     list.append(row);
   }
+}
+
+/**
+ * Every crystal you own, beside the bench. They are never carried, so the dock
+ * cannot hand one over and this column is the only way one gets worked on.
+ * Socketed ones are in here too: a socket is where a crystal LIVES, and taking
+ * it out to add a modifier would cost the run it is already set up for.
+ */
+function renderCrystals(): void {
+  const host = $('craft-crystals');
+  host.replaceChildren();
+  const grid = el('div', 'worn__grid');
+
+  const worn = socketed(game);
+  const all = [...worn, ...crystalsIn(game)];
+  for (const item of all) {
+    const family = FAMILY_BY_ID[crystalFamily(item)];
+    const btn = el('button', 'wornslot') as HTMLButtonElement;
+    btn.append(itemIcon(item, 22));
+    const body = el('span', 'wornslot__body');
+    // The family, not the full name: the level is on the line under it, so
+    // "Level 2 Demonic Crystal" spends the whole row saying it twice and then
+    // runs out of room to say either.
+    body.append(el('span', 'wornslot__name', `${family?.word || 'Normal'} Crystal`));
+    body.append(
+      el(
+        'span',
+        'wornslot__slot',
+        `lv ${crystalProgress(item).level}${worn.includes(item) ? ' · socketed' : ''}`
+      )
+    );
+    btn.append(body);
+    if (item.id === game.craftId) btn.classList.add('wornslot--on');
+
+    attachTooltip(btn, () => `${crystalTooltip(item)}\n— click to open on the bench`);
+    btn.setAttribute('aria-label', `Open on bench: ${item.name}`);
+    btn.onclick = () => {
+      if (!consumeDrag()) bench(item);
+    };
+    grid.append(btn);
+  }
+
+  if (all.length === 0) {
+    grid.append(el('p', 'worn__hint', 'None yet. The Lampwright brings the first.'));
+  }
+  host.append(grid);
 }
 
 /** Opens a worn piece on the bench. It never comes off to be worked on. */
@@ -292,6 +345,7 @@ export function render(): void {
   // Re-rendering removes whatever the cursor was over; a tooltip bound to a
   // detached element would otherwise sit there forever.
   hideTooltip();
+  renderCrystals();
   renderWorn();
   renderItem();
   $('seed').textContent = String(seed);

@@ -21,7 +21,7 @@ import {
   CURRENCIES,
   CURRENCY_BY_ID,
   CRYSTAL_QUESTS,
-  CRYSTAL_TIERS,
+  CRYSTAL_LEVELS,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -724,35 +724,46 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
 // caller reports what addItem did with it.
 {
   const game = createGame('fresh');
-  const fill = (kind: 'crystal' | 'gear', n: number) => {
-    for (let i = 0; i < n; i++) {
-      addItem(game, kind === 'crystal' ? makeCrystal(1) : makeGear('ash_wand', 1));
-    }
-  };
 
-  fill('crystal', CARRY.crystal);
+  fillGear(game);
   check(
-    carryRoom(game, 'crystal') === 0 && carryRoom(game, 'gear') === CARRY.gear,
-    'filling one bag leaves the other alone',
-    `crystal room ${carryRoom(game, 'crystal')}, gear room ${carryRoom(game, 'gear')}`
+    carryRoom(game, 'gear') === 0 && carryRoom(game, 'crystal') === Infinity,
+    'a full gear bag leaves the crystal collection uncapped',
+    `gear room ${carryRoom(game, 'gear')}, crystal room ${carryRoom(game, 'crystal')}`
   );
 
-  const overflow = makeCrystal(2);
+  const overflow = makeGear('ash_wand', 1);
   check(
     addItem(game, overflow) === 'stashed' && game.stash.includes(overflow),
     'a full bag sends the next one to the stash',
     'overflow did not reach the stash'
   );
 
-  // Fill the stash too, and the next one has genuinely nowhere to go.
-  while (stashRoom(game) > 0) addItem(game, makeCrystal(1));
+  // A crystal is never carried, sold or spent, so a container for it is triage
+  // with nothing to triage. It goes to the collection whatever else is full.
+  const stone = makeCrystal(2);
   check(
-    addItem(game, makeCrystal(3)) === 'lost',
+    addItem(game, stone) === 'carried' &&
+      game.crystals.includes(stone) &&
+      !game.inventory.includes(stone) &&
+      !game.stash.includes(stone),
+    'a crystal never enters the bags or the stash',
+    'a crystal reached a container it should have left'
+  );
+
+  // Fill the stash too, and the next one has genuinely nowhere to go.
+  while (stashRoom(game) > 0) addItem(game, makeGear('ash_wand', 1));
+  check(
+    addItem(game, makeGear('ash_wand', 1)) === 'lost',
     'a full stash on top of a full bag loses it — and says so',
     'the item went somewhere it should not have'
   );
+  check(
+    addItem(game, makeCrystal(3)) === 'carried',
+    'and a crystal still lands, with every other container full',
+    'the collection refused a crystal'
+  );
 
-  // Buying space is the way out, and it is priced to compete with a crystal.
   grant(game.wallet, 'gold', 1000);
   const before = game.stashSlots;
   const first = stashUpgradeCost(before)!;
@@ -765,7 +776,7 @@ rule('CARRY LIMIT — where does loot go when the bag is full?');
     `${before} -> ${game.stashSlots}, ${first} then ${second}`
   );
   check(
-    addItem(game, makeCrystal(4)) === 'stashed',
+    addItem(game, makeGear('ash_wand', 1)) === 'stashed',
     'and the bought space is usable',
     'the new slots did not take an item'
   );
@@ -1428,8 +1439,8 @@ rule('GUIDED OPENING — does every step actually complete?');
   );
   // The last step tells you to socket a crystal. There has to be one.
   check(
-    game.inventory.some((i) => i.kind === 'crystal'),
-    'and the crystal its last step names is in the bag',
+    game.crystals.length > 0,
+    'and the crystal its last step names is in the collection',
     'the opening ends by pointing at a crystal nobody was given'
   );
 }
@@ -2863,16 +2874,16 @@ const LADDER_SEEDS = [3, 17, 41, 58, 90];
 // demands; reading across a row tells you what a grade of gear buys you.
 const GRADES: Quality[] = ['rough', 'seamed', 'faceted', 'brilliant'];
 
-line('  gear         T1     T2     T3     T4     T5     T6');
+line('  gear         L1     L2     L3     L4     L5     L6');
 for (const grade of GRADES) {
   const kit = starterLoadout(new Rng(7), 30, grade);
   const cells: string[] = [];
 
-  for (const t of CRYSTAL_TIERS) {
+  for (const t of CRYSTAL_LEVELS) {
     let cleared = 0;
     for (const seed of LADDER_SEEDS) {
       const socketed = craft(
-        makeCrystal(t.tier),
+        makeCrystal(t.level),
         CURRENCY_BY_ID.shard_of_cleaving,
         pool,
         rng
@@ -2880,7 +2891,7 @@ for (const grade of GRADES) {
       const sim = new RunSim(
         [socketed],
         makeCharacter(kit, 'strike'),
-        new Rng(900 + seed * 7 + t.tier)
+        new Rng(900 + seed * 7 + t.level)
       );
       const f = runToCompletion(sim, 400);
       if (f.status === 'cleared') cleared++;
@@ -3596,10 +3607,10 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 // Levelling. The standing decision is that danger multiplies it and only a
 // SOCKETED crystal gains anything, so both are measured rather than asserted.
 {
-  const clearsTo = (tier: number, danger: number): number => {
+  const clearsTo = (level: number, danger: number): number => {
     const crystal = makeCrystal(1);
     let clears = 0;
-    while (Number(crystal.meta.tier) < tier && clears < 500) {
+    while (Number(crystal.meta.level) < level && clears < 500) {
       addCrystalXp(crystal, xpForClear(danger));
       clears++;
     }
@@ -3609,7 +3620,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   const bare = clearsTo(4, 0);
   const mid = clearsTo(4, 60);
   const hard = clearsTo(4, 200);
-  line(`  tier 1 → 4 takes ${bare} clears bare, ${mid} at 60 danger, ${hard} at 200`);
+  line(`  level 1 → 4 takes ${bare} clears bare, ${mid} at 60 danger, ${hard} at 200`);
   check(
     bare < 500 && hard < mid && mid < bare,
     'a blank set still levels a blank crystal, and danger is what makes it quick',
@@ -3620,11 +3631,11 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   addCrystalXp(grown, 999);
   check(
     grown.base === 'crystal_t4' &&
-      Number(grown.meta.tier) === 4 &&
+      Number(grown.meta.level) === 4 &&
       qualityOf(grown) === 'brilliant' &&
       modCapacity(grown) === 3 &&
-      grown.name.includes('Tier 4'),
-    'and a tier gained moves the base, the name, the quality and the capacity together',
+      grown.name.includes('Level 4'),
+    'and a level gained moves the base, the name, the quality and the capacity together',
     `${grown.base} ${grown.name} ${qualityOf(grown)} ${modCapacity(grown)}`
   );
 
@@ -3638,12 +3649,12 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     `${carrying.mods.length} mods, capacity ${modCapacity(carrying)}`
   );
 
-  // A save written before xp existed: the tier is real, the xp is not.
+  // A save written before xp existed: the level is real, the xp is not.
   const stale = makeCrystal(3);
   stale.meta.xp = 0;
   check(
-    addCrystalXp(stale, 1) === 0 && Number(stale.meta.tier) === 3,
-    'and a crystal whose stored progress lags its tier is never demoted for it',
+    addCrystalXp(stale, 1) === 0 && Number(stale.meta.level) === 3,
+    'and a crystal whose stored progress lags its level is never demoted for it',
     `${stale.name} after healing`
   );
 
@@ -3752,8 +3763,8 @@ rule('THE SAVE — does a save survive the game changing under it?');
   game.character.skillId = 'a_skill_that_was_cut';
 
   // A socket is a place an item lives, so it rots the same way a worn slot
-  // does — and a run launched from a crystal whose tier was cut would be built
-  // on a base that resolves to nothing.
+  // does — and a run launched from a crystal whose level was cut would be
+  // built on a base that resolves to nothing.
   const good = makeCrystal(4);
   addItem(game, good);
   socketItem(game, good, 's1');
@@ -3767,6 +3778,15 @@ rule('THE SAVE — does a save survive the game changing under it?');
   delete ancient.meta.xp;
   addItem(game, ancient);
   game.quests = ['demonic_i', 'a_quest_that_was_cut'];
+
+  // Written when crystals lived in the bags and had a tier rather than a
+  // level. Both are ids in all but name, and a crystal is never bought back.
+  const stranded = makeCrystal(2);
+  stranded.meta.tier = stranded.meta.level;
+  delete stranded.meta.level;
+  game.inventory.push(stranded);
+  const shelved = makeCrystal(2);
+  game.stash.push(shelved);
 
   const healed = heal(game);
   line(`Healed: ${healed.points} points refunded, ${healed.items} items dropped, ` +
@@ -3795,9 +3815,18 @@ rule('THE SAVE — does a save survive the game changing under it?');
     `dropped ${healed.currencies} currencies`
   );
   check(
-    crystalXp(ancient) === CRYSTAL_TIERS[2].xp && addCrystalXp(ancient, 1) === 0,
-    'a crystal written before it could level keeps its tier and starts where it stands',
-    `xp ${crystalXp(ancient)}, now tier ${ancient.meta.tier}`
+    crystalXp(ancient) === CRYSTAL_LEVELS[2].xp && addCrystalXp(ancient, 1) === 0,
+    'a crystal written before it could level keeps its level and starts where it stands',
+    `xp ${crystalXp(ancient)}, now level ${ancient.meta.level}`
+  );
+  check(
+    game.crystals.includes(stranded) &&
+      game.crystals.includes(shelved) &&
+      !game.inventory.includes(stranded) &&
+      !game.stash.includes(shelved) &&
+      Number(stranded.meta.level) === 2,
+    'a save from when crystals sat in the bags moves them out, tier renamed to level',
+    `${game.crystals.length} in the collection, stranded at level ${stranded.meta.level}`
   );
   check(
     game.quests.length === 1 && game.quests[0] === 'demonic_i',
@@ -3931,6 +3960,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
   const collections: Array<[string, (g: GameState, item: Item) => void]> = [
     ['inventory', (g, item) => { g.inventory = [item]; }],
     ['stash', (g, item) => { g.stash = [item]; }],
+    ['crystals', (g, item) => { g.crystals = [item]; }],
     ['shopStock', (g, item) => { g.shopStock = [item]; }],
     ['equipment', (g, item) => { g.character.equipment = { weapon: item }; }],
   ];
@@ -3940,7 +3970,10 @@ rule('THE SAVE — does a save survive the game changing under it?');
     // and the counter is already past it by the second case, which is a check
     // that passes whatever the code does.
     const mark = HIGH + (i + 1) * 1000;
-    const save = { ...createGame('fresh'), inventory: [], stash: [], shopStock: [], craftId: null };
+    const save = {
+      ...createGame('fresh'),
+      inventory: [], stash: [], crystals: [], shopStock: [], craftId: null,
+    };
     save.character = { ...save.character, equipment: {} };
     const item = makeGear('ash_wand', 1);
     item.id = `gear_${mark}`;

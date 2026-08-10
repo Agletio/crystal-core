@@ -19,10 +19,8 @@ The socket model is built and the game runs on it. `CLAUDE.md` is the accurate
 description; the short version, because the phases below assume it:
 
 Four sockets hold permanent crystals. Their COUNT is run length, their MODIFIERS
-are the whole of difficulty, a crystal's TIER is only mod capacity (T1–T4 → 0–3)
+are the whole of difficulty, a crystal's LEVEL is only mod capacity (1–4 → 0–3)
 and its FAMILY — Normal, Demonic, Prismatic — is only which monsters spawn.
-*(Phase 1 renames that tier to a LEVEL. §2 onward uses the new word; the code
-still uses the old one until that phase lands.)*
 Composition picks the zone. Everything a run pays reads one derived number
 (`POWER`, `runSet()`). Crystals are given, never bought: the Lampwright hands
 out the Normal ones, quests pay the other two, and a crystal levels only while
@@ -83,7 +81,9 @@ free slot does not destroy four of them. You triage before continuing.
 
 **A crystal has LEVELS, never tiers.** Gear has tiers, mods have tiers and a
 map has an item level; a fourth ladder called tier on the one thing that gains
-experience was the confusing one. The word never reaches the player.
+experience was the confusing one. The word never reaches the player — the
+base ids are still `crystal_t1`..`crystal_t4`, because a save points at them
+and renaming one costs the player that crystal for no gain.
 
 **Mod capacity comes from the BASE's tier**, and from nothing else: t1 holds 2,
 t2 holds 4, t3 holds 6. Item level still decides how good a roll can be. There
@@ -222,11 +222,19 @@ guards every currency that should respect it, and the tooltip already says the
 item is corrupted. Anything that "locks an item" sets that flag rather than
 inventing a second one.
 
-**Containers.** `GameState` holds `inventory` (the dock, capped per kind by
-`CARRY` in `src/game/state.ts`), `stash` (inert, capacity bought with gold),
-`haul` (a cleared run's loot, inert, `HAUL_CAP`), `sockets` (worn crystals) and
-`shopStock`. Inert means: nothing acts on the item until it is moved into the
-dock. `craftId` is a REFERENCE into the inventory, not a move.
+**Containers.** `GameState` holds `inventory` (the dock — gear only, capped by
+`CARRY.gear`), `stash` (inert, capacity bought with gold), `haul` (a cleared
+run's loot, inert, `HAUL_CAP`), `crystals` (every crystal you own that is not
+socketed, UNCAPPED), `sockets` and `shopStock`. Inert means: nothing acts on
+the item until it is moved into the dock. `craftId` is a REFERENCE, not a move,
+and it resolves across the bag, the collection, the worn slots and the sockets.
+
+**A crystal is never carried.** It is never spent, sold or moved anywhere, so
+there is no dock column for it and `carryRoom(game, 'crystal')` is `Infinity`.
+`addItem` routes one to `game.crystals` whatever else is full, which is what
+makes a gift unable to fail. Two screens read that list: `src/ui/crystals.ts`,
+where the collection is compared against four sockets, and the bench's own
+crystals column, which is the only route to crafting one.
 
 **Tooltips are plain text today.** `src/ui/tooltip.ts` is 58 lines and does
 `textContent = text()`. `attachTooltip(el, () => string)` is how every screen
@@ -246,51 +254,7 @@ freeze, all of that is the UI holding off on ticking.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Crystals are levels, and they leave the bag
-
-Three separate confusions, all about the same object.
-
-**The word.** `CRYSTAL_TIERS` in `src/data.ts` is `{ tier, mods, quality, xp }`
-× 4. Gear has tiers, mods have tiers and a map has an item level; calling the
-one thing that gains experience a "tier" as well is the one that has to go.
-
-**The quality.** A crystal carries Rough / Seamed / Faceted / Brilliant derived
-from its tier, and those words are on its tooltip. They describe a crafting
-ladder that Phase 2 removes. This phase stops SAYING them; Phase 2 deletes the
-mechanic. Doing it in that order means the game never shows a word that has
-stopped meaning anything.
-
-**The bag.** Crystals occupy 32 dock slots and overflow into the stash. They
-are never spent, never sold and never carried anywhere — a container for them
-is triage with nothing to triage.
-
-- [ ] `CRYSTAL_TIERS` → `CRYSTAL_LEVELS`, field `tier` → `level`. Everything
-      the player reads says "Level 3", never "T3". Keep the crystal BASE ids as
-      they are: a save points at them, and renaming one costs the player that
-      crystal for no gain (§4, save rules).
-- [ ] The crystal tooltip loses its quality word and shows level, family,
-      danger, and `2/2 modifiers`. It keeps saying what the modifiers do.
-      `src/game/crystals.ts` is where a level rewrites base, name, quality,
-      tags and capacity together — quality stays in the data for now, it just
-      stops being rendered.
-- [ ] `GameState.crystals: Item[]`, uncapped, replaces `CARRY.crystal`.
-      Crystals no longer enter `inventory` or `stash`. `addItem` routes them,
-      and `heal()` MIGRATES: any crystal found in `inventory` or `stash` on
-      load moves across. That needs no `SAVE_VERSION` bump — a missing key
-      takes its default and healing is exactly what `heal()` is for.
-- [ ] `src/ui/inventory.ts` loses its Crystals section (the label at the
-      `kind === 'crystal'` branch, and the `CARRY` line under it).
-- [ ] `src/ui/crystals.ts` becomes the only place they live: every crystal you
-      own, socketed or not, with its level, its progress to the next one, and
-      the quest ladder. It already does most of this.
-- [ ] The bench (`src/ui/craft.ts`) grows a crystals column on the LEFT of the
-      worn column: every crystal you own, click to open on the bench. That is
-      the only route to crafting one now.
-- [ ] `src/ui/tutorial.ts` points at the dock's crystal slot in at least one
-      step. It is data — steps with `done` predicates — so re-point the step.
-      `npm run guide` will fail until you do; that is the harness working.
-
-### Phase 2 — Capacity comes from the base, and the currencies are rebuilt
+### Phase 1 — Capacity comes from the base, and the currencies are rebuilt
 
 The biggest change in this list, and the one the rest lean on.
 
@@ -299,7 +263,7 @@ split across typed slots (offence / defence / utility) by `slotAllocation` in
 `src/mods.ts`, and read through `slotCapacity` / `hasOpenSlot` / `modCapacity`.
 Quality is raised by a ladder of currencies: Seaming, Ascent, Cleaving, and
 Ruin taking it all the way back. That ladder is what makes crafting a chore
-gate, and it is what the crystal tooltip was apologising for in Phase 1.
+gate, and the crystal screens have already stopped naming it.
 
 **What replaces it.** Capacity comes from the base's TIER. Armour bases are
 generated by `armourBases()` in `src/data.ts` — 12 families × 4 kinds × 3 tiers,
@@ -389,7 +353,7 @@ a currency's failure MESSAGE is ever read. Two new invariants worth adding
 while you are there: a locked item refuses every currency, and the value gamble
 is the only thing in the game that can put a roll above its modifier's maximum.
 
-### Phase 3 — Tooltips you can read
+### Phase 2 — Tooltips you can read
 
 The information is right and the presentation is a wall of monospace. Other
 ARPGs solved this; copy them.
@@ -417,7 +381,7 @@ one run of text. Both have to hand back parts.
 - [ ] `npm run shots` for overflow at both sizes, `npm run smoke` for console
       errors. A tooltip that runs off the screen is the failure this catches.
 
-### Phase 4 — Inventory management
+### Phase 3 — Inventory management
 
 - [ ] A **sort by kind** button on the dock. It reorders `game.inventory` in
       place, and the order is saved, so it sticks.
@@ -429,7 +393,7 @@ one run of text. Both have to hand back parts.
 - [ ] The same highlight answers "why can I not use this" without a click, so
       the dimmed items should carry the `WHY` sentence in their tooltip.
 
-### Phase 5 — The shop sells and buys back, and the haul empties
+### Phase 4 — The shop sells and buys back, and the haul empties
 
 - [ ] Replace **Sell unmodified gear** in `src/ui/shop.ts` with a **Sell mode**
       toggle. While it is on, a left-click on a dock item sells it. Mode is UI
@@ -447,7 +411,7 @@ one run of text. Both have to hand back parts.
       is what stops a full haul wedging the loop, and the demo builds the wedge
       and checks the way out.
 
-### Phase 6 — The descent transition
+### Phase 5 — The descent transition
 
 A cleared descent swaps the map between two frames and it reads as a glitch.
 
@@ -466,7 +430,7 @@ A cleared descent swaps the map between two frames and it reads as a glitch.
       are the two seams.
 - [ ] Input is never blocked. Leave and Abandon do what they say mid-transition.
 
-### Phase 7 — Meeting the Lampwright
+### Phase 6 — Meeting the Lampwright
 
 Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
 pushes a `met` event, and the REPORT pays the crystal out at the end.
@@ -489,7 +453,7 @@ pushes a `met` event, and the REPORT pays the crystal out at the end.
 - [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
       through it.
 
-### Phase 8 — The danger retune
+### Phase 7 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -514,7 +478,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 9 — Unique gear
+### Phase 8 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -560,7 +524,7 @@ moving — see §2, balance is deliberately loose.
   one must never read as a demotion. Deferred deliberately: it may only feel bad
   because the opening hands you everything at once, and readable tooltips plus
   real selling may fix the feeling without touching the rate. Revisit after
-  Phases 3 and 5, and measure before changing anything.
+  Phases 2 and 4, and measure before changing anything.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that
@@ -596,5 +560,8 @@ moving — see §2, balance is deliberately loose.
 - Art claims need a screenshot. `tools/model-sheet.mts` draws every look and
   every creature, `tools/model-peek.mts` draws a few of them large, and
   `tools/zone-peek.mts` draws all four zones off a real generated map. None is
-  in the suite. The demo's
-  sprite checks prove grids are square, not that anything reads.
+  in the suite. The demo's sprite checks prove grids are square, not that
+  anything reads.
+- `npm run shots` covers the welcome, the Fissure, the collection, a descent,
+  the skill web and the BENCH at two sizes. The bench shot is the one that
+  catches a third column not fitting — it is the widest screen in the game.

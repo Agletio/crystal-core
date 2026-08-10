@@ -7,7 +7,7 @@ import { Rng } from '../rng';
 import { ModPool, modCapacity } from '../mods';
 import {
   ALL_MODS,
-  CRYSTAL_TIERS,
+  CRYSTAL_LEVELS,
   DROP_BANDS,
   EQUIP_SLOTS,
   REFERENCE_ARMOUR_FAMILY,
@@ -72,7 +72,7 @@ export function ladderCharacter(band: number, rng: Rng, skillId = 'strike'): Cha
   return character;
 }
 
-/** Sockets fill before tier climbs, so a set grows the way a player's does. */
+/** Sockets fill before levels climb, so a set grows the way a player's does. */
 const LADDER_SHAPES: Array<[number, number]> = [
   [0, 1], [1, 2], [2, 2], [2, 3], [3, 3], [3, 4], [4, 4],
 ];
@@ -86,12 +86,12 @@ export function ladderSet(band: number, rng: Rng, pool: ModPool): Item[] {
   let best: Item[] = [];
   let closest = Infinity;
 
-  for (const [filled, tier] of LADDER_SHAPES) {
-    if (filled > RUN_SLOTS.length || tier > CRYSTAL_TIERS.length) continue;
+  for (const [filled, level] of LADDER_SHAPES) {
+    if (filled > RUN_SLOTS.length || level > CRYSTAL_LEVELS.length) continue;
     // Twelve tries, not four: some of what a crystal rolls carries no danger,
     // and a player aiming at a band re-rolls those away.
     for (let attempt = 0; attempt < 12; attempt++) {
-      const set = Array.from({ length: filled }, () => rollCrystal(tier, pool, rng));
+      const set = Array.from({ length: filled }, () => rollCrystal(level, pool, rng));
       const gap = Math.abs(runSet(set).power - target);
       if (gap >= closest) continue;
       closest = gap;
