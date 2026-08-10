@@ -8,6 +8,7 @@ import { Rng } from '../rng';
 import { CRYSTAL_QUESTS, EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
 import { canSell, grant, makeCrystal, makeGear, sellPrice } from '../economy';
+import { baseTier } from '../mods';
 import { makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import type { Character } from '../sim/character';
@@ -353,6 +354,22 @@ export function findAnywhere(game: GameState, id: string): Item | undefined {
 export function craftItem(game: GameState): Item | null {
   if (!game.craftId) return null;
   return findAnywhere(game, game.craftId) ?? null;
+}
+
+/** Grouped by slot, best first inside a group. IN PLACE, so a sort is part of
+ *  the save. By SLOT: "all the boots together" is what scanning the dock asks. */
+export function sortInventory(game: GameState): void {
+  const rank = (i: Item) => {
+    const at = EQUIP_SLOTS.findIndex((s) => s.accepts === gearKindOf(i));
+    return at < 0 ? EQUIP_SLOTS.length : at;
+  };
+  game.inventory.sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      baseTier(b) - baseTier(a) ||
+      b.mods.length - a.mods.length ||
+      a.name.localeCompare(b.name)
+  );
 }
 
 /**

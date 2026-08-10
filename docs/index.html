@@ -502,7 +502,9 @@
      the dock, currency the rest. */
   .dock__cols { display: flex; flex-wrap: wrap; gap: 20px; }
   .dockcol { min-width: 0; }
+  .dockcol__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
+  .dockcol__head .dockcol__label { margin-bottom: 0; }
   /* A full bag is the moment the limit starts mattering, so it says so before
      a run rather than in the report afterwards. */
   .dockcol__label--full { color: var(--citrine); }
@@ -550,6 +552,7 @@
     box-shadow: 0 0 0 2px rgba(232,184,75,.4);
   }
   .slot--off { opacity: .34; }
+  .slot--dim { opacity: .26; } /* an armed shard cannot touch it; it says why */
 
   /* The base's tier, on the border — the silhouette can only say what a piece
      IS. Tier 1 stays the plain slot colour: a grid where everything is
@@ -1187,7 +1190,10 @@
     </div>
     <div class="dock__cols">
       <div class="dockcol">
-        <div class="dockcol__label" id="inv-gear-label">Equipment</div>
+        <div class="dockcol__head">
+          <div class="dockcol__label" id="inv-gear-label">Equipment</div>
+          <button class="chip" id="inv-sort" title="Group by slot, best first">Sort</button>
+        </div>
         <div class="slots" id="inv-gear"></div>
       </div>
       <div class="dockcol">
@@ -1232,6 +1238,8 @@
           <p class="worn__hint">Stays equipped while you work on it.</p>
         </div>
         <div class="panel">
+          <!-- Outside the item: an armed shard with nothing benched still says so. -->
+          <p class="armed" id="craft-armed" hidden></p>
           <p class="empty" id="craft-empty">
             Click or drag something from your dock.
           </p>
@@ -1239,7 +1247,6 @@
             <h2 id="item-name">—</h2>
             <div id="item-meta"></div>
             <div class="mults" id="item-rewards" hidden></div>
-            <p class="armed" id="craft-armed" hidden></p>
             <div id="sockets"></div>
             <div id="modlist"></div>
           </div>

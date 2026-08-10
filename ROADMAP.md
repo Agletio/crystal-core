@@ -269,6 +269,16 @@ NUMBER and the words around it, so `.rolled__v` can be one colour and
 the markup can never drift. `describeItem` in `src/crafting.ts` is the
 text-only version and is now the demo's alone.
 
+**A currency is ARMED, then pointed.** Clicking a stack in the dock with
+nothing benched — or a stack the benched item refuses, or the targeted removal
+— arms it: `src/ui/craft.ts` holds `armed` as UI state, never saved. While it
+is up the dock lights every item `canApply` accepts and dims the rest, each
+dimmed one carrying the refusal in its own tooltip. Clicking a lit item applies
+the shard; the targeted one benches the item and waits for a modifier instead.
+The old flow is untouched: a benched item the shard accepts still fires on the
+click. `InventoryHandler` grew `dimmed(item)` beside `highlighted(item)`, which
+is the one mechanism both use.
+
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
 starts ticking; `finish()` banks the report and decides whether another descent
 follows (`looping()` is `game.autoRepeat` and not the guided opening). The sim
@@ -282,21 +292,7 @@ freeze, all of that is the UI holding off on ticking.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — Inventory management
-
-- [ ] A **sort by kind** button on the dock. It reorders `game.inventory` in
-      place, and the order is saved, so it sticks.
-- [ ] **Arming a currency lights up what it can touch.** `canApply(item,
-      currency)` already exists and `src/ui/craft.ts` already computes it for
-      the currency row. The dock already has a `highlighted` predicate for the
-      crafting selection — extend that one rather than adding a second
-      mechanism, and light every item the armed currency would accept.
-- [ ] The same highlight answers "why can I not use this" without a click, so
-      the dimmed items should carry that sentence in their tooltip.
-      `canApply` returns it, and `itemCard`'s `notes` is where it goes — the
-      dock already passes notes for what a click does.
-
-### Phase 2 — The shop sells and buys back, and the haul empties
+### Phase 1 — The shop sells and buys back, and the haul empties
 
 - [ ] Replace **Sell unmodified gear** in `src/ui/shop.ts` with a **Sell mode**
       toggle. While it is on, a left-click on a dock item sells it. Mode is UI
@@ -314,7 +310,7 @@ own. Within a phase, roughly dependency order.
       is what stops a full haul wedging the loop, and the demo builds the wedge
       and checks the way out.
 
-### Phase 3 — The descent transition
+### Phase 2 — The descent transition
 
 A cleared descent swaps the map between two frames and it reads as a glitch.
 
@@ -333,7 +329,7 @@ A cleared descent swaps the map between two frames and it reads as a glitch.
       are the two seams.
 - [ ] Input is never blocked. Leave and Abandon do what they say mid-transition.
 
-### Phase 4 — Meeting the Lampwright
+### Phase 3 — Meeting the Lampwright
 
 Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
 pushes a `met` event, and the REPORT pays the crystal out at the end.
@@ -356,7 +352,7 @@ pushes a `met` event, and the REPORT pays the crystal out at the end.
 - [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
       through it.
 
-### Phase 5 — The danger retune
+### Phase 4 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -381,7 +377,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 6 — Unique gear
+### Phase 5 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -443,7 +439,7 @@ moving — see §2, balance is deliberately loose.
   one must never read as a demotion. Deferred deliberately: it may only feel bad
   because the opening hands you everything at once, and readable tooltips plus
   real selling may fix the feeling without touching the rate. Revisit after
-  Phase 2, and measure before changing anything.
+  Phase 1, and measure before changing anything.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that

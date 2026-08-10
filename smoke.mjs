@@ -336,9 +336,23 @@ const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
 // A crystal's room comes from its LEVEL, so nothing opens a level 1 one.
+// The shard still CLICKS — it arms, and lights whatever else would take it —
+// but the crystal it is standing on refuses, and says so.
 {
   const making = currencyButton('Shard of Making');
-  assert(!!making && making.disabled, 'nothing can put a modifier on a level 1 crystal');
+  assert(!!making, 'the dock stocks the adding currency');
+  making.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(
+    /no open slot/i.test(text('tooltip')),
+    'nothing can put a modifier on a level 1 crystal, and the shard says why',
+    text('tooltip')
+  );
+  making.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+  making.click();
+  assert(facets() === 0, 'and clicking it opens no room either', String(facets()));
+  assert($('craft-armed').hidden === false, 'it arms instead, to be pointed somewhere else');
+  making.click();
+  assert($('craft-armed').hidden === true, 'and clicking it again puts it away');
 }
 $('craft-return').click();
 
@@ -376,10 +390,17 @@ assert(rolled().length === 2, 'a second modifier was added', String(rolled().len
 
 // Two is all a tier 1 base has. A third has nowhere to go, whatever else you
 // own — there is no currency in the game that opens one.
-assert(
-  currencyButton('Shard of Making')?.disabled === true,
-  'and a tier 1 base stops at two'
-);
+{
+  const third = currencyButton('Shard of Making');
+  third.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(/no open slot/i.test(text('tooltip')), 'and a tier 1 base stops at two', text('tooltip'));
+  third.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+  const held = heldCount('Shard of Making');
+  third.click();
+  assert(rolled().length === 2, 'a third does not go on', String(rolled().length));
+  assert(heldCount('Shard of Making') === held, 'and nothing is spent trying');
+  third.click();
+}
 
 // --- no identifier ever reaches the screen --------------------------------
 // `npm run mods` checks the TEXT LAYER. This checks the DOM, which is a
@@ -466,8 +487,8 @@ assert(
   const unmaking = currencyButton('Shard of Unmaking');
   assert(!!unmaking, 'the dev kit stocks the removal currency');
   assert(
-    /choose a modifier/i.test(named(unmaking)),
-    'which asks you to choose rather than firing',
+    /pick what it goes on/i.test(named(unmaking)),
+    'which asks you to point it rather than firing',
     named(unmaking)
   );
   const before = rolled().length;
@@ -481,6 +502,41 @@ assert(
   facet.click();
   assert(rolled().length === before - 1, 'clicking one removes it', `${rolled().length} vs ${before}`);
   assert($('craft-armed').hidden === true, 'and puts the shard away afterwards');
+}
+
+// --- an armed shard lights what it can go on ------------------------------
+// The dock answers "which of these would take this" without a click each. A
+// dimmed slot is not hidden, because the whole point is that hovering it says
+// why — the refusal belongs on the item you were about to click.
+{
+  const unmaking = currencyButton('Shard of Unmaking');
+  unmaking.click();
+  const lit = filled('#inv-gear').filter((b) => b.classList.contains('slot--on'));
+  const dim = filled('#inv-gear').filter((b) => b.classList.contains('slot--dim'));
+  assert(lit.length > 0, 'arming lights what the shard would take', String(lit.length));
+  assert(dim.length > 0, 'and dims what it would not', String(dim.length));
+  assert(
+    lit.every((b) => !b.classList.contains('slot--dim')),
+    'and never both at once'
+  );
+
+  dim[0].dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(
+    /modifier|corrupt|slot/i.test(text('tooltip')),
+    'a dimmed item says why it is dimmed',
+    text('tooltip')
+  );
+  dim[0].dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+
+  // A lit one takes it, which is the point of lighting it. Unmaking is the
+  // targeted one, so it benches the piece and waits for a modifier rather
+  // than firing at whichever one the engine felt like.
+  assert(/pick a modifier/i.test(named(lit[0])), 'and a lit one offers to take it', named(lit[0]));
+  unmaking.click();
+  assert(
+    filled('#inv-gear').every((b) => !b.classList.contains('slot--dim')),
+    'putting the shard away clears the dock again'
+  );
 }
 
 // --- a one-way door says so before you open it ----------------------------
@@ -1521,7 +1577,7 @@ $('skills-close').click();
   // on the worn slot after. A cudgel has no rolled mods at all, which is how
   // the sheet's tooltip came to print "no modifiers" over the only line on it.
   const mace = filled('#inv-gear').find((b) => /cudgel|maul/i.test(named(b)));
-  assert(!!mace, 'the dev kit carries a mace to test with', named(filled('#inv-gear')[0]));
+  assert(!!mace, 'the dev kit carries a mace to test with', filled('#inv-gear').map(named).join(' | '));
 
   mace.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
@@ -1594,8 +1650,9 @@ assert($('sheet').hidden === true, 'character sheet closes');
 const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 {
   // One piece at a time lives in the menu, never on the click: a sale is the
-  // one action here you cannot take back.
-  const slot = filled('#inv-gear')[0];
+  // one action here you cannot take back. Not the mace, which a later check
+  // needs and which sorting the dock moved to the front.
+  const slot = filled('#inv-gear').find((b) => !/cudgel|maul/i.test(named(b)));
   slot.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
   const sell = all('#itemmenu .itemmenu__item').find((b) => /^sell for/i.test(b.textContent ?? ''));
   assert(!!sell, 'the menu offers to sell a piece', all('#itemmenu .itemmenu__item').map((b) => b.textContent).join(' | '));
@@ -1766,6 +1823,35 @@ assert(
   'page does not scroll',
   window.getComputedStyle(document.body).overflow
 );
+
+// --- sorting the dock -----------------------------------------------------
+// A limit you can see is only useful if you can arrange what is under it, and
+// the order is saved, so a sort you liked survives a reload. Last, because it
+// moves every slot and half the checks above pick a piece by where it sits.
+{
+  const order = () => filled('#inv-gear').map((b) => named(b));
+  const before = order();
+  $('inv-sort').click();
+  const after = order();
+  assert(after.length === before.length, 'sorting loses nothing', `${before.length} -> ${after.length}`);
+  assert(after.join('|') !== before.join('|') || before.length < 2, 'and actually reorders');
+  assert(
+    [...after].sort().join('|') === [...before].sort().join('|'),
+    'and holds exactly what it held'
+  );
+  $('inv-sort').click();
+  assert(order().join('|') === after.join('|'), 'and sorting twice changes nothing');
+
+  // By slot, in the order the character sheet draws them — the dock is what
+  // you scan before equipping, so that is the grouping being asked for.
+  const kinds = after.map((n) => (n.match(/Wear as ([A-Za-z ]+?)(?: \(|:)/) ?? [])[1] ?? '?');
+  const firstAt = kinds.map((k) => kinds.indexOf(k));
+  assert(
+    firstAt.every((at, i) => i === 0 || at <= firstAt[i - 1] || at === i),
+    'and every slot ends up in one run',
+    kinds.join(', ')
+  );
+}
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 

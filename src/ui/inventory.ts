@@ -15,7 +15,7 @@ import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
-import { CARRY, fitsSlot, sendToEnd, swapItems } from '../game/state';
+import { CARRY, fitsSlot, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
 import { dockSlotId } from './tutorial';
@@ -35,6 +35,9 @@ export interface InventoryHandler {
   actionFor(item: Item): { label: string; run: () => void } | null;
   /** Item the active screen has claimed — on the bench, or in the socket. */
   highlighted?(item: Item): boolean;
+  /** Why this item is not a candidate, or null when it is. Dimmed, not
+   *  hidden, so the answer is on the item you were about to click. */
+  dimmed?(item: Item): string | null;
 }
 
 /**
@@ -104,6 +107,10 @@ let currencyHandler: CurrencyHandler | null = null;
 
 export function initInventory(state: GameState): void {
   game = state;
+  ($('inv-sort') as HTMLButtonElement).onclick = () => {
+    sortInventory(game!);
+    renderInventory();
+  };
 }
 
 /** Screens call this when they take focus, and again when their state moves. */
@@ -141,12 +148,10 @@ function currencyTooltip(currency: CurrencyDef, stock: number): string {
   // On its own line as well as inside the sentence. A one-way door nobody saw
   // is a bug report, and this is the only one in the game.
   if (locksItem(currency)) lines.push('LOCKS THE ITEM — nothing can change it afterwards');
+  const why = currencyHandler?.blocked?.(currency);
+  if (why) lines.push(`— ${why}`);
   const action = currencyHandler?.actionFor(currency);
   if (action) lines.push(`— click to ${action.label.toLowerCase()}`);
-  else {
-    const why = currencyHandler?.blocked?.(currency);
-    if (why) lines.push(`— ${why}`);
-  }
   return lines.join('\n');
 }
 
@@ -189,6 +194,9 @@ function renderCurrencies(): void {
 
 function tooltip(item: Item): HTMLElement {
   const notes: string[] = [];
+  // First: it is the question you opened the tooltip to answer.
+  const why = handler?.dimmed?.(item);
+  if (why) notes.push(why);
   const all = actionsFor(item);
   const click = clickAction(item);
   if (click) notes.push(`click to ${click.label.toLowerCase()}`);
@@ -452,6 +460,7 @@ function fill(host: HTMLElement, items: Item[]): void {
     });
 
     if (handler?.highlighted?.(item)) btn.classList.add('slot--on');
+    if (handler?.dimmed?.(item)) btn.classList.add('slot--dim');
 
     if (action) {
       btn.onclick = () => {

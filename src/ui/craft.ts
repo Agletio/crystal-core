@@ -125,6 +125,18 @@ function renderItem(): void {
   body.hidden = !item;
   ($('craft-return') as HTMLButtonElement).disabled = !item;
 
+  // Before the early return: an armed shard with nothing benched is exactly
+  // the state that most needs a line saying what it is waiting for.
+  const banner = $('craft-armed');
+  const waiting =
+    armed && item && isTargeted(armed) && !canApply(item, armed)
+      ? 'click the modifier you want gone'
+      : 'click something lit in the dock';
+  banner.textContent = armed
+    ? `${armed.name} — ${waiting}. Click the shard again to put it away.`
+    : '';
+  banner.hidden = !armed;
+
   if (!item) return;
 
   const worn = EQUIP_SLOTS.find((s) => game.character.equipment[s.id]?.id === item.id);
@@ -201,13 +213,6 @@ function renderItem(): void {
 
   const list = $('modlist');
   list.replaceChildren();
-
-  // What an armed currency is waiting for. Nothing else on screen says a click
-  // has changed meaning, and a bench that silently eats one is a bug report.
-  $('craft-armed').textContent = armed
-    ? `${armed.name} — click the modifier you want gone. Click the shard again to put it away.`
-    : '';
-  ($('craft-armed') as HTMLElement).hidden = !armed;
 
   // Implicits first and visibly separate — they're part of the base, not
   // something you rolled, and no craft can touch them.
@@ -380,11 +385,37 @@ export function render(): void {
 /**
  * Clicking an inventory item opens it on the bench. It stays in the list,
  * highlighted — the selection is a reference, not a move.
+ *
+ * With a currency armed the dock answers a different question: which of these
+ * would this shard accept. Lit ones take it on the click; the rest dim and
+ * carry the refusal in their own tooltip, which is the point of dimming them
+ * rather than hiding them.
  */
 function itemHandler() {
   return {
-    actionFor: (item: Item) => ({ label: 'Open on bench', run: () => bench(item) }),
-    highlighted: (item: Item) => item.id === game.craftId,
+    actionFor: (item: Item) => {
+      const aim = armed;
+      if (!aim) return { label: 'Open on bench', run: () => bench(item) };
+      if (canApply(item, aim)) return null;
+      return {
+        // A targeted shard still needs a modifier named, so it benches the
+        // item and stays armed rather than firing at something unchosen.
+        label: isTargeted(aim) ? `pick a modifier on ${item.name}` : `use ${aim.name}`,
+        run: () => {
+          selectForCraft(game, item);
+          focused = null;
+          if (isTargeted(aim)) {
+            note(`Bench: ${item.name}`);
+            render();
+          } else {
+            use(aim);
+          }
+        },
+      };
+    },
+    highlighted: (item: Item) =>
+      armed ? canApply(item, armed) === null : item.id === game.craftId,
+    dimmed: (item: Item) => (armed ? canApply(item, armed) : null),
   };
 }
 
@@ -398,39 +429,35 @@ function itemHandler() {
  * currency you own that appears broken.
  */
 function currencyHandler() {
+  const arm = (currency: CurrencyDef) => ({
+    label: armed?.id === currency.id ? 'put it away' : 'pick what it goes on',
+    run: () => {
+      openCraft();
+      armed = armed?.id === currency.id ? null : currency;
+      render();
+    },
+  });
+
   return {
     actionFor: (currency: CurrencyDef) => {
       const item = craftItem(game);
-      if (!item) {
+      // An item on the bench that this shard accepts is the whole of the old
+      // flow, and the click keeps meaning what it meant. Everything else —
+      // nothing benched, a shard the benched item refuses, a targeted one
+      // still waiting for a modifier — arms it instead of dying.
+      if (item && !canApply(item, currency) && !isTargeted(currency)) {
         return {
-          label: 'open the bench',
+          label: `use on ${item.name}`,
           run: () => {
             openCraft();
-            note(`${currency.name} — put an item on the bench first`);
+            use(currency);
           },
         };
       }
-      if (canApply(item, currency)) return null;
-      // Targeted currencies arm rather than fire: the bench then answers the
-      // next click, and clicking the shard again puts it away.
-      if (isTargeted(currency)) {
-        return {
-          label: armed?.id === currency.id ? 'put it away' : 'choose a modifier',
-          run: () => {
-            openCraft();
-            armed = armed?.id === currency.id ? null : currency;
-            render();
-          },
-        };
-      }
-      return {
-        label: `use on ${item.name}`,
-        run: () => {
-          openCraft();
-          use(currency);
-        },
-      };
+      return arm(currency);
     },
+    // Still asked even when a click has something to do: the click arms the
+    // shard, and why the BENCHED item refuses it is a different question.
     blocked: (currency: CurrencyDef) => {
       const item = craftItem(game);
       return item ? canApply(item, currency) : null;
