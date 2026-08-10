@@ -9,6 +9,7 @@ import {
   CRYSTAL_QUESTS,
   EQUIP_SLOTS,
   FISSURE,
+  INTRO,
   RUN_SLOTS,
   SKILL_BY_ID,
   START_PRESETS,
@@ -88,6 +89,8 @@ export interface GameState {
   onboarded: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
+  /** Descents cleared, ever. What the opening's schedule is measured in. */
+  clears: number;
   /** What the Lampwright has already handed over. `giftWaiting` reads it. */
   given: string[];
   /** Index into the guided steps, or null when not running / finished. */
@@ -125,6 +128,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     craftId: null,
     onboarded: false,
     firstClearDone: false,
+    clears: 0,
     given: [],
     tutorialStep: null,
     quests: [],
@@ -168,6 +172,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
+  game.clears = mode === 'dev' ? INTRO.firstCrystalClear : 0; // past the schedule
   // The dev kit is armed and holds every crystal: nothing waits at the mouth.
   game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
   game.tutorialStep = null;

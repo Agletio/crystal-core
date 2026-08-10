@@ -426,17 +426,26 @@ not "fix" his lines by putting figures in them.
 **What is owed.** `Waiting` is everything the mouth is holding — a weapon, the
 scheduled crystal, and every quest the clear just finished — and `takeHandover`
 grants the lot in one panel. `GameState.given` is what has already been handed
-over; with `character.level` and `INTRO` it is the whole of the schedule, and
+over; with `GameState.clears` and `INTRO` it is the whole of the schedule, and
 order cannot break it since nothing reads a flag another step of the same
 report sets.
+
+**The schedule is counted in cleared descents, never in character levels.**
+`GameState.clears` goes up inside `buildReport` on a clear, before anything
+reads it, and `giftWaiting` is asked after the report — so the descent that
+just finished is one the schedule already knows about. A level would say the
+same thing in a number that moves every time the XP curve does. `heal()` reads
+the count off an older save's own milestones, once.
 
 - The **weapon**, on the first clear. `STARTER_WEAPON` in `src/data.ts` maps
   `SkillDef.category` to a base and `SkillDef.weapon` overrides it, so it is one
   the chosen skill can swing. `starterWeapon()` resolving to nothing is a demo
   failure rather than a fallback.
-- The **first crystal**, at `INTRO.firstCrystalLevel`, with a Shard of Making
-  beside it. It is a LEVEL 2 crystal: level 1 holds no modifiers at all, and the
-  meeting is followed by the craft that teaches what one does to a room.
+- The **first crystal**, on the `INTRO.firstCrystalClear`th cleared descent —
+  the second, so one clear teaches wearing and crafting and the next is about
+  what a crystal is. It is a LEVEL 2 crystal (`LAMPWRIGHT.level`): level 1 holds
+  no modifiers at all, and the meeting is followed by the craft that teaches
+  what one does to a room. A Shard of Making comes with it.
 - Every **quest** in `CRYSTAL_QUESTS`, which is the other three Normal crystals
   as well as the two other worlds. `CrystalQuest.need` is a list of clauses
   ANDed together; `kind` names an entry in `QUEST_CONDITIONS` in
@@ -502,7 +511,7 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   happens at a random moment" belongs as a branch inside an existing step's
   `text`/`target`, not as a step of its own. The meeting is the worked example.
   There are **fifteen** steps: enter, watch, meet, take_haul, to_shop,
-  buy_making, select_weapon, use_making, equip, descend, level, meet_crystal,
+  buy_making, select_weapon, use_making, equip, descend, again, meet_crystal,
   bench_crystal, craft_crystal, socket. The demo walks the same list headlessly
   with a hand-written action per step — add a step and that action list needs
   one too, or the walkthrough reports the opening as STUCK.
@@ -510,15 +519,10 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   a minute for the Lampwright panel and fails the run if a first descent never
   produces one. The meeting is at the END of a cleared descent now, so that
   wait has to cover a whole one rather than part of it.
-- **The guide plays the opening in REAL TIME, and one step waits on a level.**
-  `level` sits through however many descents `INTRO.firstCrystalLevel` costs —
-  measured at 24, about eleven minutes — which is not a test, so `guide.mjs`
-  ages the SAVE instead and reloads. It has to do that through
-  `page.addInitScript`, not by writing localStorage and then reloading:
-  `startAutosave` flushes the live game on `pagehide`, so leaving the page
-  overwrites anything written before it. The init script runs on the way IN,
-  after that flush. The harness asserts the edit took, because a silent failure
-  there reads as the step being stuck.
+- **The guide plays the opening in REAL TIME**, and every descent in it is
+  played. `again` sits through exactly one — the second clear, which is what
+  `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to
+  reach a step.
 - **The opening ends inside a popup.** The last step sockets the crystal from the
   collection, so `guide.mjs` closes whatever is open before its post-opening
   work — the tree, the dock and the worn column all click header buttons a

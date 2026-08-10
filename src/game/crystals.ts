@@ -32,8 +32,8 @@ export function ownedCrystals(game: GameState): Item[] {
 
 /**
  * Everything owed at the mouth of a cleared descent. SCHEDULED off what has
- * been given, the character sheet and the clear itself — never rolled, so a
- * screen can quote it rather than describe it.
+ * been given, how many descents have been cleared and the clear itself — never
+ * rolled, so a screen can quote it rather than describe it.
  */
 export interface Waiting {
   weapon: boolean;
@@ -47,7 +47,7 @@ export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null
   const crystal =
     !weapon &&
     !given.includes('crystal') &&
-    game.character.level >= INTRO.firstCrystalLevel;
+    (game.clears ?? 0) >= INTRO.firstCrystalClear;
   const quests = clear ? openQuests(game).filter((q) => questMet(q, clear)) : [];
   if (!weapon && !crystal && quests.length === 0) return null;
   return { weapon, crystal, quests };
@@ -61,9 +61,9 @@ export function giftSchedule(game: GameState): string {
     return `${who} meets you at the mouth of your first cleared descent.`;
   }
   if (!given.includes('crystal')) {
-    const away = INTRO.firstCrystalLevel - game.character.level;
+    const away = INTRO.firstCrystalClear - (game.clears ?? 0);
     return away > 0
-      ? `${who} brings your first crystal at level ${INTRO.firstCrystalLevel} — ${away} to go.`
+      ? `${who} brings your first crystal at ${INTRO.firstCrystalClear} cleared descents — ${away} to go.`
       : `${who} is waiting at the mouth of your next cleared descent.`;
   }
   return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;

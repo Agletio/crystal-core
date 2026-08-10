@@ -1231,9 +1231,9 @@ export const LAMPWRIGHT = {
 /** The opening, in numbers: the one stretch where what happens next is
  *  scheduled rather than earned. */
 export const INTRO = {
-  /** Below this a socketed crystal is only a longer run than the one you
-   *  barely survived. */
-  firstCrystalLevel: 5,
+  /** CLEARED descents, not a character level: the first teaches wearing and
+   *  crafting, the second is the one about what a crystal is. */
+  firstCrystalClear: 2,
   /** Forced onto that crystal by the first Shard of Making spent on it, at its
    *  cheapest tier, so a first crystal can never be what walls the game. */
   scriptedMod: 'layout_maze',

@@ -135,10 +135,12 @@ shoulders-up, because a 24-grid silhouette blown up is a blob. What he SAYS is
 flavour — he names no screen, no currency and no number, since teaching the
 buttons is the guided opening's job.
 
-Two things are SCHEDULED, off `GameState.given` and the character sheet: the
-first weapon on the first clear, picked off the skill (`STARTER_WEAPON`), and
-the first Normal crystal at `INTRO.firstCrystalLevel` — a level 2, with a Shard
-of Making beside it, because the meeting is followed by the craft that teaches
+Two things are SCHEDULED, off `GameState.given` and `GameState.clears` — a
+count of cleared descents, since a character level drifts every time the XP
+curve moves. The first weapon on the first clear, picked off the skill
+(`STARTER_WEAPON`), and the first Normal crystal on the
+`INTRO.firstCrystalClear`th — the second — a level 2, with a Shard of Making
+beside it, because the meeting is followed by the craft that teaches
 what a modifier does to a room. That roll is the one arranged thing in the game:
 `crystal.meta.scripted` names the family, `add_mod` takes its cheapest tier and
 clears the mark. It rides on the CRYSTAL so the currency lies to nobody.

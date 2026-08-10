@@ -102,8 +102,6 @@ let dark = 0;
 let escaped = false;
 /** The opening now contains two meetings, and both have to be walked through. */
 let met = 0;
-/** Whether the save has been aged past the level the second meeting waits on. */
-let aged = false;
 let metAt = '';
 
 // Generous: a descent takes a while, and one step is "watch it happen".
@@ -126,38 +124,6 @@ for (let turn = 0; turn < 400; turn++) {
     met++;
     metAt = now.step;
     trace.push(`Met         the Lampwright, at the mouth (${met})`);
-  }
-
-  // The step that waits on character level. Reaching it honestly is two dozen
-  // bare descents — eleven minutes of watching the same room, none of it a
-  // click. Age the SAVE instead, in the public format the game itself writes,
-  // and reload: the descent that triggers the meeting is still played for real.
-  const wants = now.hint.match(/at level (\d+) someone is waiting/i);
-  if (!aged && wants) {
-    aged = true;
-    // On LOAD, not before the reload: leaving the page flushes the live game
-    // over anything written here first, so the edit has to land after that.
-    await page.addInitScript((level) => {
-      const key = 'crystal-core.save';
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
-      if (!save?.character) return;
-      save.character.level = level;
-      localStorage.setItem(key, JSON.stringify(save));
-    }, Number(wants[1]));
-    await page.reload();
-    await page.waitForTimeout(900);
-    const back = await state();
-    const at = await page.evaluate(() => {
-      const save = JSON.parse(localStorage.getItem('crystal-core.save') ?? 'null');
-      return save ? `level ${save.character.level}, held ${JSON.stringify(save.given)}` : 'no save';
-    });
-    trace.push(`Aged        the save: ${at}, resumed on ${back.step}, ring ${back.ring ?? 'none'}`);
-    if (Number(wants[1]) !== (await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('crystal-core.save') ?? '{}').character?.level))) {
-      problems.push('ageing the save did not take — the second meeting is unreachable');
-    }
-    if (back.done) problems.push('ageing the save dropped the guide entirely');
-    continue;
   }
 
   if (now.trapped) {

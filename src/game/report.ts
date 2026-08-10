@@ -59,6 +59,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let levelled: CrystalGain[] = [];
 
   if (cleared) {
+    game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
+
     for (const [id, amount] of Object.entries(run.loot.currency)) {
       const n = round(amount);
       if (n <= 0) continue;

@@ -1527,9 +1527,9 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     // Close the sheet, dismiss the report, enter again.
     () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
-    // Several descents of the loop running itself. The LEVEL is what ends it.
+    // One more descent of the loop running itself. The COUNT is what ends it.
     () => {
-      game.character.level = INTRO.firstCrystalLevel;
+      game.clears = INTRO.firstCrystalClear;
       ctx.top = 'met';
     },
     () => {
@@ -3948,17 +3948,22 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       JSON.stringify(giftWaiting(g))
     );
 
-    // The crystal is the SECOND meeting, and it is gated on the character
-    // sheet: a level 1 character with a crystal socketed is running twice the
-    // descent it just barely survived.
-    g.character.level = INTRO.firstCrystalLevel - 1;
+    // The crystal is the SECOND meeting, counted in cleared descents: the
+    // first one teaches wearing and crafting, and this one is about what a
+    // crystal does to a room.
+    check(
+      g.clears === 1,
+      'and the clear it banked is counted',
+      String(g.clears)
+    );
+    g.clears = INTRO.firstCrystalClear - 1;
     check(
       giftWaiting(g) === null &&
-        giftSchedule(g).includes(`level ${INTRO.firstCrystalLevel}`),
-      `and says how far off the first crystal is below level ${INTRO.firstCrystalLevel}`,
+        giftSchedule(g).includes(`${INTRO.firstCrystalClear} cleared descents`),
+      `and says how far off the first crystal is below ${INTRO.firstCrystalClear} clears`,
       giftSchedule(g)
     );
-    g.character.level = INTRO.firstCrystalLevel;
+    g.clears = INTRO.firstCrystalClear;
     const owed = giftWaiting(g);
     check(owed?.crystal === true, 'and is waiting with one at it', JSON.stringify(owed));
 
@@ -4431,6 +4436,24 @@ rule('THE SAVE — does a save survive the game changing under it?');
     'and a quest that was cut costs its entry, never the crystal it paid',
     game.quests.join(', ')
   );
+
+  // Written before descents were counted. Only the first crystal is scheduled
+  // on the number, so a save already holding one is past all of what it says.
+  {
+    const banked = createGame('fresh');
+    banked.firstClearDone = true;
+    delete (banked as { clears?: number }).clears;
+    heal(banked);
+    const held = createGame('fresh');
+    held.given = ['weapon', 'crystal'];
+    delete (held as { clears?: number }).clears;
+    heal(held);
+    check(
+      banked.clears === 1 && held.clears >= INTRO.firstCrystalClear,
+      'a save from before descents were counted reads the count off its milestones',
+      `${banked.clears} after one clear, ${held.clears} already holding the crystal`
+    );
+  }
   check(
     SKILL_BY_ID[game.character.skillId] !== undefined,
     'a cut skill is replaced by a real one',

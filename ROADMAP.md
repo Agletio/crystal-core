@@ -29,39 +29,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The first crystal, on the second descent
-
-**What is true today.** `INTRO.firstCrystalLevel` is 5 and `giftWaiting` in
-`src/game/crystals.ts` reads `game.character.level` against it.
-
-**Why it is wrong.** Measured, in the bare Fissure: level 2 arrives on the
-FIRST clear — the same meeting that hands over the weapon — and level 3 not
-until the fifth. Neither is "the second descent", which is what the opening
-wants: one clear that teaches wearing and crafting, then a second that is about
-what a crystal is. A character level cannot express it, and it drifts every
-time the XP curve moves.
-
-- [ ] `INTRO.firstCrystalLevel` becomes `INTRO.firstCrystalClear`, **2**. A
-      COUNT of cleared descents, not a level.
-- [ ] `GameState` gains the count — `heal()` derives it for an older save from
-      what it already holds, and the dev preset is past it.
-- [ ] `giftWaiting` reads it. Order is already safe: `src/ui/run.ts` asks after
-      `buildReport`, so the clear being counted is the one that just finished.
-- [ ] `giftSchedule` says it in descents: "one more descent", not a level.
-- [ ] The guided opening's `level` step loses its level and becomes one more
-      descent. Its hint quotes `INTRO`, so it follows the constant.
-- [ ] **`guide.mjs` stops ageing the save.** The `addInitScript` hack exists
-      only because the step waited two dozen descents; at two it just plays
-      them. Delete it, the assertion that it took, and the rule in `RULES.md`
-      that explains why it had to be an init script.
-
-**What must not break.** `npm run guide` walks both meetings with a real
-pointer, and this is the change that makes it walk them honestly. The demo's
-guided-opening walkthrough sets a level to reach the step — that becomes a
-clear count. `npm run smoke` reads what the collection screen says about the
-next meeting.
-
-### Phase 2 — The Fissure is a cave, and every zone moves
+### Phase 1 — The Fissure is a cave, and every zone moves
 
 **What is true today.**
 
@@ -111,7 +79,7 @@ every room reachable, entrance and exit connected. A rounder cut must not strand
 a room. Both renderers must agree, so anything per-tile stays a pure function in
 `render/renderer.ts` — see `RULES.md`.
 
-### Phase 3 — Walking out
+### Phase 2 — Walking out
 
 One moment of the game: what happens between the last monster and the next
 descent. It is currently three things happening on one tile at once.
@@ -169,7 +137,7 @@ a headless run reach a meeting it now has to walk to. The report reads
 `RunState.elapsed`, and `normal_iv` asks for a clear inside 90 seconds — a walk
 added to every descent moves that, and the demo measures it.
 
-### Phase 4 — Three save slots
+### Phase 3 — Three save slots
 
 **What is true today.** `src/game/save.ts` writes ONE localStorage key
 (`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
@@ -210,7 +178,7 @@ these functions, and its "every collection a save can hold items in claims its
 ids" list goes through `readSave`. The guided opening survives a reload twice
 (`RULES.md`) — that has to keep working with a live slot.
 
-### Phase 5 — Every number said out loud
+### Phase 4 — Every number said out loud
 
 The rule is in `RULES.md`. This is the sweep, and the check that keeps it swept.
 

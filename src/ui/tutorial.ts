@@ -246,17 +246,17 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
   },
-  // A gap of several descents. The loop runs itself, so there is nothing to
-  // click and nothing to teach until the level arrives.
+  // The loop runs itself, so there is nothing to click and nothing to teach
+  // until the descent the crystal is scheduled on comes back up.
   {
-    id: "level",
+    id: "again",
     text: (ctx) =>
       blocked(ctx)
         ? "Close this and keep going."
         : ctx.phase === "running"
           ? "Keep going."
           : "Go again.",
-    hint: `Coming back up is what levels you. At level ${INTRO.firstCrystalLevel} someone is waiting with a crystal.`,
+    hint: `Every descent you come back up from is one banked. Someone is waiting with a crystal at ${INTRO.firstCrystalClear}.`,
     target: (ctx) =>
       ctx.phase === "running"
         ? viaHeader(ctx, "run-loot")
