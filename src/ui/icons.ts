@@ -4,6 +4,7 @@
  * art, and swappable for a real asset one function at a time.
  */
 import { monsterArt } from '../render/sprites';
+import { portraitOf } from '../render/portraits';
 import { readPalette } from '../render/renderer';
 import type { CurrencyDef, Item } from '../types';
 
@@ -962,6 +963,17 @@ export function categoryIcon(id: string, size = 22): SVGSVGElement {
 export function beastIcon(id: string, size = 34): SVGSVGElement | null {
   const art = monsterArt(readPalette(document.body), id, 0, 'common');
   return art ? sprite(art.rows, art.key, size, `beast-${id}`) : null;
+}
+
+/**
+ * The face of whoever is speaking, at its own grid rather than the map's. Falls
+ * back to the map sprite, so a speaker with no portrait drawn yet is a small
+ * picture rather than an empty box.
+ */
+export function portraitIcon(id: string, size = 96): SVGSVGElement | null {
+  const art = portraitOf(id);
+  if (!art) return beastIcon(id, size);
+  return sprite(art.rows, art.ink(readPalette(document.body)), size, `face-${id}`);
 }
 
 export function itemIcon(item: Item, size = 26): SVGSVGElement {

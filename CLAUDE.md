@@ -115,6 +115,12 @@ and the loot it walks you out with is already banked. `giftWaiting` is what is
 owed, `takeHandover` is the panel granting it, and `giftSchedule` is the same
 answer in words for the collection screen.
 
+The panel draws a PORTRAIT, not the map sprite: `PORTRAITS` in
+`src/render/portraits.ts` is a separate table at grid 48, one frame,
+shoulders-up, because a 24-grid silhouette blown up is a blob. What he SAYS is
+flavour — he names no screen, no currency and no number, since teaching the
+buttons is the guided opening's job.
+
 Two things are SCHEDULED, off `GameState.given` and the character sheet: the
 first weapon on the first clear, picked off the skill (`STARTER_WEAPON`), and
 the first Normal crystal at `INTRO.firstCrystalLevel` — a level 2, with a Shard

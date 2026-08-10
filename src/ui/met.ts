@@ -10,7 +10,7 @@ import type { Handover, Waiting } from '../game/crystals';
 import { takeHandover } from '../game/crystals';
 import type { GameState } from '../game/state';
 import { itemCard } from './itemcard';
-import { beastIcon, currencyIcon, itemIcon } from './icons';
+import { currencyIcon, itemIcon, portraitIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { note } from './history';
 
@@ -57,7 +57,7 @@ export function openMet(waiting: Waiting): void {
   // you recognise rather than something you read.
   const face = $('met-face');
   face.replaceChildren();
-  const portrait = beastIcon(LAMPWRIGHT.sprite, 44);
+  const portrait = portraitIcon(LAMPWRIGHT.sprite, 120);
   if (portrait) face.append(portrait);
   $('met-title').textContent = words.title;
   ($('met-take') as HTMLButtonElement).textContent = words.button;

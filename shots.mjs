@@ -207,14 +207,22 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4300);
   await shoot('descent');
 
-  // The Lampwright. The first meeting is certain, but it fires on a kill count
-  // the run rolled — up to seven tenths of the map — so the wait has to cover
-  // most of a descent rather than a guess at a few seconds.
+  // The Lampwright. The meeting is at the END of a cleared descent, so the
+  // wait has to cover a whole one rather than part of it.
   try {
     await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
       timeout: 60000,
     });
     await shoot('lampwright');
+    // A FACE, at its own grid. A map sprite blown up is a silhouette, and this
+    // is the only place in the game anybody is looked at rather than fought.
+    const face = await page.evaluate(() => {
+      const svg = document.querySelector('#met-face svg');
+      return svg ? { name: svg.getAttribute('data-sprite'), box: svg.getAttribute('viewBox') } : null;
+    });
+    if (face?.name !== 'face-lampwright' || face?.box !== '0 0 48 48') {
+      problems.push(`${vp.name}: the panel is not showing a portrait — ${JSON.stringify(face)}`);
+    }
     await page.evaluate(() => document.getElementById('met-take')?.click());
   } catch {
     problems.push(`${vp.name}: the first descent never met the Lampwright`);

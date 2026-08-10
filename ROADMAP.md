@@ -50,11 +50,12 @@ retune — the deep end is a wall now, and danger stops paying for what a cap ha
 already eaten — and unique gear, six named pieces that grant switches through
 the same table the trees use, one world at a time.
 
-**§5 holds five phases**, all of them the user's: how the Lampwright looks and
-talks, a Fissure that reads as a cave and three worlds that move, a walk to the
-way out with the finale climbing out of it, three save slots, and a sweep that
-puts a figure on every number the game currently describes in words. The last
-one is also a standing rule now — §2.
+The Lampwright has a face now — a portrait at its own grid, a hood and a lamp
+on a crook — and he talks like someone who lives down there rather than like a
+manual. **§5 holds four phases**, all of them the user's: a Fissure that reads
+as a cave and three worlds that move, a walk to the way out with the finale
+climbing out of it, three save slots, and a sweep that puts a figure on every
+number the game describes in words. The last is also a standing rule — §2.
 
 ### Keeping room for a fifth socket
 
@@ -185,12 +186,16 @@ can be redrawn without the pipeline caring. Being in `BEASTIARY` does NOT make
 something a monster — `MONSTERS` is a separate table, and the demo only asks
 that every monster has art, not that every art is a monster.
 
-**The same art draws in a panel as on the map.** `monsterArt` is exported from
-`src/render/sprites.ts` and `beastIcon(id, size)` in `src/ui/icons.ts` turns it
-into an inline SVG — same grids, same inks, and the palette is read at CALL time
-off the live document, so a colour change reaches both. The Lampwright's own
-face on `#met-face` is the one use; anything that has to say WHO is speaking
-should use it rather than a word.
+**A sprite is not a portrait.** Two tables, two grids, two jobs. `BEASTIARY`
+is what walks around, at 24, and `beastIcon(id, size)` in `src/ui/icons.ts`
+turns one into an inline SVG. `PORTRAITS` in `src/render/portraits.ts` is who is
+SPEAKING, at 48, one frame, shoulders-up — `CELL` binds the map's offscreen
+canvas and nothing else, so a portrait is free to be bigger than the thing it
+stands in for, and the demo insists that it is. `portraitIcon` falls back to
+`beastIcon`, so a speaker nobody has drawn yet is a small picture rather than an
+empty box. Both read their palette at CALL time, so a colour change reaches
+both, and both are held to `wellFormed(rows, grid)` — every row exactly `grid`
+wide, trailing dots included.
 
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
@@ -433,6 +438,12 @@ is the same answer in words, for the collection screen. A meeting is a HALT of
 the idle loop — `halt = 'met'` — landing on the same report as any other ending,
 so the clear is banked before anyone is standing there.
 
+**The Lampwright speaks in FLAVOUR.** `LAMPWRIGHT.first`, `.crystal` and
+`.again` in `src/data.ts` describe what he has seen the rock do and name no
+screen, no currency and no number. Teaching what to click is the guided
+opening's job, and §2's numbers rule is about mechanics rather than voice — do
+not "fix" his lines by putting figures in them.
+
 **What is owed.** `Waiting` is everything the mouth is holding — a weapon, the
 scheduled crystal, and every quest the clear just finished — and `takeHandover`
 grants the lot in one panel. `GameState.given` is what has already been handed
@@ -491,60 +502,7 @@ an assumption. A phase that guesses is a phase that has to be undone.
 Anything in §7 is deferred by decision rather than queued; ask before turning
 one of those into a phase.
 
-### Phase 1 — The Lampwright, drawn and speaking
-
-Two halves of one character: what he looks like when he talks to you, and what
-he says. They go together because the words have to suit the picture.
-
-**What is true today.**
-
-- The panel's portrait is `beastIcon(LAMPWRIGHT.sprite, 44)` in `src/ui/met.ts`,
-  which is `monsterArt` — the SAME 24×24 map sprite, blown up. It is a figure at
-  map scale, so at 44px it is a blob with two eye pixels.
-- The map sprite itself (`lampwright` in `src/render/bestiary.ts`, `grid: 24`,
-  two frames) is a rectangle with a lamp beside it. It is not a person and it is
-  not hooded.
-- `LAMPWRIGHT.first`, `.crystal` and `.again` in `src/data.ts` are RULES read
-  aloud: "spend a Shard of Making on it: one modifier, rolled", "socket it and
-  the descent runs longer". The screens already say all of that.
-
-**Why it is wrong.** He is the only person in the game and the only one who
-ever speaks, and he currently reads as a crate with a lantern reciting the
-manual. A talking head is worth drawing properly precisely because there is one.
-
-- [ ] A PORTRAIT is a different asset from a map sprite, at its own grid.
-      Shoulders-up, one frame, in a new `PORTRAITS` table (`src/render/portraits.ts`)
-      keyed the same way the bestiary is, drawn by the same `rows`/`Tone`
-      machinery so colours still come from the palette at call time (§3).
-- [ ] The grid is **48**, not 24. `CELL = 48` binds the map's offscreen canvas
-      and nothing else; a portrait is inline SVG through `sprite()` in
-      `src/ui/icons.ts`, which takes any grid. This is the one place in the game
-      that gets detail, and it should look like a face rather than a silhouette.
-- [ ] `src/ui/met.ts` draws the portrait, falling back to `beastIcon` if a
-      speaker has no portrait — so a second speaker is one table entry.
-- [ ] THEN the map sprite is redrawn from it, at 24, so the two are the same
-      person: a **hooded figure** carrying a **lantern on a staff**, gone strange
-      from living down there. The lamp is the read at map scale — it is what
-      `LAMPWRIGHT.seen` already promises ("A lantern, further back than you have
-      been").
-- [ ] The speeches become FLAVOUR. He describes what he has seen the rock do,
-      not what the button does: carrying a crystal makes the Fissure go on and
-      on; a crystal changes the longer you hold it; something about the shard
-      that reads as a thing he does rather than a step you take. Nothing in his
-      mouth names a screen, a currency's effect or a number — §2's numbers rule
-      is about mechanics and does not reach him.
-- [ ] The guided opening keeps teaching the mechanics, because it is the thing
-      that points at buttons. Moving that job off the dialogue is the point:
-      the tutorial says what to click, the Lampwright says what the place is.
-
-**What must not break.** `npm run shots` fails the run if a first descent never
-produces the panel, and photographs it at two sizes — a 48-grid portrait must
-not push the panel out of its card. `npm run guide` clicks `met-take` twice, and
-`npm run smoke` checks `#met-face` holds a sprite and sits left of the title.
-The demo's art checks hold every bestiary entry to `wellFormed(frames, grid)`;
-whatever table portraits live in needs the same check or it has none.
-
-### Phase 2 — The Fissure is a cave, and every zone moves
+### Phase 1 — The Fissure is a cave, and every zone moves
 
 **What is true today.**
 
@@ -585,7 +543,7 @@ every room reachable, entrance and exit connected. A rounder cut must not strand
 a room. Both renderers must agree, so anything per-tile stays a pure function in
 `render/renderer.ts` (§3).
 
-### Phase 3 — Walking out
+### Phase 2 — Walking out
 
 **What is true today.** `spawnFinale()` in `src/sim/run.ts` fires the moment the
 flood finds nothing reachable left, and rings the whole encounter around
@@ -619,7 +577,7 @@ play whole descents. The report reads `RunState.elapsed`, and a quest asks for a
 clear inside 90 seconds (`normal_iv`) — a walk added to every descent moves that
 number, and the demo measures it.
 
-### Phase 4 — Three save slots
+### Phase 3 — Three save slots
 
 **What is true today.** `src/game/save.ts` writes ONE localStorage key
 (`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
@@ -651,7 +609,7 @@ these functions, and its "every collection a save can hold items in claims its
 ids" list goes through `readSave`. The guided opening survives a reload twice
 (§8) — that has to keep working with a live slot.
 
-### Phase 5 — Every number said out loud
+### Phase 4 — Every number said out loud
 
 The rule is §2. This is the sweep, and the check that keeps it swept.
 

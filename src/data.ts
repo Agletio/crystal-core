@@ -1190,20 +1190,24 @@ export const LAMPWRIGHT = {
   name: 'the Lampwright',
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   /** Said in the log the moment they appear, before you have walked over. */
-  seen: 'A lantern, further back than you have been. Someone is waiting.',
+  seen: 'A lantern, further back than you have been. Something is holding it up.',
   /** Level 2, because a level 1 crystal holds nothing and the crystal meeting
    *  is followed by the craft that teaches what a modifier does to a room. */
   level: 2,
   family: 'normal' as MonsterFamily,
 
-  /** What is said at the mouth. The FIRST is the weapon, and teaches the two
-   *  things you do with one. Every meeting after is short. */
+  /**
+   * What is said at the mouth. FLAVOUR, not instruction: the guided opening is
+   * what points at buttons, and he has been down there long enough that he is
+   * no good at explaining anything. Nothing in his mouth names a screen, a
+   * currency or a number — §2's numbers rule is about mechanics, not voice.
+   */
   first: {
     title: 'The Lampwright',
     said: [
-      'You came back up. Most do not. Here — I have no use for it and you have walked out of there with nothing.',
-      'Put it on before you go down again. Then take it to a bench and spend a Shard of Making on it: one modifier, rolled, and it is yours rather than something you found.',
-      'The shop sells those and nothing else worth having. Everything else on a bench comes out of the rock.',
+      'You came back up. Most do not. I hear the ones that do not, sometimes, still going.',
+      'You went down there with nothing in your hands. Do not do that again. Take this one — I have carried it a long way and it has never once been any use to me.',
+      'Things that come out of the rock can be argued with. Not much. A little. You will find out what I mean and then you will not stop.',
     ],
     button: 'Take it',
   },
@@ -1211,15 +1215,15 @@ export const LAMPWRIGHT = {
   crystal: {
     title: 'The Lampwright',
     said: [
-      'You have walked out of there enough times to be worth this one. It is a crystal, and it is what the Fissure is for.',
-      'Socket it and the descent runs longer. Longer is harder, and that is the whole of it — nothing down there makes a monster stronger.',
-      'Spend the shard on it first, at a bench. One modifier, and you will see what a modifier does to a room.',
+      'Now this. I have been keeping it for whoever came back up enough times, and that is you.',
+      'Carry one of these down and the Fissure goes on. And on. Same crack, same rock, and it does not end when it used to end. I have never worked out where the extra comes from.',
+      'And it changes, the longer you hold it. Slowly. Whatever you feed it, it wants the same thing again.',
     ],
     button: 'Take it',
   },
   again: {
     title: 'The Lampwright',
-    said: ['You came back up again, and you went and got this one. Here.'],
+    said: ['You went and got this one. I only carried it up.'],
     button: 'Take it',
   },
 };

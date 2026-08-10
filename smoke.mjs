@@ -1072,8 +1072,8 @@ assert(
 
 
 // --- the Lampwright's panel ------------------------------------------------
-// Their own sprite in the corner of the box, so who is talking is something
-// you recognise rather than something you read. Same art the map draws.
+// A FACE in the corner of the box, at its own grid — a map sprite blown up is
+// a silhouette, and this is the only place in the game anyone is looked at.
 {
   assert($('met-face') !== null, 'the meeting panel has somewhere to put a face');
   assert(

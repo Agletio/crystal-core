@@ -80,6 +80,7 @@ import {
 } from './mods';
 import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, wellFormed } from './render/sprites';
+import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
@@ -1126,6 +1127,33 @@ rule('SPRITES — is the pixel art well formed?');
     problems.length === 0,
     `all ${sheets} sprites are square on every frame, at ${grids.join(' and ')}`,
     problems.join('; ')
+  );
+
+  // Portraits are their own grid and their own table, so they need their own
+  // pass — a face is the one drawing anybody actually looks at.
+  const faces = Object.entries(PORTRAITS).flatMap(([name, art]) =>
+    wellFormed([art.rows], art.grid).map((b) => `${name} ${b}`)
+  );
+  const unlit: string[] = [];
+  for (const [name, art] of Object.entries(PORTRAITS)) {
+    const key = art.ink(PALETTE);
+    const used = new Set(art.rows.join('').split('').filter((c) => c !== '.'));
+    for (const ch of used) if (!key[ch]) unlit.push(`${name}: '${ch}' has no ink`);
+  }
+  check(
+    faces.length === 0 && unlit.length === 0,
+    `all ${Object.keys(PORTRAITS).length} portraits are square, and every character in one has an ink`,
+    [...faces, ...unlit].join('; ')
+  );
+  // A portrait is drawn to be READ, so it has to be bigger than the map sprite
+  // it stands in for — that is the whole reason the table exists.
+  const small = Object.entries(PORTRAITS)
+    .filter(([id, art]) => art.grid <= (BEASTIARY[id]?.grid ?? 0))
+    .map(([id]) => id);
+  check(
+    small.length === 0,
+    'and drawn at a bigger grid than the sprite that walks around',
+    small.join(', ')
   );
 
   // Every monster the tables can spawn has to have a drawing, or a pack of
