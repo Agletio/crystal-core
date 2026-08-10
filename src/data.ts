@@ -524,9 +524,9 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['density', 'quantity'],
     tiers: [
-      { ilvl: 60, weight: 200, stats: [{ stat: 'packSize', form: 'inc', range: [30, 40] }], name: 'Swarming' },
-      { ilvl: 30, weight: 600, stats: [{ stat: 'packSize', form: 'inc', range: [18, 28] }], name: 'Teeming' },
-      { ilvl: 1, weight: 1000, stats: [{ stat: 'packSize', form: 'inc', range: [8, 16] }], name: 'Crowded' },
+      { ilvl: 60, weight: 200, stats: [{ stat: 'packSize', form: 'inc', range: [45, 60] }], name: 'Swarming' },
+      { ilvl: 30, weight: 600, stats: [{ stat: 'packSize', form: 'inc', range: [27, 42] }], name: 'Teeming' },
+      { ilvl: 1, weight: 1000, stats: [{ stat: 'packSize', form: 'inc', range: [12, 24] }], name: 'Crowded' },
     ],
   },
   {
@@ -536,8 +536,8 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['density'],
     tiers: [
-      { ilvl: 45, weight: 300, stats: [{ stat: 'packCount', form: 'inc', range: [20, 30] }] },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [8, 18] }] },
+      { ilvl: 45, weight: 300, stats: [{ stat: 'packCount', form: 'inc', range: [30, 45] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [12, 27] }] },
     ],
   },
   // Reward is derived from danger, so no crystal modifier is pure upside: a mod
@@ -592,8 +592,8 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger', 'fire'],
     tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [30, 50] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [12, 25] }] },
+      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [225, 375] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [35, 75] }] },
     ],
   },
   {
@@ -603,9 +603,9 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Savagery', stats: [{ stat: 'monsterDamage', form: 'inc', range: [60, 85] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterDamage', form: 'inc', range: [35, 50] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterDamage', form: 'inc', range: [15, 30] }] },
+      { ilvl: 60, weight: 180, name: 'of Savagery', stats: [{ stat: 'monsterDamage', form: 'inc', range: [450, 640] }] },
+      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterDamage', form: 'inc', range: [175, 250] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterDamage', form: 'inc', range: [45, 90] }] },
     ],
   },
   {
@@ -615,9 +615,9 @@ export const CRYSTAL_MODS: ModDef[] = [
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Endurance', stats: [{ stat: 'monsterLife', form: 'inc', range: [55, 75] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterLife', form: 'inc', range: [30, 45] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterLife', form: 'inc', range: [12, 25] }] },
+      { ilvl: 60, weight: 180, name: 'of Endurance', stats: [{ stat: 'monsterLife', form: 'inc', range: [400, 560] }] },
+      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterLife', form: 'inc', range: [150, 225] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterLife', form: 'inc', range: [35, 75] }] },
     ],
   },
   {
@@ -1976,23 +1976,28 @@ export const MONSTER_RANGED_SKILL = 'bolt';
 // dangerous the descent has become — so a roll is "how much of this can my
 // character eat", and a build that shrugs off one kind is paid extra for it.
 // `weight` is how dangerous a point of a stat is, monster damage at 1.0.
-// `rewards` is whether that danger PAYS — density does not, because more
-// monsters already pay you in extra kills.
+// `rewards` is whether it PAYS — density does not, since more monsters already
+// pay you in extra kills.
 
 export interface DangerStat {
   weight: number;
   rewards: boolean;
+  cap?: number; // where the SIM stops reading it: past it, no danger and no reward
 }
 
+const ARMOUR_SATURATION = 900; // where reduction reaches the cap
 export const DANGER_STATS: Record<string, DangerStat> = {
-  // A ward is ONE type, so it costs a character that deals two almost nothing.
+  // A ward is ONE type: it costs a character that deals two almost nothing.
   ...Object.fromEntries(
-    DAMAGE_TYPES.map((t) => [monsterResStat(t.id), { weight: 0.65, rewards: true }])
+    DAMAGE_TYPES.map((t) => [
+      monsterResStat(t.id),
+      { weight: 0.65, rewards: true, cap: DEFENCE.resistanceCap },
+    ])
   ),
   monsterDamage: { weight: 1.0, rewards: true },
   monsterLife: { weight: 0.7, rewards: true },
-  monsterArmour: { weight: 0.55, rewards: true },
-  monsterCrit: { weight: 0.5, rewards: true },
+  monsterArmour: { weight: 0.55, rewards: true, cap: ARMOUR_SATURATION },
+  monsterCrit: { weight: 0.5, rewards: true, cap: 100 }, // a chance saturates at certain
   monsterFire: { weight: 0.9, rewards: true },
   monsterMoveSpeed: { weight: 0.6, rewards: true },
   layoutComplexity: { weight: 0.2, rewards: true },

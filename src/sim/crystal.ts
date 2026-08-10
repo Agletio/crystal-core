@@ -42,7 +42,7 @@ export function crystalRewards(mods: RolledMod[]): CrystalRewards {
   let payingDanger = 0;
 
   for (const [stat, def] of Object.entries(DANGER_STATS)) {
-    const amount = totalOf(mods, stat);
+    const amount = Math.min(totalOf(mods, stat), def.cap ?? Infinity);
     if (amount === 0) continue;
     const scored = amount * def.weight;
     danger += scored;

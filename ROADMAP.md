@@ -43,9 +43,9 @@ holding whatever is owed — the weapon your skill can actually swing, then the
 first crystal and the shard to roll it, then every quest you have just finished.
 Nothing is a coin flip and nothing is a line in a report.
 
-The OPENING is done. What is left is one balance debt carried out of the systems
-work, then the next feature. §7 is the deferred pile, and the first entry in it
-is now answerable rather than blocked.
+The OPENING is done, and so is the danger retune it was queued behind. What is
+left is the next feature. §7 is the deferred pile, and the first entry in it is
+now answerable rather than blocked.
 
 ### Keeping room for a fifth socket
 
@@ -297,6 +297,22 @@ demo's "every collection a save can hold items in claims its ids" list, which
 walks each one through `readSave` and proves the id counter moved. Miss the
 third and a save can hand out an id the next item then reuses.
 
+**Danger only counts what the sim still reads.** `DangerStat.cap` in
+`DANGER_STATS` is where a stat saturates — a ward at `DEFENCE.resistanceCap`, a
+crit chance at 100, armour at the points where `armourReduction` reaches its own
+cap — and `crystalRewards` scores the capped amount. Reward is derived from
+danger, so a set stacking four wards of one type is paid for one, and difficulty
+and payment cannot drift apart through a ceiling in the sim. A new danger stat
+that saturates anywhere needs its `cap` written down with it.
+
+**The deep end is not a band.** Power is clamped at `POWER.max`, so the top drop
+band is reached long before danger runs out — the hardest set in the game is
+nobody's target, and `deepestSet` in `src/sim/loadout.ts` is the only thing that
+builds it. `THE LADDER` measures it against gear a band below the top: it has to
+be a wall (a third or less), and it has to still be beatable, or it is a ceiling
+rather than a wall. Past the power cap, danger still pays in RARITY, which reads
+`payingDanger` directly — that is the whole reason to build it.
+
 **A crystal is never carried.** It is never spent, sold or moved anywhere, so
 there is no dock column for it and `carryRoom(game, 'crystal')` is `Infinity`.
 `addItem` routes one to `game.crystals` whatever else is full, which is what
@@ -433,43 +449,7 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The danger retune
-
-Carried out of the rewards work, where it was deferred on purpose: setting the
-danger modifiers before the aura system existed would have meant setting them
-twice. The aura system exists now.
-
-**The debt, stated precisely.** Difficulty lives entirely in crystal modifiers.
-There used to be a per-crystal monster scale (`MONSTER_TIER_SCALE`) doing most
-of the work; it is GONE — do not go looking for it — and twelve modifiers
-across four sockets now have to span what it spanned on its own. They were
-widened when it was removed, but not that far, so **the top set is still
-clearable ten times out of ten**. The game is loose in the direction §2 asks
-for, which is why this waited rather than blocking anything.
-
-The two harnesses that measure it are both in `src/demo.ts` and both print a
-grid rather than asserting a verdict, because a hardcoded verdict goes stale
-the moment the numbers move:
-
-- **ONE SOCKET** — crystal level against a rung of gear. Currently 5/5 in every
-  cell, which is the shallow end having nothing left to say. This is the rung
-  the guided opening puts in front of a new player.
-- **THE LADDER** — each power band cleared in gear the band below it drops.
-  Currently 12/12 at every band, which is the number this phase exists to move.
-
-- [ ] Widen the danger modifiers until the top of what four sockets can hold is
-      genuinely a wall for gear farmed a band below it — measured, not felt.
-- [ ] Hold both ends of `THE LADDER` while doing it. The free descent must stay
-      beatable by a character that owns nothing and still cost it something, and
-      the rung the guided opening puts in front of a new player — one socket,
-      first crystal — must stay clearable most of the time. That rung has its
-      own check because it is the one the game shows first and nothing was
-      watching it.
-- [ ] Respect `DEFENCE.monsterHitFloor`. Two caps of 75% multiply into a map
-      that cannot hurt you; the floor holds armour back to whatever the wards
-      left room for, and a quarter of every hit lands regardless.
-
-### Phase 2 — Unique gear
+### Phase 1 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -506,8 +486,8 @@ Do not guess at these.
    worth about two levels at first and the curve outruns it immediately
    (`LEVELLING.curveBase` 260, `curveExponent` 1.8). Level 3 would be ~6 clears,
    level 4 ~13. **Provisional, and mine, not the user's:** left at 5, since the
-   phase named it and the danger retune moves the XP curve anyway. Say which
-   number the opening should cost and it is one constant.
+   phase named it. Say which number the opening should cost and it is one
+   constant.
 
 3. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
@@ -555,8 +535,8 @@ moving — see §2, balance is deliberately loose.
   answer again.
 - **Blight and Strike are not the same game.** Last measured, Blight cleared
   the top of the ladder 12/12 where Strike managed 3/12. That number is OLD —
-  it predates the capacity rework and everything since — so re-measure before
-  acting on it. The danger retune will move it again either way.
+  it predates the capacity rework, the retune and everything since — so
+  re-measure before acting on it.
 - More tutorial steps for systems added since the opening was written: the
   collection screen, the bench's crystals column, sell mode, the counter.
 - **A third way to get rid of a piece.** Selling is now a mode with a buy-back

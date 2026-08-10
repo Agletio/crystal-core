@@ -109,7 +109,7 @@ import {
 } from './skills-tree';
 import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
-import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
+import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
@@ -3355,6 +3355,32 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     'every band can be cleared in gear the band below it drops',
     `${wall.join(', ')} cannot be entered in anything that band hands out`
   );
+
+  // 3. The deep end, which is not a band. Power caps at the top one long
+  //    before danger does, so the hardest set in the game is nobody's target
+  //    and nothing else here looks at it. Against the gear a band below the
+  //    top drops it has to be a WALL — and still be something a build gets
+  //    through, or it is a ceiling rather than a wall.
+  let through = 0;
+  let deepest = 0;
+  const deep = 12;
+  for (let i = 0; i < deep; i++) {
+    const set = deepestSet(new Rng(400 + i), pool);
+    deepest += runSet(set).rewards.danger;
+    const sim = new RunSim(set, ladderCharacter(6, new Rng(70 + i)), new Rng(900 + i));
+    if (runToCompletion(sim, 600).status === 'cleared') through++;
+  }
+  line(`  the deep end: four crystals rolled for danger, ${Math.round(deepest / deep)} danger: ${through}/${deep}`);
+  check(
+    through <= deep / 3,
+    'and the top of what four sockets can hold is a wall',
+    `${through}/${deep} — the deep end is a farm`
+  );
+  check(
+    through > 0,
+    'and a wall rather than a ceiling — a build gets through it',
+    'nothing gets through the deep end at all'
+  );
 }
 
 // ===========================================================================
@@ -4054,21 +4080,36 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     const clock = quest.need.find((c) => c.kind === 'under_seconds');
     if (!clock) continue;
     const limit = Number(clock.value);
+    const want = questDanger(quest);
+    // Aimed AT the threshold, not past it: a player who has to beat a clock
+    // rolls the cheapest set that clears the danger gate, and the sockets are
+    // the ones the rungs before this one have handed over.
+    const band = Math.round(want / POWER.perDanger + (RUN_SLOTS.length - 1) * POWER.perSocket);
     const times: number[] = [];
+    let cleared = 0;
     for (let i = 0; i < 6; i++) {
-      const set = Array.from({ length: RUN_SLOTS.length - 1 }, () => rollCrystal(4, pool, rng));
-      const hero = makeCharacter(starterLoadout(new Rng(200 + i)), 'strike');
-      hero.level = 20;
-      const sim = new RunSim(set, hero, new Rng(880 + i));
+      let set: Item[] = [];
+      let gap = Infinity;
+      for (let a = 0; a < 24; a++) {
+        const tryset = Array.from({ length: RUN_SLOTS.length - 1 }, () => rollCrystal(3, pool, rng));
+        const off = Math.abs(runSet(tryset).rewards.danger - want);
+        if (off >= gap) continue;
+        gap = off;
+        set = tryset;
+      }
+      const sim = new RunSim(set, ladderCharacter(band, new Rng(200 + i)), new Rng(880 + i));
       runToCompletion(sim, 900);
-      if (sim.state.status === 'cleared') times.push(sim.state.elapsed);
+      if (sim.state.status === 'cleared') {
+        cleared++;
+        times.push(sim.state.elapsed);
+      }
     }
     times.sort((a, b) => a - b);
     const median = times[Math.floor(times.length / 2)] ?? Infinity;
     check(
-      median <= limit,
-      `${quest.name}: ${limit}s against a median clear of ${median.toFixed(0)}s at that danger`,
-      `${quest.name} allows ${limit}s and the room takes ${median.toFixed(0)}s`
+      cleared > times.length / 2 && median <= limit,
+      `${quest.name}: ${limit}s against a median clear of ${median.toFixed(0)}s at ${want} danger`,
+      `${quest.name} allows ${limit}s, ${cleared}/6 cleared, and the room takes ${median.toFixed(0)}s`
     );
   }
 

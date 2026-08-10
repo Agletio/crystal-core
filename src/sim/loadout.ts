@@ -71,6 +71,22 @@ const LADDER_SHAPES: Array<[number, number]> = [
   [0, 1], [1, 2], [2, 2], [2, 3], [3, 3], [3, 4], [4, 4],
 ];
 
+/** The deep end: rolled full and KEPT for danger rather than aimed at a band,
+ *  because power caps at the top band long before danger does. */
+export function deepestSet(rng: Rng, pool: ModPool): Item[] {
+  const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+  let best: Item[] = [];
+  let danger = -1;
+  for (let i = 0; i < 40; i++) {
+    const set = Array.from({ length: RUN_SLOTS.length }, () => rollCrystal(top, pool, rng));
+    const rolled = runSet(set).rewards.danger;
+    if (rolled <= danger) continue;
+    danger = rolled;
+    best = set;
+  }
+  return best;
+}
+
 /**
  * A socketed set aimed at a power band. Rolled toward the target rather than
  * derived from it, so the nearest roll is the honest answer.

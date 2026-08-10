@@ -94,6 +94,14 @@ currency (`FAMILY_YIELD` — Normal gold, Demonic crafting currency, Prismatic
 rarity), and the finding modifiers weight WHICH kind of gear drops. None of
 those touch item level, so no amount of arranging skips a rung.
 
+Danger only counts what the sim still reads. `DangerStat.cap` in `DANGER_STATS`
+is where a stat saturates — a ward at the resistance cap, a crit chance at
+certain, armour where its reduction tops out — and `crystalRewards` scores the
+capped amount, so four wards of one type are paid for as one. Power is clamped
+at `POWER.max`, so the top drop band is reached long before danger runs out;
+past it, danger still pays in rarity, which reads `payingDanger` directly. The
+hardest set in the game is nobody's band, and `deepestSet` is what builds it.
+
 A `DropGate` says a thing does not exist in this run at all — `minPower`, a
 `zone`, or both — and the pool is filtered before the pick, so no amount of
 rarity argues with it. The Sigil of Finality drops only in the Seam.
