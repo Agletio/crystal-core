@@ -191,6 +191,14 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
   if (density > 0) {
     rows.push({ label: 'density', value: `${Math.round(density)}%` });
   }
+
+  // A finding modifier carries no danger at all, so without a row of its own
+  // it is the one thing you can craft onto a crystal that says nothing.
+  const bias = dropBias(crystal.mods);
+  for (const group of DROP_GROUPS) {
+    const aimed = (bias[group.id] ?? 1) - 1;
+    if (aimed > 0.01) rows.push({ label: group.id, value: `+${Math.round(aimed * 100)}%` });
+  }
   return rows;
 }
 

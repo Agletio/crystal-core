@@ -77,7 +77,7 @@ import { FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
 import { HERO_FRAMES, wellFormed } from './render/sprites';
 import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
 import { BODY } from './render/body';
-import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
+import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
 import { POSE_IDS } from './render/pose';
 import {
@@ -888,15 +888,18 @@ rule('SPRITES — is the pixel art well formed?');
 // here because building the sheet needs a canvas and this does not.
 {
   const problems = [
-    ...wellFormed(HERO_FRAMES).map((b) => `hero ${b}`),
-    ...Object.entries(MONSTER_FRAMES).flatMap(([name, frames]) =>
-      wellFormed(frames).map((b) => `${name} ${b}`)
+    ...wellFormed(HERO_FRAMES, DOLL_GRID).map((b) => `hero ${b}`),
+    ...Object.entries(BEASTIARY).flatMap(([name, art]) =>
+      wellFormed([...art.frames, ...(art.attack ? [art.attack] : [])], art.grid).map(
+        (b) => `${name} ${b}`
+      )
     ),
   ];
-  const sheets = 1 + Object.keys(MONSTER_FRAMES).length;
+  const sheets = 1 + Object.keys(BEASTIARY).length;
+  const grids = [...new Set(Object.values(BEASTIARY).map((a) => a.grid))].sort();
   check(
     problems.length === 0,
-    `all ${sheets} sprites are 16x16 on every frame`,
+    `all ${sheets} sprites are square on every frame, at ${grids.join(' and ')}`,
     problems.join('; ')
   );
 
@@ -917,7 +920,7 @@ rule('SPRITES — is the pixel art well formed?');
     const body = bare.join('').split('').filter((c) => c !== '.').length;
     for (const rank of ['magic', 'rare'] as const) {
       const ring = haloed(bare, HALO[rank]);
-      if (wellFormed([ring]).length > 0) rankProblems.push(`${id} ${rank} is not 16x16`);
+      if (wellFormed([ring], art.grid).length > 0) rankProblems.push(`${id} ${rank} is not square`);
       const kept = ring.join('').split('').filter((c, i) => bare.join('')[i] !== '.').length;
       if (kept !== body) rankProblems.push(`${id} ${rank} halo ate ${body - kept} of the body`);
       if (ring.join('') === bare.join('')) rankProblems.push(`${id} ${rank} looks the same`);
@@ -940,6 +943,17 @@ rule('SPRITES — is the pixel art well formed?');
     'and every one actually animates',
     same.map(([n]) => n).join(', ')
   );
+
+  // A swing that looks like standing still is worse than no swing: the player
+  // reads it as the monster not having attacked.
+  const swings = Object.entries(BEASTIARY).filter(([, a]) => a.attack);
+  const stiff = swings.filter(([, a]) => a.attack!.join('') === a.frames[0].join(''));
+  line(`  ${swings.length} of ${Object.keys(BEASTIARY).length} creatures have a swing`);
+  check(
+    stiff.length === 0 && swings.length > 0,
+    'and every creature that swings is visibly doing something else while it does',
+    stiff.map(([n]) => n).join(', ')
+  );
 }
 
 // ===========================================================================
@@ -950,14 +964,18 @@ rule('THE MODEL — does the figure hold together in every pose?');
 // every combination can be checked rather than eyeballed.
 {
   const problems: string[] = [];
-  for (const pose of POSE_IDS) problems.push(...wellFormed([BODY[pose]]).map((b) => `body ${pose} ${b}`));
+  for (const pose of POSE_IDS) {
+    problems.push(...wellFormed([BODY[pose]], DOLL_GRID).map((b) => `body ${pose} ${b}`));
+  }
   for (const [family, art] of Object.entries(FAMILY_ART)) {
     problems.push(
-      ...wellFormed([art.helmet, art.body, art.gloves, ...art.boots]).map((b) => `${family} ${b}`)
+      ...wellFormed([art.helmet, art.body, art.gloves, ...art.boots], DOLL_GRID).map(
+        (b) => `${family} ${b}`
+      )
     );
   }
   for (const [kind, art] of Object.entries(WEAPON_ART)) {
-    problems.push(...wellFormed([art.rest, art.strike]).map((b) => `${kind} ${b}`));
+    problems.push(...wellFormed([art.rest, art.strike], DOLL_GRID).map((b) => `${kind} ${b}`));
   }
   check(problems.length === 0, 'every grid is 16x16', problems.slice(0, 4).join('; '));
 
@@ -973,9 +991,9 @@ rule('THE MODEL — does the figure hold together in every pose?');
   };
   const composed = POSE_IDS.map((p) => lookRows(full, p));
   check(
-    wellFormed(composed).length === 0,
-    'and a fully armed figure still composes to 16x16 in every pose',
-    wellFormed(composed).join('; ')
+    wellFormed(composed, DOLL_GRID).length === 0,
+    `and a fully armed figure still composes to ${DOLL_GRID}x${DOLL_GRID} in every pose`,
+    wellFormed(composed, DOLL_GRID).join('; ')
   );
 
   // Four poses that look the same are one pose drawn four times.

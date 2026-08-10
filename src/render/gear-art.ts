@@ -30,10 +30,19 @@ export interface FamilyTone {
   trimLit: (p: Palette) => string;
 }
 
-/** Only the rows a piece actually draws; the rest of the cell is empty. */
-const BLANK = '................';
-export const rows = (from: Record<number, string>): string[] =>
-  Array.from({ length: 16 }, (_, y) => from[y] ?? BLANK);
+/**
+ * Only the rows a piece actually draws; the rest of the cell is empty. Curried
+ * on the grid, because art is authored at whatever size suits it and the
+ * pipeline reads the size off the art rather than assuming one.
+ */
+export const gridRows =
+  (grid: number) =>
+  (from: Record<number, string>): string[] =>
+    Array.from({ length: grid }, (_, y) => from[y] ?? '.'.repeat(grid));
+
+/** The paper doll's own size: body and armour must share one grid. */
+export const DOLL_GRID = 16;
+export const rows = gridRows(DOLL_GRID);
 
 export interface FamilyArt {
   tone: FamilyTone;

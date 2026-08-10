@@ -42,7 +42,7 @@ import {
   toHexNumber,
   vfxColour,
 } from './renderer';
-import { CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
+import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
 import { POSE_IDS } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
@@ -301,7 +301,13 @@ export async function createPixiRenderer(
       s.texture = worn[POSE_IDS.indexOf(poseOf(e, elapsed))] ?? worn[0];
     } else {
       const frames = framesFor(e);
-      const frame = e.action === 'move' ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES : 0;
+      // A swing is its own frame, held for as long as the sim holds the pose.
+      const frame =
+        e.action === 'attack'
+          ? ATTACK_FRAME
+          : e.action === 'move'
+            ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES
+            : 0;
       s.texture = frames[frame];
     }
 

@@ -418,8 +418,9 @@ assert(
   `${heldCount('Shard of Making')} vs ${stockBefore}`
 );
 
-// Every crystal mod is a downside now, so adding one must move danger up. A
-// Tier 4 is the one with room for it — tier is the only thing that grants any.
+// Adding a modifier has to CHANGE the crystal's header. Most raise danger; the
+// finding ones carry none at all and state what the run is pointed at instead.
+// A Tier 4 is the one with room for it — tier is the only thing that grants any.
 {
   const roomy = filled('#inv-crystal').find((b) => /Tier 4/.test(named(b)));
   assert(!!roomy, 'a Tier 4 crystal is in the dock');
@@ -429,8 +430,18 @@ assert(
   const danger = () =>
     Number(multRows().find((r) => r.startsWith('danger='))?.split('=')[1]);
   assert(danger() === 0, 'a blank one is worth exactly base', String(danger()));
+  const headerBefore = multRows().join(' ');
   currencyButton('Shard of Making')?.click();
-  assert(danger() > 0, 'crafting a mod raises danger', String(danger()));
+  assert(
+    multRows().join(' ') !== headerBefore,
+    'crafting a mod changes what the crystal says it does',
+    `${headerBefore} → ${multRows().join(' ')}`
+  );
+  assert(
+    danger() > 0 || multRows().some((r) => /^(weapons|armour|trinkets)=/.test(r)),
+    'and it is either more dangerous or pointed at something',
+    multRows().join(' ')
+  );
   $('craft-return').click();
   roughGear.click();
 }

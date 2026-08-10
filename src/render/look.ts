@@ -6,12 +6,12 @@
  * paints a monster.
  */
 import { BODY } from './body';
-import { FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART, hasWeapon } from './gear-art';
+import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART, hasWeapon } from './gear-art';
 import { LAYER_ORDER, POSES, shiftFor } from './pose';
 import type { LayerSlot, PoseId } from './pose';
 import type { Look, WornPiece } from '../types';
 
-const GRID = 16;
+const GRID = DOLL_GRID;
 const BLANK = '.'.repeat(GRID);
 
 /**

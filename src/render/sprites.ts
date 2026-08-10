@@ -9,44 +9,44 @@
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
 import { lookRows, roleChar } from './look';
-import { FAMILY_ART } from './gear-art';
+import { DOLL_GRID, FAMILY_ART } from './gear-art';
 import { BEASTIARY, HALO, haloed } from './bestiary';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
 import type { Look } from '../types';
 
-/** Pixels per sprite cell. Generous so the shapes stay crisp when scaled up. */
+/**
+ * Pixels per sprite cell. Generous so the shapes stay crisp when scaled up, and
+ * divisible by every grid art is authored on: 48/16 is 3, 48/24 is 2.
+ */
 export const CELL = 48;
 export const WALK_FRAMES = 2;
-
-/**
- * Side of the pixel grid. CELL divides by it exactly, so every logical pixel
- * lands on whole canvas pixels and nothing is ever half-lit.
- */
-const GRID = 16;
-const PX = CELL / GRID;
+/** After the walk cycle: the swing. */
+export const ATTACK_FRAME = WALK_FRAMES;
+export const CREATURE_FRAMES = WALK_FRAMES + 1;
 
 /** Rows of characters keyed to colours, `.` transparent: the shape is visible. */
-type PixelArt = { rows: string[]; key: Record<string, string> };
+type PixelArt = { rows: string[]; key: Record<string, string>; grid: number };
 
 /**
- * Every row of every frame must be exactly GRID characters. A short row silently
- * truncates and a long one silently draws outside the cell — both read as "the
- * art is a bit off" rather than as the typo they are.
+ * Every frame must be square and match the grid it declares. A short row
+ * silently truncates and a long one silently draws outside the cell — both
+ * read as "the art is a bit off" rather than as the typo they are.
  */
-export function wellFormed(frames: string[][]): string[] {
+export function wellFormed(frames: string[][], grid: number): string[] {
   const bad: string[] = [];
   frames.forEach((rows, f) => {
-    if (rows.length !== GRID) bad.push(`frame ${f} has ${rows.length} rows`);
+    if (rows.length !== grid) bad.push(`frame ${f} has ${rows.length} rows`);
     rows.forEach((row, y) => {
-      if (row.length !== GRID) bad.push(`frame ${f} row ${y} is ${row.length} wide`);
+      if (row.length !== grid) bad.push(`frame ${f} row ${y} is ${row.length} wide`);
     });
   });
   return bad;
 }
 
 function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
+  const px = CELL / art.grid;
   art.rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const colour = art.key[row[x]];
@@ -54,7 +54,7 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
       // +1 on the size closes the hairline seams that appear between
       // neighbouring rects when the canvas is later scaled by a fraction.
       ctx.fillStyle = colour;
-      ctx.fillRect(x * PX, y * PX, PX + 0.5, PX + 0.5);
+      ctx.fillRect(x * px, y * px, px + 0.5, px + 0.5);
     }
   });
 }
@@ -122,8 +122,13 @@ function monsterArt(
     magic: art.tone.eye(palette),
     rare: mix(art.tone.eye(palette), palette.chalk, 0.45),
   };
+  // Past the walk cycle is the swing, and a creature without one stands still
+  // to hit you — which is what every creature did before there was a frame.
+  const drawn =
+    frame >= ATTACK_FRAME ? (art.attack ?? art.frames[0]) : (art.frames[frame] ?? art.frames[0]);
   return {
-    rows: haloed(art.frames[frame] ?? art.frames[0], HALO[rank]),
+    grid: art.grid,
+    rows: haloed(drawn, HALO[rank]),
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),
       M: art.tone.lit(palette),
@@ -160,7 +165,7 @@ function heroArt(palette: Palette, frame: number): PixelArt {
     P: mix(palette.seam, palette.rockDeep, 0.2),
   };
 
-  return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key };
+  return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key, grid: DOLL_GRID };
 }
 
 /** One table, so a gauntlet and the hand inside it are lit by the same light. */
@@ -202,7 +207,7 @@ export function drawLook(
   look: Look,
   pose: PoseId
 ): void {
-  drawPixels(ctx, { rows: lookRows(look, pose), key: lookKeyColours(palette) });
+  drawPixels(ctx, { rows: lookRows(look, pose), key: lookKeyColours(palette), grid: DOLL_GRID });
 }
 
 export function makeLookFrames(palette: Palette, look: Look): HTMLCanvasElement[] | null {
@@ -261,7 +266,7 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
   for (const sprite of SPRITE_KINDS) {
     for (const rank of RANKS) {
       const frames: HTMLCanvasElement[] = [];
-      for (let frame = 0; frame < WALK_FRAMES; frame++) {
+      for (let frame = 0; frame < CREATURE_FRAMES; frame++) {
         const made = cell();
         if (!made) return null;
         drawCreature(made.ctx, sprite, frame, palette, rank);
