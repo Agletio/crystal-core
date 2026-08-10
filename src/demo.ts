@@ -15,6 +15,9 @@ import {
   monsterResStat,
   LEVELLING,
   PLAYER_SKILLS,
+  AURA,
+  AURAS,
+  AURA_BY_ID,
   CURRENCIES,
   CURRENCY_BY_ID,
   CRYSTAL_QUESTS,
@@ -59,7 +62,7 @@ import {
   sellPrice,
 } from './economy';
 import { hasArmourArt } from './ui/icons';
-import { RunSim, runToCompletion } from './sim/run';
+import { RunSim, TICK, runToCompletion } from './sim/run';
 import {
   declaredCapacity,
   hasOpenSlot,
@@ -105,8 +108,8 @@ import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, familyPlan, mapTheme, runSet } from './sim/crystal';
-import { dropBias } from './sim/stats';
-import { floorPalette, paletteFrom, tileDecals } from './render/renderer';
+import { armourReduction, dropBias } from './sim/stats';
+import { auraLook, floorPalette, paletteFrom, tileDecals } from './render/renderer';
 import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
 import type { GuideCtx } from './ui/tutorial';
 import {
@@ -158,6 +161,13 @@ import type {
 
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
+
+// The real palette, out of the stylesheet the page ships — checking what a
+// player sees against invented colours would prove nothing.
+const PALETTE = paletteFrom((cssVar) => {
+  const css = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
+  return new RegExp(`${cssVar}\\s*:\\s*([^;]+);`).exec(css)?.[1] ?? '';
+});
 
 const line = (s = '') => console.log(s);
 const rule = (t: string) => {
@@ -2450,38 +2460,64 @@ rule('FAMILIES — a different fight, or a harder one?');
   );
 
   // The paper version can be right while the fight is not — reach, speed and
-  // body size all land somewhere the stat table cannot see. So: four blank
-  // crystals, one family, same hero, same seeds. Blank because a modifier
-  // would be the difficulty this is trying to hold still.
+  // body size all land somewhere the stat table cannot see. And two of the
+  // three worlds bring AURAS, which the paper cannot see either: what the
+  // pools weigh is held equal, and what they bring with them is the ladder.
   line();
-  line('  a level 16 Strike character against four blank crystals of one family');
-  line('  family      time   taken   killed   deaths');
-  const clears: number[] = [];
-  for (const f of MONSTER_FAMILIES) {
-    let time = 0, taken = 0, killed = 0, deaths = 0;
-    const seeds = [3, 5, 7, 11, 13, 17];
+  line('  a level 16 Strike character against four blank crystals of one world');
+  line('  world       time   taken   per sec   deaths');
+  const seeds = [3, 5, 7, 11, 13, 17];
+  const room = (families: MonsterFamily[]) => {
+    let time = 0;
+    let taken = 0;
+    let deaths = 0;
     for (const seed of seeds) {
       const hero = ladderCharacter(2, new Rng(99));
-      const set = RUN_SLOTS.map(() => makeCrystal(1, f.id));
+      const set = families.map((f) => makeCrystal(1, f));
       const s = runToCompletion(new RunSim(set, hero, new Rng(seed * 37)));
       time += s.elapsed;
-      killed += s.killed;
       taken += Object.values(s.damageTaken).reduce((a, b) => a + b, 0);
       if (s.status === 'died') deaths++;
     }
-    clears.push(time / seeds.length);
+    return { perSec: taken / time, deaths, time: time / seeds.length, taken: taken / seeds.length };
+  };
+
+  const four = (f: MonsterFamily) => RUN_SLOTS.map(() => f);
+  const lived: Record<string, ReturnType<typeof room>> = {};
+  for (const f of MONSTER_FAMILIES) {
+    lived[f.id] = room(four(f.id));
+    const r = lived[f.id];
     line(
-      `  ${f.id.padEnd(9)}  ${(time / seeds.length).toFixed(0).padStart(4)}s   ` +
-        `${Math.round(taken / seeds.length).toString().padStart(5)}   ` +
-        `${Math.round(killed / seeds.length).toString().padStart(6)}   ${String(deaths).padStart(6)}`
+      `  ${f.id.padEnd(10)} ${r.time.toFixed(0).padStart(4)}s   ` +
+        `${Math.round(r.taken).toString().padStart(5)}   ${r.perSec.toFixed(1).padStart(7)}   ` +
+        `${String(r.deaths).padStart(6)}`
     );
   }
-  const clearMean = clears.reduce((a, b) => a + b, 0) / clears.length;
-  const spread = Math.max(...clears.map((t) => Math.abs(t - clearMean) / clearMean));
+  lived.seam = room(['demonic', 'demonic', 'prismatic', 'prismatic']);
+  line(
+    `  seam       ${lived.seam.time.toFixed(0).padStart(4)}s   ` +
+      `${Math.round(lived.seam.taken).toString().padStart(5)}   ` +
+      `${lived.seam.perSec.toFixed(1).padStart(7)}   ${String(lived.seam.deaths).padStart(6)}`
+  );
+
+  // The ladder, which is a DECISION rather than a drift: the Fissure is the
+  // shallow end, the two worlds that carry auras are harder than it, and the
+  // Seam — where the two kinds of aura multiply — is the worst room going.
   check(
-    spread <= 0.2,
-    `and the same character clears all three in the same time: ${(spread * 100).toFixed(0)}% apart`,
-    `${(spread * 100).toFixed(0)}% apart — a family is harder than the others in practice`
+    lived.demonic.perSec > lived.normal.perSec * 1.15 &&
+      lived.prismatic.perSec > lived.normal.perSec * 1.15 &&
+      lived.seam.perSec > Math.max(lived.demonic.perSec, lived.prismatic.perSec),
+    'Normal is the shallow end, the aura worlds are harder, and the Seam is the worst of them',
+    `${lived.normal.perSec.toFixed(1)} / ${lived.demonic.perSec.toFixed(1)} / ` +
+      `${lived.prismatic.perSec.toFixed(1)} / ${lived.seam.perSec.toFixed(1)} per second`
+  );
+  // Harder, never a wall: the same under-geared character still walks out of
+  // every one of them more often than not.
+  const walls = Object.entries(lived).filter(([, r]) => r.deaths > seeds.length / 2);
+  check(
+    walls.length === 0,
+    'and none of the four is a wall for the character that clears the Fissure',
+    walls.map(([k, r]) => `${k} killed it ${r.deaths}/${seeds.length}`).join(', ')
   );
 
   // Each socketed crystal converts its share, and the share is exact rather
@@ -2523,6 +2559,107 @@ rule('FAMILIES — a different fight, or a harder one?');
 }
 
 // ===========================================================================
+rule('AURAS — do the two worlds multiply each other?');
+
+// The claim: one world adds a fixed amount, the other multiplies, and a room
+// holding both multiplies what the other added. That cross term is the whole
+// design, so it is checked where it is unambiguous — on the arithmetic — and
+// then looked for in a real room.
+{
+  const carriers = MONSTERS.filter((m) => m.aura);
+  line(`  ${carriers.length} kinds carry one: ${carriers.map((m) => `${m.name} (${m.aura})`).join(', ')}`);
+  check(
+    carriers.every((m) => AURA_BY_ID[m.aura!]) && carriers.length >= 4,
+    'every carrier names an aura that exists',
+    carriers.filter((m) => !AURA_BY_ID[m.aura!]).map((m) => m.id).join(', ')
+  );
+  // One family adds, the other multiplies. If both did the same thing there
+  // would be no interaction to have.
+  const adds = AURAS.filter((a) => a.flatDamage || a.flatArmour);
+  const multiplies = AURAS.filter((a) => a.incDamage || a.incArmour);
+  check(
+    adds.every((a) => a.family === 'demonic') &&
+      multiplies.every((a) => a.family === 'prismatic') &&
+      adds.length === multiplies.length,
+    `${adds.length} auras add a fixed amount and ${multiplies.length} multiply, split cleanly by world`,
+    AURAS.map((a) => `${a.id}:${a.family}`).join(' ')
+  );
+
+  // The arithmetic, on one monster's swing. `sum` is what each aura is worth
+  // ALONE, added together — the number the pair has to beat to be an
+  // interaction rather than two effects in the same room.
+  const swing = 10;
+  const chant = AURA_BY_ID.chant.flatDamage! * swing;
+  const resonance = AURA_BY_ID.resonance.incDamage! / 100;
+  const withChant = swing + chant;
+  const withResonance = swing * (1 + resonance);
+  const withBoth = (swing + chant) * (1 + resonance);
+  const sum = swing + (withChant - swing) + (withResonance - swing);
+  line(
+    `  a swing of ${swing}: chanted ${withChant.toFixed(1)}, resonant ${withResonance.toFixed(1)}, ` +
+      `both ${withBoth.toFixed(1)} against a sum of ${sum.toFixed(1)}`
+  );
+  check(
+    withBoth > sum * 1.05,
+    `both together beat the sum of each alone by ${(((withBoth - sum) / sum) * 100).toFixed(0)}%`,
+    `${withBoth.toFixed(2)} against ${sum.toFixed(2)}`
+  );
+
+  // Armour is the sharper version: nothing multiplies an armour of zero, so
+  // the Cavern's aura is worth nothing at all until the Rot's has landed.
+  const bare = armourReduction(0);
+  const flatOnly = armourReduction(AURA_BY_ID.bulwark.flatArmour!);
+  const incOnly = armourReduction(0 * (1 + AURA_BY_ID.refraction.incArmour! / 100));
+  const both = armourReduction(
+    AURA_BY_ID.bulwark.flatArmour! * (1 + AURA_BY_ID.refraction.incArmour! / 100)
+  );
+  line(
+    `  a bare monster turns aside ${bare.toFixed(0)}%, bulwarked ${flatOnly.toFixed(0)}%, ` +
+      `refracted ${incOnly.toFixed(0)}%, both ${both.toFixed(0)}%`
+  );
+  check(
+    incOnly === bare && both > flatOnly,
+    'and a multiplier alone does nothing to armour nobody granted',
+    `${bare} / ${flatOnly} / ${incOnly} / ${both}`
+  );
+
+  // In a real room: a carrier never buffs itself, and everything standing in
+  // its circle does get the boost.
+  const sim = new RunSim(
+    [makeCrystal(1, 'demonic'), makeCrystal(1, 'prismatic')],
+    ladderCharacter(3, new Rng(21)),
+    new Rng(63)
+  );
+  for (let i = 0; i < 40; i++) sim.step(TICK);
+  const state = sim.state;
+  const boosted = state.monsters.filter((m) => m.boost);
+  const selfBuffed = state.monsters.filter(
+    (m) =>
+      m.aura &&
+      m.boost &&
+      !state.monsters.some(
+        (o) => o !== m && !o.dead && o.aura && Math.hypot(o.x - m.x, o.y - m.y) <= AURA.radius
+      )
+  );
+  line(`  ${boosted.length} of ${state.monsters.length} monsters are standing in something`);
+  check(
+    boosted.length > 0 && selfBuffed.length === 0,
+    'a carrier never buffs itself, and its neighbours are the ones that gain',
+    `${selfBuffed.length} are carrying their own aura`
+  );
+
+  // Both renderers read one function for the ring, so the two kinds cannot be
+  // the same colour in one and different in the other.
+  const looks = AURAS.map((a) => auraLook(PALETTE, a));
+  check(
+    new Set(looks.map((l) => l.colour)).size === 2 &&
+      looks.every((l) => l.alpha > 0 && l.alpha < 0.4),
+    'and each world draws its reach in its own ink, quietly enough to fight over',
+    looks.map((l) => `${l.colour}@${l.alpha}`).join(' ')
+  );
+}
+
+// ===========================================================================
 rule('THEMES — does the composition change the rock you stand on?');
 
 // A theme is a LOOK, decided by the same shares that decide the packs. Two
@@ -2556,14 +2693,6 @@ rule('THEMES — does the composition change the rock you stand on?');
     `every composition lands in the world the thresholds name (${cases.length} cases)`,
     `${wrong.length} land somewhere else — see above`
   );
-
-  // The real palette, out of the stylesheet the page ships — checking themes
-  // against invented colours would prove nothing about what anyone sees.
-  const css = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
-  const PALETTE = paletteFrom((cssVar) => {
-    const found = new RegExp(`${cssVar}\\s*:\\s*([^;]+);`).exec(css);
-    return found?.[1] ?? '';
-  });
 
   // The renderer's own vocabulary: floor colour, and what grows on a wall. If
   // two themes agree on both, they are one tileset with two names.

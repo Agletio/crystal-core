@@ -172,11 +172,8 @@ export interface RunSlotDef {
   accepts: ItemKind;
 }
 
-/**
- * Stat fields are MULTIPLIERS on the tier-scaled baseline in MONSTER_BASE, so
- * tier and identity stay independent: a Brute is 2.2x whatever a monster is
- * worth at that tier. `sprite` is a name, not an asset.
- */
+/** Stat fields are MULTIPLIERS on MONSTER_BASE, so identity and difficulty
+ *  stay independent. `sprite` is a name, not an asset. */
 export interface MonsterRankDef {
   id: 'common' | 'magic' | 'rare';
   weight: number;
@@ -208,10 +205,36 @@ export interface MapThemeDef {
   blurb: string;
 }
 
+/** A monster that makes its neighbours worse. One family adds a fixed amount,
+ *  the other multiplies — a room with both multiplies what the other added. */
+export interface AuraDef {
+  id: string;
+  name: string;
+  family: MonsterFamily;
+  /** Multiples of the map's baseline monster damage. */
+  flatDamage?: number;
+  /** Percent, applied after every flat aura in range. */
+  incDamage?: number;
+  /** Armour points. */
+  flatArmour?: number;
+  incArmour?: number;
+  blurb: string;
+}
+
+/** What nearby auras are doing to one monster, already summed. */
+export interface Boost {
+  flatDamage: number;
+  incDamage: number;
+  flatArmour: number;
+  incArmour: number;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;
   family: MonsterFamily;
+  /** An aura this kind carries, by id. It never buffs itself. */
+  aura?: string;
   life: number;
   damage: number;
   moveSpeed: number;

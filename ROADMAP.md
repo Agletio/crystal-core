@@ -164,6 +164,11 @@ against run power, because both caught real bugs:
 
 Settled. Do not relitigate without the user saying so.
 
+**The worlds are a ladder, not three equal opponents.** Settled in Phase 8: the
+pools weigh the same per monster, but Demonic and Prismatic carry auras and
+Normal does not, so they are harder — and they pay in currencies Normal does
+not. Normal keeps its own reason to exist through drops nothing else has.
+
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
 the crystals, not the gear, and not the haul already banked from earlier clears.
 Stopping the loop is the real teeth: you cannot blindly re-run a set that kills
@@ -518,14 +523,40 @@ buffs but no flat. Separately each is mild. Mixed, the percentages land on the
 flat and the room becomes lethal. Defensive variants of the same idea — one
 family granting flat armour, the other multiplying it.
 
-- [ ] Monster aura/buff system in the sim. Does not exist today; monsters have no
-      way to affect each other.
-- [ ] Offensive aura pair — flat-granting family, percent-granting family.
-- [ ] Defensive aura pair on the same principle.
-- [ ] Auras are visible on the field. A room that is lethal for a reason you
-      cannot see is a room that reads as a bug.
-- [ ] The demo proves the interaction: each family alone versus both together,
-      with the combined number materially higher than the sum.
+- [x] Monster aura/buff system in the sim (`AURAS`, `AURA`, `Entity.boost`).
+      One carrier per PACK, never buffing itself, re-read four times a second
+      so a carrier that died stops mattering. Flats and percentages are summed
+      apart and multiplied once at the point of use, so order never changes the
+      answer.
+- [x] Offensive aura pair — the Chanter adds a fixed weight to every swing
+      nearby, the Chime multiplies nearby damage.
+- [x] Defensive aura pair — the Bloat adds armour points, the Lattice
+      multiplies armour. Sharper than the offensive pair: nothing multiplies an
+      armour nobody granted, so the Cavern's half is worth nothing until the
+      Rot's has landed.
+- [x] Auras are visible: every carrier draws its reach on the floor in its
+      world's ink, under the bodies rather than as a badge on them, from one
+      pure function both renderers read.
+- [x] The demo proves it on the arithmetic, where it is unambiguous, and then
+      looks for it in a real room: Normal is the shallow end, the two aura
+      worlds are ~60–70% more damage a second, and the Seam is worse than
+      either at ~75%.
+
+> **Landed, and it cost a standing decision.** An aura lands on a whole pack, so
+> it is never small: with auras on two of the three worlds, those worlds are
+> simply harder than Normal, which "a family is an opponent, never a difficulty
+> setting" forbade. Asked, and the user chose to let the worlds be harder — it
+> reads better thematically, and Normal is what you are given first, so the
+> ladder matches the order you meet them in. Phase 9 owes the Fissure something
+> back: uniques that drop only in Normal, so the shallow end stays worth
+> visiting.
+>
+> The other thing measured rather than assumed: a mixed room holds HALF as many
+> of each carrier, so the cross term has to beat that halving before the Seam is
+> worse than either parent. With symmetric auras the margin is exactly a quarter
+> of the flat times the percentage, which is why the numbers are large (a chant
+> is worth 1.75 baseline swings) rather than the gentle values tried first —
+> those made the Seam the middle of the three rather than the worst.
 
 ### Phase 9 — Unique gear
 
@@ -543,8 +574,10 @@ attacks *you* take.
       read by some behaviour then apply to gear for free.
 - [ ] Grant collection reads equipment as well as the tree — `treeGrants` in
       `src/sim/stats.ts` is the seam.
-- [ ] Drop-gated by zone: some uniques only from a full Demonic run, some from
-      full Prismatic, some only from the Seam.
+- [ ] Drop-gated by zone through `DropGate`, which Phase 7 built: some uniques
+      only from a full Demonic run, some from full Prismatic, some only from
+      the Seam — **and some only from Normal**, which is what the Fissure gets
+      in exchange for being the easy world (see Phase 8).
 
 ---
 

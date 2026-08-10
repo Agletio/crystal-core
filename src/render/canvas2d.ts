@@ -9,11 +9,13 @@
  * When real art arrives, write a second Renderer and swap it in game.ts.
  * Nothing outside this file knows what a pixel is.
  */
+import { AURA, AURA_BY_ID } from '../data';
 import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
+  auraLook,
   burstRadius,
   fireBolt,
   fireBurst,
@@ -367,6 +369,26 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     drawLifeBar(v, hero, 1.1, palette.verdite);
   }
 
+  /** Under the bodies: the field they are standing in, not a badge on them. */
+  function drawAuras(state: RunState, v: View): void {
+    for (const m of state.monsters) {
+      if (m.dead || !m.aura) continue;
+      const def = AURA_BY_ID[m.aura];
+      if (!def) continue;
+      const look = auraLook(palette, def);
+      ctx.globalAlpha = look.alpha;
+      ctx.fillStyle = look.colour;
+      ctx.beginPath();
+      ctx.arc(cx(v, m.x), cy(v, m.y), AURA.radius * v.tile, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = Math.min(1, look.alpha * 2.5);
+      ctx.strokeStyle = look.colour;
+      ctx.lineWidth = Math.max(1, v.tile * 0.04);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
   function drawFloater(v: View, f: Floater): void {
     const t = f.age / FLOATER_LIFE;
     ctx.globalAlpha = Math.max(0, 1 - t);
@@ -384,6 +406,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.fillRect(0, 0, cssWidth, cssHeight);
 
     drawMap(state, v);
+    drawAuras(state, v);
 
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);

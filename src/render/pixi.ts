@@ -18,12 +18,14 @@
  * case and the caller falls back to canvas2d.
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { AURA, AURA_BY_ID } from '../data';
 import { WALL } from '../sim/grid';
 import { DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
+  auraLook,
   burstRadius,
   fireBolt,
   fireBurst,
@@ -100,11 +102,13 @@ export async function createPixiRenderer(
 
   const world = new Container();
   const mapLayer = new Graphics();
+  // Under the bodies: an aura is a field on the floor, not a badge on a monster.
+  const auraLayer = new Graphics();
   const vfxLayer = new Graphics();
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(mapLayer, entityLayer, vfxLayer);
+  world.addChild(mapLayer, auraLayer, entityLayer, vfxLayer);
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
@@ -502,6 +506,22 @@ export async function createPixiRenderer(
     }
   }
 
+  /** In tile units, like everything else in the world container. */
+  function drawAuras(state: RunState): void {
+    auraLayer.clear();
+    for (const m of state.monsters) {
+      if (m.dead || !m.aura) continue;
+      const def = AURA_BY_ID[m.aura];
+      if (!def) continue;
+      const look = auraLook(palette, def);
+      const colour = toHexNumber(look.colour);
+      auraLayer.circle(m.x, m.y, AURA.radius).fill({ color: colour, alpha: look.alpha });
+      auraLayer
+        .circle(m.x, m.y, AURA.radius)
+        .stroke({ color: colour, alpha: Math.min(1, look.alpha * 2.5), width: 0.04 });
+    }
+  }
+
   function draw(state: RunState): void {
     if (state.map !== builtMap) {
       // New run: drop every sprite, the ids belong to a dead sim.
@@ -511,6 +531,7 @@ export async function createPixiRenderer(
     }
 
     camera(state.map, state.hero);
+    drawAuras(state);
 
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawEntity(m, state.elapsed);

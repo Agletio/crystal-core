@@ -59,15 +59,23 @@ modifiers it can hold (T1–T4 → 0–3); its FAMILY — Normal, Demonic or Pri
 is only WHICH monsters spawn, each socketed crystal converting its share of the
 packs. Nothing else makes a monster stronger.
 
-The three pools are held to the same threat, and the demo measures it both on
-paper and by clearing one of each with the same character. A family is an
-opponent, never a difficulty setting.
+The three pools weigh the same PER MONSTER, and the demo measures it. What
+differs is what a world brings with it: Demonic and Prismatic carry **auras**
+and the Fissure does not, so the worlds are a ladder as well as three
+opponents — Normal is the shallow end, and you are given its crystals first.
 
 The composition also decides the **zone** (`mapTheme`, `MAP_THEMES`): half of one
 world takes the rock — The Rot, The Cavern — and two halves with no Normal is
 The Seam, which therefore takes exactly two crystals of each. A zone is a LOOK:
 same generator, same packs, different stone under them. It rides on `GameMap`,
 so both renderers read one answer.
+
+**Auras** (`AURAS`) are why the Seam is the hardest room in the game. One
+carrier per pack, never buffing itself: Demonic adds a fixed amount of damage
+and of armour, Prismatic multiplies both. Alone each is a hazard; together the
+multiplier lands on what the other added, and nothing multiplies an armour
+nobody granted. Every carrier draws its reach on the floor — a room that is
+lethal for a reason you cannot see reads as a bug.
 
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,

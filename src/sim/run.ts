@@ -11,6 +11,7 @@ import { findPath, nearestByPath } from './pathfind';
 import { AILMENT } from '../data';
 import { lookOf } from './appearance';
 import {
+  armourReduction,
   characterStats,
   dropBias,
   effectiveSkill,
@@ -25,12 +26,17 @@ import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
 import {
+  AURA,
+  AURA_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
+  DEFENCE,
   ENCOUNTERS,
   ALL_MODS,
   HERO_BASE,
+  LAMPWRIGHT,
   LOOT,
+  MONSTER_BASE,
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
@@ -38,12 +44,15 @@ import {
   RANGED_PACK_CHANCE,
   SKILLS,
   SKILL_BY_ID,
+  opensHere,
+  socketPackSize,
+  socketPacks,
+  socketSize,
 } from '../data';
-import { LAMPWRIGHT, opensHere, socketPackSize, socketPacks, socketSize } from '../data';
 import type { EncounterDef } from '../data';
-import { ModPool } from '../mods';
+import { ModPool, computeStat } from '../mods';
 import { pickGearBase, pickQuality, rollGear } from '../economy';
-import type { Item, Look, SkillDef } from '../types';
+import type { Boost, Item, Look, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
 /** Built once at load: derived from authored data and never mutated. */
@@ -58,10 +67,7 @@ const ACTIVE_RANGE = 16;
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
 
-/**
- * How far waking one monster wakes its neighbours. ONE hop: letting the woken
- * wake their own would cascade across a dense map and pull everything at once.
- */
+/** How far waking one wakes its neighbours. ONE hop, or a dense map cascades. */
 const AGGRO_CHAIN_RADIUS = 4.5;
 
 /** Ordered worst-to-best, so rarity climbs the list. */
@@ -106,11 +112,8 @@ export interface Ailment {
 const MAX_AILMENT_STACKS = AILMENT.maxStacks;
 const AILMENT_TICK = AILMENT.tick;
 
-/**
- * How far contagion may travel from the cast. A cap on WORK, not on state:
- * re-poisoning refreshes rather than duplicates, so the poisoned set already
- * saturates, but a dense room could still scan every enemy from every enemy.
- */
+/** A cap on WORK, not on state: re-poisoning refreshes rather than duplicates,
+ *  but a dense room could still scan every enemy from every enemy. */
 const MAX_CONTAGION_GENERATIONS = 3;
 
 /** Named so a renderer picks an animation rather than guessing from deltas. */
@@ -158,6 +161,10 @@ export interface Entity {
   /** Multiplier on the xp and gold this one is worth. 1 for rank and file. */
   bounty: number;
   aggroed: boolean;
+  /** An aura this entity emits, by id. Presentation draws its reach. */
+  aura?: string;
+  /** What nearby auras are doing to it, re-read a few times a second. */
+  boost?: Boost;
   /** Seconds of "just got hit" left, for the renderer to flash. */
   hitFlash: number;
   dead: boolean;
@@ -257,6 +264,10 @@ export class RunSim {
   private finale: EncounterDef | null = null;
   /** Kill count the Lampwright turns up on, or null for a descent they miss. */
   private meetAt: number | null = null;
+  /** Countdown to the next aura pass. */
+  private auraTimer = 0;
+  /** One aura's worth of flat damage on this map, in real damage. */
+  private auraDamage = 0;
   /** Baseline monster stats for this map, scaled into the finale. */
   private finaleStats!: CombatStats;
   private byId = new Map<number, Entity>();
@@ -360,6 +371,10 @@ export class RunSim {
     // room. Scaling both would square it.
     const packCount = Math.max(1, Math.round(density.packCount * thin * socketPacks(filled)));
     const packSize = Math.max(1, Math.round(density.packSize * socketPackSize(filled)));
+    // A flat aura is stated as a multiple of what a monster on THIS map hits
+    // for, so it stays worth something once the crystals scale the room.
+    this.auraDamage = computeStat(MONSTER_BASE.damage, this.set.mods, 'monsterDamage');
+
     // Run power pays here: it is the one number a reward reads.
     this.xpPerKill = monsterXp(this.set.power);
     // Power is the whole of it, times what the worlds in the set pay.
@@ -394,6 +409,10 @@ export class RunSim {
       const def = this.rng.weighted(pool, (m) => m.weight) ?? pool[0];
       const ranged = this.rng.chance(RANGED_PACK_CHANCE);
       const bolt = SKILL_BY_ID[MONSTER_RANGED_SKILL];
+      // One carrier per pack, whatever the kind. Five Chanters would stack
+      // five chants on their own neighbours, and read on screen as fog rather
+      // than as a thing in the middle of the room worth killing first.
+      const carrier = def.aura ? this.rng.int(0, packSize - 1) : -1;
 
       // Stats differ between the melee and ranged variants of a kind, so they
       // key separately — a ranged pack reaches much further and has to notice
@@ -436,6 +455,7 @@ export class RunSim {
           rank: rank.id,
           radius: def.radius * rank.scale,
           skillId: ranged && bolt ? MONSTER_RANGED_SKILL : null,
+          ...(def.aura && i === carrier ? { aura: def.aura } : {}),
           x: this.rng.float(room.x, room.x + room.w - 1),
           y: this.rng.float(room.y, room.y + room.h - 1),
           facing: this.rng.float(0, Math.PI * 2),
@@ -479,6 +499,14 @@ export class RunSim {
 
     for (const v of s.vfx) v.age += dt;
     if (s.vfx.length > 0) s.vfx = s.vfx.filter((v) => v.age < v.ttl);
+
+    // Before anyone swings: what the room is doing to itself. A carrier that
+    // died last tick stops helping this one.
+    this.auraTimer -= dt;
+    if (this.auraTimer <= 0) {
+      this.auraTimer = AURA.tick;
+      this.readAuras();
+    }
 
     // Ailments tick before anyone acts, so a poisoned monster can die on its
     // own without first getting a free swing.
@@ -953,19 +981,24 @@ export class RunSim {
     let scale = multiplier * this.rng.float(0.9, 1.1);
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
 
-    // Resistance first, then armour. They're both multipliers so the order
-    // between them doesn't change the result — but resistance must be applied
-    // to ONE type's damage, never to a summed total, or fire resistance would
-    // start reducing the physical half of the same hit.
-    //
-    // Armour is a flat percentage against hits only, and is typeless. Damage
-    // over time skips it entirely, which is what lets an ailment threaten a
-    // tanky build.
-    const armour = 1 - defender.stats.armourReduction / 100;
+    // Resistance applies to ONE type's damage, never to a summed total, or
+    // fire resistance would reduce the physical half of the same hit. Armour
+    // is typeless and hits only — damage over time skips it, which is what
+    // lets an ailment threaten a tanky build.
+    const armour = 1 - this.blunting(defender) / 100;
+    // A flat aura lands ONCE on the hit, then every percentage multiplies what
+    // is there — which is the whole of why a room holding both is lethal.
+    const boost = attacker.boost;
+    const swing = Object.values(attacker.stats.damageByType).reduce((n, v) => n + v, 0);
+    const lift =
+      boost && swing > 0
+        ? ((swing + boost.flatDamage) * (1 + boost.incDamage / 100)) / swing
+        : 1;
+
     const byType: Record<string, number> = {};
     let dmg = 0;
     for (const [type, amount] of Object.entries(attacker.stats.damageByType)) {
-      const dealt = this.afterResistance(defender, amount * scale, type) * armour;
+      const dealt = this.afterResistance(defender, amount * scale * lift, type) * armour;
       byType[type] = (byType[type] ?? 0) + dealt;
       dmg += dealt;
     }
@@ -1159,6 +1192,56 @@ export class RunSim {
       spread.skill.damageTypes[0] ?? 'poison',
       jumped ? 0.5 : 0.3
     );
+  }
+
+  /** A defender's armour once the room has had its say. The stat pipeline's
+   *  floor holds here too: a quarter of every hit still lands. */
+  private blunting(defender: Entity): number {
+    const boost = defender.boost;
+    if (!boost || (boost.flatArmour === 0 && boost.incArmour === 0)) {
+      return defender.stats.armourReduction;
+    }
+    const armour = (defender.stats.armour + boost.flatArmour) * (1 + boost.incArmour / 100);
+    const hardest = Math.max(0, ...Object.values(defender.stats.resistances)) / 100;
+    const room = 1 - DEFENCE.monsterHitFloor / Math.max(0.01, 1 - hardest);
+    return Math.max(0, Math.min(armourReduction(armour), room * 100));
+  }
+
+  /**
+   * What every monster is currently standing in. Read a few times a second
+   * rather than per hit: a carrier that walked away or died stops mattering.
+   * Flats and percentages are summed apart, and multiplied once at the point
+   * of use — so order never changes the answer.
+   */
+  private readAuras(): void {
+    const carriers = this.state.monsters.filter((m) => !m.dead && m.aura);
+    for (const m of this.state.monsters) {
+      if (m.dead) continue;
+      if (carriers.length === 0) {
+        m.boost = undefined;
+        continue;
+      }
+      let flatDamage = 0;
+      let incDamage = 0;
+      let flatArmour = 0;
+      let incArmour = 0;
+      for (const carrier of carriers) {
+        // Never itself: what makes a room lethal is the pack around the thing
+        // in the middle, and killing that thing is the answer to it.
+        if (carrier === m) continue;
+        if (dist(carrier, m) > AURA.radius) continue;
+        const aura = AURA_BY_ID[carrier.aura!];
+        if (!aura) continue;
+        flatDamage += (aura.flatDamage ?? 0) * this.auraDamage;
+        incDamage += aura.incDamage ?? 0;
+        flatArmour += aura.flatArmour ?? 0;
+        incArmour += aura.incArmour ?? 0;
+      }
+      m.boost =
+        flatDamage || incDamage || flatArmour || incArmour
+          ? { flatDamage, incDamage, flatArmour, incArmour }
+          : undefined;
+    }
   }
 
   private kill(victim: Entity): void {

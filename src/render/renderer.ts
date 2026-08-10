@@ -6,7 +6,7 @@
 import { TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Vec2 } from '../sim/grid';
-import type { MapTheme } from '../types';
+import type { AuraDef, MapTheme } from '../types';
 
 export interface Palette {
   void: string;
@@ -169,6 +169,18 @@ const VEIN_COLOURS: Array<keyof Palette> = [
 export function veinColour(palette: Palette, vein: number): string {
   const i = Math.max(1, Math.min(VEIN_COLOURS.length, Math.round(vein))) - 1;
   return palette[VEIN_COLOURS[i]];
+}
+
+/**
+ * The circle a monster's aura is drawing. A room that is lethal for a reason
+ * you cannot see reads as a bug, so the area is on the floor rather than in a
+ * tooltip — and the two kinds of aura are told apart by their family's ink.
+ */
+export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alpha: number } {
+  const colour = aura.family === 'demonic' ? palette.venom : palette.bone;
+  // A percentage aura is the one that needs the other to be worth much, so it
+  // reads as the fainter of the two.
+  return { colour, alpha: aura.incDamage || aura.incArmour ? 0.07 : 0.09 };
 }
 
 /** Answerable for one tile without having generated any other — not the Rng. */

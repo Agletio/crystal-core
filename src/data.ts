@@ -7,6 +7,7 @@ import type {
   ModDef,
   MonsterDef,
   MonsterFamily,
+  AuraDef,
   DropGate,
   GearKind,
   MapTheme,
@@ -1541,6 +1542,57 @@ export const crystalName = (tier: number, family: MonsterFamily): string => {
   return `Tier ${tier} ${word ? `${word} ` : ''}Crystal`;
 };
 
+/**
+ * How far an aura reaches, in tiles, and how often the field is re-read. A
+ * carrier never buffs itself: what makes a room lethal is the pack around it,
+ * and killing the thing in the middle is the answer.
+ */
+export const AURA = { radius: 6, tick: 0.25 };
+
+/**
+ * The two families buff in incompatible ways. Alone each is a hazard the
+ * Fissure does not have; together the multiplier lands on what the other
+ * added, and that cross term is why a half-and-half room is the hardest one
+ * in the game.
+ *
+ * This is the one place a family IS difficulty. The pools still weigh the same
+ * per monster — the ladder is what they bring with them, not what they are.
+ */
+export const AURAS: AuraDef[] = [
+  {
+    id: 'chant',
+    name: 'Chant',
+    family: 'demonic',
+    flatDamage: 1.75,
+    blurb: 'Every swing nearby lands with a fixed weight added.',
+  },
+  {
+    id: 'bulwark',
+    name: 'Bulwark',
+    family: 'demonic',
+    flatArmour: 380,
+    blurb: 'Nearby hide thickens by a fixed amount.',
+  },
+  {
+    id: 'resonance',
+    name: 'Resonance',
+    family: 'prismatic',
+    incDamage: 175,
+    blurb: 'Nearby damage is multiplied — including whatever a Chant added.',
+  },
+  {
+    id: 'refraction',
+    name: 'Refraction',
+    family: 'prismatic',
+    incArmour: 175,
+    blurb: 'Nearby armour is multiplied — including whatever a Bulwark added.',
+  },
+];
+
+export const AURA_BY_ID: Record<string, AuraDef> = Object.fromEntries(
+  AURAS.map((a) => [a.id, a])
+);
+
 // --- monster kinds ---------------------------------------------------------
 //
 // Multipliers on MONSTER_BASE, so identity and difficulty stay independent. A
@@ -1721,6 +1773,7 @@ export const MONSTERS: MonsterDef[] = [
   },
   {
     id: 'bloat',
+    aura: 'bulwark',
     name: 'Bloat',
     family: 'demonic',
     life: 2,
@@ -1766,6 +1819,7 @@ export const MONSTERS: MonsterDef[] = [
   },
   {
     id: 'chanter',
+    aura: 'chant',
     name: 'Chanter',
     family: 'demonic',
     life: 0.9,
@@ -1802,6 +1856,7 @@ export const MONSTERS: MonsterDef[] = [
   },
   {
     id: 'lattice',
+    aura: 'refraction',
     name: 'Lattice',
     family: 'prismatic',
     life: 1.6,
@@ -1862,6 +1917,7 @@ export const MONSTERS: MonsterDef[] = [
   },
   {
     id: 'chime',
+    aura: 'resonance',
     name: 'Chime',
     family: 'prismatic',
     life: 0.55,
