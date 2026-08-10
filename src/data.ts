@@ -1193,6 +1193,7 @@ export const CRYSTAL_XP = {
  */
 export const LAMPWRIGHT = {
   name: 'the Lampwright',
+  sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   /** Said in the log the moment they appear, before you have walked over. */
   seen: 'A lantern, further back than you have been. Someone is waiting.',
   chance: [1, 0.34, 0.22, 0.14],

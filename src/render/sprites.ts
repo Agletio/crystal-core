@@ -126,7 +126,7 @@ export const HERO_FRAMES: string[][] = [
 ];
 
 /** Its own inks, plus the rank: the accent brightens and a halo goes round. */
-function monsterArt(
+export function monsterArt(
   palette: Palette,
   sprite: string,
   frame: number,

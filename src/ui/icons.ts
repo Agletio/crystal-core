@@ -3,6 +3,8 @@
  * to re-render. Procedural placeholders: a shape that reads at a glance, not
  * art, and swappable for a real asset one function at a time.
  */
+import { monsterArt } from '../render/sprites';
+import { readPalette } from '../render/renderer';
 import type { CurrencyDef, Item } from '../types';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -948,6 +950,20 @@ export function categoryIcon(id: string, size = 22): SVGSVGElement {
 }
 
 /** Whatever this item is, give me something to put next to its name. */
+/**
+ * A creature — or a person — out of the bestiary, as an SVG rather than as a
+ * canvas. The same grids and the same inks the map draws, so a portrait beside
+ * some words is unmistakably the thing you are standing in front of.
+ *
+ * The palette is read at CALL time off the live document, which is what keeps
+ * the colours out of this file: the art is characters, and what a character
+ * means is a CSS custom property.
+ */
+export function beastIcon(id: string, size = 34): SVGSVGElement | null {
+  const art = monsterArt(readPalette(document.body), id, 0, 'common');
+  return art ? sprite(art.rows, art.key, size, `beast-${id}`) : null;
+}
+
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
     return crystalIcon((item.meta.level as number) ?? 1, size);

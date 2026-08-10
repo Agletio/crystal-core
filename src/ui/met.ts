@@ -9,7 +9,7 @@ import { LAMPWRIGHT } from '../data';
 import { lampwrightGift } from '../game/crystals';
 import type { GameState } from '../game/state';
 import { itemCard } from './itemcard';
-import { itemIcon } from './icons';
+import { beastIcon, itemIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { note } from './history';
 import type { Item } from '../types';
@@ -38,6 +38,12 @@ export function openMet(first: boolean): void {
   held = given.crystal;
 
   const words = first ? LAMPWRIGHT.first : LAMPWRIGHT.again;
+  // The same sprite standing on the map. Who is speaking should be something
+  // you recognise rather than something you read.
+  const face = $('met-face');
+  face.replaceChildren();
+  const portrait = beastIcon(LAMPWRIGHT.sprite, 44);
+  if (portrait) face.append(portrait);
   $('met-title').textContent = words.title;
   ($('met-take') as HTMLButtonElement).textContent = words.button;
 

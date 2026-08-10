@@ -1043,6 +1043,17 @@ assert(
 }
 
 
+// --- the Lampwright's panel ------------------------------------------------
+// Their own sprite in the corner of the box, so who is talking is something
+// you recognise rather than something you read. Same art the map draws.
+{
+  assert($('met-face') !== null, 'the meeting panel has somewhere to put a face');
+  assert(
+    $('met-face').compareDocumentPosition($('met-title')) & window.Node.DOCUMENT_POSITION_FOLLOWING,
+    'and it comes before the name'
+  );
+}
+
 // --- the handover between descents ----------------------------------------
 // A cleared descent used to swap the map between two frames, which reads as a
 // glitch. The hero drops into the hole at the exit, the screen goes dark for

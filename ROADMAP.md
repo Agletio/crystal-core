@@ -722,8 +722,15 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   already satisfied is SKIPPED and never comes back, so "do this thing that
   happens at a random moment" belongs as a branch inside an existing step's
   `text`/`target`, not as a step of its own. The meeting is the worked example.
-- **`npm run shots` can fail on content, not just on layout.** It waits for the
-  Lampwright panel and fails the run if a first descent never produces one.
+- **`npm run shots` can fail on content, not just on layout.** It waits up to
+  a minute for the Lampwright panel and fails the run if a first descent never
+  produces one. The meeting fires on a kill count the run rolled, up to seven
+  tenths of the map, so the wait has to cover most of a descent.
+- **Measure a box with `hover()` first when a drag test aims at one.** Playwright's
+  actionability waits for the element to stop MOVING; a raw `boundingBox()`
+  does not. The bench going from empty to full grows the card and re-centres
+  the modal, so a box read a moment earlier is 20px out and the press lands
+  between two slots and silently does nothing. That was a 1-in-4 flake.
 
 ### Claims need evidence
 

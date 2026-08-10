@@ -207,11 +207,12 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4300);
   await shoot('descent');
 
-  // The Lampwright. The first meeting is certain, but it fires on a kill
-  // count the run rolled, so this waits for it rather than assuming a time.
+  // The Lampwright. The first meeting is certain, but it fires on a kill count
+  // the run rolled — up to seven tenths of the map — so the wait has to cover
+  // most of a descent rather than a guess at a few seconds.
   try {
     await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
-      timeout: 20000,
+      timeout: 60000,
     });
     await shoot('lampwright');
     await page.evaluate(() => document.getElementById('met-take')?.click());

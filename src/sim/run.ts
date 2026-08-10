@@ -735,7 +735,7 @@ export class RunSim {
       return {
         id: this.nextId++,
         kind: 'monster',
-        sprite: 'lampwright',
+        sprite: LAMPWRIGHT.sprite,
         scale: 0.9,
         rank: 'common',
         radius: 0.3,

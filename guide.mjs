@@ -350,8 +350,14 @@ if (finished) {
     if (wornCount === 0) {
       problems.push('nothing is worn, so the worn column checks never ran');
     } else {
-      const name = (await worn.first().locator('.wornslot__name').textContent())?.trim();
-      const w = await worn.first().boundingBox();
+      // hover() before measuring: it waits for the element to stop MOVING, and
+      // the bench had just gone from empty to holding something, which grows
+      // the card and re-centres the whole modal under a box measured a moment
+      // earlier. A press 20px off lands between two slots and does nothing.
+      const first = worn.first();
+      const name = (await first.locator('.wornslot__name').textContent())?.trim();
+      await first.hover();
+      const w = await first.boundingBox();
       const zone2 = await page.locator('[data-drop="bench"]').boundingBox();
       await page.mouse.move(w.x + w.width / 2, w.y + w.height / 2);
       await page.mouse.down();
@@ -399,6 +405,7 @@ if (finished) {
         const ids = () =>
           page.$$eval('#inv-gear .slot:not(.slot--empty)', (ns) => ns.map((n) => n.dataset.itemId));
         const wasIds = await ids();
+        await gearSlots().nth(0).hover();
         const s2 = await gearSlots().nth(0).boundingBox();
         const t2 = await page.locator('#craft-worn .wornslot').nth(idx).boundingBox();
         await page.mouse.move(s2.x + s2.width / 2, s2.y + s2.height / 2);

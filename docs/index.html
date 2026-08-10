@@ -696,6 +696,8 @@
   .stagebox { position: relative; }
   .modal__card--narrow { width: min(460px, 100%); }
   .met { padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .met__who { display: flex; align-items: center; flex: none; }
+  .met__who .icon { image-rendering: pixelated; }
   .met__gift { display: flex; gap: 10px; align-items: center; }
   .met__name { font-size: 13px; color: var(--citrine); }
   .met__said { line-height: 1.6; }
@@ -744,6 +746,10 @@
      dock, and a card measured in vh would hang over it. */
   .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
   .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--seam); background-image: linear-gradient(rgba(196,99,30,.10), transparent); }
+  /* A face beside the name rather than at the other end of the bar: the head's
+     usual space-between would put the person and who they are as far apart as
+     the box allows. */
+  .modal__head--who { justify-content: flex-start; align-items: center; gap: 10px; }
   .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--rust); text-shadow: 2px 2px 0 #000; }
   .modal__body { padding: 16px 18px; overflow-y: auto; }
 
@@ -1275,7 +1281,9 @@
      happens further down. -->
 <div class="modal" id="met" hidden>
   <div class="modal__card modal__card--narrow">
-    <div class="modal__head">
+    <div class="modal__head modal__head--who">
+      <!-- Their own sprite, so who is talking is a look rather than a name. -->
+      <span class="met__who" id="met-face"></span>
       <h2 class="modal__title" id="met-title">The Lampwright</h2>
     </div>
     <div class="modal__body">
