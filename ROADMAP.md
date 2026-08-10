@@ -27,10 +27,12 @@ and its FAMILY — Normal, Demonic, Prismatic — is only which monsters spawn.
 Composition picks the zone. Everything a run pays reads one derived number
 (`POWER`, `runSet()`). Crystals are given, never bought: the first is scheduled
 and every one after it is a quest, all of them handed over in person at the
-mouth of a cleared descent, and a crystal levels only while socketed. A cleared descent launches the next one until you die, fill the haul,
-or stop it; every ending lands on the same report and the same haul screen. Gold
-is the one currency. Demonic and Prismatic carry auras and Normal does not, so
-the three worlds are a ladder as well as three opponents.
+mouth of a cleared descent, and a crystal levels only while socketed. A cleared
+descent launches the next one until you die, fill the haul, or stop it; every
+ending lands on the same report and the same haul screen. Gold is the one
+currency. Demonic and Prismatic carry auras and Normal does not, so the three
+worlds are a ladder as well as three opponents, and each of them drops a unique
+that exists nowhere else.
 
 **The art is done, and so is the pass over the parts you touch with your
 hands.** Crystals are levels and live on their own screen; capacity comes off
@@ -170,6 +172,13 @@ can be redrawn without the pipeline caring. Being in `BEASTIARY` does NOT make
 something a monster — `MONSTERS` is a separate table, and the demo only asks
 that every monster has art, not that every art is a monster.
 
+**The same art draws in a panel as on the map.** `monsterArt` is exported from
+`src/render/sprites.ts` and `beastIcon(id, size)` in `src/ui/icons.ts` turns it
+into an inline SVG — same grids, same inks, and the palette is read at CALL time
+off the live document, so a colour change reaches both. The Lampwright's own
+face on `#met-face` is the one use; anything that has to say WHO is speaking
+should use it rather than a word.
+
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
@@ -289,11 +298,12 @@ socketed, UNCAPPED), `sold` (the counter, `SOLD_CAP`), `sockets` and
 dock. `craftId` is a REFERENCE, not a move, and it resolves across the bag, the
 collection, the worn slots and the sockets.
 
-**Adding a modal is three places, not one.** The markup in `docs/index.html`;
+**Adding a modal is four places, not one.** The markup in `docs/index.html`;
 the Escape chain in `src/web.ts`, which closes the topmost thing and must know
-where yours sits in that stack; and `guideContext()`'s `top`, which is what
-lets a tutorial step point at a button inside it. Miss the third and the guided
-opening will ring something a popup is covering, which is a failure `npm run
+where yours sits in that stack; `guideContext()`'s `top`, which is what lets a
+tutorial step point at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`,
+which is how `viaHeader` walks a player back OUT of it. Miss either of the last
+two and the guided opening rings something a popup is covering, which `npm run
 guide` reports as being trapped.
 
 **Adding a container is three places, not one.** The field on `GameState`;
@@ -570,7 +580,7 @@ a two-minute tool timeout will kill them mid-run:
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s |
+| `smoke` | ~10s, 443 checks |
 | `demo` | ~85s |
 | `shots` | ~90s |
 | `guide` | ~2min |
@@ -604,10 +614,28 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   already satisfied is SKIPPED and never comes back, so "do this thing that
   happens at a random moment" belongs as a branch inside an existing step's
   `text`/`target`, not as a step of its own. The meeting is the worked example.
+  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop,
+  buy_making, select_weapon, use_making, equip, descend, level, meet_crystal,
+  bench_crystal, craft_crystal, socket. The demo walks the same list headlessly
+  with a hand-written action per step — add a step and that action list needs
+  one too, or the walkthrough reports the opening as STUCK.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
   a minute for the Lampwright panel and fails the run if a first descent never
-  produces one. The meeting fires on a kill count the run rolled, up to seven
-  tenths of the map, so the wait has to cover most of a descent.
+  produces one. The meeting is at the END of a cleared descent now, so that
+  wait has to cover a whole one rather than part of it.
+- **The guide plays the opening in REAL TIME, and one step waits on a level.**
+  `level` sits through however many descents `INTRO.firstCrystalLevel` costs —
+  measured at 24, about eleven minutes — which is not a test, so `guide.mjs`
+  ages the SAVE instead and reloads. It has to do that through
+  `page.addInitScript`, not by writing localStorage and then reloading:
+  `startAutosave` flushes the live game on `pagehide`, so leaving the page
+  overwrites anything written before it. The init script runs on the way IN,
+  after that flush. The harness asserts the edit took, because a silent failure
+  there reads as the step being stuck.
+- **The opening ends inside a popup.** The last step socket the crystal from the
+  collection, so `guide.mjs` closes whatever is open before its post-opening
+  work — the tree, the dock and the worn column all click header buttons a
+  modal covers.
 - **Measure a box with `hover()` first when a drag test aims at one.** Playwright's
   actionability waits for the element to stop MOVING; a raw `boundingBox()`
   does not. The bench going from empty to full grows the card and re-centres
