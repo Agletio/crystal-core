@@ -51,7 +51,7 @@ import {
 } from '../data';
 import type { EncounterDef } from '../data';
 import { ModPool, computeStat } from '../mods';
-import { pickGearBase, pickQuality, rollGear } from '../economy';
+import { pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -1274,10 +1274,10 @@ export class RunSim {
   }
 
   /**
-   * A piece's quality and item level come off the power band, so a weak set
-   * cannot hand you a Brilliant one however lucky you get. Rarity raises the
-   * CHANCE, never the ceiling, or a rarity-stacked bare run out-drops an
-   * honest set.
+   * A piece's item level comes off the power band, and the base's tier comes
+   * off that — so a weak set cannot hand you a six-modifier base however lucky
+   * you get. Rarity raises the CHANCE, never the ceiling, or a rarity-stacked
+   * bare run out-drops an honest set.
    */
   private rollGearDrop(): void {
     const drops = this.set.band;
@@ -1289,11 +1289,8 @@ export class RunSim {
     const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods));
     if (!base) return;
 
-    const quality = pickQuality(drops.quality, this.rng);
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
-    this.state.loot.items.push(
-      rollGear(base.id, drops.ilvl, quality, mods, DROP_POOL, this.rng)
-    );
+    this.state.loot.items.push(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng));
   }
 
   private rollCurrency(): void {

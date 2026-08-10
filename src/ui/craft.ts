@@ -8,13 +8,12 @@ import { Rng } from '../rng';
 import {
   ModPool,
   modCapacity,
-  qualityName,
-  qualityOf,
+  tierName,
   slotCapacity,
   slotTypes,
   slotUsed,
 } from '../mods';
-import { canApply, craft, describeMod } from '../crafting';
+import { canApply, craft, describeMod, isTargeted } from '../crafting';
 import { describeStatLine } from '../mod-text';
 import { ALL_MODS } from '../data';
 import { balance, spend } from '../economy';
@@ -43,6 +42,12 @@ let seed = Math.floor(Math.random() * 1e9);
 let rng = new Rng(seed);
 let game: GameState;
 let focused: string | null = null;
+/**
+ * A targeted currency, waiting for you to say which modifier. UI state, never
+ * saved: a reload that came back still pointing a Shard of Unmaking at an item
+ * would be a click you did not make.
+ */
+let armed: CurrencyDef | null = null;
 
 /** Facet colour by what the mod actually does. */
 const TAG_COLOURS: Array<[string, string]> = [
@@ -74,7 +79,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-function use(currency: CurrencyDef): void {
+function use(currency: CurrencyDef, chosen?: string): void {
   const item = craftItem(game);
   if (!item) return;
 
@@ -84,7 +89,7 @@ function use(currency: CurrencyDef): void {
     return;
   }
 
-  const result = craft(item, currency, pool, rng);
+  const result = craft(item, currency, pool, rng, chosen);
   if (!result.ok) {
     // A refused craft costs nothing — the currency is only spent on a change.
     note(`${currency.name} — ${result.error}`, 'fail');
@@ -93,6 +98,7 @@ function use(currency: CurrencyDef): void {
   }
 
   spend(game.wallet, { [currency.id]: 1 });
+  armed = null;
   note(currency.name, 'note');
   for (const entry of result.log) {
     note(entry, entry.startsWith('-') ? 'remove' : 'add');
@@ -124,14 +130,11 @@ function renderItem(): void {
 
   const worn = EQUIP_SLOTS.find((s) => game.character.equipment[s.id]?.id === item.id);
   $('item-name').textContent = item.name;
-  // Quality first for gear: it decides what you can do next, and it is the
-  // difference between a full Seamed item and a full Brilliant one. A crystal
-  // has no quality ladder — its level is the whole of what grants it room.
+  // The ladder first: it is the whole of how much the item can hold, and the
+  // only thing that moves it is finding a better base.
   $('item-meta').textContent =
-    (item.kind === 'crystal'
-      ? `level ${crystalProgress(item).level}`
-      : qualityName(qualityOf(item))) +
-    ` · ilvl ${item.ilvl} · ${item.mods.length}/${modCapacity(item)} modifiers` +
+    `${tierName(item)} · ilvl ${item.ilvl} · ` +
+    `${item.mods.length}/${modCapacity(item)} modifiers` +
     (item.meta.corrupted ? ' · locked' : '') +
     // Every currency here is live against something you are wearing, and a
     // Shard of Ruin does not care that you are standing in it.
@@ -173,12 +176,17 @@ function renderItem(): void {
       const facet = el('button', 'facet') as HTMLButtonElement;
       if (mod) {
         facet.classList.add('facet--set', `facet--${facetOf(mod)}`);
-        attachTooltip(facet, () => describeMod(mod));
+        const aim = armed;
+        attachTooltip(facet, () =>
+          aim ? `${describeMod(mod)}\n— ${aim.name}: click to remove this one` : describeMod(mod)
+        );
         facet.setAttribute('aria-label', describeMod(mod));
         facet.onclick = () => {
+          if (aim) return use(aim, mod.entryId);
           focused = focused === mod.entryId ? null : mod.entryId;
           render();
         };
+        if (aim) facet.classList.add('facet--armed');
         if (focused === mod.entryId) facet.classList.add('facet--focus');
         facet.append(el('span', 'facet__tier', `T${mod.tier}`));
       } else {
@@ -194,6 +202,13 @@ function renderItem(): void {
 
   const list = $('modlist');
   list.replaceChildren();
+
+  // What an armed currency is waiting for. Nothing else on screen says a click
+  // has changed meaning, and a bench that silently eats one is a bug report.
+  $('craft-armed').textContent = armed
+    ? `${armed.name} — click the modifier you want gone. Click the shard again to put it away.`
+    : '';
+  ($('craft-armed') as HTMLElement).hidden = !armed;
 
   // Implicits first and visibly separate — they're part of the base, not
   // something you rolled, and no craft can touch them.
@@ -224,7 +239,13 @@ function renderItem(): void {
     );
   }
   for (const mod of item.mods) {
-    const row = el('div', 'mod');
+    const aim = armed;
+    const row = el(aim ? 'button' : 'div', 'mod');
+    if (aim) {
+      row.classList.add('mod--armed');
+      row.setAttribute('aria-label', `${aim.name}: remove ${describeMod(mod)}`);
+      (row as HTMLButtonElement).onclick = () => use(aim, mod.entryId);
+    }
     if (focused === mod.entryId) row.classList.add('mod--focus');
     row.append(el('span', `dot dot--${facetOf(mod)}`));
     const b = el('div', 'mod__body');
@@ -291,6 +312,7 @@ function renderCrystals(): void {
 function bench(item: Item): void {
   selectForCraft(game, item);
   focused = null;
+  armed = null;
   note(`Bench: ${item.name}`);
   render();
 }
@@ -388,6 +410,18 @@ function currencyHandler() {
         };
       }
       if (canApply(item, currency)) return null;
+      // Targeted currencies arm rather than fire: the bench then answers the
+      // next click, and clicking the shard again puts it away.
+      if (isTargeted(currency)) {
+        return {
+          label: armed?.id === currency.id ? 'put it away' : 'choose a modifier',
+          run: () => {
+            openCraft();
+            armed = armed?.id === currency.id ? null : currency;
+            render();
+          },
+        };
+      }
       return {
         label: `use on ${item.name}`,
         run: () => {
@@ -422,6 +456,7 @@ export function openCraft(): void {
 }
 
 export function closeCraft(): void {
+  armed = null;
   $('craft').hidden = true;
   hideTooltip();
   onClosed?.();
@@ -445,6 +480,7 @@ export function initCraft(state: GameState, closed: () => void, changed?: () => 
     const item = craftItem(game);
     if (!item) return;
     note(`Closed ${item.name}`);
+    armed = null;
     clearCraft(game);
     render();
   };

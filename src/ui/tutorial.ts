@@ -12,7 +12,6 @@
  * through six modules' renders, and the same tick repositions the card.
  */
 import { balance } from "../economy";
-import { qualityOf } from "../mods";
 import { craftItem, gearKindOf, giftWeapon } from "../game/state";
 import type { GameState } from "../game/state";
 import type { Item } from "../types";
@@ -59,7 +58,7 @@ const isWeapon = (i: Item) => i.kind === 'gear' && gearKindOf(i) === 'weapon';
 
 /** A fallback, for a save written before the wand was marked. */
 const anyWeapon = (g: GameState): Item | undefined =>
-  g.inventory.find((i) => isWeapon(i) && qualityOf(i) === 'rough') ?? g.inventory.find(isWeapon);
+  g.inventory.find((i) => isWeapon(i) && i.mods.length === 0) ?? g.inventory.find(isWeapon);
 
 /** The wand itself, if it is still in the dock to be clicked. */
 const theWand = (g: GameState): string => {
@@ -145,22 +144,22 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       blocked(ctx) ? "Close this — the Shop is behind it." : "Open the Shop.",
     target: (ctx) => viaHeader(ctx, "open-shop"),
-    done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_awakening"),
+    done: (_g, ctx) => ctx.top === "shop" || has(_g, "shard_of_making"),
   },
   {
-    id: "buy_seaming",
+    id: "buy_making",
     text: (ctx) =>
       ctx.top === "shop"
-        ? "Buy a Shard of Seaming."
+        ? "Buy a Shard of Making."
         : blocked(ctx)
           ? "Close this to get back to the Shop."
-          : "Open the Shop and buy a Shard of Seaming.",
-    hint: "Your wand is Rough — it has no room for a modifier until this opens one.",
+          : "Open the Shop and buy a Shard of Making.",
+    hint: "The only currency the shop sells. Everything else at the bench drops.",
     target: (ctx) =>
       ctx.top === "shop"
-        ? recipeButtonId("make_shard_of_seaming")
+        ? recipeButtonId("make_shard_of_making")
         : viaHeader(ctx, "open-shop"),
-    done: (g) => has(g, "shard_of_seaming"),
+    done: (g) => has(g, "shard_of_making"),
   },
   {
     id: "select_weapon",
@@ -178,31 +177,16 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         : ctx.view === "craft"
           ? theWand(g)
           : viaHeader(ctx, "open-craft"),
-    // THE wand. Every looser reading — any gear, any Rough weapon — let a first
-    // run's drops satisfy this step, and with it the next one, which waits for
-    // a modifier that was already there.
+    // THE wand. Every looser reading — any gear, any blank weapon — let a
+    // first run's drops satisfy this step, and with it the next one.
     done: (g) => craftItem(g)?.meta.firstClear === true,
   },
   {
-    id: "use_seaming",
-    text: "Click the Shard of Seaming.",
+    id: "use_making",
+    text: "Click the Shard of Making.",
+    hint: "An Ash Wand is a tier 1 base: two modifiers, and nothing at the bench raises that. A bigger one is something you go and find.",
     target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
-  },
-  {
-    id: "buy_making",
-    text: (ctx) =>
-      ctx.top === "shop"
-        ? "Buy a Shard of Making."
-        : blocked(ctx)
-          ? "Close this — the Shop is behind it."
-          : "Back to the Shop.",
-    hint: "A Seamed item holds two modifiers. Your wand is using one.",
-    target: (ctx) =>
-      ctx.top === "shop"
-        ? recipeButtonId("make_shard_of_making")
-        : viaHeader(ctx, "open-shop"),
-    done: (g) => has(g, "shard_of_making"),
   },
   {
     id: "equip",

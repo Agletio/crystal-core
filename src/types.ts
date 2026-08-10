@@ -9,10 +9,6 @@
 export type StatForm = 'flat' | 'inc' | 'more';
 export type ItemKind = 'gear' | 'crystal';
 
-/** How many modifiers an item may carry — the base's slot table says which
- *  KINDS. How finished it is, against what it is. */
-export type Quality = 'rough' | 'seamed' | 'faceted' | 'brilliant';
-
 /** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;
 
@@ -83,7 +79,7 @@ export interface Item {
   kind: ItemKind;
   base: string;
   name: string;
-  tags: string[]; // what mods match against: ['crystal','tier3']
+  tags: string[]; // what mods match against: ['crystal','level3']
   ilvl: number;
   slots: Record<ModSlot, number>; // capacity, declared by the base
   mods: RolledMod[];
@@ -148,7 +144,12 @@ export interface GearBase {
   name: string;
   kind: GearKind;
   art: string; // icon family — a name, not an asset
-  slots: Record<string, number>; // zero in a slot type means it never rolls one
+  /** Which slot types it can roll, and the ceiling on each. The TOTAL a piece
+   *  may hold comes off `tier` — this only says where those go. */
+  slots: Record<string, number>;
+  /** 1, 2 or 3. Holds `BASE_TIER_MODS[tier - 1]` modifiers, and nothing raises
+   *  it: a bigger item means going and finding a better base. */
+  tier: number;
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
   family?: string;

@@ -5,10 +5,6 @@ import {
   fillState,
   hasOpenSlot,
   instantiate,
-  modCapacity,
-  qualityName,
-  qualityOf,
-  qualityRank,
   rollRandomMod,
   rollValues,
   declaredCapacity,
@@ -16,7 +12,6 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { QUALITIES } from './data';
 import type {
   Condition,
   CraftResult,
@@ -32,6 +27,8 @@ export interface CraftContext {
   pool: ModPool;
   rng: Rng;
   log: string[];
+  /** entryId the player picked, for the one currency that lets them pick. */
+  chosen?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,16 +65,6 @@ export const CONDITIONS: Record<string, ConditionImpl> = {
   ilvl_at_least: (item, p) => item.ilvl >= p.value,
 
   not_corrupted: (item) => item.meta.corrupted !== true,
-
-  /** Item is at exactly one of these qualities. */
-  quality_is: (item, p) => (p.any as string[]).includes(qualityOf(item)),
-
-  /** Item is at this quality or better. */
-  quality_at_least: (item, p) =>
-    qualityRank(qualityOf(item)) >= qualityRank(p.value),
-
-  /** Item is below this quality — the gate on every step-up currency. */
-  quality_below: (item, p) => qualityRank(qualityOf(item)) < qualityRank(p.value),
 };
 
 const CONDITION_MESSAGES: Record<string, string> = {
@@ -87,9 +74,6 @@ const CONDITION_MESSAGES: Record<string, string> = {
   has_slot_type: 'item has no such slot',
   mod_count: 'wrong number of modifiers',
   fill_state: 'wrong fill state',
-  quality_is: 'wrong quality',
-  quality_at_least: 'the item is not refined enough',
-  quality_below: 'the item is already that refined',
 };
 
 export function checkConditions(item: Item, conds: Condition[] = []): string | null {
@@ -146,19 +130,59 @@ export const EFFECTS: Record<string, EffectImpl> = {
     return added > 0;
   },
 
-  /** Remove mods at random from the matching set. */
+  /**
+   * Remove mods from the matching set. Random, unless the currency is `chosen`
+   * and the caller named one in `ctx.chosen` — the one piece of targeting on
+   * the bench, and it is targeting what LEAVES rather than what arrives.
+   *
+   * A `chosen` currency with nothing named refuses rather than picking for
+   * you: spending it on a random removal you did not ask for is the worst
+   * possible reading of a click.
+   */
   remove_mod: (ctx, p) => {
     const count = p.count ?? 1;
     let removed = 0;
     for (let i = 0; i < count; i++) {
       const pool = matching(ctx.item.mods, p);
-      const victim = ctx.rng.pick(pool);
+      const named = p.chosen && i === 0
+        ? pool.find((m) => m.entryId === ctx.chosen)
+        : undefined;
+      if (p.chosen && i === 0 && !named) return false;
+      const victim = named ?? ctx.rng.pick(pool);
       if (!victim) break;
       ctx.item.mods.splice(ctx.item.mods.indexOf(victim), 1);
       ctx.log.push(`- ${describeMod(victim)}`);
       removed++;
     }
     return removed > 0;
+  },
+
+  /**
+   * A coin flip with no take-back: one modifier PAST the item's capacity, or
+   * one taken away at random. The upside is the only route to an over-full
+   * item in the game, and it costs the same throw that can gut a finished one.
+   *
+   * The flip falls back to the other side rather than failing: a currency that
+   * refuses on a full item, and refuses on an empty one, is a currency you
+   * cannot read.
+   */
+  gamble_mod: (ctx, p) => {
+    const grow = () => {
+      const slot: ModSlot = ctx.rng.pick(slotTypes(ctx.item)) ?? slotTypes(ctx.item)[0];
+      if (!slot) return false;
+      const had = ctx.item.mods.length;
+      ctx.item.meta.bonusSlots ??= {};
+      ctx.item.meta.bonusSlots[slot] = (ctx.item.meta.bonusSlots[slot] ?? 0) + 1;
+      if (EFFECTS.add_mod(ctx, { count: 1 }) && ctx.item.mods.length > had) return true;
+      // Nothing could roll there. Hand the slot back rather than leaving a
+      // permanent opening the item was never paid for.
+      ctx.item.meta.bonusSlots[slot]--;
+      return false;
+    };
+    const shrink = () => EFFECTS.remove_mod(ctx, { count: 1 });
+
+    const up = ctx.rng.chance(p.upChance ?? 0.5);
+    return up ? grow() || shrink() : shrink() || grow();
   },
 
   /**
@@ -250,36 +274,10 @@ export const EFFECTS: Record<string, EffectImpl> = {
     return true;
   },
 
-  /** Irreversibly lock the item. Demonstrates a meta-flag effect. */
+  /** Irreversibly lock the item. Every currency refuses one. */
   corrupt: (ctx) => {
     ctx.item.meta.corrupted = true;
     ctx.log.push('item is now corrupted');
-    return true;
-  },
-
-  /**
-   * Raise the item's quality, optionally filling it to a mod count.
-   *
-   * One effect covers the whole step-up ladder because the interesting part
-   * is always the same shape: a Rough piece becomes Seamed with one mod, a
-   * Seamed piece becomes Faceted keeping what it had. Only ever upward —
-   * a currency that could quietly downgrade an item would delete mods as a
-   * side effect of a name that didn't say so.
-   */
-  set_quality: (ctx, p) => {
-    const to = p.to as string;
-    if (qualityRank(qualityOf(ctx.item)) >= qualityRank(to as never)) return false;
-    if (!QUALITIES.some((q) => q.id === to)) return false;
-
-    ctx.item.meta.quality = to;
-    ctx.log.push(`now ${qualityName(to as never)}`);
-
-    // `fill` is a TARGET count, not an addition: the same currency used on a
-    // Rough item and on a Seamed one should land on the same shape.
-    if (p.fill !== undefined) {
-      const target = Math.min(p.fill as number, modCapacity(ctx.item));
-      fillAll(ctx, undefined, target);
-    }
     return true;
   },
 
@@ -317,6 +315,14 @@ function fillAll(ctx: CraftContext, slot?: ModSlot, limit = Infinity): void {
 // ---------------------------------------------------------------------------
 // Engine
 // ---------------------------------------------------------------------------
+
+/** True for the one currency that asks you which modifier, not the engine. */
+export const isTargeted = (currency: CurrencyDef): boolean =>
+  currency.effects.some((e) => e.chosen === true);
+
+/** True for anything that leaves the item unable to be crafted again. */
+export const locksItem = (currency: CurrencyDef): boolean =>
+  currency.effects.some((e) => e.kind === 'corrupt');
 
 export function canApply(item: Item, currency: CurrencyDef): string | null {
   const t = currency.targets;
@@ -368,12 +374,13 @@ export function craft(
   item: Item,
   currency: CurrencyDef,
   pool: ModPool,
-  rng: Rng
+  rng: Rng,
+  chosen?: string
 ): CraftResult {
   const blocked = canApply(item, currency);
   if (blocked) return { ok: false, item, log: [], error: blocked };
 
-  const ctx: CraftContext = { item: clone(item), pool, rng, log: [] };
+  const ctx: CraftContext = { item: clone(item), pool, rng, log: [], chosen };
 
   for (const effect of currency.effects) {
     const impl = EFFECTS[effect.kind];
@@ -422,8 +429,7 @@ export function describeItem(item: Item): string {
   const head = `${item.name} [${fillState(item)}] ilvl ${item.ilvl}${
     item.meta.corrupted ? ' (corrupted)' : ''
   }`;
-  // Only the types this item currently has room in. A Rough item lists none,
-  // which is the truth about it.
+  // Only the types this item currently has room in.
   const caps =
     slotTypes(item)
       .filter((t) => slotCapacity(item, t) > 0)

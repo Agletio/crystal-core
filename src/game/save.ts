@@ -7,7 +7,6 @@
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { healQuests } from './crystals';
-import { qualityOf } from '../mods';
 import type { GameState } from './state';
 import {
   CRYSTAL_LEVELS,
@@ -236,7 +235,7 @@ export function heal(game: GameState): Healed {
     const weapons = [...game.inventory, ...wornItems(game)].filter(
       (i) => GEAR_BASE_BY_ID[i.base]?.kind === 'weapon'
     );
-    const pick = weapons.find((i) => qualityOf(i) === 'rough') ?? weapons[0];
+    const pick = weapons.find((i) => i.mods.length === 0) ?? weapons[0];
     if (pick) pick.meta.firstClear = true;
   }
 

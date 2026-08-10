@@ -269,11 +269,11 @@ assert(benchCrystals().length > 0, 'the bench keeps a crystals column instead');
   );
 }
 
-// Quality colours the slot. A dock is something you scan for "is any of this
-// worth looking at", and a silhouette can only say what a piece IS.
+// The base's tier colours the slot. A dock is something you scan for "is any
+// of this worth looking at", and a silhouette can only say what a piece IS.
 assert(
-  filled('#inv-gear').every((b) => /slot--q-/.test(b.className)),
-  'every piece carries its quality on the slot'
+  filled('#inv-gear').every((b) => /slot--t\d/.test(b.className)),
+  'every piece carries its base tier on the slot'
 );
 
 // --- bench starts empty ---------------------------------------------------
@@ -335,65 +335,50 @@ const currencyButton = (name) =>
 const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
 
-// A crystal's room comes from its LEVEL, so no amount of crafting opens a
-// level 1 one. Everything below is the gear ladder instead, which is where
-// quality still decides how much a piece can hold.
+// A crystal's room comes from its LEVEL, so nothing opens a level 1 one.
 {
   const making = currencyButton('Shard of Making');
   assert(!!making && making.disabled, 'nothing can put a modifier on a level 1 crystal');
-  const seaming = currencyButton('Shard of Seaming');
-  seaming?.click();
-  assert(facets() === 0, 'and opening it does not give it room either', String(facets()));
 }
 $('craft-return').click();
 
-// --- quality gates what a currency can touch ------------------------------
-// A blank piece of gear is Rough: no room for a modifier at all, whatever its
-// base declares. This is the whole point of the ladder — you cannot fill and
-// re-roll a fresh drop to perfection, because a fresh drop has nowhere to put
-// anything until you open it.
-const roughGear = filled('#inv-gear').find((b) => /q-rough/.test(b.className));
-assert(!!roughGear, 'a Rough piece of gear is in the dock');
-roughGear.click();
+// --- the base's tier is the whole of what an item can hold ----------------
+// Two modifiers on a tier 1 base, and nothing at the bench raises that: a
+// bigger item is something you go and find. This is what stops a fresh drop
+// being filled and re-rolled to perfection.
+const smallGear = filled('#inv-gear').find((b) => /slot--t1\b/.test(b.className));
+assert(!!smallGear, 'a tier 1 piece of gear is in the dock');
+smallGear.click();
 
-const making = currencyButton('Shard of Making');
-assert(!!making && making.disabled, 'Making cannot touch a Rough item');
 assert(
-  /rough/i.test(text('item-meta')),
-  'and the item says it is Rough',
+  /tier 1/i.test(text('item-meta')),
+  'and the item says which tier it is',
   text('item-meta')
 );
+assert(facets() === 2, 'a tier 1 base opens exactly two facets', String(facets()));
 
-const seaming = currencyButton('Shard of Seaming');
-assert(!!seaming && !seaming.disabled, 'Seaming is what opens it');
-assert(heldCount('Shard of Seaming') > 0, 'currency count shown on the stack');
+const making = currencyButton('Shard of Making');
+assert(!!making && !making.disabled, 'Making is what fills them');
+assert(heldCount('Shard of Making') > 0, 'currency count shown on the stack');
 
-const seamStock = heldCount('Shard of Seaming');
-seaming.click();
 const rolled = () => all('#modlist .mod').filter((m) => !m.classList.contains('mod--implicit'));
-assert(rolled().length === 1, 'Seaming lands one modifier', String(rolled().length));
-assert(/seamed/i.test(text('item-meta')), 'and raises the quality', text('item-meta'));
-// Two, because Seamed is two, whatever the base declares.
-assert(facets() === 2, 'and opens exactly two facets', String(facets()));
+const stockBefore = heldCount('Shard of Making');
+making.click();
+assert(rolled().length === 1, 'Making lands one modifier', String(rolled().length));
 assert(
-  heldCount('Shard of Seaming') === seamStock - 1,
-  'Seaming was spent',
-  `${heldCount('Shard of Seaming')} vs ${seamStock}`
+  heldCount('Shard of Making') === stockBefore - 1,
+  'Making was spent',
+  `${heldCount('Shard of Making')} vs ${stockBefore}`
 );
 
-// Now Making works, because there is somewhere to put a modifier.
-const making2 = currencyButton('Shard of Making');
-assert(!!making2 && !making2.disabled, 'Making works once the item is Seamed');
-
-const stockBefore = heldCount('Shard of Making');
-making2.click();
-
+currencyButton('Shard of Making').click();
 assert(rolled().length === 2, 'a second modifier was added', String(rolled().length));
 
-// Seamed holds two. A third has nowhere to go, whatever the base's slots say.
+// Two is all a tier 1 base has. A third has nowhere to go, whatever else you
+// own — there is no currency in the game that opens one.
 assert(
   currencyButton('Shard of Making')?.disabled === true,
-  'and a Seamed item stops at two'
+  'and a tier 1 base stops at two'
 );
 
 // --- no identifier ever reaches the screen --------------------------------
@@ -413,12 +398,6 @@ assert(
   }
   assert(leaks.size === 0, 'and none of them is a raw identifier', [...leaks].join(', '));
 }
-
-assert(
-  heldCount('Shard of Making') === stockBefore - 1,
-  'currency was spent',
-  `${heldCount('Shard of Making')} vs ${stockBefore}`
-);
 
 // Adding a modifier has to CHANGE the crystal's header. Most raise danger; the
 // finding ones carry none at all and state what the run is pointed at instead.
@@ -445,14 +424,14 @@ assert(
     multRows().join(' ')
   );
   $('craft-return').click();
-  roughGear.click();
+  smallGear.click();
 }
 assert(
-  currencySlots().length >= 12,
+  currencySlots().length >= 6,
   'the dock holds the whole spread of currency',
   String(currencySlots().length)
 );
-// Thirteen currencies that all looked the same made the icon decoration; the
+// Currencies that all looked the same made the icon decoration; the
 // silhouette is what tells them apart before you have learned the names.
 {
   const shapes = new Set(
@@ -478,6 +457,47 @@ assert(
   `${invItems().length} vs ${inventoryBefore}`
 );
 
+// --- arming the one currency you aim --------------------------------------
+// Everything else at the bench fires on the click. Removal asks which one,
+// because choosing what LEAVES is the only targeting that does not collapse
+// the chase — and a bench that silently changed what a click means would be a
+// bug report, so arming has to say so on screen.
+{
+  const unmaking = currencyButton('Shard of Unmaking');
+  assert(!!unmaking, 'the dev kit stocks the removal currency');
+  assert(
+    /choose a modifier/i.test(named(unmaking)),
+    'which asks you to choose rather than firing',
+    named(unmaking)
+  );
+  const before = rolled().length;
+  assert(before > 0, 'the benched item has something to remove', String(before));
+  unmaking.click();
+  assert($('craft-armed').hidden === false, 'arming it says so on the bench');
+
+  const facet = all('#sockets .facet--set')[0];
+  assert(!!facet, 'the item draws its filled facets');
+  assert(facet.classList.contains('facet--armed'), 'and every one becomes a target');
+  facet.click();
+  assert(rolled().length === before - 1, 'clicking one removes it', `${rolled().length} vs ${before}`);
+  assert($('craft-armed').hidden === true, 'and puts the shard away afterwards');
+}
+
+// --- a one-way door says so before you open it ----------------------------
+// The two gambles lock the item permanently. Nothing else in the game does,
+// and a lock nobody saw coming is the worst thing on the bench.
+{
+  const gamble = currencySlots().find((b) => /Sigil of/.test(named(b)));
+  assert(!!gamble, 'the dev kit stocks a gamble', named(currencySlots()[0]));
+  gamble.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(
+    /LOCKS THE ITEM/.test(text('tooltip')),
+    'and it says it locks the item before you spend it',
+    text('tooltip')
+  );
+  gamble.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
 // --- implicits survive everything ----------------------------------------
 // A weapon's implicit is its identity. Every effect in the registry operates
 // on `mods`, so nothing — including Shard of Ruin, which strips the lot —
@@ -493,9 +513,9 @@ const implicitRows = () => all('#modlist .mod--implicit');
 assert(implicitRows().length === 1, 'the weapon shows its implicit');
 const implicitText = implicitRows()[0].textContent;
 
-// Cut it straight to Faceted, fill it, then wipe it. Nothing in that sequence
-// may reach the implicit — it is the base's identity, not a modifier.
-for (const name of ['Shard of Cleaving', 'Shard of Awakening', 'Shard of Ruin']) {
+// Fill it, re-roll every modifier, then re-roll every value. Nothing in that
+// sequence may reach the implicit — it is the base's identity, not a modifier.
+for (const name of ['Shard of Making', 'Shard of Making', 'Shard of Chaos', 'Shard of Change']) {
   const btn = currencyButton(name);
   if (btn && !btn.disabled) btn.click();
 }
@@ -524,13 +544,14 @@ $('open-shop').click();
 assert($('shop').hidden === false, 'the shop opens');
 
 const buys = all('#workshop button.buy');
-assert(buys.length >= 2, 'the shop lists recipes', String(buys.length));
+assert(buys.length >= 1, 'the shop lists recipes', String(buys.length));
 const affordable = buys.find((b) => !b.disabled);
 assert(!!affordable, 'at least one recipe is affordable');
 
-// --- the shelf grows with you ---------------------------------------------
-// A level-1 shop selling a Shard of Chaos is selling something you cannot use
-// on anything you own. Crystals are not on it at all: they are given.
+// --- the shelf is one currency, and the map is the rest -------------------
+// A shop that stocks the whole bench is a shop that replaces the map. Adding
+// a modifier is the one thing you need enough of that running out is only
+// tedious; crystals are not on the shelf at all, because they are given.
 const buyNames = () => all('#workshop .buy__name').map((n) => n.textContent);
 assert(
   !buyNames().some((n) => /Crystal/.test(n)),
@@ -538,13 +559,8 @@ assert(
   buyNames().join(', ')
 );
 assert(
-  !buyNames().some((n) => /Chaos|Awakening|Cleaving|Ascent/.test(n)),
-  'and none of the currencies you could not use yet',
-  buyNames().join(', ')
-);
-assert(
-  buyNames().some((n) => /Seaming/.test(n)),
-  'but the one that opens a Rough item is there from the start',
+  buyNames().length === 1 && /Making/.test(buyNames()[0]),
+  'and sells exactly one currency: the one that adds a modifier',
   buyNames().join(', ')
 );
 
@@ -556,8 +572,8 @@ assert(
   'every piece shows a price'
 );
 assert(
-  all('#shop-stock .buy__cost').every((n) => /Rough|Seamed|Faceted|Brilliant/.test(n.textContent)),
-  'and its quality',
+  all('#shop-stock .buy__cost').every((n) => /Tier \d/.test(n.textContent)),
+  'and its base tier',
   all('#shop-stock .buy__cost')[0]?.textContent
 );
 

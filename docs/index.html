@@ -60,6 +60,15 @@
 
     --rust:      #C4631E;
     --venom:     #9BD13A;
+
+    /* A gear base's tier, which is the whole of how many modifiers it holds.
+       One ladder, one set of colours, wherever a piece is drawn. */
+    --tier1:     #D8D2C4;
+    --tier2:     #6FC7E8;
+    --tier3:     #D9A441;
+    /* Locked. Nothing can touch the item again, which is worth seeing from
+       across the screen rather than in a tooltip. */
+    --locked:    #C4631E;
     --gloom:     #3A2450;
     --bone:      #C9BFA3;
 
@@ -535,12 +544,12 @@
   }
   .slot--off { opacity: .34; }
 
-  /* Item quality, on the border — the silhouette can only say what a piece IS.
-     Rough stays the plain slot colour: a grid where everything is highlighted
-     highlights nothing. */
-  .slot--q-seamed    { border-color: rgba(111,199,232,.55); }
-  .slot--q-faceted   { border-color: rgba(232,184,75,.6); }
-  .slot--q-brilliant { border-color: rgba(232,115,95,.75); box-shadow: inset 0 0 0 1px rgba(232,115,95,.3); }
+  /* The base's tier, on the border — the silhouette can only say what a piece
+     IS. Tier 1 stays the plain slot colour: a grid where everything is
+     highlighted highlights nothing. */
+  .slot--t2     { border-color: var(--tier2); }
+  .slot--t3     { border-color: var(--tier3); box-shadow: inset 0 0 0 1px rgba(217,164,65,.3); }
+  .slot--locked { border-color: var(--locked); box-shadow: inset 0 0 0 1px rgba(196,99,30,.35); }
 
   /* Currency stacks. Class colours the border, matching the icon's fill, so
      rarity reads from the grid before you've learned a single silhouette. */
@@ -874,6 +883,14 @@
     .craftcols > .worn--crystals { order: 3; }
   }
 
+  /* A currency waiting for you to point at something. Only ever up while a
+     click on the bench means something other than what it usually means. */
+  .armed { font-size: 11px; color: var(--citrine); margin: 6px 0 10px; line-height: 1.5; }
+  .facet--armed, .mod--armed { cursor: pointer; }
+  .facet--armed:hover { border-color: var(--ember); }
+  .mod--armed { width: 100%; text-align: left; border: 0; background: none; padding: 0; }
+  .mod--armed:hover { background: var(--seam); }
+
   .worn { padding: 10px; }
   /* The collection only ever grows, so it gets its own scroll rather than
      making the whole bench taller than the window. */
@@ -1185,6 +1202,7 @@
             <h2 id="item-name">—</h2>
             <div id="item-meta"></div>
             <div class="mults" id="item-rewards" hidden></div>
+            <p class="armed" id="craft-armed" hidden></p>
             <div id="sockets"></div>
             <div id="modlist"></div>
           </div>

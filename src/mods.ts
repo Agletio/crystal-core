@@ -1,12 +1,11 @@
 import { Rng } from './rng';
-import { QUALITIES, QUALITY_BY_ID } from './data';
+import { GEAR_BASE_BY_ID, baseMods } from './data';
 import type {
   FillState,
   Item,
   ModDef,
   ModEntry,
   ModSlot,
-  Quality,
   RolledMod,
   StatRoll,
 } from './types';
@@ -16,10 +15,7 @@ export function slotTypes(item: Item): ModSlot[] {
   return Object.keys(item.slots);
 }
 
-/**
- * What the BASE says, ignoring quality — the item's ceiling if it were finished,
- * and the right question for "can this currency target this item at all".
- */
+/** The ceiling on ONE slot type. How many the item holds is `modCapacity`. */
 export function declaredCapacity(item: Item, slot: ModSlot): number {
   const base = item.slots[slot] ?? 0;
   const bonus = (item.meta?.bonusSlots?.[slot] as number) ?? 0;
@@ -34,30 +30,32 @@ export function totalCapacity(item: Item): number {
   return slotTypes(item).reduce((n, t) => n + declaredCapacity(item, t), 0);
 }
 
-/** Untagged items are Rough — the state everything starts in. */
-export function qualityOf(item: Item): Quality {
-  return (item.meta?.quality as Quality) ?? 'rough';
-}
+/**
+ * 1, 2 or 3 for gear; a crystal's is its level. No currency raises it, so a
+ * bigger item means going and finding a better base.
+ */
+export const baseTier = (item: Item): number =>
+  item.kind === 'crystal'
+    ? Number(item.meta?.level) || 1
+    : (GEAR_BASE_BY_ID[item.base]?.tier ?? 1);
 
-export function qualityRank(quality: Quality): number {
-  const i = QUALITIES.findIndex((q) => q.id === quality);
-  return i < 0 ? 0 : i;
-}
-
-export const qualityName = (quality: Quality): string =>
-  QUALITY_BY_ID[quality]?.name ?? quality;
+/** What that ladder is called on screen. A crystal's is a level, not a tier. */
+export const tierName = (item: Item): string =>
+  item.kind === 'crystal' ? `Level ${baseTier(item)}` : `Tier ${baseTier(item)}`;
 
 /**
- * The lower of two independent limits: quality says how finished the item is,
- * the slot table says what a body armour IS. Either can be the binding one.
+ * The lower of two independent limits: the base's TIER says how many, the slot
+ * table says where they may go. Either can be the binding one, and a crystal
+ * declares its whole capacity in one `mod` slot rather than a spread.
  */
 export function modCapacity(item: Item): number {
-  // Bonus slots raise BOTH limits — they are the one way past a quality cap.
+  // Bonus slots raise BOTH limits — they are the one way past the tier's cap.
   const bonus = Object.values(
     (item.meta?.bonusSlots as Record<string, number>) ?? {}
   ).reduce((n, v) => n + v, 0);
-  const byQuality = (QUALITY_BY_ID[qualityOf(item)]?.mods ?? 0) + bonus;
-  return Math.min(byQuality, totalCapacity(item));
+  const declared =
+    item.kind === 'crystal' ? (item.slots.mod ?? 0) : baseMods(baseTier(item));
+  return Math.min(declared + bonus, totalCapacity(item));
 }
 
 /**
@@ -152,7 +150,7 @@ export class ModPool {
     for (const g of opts.excludeGroups ?? []) takenGroups.add(g);
 
     // Here rather than only at the call sites, so no future effect can route
-    // around the quality cap by accident.
+    // around the capacity cap by accident.
     if (item.mods.length >= modCapacity(item)) return [];
 
     // Dealt once, not per candidate: this runs over the whole pool per roll.

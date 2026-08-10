@@ -1,7 +1,7 @@
 /**
  * A reference set of gear and crystals for the dev kit and the balance
- * harnesses. Quality is a parameter because "what does a Faceted set clear" is
- * what the ladder exists to answer.
+ * harnesses. Item level is the only parameter: it decides the base's tier as
+ * well as which modifier tiers can roll.
  */
 import { Rng } from '../rng';
 import { ModPool, modCapacity } from '../mods';
@@ -19,28 +19,23 @@ import { makeCharacter } from './character';
 import { canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
-import type { Item, Quality } from '../types';
+import type { Item } from '../types';
 
-/** One item per slot, filled to its quality, keyed by slot id. */
-export function starterLoadout(
-  rng: Rng,
-  ilvl = 30,
-  quality: Quality = 'faceted'
-): Record<string, Item> {
+/** One item per slot, filled to its base's capacity, keyed by slot id. */
+export function starterLoadout(rng: Rng, ilvl = 30): Record<string, Item> {
   const pool = new ModPool(ALL_MODS);
   const equipment: Record<string, Item> = {};
 
   for (const slot of EQUIP_SLOTS) {
     const base = defaultGearBase(slot.accepts, ilvl, REFERENCE_ARMOUR_FAMILY);
     if (!base) continue;
-    // Ask for more than any quality allows and let modCapacity decide — the
-    // caller should not have to know the ladder's numbers to fill an item.
-    equipment[slot.id] = rollGear(base.id, ilvl, quality, 99, pool, rng);
+    // More than any base holds, and let modCapacity decide.
+    equipment[slot.id] = rollGear(base.id, ilvl, 99, pool, rng);
   }
   return equipment;
 }
 
-/** How many mods a full set of this quality carries. Used by the harnesses. */
+/** How many mods a full set carries. Used by the harnesses. */
 export function loadoutMods(equipment: Record<string, Item>): number {
   return Object.values(equipment).reduce((n, i) => n + i.mods.length, 0);
 }
@@ -54,10 +49,9 @@ export const loadoutCapacity = (equipment: Record<string, Item>): number =>
  */
 export function ladderCharacter(band: number, rng: Rng, skillId = 'strike'): Character {
   const rung = Math.min(Math.max(1, band), DROP_BANDS.length - 1);
-  const quality: Quality = rung >= 6 ? 'brilliant' : rung >= 3 ? 'faceted' : 'seamed';
   const ilvl = DROP_BANDS[rung - 1].ilvl;
 
-  const character = makeCharacter(starterLoadout(rng, ilvl, quality), skillId);
+  const character = makeCharacter(starterLoadout(rng, ilvl), skillId);
   character.level = 4 + rung * 6;
 
   const progress = skillProgress(character, skillId);

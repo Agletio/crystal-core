@@ -1,7 +1,6 @@
 import type {
   CurrencyClass,
   CurrencyDef,
-  Quality,
   EquipSlotDef,
   GearBase,
   ModDef,
@@ -96,11 +95,9 @@ export const AILMENT = {
 
 /**
  * Resistance and armour are separate MULTIPLIERS — at both caps you take
- * 0.25 * 0.25 of a hit. Adding them would be immunity at 75 + 75.
- *
- * Armour curves with armour POINTS, not with the size of the hit, so it is one
- * number you can print. It applies to HITS only: damage over time goes through
- * resistance alone, which is what lets an ailment threaten an armoured build.
+ * 0.25 * 0.25 of a hit; adding them would be immunity at 75 + 75. Armour
+ * curves with armour POINTS, not with the size of the hit, and applies to HITS
+ * only: damage over time goes through resistance alone.
  */
 export const DEFENCE = {
   resistanceCap: 75,
@@ -123,28 +120,20 @@ export const RUN_SLOTS: RunSlotDef[] = [
   { id: 's4', name: 'Fourth socket', accepts: 'crystal' },
 ];
 
-// --- item quality ----------------------------------------------------------
-//
-// The second axis: the base decides WHAT can go on an item, quality decides
-// HOW MUCH. Slot tables sum to six.
-
-export const QUALITIES: Array<{ id: Quality; name: string; mods: number }> = [
-  { id: 'rough', name: 'Rough', mods: 0 },
-  { id: 'seamed', name: 'Seamed', mods: 2 },
-  { id: 'faceted', name: 'Faceted', mods: 4 },
-  { id: 'brilliant', name: 'Brilliant', mods: 6 },
-];
-
-export const QUALITY_BY_ID: Record<string, (typeof QUALITIES)[number]> =
-  Object.fromEntries(QUALITIES.map((q) => [q.id, q]));
+// --- what a base holds -----------------------------------------------------
 
 /**
- * Gear mod groups. Restricting what a piece can roll is a capacity table, not
+ * Modifiers a gear base holds, by its tier. The WHOLE of capacity: nothing a
+ * currency does raises it, so a bigger item means finding a better base.
+ */
+export const BASE_TIER_MODS = [2, 4, 6];
+
+export const baseMods = (tier: number): number =>
+  BASE_TIER_MODS[Math.max(0, Math.min(BASE_TIER_MODS.length - 1, tier - 1))];
+
+/**
+ * Where a modifier may go. Restricting what a piece can roll is a table, not
  * an engine feature: a base with zero utility slots cannot roll move speed.
- *
- *   offence  hurting things — flat damage, increases, speed, crit
- *   defence  staying alive
- *   utility  everything that is neither
  */
 export const GEAR_SLOT_TYPES = ['offence', 'defence', 'utility'] as const;
 
@@ -175,9 +164,8 @@ export const BASE_TIER_ILVL = [1, 22, 46];
 // Twelve families across four slots and three rungs. Every family spends the
 // SAME budget at the same rate and differs only in how it splits it, so a
 // hybrid is a redistribution rather than a surplus — the demo re-adds the
-// points to prove it. Armour comes out of that budget as a rating on the base,
-// so increases have something to scale. Slot capacities never vary by family:
-// a better split AND more openings is how one becomes the only choice.
+// points to prove it. Slot layouts never vary by family: a better split AND
+// more openings is how one becomes the only choice.
 
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
@@ -361,6 +349,7 @@ const armourBases = (): GearBase[] => {
           art: `${family.id}_${kind}`,
           family: family.id,
           ilvl: BASE_TIER_ILVL[tier - 1],
+          tier,
           slots: { ...ARMOUR_SLOT_LAYOUT[kind] },
           armour: quantise('armour', budget * (family.mix.armour ?? 0)),
           // A family that spends everything on the rating has no implicit at
@@ -400,15 +389,9 @@ export const familySpendOn = (familyId: string, kind: string, tier: number, key:
 
 /**
  * One-handed weapons, in four families. Every weapon carries an IMPLICIT no
- * craft can touch, which is the reason to want a wand over a sword before
- * either has rolled anything.
- *
- *   wands    spell damage, or cast speed
- *   swords   attack speed
- *   daggers  flat critical chance — increases would multiply a 5% base
- *   maces    flat damage of ONE type per base, so a mace commits you
- *
- * Tiers within a family are gated by ilvl, so bases are themselves progression.
+ * craft can touch — wands spell damage or cast speed, swords attack speed,
+ * daggers flat crit, maces flat damage of ONE type, so a mace commits you.
+ * Rungs within a family are gated by ilvl, so bases are themselves progression.
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
@@ -420,6 +403,9 @@ const weapon = (
   implicit: StatSpec[]
 ): GearBase => ({
   id, name, kind: 'weapon', art: family, family, ilvl,
+  // Off the rung it drops at, so a side-grade arriving beside a rung holds
+  // exactly what that rung holds.
+  tier: BASE_TIER_ILVL.indexOf(ilvl) + 1,
   slots: { ...WEAPON_SLOTS },
   implicit,
 });
@@ -485,17 +471,28 @@ export const WEAPON_BASES: GearBase[] = [
   ]),
 ];
 
+/**
+ * Jewellery carries no implicit, so a rung differs from the one below in
+ * exactly one way: how many modifiers it holds. The first rung keeps the ids
+ * `amulet` and `ring` — a save points at them.
+ */
+const TRINKET_SLOTS = { offence: 3, defence: 2, utility: 1 };
+
+const trinket = (id: string, name: string, kind: GearKind, tier: number): GearBase => ({
+  id, name, kind, art: kind, tier,
+  ilvl: BASE_TIER_ILVL[tier - 1],
+  slots: { ...TRINKET_SLOTS },
+});
+
 export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
   ...ARMOUR_BASES,
-  {
-    id: 'amulet', name: 'Bone Amulet', kind: 'amulet', art: 'amulet',
-    slots: { offence: 3, defence: 2, utility: 1 },
-  },
-  {
-    id: 'ring', name: 'Copper Band', kind: 'ring', art: 'ring',
-    slots: { offence: 3, defence: 2, utility: 1 },
-  },
+  trinket('amulet', 'Bone Amulet', 'amulet', 1),
+  trinket('jade_amulet', 'Jade Amulet', 'amulet', 2),
+  trinket('onyx_amulet', 'Onyx Amulet', 'amulet', 3),
+  trinket('ring', 'Copper Band', 'ring', 1),
+  trinket('silver_band', 'Silver Band', 'ring', 2),
+  trinket('gold_band', 'Gold Band', 'ring', 3),
 ];
 
 export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
@@ -681,8 +678,8 @@ export const CRYSTAL_MODS: ModDef[] = [
   })),
 
   // What the rock gives up, rather than what it holds. These carry no danger
-  // and never raise a drop's ilvl or its quality: the run pays exactly what it
-  // paid, in a shape you chose. The cost is the socket, and the mod slot in it
+  // and never raise a drop's item level: the run pays exactly what it paid,
+  // in a shape you chose. The cost is the socket, and the mod slot in it
   // that a danger modifier is not using.
   ...DROP_GROUPS.map((group) => ({
     id: `find_${group.id}`,
@@ -1052,24 +1049,12 @@ export const GEAR_MODS: ModDef[] = [
 export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
 
 /**
- * The crafting currencies, as a ladder. Adding one is an entry here; new code
- * is only needed for a genuinely new kind of mutation.
- *
- * They are gated on QUALITY, so the ladder reads bottom to top: early on you
- * add a modifier to a two-slot piece, and only much later re-roll a six-slot
- * one at will.
+ * The crafting currencies. Adding one is an entry here; new code is only for a
+ * new KIND of mutation. Six: add one, remove one you choose, re-roll which,
+ * re-roll the values, and the two gambles.
  */
 export const CURRENCIES: CurrencyDef[] = [
-  // --- basic: the first thing you ever craft with -------------------------
-  {
-    id: 'shard_of_seaming',
-    name: 'Shard of Seaming',
-    class: 'basic',
-    description: 'Opens a Rough item to Seamed, with one modifier.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['rough'] }],
-    effects: [{ kind: 'set_quality', to: 'seamed', fill: 1 }],
-  },
+  // --- basic: the one thing the shop sells --------------------------------
   {
     id: 'shard_of_making',
     name: 'Shard of Making',
@@ -1079,69 +1064,33 @@ export const CURRENCIES: CurrencyDef[] = [
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
     effects: [{ kind: 'add_mod', count: 1 }],
   },
-  {
-    id: 'shard_of_unmaking',
-    name: 'Shard of Unmaking',
-    class: 'basic',
-    description: 'Removes one modifier at random.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'remove_mod', count: 1 }],
-  },
+
+  // --- uncommon: reshaping something you already have ---------------------
   {
     id: 'shard_of_change',
     name: 'Shard of Change',
-    class: 'basic',
+    class: 'uncommon',
     description: 'Re-rolls the numeric values of all modifiers.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
     effects: [{ kind: 'reroll_values' }],
   },
-
-  // --- uncommon: reshaping something you already have ---------------------
   {
-    id: 'shard_of_turning',
-    name: 'Shard of Turning',
+    id: 'shard_of_chaos',
+    name: 'Shard of Chaos',
     class: 'uncommon',
-    description: 'Re-rolls which modifiers a Seamed item has. Seamed only.',
+    description: 'Re-rolls which modifiers an item has, keeping the same number.',
     targets: {},
-    requires: [
-      { kind: 'not_corrupted' },
-      { kind: 'quality_is', any: ['seamed'] },
-      { kind: 'mod_count', min: 1 },
-    ],
+    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
     effects: [{ kind: 'reroll_mods' }],
   },
-  {
-    id: 'shard_of_cleaving',
-    name: 'Shard of Cleaving',
-    class: 'uncommon',
-    description: 'Cuts a Rough item straight to Faceted, with three modifiers.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['rough'] }],
-    // Three, not four. Skipping a rung should cost you the last slot — the
-    // fourth is what Making is for, and what makes a finished Faceted item a
-    // thing you assembled rather than a thing you bought.
-    effects: [{ kind: 'set_quality', to: 'faceted', fill: 3 }],
-  },
-  {
-    id: 'sigil_of_ascent',
-    name: 'Sigil of Ascent',
-    class: 'uncommon',
-    description: 'Raises a Seamed item to Faceted, keeping its modifiers and adding one.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['seamed'] }],
-    // The patient route. Keeps what you rolled, which is the whole reason to
-    // have curated a Seamed item rather than cleaving a fresh one.
-    effects: [{ kind: 'set_quality', to: 'faceted' }, { kind: 'add_mod', count: 1 }],
-  },
-
-  // --- uncommon: guaranteed families -------------------------------------
   {
     id: 'essence_of_the_swarm',
     name: 'Essence of the Swarm',
     class: 'uncommon',
     description: 'Fills a slot with a guaranteed Density modifier.',
+    // Targeting, on purpose, and only here: a crystal is a configuration you
+    // are meant to be able to aim, and none of the gear chase runs through it.
     targets: { kinds: ['crystal'] },
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
     effects: [{ kind: 'add_mod', tag: 'density' }],
@@ -1150,112 +1099,30 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'essence_of_greed',
     name: 'Essence of Greed',
     class: 'uncommon',
-    description: 'Fills a slot with a guaranteed Reward modifier.',
+    description: 'Fills a slot with a guaranteed Hunting modifier — which KIND of gear the run turns up, never which piece.',
     targets: { kinds: ['crystal'] },
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
-    effects: [{ kind: 'add_mod', tag: 'reward' }],
-  },
-  {
-    id: 'whetstone_of_might',
-    name: 'Whetstone of Might',
-    class: 'uncommon',
-    description: 'Fills an offence slot with a guaranteed Damage modifier.',
-    targets: { kinds: ['gear'], slots: ['offence'] },
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'offence' }],
-    effects: [{ kind: 'add_mod', slot: 'offence', tag: 'damage' }],
-  },
-  {
-    id: 'oil_of_swiftness',
-    name: 'Oil of Swiftness',
-    class: 'uncommon',
-    description: 'Fills a utility slot with a guaranteed Speed modifier.',
-    targets: { kinds: ['gear'], slots: ['utility'] },
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot', slot: 'utility' }],
-    effects: [{ kind: 'add_mod', slot: 'utility', tag: 'speed' }],
+    effects: [{ kind: 'add_mod', tag: 'finding' }],
   },
 
-  // --- rare: working on a finished item ----------------------------------
+  // --- rare: the one currency you aim ------------------------------------
   {
-    id: 'shard_of_awakening',
-    name: 'Shard of Awakening',
+    id: 'shard_of_unmaking',
+    name: 'Shard of Unmaking',
     class: 'rare',
-    description: 'Fills every empty slot at once. Faceted or better.',
-    targets: {},
-    requires: [
-      { kind: 'not_corrupted' },
-      { kind: 'quality_at_least', value: 'faceted' },
-      { kind: 'has_open_slot' },
-    ],
-    effects: [{ kind: 'fill_slots' }],
-  },
-  {
-    id: 'shard_of_chaos',
-    name: 'Shard of Chaos',
-    class: 'rare',
-    description:
-      'Re-rolls every modifier on a Faceted or better item, keeping the same number.',
-    targets: {},
-    requires: [
-      { kind: 'not_corrupted' },
-      { kind: 'quality_at_least', value: 'faceted' },
-      { kind: 'mod_count', min: 1 },
-    ],
-    effects: [{ kind: 'reroll_mods' }],
-  },
-  {
-    id: 'sigil_of_refinement',
-    name: 'Sigil of Refinement',
-    class: 'rare',
-    // Polishing what is already there is the Cavern's whole character, and a
-    // world nobody has a reason to enter is a world nobody enters.
-    gate: { zone: 'prismatic' },
-    description: 'Upgrades one modifier to a higher tier.',
+    // The whole bench is random except this. Choosing what LEAVES is the one
+    // targeting that does not collapse the chase — you still cannot choose
+    // what arrives.
+    description: 'Removes the modifier you choose.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'upgrade_mod_tier' }],
-  },
-  {
-    // Deliberately scarce. As a cheap basic this was the single biggest thing
-    // devaluing bases: any good chest could be spammed back to blank and
-    // re-rolled for free, so no base was ever worth keeping. It resets quality
-    // too — a wipe that left the item Faceted would be a free re-roll rather
-    // than a decision.
-    id: 'shard_of_ruin',
-    name: 'Shard of Ruin',
-    class: 'rare',
-    gate: { zone: 'demonic' },
-    description: 'Strips an item back to Rough. Everything is lost.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'clear_mods' }, { kind: 'set_meta', key: 'quality', value: 'rough' }],
+    effects: [{ kind: 'remove_mod', count: 1, chosen: true }],
   },
 
   // --- exotic: the last thing you do to an item --------------------------
-  {
-    id: 'sigil_of_brilliance',
-    name: 'Sigil of Brilliance',
-    class: 'exotic',
-    description: 'Raises a Faceted item to Brilliant, adding one modifier.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'quality_is', any: ['faceted'] }],
-    effects: [{ kind: 'set_quality', to: 'brilliant' }, { kind: 'add_mod', count: 1 }],
-  },
-  {
-    id: 'sigil_of_excess',
-    name: 'Sigil of Excess',
-    class: 'exotic',
-    description: 'Grants one modifier beyond the limit. Only on a finished Brilliant item.',
-    targets: {},
-    // Brilliant AND full. Without the quality gate a blank Rough item counts
-    // as "full" — it has no room by definition — so this would have been a
-    // way to put a seventh modifier on something that had never held one.
-    requires: [
-      { kind: 'not_corrupted' },
-      { kind: 'quality_at_least', value: 'brilliant' },
-      { kind: 'slots_full' },
-    ],
-    effects: [{ kind: 'add_slot', count: 1 }],
-  },
+  //
+  // Both gambles lock the item, and both say so before you spend one. A
+  // one-way door nobody saw is a bug report.
   {
     id: 'sigil_of_finality',
     name: 'Sigil of Finality',
@@ -1264,16 +1131,26 @@ export const CURRENCIES: CurrencyDef[] = [
     // two of each crystal to open: the top of both axes at once.
     gate: { zone: 'seam' },
     description:
-      'Empowers or diminishes every modifier by 25% at random, then locks the item permanently.',
+      'Empowers or diminishes every modifier by 25% at random, past its normal ' +
+      'maximum, then locks the item permanently.',
     targets: {},
-    requires: [{ kind: 'not_corrupted' }],
-    // A coin flip you can't take back. Scaling what's already rolled (rather
-    // than adding) means the better the item, the more the gamble costs you —
-    // so finishing a good item is a real decision instead of a free upgrade.
-    effects: [
-      { kind: 'scale_values', magnitude: 0.25, optional: true },
-      { kind: 'corrupt' },
-    ],
+    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
+    // Scaling what is already rolled, rather than adding, means the better the
+    // item the more the gamble costs you. It is also the only thing in the game
+    // that can put a roll above its modifier's ceiling.
+    effects: [{ kind: 'scale_values', magnitude: 0.25 }, { kind: 'corrupt' }],
+  },
+  {
+    id: 'sigil_of_upheaval',
+    name: 'Sigil of Upheaval',
+    class: 'exotic',
+    gate: { zone: 'demonic' },
+    description:
+      'Adds a modifier beyond the item\'s limit, or takes one away at random, ' +
+      'then locks the item permanently.',
+    targets: {},
+    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
+    effects: [{ kind: 'gamble_mod' }, { kind: 'corrupt' }],
   },
 ];
 
@@ -1286,27 +1163,21 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 // Gold is the universal feedstock and selling is where it comes from. One
 // spent on stash space is one not spent at the bench.
 
-/**
- * A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
- * are as dangerous as two blank level 1s. `quality` rides along because the
- * crafting currencies gate on it; `xp` is the total to sit at that level.
- */
+/** A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
+ *  are as dangerous as two blank level 1s. `xp` is the total to sit at it. */
 export const CRYSTAL_LEVELS = [
-  { level: 1, mods: 0, quality: 'rough' as Quality, xp: 0 },
-  { level: 2, mods: 1, quality: 'seamed' as Quality, xp: 5 },
-  { level: 3, mods: 2, quality: 'faceted' as Quality, xp: 20 },
-  { level: 4, mods: 3, quality: 'brilliant' as Quality, xp: 60 },
+  { level: 1, mods: 0, xp: 0 },
+  { level: 2, mods: 1, xp: 5 },
+  { level: 3, mods: 2, xp: 20 },
+  { level: 4, mods: 3, xp: 60 },
 ];
 
 /**
- * What one cleared descent is worth to every crystal SOCKETED for it. Danger is
- * the multiplier, so levelling a blank in a vicious set is fast and levelling
- * four blanks together is slow — a socket spent on a fresh crystal is a socket
- * not carrying danger, which is the whole cost.
- *
- * The flat term is why it is `1 + danger`, not `danger`: the crystals you are
- * given are blank, four blanks are a set with no danger at all, and a game
- * whose first crystals can never level is a game with no way up.
+ * What one cleared descent is worth to every crystal SOCKETED for it. Danger
+ * is the multiplier, so a socket spent on a fresh crystal is a socket not
+ * carrying danger, which is the whole cost. The flat term is why it is
+ * `1 + danger`: four blanks are a set with no danger at all, and a game whose
+ * first crystals can never level is a game with no way up.
  */
 export const CRYSTAL_XP = {
   perClear: 1,
@@ -1315,12 +1186,10 @@ export const CRYSTAL_XP = {
 };
 
 /**
- * Who hands out the Normal crystals: met once mid-descent, at a chance read off
- * how many Normal ones you already hold. Four ends it, and the rest of the
- * collection is quests rather than luck.
- *
- * The first is certain. Four sockets with nothing that can reach them is not a
- * slow start, it is a game that never begins.
+ * Who hands out the Normal crystals: met once mid-descent, at a chance read
+ * off how many you already hold. Four ends it, and the rest of the collection
+ * is quests rather than luck. The first is certain — four sockets with nothing
+ * that can reach them is a game that never begins.
  */
 export const LAMPWRIGHT = {
   name: 'the Lampwright',
@@ -1331,10 +1200,8 @@ export const LAMPWRIGHT = {
 };
 
 /**
- * The other two worlds are not given, they are gone and got. Every objective is
- * something a player who has been levelling crystals can already do — the point
- * is knowing to go and do it on purpose.
- *
+ * The other two worlds are not given, they are gone and got — every objective
+ * is something a player who has been levelling crystals can already do.
  * `share` is a floor on the composition, and a quarter is ONE socketed crystal
  * of that family out of four: the second gift is earned by using the first.
  */
@@ -1432,9 +1299,7 @@ export const MONSTER_BASE = {
 /**
  * How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
  * Fissure. Length only: monsters are exactly as strong in a four-socket run as
- * in an empty one, so a long set is a long trip rather than a hard one.
- *
- * `size` is the linear dimension, so area goes as its square.
+ * in an empty one. `size` is linear, so area goes as its square.
  */
 export const SOCKET_SCALE = {
   size: [0.62, 1, 1.15, 1.3, 1.45],
@@ -1456,13 +1321,11 @@ export const socketPacks = (filled: number): number => rung(filled, SOCKET_SCALE
 export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SCALE.packSize);
 
 /**
- * Run power: the one number every reward reads, so difficulty and payout cannot
- * drift apart. 0 is the bare Fissure and the baseline for XP, gold, drops and
- * item level; each further point is one rung of reward scaling.
- *
- * Danger carries most of it. Sockets add a little, so a long set is worth
- * something — but never enough that filling sockets beats rolling danger, which
- * is what stops a safe grind from being the best farm.
+ * Run power: the one number every reward reads, so difficulty and payout
+ * cannot drift apart. 0 is the bare Fissure and the baseline for XP, gold,
+ * drops and item level. Danger carries most of it; sockets add a little, never
+ * enough that filling sockets beats rolling danger — which is what stops a
+ * safe grind from being the best farm.
  */
 export const POWER = {
   perSocket: 0.3,
@@ -1552,11 +1415,8 @@ export const AURA = { radius: 6, tick: 0.25 };
 /**
  * The two families buff in incompatible ways. Alone each is a hazard the
  * Fissure does not have; together the multiplier lands on what the other
- * added, and that cross term is why a half-and-half room is the hardest one
- * in the game.
- *
- * This is the one place a family IS difficulty. The pools still weigh the same
- * per monster — the ladder is what they bring with them, not what they are.
+ * added, which is why a half-and-half room is the hardest in the game. The
+ * pools still weigh the same per monster — the ladder is what they bring.
  */
 export const AURAS: AuraDef[] = [
   {
@@ -2031,11 +1891,9 @@ export const MONSTER_RANGED_SKILL = 'bolt';
 // --- danger → reward -------------------------------------------------------
 //
 // Every crystal modifier is a DOWNSIDE, and reward is derived from how
-// dangerous the descent has become. So no mod is simply good or bad: a roll is
-// "how much of this can my character eat", and a build that shrugs off one
-// kind of danger is paid extra for it.
-//
-// `weight` is how dangerous a point of a stat is, with monster damage at 1.0.
+// dangerous the descent has become — so a roll is "how much of this can my
+// character eat", and a build that shrugs off one kind is paid extra for it.
+// `weight` is how dangerous a point of a stat is, monster damage at 1.0.
 // `rewards` is whether that danger PAYS — density does not, because more
 // monsters already pay you in extra kills.
 
@@ -2096,16 +1954,12 @@ export const CURRENCY_DROP = {
 // --- what a run drops ------------------------------------------------------
 //
 // Indexed by run power, which decides what a map can GIVE you and not just how
-// much: you cannot re-roll a Faceted item at will until you run sets dangerous
-// enough to drop the currency for it.
-//
-// `quality` is weighted, so a band has a normal result and a good one. `fill`
-// is how finished a piece arrives, `ilvl` the level it rolls at — the thing
-// that decides which modifier TIERS are reachable at all.
+// much. `ilvl` is the load-bearing one: it decides which modifier TIERS are
+// reachable AND which gear bases can drop, and a base's tier is the whole of
+// how many modifiers it holds — so a band's item level is its ceiling twice
+// over. `fill` is only how finished a piece ARRIVES.
 
 export interface DropBand {
-  /** Weighted quality table: [quality, weight]. */
-  quality: Array<[Quality, number]>;
   /** Mods a dropped piece arrives with, as [min, max] of its cap. */
   fill: [number, number];
   /** Best currency class this band can produce. */
@@ -2120,15 +1974,15 @@ export const DROP_BANDS: DropBand[] = [
   // The bare Fissure. Mostly junk, occasionally a one-modifier piece — enough
   // that the free descent has some upside, which is the difference between a
   // tutorial and a tax.
-  { quality: [['rough', 7], ['seamed', 3]], fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
-  { quality: [['rough', 4], ['seamed', 6]], fill: [1, 2], currency: 'basic', gearChance: 0.075, ilvl: 10 },
-  { quality: [['rough', 2], ['seamed', 8]], fill: [1, 2], currency: 'uncommon', gearChance: 0.068, ilvl: 22 },
-  // The first Faceted, and deliberately not a full one.
-  { quality: [['seamed', 6], ['faceted', 4]], fill: [2, 3], currency: 'uncommon', gearChance: 0.06, ilvl: 34 },
-  // Where a build becomes possible: full Faceted pieces, four modifiers.
-  { quality: [['seamed', 2], ['faceted', 8]], fill: [3, 4], currency: 'rare', gearChance: 0.052, ilvl: 46 },
-  { quality: [['faceted', 7], ['brilliant', 3]], fill: [3, 5], currency: 'rare', gearChance: 0.045, ilvl: 58 },
-  { quality: [['faceted', 4], ['brilliant', 6]], fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
+  { fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
+  { fill: [1, 2], currency: 'basic', gearChance: 0.075, ilvl: 10 },
+  { fill: [1, 2], currency: 'uncommon', gearChance: 0.068, ilvl: 22 },
+  // Tier 2 bases are in reach here, and deliberately not filled.
+  { fill: [2, 3], currency: 'uncommon', gearChance: 0.06, ilvl: 34 },
+  // Where a build becomes possible: tier 3 bases, six modifiers apiece.
+  { fill: [3, 4], currency: 'rare', gearChance: 0.052, ilvl: 46 },
+  { fill: [3, 5], currency: 'rare', gearChance: 0.045, ilvl: 58 },
+  { fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
 ];
 
 export const bandFor = (power: number): DropBand =>
@@ -2152,10 +2006,10 @@ export const SHOP = {
   maxSlots: 8,
   /** Item level of stock, as a multiple of character level. */
   ilvlPerLevel: 1.6,
-  /** Gold per item level, before quality. */
+  /** Gold per item level, before the base's tier. */
   pricePerIlvl: 2.4,
-  /** Price multiplier by quality. Steeper than the mod count, on purpose. */
-  priceByQuality: { rough: 1, seamed: 2.6, faceted: 7, brilliant: 18 } as Record<Quality, number>,
+  /** Price multiplier by base tier. Steeper than the mod count, on purpose. */
+  priceByTier: [1, 2.6, 7],
   /**
    * What a SALE pays, against the same base. Six modifiers reach 1.9×, so the
    * fraction has to stay under 1/1.9 or buying a full piece and selling it back
@@ -2165,26 +2019,11 @@ export const SHOP = {
   /** What one rolled modifier adds to a sale, as a fraction of the base. */
   pricePerMod: 0.15,
   /**
-   * What a SALE pays for quality, flatter than what a purchase charges for it:
-   * a good piece is worth having, not worth selling. Every entry stays at or
-   * under its purchase multiplier, or the counter would mint gold.
+   * What a SALE pays for the tier, flatter than what a purchase charges for
+   * it: a good piece is worth having, not worth selling. Every entry stays at
+   * or under its purchase multiplier, or the counter would mint gold.
    */
-  sellByQuality: { rough: 1, seamed: 1.8, faceted: 3.2, brilliant: 5 } as Record<Quality, number>,
-};
-
-/** Best last. Rough only early: the point is a BASE, not a finished item. */
-export const SHOP_QUALITY: Array<{ level: number; quality: Array<[Quality, number]> }> = [
-  { level: 1, quality: [['rough', 10]] },
-  { level: 5, quality: [['rough', 7], ['seamed', 3]] },
-  { level: 10, quality: [['rough', 4], ['seamed', 6]] },
-  { level: 18, quality: [['rough', 2], ['seamed', 7], ['faceted', 1]] },
-  { level: 28, quality: [['seamed', 6], ['faceted', 4]] },
-];
-
-export const shopQualityFor = (level: number): Array<[Quality, number]> => {
-  let table = SHOP_QUALITY[0].quality;
-  for (const row of SHOP_QUALITY) if (level >= row.level) table = row.quality;
-  return table;
+  sellByTier: [1, 1.8, 3.2],
 };
 
 export const LOOT = {
@@ -2204,22 +2043,18 @@ export const LOOT = {
 };
 
 /**
- * The Fissure, unempowered — a descent with an empty socket. There is only one
- * place you ever go; a crystal empowers it rather than replacing it.
- *
- * Always available and free, so the economy can never strand you. A way back
- * in, not a place to farm.
+ * The Fissure, unempowered. There is only one place you ever go; a crystal
+ * empowers it rather than replacing it. Always free, so the economy can never
+ * strand you — a way back in, not a place to farm.
  */
 export const FISSURE = {
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
   /**
    * What the FIRST clear hands you, on top of its own loot. Gold rather than
-   * the shards themselves, because buying them is what the opening teaches, and
-   * several times what it asks for so the rest is yours to place.
-   *
-   * No crystal: that gift is the Lampwright's, and their first is certain, so a
-   * first clear still comes back with one.
+   * the shards, because buying them is what the opening teaches, and several
+   * times what it asks for so the rest is yours to place. No crystal: that
+   * gift is the Lampwright's, whose first is certain.
    */
   firstClear: {
     gold: 30,
@@ -2260,31 +2095,18 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
 
 /** Dev kit only — nobody is handed these by playing. */
 export const DEV_CURRENCY: Record<string, number> = {
-  shard_of_seaming: 6,
-  shard_of_turning: 3,
-  shard_of_cleaving: 3,
-  sigil_of_ascent: 2,
-  sigil_of_brilliance: 1,
-  shard_of_making: 6,
-  shard_of_awakening: 3,
-  shard_of_unmaking: 3,
+  shard_of_making: 8,
+  shard_of_unmaking: 4,
   shard_of_change: 4,
-  // The rare ones have no recipe and, until runs drop currency, no source at
-  // all. Seeded here so the whole bench can be exercised rather than half of
-  // it being permanently greyed out.
-  sigil_of_refinement: 2,
-  sigil_of_excess: 1,
-  sigil_of_finality: 1,
-  shard_of_ruin: 1,
-  shard_of_chaos: 2,
-  // The crystal essences were the half this was meant to stop being greyed
-  // out and weren't in it. That was invisible while every currency rendered
-  // whether or not you held any; now the dock shows only what you own, so a
-  // dev kit missing four of thirteen is four icons nobody can look at.
+  shard_of_chaos: 4,
   essence_of_the_swarm: 2,
   essence_of_greed: 2,
-  whetstone_of_might: 2,
-  oil_of_swiftness: 2,
+  // Drop-only, and only out of one world each. Seeded here so the whole bench
+  // can be exercised rather than a third of it being permanently greyed out —
+  // the dock draws only what you hold, so a missing kind is an icon nobody can
+  // ever look at.
+  sigil_of_finality: 2,
+  sigil_of_upheaval: 2,
 };
 
 /**
@@ -2449,14 +2271,9 @@ export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
 // and, later, by a quest — because a price would make the whole socket set
 // something you shop for rather than something you earn.
 export const RECIPES: Recipe[] = [
-  // Level 1: the two things you can do to a Rough item, and nothing else.
-  {
-    id: 'make_shard_of_seaming',
-    name: 'Shard of Seaming',
-    level: 1,
-    inputs: { gold: 4 },
-    output: { type: 'currency', id: 'shard_of_seaming', qty: 1 },
-  },
+  // The whole shelf. Everything else drops, because a shop that stocks the
+  // bench is a shop that replaces the map — and adding a modifier is the one
+  // thing you need enough of that running out of it is only tedious.
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
@@ -2464,57 +2281,4 @@ export const RECIPES: Recipe[] = [
     inputs: { gold: 5 },
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
-
-  {
-    id: 'make_shard_of_change',
-    name: 'Shard of Change',
-    level: 3,
-    inputs: { gold: 3 },
-    output: { type: 'currency', id: 'shard_of_change', qty: 1 },
-  },
-  {
-    id: 'make_shard_of_unmaking',
-    name: 'Shard of Unmaking',
-    level: 4,
-    inputs: { gold: 7 },
-    output: { type: 'currency', id: 'shard_of_unmaking', qty: 1 },
-  },
-  {
-    id: 'make_shard_of_turning',
-    name: 'Shard of Turning',
-    level: 6,
-    inputs: { gold: 11 },
-    output: { type: 'currency', id: 'shard_of_turning', qty: 1 },
-  },
-  {
-    id: 'make_shard_of_cleaving',
-    name: 'Shard of Cleaving',
-    level: 10,
-    inputs: { gold: 22 },
-    output: { type: 'currency', id: 'shard_of_cleaving', qty: 1 },
-  },
-  {
-    id: 'make_sigil_of_ascent',
-    name: 'Sigil of Ascent',
-    level: 12,
-    inputs: { gold: 30 },
-    output: { type: 'currency', id: 'sigil_of_ascent', qty: 1 },
-  },
-  {
-    id: 'make_shard_of_awakening',
-    name: 'Shard of Awakening',
-    level: 16,
-    inputs: { gold: 44 },
-    output: { type: 'currency', id: 'shard_of_awakening', qty: 1 },
-  },
-  {
-    id: 'make_shard_of_chaos',
-    name: 'Shard of Chaos',
-    level: 18,
-    inputs: { gold: 52 },
-    output: { type: 'currency', id: 'shard_of_chaos', qty: 1 },
-  },
-  // No recipe for Shard of Ruin or any of the sigils — those are drop-only.
-  // If you could buy a wipe, bases would be disposable again, and a
-  // purchasable Brilliant would make the top of the ladder a price.
 ];

@@ -3,8 +3,8 @@
  * Lampwright gives you the Normal ones, and the other two worlds are quests.
  *
  * A crystal is never spent, so this is the only thing that changes one without
- * a currency being poured on it — which is why the level, the quality, the base
- * and the name are all rewritten together.
+ * a currency being poured on it — which is why the level, the base, the name
+ * and the capacity are all rewritten together.
  */
 import {
   CRYSTAL_QUESTS,
@@ -104,7 +104,6 @@ export function addCrystalXp(crystal: Item, xp: number): number {
   const def = CRYSTAL_LEVELS.find((t) => t.level === now)!;
   const family = crystalFamily(crystal);
   crystal.meta.level = now;
-  crystal.meta.quality = def.quality;
   crystal.base = `crystal_t${now}`;
   crystal.name = crystalName(now, family);
   crystal.tags = ['crystal', `level${now}`, family];

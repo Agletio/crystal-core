@@ -51,13 +51,14 @@ function maxRoll(entry: ModEntry): RolledMod {
 }
 
 /**
- * Fully open, so quality never masks a gap. Every question here is "can this
- * modifier exist at all", and a Rough item answers no to everything.
+ * Fully open, so a small base never masks a gap. Every question here is "can
+ * this modifier exist at all", and a tier 1 base holding two answers no to
+ * most of them for reasons that have nothing to do with the modifier.
  */
 const open = (item: Item): Item => ({
   ...item,
   ilvl: 100,
-  meta: { ...item.meta, quality: 'brilliant' },
+  meta: { ...item.meta, bonusSlots: { offence: 6, defence: 6, utility: 6, mod: 6 } },
 });
 
 line('mods: does every modifier do what it says?\n');

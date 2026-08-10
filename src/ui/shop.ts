@@ -2,19 +2,12 @@
  * The shop: only ever a price list, the way crafting is only ever the item. What
  * you buy lands in the dock, which is where you spend it from.
  */
-import {
-  ALL_MODS,
-  CURRENCY_BY_ID,
-  RECIPES,
-  SHOP,
-  shopQualityFor,
-} from '../data';
+import { ALL_MODS, CURRENCY_BY_ID, RECIPES, SHOP } from '../data';
 import { Rng } from '../rng';
-import { ModPool, modCapacity, qualityName, qualityOf } from '../mods';
+import { ModPool, modCapacity, tierName } from '../mods';
 import {
   balance,
   pickGearBase,
-  pickQuality,
   priceOfItem,
   rollGear,
   runRecipe,
@@ -226,16 +219,16 @@ export function restockIfLevelled(): void {
     Math.min(SHOP.maxSlots, Math.floor(level / SHOP.slotsPerLevel) + SHOP.minSlots)
   );
   const ilvl = Math.max(1, Math.round(level * SHOP.ilvlPerLevel));
-  const table = shopQualityFor(level);
 
   const stock: Item[] = [];
   for (let i = 0; i < count; i++) {
     const base = pickGearBase(ilvl, rng);
     if (!base) continue;
-    const quality = pickQuality(table, rng);
-    // Shop pieces arrive FULL for their quality. You are paying to skip the
-    // rolling, not to gamble a second time at the counter.
-    stock.push(rollGear(base.id, ilvl, quality, 6, POOL, rng));
+    // Shop pieces arrive FULL for their base. You are paying to skip the
+    // rolling, not to gamble a second time at the counter — and what a base
+    // holds is the base's own business, so the shelf never sells a tier the
+    // item level would not have dropped.
+    stock.push(rollGear(base.id, ilvl, 6, POOL, rng));
   }
 
   game.shopStock = stock;
@@ -246,7 +239,7 @@ export function restockIfLevelled(): void {
 function tooltip(item: Item): string {
   const lines = [
     item.name,
-    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+    `${tierName(item)} · ilvl ${item.ilvl} · ` +
       `${item.mods.length}/${modCapacity(item)} modifiers`,
   ];
   if (item.armour) lines.push(`Armour ${item.armour}`);
@@ -301,7 +294,7 @@ function renderStock(): void {
       el(
         'span',
         'buy__cost',
-        `${cost} gold · ${qualityName(qualityOf(item))} · ilvl ${item.ilvl}`
+        `${cost} gold · ${tierName(item)} · ilvl ${item.ilvl}`
       )
     );
     btn.append(body);

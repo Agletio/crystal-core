@@ -10,7 +10,7 @@
 import { HAUL_CAP, carryRoom, fromHaul, haulToStash, plainGear, sellAll, sellItem, stashRoom, takeWhatFits } from '../game/state';
 import type { GameState } from '../game/state';
 import { canSell, sellPrice } from '../economy';
-import { modCapacity, qualityName, qualityOf } from '../mods';
+import { baseTier, modCapacity, tierName } from '../mods';
 import { describeMod } from '../crafting';
 import { itemIcon } from './icons';
 import { openMenu } from './menu';
@@ -44,7 +44,7 @@ function changed(): void {
 function tooltip(item: Item, action: string): string {
   const lines = [
     item.name,
-    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+    `${tierName(item)} · ilvl ${item.ilvl} · ` +
       `${item.mods.length}/${modCapacity(item)} modifiers`,
   ];
   if (item.armour) lines.push(`Armour ${item.armour}`);
@@ -106,7 +106,7 @@ export function render(): void {
     const take = actionsFor(item)[0];
     const btn = el(
       'button',
-      `slot slot--${item.kind} slot--q-${qualityOf(item)}`
+      `slot slot--${item.kind} slot--t${baseTier(item)}${item.meta.corrupted ? ' slot--locked' : ''}`
     ) as HTMLButtonElement;
     btn.append(itemIcon(item, 30));
     if (item.mods.length > 0) btn.classList.add('slot--modded');

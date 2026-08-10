@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { ModPool, computeStat, modCapacity, qualityOf, rollRandomMod } from './mods';
+import { ModPool, baseTier, computeStat, modCapacity, rollRandomMod } from './mods';
 import {
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
@@ -17,7 +17,6 @@ import type {
   Item,
   ItemKind,
   MonsterFamily,
-  Quality,
   Recipe,
   RolledMod,
   Wallet,
@@ -71,14 +70,13 @@ export function makeCrystal(level: number, family: MonsterFamily = 'normal'): It
     // one world is a line in the mod table rather than an engine change.
     tags: ['crystal', `level${level}`, family],
     ilvl: CRYSTAL_ILVL,
-    // The level IS the capacity. Quality rides along so the crafting
-    // currencies, which gate on quality, reach exactly the slots it granted.
+    // The level IS the capacity, and the only thing that grants any.
     slots: { mod: def.mods },
     mods: [],
     implicits: [],
     // Experience starts at its level's floor: a crystal handed out above 1 has
     // had that climb paid for, and one whose xp disagrees would drop a level.
-    meta: { level, quality: def.quality, family, xp: def.xp },
+    meta: { level, family, xp: def.xp },
   };
 }
 
@@ -147,12 +145,7 @@ export function defaultGearBase(
   );
 }
 
-export function makeGear(
-  base: string,
-  ilvl: number,
-  name?: string,
-  quality: Quality = 'rough'
-): Item {
+export function makeGear(base: string, ilvl: number, name?: string): Item {
   const def = GEAR_BASE_BY_ID[base];
   return {
     id: uid('gear'),
@@ -161,33 +154,31 @@ export function makeGear(
     name: name ?? def?.name ?? base,
     tags: ['gear', base],
     ilvl,
-    // Per-base capacities are the whole restriction mechanism: a base with no
-    // utility slots can never roll move speed.
+    // The whole restriction mechanism: a base with no utility slots can never
+    // roll move speed, whatever its tier.
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
     implicits: implicitsFor(def),
     ...(def?.armour ? { armour: def.armour } : {}), // the item outlives its base
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
-    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body', quality },
+    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },
   };
 }
 
 /**
  * Rolling happens HERE rather than in the sim, so a drop, a shop entry and a
- * dev-kit grant produce the same shape of item. The sim decides which base and
- * how good; it never learns what a modifier is.
+ * dev-kit grant produce the same shape. The sim never learns what a mod is.
  */
 export function rollGear(
   base: string,
   ilvl: number,
-  quality: Quality,
   mods: number,
   pool: ModPool,
   rng: Rng
 ): Item {
-  const item = makeGear(base, ilvl, undefined, quality);
-  // modCapacity is the truth, not the caller: a Seamed item asked for four
+  const item = makeGear(base, ilvl);
+  // modCapacity is the truth, not the caller: a tier 1 base asked for four
   // mods gets two, and a base with no utility slots gets whatever fits.
   const want = Math.min(mods, modCapacity(item));
   let guard = 24;
@@ -197,17 +188,6 @@ export function rollGear(
     item.mods.push(mod);
   }
   return item;
-}
-
-/** Picks a quality out of a weighted table. */
-export function pickQuality(table: Array<[Quality, number]>, rng: Rng): Quality {
-  const total = table.reduce((n, [, w]) => n + w, 0);
-  let roll = rng.next() * total;
-  for (const [quality, weight] of table) {
-    roll -= weight;
-    if (roll <= 0) return quality;
-  }
-  return table[table.length - 1]?.[0] ?? 'rough';
 }
 
 export function makeItem(base: string, ilvl = 1): Item {
@@ -224,12 +204,12 @@ export function balance(w: Wallet, id: string): number {
 }
 
 /**
- * Priced off item level and quality, never off what rolled. Charging more for a
- * good roll would turn a shelf you can SEE into the gamble maps already are.
+ * Priced off item level and tier, never off what rolled. Charging for a good
+ * roll would turn a shelf you can SEE into the gamble maps already are.
  */
 export function priceOfItem(item: Item): number {
-  const byQuality = SHOP.priceByQuality[qualityOf(item)] ?? 1;
-  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byQuality));
+  const byTier = SHOP.priceByTier[baseTier(item) - 1] ?? 1;
+  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byTier));
 }
 
 /** Gear only. A crystal is a standing choice, not stock. */
@@ -242,9 +222,9 @@ export const canSell = (item: Item): boolean => item.kind === 'gear';
  */
 export function sellPrice(item: Item): number {
   if (!canSell(item)) return 0;
-  const byQuality = SHOP.sellByQuality[qualityOf(item)] ?? 1;
+  const byTier = SHOP.sellByTier[baseTier(item) - 1] ?? 1;
   const worth =
-    item.ilvl * SHOP.pricePerIlvl * byQuality * (1 + item.mods.length * SHOP.pricePerMod);
+    item.ilvl * SHOP.pricePerIlvl * byTier * (1 + item.mods.length * SHOP.pricePerMod);
   return Math.max(1, Math.round(worth * SHOP.sellFraction));
 }
 

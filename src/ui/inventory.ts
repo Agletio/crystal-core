@@ -7,8 +7,8 @@
  * has no opinion about what an item is for.
  */
 import { currencyIcon, itemIcon } from './icons';
-import { modCapacity, qualityName, qualityOf } from '../mods';
-import { describeModLines } from '../crafting';
+import { baseTier, modCapacity, tierName } from '../mods';
+import { describeModLines, locksItem } from '../crafting';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
@@ -137,6 +137,9 @@ function currencyTooltip(currency: CurrencyDef, stock: number): string {
     `${currency.class} · ${stock} held`,
     currency.description,
   ];
+  // On its own line as well as inside the sentence. A one-way door nobody saw
+  // is a bug report, and this is the only one in the game.
+  if (locksItem(currency)) lines.push('LOCKS THE ITEM — nothing can change it afterwards');
   const action = currencyHandler?.actionFor(currency);
   if (action) lines.push(`— click to ${action.label.toLowerCase()}`);
   else {
@@ -186,7 +189,7 @@ function renderCurrencies(): void {
 function tooltip(item: Item): string {
   const lines = [
     item.name,
-    `${qualityName(qualityOf(item))} · ilvl ${item.ilvl} · ` +
+    `${tierName(item)} · ilvl ${item.ilvl} · ` +
       `${item.mods.length}/${modCapacity(item)} modifiers`,
   ];
   if (item.meta.corrupted) lines.push('corrupted — cannot be changed');
@@ -440,11 +443,11 @@ function fill(host: HTMLElement, items: Item[]): void {
 
   for (const item of items) {
     const action = clickAction(item);
-    // Quality colours the slot; the silhouette says what a piece IS, never how
-    // good it is.
+    // The base's tier colours the slot; the silhouette says what a piece IS,
+    // never how much it can hold.
     const btn = el(
       'button',
-      `slot slot--gear slot--q-${qualityOf(item)}`
+      `slot slot--gear slot--t${baseTier(item)}${item.meta.corrupted ? ' slot--locked' : ''}`
     ) as HTMLButtonElement;
 
     btn.append(itemIcon(item, 30));
