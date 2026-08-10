@@ -14,14 +14,14 @@ import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
-import { FAMILY_BY_ID, RUN_SLOTS, THEME_BY_ID } from '../data';
+import { FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState, GiftPlace } from '../game/state';
-import { crystalProgress, giftChance, ownedCrystals } from '../game/crystals';
+import { crystalProgress, giftWaiting } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
-import { isMetOpen, openMet } from './met';
+import { openMet } from './met';
 import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
@@ -64,7 +64,7 @@ let seed = 0;
 /** Descents cleared without stopping. Reset by the click that starts the loop. */
 let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
-let halt: 'died' | 'full' | 'once' | 'left' | 'chose' = 'once';
+let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
 let leaving = false;
 
@@ -83,6 +83,8 @@ let handover = 0;
 let banked: RunReport | null = null;
 /** Set to `banked` when the loop is stopping and the drop has still to play. */
 let pending: RunReport | null = null;
+/** Held while the Lampwright's panel is up, for `land()` to take afterwards. */
+let greeted: RunReport | null = null;
 /**
  * Close enough to see what's happening. Fit (1×) shows the whole Fissure,
  * which is useless for watching a fight — at that scale a monster is four
@@ -119,9 +121,15 @@ export function syncViewportLock(): void {
 /** Which of the three states the Fissure is in. The guide branches on it. */
 export const runPhase = (): Phase => phase;
 
-/** The panel is done: the crystal is granted, so the descent may run again. */
+/**
+ * The panel is done. The descent it ended was already cleared and already
+ * banked, so this is the report landing rather than the run resuming.
+ */
 export function metTaken(): void {
   sim?.takeGift();
+  const report = greeted;
+  greeted = null;
+  if (report) land(report);
 }
 
 /** Called when the bench popup closes — the dock answers to the map again. */
@@ -265,7 +273,7 @@ function launch(): void {
   seed = Math.floor(Math.random() * 1e9);
   // Who you might meet is the player's business, not the set's: the chance
   // falls as the collection fills, and the sim is only told the number.
-  sim = new RunSim(set, game.character, new Rng(seed), { crystalGift: giftChance(game) });
+  sim = new RunSim(set, game.character, new Rng(seed));
 
   note(
     `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
@@ -296,10 +304,22 @@ function launch(): void {
  */
 function finish(left = false): void {
   if (!sim) return;
+  const waiting =
+    sim.state.status === 'cleared' && !left ? giftWaiting(game) : null;
   const report = buildReport(game, sim.state, left);
   playing = false;
 
   if (report.cleared) streak++;
+
+  // Somebody at the mouth. Already banked, so it is a reason the loop stopped
+  // rather than a new ending — same `land()`, same report.
+  if (waiting && report.cleared && sim.greetAtExit()) {
+    halt = 'met';
+    greeted = report;
+    openMet(waiting);
+    return;
+  }
+
   halt = left
     ? 'left'
     : !report.cleared
@@ -356,6 +376,7 @@ function haltLine(report: RunReport): string {
         ? 'That descent banked nothing, but what was already here is still yours.'
         : 'A descent only pays if you finish it.';
 
+  if (halt === 'met') return `${LAMPWRIGHT.name} walked you out. Cleared ${runs}.`;
   if (halt === 'left') return `You walked out. ${kept}`;
   if (halt === 'died') return `You died. ${kept}`;
   if (halt === 'full') return `The haul is full after ${runs}. Clear some of it to go again.`;
@@ -605,11 +626,7 @@ function frame(now: number): void {
   const emerge = emergeNow();
   $('run-fade').style.opacity = String(1 - emerge);
 
-  // Someone is standing in front of you. Not a pause state — the sim is simply
-  // not ticked while the panel is up, and the panel is what ends the meeting.
-  if (sim?.state.meeting && !isMetOpen()) openMet(ownedCrystals(game).length === 0);
-
-  if (playing && handover === 0 && !isMetOpen() && sim && sim.state.status === 'running') {
+  if (playing && handover === 0 && sim && sim.state.status === 'running') {
     // One pace, always. Speed multipliers were papering over combat that
     // will change as the character scales; tuning the real pace is the
     // honest fix.

@@ -29,10 +29,12 @@ export function ownedCrystals(game: GameState): Item[] {
 
 // --- the Lampwright ---------------------------------------------------------
 
-/** How likely they are to turn up, given what you already hold. 0 once it's four. */
-export function giftChance(game: GameState): number {
-  const held = ownedCrystals(game).filter((c) => crystalFamily(c) === LAMPWRIGHT.family).length;
-  return LAMPWRIGHT.chance[held] ?? 0;
+/** What is waiting at the mouth of a cleared descent, or null. SCHEDULED,
+ *  never rolled, and read BEFORE the report, which sets the flag it reads. */
+export type Waiting = 'weapon';
+
+export function giftWaiting(game: GameState): Waiting | null {
+  return game.firstClearDone ? null : 'weapon';
 }
 
 export function lampwrightGift(game: GameState): { crystal: Item; where: GiftPlace } {

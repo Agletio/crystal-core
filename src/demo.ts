@@ -125,6 +125,7 @@ import {
   createGame,
   equipItem,
   grantFirstClear,
+  lampwrightWeapon,
   giftWeapon,
   HAUL_CAP,
   haulFull,
@@ -145,7 +146,7 @@ import {
   addCrystalXp,
   claimQuests,
   crystalXp,
-  giftChance,
+  giftWaiting,
   lampwrightGift,
   ownedCrystals,
   questMet,
@@ -1441,17 +1442,21 @@ rule('GUIDED OPENING — does every step actually complete?');
       // That is why the last step has to point at "Back to the Fissure".
       ctx.phase = 'results';
       grantFirstClear(game);
-      // The crystal the last step names comes from the Lampwright, whose first
-      // gift is certain — so a first clear always comes back with one.
-      lampwrightGift(game);
       // A cleared run banks into the haul, so the step after this one has
       // something to take. Without it the step satisfies itself and proves
       // nothing about the screen it is teaching.
       bankToHaul(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
+      // The clear ends at the mouth with the Lampwright in it.
+      ctx.top = 'met';
       line(
         `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
           `${game.inventory.length} items`
       );
+    },
+    () => {
+      // The panel's one button: the weapon is handed over and it closes.
+      lampwrightWeapon(game);
+      ctx.top = null;
     },
     () => {
       // The drops went to the haul, not the bag. Taking them is the step.
@@ -1580,10 +1585,10 @@ rule('GUIDED OPENING — does every step actually complete?');
     }
     check(fooled.length === 0, 'nothing a first run drops passes for your wand', fooled.join(', '));
 
-    // The one the Fissure hands you, marked by grantFirstClear.
+    // The one the Lampwright hands you, marked by lampwrightWeapon.
     const given = createGame('fresh');
     given.firstClearDone = false;
-    const gift = grantFirstClear(given)!.weapon!;
+    const gift = lampwrightWeapon(given)!.item;
     selectForCraft(given, gift);
     check(
       step.done(given, ctx) &&
@@ -1635,11 +1640,13 @@ rule('GUIDED OPENING — does every step actually complete?');
     `the first clear pays ${FISSURE.firstClear.gold} gold and asks for ${bill} of it`,
     `it pays ${FISSURE.firstClear.gold} but asks for ${bill}`
   );
-  // The last step tells you to socket a crystal. There has to be one.
+  // The opening ends with a weapon on and a modifier in it, and no crystal at
+  // all: a level 1 character with a socket filled is running twice the descent
+  // it just barely survived.
   check(
-    game.crystals.length > 0,
-    'and the crystal its last step names is in the collection',
-    'the opening ends by pointing at a crystal nobody was given'
+    game.crystals.length === 0 && !!game.character.equipment.weapon,
+    'the opening ends armed and with nothing socketed',
+    `${game.crystals.length} crystals, weapon ${game.character.equipment.weapon?.base ?? 'none'}`
   );
 }
 
@@ -3758,92 +3765,79 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 // up at all. Three things have to hold: the first four arrive, a socketed
 // crystal levels, and the other two worlds are reachable on purpose.
 {
-  const game = createGame('fresh');
+  // Nothing about a gift is rolled. The schedule is a condition you can read
+  // off the game rather than a coin flip, which is what lets a player plan the
+  // only decision the game asks them to make.
+  const fresh = createGame('fresh');
   check(
-    giftChance(game) === 1,
-    'the Lampwright is certain while you hold nothing — four sockets always have something to put in them',
-    `chance ${giftChance(game)} with nothing owned`
+    giftWaiting(fresh) === 'weapon',
+    'a character who has never cleared anything is owed a weapon at the mouth',
+    String(giftWaiting(fresh))
   );
 
-  const ladder: number[] = [];
-  for (let owned = 0; owned <= LAMPWRIGHT.chance.length; owned++) {
+  // A weapon picked off the SKILL. A Strike character handed a wand is the
+  // first item the game gives you and the first one it teaches you to craft.
+  const bySkill: string[] = [];
+  for (const skill of PLAYER_SKILLS) {
     const g = createGame('fresh');
-    for (let i = 0; i < owned; i++) addItem(g, makeCrystal(1));
-    ladder.push(giftChance(g));
+    g.character = makeCharacter({}, skill.id);
+    const given = lampwrightWeapon(g);
+    bySkill.push(`${skill.id}=${given?.item.base ?? 'NOTHING'}`);
   }
-  line(`  chance by crystals held: ${ladder.map((c) => `${Math.round(c * 100)}%`).join(' → ')}`);
+  line(`  the first weapon, by skill: ${bySkill.join(' ')}`);
   check(
-    ladder.every((c, i) => i === 0 || c < ladder[i - 1]) && ladder[ladder.length - 1] === 0,
-    'and the chance falls with every one you hold, reaching nothing at four',
-    ladder.join(' ')
+    !bySkill.some((r) => r.endsWith('NOTHING')),
+    'and every skill in the game resolves to one',
+    bySkill.join(' ')
+  );
+  check(
+    new Set(bySkill.map((r) => r.split('=')[1])).size > 1,
+    'and not all to the same one, which is the whole point of the table',
+    bySkill.join(' ')
   );
 
-  // What it actually takes, played out: bare descents until the collection is
-  // full. The rolls are the sim's, so this is the real distribution.
-  const runs: number[] = [];
-  for (let trial = 0; trial < 40; trial++) {
-    const g = createGame('fresh');
-    let descents = 0;
-    while (ownedCrystals(g).length < 4 && descents < 200) {
-      const sim = new RunSim([], g.character, new Rng(6100 + trial * 97 + descents), {
-        crystalGift: giftChance(g),
-      });
-      // What the panel does: the crystal is handed over at the meeting and is
-      // yours from that moment, so this is not waiting for a clear.
-      runToCompletion(sim, 400, () => lampwrightGift(g));
-      descents++;
-      if (sim.state.status === 'cleared') buildReport(g, sim.state);
-    }
-    runs.push(descents);
-  }
-  runs.sort((a, b) => a - b);
-  line(`  collecting all four took ${runs[0]}–${runs[runs.length - 1]} descents, median ${runs[20]}`);
-  check(
-    runs[runs.length - 1] < 200 && runs[0] >= 4,
-    'and four bare descents is the floor, with the tail still finite',
-    `${runs[0]}–${runs[runs.length - 1]}`
-  );
-
-  // The rule that changed with the meeting: it is handed over on the spot, so
-  // a descent you die in still leaves you holding it. Everything else about
-  // dying is unchanged — that descent's loot is still gone.
+  // Played out. The meeting is at the MOUTH, so it is only ever reached on a
+  // clear — a gift is never a thing standing next to the monsters.
   {
     const g = createGame('fresh');
-    const sim = new RunSim([], g.character, new Rng(5150), { crystalGift: 1 });
-    let handed = false;
-    for (let i = 0; i < 4000 && !handed; i++) {
-      if (sim.state.meeting) {
-        lampwrightGift(g);
-        sim.takeGift();
-        handed = true;
-        break;
-      }
-      sim.step(TICK);
-    }
-    check(handed, 'the Lampwright turns up as a body on the map and is walked to',
-      'nobody was ever standing there');
+    const sim = new RunSim([], g.character, new Rng(6100));
+    runToCompletion(sim, 400);
+    check(
+      sim.state.status === 'cleared' && !sim.state.lampwright && !sim.state.meeting,
+      'nobody is on the map during a descent',
+      `${sim.state.status}, lampwright ${sim.state.lampwright ? 'placed' : 'absent'}`
+    );
 
-    // Now kill the descent outright and bank nothing.
-    sim.state.hero.life = 0;
-    sim.state.status = 'died';
-    const held = ownedCrystals(g).length;
+    const waiting = giftWaiting(g);
     buildReport(g, sim.state);
     check(
-      held === 1 && ownedCrystals(g).length === 1,
-      'and the crystal is yours even though you died further down',
-      `${held} at the meeting, ${ownedCrystals(g).length} after dying`
+      waiting === 'weapon' && sim.greetAtExit() && sim.state.meeting,
+      'and climbs out of the exit once it is cleared',
+      `waiting ${waiting}, meeting ${sim.state.meeting}`
+    );
+    check(
+      Math.round(sim.state.lampwright!.x) === Math.round(sim.state.map.exit.x) &&
+        Math.round(sim.state.lampwright!.y) === Math.round(sim.state.map.exit.y),
+      'out of the hole the hero would have dropped through, and nowhere else',
+      `${sim.state.lampwright!.x},${sim.state.lampwright!.y} against ${sim.state.map.exit.x},${sim.state.map.exit.y}`
+    );
+
+    // What the panel does. The run is already banked, so this is a handover
+    // and not a payout — nothing about it can be lost.
+    const given = lampwrightWeapon(g)!;
+    sim.takeGift();
+    check(
+      given.item.meta.firstClear === true &&
+        [...g.inventory, ...g.stash].some((i) => i.id === given.item.id),
+      'and hands over a marked weapon the guided opening can point at',
+      `${given.item.base} landed ${given.where}`
+    );
+    check(
+      giftWaiting(g) === null,
+      'and is not waiting again the next time you come up',
+      String(giftWaiting(g))
     );
   }
-
-  const full = createGame('fresh');
-  for (let i = 0; i < 4; i++) addItem(full, makeCrystal(1));
-  const after = new RunSim([], full.character, new Rng(77), { crystalGift: giftChance(full) });
-  runToCompletion(after, 400);
-  check(
-    !after.state.met && ownedCrystals(full).length === 4,
-    'a full collection is never handed a fifth',
-    `${ownedCrystals(full).length} owned`
-  );
 }
 
 // Levelling. The standing decision is that danger multiplies it and only a

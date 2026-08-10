@@ -6,7 +6,9 @@
  * pause: the loop has no pause state, the UI just stops ticking the sim.
  */
 import { LAMPWRIGHT } from '../data';
+import type { Waiting } from '../game/crystals';
 import { lampwrightGift } from '../game/crystals';
+import { lampwrightWeapon } from '../game/state';
 import type { GameState } from '../game/state';
 import { itemCard } from './itemcard';
 import { beastIcon, itemIcon } from './icons';
@@ -30,14 +32,16 @@ let held: Item | null = null;
 
 export const isMetOpen = (): boolean => !$('met').hidden;
 
-/** `first` picks which of the two speeches is used. Only the first teaches. */
-export function openMet(first: boolean): void {
-  // Before the panel, so what you are shown and what lands in the collection
-  // are one object rather than two rolls of one.
-  const given = lampwrightGift(game);
-  held = given.crystal;
+/**
+ * `waiting` says what they are holding. Granted BEFORE the panel, so what you
+ * are shown and what lands in your hands are one object rather than two rolls
+ * of the same thing.
+ */
+export function openMet(waiting: Waiting): void {
+  held = waiting === 'weapon' ? (lampwrightWeapon(game)?.item ?? null) : lampwrightGift(game).crystal;
+  if (!held) return;
 
-  const words = first ? LAMPWRIGHT.first : LAMPWRIGHT.again;
+  const words = waiting === 'weapon' ? LAMPWRIGHT.first : LAMPWRIGHT.again;
   // The same sprite standing on the map. Who is speaking should be something
   // you recognise rather than something you read.
   const face = $('met-face');
@@ -51,7 +55,8 @@ export function openMet(first: boolean): void {
   gift.replaceChildren();
   gift.append(itemIcon(held, 34));
   gift.append(el('span', 'met__name', held.name));
-  attachTooltip(gift, () => itemCard(held!));
+  const shown = held;
+  attachTooltip(gift, () => itemCard(shown));
 
   const said = $('met-said');
   said.replaceChildren();

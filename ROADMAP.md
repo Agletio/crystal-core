@@ -38,12 +38,13 @@ the base's tier and the currencies were rebuilt around six kinds; tooltips are
 built cards with the rolled number coloured apart from the words; the dock
 sorts and lights up what an armed shard can reach; the counter sells in a mode
 and buys back; a descent hands over to the next one through a hole in the
-ground; and the Lampwright is a person you walk to.
+ground; and the Lampwright is a person waiting at the mouth of a cleared one,
+holding the weapon your skill can actually swing.
 
-What is left is the OPENING — the first hour hands out crystals faster than a
-character can carry them — then one balance debt carried out of the systems
-work, then the next feature. §7 is the deferred pile, and the first entry in it
-is now answerable rather than blocked.
+What is left is the rest of the OPENING — the first hour still hands out
+crystals faster than a character can carry them — then one balance debt carried
+out of the systems work, then the next feature. §7 is the deferred pile, and the
+first entry in it is now answerable rather than blocked.
 
 ### Keeping room for a fifth socket
 
@@ -368,12 +369,17 @@ and EXIT tiles, per zone, so both renderers get it.
 
 **A meeting.** The Lampwright is `RunState.lampwright`, an `Entity` kept
 deliberately OUT of `monsters` so nothing in combat can ever see them.
-The hero breaks off and walks over; reaching them sets `meeting`, the UI stops
-ticking and puts `src/ui/met.ts` up, and the button grants the crystal and
-calls `RunSim.takeGift()`. The report never pays a meeting out, which is what
-makes it yours even if you die further down. `runToCompletion` takes an
-`onMeeting` callback because a headless run would otherwise stand there
-forever.
+`giftWaiting` in `src/game/crystals.ts` answers what is waiting at the mouth,
+read BEFORE the report because the report sets the flag it reads.
+`RunSim.greetAtExit()` stands them on `map.exit` facing the hero; `src/ui/met.ts`
+grants the thing and `RunSim.takeGift()` clears the panel. A meeting is a HALT
+of the idle loop — `halt = 'met'` — landing on the same report as any other
+ending, so the clear is banked before anyone is standing there.
+
+`STARTER_WEAPON` in `src/data.ts` maps `SkillDef.category` to a weapon base and
+`SkillDef.weapon` overrides it, so what the first meeting hands over is a weapon
+the chosen skill can swing. `starterWeapon()` resolving to nothing is a demo
+failure rather than a fallback.
 
 ---
 
@@ -400,67 +406,7 @@ one usually missing:
 Anything you are unsure about goes in §6 as a question, never into a phase as
 an assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The Lampwright at the mouth
-
-The three phases that follow are one idea in three landable pieces: **the
-opening hands out crystals faster than a character can carry them.** A crystal
-socketed the moment it is given makes the descent LONGER, and longer is harder
-even with nothing rolled on it — you have to survive all of it. So most skills
-die on the run after their first gift, and the honest move is to leave the gift
-out, which reads as the game handing you a trap. This phase moves the meeting;
-Phase 2 moves the first crystal off it; Phase 3 replaces the coin flip that
-pays for the rest.
-
-**What is true today.**
-
-- The Lampwright is met MID-descent. `RunSim` picks a kill count (`meetAt`),
-  and `placeLampwright` in `src/sim/run.ts` drops a body three to six tiles
-  from the hero; walking to it sets `meeting`, the UI freezes and `src/ui/met.ts`
-  hands over a crystal. The descent then carries on.
-- The first clear pays at the REPORT: `grantFirstClear` in `src/game/state.ts`
-  reads `FISSURE.firstClear` and grants 30 gold and an `ash_wand` — the same
-  wand whatever skill was chosen.
-
-**Why it is wrong.** A Strike character is handed a wand, which is the first
-item the game gives you and the first one it teaches you to craft. And a meeting
-in the middle of a descent is a gift you can walk away from with a corpse: it is
-the only good thing on the map, and it is standing next to the monsters.
-
-- [ ] The meeting moves to the END of a cleared descent. The Lampwright climbs
-      out of the hole the hero would have dropped into — the `mouth()` decal on
-      the EXIT tile — rather than being placed mid-map. `placeLampwright` and
-      the `meetAt` kill count go.
-- [ ] A meeting ENDS the run rather than pausing it. It banks as the clear it
-      is, lands on the usual report, and stops the idle loop: the same terminus
-      as **Leave after this run** (`land()` in `src/ui/run.ts`), not a fifth
-      ending. He guides you out; that is what the words say and what the loop
-      does.
-- [ ] The first cleared descent always has one, and what it hands over is a
-      WEAPON. `FISSURE.firstClear.weapon` — one base id — becomes `STARTER_WEAPON`,
-      a table from what the skill IS to a weapon base, so a new skill is one row
-      and never a silent wand.
-- [ ] Keyed off `SkillDef.category`, which is already `'attack' | 'spell'`, with
-      an optional `weapon` field on `SkillDef` overriding it when a skill wants a
-      specific family. Today that is `spell → ash_wand` and `attack →
-      rusted_sword`; the point of the table is the rows that are not written yet
-      — a bow skill and a two-hander each add one. A skill that resolves to no
-      base is a demo failure, not a fallback.
-- [ ] The 30 gold stays a report line. Gold is not a thing that is handed over,
-      and the opening needs it to buy the shard it already asks for.
-- [ ] `LAMPWRIGHT.first` is the WEAPON speech now, and teaches equipping and
-      crafting rather than sockets. The crystal speech moves to Phase 2.
-- [ ] The guided opening's `select_weapon` / `use_making` / `equip` steps hang
-      off this meeting instead of off a report payout, and `descend`'s "Socket
-      the crystal you were given first" goes with the crystal (Phase 2).
-
-**What must not break.** `npm run guide` walks the real opening with a real
-pointer, and `npm run shots` fails the run if a first descent never produces a
-Lampwright panel — both are about to be load-bearing for this phase rather than
-incidental to it. `runToCompletion` takes an `onMeeting` callback so a headless
-run does not stand there forever; a meeting that ends the run has to leave that
-harness with a cleared run rather than a stuck one.
-
-### Phase 2 — The first crystal, at character level 5
+### Phase 1 — The first crystal, at character level 5
 
 **What is true today.** `LAMPWRIGHT.chance` is `[1, 0.34, 0.22, 0.14]`, indexed
 by how many Normal crystals you hold — so the first one is CERTAIN, and lands
@@ -498,7 +444,7 @@ around it. The demo's save round-trip has to carry `meta.scripted`, and `heal()`
 has to drop it on a crystal that already has its modifier. `npm run guide` grows
 the steps that teach the socket.
 
-### Phase 3 — The rest of the Normal crystals are quests
+### Phase 2 — The rest of the Normal crystals are quests
 
 **What is true today.** `LAMPWRIGHT.chance[1..3]` — crystals two, three and four
 are a per-clear coin flip at 34%, 22% and 14%. `CRYSTAL_QUESTS` in `src/data.ts`
@@ -539,7 +485,7 @@ game does not pay out four duplicates on its first dangerous descent; three more
 quests have to be in that set. The demo's quest checks and `npm run guide` both
 walk this.
 
-### Phase 4 — The danger retune
+### Phase 3 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -575,7 +521,7 @@ the moment the numbers move:
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 5 — Unique gear
+### Phase 4 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.

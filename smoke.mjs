@@ -736,11 +736,16 @@ assert(
   'it counts what you own against what is in use',
   text('crystals-count')
 );
-// The one thing about the Lampwright a player cannot see by playing: the
-// chance falls as the collection fills, and the dev kit has passed the end.
+// Nothing about a gift is a probability any more, so the screen states a fact.
+// A percentage here would be the one thing on it a player cannot act on.
 assert(
-  /nothing left to give you/i.test(text('crystals-npc')),
-  'a full collection is told the Lampwright is done',
+  /at the mouth of a cleared descent/i.test(text('crystals-npc')),
+  'the collection says where the Lampwright is met',
+  text('crystals-npc')
+);
+assert(
+  !/\d+%|chance/i.test(text('crystals-npc')),
+  'and never as odds',
   text('crystals-npc')
 );
 assert(

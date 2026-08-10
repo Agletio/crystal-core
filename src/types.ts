@@ -257,6 +257,8 @@ export interface SkillDef {
   name: string;
   description: string;
   category?: SkillCategory; // omitted for monster-only skills
+  /** Base the Lampwright hands a character who chose this, over the category's. */
+  weapon?: string;
   /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */
   tags: string[];
   behaviour: string; // key into SKILL_BEHAVIOURS

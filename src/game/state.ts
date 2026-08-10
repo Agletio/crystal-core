@@ -5,7 +5,15 @@
  * moving it wipes everyone's game.
  */
 import { Rng } from '../rng';
-import { CRYSTAL_QUESTS, EQUIP_SLOTS, FISSURE, RUN_SLOTS, START_PRESETS } from '../data';
+import {
+  CRYSTAL_QUESTS,
+  EQUIP_SLOTS,
+  FISSURE,
+  RUN_SLOTS,
+  SKILL_BY_ID,
+  START_PRESETS,
+  starterWeapon,
+} from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
 import { canSell, grant, makeCrystal, makeGear, sellPrice } from '../economy';
 import { baseTier } from '../mods';
@@ -165,8 +173,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
 export function grantFirstClear(game: GameState): {
   gold: number;
   currency: Record<string, number>;
-  weapon: Item;
-  where: GiftPlace;
 } | null {
   if (game.firstClearDone) return null;
   game.firstClearDone = true;
@@ -175,17 +181,19 @@ export function grantFirstClear(game: GameState): {
   grant(game.wallet, 'gold', gift.gold);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
-  const weapon = makeGear(gift.weapon, 1);
-  // The guided opening points at THIS wand: its base drops, its quality is
-  // half a first run's loot, its id is a counter. craft() deep-copies meta.
-  weapon.meta.firstClear = true;
+  // No weapon: gold is a number on a report and a weapon is a thing someone
+  // puts in your hands. `lampwrightWeapon` is where that happens.
+  return { gold: gift.gold, currency: gift.currency };
+}
 
-  return {
-    gold: gift.gold,
-    currency: gift.currency,
-    weapon,
-    where: giveGift(game, weapon),
-  };
+/** The first weapon, picked off the SKILL. Marked, because the guided opening
+ *  rings this piece and every looser reading let a drop satisfy the step. */
+export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlace } | null {
+  const base = starterWeapon(SKILL_BY_ID[game.character.skillId]);
+  if (!base) return null;
+  const item = makeGear(base, 1);
+  item.meta.firstClear = true;
+  return { item, where: giveGift(game, item) };
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>

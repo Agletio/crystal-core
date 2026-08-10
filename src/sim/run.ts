@@ -199,8 +199,6 @@ export interface Vfx {
 export interface RunOptions {
   /** Thins the packs without touching the map. Harness use only. */
   densityScale?: number;
-  /** Chance the Lampwright is met down here. The player's, not the run's. */
-  crystalGift?: number;
 }
 
 export type RunEvent =
@@ -273,8 +271,6 @@ export class RunSim {
   private casts = 0;
   /** Set once the closing encounter has been spawned. */
   private finale: EncounterDef | null = null;
-  /** Kill count the Lampwright turns up on, or null for a descent they miss. */
-  private meetAt: number | null = null;
   /** Countdown to the next aura pass. */
   private auraTimer = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
@@ -365,13 +361,6 @@ export class RunSim {
       damageTaken: {},
     };
 
-    // Rolled only when there is something to give, so a harness that passes no
-    // chance draws exactly the stream it always did. Never on the last kills:
-    // a meeting the finale interrupts reads as having missed it.
-    const chance = options.crystalGift ?? 0;
-    if (chance > 0 && rng.chance(chance)) {
-      this.meetAt = rng.int(1, Math.max(1, Math.floor(monsters.length * 0.7)));
-    }
   }
 
   /** Packs land in rooms other than the entrance, so you always get a moment
@@ -664,22 +653,6 @@ export class RunSim {
       hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
     }
 
-    // Someone is waiting, and it comes before the fight. Monsters keep
-    // swinging on the way over, so it still costs something.
-    if (s.lampwright && !s.meeting) {
-      if (dist(hero, s.lampwright) <= 1.1) {
-        hero.path = [];
-        this.face(hero, s.lampwright.x, s.lampwright.y);
-        this.settleAction(hero, false);
-        s.meeting = true;
-        return;
-      }
-      hero.targetId = null;
-      // Unreachable: forget it rather than walk at a wall all descent.
-      if (!this.advance(hero, s.lampwright, dt)) s.lampwright = null;
-      return;
-    }
-
     const target = this.acquireTarget(hero);
 
     if (target) {
@@ -713,54 +686,46 @@ export class RunSim {
   }
 
   /**
-   * A few tiles off, so walking over is a moment rather than a trek, and never
-   * inside a pack: the meeting is not a fight you have to win first.
+   * Someone is waiting at the mouth. Called on a CLEARED descent, so the run
+   * is already over and already banked — a gift is never a thing standing next
+   * to the monsters. They climb out of the hole the hero would have dropped
+   * through, which is the `mouth()` decal already on the exit tile.
    */
-  private placeLampwright(): Entity | null {
-    const { grid } = this.state.map;
-    const hero = this.state.hero;
+  greetAtExit(): boolean {
+    const s = this.state;
+    if (s.lampwright || s.met) return false;
+    const exit = s.map.exit;
+    const hero = s.hero;
 
-    for (let tries = 0; tries < 48; tries++) {
-      const angle = this.rng.float(0, Math.PI * 2);
-      const reach = 3 + this.rng.float(0, 2.5);
-      const at = {
-        x: Math.round(hero.x + Math.cos(angle) * reach),
-        y: Math.round(hero.y + Math.sin(angle) * reach),
-      };
-      const tile = grid.at(at.x, at.y);
-      if (tile === undefined || tile === WALL) continue;
-      if (this.state.monsters.some((m) => !m.dead && dist(m, at) < 2.5)) continue;
-      if (findPath(grid, hero, at).length === 0) continue;
-
-      return {
-        id: this.nextId++,
-        kind: 'monster',
-        sprite: LAMPWRIGHT.sprite,
-        scale: 0.9,
-        rank: 'common',
-        radius: 0.3,
-        skillId: null,
-        x: at.x,
-        y: at.y,
-        // Facing the hero, because they came to find you.
-        facing: Math.atan2(hero.y - at.y, hero.x - at.x),
-        action: 'idle',
-        actionTimer: 0,
-        deathAge: 0,
-        ailments: [],
-        bounty: 0,
-        life: 1,
-        stats: this.state.hero.stats,
-        cooldown: 0,
-        path: [],
-        pathTimer: 0,
-        targetId: null,
-        aggroed: false,
-        hitFlash: 0,
-        dead: false,
-      };
-    }
-    return null;
+    s.lampwright = {
+      id: this.nextId++,
+      kind: 'monster',
+      sprite: LAMPWRIGHT.sprite,
+      scale: 0.9,
+      rank: 'common',
+      radius: 0.3,
+      skillId: null,
+      x: exit.x,
+      y: exit.y,
+      facing: Math.atan2(hero.y - exit.y, hero.x - exit.x),
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: 0,
+      life: 1,
+      stats: hero.stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      aggroed: false,
+      hitFlash: 0,
+      dead: false,
+    };
+    s.meeting = true;
+    this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.seen });
+    return true;
   }
 
   /** The meeting is over and the crystal is in hand — granted by whoever calls
@@ -1353,13 +1318,6 @@ export class RunSim {
     this.rollGearDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
-    if (this.meetAt !== null && s.killed >= this.meetAt) {
-      this.meetAt = null;
-      s.lampwright = this.placeLampwright();
-      if (s.lampwright) {
-        this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.seen });
-      }
-    }
   }
 
   /**
@@ -1415,22 +1373,8 @@ export class RunSim {
 }
 
 /** Convenience for the headless callers (demo, smoke): run to completion. */
-/**
- * `onMeeting` is what the UI's panel does, for a harness with no UI: the hero
- * stands there until someone takes the crystal, so a run without it never ends.
- */
-export function runToCompletion(
-  sim: RunSim,
-  maxSeconds = 600,
-  onMeeting?: () => void
-): RunState {
+export function runToCompletion(sim: RunSim, maxSeconds = 600): RunState {
   let guard = Math.ceil(maxSeconds / TICK);
-  while (sim.state.status === 'running' && guard-- > 0) {
-    if (sim.state.meeting) {
-      onMeeting?.();
-      sim.takeGift();
-    }
-    sim.step(TICK);
-  }
+  while (sim.state.status === 'running' && guard-- > 0) sim.step(TICK);
   return sim.state;
 }

@@ -89,7 +89,6 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
       for (const [id, n] of Object.entries(first.currency)) {
         banked[id] = (banked[id] ?? 0) + n;
       }
-      gifts.push({ item: first.weapon, where: first.where, from: 'The Fissure' });
     }
 
     // Socketed only. A crystal in a bag is a crystal that was not used, and

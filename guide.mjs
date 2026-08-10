@@ -115,12 +115,11 @@ for (let turn = 0; turn < 240; turn++) {
     stuck++;
   }
 
-  // The Lampwright freezes the descent and hands the crystal over in person.
-  // The guide has to click that button like any other, and the step it lands
-  // in is the one that says "clear it" — so a meeting nobody could dismiss
-  // would show up as being stuck, not as being skipped.
+  // The Lampwright is at the MOUTH of the cleared descent, handing over in
+  // person. The guide clicks that button like any other, so a meeting nobody
+  // could dismiss shows up as being stuck rather than as being skipped.
   if (now.ring === 'met-take') {
-    if (!met) trace.push(`Met         the Lampwright, mid-descent`);
+    if (!met) trace.push(`Met         the Lampwright, at the mouth`);
     met = true;
   }
 

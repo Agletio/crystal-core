@@ -11,7 +11,7 @@ import { CRYSTAL_QUESTS, FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS } from '../data';
 import type { CrystalQuest } from '../data';
 import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress, giftChance, questDone } from '../game/crystals';
+import { crystalProgress, questDone } from '../game/crystals';
 import { crystalFamily, crystalRewards } from '../sim/crystal';
 import { modCapacity } from '../mods';
 import { describeMod } from '../crafting';
@@ -180,17 +180,11 @@ export function render(): void {
     all.filter((r) => r.held === 'socket').length
   }/${RUN_SLOTS.length} socketed`;
 
-  // The chance is the one thing about the Lampwright a player cannot see by
-  // playing: it falls as the collection fills, and silently reaching zero
-  // would read as the drop having broken.
-  const chance = giftChance(game);
+  // Every gift is scheduled rather than rolled, so this is a fact rather than
+  // a probability — but the schedule for the Normal ones is not written yet.
   $('crystals-npc').textContent =
-    chance >= 1
-      ? `You will meet ${LAMPWRIGHT.name} on your next cleared descent, and come back with a crystal.`
-      : chance > 0
-        ? `You meet ${LAMPWRIGHT.name} on about ${Math.round(chance * 100)}% of cleared descents, ` +
-          'and they hand you a Normal crystal.'
-        : `${LAMPWRIGHT.name} has nothing left to give you. The other two worlds are earned below.`;
+    `${LAMPWRIGHT.name} meets you at the mouth of a cleared descent when there ` +
+    'is something to hand over. The other two worlds are earned below.';
 }
 
 export function openCrystals(): void {

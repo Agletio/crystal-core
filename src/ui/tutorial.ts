@@ -107,30 +107,34 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "watch",
     text: (ctx) =>
-      ctx.top === "met"
-        ? "Someone is waiting. Take what they are holding."
-        : ctx.phase === "running"
-          ? blocked(ctx)
-            ? "Close this and watch."
-            : "Clear it."
-          : blocked(ctx)
-            ? "Close this and go again."
-            : "That run ended early. Go again.",
+      ctx.phase === "running"
+        ? blocked(ctx)
+          ? "Close this and watch."
+          : "Clear it."
+        : blocked(ctx)
+          ? "Close this and go again."
+          : "That run ended early. Go again.",
     hint: "Loot only banks if you make it out.",
     // Beside the loot list rather than on the stage: a ring around the viewport
     // of a zoomed-in camera frames a random patch of rock rather than the fight.
     target: (ctx) =>
-      ctx.top === "met"
-        ? "met-take"
-        : ctx.phase === "running"
-          ? viaHeader(ctx, "run-loot")
-          : viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
+      ctx.phase === "running"
+        ? viaHeader(ctx, "run-loot")
+        : viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     // A reload loses the run in progress, and this step only ends on a clear —
     // so whenever nothing is running there has to be something lit, or the
-    // step is one nobody can finish. A meeting freezes the descent, and the
-    // panel's one button is the only thing that unfreezes it.
+    // step is one nobody can finish.
     ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
     done: (g) => g.firstClearDone,
+  },
+  // The clear ends at the mouth with someone standing in it, so this is
+  // reached with the panel already up rather than waiting for it.
+  {
+    id: "meet",
+    text: "Take what they are holding.",
+    hint: "Everything you are ever given is handed over up here, on a run you finished.",
+    target: "met-take",
+    done: (_g, ctx) => ctx.top !== "met",
   },
   {
     id: "take_haul",
@@ -221,8 +225,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? "Close this and go again."
         : ctx.phase === "results"
           ? "Back to the Fissure."
-          : "Go again. Socket the crystal you were given first.",
-    hint: "Socketing keeps it — you never spend one, and a crystal only levels while it is in a socket.",
+          : "Go again.",
+    hint: "The Fissure is always open, and an empty set is a real descent.",
     target: (ctx) =>
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",

@@ -1185,12 +1185,8 @@ export const CRYSTAL_XP = {
   perDanger: 55,
 };
 
-/**
- * Who hands out the Normal crystals: met once mid-descent, at a chance read
- * off how many you already hold. Four ends it, and the rest of the collection
- * is quests rather than luck. The first is certain — four sockets with nothing
- * that can reach them is a game that never begins.
- */
+/** Who meets you at the mouth of a cleared descent and hands things over in
+ *  person. What is waiting is SCHEDULED — `giftWaiting` — never rolled. */
 export const LAMPWRIGHT = {
   name: 'the Lampwright',
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
@@ -1200,23 +1196,20 @@ export const LAMPWRIGHT = {
   level: 1,
   family: 'normal' as MonsterFamily,
 
-  /** What is said at the meeting. The FIRST one teaches: a crystal with no
-   *  explanation is four sockets nobody fills, and the thing new players get
-   *  wrong is thinking a socket makes the descent harder. */
+  /** What is said at the mouth. The FIRST is the weapon, and teaches the two
+   *  things you do with one. Every meeting after is short. */
   first: {
     title: 'The Lampwright',
     said: [
-      'You have been down here long enough to be worth talking to. Here — it will not hold a flame, so it is no use to me.',
-      'It goes in a socket at the Fissure. A socketed crystal makes the descent LONGER, not harder; what makes it harder is what is rolled ON it, and that one has nothing rolled on it yet.',
-      'It levels while it is in a socket, and never anywhere else. Take it down with you.',
+      'You came back up. Most do not. Here — I have no use for it and you have walked out of there with nothing.',
+      'Put it on before you go down again. Then take it to a bench and spend a Shard of Making on it: one modifier, rolled, and it is yours rather than something you found.',
+      'The shop sells those and nothing else worth having. Everything else on a bench comes out of the rock.',
     ],
     button: 'Take it',
   },
   again: {
     title: 'The Lampwright',
-    said: [
-      'Another one that will not light. You will find a use for it.',
-    ],
+    said: ['You came back up again. Here.'],
     button: 'Take it',
   },
 };
@@ -2073,17 +2066,30 @@ export const FISSURE = {
   name: 'The Fissure',
   description: 'A thin place in the rock. Costs nothing, pays little, always open.',
   /**
-   * What the FIRST clear hands you, on top of its own loot. Gold rather than
-   * the shards, because buying them is what the opening teaches, and several
-   * times what it asks for so the rest is yours to place. No crystal: that
-   * gift is the Lampwright's, whose first is certain.
+   * What the FIRST clear pays, on top of its own loot. Gold rather than the
+   * shards, because buying them is what the opening teaches, and several times
+   * what it asks for so the rest is yours to place. The WEAPON is not here:
+   * it is handed over in person at the mouth — see `STARTER_WEAPON`.
    */
   firstClear: {
     gold: 30,
-    weapon: 'ash_wand',
     currency: {} as Record<string, number>,
   },
 };
+
+/**
+ * The first weapon, by what the skill IS. A Strike character handed a wand is
+ * the game's first item and the first thing it teaches you to craft, both
+ * wrong. A new skill is a ROW here, or a `weapon` on the skill itself; a skill
+ * that resolves to no base is a demo failure rather than a silent wand.
+ */
+export const STARTER_WEAPON: Record<string, string> = {
+  spell: 'ash_wand',
+  attack: 'rusted_sword',
+};
+
+export const starterWeapon = (skill: SkillDef | undefined): string | null =>
+  skill?.weapon ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
 
 export interface StartPreset {
   gold: number;
