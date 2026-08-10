@@ -713,6 +713,10 @@ assert(
 );
 assert($('haul-take').disabled === true, 'with nothing to take');
 assert($('haul-sell').disabled === true, 'and nothing to sell');
+// The way out of a full everything: a sale needs room nowhere, which is what
+// stops the one thing that can shut the Fissure from wedging it.
+assert($('haul-sellall') !== null, 'and a way to empty the whole thing');
+assert($('haul-sellall').disabled === true, 'off while there is nothing in it');
 assert($('haul-why').hidden === true, 'opening it yourself needs no explanation');
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -1679,34 +1683,74 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
   $('crystals-close').click();
 }
 
-// The bulk button: thirty pieces one click at a time is what kills a loop.
+// Sell mode: a click in the dock sells, and only while the mode says so. The
+// old bulk button could only take the heap nothing had been spent on, so the
+// pieces you actually wanted rid of still came out one right-click at a time.
 {
   $('open-shop').click();
-  const label = () => text('shop-sell');
-  assert(/\d+ pieces/.test(label()), 'the shop counts what it would take', label());
-  assert(/\+\d+ gold/.test(label()), 'and prices the heap', label());
-
-  const offered = Number(label().match(/\+(\d+) gold/)?.[1] ?? 0);
-  const before = purse();
-  $('shop-sell').click();
-  await new Promise((r) => setTimeout(r, 0));
-  assert($('confirm').hidden === false, 'selling the lot asks first');
-  $('confirm-no').click();
-  await new Promise((r) => setTimeout(r, 0));
-  assert(purse() === before, 'and answering no sells nothing', `${before} -> ${purse()}`);
-
-  $('shop-sell').click();
-  await new Promise((r) => setTimeout(r, 0));
-  $('confirm-yes').click();
-  await new Promise((r) => setTimeout(r, 0));
-  assert(purse() === before + offered, 'yes pays what the button said', `${before} -> ${purse()}, offered ${offered}`);
+  const mode = () => $('shop-sell');
+  assert(/sell mode/i.test(text('shop-sell')), 'the counter offers a sell mode', text('shop-sell'));
   assert(
-    filled('#inv-gear').every((b) => b.classList.contains('slot--modded')),
-    'and leaves anything a currency has touched',
-    String(filled('#inv-gear').length)
+    !mode().classList.contains('buy--armed'),
+    'which is off until you turn it on'
   );
-  assert($('shop-sell').disabled === true, 'with nothing left to take');
-  $('shop-close').click();
+
+  mode().click();
+  assert(mode().classList.contains('buy--armed'), 'turning it on says so');
+  const lit = filled('#inv-gear').filter((b) => b.classList.contains('slot--on'));
+  assert(lit.length > 0, 'and lights everything a click would sell', String(lit.length));
+  assert(/sell for \d+ gold/i.test(named(lit[0])), 'saying what for', named(lit[0]));
+
+  const asked = Number(named(lit[0]).match(/(\d+) gold/)?.[1] ?? 0);
+  const before = purse();
+  const carried = filled('#inv-gear').length;
+  lit[0].click();
+  assert(purse() === before + asked, 'a click sells for what it offered', `${before} -> ${purse()}, asked ${asked}`);
+  assert(filled('#inv-gear').length === carried - 1, 'and the piece leaves the dock');
+
+  // What you sold waits on the counter, at the same number in the other
+  // direction — so the pair is neutral and the shelf cannot be ground.
+  const sold = () => all('#shop-sold button.buy');
+  const kept = sold().length;
+  assert(kept > 0, 'the counter keeps what you sold', String(kept));
+  assert(/buy back/i.test(sold()[0].textContent ?? ''), 'and offers it back', sold()[0].textContent);
+  assert(
+    Number((sold()[0].textContent ?? '').match(/(\d+) gold/)?.[1]) === asked,
+    'newest first, at exactly what it paid',
+    sold()[0].textContent
+  );
+
+  const owed = purse();
+  sold()[0].click();
+  assert(purse() === owed - asked, 'buying back costs the same', `${owed} -> ${purse()}`);
+  assert(filled('#inv-gear').length === carried, 'and the piece comes home');
+  assert(sold().length === kept - 1, 'and leaves the counter', String(sold().length));
+
+  mode().click();
+  assert(!mode().classList.contains('buy--armed'), 'turning it off says so too');
+  assert(
+    filled('#inv-gear').every((b) => !/sell/i.test(named(b))),
+    'and a click in the dock stops meaning sell'
+  );
+}
+
+// Right-click a shelf recipe and it asks how many. Twenty shards twenty
+// clicks at a time is what kills an evening; the left click still buys one.
+{
+  const recipe = all('#workshop button.buy')[0];
+  recipe.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  const counts = all('#itemmenu .itemmenu__item').map((b) => b.textContent ?? '');
+  assert(counts.length > 0, 'the shelf asks how many', counts.join(' | '));
+  assert(counts.every((t) => /buy \d+/i.test(t)), 'and every answer is a count', counts.join(' | '));
+
+  const five = counts.findIndex((t) => /buy 5\b/i.test(t));
+  if (five >= 0) {
+    const before = purse();
+    all('#itemmenu .itemmenu__item')[five].click();
+    assert(purse() < before, 'and picking one spends for the lot', `${before} -> ${purse()}`);
+  } else {
+    document.body.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  }
 }
 
 // --- history --------------------------------------------------------------

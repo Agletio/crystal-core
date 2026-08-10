@@ -82,7 +82,10 @@ export interface ItemActions {
 }
 
 let game: GameState | null = null;
-let handler: InventoryHandler | null = null;
+let screenHandler: InventoryHandler | null = null;
+/** A mode over the screen that owns the dock; off restores what was under. */
+let override: InventoryHandler | null = null;
+const handlerFor = (): InventoryHandler | null => override ?? screenHandler;
 let extras: ItemActions | null = null;
 
 export function setItemActions(next: ItemActions | null): void {
@@ -91,7 +94,7 @@ export function setItemActions(next: ItemActions | null): void {
 
 /** The screen's own action first, then everything true regardless of screen. */
 function actionsFor(item: Item): ItemAction[] {
-  const own = handler?.actionFor(item);
+  const own = handlerFor()?.actionFor(item);
   return [...(own ? [own] : []), ...(extras?.extrasFor(item) ?? [])];
 }
 
@@ -115,7 +118,13 @@ export function initInventory(state: GameState): void {
 
 /** Screens call this when they take focus, and again when their state moves. */
 export function setInventoryHandler(next: InventoryHandler | null): void {
-  handler = next;
+  screenHandler = next;
+  renderInventory();
+}
+
+/** Null puts the dock back in the hands of whatever screen is underneath. */
+export function setInventoryOverride(next: InventoryHandler | null): void {
+  override = next;
   renderInventory();
 }
 
@@ -195,7 +204,7 @@ function renderCurrencies(): void {
 function tooltip(item: Item): HTMLElement {
   const notes: string[] = [];
   // First: it is the question you opened the tooltip to answer.
-  const why = handler?.dimmed?.(item);
+  const why = handlerFor()?.dimmed?.(item);
   if (why) notes.push(why);
   const all = actionsFor(item);
   const click = clickAction(item);
@@ -409,7 +418,7 @@ function drop(event: PointerEvent): void {
   const where = landing(targetAt(event), carried.item);
   // Dropping on the bench is the same intent as clicking one, so it runs the
   // same action rather than inventing a second way to say it.
-  if (where?.kind === 'bench') (carried.onBench ?? (() => handler?.actionFor(carried.item)?.run()))();
+  if (where?.kind === 'bench') (carried.onBench ?? (() => handlerFor()?.actionFor(carried.item)?.run()))();
   else if (where?.kind === 'equip') extras?.equipTo?.(carried.item, where.slotId);
   else if (where?.kind === 'swap' && game) swapItems(game, carried.item, where.onto);
   else if (where?.kind === 'end' && game) sendToEnd(game, carried.item);
@@ -459,8 +468,8 @@ function fill(host: HTMLElement, items: Item[]): void {
       showMenu(item, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
     });
 
-    if (handler?.highlighted?.(item)) btn.classList.add('slot--on');
-    if (handler?.dimmed?.(item)) btn.classList.add('slot--dim');
+    if (handlerFor()?.highlighted?.(item)) btn.classList.add('slot--on');
+    if (handlerFor()?.dimmed?.(item)) btn.classList.add('slot--dim');
 
     if (action) {
       btn.onclick = () => {

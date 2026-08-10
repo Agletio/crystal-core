@@ -522,7 +522,7 @@
   /* Where the loop stops. The count going red is the whole warning. */
   .haul__why { font-size: 12px; color: var(--citrine); margin: 0 0 8px; }
   .haul__count--full { color: var(--ember); }
-  #haul-take, #haul-sell { flex: 1 1 0; justify-content: center; text-align: center; }
+  #haul-take, #haul-sell, #haul-sellall { flex: 1 1 0; justify-content: center; text-align: center; }
   .slots--stash {
     grid-template-columns: repeat(auto-fill, 40px);
     grid-template-rows: none;
@@ -633,6 +633,10 @@
   .buy--off { opacity: .38; }
   /* Alone on its row and carrying a sentence, not a name. */
   #shop-sell { grid-column: 1 / -1; justify-content: space-between; }
+  /* Sell mode changes what a click in the dock MEANS, so it has to be loud —
+     the same ember the game uses for anything you cannot take back. */
+  .buy--armed { border-color: var(--locked); color: var(--locked); }
+  #shop-sold { grid-column: 1 / -1; }
 
   /* --- the socketed crystal ------------------------------------------- */
   /* Derived reward multipliers, shown right under a crystal's name. */
@@ -1278,6 +1282,7 @@
         <div class="runbar">
           <button class="buy" id="haul-take"></button>
           <button class="buy" id="haul-sell"></button>
+          <button class="buy" id="haul-sellall"></button>
         </div>
       </div>
     </div>
@@ -1360,7 +1365,9 @@
         <div class="buys">
           <button class="buy" id="shop-sell"></button>
         </div>
-        <p class="empty">Any one piece: hold or right-click it in the dock.</p>
+        <p class="empty" id="shop-sell-hint"></p>
+        <p class="panel__title">Sold</p>
+        <div class="buys" id="shop-sold"></div>
       </div>
     </div>
   </div>

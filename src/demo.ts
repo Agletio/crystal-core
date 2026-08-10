@@ -116,7 +116,9 @@ import type { GuideCtx } from './ui/tutorial';
 import {
   CARRY,
   addItem,
+  SOLD_CAP,
   bankToHaul,
+  buyBack,
   buyStashSpace,
   carryRoom,
   craftItem,
@@ -130,6 +132,7 @@ import {
   replaceItem,
   selectForCraft,
   sellAll,
+  sellItem,
   socketItem,
   stashRoom,
   stashUpgradeCost,
@@ -778,9 +781,16 @@ rule('THE HAUL — where does the loop stop, and can it wedge shut?');
   );
 
   // Deliberately past the limit: the alternative is splitting a descent's
-  // drops, and the run that was cut in half is the one you remember.
+  // drops, and the run that was cut in half is the one you remember. Half of
+  // it rolled, so the bulk button and Sell all are answering different
+  // questions rather than the same one twice.
   const flood = HAUL_CAP + CARRY.gear;
-  bankToHaul(game, Array.from({ length: flood }, () => makeGear('ash_wand', 5)));
+  bankToHaul(
+    game,
+    Array.from({ length: flood }, (_, i) =>
+      i % 2 === 0 ? makeGear('ash_wand', 5) : rollGear('ash_wand', 40, 2, pool, new Rng(600 + i))
+    )
+  );
   check(
     game.haul.length === 20 + flood && haulFull(game),
     'and overflows rather than dropping anything on the floor',
@@ -807,6 +817,74 @@ rule('THE HAUL — where does the loop stop, and can it wedge shut?');
     sold.count > 0 && !haulFull(game) && sold.gold > 0,
     `and selling ${sold.count} pieces for ${sold.gold} gold reopens the Fissure`,
     `${game.haul.length} still hauled after selling ${sold.count}`
+  );
+  // Sell everything, with every container still full. This is the state the
+  // loop can actually reach and the one a room check would wedge.
+  const rest = sellAll(game, [...game.haul]);
+  check(
+    game.haul.length === 0 && rest.count > 0,
+    'and selling ALL of it empties the haul with every other container full',
+    `${game.haul.length} left after selling ${rest.count}`
+  );
+}
+
+// ===========================================================================
+rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
+
+// Selling is the one move you cannot undo, so the counter keeps the last few
+// and buys them back at what they paid. That number has to be exact in both
+// directions, or the shelf becomes a gold press.
+{
+  const game = createGame('fresh');
+  grant(game.wallet, 'gold', 500);
+  const piece = rollGear('bulwark_body_t3', 60, 6, pool, new Rng(12));
+  addItem(game, piece);
+
+  const before = balance(game.wallet, 'gold');
+  const paid = sellItem(game, piece);
+  check(
+    paid > 0 && game.sold.length === 1 && game.sold[0].price === paid,
+    'a sale lands on the counter at what it paid',
+    `${game.sold.length} on the counter`
+  );
+
+  const back = buyBack(game, game.sold[0]);
+  check(
+    back.ok &&
+      balance(game.wallet, 'gold') === before &&
+      game.inventory.some((i) => i.id === piece.id) &&
+      game.sold.length === 0,
+    'and buying it back is exactly neutral, in gold and in what you hold',
+    `${balance(game.wallet, 'gold')} against ${before}`
+  );
+
+  // Not a queue you can grow forever. The oldest falls off, which is what
+  // keeps a save from carrying a night's regret around.
+  for (let i = 0; i < SOLD_CAP + 6; i++) {
+    const junk = makeGear('ash_wand', 1);
+    addItem(game, junk);
+    sellItem(game, junk);
+  }
+  check(
+    game.sold.length === SOLD_CAP,
+    `the counter remembers ${SOLD_CAP} and no more`,
+    `${game.sold.length} kept`
+  );
+
+  // A sale needs room nowhere; buying one back is a purchase and does. The
+  // asymmetry is the whole reason the loop cannot wedge.
+  const full = createGame('fresh');
+  grant(full.wallet, 'gold', 500);
+  while (carryRoom(full, 'gear') > 0) addItem(full, makeGear('ash_wand', 1));
+  const last = full.inventory[0];
+  sellItem(full, last);
+  while (carryRoom(full, 'gear') > 0) addItem(full, makeGear('ash_wand', 1));
+  while (stashRoom(full) > 0) full.stash.push(makeGear('ash_wand', 1));
+  const refused = buyBack(full, full.sold[0]);
+  check(
+    !refused.ok && refused.error !== undefined && full.sold.length === 1,
+    'buying back refuses when there is nowhere to put it, and says why',
+    refused.error ?? 'it went ahead anyway'
   );
 }
 
@@ -4091,6 +4169,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     ['inventory', (g, item) => { g.inventory = [item]; }],
     ['stash', (g, item) => { g.stash = [item]; }],
     ['crystals', (g, item) => { g.crystals = [item]; }],
+    ['sold', (g, item) => { g.sold = [{ item, price: 1 }]; }],
     ['shopStock', (g, item) => { g.shopStock = [item]; }],
     ['equipment', (g, item) => { g.character.equipment = { weapon: item }; }],
   ];
@@ -4102,7 +4181,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     const mark = HIGH + (i + 1) * 1000;
     const save = {
       ...createGame('fresh'),
-      inventory: [], stash: [], crystals: [], shopStock: [], craftId: null,
+      inventory: [], stash: [], crystals: [], sold: [], shopStock: [], craftId: null,
     };
     save.character = { ...save.character, equipment: {} };
     const item = makeGear('ash_wand', 1);

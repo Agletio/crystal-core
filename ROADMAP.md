@@ -269,6 +269,14 @@ NUMBER and the words around it, so `.rolled__v` can be one colour and
 the markup can never drift. `describeItem` in `src/crafting.ts` is the
 text-only version and is now the demo's alone.
 
+**Selling is undoable, and needs room nowhere.** `sellItem` puts the piece on
+the counter (`GameState.sold`, newest first, `SOLD_CAP` of them) at exactly
+what it paid; `buyBack` takes it off for the same number, so the pair is
+neutral and the shelf cannot be ground for gold. A SALE needs room nowhere — 
+that asymmetry is what stops a full haul wedging the loop — but a buy-back is
+a purchase and refuses when there is nowhere to put it. Sell mode is UI state
+in `src/ui/shop.ts` laid over the dock through `setInventoryOverride`.
+
 **A currency is ARMED, then pointed.** Clicking a stack in the dock with
 nothing benched — or a stack the benched item refuses, or the targeted removal
 — arms it: `src/ui/craft.ts` holds `armed` as UI state, never saved. While it
@@ -292,25 +300,7 @@ freeze, all of that is the UI holding off on ticking.
 Phases are ordered so each leaves the game playable and each is checkable on its
 own. Within a phase, roughly dependency order.
 
-### Phase 1 — The shop sells and buys back, and the haul empties
-
-- [ ] Replace **Sell unmodified gear** in `src/ui/shop.ts` with a **Sell mode**
-      toggle. While it is on, a left-click on a dock item sells it. Mode is UI
-      state, not saved — it should not survive a reload and surprise anyone.
-- [ ] A **sold list** in the same panel: the last 12 pieces, each with **Buy
-      back** at exactly what it sold for. Saved in `GameState`, so it survives a
-      reload; buying back removes it from the list. No room in the dock means
-      the button is disabled and says why.
-- [ ] **Right-click a shop currency** opens a quantity picker: 5 / 10 / 20 / as
-      many as you can afford. Left-click still buys one.
-- [ ] **Sell all** on the haul, beside the bulk buttons in `src/ui/haul.ts`.
-      Takes everything still in the haul, behind a confirm naming the count and
-      the gold (`src/ui/confirm.ts` exists).
-- [ ] The rule that must survive all of it: **selling needs room nowhere.** That
-      is what stops a full haul wedging the loop, and the demo builds the wedge
-      and checks the way out.
-
-### Phase 2 — The descent transition
+### Phase 1 — The descent transition
 
 A cleared descent swaps the map between two frames and it reads as a glitch.
 
@@ -329,7 +319,7 @@ A cleared descent swaps the map between two frames and it reads as a glitch.
       are the two seams.
 - [ ] Input is never blocked. Leave and Abandon do what they say mid-transition.
 
-### Phase 3 — Meeting the Lampwright
+### Phase 2 — Meeting the Lampwright
 
 Today he is a number. `meetAt` in `src/sim/run.ts` is a kill count; crossing it
 pushes a `met` event, and the REPORT pays the crystal out at the end.
@@ -352,7 +342,7 @@ pushes a `met` event, and the REPORT pays the crystal out at the end.
 - [ ] The guided opening now contains a meeting, so `npm run guide` has to walk
       through it.
 
-### Phase 4 — The danger retune
+### Phase 3 — The danger retune
 
 Carried out of the rewards work, where it was deferred on purpose: setting the
 danger modifiers before the aura system existed would have meant setting them
@@ -377,7 +367,7 @@ waited rather than blocking anything.
       that cannot hurt you; the floor holds armour back to whatever the wards
       left room for, and a quarter of every hit lands regardless.
 
-### Phase 5 — Unique gear
+### Phase 4 — Unique gear
 
 Items with fixed identity and a behaviour attached, closer to a tree passive
 than to a rolled mod, but broad enough to work across builds.
@@ -431,15 +421,17 @@ moving — see §2, balance is deliberately loose.
   base tier is, and it is also the least interesting pair of slots in the
   game. Implicits for them would fix that; they are a balance change, so not
   in a phase about capacity.
-- **Fewer items per clear.** Measured today: gear is rolled per KILL at
-  `gearChance × yield × (1 + rarity/200)`, which is roughly **two to eleven
-  pieces a clear** across the bands. The plan was to halve that and gate the
-  three armour tiers behind power thresholds, so quantity resets down each time
-  quality steps up, with gold per clear held flat across a threshold — crossing
-  one must never read as a demotion. Deferred deliberately: it may only feel bad
-  because the opening hands you everything at once, and readable tooltips plus
-  real selling may fix the feeling without touching the rate. Revisit after
-  Phase 1, and measure before changing anything.
+- **Fewer items per clear.** Measured before the tooltip and shop work: gear
+  is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two
+  to eleven pieces a clear** across the bands. The plan was to halve that and
+  gate the three armour tiers behind power thresholds, so quantity resets down
+  each time quality steps up, with gold per clear held flat across a
+  threshold — crossing one must never read as a demotion.
+  **The two things it was waiting on have landed.** Base tiers now gate
+  themselves through item level, tooltips are readable, and Sell mode plus
+  buy-back mean a heap of drops is a few clicks rather than a chore. So the
+  question is now answerable rather than deferred: play it, and if it still
+  feels like too much, measure the rate before changing it.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like, and uniques will move that

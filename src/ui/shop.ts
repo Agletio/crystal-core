@@ -8,6 +8,7 @@ import { ModPool, tierName } from '../mods';
 import { itemCard } from './itemcard';
 import {
   balance,
+  canSell,
   pickGearBase,
   priceOfItem,
   rollGear,
@@ -15,12 +16,13 @@ import {
   sellPrice,
   spend,
 } from '../economy';
-import { addItem, carryRoom, plainGear, sellAll, stashRoom } from '../game/state';
-import { ask } from './confirm';
-import type { GameState } from '../game/state';
+import { addItem, buyBack, carryRoom, sellItem, stashRoom } from '../game/state';
+import type { Placement } from '../game/state';
+import type { GameState, SoldEntry } from '../game/state';
 import { note } from './history';
 import { crystalIcon, currencyIcon, itemIcon } from './icons';
-import { renderInventory } from './inventory';
+import { openMenu } from './menu';
+import { renderInventory, setInventoryOverride } from './inventory';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { recipeButtonId } from './tutorial';
 import type { Item, ItemKind, Recipe } from '../types';
@@ -38,6 +40,12 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let game: GameState;
+/**
+ * While this is on a left-click in the dock sells. UI state and never saved:
+ * a mode that survived a reload would turn the first click of a session into
+ * a sale nobody asked for.
+ */
+let selling = false;
 
 /**
  * Checked BEFORE the sale: runRecipe spends first, so without this you could pay
@@ -49,7 +57,42 @@ function hasRoomFor(recipe: Recipe): boolean {
   return carryRoom(game, kind) > 0 || stashRoom(game) > 0;
 }
 
-function buy(recipeId: string): void {
+/**
+ * How many of a recipe the purse could take, ignoring room — currency needs
+ * none. Zero when a price is something other than gold, which nothing on the
+ * shelf is today and which this must not silently mis-answer if one ever is.
+ */
+function affordableCount(recipe: Recipe): number {
+  let most = Infinity;
+  for (const [id, n] of Object.entries(recipe.inputs)) {
+    most = Math.min(most, Math.floor(balance(game.wallet, id) / n));
+  }
+  return Number.isFinite(most) ? Math.max(0, most) : 0;
+}
+
+/**
+ * Buying twenty shards twenty clicks at a time is what kills an evening. The
+ * left click still buys one, so nothing about the opening changed.
+ */
+function quantityMenu(recipe: Recipe, x: number, y: number): void {
+  const most = affordableCount(recipe);
+  const counts = [5, 10, 20].filter((n) => n <= most);
+  if (most > 0 && !counts.includes(most)) counts.push(most);
+
+  openMenu(
+    x,
+    y,
+    recipe.name,
+    counts.length === 0
+      ? [{ label: 'Buy 1', run: () => {}, blocked: `${priceOf(recipe)} — you cannot afford one` }]
+      : counts.map((n) => ({
+          label: n === most ? `Buy ${n} — all you can afford` : `Buy ${n}`,
+          run: () => buy(recipe.id, n),
+        }))
+  );
+}
+
+function buy(recipeId: string, count = 1): void {
   const recipe = RECIPES.find((r) => r.id === recipeId);
   if (recipe && !hasRoomFor(recipe)) {
     note(`${recipe.name} — nowhere to put it. Your bag and stash are both full.`, 'fail');
@@ -57,26 +100,40 @@ function buy(recipeId: string): void {
     return;
   }
 
-  const result = runRecipe(game.wallet, recipeId);
-  if (!result.ok) {
-    note(result.error ?? 'cannot afford that', 'fail');
-    render();
-    return;
-  }
-  if (result.item) {
-    // Where it landed matters: a full bag routes it to the stash, and a full
-    // stash means you just paid for something you cannot have. Say so.
-    const where = addItem(game, result.item);
-    if (where === 'lost') {
-      note(`${result.item.name} — no room to carry it, and the stash is full`, 'fail');
-    } else if (where === 'stashed') {
-      note(`Bought ${result.item.name} — bag full, sent to the stash`, 'add');
-    } else {
-      note(`Bought ${result.item.name}`, 'add');
+  // One at a time, so running out of gold partway through leaves you with
+  // what you could afford rather than with nothing.
+  let bought = 0;
+  let stopped: string | null = null;
+  let landed: Placement | null = null;
+  let last: Item | null = null;
+
+  for (let i = 0; i < count; i++) {
+    const result = runRecipe(game.wallet, recipeId);
+    if (!result.ok) {
+      stopped = result.error ?? 'cannot afford that';
+      break;
     }
+    if (result.item) {
+      landed = addItem(game, result.item);
+      last = result.item;
+      if (landed === 'lost') {
+        stopped = 'no room to carry it, and the stash is full';
+        break;
+      }
+    }
+    bought++;
+  }
+
+  if (bought === 0) note(stopped ?? 'nothing bought', 'fail');
+  else if (count > 1) note(`Bought ${bought}${stopped ? ` — ${stopped}` : ''}`, 'add');
+  else if (last) {
+    // Where it landed matters: a full bag routes it to the stash, and a full
+    // stash means you just paid for something you cannot have.
+    note(landed === 'stashed' ? `Bought ${last.name} — bag full, sent to the stash` : `Bought ${last.name}`, 'add');
   } else {
     note('Bought currency', 'add');
   }
+
   render();
   // What you bought landed in the dock, not here — a purchase that leaves the
   // dock stale looks like it did nothing.
@@ -150,54 +207,123 @@ export function render(): void {
       }
     }
     btn.onclick = () => buy(recipe.id);
+    // Right-click asks how many. The left click still buys one, so the guided
+    // opening's step means exactly what it meant.
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      quantityMenu(recipe, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+    });
     host.append(btn);
   }
 
   renderStock();
   renderSell();
+  renderSold();
   $('shop-purse').textContent = `${balance(game.wallet, 'gold')} gold`;
 }
 
 /**
- * The counter you sell across. One button, because the alternative is picking
- * thirty pieces out of the dock by hand — and what it takes is exactly the
- * heap nothing has been spent on, so it can never eat a decision.
+ * The counter you sell across. A MODE rather than a bulk button: the old one
+ * could only take the heap nothing had been spent on, so the pieces you
+ * actually wanted rid of — the ones with one bad modifier — still had to come
+ * out of the dock one right-click at a time.
+ *
+ * Selling one piece stays a decision, which is why the mode has to be visibly
+ * on. Nothing here is unrecoverable now anyway: the counter buys it back.
  */
 function renderSell(): void {
   const btn = $('shop-sell') as HTMLButtonElement;
   btn.replaceChildren();
-
-  const junk = plainGear(game.inventory);
-  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
-  btn.append(el('span', 'buy__name', 'Sell unmodified gear'));
+  btn.append(el('span', 'buy__name', selling ? 'Sell mode — on' : 'Sell mode'));
   btn.append(
     el(
       'span',
       'buy__cost',
-      junk.length === 0
-        ? 'nothing in the bag that no currency has touched'
-        : `${junk.length} pieces · +${worth} gold`
+      selling ? 'click to stop' : 'then click pieces in the dock'
     )
   );
-  btn.disabled = junk.length === 0;
-  btn.classList.toggle('buy--off', junk.length === 0);
+  btn.classList.toggle('buy--armed', selling);
+
+  $('shop-sell-hint').textContent = selling
+    ? 'Every piece you click is sold. It stays on the counter below until twelve more are.'
+    : 'Any one piece: hold or right-click it in the dock.';
 }
 
-async function sellJunk(): Promise<void> {
-  const junk = plainGear(game.inventory);
-  if (junk.length === 0) return;
-  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
-  const yes = await ask({
-    title: `Sell ${junk.length} pieces for ${worth} gold?`,
-    text: 'Everything in your bag with no modifier on it. Worn and stashed gear stays.',
-    confirm: 'Sell',
-  });
-  if (!yes) return;
-
-  const sold = sellAll(game, junk);
-  note(`Sold ${sold.count} pieces for ${sold.gold} gold`, 'add');
+function setSelling(on: boolean): void {
+  selling = on;
+  // The dock answers to the mode while it is up, and to whatever screen is
+  // underneath the moment it is not.
+  setInventoryOverride(
+    on
+      ? {
+          actionFor: (item: Item) =>
+            canSell(item)
+              ? {
+                  label: `sell for ${sellPrice(item)} gold`,
+                  run: () => {
+                    const paid = sellItem(game, item);
+                    if (paid <= 0) return;
+                    note(`Sold ${item.name} for ${paid} gold`, 'add');
+                    render();
+                    renderInventory();
+                  },
+                }
+              : null,
+          highlighted: (item: Item) => canSell(item),
+          dimmed: (item: Item) => (canSell(item) ? null : 'a crystal is never sold'),
+        }
+      : null
+  );
   render();
-  renderInventory();
+}
+
+/**
+ * What you sold, at what it paid. Buying one back is the same number in the
+ * other direction, so the pair is neutral and the shelf cannot be ground for
+ * gold — which is the only reason a sale can be this cheap to make.
+ */
+function renderSold(): void {
+  const host = $('shop-sold');
+  host.replaceChildren();
+
+  const sold = game.sold ?? [];
+  if (sold.length === 0) {
+    host.append(el('p', 'empty', 'Nothing sold yet. What you sell waits here.'));
+    return;
+  }
+
+  for (const entry of sold) {
+    const btn = el('button', 'buy') as HTMLButtonElement;
+    btn.append(itemIcon(entry.item, 26));
+    const body = el('span', 'buy__body');
+    body.append(el('span', 'buy__name', entry.item.name));
+    body.append(el('span', 'buy__cost', `Buy back · ${entry.price} gold`));
+    btn.append(body);
+    attachTooltip(btn, () => itemCard(entry.item, [`buy back for ${entry.price} gold`]));
+
+    const why =
+      balance(game.wallet, 'gold') < entry.price
+        ? `costs ${entry.price} gold`
+        : carryRoom(game, entry.item.kind) <= 0 && stashRoom(game) <= 0
+          ? 'nowhere to put it'
+          : null;
+    if (why) {
+      btn.disabled = true;
+      btn.classList.add('buy--off');
+      body.append(el('span', 'buy__why', why));
+    }
+    btn.onclick = () => {
+      const result = buyBack(game, entry);
+      if (!result.ok) {
+        note(`${entry.item.name} — ${result.error}`, 'fail');
+        return;
+      }
+      note(`Bought back ${entry.item.name}`, 'add');
+      render();
+      renderInventory();
+    };
+    host.append(btn);
+  }
 }
 
 /**
@@ -306,6 +432,9 @@ export function openShop(): void {
 }
 
 export function closeShop(): void {
+  // Leaving the counter ends the mode. Otherwise a click in the dock on some
+  // other screen would still be a sale, and nothing would be saying so.
+  if (selling) setSelling(false);
   $('shop').hidden = true;
   hideTooltip();
 }
@@ -320,7 +449,7 @@ export function refreshShop(): void {
 export function initShop(state: GameState): void {
   game = state;
   ($('shop-close') as HTMLButtonElement).onclick = closeShop;
-  ($('shop-sell') as HTMLButtonElement).onclick = () => void sellJunk();
+  ($('shop-sell') as HTMLButtonElement).onclick = () => setSelling(!selling);
   restockIfLevelled();
   render();
 }

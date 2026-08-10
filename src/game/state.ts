@@ -32,6 +32,9 @@ export const CARRY: Record<'gear', number> = {
  */
 export const HAUL_CAP = 48;
 
+/** Sales the counter remembers — about one triage's worth. */
+export const SOLD_CAP = 12;
+
 /** Stash slots you start with. */
 export const STASH_START = 12;
 /** Slots one purchase adds. */
@@ -79,11 +82,19 @@ export interface GameState {
   tutorialStep: number | null;
   /** Quest ids already paid out. What is not in here is still open. */
   quests: string[];
+  /** What you sold, newest first, each at what it paid. Buying one back costs
+   *  the same, so the counter can never mint or eat gold. */
+  sold: SoldEntry[];
   /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
   shopStock: Item[];
   shopLevel: number;
   /** Whether a cleared descent launches the next one by itself. */
   autoRepeat: boolean;
+}
+
+export interface SoldEntry {
+  item: Item;
+  price: number;
 }
 
 export type StartMode = 'fresh' | 'dev';
@@ -104,6 +115,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     firstClearDone: false,
     tutorialStep: null,
     quests: [],
+    sold: [],
     shopStock: [],
     shopLevel: 0,
     autoRepeat: true,
@@ -142,6 +154,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
+  game.sold = [];
   // Zero, not the character's level, so the next open restocks rather than
   // showing whatever the previous game happened to be carrying.
   game.shopStock = [];
@@ -281,7 +294,28 @@ export function sellItem(game: GameState, item: Item): number {
   const paid = sellPrice(item);
   if (!takeFrom(game.inventory, item) && !takeFrom(game.haul, item)) return 0;
   grant(game.wallet, 'gold', paid);
+  game.sold = [{ item, price: paid }, ...(game.sold ?? [])].slice(0, SOLD_CAP);
   return paid;
+}
+
+/**
+ * Off the counter, at what it sold for. Room is needed HERE and only here,
+ * because this is a purchase — selling still needs room nowhere, which is
+ * what stops a full haul wedging the loop.
+ */
+export function buyBack(game: GameState, entry: SoldEntry): { ok: boolean; error?: string } {
+  const at = (game.sold ?? []).indexOf(entry);
+  if (at < 0) return { ok: false, error: 'it is no longer on the counter' };
+  if ((game.wallet.gold ?? 0) < entry.price) {
+    return { ok: false, error: `costs ${entry.price} gold` };
+  }
+  if (carryRoom(game, entry.item.kind) <= 0 && stashRoom(game) <= 0) {
+    return { ok: false, error: 'your bag and stash are both full' };
+  }
+  game.sold.splice(at, 1);
+  game.wallet.gold = (game.wallet.gold ?? 0) - entry.price;
+  addItem(game, entry.item);
+  return { ok: true };
 }
 
 /** Gear with nothing rolled on it: the heap you can clear without reading it. */

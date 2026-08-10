@@ -180,6 +180,12 @@ export function heal(game: GameState): Healed {
   // Hand-edited saves reach here, and one that predates the haul has no key.
   game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
+  // Same rule as every other container: a base that is gone takes its entry.
+  game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
+    const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);
+    if (!ok) out.items++;
+    return ok;
+  });
 
   // Crystals used to live in the bags. They are never carried anywhere now, so
   // a save written before that moves its collection across rather than leaving

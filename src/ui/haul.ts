@@ -156,6 +156,17 @@ export function render(): void {
   sell.disabled = junk.length === 0;
   sell.classList.toggle('buy--off', junk.length === 0);
 
+  // The way out of a full everything, and the reason the loop cannot wedge:
+  // a sale needs room nowhere. Behind a confirm because it takes the pieces
+  // you have not looked at yet.
+  const all = game.haul.filter(canSell);
+  const allWorth = all.reduce((n, i) => n + sellPrice(i), 0);
+  const sellAllBtn = $('haul-sellall') as HTMLButtonElement;
+  sellAllBtn.textContent =
+    all.length > 0 ? `Sell all ${all.length} for ${allWorth} gold` : 'Nothing to sell';
+  sellAllBtn.disabled = all.length === 0;
+  sellAllBtn.classList.toggle('buy--off', all.length === 0);
+
   $('haul-hint').textContent =
     game.haul.length >= HAUL_CAP
       ? 'The Fissure stays shut until this is back under its limit.'
@@ -174,6 +185,22 @@ async function sellJunk(): Promise<void> {
   if (!yes) return;
 
   const sold = sellAll(game, junk);
+  note(`Sold ${sold.count} pieces for ${sold.gold} gold`, 'add');
+  changed();
+}
+
+async function sellEverything(): Promise<void> {
+  const all = game.haul.filter(canSell);
+  if (all.length === 0) return;
+  const worth = all.reduce((n, i) => n + sellPrice(i), 0);
+  const yes = await ask({
+    title: `Sell all ${all.length} pieces for ${worth} gold?`,
+    text: 'Everything still in the haul, whatever is rolled on it. The shop buys the last twelve back.',
+    confirm: 'Sell all',
+  });
+  if (!yes) return;
+
+  const sold = sellAll(game, all);
   note(`Sold ${sold.count} pieces for ${sold.gold} gold`, 'add');
   changed();
 }
@@ -204,5 +231,6 @@ export function initHaul(state: GameState, refresh: () => void): void {
     changed();
   };
   ($('haul-sell') as HTMLButtonElement).onclick = () => void sellJunk();
+  ($('haul-sellall') as HTMLButtonElement).onclick = () => void sellEverything();
   render();
 }
