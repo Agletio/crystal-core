@@ -373,6 +373,28 @@
   .hp__fill--xp { background: var(--rust); }
   .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
 
+  /* Two across under the map: the keys are the shortcut and these are the
+     interface, because a phone has no number row. */
+  .flasks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .flask { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
+  @media (max-width: 560px) { .flasks { grid-template-columns: 1fr; } }
+  .flask__use {
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 6px 8px; text-align: left;
+  }
+  .flask__use:disabled { opacity: .4; }
+  .flask__name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flask__charges { font-size: 11px; color: var(--citrine); flex: none; }
+  .flask__key {
+    flex: none; font-size: 10px; color: var(--dust); border: 1px solid var(--seam);
+    padding: 1px 5px;
+  }
+  /* Drinking, so the button says what the bar is doing. */
+  .flask--live .flask__use { border-color: var(--quartz); }
+  .flask__auto { display: flex; align-items: center; gap: 4px; flex: none; }
+  .flask__auto span { font-size: 10px; color: var(--dust); min-width: 30px; text-align: center; }
+  .flask__auto button { padding: 2px 6px; font-size: 11px; }
+
   .whoami { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   .whoami__name { font-family: var(--display); font-size: 14px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .whoami__level { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); flex: none; }
@@ -1192,6 +1214,10 @@
              another. Never takes a click: the buttons are outside it. -->
         <div class="fade" id="run-fade"></div>
         <div class="results" id="run-results" hidden></div>
+        <!-- The one thing you DO in a fight, attached to the MAP rather than
+             to the panel. Stacked, the panel is below the fold and a flask you
+             have to scroll to mid-fight is a flask you do not have. -->
+        <div class="flasks" id="run-flasks"></div>
       </div>
 
       <!-- One panel rather than three. The inventory dock below needs the

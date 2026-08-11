@@ -136,9 +136,6 @@ assert(
   'the Fissure consumes nothing',
   `${dockItems().length} vs ${beforeFissure}`
 );
-$('run-abandon').click();
-$('run-again').click();
-
 // --- the guided opening ----------------------------------------------------
 // It runs from the very first click now, so a new player is never looking at
 // a screen full of buttons with no idea which one. Only the plumbing is
@@ -210,6 +207,51 @@ assert(all('.guide-on').length === 0, 'and takes the highlight with it');
 assert(!document.body.classList.contains('guided'), 'and lifts the lock');
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('craft').hidden === false, 'a stocked game opens on the bench');
+
+// --- the flasks --------------------------------------------------------------
+// The one thing a player DOES in a fight, and the first input a descent has
+// ever had. AFTER the wipe: a press only lands once the sim ticks, and the
+// waiting that needs would walk the guided opening on past the step above.
+{
+  $('craft-close').click();
+  $('run-launch').click();
+  await new Promise((r) => setTimeout(r, 60));
+
+  const flasks = all('#run-flasks .flask');
+  assert(flasks.length === 2, 'two flasks under the map', String(flasks.length));
+  assert(
+    all('#run-flasks .flask__key').map((n) => n.textContent).join(',') === '1,2',
+    'on the keys the table binds them to',
+    all('#run-flasks .flask__key').map((n) => n.textContent).join(',')
+  );
+  assert(
+    $('run-flasks').closest('.stagebox') !== null,
+    'and attached to the map rather than to the side panel'
+  );
+  const charges = () => all('#run-flasks .flask__charges').map((n) => n.textContent);
+  assert(charges().every((c) => c === '2 / 2'), 'each starting the descent full', charges().join(' '));
+
+  // A press is QUEUED and drained on the next TICK, and the sim does not tick
+  // while the hero is still climbing out — so this has to outlast the handover
+  // before the charge can have gone anywhere.
+  const use = all('#run-flasks .flask__use')[0];
+  assert(!use.disabled, 'and a flask you can drink is a button you can press');
+  use.click();
+  await new Promise((r) => setTimeout(r, 1500));
+  assert(charges()[0] === '1 / 2', 'drinking one spends a charge', charges().join(' '));
+
+  $('run-abandon').click();
+  $('run-again').click();
+  $('run-launch').click();
+  await new Promise((r) => setTimeout(r, 60));
+  assert(
+    charges().every((c) => c === '2 / 2'),
+    'and the next descent starts full: a budget, never a stockpile',
+    charges().join(' ')
+  );
+  $('run-abandon').click();
+  $('run-again').click();
+}
 
 // --- duplicate ids would silently break getElementById --------------------
 const ids = all('[id]').map((n) => n.id);

@@ -106,6 +106,8 @@ export interface GameState {
   autoRepeat: boolean;
   /** Key overrides by binding id; a missing one takes the table's default. */
   keys: Record<string, string>;
+  /** Share of a pool a potion fires at, by id. Charges are `RunState`'s. */
+  potions: Record<string, number>;
 }
 
 export interface SoldEntry {
@@ -138,6 +140,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     shopLevel: 0,
     autoRepeat: true,
     keys: {},
+    potions: {},
   };
   resetGame(game, mode);
   return game;

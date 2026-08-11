@@ -224,10 +224,27 @@ below a third of their life" changes a number rather than what the skill is.
 The line the card prints comes out of `GrantDef.say`, never out of the node's
 own prose, so what it charges and what it says cannot drift.
 
+**Two flasks, and they are a descent's budget.** `POTIONS` in `data.ts` — a
+Flask of Blood and a Flask of Quiet, 2 charges each, 4 seconds of heavy
+regeneration apiece. A potion is an EFFECT WITH A DURATION (`TimedEffect` on
+the hero), never a lump of life, because the trade that turns potions into the
+character's engine hangs BUFFS off that same shape. Charges live on `RunState`
+and nowhere in the save, so a descent always begins full and there is nothing
+to hoard.
+
+They fire THEMSELVES at a threshold (`PotionDef.threshold`, moved by the player
+into `GameState.potions`), and that same threshold is what `runToCompletion`
+obeys — one rule with one implementation, because no build's power may depend
+on somebody watching. The keys are `BINDINGS` entries like every other; the
+buttons beside the map are the interface, since a phone has no number row.
+`RunSim.usePotion` QUEUES a press for the next tick, so a seed still replays.
+
 **Out of mana you do not stand still.** You swing bare — `DRY_SKILL`,
 `MANA.dryDamage` of your damage, one target, none of the tree behind it — so a
-descent always ends and a headless run can never hang. A bare level 1 spends
-8% to 30% of its swings that way, measured over real descents.
+descent always ends and a headless run can never hang. A bare level 1 spends 0%
+(Strike) to 17% (Blight) of its swings that way — measured over real descents
+with the flasks firing themselves, which is the floor everything else is
+measured against.
 
 ## The loop
 

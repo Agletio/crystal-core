@@ -16,6 +16,7 @@ import {
   FAMILY_BY_ID,
   GEAR_BASE_BY_ID,
   PLAYER_SKILLS,
+  POTION_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
   UNIQUE_BY_ID,
@@ -299,6 +300,18 @@ export function heal(game: GameState): Healed {
     }
   }
   healQuests(game);
+
+  // A threshold for a potion that no longer exists costs its entry; one out of
+  // range is clamped rather than dropped, so a save never fires a flask at a
+  // share nothing can reach.
+  {
+    const kept: Record<string, number> = {};
+    for (const [id, share] of Object.entries(game.potions ?? {})) {
+      if (!POTION_BY_ID[id] || !Number.isFinite(share)) continue;
+      kept[id] = Math.max(0, Math.min(1, share));
+    }
+    game.potions = kept;
+  }
 
   // Before meetings were scheduled: read off what the save already holds.
   if (!Array.isArray(game.given)) {

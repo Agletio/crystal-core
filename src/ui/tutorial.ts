@@ -12,13 +12,14 @@
  * through six modules' renders, and the same tick repositions the card.
  */
 import { balance } from "../economy";
-import { INTRO, SKILL_BY_ID } from "../data";
+import { INTRO, POTIONS, SKILL_BY_ID } from "../data";
 import { carryRoom, craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
 import { ownedCrystals } from "../game/crystals";
 import { pointsAvailable, skillProgress } from "../sim/character";
 import { hasNotable, pathToNotable } from "../skills-tree";
 import { modCapacity } from "../mods";
+import { keyFor, keyName } from "./keys";
 import { crystalMoveId } from "./crystals";
 import { crystalSlotId } from "./craft";
 import type { Item } from "../types";
@@ -49,8 +50,9 @@ export interface TutorialStep {
   target: string | ((ctx: GuideCtx, game: GameState) => string);
   /** Default true; false for steps with nothing to click. */
   ring?: boolean | ((ctx: GuideCtx) => boolean);
-  /** Optional aside under the text — what this costs, or what to expect. */
-  hint?: string;
+  /** Optional aside under the text — what this costs, or what to expect. A
+   *  function when it names something the player can rebind. */
+  hint?: string | ((ctx: GuideCtx, game: GameState) => string);
   /**
    * True while the step cannot be reached yet — a level away, a crystal that
    * has to grow. The card goes, the lockdown drops and nothing advances: the
@@ -62,6 +64,11 @@ export interface TutorialStep {
 }
 
 const has = (g: GameState, id: string) => balance(g.wallet, id) > 0;
+
+/** The keys the flasks are on, as they are actually bound: a rebound key has
+ *  to say what it is rather than what the table shipped. */
+const flaskKeys = (g: GameState): string =>
+  POTIONS.map((p) => keyName(keyFor(g, p.binding))).join(" and ");
 
 /** Here rather than in the shop: the guide is the only reason they need ids. */
 export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
@@ -178,7 +185,9 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "enter",
     text: (ctx) => (blocked(ctx) ? "Close this — the Fissure is behind it." : "Enter the Fissure."),
-    hint: "You fight on your own. Nothing to time.",
+    hint: (_ctx, g) =>
+      `You fight on your own — except the flasks. ${flaskKeys(g)}, ${POTIONS[0].charges} charges each a descent, ` +
+      'and they fire themselves when you get low.',
     target: (ctx) => viaHeader(ctx, "run-launch"),
     done: (g, ctx) => ctx.phase !== "menu" || g.firstClearDone,
   },
@@ -690,7 +699,8 @@ function paint(): void {
   card.hidden = false;
   $("guide-text").textContent =
     typeof step.text === "function" ? step.text(ctx, game) : step.text;
-  $("guide-hint").textContent = step.hint ?? "";
+  $("guide-hint").textContent =
+    typeof step.hint === "function" ? step.hint(ctx, game) : (step.hint ?? "");
   $("guide-step").textContent =
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;
 

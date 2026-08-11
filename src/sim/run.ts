@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import { WALL, generateMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, DRY_SKILL } from '../data';
+import { AILMENT, DRY_SKILL, POTIONS, POTION_BY_ID } from '../data';
 import { lookOf } from './appearance';
 import {
   armourReduction,
@@ -168,6 +168,8 @@ export interface Entity {
   ailments: Ailment[];
   life: number;
   mana: number; // monsters never spend it and never regain it
+  /** What is true of this entity for a while yet. Only the hero has any. */
+  effects: TimedEffect[];
   stats: CombatStats;
   cooldown: number;
   path: Vec2[];
@@ -211,6 +213,15 @@ export interface Vfx {
 export interface RunOptions {
   /** Thins the packs without touching the map. Harness use only. */
   densityScale?: number;
+  /** Share of a pool below which a potion fires itself, by potion id. A
+   *  missing one takes the table's default, which is what every harness runs. */
+  potionThresholds?: Record<string, number>;
+}
+
+/** A thing that is true for a while. `id` names a `PotionDef` for now. */
+export interface TimedEffect {
+  id: string;
+  remaining: number;
 }
 
 export type RunEvent =
@@ -263,6 +274,10 @@ export interface RunState {
   /** Swings that could not pay, and swings in all: the calibration is a share. */
   dryCasts: number;
   casts: number;
+  /** Potion charges left this descent, by id. A descent always begins full. */
+  charges: Record<string, number>;
+  /** Charges spent, so a harness can say whether the floor was actually used. */
+  drunk: number;
 }
 
 const FLOATER_LIFE = 1.1;
@@ -272,6 +287,7 @@ export class RunSim {
   private readonly rng: Rng;
   /** Placement retries only. Fixed, so the same map places the same way. */
   private readonly retry = new Rng(7919);
+  private readonly queued: string[] = []; // presses waiting for the next tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -350,6 +366,7 @@ export class RunSim {
       bounty: 1,
       life: stats.maxLife,
       mana: stats.maxMana,
+      effects: [],
       stats,
       cooldown: 0,
       path: [],
@@ -379,6 +396,8 @@ export class RunSim {
       set: this.set,
       dryCasts: 0,
       casts: 0,
+      charges: Object.fromEntries(POTIONS.map((p) => [p.id, p.charges])),
+      drunk: 0,
       lampwright: null,
       meeting: false,
       met: false,
@@ -509,6 +528,7 @@ export class RunSim {
           bounty: rank.bounty,
           life: stats.maxLife,
           mana: 0,
+          effects: [],
           stats,
           cooldown: this.rng.float(0, 1),
           path: [],
@@ -535,6 +555,10 @@ export class RunSim {
     if (s.status !== 'running') return;
 
     s.elapsed += dt;
+
+    // On a TICK, before anything else: a press lands on the next one like
+    // every other decision, or a seed stops replaying the same run.
+    this.stepPotions(dt);
 
     for (const f of s.floaters) f.age += dt;
     if (s.floaters.length > 0 && s.floaters[0].age >= FLOATER_LIFE) {
@@ -781,6 +805,7 @@ export class RunSim {
       bounty: 0,
       life: 1,
       mana: 0,
+      effects: [],
       stats: hero.stats,
       cooldown: 0,
       path: [],
@@ -879,6 +904,7 @@ export class RunSim {
         bounty: def.bounty,
         life: stats.maxLife,
         mana: 0,
+        effects: [],
         stats,
         cooldown: 0,
         path: [],
@@ -1077,6 +1103,65 @@ export class RunSim {
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
+  /** The one input a descent has ever had. QUEUED, never applied where it
+   *  arrives, so a press cannot land between two ticks. */
+  usePotion(id: string): void {
+    this.queued.push(id);
+  }
+
+  /** What a potion is waiting for, whoever is asking. */
+  potionThreshold(id: string): number {
+    return this.options.potionThresholds?.[id] ?? POTION_BY_ID[id]?.threshold ?? 0;
+  }
+
+  /** Whether one would do anything if you pressed it right now. */
+  canDrink(id: string): boolean {
+    const hero = this.state.hero;
+    return (
+      this.state.status === 'running' &&
+      (this.state.charges[id] ?? 0) > 0 &&
+      !hero.effects.some((e) => e.id === id)
+    );
+  }
+
+  /**
+   * Presses first, then the shipped policy, then what is already running. ONE
+   * implementation: `runToCompletion` runs exactly the rule a player watching
+   * would, because a build whose power needs somebody there is a build no
+   * harness can hold.
+   */
+  private stepPotions(dt: number): void {
+    const hero = this.state.hero;
+
+    for (const id of this.queued) this.drink(id);
+    this.queued.length = 0;
+
+    for (const potion of POTIONS) {
+      const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
+      const now = potion.pool === 'life' ? hero.life : hero.mana;
+      if (max > 0 && now / max <= this.potionThreshold(potion.id)) this.drink(potion.id);
+    }
+
+    if (hero.effects.length === 0) return;
+    for (const effect of hero.effects) {
+      effect.remaining -= dt;
+      const potion = POTION_BY_ID[effect.id];
+      if (!potion) continue;
+      const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
+      const gain = ((max * potion.percentPerSecond) / 100) * dt;
+      if (potion.pool === 'life') hero.life = Math.min(max, hero.life + gain);
+      else hero.mana = Math.min(max, hero.mana + gain);
+    }
+    hero.effects = hero.effects.filter((e) => e.remaining > 0);
+  }
+
+  private drink(id: string): void {
+    if (!this.canDrink(id)) return;
+    this.state.charges[id]--;
+    this.state.drunk++;
+    this.state.hero.effects.push({ id, remaining: POTION_BY_ID[id].seconds });
+  }
+
   /** The one place mana is spent. Short of the cost you swing bare rather than
    *  stand still, because a descent that never ends is a harness that hangs. */
   private swing(hero: Entity, target: Entity): void {

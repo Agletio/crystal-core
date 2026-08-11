@@ -10,7 +10,7 @@ import { createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
-import { EQUIP_SLOTS } from './data';
+import { EQUIP_SLOTS, POTIONS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
@@ -22,7 +22,15 @@ import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
 import { closeMet, initMet, isMetOpen } from './ui/met';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
-import { centreCamera, initRun, metTaken, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
+import {
+  centreCamera,
+  drinkFlask,
+  initRun,
+  metTaken,
+  onRunFocused,
+  refreshRunPanels,
+  runPhase,
+} from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
@@ -314,6 +322,8 @@ initKeys(game, {
     if (isCharacterOpen()) closeCharacter();
     else openCharacter();
   },
+  // One entry per potion, off the same table the flasks are drawn from.
+  ...Object.fromEntries(POTIONS.map((p) => [p.binding, () => drinkFlask(p.id)])),
 });
 
 initTutorial(game, guideContext);

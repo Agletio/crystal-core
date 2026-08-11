@@ -2028,6 +2028,61 @@ export const ENCOUNTERS: EncounterDef[] = [
 /** Which skill a ranged pack uses. */
 export const MONSTER_RANGED_SKILL = 'bolt';
 
+/**
+ * A thing that is TRUE FOR A WHILE, and the first instances of one. A potion
+ * is not a lump of life — it is an effect with a duration, because the trade
+ * that turns potions into the character's engine hangs BUFFS off the same
+ * shape, and that has to be a table entry rather than a rewrite.
+ */
+export interface PotionDef {
+  id: string;
+  name: string;
+  /** The binding that fires it: its key is a table entry like every other. */
+  binding: string;
+  /** Charges per DESCENT. Run state, so a descent always begins full. */
+  charges: number;
+  seconds: number;
+  /** Which pool it fills, and by what share of that pool's maximum per second. */
+  pool: 'life' | 'mana';
+  percentPerSecond: number;
+  /**
+   * Fires itself when the pool falls below this share of its maximum. The
+   * player's to move, and the shipped default is the one every harness runs —
+   * no build's power may depend on somebody watching.
+   */
+  threshold: number;
+  blurb: string;
+}
+
+export const POTIONS: PotionDef[] = [
+  {
+    id: 'flask_of_life',
+    name: 'Flask of Blood',
+    binding: 'potion_life',
+    charges: 2,
+    seconds: 4,
+    pool: 'life',
+    percentPerSecond: 5,
+    threshold: 0.35,
+    blurb: '5% of your life a second for 4s. Fires itself at 35% life.',
+  },
+  {
+    id: 'flask_of_mana',
+    name: 'Flask of Quiet',
+    binding: 'potion_mana',
+    charges: 2,
+    seconds: 4,
+    pool: 'mana',
+    percentPerSecond: 6,
+    threshold: 0.12,
+    blurb: '6% of your mana a second for 4s. Fires itself at 12% mana, which is about one cast left.',
+  },
+];
+
+export const POTION_BY_ID: Record<string, PotionDef> = Object.fromEntries(
+  POTIONS.map((p) => [p.id, p])
+);
+
 /** What you swing when you cannot pay. No category, so it never reaches the
  *  Skills screen, and no tree reaches it. */
 export const DRY_SKILL: SkillDef = {
@@ -2356,6 +2411,8 @@ export interface BindingDef {
 export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
   { id: 'character', what: 'Open the character sheet', key: 'c' },
+  { id: 'potion_life', what: 'Drink the Flask of Blood', key: '1' },
+  { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '2' },
 ];
 
 export const BINDING_BY_ID: Record<string, BindingDef> = Object.fromEntries(

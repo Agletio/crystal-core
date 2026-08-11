@@ -14,7 +14,7 @@ import { characterStats } from '../sim/stats';
 import { xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
-import { FAMILY_BY_ID, LAMPWRIGHT, RUN_SLOTS, THEME_BY_ID } from '../data';
+import { FAMILY_BY_ID, LAMPWRIGHT, POTIONS, RUN_SLOTS, THEME_BY_ID } from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, giftWaiting } from '../game/crystals';
@@ -268,7 +268,7 @@ function launch(): void {
   seed = Math.floor(Math.random() * 1e9);
   // Who you might meet is the player's business, not the set's: the chance
   // falls as the collection fills, and the sim is only told the number.
-  sim = new RunSim(set, game.character, new Rng(seed));
+  sim = new RunSim(set, game.character, new Rng(seed), { potionThresholds: game.potions });
 
   note(
     `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
@@ -287,6 +287,7 @@ function launch(): void {
 
   setPhase('running');
   renderStatsPanel();
+  renderFlasks();
   fitCanvas();
   setLeaveLabel();
   // Paint once up front rather than waiting for the first animation frame,
@@ -467,11 +468,66 @@ function renderCarrying(): void {
   }
 }
 
+/**
+ * The flasks. The KEYS are the shortcut and these are the interface — a phone
+ * has no number row, so a potion reachable only by keyboard is missing rather
+ * than optional. `fires at` is the same threshold the sim's own policy reads,
+ * so setting it here is setting what a headless run does.
+ */
+function renderFlasks(): void {
+  const host = $('run-flasks');
+  const live = sim && playing;
+  host.replaceChildren();
+
+  for (const potion of POTIONS) {
+    const left = sim?.state.charges[potion.id] ?? potion.charges;
+    const drinking = sim?.state.hero.effects.some((e) => e.id === potion.id) ?? false;
+    const share = game.potions?.[potion.id] ?? potion.threshold;
+
+    const row = el('div', `flask${drinking ? ' flask--live' : ''}`);
+    const use = el('button', 'flask__use') as HTMLButtonElement;
+    use.id = `flask-${potion.id}`;
+    use.append(el('span', 'flask__key', keyName(keyFor(game, potion.binding))));
+    use.append(el('span', 'flask__name', potion.name));
+    use.append(el('span', 'flask__charges', `${left} / ${potion.charges}`));
+    use.disabled = !live || !sim!.canDrink(potion.id);
+    use.onclick = () => drinkPotion(potion.id);
+    use.title = potion.blurb;
+    row.append(use);
+
+    const auto = el('div', 'flask__auto');
+    for (const step of [-5, 5]) {
+      const button = el('button', 'mini', step < 0 ? '−' : '+') as HTMLButtonElement;
+      button.onclick = () => {
+        const next = Math.max(0, Math.min(0.95, share + step / 100));
+        game.potions = { ...(game.potions ?? {}), [potion.id]: next };
+        renderFlasks();
+      };
+      if (step < 0) auto.append(button);
+      else {
+        auto.append(el('span', undefined, `${Math.round(share * 100)}%`));
+        auto.append(button);
+      }
+    }
+    auto.title = `Fires itself when ${potion.pool} falls to this share.`;
+    row.append(auto);
+    host.append(row);
+  }
+}
+
+/** A press, from a key or from the button. The sim queues it for the next tick. */
+function drinkPotion(id: string): void {
+  if (!sim || !playing) return;
+  sim.usePotion(id);
+  renderFlasks();
+}
+
 function renderReadout(): void {
   if (!sim) return;
   const s = sim.state;
 
   renderCarrying();
+  renderFlasks();
 
   $('run-elapsed').textContent = `${s.elapsed.toFixed(1)}s`;
   $('run-killed').textContent = `${s.killed}/${s.totalMonsters}`;
@@ -693,6 +749,9 @@ function setLeaveLabel(): void {
  */
 let userZoomed = false;
 
+/** Matches the `.flasks` margin, because they describe the same gap. */
+const FLASK_GAP = 8;
+
 function fitCanvas(): void {
   const box = $('run-stage');
   const width = box.clientWidth;
@@ -701,7 +760,12 @@ function fitCanvas(): void {
   // the media query, because they describe the same layout.
   const stacked = globalThis.innerWidth <= 900;
   const row = box.closest('.runcols') as HTMLElement | null;
-  const available = !stacked && row ? row.clientHeight - 2 : 0;
+  // The flasks sit UNDER the map inside the same box, so the canvas may not
+  // have the whole row: taking it all pushes them off the bottom, where the
+  // dock covers them and nothing can be clicked.
+  const flasks = $('run-flasks').getBoundingClientRect().height;
+  const reserve = flasks > 0 ? flasks + FLASK_GAP : 0;
+  const available = !stacked && row ? row.clientHeight - 2 - reserve : 0;
   const height = available > 240 ? available : Math.max(320, Math.round(width * 0.66));
   renderer?.resize(width, height);
 
@@ -746,6 +810,11 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
 
 export function initRun(state: GameState): void {
   game = state;
+
+  // Drawn from the very first paint, so the room they take is not something
+  // the canvas discovers when a descent starts — and so the threshold is set
+  // before you drop rather than during a fight.
+  renderFlasks();
 
   const stage = $('run-stage');
   const palette = readPalette(document.documentElement);
@@ -852,6 +921,11 @@ export function initRun(state: GameState): void {
 
 
 /** Re-read derived stats — called after equipment changes on the sheet. */
+/** A key press, from the shell's one listener. */
+export function drinkFlask(id: string): void {
+  drinkPotion(id);
+}
+
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();

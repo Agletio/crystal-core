@@ -41,61 +41,15 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Two potions, two charges [user 3b]
+### Phase 1 — Character level buys attributes [user 7]
 
-**What is true today.** Nothing. There are no consumables, and — more to the
-point — **there is no player input during a descent at all.** The guided
-opening's first hint says so: "You fight on your own. Nothing to time." The
-only mid-run controls are Abandon and Leave, which are about the loop rather
-than the fight.
+**Potions landed first, and they moved the floor.** Every number below that
+compares against "today" was measured with the flasks firing themselves, which
+is what `runToCompletion` now does: naked level 1 is 24/24 at 57% life, the
+blank-crystal rung is 22/24, the bands are 12/12/12/12/12/11 and the deep end
+is 3/12. Mana costs `MANA.costPerSecond` a second bare, and a level 1 spends 0%
+(Strike) to 17% (Blight) of its swings unable to pay.
 
-**Why it is wrong.** With mana costed, running dry has no answer, and a run
-you can only watch has no moment in it that is yours.
-
-- [ ] A potion is an EFFECT WITH A DURATION, not an instant heal. The life one
-      is a few seconds of heavy life regeneration and the mana one is the same
-      for mana — the plainest possible instance of "a thing that is true for a
-      while". Built any other way, the trade that turns potions into buffs is a
-      rewrite rather than a table entry, and that trade is already designed.
-- [ ] **Two charges each per descent**, refilled on the descent after — so they
-      are part of a descent's budget rather than a stockpile, and a cleared run
-      always starts full.
-- [ ] Charges are RUN state, not save state: they live on `RunState`, and
-      `RunSim` grows the one input it has ever had. Nothing about a potion is
-      in `GameState` yet — the ways to modify them come later.
-- [ ] Bound to **1** and **2** through `BINDINGS` in `src/data.ts` and the one
-      listener in `src/ui/keys.ts` — two more table entries, not two literals.
-      That table already exists; see `RULES.md`.
-- [ ] The tutorial's opening hint stops saying there is nothing to time, and
-      the opening teaches the two keys somewhere. This is the first thing a
-      player DOES in a fight and it cannot be a secret.
-- [ ] **Automation is universal and is never a build choice.** Potions
-      auto-use on a threshold, the threshold is the player's to set, and the
-      shipped default is the one every harness runs — so `runToCompletion` and
-      the in-game automation are ONE rule with one implementation. A build
-      whose power needs the player present is a build no harness can hold, and
-      `RULES.md` forbids it.
-- [ ] The ladder is measured with potions ON, as the floor. Auto-firing potions
-      hand every character in the game the equivalent of extra life at all
-      times; counted as a bonus on top of the existing numbers rather than as
-      part of them, every band is quietly softer than it reads.
-- [ ] Potions are one of THREE postures and the other two are built later, so
-      leave room for them: this phase is the reactive safety net; a node
-      somewhere that deletes potions outright for flat power is the second;
-      and the Alchemist, who turns them into the character's engine, is the
-      third and has a phase of its own. All three are automatic — see the rule
-      in `RULES.md` about builds that need the player present.
-- [ ] On-screen buttons beside the map, with 1 and 2 as the shortcut rather
-      than the interface. `npm run shots` runs a 390px viewport: a phone has no
-      number row, and a potion nobody can reach there is not optional, it is
-      missing.
-
-**What must not break.** The sim is deterministic and replay-safe: an input
-arriving between ticks must land on a tick boundary like everything else, or
-the same seed stops giving the same run. `npm run smoke` and `npm run guide`
-both drive real descents.
-
-### Phase 2 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -134,7 +88,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 3 — Trades: the part of a character that is not the skill
+### Phase 2 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -216,7 +170,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 4 — Every monster brings its own element [user 10]
+### Phase 3 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -272,7 +226,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 5 — What a node does, shown and not overlapped [user 8]
+### Phase 4 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

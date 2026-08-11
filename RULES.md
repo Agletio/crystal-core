@@ -209,6 +209,24 @@ character that stops attacking is a run that never ends and a harness that
 hangs — the demo holds one with no pool at all to finishing its descent, dead
 or cleared.
 
+**A potion is an effect with a DURATION, never a lump.** `TimedEffect` on the
+hero, `PotionDef` in `src/data.ts` saying which pool it fills and by what share
+of that pool per second. Built as an instant heal, the trade that turns potions
+into the character's engine would be a rewrite instead of a table row, and that
+trade is already designed.
+
+**Charges are a descent's BUDGET, never a stockpile.** They live on
+`RunState.charges` and nothing about them reaches the save — the demo holds
+`JSON.stringify(createGame())` to containing no charge count at all — so a
+cleared descent always starts full and there is nothing to hoard between runs.
+
+**One rule fires a potion, and it is the rule a harness runs.** The threshold
+is the player's (`GameState.potions`, defaulting to `PotionDef.threshold`), and
+`RunSim.stepPotions` is the only implementation of it — so what a watching
+player gets and what `runToCompletion` measures cannot come apart. A press is
+QUEUED and drained at the top of the next tick, never applied where it arrives,
+or the same seed stops replaying the same run.
+
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
 about to be replaced.
