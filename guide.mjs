@@ -249,9 +249,13 @@ for (let turn = 0; turn < 900; turn++) {
     // is not the test — what it CLAIMS to be is.
     return ring instanceof HTMLButtonElement || ring?.getAttribute('role') === 'button';
   });
+  // A region's first live control. The skill web's are SVG groups rather than
+  // buttons, so both shapes count — a step ringing the web leaves the choice.
   const target = isControl
     ? page.locator('.guide-on').first()
-    : page.locator('.guide-on button:not([disabled])').first();
+    : page
+        .locator('.guide-on button:not([disabled]), .guide-on .web__node--open')
+        .first();
   try {
     await target.click({ timeout: 1200 });
   } catch {

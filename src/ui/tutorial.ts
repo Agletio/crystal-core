@@ -15,9 +15,9 @@ import { balance } from "../economy";
 import { INTRO, POTIONS, SKILL_BY_ID } from "../data";
 import { carryRoom, craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
-import { ownedCrystals } from "../game/crystals";
+import { crystalEarned, ownedCrystals } from "../game/crystals";
 import { pointsAvailable, skillProgress } from "../sim/character";
-import { hasNotable, pathToNotable } from "../skills-tree";
+import { pathToNotable } from "../skills-tree";
 import { modCapacity } from "../mods";
 import { keyFor, keyName } from "./keys";
 import { crystalMoveId } from "./crystals";
@@ -117,21 +117,20 @@ const treeOf = (g: GameState) => {
   return { skillId, progress, path: pathToNotable(skillId, progress.allocated) };
 };
 
-/**
- * The next click on the way to spending a point: out of whatever is covering
- * the header, into Skills, down two shelves to the active skill, then the node
- * itself. Wander into another category and the way on is Back.
- */
-function towardNode(ctx: GuideCtx, g: GameState): string {
+/** Out of whatever covers the header, into Skills, down two shelves, then the
+ *  WEB — which node to take is the decision the tree exists to hand over, and
+ *  `.web__node--open` is what a free point makes clickable. Its WRAPPER, which
+ *  clips: an outline on the svg inside is drawn where nobody sees it. */
+function towardWeb(ctx: GuideCtx, g: GameState): string {
   if (ctx.top !== "skills") return viaHeader(ctx, "open-skills");
-  const { skillId, path } = treeOf(g);
+  const { skillId } = treeOf(g);
   const category = SKILL_BY_ID[skillId]?.category;
   if (!category) return "skills-close";
   if (ctx.viewing !== null && ctx.viewing !== skillId) return "skills-back";
   if (ctx.category !== null && ctx.category !== category) return "skills-back";
   if (ctx.category === null) return skillCatId(category);
   if (ctx.viewing === null) return skillRowId(skillId);
-  return path[0] ? skillNodeId(path[0].id) : "skills-fit";
+  return "skills-webwrap";
 }
 
 /** The crystal a modifier could go on, else the first one you hold. Socketed
@@ -323,53 +322,25 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
   },
-  // The last thing taught before the opening lets go. A point is what the
-  // first crystal is bought with, so the screen it is spent on is the one
-  // thing a player cannot be left to find on their own.
+  // Sleeps between levels, and ends on `crystalEarned` itself — so the opening
+  // cannot finish teaching and leave the crystal out of reach.
   {
-    id: "spend_point",
+    id: "spend_points",
+    waits: (g) => treeOf(g).progress.level < INTRO.crystalSkillLevel,
     text: (ctx, g) => {
       if (ctx.top !== "skills") {
         return blocked(ctx) ? "Close this and open Skills." : "Open Skills.";
       }
-      const { skillId, path } = treeOf(g);
+      const { skillId, progress, path } = treeOf(g);
       const name = SKILL_BY_ID[skillId]?.name ?? "your skill";
-      return ctx.viewing === skillId
-        ? path[0]
-          ? `Take ${path[0].name}.`
-          : "Spend a point on the web."
-        : `Open ${name}.`;
+      if (ctx.viewing !== skillId) return `Open ${name}.`;
+      const spare = pointsAvailable(progress);
+      const near = path[0] ? ` ${path[0].name} is ${path.length} away.` : "";
+      return `Spend ${spare === 1 ? "your point" : `all ${spare} points`}.${near}`;
     },
-    hint: "1 point every skill level, and a point spent is what the tree costs. Nothing here is permanent — a node refunds when you click it again.",
-    target: towardNode,
-    done: (g) => skillProgress(g.character, g.character.skillId).allocated.length > 0,
-  },
-  // Two levels off at this point, so it sleeps through them. Nothing is locked
-  // while you are levelling, and the Crystals screen is where the wait is
-  // written down.
-  {
-    id: "take_notable",
-    waits: (g) => {
-      const { progress, path } = treeOf(g);
-      return path.length > 0 && pointsAvailable(progress) < path.length;
-    },
-    text: (ctx, g) => {
-      if (ctx.top !== "skills") {
-        return blocked(ctx)
-          ? "Close this — you can afford a notable."
-          : "You can afford a notable. Open Skills.";
-      }
-      const { skillId, path } = treeOf(g);
-      const name = SKILL_BY_ID[skillId]?.name ?? "your skill";
-      return ctx.viewing === skillId
-        ? path[0]
-          ? `Take ${path[0].name}. ${path.length} to go.`
-          : "Take the big node."
-        : `Open ${name}.`;
-    },
-    hint: "The big nodes are the reason to walk in a direction, and the run of small ones in front of one is its whole price. Take a notable and someone brings you a crystal on your next clear.",
-    target: towardNode,
-    done: (g) => hasNotable(g.character.skillId, treeOf(g).progress.allocated),
+    hint: "1 point every skill level, and a point spent is what the tree costs. The big nodes are the reason to walk in a direction and the run of small ones in front of one is its whole price — but which direction is yours. Nothing here is permanent: a node refunds when you click it again.",
+    target: towardWeb,
+    done: crystalEarned,
   },
   // Dormant until the clear that the notable bought puts someone at the mouth.
   {

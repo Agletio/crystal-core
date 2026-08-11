@@ -17,7 +17,8 @@ import {
   crystalName,
 } from '../data';
 import type { CrystalQuest } from '../data';
-import { hasNotable, nodeById } from '../skills-tree';
+import { nodeById } from '../skills-tree';
+import { pointsAvailable } from '../sim/character';
 import { giveGift, lampwrightWeapon } from './state';
 import type { GameState, GiftPlace } from './state';
 import { grant, makeCrystal } from '../economy';
@@ -43,15 +44,14 @@ export interface Waiting {
   quests: CrystalQuest[];
 }
 
-/**
- * What the first crystal is earned by. BOTH: the level is what buys the point
- * and the allocation is what spends it.
- */
+/** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
+ *  the level buys the points, the allocation spends them, and WHICH node they
+ *  went on is the player's own decision. Nothing can dead-end on it. */
 export function crystalEarned(game: GameState): boolean {
   const skillId = game.character.skillId;
   const progress = game.character.skills?.[skillId];
   if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
-  return hasNotable(skillId, progress.allocated ?? []);
+  return pointsAvailable(progress) === 0;
 }
 
 export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
@@ -77,14 +77,11 @@ export function giftSchedule(game: GameState): string {
     const skillId = game.character.skillId;
     const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
     const progress = game.character.skills?.[skillId];
-    const allocated = progress?.allocated ?? [];
-    const notables = allocated.filter(
-      (id) => nodeById(skillId, id)?.kind === 'notable'
-    ).length;
+    const spare = progress ? pointsAvailable(progress) : 1;
     return (
       `${who} brings your first crystal to the mouth of a cleared descent once ` +
-      `${name} is level ${INTRO.crystalSkillLevel} with a notable taken in its tree. ` +
-      `${name} is level ${progress?.level ?? 1}, with ${notables} notables taken.`
+      `${name} is level ${INTRO.crystalSkillLevel} with every one of its points spent. ` +
+      `${name} is level ${progress?.level ?? 1}, with ${spare} unspent.`
     );
   }
   return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;

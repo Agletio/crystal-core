@@ -152,10 +152,11 @@ buttons is the guided opening's job.
 Two things are SCHEDULED, off `GameState.given`. The first weapon on the first
 cleared descent, picked off the skill (`STARTER_WEAPON`). The first Normal
 crystal on the first clear after the ACTIVE SKILL has reached
-`INTRO.crystalSkillLevel` and taken a NOTABLE in its tree (`crystalEarned`) —
-the level buys the point and the allocation spends it, so the crystal is paid
+`INTRO.crystalSkillLevel` with EVERY point of it spent (`crystalEarned`) — the
+level buys the points and the allocation spends them, so the crystal is paid
 for by the thing that makes a character a build rather than by pressing Enter
-twice. It arrives at LEVEL 1, which holds no modifiers: it is socketed blank,
+twice. Points rather than a notable, because WHICH node they went on is the one
+decision the tree exists to hand the player. It arrives at LEVEL 1, which holds no modifiers: it is socketed blank,
 and the descent it makes longer is the whole of what it does. A Shard of Making
 comes with it for later, since everything is handed over in person. Five
 cleared descents socketed at no danger buy it its first slot, and THAT is when

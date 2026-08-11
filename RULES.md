@@ -180,9 +180,20 @@ loop chains descents by itself and every screen is live. A hidden card means
 FINISHED to everything outside the module, so dormancy also stamps
 `document.body.dataset.guideWaiting` with the step's id: that attribute is the
 only thing telling a harness the difference between an opening that is over and
-one that is asleep. Three steps use it — `take_notable` waits for the levels a
-notable costs, `meet_crystal` for someone to be standing at the mouth, and
-`bench_crystal` for the crystal to grow a slot.
+one that is asleep. Three steps use it — `spend_points` waits for the skill to
+reach `INTRO.crystalSkillLevel`, `meet_crystal` for someone to be standing at
+the mouth, and `bench_crystal` for the crystal to grow a slot.
+
+**The tree step rings the WEB, never a node.** Which node to take is the one
+decision the tree exists to hand the player, and ringing one answers it for
+them — so `towardWeb` ends at `skills-webwrap` and the step is done when
+`crystalEarned` is, which is every point spent at
+`INTRO.crystalSkillLevel`. The WRAPPER and not the svg: `.webwrap` clips its
+children, so an outline on the web inside it is drawn where nobody can see it.
+The step SUGGESTS the nearest notable by name off `pathToNotable` and never
+requires one. `guide.mjs` clicks a region's first live control, and the web's
+are SVG groups rather than buttons, so its selector takes
+`.web__node--open` as well.
 
 **Mana is bought, never granted.** The pool does not grow with a character
 level. Life does, and one that grew alongside it would leave the cost
@@ -830,7 +841,7 @@ is not the binding constraint, the wall clock is.
 
 The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
 `· ` line is a `gauge` — a balance number that reports and can never fail; it is
-360 checks and 7 gauges.
+361 checks and 7 gauges.
 
 ### The harnesses have their own rules
 
@@ -856,9 +867,9 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. 
   "Ash Wand" three times and lied to every character handed a sword, so the
   demo now renders every step's text for every skill and fails on any weapon
   name that is not the one that character was given.
-  There are **sixteen** steps: enter, watch, meet, take_haul, to_shop,
-  buy_making, select_weapon, use_making, equip, descend, spend_point,
-  take_notable, meet_crystal, socket, bench_crystal, craft_crystal. The demo
+  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop,
+  buy_making, select_weapon, use_making, equip, descend, spend_points,
+  meet_crystal, socket, bench_crystal, craft_crystal. The demo
   walks the same list headlessly with a hand-written action per step — add a
   step and that action list needs one too, or the walkthrough reports the
   opening as STUCK. A step that WAITS is asleep when the walkthrough arrives at

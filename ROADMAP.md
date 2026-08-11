@@ -17,8 +17,8 @@ it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
 **A character will end up holding three skills**, one from each of three slots
 — something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 2 changes it. Anything built
-before then that assumes one skill is something Phase 2 has to undo, so prefer
+`Character.skillId` is one field until Phase 1 changes it. Anything built
+before then that assumes one skill is something Phase 1 has to undo, so prefer
 `characterStats(character)` over reaching for `character.skillId` yourself.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
@@ -51,50 +51,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The opening spends every point [user 3]
-
-**What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
-steps. `spend_point` rings ONE specific node — `towardNode` walks you into
-Skills, down two shelves, and points at `pathToNotable(...)[0]` — and is done
-when `allocated.length > 0`. `take_notable` then sleeps (`waits`) until the
-skill can afford the run of nodes to a notable, wakes, and rings them one at a
-time until `hasNotable(...)` is true. The first crystal is gated on exactly
-that: `crystalEarned` in `src/game/crystals.ts` wants
-`INTRO.crystalSkillLevel` AND a notable allocated.
-
-**Why it is wrong.** By the time the opening reaches Skills the character is
-usually skill level 2, so a step that ends at one point spent leaves a point
-unspent and teaches that unspent points are normal. Ringing one particular node
-also tells the player what to build, which is the one decision the tree exists
-to hand them.
-
-- [ ] One step, not two: spend EVERY point you have. Done when
-      `pointsAvailable(progress) === 0`.
-- [ ] It rings the web rather than a node — the player picks. `npm run guide`
-      clicks only what is lit, so whatever it rings has to be something the
-      harness can click into a real allocation; a region gets its first live
-      control, and `.web__node--open` is what a free point makes clickable.
-- [ ] Nothing on the main screen is held while it runs.
-- [ ] **The first crystal's gate moves with it, and this is answered:**
-      `crystalEarned` in `src/game/crystals.ts` becomes the active skill at
-      `INTRO.crystalSkillLevel` with EVERY point of it spent —
-      `pointsAvailable(progress) === 0` — instead of a notable allocated. The
-      level gate is what stops one point at level 1 satisfying it. Nothing can
-      dead-end: spending everything is always reachable.
-- [ ] The step SUGGESTS a notable and never requires one. Its text can name the
-      nearest one — `pathToNotable` in `src/skills-tree.ts` still answers that,
-      so it stays — but the ring is the web and the `done` is the points. A
-      player who spreads their points instead will meet a notable soon enough
-      and work it out; being told what to build is what this removes.
-- [ ] `hasNotable` may end up with no callers once the gate moves. If so it
-      goes.
-
-**What must not break.** `npm run guide` plays the whole opening with a real
-pointer and is the only thing that proves a step is finishable; the demo walks
-the same list headlessly with one hand-written action per step, and the step
-count in `RULES.md` needs updating with it.
-
-### Phase 2 — Three skill slots, and a skill to put in each [user 4]
+### Phase 1 — Three skill slots, and a skill to put in each [user 4]
 
 **What is true today.** A character has ONE skill — `Character.skillId` —
 and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
@@ -142,7 +99,7 @@ through `makeCharacter(equipment, skillId)`; that signature changing touches
 guide` equips a skill with a real pointer. The blink is a new way for a run to
 end early or never end — `TERMINATION CHECK` is the one that would catch it.
 
-### Phase 3 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 2 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
 row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
@@ -153,7 +110,7 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 2) it cannot even be written down.
+and with three skills equipped (Phase 1) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
       three skill icons, one per slot. `skillIcon(skillId, size)` in
@@ -175,7 +132,7 @@ and with three skills equipped (Phase 2) it cannot even be written down.
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 4 — Trades: the part of a character that is not the skill
+### Phase 3 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -257,7 +214,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 5 — Every monster brings its own element [user 10]
+### Phase 4 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -313,7 +270,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 6 — What a node does, shown and not overlapped [user 8]
+### Phase 5 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

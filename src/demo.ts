@@ -127,6 +127,7 @@ import {
   attributePointsLeft,
   attributesSpent,
   makeCharacter,
+  pointsAvailable,
   skillProgress,
   spendAttribute,
   xpToNext,
@@ -1666,22 +1667,22 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     // Close the sheet, dismiss the report, enter again.
     () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
-    // The first point, which is what the first crystal is bought with.
-    () => {
-      ctx.top = 'skills';
-      ctx.category = myCategory;
-      ctx.viewing = mine;
-      const progress = skillProgress(game.character, mine);
-      progress.allocated.push(pathToNotable(mine, progress.allocated)[0]!.id);
-    },
-    // Then the levels the notable costs, which is what the dormant stretch is.
+    // Dormant until the skill reaches the level the crystal is gated on, then
+    // every point of it spent — which is what the first crystal is bought
+    // with, and WHICH nodes they went on is nobody's business but the
+    // player's. Walked here the way an idle player would: cheapest first.
     () => {
       const progress = skillProgress(game.character, mine);
       while (progress.level < INTRO.crystalSkillLevel) {
         addSkillXp(game.character, mine, xpToNext(progress.level));
       }
-      for (const node of pathToNotable(mine, progress.allocated)) {
-        progress.allocated.push(node.id);
+      ctx.top = 'skills';
+      ctx.category = myCategory;
+      ctx.viewing = mine;
+      while (pointsAvailable(progress) > 0) {
+        const open = treeFor(mine).filter((n) => canAllocate(mine, n.id, progress.allocated));
+        if (open.length === 0) break;
+        progress.allocated.push(open[0].id);
       }
       ctx.top = null;
       ctx.category = null;
@@ -4727,7 +4728,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     check(
       giftWaiting(g) === null &&
         giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`) &&
-        giftSchedule(g).includes('0 notables'),
+        giftSchedule(g).includes('1 unspent'),
       'and says what the first crystal is waiting on, in numbers',
       giftSchedule(g)
     );
@@ -4739,6 +4740,9 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       `and ${INTRO.crystalSkillLevel} skill levels with nothing spent is still nothing owed`,
       JSON.stringify(giftWaiting(g))
     );
+    // The gate is the POINTS, not the notable — but the opening still names
+    // the nearest one as a suggestion, so the distance has to keep being one
+    // those levels can afford or the suggestion is a lie.
     const route = pathToNotable(mine, progress.allocated);
     check(
       route.length === INTRO.crystalSkillLevel && route[route.length - 1].kind === 'notable',
@@ -4747,7 +4751,12 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     );
     for (const node of route) progress.allocated.push(node.id);
     const owed = giftWaiting(g);
-    check(owed?.crystal === true, 'and taking it is what puts one at the mouth', JSON.stringify(owed));
+    check(owed?.crystal === true, 'and spending the last of them is what puts one at the mouth', JSON.stringify(owed));
+    check(
+      pointsAvailable(progress) === 0,
+      'which is the points being GONE rather than a particular node being taken',
+      `${pointsAvailable(progress)} still unspent`
+    );
 
     const second = takeHandover(g, owed!);
     const crystal = second.items[0];
