@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Rng } from './rng';
 import { ModPool } from './mods';
-import { canApply, craft, describeItem } from './crafting';
+import { canApply, craft, describeItem, describeMod, itemMatches } from './crafting';
 import {
   AILMENT,
   ALL_MODS,
@@ -841,6 +841,30 @@ rule('THE HAUL — where does the loop stop, and can it wedge shut?');
     'with everything full there is nowhere left to put one',
     `${game.haul.length} hauled, ${carryRoom(game, 'gear')} bag room`
   );
+  // What a Find box matches. A haul is a night's work and the only other way
+  // to read it is one hover at a time, so the answer has to cover everything
+  // printed on a piece rather than just its name.
+  {
+    const piece = rollGear('bulwark_helmet_t1', 40, 2, pool, new Rng(5));
+    const lines = [...piece.implicits, ...piece.mods].map(describeMod).join(' ');
+    const word = /([A-Za-z]{4,})/.exec(lines)?.[1] ?? 'armour';
+    line(`  a rolled helmet reads: ${lines.slice(0, 90)}`);
+    check(
+      itemMatches(piece, piece.name.split(' ')[0]) &&
+        itemMatches(piece, 'helmet') &&
+        itemMatches(piece, word) &&
+        itemMatches(piece, word.toUpperCase()),
+      'a search reaches the name, the base and every line printed on it',
+      `name ${itemMatches(piece, piece.name.split(' ')[0])}, base ` +
+        `${itemMatches(piece, 'helmet')}, line "${word}" ${itemMatches(piece, word)}`
+    );
+    check(
+      itemMatches(piece, '') && itemMatches(piece, '   ') && !itemMatches(piece, 'zzzznothing'),
+      'and an empty box matches everything while a word nothing has matches none',
+      'the empty case is wrong'
+    );
+  }
+
   // The haul is ordered by the DOCK's comparator, so the two piles read the
   // same way — and ordering is not moving: the haul is inert, and a sort that
   // quietly took something out of it would be the one screen that spends your

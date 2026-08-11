@@ -8,7 +8,7 @@
  */
 import { currencyIcon, itemIcon } from './icons';
 import { baseTier } from '../mods';
-import { locksItem } from '../crafting';
+import { itemMatches, locksItem } from '../crafting';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
@@ -82,6 +82,8 @@ export interface ItemActions {
 }
 
 let game: GameState | null = null;
+/** What the Find box holds. Filters what is DRAWN and nothing else. */
+let find = '';
 let screenHandler: InventoryHandler | null = null;
 /** A mode over the screen that owns the dock; off restores what was under. */
 let override: InventoryHandler | null = null;
@@ -110,6 +112,14 @@ let currencyHandler: CurrencyHandler | null = null;
 
 export function initInventory(state: GameState): void {
   game = state;
+  // Never saved: a filter surviving a reload is a dock that looks empty.
+  const box = $('inv-find') as HTMLInputElement;
+  box.value = '';
+  box.oninput = () => {
+    find = box.value;
+    renderInventory();
+  };
+
   ($('inv-sort') as HTMLButtonElement).onclick = () => {
     sortInventory(game!);
     renderInventory();
@@ -434,9 +444,9 @@ export function renderInventory(): void {
   renderCurrencies();
 
   const items = game.inventory.filter((i) => i.kind === 'gear');
-  fill($(GEAR_HOST), items);
-  // On the label, not in a tooltip: this is what you check before deciding
-  // whether to go back down.
+  fill($(GEAR_HOST), items.filter((i) => itemMatches(i, find)));
+  // On the label, not in a tooltip: what you check before deciding whether to
+  // go back down. It counts what you HOLD, never what a filter left on screen.
   const label = $(`${GEAR_HOST}-label`);
   label.textContent = `Equipment ${items.length}/${CARRY.gear}`;
   label.classList.toggle('dockcol__label--full', items.length >= CARRY.gear);

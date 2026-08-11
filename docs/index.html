@@ -895,6 +895,11 @@
   .welcomedev { display: flex; justify-content: flex-end; margin-top: 12px; }
 
   .savemeta { font-size: 11px; color: var(--dust); margin: 0 0 14px; }
+  /* Filters what is DRAWN and never what is held, so a narrow one is honest. */
+  .find { background: var(--void); border: 1px solid var(--seam); color: var(--bone);
+    font: inherit; font-size: 11px; padding: 2px 6px; width: 92px; }
+  .find:focus { outline: none; border-color: var(--citrine); }
+  .find::placeholder { color: var(--dust); }
   .saveslots { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
   .saveslot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     border: 1px solid var(--seam); padding: 10px 12px; }
@@ -1227,6 +1232,7 @@
       <div class="dockcol">
         <div class="dockcol__head">
           <div class="dockcol__label" id="inv-gear-label">Equipment</div>
+          <input class="find" id="inv-find" type="search" placeholder="Find" aria-label="Filter what is drawn" />
           <button class="chip" id="inv-sort" title="Group by slot, best first">Sort</button>
         </div>
         <div class="slots" id="inv-gear"></div>
@@ -1320,6 +1326,7 @@
       <h2 class="modal__title">The Haul</h2>
       <div class="seedbar">
         <code id="haul-count">0 / 0</code>
+        <input class="find" id="haul-find" type="search" placeholder="Find" aria-label="Filter what is drawn" />
         <button class="chip" id="haul-sort" title="Group by slot, best first">Sort</button>
         <button class="mini" id="haul-close">Close</button>
       </div>

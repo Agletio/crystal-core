@@ -1,4 +1,5 @@
 import { Rng } from './rng';
+import { GEAR_BASE_BY_ID } from './data';
 import { describeStatLine } from './mod-text';
 import {
   ModPool,
@@ -434,6 +435,20 @@ export function describeModLines(mod: RolledMod): string[] {
   return mod.stats.map((s, i) =>
     i === 0 ? `${describeStatLine(s)}${tag}` : `  ${describeStatLine(s)}`
   );
+}
+
+/** Everything a player could reasonably type: the piece's name, the base it is
+ *  a version of, and every line printed on it. Substring and case-blind — a
+ *  search box with a syntax is a search box nobody uses. */
+export function itemMatches(item: Item, query: string): boolean {
+  const want = query.trim().toLowerCase();
+  if (want === '') return true;
+  const base = GEAR_BASE_BY_ID[item.base];
+  // The KIND and the FAMILY as well as the name, so "helmet" and "bulwark"
+  // both find one — a base is called a Helm and nobody types that.
+  const parts = [item.name, base?.name ?? '', base?.kind ?? '', base?.family ?? ''];
+  for (const mod of [...item.implicits, ...item.mods]) parts.push(describeMod(mod));
+  return parts.join(' \n ').toLowerCase().includes(want);
 }
 
 export function describeItem(item: Item): string {

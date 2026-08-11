@@ -10,6 +10,7 @@
 import { HAUL_CAP, carryRoom, fromHaul, haulToStash, sellAll, sellItem, sortGear, stashRoom, takeWhatFits } from '../game/state';
 import type { GameState } from '../game/state';
 import { canSell, sellPrice } from '../economy';
+import { itemMatches } from '../crafting';
 import { baseTier } from '../mods';
 import { itemCard } from './itemcard';
 import { itemIcon } from './icons';
@@ -34,6 +35,8 @@ let game: GameState;
 let onChanged: (() => void) | null = null;
 /** Why the loop dropped you here, or empty when you opened it yourself. */
 let why = '';
+/** What the Find box holds. Filters what is DRAWN and nothing else. */
+let find = '';
 
 function changed(): void {
   render();
@@ -92,7 +95,8 @@ export function render(): void {
   const host = $('haul-slots');
   host.replaceChildren();
 
-  for (const item of game.haul) {
+  const shown = game.haul.filter((i) => itemMatches(i, find));
+  for (const item of shown) {
     const take = actionsFor(item)[0];
     const btn = el(
       'button',
@@ -126,7 +130,7 @@ export function render(): void {
 
   // Up to what it holds, so the stop condition is something you watch coming.
   // Past that there are no pads to draw: over capacity is a real state.
-  for (let i = game.haul.length; i < HAUL_CAP; i++) {
+  for (let i = shown.length; i < HAUL_CAP; i++) {
     host.append(el('div', 'slot slot--empty'));
   }
 
@@ -212,6 +216,13 @@ export function initHaul(state: GameState, refresh: () => void): void {
   ($('haul-sellall') as HTMLButtonElement).onclick = () => void sellEverything();
   // Ordering the pile, not moving it: nothing leaves the haul for being sorted,
   // and the screen is open, so it redraws in place.
+  const box = $('haul-find') as HTMLInputElement;
+  box.value = '';
+  box.oninput = () => {
+    find = box.value;
+    render();
+  };
+
   ($('haul-sort') as HTMLButtonElement).onclick = () => {
     sortGear(game.haul);
     render();

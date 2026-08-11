@@ -434,6 +434,13 @@ makes a gift unable to fail. Two screens read that list: `src/ui/crystals.ts`,
 where the collection is compared against four sockets, and the bench's own
 crystals column, which is the only route to crafting one.
 
+**A pile is searched by `itemMatches`** in `src/crafting.ts` — the dock and the
+haul both filter through it, over the piece's name, its base's name, kind and
+family, and every line printed on it. Substring, case-blind, no syntax. What it
+does is DRAW fewer things: nothing moves, nothing is consumed, and every count
+beside a filtered grid still reads the real container, or a search looks like
+it sold your gear. The box is UI state in the module, never on `GameState`.
+
 **An item is drawn in exactly one place.** `itemCard(item, notes)` in
 `src/ui/itemcard.ts` builds the card every screen hovers — the dock, the haul,
 the stash, the shelf, the sheet and both of the bench's columns. `notes` is the

@@ -1987,6 +1987,47 @@ assert(
   );
 }
 
+// --- finding one thing in a pile -------------------------------------------
+// Last, because it changes what is DRAWN and every check above picks a piece
+// by where it sits. The counts must keep reading the real bag: a filter that
+// moved the numbers would be a search that looked like it sold your gear.
+{
+  // The slot tests above ended on a NEW game, so there is nothing in the dock
+  // to search. Restock — this is the last check in the file.
+  $('dev-kit').click();
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+
+  const shown = () => filled('#inv-gear').length;
+  const label = () => text('inv-gear-label');
+  const all = shown();
+  const held = label();
+  assert(all > 1, 'there is a pile to search', String(all));
+
+  const box = $('inv-find');
+  const type = (v) => {
+    box.value = v;
+    box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  };
+
+  const first = named(filled('#inv-gear')[0]).split('\n')[0].trim();
+  const word = first.split(' ').pop();
+  type(word);
+  assert(shown() < all, `typing "${word}" hides what does not match`, `${shown()} of ${all}`);
+  assert(shown() > 0, 'and keeps what does', String(shown()));
+  assert(label() === held, 'while the count still reads the real bag', `${label()} vs ${held}`);
+
+  type(word.toUpperCase());
+  assert(shown() > 0, 'case is not a syntax');
+
+  type('zzzznothing');
+  assert(shown() === 0, 'a word nothing has hides everything', String(shown()));
+  assert(label() === held, 'and STILL says what you are holding', label());
+
+  type('');
+  assert(shown() === all, 'and clearing it puts the pile back', `${shown()} of ${all}`);
+}
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();
