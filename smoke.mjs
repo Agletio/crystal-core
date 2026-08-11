@@ -712,7 +712,9 @@ assert(
   text('haul-hint')
 );
 assert($('haul-take').disabled === true, 'with nothing to take');
-assert($('haul-sell').disabled === true, 'and nothing to sell');
+assert($('haul-sell') === null, 'and no second sell button beside the first');
+assert($('haul-sort') !== null, 'a Sort, the same one the dock has');
+assert($('haul-sort').disabled === true, 'off while there is nothing to order');
 // The way out of a full everything: a sale needs room nowhere, which is what
 // stops the one thing that can shut the Fissure from wedging it.
 assert($('haul-sellall') !== null, 'and a way to empty the whole thing');

@@ -41,30 +41,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The haul is take, sell all, sort [user 5]
-
-**What is true today.** `src/ui/haul.ts` renders three buttons —
-`haul-take` (Take what fits), `haul-sell` (sell every piece no currency has
-touched, `plainGear`) and `haul-sellall` — and no sort. The dock has
-`inv-sort`, handled in `src/ui/inventory.ts` and implemented by
-`sortInventory` in `src/game/state.ts`.
-
-**Why it is wrong.** Two sell buttons side by side is a decision about a
-distinction nobody asked for, and the haul is the one screen with fifty
-unsorted things in it and no way to order them.
-
-- [ ] `haul-sell` goes, markup and handler. Take what fits and Sell all are the
-      two buttons.
-- [ ] A Sort button on the haul, the same comparator the dock uses, so the two
-      screens order a pile the same way.
-- [ ] Sorting the haul is not a move: nothing leaves it, and a sort with the
-      screen open re-renders in place.
-
-**What must not break.** `npm run smoke` clicks the haul's buttons by id and
-is ORDER-DEPENDENT — see `RULES.md`. `npm run shots` has no haul shot; add one
-only if the row of buttons stops fitting.
-
-### Phase 2 — Searching a pile [user 9]
+### Phase 1 — Searching a pile [user 9]
 
 **What is true today.** The dock (`renderInventory` in `src/ui/inventory.ts`)
 and the haul (`src/ui/haul.ts`) both draw every item as a slot with a tooltip.
@@ -91,7 +68,7 @@ one hover at a time.
 checks hundreds of lines further down. Leave the box empty in every existing
 check and add the search's own at the END of the file.
 
-### Phase 3 — The camera is yours, and a key is a table entry [user 1]
+### Phase 2 — The camera is yours, and a key is a table entry [user 1]
 
 **What is true today.** `src/ui/run.ts` owns zoom: three buttons
 (`run-zoom-in`, `run-zoom-out`, `run-zoom-fit`) and a `run-zoom-label`, plus a
@@ -144,7 +121,7 @@ camera that starts unlocked empties both. `npm run guide` clicks the map region
 for some steps; a drag handler that eats those clicks reads as STUCK. `npm run
 smoke` presses Enter and Space at the lockdown and asserts what is swallowed.
 
-### Phase 4 — A sword is held out, not hung [user 3]
+### Phase 3 — A sword is held out, not hung [user 3]
 
 **What is true today.** `WEAPON_ART` in `src/render/gear-art.ts` draws every
 weapon against the doll's grip at (17, 14), as two 24-grids: `rest` and
@@ -179,7 +156,7 @@ the game are given.
 out.png` draws every look, `tools/model-peek.mts out.png family` draws a few
 large. Neither is in the suite, so LOOK at one.
 
-### Phase 5 — The first crystal is earned with a notable [user 6]
+### Phase 4 — The first crystal is earned with a notable [user 6]
 
 **What is true today.** `giftWaiting` in `src/game/crystals.ts` schedules the
 first crystal off `INTRO.firstCrystalClear = 2` — the second cleared descent —
@@ -231,7 +208,7 @@ harness's. The demo walks the same steps headlessly with one hand-written
 action each, and a TRIGGERED step is a new shape for both of them: a step that
 is not reachable yet must not be reported as stuck.
 
-### Phase 6 — Mana, and what a skill costs [user 3a]
+### Phase 5 — Mana, and what a skill costs [user 3a]
 
 **What is true today.** There is no mana anywhere: no resource on `Character`
 (`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
@@ -266,7 +243,7 @@ band clears, and a skill that can run dry moves all of them. Measure before and
 after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
 character that cannot afford to attack is the newest way for one not to.
 
-### Phase 7 — Two potions, two charges [user 3b]
+### Phase 6 — Two potions, two charges [user 3b]
 
 **What is true today.** Nothing. There are no consumables, and — more to the
 point — **there is no player input during a descent at all.** The guided
@@ -319,7 +296,7 @@ arriving between ticks must land on a tick boundary like everything else, or
 the same seed stops giving the same run. `npm run smoke` and `npm run guide`
 both drive real descents.
 
-### Phase 8 — Character level buys attributes [user 7]
+### Phase 7 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -358,7 +335,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 9 — Trades: the part of a character that is not the skill
+### Phase 8 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -440,7 +417,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 10 — Every monster brings its own element [user 10]
+### Phase 9 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -496,7 +473,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 11 — What a node does, shown and not overlapped [user 8]
+### Phase 10 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

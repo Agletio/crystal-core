@@ -516,7 +516,7 @@
   /* Where the loop stops. The count going red is the whole warning. */
   .haul__why { font-size: 12px; color: var(--citrine); margin: 0 0 8px; }
   .haul__count--full { color: var(--ember); }
-  #haul-take, #haul-sell, #haul-sellall { flex: 1 1 0; justify-content: center; text-align: center; }
+  #haul-take, #haul-sellall { flex: 1 1 0; justify-content: center; text-align: center; }
   .slots--stash {
     grid-template-columns: repeat(auto-fill, 40px);
     grid-template-rows: none;
@@ -1320,6 +1320,7 @@
       <h2 class="modal__title">The Haul</h2>
       <div class="seedbar">
         <code id="haul-count">0 / 0</code>
+        <button class="chip" id="haul-sort" title="Group by slot, best first">Sort</button>
         <button class="mini" id="haul-close">Close</button>
       </div>
     </div>
@@ -1332,7 +1333,6 @@
       <div class="panel">
         <div class="runbar">
           <button class="buy" id="haul-take"></button>
-          <button class="buy" id="haul-sell"></button>
           <button class="buy" id="haul-sellall"></button>
         </div>
       </div>

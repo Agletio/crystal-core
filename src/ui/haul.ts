@@ -7,7 +7,7 @@
  * because taking is the move you can undo; the two that need thought are in
  * the menu beside it.
  */
-import { HAUL_CAP, carryRoom, fromHaul, haulToStash, plainGear, sellAll, sellItem, stashRoom, takeWhatFits } from '../game/state';
+import { HAUL_CAP, carryRoom, fromHaul, haulToStash, sellAll, sellItem, sortGear, stashRoom, takeWhatFits } from '../game/state';
 import type { GameState } from '../game/state';
 import { canSell, sellPrice } from '../economy';
 import { baseTier } from '../mods';
@@ -148,13 +148,8 @@ export function render(): void {
   take.disabled = fits === 0;
   take.classList.toggle('buy--off', fits === 0);
 
-  const junk = plainGear(game.haul);
-  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
-  const sell = $('haul-sell') as HTMLButtonElement;
-  sell.textContent =
-    junk.length > 0 ? `Sell ${junk.length} unmodified for ${worth} gold` : 'Nothing unmodified';
-  sell.disabled = junk.length === 0;
-  sell.classList.toggle('buy--off', junk.length === 0);
+  const sort = $('haul-sort') as HTMLButtonElement;
+  sort.disabled = game.haul.length < 2;
 
   // The way out of a full everything, and the reason the loop cannot wedge:
   // a sale needs room nowhere. Behind a confirm because it takes the pieces
@@ -171,22 +166,6 @@ export function render(): void {
     game.haul.length >= HAUL_CAP
       ? 'The Fissure stays shut until this is back under its limit.'
       : 'Nothing here can be worn, crafted or socketed until you take it out.';
-}
-
-async function sellJunk(): Promise<void> {
-  const junk = plainGear(game.haul);
-  if (junk.length === 0) return;
-  const worth = junk.reduce((n, i) => n + sellPrice(i), 0);
-  const yes = await ask({
-    title: `Sell ${junk.length} pieces for ${worth} gold?`,
-    text: 'Everything in the haul with no modifier on it. Anything rolled stays.',
-    confirm: 'Sell',
-  });
-  if (!yes) return;
-
-  const sold = sellAll(game, junk);
-  note(`Sold ${sold.count} pieces for ${sold.gold} gold`, 'add');
-  changed();
 }
 
 async function sellEverything(): Promise<void> {
@@ -230,7 +209,12 @@ export function initHaul(state: GameState, refresh: () => void): void {
     if (moved > 0) note(`Took ${moved} out of the haul`);
     changed();
   };
-  ($('haul-sell') as HTMLButtonElement).onclick = () => void sellJunk();
   ($('haul-sellall') as HTMLButtonElement).onclick = () => void sellEverything();
+  // Ordering the pile, not moving it: nothing leaves the haul for being sorted,
+  // and the screen is open, so it redraws in place.
+  ($('haul-sort') as HTMLButtonElement).onclick = () => {
+    sortGear(game.haul);
+    render();
+  };
   render();
 }

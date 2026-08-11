@@ -418,12 +418,12 @@ export function craftItem(game: GameState): Item | null {
 
 /** Grouped by slot, best first inside a group. IN PLACE, so a sort is part of
  *  the save. By SLOT: "all the boots together" is what scanning the dock asks. */
-export function sortInventory(game: GameState): void {
+export function sortGear(items: Item[]): void {
   const rank = (i: Item) => {
     const at = EQUIP_SLOTS.findIndex((s) => s.accepts === gearKindOf(i));
     return at < 0 ? EQUIP_SLOTS.length : at;
   };
-  game.inventory.sort(
+  items.sort(
     (a, b) =>
       rank(a) - rank(b) ||
       baseTier(b) - baseTier(a) ||
@@ -431,6 +431,9 @@ export function sortInventory(game: GameState): void {
       a.name.localeCompare(b.name)
   );
 }
+
+/** One comparator, so the dock and the haul order a pile the same way. */
+export const sortInventory = (game: GameState): void => sortGear(game.inventory);
 
 /**
  * Exchanges two carried items' places. A swap rather than an insert-before,

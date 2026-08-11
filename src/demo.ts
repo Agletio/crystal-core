@@ -147,6 +147,8 @@ import {
   socketFor,
   socketItem,
   socketed,
+  sortGear,
+  sortInventory,
   stashRoom,
   stashUpgradeCost,
   takeWhatFits,
@@ -839,6 +841,42 @@ rule('THE HAUL — where does the loop stop, and can it wedge shut?');
     'with everything full there is nowhere left to put one',
     `${game.haul.length} hauled, ${carryRoom(game, 'gear')} bag room`
   );
+  // The haul is ordered by the DOCK's comparator, so the two piles read the
+  // same way — and ordering is not moving: the haul is inert, and a sort that
+  // quietly took something out of it would be the one screen that spends your
+  // loot for you.
+  {
+    const pile = createGame('dev');
+    pile.haul = [
+      makeGear('bulwark_helmet_t1', 8),
+      makeGear('rusted_sword', 8),
+      makeGear('shiv', 30),
+      makeGear('bulwark_body_t2', 30),
+    ];
+    const was = [...pile.haul];
+    sortGear(pile.haul);
+    check(
+      pile.haul.length === was.length && was.every((i) => pile.haul.includes(i)),
+      'sorting the haul holds exactly what it held',
+      `${was.length} in, ${pile.haul.length} out`
+    );
+    const order = pile.haul.map((i) => i.id).join(',');
+    sortGear(pile.haul);
+    check(
+      pile.haul.map((i) => i.id).join(',') === order,
+      'and sorting it twice changes nothing',
+      order
+    );
+    const dock = createGame('dev');
+    dock.inventory = [...was];
+    sortInventory(dock);
+    check(
+      dock.inventory.map((i) => i.base).join(',') === pile.haul.map((i) => i.base).join(','),
+      'and orders a pile the way the dock orders the same pile',
+      `${dock.inventory.map((i) => i.base).join(',')} vs ${pile.haul.map((i) => i.base).join(',')}`
+    );
+  }
+
   const sold = sellAll(game, plainGear(game.haul));
   check(
     sold.count > 0 && !haulFull(game) && sold.gold > 0,

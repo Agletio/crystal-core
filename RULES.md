@@ -414,8 +414,9 @@ the demo and the skills screen, and no player reads it about a specific item. `t
 so a unique's switch reaches the sim by the one path a tree's does. The lines
 live in `implicits`, and the item declares NO modifier slots — `modCapacity` is
 zero and every currency refuses it, `sigil_of_upheaval` included. `plainGear`
-excludes them, or the bulk sell would eat one. The demo holds each to the same
-rules as a tree node: declared, read by a skill you can pick, and paid for by a
+excludes them — it is the demo's now that nothing bulk-sells by it, and stays
+that way so anything that does again cannot eat one. The demo holds each to
+the same rules as a tree node: declared, read by a skill you can pick, and paid for by a
 downside on the item. Every world drops something of its own, the Fissure two.
 
 **The deep end is not a band.** Power is clamped at `POWER.max`, so the top drop
