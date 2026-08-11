@@ -22,7 +22,7 @@ import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
 import { closeMet, initMet, isMetOpen } from './ui/met';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
-import { initRun, metTaken, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
+import { centreCamera, initRun, metTaken, onRunFocused, refreshRunPanels, runPhase } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
@@ -45,6 +45,7 @@ import {
   note,
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
+import { initKeys } from './ui/keys';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
 const game = createGame('fresh');
@@ -296,6 +297,16 @@ function guideContext(): GuideCtx {
     picking: pickingSlot(),
   };
 }
+
+// Every key in the game but Escape, which is the shell's own chain above.
+// A binding is a table entry, so the screen that rebinds them is a screen.
+initKeys(game, {
+  centre: centreCamera,
+  character: () => {
+    if (isCharacterOpen()) closeCharacter();
+    else openCharacter();
+  },
+});
 
 initTutorial(game, guideContext);
 onRunFocused();

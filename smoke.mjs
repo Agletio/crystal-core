@@ -1127,16 +1127,24 @@ assert(text('run-level') === '1', 'and shows your level', text('run-level'));
 assert($('run-loot') !== null, 'a carrying panel is on screen during a run');
 assert(text('run-loot').length > 0, 'the carrying panel says what it holds');
 
-// --- zoom -----------------------------------------------------------------
-// Starts close enough to read a fight, not fitted — at 1× a monster is four
-// pixels.
-assert(text('run-zoom-label') === '2.0×', 'zoom starts close', text('run-zoom-label'));
-assert($('run-zoom-out').disabled === false, 'and can be pulled back');
-$('run-zoom-in').click();
-assert(text('run-zoom-label') === '2.5×', 'zoom in works', text('run-zoom-label'));
-$('run-zoom-fit').click();
-assert(text('run-zoom-label') === '1.0×', 'fit shows the whole Fissure');
-assert($('run-zoom-out').disabled === true, 'and cannot go wider than that');
+// --- the camera -------------------------------------------------------------
+// The wheel is the only zoom now: no buttons, no readout, and one hint saying
+// so. A canvas has nothing to assert about scale from out here — the renderer
+// owns it — so this checks the controls are gone and the gestures are wired.
+assert($('run-zoom-in') === null, 'no zoom buttons');
+assert($('run-zoom-label') === null, 'and no zoom readout');
+assert(
+  /scroll/i.test(text('run-camhint')) && /space/i.test(text('run-camhint')),
+  'the bar says how the camera works instead',
+  text('run-camhint')
+);
+{
+  // A wheel over the stage must be SWALLOWED, or the page scrolls under the
+  // map — which is the whole reason the listener is not passive.
+  const wheel = new window.WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true });
+  $('run-stage').dispatchEvent(wheel);
+  assert(wheel.defaultPrevented, 'and the wheel over the map is taken, not passed to the page');
+}
 
 // The frame only freezes while a map is on screen, and the map keeps running
 // underneath crafting rather than being left for.

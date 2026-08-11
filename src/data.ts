@@ -2274,6 +2274,24 @@ export const STARTER_WEAPON: Record<string, string> = {
 export const starterWeapon = (skill: SkillDef | undefined): string | null =>
   skill?.weapon ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
 
+/** What a key DOES, declared once. The default is here and an override lands
+ *  on `GameState.keys` under the same id, so the screen that edits them later
+ *  is a screen rather than a refactor. `what` is the line it will print. */
+export interface BindingDef {
+  id: string;
+  what: string;
+  key: string;
+}
+
+export const BINDINGS: BindingDef[] = [
+  { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
+  { id: 'character', what: 'Open the character sheet', key: 'c' },
+];
+
+export const BINDING_BY_ID: Record<string, BindingDef> = Object.fromEntries(
+  BINDINGS.map((b) => [b.id, b])
+);
+
 export interface StartPreset {
   gold: number;
   currency: Record<string, number>;

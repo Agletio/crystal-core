@@ -208,6 +208,10 @@ that means "the run is over, deal with your things", and what earlier clears
 banked is visible rather than assumed. Only the descent you are standing in can
 be lost; each clear banks as it happens and nothing reaches back for it.
 
+**The camera is yours.** Scroll to zoom, drag to look somewhere else, and one
+key puts it back on your character and keeps it there. Dragging is what stops
+it following; zooming never does.
+
 **A descent ends at a place you walk to.** Killing the last thing is not the
 end of it: the hero walks to the exit, and coming near the hole is what brings
 the closing encounter up out of it, a few at a time, so the last fight is

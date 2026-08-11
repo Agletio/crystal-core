@@ -54,20 +54,25 @@ export interface Palette {
 export interface Renderer {
   /** CSS pixel dimensions. Implementations handle devicePixelRatio. */
   resize(width: number, height: number): void;
-  /**
-   * `emerge` is how far out of the ground the hero is: 1 standing, 0 gone.
-   * Only the handover between descents moves it, and only the UI knows about
-   * that — nothing in the sim has an opinion about where the hero's feet are.
-   */
+  /** `emerge` is how far out of the ground the hero is: 1 standing, 0 gone.
+   *  Only the handover moves it, and only the UI knows it exists. */
   draw(state: RunState, emerge?: number): void;
-  /** 1 fits the whole map. Above that the view follows the hero. */
-  setZoom(zoom: number): void;
+  /** 1 fits the whole map; above that it follows the hero unless panned. `at`
+   *  is CSS pixels from the view's middle that must not move: lean in on the
+   *  cursor, or what you leaned in on slides out from under it. */
+  setZoom(zoom: number, at?: { x: number; y: number }): void;
+  /** Drag by a screen-pixel delta. STOPS the follow until `follow()`. */
+  panBy(dx: number, dy: number): void;
+  follow(): void;
   /** Release the surface and any GPU resources. */
   destroy(): void;
 }
 
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 5;
+
+/** One wheel notch, multiplicative: additive steps crawl close and jump far. */
+export const ZOOM_STEP = 1.12;
 
 /** Pixels per tile at 1x. Absolute, so a small screen shows less world. */
 export const TILE_AT_1X = 18;

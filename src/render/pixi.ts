@@ -42,6 +42,7 @@ import {
   tileSize,
   toHexNumber,
   vfxColour,
+  ZOOM_MIN,
 } from './renderer';
 import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
@@ -119,6 +120,10 @@ export async function createPixiRenderer(
   let livingFloor: ReturnType<typeof floorPalette> | null = null;
   let zoom = 1;
   let tile = 1;
+  /** Where the camera is pointed, in tiles. Null while it follows the hero. */
+  let looking: { x: number; y: number } | null = null;
+  /** What it centred on last, so a drag starts from where you are looking. */
+  let at = { x: 0, y: 0 };
   let offX = 0;
   let offY = 0;
 
@@ -183,8 +188,11 @@ export async function createPixiRenderer(
   const sy = (y: number) => offY + (y + 0.5) * tile;
 
   /**
-   * At zoom 1 the whole map is centred. Above that the camera follows the
+   * At zoom 1 the whole map is centred. Above that the camera sits on the
    * focus point and clamps to the map edges, so it never pans into the void.
+   * The focus is the hero unless a drag has taken it — `looking` — and it is
+   * clamped in TILES too, or a long drag banks up an offset that takes as many
+   * drags to come back from as it took to build.
    */
   function camera(map: GameMap, focus?: { x: number; y: number }): void {
     const w = viewW();
@@ -195,12 +203,19 @@ export async function createPixiRenderer(
     const mapW = tile * map.grid.width;
     const mapH = tile * map.grid.height;
 
-    if (zoom <= 1 || !focus) {
+    if (looking) {
+      looking.x = Math.max(0, Math.min(map.grid.width - 1, looking.x));
+      looking.y = Math.max(0, Math.min(map.grid.height - 1, looking.y));
+    }
+    const on = looking ?? focus;
+    at = on ?? at;
+
+    if (zoom <= 1 || !on) {
       offX = (w - mapW) / 2;
       offY = (h - mapH) / 2;
     } else {
-      offX = w / 2 - (focus.x + 0.5) * tile;
-      offY = h / 2 - (focus.y + 0.5) * tile;
+      offX = w / 2 - (on.x + 0.5) * tile;
+      offY = h / 2 - (on.y + 0.5) * tile;
       offX = mapW <= w ? (w - mapW) / 2 : Math.min(0, Math.max(w - mapW, offX));
       offY = mapH <= h ? (h - mapH) / 2 : Math.min(0, Math.max(h - mapH, offY));
     }
@@ -594,8 +609,31 @@ export async function createPixiRenderer(
     if (builtMap) camera(builtMap);
   }
 
-  function setZoom(next: number): void {
+  function setZoom(next: number, on?: { x: number; y: number }): void {
+    const was = zoom;
     zoom = clampZoom(next);
+    // Keep the world point under the cursor under the cursor — but only once
+    // a DRAG has taken the camera. Leaning in while following the hero should
+    // never be the thing that loses them.
+    if (looking && on && tile > 0 && zoom !== was && zoom > ZOOM_MIN) {
+      const world = { x: at.x + on.x / tile, y: at.y + on.y / tile };
+      const fit = builtMap
+        ? Math.min(viewW() / builtMap.grid.width, viewH() / builtMap.grid.height)
+        : tile;
+      const next2 = tileSize(zoom, fit);
+      looking = { x: world.x - on.x / next2, y: world.y - on.y / next2 };
+    }
+    if (builtMap) camera(builtMap);
+  }
+
+  function panBy(dx: number, dy: number): void {
+    if (tile <= 0) return;
+    looking = { x: at.x - dx / tile, y: at.y - dy / tile };
+    if (builtMap) camera(builtMap);
+  }
+
+  function follow(): void {
+    looking = null;
     if (builtMap) camera(builtMap);
   }
 
@@ -603,5 +641,5 @@ export async function createPixiRenderer(
     app.destroy(true, { children: true });
   }
 
-  return { resize, draw, setZoom, destroy };
+  return { resize, draw, setZoom, panBy, follow, destroy };
 }

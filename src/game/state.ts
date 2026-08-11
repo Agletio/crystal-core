@@ -53,8 +53,7 @@ export const STASH_STEP = 6;
 /** Where buying more stops. */
 export const STASH_MAX = 60;
 
-/** The next block of stash space, or null at the top. Steep: gold spent on
- *  storage is gold not spent at the bench. */
+/** The next block, or null at the top. Steep: storage is gold not spent. */
 export function stashUpgradeCost(slots: number): number | null {
   if (slots >= STASH_MAX) return null;
   const bought = Math.max(0, Math.round((slots - STASH_START) / STASH_STEP));
@@ -105,6 +104,8 @@ export interface GameState {
   shopLevel: number;
   /** Whether a cleared descent launches the next one by itself. */
   autoRepeat: boolean;
+  /** Key overrides by binding id; a missing one takes the table's default. */
+  keys: Record<string, string>;
 }
 
 export interface SoldEntry {
@@ -136,6 +137,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     shopStock: [],
     shopLevel: 0,
     autoRepeat: true,
+    keys: {},
   };
   resetGame(game, mode);
   return game;

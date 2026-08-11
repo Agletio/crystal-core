@@ -32,6 +32,8 @@ import {
   tileDecals,
   tileSize,
   vfxColour,
+  TILE_AT_1X,
+  ZOOM_MIN,
 } from './renderer';
 
 const FLOATER_LIFE = 1.1;
@@ -57,6 +59,8 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       resize: () => {},
       draw: () => {},
       setZoom: () => {},
+      panBy: () => {},
+      follow: () => {},
       destroy: () => canvas.remove(),
     };
   }
@@ -66,6 +70,11 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   let cssWidth = canvas.clientWidth || 640;
   let cssHeight = canvas.clientHeight || 420;
   let zoom = 1;
+  /** Where the camera is pointed, in tiles. Null while it follows the hero. */
+  let looking: { x: number; y: number } | null = null;
+  /** What it centred on last, and the tile size it did it at. */
+  let at = { x: 0, y: 0 };
+  let lastTile = 0;
 
   function resize(width: number, height: number): void {
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
@@ -78,21 +87,33 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  /** Zoom 1 fits the whole map; above that it follows the hero, clamped. */
+  /**
+   * Zoom 1 fits the whole map; above that it sits on the focus, clamped. The
+   * focus is the hero unless a drag took it — `looking` — and it is clamped in
+   * TILES as well, or a long drag banks an offset that takes as many drags to
+   * undo as it took to build.
+   */
   function viewFor(state: RunState): View {
     const { grid } = state.map;
     const fit = Math.min(cssWidth / grid.width, cssHeight / grid.height);
     const tile = tileSize(zoom, fit);
     const mapW = tile * grid.width;
     const mapH = tile * grid.height;
+    lastTile = tile;
+
+    if (looking) {
+      looking.x = Math.max(0, Math.min(grid.width - 1, looking.x));
+      looking.y = Math.max(0, Math.min(grid.height - 1, looking.y));
+    }
+    const on = looking ?? state.hero;
+    at = { x: on.x, y: on.y };
 
     if (zoom <= 1) {
       return { tile, offX: (cssWidth - mapW) / 2, offY: (cssHeight - mapH) / 2 };
     }
 
-    const hero = state.hero;
-    let offX = cssWidth / 2 - (hero.x + 0.5) * tile;
-    let offY = cssHeight / 2 - (hero.y + 0.5) * tile;
+    let offX = cssWidth / 2 - (on.x + 0.5) * tile;
+    let offY = cssHeight / 2 - (on.y + 0.5) * tile;
     offX = mapW <= cssWidth ? (cssWidth - mapW) / 2 : Math.min(0, Math.max(cssWidth - mapW, offX));
     offY = mapH <= cssHeight ? (cssHeight - mapH) / 2 : Math.min(0, Math.max(cssHeight - mapH, offY));
     return { tile, offX, offY };
@@ -416,10 +437,27 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (const f of state.floaters) drawFloater(v, f);
   }
 
-  function setZoom(next: number): void {
+  function setZoom(next: number, on?: { x: number; y: number }): void {
+    const was = zoom;
     zoom = clampZoom(next);
+    if (!looking || !on || lastTile <= 0 || zoom === was || zoom <= ZOOM_MIN) return;
+    // The point under the cursor stays under it — but only once a drag has
+    // taken the camera; leaning in while following must not lose the hero.
+    // Above fit the tile size is absolute, which is the whole conversion.
+    const world = { x: at.x + on.x / lastTile, y: at.y + on.y / lastTile };
+    const next2 = TILE_AT_1X * zoom;
+    looking = { x: world.x - on.x / next2, y: world.y - on.y / next2 };
   }
 
+  function panBy(dx: number, dy: number): void {
+    if (lastTile <= 0) return;
+    looking = { x: at.x - dx / lastTile, y: at.y - dy / lastTile };
+  }
+
+  const follow = (): void => {
+    looking = null;
+  };
+
   resize(cssWidth, cssHeight);
-  return { resize, draw, setZoom, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, panBy, follow, destroy: () => canvas.remove() };
 }

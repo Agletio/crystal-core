@@ -496,6 +496,27 @@ holding off on ticking.
 and there is not going to be one. Both of the things that stop a descent work
 the same way, and anything that stops one in future should too.
 
+**The camera is the RENDERER's, and gestures are the UI's.** `src/ui/run.ts`
+sends what the pointer did — `setZoom(zoom, at)` with a focal point in CSS
+pixels from the view's middle, `panBy(dx, dy)` in pixels, `follow()` — and each
+renderer converts with the tile size only it knows. Both keep a `looking` focus
+in tiles, null while following the hero, clamped to the grid so a long drag
+does not bank an offset that takes as many drags to undo. A DRAG unlocks the
+follow and nothing else does: zooming while following keeps the hero centred,
+because leaning in to look closer must never be the thing that loses them.
+`launch()` calls `follow()` — a camera left pointed at a corner of the last
+map is a black screen with no obvious way out. The wheel is the only zoom;
+there are no buttons and no readout.
+
+**Every key but Escape is a table entry.** `BINDINGS` in `src/data.ts` says
+what each one does and what it defaults to, `GameState.keys` overrides by id,
+and `src/ui/keys.ts` owns the one listener. Nothing else may read a key
+literal — including the hints, which print `keyName(keyFor(...))` so a rebound
+key says what it is. Typing is not a shortcut: the listener ignores everything
+while an input has focus, or the Find box turns a search into an action.
+Escape is the exception and stays in the shell's own chain, because it is
+about closing whatever is on top rather than doing anything.
+
 **The handover between descents.** `HANDOVER` seconds where the sim does not
 tick at all: the hero drops into the hole at the exit, `#run-fade` goes black
 for the moment the map is swapped, and they climb out of the next entrance.

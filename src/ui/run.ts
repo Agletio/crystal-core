@@ -27,9 +27,10 @@ import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
-import { ZOOM_MAX, ZOOM_MIN, clampZoom, defaultZoom, readPalette } from '../render/renderer';
+import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
+import { keyFor, keyName } from './keys';
 import { note } from './history';
 import type { Item } from '../types';
 
@@ -276,6 +277,9 @@ function launch(): void {
   accumulator = 0;
   playing = true;
   lootSig = '';
+  // A new map: a camera left pointed at a corner of the last one is a black
+  // screen you have to work out how to escape.
+  renderer?.follow();
 
   // Climbing out. From the menu that is the whole handover; out of a cleared
   // descent the drop has already played.
@@ -691,16 +695,18 @@ function fitCanvas(): void {
 
   // Now that the surface has a real size, pick the scale that fits it. At
   // startup the stage is still unmeasured, so this is the first honest chance.
-  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)), false);
+  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)));
 }
 
-function setZoom(next: number, byUser = true): void {
-  if (byUser) userZoomed = true;
+function setZoom(next: number, at?: { x: number; y: number }): void {
+  if (at) userZoomed = true;
   zoom = clampZoom(next);
-  renderer?.setZoom(zoom);
-  $('run-zoom-label').textContent = `${zoom.toFixed(1)}×`;
-  ($('run-zoom-out') as HTMLButtonElement).disabled = zoom <= ZOOM_MIN;
-  ($('run-zoom-in') as HTMLButtonElement).disabled = zoom >= ZOOM_MAX;
+  renderer?.setZoom(zoom, at);
+}
+
+/** Back on the hero, and following again. The one key the map has. */
+export function centreCamera(): void {
+  renderer?.follow();
 }
 
 /**
@@ -772,26 +778,62 @@ export function initRun(state: GameState): void {
   };
 
 
-  // Zoom: buttons for discoverability, wheel because that's what anyone
-  // watching a map will reach for first.
-  ($('run-zoom-in') as HTMLButtonElement).onclick = () => setZoom(zoom + 0.5);
-  ($('run-zoom-out') as HTMLButtonElement).onclick = () => setZoom(zoom - 0.5);
-  ($('run-zoom-fit') as HTMLButtonElement).onclick = () => setZoom(1);
-
+  // The only zoom, and it leans in on the CURSOR rather than the middle — the
+  // same gesture the skill web has, because it is the same gesture.
   stage.addEventListener(
     'wheel',
     (event) => {
       event.preventDefault();
-      setZoom(zoom + (event.deltaY < 0 ? 0.35 : -0.35));
+      const box = stage.getBoundingClientRect();
+      setZoom(event.deltaY < 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP, {
+        x: event.clientX - box.left - box.width / 2,
+        y: event.clientY - box.top - box.height / 2,
+      });
     },
     { passive: false }
   );
 
+  // Drag to look somewhere else, which STOPS the camera following. It comes
+  // back on the key, and on the next descent — a camera left pointed at a
+  // corner of a map that no longer exists is a black screen.
+  let from: { x: number; y: number } | null = null;
+  let held: number | null = null;
+  stage.addEventListener('pointerdown', (event) => {
+    from = { x: event.clientX, y: event.clientY };
+  });
+  stage.addEventListener('pointermove', (event) => {
+    if (!from) return;
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    // A few pixels of slop, so a shaky click is still a click.
+    if (held === null && Math.hypot(dx, dy) < 4) return;
+    if (held === null) {
+      held = event.pointerId;
+      stage.setPointerCapture?.(event.pointerId);
+      stage.classList.add('stage--drag');
+    }
+    renderer?.panBy(dx, dy);
+    from = { x: event.clientX, y: event.clientY };
+  });
+  const release = () => {
+    from = null;
+    if (held !== null) stage.releasePointerCapture?.(held);
+    held = null;
+    stage.classList.remove('stage--drag');
+  };
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+  stage.addEventListener('pointerleave', release);
+
   globalThis.addEventListener('resize', fitCanvas);
+
+  // Off the bindings table: a rebound key says what it is.
+  $('run-camhint').textContent =
+    `scroll to zoom · drag to look · ${keyName(keyFor(game, 'centre'))} to follow`;
 
   renderStatsPanel();
   renderMenu();
-  setZoom(DEFAULT_ZOOM, false);
+  setZoom(DEFAULT_ZOOM);
   setPhase('menu');
   requestAnimationFrame(frame);
 }

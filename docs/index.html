@@ -573,7 +573,6 @@
   /* A crafted item is worth spotting in a full dock. */
   .slot--modded { box-shadow: inset 0 0 0 1px rgba(212,175,79,.35); }
   .icon { flex: none; display: block; }
-  .zoomlabel { font-size: 11px; color: var(--quartz); min-width: 34px; text-align: center; }
 
   /* Narrow: the columns wrap rather than shrink, and the dock scrolls
      sideways only if even one column won't fit. Four rows stay four rows —
@@ -695,6 +694,7 @@
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
+  .stage--drag { cursor: grabbing; }
   .modal__card--narrow { width: min(460px, 100%); }
   .met { padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
   .met__who { display: flex; align-items: flex-end; flex: none; align-self: flex-end; margin-bottom: -6px; }
@@ -1159,11 +1159,7 @@
     <div class="runbar">
       <button class="mini" id="run-leave">Leave after this run</button>
       <button class="mini" id="run-abandon">Abandon</button>
-      <span class="sub">zoom</span>
-      <button class="chip" id="run-zoom-out" title="Zoom out">&minus;</button>
-      <span class="zoomlabel" id="run-zoom-label">1.0&times;</span>
-      <button class="chip" id="run-zoom-in" title="Zoom in">+</button>
-      <button class="chip" id="run-zoom-fit" title="Fit the whole map">Fit</button>
+      <span class="sub" id="run-camhint"></span>
       <span class="spacer"></span>
       <span class="run-status" id="run-status">running</span>
     </div>

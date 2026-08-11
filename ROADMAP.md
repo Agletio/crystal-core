@@ -41,60 +41,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The camera is yours, and a key is a table entry [user 1]
-
-**What is true today.** `src/ui/run.ts` owns zoom: three buttons
-(`run-zoom-in`, `run-zoom-out`, `run-zoom-fit`) and a `run-zoom-label`, plus a
-wheel handler that steps `±0.35` ADDITIVELY between `ZOOM_MIN = 1` and
-`ZOOM_MAX = 5` (`src/render/renderer.ts`). There is no pan at all: `camera()`
-in `src/render/pixi.ts` and the matching block in `src/render/canvas2d.ts`
-centre the whole map at zoom 1 and follow the hero above it, clamped.
-
-There is no keybind system either. Every key in the game is a literal in a
-handler: Escape in `src/web.ts`, Enter and Space in the guided opening's
-`guardKeys`.
-
-The skill web already does the camera half, in `src/ui/skills.ts`: the wheel
-zooms MULTIPLICATIVELY about the cursor (`scale * ZOOM.step`, keeping the point
-under the pointer fixed), and `pointerdown`/`pointermove`/`pointerup` with
-`setPointerCapture` pans, with a `dragged` flag so a drag is not also a click.
-
-**Why it is wrong.** Two controls for zoom where one would do, a step so coarse
-the map jumps, no way to look at anything but the hero — and no place to put a
-key, which is why there are no keys.
-
-- [ ] The three zoom buttons and the label go, from `docs/index.html` and from
-      `src/ui/run.ts`. The wheel is the only zoom.
-- [ ] Zoom is multiplicative and small enough to read as smooth — the web's
-      `ZOOM.step` is the model, and one notch must not cross a whole level. It
-      zooms about the POINTER, or the thing you leaned in to look at slides
-      away as you do it.
-- [ ] Drag pans, exactly as the web does, capture and `dragged` flag included.
-      Panning UNLOCKS the camera: it stops following and stays where you put
-      it. The pan is clamped the way the follow already is, and survives a
-      resize.
-- [ ] **A bindings TABLE**, one entry per action: an id, what it does in words,
-      and its default key. Nothing reads a key literal any more. It lives where
-      data lives and the binding is saved on `GameState`, so the screen that
-      edits it later is a screen and not a refactor. No screen now — that is
-      its own phase when there is more than a handful worth changing.
-- [ ] Two bindings to start: **Space** re-centres on the hero and re-locks the
-      follow, and **C** opens the character sheet. Both are defaults in the
-      table rather than constants in a handler.
-- [ ] A key does nothing while a modal owns the screen, and nothing while the
-      guided opening has the lockdown on anything it would reach — `guardKeys`
-      in `src/ui/tutorial.ts` is the existing half of that rule.
-- [ ] BOTH renderers. `camera()` is per-renderer today; the pan offset and the
-      locked flag belong wherever those two already agree, and the canvas2d
-      fallback may not silently keep following.
-
-**What must not break.** `npm run shots` fires its HANDOVER shot 180ms into a
-launch and its descent shot at 4.3s, both expecting the hero on screen — a
-camera that starts unlocked empties both. `npm run guide` clicks the map region
-for some steps; a drag handler that eats those clicks reads as STUCK. `npm run
-smoke` presses Enter and Space at the lockdown and asserts what is swallowed.
-
-### Phase 2 — A sword is held out, not hung [user 3]
+### Phase 1 — A sword is held out, not hung [user 3]
 
 **What is true today.** `WEAPON_ART` in `src/render/gear-art.ts` draws every
 weapon against the doll's grip at (17, 14), as two 24-grids: `rest` and
@@ -129,7 +76,7 @@ the game are given.
 out.png` draws every look, `tools/model-peek.mts out.png family` draws a few
 large. Neither is in the suite, so LOOK at one.
 
-### Phase 3 — The first crystal is earned with a notable [user 6]
+### Phase 2 — The first crystal is earned with a notable [user 6]
 
 **What is true today.** `giftWaiting` in `src/game/crystals.ts` schedules the
 first crystal off `INTRO.firstCrystalClear = 2` — the second cleared descent —
@@ -181,7 +128,7 @@ harness's. The demo walks the same steps headlessly with one hand-written
 action each, and a TRIGGERED step is a new shape for both of them: a step that
 is not reachable yet must not be reported as stuck.
 
-### Phase 4 — Mana, and what a skill costs [user 3a]
+### Phase 3 — Mana, and what a skill costs [user 3a]
 
 **What is true today.** There is no mana anywhere: no resource on `Character`
 (`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
@@ -216,7 +163,7 @@ band clears, and a skill that can run dry moves all of them. Measure before and
 after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
 character that cannot afford to attack is the newest way for one not to.
 
-### Phase 5 — Two potions, two charges [user 3b]
+### Phase 4 — Two potions, two charges [user 3b]
 
 **What is true today.** Nothing. There are no consumables, and — more to the
 point — **there is no player input during a descent at all.** The guided
@@ -269,7 +216,7 @@ arriving between ticks must land on a tick boundary like everything else, or
 the same seed stops giving the same run. `npm run smoke` and `npm run guide`
 both drive real descents.
 
-### Phase 6 — Character level buys attributes [user 7]
+### Phase 5 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -308,7 +255,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 7 — Trades: the part of a character that is not the skill
+### Phase 6 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -390,7 +337,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 8 — Every monster brings its own element [user 10]
+### Phase 7 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -446,7 +393,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 9 — What a node does, shown and not overlapped [user 8]
+### Phase 8 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
