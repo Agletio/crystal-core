@@ -13,7 +13,7 @@
  */
 import { balance } from "../economy";
 import { INTRO } from "../data";
-import { craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
+import { carryRoom, craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
 import { crystalMoveId } from "./crystals";
 import { crystalSlotId } from "./craft";
@@ -35,8 +35,8 @@ export interface GuideCtx {
 
 export interface TutorialStep {
   id: string;
-  /** A function when what to say depends on what's currently open. */
-  text: string | ((ctx: GuideCtx) => string);
+  /** A function when what to say depends on what's open, or on what you hold. */
+  text: string | ((ctx: GuideCtx, game: GameState) => string);
   /** Element to point at. A function when it depends on the state. */
   target: string | ((ctx: GuideCtx, game: GameState) => string);
   /** Default true; false for steps with nothing to click. */
@@ -59,16 +59,29 @@ export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
 
 const isWeapon = (i: Item) => i.kind === 'gear' && gearKindOf(i) === 'weapon';
 
-/** A fallback, for a save written before the wand was marked. */
+/** A fallback, for a save written before the gift was marked. */
 const anyWeapon = (g: GameState): Item | undefined =>
   g.inventory.find((i) => isWeapon(i) && i.mods.length === 0) ?? g.inventory.find(isWeapon);
 
-/** The wand itself, if it is still in the dock to be clicked. */
-const theWand = (g: GameState): string => {
+const given = (g: GameState): Item | undefined => {
   const gift = giftWeapon(g);
-  const item = (gift && g.inventory.includes(gift) ? gift : undefined) ?? anyWeapon(g);
+  return (gift && g.inventory.includes(gift) ? gift : undefined) ?? anyWeapon(g);
+};
+
+/** The weapon itself, if it is still in the dock to be clicked. */
+const theWeapon = (g: GameState): string => {
+  const item = given(g);
   return item ? dockSlotId(item.id) : slotButtonId('weapon');
 };
+
+/** Its own name. The Lampwright hands over what the chosen skill swings, so a
+ *  step naming one base is a step that lies to half the characters. */
+const itsName = (g: GameState): string => given(g)?.name ?? 'weapon';
+
+/** Whether Take what fits would do anything. Ringing a disabled button is a
+ *  step with nothing to click, which the guide reports as being stuck. */
+const takeable = (g: GameState): boolean =>
+  g.haul.some((i) => carryRoom(g, i.kind) > 0);
 
 /** The crystal beside the bench, and the same one's row on the collection. */
 const theCrystal = (g: GameState): string => {
@@ -192,11 +205,11 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: "select_weapon",
-    text: (ctx) =>
+    text: (ctx, g) =>
       ctx.top === "shop"
         ? "Close the Shop."
         : ctx.view === "craft"
-          ? "Click your Ash Wand in the dock."
+          ? `Click your ${itsName(g)} in the dock.`
           : blocked(ctx)
             ? "Close this and open Crafting."
             : "Open Crafting.",
@@ -204,25 +217,25 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       ctx.top === "shop"
         ? "shop-close"
         : ctx.view === "craft"
-          ? theWand(g)
+          ? theWeapon(g)
           : viaHeader(ctx, "open-craft"),
-    // THE wand. Every looser reading — any gear, any blank weapon — let a
+    // THE weapon. Every looser reading — any gear, any blank weapon — let a
     // first run's drops satisfy this step, and with it the next one.
     done: (g) => craftItem(g)?.meta.firstClear === true,
   },
   {
     id: "use_making",
     text: "Click the Shard of Making.",
-    hint: "An Ash Wand is a tier 1 base: two modifiers, and nothing at the bench raises that. A bigger one is something you go and find.",
+    hint: "It is a tier 1 base: two modifiers, and nothing at the bench raises that. A bigger one is something you go and find.",
     target: "inv-currency",
     done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },
   {
     id: "equip",
-    text: (ctx) =>
+    text: (ctx, g) =>
       ctx.top === "sheet"
         ? ctx.picking
-          ? "Click the Ash Wand in the dock."
+          ? `Click the ${itsName(g)} in the dock.`
           : "Click the Weapon slot."
         : blocked(ctx)
           ? "Close this and open Character."
@@ -232,7 +245,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? // Once a slot is picked the gear is what you click, and it is in the
           // dock — ringing the slot lights the button you just pressed.
           ctx.picking
-          ? theWand(g)
+          ? theWeapon(g)
           : slotButtonId("weapon")
         : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,
@@ -277,15 +290,28 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: "bench_crystal",
-    text: (ctx) =>
-      ctx.view === "craft"
-        ? "Click your crystal, beside the bench."
-        : blocked(ctx)
-          ? "Close this and open Crafting."
-          : "Open Crafting.",
+    // The second meeting ends a descent, and every ending opens the haul — so
+    // this step is reached with a full one on top of it. Empty it rather than
+    // saying "close this", which is the opposite of what step 4 taught.
+    text: (ctx, g) =>
+      ctx.top === "haul"
+        ? takeable(g)
+          ? "Take what fits — this run banked too."
+          : "Nothing here fits. Close it and carry on."
+        : ctx.view === "craft"
+          ? "Click your crystal, beside the bench."
+          : blocked(ctx)
+            ? "Close this and open Crafting."
+            : "Open Crafting.",
     hint: "A crystal is never carried, so the column beside the bench is the only way one gets worked on.",
     target: (ctx, g) =>
-      ctx.view === "craft" ? theCrystal(g) : viaHeader(ctx, "open-craft"),
+      ctx.top === "haul"
+        ? takeable(g)
+          ? "haul-take"
+          : "haul-close"
+        : ctx.view === "craft"
+          ? theCrystal(g)
+          : viaHeader(ctx, "open-craft"),
     done: (g) => craftItem(g)?.kind === "crystal",
   },
   {
@@ -532,7 +558,7 @@ function paint(): void {
   const ctx = context();
   card.hidden = false;
   $("guide-text").textContent =
-    typeof step.text === "function" ? step.text(ctx) : step.text;
+    typeof step.text === "function" ? step.text(ctx, game) : step.text;
   $("guide-hint").textContent = step.hint ?? "";
   $("guide-step").textContent =
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;

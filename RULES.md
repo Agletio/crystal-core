@@ -625,6 +625,10 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   panel in which that was already true, so the opening skipped the meeting and
   then rang a header button underneath it. It ends on the thing having been
   handed over instead.
+  A step may not name a thing the player might not be holding: the opening said
+  "Ash Wand" three times and lied to every character handed a sword, so the
+  demo now renders every step's text for every skill and fails on any weapon
+  name that is not the one that character was given.
   There are **fifteen** steps: enter, watch, meet, take_haul, to_shop, buy_making, select_weapon, use_making, equip, descend, again, meet_crystal,
   bench_crystal, craft_crystal, socket. The demo walks the same list headlessly
   with a hand-written action per step — add a step and that action list needs

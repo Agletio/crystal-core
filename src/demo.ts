@@ -1549,9 +1549,13 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     () => {
       takeHandover(game, { weapon: false, crystal: true, quests: [] });
-      ctx.top = null;
+      // A meeting ends a descent and every ending opens the haul, so the step
+      // after it is reached with one on top. That is the step's first branch.
+      ctx.top = 'haul';
+      bankToHaul(game, [makeGear('shiv', 8)]);
     },
     () => {
+      takeWhatFits(game);
       ctx.view = 'craft';
       ctx.top = 'craft';
       selectForCraft(game, crystalsIn(game)[0]);
@@ -1627,6 +1631,36 @@ rule('GUIDED OPENING — does every step actually complete?');
     'and never at one a popup is covering',
     `unreachable: ${unreachable.join(', ')}`
   );
+
+  // No step may name a weapon it cannot know you are holding. The opening
+  // used to say "Ash Wand" three times, which is a lie to every character who
+  // took Strike and was handed a sword — and would be a fresh lie for every
+  // weapon added after.
+  {
+    const wrong: string[] = [];
+    for (const skill of PLAYER_SKILLS) {
+      const at = createGame('fresh');
+      at.character = makeCharacter({}, skill.id);
+      const mine = lampwrightWeapon(at)?.item;
+      if (!mine) continue;
+      // Every OTHER weapon in the game: none of their names may appear.
+      const theirs = WEAPON_BASES.filter((b) => b.id !== mine.base).map((b) => b.name);
+      for (const step of TUTORIAL_STEPS) {
+        for (const situation of SITUATIONS) {
+          const said =
+            typeof step.text === 'function' ? step.text(situation, at) : step.text;
+          for (const name of theirs) {
+            if (said.includes(name)) wrong.push(`${skill.id}/${step.id}: "${name}"`);
+          }
+        }
+      }
+    }
+    check(
+      wrong.length === 0,
+      'and no step names a weapon the character is not holding',
+      [...new Set(wrong)].join(', ')
+    );
+  }
 
   // The other half of a dead end: a step with nothing lit that nothing can
   // finish. Only 'watch' has no ring, and only while a run is actually going.
