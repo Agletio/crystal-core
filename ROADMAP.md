@@ -29,49 +29,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Three save slots
-
-**What is true today.** `src/game/save.ts` writes ONE localStorage key
-(`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
-says where your progress lives and offers a file backup, a file load and a
-delete. `New game` is a separate header button (`dev-fresh`) that wipes.
-
-**Why it is wrong.** One save means trying anything costs you the game you have,
-and the only way to keep two is to download a file and remember which is which.
-
-**How it saves.** ANSWERED: **the live slot autosaves**, exactly as the single
-save does today — nothing can ever be lost to a closed tab. A slot is somewhere
-to KEEP a run, not somewhere to remember to save one. So the row you are
-playing says so and has no Save button; the other rows offer **Copy here** and
-**Load**.
-
-- [ ] Three slots. The key becomes one per slot; `readSave`/`saveGame`/
-      `clearSave`/`savedAt` take a slot, and one stored key remembers which slot
-      is live so a reload comes back to the same game.
-- [ ] `startAutosave` writes the LIVE slot, on the same 4-second timer and the
-      same `pagehide` flush. Switching slots is what changes where it writes.
-- [ ] The header button says **Save & Load** and opens a screen of three rows.
-      Each row shows what is in it — character, level, how long ago — or that it
-      is empty. The LIVE row says so and offers nothing; the others offer
-      **Copy here** and **Load**.
-- [ ] An empty slot's action is to START a new game there. **`New game` leaves
-      the header**: a new game is a thing you do to a slot, which is also what
-      stops it wiping the game you are in.
-- [ ] Copying over an occupied slot asks first (`src/ui/confirm.ts`), the same
-      way `New game` does today. Loading asks too — it is the one action that
-      puts a different game in front of you.
-- [ ] The file backup and the file load stay — they are the only thing that
-      survives clearing the browser — and a loaded file lands in a slot.
-- [ ] `SAVE_VERSION` does not move. `heal()` already drops what no longer
-      resolves, and a save written before slots existed loads into slot 1.
-
-**What must not break.** `npm run smoke` walks the Save screen and asserts what
-it says; the demo's save round-trip and `heal()` checks read and write through
-these functions, and its "every collection a save can hold items in claims its
-ids" list goes through `readSave`. The guided opening survives a reload twice
-(`RULES.md`) — that has to keep working with a live slot.
-
-### Phase 2 — Every number said out loud
+### Phase 1 — Every number said out loud
 
 The rule is in `RULES.md`. This is the sweep, and the check that keeps it swept.
 

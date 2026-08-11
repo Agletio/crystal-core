@@ -188,7 +188,7 @@ assert(document.body.classList.contains('guided'), 'a live step locks the app do
   // The doors. Every one of these was dead under the old lock.
   assert(!fire($('open-shop'), 'Enter'), 'but opening a screen is not');
   assert(!fire($('open-skills'), 'Enter'), 'nor is any other screen');
-  assert(!fire($('dev-fresh'), ' '), 'and starting over always works');
+  assert(!fire($('open-save'), ' '), 'and Save & Load always opens');
   assert(
     !fire($('welcome-name') ?? $('run-launch'), 'Enter') || true,
     'typing is never swallowed'
@@ -1819,82 +1819,114 @@ assert(all('#history-log .logline').length === 0, 'clearing empties the history'
 $('history-close').click();
 assert($('history').hidden === true, 'history closes');
 
-// --- New game asks first ---------------------------------------------------
-// It is the one button in the game with no way back, and it sits in a row of
-// buttons you click all day. Left last on purpose: the confirming half of this
-// really does wipe everything.
-{
-  const owned = dockItems().length;
-  assert(owned > 0, 'there is something to lose', String(owned));
-
-  $('dev-fresh').click();
-  assert($('confirm').hidden === false, 'New game asks before it wipes');
-  assert(
-    document.activeElement === $('confirm-no'),
-    'and focus starts on Cancel, not the wipe',
-    document.activeElement?.id ?? '(none)'
-  );
-
-  $('confirm-no').click();
-  assert($('confirm').hidden === true, 'Cancel closes the question');
-  assert(
-    dockItems().length === owned,
-    'and nothing was touched',
-    `${dockItems().length} vs ${owned}`
-  );
-
-  // Escape is the same answer by another door.
-  $('dev-fresh').click();
-  document.dispatchEvent(
-    new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-  );
-  assert($('confirm').hidden === true, 'Escape answers it no');
-  assert(dockItems().length === owned, 'still untouched');
-
-  // And confirming actually does the thing — a guard that also blocked the
-  // button would be worse than no guard.
-  $('dev-fresh').click();
-  $('confirm-yes').click();
-  assert($('confirm').hidden === true, 'confirming closes it');
-  // The answer arrives as a resolved promise, so the wipe itself lands a
-  // microtask later than the click.
-  await new Promise((r) => setTimeout(r, 0));
-  assert(
-    dockItems().length < owned,
-    'and a confirmed New game really wipes',
-    `${dockItems().length} vs ${owned}`
-  );
-}
-
-// --- the save ---------------------------------------------------------------
+// --- three slots -----------------------------------------------------------
 // The hosted build has no server behind it, so localStorage is the whole save.
-// A reload that starts you over is the one bug this feature can have.
+// A reload that starts you over is the one bug this feature can have — and now
+// that there are three of them, so is writing into the wrong one. Left near
+// the end on purpose: the last part of it really does wipe everything.
 {
-  const KEY = 'crystal-core.save';
-  const stored = () => {
-    const raw = window.localStorage.getItem(KEY);
+  const stored = (slot) => {
+    const raw = window.localStorage.getItem(`crystal-core.save.${slot}`);
     return raw === null ? null : JSON.parse(raw);
   };
 
-  assert(stored() !== null, 'the game writes a save');
-  assert(stored().version === 1, 'stamped with the format it was written in');
-
-  // The wipe above must reach the save too, or the next reload undoes it.
-  assert(
-    stored().onboarded === false,
-    'a New game wipes the save as well as the state',
-    JSON.stringify(stored().onboarded)
-  );
+  assert(stored(1) !== null, 'the game writes a save');
+  assert(stored(1).version === 1, 'stamped with the format it was written in');
+  assert(stored(2) === null, 'and only into the slot being played', 'slot 2 was written');
 
   $('open-save').click();
-  assert($('savedata').hidden === false, 'the Save screen opens');
+  assert($('savedata').hidden === false, 'the Save & Load screen opens');
   assert(
     /this browser/i.test(text('save-where')),
     'and says which browser your progress is in',
     text('save-where').slice(0, 50)
   );
+  assert(all('.saveslot').length === 3, 'three slots', String(all('.saveslot').length));
+  assert(
+    $('save-row-1').classList.contains('saveslot--live'),
+    'the one you are playing says so',
+    $('save-row-1').className
+  );
+  // The live row offers nothing: a slot is somewhere to keep a game, not
+  // somewhere to remember to save one.
+  assert($('save-copy-1') === null && $('save-load-1') === null, 'and offers no buttons');
+  assert(/empty/i.test(text('save-row-2')), 'an empty slot says so', text('save-row-2'));
+  assert(!!$('save-new-2'), 'and offers to start a game there');
+
+  // Copying is how a second slot gets filled without leaving this game.
+  const owned = dockItems().length;
+  $('save-copy-2').click();
+  assert(stored(2) !== null, 'Copy here fills the other slot');
+  assert(
+    stored(2).character.name === stored(1).character.name,
+    'with the game you are playing',
+    `${stored(2)?.character?.name} vs ${stored(1)?.character?.name}`
+  );
+  assert(!!$('save-load-2'), 'and it now offers to be loaded');
+  assert(
+    window.localStorage.getItem('crystal-core.slot') !== '2',
+    'copying does not move you into it',
+    window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
+  );
+
+  // Loading asks first — it is the one action that puts a different game in
+  // front of you, and the answer arrives a microtask after the click.
+  $('save-load-2').click();
+  assert($('confirm').hidden === false, 'Load asks before it switches');
+  assert(
+    document.activeElement === $('confirm-no'),
+    'and focus starts on Cancel',
+    document.activeElement?.id ?? '(none)'
+  );
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert($('confirm').hidden === true, 'Escape answers it no');
+  await new Promise((r) => setTimeout(r, 0));
+  assert(
+    window.localStorage.getItem('crystal-core.slot') !== '2',
+    'and nothing switched',
+    window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
+  );
+
+  $('save-load-2').click();
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(
+    window.localStorage.getItem('crystal-core.slot') === '2',
+    'confirming moves you into that slot',
+    window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
+  );
+  assert($('savedata').hidden === true, 'and gets out of the way');
+  assert(
+    dockItems().length === owned,
+    'and the same game is in front of you, since it was a copy of it',
+    `${dockItems().length} vs ${owned}`
+  );
+
+  // A new game is a thing you do to a SLOT. Nothing is lost by it: what you
+  // were playing is still in the slot you left.
+  $('open-save').click();
+  $('save-new-3').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(
+    window.localStorage.getItem('crystal-core.slot') === '3',
+    'New game starts in the slot you pressed it on',
+    window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
+  );
+  assert(
+    dockItems().length < owned,
+    'and really is a new game',
+    `${dockItems().length} vs ${owned}`
+  );
+  assert(
+    stored(2) !== null && stored(2).onboarded === true,
+    'while the one you left is untouched in its own slot',
+    JSON.stringify(stored(2)?.onboarded)
+  );
+  assert(stored(3) !== null && stored(3).onboarded === false, 'and the new one is written');
+
+  $('open-save').click();
   $('save-close').click();
-  assert($('savedata').hidden === true, 'and closes');
+  assert($('savedata').hidden === true, 'and the screen closes');
 }
 
 // --- skipping the opening --------------------------------------------------

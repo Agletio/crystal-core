@@ -210,8 +210,11 @@ selling needs room nowhere.
 
 ## Saves
 
-The save is `JSON.stringify(game)` in one localStorage key — there is no server
-behind the hosted build. `GameState` must stay plain data.
+The save is `JSON.stringify(game)` in a localStorage key per SLOT — three of
+them, one LIVE — and there is no server behind the hosted build. `GameState`
+must stay plain data. The live slot autosaves; the Save & Load screen is where
+you copy a game into another slot, load one back, or start a new one, and a new
+game is a thing you do to a slot rather than a button in the header.
 
 A save is full of ids pointing into `data.ts` and the trees, and those move.
 `heal()` in `game/save.ts` runs on every load and drops what no longer resolves:

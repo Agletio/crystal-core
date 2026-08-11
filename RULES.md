@@ -262,8 +262,9 @@ nobody can see.
 The save, the items, the currencies, the screens and the loop. Same purpose as
 the art section: it is the part that saves you reading the code.
 
-**`GameState` is plain data in one localStorage key** (`JSON.stringify(game)`),
-and `heal()` in `src/game/save.ts` runs on every load. Adding a field costs
+**`GameState` is plain data in a localStorage key per SLOT**
+(`crystal-core.save.1|2|3`, `JSON.stringify(game)`), and `heal()` in
+`src/game/save.ts` runs on every load. Adding a field costs
 nothing — a missing key takes its default. Renaming an id costs the player
 whatever pointed at it, and nothing else. `SAVE_VERSION` is only bumped when a
 save must be REFUSED, which wipes everyone, so it is the last resort. `heal()`
@@ -321,6 +322,24 @@ tutorial step point at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`,
 which is how `viaHeader` walks a player back OUT of it. Miss either of the last
 two and the guided opening rings something a popup is covering, which `npm run
 guide` reports as being trapped.
+
+**Three save slots, one of them LIVE.** `crystal-core.slot` remembers which,
+`liveSlot()` is the default argument of `saveGame`/`loadGame`/`savedAt`/
+`clearSave`, and `startAutosave` reads it every flush — so switching slots is
+the entire meaning of "which game is this". A slot is somewhere to KEEP a game,
+never somewhere to remember to save one: the live one autosaves exactly as the
+single save always did, its row on the Save & Load screen offers no buttons,
+and the other two offer **Copy here** and **Load** (or **New game** when
+empty). `peekSlot` reads a row's name and level WITHOUT `readSave`, because
+looking at a slot may not reserve the item ids inside it, and `copySlot` moves
+the stored text itself rather than re-serialising. `lastWritten` is per slot or
+a copy is skipped as a no-op. A save written before slots existed is adopted
+into slot 1 on the first storage touch, once.
+
+**A new game is a SLOT's action**, which is what stops it being a header button
+that wipes the game you are in. The header has Save & Load and the dev kit; the
+only thing that erases anything is the slot screen, and it asks first for
+anything that overwrites — a copy onto an occupied slot, and every load.
 
 **Adding a container is three places, not one.** The field on `GameState`;
 `heal()`, which has to drop entries whose base no longer resolves; and the
@@ -509,15 +528,15 @@ Everything in `CLAUDE.md` still applies — the comment budget above all.
 
 ### How long the suite takes
 
-About **five minutes** end to end, and three of the eight are slow enough that
+About **seven minutes** end to end, and three of the eight are slow enough that
 a two-minute tool timeout will kill them mid-run:
 
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s, 443 checks |
+| `smoke` | ~10s, 454 checks |
 | `demo` | ~85s |
-| `shots` | ~90s |
+| `shots` | ~3min — two viewports, each waiting out a whole first descent |
 | `guide` | ~2min |
 
 None of them hangs. If one looks stuck it is one of the bottom three, and the
@@ -559,9 +578,10 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   with a hand-written action per step — add a step and that action list needs
   one too, or the walkthrough reports the opening as STUCK.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
-  a minute for the Lampwright panel and fails the run if a first descent never
-  produces one. The meeting is at the END of a cleared descent, after a walk to
-  the exit and a walk over to him, so that wait covers a whole descent.
+  two minutes for the Lampwright panel and fails the run if a first descent
+  never produces one. The meeting is at the END of a cleared descent, after a
+  walk to the exit and a walk over to him, so that wait covers a whole one —
+  and the skill it picks is Blight, which takes about a minute over its first.
 - **The guide plays the opening in REAL TIME**, and every descent in it is
   played. `again` sits through exactly one — the second clear, which is what
   `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to

@@ -29,6 +29,29 @@ import type { Item } from '../types';
 
 const KEY = 'crystal-core.save';
 const STAMP = 'crystal-core.saved-at';
+/** Which slot is being played. Everything else keys off it. */
+const LIVE = 'crystal-core.slot';
+
+export type Slot = 1 | 2 | 3;
+export const SLOTS: readonly Slot[] = [1, 2, 3];
+
+const keyFor = (slot: Slot) => `${KEY}.${slot}`;
+const stampFor = (slot: Slot) => `${STAMP}.${slot}`;
+
+/** A save written before slots existed becomes slot 1, once, on first touch. */
+function adoptLegacy(s: Storage): void {
+  const raw = s.getItem(KEY);
+  if (raw === null) return;
+  if (s.getItem(keyFor(1)) === null) {
+    s.setItem(keyFor(1), raw);
+    const at = s.getItem(STAMP);
+    if (at !== null) s.setItem(stampFor(1), at);
+  }
+  s.removeItem(KEY);
+  s.removeItem(STAMP);
+}
+
+let adopted = false;
 
 /** Private windows throw on the first WRITE, so the probe has to write. */
 function store(): Storage | null {
@@ -36,6 +59,10 @@ function store(): Storage | null {
     const s = globalThis.localStorage;
     s.setItem(`${KEY}.probe`, '1');
     s.removeItem(`${KEY}.probe`);
+    if (!adopted) {
+      adopted = true;
+      adoptLegacy(s);
+    }
     return s;
   } catch {
     return null;
@@ -44,29 +71,72 @@ function store(): Storage | null {
 
 export const canSave = (): boolean => store() !== null;
 
-/** What was last written, so an unchanged game does not rewrite the key. */
-let lastWritten: string | null = null;
+/** The slot being played. Where autosave writes, and where a reload comes back
+ *  to — so switching slots is the whole of what "which game is this" means. */
+export function liveSlot(): Slot {
+  const raw = Number(store()?.getItem(LIVE));
+  return SLOTS.includes(raw as Slot) ? (raw as Slot) : 1;
+}
 
-export function saveGame(game: GameState): boolean {
+export function setLiveSlot(slot: Slot): void {
+  store()?.setItem(LIVE, String(slot));
+}
+
+/** Per slot, so copying a game into another one is never skipped as a no-op. */
+const lastWritten = new Map<Slot, string>();
+
+export function saveGame(game: GameState, slot: Slot = liveSlot()): boolean {
   const s = store();
   if (!s) return false;
   const json = JSON.stringify(game);
-  if (json === lastWritten) return true;
+  if (json === lastWritten.get(slot)) return true;
   try {
-    s.setItem(KEY, json);
-    s.setItem(STAMP, String(Date.now()));
-    lastWritten = json;
+    s.setItem(keyFor(slot), json);
+    s.setItem(stampFor(slot), String(Date.now()));
+    lastWritten.set(slot, json);
     return true;
   } catch {
     return false; // quota; throwing would take the frame down with it
   }
 }
 
-/** When the save was last written, or null if there isn't one. */
-export function savedAt(): number | null {
-  const raw = store()?.getItem(STAMP);
+/** When the slot was last written, or null if there isn't one. */
+export function savedAt(slot: Slot = liveSlot()): number | null {
+  const raw = store()?.getItem(stampFor(slot));
   const n = raw === null || raw === undefined ? NaN : Number(raw);
   return Number.isFinite(n) ? n : null;
+}
+
+/** Who is in a slot, for a screen listing all three. Deliberately NOT
+ *  `readSave`: looking at a slot may not reserve the ids inside it. */
+export interface SlotInfo {
+  name: string;
+  level: number;
+  at: number | null;
+}
+
+export function peekSlot(slot: Slot): SlotInfo | null {
+  const raw = store()?.getItem(keyFor(slot));
+  if (!raw) return null;
+  try {
+    const who = (JSON.parse(raw) as Partial<GameState>).character;
+    if (!who) return null;
+    return { name: who.name || 'wanderer', level: who.level ?? 1, at: savedAt(slot) };
+  } catch {
+    return null;
+  }
+}
+
+/** The text itself, so a copy is exactly the game rather than a re-serialised
+ *  one. Returns whether there was anything to copy. */
+export function copySlot(from: Slot, to: Slot): boolean {
+  const s = store();
+  const raw = s?.getItem(keyFor(from));
+  if (!s || !raw) return false;
+  s.setItem(keyFor(to), raw);
+  s.setItem(stampFor(to), String(Date.now()));
+  lastWritten.set(to, raw);
+  return true;
 }
 
 /** Shape is checked, not trusted: the text can be edited by hand. */
@@ -88,20 +158,20 @@ export function readSave(text: string): GameState | null {
   return save as GameState;
 }
 
-export function loadGame(): GameState | null {
-  const raw = store()?.getItem(KEY);
+export function loadGame(slot: Slot = liveSlot()): GameState | null {
+  const raw = store()?.getItem(keyFor(slot));
   if (!raw) return null;
   const save = readSave(raw);
-  if (save) lastWritten = raw;
+  if (save) lastWritten.set(slot, raw);
   return save;
 }
 
-export function clearSave(): void {
+export function clearSave(slot: Slot = liveSlot()): void {
   const s = store();
   if (!s) return;
-  s.removeItem(KEY);
-  s.removeItem(STAMP);
-  lastWritten = null;
+  s.removeItem(keyFor(slot));
+  s.removeItem(stampFor(slot));
+  lastWritten.delete(slot);
 }
 
 // --- healing an old save ----------------------------------------------------
@@ -317,6 +387,7 @@ export function backupName(game: GameState): string {
  * something.
  */
 export function startAutosave(game: GameState, everyMs = 4000): void {
+  // The LIVE slot, read every time: switching slots is what moves the writes.
   const flush = () => saveGame(game);
   // At once, so a tab closed inside the first tick still leaves a save.
   flush();

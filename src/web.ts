@@ -105,13 +105,13 @@ document.getElementById('open-character')!.addEventListener('click', openCharact
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', openSaveData);
-// Both wipe the save, and both sit in a row you click all day. They ask first.
+// The dev kit wipes what you are playing, and it sits in a row you click all
+// day. A new game is a SLOT's action now, on the Save & Load screen.
 const guard = (id: string, title: string, mode: StartMode) =>
   document.getElementById(id)!.addEventListener('click', async () => {
     if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
   });
 
-guard('dev-fresh', 'Start a new game?', 'fresh');
 guard('dev-kit', 'Restart with the dev kit?', 'dev');
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
@@ -159,13 +159,19 @@ initInventory(game);
 initHistory();
 initConfirm();
 // A loaded backup replaces everything, so every screen has to look again.
-initSaveData(game, (healed) => {
-  const said = healingNote(healed);
-  if (said) note(said);
-  refreshRunPanels();
-  onRunFocused();
-  maybeShowWelcome();
-});
+initSaveData(
+  game,
+  (healed) => {
+    const said = healingNote(healed);
+    if (said) note(said);
+    refreshRunPanels();
+    onRunFocused();
+    maybeShowWelcome();
+  },
+  // A new game in another slot. The slot has already moved, so `restart` is
+  // wiping and writing the one being started rather than the one left behind.
+  () => restart('fresh')
+);
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels, onRunFocused);

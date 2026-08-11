@@ -121,7 +121,7 @@ const lockProbe = () => {
   // Only when the header is not under a popup, which is an ordinary state and
   // not the lock. The guide rings a Close when something is on top.
   if (!document.querySelector('.modal:not([hidden])')) {
-    for (const id of ['open-shop', 'open-craft', 'open-character', 'dev-fresh']) {
+    for (const id of ['open-shop', 'open-craft', 'open-character', 'open-save']) {
       const el = document.getElementById(id);
       if (el && reaches(el) === false) wrong.push(`${id} is a door that will not open`);
     }
@@ -195,6 +195,14 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
   await page.waitForTimeout(200);
 
+  // Three slot rows, each with a name, a level, an age and two buttons. The
+  // narrow screen is where a row like that stops fitting on one line.
+  await page.evaluate(() => document.getElementById('open-save')?.click());
+  await page.waitForTimeout(300);
+  await shoot('slots');
+  await page.evaluate(() => document.getElementById('save-close')?.click());
+  await page.waitForTimeout(200);
+
   // And the run itself. A menu screenshot cannot show whether combat reads,
   // which is the half of the UI that actually moves.
   // The handover, caught in the middle: the hero climbing out of the entrance
@@ -207,11 +215,11 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4300);
   await shoot('descent');
 
-  // The Lampwright. The meeting is at the END of a cleared descent, so the
-  // wait has to cover a whole one rather than part of it.
+  // The Lampwright, at the END of a cleared descent and after the walk out to
+  // it: the wait covers a whole descent, and Blight takes a minute over one.
   try {
     await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
-      timeout: 60000,
+      timeout: 120000,
     });
     await shoot('lampwright');
     // A FACE, at its own grid. A map sprite blown up is a silhouette, and this

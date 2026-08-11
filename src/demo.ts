@@ -167,7 +167,18 @@ import {
   xpForClear,
 } from './game/crystals';
 import type { QuestFacts } from './game/crystals';
-import { heal, readSave } from './game/save';
+import {
+  clearSave,
+  copySlot,
+  heal,
+  liveSlot,
+  loadGame,
+  peekSlot,
+  readSave,
+  saveGame,
+  savedAt,
+  setLiveSlot,
+} from './game/save';
 import type { GameState } from './game/state';
 import type {
   Item,
@@ -1596,7 +1607,6 @@ rule('GUIDED OPENING — does every step actually complete?');
     'run-launch',
     'run-again',
     'run-loot',
-    'dev-fresh',
     'dev-kit',
     ...['craft', 'shop', 'stash', 'character', 'skills', 'history', 'save', 'crystals'].map(
       (s) => `open-${s}`
@@ -4617,6 +4627,56 @@ rule('THE SAVE — does a save survive the game changing under it?');
       'and every one of those points comes back',
       `refunded ${cut.points} of ${path.length - 1}`
     );
+  }
+
+  // Three slots, over a localStorage that does not exist in node. The one
+  // thing here no browser test can reach: a save written BEFORE slots, which
+  // has to become slot 1 rather than a game nobody can get back to.
+  {
+    const cells = new Map<string, string>();
+    const fake = {
+      getItem: (k: string) => cells.get(k) ?? null,
+      setItem: (k: string, v: string) => void cells.set(k, v),
+      removeItem: (k: string) => void cells.delete(k),
+    };
+    (globalThis as { localStorage?: unknown }).localStorage = fake;
+    cells.set('crystal-core.save', JSON.stringify(game));
+    cells.set('crystal-core.saved-at', '1234');
+
+    const adopted = loadGame();
+    check(
+      adopted !== null && liveSlot() === 1 && cells.get('crystal-core.save') === undefined,
+      'a save written before slots existed becomes slot 1, and the old key goes',
+      `slot ${liveSlot()}, legacy ${cells.has('crystal-core.save') ? 'left behind' : 'gone'}`
+    );
+    check(savedAt(1) === 1234, 'keeping when it was written', String(savedAt(1)));
+
+    // Where the writes go is the live slot and nothing else.
+    setLiveSlot(2);
+    saveGame(game);
+    check(
+      peekSlot(2)?.name === game.character.name && peekSlot(3) === null,
+      'and every write after that lands in the slot being played',
+      `2: ${peekSlot(2)?.name ?? 'empty'}, 3: ${peekSlot(3)?.name ?? 'empty'}`
+    );
+
+    // A copy is the text itself, so the two slots are the same game rather
+    // than two serialisations that might disagree.
+    copySlot(2, 3);
+    check(
+      cells.get('crystal-core.save.3') === cells.get('crystal-core.save.2'),
+      'a copy is the save itself, byte for byte',
+      'the copy differed from what it came from'
+    );
+    clearSave(3);
+    check(
+      peekSlot(3) === null && peekSlot(2) !== null,
+      'and clearing one leaves the rest',
+      `3: ${peekSlot(3) ? 'still there' : 'gone'}, 2: ${peekSlot(2) ? 'kept' : 'lost'}`
+    );
+
+    setLiveSlot(1);
+    delete (globalThis as { localStorage?: unknown }).localStorage;
   }
 
   // A save from a version that no longer exists is refused, not half-read.

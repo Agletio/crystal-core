@@ -895,6 +895,16 @@
   .welcomedev { display: flex; justify-content: flex-end; margin-top: 12px; }
 
   .savemeta { font-size: 11px; color: var(--dust); margin: 0 0 14px; }
+  .saveslots { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+  .saveslot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border: 1px solid var(--seam); padding: 10px 12px; }
+  .saveslot--live { border-color: var(--citrine); }
+  .saveslot__who { display: flex; flex-direction: column; gap: 2px; flex: 1 1 180px; min-width: 0; }
+  .saveslot__n { font-size: 11px; color: var(--dust); letter-spacing: .08em; }
+  .saveslot__name { color: var(--bone); }
+  .saveslot__when { font-size: 11px; color: var(--dust); }
+  .saveslot__acts { display: flex; gap: 6px; align-items: center; }
+  .saveslot__live { font-size: 11px; color: var(--citrine); letter-spacing: .08em; }
   .savenote { font-size: 11px; color: var(--verdite); min-height: 16px; margin: 12px 0 0; }
   .savenote--bad { color: var(--ember); }
 
@@ -1091,9 +1101,8 @@
       <button class="mini" id="open-character">Character</button>
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-history">History</button>
-      <button class="mini" id="open-save">Save</button>
+      <button class="mini" id="open-save">Save &amp; Load</button>
       <span class="devsep"></span>
-      <button class="mini mini--dev" id="dev-fresh" title="Wipe to a true new game: nothing at all">New game</button>
       <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, gold and every currency">Dev kit</button>
     </div>
   </header>
@@ -1515,7 +1524,7 @@
 <div class="modal" id="savedata" hidden>
   <div class="modal__card modal__card--ask">
     <div class="modal__head">
-      <h2 class="modal__title">Save</h2>
+      <h2 class="modal__title">Save &amp; Load</h2>
       <button class="mini" id="save-close">Close</button>
     </div>
     <div class="modal__body">
@@ -1524,7 +1533,7 @@
         <button class="mini" id="save-download">Download backup</button>
         <button class="mini" id="save-load">Load backup</button>
         <span class="spacer" style="flex:1 1 auto"></span>
-        <button class="mini mini--danger" id="save-wipe">Delete save</button>
+        <button class="mini mini--danger" id="save-wipe">Delete all saves</button>
       </div>
       <input type="file" id="save-file" accept="application/json,.json" hidden />
       <p class="savenote" id="save-note"></p>
