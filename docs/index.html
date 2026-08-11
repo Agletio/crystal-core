@@ -204,8 +204,11 @@
   button:focus-visible { outline: 2px solid var(--citrine); outline-offset: 2px; }
   button:disabled { cursor: not-allowed; }
 
-  .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; }
+  .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; position: relative; }
   .mini:hover:not(:disabled) { border-color: var(--rust); color: var(--rust); }
+  /* The count of what a screen has waiting. Outside the button's box on both
+     axes, so a three-row header at 390px is no tighter for carrying one. */
+  .tabbadge { position: absolute; top: -7px; right: -7px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--citrine); color: var(--pitch); font-family: var(--display); font-size: 10px; line-height: 15px; text-align: center; pointer-events: none; }
   /* Dev tools, marked so they read as scaffolding rather than features. */
   .mini--dev { border-style: dashed; color: var(--dust); }
   .mini--dev:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
@@ -406,6 +409,16 @@
   .levelrow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
   .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
   .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); }
+
+  /* Points in, what they bought, and the one button that spends. The `how`
+     line drops to its own row so a long stat sentence never squeezes the
+     number, which is the thing being compared between the four. */
+  .attrleft { font-family: var(--display); font-size: 11px; color: var(--citrine); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+  .attr { display: grid; grid-template-columns: 1fr auto 26px; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--seam); }
+  .attr__k { font-size: 12px; color: var(--chalk); }
+  .attr__v { font-family: var(--display); font-size: 13px; color: var(--citrine); }
+  .attr__buy { padding: 0; width: 24px; height: 22px; line-height: 1; font-size: 13px; }
+  .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--dust); }
 
   .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
   .stat__k { color: var(--dust); }
@@ -1483,7 +1496,10 @@
   <div class="modal__card modal__card--wide">
     <div class="modal__head">
       <h2 class="modal__title">Character</h2>
-      <button class="mini" id="sheet-close">Close</button>
+      <div class="seedbar">
+        <button class="mini mini--dev" id="sheet-devlevel" title="Dev only: grant a character level">+1 level (dev)</button>
+        <button class="mini" id="sheet-close">Close</button>
+      </div>
     </div>
     <div class="modal__body">
       <div class="sheetcols">
@@ -1504,7 +1520,11 @@
           <!-- Which skill every number below is for. Damage is meaningless
                without it, and the sheet used to leave it unsaid. -->
           <div class="skillline" id="sheet-skill"></div>
-          <p class="panel__title">Stats</p>
+          <!-- What the level above bought. Spent by hand, and the only thing
+               on this screen that is a decision rather than a readout. -->
+          <p class="panel__title">Attributes <span class="attrleft" id="sheet-attr-left" hidden></span></p>
+          <div id="sheet-attrs"></div>
+          <p class="panel__title" style="margin-top:16px">Stats</p>
           <div id="sheet-stats"></div>
           <p class="panel__title" style="margin-top:16px">Resistances</p>
           <div id="sheet-res"></div>

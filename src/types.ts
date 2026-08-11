@@ -22,6 +22,13 @@ export interface StatRoll {
   tags: string[];
 }
 
+/** What a character level buys points in, spent on the sheet. */
+export interface AttributeDef {
+  id: string;
+  name: string;
+  per: StatRoll[]; // ONE step, in stat names the modifier engine already reads
+}
+
 /** The authored range a stat rolls within. */
 export interface StatSpec {
   stat: string;

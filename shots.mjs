@@ -195,6 +195,19 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
   await page.waitForTimeout(200);
 
+  // The sheet, with points waiting. Four rows of name, count, button and a
+  // stat sentence is where a narrow column tears, and the narrow viewport
+  // stacks the columns, so they are scrolled to rather than shot blind.
+  await page.evaluate(() => {
+    document.getElementById('open-character')?.click();
+    for (let i = 0; i < 3; i++) document.getElementById('sheet-devlevel')?.click();
+    document.getElementById('sheet-attrs')?.scrollIntoView({ block: 'center' });
+  });
+  await page.waitForTimeout(300);
+  await shoot('sheet');
+  await page.evaluate(() => document.getElementById('sheet-close')?.click());
+  await page.waitForTimeout(200);
+
   // Three slot rows, each with a name, a level, an age and two buttons. The
   // narrow screen is where a row like that stops fitting on one line.
   await page.evaluate(() => document.getElementById('open-save')?.click());

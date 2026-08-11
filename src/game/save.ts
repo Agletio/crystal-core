@@ -11,6 +11,7 @@ import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
   ALL_MODS,
+  ATTRIBUTE_BY_ID,
   CRYSTAL_LEVELS,
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
@@ -24,6 +25,7 @@ import {
 } from '../data';
 import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
 import { reserveItemIds } from '../economy';
+import { attributePointsFor } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
 
@@ -244,6 +246,30 @@ function replayTree(character: Character, skillId: string): number {
   return lost;
 }
 
+/**
+ * The same treatment for attributes: replayed against the level that paid for
+ * them rather than trusted. A curve that moves, or an attribute that is cut,
+ * must not leave a character holding points no level ever granted — and what
+ * falls out is refunded, since the pool is the budget minus what is spent.
+ */
+function replayAttributes(character: Character): number {
+  const budget = attributePointsFor(character.level);
+  const kept: Record<string, number> = {};
+  let spent = 0;
+  let lost = 0;
+
+  for (const [id, held] of Object.entries(character.attributes ?? {})) {
+    const want = Number.isFinite(held) ? Math.max(0, Math.floor(held)) : 0;
+    const take = ATTRIBUTE_BY_ID[id] ? Math.min(want, budget - spent) : 0;
+    if (take > 0) kept[id] = take;
+    spent += take;
+    lost += want - take;
+  }
+
+  character.attributes = kept;
+  return lost;
+}
+
 /** IN PLACE. Everything the current build cannot resolve, gone. */
 export function heal(game: GameState): Healed {
   const out: Healed = { items: 0, currencies: 0, points: 0, skill: false };
@@ -366,6 +392,8 @@ export function heal(game: GameState): Healed {
     }
     out.points += replayTree(game.character, skillId);
   }
+
+  out.points += replayAttributes(game.character);
 
   if (!SKILL_BY_ID[game.character.skillId]) {
     game.character.skillId = PLAYER_SKILLS[0]?.id ?? 'strike';

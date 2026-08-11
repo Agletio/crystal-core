@@ -3,6 +3,7 @@ import { aggregate, computeStat, percentStat } from '../mods';
 import {
   AILMENT,
   AILMENT_NAMES,
+  ATTRIBUTES,
   DAMAGE_TYPES,
   DEFENCE,
   DROP_GROUPS,
@@ -16,7 +17,7 @@ import {
   SKILL_BY_ID,
   UNIQUE_BY_ID,
 } from '../data';
-import { equippedItems } from './character';
+import { attributeSteps, equippedItems } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
 import { mergeGrants } from './grants';
@@ -279,7 +280,8 @@ export function heroStats(
         mods,
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) * skill.rateMultiplier,
-    critChance: computeStat(HERO_BASE.critChance, mods, 'critChance'),
+    // Tagged, so an ATTACK critical chance does nothing for a spell.
+    critChance: computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags),
     // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
@@ -323,6 +325,27 @@ export function treeMod(character: Character): RolledMod | null {
     group: 'tree',
     slot: 'tree',
     name: 'Skill tree',
+    tier: 1,
+    tags: [],
+    stats,
+  };
+}
+
+/** Everything spent on attributes as ONE synthetic mod, the way the tree
+ *  arrives. Whole steps only: a part-step is banked and pays nothing. */
+export function attributeMod(character: Character): RolledMod | null {
+  const stats = ATTRIBUTES.flatMap((attr) => {
+    const steps = attributeSteps(character, attr.id);
+    return steps > 0 ? attr.per.map((s) => ({ ...s, value: s.value * steps })) : [];
+  });
+
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'attributes',
+    defId: 'attributes',
+    group: 'attributes',
+    slot: 'attributes',
+    name: 'Attributes',
     tier: 1,
     tags: [],
     stats,
@@ -382,10 +405,10 @@ export function effectiveSkill(
  * mods — the only difference is that crafting can't reach them.
  */
 export function statMods(character: Character): RolledMod[] {
-  const extra = treeMod(character);
+  const extra = [treeMod(character), attributeMod(character)];
   return [
     ...equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]),
-    ...(extra ? [extra] : []),
+    ...extra.filter((m): m is RolledMod => m !== null),
   ];
 }
 

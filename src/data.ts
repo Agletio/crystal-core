@@ -1,4 +1,5 @@
 import type {
+  AttributeDef,
   CurrencyClass,
   CurrencyDef,
   EquipSlotDef,
@@ -2493,6 +2494,8 @@ export const LEVELLING = {
   lifePerLevel: 14,
   /** PERCENT of the skill's own base per level, so skills stay in proportion. */
   damagePerLevel: 2.2,
+  /** Points a level hands you to put into ATTRIBUTES, spent on the sheet. */
+  attributePointsPerLevel: 3,
   /** XP from one COMMON monster in the bare Fissure. */
   perMonster: 6,
   /** XP multiplier per point of run power. */
@@ -2505,6 +2508,57 @@ export const LEVELLING = {
   curveBase: 260,
   curveExponent: 1.8,
 };
+
+/** Points to one STEP, and a part-step pays nothing: three a level against
+ *  five to a step is a step every level and two thirds. */
+export const ATTRIBUTE_STEP = 5;
+
+/**
+ * The four, and what one step of each is worth. Every line is an ordinary
+ * stat under a name the modifier engine already reads, so an attribute
+ * reaches the sim by exactly the path gear does. The TAGS are the whole of
+ * what keeps them apart: a critical chance tagged `attack` does nothing for a
+ * spell, and `attackSpeed` is already the wrong stat for one, so Dexterity
+ * and Acuity are two halves of one shape rather than a stat with a switch.
+ */
+export const ATTRIBUTES: AttributeDef[] = [
+  {
+    id: 'strength',
+    name: 'Strength',
+    per: [
+      { stat: 'damage', form: 'inc', value: 5, tags: ['attack'] },
+      { stat: 'life', form: 'inc', value: 3, tags: [] },
+    ],
+  },
+  {
+    id: 'intelligence',
+    name: 'Intelligence',
+    per: [
+      { stat: 'damage', form: 'inc', value: 5, tags: ['spell'] },
+      { stat: 'mana', form: 'inc', value: 6, tags: [] },
+    ],
+  },
+  {
+    id: 'dexterity',
+    name: 'Dexterity',
+    per: [
+      { stat: 'critChance', form: 'flat', value: 0.6, tags: ['attack'] },
+      { stat: 'attackSpeed', form: 'inc', value: 2, tags: [] },
+    ],
+  },
+  {
+    id: 'acuity',
+    name: 'Acuity',
+    per: [
+      { stat: 'critChance', form: 'flat', value: 0.6, tags: ['spell'] },
+      { stat: 'castSpeed', form: 'inc', value: 2, tags: [] },
+    ],
+  },
+];
+
+export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
+  ATTRIBUTES.map((a) => [a.id, a])
+);
 
 // --- skills ----------------------------------------------------------------
 //

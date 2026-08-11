@@ -6,10 +6,27 @@
  * DOCK that fits, which is where your gear already is. Worn items live here
  * rather than in the dock, which is safe because this screen shows them.
  */
-import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, MANA, SKILLS } from '../data';
+import {
+  ATTRIBUTES,
+  ATTRIBUTE_STEP,
+  DAMAGE_TYPES,
+  DAMAGE_TYPE_BY_ID,
+  DEFENCE,
+  EQUIP_SLOTS,
+  LEVELLING,
+  MANA,
+  SKILLS,
+} from '../data';
 import { characterStats, damageDetail, skillBase } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
-import { xpToNext } from '../sim/character';
+import { describeStatLine } from '../mod-text';
+import {
+  addXp,
+  attributePointsLeft,
+  attributeSteps,
+  spendAttribute,
+  xpToNext,
+} from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
@@ -135,6 +152,58 @@ function renderPickHint(): void {
 }
 
 const round = (n: number) => Math.round(n).toString();
+
+/**
+ * The four, what each has bought so far, and one button that spends a point.
+ *
+ * Every line is the attribute's own `per` scaled by the whole steps in it, so
+ * the sentence a player reads is the same stat line the sim aggregates —
+ * there is no second description to drift.
+ */
+function renderAttributes(): void {
+  const { character } = game;
+  const host = $('sheet-attrs');
+  host.replaceChildren();
+
+  const left = attributePointsLeft(character);
+  const spare = $('sheet-attr-left');
+  spare.hidden = left <= 0;
+  spare.textContent = `${left} to spend`;
+
+  for (const attr of ATTRIBUTES) {
+    const held = character.attributes?.[attr.id] ?? 0;
+    const steps = attributeSteps(character, attr.id);
+    const row = el('div', 'attr');
+    row.append(el('span', 'attr__k', attr.name));
+    row.append(el('span', 'attr__v', String(held)));
+
+    const buy = el('button', 'mini attr__buy', '+') as HTMLButtonElement;
+    buy.disabled = left <= 0;
+    buy.title = `Put 1 point into ${attr.name}`;
+    buy.onclick = () => {
+      if (spendAttribute(character, attr.id)) render();
+    };
+    row.append(buy);
+
+    const bought = attr.per.map((s) => describeStatLine({ ...s, value: s.value * steps }));
+    const each = attr.per.map((s) => describeStatLine(s));
+    row.append(
+      el(
+        'span',
+        'attr__how',
+        `${steps > 0 ? bought.join(', ') : `${ATTRIBUTE_STEP} points buys ${each.join(', ')}`}` +
+          ` · ${held % ATTRIBUTE_STEP} of ${ATTRIBUTE_STEP} toward the next`
+      )
+    );
+    attachTooltip(
+      row,
+      () =>
+        `${attr.name}\nEvery ${ATTRIBUTE_STEP} points: ${each.join(', ')}.\n` +
+        `A level hands you ${LEVELLING.attributePointsPerLevel}.`
+    );
+    host.append(row);
+  }
+}
 
 /**
  * The damage number, taken apart. Every line here is derived from the same
@@ -332,6 +401,7 @@ function render(): void {
   renderSkill();
   renderSlots();
   renderPickHint();
+  renderAttributes();
   renderStats();
   // The handler has to be re-registered on every render: it closes over
   // `picking`, so a stale one keeps lighting up the slot you already filled.
@@ -383,6 +453,12 @@ export function initCharacter(
   onClosed = closed ?? null;
 
   ($('sheet-close') as HTMLButtonElement).onclick = closeCharacter;
+  // The skills web has the same button for the same reason: attributes start
+  // at level 2, so without one nothing but a played descent reaches them.
+  ($('sheet-devlevel') as HTMLButtonElement).onclick = () => {
+    addXp(game.character, xpToNext(game.character.level));
+    render();
+  };
   $('sheet').addEventListener('click', (event) => {
     // Click the backdrop to dismiss; clicks inside the card shouldn't.
     if (event.target === $('sheet')) closeCharacter();

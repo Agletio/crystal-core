@@ -7,6 +7,7 @@ import { Rng } from '../rng';
 import { ModPool, modCapacity } from '../mods';
 import {
   ALL_MODS,
+  ATTRIBUTES,
   CRYSTAL_LEVELS,
   DROP_BANDS,
   EQUIP_SLOTS,
@@ -15,7 +16,7 @@ import {
 } from '../data';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
-import { makeCharacter } from './character';
+import { attributePointsFor, makeCharacter } from './character';
 import { canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
@@ -53,6 +54,15 @@ export function ladderCharacter(band: number, rng: Rng, skillId = 'strike'): Cha
 
   const character = makeCharacter(starterLoadout(rng, ilvl), skillId);
   character.level = 4 + rung * 6;
+
+  // Split four ways. A measured character with no attributes at all is a
+  // character nobody plays, and half of what these attributes buy is tagged
+  // for the skill this one is not — so a spread is the floor, not the build.
+  const points = attributePointsFor(character.level);
+  ATTRIBUTES.forEach((attr, i) => {
+    character.attributes[attr.id] =
+      Math.floor(points / ATTRIBUTES.length) + (i < points % ATTRIBUTES.length ? 1 : 0);
+  });
 
   const progress = skillProgress(character, skillId);
   const tree = treeFor(skillId);

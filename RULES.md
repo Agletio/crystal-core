@@ -188,7 +188,37 @@ notable costs, `meet_crystal` for someone to be standing at the mouth, and
 level. Life does, and one that grew alongside it would leave the cost
 meaningless by level 10 — the whole pressure is that casting more, or casting
 something bigger, gets paid for. Gear reaches it through the modifier engine
-like every other stat, and attributes will.
+like every other stat, and so does Intelligence.
+
+**A level GRANTS a baseline and SELLS the rest.** `LEVELLING.lifePerLevel` and
+`LEVELLING.damagePerLevel` are the baseline, handed over for nothing;
+`attributePointsPerLevel` is the layer you spend by hand. Both halves stay:
+measured, dropping `damagePerLevel` costs a top-band character a third of its
+damage (554 → 370) and buys the deep end nothing at all (5/12 either way), and
+without it a character who never touches Strength or Intelligence gets no
+damage growth across fifty levels — which would make an attribute compulsory
+rather than a choice.
+
+**An attribute is stat lines, never a new concept.** `AttributeDef.per` is what
+ONE step is worth, written under stat names the modifier engine already reads,
+and `attributeMod` in `src/sim/stats.ts` folds every step into ONE synthetic
+`RolledMod` the way `treeMod` does. Anything downstream that had to learn the
+word "attribute" is a seam in the wrong place.
+
+**A part-step buys nothing.** `attributeSteps` FLOORS. Points short of a whole
+`ATTRIBUTE_STEP` are banked toward one, which is what lets a step be worth
+enough to build around, and the demo holds the 4th point to changing no stat
+and the 5th to changing them all.
+
+**Tags are what keep the four apart.** `heroStats` passes the skill's tags into
+the `critChance` computation, so a critical chance tagged `attack` does nothing
+for a spell — the same seam `areaOfEffect` and the damage passes already ride
+on. Untagged gear lines are unaffected and must stay that way.
+
+**Points are REPLAYED on load, never trusted.** `replayAttributes` in
+`src/game/save.ts` does for attributes what `replayTree` does for the tree: an
+attribute that is cut, or a level curve that moves, hands the points back. A
+character holding points no level ever granted is the failure this prevents.
 
 **Every bare skill costs the same per second.** `MANA.costPerSecond`.
 `SkillDef.manaCost` is per USE, so the table holds three different figures only
@@ -452,6 +482,12 @@ socketed, UNCAPPED), `sold` (the counter, `SOLD_CAP`), `sockets` and
 `shopStock`. Inert means: nothing acts on the item until it is moved into the
 dock. `craftId` is a REFERENCE, not a move, and it resolves across the bag, the
 collection, the worn slots and the sockets.
+
+**A dev level button, per ladder.** `skills-devlevel` grants a SKILL level and
+`sheet-devlevel` grants a CHARACTER one, both marked `.mini--dev`. Attributes
+begin at level 2, so without the second one nothing but a played descent
+reaches the screen this phase built — and `smoke.mjs` is what proves the
+buttons and the badge work.
 
 **Adding a modal is four places, not one.** The markup in `docs/index.html`;
 the Escape chain in `src/web.ts`, which closes the topmost thing and must know
@@ -757,7 +793,7 @@ is not the binding constraint, the wall clock is.
 
 The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
 `· ` line is a `gauge` — a balance number that reports and can never fail; it is
-351 checks and 6 gauges.
+358 checks and 6 gauges.
 
 ### The harnesses have their own rules
 
@@ -830,9 +866,11 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. 
     real generated map, centred on the entrance. **`span` must be EVEN**: it is
     halved to find the corner, and an odd one lands the loop on half-tiles and
     silently draws nothing where the landmark should be.
-- `npm run shots` covers the welcome, the Fissure, the collection, the SLOTS,
-  the HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH and an item
-  TOOLTIP at two sizes. The bench shot catches a third column not fitting; the
+- `npm run shots` covers the welcome, the Fissure, the collection, the SHEET,
+  the SLOTS, the HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH
+  and an item TOOLTIP at two sizes. The sheet shot grants three levels first
+  and scrolls the attributes into view, because at 390px the two columns stack
+  and the rows it is there to catch are below the fold. The bench shot catches a third column not fitting; the
   tooltip shot rolls four modifiers onto a piece first, because a blank one
   shows none of the grouping; the handover shot fires 180ms into a launch,
   which is the hero half out of the entrance; the slots shot is three rows of

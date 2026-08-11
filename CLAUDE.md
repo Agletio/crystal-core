@@ -203,6 +203,35 @@ thing an item can do that cannot be undone. The bulk button in the shop takes
 every carried piece no currency has touched, which is why it can never eat a
 decision.
 
+## What a level buys
+
+**Attributes** (`ATTRIBUTES`, `ATTRIBUTE_STEP` in `data.ts`). A character level
+hands over `LEVELLING.attributePointsPerLevel` = 3 points and nothing spends
+them but you, on the sheet; level 1 grants none. Five points make a STEP and a
+part-step pays nothing, so the numbers on a step can be generous enough to
+build around. Strength buys attack damage and life, Intelligence spell damage
+and mana, Dexterity attack critical chance and attack speed, Acuity the same
+two for spells.
+
+Every one of them is written as ordinary stat lines under names the modifier
+engine already reads, and `attributeMod` folds the lot into ONE synthetic
+`RolledMod` the way `treeMod` does — so an attribute reaches the sim by exactly
+the path a ring does. The TAGS are the whole of what keeps the four apart:
+`heroStats` passes the skill's tags into the `critChance` computation, so an
+attack critical chance does nothing for a spell, and `attackSpeed` was already
+the wrong stat for one. Untagged gear lines still reach everything.
+
+`heal()` REPLAYS them against the level that paid, exactly as tree points are
+replayed: an attribute that is cut, or a curve that moves, hands the points
+back rather than leaving a character holding what no level granted.
+
+The character level also still scales the skill's own base damage
+(`LEVELLING.damagePerLevel`), which is the granted baseline `lifePerLevel` is
+for life. Attributes are the layer you BUY on top of both.
+
+A count of what is waiting to be spent sits on the header button that spends it
+(`badge` in `src/ui/badge.ts`). Zero shows nothing at all.
+
 ## What a skill costs
 
 Every use of your skill is paid out of **mana** — `HERO_BASE.mana`, and

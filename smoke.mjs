@@ -1352,6 +1352,66 @@ assert(
 }
 
 // One resistance row per damage type, none of them above the cap.
+// --- attributes: a level buys points, and the sheet is where they go -------
+// Level 1 has none, which is the state the dev kit starts in — so the first
+// thing to prove is that nothing is offered before a level pays for one.
+const attrRows = all('#sheet-attrs .attr');
+assert(attrRows.length === 4, 'four attributes on the sheet', String(attrRows.length));
+assert(
+  attrRows.every((r) => r.querySelector('.attr__buy')?.disabled === true),
+  'a level 1 character is offered nothing to spend'
+);
+assert($('sheet-attr-left').hidden === true, 'and no unspent count is shown at zero');
+assert(
+  $('open-character').querySelector('.tabbadge') === null,
+  'and the header button carries no badge — a 0 badge is a permanent nag'
+);
+// Every attribute names what a point in it is worth, in figures.
+assert(
+  attrRows.every((r) => /\d/.test(r.querySelector('.attr__how')?.textContent ?? '')),
+  'every attribute says what it buys, with the number in it'
+);
+
+$('sheet-devlevel').click();
+assert(text('sheet-level') === '2', 'a level lands on the sheet', text('sheet-level'));
+assert(
+  $('sheet-attr-left').hidden === false && /^\d+ to spend$/.test(text('sheet-attr-left')),
+  'and it hands over points, counted out loud',
+  text('sheet-attr-left')
+);
+assert(
+  text('open-character').includes(text('sheet-attr-left').split(' ')[0]),
+  'and the header button says how many are waiting',
+  text('open-character')
+);
+
+// Re-queried, not reused: every spend re-renders the block, so a row held
+// from before the level landed is a node no longer on the page.
+const granted = Number(text('sheet-attr-left').split(' ')[0]);
+all('#sheet-attrs .attr')[0].querySelector('.attr__buy').click();
+assert(
+  all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent === '1',
+  'clicking + puts one point in'
+);
+assert(
+  text('sheet-attr-left') === `${granted - 1} to spend`,
+  'and the unspent count comes down by exactly one',
+  text('sheet-attr-left')
+);
+
+// The pool is the budget: spend it out and every button goes dark, badge with
+// it. Nothing else in the game hands out an attribute point.
+for (let i = 0; i < granted; i++) all('#sheet-attrs .attr')[0].querySelector('.attr__buy')?.click();
+assert(
+  all('#sheet-attrs .attr').every((r) => r.querySelector('.attr__buy')?.disabled === true),
+  'a spent-out pool offers nothing more'
+);
+assert($('sheet-attr-left').hidden === true, 'and the count goes away rather than reading 0');
+assert(
+  $('open-character').querySelector('.tabbadge') === null,
+  'and so does the badge'
+);
+
 const resRows = all('#sheet-res .stat');
 assert(resRows.length === 8, 'a resistance row per damage type', String(resRows.length));
 const overCap = resRows.filter(

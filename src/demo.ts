@@ -7,6 +7,8 @@ import { canApply, craft, describeItem, describeMod, itemMatches } from './craft
 import {
   AILMENT,
   ALL_MODS,
+  ATTRIBUTES,
+  ATTRIBUTE_STEP,
   DEFENCE,
   FISSURE,
   BINDING_BY_ID,
@@ -103,6 +105,7 @@ import {
   treeGrants,
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
+import { describeStatLine } from './mod-text';
 import { SKILL_BEHAVIOURS } from './sim/skills';
 import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
@@ -117,7 +120,17 @@ import {
   pathToNotable,
   treeFor,
 } from './skills-tree';
-import { addSkillXp, addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
+import {
+  addSkillXp,
+  addXp,
+  attributePointsFor,
+  attributePointsLeft,
+  attributesSpent,
+  makeCharacter,
+  skillProgress,
+  spendAttribute,
+  xpToNext,
+} from './sim/character';
 import type { Character } from './sim/character';
 import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
@@ -3529,6 +3542,9 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
   }
   for (const q of CRYSTAL_QUESTS) holds(`quest/${q.id}`, q.detail);
   for (const a of AURAS) holds(`aura/${a.id}`, a.blurb);
+  for (const attr of ATTRIBUTES) {
+    for (const s of attr.per) holds(`attribute/${attr.id}`, describeStatLine(s));
+  }
 
   line(`  ${looked.length} lines read, ${numberless.length} with no figure in them`);
   check(
@@ -3547,6 +3563,143 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
     ENCOUNTERS.every((e) => e.herald.length > 0) && LAMPWRIGHT.first.said.length > 0,
     'and the lines that are voice rather than mechanics are left alone',
     'flavour went missing'
+  );
+}
+
+// ===========================================================================
+rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
+
+// A level hands out points, the sheet spends them, and everything downstream
+// has to see them as ordinary stat lines. Three things can break silently: a
+// step that pays before it is whole, a tag that lets an attack line arm a
+// spell, and a point no level ever granted surviving a load.
+{
+  const step = ATTRIBUTE_STEP;
+  const round = (n: number) => Math.round(n).toString();
+
+  // What one step is worth, measured on the character it is meant for. Half
+  // of each attribute is tagged, so the skill is what decides whether it
+  // lands — which is the whole of how the four stay apart.
+  line('  attribute      one step, on the skill it is for');
+  for (const attr of ATTRIBUTES) {
+    line(`  ${attr.name.padEnd(13)} ${attr.per.map((s) => describeStatLine(s)).join(', ')}`);
+  }
+
+  const withPoints = (skillId: string, id: string, points: number): Character => {
+    const c = makeCharacter({}, skillId);
+    c.level = 40;
+    c.attributes[id] = points;
+    return c;
+  };
+  const bare = (skillId: string) => characterStats(withPoints(skillId, 'strength', 0));
+
+  // A part-step is banked, not spent. Points short of a whole one buying
+  // anything at all would make the granularity a lie.
+  {
+    const none = characterStats(withPoints('strike', 'strength', step - 1));
+    const one = characterStats(withPoints('strike', 'strength', step));
+    line(
+      `  ${step - 1} points into Strength: ${round(none.maxLife)} life; ` +
+        `${step}: ${round(one.maxLife)}`
+    );
+    check(
+      none.maxLife === bare('strike').maxLife && one.maxLife > none.maxLife,
+      `a part-step buys nothing and the ${step}th point buys the lot`,
+      `${none.maxLife} then ${one.maxLife} against a bare ${bare('strike').maxLife}`
+    );
+  }
+
+  // The tags. An attack critical chance on a spell is the silent one: it
+  // rolls, it shows, it stacks, and it does nothing — which is exactly what
+  // `heroStats` passing the skill's tags into `critChance` prevents.
+  {
+    const dexOnStrike = characterStats(withPoints('strike', 'dexterity', step * 4));
+    const dexOnBlight = characterStats(withPoints('blight', 'dexterity', step * 4));
+    const acuOnBlight = characterStats(withPoints('blight', 'acuity', step * 4));
+    line(
+      `  4 steps of Dexterity: ${dexOnStrike.critChance.toFixed(1)}% crit on Strike, ` +
+        `${dexOnBlight.critChance.toFixed(1)}% on Blight — Acuity gives it ` +
+        `${acuOnBlight.critChance.toFixed(1)}%`
+    );
+    check(
+      dexOnStrike.critChance > bare('strike').critChance
+        && dexOnBlight.critChance === bare('blight').critChance
+        && acuOnBlight.critChance > bare('blight').critChance,
+      'an attack critical chance does nothing for a spell, and Acuity is its other half',
+      `${dexOnStrike.critChance} / ${dexOnBlight.critChance} / ${acuOnBlight.critChance}`
+    );
+    // Speed is the same split, and it rides on a seam that already existed:
+    // a spell reads castSpeed and never attackSpeed.
+    check(
+      characterStats(withPoints('blight', 'dexterity', step * 4)).attacksPerSecond
+        === bare('blight').attacksPerSecond
+        && characterStats(withPoints('blight', 'acuity', step * 4)).attacksPerSecond
+          > bare('blight').attacksPerSecond,
+      'and cast speed is bought with Acuity rather than with Dexterity',
+      'the wrong attribute moved a spell’s rate'
+    );
+    // Damage, the same way round.
+    const str = characterStats(withPoints('strike', 'strength', step * 4));
+    const int = characterStats(withPoints('strike', 'intelligence', step * 4));
+    check(
+      str.damage > bare('strike').damage && int.damage === bare('strike').damage,
+      'and a spell damage attribute leaves an attack exactly where it was',
+      `${round(str.damage)} / ${round(int.damage)} against ${round(bare('strike').damage)}`
+    );
+  }
+
+  // The budget. A level pays for the points and nothing else does.
+  {
+    const c = makeCharacter({}, 'strike');
+    c.level = 5;
+    const granted = attributePointsFor(5);
+    let spent = 0;
+    while (spendAttribute(c, 'strength')) spent++;
+    line(`  level 5 grants ${granted} points, and ${spent} went in before it refused`);
+    check(
+      granted === (5 - 1) * LEVELLING.attributePointsPerLevel
+        && spent === granted
+        && attributePointsLeft(c) === 0
+        && !spendAttribute(c, 'strength'),
+      `${LEVELLING.attributePointsPerLevel} points a level, and never one more`,
+      `${granted} granted, ${spent} spent, ${attributePointsLeft(c)} left`
+    );
+    check(
+      attributePointsFor(1) === 0,
+      'and level 1 grants none — the first level is the one you start on',
+      `a new character already has ${attributePointsFor(1)}`
+    );
+  }
+
+  // Healed. Points are REPLAYED against the level that paid for them, the way
+  // tree points are: a curve that moves, or an attribute that is cut, hands
+  // back what it stranded rather than leaving a build nobody could reach.
+  {
+    const game = createGame('fresh');
+    game.character.level = 3;
+    game.character.attributes = { strength: 99, nonesuch: 12 };
+    const healed = heal(game);
+    const kept = game.character.attributes;
+    line(
+      `  a save holding 99 Strength and 12 of an attribute that is gone, at level 3: ` +
+        `${JSON.stringify(kept)}, ${healed.points} handed back`
+    );
+    check(
+      kept.strength === attributePointsFor(3)
+        && kept.nonesuch === undefined
+        && attributePointsLeft(game.character) === 0,
+      'a load replays attribute points and refunds what no level granted',
+      `${JSON.stringify(kept)} survived`
+    );
+  }
+
+  // And what a measured character actually carries, so the ladder numbers
+  // below have something to be read against.
+  const spread = ladderCharacter(DROP_BANDS.length - 1, new Rng(11));
+  line(
+    `  a top-band ladder character is level ${spread.level} with ` +
+      `${attributesSpent(spread)} points spread four ways: ` +
+      ATTRIBUTES.map((a) => `${a.name.slice(0, 3).toLowerCase()} ${spread.attributes[a.id]}`).join(', ')
   );
 }
 

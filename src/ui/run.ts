@@ -11,7 +11,7 @@ import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
-import { xpToNext } from '../sim/character';
+import { attributePointsLeft, xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, LAMPWRIGHT, POTIONS, RUN_SLOTS, THEME_BY_ID } from '../data';
@@ -32,6 +32,7 @@ import type { Palette, Renderer } from '../render/renderer';
 import { renderInventory, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
+import { badge } from './badge';
 import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -130,8 +131,7 @@ export function metTaken(): void {
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
   setInventoryHandler(runHandler());
-  renderMenu();
-  renderStatsPanel();
+  refreshRunPanels();
 }
 
 /**
@@ -305,6 +305,7 @@ function finish(left = false): void {
   if (!sim) return;
   const report = buildReport(game, sim.state, left);
   playing = false;
+  renderBadges(); // the level this descent bought has landed, so a point may have
 
   if (report.cleared) streak++;
 
@@ -912,8 +913,7 @@ export function initRun(state: GameState): void {
   $('run-camhint').textContent =
     `scroll to zoom · drag to look · ${keyName(keyFor(game, 'centre'))} to follow`;
 
-  renderStatsPanel();
-  renderMenu();
+  refreshRunPanels();
   setZoom(DEFAULT_ZOOM);
   setPhase('menu');
   requestAnimationFrame(frame);
@@ -929,5 +929,12 @@ export function drinkFlask(id: string): void {
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
+  renderBadges();
+}
+
+/** What each screen is holding that has not been spent. One place, called
+ *  after everything that could change one. */
+function renderBadges(): void {
+  badge('open-character', attributePointsLeft(game.character));
 }
 

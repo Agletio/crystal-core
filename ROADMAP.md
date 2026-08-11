@@ -17,8 +17,8 @@ it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
 **A character will end up holding three skills**, one from each of three slots
 — something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 6 changes it. Anything built
-before then that assumes one skill is something Phase 6 has to undo, so prefer
+`Character.skillId` is one field until Phase 5 changes it. Anything built
+before then that assumes one skill is something Phase 5 has to undo, so prefer
 `characterStats(character)` over reaching for `character.skillId` yourself.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
@@ -26,8 +26,9 @@ nothing here is tuned until every system is in, because attributes, trades and
 jobs each hand out more power than the last and anything tuned before them is
 thrown away. Lean too easy. Measure, print, carry on.
 
-Mana costs and the potions that answer running dry have both landed. Phase 1
-is the last piece of that idea — the attributes that scale the pool.
+Mana costs, the potions that answer running dry, and the attributes that scale
+the pool have all landed. What is left of that idea is Phase 3, which turns
+running dry from a wall into a penalty.
 
 ---
 
@@ -50,106 +51,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Character level buys attributes [user 7]
-
-**Potions landed first, and they moved the floor.** Every number below that
-compares against "today" was measured with the flasks firing themselves, which
-is what `runToCompletion` now does: naked level 1 is 24/24 at 57% life, the
-blank-crystal rung is 22/24, the bands are 12/12/12/12/12/11 and the deep end
-is 3/12. Mana costs `MANA.costPerSecond` a second bare, and a level 1 spends 0%
-(Strike) to 17% (Blight) of its swings unable to pay.
-
-
-**What is true today.** `character.level` (`src/sim/character.ts`) does almost
-nothing: it scales the skill's own base damage through `skillBase(skill,
-level)` and `LEVELLING.damagePerLevel`, and it sets the shop's stock level.
-Everything else a character IS comes off gear and the tree — `characterStats`
-in `src/sim/stats.ts` builds `CombatStats` from those two and nothing else.
-There are no attributes.
-
-**Why it is wrong.** Levelling is the most common thing a player does and the
-thing that changes least.
-
-- [ ] Four attributes: **Strength**, **Intelligence**, **Dexterity**,
-      **Acuity**.
-- [ ] Strength gives % attack damage and life. Intelligence gives % spell
-      damage and mana. Dexterity gives attack critical chance and attack
-      speed. Acuity gives spell critical chance and cast speed. Granularity is
-      per 5 points, so the numbers can be generous and a build can pile them
-      up; the exact rates are tuning and a measurement beats them.
-- [ ] A **set number of points per level**, ALLOCATED by the player on the
-      character sheet. Spent points are saved, and `heal()` replays them
-      against the level that paid for them the way tree points are replayed —
-      a level curve that moves must not leave a character holding points no
-      level ever granted.
-- [ ] They land in `characterStats` beside gear and the tree, under the stat
-      names the modifier engine already has, so nothing downstream learns a new
-      concept.
-- [ ] The sheet shows each attribute, what it is buying in numbers, and how
-      many points are unspent. An unspent point is visible from outside the
-      sheet, or nobody spends them.
-- [ ] Whether `LEVELLING.damagePerLevel` survives: a level that buys attributes
-      AND scales the skill's base is paying twice. Decide, and say which.
-
-**What must not break.** The ladder harnesses build characters with
-`ladderCharacter` in `src/sim/loadout.ts`; attributes move every number they
-print, and the retune that set them was a phase of its own. Measure before and
-after, and give `ladderCharacter` a spread so a measured character is not a
-character with no attributes at all.
-
-**ANSWERED, and it is 3 points a level.** The phase was blocked on the deep
-end: `RULES.md` used to require the hardest set in the game to stay a wall — a
-third or less gets through — and measured over 36 runs it was already at 31%
-before attributes existed. Three points a level puts it at 39%. The user's
-answer is that **balance is not tuned at all** until every system is in, so
-that target is suspended and this phase does not have to hold it. Build it at
-3 points a level and PRINT what the deep end does.
-
-**MEASURED, so nobody derives it twice.** With `LEVELLING.damagePerLevel` set
-to 0 and a spread character (points split four ways by `ladderCharacter`), at
-5% damage / 2% life / 2% speed / 0.6 crit per step:
-
-| points a level | deep end, 36 runs | bands, 12 each |
-|---|---|---|
-| none (before this phase) | 31% | 12/12/12/12/12/11 |
-| 1 | 33% | — |
-| 2 | 36% | 12/12/12/12/12/12 |
-| **3** | **39%** | 12/12/12/12/12/12 |
-
-Dropping `damagePerLevel` does NOT make room: the deep end is survival-limited
-rather than damage-limited, so what softens it is the life, the speed and the
-crit rather than the damage.
-
-**The groundwork was built once and reverted rather than half-landed.** It is
-about forty lines and none of it is hard — rebuild it rather than hunting for
-it:
-
-- `ATTRIBUTES` / `ATTRIBUTE_STEP` / `ATTRIBUTE_BY_ID` in `src/data.ts`, each
-  attribute holding `per: StatRoll[]` — what ONE step is worth, in ordinary
-  stat lines under names the engine already reads. `StatRoll` has to be added
-  to data.ts's type import.
-- `LEVELLING.attributePointsPerLevel = 3`, and `ATTRIBUTE_STEP = 5` points to
-  a step, so a step is bought over a level and a bit.
-- `Character.attributes: Record<string, number>` in `src/sim/character.ts`,
-  `{}` from `makeCharacter`, plus `attributePointsFor(level)`,
-  `attributesSpent`, `attributePointsLeft` and `attributeSteps(character, id)`
-  (which FLOORS: a part-step buys nothing yet).
-- `attributeMod(character)` in `src/sim/stats.ts` building ONE synthetic
-  `RolledMod` exactly the way `treeMod` does, and `statMods` returning it
-  beside the tree's. Nothing downstream learns a new concept.
-- `heroStats` passes `skill.tags` into the `critChance` `computeStat`, which is
-  what makes an ATTACK critical-chance line do nothing for a spell. It is the
-  same seam `areaOfEffect` already rides on, and untagged gear lines are
-  unaffected.
-- `ladderCharacter` in `src/sim/loadout.ts` splits the points four ways.
-
-The rates that were measured, as a starting point rather than a target: 5%
-increased damage tagged `['attack']` and 3% increased life for Strength; 5%
-tagged `['spell']` and 6% mana for Intelligence; 0.6 flat critical chance
-tagged `['attack']` and 2% attack speed for Dexterity; the same tagged
-`['spell']` with cast speed for Acuity.
-
-### Phase 2 — Two things the run screen gets wrong [user 1, user 2]
+### Phase 1 — Two things the run screen gets wrong [user 1, user 2]
 
 Two unrelated one-screen fixes, both small, both about the screen showing you
 the wrong thing. Do them together.
@@ -189,35 +91,37 @@ node and its own card covers the tooltip naming it.
 guide` clicks through the opening with a real pointer and would notice a
 tooltip that started swallowing clicks.
 
-### Phase 3 — A badge on every tab holding points to spend [user 6]
+### Phase 2 — A badge on every tab holding points to spend [user 6]
 
-**What is true today.** Unspent points are invisible from outside the screen
-that spends them. `pointsAvailable(progress)` in `src/sim/character.ts` is the
-tree's spare points and is only ever read inside `src/ui/skills.ts`;
-`attributePointsLeft(character)` (Phase 1) is the same for attributes and is
-only read on the sheet. The header buttons — `#open-skills`, `#open-character`
-in `docs/index.html` — say nothing.
+**Half of this landed with attributes and the mechanism is built.**
+`badge(buttonId, count)` in `src/ui/badge.ts` adds or removes a
+`<span class="tabbadge">`, zero removes it entirely, `.tabbadge` in
+`docs/index.html` is the circle, and `renderBadges()` in `src/ui/run.ts` is the
+one place that recomputes — called from `refreshRunPanels()` and again from
+`finish()`, where the level a descent bought lands. `#open-character` already
+carries `attributePointsLeft(character)`, and `smoke.mjs` holds it to
+appearing, counting down as points are spent, and vanishing at zero.
+
+**What is left is the SKILLS side.** `pointsAvailable(progress)` in
+`src/sim/character.ts` is the tree's spare points and is still only ever read
+inside `src/ui/skills.ts`, so `#open-skills` says nothing.
 
 **Why it is wrong.** A point nobody spends is a level that did nothing, and the
 guided opening is the only thing that has ever told a player they have one.
 
-- [ ] A small badge on a header button when that screen has something to spend:
-      a circle with the COUNT in it, top-right of the button. `4` rather than
-      `!` — every number is said out loud.
-- [ ] Skills carries the ACTIVE skill's spare tree points. Character carries
-      unspent attribute points.
-- [ ] One mechanism, not two: a `badge(buttonId, count)` helper that adds or
-      removes a `<span class="tabbadge">`, and one place that recomputes both.
-      `refreshRunPanels()` in `src/ui/run.ts` is called after everything that
-      could change them.
-- [ ] Zero shows NOTHING at all — a badge reading 0 is a permanent nag.
-- [ ] It has to read at 390px, where the header already wraps to three rows.
+- [ ] `renderBadges()` gains one line: `#open-skills` carries the ACTIVE
+      skill's spare tree points. No second mechanism.
+- [ ] It has to read at 390px, where the header already wraps to three rows —
+      and with TWO badges up at once, which is the case attributes alone never
+      produced. `npm run shots` is where that shows.
+- [ ] A smoke check for the skills badge beside the ones the character button
+      already has, including that it goes when the last point is allocated.
 
 **What must not break.** `npm run shots` fails on overflow and the header is
 the tightest row in the game. The demo's "every step points at an element that
 exists" walks header ids and a badge must not become one of them.
 
-### Phase 4 — Out of mana is a penalty, not a wall [user 5]
+### Phase 3 — Out of mana is a penalty, not a wall [user 5]
 
 **What is true today.** `RunSim.swing` in `src/sim/run.ts` pays
 `hero.stats.manaCost` and, short of it, casts `DRY_SKILL` instead — a
@@ -247,6 +151,9 @@ damage instead of by scaling sustain if that is the build you want.
       Declare it in `src/sim/grants.ts` the way `manaMultiplier` is, give it a
       merge, and have the sim ask one function for the number. Getting this
       wrong costs that job a rewrite; getting it right costs a table entry.
+- [ ] The character sheet's `mana/sec` row explains the dry swing in its own
+      `why` text (`src/ui/character.ts`). It has to say the new rule instead,
+      with the penalty's number in it.
 - [ ] It is VISIBLE. The mana bar already turns rust when short of a cast
       (`.hp--dry`); a starved cast needs to read on the map or in the readout
       too, or damage silently halves for a reason nobody can see.
@@ -258,7 +165,7 @@ at all to finishing its descent; that check gets EASIER here, since it can now
 always cast, but it still has to pass. `npm run demo`'s determinism check
 replays a seed with the same presses and must still match.
 
-### Phase 5 — The opening spends every point [user 3]
+### Phase 4 — The opening spends every point [user 3]
 
 **What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
 steps. `spend_point` rings ONE specific node — `towardNode` walks you into
@@ -301,7 +208,7 @@ pointer and is the only thing that proves a step is finishable; the demo walks
 the same list headlessly with one hand-written action per step, and the step
 count in `RULES.md` needs updating with it.
 
-### Phase 6 — Three skill slots, and a skill to put in each [user 4]
+### Phase 5 — Three skill slots, and a skill to put in each [user 4]
 
 **What is true today.** A character has ONE skill — `Character.skillId` —
 and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
@@ -349,7 +256,7 @@ through `makeCharacter(equipment, skillId)`; that signature changing touches
 guide` equips a skill with a real pointer. The blink is a new way for a run to
 end early or never end — `TERMINATION CHECK` is the one that would catch it.
 
-### Phase 7 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 6 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
 row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
@@ -360,7 +267,7 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 6) it cannot even be written down.
+and with three skills equipped (Phase 5) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
       three skill icons, one per slot. `skillIcon(skillId, size)` in
@@ -373,13 +280,16 @@ and with three skills equipped (Phase 6) it cannot even be written down.
       rows LEAVE the general stats, which keeps life, armour, resistances, move
       speed, regeneration, the mana pool and its regeneration.
 - [ ] An empty slot says what it is for. A dark square teaches nothing.
+- [ ] The sheet's right column now runs level → xp → skill line → ATTRIBUTES →
+      Stats → Resistances. Attributes belong to the CHARACTER and stay where
+      they are; the per-skill sections go below them.
 
 **What must not break.** `npm run shots` renders the sheet and the run panel at
 390px, where three icons and three sections are the tight fit; the sheet
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 8 — Trades: the part of a character that is not the skill
+### Phase 7 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -461,7 +371,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 9 — Every monster brings its own element [user 10]
+### Phase 8 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -517,7 +427,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 10 — What a node does, shown and not overlapped [user 8]
+### Phase 9 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -572,7 +482,7 @@ this file is buildable today.
 2. **What the second trade is.** The Alchemist is designed, and a second is
    now half-designed: **a trade that stacks MANA** — a large upside for solving
    mana at all, and a bigger downside for running out, which is a rule change
-   rather than a percentage. Phase 4 is built with that in mind: the starved
+   rather than a percentage. Phase 3 is built with that in mind: the starved
    damage penalty arrives through a declared grant so this trade can move it
    with a table entry rather than a rewrite. What it grants and what it takes
    away is still unwritten. The user calls these JOBS; this file calls them
