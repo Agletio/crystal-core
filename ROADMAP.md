@@ -41,42 +41,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Mana, and what a skill costs [user 3a]
-
-**What is true today.** There is no mana anywhere: no resource on `Character`
-(`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
-cost on `SkillDef` (`src/types.ts`), no bar. A skill fires whenever
-`hero.cooldown <= 0` in `useSkill` (`src/sim/run.ts`), and the only thing that
-has ever limited one is time. `lifeRegen` is the shape a regenerating resource
-already has.
-
-**Why it is wrong.** Every node in every tree is an upgrade with no cost beside
-the point it took, so "more of everything" is always the right build.
-
-- [ ] Mana on the character: a pool, a regeneration rate, and a cost per skill
-      use. Same shape as life — a `CombatStats` field, so gear and the tree
-      reach it through the modifier engine without learning a new concept.
-- [ ] **The calibration, and it is the whole phase:** a level 1 character with
-      no attributes, no regeneration and no gear, casting a BARE skill with no
-      nodes, is just barely sustainable. Not comfortable. Measured against a
-      real descent, not a formula.
-- [ ] A node that changes what a skill DOES multiplies its cost. Bigger nodes
-      cost more, so stacking them is what makes a build mana-hungry — that is
-      the pressure this phase exists to create. A `manaMultiplier` grant with
-      a `product` merge is the mechanism; it is declared in `sim/grants.ts`
-      like every other switch and says its number out loud on the node.
-- [ ] What a character out of mana DOES. It cannot be "stand still" — the run
-      would never end, and `runToCompletion` would hang. Name it: walk to the
-      exit, fall back to an unarmed swing, or wait while regeneration catches
-      up with a floor on how long that can take.
-- [ ] A mana bar beside the life bar in the run readout, and on the sheet.
-
-**What must not break.** Every ladder harness in `src/demo.ts` measures what a
-band clears, and a skill that can run dry moves all of them. Measure before and
-after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
-character that cannot afford to attack is the newest way for one not to.
-
-### Phase 2 — Two potions, two charges [user 3b]
+### Phase 1 — Two potions, two charges [user 3b]
 
 **What is true today.** Nothing. There are no consumables, and — more to the
 point — **there is no player input during a descent at all.** The guided
@@ -130,7 +95,7 @@ arriving between ticks must land on a tick boundary like everything else, or
 the same seed stops giving the same run. `npm run smoke` and `npm run guide`
 both drive real descents.
 
-### Phase 3 — Character level buys attributes [user 7]
+### Phase 2 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -169,7 +134,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 4 — Trades: the part of a character that is not the skill
+### Phase 3 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -251,7 +216,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 5 — Every monster brings its own element [user 10]
+### Phase 4 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -307,7 +272,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 6 — What a node does, shown and not overlapped [user 8]
+### Phase 5 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -380,9 +345,12 @@ new and come out of the trade system.
    a Demonic aura and half a Prismatic one, where four Demonic crystals put an
    aura in every pack. Making it genuinely worst means changing what the
    composition does — both auras on one pack, or a Seam-only carrier — which is
-   a balance decision rather than a measurement. The demo now holds the Seam to
-   being within 5% of the hardest single world and PRINTS the margin, and
-   `CLAUDE.md` says it is an open question rather than a claim.
+   a balance decision rather than a measurement. The gap also MOVES several
+   percent either way whenever anything in the sim changes — mana shifted it,
+   potions shifted it back — so the demo holds the Seam to the same CLASS as the
+   hardest single world (within 15%) rather than to an ordering, and PRINTS the
+   margin so an answer has something to read. `CLAUDE.md` says it is an open
+   question rather than a claim.
 
 5. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
