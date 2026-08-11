@@ -89,8 +89,9 @@ makes a character feel like a build — took your first notable.
 - [ ] The craft is TRIGGERED, not queued. Nothing about crafting is taught at
       the meeting; when that crystal reaches level 2 by being used, the guide
       comes back on its own for the two steps that put a modifier on it, and
-      lets go again. `INTRO.scriptedMod` and the `shard_of_making` that comes
-      with it move to that trigger.
+      lets go again. `INTRO.scriptedMod` stays on the crystal from the moment
+      it is handed over — it is inert until there is a slot to fill — so what
+      moves to the trigger is the TEACHING and not the items.
 - [ ] The opening runs to the end of the first descent as it does now, plus one
       step: spend your first skill point. Then it LETS GO — lockdown off, and
       what it is waiting for said somewhere you can read it rather than in a
@@ -174,8 +175,9 @@ you can only watch has no moment in it that is yours.
 - [ ] Charges are RUN state, not save state: they live on `RunState`, and
       `RunSim` grows the one input it has ever had. Nothing about a potion is
       in `GameState` yet — the ways to modify them come later.
-- [ ] Bound to **1** and **2** through the bindings table from the camera
-      phase, not through literals.
+- [ ] Bound to **1** and **2** through `BINDINGS` in `src/data.ts` and the one
+      listener in `src/ui/keys.ts` — two more table entries, not two literals.
+      That table already exists; see `RULES.md`.
 - [ ] The tutorial's opening hint stops saying there is nothing to time, and
       the opening teaches the two keys somewhere. This is the first thing a
       player DOES in a fight and it cannot be a secret.

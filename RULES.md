@@ -32,7 +32,13 @@ One phase at a time, and **no stop between them**. Every pass:
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
 5. Commit and push. Push BEFORE starting the next phase, so the next session
-   to fetch sees the work rather than rebuilding it.
+   to fetch sees the work rather than rebuilding it — and because a session's
+   checkout is not guaranteed to survive: this working tree has been observed
+   resetting to the commit it started from, twice in one session, taking every
+   uncommitted and unpushed file with it. Both times the recovery was
+   `git fetch && git reset --hard origin/<branch>` and nothing was lost,
+   because each phase had been pushed as it went green. A phase's worth of
+   work held locally is a phase's worth of work you may be asked to do again.
 6. Update `ROADMAP.md`: delete the phase, renumber the rest, move anything that
    turned out to be wrong into its Open questions, and write down anything the
    next session would otherwise have to rediscover. Update this file if a rule
@@ -441,6 +447,17 @@ makes a gift unable to fail. Two screens read that list: `src/ui/crystals.ts`,
 where the collection is compared against four sockets, and the bench's own
 crystals column, which is the only route to crafting one.
 
+**One comparator orders every pile.** `sortGear(items)` in `src/game/state.ts`
+sorts in place — by equipment slot, then base tier, then modifier count, then
+name — and `sortInventory(game)` is one line calling it. The dock and the haul
+both use it, so the two screens cannot drift into ordering the same pieces
+differently, and the demo sorts one set of pieces as each and fails if the
+answers differ. Sorting the haul is not MOVING: it is inert, and a sort that
+took something out of it would be the one screen that spends your loot for you.
+The haul has exactly two buttons — Take what fits and Sell all — because two
+sell buttons side by side asked the player to care about a distinction nobody
+asked for.
+
 **A pile is searched by `itemMatches`** in `src/crafting.ts` — the dock and the
 haul both filter through it, over the piece's name, its base's name, kind and
 family, and every line printed on it. Substring, case-blind, no syntax. What it
@@ -622,7 +639,7 @@ a two-minute tool timeout will kill them mid-run:
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s, 454 checks |
+| `smoke` | ~10s, 463 checks |
 | `demo` | ~85s |
 | `shots` | ~3min — two viewports, each waiting out a whole first descent |
 | `guide` | ~2min |
