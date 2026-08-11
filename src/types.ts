@@ -296,6 +296,15 @@ export interface SkillDef {
   range: number; // in tiles
   vfxKind?: string; // a name, not a shape. Unset draws a generic line
   params?: Record<string, any>; // behaviour-specific knobs
+  grants?: Record<string, unknown>; // switches an EQUIPPED skill hands the sim
+}
+
+/** A slot a skill goes in. A table, so a fourth is one entry. */
+export interface SkillSlotDef {
+  id: string;
+  name: string;
+  accepts: SkillCategory[]; // which shelves may fill it
+  blurb: string; // what an empty one is for
 }
 
 /** What the figure is wearing, as art keys. Empty slots are simply absent. */

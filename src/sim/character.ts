@@ -1,5 +1,13 @@
 /** The character: what persists between runs. A run reports XP, this banks it. */
-import { ATTRIBUTE_BY_ID, ATTRIBUTE_STEP, LEVELLING } from '../data';
+import {
+  ATTRIBUTE_BY_ID,
+  ATTRIBUTE_STEP,
+  LEVELLING,
+  MAIN_SLOT,
+  SKILL_BY_ID,
+  SKILL_SLOTS,
+  SKILL_SLOT_BY_ID,
+} from '../data';
 import { treePointsFor } from '../skills-tree';
 import type { Item } from '../types';
 
@@ -23,7 +31,8 @@ export interface Character {
   xp: number;
   /** Slot id → worn item. Slots with nothing in them are simply absent. */
   equipment: Record<string, Item>;
-  skillId: string;
+  /** Slot id → skill id, over `SKILL_SLOTS`. An empty slot is simply absent. */
+  equipped: Record<string, string>;
   /** Per-skill levels and tree allocations, keyed by skill id. */
   skills: Record<string, SkillProgress>;
   /** Attribute id → points put in. What a character LEVEL bought, spent by
@@ -35,7 +44,38 @@ export function makeCharacter(
   equipment: Record<string, Item>,
   skillId: string
 ): Character {
-  return { name: 'Wanderer', level: 1, xp: 0, equipment, skillId, skills: {}, attributes: {} };
+  return {
+    name: 'Wanderer',
+    level: 1,
+    xp: 0,
+    equipment,
+    equipped: { [MAIN_SLOT]: skillId },
+    skills: {},
+    attributes: {},
+  };
+}
+
+/** What is in a slot, or null. Nothing else may read `equipped` directly. */
+export const equippedSkill = (character: Character, slotId: string): string | null =>
+  character.equipped?.[slotId] ?? null;
+
+/** The skill that swings. Every damage number in the game is this one's. */
+export const mainSkillId = (character: Character): string =>
+  equippedSkill(character, MAIN_SLOT) ?? '';
+
+/** Which slot a skill goes in, by its category. Null for a monster's. */
+export function slotForSkill(skillId: string): string | null {
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (!category) return null;
+  return SKILL_SLOTS.find((s) => s.accepts.includes(category))?.id ?? null;
+}
+
+/** IN PLACE. Refuses a skill the slot does not accept. */
+export function equipSkill(character: Character, skillId: string): boolean {
+  const slot = slotForSkill(skillId);
+  if (!slot || !SKILL_SLOT_BY_ID[slot]) return false;
+  character.equipped = { ...(character.equipped ?? {}), [slot]: skillId };
+  return true;
 }
 
 /** Level 1 buys nothing: the first level is the one you start on. */

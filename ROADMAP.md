@@ -15,12 +15,6 @@ each. The number in brackets is the user's own numbering within its batch, kept
 so a phase can be matched back to the ask — it says nothing about when to build
 it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
-**A character will end up holding three skills**, one from each of three slots
-— something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 1 changes it. Anything built
-before then that assumes one skill is something Phase 1 has to undo, so prefer
-`characterStats(character)` over reaching for `character.skillId` yourself.
-
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
 nothing here is tuned until every system is in, because attributes, trades and
 jobs each hand out more power than the last and anything tuned before them is
@@ -51,58 +45,13 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Three skill slots, and a skill to put in each [user 4]
-
-**What is true today.** A character has ONE skill — `Character.skillId` —
-and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
-in `src/data.ts` lists four kinds: spell, attack, passive, movement. Only the
-first two have entries in `SKILLS`; the other two say "Nothing here yet" and
-are empty. `src/ui/skills.ts` equips by writing `character.skillId`.
-
-**Why it is wrong.** A character is one ability. The intended shape is three at
-once — something that kills, something always on, and something that moves you
-— and neither of the last two exists to be equipped.
-
-- [ ] **Three slots, declared as a table** the way `EQUIP_SLOTS` and
-      `RUN_SLOTS` are, never three named fields: a `main` slot accepting
-      `spell` OR `attack`, a `passive` slot, a `movement` slot. One entry is
-      how a fourth ever gets added.
-- [ ] `Character.skillId` becomes that slot table's contents. `heal()` drops a
-      slot naming a skill that no longer exists, and a save written before this
-      puts its old `skillId` in `main` — the demo already holds every container
-      to being healed.
-- [ ] `characterStats` resolves the MAIN slot for damage, so every existing
-      harness keeps meaning what it meant. The passive and the movement skill
-      reach the sim as their own thing, not by being the skill that swings.
-- [ ] **The passive:** critical hits deal NO extra damage; instead, landing one
-      grants 40% more damage for 5 seconds. It is a TRADE, which is what makes
-      it worth a slot. The mechanism already exists — `TimedEffect` on the hero
-      from the potions phase — so this is an effect with a duration granted by
-      a crit rather than by a flask, and `critMultiplier` reads as 0 while it
-      is equipped. Its own line has to say both halves and both numbers.
-- [ ] **The movement:** a blink. Teleports the hero a short distance on a short
-      cooldown, to make crossing a map faster. It fires ITSELF — automation is
-      universal (`RULES.md`), so the shipped policy is what `runToCompletion`
-      runs: blink along the path you are already walking when it is off
-      cooldown and the way is clear. It may not put a body inside rock —
-      `RunSim.placeIn` and the `BODIES` demo section are what hold that.
-- [ ] Both new skills need art the way every other does, and a tree is NOT
-      required: `BUILT_TREES` is per skill and a skill with no web renders "no
-      web yet" already.
-- [ ] The welcome screen picks your first MAIN skill and says nothing about the
-      other two; how you get those is the same question as where any skill
-      comes from, and is not answered here.
-
-**What must not break.** `npm run demo` builds characters in a dozen places
-through `makeCharacter(equipment, skillId)`; that signature changing touches
-`ladderCharacter`, the tutorial walkthrough and the sheet harness. `npm run
-guide` equips a skill with a real pointer. The blink is a new way for a run to
-end early or never end — `TERMINATION CHECK` is the one that would catch it.
-
-### Phase 2 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 1 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
-row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
+row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar, with a
+`starved casts` row under it. `SKILL_SLOTS` and `Character.equipped` exist —
+`mainSkillId`, `equippedSkill` and `SKILL_SLOT_BY_ID[slot].blurb` are what the
+icons and the empty-slot line read. The
 character sheet (`src/ui/character.ts`) mixes stats belonging to the CHARACTER
 — life, armour, resistances, move speed, the mana pool and its regeneration —
 with stats belonging to the SKILL it happens to resolve: the damage breakdown,
@@ -110,11 +59,12 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 1) it cannot even be written down.
+and with three skills equipped it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
-      three skill icons, one per slot. `skillIcon(skillId, size)` in
-      `src/ui/icons.ts` already draws one.
+      three skill icons, one per slot, over `SKILL_SLOTS`. `skillIcon(skillId,
+      size)` in `src/ui/icons.ts` draws all four skills. The `starved casts`
+      row stays: it belongs to the run, not to a skill.
 - [ ] HOVER gives the short version. CLICK opens the character sheet at that
       skill's own section.
 - [ ] The sheet gains a section PER EQUIPPED SKILL holding everything only true
@@ -122,7 +72,8 @@ and with three skills equipped (Phase 1) it cannot even be written down.
       crit chance and crit damage, casts or attacks per second, reach. Those
       rows LEAVE the general stats, which keeps life, armour, resistances, move
       speed, regeneration, the mana pool and its regeneration.
-- [ ] An empty slot says what it is for. A dark square teaches nothing.
+- [ ] An empty slot says what it is for. A dark square teaches nothing, and
+      `SkillSlotDef.blurb` is already that sentence.
 - [ ] The sheet's right column now runs level → xp → skill line → ATTRIBUTES →
       Stats → Resistances. Attributes belong to the CHARACTER and stay where
       they are; the per-skill sections go below them.
@@ -132,7 +83,7 @@ and with three skills equipped (Phase 1) it cannot even be written down.
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 3 — Trades: the part of a character that is not the skill
+### Phase 2 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -214,7 +165,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 4 — Every monster brings its own element [user 10]
+### Phase 3 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -270,7 +221,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 5 — What a node does, shown and not overlapped [user 8]
+### Phase 4 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

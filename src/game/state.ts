@@ -20,7 +20,7 @@ import {
 import type { EquipSlotDef, RunSlotDef } from '../types';
 import { canSell, grant, makeCrystal, makeGear, makeUnique, sellPrice } from '../economy';
 import { baseTier } from '../mods';
-import { makeCharacter } from '../sim/character';
+import { mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
@@ -206,7 +206,7 @@ export function grantFirstClear(game: GameState): {
 /** The first weapon, picked off the SKILL. Marked, because the guided opening
  *  rings this piece and every looser reading let a drop satisfy the step. */
 export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlace } | null {
-  const base = starterWeapon(SKILL_BY_ID[game.character.skillId]);
+  const base = starterWeapon(SKILL_BY_ID[mainSkillId(game.character)]);
   if (!base) return null;
   const item = makeGear(base, 1);
   item.meta.firstClear = true;

@@ -20,7 +20,11 @@ import {
   monsterResStat,
   LEVELLING,
   ENCOUNTERS,
+  MAIN_SKILLS,
+  MAIN_SLOT,
   PLAYER_SKILLS,
+  SKILL_SLOTS,
+  SKILL_SLOT_BY_ID,
   AURA,
   AURAS,
   AURA_BY_ID,
@@ -97,6 +101,7 @@ import type { PoseId } from './render/pose';
 import {
   characterStats,
   convertedType,
+  heroStats,
   damageBreakdown,
   damageDetail,
   monsterStats,
@@ -107,7 +112,14 @@ import {
 import { damageWorkings, readWorkings } from './damage-text';
 import { describeStatLine } from './mod-text';
 import { SKILL_BEHAVIOURS } from './sim/skills';
-import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants, starvedMultiplier } from './sim/grants';
+import {
+  GRANT_BY_ID,
+  STATS,
+  behaviourReads,
+  critBuff,
+  mergeGrants,
+  starvedMultiplier,
+} from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import {
   BUILT_TREES,
@@ -126,6 +138,10 @@ import {
   attributePointsFor,
   attributePointsLeft,
   attributesSpent,
+  equipSkill,
+  equippedSkill,
+  mainSkillId,
+  slotForSkill,
   makeCharacter,
   pointsAvailable,
   skillProgress,
@@ -1543,10 +1559,10 @@ rule('GUIDED OPENING — does every step actually complete?');
   const targetless: string[] = [];
   const MARKUP = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
 
-  const mine = game.character.skillId;
+  const mine = mainSkillId(game.character);
   const myCategory = SKILL_BY_ID[mine]!.category!;
   const elsewhere = SKILL_CATEGORIES.find((c) => c.id !== myCategory)!.id;
-  const another = PLAYER_SKILLS.find((s) => s.id !== mine)!.id;
+  const another = MAIN_SKILLS.find((s) => s.id !== mine)!.id;
 
   /** Every surface a step could be pointing at when it fires. */
   const SITUATIONS: GuideCtx[] = [
@@ -1811,7 +1827,7 @@ rule('GUIDED OPENING — does every step actually complete?');
   // weapon added after.
   {
     const wrong: string[] = [];
-    for (const skill of PLAYER_SKILLS) {
+    for (const skill of MAIN_SKILLS) {
       const at = createGame('fresh');
       at.character = makeCharacter({}, skill.id);
       const mine = lampwrightWeapon(at)?.item;
@@ -2585,7 +2601,7 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
 {
   const game = createGame('dev');
   for (const skillId of ['strike', 'fireball', 'blight']) {
-    game.character.skillId = skillId;
+    equipSkill(game.character, skillId);
     const detail = damageDetail(game.character);
     const parts = detail.breakdown.parts.reduce((n, p) => n + p.total, 0);
     check(
@@ -2598,7 +2614,7 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
   // The question the tags invite: flat damage of a type your skill does not
   // deal still counts, and it stays THAT type. Only the skill's own damage is
   // poison, which is what makes a cold ring different from a fire one.
-  game.character.skillId = 'blight';
+  equipSkill(game.character, 'blight');
   const blight = damageDetail(game.character);
   check(
     blight.breakdown.baseType === 'poison',
@@ -2649,7 +2665,7 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
     `${blight.seconds}s, ${blight.maxStacks} stacks`
   );
 
-  game.character.skillId = 'strike';
+  equipSkill(game.character, 'strike');
   check(
     damageDetail(game.character).seconds === 0,
     'and a skill that hits reports no duration at all',
@@ -2670,7 +2686,7 @@ rule('THE SHEET — does every number on it survive being checked?');
 {
   /** Characters worth checking: every skill, bare and deep into its own tree. */
   const subjects: Array<{ name: string; character: Character }> = [];
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     for (const [label, level, walkTo] of [
       ['bare, level 1', 1, 0],
       ['geared, level 20', 20, 0],
@@ -2678,7 +2694,7 @@ rule('THE SHEET — does every number on it survive being checked?');
       ['a deep tree', 40, 40],
     ] as Array<[string, number, number]>) {
       const character = createGame(walkTo === 0 && level === 1 ? 'fresh' : 'dev').character;
-      character.skillId = skill.id;
+      equipSkill(character, skill.id);
       character.level = level;
       const progress = skillProgress(character, skill.id);
       // A real walk, not a random set: allocation rules are what decide which
@@ -2722,7 +2738,7 @@ rule('THE SHEET — does every number on it survive being checked?');
   // A random walk found no node that scales an ailment DOWN, and one of those
   // is exactly what made the sheet disagree with itself. Every node that
   // touches a damage multiplier gets walked to on purpose, choices and all.
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     for (const node of treeFor(skill.id)) {
       const options = node.choices?.length ? node.choices.map((c) => c.id) : [null];
       for (const choice of options) {
@@ -2732,7 +2748,7 @@ rule('THE SHEET — does every number on it survive being checked?');
         const path = pathTo(skill.id, node.id);
         if (path.length === 0) continue;
         const character = createGame('dev').character;
-        character.skillId = skill.id;
+        equipSkill(character, skill.id);
         character.level = 30;
         const progress = skillProgress(character, skill.id);
         progress.allocated = path;
@@ -2799,7 +2815,7 @@ rule('THE SHEET — does every number on it survive being checked?');
     const bare = damageBreakdown(
       statMods(character),
       character.level,
-      effectiveSkill(SKILL_BY_ID[character.skillId], treeGrants(character)),
+      effectiveSkill(SKILL_BY_ID[mainSkillId(character)], treeGrants(character)),
       treeGrants(character)
     );
     if (!near(bare.total, stats.damage)) {
@@ -2889,10 +2905,10 @@ rule('THE SHEET — does every number on it survive being checked?');
   };
 
   const mismatched: string[] = [];
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     for (const walkTo of [0, 12, 30]) {
       const character = createGame('dev').character;
-      character.skillId = skill.id;
+      equipSkill(character, skill.id);
       character.level = 24;
       const progress = skillProgress(character, skill.id);
       const tree = treeFor(skill.id);
@@ -3568,6 +3584,146 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
 }
 
 // ===========================================================================
+rule('THREE SLOTS — one that kills, one always on, one that moves you');
+
+// A character is three skills now, and the two new ones never cast: a passive
+// is its `grants` and a movement skill is params the sim fires itself. What
+// can break quietly is a slot accepting the wrong shelf, a save losing the
+// skill it was swinging, or a trade that took something away and gave nothing.
+{
+  line(`  ${SKILL_SLOTS.map((s) => `${s.name}: ${s.accepts.join('/')}`).join(' · ')}`);
+  check(
+    SKILL_SLOTS.length === 3
+      && SKILL_SLOT_BY_ID[MAIN_SLOT]?.accepts.join(',') === 'spell,attack'
+      && SKILL_SLOTS.every((s) => s.accepts.length > 0 && s.blurb.length > 0),
+    'three slots, declared as a table, and every one says what it is for',
+    SKILL_SLOTS.map((s) => s.id).join(', ')
+  );
+  // Every shelf fills exactly one slot, and every slot has something to put in
+  // it — an empty shelf is a slot nobody can fill.
+  const homeless = PLAYER_SKILLS.filter((s) => !slotForSkill(s.id));
+  const bare = SKILL_SLOTS.filter((slot) => !PLAYER_SKILLS.some((s) => slotForSkill(s.id) === slot.id));
+  check(
+    homeless.length === 0 && bare.length === 0,
+    'every skill has a slot and every slot has a skill',
+    `${homeless.map((s) => s.id).join(', ')} / ${bare.map((s) => s.id).join(', ')}`
+  );
+  // A slot refuses what it does not accept: equipping the blink must never be
+  // the thing that stops you swinging.
+  {
+    const c = makeCharacter({}, 'strike');
+    equipSkill(c, 'blink');
+    equipSkill(c, 'surge');
+    check(
+      mainSkillId(c) === 'strike'
+        && equippedSkill(c, 'movement') === 'blink'
+        && equippedSkill(c, 'passive') === 'surge',
+      'and equipping one lands in its own slot without displacing the others',
+      JSON.stringify(c.equipped)
+    );
+  }
+
+  // The passive is a TRADE, and both halves have to hold at once.
+  {
+    const withIt = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+    equipSkill(withIt, 'surge');
+    const buff = critBuff(treeGrants(withIt));
+    // Against a real crit-damage line, since the hero's own base is 0: what
+    // the passive takes away is whatever you found, not a number nobody had.
+    const savage: RolledMod = {
+      entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
+      name: 'probe', tier: 1, tags: [],
+      stats: [{ stat: 'critMultiplier', form: 'flat', value: 40, tags: [] }],
+    };
+    const strike = SKILL_BY_ID.strike;
+    const kept = heroStats([savage], 1, strike, {}).critMultiplier;
+    const lost = heroStats([savage], 1, strike, treeGrants(withIt)).critMultiplier;
+    line(
+      `  crit damage ×${(2 + kept / 100).toFixed(2)} bare, ×${(2 + lost / 100).toFixed(2)} ` +
+        `with the passive, for ${buff?.more}% more for ${buff?.seconds}s`
+    );
+    check(
+      kept > 0 && lost === 0 && !!buff && buff.more > 0 && buff.seconds > 0,
+      'the passive takes crit damage away and gives a window back — both halves',
+      `${kept} then ${lost}, ${JSON.stringify(buff)}`
+    );
+    const said = GRANT_BY_ID.critIntoBuff?.say?.(SKILL_BY_ID.surge.grants!.critIntoBuff);
+    check(
+      typeof said === 'string' && /\d/.test(said) && said.split(/\d+/).length >= 3,
+      'and says both numbers, out of the grant rather than its own prose',
+      String(said)
+    );
+    // It has to land in a real fight. Crit forced to certain, so this measures
+    // the mechanism rather than the seed's luck.
+    const sim = new RunSim([], withIt, new Rng(4242));
+    sim.state.hero.stats.critChance = 100;
+    let seen = false;
+    for (let i = 0; i < 4000 && sim.state.status === 'running'; i++) {
+      sim.step(TICK);
+      if (sim.state.hero.effects.some((e) => e.id === 'crit_surge')) seen = true;
+    }
+    check(seen, 'and a crit in a real descent arms it', 'the buff never appeared');
+  }
+
+  // The movement skill fires ITSELF, and may never put a body in rock.
+  {
+    const walker = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+    equipSkill(walker, 'blink');
+    let inRock = 0;
+    let blinks = 0;
+    let cleared = 0;
+    const seeds = [3, 11, 29, 47, 5, 13];
+    for (const seed of seeds) {
+      const sim = new RunSim([], walker, new Rng(seed * 7));
+      const grid = sim.state.map.grid;
+      for (let k = 0; k < 6000 && sim.state.status === 'running'; k++) {
+        sim.step(TICK);
+        if (!grid.walkable(sim.state.hero.x, sim.state.hero.y)) inRock++;
+      }
+      if (sim.state.status === 'cleared') cleared++;
+      blinks += sim.state.blinks;
+    }
+    line(`  ${blinks} blinks over ${seeds.length} descents, ${cleared} cleared, ${inRock} ticks in rock`);
+    check(
+      blinks > 0 && inRock === 0,
+      'the blink fires itself with nobody watching, and never lands in rock',
+      `${blinks} blinks, ${inRock} ticks inside a wall`
+    );
+    // A new way for a run to end early or never end. Both, on the same seeds.
+    const ends = seeds.every((seed) => {
+      const sim = new RunSim([], walker, new Rng(seed * 13));
+      return runToCompletion(sim, 800).status !== 'running';
+    });
+    check(ends, 'and every descent it is in still ends', 'a blinking run never finished');
+  }
+
+  // A save written before slots existed. The demo already holds every
+  // container to being healed; this is the same rule for what you swing.
+  {
+    const old = createGame('fresh');
+    delete (old.character as unknown as { equipped?: unknown }).equipped;
+    (old.character as unknown as { skillId?: string }).skillId = 'blight';
+    heal(old);
+    check(
+      mainSkillId(old.character) === 'blight'
+        && (old.character as unknown as { skillId?: string }).skillId === undefined,
+      'a save that predates the slots puts what it was swinging in the main one',
+      JSON.stringify(old.character.equipped)
+    );
+    const cut = createGame('fresh');
+    cut.character.equipped = { main: 'gone', passive: 'surge', movement: 'surge' };
+    heal(cut);
+    check(
+      SKILL_BY_ID[mainSkillId(cut.character)] !== undefined
+        && equippedSkill(cut.character, 'passive') === 'surge'
+        && equippedSkill(cut.character, 'movement') === null,
+      'and a slot naming a cut skill — or the wrong shelf — empties rather than sticking',
+      JSON.stringify(cut.character.equipped)
+    );
+  }
+}
+
+// ===========================================================================
 rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
 
 // A level hands out points, the sheet spends them, and everything downstream
@@ -3717,7 +3873,7 @@ rule('MANA — is a bare skill just barely sustainable?');
   // because the rates do, which is the only reason the table holds three
   // different figures.
   const off: string[] = [];
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     const perSecond = skill.manaCost * HERO_BASE.attacksPerSecond * skill.rateMultiplier;
     const drift = Math.abs(perSecond - MANA.costPerSecond) / MANA.costPerSecond;
     line(
@@ -3736,7 +3892,7 @@ rule('MANA — is a bare skill just barely sustainable?');
   // for the skill, so it is the same number whatever the skill's rate.
   const dryShare: number[] = [];
   const unclear: string[] = [];
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     const hero = makeCharacter({}, skill.id);
     let dry = 0;
     let casts = 0;
@@ -3970,7 +4126,7 @@ rule('TERMINATION CHECK — does every run actually end?');
   // this is that promise held against a pool it can never fill.
   {
     const broke: string[] = [];
-    for (const skill of PLAYER_SKILLS) {
+    for (const skill of MAIN_SKILLS) {
       const hero = makeCharacter({}, skill.id);
       const sim = new RunSim([], hero, new Rng(6161));
       // Nothing to spend and nothing coming back, which no real character can
@@ -4647,7 +4803,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
   // A weapon picked off the SKILL. A Strike character handed a wand is the
   // first item the game gives you and the first one it teaches you to craft.
   const bySkill: string[] = [];
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     const g = createGame('fresh');
     g.character = makeCharacter({}, skill.id);
     const given = lampwrightWeapon(g);
@@ -4723,7 +4879,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'and the clear it banked is counted',
       String(g.clears)
     );
-    const mine = g.character.skillId;
+    const mine = mainSkillId(g.character);
     const progress = skillProgress(g.character, mine);
     check(
       giftWaiting(g) === null &&
@@ -5024,7 +5180,7 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 {
   const undeclared: string[] = [];
   const unread: string[] = [];
-  const behaviours = new Set(PLAYER_SKILLS.map((s) => s.behaviour));
+  const behaviours = new Set(MAIN_SKILLS.map((s) => s.behaviour));
   for (const u of UNIQUES) {
     for (const key of Object.keys(u.grants ?? {})) {
       const def = GRANT_BY_ID[key];
@@ -5162,7 +5318,7 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 rule('THE SAVE — does a save survive the game changing under it?');
 {
   const game = createGame('dev');
-  game.character.skillId = 'fireball';
+  equipSkill(game.character, 'fireball');
   const progress = skillProgress(game.character, 'fireball');
   progress.level = 30;
 
@@ -5189,7 +5345,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     { ...game.inventory[0], id: 'haul_ghost', base: 'base_that_was_renamed' },
   ]);
   game.wallet.shard_of_something_removed = 9;
-  game.character.skillId = 'a_skill_that_was_cut';
+  (game.character as any).equipped.main = 'a_skill_that_was_cut';
 
   // A socket is a place an item lives, so it rots the same way a worn slot
   // does — and a run launched from a crystal whose level was cut would be
@@ -5280,9 +5436,9 @@ rule('THE SAVE — does a save survive the game changing under it?');
     );
   }
   check(
-    SKILL_BY_ID[game.character.skillId] !== undefined,
+    SKILL_BY_ID[mainSkillId(game.character)] !== undefined,
     'a cut skill is replaced by a real one',
-    game.character.skillId
+    mainSkillId(game.character)
   );
   check(
     progress.allocated.every((id) => nodeById('fireball', id) !== undefined),
@@ -5320,7 +5476,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
   // beyond it has no way home any more and has to come back as points.
   {
     const deep = createGame('dev');
-    deep.character.skillId = 'fireball';
+    equipSkill(deep.character, 'fireball');
     const walk = skillProgress(deep.character, 'fireball');
     walk.level = 30;
 

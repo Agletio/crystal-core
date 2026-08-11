@@ -15,12 +15,14 @@ import {
   findStat,
   monsterResStat,
   SKILL_BY_ID,
+  SKILL_SLOTS,
+  MAIN_SLOT,
   UNIQUE_BY_ID,
 } from '../data';
-import { attributeSteps, equippedItems } from './character';
+import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
-import { mergeGrants } from './grants';
+import { critBuff, mergeGrants } from './grants';
 import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
@@ -205,7 +207,7 @@ export interface DamageDetail {
 export function damageDetail(character: Character): DamageDetail {
   const stats = characterStats(character);
   const grants = treeGrants(character);
-  const skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], grants);
+  const skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], grants);
 
   const overTime = skill.behaviour === 'ailment_burst';
   const seconds = overTime ? ailmentSeconds(skill, grants) : 0;
@@ -267,7 +269,10 @@ export function heroStats(
       computeStat(skill.manaCost, mods, 'manaCost') *
         ((grants.manaMultiplier as number) ?? 1)
     ),
-    critMultiplier: computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
+    // The passive's half of its own trade: no extra damage on a crit at all.
+    critMultiplier: critBuff(grants)
+      ? 0
+      : computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
     // Percentages with no base to scale — see percentStat.
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
@@ -298,15 +303,16 @@ export function heroStats(
  * aggregation as gear rather than a second parallel system that drifts.
  */
 export function treeMod(character: Character): RolledMod | null {
-  const progress = character.skills[character.skillId];
+  const skillId = mainSkillId(character);
+  const progress = character.skills[skillId];
   if (!progress || progress.allocated.length === 0) return null;
 
-  const skill = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  const skill = SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0];
   const grants = treeGrants(character);
   const converted = convertedType(skill, grants);
 
   const stats = progress.allocated
-    .flatMap((id) => nodeById(character.skillId, id)?.stats ?? [])
+    .flatMap((id) => nodeById(skillId, id)?.stats ?? [])
     .map((s) => ({
       stat: s.stat,
       form: s.form,
@@ -357,10 +363,10 @@ export function attributeMod(character: Character): RolledMod | null {
  *  last, so a unique bought with a downside wins a tie against a node. */
 export function treeGrants(character: Character): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  const progress = character.skills[character.skillId];
+  const progress = character.skills[mainSkillId(character)];
 
   for (const id of progress?.allocated ?? []) {
-    const node = nodeById(character.skillId, id);
+    const node = nodeById(mainSkillId(character), id);
     // A choice node gives the option you picked, and nothing until you pick.
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
     mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
@@ -368,6 +374,13 @@ export function treeGrants(character: Character): Record<string, unknown> {
   for (const worn of equippedItems(character)) {
     const def = UNIQUE_BY_ID[String(worn.meta.unique)];
     if (def?.grants) mergeGrants(out, def.grants);
+  }
+  // The other two slots. A passive never casts and has no delivery of its own:
+  // its `grants` ARE the skill, and they land on the one that swings.
+  for (const slot of SKILL_SLOTS) {
+    if (slot.id === MAIN_SLOT) continue;
+    const held = SKILL_BY_ID[equippedSkill(character, slot.id) ?? ''];
+    if (held?.grants) mergeGrants(out, held.grants);
   }
   return out;
 }
@@ -414,7 +427,7 @@ export function statMods(character: Character): RolledMod[] {
 
 /** Stats for a character, resolving its selected skill, gear and tree. */
 export function characterStats(character: Character): CombatStats {
-  const base = SKILL_BY_ID[character.skillId] ?? SKILLS[0];
+  const base = SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0];
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
   const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);

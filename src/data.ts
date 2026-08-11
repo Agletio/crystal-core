@@ -1,5 +1,6 @@
 import type {
   AttributeDef,
+  SkillSlotDef,
   CurrencyClass,
   CurrencyDef,
   EquipSlotDef,
@@ -2636,6 +2637,45 @@ export const SKILLS: SkillDef[] = [
      */
     params: { radius: 0.9, duration: 10 },
   },
+
+  // The passive, and a TRADE — which is what makes it worth a slot. It never
+  // casts: `critIntoBuff` is the whole of it, read out of `GRANTS`.
+  {
+    id: 'surge',
+    name: 'Killing Surge',
+    category: 'passive',
+    description:
+      'Critical hits deal no extra damage. Landing one grants 35% more damage for 5 seconds.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { critIntoBuff: { more: 35, seconds: 5 } },
+  },
+
+  // Never cast either: `RunSim` reads these params off the equipped slot and
+  // fires it ITSELF, because automation is universal.
+  {
+    id: 'blink',
+    name: 'Blink',
+    category: 'movement',
+    description:
+      'Step up to 5 tiles along the way you are already walking, once every 3 seconds.',
+    tags: ['movement'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    vfxKind: 'blink',
+    params: { distance: 5, cooldown: 3 },
+  },
 ];
 
 export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(
@@ -2653,12 +2693,47 @@ export const SKILL_CATEGORIES: Array<{
 }> = [
   { id: 'spell', name: 'Spells', blurb: 'Cast. Scales with cast speed.' },
   { id: 'attack', name: 'Attacks', blurb: 'Swung. Scales with attack speed.' },
-  { id: 'passive', name: 'Passive Skills', blurb: 'Always on. Nothing here yet.' },
-  { id: 'movement', name: 'Movement', blurb: 'Getting out of the way. Nothing here yet.' },
+  { id: 'passive', name: 'Passive Skills', blurb: 'Always on, and always a trade.' },
+  { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.' },
 ];
+
+/** The three a character holds at once, as a TABLE like `EQUIP_SLOTS`: a
+ *  fourth is one entry rather than a fourth named field. */
+export const SKILL_SLOTS: SkillSlotDef[] = [
+  {
+    id: 'main',
+    name: 'Main',
+    accepts: ['spell', 'attack'],
+    blurb: 'What you kill with. Every damage number on the sheet is this one.',
+  },
+  {
+    id: 'passive',
+    name: 'Passive',
+    accepts: ['passive'],
+    blurb: 'Always on, and paid for by giving something up.',
+  },
+  {
+    id: 'movement',
+    name: 'Movement',
+    accepts: ['movement'],
+    blurb: 'Ground covered. It fires itself, like the flasks.',
+  },
+];
+
+/** The slot whose skill swings. Everything measured is measured on it. */
+export const MAIN_SLOT = 'main';
+
+export const SKILL_SLOT_BY_ID: Record<string, SkillSlotDef> = Object.fromEntries(
+  SKILL_SLOTS.map((s) => [s.id, s])
+);
 
 /** Skills you can actually pick. Monster-only entries have no category. */
 export const PLAYER_SKILLS = SKILLS.filter((s) => s.category);
+
+/** What the MAIN slot takes: everything that swings and is measured. */
+export const MAIN_SKILLS = PLAYER_SKILLS.filter((s) =>
+  SKILL_SLOT_BY_ID[MAIN_SLOT].accepts.includes(s.category!)
+);
 
 export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);

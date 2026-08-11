@@ -204,6 +204,36 @@ thing an item can do that cannot be undone. The bulk button in the shop takes
 every carried piece no currency has touched, which is why it can never eat a
 decision.
 
+## Three skills at once
+
+`SKILL_SLOTS` in `data.ts` is a TABLE like `EQUIP_SLOTS` and `RUN_SLOTS`, never
+three named fields: **main** (accepting spell OR attack), **passive** and
+**movement**. `Character.equipped` is slot id → skill id, `mainSkillId` is what
+swings, and every damage number in the game is that one's. `equipSkill` puts a
+skill in the slot its category names and refuses anything else, so equipping
+the blink can never be what stops you swinging. `heal()` empties a slot naming
+a skill that is gone and puts a pre-slots save's bare `skillId` in the main one.
+
+**Killing Surge**, the passive, is a TRADE and that is what makes it worth a
+slot: critical hits deal NO extra damage, and landing one grants 35% more
+damage for 5 seconds. It never casts — the `critIntoBuff` grant IS the skill,
+declared in `sim/grants.ts` like a tree node's, merged by `treeGrants` and read
+in two places: `heroStats` reads `critMultiplier` as 0 while it is equipped,
+and `dealDamage` arms a `TimedEffect` on the hero from the crit that lands.
+The buff refreshes rather than stacking, and the crit that grants it never hits
+harder for doing so.
+
+**Blink**, the movement skill, fires ITSELF — automation is universal, so the
+shipped policy is what `runToCompletion` runs. `RunSim.maybeBlink` steps to the
+furthest waypoint of the path already found within `distance` tiles that is
+walkable and has a clear line to it, once every `cooldown` seconds, so it never
+lands a body in rock and never cuts a corner the walk could not.
+`RunState.blinks` counts them.
+
+Neither has a tree, and neither needs one: `BUILT_TREES` is per skill and a
+skill with no web renders "no web yet". `MAIN_SKILLS` is what the main slot
+takes and is what every harness that builds a character to fight with reads.
+
 ## What a level buys
 
 **Attributes** (`ATTRIBUTES`, `ATTRIBUTE_STEP` in `data.ts`). A character level

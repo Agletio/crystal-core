@@ -16,7 +16,10 @@ import {
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
   GEAR_BASE_BY_ID,
+  MAIN_SKILLS,
+  MAIN_SLOT,
   PLAYER_SKILLS,
+  SKILL_SLOTS,
   POTION_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -270,6 +273,29 @@ function replayAttributes(character: Character): number {
   return lost;
 }
 
+/**
+ * The three skill slots. A slot naming a skill that is gone empties; a save
+ * written before slots existed carries a bare `skillId`, and that goes in the
+ * main one. A character with nothing to swing is given the first skill there
+ * is, because a game you cannot play is worse than a lost choice.
+ */
+function healSkillSlots(character: Character): boolean {
+  const was = JSON.stringify(character.equipped ?? {});
+  const legacy = (character as unknown as { skillId?: string }).skillId;
+  const kept: Record<string, string> = {};
+
+  for (const slot of SKILL_SLOTS) {
+    const held = character.equipped?.[slot.id] ?? (slot.id === MAIN_SLOT ? legacy : undefined);
+    const category = held ? SKILL_BY_ID[held]?.category : undefined;
+    if (held && category && slot.accepts.includes(category)) kept[slot.id] = held;
+  }
+  if (!kept[MAIN_SLOT]) kept[MAIN_SLOT] = MAIN_SKILLS[0]?.id ?? PLAYER_SKILLS[0]?.id ?? 'strike';
+
+  character.equipped = kept;
+  delete (character as unknown as { skillId?: string }).skillId;
+  return JSON.stringify(kept) !== was;
+}
+
 /** IN PLACE. Everything the current build cannot resolve, gone. */
 export function heal(game: GameState): Healed {
   const out: Healed = { items: 0, currencies: 0, points: 0, skill: false };
@@ -395,10 +421,7 @@ export function heal(game: GameState): Healed {
 
   out.points += replayAttributes(game.character);
 
-  if (!SKILL_BY_ID[game.character.skillId]) {
-    game.character.skillId = PLAYER_SKILLS[0]?.id ?? 'strike';
-    out.skill = true;
-  }
+  out.skill = healSkillSlots(game.character);
   return out;
 }
 

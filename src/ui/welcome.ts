@@ -2,7 +2,8 @@
  * First run: one question — how do you want to fight — then straight into the
  * Fissure. The bench waits until you have something to spend.
  */
-import { PLAYER_SKILLS } from '../data';
+import { MAIN_SKILLS } from '../data';
+import { equipSkill } from '../sim/character';
 import { skillIcon } from './icons';
 import type { GameState } from '../game/state';
 
@@ -27,7 +28,7 @@ function render(): void {
 
   // Yours only. Monsters have skills too, and offering a husk's fire bolt as
   // a starting choice would be offering a skill with no tree behind it.
-  for (const skill of PLAYER_SKILLS) {
+  for (const skill of MAIN_SKILLS) {
     const card = el('button', 'welcomecard') as HTMLButtonElement;
     card.append(skillIcon(skill.id, 52));
     card.append(el('span', 'welcomecard__name', skill.name));
@@ -37,7 +38,7 @@ function render(): void {
       // stopped at the door for not wanting to name themselves.
       const typed = ($('welcome-name') as HTMLInputElement).value.trim();
       game.character.name = typed.slice(0, 24) || 'Wanderer';
-      game.character.skillId = skill.id;
+      equipSkill(game.character, skill.id);
       game.onboarded = true;
       $('welcome').hidden = true;
       onChosen?.(guided);

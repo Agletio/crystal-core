@@ -16,7 +16,7 @@ import { INTRO, POTIONS, SKILL_BY_ID } from "../data";
 import { carryRoom, craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
 import { crystalEarned, ownedCrystals } from "../game/crystals";
-import { pointsAvailable, skillProgress } from "../sim/character";
+import { mainSkillId, pointsAvailable, skillProgress } from "../sim/character";
 import { pathToNotable } from "../skills-tree";
 import { modCapacity } from "../mods";
 import { keyFor, keyName } from "./keys";
@@ -112,7 +112,7 @@ const takeable = (g: GameState): boolean =>
 
 /** The active skill's tree, and how far off a notable is from where it stands. */
 const treeOf = (g: GameState) => {
-  const skillId = g.character.skillId;
+  const skillId = mainSkillId(g.character);
   const progress = skillProgress(g.character, skillId);
   return { skillId, progress, path: pathToNotable(skillId, progress.allocated) };
 };

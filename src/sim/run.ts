@@ -21,8 +21,8 @@ import {
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
-import { starvedMultiplier } from './grants';
-import { monsterXp } from './character';
+import { critBuff, starvedMultiplier } from './grants';
+import { equippedSkill, mainSkillId, monsterXp } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
@@ -82,6 +82,9 @@ const AT_EXIT = 0.5;
 
 /** How far off the hole the Lampwright steps: out of it, still beside it. */
 const GREET_STEP = 1.6;
+
+/** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
+const CRIT_BUFF = 'crit_surge';
 
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
@@ -274,6 +277,8 @@ export interface RunState {
   damageTaken: Record<string, number>;
   /** Swings that could not pay, and swings in all: the calibration is a share. */
   dryCasts: number;
+  /** Times the movement skill fired. Zero without one equipped. */
+  blinks: number;
   casts: number;
   /** Potion charges left this descent, by id. A descent always begins full. */
   charges: Record<string, number>;
@@ -303,6 +308,10 @@ export class RunSim {
   private useCrit: boolean | null = null;
   /** True for the length of a cast the hero could not pay for. */
   private starved = false;
+  /** Seconds until the movement skill can fire again. */
+  private blinkIn = 0;
+  /** The movement skill in the slot, resolved once. Null without one. */
+  private readonly mover: SkillDef | null;
   /** How many times the hero has cast, for nodes that count casts. */
   private casts = 0;
   /** Set once the closing encounter has been triggered. */
@@ -333,10 +342,11 @@ export class RunSim {
     this.rng = rng;
     this.options = options;
     this.grants = treeGrants(character);
+    this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
     // The tree can change what the skill IS — its damage type, its tags — and
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
-    this.skill = effectiveSkill(SKILL_BY_ID[character.skillId] ?? SKILLS[0], this.grants);
+    this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
     this.set = runSet(crystals);
 
     // Sockets are the only thing that lengthens a descent. An empty Fissure is
@@ -362,7 +372,7 @@ export class RunSim {
       facing: 0,
       action: 'idle',
       radius: HERO_BASE.radius,
-      skillId: character.skillId,
+      skillId: mainSkillId(character),
       actionTimer: 0,
       deathAge: 0,
       ailments: [],
@@ -398,6 +408,7 @@ export class RunSim {
       loot: { currency: {}, items: [] },
       set: this.set,
       dryCasts: 0,
+      blinks: 0,
       casts: 0,
       charges: Object.fromEntries(POTIONS.map((p) => [p.id, p.charges])),
       drunk: 0,
@@ -722,6 +733,7 @@ export class RunSim {
     const hero = s.hero;
 
     if (hero.cooldown > 0) hero.cooldown -= dt;
+    if (this.blinkIn > 0) this.blinkIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
@@ -1073,6 +1085,7 @@ export class RunSim {
       e.pathTimer = 0.4 + this.rng.float(0, 0.25);
       if (e.path.length === 0) return false;
     }
+    if (e.kind === 'hero') this.maybeBlink(e);
 
     const startX = e.x;
     const startY = e.y;
@@ -1103,6 +1116,32 @@ export class RunSim {
     if (moved) this.face(e, e.x + (e.x - startX), e.y + (e.y - startY));
     this.settleAction(e, moved);
     return true;
+  }
+
+  /** The movement skill, firing ITSELF, along the path already found: the
+   *  furthest waypoint in reach with a clear line to it, so it never lands a
+   *  body in rock and never cuts a corner the walk could not. */
+  private maybeBlink(hero: Entity): void {
+    const skill = this.mover;
+    if (!skill || this.blinkIn > 0 || hero.path.length === 0) return;
+
+    const reach = (skill.params?.distance as number) ?? 0;
+    const grid = this.state.map.grid;
+    let landing: Vec2 | null = null;
+    let steps = 0;
+    for (const wp of hero.path) {
+      if (dist(hero, wp) > reach) break;
+      steps++;
+      if (grid.walkable(wp.x, wp.y) && hasLineOfSight(grid, hero, wp)) landing = wp;
+    }
+    if (!landing || steps === 0) return;
+
+    this.emit('blink', [{ x: hero.x, y: hero.y }, { x: landing.x, y: landing.y }], 'physical', 0.25);
+    hero.x = landing.x;
+    hero.y = landing.y;
+    hero.path = hero.path.slice(steps);
+    this.state.blinks++;
+    this.blinkIn = (skill.params?.cooldown as number) ?? 1;
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
@@ -1244,6 +1283,10 @@ export class RunSim {
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
+    // From a crit that landed BEFORE this one: the crit granting it never
+    // hits harder for doing so.
+    const buff = attacker.kind === 'hero' ? critBuff(this.grants) : null;
+    if (buff && attacker.effects.some((e) => e.id === CRIT_BUFF)) scale *= 1 + buff.more / 100;
 
     // Resistance applies to ONE type's damage, never to a summed total, or
     // fire resistance would reduce the physical half of the same hit. Armour
@@ -1291,6 +1334,14 @@ export class RunSim {
 
     // Cooldown is the caller's business — a multi-target skill deals several
     // hits from one use and must not pay for each of them.
+
+    // Refreshed, never stacked: two windows would be one number twice.
+    if (crit && buff) {
+      const live = attacker.effects.find((e) => e.id === CRIT_BUFF);
+      if (live) live.remaining = buff.seconds;
+      else attacker.effects.push({ id: CRIT_BUFF, remaining: buff.seconds });
+      this.emit('crit_surge', [{ x: attacker.x, y: attacker.y }], 'physical', 0.4);
+    }
 
     s.floaters.push({
       x: defender.x,

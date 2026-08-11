@@ -8,7 +8,7 @@ import type { GameState } from './state';
 import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
-import { addXp, addSkillXp } from '../sim/character';
+import { addXp, addSkillXp, mainSkillId } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
 
@@ -93,7 +93,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
 
   // The active skill shares the same XP. That's what makes committing to one
   // skill the thing that advances its tree.
-  const skillLevels = addSkillXp(game.character, game.character.skillId, xp);
+  const skillLevels = addSkillXp(game.character, mainSkillId(game.character), xp);
 
   const rows: ReportRow[] = [
     { label: 'time', value: `${run.elapsed.toFixed(1)}s` },

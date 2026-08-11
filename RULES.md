@@ -195,6 +195,25 @@ requires one. `guide.mjs` clicks a region's first live control, and the web's
 are SVG groups rather than buttons, so its selector takes
 `.web__node--open` as well.
 
+**A character holds THREE skills, in a slot table.** `SKILL_SLOTS`, like
+`EQUIP_SLOTS` and `RUN_SLOTS` — a fourth is one entry, never a fourth named
+field. `Character.equipped` is slot id → skill id and nothing outside
+`src/sim/character.ts` reads it directly: `mainSkillId`, `equippedSkill`,
+`slotForSkill` and `equipSkill` are the seam. `MAIN_SKILLS` is what the main
+slot takes, and every harness that builds a character to FIGHT reads that list
+rather than `PLAYER_SKILLS` — a passive has no damage to measure.
+
+**A skill that never casts reaches the sim through GRANTS.** `SkillDef.grants`
+is merged by `treeGrants` for every equipped slot but the main one, out of the
+same table a tree node and a unique use. A passive with a switch nobody reads
+is a slot spent on nothing, and the demo holds it to being declared and to
+saying its own numbers.
+
+**A passive is a TRADE.** That is what makes it worth a slot rather than a free
+percentage. Killing Surge gives up crit damage entirely for a window of more
+damage, and both halves are one grant — half-applying it would be a character
+that paid and got nothing.
+
 **Mana is bought, never granted.** The pool does not grow with a character
 level. Life does, and one that grew alongside it would leave the cost
 meaningless by level 10 — the whole pressure is that casting more, or casting
@@ -841,7 +860,7 @@ is not the binding constraint, the wall clock is.
 
 The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
 `· ` line is a `gauge` — a balance number that reports and can never fail; it is
-361 checks and 7 gauges.
+371 checks and 7 gauges.
 
 ### The harnesses have their own rules
 
@@ -901,6 +920,11 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. 
   collection, so `guide.mjs` closes whatever is open before its post-opening
   work — the tree, the dock and the worn column all click header buttons a
   modal covers.
+- **The post-opening DRAG tests flake.** `npm run guide` ends by dragging a
+  dock slot, a worn piece and a tree node with a real pointer, and
+  `dragging a dock slot did not reorder it` has been seen once on a bundle
+  that passed the same test either side of it. Re-run before treating one as a
+  regression; the same class of flake is the one below.
 - **Measure a box with `hover()` first when a drag test aims at one.** Playwright's
   actionability waits for the element to stop MOVING; a raw `boundingBox()`
   does not. The bench going from empty to full grows the card and re-centres

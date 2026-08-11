@@ -16,7 +16,7 @@
  * meant to — you scroll to zoom and drag to move, the same as any other map,
  * because a hundred nodes shrunk to fit are a hundred dots you cannot read.
  */
-import { SKILL_BY_ID, SKILL_CATEGORIES, skillsInCategory } from '../data';
+import { SKILL_BY_ID, SKILL_CATEGORIES, SKILL_SLOT_BY_ID, skillsInCategory } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
@@ -32,7 +32,7 @@ import { skillCatId, skillNodeId, skillRowId } from './tutorial';
 import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { addSkillXp, skillProgress, xpToNext } from '../sim/character';
+import { addSkillXp, equipSkill, equippedSkill, mainSkillId, skillProgress, slotForSkill, xpToNext } from '../sim/character';
 import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
@@ -218,7 +218,7 @@ function skillSummary(skill: SkillDef): string[] {
   const stats = characterStats(game.character);
   const progress = skillProgress(game.character, skill.id);
   const grants = treeGrants(game.character);
-  const mine = skill.id === game.character.skillId;
+  const mine = skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '');
 
   const converted = convertedType(skill, grants);
   const dealt = converted ?? skill.damageTypes[0] ?? 'physical';
@@ -317,7 +317,7 @@ function renderSkillList(): void {
     btn.id = skillRowId(skill.id);
     const head = el('span', 'skillrow__head');
     head.append(el('span', 'skillrow__name', skill.name));
-    if (skill.id === game.character.skillId) {
+    if (skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '')) {
       head.append(el('span', 'skillrow__tag', 'equipped'));
     }
     btn.append(head);
@@ -363,11 +363,15 @@ function renderHeader(): void {
     ` · ${progress.xp}/${xpToNext(progress.level)} xp`;
 
   const equip = $('skills-equip') as HTMLButtonElement;
-  const equipped = game.character.skillId === skillId;
-  equip.textContent = equipped ? 'Equipped' : 'Equip';
-  equip.disabled = equipped;
+  const slot = slotForSkill(skillId);
+  const equipped = !!slot && equippedSkill(game.character, slot) === skillId;
+  // Which of the three it goes in, said out loud: a skill that cannot displace
+  // the one you are swinging is a skill nobody would guess is equippable.
+  const where = slot ? SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() : null;
+  equip.textContent = equipped ? `Equipped — ${where}` : where ? `Equip as ${where}` : 'Equip';
+  equip.disabled = equipped || !slot;
   equip.onclick = () => {
-    game.character.skillId = skillId;
+    equipSkill(game.character, skillId);
     render();
     renderWeb();
   };

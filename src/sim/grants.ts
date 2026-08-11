@@ -77,6 +77,18 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
+  {
+    id: 'critIntoBuff',
+    what: 'critical hits buff you instead of hitting harder',
+    // The passive's whole TRADE, as ONE switch: half-applying it would be a
+    // character that gave up crit damage and got nothing for it.
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'more', 'seconds');
+      return p && `Critical hits deal no extra damage; landing one grants ${p[0]}% more damage for ${p[1]}s`;
+    },
+  },
+
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SHARED },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SHARED },
   {
@@ -271,6 +283,13 @@ export function mergeGrants(
 /** Whether a skill delivered this way would do anything with the grant. */
 export const behaviourReads = (behaviour: string, grant: string): boolean =>
   GRANT_BY_ID[grant]?.reads.includes(behaviour) ?? false;
+
+/** How long the passive's buff lasts and what it is worth, or null. */
+export function critBuff(grants: Record<string, unknown>): { more: number; seconds: number } | null {
+  const v = grants.critIntoBuff as { more?: unknown; seconds?: unknown } | undefined;
+  if (typeof v?.more !== 'number' || typeof v?.seconds !== 'number') return null;
+  return { more: v.more, seconds: v.seconds };
+}
 
 /**
  * What a cast is worth while STARVED of mana. One function, so the sim, the

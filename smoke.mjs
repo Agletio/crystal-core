@@ -1438,6 +1438,33 @@ assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.len
 // Three depths now. The old screen put every skill and every node on one
 // page, which was fine at ten nodes and is a wall at a hundred.
 $('sheet-close').click();
+// --- three slots, and equipping into one -----------------------------------
+// Equipping the passive must not stop you swinging: they are different slots,
+// and the button says which one it is talking about.
+{
+  $('open-skills').click();
+  all('#skills-cats .catcard').find((c) => /Passive/.test(c.textContent ?? '')).click();
+  const row = all('#skills-list .skillrow')[0];
+  assert(!!row, 'the passive shelf has something on it');
+  row.click();
+  const equip = $('skills-equip');
+  assert(/passive/i.test(equip.textContent ?? ''), 'and the button names its slot', equip.textContent);
+  equip.click();
+  assert(/equipped/i.test(equip.textContent ?? ''), 'equipping it takes', equip.textContent);
+  // Back to the top before leaving: the screen remembers where it was, and
+  // every check below this one opens it expecting the categories.
+  $('skills-back').click();
+  $('skills-back').click();
+  $('skills-close').click();
+  $('open-character').click();
+  assert(
+    /Strike/.test(text('sheet-skill')),
+    'and the sheet still computes for the skill that swings',
+    text('sheet-skill')
+  );
+  $('sheet-close').click();
+}
+
 // The other half of the badge. A level 1 character already has a tree point,
 // which is why the guided opening has a step for spending one.
 assert(
@@ -1455,14 +1482,13 @@ assert($('skills-detail').hidden === true, 'and not on a web');
 assert(all('#skills-cats .catcard').length === 4, 'four categories offered');
 assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 
-// Movement and Passive are listed and empty. Leaving them out until they have
-// something in them would move every shelf the day they arrive.
+// All four shelves have something on them now: a character holds three skills
+// at once, one out of each of three slots.
 const cats = all('#skills-cats .catcard');
-const emptyCats = cats.filter((c) => c.disabled);
-assert(emptyCats.length === 2, 'two shelves are still empty', String(emptyCats.length));
 assert(
-  cats.filter((c) => !c.disabled).length === 2,
-  'and two have something on them'
+  cats.filter((c) => c.disabled).length === 0,
+  'every shelf has something on it',
+  String(cats.filter((c) => c.disabled).length)
 );
 
 // Monster skills are not yours: Fire Bolt is what a husk throws, and it has no

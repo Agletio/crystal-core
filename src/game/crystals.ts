@@ -18,7 +18,7 @@ import {
 } from '../data';
 import type { CrystalQuest } from '../data';
 import { nodeById } from '../skills-tree';
-import { pointsAvailable } from '../sim/character';
+import { mainSkillId, pointsAvailable } from '../sim/character';
 import { giveGift, lampwrightWeapon } from './state';
 import type { GameState, GiftPlace } from './state';
 import { grant, makeCrystal } from '../economy';
@@ -48,7 +48,7 @@ export interface Waiting {
  *  the level buys the points, the allocation spends them, and WHICH node they
  *  went on is the player's own decision. Nothing can dead-end on it. */
 export function crystalEarned(game: GameState): boolean {
-  const skillId = game.character.skillId;
+  const skillId = mainSkillId(game.character);
   const progress = game.character.skills?.[skillId];
   if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
   return pointsAvailable(progress) === 0;
@@ -74,7 +74,7 @@ export function giftSchedule(game: GameState): string {
     if (crystalEarned(game)) {
       return `${who} is waiting at the mouth of your next cleared descent.`;
     }
-    const skillId = game.character.skillId;
+    const skillId = mainSkillId(game.character);
     const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
     const progress = game.character.skills?.[skillId];
     const spare = progress ? pointsAvailable(progress) : 1;

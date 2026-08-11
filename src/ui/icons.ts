@@ -119,6 +119,38 @@ const BLIGHT = [
   '.....oo.....',
 ];
 
+/** The passive: a spark caught mid-burst. Never a weapon — it swings nothing. */
+const SURGE = [
+  '.....oo.....',
+  '....owwo....',
+  '.o..owwo..o.',
+  '.oo.oyyo.oo.',
+  '..oooyyooo..',
+  '...oyyyyo...',
+  '.ooyywwyyoo.',
+  '...oyyyyo...',
+  '..oooyyooo..',
+  '.oo.oyyo.oo.',
+  '.o..owwo..o.',
+  '....oooo....',
+];
+
+/** The movement skill: a figure and where it just was. */
+const BLINK = [
+  '..o......o..',
+  '.osso...ohho',
+  '.osso...ohho',
+  '..oo.....oo.',
+  '.osso...ohho',
+  'ossso..ohhho',
+  '.osso...ohho',
+  '..oo.....oo.',
+  '.osso...ohho',
+  '.osso...ohho',
+  '..o......o..',
+  '............',
+];
+
 const BLADE = [
   '.....oo.....',
   '....osdo....',
@@ -931,6 +963,10 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
       return sprite(FIREBALL, FIRE_PALETTE, size, 'fireball');
     case 'blight':
       return sprite(BLIGHT, ROT, size, 'blight');
+    case 'surge':
+      return sprite(SURGE, STEEL, size, 'surge');
+    case 'blink':
+      return sprite(BLINK, STEEL, size, 'blink');
     default:
       return sprite(BLADE, STEEL, size, 'strike');
   }

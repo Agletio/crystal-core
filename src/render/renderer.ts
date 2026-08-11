@@ -167,6 +167,9 @@ export function vfxColour(palette: Palette, kind: string, damageType: string): s
   // Only the neutral kinds get a fixed colour; anything elemental follows its
   // damage type, so a converted fireball looks converted.
   if (kind === 'slash') return palette.chalk;
+  // Neither of these is elemental: a step is a step and a buff is a buff.
+  if (kind === 'blink') return palette.quartz;
+  if (kind === 'crit_surge') return palette.citrine;
   return damageColour(palette, damageType);
 }
 
