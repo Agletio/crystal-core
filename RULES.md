@@ -195,6 +195,18 @@ requires one. `guide.mjs` clicks a region's first live control, and the web's
 are SVG groups rather than buttons, so its selector takes
 `.web__node--open` as well.
 
+**The sheet splits what is TRUE OF YOU from what is true of a SKILL.** The run
+panel carries three skill icons under the xp bar, one per `SKILL_SLOTS` entry;
+hovering one says the short version and clicking opens the sheet at
+`skillSectionId(slot)`. The sheet's general stats keep life, armour,
+resistances, move speed, regeneration and the mana pool — everything that is
+still true whatever you are holding — and each equipped slot gets its own
+section for the numbers that would be different for a different skill: the
+damage breakdown, mana per use, damage per second, crit chance and damage,
+casts or attacks per second, reach. With three skills equipped a mixed sheet
+cannot even be written down, which is why the split exists. An empty slot
+prints `SkillSlotDef.blurb` rather than a dark square.
+
 **A character holds THREE skills, in a slot table.** `SKILL_SLOTS`, like
 `EQUIP_SLOTS` and `RUN_SLOTS` — a fourth is one entry, never a fourth named
 field. `Character.equipped` is slot id → skill id and nothing outside
@@ -835,7 +847,7 @@ that a two-minute tool timeout will kill them mid-run:
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s, 463 checks |
+| `smoke` | ~10s, 505 checks |
 | `demo` | ~2min |
 | `shots` | ~3min — two viewports, each waiting out a whole first descent |
 | `guide` | ~10min — it plays about eleven descents in real time |
