@@ -29,7 +29,7 @@ const BRANCHES: Branch[] = [
       description:
         'The swing deals 45% damage to everything in reach instead of 10%. ' +
         'Strike stops being aimed at one enemy and starts clearing a circle.',
-      grants: { splashMultiplier: 0.45 },
+      grants: { splashMultiplier: 0.45, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -38,7 +38,7 @@ const BRANCHES: Branch[] = [
           id: 'st_widearc',
           name: 'Wide Arc',
           description: 'The swing reaches 40% further.',
-          grants: { splashRadius: 1.4 },
+          grants: { splashRadius: 1.4, manaMultiplier: 1.08 },
         },
       },
       {
@@ -47,7 +47,7 @@ const BRANCHES: Branch[] = [
           id: 'st_carve',
           name: 'Carve',
           description: 'The swing deals 70% to everything in reach.',
-          grants: { splashMultiplier: 0.7 },
+          grants: { splashMultiplier: 0.7, manaMultiplier: 1.08 },
         },
       },
       {
@@ -57,7 +57,7 @@ const BRANCHES: Branch[] = [
           id: 'st_whirlwind',
           name: 'Whirlwind',
           description: 'Everything in reach takes 100% of the swing, and reach grows 25%.',
-          grants: { splashMultiplier: 1, splashRadius: 1.25 },
+          grants: { splashMultiplier: 1, splashRadius: 1.25, manaMultiplier: 1.08 },
         },
       },
     ],
@@ -107,7 +107,7 @@ const BRANCHES: Branch[] = [
           description:
             'A bleed that ticks critically opens the same wound on everything ' +
             'within 2 tiles.',
-          grants: { ailmentSpread: 2 },
+          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -125,7 +125,7 @@ const BRANCHES: Branch[] = [
       id: 'st_onslaught',
       name: 'Onslaught',
       description: 'Strike swings +1 more time at what you aimed at, and stops once it is down.',
-      grants: { doubleStrike: 1 },
+      grants: { doubleStrike: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -134,7 +134,7 @@ const BRANCHES: Branch[] = [
           id: 'st_flurry',
           name: 'Flurry',
           description: 'And +1 swing on top of that, for three.',
-          grants: { doubleStrike: 1 },
+          grants: { doubleStrike: 1, manaMultiplier: 1.15 },
         },
       },
       {
@@ -143,7 +143,7 @@ const BRANCHES: Branch[] = [
           id: 'st_frenzy',
           name: 'Frenzy',
           description: 'And +2 more swings beyond that.',
-          grants: { doubleStrike: 2 },
+          grants: { doubleStrike: 2, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -158,7 +158,7 @@ const BRANCHES: Branch[] = [
       description:
         'Every enemy the swing lands on takes a burst, dealing 50% damage within ' +
         '1.6 tiles. Strike gains the Area tag.',
-      grants: { explode: { radius: 1.6, multiplier: 0.5 }, addTags: ['area'] },
+      grants: { explode: { radius: 1.6, multiplier: 0.5 }, addTags: ['area'], manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -167,7 +167,7 @@ const BRANCHES: Branch[] = [
           id: 'st_faultline',
           name: 'Faultline',
           description: 'The burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45 },
+          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
       {
@@ -177,7 +177,7 @@ const BRANCHES: Branch[] = [
           id: 'st_upheaval',
           name: 'Upheaval',
           description: 'The burst carries +50% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.5 },
+          grants: { explodeMultiplierAdd: 0.5, manaMultiplier: 1.08 },
         },
       },
       {
@@ -187,7 +187,7 @@ const BRANCHES: Branch[] = [
           id: 'st_aftershock',
           name: 'Aftershock',
           description: 'An enemy killed by Strike bursts, dealing 60% damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
+          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
         },
       },
     ],

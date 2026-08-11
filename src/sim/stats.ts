@@ -37,6 +37,11 @@ export interface CombatStats {
   aggroRange: number;
   /** Life restored per second. Monsters have none. */
   lifeRegen: number;
+  /** The pool a skill is paid for out of, and what ONE use of this character's
+   *  skill costs after the tree's multipliers. Monsters have neither. */
+  maxMana: number;
+  manaRegen: number;
+  manaCost: number;
   /** Damage type dealt when attacking without a skill. Monsters only. */
   damageType?: string;
   /** Percent reduction per damage type, already capped. Typeless is absent. */
@@ -248,9 +253,19 @@ export function heroStats(
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
 
+  const maxMana = computeStat(HERO_BASE.mana, mods, 'mana');
+
   return {
     maxLife,
     lifeRegen: computeStat((maxLife * HERO_BASE.lifeRegenPercent) / 100, mods, 'lifeRegen'),
+    maxMana,
+    manaRegen: computeStat((maxMana * HERO_BASE.manaRegenPercent) / 100, mods, 'manaRegen'),
+    // The tree's multipliers land LAST, on top of whatever gear did.
+    manaCost: Math.max(
+      0,
+      computeStat(skill.manaCost, mods, 'manaCost') *
+        ((grants.manaMultiplier as number) ?? 1)
+    ),
     critMultiplier: computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
     // Percentages with no base to scale — see percentStat.
     rarity: percentStat(mods, 'rarity'),
@@ -426,6 +441,9 @@ export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
     lifeRegen: 0,
+    maxMana: 0,
+    manaRegen: 0,
+    manaCost: 0,
     critMultiplier: 0,
     // No monster has an area skill yet; its crystal mod would land here.
     areaOfEffect: 0,

@@ -371,7 +371,20 @@ new and come out of the trade system.
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-4. **The Cavern and the Fissure have no currency of their own.** Retiring the
+4. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
+   was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
+   BELOW** four Demonic crystals on damage taken per second, and with mana
+   removed entirely it is only 2.0% above — so the ordering was always inside
+   the noise rather than a thing the game does. The cause is structural: the
+   Seam takes exactly two crystals of each world, so only half its packs carry
+   a Demonic aura and half a Prismatic one, where four Demonic crystals put an
+   aura in every pack. Making it genuinely worst means changing what the
+   composition does — both auras on one pack, or a Seam-only carrier — which is
+   a balance decision rather than a measurement. The demo now holds the Seam to
+   being within 5% of the hardest single world and PRINTS the margin, and
+   `CLAUDE.md` says it is an open question rather than a claim.
+
+5. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated

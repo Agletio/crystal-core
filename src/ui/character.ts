@@ -6,7 +6,7 @@
  * DOCK that fits, which is where your gear already is. Worn items live here
  * rather than in the dock, which is safe because this screen shows them.
  */
-import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, SKILLS } from '../data';
+import { DAMAGE_TYPES, DAMAGE_TYPE_BY_ID, DEFENCE, EQUIP_SLOTS, MANA, SKILLS } from '../data';
 import { characterStats, damageDetail, skillBase } from '../sim/stats';
 import { damageWorkings } from '../damage-text';
 import { xpToNext } from '../sim/character';
@@ -236,6 +236,17 @@ function renderStats(): void {
       why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
     },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
+    { key: 'mana', value: round(s.maxMana) },
+    {
+      key: 'mana/sec',
+      value: s.manaRegen.toFixed(1),
+      why: `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. Short of a cast you swing bare, for ${Math.round(MANA.dryDamage * 100)}% of your damage.`,
+    },
+    {
+      key: 'mana per use',
+      value: s.manaCost.toFixed(1),
+      why: 'The skill’s own cost, times what every node that changes what it does multiplies it by.',
+    },
     { key: 'reach', value: s.attackRange.toFixed(1), unit: 'tiles' },
   ];
 

@@ -66,7 +66,7 @@ const BRANCHES: Branch[] = [
           name: 'Wildfire',
           description:
             'A burn that ticks critically sets everything within 2 tiles alight as well.',
-          grants: { ailmentSpread: 2 },
+          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -86,7 +86,7 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball bursts where it lands, dealing 55% damage to everything within ' +
         '1.8 tiles. Fireball gains the Area tag.',
-      grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'] },
+      grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'], manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -95,7 +95,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_concussive',
           name: 'Concussive Blast',
           description: 'The burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45 },
+          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
       {
@@ -105,7 +105,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_fuelair',
           name: 'Fuel-Air Charge',
           description: 'The burst carries +45% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.45 },
+          grants: { explodeMultiplierAdd: 0.45, manaMultiplier: 1.08 },
         },
       },
       {
@@ -116,7 +116,7 @@ const BRANCHES: Branch[] = [
           name: 'Chain Reaction',
           description:
             'An enemy killed by Fireball bursts, dealing 60% damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
+          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -135,7 +135,7 @@ const BRANCHES: Branch[] = [
       name: 'Split Cast',
       description:
         'Fireball strikes one additional enemy near the target, for 70% damage.',
-      grants: { extraTargets: 1 },
+      grants: { extraTargets: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -144,7 +144,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_focused',
           name: 'Focused Volley',
           description: 'Additional targets take full damage instead of 70%.',
-          grants: { extraTargetDamage: 1 },
+          grants: { extraTargetDamage: 1, manaMultiplier: 1.08 },
         },
       },
       {
@@ -153,7 +153,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_volley',
           name: 'Volley',
           description: 'Fireball strikes +1 enemy on top of that, for 70% damage.',
-          grants: { extraTargets: 1 },
+          grants: { extraTargets: 1, manaMultiplier: 1.15 },
         },
       },
       {
@@ -163,7 +163,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_barrage',
           name: 'Barrage',
           description: 'Fireball strikes two more enemies near the target, for 70% damage.',
-          grants: { extraTargets: 2 },
+          grants: { extraTargets: 2, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -178,7 +178,7 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball passes through one enemy for 70% damage, carrying on to ' +
         'whatever is behind it.',
-      grants: { pierce: 1 },
+      grants: { pierce: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -187,7 +187,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_momentum',
           name: 'Momentum',
           description: 'Enemies pierced take full damage instead of 70%.',
-          grants: { pierceDamage: 1 },
+          grants: { pierceDamage: 1, manaMultiplier: 1.08 },
         },
       },
       {
@@ -196,7 +196,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_overpen',
           name: 'Overpenetration',
           description: 'Fireball passes through one more enemy, also for 70%.',
-          grants: { pierce: 1 },
+          grants: { pierce: 1, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -211,7 +211,7 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball leaps from the enemy it hits to one more within 4.5 tiles, ' +
         'for 70% damage.',
-      grants: { chains: 1 },
+      grants: { chains: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -220,7 +220,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_rebound',
           name: 'Rebound',
           description: 'Leaps deal full damage instead of 70%.',
-          grants: { chainDamage: 1 },
+          grants: { chainDamage: 1, manaMultiplier: 1.08 },
         },
       },
       {
@@ -230,7 +230,7 @@ const BRANCHES: Branch[] = [
           id: 'fb_leaping',
           name: 'Leaping Flame',
           description: 'Fireball leaps one more time, also for 70%.',
-          grants: { chains: 1 },
+          grants: { chains: 1, manaMultiplier: 1.15 },
         },
       },
     ],

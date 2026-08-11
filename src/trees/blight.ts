@@ -30,7 +30,7 @@ const BRANCHES: Branch[] = [
       description:
         'A poison tick that critically strikes plants a fresh cloud, 1.6 tiles ' +
         'across, around whatever it ticked on.',
-      grants: { contagionRadius: 1.6 },
+      grants: { contagionRadius: 1.6, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -39,7 +39,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_epidemic',
           name: 'Epidemic',
           description: 'Clouds planted by a critical tick are 0.9 tiles wider.',
-          grants: { contagionRadius: 0.9 },
+          grants: { contagionRadius: 0.9, manaMultiplier: 1.08 },
         },
       },
       {
@@ -48,7 +48,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_pandemic',
           name: 'Pandemic',
           description: 'And another +1.2 tiles wider.',
-          grants: { contagionRadius: 1.2 },
+          grants: { contagionRadius: 1.2, manaMultiplier: 1.08 },
         },
       },
       {
@@ -61,7 +61,7 @@ const BRANCHES: Branch[] = [
             'Ticks critically strike far more often, and the clouds they plant ' +
             'are 0.8 tiles wider.',
           stats: [stat('critChance', 'flat', 7)],
-          grants: { contagionRadius: 0.8 },
+          grants: { contagionRadius: 0.8, manaMultiplier: 1.08 },
         },
       },
     ],
@@ -76,7 +76,7 @@ const BRANCHES: Branch[] = [
       description:
         'Blight bursts as it lands, dealing 70% damage within 1.5 tiles. That ' +
         'burst is a HIT, so armour blunts it where the poison it leaves ignores it.',
-      grants: { explode: { radius: 1.5, multiplier: 0.7 } },
+      grants: { explode: { radius: 1.5, multiplier: 0.7 }, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -85,7 +85,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_shrapnel',
           name: 'Shrapnel',
           description: 'The burst covers 50% more ground.',
-          grants: { explodeRadius: 1.5 },
+          grants: { explodeRadius: 1.5, manaMultiplier: 1.08 },
         },
       },
       {
@@ -95,7 +95,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_overpressure',
           name: 'Overpressure',
           description: 'The burst carries +30% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.3 },
+          grants: { explodeMultiplierAdd: 0.3, manaMultiplier: 1.08 },
         },
       },
       {
@@ -105,7 +105,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_sporeburst',
           name: 'Sporeburst',
           description: 'The burst covers 35% more ground and deals 25% more damage.',
-          grants: { explodeRadius: 1.35, explodeMultiplierAdd: 0.25 },
+          grants: { explodeRadius: 1.35, explodeMultiplierAdd: 0.25, manaMultiplier: 1.08 },
         },
       },
     ],
@@ -123,7 +123,7 @@ const BRANCHES: Branch[] = [
       id: 'bl_miasma',
       name: 'Miasma',
       description: 'Blight drops +1 cloud, on another enemy near the target.',
-      grants: { extraFields: 1 },
+      grants: { extraFields: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -132,7 +132,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_choking',
           name: 'Choking Haze',
           description: 'And +1 cloud on top of that, for three.',
-          grants: { extraFields: 1 },
+          grants: { extraFields: 1, manaMultiplier: 1.15 },
         },
       },
       {
@@ -141,7 +141,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_smother',
           name: 'Smother',
           description: 'And +2 more clouds beyond that.',
-          grants: { extraFields: 2 },
+          grants: { extraFields: 2, manaMultiplier: 1.15 },
         },
       },
       {
@@ -151,7 +151,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_shroud',
           name: 'Shroud',
           description: 'Two more clouds again, and every cloud is 15% wider.',
-          grants: { extraFields: 2, fieldRadius: 1.15 },
+          grants: { extraFields: 2, fieldRadius: 1.15, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -214,7 +214,7 @@ const BRANCHES: Branch[] = [
       description:
         'The cloud covers 55% more ground, and its poison deals 12% less damage. ' +
         'Blight stops being aimed and starts being placed.',
-      grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88 },
+      grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 },
     },
     twigs: [
       {
@@ -223,7 +223,7 @@ const BRANCHES: Branch[] = [
           id: 'bl_overgrowth',
           name: 'Overgrowth',
           description: 'The cloud covers 30% more ground again.',
-          grants: { fieldRadius: 1.3 },
+          grants: { fieldRadius: 1.3, manaMultiplier: 1.08 },
         },
       },
       {
@@ -243,7 +243,7 @@ const BRANCHES: Branch[] = [
           name: 'Wildgrowth',
           description: 'The cloud covers 25% more ground, and +15% increased Area of Effect.',
           stats: [stat('areaOfEffect', 'inc', 15)],
-          grants: { fieldRadius: 1.25 },
+          grants: { fieldRadius: 1.25, manaMultiplier: 1.08 },
         },
       },
     ],

@@ -285,6 +285,7 @@ export interface SkillDef {
    */
   addedEffectiveness: number;
   rateMultiplier: number; // on the character's attacks/sec
+  manaCost: number; // per USE, so a slower skill's number is a bigger one
   range: number; // in tiles
   vfxKind?: string; // a name, not a shape. Unset draws a generic line
   params?: Record<string, any>; // behaviour-specific knobs

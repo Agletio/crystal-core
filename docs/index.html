@@ -362,6 +362,13 @@
   .hp { position: relative; height: 20px; background: var(--void); border: 1px solid var(--seam); margin-bottom: 8px; }
   .hp__fill { height: 100%; background: var(--verdite); }
   .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--chalk); }
+  .hp--mana { height: 14px; }
+  .hp__fill--mana { background: var(--quartz); }
+  .hp--mana .hp__text { font-size: 10px; }
+  /* Empty is the state worth reading at a glance: it is why you are swinging
+     for a third of your damage. */
+  .hp--mana.hp--dry { border-color: var(--rust); }
+  .hp--mana.hp--dry .hp__text { color: var(--rust); }
   .hp--xp { height: 14px; margin-bottom: 14px; }
   .hp__fill--xp { background: var(--rust); }
   .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
@@ -1202,12 +1209,18 @@
             <div class="hp__text" id="run-hp-text">—</div>
           </div>
 
+          <div class="hp hp--mana">
+            <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
+            <div class="hp__text" id="run-mana-text">—</div>
+          </div>
+
           <div class="hp hp--xp">
             <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
             <div class="hp__text" id="run-xp-text">0 / 0</div>
           </div>
 
           <div class="readout">
+            <div><span>mana a swing</span><code id="run-mana-cost">0</code></div>
             <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
             <div><span>killed</span><code id="run-killed">0/0</code></div>
             <div><span>xp earned</span><code id="run-xp-gained">0</code></div>

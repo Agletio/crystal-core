@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import { WALL, generateMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT } from '../data';
+import { AILMENT, DRY_SKILL } from '../data';
 import { lookOf } from './appearance';
 import {
   armourReduction,
@@ -167,6 +167,7 @@ export interface Entity {
   /** Active damage-over-time stacks. */
   ailments: Ailment[];
   life: number;
+  mana: number; // monsters never spend it and never regain it
   stats: CombatStats;
   cooldown: number;
   path: Vec2[];
@@ -259,6 +260,9 @@ export interface RunState {
   met: boolean;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
+  /** Swings that could not pay, and swings in all: the calibration is a share. */
+  dryCasts: number;
+  casts: number;
 }
 
 const FLOATER_LIFE = 1.1;
@@ -345,6 +349,7 @@ export class RunSim {
       ailments: [],
       bounty: 1,
       life: stats.maxLife,
+      mana: stats.maxMana,
       stats,
       cooldown: 0,
       path: [],
@@ -372,6 +377,8 @@ export class RunSim {
       finale: null,
       loot: { currency: {}, items: [] },
       set: this.set,
+      dryCasts: 0,
+      casts: 0,
       lampwright: null,
       meeting: false,
       met: false,
@@ -501,6 +508,7 @@ export class RunSim {
           ailments: [],
           bounty: rank.bounty,
           life: stats.maxLife,
+          mana: 0,
           stats,
           cooldown: this.rng.float(0, 1),
           path: [],
@@ -693,6 +701,9 @@ export class RunSim {
     if (hero.life < hero.stats.maxLife) {
       hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.lifeRegen * dt);
     }
+    if (hero.mana < hero.stats.maxMana) {
+      hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.manaRegen * dt);
+    }
 
     const target = this.acquireTarget(hero);
 
@@ -704,7 +715,7 @@ export class RunSim {
         hero.path = [];
         this.face(hero, target.x, target.y);
         this.settleAction(hero, false);
-        if (hero.cooldown <= 0) this.useSkill(hero, target, this.skill);
+        if (hero.cooldown <= 0) this.swing(hero, target);
       } else if (!this.advance(hero, target, dt)) {
         // Route vanished mid-chase. Drop it; the next flood picks correctly.
         hero.targetId = null;
@@ -769,6 +780,7 @@ export class RunSim {
       ailments: [],
       bounty: 0,
       life: 1,
+      mana: 0,
       stats: hero.stats,
       cooldown: 0,
       path: [],
@@ -866,6 +878,7 @@ export class RunSim {
         ailments: [],
         bounty: def.bounty,
         life: stats.maxLife,
+        mana: 0,
         stats,
         cooldown: 0,
         path: [],
@@ -1064,13 +1077,28 @@ export class RunSim {
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
+  /** The one place mana is spent. Short of the cost you swing bare rather than
+   *  stand still, because a descent that never ends is a harness that hangs. */
+  private swing(hero: Entity, target: Entity): void {
+    const cost = hero.stats.manaCost;
+    this.state.casts++;
+    if (hero.mana + 1e-9 >= cost) {
+      hero.mana -= cost;
+      this.useSkill(hero, target, this.skill);
+      return;
+    }
+    this.state.dryCasts++;
+    this.useSkill(hero, target, DRY_SKILL);
+  }
+
   private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
     const behaviour = SKILL_BEHAVIOURS[skill.behaviour] ?? SKILL_BEHAVIOURS.single_target;
 
     user.action = 'attack';
     user.actionTimer = ATTACK_POSE;
 
-    const grants = user.kind === 'hero' ? this.grants : {};
+    // Nothing the tree granted reaches a dry swing.
+    const grants = user.kind === 'hero' && skill !== DRY_SKILL ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and

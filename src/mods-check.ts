@@ -105,6 +105,7 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
         [
           s.maxLife, s.damage, s.attacksPerSecond, s.critChance, s.critMultiplier,
           s.moveSpeed, s.armour, s.armourReduction, s.attackRange, s.lifeRegen,
+          s.maxMana, s.manaRegen, s.manaCost,
           s.areaOfEffect, s.rarity, s.currencyFind,
           ...Object.values(s.resistances),
         ].join(',')

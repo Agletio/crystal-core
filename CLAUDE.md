@@ -97,12 +97,17 @@ The Seam, which therefore takes exactly two crystals of each. A zone is a LOOK:
 same generator, same packs, different stone under them. It rides on `GameMap`,
 so both renderers read one answer.
 
-**Auras** (`AURAS`) are why the Seam is the hardest room in the game. One
-carrier per pack, never buffing itself: Demonic adds a fixed amount of damage
-and of armour, Prismatic multiplies both. Alone each is a hazard; together the
-multiplier lands on what the other added, and nothing multiplies an armour
-nobody granted. Every carrier draws its reach on the floor — a room that is
-lethal for a reason you cannot see reads as a bug.
+**Auras** (`AURAS`) are why the aura worlds hurt about twice as much as the
+Fissure. One carrier per pack, never buffing itself: Demonic adds a fixed amount
+of damage and of armour, Prismatic multiplies both. Alone each is a hazard;
+together the multiplier lands on what the other added, and nothing multiplies an
+armour nobody granted. Every carrier draws its reach on the floor — a room that
+is lethal for a reason you cannot see reads as a bug.
+
+The Seam was meant to be the worst room in the game and MEASURES level with
+four Demonic crystals rather than above them — it takes two crystals of each, so
+only half its packs carry either aura. That is an open question in
+`ROADMAP.md`, not a settled design.
 
 Danger and socket count fold into one **run power** number (`POWER`,
 `runSet()`), and every reward reads that and nothing else: drops, item level,
@@ -197,6 +202,32 @@ Selling one piece is a menu action on the dock, never a click: it is the only
 thing an item can do that cannot be undone. The bulk button in the shop takes
 every carried piece no currency has touched, which is why it can never eat a
 decision.
+
+## What a skill costs
+
+Every use of your skill is paid out of **mana** — `HERO_BASE.mana`, and
+`CombatStats.maxMana` beside `maxLife`. The pool never grows with a character
+level, where life does: a pool that grew alongside it would leave the cost
+meaningless by level 10, so sustain is BOUGHT. Three gear modifiers reach it —
+of the Well, of Clarity, of Thrift — through the modifier engine like anything
+else.
+
+Bare, every skill costs the same PER SECOND (`MANA.costPerSecond`).
+`SkillDef.manaCost` is per USE, so a slower skill's number is a bigger one, and
+the demo holds all three to the same rate.
+
+**What a node changes, it charges for.** The 42 notables that change what the
+skill DOES — a burst, a sweep, another projectile, another cloud — each grant
+`manaMultiplier`, which merges by PRODUCT, so a build stacking four of them
+pays about half again a cast. Conditional damage is free: "more against enemies
+below a third of their life" changes a number rather than what the skill is.
+The line the card prints comes out of `GrantDef.say`, never out of the node's
+own prose, so what it charges and what it says cannot drift.
+
+**Out of mana you do not stand still.** You swing bare — `DRY_SKILL`,
+`MANA.dryDamage` of your damage, one target, none of the tree behind it — so a
+descent always ends and a headless run can never hang. A bare level 1 spends
+8% to 30% of its swings that way, measured over real descents.
 
 ## The loop
 

@@ -759,6 +759,42 @@ export const GEAR_MAIN_MODS: ModDef[] = [
       { ilvl: 1, weight: 700, stats: [{ stat: 'lifeRegen', form: 'inc', range: [10, 22] }] },
     ],
   },
+  // The pool a skill is paid out of, and the two other ways to afford one:
+  // more of it, faster return, or a cheaper skill. Nothing else buys sustain
+  // until attributes do, so a build that wants to cast has to wear some.
+  {
+    id: 'flat_mana',
+    slot: 'defence',
+    name: 'of the Well',
+    appliesTo: ['gear'],
+    tags: ['mana', 'defence'],
+    tiers: [
+      { ilvl: 45, weight: 300, stats: [{ stat: 'mana', form: 'flat', range: [26, 44] }] },
+      { ilvl: 1, weight: 800, stats: [{ stat: 'mana', form: 'flat', range: [8, 22] }] },
+    ],
+  },
+  {
+    id: 'mana_regen',
+    slot: 'defence',
+    name: 'of Clarity',
+    appliesTo: ['gear'],
+    tags: ['mana', 'defence'],
+    tiers: [
+      { ilvl: 40, weight: 260, stats: [{ stat: 'manaRegen', form: 'inc', range: [30, 50] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'manaRegen', form: 'inc', range: [12, 26] }] },
+    ],
+  },
+  {
+    id: 'mana_cost',
+    slot: 'defence',
+    name: 'of Thrift',
+    appliesTo: ['gear'],
+    tags: ['mana', 'defence'],
+    tiers: [
+      { ilvl: 50, weight: 220, stats: [{ stat: 'manaCost', form: 'inc', range: [-22, -14] }] },
+      { ilvl: 1, weight: 600, stats: [{ stat: 'manaCost', form: 'inc', range: [-12, -6] }] },
+    ],
+  },
   // Resistances are generated from DAMAGE_TYPES below, also into 'defence'.
 ];
 
@@ -1367,6 +1403,21 @@ export const HERO_BASE = {
    * level 1 finishes the Fissure about a third down: hurt, never threatened.
    */
   lifeRegenPercent: 0.55,
+
+  /** Never grows with a level, where life does: sustain is bought. */
+  mana: 80,
+  /** Percent of max mana per second. */
+  manaRegenPercent: 4.5,
+};
+
+/** What a skill costs, and what is left when you cannot pay. */
+export const MANA = {
+  /** Every bare skill costs this much per second once its rate is counted. */
+  costPerSecond: 9,
+  /** How far one may sit either side of it before the demo objects. */
+  costTolerance: 0.12,
+  /** The share of your damage a dry swing is worth. */
+  dryDamage: 0.5,
 };
 
 /**
@@ -1977,6 +2028,24 @@ export const ENCOUNTERS: EncounterDef[] = [
 /** Which skill a ranged pack uses. */
 export const MONSTER_RANGED_SKILL = 'bolt';
 
+/** What you swing when you cannot pay. No category, so it never reaches the
+ *  Skills screen, and no tree reaches it. */
+export const DRY_SKILL: SkillDef = {
+  id: 'dry_swing',
+  name: 'Bare Swing',
+  description: `A swing with nothing behind it, for ${Math.round(MANA.dryDamage * 100)}% of your damage.`,
+  tags: ['attack'],
+  behaviour: 'dry_swing',
+  damageTypes: ['physical'],
+  baseDamage: 0, // never read: the damage is the character's own, cut down
+
+  addedEffectiveness: 100,
+  rateMultiplier: 1,
+  manaCost: 0,
+  range: HERO_BASE.attackRange,
+  vfxKind: 'swing',
+};
+
 // --- loot ------------------------------------------------------------------
 //
 // Banks only when a run is CLEARED. Dying loses it, which is what makes the
@@ -2399,6 +2468,7 @@ export const SKILLS: SkillDef[] = [
     baseDamage: 72,
     addedEffectiveness: 100,
     rateMultiplier: 1,
+    manaCost: 7.5,
     range: HERO_BASE.attackRange,
     vfxKind: 'slash',
     // Splash is placeholder-cheap: the mechanism is the point, not the 10%.
@@ -2421,6 +2491,7 @@ export const SKILLS: SkillDef[] = [
     baseDamage: 72,
     addedEffectiveness: 100,
     rateMultiplier: 1,
+    manaCost: 7.5,
     range: 6.5,
     vfxKind: 'flame',
   },
@@ -2436,6 +2507,7 @@ export const SKILLS: SkillDef[] = [
     baseDamage: 72,
     addedEffectiveness: 100,
     rateMultiplier: 1,
+    manaCost: 0,
     range: 6.5,
     vfxKind: 'bolt',
   },
@@ -2462,6 +2534,7 @@ export const SKILLS: SkillDef[] = [
     baseDamage: 115,
     addedEffectiveness: 160,
     rateMultiplier: 0.75,
+    manaCost: 10,
     range: 6.5,
     vfxKind: 'blight_field',
     /**

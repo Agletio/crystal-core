@@ -47,6 +47,18 @@ const HITTERS = ['projectile', 'cleave'];
 export const GRANTS: GrantDef[] = [
   { id: 'convertTree', what: 'the skill deals another damage type', reads: [STATS] },
   { id: 'addTags', what: 'the skill gains a tag, so more modifiers reach it', reads: [STATS], merge: 'append' },
+  {
+    id: 'manaMultiplier',
+    what: 'the skill costs more mana',
+    reads: [STATS],
+    // The one thing every delivery node also hands over, so a build that
+    // changes what its skill DOES four times pays four times over.
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${more(n)} more mana per use`;
+    },
+  },
 
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SHARED },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SHARED },

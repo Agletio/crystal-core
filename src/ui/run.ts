@@ -407,6 +407,9 @@ function renderStatsPanel(): void {
     ['move', s.moveSpeed.toFixed(1)],
     ['armour', Math.round(s.armour).toString()],
     ['regen/s', s.lifeRegen.toFixed(1)],
+    ['mana', Math.round(s.maxMana).toString()],
+    ['mana/s', s.manaRegen.toFixed(1)],
+    ['cost', s.manaCost.toFixed(1)],
   ];
 
   for (const [k, v] of rows) {
@@ -485,6 +488,15 @@ function renderReadout(): void {
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
   $('run-hp-text').textContent =
     `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
+
+  const cost = s.hero.stats.manaCost;
+  const spare = Math.max(0, s.hero.mana);
+  const pool = Math.max(1, s.hero.stats.maxMana);
+  ($('run-mana-fill') as HTMLElement).style.width = `${Math.min(100, (spare / pool) * 100)}%`;
+  $('run-mana-text').textContent = `${Math.round(spare)} / ${Math.round(pool)}`;
+  $('run-mana-cost').textContent = cost.toFixed(1);
+  // Short of the cost is the state worth seeing: it is why the damage dropped.
+  ($('run-mana-fill').parentElement as HTMLElement).classList.toggle('hp--dry', spare < cost);
 
   // A walked-out run is still 'running' to the sim — it was never finished —
   // so the chip reads the phase for that one case rather than the sim.

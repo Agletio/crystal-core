@@ -184,6 +184,31 @@ one that is asleep. Three steps use it — `take_notable` waits for the levels a
 notable costs, `meet_crystal` for someone to be standing at the mouth, and
 `bench_crystal` for the crystal to grow a slot.
 
+**Mana is bought, never granted.** The pool does not grow with a character
+level. Life does, and one that grew alongside it would leave the cost
+meaningless by level 10 — the whole pressure is that casting more, or casting
+something bigger, gets paid for. Gear reaches it through the modifier engine
+like every other stat, and attributes will.
+
+**Every bare skill costs the same per second.** `MANA.costPerSecond`.
+`SkillDef.manaCost` is per USE, so the table holds three different figures only
+because the cast rates differ; a skill that is deliberately expensive is a
+decision, and `MANA.costTolerance` in the demo is what would have to be told
+about it.
+
+**A node that changes what the skill DOES charges for it.** `manaMultiplier`,
+product merge, on the notables that change the DELIVERY — a burst, a sweep,
+another projectile, another cloud. NOT on conditional damage, which moves a
+number rather than what the skill is. The line the card prints comes out of
+`GrantDef.say`, never out of the node's prose, so what is charged and what is
+said cannot come apart.
+
+**Out of mana you swing bare, and never stand still.** `DRY_SKILL` at
+`MANA.dryDamage` of your damage, one target, no grants, same rate and reach. A
+character that stops attacking is a run that never ends and a harness that
+hangs — the demo holds one with no pool at all to finishing its descent, dead
+or cleared.
+
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
 about to be replaced.
@@ -652,16 +677,16 @@ Everything in `CLAUDE.md` still applies — the comment budget above all.
 
 ### How long the suite takes
 
-About **fifteen minutes** end to end, and three of the eight are slow enough
+About **sixteen minutes** end to end, and three of the eight are slow enough
 that a two-minute tool timeout will kill them mid-run:
 
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
 | `smoke` | ~10s, 463 checks |
-| `demo` | ~85s |
+| `demo` | ~2min |
 | `shots` | ~3min — two viewports, each waiting out a whole first descent |
-| `guide` | ~9½min — it plays about eleven descents in real time |
+| `guide` | ~10min — it plays about eleven descents in real time |
 
 None of them hangs. If one looks stuck it is one of the bottom three, and the
 answer is to wait or run it in the background, never to assume it broke.

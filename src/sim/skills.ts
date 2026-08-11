@@ -9,6 +9,7 @@
  */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
+import { MANA } from '../data';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -164,6 +165,18 @@ function alongRay(
 
 export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage. The floor every other behaviour builds on. */
+  /**
+   * Out of mana. One target, no grants, `MANA.dryDamage` of the damage — the
+   * skill's own delivery is exactly what you stop being able to afford.
+   */
+  dry_swing: (use) => {
+    use.hit(use.primary, MANA.dryDamage);
+    use.vfx('swing', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
+  },
+
   single_target: (use) => {
     use.hit(use.primary, 1);
 

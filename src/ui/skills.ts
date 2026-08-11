@@ -17,6 +17,7 @@
  * because a hundred nodes shrunk to fit are a hundred dots you cannot read.
  */
 import { SKILL_BY_ID, SKILL_CATEGORIES, skillsInCategory } from '../data';
+import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
   MAX_TREE_POINTS,
@@ -384,6 +385,18 @@ function project(
   };
 }
 
+/**
+ * What the node adds to the skill's mana cost, in its own words. Printed from
+ * the grant rather than written into every description, so the line and the
+ * number the sim charges cannot come apart.
+ */
+function cost(node: SkillNodeDef): string {
+  const value = node.grants?.manaMultiplier;
+  if (value === undefined) return '';
+  const said = GRANT_BY_ID.manaMultiplier?.say?.(value);
+  return said ? `\n${said}.` : '';
+}
+
 function renderWeb(): void {
   const svg = $('skills-web') as unknown as SVGSVGElement;
   svg.replaceChildren();
@@ -519,7 +532,7 @@ function renderWeb(): void {
       const choice = node.choices
         ? `\n${picked ? `chosen: ${picked.name} — ${picked.description}` : 'click to choose'}`
         : '';
-      return `${node.name}  (${state})\n${node.description}${choice}`;
+      return `${node.name}  (${state})\n${node.description}${cost(node)}${choice}`;
     });
 
     const act = () => {
