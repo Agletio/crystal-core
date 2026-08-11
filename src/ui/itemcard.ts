@@ -118,14 +118,15 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     card.append(box);
   }
 
-  // What the piece DOES, in the words the grant table already carries — and
-  // why it can never be crafted, which is otherwise a currency refusing it for
-  // no reason the card gives.
+  // What the piece DOES, with ITS numbers in it — `say` off the item's own
+  // grant bag rather than the table's generic sentence, which describes the
+  // switch and no amount. And why it can never be crafted, which is otherwise
+  // a currency refusing it for no reason the card gives.
   if (unique) {
     const box = group('it does this');
-    for (const id of Object.keys(unique.grants ?? {})) {
-      const what = GRANT_BY_ID[id]?.what;
-      if (what) box.append(el('div', 'tip__grant', what));
+    for (const [id, value] of Object.entries(unique.grants ?? {})) {
+      const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
+      if (said) box.append(el('div', 'tip__grant', said));
     }
     box.append(el('div', 'tip__none', 'Fixed. Nothing at a bench can change it.'));
     card.append(box);

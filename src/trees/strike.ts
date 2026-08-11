@@ -56,7 +56,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_whirlwind',
           name: 'Whirlwind',
-          description: 'Everything in reach takes the full swing, and reach grows again.',
+          description: 'Everything in reach takes 100% of the swing, and reach grows 25%.',
           grants: { splashMultiplier: 1, splashRadius: 1.25 },
         },
       },
@@ -124,7 +124,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_onslaught',
       name: 'Onslaught',
-      description: 'Strike swings twice at what you aimed at, and stops once it is down.',
+      description: 'Strike swings +1 more time at what you aimed at, and stops once it is down.',
       grants: { doubleStrike: 1 },
     },
     twigs: [
@@ -133,7 +133,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_flurry',
           name: 'Flurry',
-          description: 'And a third swing.',
+          description: 'And +1 swing on top of that, for three.',
           grants: { doubleStrike: 1 },
         },
       },
@@ -142,7 +142,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_frenzy',
           name: 'Frenzy',
-          description: 'And two more beyond that.',
+          description: 'And +2 more swings beyond that.',
           grants: { doubleStrike: 2 },
         },
       },
@@ -176,7 +176,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_upheaval',
           name: 'Upheaval',
-          description: 'The burst deals full damage rather than a fraction of it.',
+          description: 'The burst carries +50% of the damage, for all of it.',
           grants: { explodeMultiplierAdd: 0.5 },
         },
       },
@@ -261,7 +261,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_executioner',
           name: 'Executioner',
-          description: 'Strike deals 35% more damage to enemies below a third of their life.',
+          description: 'Strike deals 35% more damage to enemies below 33% of their life.',
           grants: { moreVsLow: { below: 0.33, more: 0.35 } },
         },
       },
@@ -270,7 +270,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_ambush',
           name: 'Ambush',
-          description: 'Strike deals 35% more damage to enemies above four fifths of their life.',
+          description: 'Strike deals 35% more damage to enemies above 80% of their life.',
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
       },
@@ -280,7 +280,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_haymaker',
           name: 'Haymaker',
-          description: 'Every fifth swing of Strike deals triple damage.',
+          description: 'Every 5th swing of Strike deals 300% damage.',
           grants: { everyNth: { n: 5, multiplier: 3 } },
         },
       },
@@ -338,7 +338,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_focus',
     name: 'Killer Instinct',
-    description: 'Strike critically strikes far more often, and far harder.',
+    description: 'Strike criticals +11% more often, for +45% critical damage.',
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {

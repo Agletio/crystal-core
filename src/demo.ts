@@ -3283,6 +3283,60 @@ line('and it should stay clearable. The deep end is four sockets, not four');
 line('levels — see THE LADDER below for that.');
 
 // ===========================================================================
+rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
+
+// The rule is in RULES.md: nothing a player reads may describe a quantity in
+// words when there is a figure behind it. A digit is a coarse test and a
+// deliberate one — "a third more ground" and "hits harder" both pass any
+// cleverer check by describing something real, and both are the decision being
+// asked for with the number taken out.
+{
+  const numberless: string[] = [];
+  const looked: string[] = [];
+
+  const holds = (where: string, text: string): void => {
+    looked.push(where);
+    if (!/\d/.test(text)) numberless.push(`${where}: ${text}`);
+  };
+
+  for (const tree of BUILT_TREES) {
+    for (const node of tree.nodes) {
+      // A conversion has no quantity in it at all: what it changes is WHICH
+      // damage type, and the choices under it each name one.
+      if (node.grants?.convertTree !== undefined || node.choices?.length) continue;
+      holds(`${tree.spec.skillId}/${node.id}`, node.description);
+    }
+  }
+  for (const c of CURRENCIES) {
+    // Two of them act on EVERY modifier or on none in particular. There is no
+    // figure being withheld, so there is none to print.
+    if (c.id === 'shard_of_change' || c.id === 'shard_of_chaos') continue;
+    holds(`currency/${c.id}`, c.description);
+  }
+  for (const q of CRYSTAL_QUESTS) holds(`quest/${q.id}`, q.detail);
+  for (const a of AURAS) holds(`aura/${a.id}`, a.blurb);
+
+  line(`  ${looked.length} lines read, ${numberless.length} with no figure in them`);
+  check(
+    numberless.length === 0,
+    'every line that has a number behind it says the number',
+    numberless.join('; ')
+  );
+
+  // What is deliberately NOT in that sweep, so the next session does not
+  // "fix" it: an encounter's herald and the Lampwright's speeches are voice
+  // rather than mechanics — nobody plays differently for knowing the Honour
+  // Guard is four, and the kill readout says four the moment it starts.
+  // GRANTS[].what describes a SWITCH with no value attached; a unique prints
+  // `say` instead, which is checked where the uniques are.
+  check(
+    ENCOUNTERS.every((e) => e.herald.length > 0) && LAMPWRIGHT.first.said.length > 0,
+    'and the lines that are voice rather than mechanics are left alone',
+    'flavour went missing'
+  );
+}
+
+// ===========================================================================
 rule('TERMINATION CHECK — does every run actually end?');
 
 // Worth its own check because this failure mode has bitten three times now
@@ -4330,6 +4384,27 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
   }
   check(undeclared.length === 0, `all ${UNIQUES.length} uniques grant only declared switches`, undeclared.join(', '));
   check(unread.length === 0, 'and every one of them is read by a skill you can pick', unread.join(', '));
+
+  // Declared and read is not the same as READABLE. A grant whose value is the
+  // wrong shape — a bare number where the sim wants { above, more } — is a
+  // switch that does nothing, silently, and four of these had one. `say`
+  // refusing the value is exactly that shape being wrong, so the line a card
+  // prints and the line the sim acts on cannot come apart.
+  const mute: string[] = [];
+  const said: string[] = [];
+  for (const u of UNIQUES) {
+    for (const [key, value] of Object.entries(u.grants ?? {})) {
+      const line = GRANT_BY_ID[key]?.say?.(value) ?? null;
+      if (line === null) mute.push(`${u.id}: ${key} = ${JSON.stringify(value)}`);
+      else said.push(`${u.name}: ${line}`);
+    }
+  }
+  for (const one of said) line(`  ${one}`);
+  check(
+    mute.length === 0,
+    'and says what it does with its own number in it, off a value the sim reads',
+    mute.join('; ')
+  );
 
   const noBase = UNIQUES.filter((u) => !GEAR_BASE_BY_ID[u.base]).map((u) => u.id);
   check(noBase.length === 0, 'and every one is a version of a base that exists', noBase.join(', '));

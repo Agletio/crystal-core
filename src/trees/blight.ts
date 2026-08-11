@@ -47,7 +47,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_pandemic',
           name: 'Pandemic',
-          description: 'And another 1.2 tiles wider again.',
+          description: 'And another +1.2 tiles wider.',
           grants: { contagionRadius: 1.2 },
         },
       },
@@ -94,7 +94,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_overpressure',
           name: 'Overpressure',
-          description: 'The burst deals full damage rather than a fraction of it.',
+          description: 'The burst carries +30% of the damage, for all of it.',
           grants: { explodeMultiplierAdd: 0.3 },
         },
       },
@@ -104,7 +104,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_sporeburst',
           name: 'Sporeburst',
-          description: 'The burst covers a third more ground again, and hits harder.',
+          description: 'The burst covers 35% more ground and deals 25% more damage.',
           grants: { explodeRadius: 1.35, explodeMultiplierAdd: 0.25 },
         },
       },
@@ -122,7 +122,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_miasma',
       name: 'Miasma',
-      description: 'Blight drops a second cloud on another enemy near the target.',
+      description: 'Blight drops +1 cloud, on another enemy near the target.',
       grants: { extraFields: 1 },
     },
     twigs: [
@@ -131,7 +131,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_choking',
           name: 'Choking Haze',
-          description: 'And a third cloud.',
+          description: 'And +1 cloud on top of that, for three.',
           grants: { extraFields: 1 },
         },
       },
@@ -140,7 +140,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_smother',
           name: 'Smother',
-          description: 'And two more beyond that.',
+          description: 'And +2 more clouds beyond that.',
           grants: { extraFields: 2 },
         },
       },
@@ -193,7 +193,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_necrosis',
           name: 'Necrosis',
-          description: 'The poison deals another 35% more damage.',
+          description: 'The poison deals a further 35% more damage.',
           grants: { ailmentMultiplier: 1.35 },
         },
       },
@@ -241,7 +241,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_wildgrowth',
           name: 'Wildgrowth',
-          description: 'The cloud covers a quarter more ground, and area grows again.',
+          description: 'The cloud covers 25% more ground, and +15% increased Area of Effect.',
           stats: [stat('areaOfEffect', 'inc', 15)],
           grants: { fieldRadius: 1.25 },
         },
@@ -264,7 +264,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_wither',
           name: 'Wither',
-          description: 'Blight deals 40% more damage to enemies below a third of their life.',
+          description: 'Blight deals 40% more damage to enemies below 33% of their life.',
           grants: { moreVsLow: { below: 0.33, more: 0.4 } },
         },
       },
@@ -273,7 +273,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_dread',
           name: 'Dread',
-          description: 'Blight deals 35% more damage to enemies above four fifths of their life.',
+          description: 'Blight deals 35% more damage to enemies above 80% of their life.',
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
       },
@@ -283,7 +283,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_surge',
           name: 'Surge',
-          description: 'Every fourth cast of Blight is worth two and a half.',
+          description: 'Every 4th cast of Blight deals 250% damage.',
           grants: { everyNth: { n: 4, multiplier: 2.5 } },
         },
       },
@@ -335,7 +335,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_focus',
     name: 'Malign Focus',
-    description: 'Blight critically strikes far more often, and far harder.',
+    description: 'Blight criticals +10% more often, for +45% critical damage.',
     stats: [stat('critChance', 'flat', 10), stat('critMultiplier', 'flat', 45)],
   },
   {

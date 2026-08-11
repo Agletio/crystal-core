@@ -119,8 +119,16 @@ number, the line is describing the wrong thing.
 
 This is about MECHANICS, not about voice. Flavour has no number behind it and is
 not covered: the Lampwright says what he sees, a unique's own line is a line
-about a dead man, and neither is a stat. The test is whether a player could act
-differently knowing the figure — if yes, the figure goes in.
+about a dead man, an encounter's herald announces an arrival the kill readout
+counts a second later, and none of them is a stat. The test is whether a player
+could act differently knowing the figure — if yes, the figure goes in.
+
+**The demo sweeps it**, over every tree node, every currency, every quest and
+every aura: a line with no digit in it fails. Three things are deliberately out
+of that sweep and must not be "fixed" into it — a conversion node, which
+changes WHICH damage type and names no amount; the two currencies that act on
+every modifier or on no particular one; and the flavour above. `GRANTS[].what`
+is out too, because it describes a switch with no value attached — see below.
 
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
@@ -358,7 +366,13 @@ that saturates anywhere needs its `cap` written down with it.
 **Uniques are gear that grants.** `UNIQUES` in `src/data.ts` is a table of
 `UniqueDef` — a base it is a version of, fixed `stats` rolled once by
 `makeUnique`, a `grants` bag out of the same `GRANTS` table the trees use, and a
-`gate`. `treeGrants` in `src/sim/stats.ts` merges what is WORN after the tree,
+`gate`. A grant's VALUE has to be the shape the sim reads — `moreVsFull` wants
+`{ above, more }` and a bare `1.35` is a switch that does nothing, silently.
+`GrantDef.say(value)` is that value in a sentence with its number in it, which
+is what a unique's card prints; it returns null for a shape it cannot read, and
+the demo fails on that — so the line the card shows and the line the sim acts
+on cannot come apart. `what` stays the generic description of the switch, for
+the demo and the skills screen, and no player reads it about a specific item. `treeGrants` in `src/sim/stats.ts` merges what is WORN after the tree,
 so a unique's switch reaches the sim by the one path a tree's does. The lines
 live in `implicits`, and the item declares NO modifier slots — `modCapacity` is
 zero and every currency refuses it, `sigil_of_upheaval` included. `plainGear`

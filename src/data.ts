@@ -1058,7 +1058,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'shard_of_making',
     name: 'Shard of Making',
     class: 'basic',
-    description: 'Fills one empty slot with a random modifier.',
+    description: 'Adds 1 random modifier, in an empty slot.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
     effects: [{ kind: 'add_mod', count: 1 }],
@@ -1087,7 +1087,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'essence_of_the_swarm',
     name: 'Essence of the Swarm',
     class: 'uncommon',
-    description: 'Fills a slot with a guaranteed Density modifier.',
+    description: 'Adds 1 modifier, in an empty slot, guaranteed to be a Density one.',
     // Targeting, on purpose, and only here: a crystal is a configuration you
     // are meant to be able to aim, and none of the gear chase runs through it.
     targets: { kinds: ['crystal'] },
@@ -1098,7 +1098,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'essence_of_greed',
     name: 'Essence of Greed',
     class: 'uncommon',
-    description: 'Fills a slot with a guaranteed Hunting modifier — which KIND of gear the run turns up, never which piece.',
+    description: 'Adds 1 modifier, in an empty slot, guaranteed to be a Hunting one — which KIND of gear the run turns up, never which piece.',
     targets: { kinds: ['crystal'] },
     requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
     effects: [{ kind: 'add_mod', tag: 'finding' }],
@@ -1112,7 +1112,7 @@ export const CURRENCIES: CurrencyDef[] = [
     // The whole bench is random except this. Choosing what LEAVES is the one
     // targeting that does not collapse the chase — you still cannot choose
     // what arrives.
-    description: 'Removes the modifier you choose.',
+    description: 'Removes 1 modifier: the one you point at.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
     effects: [{ kind: 'remove_mod', count: 1, chosen: true }],
@@ -1145,7 +1145,7 @@ export const CURRENCIES: CurrencyDef[] = [
     class: 'exotic',
     gate: { zone: 'demonic' },
     description:
-      'Adds a modifier beyond the item\'s limit, or takes one away at random, ' +
+      'Adds 1 modifier beyond the item\'s limit, or takes 1 away at random, ' +
       'then locks the item permanently.',
     targets: {},
     requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
@@ -1511,28 +1511,28 @@ export const AURAS: AuraDef[] = [
     name: 'Chant',
     family: 'demonic',
     flatDamage: 1.75,
-    blurb: 'Every swing nearby lands with a fixed weight added.',
+    blurb: 'Every swing within 6 tiles lands with 175% of a monster\'s damage added.',
   },
   {
     id: 'bulwark',
     name: 'Bulwark',
     family: 'demonic',
     flatArmour: 380,
-    blurb: 'Nearby hide thickens by a fixed amount.',
+    blurb: 'Hide within 6 tiles thickens by +380 armour.',
   },
   {
     id: 'resonance',
     name: 'Resonance',
     family: 'prismatic',
     incDamage: 175,
-    blurb: 'Nearby damage is multiplied — including whatever a Chant added.',
+    blurb: 'Damage within 6 tiles is +175% increased — including whatever a Chant added.',
   },
   {
     id: 'refraction',
     name: 'Refraction',
     family: 'prismatic',
     incArmour: 175,
-    blurb: 'Nearby armour is multiplied — including whatever a Bulwark added.',
+    blurb: 'Armour within 6 tiles is +175% increased — including whatever a Bulwark added.',
   },
 ];
 
@@ -2112,7 +2112,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'damage', form: 'flat', range: [20, 30] },
       { stat: 'life', form: 'inc', range: [-35, -25] },
     ],
-    grants: { moreVsFull: 1.35 },
+    grants: { moreVsFull: { above: 0.8, more: 0.35 } },
     gate: { zone: 'fissure', minPower: 1 },
   },
   {
@@ -2125,7 +2125,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'attackSpeed', form: 'inc', range: [12, 20] },
       { stat: 'castSpeed', form: 'inc', range: [12, 20] },
     ],
-    grants: { pierce: 2, pierceDamage: true },
+    grants: { pierce: 2, pierceDamage: 1 },
     gate: { zone: 'fissure', minPower: 2 },
   },
   // The Rot: everything here is about what a corpse is still good for.
@@ -2138,7 +2138,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'life', form: 'inc', range: [-30, -20] },
       { stat: 'critChance', form: 'flat', range: [6, 10] },
     ],
-    grants: { explodeOnKill: true },
+    grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
     gate: { zone: 'demonic', minPower: 2 },
   },
   {
@@ -2164,7 +2164,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'armour', form: 'inc', range: [-40, -30] },
       { stat: 'rarity', form: 'flat', range: [18, 30] },
     ],
-    grants: { extraTargets: 2, extraTargetDamage: true, extraFields: 1 },
+    grants: { extraTargets: 2, extraTargetDamage: 1, extraFields: 1 },
     gate: { zone: 'prismatic', minPower: 3 },
   },
   // The Seam, and the only piece that asks for both worlds at once.
@@ -2177,7 +2177,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'life', form: 'inc', range: [-45, -35] },
       { stat: 'damage', form: 'inc', range: [40, 60] },
     ],
-    grants: { explode: true, explodeRadius: 1.5, explodeMultiplierAdd: 0.4 },
+    grants: { explode: { radius: 1.6, multiplier: 0.5 }, explodeRadius: 1.5, explodeMultiplierAdd: 0.4 },
     gate: { zone: 'seam', minPower: 4 },
   },
 ];

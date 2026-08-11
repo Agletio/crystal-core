@@ -104,7 +104,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_fuelair',
           name: 'Fuel-Air Charge',
-          description: 'The burst deals full damage rather than a fraction of it.',
+          description: 'The burst carries +45% of the damage, for all of it.',
           grants: { explodeMultiplierAdd: 0.45 },
         },
       },
@@ -152,7 +152,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_volley',
           name: 'Volley',
-          description: 'Fireball strikes another additional enemy, for 70% damage.',
+          description: 'Fireball strikes +1 enemy on top of that, for 70% damage.',
           grants: { extraTargets: 1 },
         },
       },
@@ -260,7 +260,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_executioner',
           name: 'Executioner',
-          description: 'Fireball deals 35% more damage to enemies below a third of their life.',
+          description: 'Fireball deals 35% more damage to enemies below 33% of their life.',
           grants: { moreVsLow: { below: 0.33, more: 0.35 } },
         },
       },
@@ -270,7 +270,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overload',
           name: 'Overload',
-          description: 'Every fifth cast of Fireball deals triple damage.',
+          description: 'Every 5th cast of Fireball deals 300% damage.',
           grants: { everyNth: { n: 5, multiplier: 3 } },
         },
       },
@@ -321,13 +321,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_opening',
     name: 'Opening Salvo',
-    description: 'Fireball deals 35% more damage to enemies above four fifths of their life.',
+    description: 'Fireball deals 35% more damage to enemies above 80% of their life.',
     grants: { moreVsFull: { above: 0.8, more: 0.35 } },
   },
   {
     id: 'fb_focus',
     name: 'Sharpened Focus',
-    description: 'Fireball critically strikes far more often, and far harder.',
+    description: 'Fireball criticals +11% more often, for +45% critical damage.',
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {

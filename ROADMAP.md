@@ -29,40 +29,10 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Every number said out loud
-
-The rule is in `RULES.md`. This is the sweep, and the check that keeps it swept.
-
-**What is true today.** Most tree nodes already carry figures. What does not:
-fractions written as words — "a third more ground", "a quarter more", "below a
-third of their life", "above four fifths of their life"; counts written as
-words — "And a third cloud", "And a third swing", "another additional enemy";
-and bare comparatives — "hits harder", "reach grows again", "wider again".
-`GRANTS[].what` in `src/sim/grants.ts` is worse: "more damage to enemies near
-you", "extra swings at the target", "more enemies near the target are hit" —
-generic by design, and since uniques landed those strings are printed verbatim
-on a unique's card.
-
-**Why it is wrong.** Every one of those is a decision the player is being asked
-to make with the number withheld.
-
-- [ ] Every node `description` in `src/trees/*` names its figures. Fractions
-      become percentages; "another" becomes "+1"; a comparative names its
-      amount.
-- [ ] A unique's card prints the VALUE off the unique's own `grants` bag, not
-      the generic sentence from `GRANTS[].what`. `what` stays what it is — a
-      description of the SWITCH for the demo and for `src/ui/skills.ts` — but it
-      stops being the thing a player reads about a specific item.
-- [ ] Currency descriptions, quest `detail`, `AURAS`, encounter `herald`, the
-      report's rows and every tooltip note get the same pass.
-- [ ] **A demo check, or it rots in a month.** Player-facing text with no digit
-      in it fails, with an allow-list for the lines that genuinely have no
-      number — flavour, and the Lampwright.
-
-**What must not break.** `npm run mods` proves every modifier reads; `npm run
-smoke` asserts the shapes of several of these strings, including that a stat
-line splits its value from its words. The tree demo checks descriptions exist;
-they now also have to contain a figure.
+**There are none.** Everything written down has been built. What is left is the
+two open questions below, which are the user's to answer, and a backlog that is
+deferred by decision rather than queued — nothing comes out of it without being
+asked for.
 
 ---
 
