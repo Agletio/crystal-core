@@ -11,10 +11,24 @@ import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent, RunState } from '../sim/run';
 import { characterStats, treeGrants } from '../sim/stats';
-import { attributePointsLeft, mainSkillId, spareTreePoints, xpToNext } from '../sim/character';
+import {
+  attributePointsLeft,
+  equippedSkill,
+  mainSkillId,
+  spareTreePoints,
+  xpToNext,
+} from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
-import { FAMILY_BY_ID, LAMPWRIGHT, POTIONS, RUN_SLOTS, THEME_BY_ID } from '../data';
+import {
+  FAMILY_BY_ID,
+  LAMPWRIGHT,
+  POTIONS,
+  RUN_SLOTS,
+  SKILL_BY_ID,
+  SKILL_SLOTS,
+  THEME_BY_ID,
+} from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, giftWaiting } from '../game/crystals';
@@ -33,6 +47,9 @@ import { renderInventory, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
+import { openCharacter, skillLines } from './character';
+import { skillIcon } from './icons';
+import { attachTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
 import type { Item } from '../types';
 
@@ -548,7 +565,6 @@ function renderReadout(): void {
   const pool = Math.max(1, s.hero.stats.maxMana);
   ($('run-mana-fill') as HTMLElement).style.width = `${Math.min(100, (spare / pool) * 100)}%`;
   $('run-mana-text').textContent = `${Math.round(spare)} / ${Math.round(pool)}`;
-  $('run-mana-cost').textContent = cost.toFixed(1);
   // Short of the cost is the state worth seeing: it is why the damage dropped.
   ($('run-mana-fill').parentElement as HTMLElement).classList.toggle('hp--dry', spare < cost);
   // And how often it has happened, since one starved cast is invisible and a
@@ -927,10 +943,36 @@ export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
   renderBadges();
+  renderSkillIcons();
 }
 
 /** What each screen is holding that has not been spent. One place, called
  *  after everything that could change one. */
+/**
+ * The three you are holding, under the xp bar. Hover says what it is; click
+ * opens the sheet at that skill's own section, which is where its numbers are.
+ */
+function renderSkillIcons(): void {
+  const host = $('run-skills');
+  host.replaceChildren();
+
+  for (const slot of SKILL_SLOTS) {
+    const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
+    const cell = el('button', `mini skillslot${held ? '' : ' skillslot--empty'}`) as HTMLButtonElement;
+    cell.id = `run-skill-${slot.id}`;
+    cell.append(held ? skillIcon(held.id, 30) : el('span', 'skillslot__none', slot.name[0]));
+    attachTooltip(cell, () =>
+      held
+        ? [`${slot.name} — ${held.name}`, held.description, ...skillLines(held).map((l) => `${l}.`)]
+            .filter(Boolean)
+            .join('\n')
+        : `${slot.name}\n${slot.blurb}`
+    );
+    cell.onclick = () => openCharacter(slot.id);
+    host.append(cell);
+  }
+}
+
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));

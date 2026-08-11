@@ -45,45 +45,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Three icons, and the stats that belong to a skill [user 4]
-
-**What is true today.** The run panel's readout begins with a `mana a swing`
-row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar, with a
-`starved casts` row under it. `SKILL_SLOTS` and `Character.equipped` exist —
-`mainSkillId`, `equippedSkill` and `SKILL_SLOT_BY_ID[slot].blurb` are what the
-icons and the empty-slot line read. The
-character sheet (`src/ui/character.ts`) mixes stats belonging to the CHARACTER
-— life, armour, resistances, move speed, the mana pool and its regeneration —
-with stats belonging to the SKILL it happens to resolve: the damage breakdown,
-damage per second, crit chance and crit damage, casts or attacks per second,
-mana per use, reach.
-
-**Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped it cannot even be written down.
-
-- [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
-      three skill icons, one per slot, over `SKILL_SLOTS`. `skillIcon(skillId,
-      size)` in `src/ui/icons.ts` draws all four skills. The `starved casts`
-      row stays: it belongs to the run, not to a skill.
-- [ ] HOVER gives the short version. CLICK opens the character sheet at that
-      skill's own section.
-- [ ] The sheet gains a section PER EQUIPPED SKILL holding everything only true
-      of that skill: its damage breakdown, mana per use, damage per second,
-      crit chance and crit damage, casts or attacks per second, reach. Those
-      rows LEAVE the general stats, which keeps life, armour, resistances, move
-      speed, regeneration, the mana pool and its regeneration.
-- [ ] An empty slot says what it is for. A dark square teaches nothing, and
-      `SkillSlotDef.blurb` is already that sentence.
-- [ ] The sheet's right column now runs level → xp → skill line → ATTRIBUTES →
-      Stats → Resistances. Attributes belong to the CHARACTER and stay where
-      they are; the per-skill sections go below them.
-
-**What must not break.** `npm run shots` renders the sheet and the run panel at
-390px, where three icons and three sections are the tight fit; the sheet
-harness in `src/demo.ts` checks every number on it survives being recomputed,
-and it walks the rows.
-
-### Phase 2 — Trades: the part of a character that is not the skill
+### Phase 1 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -165,7 +127,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 3 — Every monster brings its own element [user 10]
+### Phase 2 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -221,7 +183,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 4 — What a node does, shown and not overlapped [user 8]
+### Phase 3 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

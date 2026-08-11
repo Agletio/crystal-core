@@ -420,6 +420,18 @@
   .attr__buy { padding: 0; width: 24px; height: 22px; line-height: 1; font-size: 13px; }
   .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--dust); }
 
+  .skillrow-icons { display: flex; gap: 8px; margin: 10px 0 12px; }
+  .skillslot { padding: 4px; display: flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; }
+  .skillslot--empty { border-style: dashed; opacity: .5; }
+
+  /* One block per equipped skill: only the numbers true of THAT skill. */
+  .skillsec { border-left: 3px solid var(--seam-lit); padding: 2px 0 2px 9px; margin-bottom: 12px; }
+  .skillsec--main { border-left-color: var(--citrine); }
+  .skillsec__slot { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
+  .skillsec__name { font-size: 13px; color: var(--chalk); margin-bottom: 2px; }
+  .skillsec__how { font-size: 11px; color: var(--dust); margin-bottom: 4px; }
+  .skillsec__empty { font-size: 11px; color: var(--dust); font-style: italic; }
+
   .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
   .stat__k { color: var(--dust); }
   .stat__unit { color: var(--seam-lit); font-size: 10px; margin-left: 5px; }
@@ -1254,8 +1266,10 @@
             <div class="hp__text" id="run-xp-text">0 / 0</div>
           </div>
 
+          <!-- One per slot, and the way into the sheet section explaining it. -->
+          <div class="skillrow-icons" id="run-skills"></div>
+
           <div class="readout">
-            <div><span>mana a swing</span><code id="run-mana-cost">0</code></div>
             <!-- Rust once there are any: the damage is down, and this is why. -->
             <div><span>starved casts</span><code id="run-starved">0</code></div>
             <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
@@ -1517,7 +1531,7 @@
           </div>
           <!-- Which skill every number below is for. Damage is meaningless
                without it, and the sheet used to leave it unsaid. -->
-          <div class="skillline" id="sheet-skill"></div>
+          <div id="sheet-skills"></div>
           <!-- What the level above bought. Spent by hand, and the only thing
                on this screen that is a decision rather than a readout. -->
           <p class="panel__title">Attributes <span class="attrleft" id="sheet-attr-left" hidden></span></p>

@@ -1290,7 +1290,42 @@ assert(slots.length === 8, 'all eight equipment slots shown', String(slots.lengt
 
 const worn = all('#sheet-slots .slotcell__btn--worn');
 assert(worn.length === 8, 'starter set fills every slot', String(worn.length));
-assert(all('#sheet-stats .stat').length >= 8, 'sheet lists derived stats');
+assert(all('#sheet-stats .stat').length >= 5, 'sheet lists the character’s own stats');
+
+// --- three sections, one per slot ------------------------------------------
+// Everything only true of ONE skill lives with that skill; the general list
+// above keeps what is true of the character whatever it is holding.
+{
+  const secs = all('#sheet-skills .skillsec');
+  assert(secs.length === 3, 'a section per skill slot', String(secs.length));
+  const main = $('sheet-skill-main');
+  assert(
+    /Strike/.test(main.textContent ?? ''),
+    'the main one names the skill that swings',
+    main.textContent?.slice(0, 40)
+  );
+  const keys = (host) =>
+    all(`${host} .stat__k`).map((n) => n.textContent);
+  assert(
+    ['damage', 'crit chance', 'mana per use', 'reach'].every((k) => keys('#sheet-skill-main').includes(k)),
+    'and carries the numbers that would change with it',
+    keys('#sheet-skill-main').join(', ')
+  );
+  assert(
+    ['damage', 'crit chance', 'reach'].every((k) => !keys('#sheet-stats').includes(k)),
+    'and those rows have LEFT the general stats',
+    keys('#sheet-stats').join(', ')
+  );
+  assert(
+    ['life', 'armour', 'mana'].every((k) => keys('#sheet-stats').includes(k)),
+    'which keeps what is true of the character',
+    keys('#sheet-stats').join(', ')
+  );
+  // An empty slot says what it is for. A dark square teaches nothing.
+  const empty = all('#sheet-skills .skillsec__empty');
+  assert(empty.length > 0 && empty.every((n) => (n.textContent ?? '').length > 12),
+    'and an empty slot says what it is for', String(empty.length));
+}
 
 // Armour must print points AND what they're worth — the whole reason it
 // curves on points rather than hit size is that this can be stated.
@@ -1306,17 +1341,17 @@ assert(
 // --- the sheet says what its numbers are for ------------------------------
 // Damage with no skill beside it is a number without units, and the tree can
 // have changed the type since you picked the skill.
-assert(text('sheet-skill').length > 0, 'the sheet names the skill it computed for');
+assert(text('sheet-skill-main').length > 0, 'the sheet names the skill it computed for');
 assert(
-  /on hit|over \d+s/.test(text('sheet-skill')),
+  /on hit|over \d+s/.test(text('sheet-skill-main')),
   'and how that skill delivers its damage',
-  text('sheet-skill')
+  text('sheet-skill-main')
 );
 
 // --- the damage number comes apart -----------------------------------------
 {
   const rowFor = (k) =>
-    all('#sheet-stats .stat').find((r) => r.querySelector('.stat__k')?.textContent === k);
+    all('#sheet-skill-main .stat').find((r) => r.querySelector('.stat__k')?.textContent === k);
   const dmg = rowFor('damage');
   assert(dmg?.classList.contains('stat--open') === true, 'the damage row opens');
   assert(
@@ -1458,9 +1493,9 @@ $('sheet-close').click();
   $('skills-close').click();
   $('open-character').click();
   assert(
-    /Strike/.test(text('sheet-skill')),
+    /Strike/.test(text('sheet-skill-main')),
     'and the sheet still computes for the skill that swings',
-    text('sheet-skill')
+    text('sheet-skill-main')
   );
   $('sheet-close').click();
 }
@@ -1787,12 +1822,14 @@ $('skills-close').click();
 
   $('open-character').click();
   assert(
-    /over \d+s/.test(text('sheet-skill')),
+    /over \d+s/.test(text('sheet-skill-main')),
     'the sheet reports a lasting skill as lasting',
-    text('sheet-skill')
+    text('sheet-skill-main')
   );
 
-  const dmg = all('#sheet-stats .stat').find(
+  // The damage row belongs to the SKILL now, so it is in that slot's section
+  // rather than in the general stats.
+  const dmg = all('#sheet .stat').find(
     (r) => r.querySelector('.stat__k')?.textContent === 'damage'
   );
   dmg.click();

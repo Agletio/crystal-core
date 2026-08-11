@@ -9,6 +9,9 @@
 import {
   ATTRIBUTES,
   ATTRIBUTE_STEP,
+  MAIN_SLOT,
+  SKILL_BY_ID,
+  SKILL_SLOTS,
   DAMAGE_TYPES,
   DAMAGE_TYPE_BY_ID,
   DEFENCE,
@@ -17,12 +20,13 @@ import {
   SKILLS,
 } from '../data';
 import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { starvedMultiplier } from '../sim/grants';
+import { GRANT_BY_ID, starvedMultiplier } from '../sim/grants';
 import { damageWorkings } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
   addXp,
   attributePointsLeft,
+  equippedSkill,
   attributeSteps,
   spendAttribute,
   xpToNext,
@@ -36,7 +40,7 @@ import { attachTooltip, hideTooltip } from './tooltip';
 import { itemCard } from './itemcard';
 import { slotButtonId } from './tutorial';
 import { setInventoryHandler } from './inventory';
-import type { EquipSlotDef, Item } from '../types';
+import type { EquipSlotDef, Item, SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -251,6 +255,29 @@ function damagePanel(): HTMLElement {
   return box;
 }
 
+/** One row, wherever it is drawn. A row that opens keeps its fold across a
+ *  redraw, which is what `openStat` is for. */
+function statRow(host: HTMLElement, row: StatRow): void {
+  const node = row.detail
+    ? (el('button', 'stat stat--open') as HTMLButtonElement)
+    : el('div', 'stat');
+  node.append(el('span', 'stat__k', row.key));
+  const value = el('span', 'stat__v', row.value);
+  if (row.unit) value.append(el('span', 'stat__unit', row.unit));
+  node.append(value);
+  if (row.why) attachTooltip(node, () => `${row.key}\n${row.why}`);
+
+  if (row.detail) {
+    node.classList.toggle('stat--on', openStat === row.key);
+    (node as HTMLButtonElement).onclick = () => {
+      openStat = openStat === row.key ? null : row.key;
+      render();
+    };
+  }
+  host.append(node);
+  if (row.detail && openStat === row.key) host.append(row.detail());
+}
+
 interface StatRow {
   key: string;
   value: string;
@@ -266,9 +293,62 @@ function renderStats(): void {
   const host = $('sheet-stats');
   host.replaceChildren();
 
-  const cast = detail.skill.tags.includes('spell');
   const rows: StatRow[] = [
     { key: 'life', value: round(s.maxLife) },
+    { key: 'move speed', value: s.moveSpeed.toFixed(1), unit: 'tiles/s' },
+    // Armour shows points AND what they're worth — the whole reason it curves
+    // on points rather than on hit size is that this number can be stated.
+    {
+      key: 'armour',
+      value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
+      why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
+    },
+    { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
+    { key: 'mana', value: round(s.maxMana) },
+    {
+      key: 'mana/sec',
+      value: s.manaRegen.toFixed(1),
+      why:
+        `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. ` +
+        `With nothing in the pool you cast anyway, for ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}% of your damage — ` +
+        'your own skill, with everything the tree gave it.',
+    },
+  ];
+
+  for (const row of rows) statRow(host, row);
+
+  // Resistances, grouped as they're resisted. Zeroes are shown too — an
+  // unresisted type is exactly the thing you want to notice.
+  const res = $('sheet-res');
+  res.replaceChildren();
+  for (const type of DAMAGE_TYPES) {
+    const value = Math.round(s.resistances[type.id] ?? 0);
+    const row = el('div', 'stat');
+    row.append(el('span', 'stat__k', type.name.toLowerCase()));
+    const cell = el('span', 'stat__v', `${value}%`);
+    if (value >= DEFENCE.resistanceCap) cell.classList.add('stat__v--capped');
+    else if (value === 0) cell.classList.add('stat__v--zero');
+    row.append(cell);
+    res.append(row);
+  }
+
+  const need = xpToNext(game.character.level);
+  $('sheet-level').textContent = String(game.character.level);
+  $('sheet-xp-text').textContent = `${game.character.xp} / ${need}`;
+  ($('sheet-xp-fill') as HTMLElement).style.width =
+    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+}
+
+/** Id of one slot's section, so the run panel's icon can open the sheet at it. */
+export const skillSectionId = (slotId: string): string => `sheet-skill-${slotId}`;
+
+/** The rows only true of the skill that SWINGS. Everything here would be a
+ *  different number for a different main skill, which is why it lives here. */
+function mainRows(): StatRow[] {
+  const s = characterStats(game.character);
+  const detail = damageDetail(game.character);
+  const cast = detail.skill.tags.includes('spell');
+  return [
     {
       key: 'damage',
       value: round(detail.perApplication),
@@ -296,24 +376,6 @@ function renderStats(): void {
       value: `×${(2 + s.critMultiplier / 100).toFixed(2)}`,
       why: 'A crit doubles, plus this. Damage over time rolls it per tick.',
     },
-    { key: 'move speed', value: s.moveSpeed.toFixed(1), unit: 'tiles/s' },
-    // Armour shows points AND what they're worth — the whole reason it curves
-    // on points rather than on hit size is that this number can be stated.
-    {
-      key: 'armour',
-      value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
-      why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
-    },
-    { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
-    { key: 'mana', value: round(s.maxMana) },
-    {
-      key: 'mana/sec',
-      value: s.manaRegen.toFixed(1),
-      why:
-        `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. ` +
-        `With nothing in the pool you cast anyway, for ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}% of your damage — ` +
-        'your own skill, with everything the tree gave it.',
-    },
     {
       key: 'mana per use',
       value: s.manaCost.toFixed(1),
@@ -321,87 +383,75 @@ function renderStats(): void {
     },
     { key: 'reach', value: s.attackRange.toFixed(1), unit: 'tiles' },
   ];
+}
 
-  for (const row of rows) {
-    const node = row.detail
-      ? (el('button', 'stat stat--open') as HTMLButtonElement)
-      : el('div', 'stat');
-    node.append(el('span', 'stat__k', row.key));
-    const value = el('span', 'stat__v', row.value);
-    if (row.unit) value.append(el('span', 'stat__unit', row.unit));
-    node.append(value);
-    if (row.why) attachTooltip(node, () => `${row.key}\n${row.why}`);
-
-    if (row.detail) {
-      node.classList.toggle('stat--on', openStat === row.key);
-      (node as HTMLButtonElement).onclick = () => {
-        openStat = openStat === row.key ? null : row.key;
-        render();
-      };
-    }
-    host.append(node);
-    if (row.detail && openStat === row.key) host.append(row.detail());
+/** What a skill that never casts DOES, in figures, out of the grant table so
+ *  the line and the switch the sim reads cannot come apart. */
+export function skillLines(skill: SkillDef): string[] {
+  const said = Object.entries(skill.grants ?? {})
+    .map(([id, value]) => GRANT_BY_ID[id]?.say?.(value))
+    .filter((line): line is string => typeof line === 'string');
+  const params = skill.params ?? {};
+  if (typeof params.distance === 'number' && typeof params.cooldown === 'number') {
+    said.push(`Steps up to ${params.distance} tiles every ${params.cooldown}s, on its own`);
   }
-
-  // Resistances, grouped as they're resisted. Zeroes are shown too — an
-  // unresisted type is exactly the thing you want to notice.
-  const res = $('sheet-res');
-  res.replaceChildren();
-  for (const type of DAMAGE_TYPES) {
-    const value = Math.round(s.resistances[type.id] ?? 0);
-    const row = el('div', 'stat');
-    row.append(el('span', 'stat__k', type.name.toLowerCase()));
-    const cell = el('span', 'stat__v', `${value}%`);
-    if (value >= DEFENCE.resistanceCap) cell.classList.add('stat__v--capped');
-    else if (value === 0) cell.classList.add('stat__v--zero');
-    row.append(cell);
-    res.append(row);
-  }
-
-  const need = xpToNext(game.character.level);
-  $('sheet-level').textContent = String(game.character.level);
-  $('sheet-xp-text').textContent = `${game.character.xp} / ${need}`;
-  ($('sheet-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+  return said;
 }
 
 /**
- * What every number below is computed for. Damage without the skill beside it
- * is a number with no units, and the tree can have changed the type since you
- * picked it.
+ * One block per slot. Every number that would be a different number for a
+ * different skill lives in its own block; the general stats below keep what is
+ * true of the CHARACTER whatever it is holding.
  */
-function renderSkill(): void {
-  const host = $('sheet-skill');
+function renderSkills(): void {
+  const host = $('sheet-skills');
   host.replaceChildren();
-  const detail = damageDetail(game.character);
-  const { baseType } = detail.breakdown;
-  const dealt = DAMAGE_TYPE_BY_ID[baseType]?.name ?? baseType;
-  const base = Math.round(skillBase(detail.skill, game.character.level));
 
-  host.append(el('div', 'skillline__name', detail.skill.name));
-  host.append(
-    el(
-      'div',
-      'skillline__how',
-      detail.seconds > 0
-        ? `${base} ${dealt} over ${detail.seconds}s per cast · ${detail.skill.tags.join(', ')}`
-        : `${base} ${dealt} on hit · ${detail.skill.tags.join(', ')}`
-    )
-  );
-  // The one rule the rows below cannot show: what a point of flat damage from
-  // your gear is worth here, and that it arrives as its own type.
-  host.append(
-    el(
-      'div',
-      'skillline__how',
-      `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
-    )
-  );
+  for (const slot of SKILL_SLOTS) {
+    const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
+    const main = slot.id === MAIN_SLOT;
+    const box = el('div', `skillsec${main ? ' skillsec--main' : ''}`);
+    box.id = skillSectionId(slot.id);
+    box.append(el('div', 'skillsec__slot', slot.name));
+
+    if (!held) {
+      box.append(el('div', 'skillsec__empty', slot.blurb));
+      host.append(box);
+      continue;
+    }
+
+    box.append(el('div', 'skillsec__name', held.name));
+    if (main) {
+      const detail = damageDetail(game.character);
+      const dealt = DAMAGE_TYPE_BY_ID[detail.breakdown.baseType]?.name ?? detail.breakdown.baseType;
+      const base = Math.round(skillBase(detail.skill, game.character.level));
+      box.append(
+        el(
+          'div',
+          'skillsec__how',
+          detail.seconds > 0
+            ? `${base} ${dealt} over ${detail.seconds}s per cast · ${detail.skill.tags.join(', ')}`
+            : `${base} ${dealt} on hit · ${detail.skill.tags.join(', ')}`
+        )
+      );
+      box.append(
+        el(
+          'div',
+          'skillsec__how',
+          `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
+        )
+      );
+      for (const row of mainRows()) statRow(box, row);
+    } else {
+      for (const line of skillLines(held)) box.append(el('div', 'skillsec__how', `${line}.`));
+    }
+    host.append(box);
+  }
 }
 
 function render(): void {
   hideTooltip();
-  renderSkill();
+  renderSkills();
   renderSlots();
   renderPickHint();
   renderAttributes();
@@ -418,10 +468,13 @@ export function refreshCharacter(): void {
   if (isCharacterOpen()) render();
 }
 
-export function openCharacter(): void {
+export function openCharacter(atSlot?: string): void {
   picking = null;
   render();
   $('sheet').hidden = false;
+  // Opened FROM an icon: the sheet is long enough that a section below the
+  // fold is a click that appears to do nothing.
+  if (atSlot) $(skillSectionId(atSlot))?.scrollIntoView({ block: 'center' });
 }
 
 export function closeCharacter(): void {
