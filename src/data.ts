@@ -1417,8 +1417,7 @@ export const MANA = {
   costPerSecond: 9,
   /** How far one may sit either side of it before the demo objects. */
   costTolerance: 0.12,
-  /** The share of your damage a dry swing is worth. */
-  dryDamage: 0.5,
+  starvedDamage: 0.5, // STARVED: the share of your damage a cast with an empty pool lands for
 };
 
 /**
@@ -2083,24 +2082,6 @@ export const POTIONS: PotionDef[] = [
 export const POTION_BY_ID: Record<string, PotionDef> = Object.fromEntries(
   POTIONS.map((p) => [p.id, p])
 );
-
-/** What you swing when you cannot pay. No category, so it never reaches the
- *  Skills screen, and no tree reaches it. */
-export const DRY_SKILL: SkillDef = {
-  id: 'dry_swing',
-  name: 'Bare Swing',
-  description: `A swing with nothing behind it, for ${Math.round(MANA.dryDamage * 100)}% of your damage.`,
-  tags: ['attack'],
-  behaviour: 'dry_swing',
-  damageTypes: ['physical'],
-  baseDamage: 0, // never read: the damage is the character's own, cut down
-
-  addedEffectiveness: 100,
-  rateMultiplier: 1,
-  manaCost: 0,
-  range: HERO_BASE.attackRange,
-  vfxKind: 'swing',
-};
 
 // --- loot ------------------------------------------------------------------
 //

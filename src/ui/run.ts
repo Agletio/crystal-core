@@ -10,7 +10,7 @@
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent, RunState } from '../sim/run';
-import { characterStats } from '../sim/stats';
+import { characterStats, treeGrants } from '../sim/stats';
 import { attributePointsLeft, spareTreePoints, xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
@@ -33,6 +33,7 @@ import { renderInventory, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
+import { starvedMultiplier } from '../sim/grants';
 import type { Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -550,6 +551,11 @@ function renderReadout(): void {
   $('run-mana-cost').textContent = cost.toFixed(1);
   // Short of the cost is the state worth seeing: it is why the damage dropped.
   ($('run-mana-fill').parentElement as HTMLElement).classList.toggle('hp--dry', spare < cost);
+  // And how often it has happened, since one starved cast is invisible and a
+  // hundred of them is the whole descent.
+  const starved = $('run-starved');
+  starved.textContent = `${s.dryCasts} at ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}%`;
+  starved.classList.toggle('readout__v--bad', s.dryCasts > 0);
 
   // A walked-out run is still 'running' to the sim — it was never finished —
   // so the chip reads the phase for that one case rather than the sim.

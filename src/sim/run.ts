@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import { WALL, generateMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, DRY_SKILL, POTIONS, POTION_BY_ID } from '../data';
+import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
 import { lookOf } from './appearance';
 import {
   armourReduction,
@@ -21,6 +21,7 @@ import {
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
+import { starvedMultiplier } from './grants';
 import { monsterXp } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
@@ -300,6 +301,8 @@ export class RunSim {
   private readonly grants: Record<string, unknown>;
   /** Crit decided for the current skill use, so every target shares it. */
   private useCrit: boolean | null = null;
+  /** True for the length of a cast the hero could not pay for. */
+  private starved = false;
   /** How many times the hero has cast, for nodes that count casts. */
   private casts = 0;
   /** Set once the closing encounter has been triggered. */
@@ -1162,18 +1165,17 @@ export class RunSim {
     this.state.hero.effects.push({ id, remaining: POTION_BY_ID[id].seconds });
   }
 
-  /** The one place mana is spent. Short of the cost you swing bare rather than
-   *  stand still, because a descent that never ends is a harness that hangs. */
+  /** The one place mana is spent. Short of it you are STARVED: the pool drains
+   *  to 0 and the cast lands at `starvedMultiplier`, skill and tree intact. */
   private swing(hero: Entity, target: Entity): void {
     const cost = hero.stats.manaCost;
     this.state.casts++;
-    if (hero.mana + 1e-9 >= cost) {
-      hero.mana -= cost;
-      this.useSkill(hero, target, this.skill);
-      return;
-    }
-    this.state.dryCasts++;
-    this.useSkill(hero, target, DRY_SKILL);
+    const paid = hero.mana + 1e-9 >= cost;
+    hero.mana = paid ? hero.mana - cost : 0;
+    if (!paid) this.state.dryCasts++;
+    this.starved = !paid;
+    this.useSkill(hero, target, this.skill);
+    this.starved = false;
   }
 
   private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
@@ -1182,8 +1184,7 @@ export class RunSim {
     user.action = 'attack';
     user.actionTimer = ATTACK_POSE;
 
-    // Nothing the tree granted reaches a dry swing.
-    const grants = user.kind === 'hero' && skill !== DRY_SKILL ? this.grants : {};
+    const grants = user.kind === 'hero' ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
@@ -1241,6 +1242,8 @@ export class RunSim {
 
     let scale = multiplier * this.rng.float(0.9, 1.1);
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
+    // Ailments and bursts too: no corner of a build runs dry for free.
+    if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
 
     // Resistance applies to ONE type's damage, never to a summed total, or
     // fire resistance would reduce the physical half of the same hit. Armour

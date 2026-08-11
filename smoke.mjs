@@ -249,6 +249,21 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
     'and the next descent starts full: a budget, never a stockpile',
     charges().join(' ')
   );
+  // Starved reads out. Zero is the honest answer for a dev-kit character with
+  // a pool, and the row says what a starved cast is worth so a halved number
+  // is never a mystery.
+  $('run-launch').click();
+  await new Promise((r) => setTimeout(r, 60));
+  assert(
+    /^\d+ at \d+%$/.test(text('run-starved')),
+    'the readout counts starved casts and says what one is worth',
+    text('run-starved')
+  );
+  assert(
+    !$('run-starved').classList.contains('readout__v--bad'),
+    'and does not shout while nothing has starved',
+    $('run-starved').getAttribute('class') ?? ''
+  );
   $('run-abandon').click();
   $('run-again').click();
 }

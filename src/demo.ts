@@ -107,7 +107,7 @@ import {
 import { damageWorkings, readWorkings } from './damage-text';
 import { describeStatLine } from './mod-text';
 import { SKILL_BEHAVIOURS } from './sim/skills';
-import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants } from './sim/grants';
+import { GRANT_BY_ID, STATS, behaviourReads, mergeGrants, starvedMultiplier } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import {
   BUILT_TREES,
@@ -3750,7 +3750,7 @@ rule('MANA — is a bare skill just barely sustainable?');
     const share = dry / Math.max(1, casts);
     dryShare.push(share);
     line(
-      `  ${skill.id.padEnd(9)} ${(share * 100).toFixed(0)}% of swings were bare, ${cleared}/${runs} cleared`
+      `  ${skill.id.padEnd(9)} ${(share * 100).toFixed(0)}% of swings were starved, ${cleared}/${runs} cleared`
     );
     if (cleared < runs * 0.8) unclear.push(`${skill.id} ${cleared}/${runs}`);
   }
@@ -3767,6 +3767,47 @@ rule('MANA — is a bare skill just barely sustainable?');
     `${(best * 100).toFixed(0)}% to ${(worst * 100).toFixed(0)}% of swings go unpaid — ` +
       'the skill is cast most of the time between 5% and 50%'
   );
+
+  // What running dry COSTS, and that it is a penalty rather than a wall. The
+  // skill is still yours: same delivery, same grants, same targets, at a
+  // multiplier that arrives through one declared seam a trade can move.
+  {
+    const bare = starvedMultiplier({});
+    gauge(`a starved cast lands for ${Math.round(bare * 100)}% of your damage, and is still your skill`);
+
+    const def = GRANT_BY_ID.starvedDamage;
+    check(
+      def?.merge === 'product'
+        && def.reads.includes(STATS)
+        && typeof def.say?.(1.4) === 'string'
+        && starvedMultiplier({ starvedDamage: 1.4 }) > bare
+        && starvedMultiplier({ starvedDamage: 0.5 }) < bare,
+      'and the penalty moves through a declared grant, in both directions',
+      `merge ${def?.merge}, ${starvedMultiplier({ starvedDamage: 1.4 })} against ${bare}`
+    );
+    // A pool of nothing is the whole of the difference. Same seed, same
+    // presses, same everything else — so what changes is the penalty.
+    const measure = (mana: number) => {
+      const hero = makeCharacter(starterLoadout(new Rng(3)), 'strike');
+      const sim = new RunSim([], hero, new Rng(8181));
+      sim.state.hero.stats.maxMana = mana;
+      sim.state.hero.stats.manaRegen = mana;
+      sim.state.hero.mana = mana;
+      const final = runToCompletion(sim, 800);
+      return { killed: final.killed, starved: sim.state.dryCasts, casts: sim.state.casts };
+    };
+    const fed = measure(9999);
+    const dryRun = measure(0);
+    line(
+      `  the same descent on a full pool and on none: ` +
+        `${fed.starved}/${fed.casts} starved against ${dryRun.starved}/${dryRun.casts}`
+    );
+    check(
+      fed.starved === 0 && dryRun.starved === dryRun.casts && dryRun.casts > 0,
+      'a character with a pool never starves, and one with none starves every cast',
+      `${fed.starved} against ${dryRun.starved} of ${dryRun.casts}`
+    );
+  }
 
   // The pressure the phase exists to create. Nodes that change what the skill
   // DOES multiply the cost, so a build stacking them pays for the privilege —
@@ -3937,9 +3978,9 @@ rule('TERMINATION CHECK — does every run actually end?');
       sim.state.hero.stats.manaRegen = 0;
       sim.state.hero.mana = 0;
       const final = runToCompletion(sim, 800);
-      // ENDS, cleared or dead. A bare swing is meant to be worse than the
-      // skill it stands in for — dying to one is a fair outcome, standing
-      // still forever is not.
+      // ENDS, cleared or dead. Starved is meant to be worse than paying for
+      // the cast — dying to it is a fair outcome, standing still forever is
+      // not, and a character that can never pay casts every swing starved.
       if (final.status === 'running') broke.push(`${skill.id} never ended`);
       if (sim.state.casts === 0 || sim.state.dryCasts !== sim.state.casts) {
         broke.push(`${skill.id}: ${sim.state.dryCasts} dry of ${sim.state.casts} swings`);

@@ -8,6 +8,8 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
+import { MANA } from '../data';
+
 export const STATS = 'stats';
 
 /** What two nodes granting the same thing come to. `replace` is the default. */
@@ -57,6 +59,21 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `${more(n)} more mana per use`;
+    },
+  },
+
+  {
+    id: 'starvedDamage',
+    what: 'casting while out of mana costs you less damage',
+    // Every skill, whatever its delivery: being unable to pay is not a thing
+    // one behaviour does. It MULTIPLIES `MANA.starvedDamage` rather than
+    // replacing it, so a trade that makes running dry worse and one that
+    // softens it both cost a table entry instead of a rewrite.
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${more(n)} damage while out of mana`;
     },
   },
 
@@ -254,3 +271,13 @@ export function mergeGrants(
 /** Whether a skill delivered this way would do anything with the grant. */
 export const behaviourReads = (behaviour: string, grant: string): boolean =>
   GRANT_BY_ID[grant]?.reads.includes(behaviour) ?? false;
+
+/**
+ * What a cast is worth while STARVED of mana. One function, so the sim, the
+ * sheet and the demo cannot disagree about the number — and one seam, so what
+ * moves it is a grant rather than an edit at every call site.
+ */
+export function starvedMultiplier(grants: Record<string, unknown>): number {
+  const own = typeof grants.starvedDamage === 'number' ? grants.starvedDamage : 1;
+  return Math.max(0, Math.min(1, MANA.starvedDamage * own));
+}

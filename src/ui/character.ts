@@ -14,10 +14,10 @@ import {
   DEFENCE,
   EQUIP_SLOTS,
   LEVELLING,
-  MANA,
   SKILLS,
 } from '../data';
-import { characterStats, damageDetail, skillBase } from '../sim/stats';
+import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
+import { starvedMultiplier } from '../sim/grants';
 import { damageWorkings } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
@@ -309,7 +309,10 @@ function renderStats(): void {
     {
       key: 'mana/sec',
       value: s.manaRegen.toFixed(1),
-      why: `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. Short of a cast you swing bare, for ${Math.round(MANA.dryDamage * 100)}% of your damage.`,
+      why:
+        `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. ` +
+        `With nothing in the pool you cast anyway, for ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}% of your damage — ` +
+        'your own skill, with everything the tree gave it.',
     },
     {
       key: 'mana per use',

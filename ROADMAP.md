@@ -17,8 +17,8 @@ it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
 **A character will end up holding three skills**, one from each of three slots
 — something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 3 changes it. Anything built
-before then that assumes one skill is something Phase 3 has to undo, so prefer
+`Character.skillId` is one field until Phase 2 changes it. Anything built
+before then that assumes one skill is something Phase 2 has to undo, so prefer
 `characterStats(character)` over reaching for `character.skillId` yourself.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
@@ -26,9 +26,9 @@ nothing here is tuned until every system is in, because attributes, trades and
 jobs each hand out more power than the last and anything tuned before them is
 thrown away. Lean too easy. Measure, print, carry on.
 
-Mana costs, the potions that answer running dry, and the attributes that scale
-the pool have all landed. What is left of that idea is Phase 1, which turns
-running dry from a wall into a penalty.
+Mana costs, the potions that answer running dry, the attributes that scale the
+pool and the starved penalty that replaced the dry swing have all landed. That
+idea is finished.
 
 ---
 
@@ -51,51 +51,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Out of mana is a penalty, not a wall [user 5]
-
-**What is true today.** `RunSim.swing` in `src/sim/run.ts` pays
-`hero.stats.manaCost` and, short of it, casts `DRY_SKILL` instead — a
-single-target swing at `MANA.dryDamage` (half) of your damage with NONE of the
-tree behind it. `DRY_SKILL` is in `src/data.ts` and its behaviour `dry_swing`
-is in `src/sim/skills.ts`. `RunState.dryCasts` counts them.
-
-**Why it is wrong.** Being unable to cast your own skill deletes the build you
-walked to, which makes mana a wall rather than a cost. It should be a downside
-you may simply choose to ignore: run dry, hit softer, and answer it by scaling
-damage instead of by scaling sustain if that is the build you want.
-
-- [ ] The dry swing goes. You ALWAYS cast your own skill, with every grant the
-      tree gives it — `DRY_SKILL`, `dry_swing` and `MANA.dryDamage` are
-      deleted, not left unreferenced.
-- [ ] Short of the cost you are **starved**: mana drains to 0 and the cast
-      happens anyway, at a penalty. `RunState.dryCasts` keeps its meaning —
-      casts made while starved — and so does the demo's calibration section.
-- [ ] The penalty is a `more` multiplier on DAMAGE and nothing else — not
-      speed. Answered: scaling damage is meant to be a real answer to running
-      dry, and it works against a damage penalty directly where it only works
-      against a speed one sideways.
-- [ ] **Build the penalty as a number something can later change, not as a
-      constant read at the call site.** A job that stacks mana is planned —
-      huge upside for solving mana, a bigger downside when you run out — so
-      the starved multiplier has to arrive through one seam a grant can reach.
-      Declare it in `src/sim/grants.ts` the way `manaMultiplier` is, give it a
-      merge, and have the sim ask one function for the number. Getting this
-      wrong costs that job a rewrite; getting it right costs a table entry.
-- [ ] The character sheet's `mana/sec` row explains the dry swing in its own
-      `why` text (`src/ui/character.ts`). It has to say the new rule instead,
-      with the penalty's number in it.
-- [ ] It is VISIBLE. The mana bar already turns rust when short of a cast
-      (`.hp--dry`); a starved cast needs to read on the map or in the readout
-      too, or damage silently halves for a reason nobody can see.
-- [ ] Balance is not tuned (see `RULES.md`) — pick a generous placeholder,
-      print what the calibration section measures, and move on.
-
-**What must not break.** The `TERMINATION CHECK` holds a character with no pool
-at all to finishing its descent; that check gets EASIER here, since it can now
-always cast, but it still has to pass. `npm run demo`'s determinism check
-replays a seed with the same presses and must still match.
-
-### Phase 2 — The opening spends every point [user 3]
+### Phase 1 — The opening spends every point [user 3]
 
 **What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
 steps. `spend_point` rings ONE specific node — `towardNode` walks you into
@@ -138,7 +94,7 @@ pointer and is the only thing that proves a step is finishable; the demo walks
 the same list headlessly with one hand-written action per step, and the step
 count in `RULES.md` needs updating with it.
 
-### Phase 3 — Three skill slots, and a skill to put in each [user 4]
+### Phase 2 — Three skill slots, and a skill to put in each [user 4]
 
 **What is true today.** A character has ONE skill — `Character.skillId` —
 and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
@@ -186,7 +142,7 @@ through `makeCharacter(equipment, skillId)`; that signature changing touches
 guide` equips a skill with a real pointer. The blink is a new way for a run to
 end early or never end — `TERMINATION CHECK` is the one that would catch it.
 
-### Phase 4 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 3 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
 row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
@@ -197,7 +153,7 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 3) it cannot even be written down.
+and with three skills equipped (Phase 2) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
       three skill icons, one per slot. `skillIcon(skillId, size)` in
@@ -219,7 +175,7 @@ and with three skills equipped (Phase 3) it cannot even be written down.
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 5 — Trades: the part of a character that is not the skill
+### Phase 4 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -301,7 +257,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 6 — Every monster brings its own element [user 10]
+### Phase 5 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -357,7 +313,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 7 — What a node does, shown and not overlapped [user 8]
+### Phase 6 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -412,9 +368,9 @@ this file is buildable today.
 2. **What the second trade is.** The Alchemist is designed, and a second is
    now half-designed: **a trade that stacks MANA** — a large upside for solving
    mana at all, and a bigger downside for running out, which is a rule change
-   rather than a percentage. Phase 1 is built with that in mind: the starved
-   damage penalty arrives through a declared grant so this trade can move it
-   with a table entry rather than a rewrite. What it grants and what it takes
+   rather than a percentage. The starved damage penalty already arrives
+   through a declared `starvedDamage` grant, so this trade moves it with a
+   table entry rather than a rewrite. What it grants and what it takes
    away is still unwritten. The user calls these JOBS; this file calls them
    trades, and they are the same thing.
    Other candidates, all of which change a rule the game already has: crystals

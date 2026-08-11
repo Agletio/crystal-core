@@ -270,12 +270,23 @@ on somebody watching. The keys are `BINDINGS` entries like every other; the
 buttons beside the map are the interface, since a phone has no number row.
 `RunSim.usePotion` QUEUES a press for the next tick, so a seed still replays.
 
-**Out of mana you do not stand still.** You swing bare — `DRY_SKILL`,
-`MANA.dryDamage` of your damage, one target, none of the tree behind it — so a
-descent always ends and a headless run can never hang. A bare level 1 spends 0%
-(Strike) to 17% (Blight) of its swings that way — measured over real descents
-with the flasks firing themselves, which is the floor everything else is
-measured against.
+**Out of mana you are STARVED, not stopped.** The pool drains to 0, the cast
+happens anyway, and it lands for `MANA.starvedDamage` — 50% — of your damage:
+your own skill, its own delivery, every grant the tree gave it, every target it
+would have hit. Running dry is a downside you may choose to ignore and answer
+by scaling damage, rather than a wall that deletes the build you walked to. It
+also means a descent always ends and a headless run can never hang.
+
+The multiplier arrives through ONE seam: `starvedMultiplier(grants)` in
+`sim/grants.ts`, which is `MANA.starvedDamage` times the declared
+`starvedDamage` grant (product merge). A trade that makes running dry worse —
+or better — is a table entry rather than a rewrite. It lands in `dealDamage`,
+so ailments and bursts are cut too and no corner of a build runs dry for free.
+
+It is visible: the mana bar goes rust while short of a cast, and the run
+readout carries `starved casts` — the count and what one is worth — in rust
+once there are any. A bare level 1 spends 0% (Strike) to 25% (Blight) of its
+swings starved, measured over real descents with the flasks firing themselves.
 
 ## The loop
 

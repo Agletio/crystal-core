@@ -451,6 +451,7 @@
   .readout div { display: flex; justify-content: space-between; gap: 10px; }
   .readout span { color: var(--dust); }
   .readout code { color: var(--quartz); }
+  .readout code.readout__v--bad { color: var(--rust); }
   .runsrc { margin-top: 10px; font-size: 11px; color: var(--dust); }
   .runblocked:not(:empty) { margin: 10px 0 0; font-size: 12px; color: var(--ember); }
 
@@ -1255,6 +1256,8 @@
 
           <div class="readout">
             <div><span>mana a swing</span><code id="run-mana-cost">0</code></div>
+            <!-- Rust once there are any: the damage is down, and this is why. -->
+            <div><span>starved casts</span><code id="run-starved">0</code></div>
             <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
             <div><span>killed</span><code id="run-killed">0/0</code></div>
             <div><span>xp earned</span><code id="run-xp-gained">0</code></div>

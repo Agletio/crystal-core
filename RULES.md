@@ -233,11 +233,24 @@ number rather than what the skill is. The line the card prints comes out of
 `GrantDef.say`, never out of the node's prose, so what is charged and what is
 said cannot come apart.
 
-**Out of mana you swing bare, and never stand still.** `DRY_SKILL` at
-`MANA.dryDamage` of your damage, one target, no grants, same rate and reach. A
-character that stops attacking is a run that never ends and a harness that
-hangs — the demo holds one with no pool at all to finishing its descent, dead
-or cleared.
+**Out of mana you are STARVED, and never stand still.** The pool drains to 0
+and the cast happens anyway at `MANA.starvedDamage` of the damage — your own
+skill, its delivery, its grants, its targets. Running dry is a cost you may
+choose to pay, not a wall that deletes the build you walked to, and scaling
+damage is a real answer to it because the penalty is on damage and nothing
+else. A character that stops attacking is a run that never ends and a harness
+that hangs — the demo holds one with no pool at all to finishing its descent,
+dead or cleared, casting every swing starved.
+
+**The penalty arrives through ONE declared seam.** `starvedMultiplier(grants)`
+in `src/sim/grants.ts` is `MANA.starvedDamage` times the `starvedDamage` grant,
+product-merged, clamped to [0, 1] — and the sim, the sheet and the readout all
+ask that one function. A mana job with a huge upside and a bigger downside is
+planned; moving what running dry costs must stay a table entry. Nothing may
+read `MANA.starvedDamage` at a call site.
+
+It lands in `dealDamage`, not in a behaviour, so ailments and bursts are cut
+with everything else — no corner of a build runs dry for free.
 
 **A potion is an effect with a DURATION, never a lump.** `TimedEffect` on the
 hero, `PotionDef` in `src/data.ts` saying which pool it fills and by what share
@@ -817,7 +830,7 @@ is not the binding constraint, the wall clock is.
 
 The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
 `· ` line is a `gauge` — a balance number that reports and can never fail; it is
-358 checks and 6 gauges.
+360 checks and 7 gauges.
 
 ### The harnesses have their own rules
 
