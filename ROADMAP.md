@@ -88,6 +88,33 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
+**BLOCKED on open question 1 below, and here is the measurement that blocks it.**
+The groundwork was built and reverted rather than half-landed: four attributes
+as a synthetic `RolledMod` beside the tree's (`attributeMod` in
+`sim/stats.ts`), `Character.attributes`, `attributePointsFor(level)`, a spread
+in `ladderCharacter`, and `critChance` reading `skill.tags` so an attack
+attribute does nothing for a spell. All of that is straightforward and none of
+it is where the phase stops.
+
+Where it stops is the deep end. `RULES.md` says the hardest set in the game has
+to be a WALL — a third or less gets through — and, measured over 36 runs rather
+than the 12 the demo uses, it was ALREADY at 31% before this phase. Attributes
+are a power increase, so there is no room underneath it:
+
+| what a level buys | deep end, 36 runs |
+|---|---|
+| today: nothing but life and `damagePerLevel` | **31%** |
+| 3 points/level, 5% damage · 2% life · 2% speed · 0.6 crit, no `damagePerLevel` | 39% |
+| 2 points/level, same rates | 36% |
+| 1 point/level, same rates | 33% |
+
+One point a level is the only setting that holds the invariant, and it buys a
+level-40 character 2 steps per attribute — 10% attack damage — which is the
+phase's own complaint about levelling, restated. Dropping `damagePerLevel`
+does NOT buy the room back: the deep end is survival-limited, not
+damage-limited, so it is the life, speed and crit that soften it. The demo's
+own 12-run check reads 25% at baseline and hides how tight this already was.
+
 ### Phase 2 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
@@ -266,11 +293,28 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. None of them blocks a phase in this file — the six that
-did have been answered and are written into the phases above. The first two are
-new and come out of the trade system.
+Do not guess at these. **The first one BLOCKS Phase 1** and is the only thing
+standing between the roadmap and a session's work; the rest block nothing.
 
-1. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
+1. **How much stronger should a level make you, and does the deep end get
+   retuned to match?** Attributes are a power increase and `RULES.md` requires
+   the hardest set in the game to stay a wall (a third or less gets through).
+   It is already at 31% over 36 runs, so the two cannot both hold. Three
+   answers, and they are different work:
+
+   - **Shrink the attributes** to 1 point a level. The invariant holds
+     untouched, and levelling stays nearly as inert as the phase complains it
+     is — 10% attack damage at level 40.
+   - **Retune the deep end** so the wall is restored against a character who
+     now has attributes. That is monster and danger numbers, which is a
+     balance phase rather than this one, and it moves every band with it.
+   - **Move the wall.** Decide that a third was the number for a character
+     whose levels bought nothing, and say what it is now.
+
+   Nothing else in the phase is blocked — the mechanism, the sheet, the saving
+   and the replaying are all buildable the moment this is answered.
+
+2. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
    and the intent is a storyline with the Lampwright rather than a level
    threshold — he is the only person in the game and the only voice it has.
    Nothing about it is written: what he is doing down there, what he asks for,
@@ -278,19 +322,19 @@ new and come out of the trade system.
    The phase ships a placeholder that the story replaces without touching the
    tree or the points, so this blocks the STORY and not the system.
 
-2. **What the second trade is.** The Alchemist is designed. The framework phase
+3. **What the second trade is.** The Alchemist is designed. The framework phase
    asks for two, and the rule the second has to clear is the same one: it
    changes what is POSSIBLE rather than by how much. Candidates, all of which
    change a rule the game already has: crystals that level while carried rather
    than only while socketed; a descent that runs longer and pays per clear
    rather than per kill; danger that hurts less and pays less. None is picked.
 
-3. **What is the fifth socket?** Wanted as an endgame slot holding something
+4. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-4. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
+5. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
    was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
    BELOW** four Demonic crystals on damage taken per second, and with mana
    removed entirely it is only 2.0% above — so the ordering was always inside
@@ -306,7 +350,7 @@ new and come out of the trade system.
    margin so an answer has something to read. `CLAUDE.md` says it is an open
    question rather than a claim.
 
-5. **The Cavern and the Fissure have no currency of their own.** Retiring the
+6. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
