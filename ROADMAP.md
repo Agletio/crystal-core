@@ -10,11 +10,15 @@ tuning — a measurement beats them. A landed phase is DELETED from here, so
 before starting one, `git fetch` and check you are on the tip of the branch:
 a phase you can still see in a stale clone may already be built.
 
-**Where these came from.** Ten of them, dictated by the user in one go. The
-number in brackets on each is the user's own, so a phase can be matched back to
-what was asked for; the ORDER here is dependency order and does not match.
-Several are blocked on an Open question below — skip a blocked one and take the
-next, rather than guessing at it.
+**Where these came from.** Ten asks, dictated by the user in one go, and the
+six questions they raised have been answered — so these eleven phases are all
+unblocked, and they are listed in dependency order. The number in brackets is
+the user's own numbering of what they asked for, kept so a phase can be matched
+back to the ask — it says nothing about when to build it.
+
+Three of them are one idea in three landable pieces — mana costs, then the
+potions that answer running dry, then the attributes that scale the pool — and
+each leaves the game playable on its own.
 
 ---
 
@@ -119,49 +123,58 @@ one hover at a time.
 checks hundreds of lines further down. Leave the box empty in every existing
 check and add the search's own at the END of the file.
 
-### Phase 4 — The camera is yours [user 1]
+### Phase 4 — The camera is yours, and a key is a table entry [user 1]
 
 **What is true today.** `src/ui/run.ts` owns zoom: three buttons
 (`run-zoom-in`, `run-zoom-out`, `run-zoom-fit`) and a `run-zoom-label`, plus a
 wheel handler that steps `±0.35` ADDITIVELY between `ZOOM_MIN = 1` and
 `ZOOM_MAX = 5` (`src/render/renderer.ts`). There is no pan at all: `camera()`
-in `src/render/pixi.ts` and the same block in `src/render/canvas2d.ts` centre
-the whole map at zoom 1 and follow the hero above it, clamped to the map.
+in `src/render/pixi.ts` and the matching block in `src/render/canvas2d.ts`
+centre the whole map at zoom 1 and follow the hero above it, clamped.
 
-The skill web already does what is wanted, in `src/ui/skills.ts`: the wheel
+There is no keybind system either. Every key in the game is a literal in a
+handler: Escape in `src/web.ts`, Enter and Space in the guided opening's
+`guardKeys`.
+
+The skill web already does the camera half, in `src/ui/skills.ts`: the wheel
 zooms MULTIPLICATIVELY about the cursor (`scale * ZOOM.step`, keeping the point
 under the pointer fixed), and `pointerdown`/`pointermove`/`pointerup` with
 `setPointerCapture` pans, with a `dragged` flag so a drag is not also a click.
 
 **Why it is wrong.** Two controls for zoom where one would do, a step so coarse
-the map jumps, and no way to look at anything but the hero.
+the map jumps, no way to look at anything but the hero — and no place to put a
+key, which is why there are no keys.
 
-- [ ] The three zoom buttons and the label go from `docs/index.html` and from
+- [ ] The three zoom buttons and the label go, from `docs/index.html` and from
       `src/ui/run.ts`. The wheel is the only zoom.
 - [ ] Zoom is multiplicative and small enough to read as smooth — the web's
-      `ZOOM.step` is the model, and one notch must not cross a whole level.
-      It zooms about the POINTER, not the centre, or the thing you were
-      looking at slides away as you lean in.
-- [ ] Drag pans, exactly as the web does, including the capture and the
-      "a drag is not a click" flag. Panning UNLOCKS the camera: it stops
-      following the hero and stays where you put it.
-- [ ] One key re-centres on the hero and re-locks the follow. It is one entry
-      in a table of bindings rather than a literal in a handler — see the open
-      question about keybinds.
-- [ ] The pan is clamped the way the follow already is, so the map cannot be
-      dragged off the screen entirely, and it survives a resize.
+      `ZOOM.step` is the model, and one notch must not cross a whole level. It
+      zooms about the POINTER, or the thing you leaned in to look at slides
+      away as you do it.
+- [ ] Drag pans, exactly as the web does, capture and `dragged` flag included.
+      Panning UNLOCKS the camera: it stops following and stays where you put
+      it. The pan is clamped the way the follow already is, and survives a
+      resize.
+- [ ] **A bindings TABLE**, one entry per action: an id, what it does in words,
+      and its default key. Nothing reads a key literal any more. It lives where
+      data lives and the binding is saved on `GameState`, so the screen that
+      edits it later is a screen and not a refactor. No screen now — that is
+      its own phase when there is more than a handful worth changing.
+- [ ] Two bindings to start: **Space** re-centres on the hero and re-locks the
+      follow, and **C** opens the character sheet. Both are defaults in the
+      table rather than constants in a handler.
+- [ ] A key does nothing while a modal owns the screen, and nothing while the
+      guided opening has the lockdown on anything it would reach — `guardKeys`
+      in `src/ui/tutorial.ts` is the existing half of that rule.
 - [ ] BOTH renderers. `camera()` is per-renderer today; the pan offset and the
-      locked flag belong wherever the two already agree, and the canvas2d
+      locked flag belong wherever those two already agree, and the canvas2d
       fallback may not silently keep following.
 
 **What must not break.** `npm run shots` fires its HANDOVER shot 180ms into a
-launch and its descent shot at 4.3s, both expecting the hero on screen —
-a camera that starts unlocked would empty both. `npm run guide` clicks the map
-region for some steps; a drag handler that eats those clicks reads as STUCK.
-
-**BLOCKED** on the open question "Keybinds: a real rebinding screen, or one
-constant?" — everything else in this phase can be built without the answer, so
-if that one lands first, the rest of it does not wait.
+launch and its descent shot at 4.3s, both expecting the hero on screen — a
+camera that starts unlocked empties both. `npm run guide` clicks the map region
+for some steps; a drag handler that eats those clicks reads as STUCK. `npm run
+smoke` presses Enter and Space at the lockdown and asserts what is swallowed.
 
 ### Phase 5 — A sword is held out, not hung [user 3]
 
@@ -196,10 +209,10 @@ large. Neither is in the suite, so LOOK at one.
 
 **What is true today.** `giftWaiting` in `src/game/crystals.ts` schedules the
 first crystal off `INTRO.firstCrystalClear = 2` — the second cleared descent —
-and `LAMPWRIGHT.level = 2`, so the crystal arrives holding one modifier slot
+and `LAMPWRIGHT.level = 2`, so it arrives already holding one modifier slot,
 with a `shard_of_making` beside it and `INTRO.scriptedMod` forced into it. The
-guided opening runs straight through it: `descend`, `again`, `meet_crystal`,
-`bench_crystal`, `craft_crystal`, `socket`.
+guided opening runs straight through: `descend`, `again`, `meet_crystal`,
+`bench_crystal`, `craft_crystal`, `socket`, fifteen steps end to end.
 
 Tree points come from the SKILL's level, not the character's:
 `treePointsFor(p.level)` in `src/skills-tree.ts`, and `addSkillXp` gives the
@@ -208,74 +221,204 @@ tree costs exactly 3 points** — measured: `st_rend`, `fb_detonation` and
 `bl_rupture` are all 3 — so skill level 3 buys a first notable and nothing
 earlier does.
 
+A crystal's LEVEL is its modifier capacity: `CRYSTAL_LEVELS` gives level 1 zero
+slots, level 2 one, level 3 two, level 4 three. `xpForClear` levels a socketed
+crystal, and level 2 costs 5 xp — one cleared descent at any danger.
+
 **Why it is wrong.** The crystal arrives because you cleared twice, which is a
 number nobody is looking at. It should arrive because you did the thing that
-makes a character feel like a build — took your first notable — and the run
-after that is the one where a longer descent is survivable.
+makes a character feel like a build — took your first notable.
 
 - [ ] The first crystal is scheduled on the first cleared descent AFTER the
       active skill has reached level 3 AND a notable is allocated in its tree.
-      Both, not either: the level is what buys the point and the allocation is
-      what spends it.
-- [ ] It is a LEVEL 1 crystal (`LAMPWRIGHT.level`), which holds NO modifiers —
-      see the open question "A level 1 crystal holds NO modifiers".
+      Both: the level buys the point and the allocation spends it.
+- [ ] It is a **level 1** crystal, which holds NO modifiers. It is socketed
+      blank, and the descent it makes longer is the whole of what it does at
+      first — which is also the honest lesson about what a level is.
+- [ ] The craft is TRIGGERED, not queued. Nothing about crafting is taught at
+      the meeting; when that crystal reaches level 2 by being used, the guide
+      comes back on its own for the two steps that put a modifier on it, and
+      lets go again. `INTRO.scriptedMod` and the `shard_of_making` that comes
+      with it move to that trigger.
 - [ ] The opening runs to the end of the first descent as it does now, plus one
-      new step: spend your first skill point. Then it LETS GO — the lockdown
-      comes off and the guide says what it is waiting for, which is a notable.
-      Nothing is locked while you are levelling.
-- [ ] It takes hold again at the meeting that hands the crystal over, for the
-      craft and the socket, and lets go for good after.
-- [ ] The collection screen's `giftSchedule` says the new condition in words,
-      the way it says the clear count today.
+      step: spend your first skill point. Then it LETS GO — lockdown off, and
+      what it is waiting for said somewhere you can read it rather than in a
+      card that follows you. Nothing is locked while you are levelling.
+- [ ] `giftSchedule` says the new condition in words, the way it says the clear
+      count today, and the collection screen is where it is read.
 - [ ] The dev preset still marks everything given (`game.given`), so a stocked
       game does not walk into the opening.
 
 **What must not break.** `npm run guide` plays the opening in REAL TIME and
-sits through every descent in it. A condition that needs a skill level will
-cost it descents — measure how many before writing the number, and if the guide
-cannot reach it in its turn budget, that is the phase's problem and not the
+sits through every descent in it. A condition that needs a skill level costs it
+descents — measure how many before writing the number, and if the guide cannot
+reach it in its turn budget, that is this phase's problem and not the
 harness's. The demo walks the same steps headlessly with one hand-written
-action each.
+action each, and a TRIGGERED step is a new shape for both of them: a step that
+is not reachable yet must not be reported as stuck.
 
-**BLOCKED** on the open question "A level 1 crystal holds NO modifiers".
+### Phase 7 — Mana, and what a skill costs [user 3a]
 
-### Phase 7 — Three bolts, three elements [user 10]
+**What is true today.** There is no mana anywhere: no resource on `Character`
+(`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
+cost on `SkillDef` (`src/types.ts`), no bar. A skill fires whenever
+`hero.cooldown <= 0` in `useSkill` (`src/sim/run.ts`), and the only thing that
+has ever limited one is time. `lifeRegen` is the shape a regenerating resource
+already has.
 
-**What is true today.** `MONSTER_RANGED_SKILL = 'bolt'` in `src/data.ts` names
-ONE skill, and `RANGED_PACK_CHANCE` decides whether a pack carries it. The
-`bolt` SkillDef is monster-only (no `category`, so it never reaches the Skills
-screen), `damageTypes: ['fire']`, `vfxKind: 'bolt'`.
+**Why it is wrong.** Every node in every tree is an upgrade with no cost beside
+the point it took, so "more of everything" is always the right build.
 
-What a monster's damage actually IS comes from the MAP, not the skill:
-`monsterStats` in `src/sim/stats.ts` reads the crystal's `monsterFire` modifier
-and sets `damageByType` to fire if it rolled and physical if it did not — one
-type for every monster on the map.
+- [ ] Mana on the character: a pool, a regeneration rate, and a cost per skill
+      use. Same shape as life — a `CombatStats` field, so gear and the tree
+      reach it through the modifier engine without learning a new concept.
+- [ ] **The calibration, and it is the whole phase:** a level 1 character with
+      no attributes, no regeneration and no gear, casting a BARE skill with no
+      nodes, is just barely sustainable. Not comfortable. Measured against a
+      real descent, not a formula.
+- [ ] A node that changes what a skill DOES multiplies its cost. Bigger nodes
+      cost more, so stacking them is what makes a build mana-hungry — that is
+      the pressure this phase exists to create. A `manaMultiplier` grant with
+      a `product` merge is the mechanism; it is declared in `sim/grants.ts`
+      like every other switch and says its number out loud on the node.
+- [ ] What a character out of mana DOES. It cannot be "stand still" — the run
+      would never end, and `runToCompletion` would hang. Name it: walk to the
+      exit, fall back to an unarmed swing, or wait while regeneration catches
+      up with a floor on how long that can take.
+- [ ] A mana bar beside the life bar in the run readout, and on the sheet.
 
-**Why it is wrong.** Every ranged monster in the game throws the same bolt, and
-a caster's element is a property of the room rather than of the thing casting.
+**What must not break.** Every ladder harness in `src/demo.ts` measures what a
+band clears, and a skill that can run dry moves all of them. Measure before and
+after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
+character that cannot afford to attack is the newest way for one not to.
 
-- [ ] Three monster skills — a fire bolt, a frost bolt and a lightning arc —
-      each dealing its own element. The fire bolt keeps the look it has; frost
-      is a blue-white icy bolt; the arc is a lightning strike that chains.
-- [ ] `MONSTER_RANGED_SKILL` becomes a LIST, and which one a pack carries is
-      rolled off the run's own rng at spawn beside `RANGED_PACK_CHANCE`.
-- [ ] How the skill's element and the map's `monsterFire` modifier combine —
-      see the open question about it.
-- [ ] The arc chains, so it needs a `vfxKind` both renderers can draw: the sim
-      already emits `points` for a shape, which is what the chain arc is for.
-- [ ] The results overlay's damage-taken rows already split by type and will
-      show three where they showed one. That is the point; check it reads.
+### Phase 8 — Two potions, two charges [user 3b]
+
+**What is true today.** Nothing. There are no consumables, and — more to the
+point — **there is no player input during a descent at all.** The guided
+opening's first hint says so: "You fight on your own. Nothing to time." The
+only mid-run controls are Abandon and Leave, which are about the loop rather
+than the fight.
+
+**Why it is wrong.** With mana costed, running dry has no answer, and a run
+you can only watch has no moment in it that is yours.
+
+- [ ] A life potion and a mana potion. **Two charges each per descent**,
+      refilled on the descent after — so they are part of a descent's budget
+      rather than a stockpile, and a cleared run always starts full.
+- [ ] Charges are RUN state, not save state: they live on `RunState`, and
+      `RunSim` grows the one input it has ever had. Nothing about a potion is
+      in `GameState` yet — the ways to modify them come later.
+- [ ] Bound to **1** and **2** through the bindings table from the camera
+      phase, not through literals.
+- [ ] The tutorial's opening hint stops saying there is nothing to time, and
+      the opening teaches the two keys somewhere. This is the first thing a
+      player DOES in a fight and it cannot be a secret.
+- [ ] A headless run has to be able to drink, or every balance harness measures
+      a character playing with one hand — `runToCompletion` decides when, and
+      the rule it uses is written down rather than clever.
+
+**What must not break.** The sim is deterministic and replay-safe: an input
+arriving between ticks must land on a tick boundary like everything else, or
+the same seed stops giving the same run. `npm run smoke` and `npm run guide`
+both drive real descents.
+
+### Phase 9 — Character level buys attributes [user 7]
+
+**What is true today.** `character.level` (`src/sim/character.ts`) does almost
+nothing: it scales the skill's own base damage through `skillBase(skill,
+level)` and `LEVELLING.damagePerLevel`, and it sets the shop's stock level.
+Everything else a character IS comes off gear and the tree — `characterStats`
+in `src/sim/stats.ts` builds `CombatStats` from those two and nothing else.
+There are no attributes.
+
+**Why it is wrong.** Levelling is the most common thing a player does and the
+thing that changes least.
+
+- [ ] Four attributes: **Strength**, **Intelligence**, **Dexterity**,
+      **Acuity**.
+- [ ] Strength gives % attack damage and life. Intelligence gives % spell
+      damage and mana. Dexterity gives attack critical chance and attack
+      speed. Acuity gives spell critical chance and cast speed. Granularity is
+      per 5 points, so the numbers can be generous and a build can pile them
+      up; the exact rates are tuning and a measurement beats them.
+- [ ] A **set number of points per level**, ALLOCATED by the player on the
+      character sheet. Spent points are saved, and `heal()` replays them
+      against the level that paid for them the way tree points are replayed —
+      a level curve that moves must not leave a character holding points no
+      level ever granted.
+- [ ] They land in `characterStats` beside gear and the tree, under the stat
+      names the modifier engine already has, so nothing downstream learns a new
+      concept.
+- [ ] The sheet shows each attribute, what it is buying in numbers, and how
+      many points are unspent. An unspent point is visible from outside the
+      sheet, or nobody spends them.
+- [ ] Whether `LEVELLING.damagePerLevel` survives: a level that buys attributes
+      AND scales the skill's base is paying twice. Decide, and say which.
+
+**What must not break.** The ladder harnesses build characters with
+`ladderCharacter` in `src/sim/loadout.ts`; attributes move every number they
+print, and the retune that set them was a phase of its own. Measure before and
+after, and give `ladderCharacter` a spread so a measured character is not a
+character with no attributes at all.
+
+### Phase 10 — Every monster brings its own element [user 10]
+
+**What is true today, and it is not what it looks like.** One crystal modifier
+does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
+`monsterFire` at +35–75% on its cheap tier and +225–375% on its ilvl 40 tier,
+and `monsterStats` in `src/sim/stats.ts` reads it like this:
+
+```
+const fire = percentStat(mods, 'monsterFire');
+const dealt = computeStat(damage, mods, 'monsterDamage') * (1 + fire / 100);
+const type = fire > 0 ? 'fire' : 'physical';
+```
+
+So it is a CONVERSION with a damage bonus welded to it: any amount at all flips
+every monster on the map from physical to fire, and the number is how much more
+damage they do while doing it. One type for the whole map, decided by the
+crystal. Nothing else in the game deals anything but physical — and because a
+ward is one type and caps at `DEFENCE.resistanceCap`, one fire ward turns that
+entire modifier off.
+
+Ranged monsters share one skill: `MONSTER_RANGED_SKILL = 'bolt'`, a monster-only
+`SkillDef` with no `category` so it never reaches the Skills screen, and
+`RANGED_PACK_CHANCE` decides whether a pack carries it.
+
+**Why it is wrong.** A monster's element belongs to the monster, not the room,
+and a danger modifier that one ward switches off entirely is a modifier that is
+either free or fatal with nothing in between.
+
+- [ ] A TABLE of monster abilities, each with its own damage type, and a
+      monster rolls one at spawn off the run's own rng. Three to start: a fire
+      bolt (the look it has now), a frost bolt (blue-white, icy) and a
+      lightning arc (a strike that chains).
+- [ ] The ability's type is what that monster deals. `MONSTER_RANGED_SKILL`
+      becomes the table, and the melee monsters get their entry too rather than
+      being physical by definition.
+- [ ] `monster_fire` stops CONVERTING. It becomes **added damage of a type**:
+      a share of what a monster already hits for, dealt as fire on top. You can
+      then stack it and armour yourself against it — and because it is on top
+      of the monster's own element, you still need some defence against the
+      rest, which is the whole point of the change.
+- [ ] Whether the other elements get their own map modifier beside Cinders, or
+      one modifier rolls which element it adds. Either is defensible; pick one
+      and say why.
+- [ ] `DANGER_STATS` re-reads it. `monsterFire` is weighted `0.9` today as a
+      convert-everything mod; as added damage it is worth something else, and
+      danger is what every reward is derived from.
+- [ ] The arc chains, so it needs a `vfxKind` both renderers draw — the sim
+      already emits `points` for a shape, which is what a chain is.
+- [ ] The results overlay splits damage taken by type already and will show
+      three where it showed one. That is the point; check that it reads.
 
 **What must not break.** `npm run demo` measures what a monster hits for
-against what its stats say, across every rank and the finale. Resistances are
-per type, so three elements means a warded character eats less from one pack
-and the same from another — the ladder harnesses will move, and by how much is
-a measurement, not a guess.
+against what its stats say, across every rank and the finale, and it holds
+`DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
+Three elements against per-type resistances moves every ladder number: measure.
 
-**BLOCKED** on the open question "Does a monster's bolt override the map's
-element?".
-
-### Phase 8 — What a node does, shown and not overlapped [user 8]
+### Phase 11 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -311,123 +454,28 @@ refunds points in saves that already spent them. That is the intended
 behaviour, not a bug — but it means a wrong refusal costs every player their
 build, so the demo has to prove the block only catches what it means to.
 
-### Phase 9 — Character level buys stats [user 7]
-
-**What is true today.** `character.level` (`src/sim/character.ts`) does almost
-nothing. It scales the skill's own base damage through
-`skillBase(skill, level)` and `LEVELLING.damagePerLevel`, and it sets the
-shop's stock level. Everything else a character IS comes off gear and the tree:
-`characterStats` in `src/sim/stats.ts` builds `CombatStats` from those two and
-nothing else. There are no attributes in the game, and **no mana** — no
-resource, no cost, no bar, nowhere.
-
-**Why it is wrong.** Levelling is the most common thing a player does and it is
-the one that changes the least.
-
-- [ ] Attributes on the character: Strength, Intelligence, Dexterity, and a
-      fourth whose name is an open question.
-- [ ] Strength gives % attack damage and life; Intelligence gives % spell
-      damage and whatever the mana question answers; Dexterity gives attack
-      critical chance and attack speed; the fourth gives spell critical chance
-      and cast speed. Granularity is per 5 points so the numbers can be generous —
-      exact rates are tuning and a measurement beats them.
-- [ ] Where the points come from — automatic per level, or allocated — is a
-      question below, and the answer changes whether there is a screen.
-- [ ] They land in `characterStats` beside gear and the tree, using the stat
-      names the modifier engine already has, so nothing downstream learns a
-      new concept.
-- [ ] The character sheet shows them, and shows what each is buying.
-- [ ] Whether `LEVELLING.damagePerLevel` survives: if a level now buys
-      attributes, a level that ALSO scales the skill's base is paying twice.
-      Decide, and say which.
-
-**What must not break.** `npm run demo`'s ladder harnesses build characters
-with `ladderCharacter` in `src/sim/loadout.ts` and measure what each band
-clears — attributes will move every one of those numbers, and the retune that
-set them was itself a phase. Measure before and after. The save takes new
-fields for free; `heal()` needs nothing unless points are allocated, in which
-case it must replay them the way it replays the tree.
-
-**BLOCKED** on three open questions: "Does mana exist?", "Where attribute
-points come from" and "What the fourth stat is called".
-
 ---
 
 ## Open questions
 
-Do not guess at these. The first six block a phase each and are named in it.
+Do not guess at these. Both are the user's to answer and neither blocks a phase
+in this file — the six that did have been answered and are written into the
+phases above.
 
-1. **A level 1 crystal holds NO modifiers, so it cannot be crafted on.**
-   `CRYSTAL_LEVELS` is `[{1, mods: 0}, {2, mods: 1}, {3, mods: 2}, {4, mods:
-   3}]` — a level is capacity and level 1 is none of it. The phase "The first
-   crystal is earned with a notable" asks for a
-   level 1 crystal AND for the craft that teaches what a modifier does to a
-   room, and those two cannot both happen: the Shard of Making refuses an item
-   with no open slot. Three ways out and the user picks:
-   (a) level 1 holds ONE modifier — shift the whole table, which hands every
-   crystal in the game a slot and moves the danger ladder that was just tuned;
-   (b) the crystal arrives level 1 and BLANK, the socket lesson ends there, and
-   the craft lesson waits for it to reach level 2 by being used, which is
-   itself the lesson about what a level is;
-   (c) it stays level 2, as built. **Mine, not the user's: (b).** It is the
-   only one that gives a level 1 crystal without touching balance.
-
-2. **Keybinds: a real rebinding screen, or one constant?** There is no keybind
-   system and no settings screen in the game — every key today is a literal in
-   a handler (Escape in `src/web.ts`, Enter and Space in the guide's lock).
-   The phase "The camera is yours" wants "space centres the camera, and it
-   should be customisable".
-   Customisable means a table of bindings, a screen to change them on, and a
-   field on `GameState` — a phase of its own. **Mine, not the user's:** do the
-   table now (one place, saved, so nothing has to be found again later) and the
-   SCREEN as its own phase when there are more than two bindings worth
-   changing.
-
-3. **Does mana exist?** The phase "Character level buys stats" wants
-   Intelligence to give "% spell damage and mana per int". There is no mana anywhere in the game: no resource, no cost
-   on a skill, no regeneration, no bar. Adding it is a mechanic — every skill
-   needs a cost, the sim needs to refuse a cast without it, and a character who
-   runs out needs something to do. Either that is wanted now, in this phase or
-   beside it, or Intelligence gives something else until it exists (ailment
-   damage and duration is the obvious pair, since it is what a caster already
-   has that an attacker does not).
-
-4. **Where attribute points come from.** Automatic on level — every level gives
-   a fixed spread, and the character sheet is a readout — or ALLOCATED, and
-   there is a screen with four buttons and a respec question. Automatic is
-   cheap and honest with the existing "distance is the only price" tree;
-   allocated is a second build system beside the tree it might argue with.
-
-5. **What the fourth stat is called.** Spell critical chance and cast speed —
-   the spell mirror of Dexterity. Suggestions: **Wit** (quickness of mind, so
-   it reads as speed and precision at once), **Focus**, **Acuity**, **Insight**,
-   **Attunement**, **Clarity**. Wit is the one that mirrors Dexterity's brevity
-   and says both halves. Also worth confirming the reading: the user wrote
-   "spell crit and attack speed", which beside Dexterity's "attack crit and
-   attack speed" is presumably cast speed.
-
-6. **Does a monster's bolt override the map's element?** Today one crystal
-   modifier (`monsterFire`) makes EVERY monster on the map deal fire, and
-   nothing else deals anything but physical. The phase "Three bolts, three
-   elements" gives them three. Either the skill wins for the thing casting it (a frost caster in
-   a fire map throws frost, and the map's fire is what everything else swings
-   with), or the map wins and the bolts are three looks over one element, which
-   is most of the point gone. **Mine, not the user's:** the skill wins.
-
-7. **What is the fifth socket?** Wanted as an endgame slot holding something
+1. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-8. **The Cavern and the Fissure have no currency of their own.** Retiring the
+2. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
    to nothing. `RULES.md` says a world should have a reason to be entered, and
-   every world now has uniques of its own — the Fissure two — so this may already be
-   paid. **Provisional, and mine, not the user's:** left as it is rather than
-   inventing a gate. Ask before gating an existing currency to the Cavern; it
-   would make a staple zone-locked.
+   every world now has uniques of its own — the Fissure two — so this may
+   already be paid. **Provisional, and mine, not the user's:** left as it is
+   rather than inventing a gate. Ask before gating an existing currency to the
+   Cavern; it would make a staple zone-locked.
 
 ---
 

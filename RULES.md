@@ -143,6 +143,16 @@ changes WHICH damage type and names no amount; the two currencies that act on
 every modifier or on no particular one; and the flavour above. `GRANTS[].what`
 is out too, because it describes a switch with no value attached — see below.
 
+**The guided opening teaches in bursts and lets go between them.** A step that
+cannot be finished right now must never hold the screen: no card following you
+about, no lockdown, while what it is waiting for is a level or a drop or a
+crystal that has to grow. It teaches a thing, releases, and comes BACK when the
+game reaches the next thing worth teaching — triggered by state, not queued in
+a chain. Tutorial-popup purgatory is the failure this avoids, and it is why
+`TUTORIAL_STEPS` is data with `done` predicates rather than a script: a step
+that is already satisfied is skipped, and a step nobody can satisfy yet should
+not be on screen at all.
+
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
 about to be replaced.
