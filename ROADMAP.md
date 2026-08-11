@@ -71,6 +71,21 @@ makes a character feel like a build — took your first notable.
 - [ ] It is a **level 1** crystal, which holds NO modifiers. It is socketed
       blank, and the descent it makes longer is the whole of what it does at
       first — which is also the honest lesson about what a level is.
+- [ ] A step gains `waits`: true while it cannot be reached yet. A waiting step
+      hides the card, drops the lockdown and advances nothing — the guide is
+      DORMANT rather than stuck, which is the whole of "no popup purgatory".
+      `npm run guide` reads the card being hidden as FINISHED, so dormancy has
+      to be visible from outside it (a `data-` attribute on `body`, say) or the
+      harness will report the opening as over the moment it lets go.
+- [ ] The order changes: the crystal arrives BLANK, so it is socketed first and
+      crafted later. `meet_crystal` → `socket` → (dormant) → `bench_crystal` →
+      `craft_crystal`, and the `again` step goes: the dormant stretch is what
+      replaces it.
+- [ ] The shard still comes WITH the crystal at the meeting — everything is
+      handed over in person, and that rule outranks tidiness — so the player
+      may hold it for several descents and can spend it elsewhere. The craft
+      step therefore has to survive an empty wallet: with no shard it points at
+      the shop, which is where the gold from the first clear is already for.
 - [ ] The craft is TRIGGERED, not queued. Nothing about crafting is taught at
       the meeting; when that crystal reaches level 2 by being used, the guide
       comes back on its own for the two steps that put a modifier on it, and
@@ -85,11 +100,20 @@ makes a character feel like a build — took your first notable.
 - [ ] The dev preset still marks everything given (`game.given`), so a stocked
       game does not walk into the opening.
 
+**MEASURED, so nobody derives it twice.** A fresh character on bare descents
+reaches skill level 2 on the 2nd clear and **skill level 3 on the 5th**, about
+**133 seconds** of play (three trials, all the same shape). So the crystal
+arrives on roughly the fifth descent, which is a fine pace for a player and a
+problem for one harness only:
+
 **What must not break.** `npm run guide` plays the opening in REAL TIME and
-sits through every descent in it. A condition that needs a skill level costs it
-descents — measure how many before writing the number, and if the guide cannot
-reach it in its turn budget, that is this phase's problem and not the
-harness's. The demo walks the same steps headlessly with one hand-written
+sits through every descent in it. Five descents is ~2¼ minutes of waiting on
+top of everything else, and its turn budget is 240 turns of ~320–500ms — about
+two minutes total. **Raise it to ~600 turns and write the new suite timing into
+`RULES.md`;** the harness being too impatient is this phase's problem, not a
+reason to move the condition. While the guide is DORMANT the lockdown is off,
+so `looping()` is true and descents chain by themselves — the harness only has
+to wait, not click. The demo walks the same steps headlessly with one hand-written
 action each, and a TRIGGERED step is a new shape for both of them: a step that
 is not reachable yet must not be reported as stuck.
 
