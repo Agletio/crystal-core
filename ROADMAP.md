@@ -15,6 +15,12 @@ each. The number in brackets is the user's own numbering within its batch, kept
 so a phase can be matched back to the ask — it says nothing about when to build
 it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
+**A character will end up holding three skills**, one from each of three slots
+— something that kills, something always on, something that moves you — and
+`Character.skillId` is one field until Phase 7 changes it. Anything built
+before then that assumes one skill is something Phase 7 has to undo, so prefer
+`characterStats(character)` over reaching for `character.skillId` yourself.
+
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
 nothing here is tuned until every system is in, because attributes, trades and
 jobs each hand out more power than the last and anything tuned before them is
@@ -263,9 +269,17 @@ damage instead of by scaling sustain if that is the build you want.
 - [ ] Short of the cost you are **starved**: mana drains to 0 and the cast
       happens anyway, at a penalty. `RunState.dryCasts` keeps its meaning —
       casts made while starved — and so does the demo's calibration section.
-- [ ] The penalty is a `more` multiplier on damage, so more damage from
-      anywhere genuinely overcomes it. **See open question 3 for whether it is
-      also a speed penalty; do not guess.**
+- [ ] The penalty is a `more` multiplier on DAMAGE and nothing else — not
+      speed. Answered: scaling damage is meant to be a real answer to running
+      dry, and it works against a damage penalty directly where it only works
+      against a speed one sideways.
+- [ ] **Build the penalty as a number something can later change, not as a
+      constant read at the call site.** A job that stacks mana is planned —
+      huge upside for solving mana, a bigger downside when you run out — so
+      the starved multiplier has to arrive through one seam a grant can reach.
+      Declare it in `src/sim/grants.ts` the way `manaMultiplier` is, give it a
+      merge, and have the sim ask one function for the number. Getting this
+      wrong costs that job a rewrite; getting it right costs a table entry.
 - [ ] It is VISIBLE. The mana bar already turns rust when short of a cast
       (`.hp--dry`); a starved cast needs to read on the map or in the readout
       too, or damage silently halves for a reason nobody can see.
@@ -301,57 +315,104 @@ to hand them.
       harness can click into a real allocation; a region gets its first live
       control, and `.web__node--open` is what a free point makes clickable.
 - [ ] Nothing on the main screen is held while it runs.
-- [ ] **The first crystal's gate has to move with it — see open question 2.**
-      Spending three points on three minors leaves you with no notable, so as
-      written the crystal would never arrive and the opening would sleep
-      forever on `meet_crystal`. Do not build this half.
-- [ ] `pathToNotable` in `src/skills-tree.ts` may end up with no callers. If so
-      it goes, unless the answer to question 2 keeps it.
+- [ ] **The first crystal's gate moves with it, and this is answered:**
+      `crystalEarned` in `src/game/crystals.ts` becomes the active skill at
+      `INTRO.crystalSkillLevel` with EVERY point of it spent —
+      `pointsAvailable(progress) === 0` — instead of a notable allocated. The
+      level gate is what stops one point at level 1 satisfying it. Nothing can
+      dead-end: spending everything is always reachable.
+- [ ] The step SUGGESTS a notable and never requires one. Its text can name the
+      nearest one — `pathToNotable` in `src/skills-tree.ts` still answers that,
+      so it stays — but the ring is the web and the `done` is the points. A
+      player who spreads their points instead will meet a notable soon enough
+      and work it out; being told what to build is what this removes.
+- [ ] `hasNotable` may end up with no callers once the gate moves. If so it
+      goes.
 
 **What must not break.** `npm run guide` plays the whole opening with a real
 pointer and is the only thing that proves a step is finishable; the demo walks
 the same list headlessly with one hand-written action per step, and the step
 count in `RULES.md` needs updating with it.
 
-### Phase 7 — Three skills, three icons, and stats that belong to a skill [user 4]
+### Phase 7 — Three skill slots, and a skill to put in each [user 4]
 
-**What is true today.** A character has ONE skill: `Character.skillId`, and
-`SKILL_CATEGORIES` in `src/data.ts` lists four kinds — spell, attack, passive,
-movement — of which the last two say "Nothing here yet" and have no entries in
-`SKILLS`. The run panel's readout begins with a `mana a swing` row
-(`#run-mana-cost`) directly under the xp bar. The character sheet
-(`src/ui/character.ts`) mixes stats that belong to the CHARACTER (life, armour,
-resistances, move speed, mana pool and regeneration) with stats that belong to
-the SKILL you happen to have equipped (damage, damage/sec, crit chance and
-damage, casts or attacks per second, mana per use, reach).
+**What is true today.** A character has ONE skill — `Character.skillId` —
+and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
+in `src/data.ts` lists four kinds: spell, attack, passive, movement. Only the
+first two have entries in `SKILLS`; the other two say "Nothing here yet" and
+are empty. `src/ui/skills.ts` equips by writing `character.skillId`.
+
+**Why it is wrong.** A character is one ability. The intended shape is three at
+once — something that kills, something always on, and something that moves you
+— and neither of the last two exists to be equipped.
+
+- [ ] **Three slots, declared as a table** the way `EQUIP_SLOTS` and
+      `RUN_SLOTS` are, never three named fields: a `main` slot accepting
+      `spell` OR `attack`, a `passive` slot, a `movement` slot. One entry is
+      how a fourth ever gets added.
+- [ ] `Character.skillId` becomes that slot table's contents. `heal()` drops a
+      slot naming a skill that no longer exists, and a save written before this
+      puts its old `skillId` in `main` — the demo already holds every container
+      to being healed.
+- [ ] `characterStats` resolves the MAIN slot for damage, so every existing
+      harness keeps meaning what it meant. The passive and the movement skill
+      reach the sim as their own thing, not by being the skill that swings.
+- [ ] **The passive:** critical hits deal NO extra damage; instead, landing one
+      grants 40% more damage for 5 seconds. It is a TRADE, which is what makes
+      it worth a slot. The mechanism already exists — `TimedEffect` on the hero
+      from the potions phase — so this is an effect with a duration granted by
+      a crit rather than by a flask, and `critMultiplier` reads as 0 while it
+      is equipped. Its own line has to say both halves and both numbers.
+- [ ] **The movement:** a blink. Teleports the hero a short distance on a short
+      cooldown, to make crossing a map faster. It fires ITSELF — automation is
+      universal (`RULES.md`), so the shipped policy is what `runToCompletion`
+      runs: blink along the path you are already walking when it is off
+      cooldown and the way is clear. It may not put a body inside rock —
+      `RunSim.placeIn` and the `BODIES` demo section are what hold that.
+- [ ] Both new skills need art the way every other does, and a tree is NOT
+      required: `BUILT_TREES` is per skill and a skill with no web renders "no
+      web yet" already.
+- [ ] The welcome screen picks your first MAIN skill and says nothing about the
+      other two; how you get those is the same question as where any skill
+      comes from, and is not answered here.
+
+**What must not break.** `npm run demo` builds characters in a dozen places
+through `makeCharacter(equipment, skillId)`; that signature changing touches
+`ladderCharacter`, the tutorial walkthrough and the sheet harness. `npm run
+guide` equips a skill with a real pointer. The blink is a new way for a run to
+end early or never end — `TERMINATION CHECK` is the one that would catch it.
+
+### Phase 8 — Three icons, and the stats that belong to a skill [user 4]
+
+**What is true today.** The run panel's readout begins with a `mana a swing`
+row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
+character sheet (`src/ui/character.ts`) mixes stats belonging to the CHARACTER
+— life, armour, resistances, move speed, the mana pool and its regeneration —
+with stats belonging to the SKILL it happens to resolve: the damage breakdown,
+damage per second, crit chance and crit damage, casts or attacks per second,
+mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and the moment a character carries more than one skill it cannot even be
-written down.
+and with three skills equipped (Phase 7) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
-      three skill icons: your main skill, your passive, your movement.
-      `skillIcon(skillId, size)` in `src/ui/icons.ts` already draws one.
+      three skill icons, one per slot. `skillIcon(skillId, size)` in
+      `src/ui/icons.ts` already draws one.
 - [ ] HOVER gives the short version. CLICK opens the character sheet at that
       skill's own section.
-- [ ] The sheet gains a section per equipped skill holding everything that is
-      only true of that skill: the damage breakdown that is on it today, mana
-      per use, damage per second, crit chance and crit damage, casts or attacks
-      per second, reach. Those rows LEAVE the general stats, which keeps life,
-      armour, resistances, move speed, regeneration, the mana pool and its
-      regeneration.
-- [ ] **Whether passive and movement are real slots or two empty ones — see
-      open question 4.** If they are real, this phase grows a way to equip
-      three skills and `characterStats` grows a skill argument; if they are
-      placeholders, the two icons draw empty and say what will go there.
+- [ ] The sheet gains a section PER EQUIPPED SKILL holding everything only true
+      of that skill: its damage breakdown, mana per use, damage per second,
+      crit chance and crit damage, casts or attacks per second, reach. Those
+      rows LEAVE the general stats, which keeps life, armour, resistances, move
+      speed, regeneration, the mana pool and its regeneration.
 - [ ] An empty slot says what it is for. A dark square teaches nothing.
 
-**What must not break.** `characterStats(character)` resolves ONE skill today
-and every harness calls it; `damageDetail` and `skillBase` are per skill
-already. `npm run shots` renders the sheet and the run panel at 390px, where
-three icons and a per-skill section are the tight fit.
+**What must not break.** `npm run shots` renders the sheet and the run panel at
+390px, where three icons and three sections are the tight fit; the sheet
+harness in `src/demo.ts` checks every number on it survives being recomputed,
+and it walks the rows.
 
-### Phase 8 — Trades: the part of a character that is not the skill
+### Phase 9 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -433,7 +494,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 9 — Every monster brings its own element [user 10]
+### Phase 10 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -489,7 +550,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 10 — What a node does, shown and not overlapped [user 8]
+### Phase 11 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -529,40 +590,11 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. **Questions 1 and 2 block Phases 6 and 7**; nothing else
-blocks anything. Every phase before those is buildable today.
+Do not guess at these. **None of them blocks a phase** — the three that did
+have been answered and are written into the phases above, so every phase in
+this file is buildable today.
 
-1. **What gates the first crystal once the opening stops pointing at a
-   notable?** Phase 6 replaces "take this node" with "spend every point", and a
-   player can spend three points on three minors and own no notable — at which
-   point `crystalEarned` in `src/game/crystals.ts` is never satisfied, the
-   Lampwright never comes, and the opening sleeps on `meet_crystal` forever.
-   Three answers:
-
-   - **Points spent** rather than a notable: the skill at
-     `INTRO.crystalSkillLevel` with every point of it spent. Closest to what
-     the opening now teaches, and it cannot dead-end.
-   - **Skill level alone.** Simplest; the tree stops being part of the price.
-   - **Keep the notable** and let the opening come back a third time when one
-     is affordable, which is the dormancy mechanism doing what it is for — but
-     it is the "take THIS node" step the phase is trying to remove.
-
-2. **Are passive and movement real skill slots, or two empty ones?** Phase 7
-   draws three icons and there is only one skill on a `Character`, no passive
-   or movement skills in `SKILLS`, and both categories say "Nothing here yet".
-   Either the phase is a UI change over one real skill and two placeholders
-   that say what will go there, or it is the system that lets a character equip
-   three skills at once — `Character.skillId` becomes a slot table,
-   `characterStats` takes which skill it is resolving, and every harness that
-   builds a character changes with it. The second is several times the first.
-
-3. **What being starved of mana costs.** Phase 5 makes running dry a penalty
-   rather than a wall. Less damage, slower casting, or both? Damage alone is
-   the cleanest answer to what was asked — "scale more damage to overcome the
-   downside" works directly against a damage penalty and only indirectly
-   against a speed one — but both is defensible and reads more like exhaustion.
-
-4. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
+1. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
    and the intent is a storyline with the Lampwright rather than a level
    threshold — he is the only person in the game and the only voice it has.
    Nothing about it is written: what he is doing down there, what he asks for,
@@ -570,19 +602,25 @@ blocks anything. Every phase before those is buildable today.
    The phase ships a placeholder that the story replaces without touching the
    tree or the points, so this blocks the STORY and not the system.
 
-5. **What the second trade is.** The Alchemist is designed. The framework phase
-   asks for two, and the rule the second has to clear is the same one: it
-   changes what is POSSIBLE rather than by how much. Candidates, all of which
-   change a rule the game already has: crystals that level while carried rather
-   than only while socketed; a descent that runs longer and pays per clear
-   rather than per kill; danger that hurts less and pays less. None is picked.
+2. **What the second trade is.** The Alchemist is designed, and a second is
+   now half-designed: **a trade that stacks MANA** — a large upside for solving
+   mana at all, and a bigger downside for running out, which is a rule change
+   rather than a percentage. Phase 5 is built with that in mind: the starved
+   damage penalty arrives through a declared grant so this trade can move it
+   with a table entry rather than a rewrite. What it grants and what it takes
+   away is still unwritten. The user calls these JOBS; this file calls them
+   trades, and they are the same thing.
+   Other candidates, all of which change a rule the game already has: crystals
+   that level while carried rather than only while socketed; a descent that
+   runs longer and pays per clear rather than per kill; danger that hurts less
+   and pays less.
 
-6. **What is the fifth socket?** Wanted as an endgame slot holding something
+3. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-7. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
+4. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
    was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
    BELOW** four Demonic crystals on damage taken per second, and with mana
    removed entirely it is only 2.0% above — so the ordering was always inside
@@ -597,7 +635,7 @@ blocks anything. Every phase before those is buildable today.
    an ordering, and `CLAUDE.md` says it is an open question rather than a claim.
    Nothing is blocked on it: it is a balance answer, and balance waits.
 
-8. **The Cavern and the Fissure have no currency of their own.** Retiring the
+5. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
