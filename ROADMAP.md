@@ -17,8 +17,8 @@ it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
 **A character will end up holding three skills**, one from each of three slots
 — something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 5 changes it. Anything built
-before then that assumes one skill is something Phase 5 has to undo, so prefer
+`Character.skillId` is one field until Phase 4 changes it. Anything built
+before then that assumes one skill is something Phase 4 has to undo, so prefer
 `characterStats(character)` over reaching for `character.skillId` yourself.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
@@ -27,7 +27,7 @@ jobs each hand out more power than the last and anything tuned before them is
 thrown away. Lean too easy. Measure, print, carry on.
 
 Mana costs, the potions that answer running dry, and the attributes that scale
-the pool have all landed. What is left of that idea is Phase 3, which turns
+the pool have all landed. What is left of that idea is Phase 2, which turns
 running dry from a wall into a penalty.
 
 ---
@@ -51,47 +51,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Two things the run screen gets wrong [user 1, user 2]
-
-Two unrelated one-screen fixes, both small, both about the screen showing you
-the wrong thing. Do them together.
-
-**Keep going is not a choice.** `docs/index.html` has a `.keepgoing` label
-holding `<input type="checkbox" id="run-repeat" checked>` beside Enter the
-Fissure; it writes `GameState.autoRepeat`, which `looping()` in
-`src/ui/run.ts` reads (`game.autoRepeat && !isGuided()`). Chaining descents is
-what this game IS, and the two buttons that stop it — **Leave after this run**
-and **Abandon** — already cover every way you might want out. A checkbox
-offering to make the idle game not idle is a decision nobody needs.
-
-- [ ] The checkbox and its label go from the markup, and `run-repeat`'s
-      `onchange` handler goes from `initRun`.
-- [ ] `looping()` becomes `!isGuided()`. The guided opening still suppresses
-      chaining, which is deliberate: its later steps are written against a
-      report that is still on screen.
-- [ ] `GameState.autoRepeat` goes, and `heal()` needs nothing — a field a save
-      still carries is simply never read again.
-- [ ] `grep -rn autoRepeat src smoke.mjs` finds every reader. `smoke.mjs` and
-      `src/demo.ts` both touch it.
-
-**A tooltip is the top layer.** `.tip` in `docs/index.html` sits at
-`z-index: 40`. The guide card is 50, the item menu 95 and the toast 96, so the
-thing explaining what you are looking at is UNDER the thing telling you to
-click it. On the skills web this is at its worst: the guided opening rings a
-node and its own card covers the tooltip naming it.
-
-- [ ] `.tip` goes above everything the app can put on screen. It is
-      `pointer-events: none`, so nothing can be trapped behind it.
-- [ ] Check it against the item menu (right-click a dock slot), the toast (equip
-      by drag), the guide card, and a modal — the tooltip has to win all four.
-- [ ] `npm run shots` renders a tooltip at two viewports and is where a
-      regression would show.
-
-**What must not break.** `npm run smoke` drives the checkbox today; `npm run
-guide` clicks through the opening with a real pointer and would notice a
-tooltip that started swallowing clicks.
-
-### Phase 2 — A badge on every tab holding points to spend [user 6]
+### Phase 1 — A badge on every tab holding points to spend [user 6]
 
 **Half of this landed with attributes and the mechanism is built.**
 `badge(buttonId, count)` in `src/ui/badge.ts` adds or removes a
@@ -121,7 +81,7 @@ guided opening is the only thing that has ever told a player they have one.
 the tightest row in the game. The demo's "every step points at an element that
 exists" walks header ids and a badge must not become one of them.
 
-### Phase 3 — Out of mana is a penalty, not a wall [user 5]
+### Phase 2 — Out of mana is a penalty, not a wall [user 5]
 
 **What is true today.** `RunSim.swing` in `src/sim/run.ts` pays
 `hero.stats.manaCost` and, short of it, casts `DRY_SKILL` instead — a
@@ -165,7 +125,7 @@ at all to finishing its descent; that check gets EASIER here, since it can now
 always cast, but it still has to pass. `npm run demo`'s determinism check
 replays a seed with the same presses and must still match.
 
-### Phase 4 — The opening spends every point [user 3]
+### Phase 3 — The opening spends every point [user 3]
 
 **What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
 steps. `spend_point` rings ONE specific node — `towardNode` walks you into
@@ -208,7 +168,7 @@ pointer and is the only thing that proves a step is finishable; the demo walks
 the same list headlessly with one hand-written action per step, and the step
 count in `RULES.md` needs updating with it.
 
-### Phase 5 — Three skill slots, and a skill to put in each [user 4]
+### Phase 4 — Three skill slots, and a skill to put in each [user 4]
 
 **What is true today.** A character has ONE skill — `Character.skillId` —
 and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
@@ -256,7 +216,7 @@ through `makeCharacter(equipment, skillId)`; that signature changing touches
 guide` equips a skill with a real pointer. The blink is a new way for a run to
 end early or never end — `TERMINATION CHECK` is the one that would catch it.
 
-### Phase 6 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 5 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
 row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
@@ -267,7 +227,7 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 5) it cannot even be written down.
+and with three skills equipped (Phase 4) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
       three skill icons, one per slot. `skillIcon(skillId, size)` in
@@ -289,7 +249,7 @@ and with three skills equipped (Phase 5) it cannot even be written down.
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 7 — Trades: the part of a character that is not the skill
+### Phase 6 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -371,7 +331,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 8 — Every monster brings its own element [user 10]
+### Phase 7 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -427,7 +387,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 9 — What a node does, shown and not overlapped [user 8]
+### Phase 8 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -482,7 +442,7 @@ this file is buildable today.
 2. **What the second trade is.** The Alchemist is designed, and a second is
    now half-designed: **a trade that stacks MANA** — a large upside for solving
    mana at all, and a bigger downside for running out, which is a rule change
-   rather than a percentage. Phase 3 is built with that in mind: the starved
+   rather than a percentage. Phase 2 is built with that in mind: the starved
    damage penalty arrives through a declared grant so this trade can move it
    with a table entry rather than a rewrite. What it grants and what it takes
    away is still unwritten. The user calls these JOBS; this file calls them

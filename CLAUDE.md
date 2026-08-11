@@ -277,9 +277,10 @@ measured against.
 
 ## The loop
 
-You press Enter once. A cleared descent launches the next one by itself, and it
-keeps going until it is stopped: **you die**, **the haul fills**, **someone is
-waiting at the mouth**, or you say so. Saying so has two prices. **Leave after
+You press Enter once. A cleared descent launches the next one by itself — that
+is not a setting and there is no checkbox for it — and it keeps going until it
+is stopped: **you die**, **the haul fills**, **someone is waiting at the
+mouth**, or you say so. Saying so has two prices. **Leave after
 this run** finishes the descent you are in and banks it; **Abandon** walks out
 now, and that descent pays nothing — the same rule as dying in it. A meeting is
 the gentlest of the five and costs nothing at all: the descent is already

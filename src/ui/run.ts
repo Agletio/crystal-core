@@ -245,19 +245,15 @@ function renderMenu(): void {
   $('run-blocked').textContent = blocked
     ? 'Your haul is full. Empty some of it before you go back down.'
     : '';
-  ($('run-repeat') as HTMLInputElement).checked = game.autoRepeat;
 }
 
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 
-/**
- * Whether a cleared descent starts the next one by itself. Off during the
- * guided opening whatever the toggle says: its later steps are written
- * against a report that is still on screen.
- */
-const looping = (): boolean => game.autoRepeat && !isGuided();
+/** A cleared descent always starts the next one. The guided opening is the
+ *  one exception: its later steps read a report still on screen. */
+const looping = (): boolean => !isGuided();
 
 function launch(): void {
   // An empty set is a real descent, not a missing choice: the bare Fissure is
@@ -827,11 +823,6 @@ export function initRun(state: GameState): void {
     streak = 0;
     leaving = false;
     launch();
-  };
-
-  ($('run-repeat') as HTMLInputElement).onchange = (event) => {
-    game.autoRepeat = (event.target as HTMLInputElement).checked;
-    renderMenu();
   };
 
   ($('run-leave') as HTMLButtonElement).onclick = () => {

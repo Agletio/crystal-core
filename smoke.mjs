@@ -2138,6 +2138,38 @@ assert(
   assert(shown() === all, 'and clearing it puts the pile back', `${shown()} of ${all}`);
 }
 
+// --- the tooltip is the top layer -----------------------------------------
+// It explains what you are looking at, so it cannot sit under the thing
+// telling you to click it. Measured against every layer the app can raise,
+// rather than against the number written in the stylesheet.
+{
+  const layer = (cls) => {
+    const probe = document.createElement('div');
+    probe.className = cls;
+    document.body.append(probe);
+    const z = Number(window.getComputedStyle(probe).zIndex);
+    probe.remove();
+    return z;
+  };
+  const tip = layer('tip');
+  for (const cls of ['modal', 'guide', 'dragghost', 'itemmenu', 'toast']) {
+    assert(tip > layer(cls), `the tooltip draws over .${cls}`, `${tip} vs ${layer(cls)}`);
+  }
+  assert(
+    window.getComputedStyle($('tooltip')).pointerEvents === 'none',
+    'and is never hit-tested, so nothing can be trapped behind it'
+  );
+}
+
+// --- keeping going is not a choice ----------------------------------------
+// Chaining descents is what this game is; Leave after this run and Abandon are
+// the two ways out and there is no third.
+assert($('run-repeat') === null, 'no checkbox offers to make the idle game not idle');
+assert(
+  $('run-leave') !== null && $('run-abandon') !== null,
+  'and the two buttons that stop the loop are still there'
+);
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();

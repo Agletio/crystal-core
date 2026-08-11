@@ -102,8 +102,6 @@ export interface GameState {
   /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
   shopStock: Item[];
   shopLevel: number;
-  /** Whether a cleared descent launches the next one by itself. */
-  autoRepeat: boolean;
   /** Key overrides by binding id; a missing one takes the table's default. */
   keys: Record<string, string>;
   /** Share of a pool a potion fires at, by id. Charges are `RunState`'s. */
@@ -138,7 +136,6 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     sold: [],
     shopStock: [],
     shopLevel: 0,
-    autoRepeat: true,
     keys: {},
     potions: {},
   };
@@ -164,7 +161,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.stash = [];
   game.haul = [];
   game.stashSlots = STASH_START;
-  game.autoRepeat = true;
 
   // The dev preset wears a rolled set, so the stat pipeline has something in it.
   game.character = makeCharacter(

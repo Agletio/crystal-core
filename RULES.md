@@ -489,6 +489,13 @@ begin at level 2, so without the second one nothing but a played descent
 reaches the screen this phase built — and `smoke.mjs` is what proves the
 buttons and the badge work.
 
+**The tooltip is the TOP LAYER.** `.tip` is `z-index: 100`, over every popup,
+menu, guide card and toast the app can raise — what explains a thing may not
+sit under what points at it, and on the skill web the opening's own card used
+to cover the tooltip naming the node it was ringing. It is
+`pointer-events: none`, so nothing can be trapped behind it. `smoke.mjs`
+measures it against each of those layers rather than against the number.
+
 **Adding a modal is four places, not one.** The markup in `docs/index.html`;
 the Escape chain in `src/web.ts`, which closes the topmost thing and must know
 where yours sits in that stack; `guideContext()`'s `top`, which is what lets a
@@ -629,10 +636,16 @@ changes what a CLICK means, and a mode that survived a reload would turn the
 first click of a session into something nobody asked for. None of them is in
 `GameState` and none of them should be.
 
+**Chaining descents is not a setting.** `looping()` is `!isGuided()` and
+nothing else — the guided opening is the only thing that suppresses it, because
+its later steps are written against a report still on screen. **Leave after
+this run** and **Abandon** are the two ways out and there is no third; a
+checkbox offering to make the idle game not idle is a decision nobody needs.
+`smoke.mjs` holds `#run-repeat` to not existing.
+
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
 starts ticking; `finish()` banks the report and decides whether another descent
-follows (`looping()` is `game.autoRepeat` and not the guided opening); `land()`
-is the one terminus every ending arrives at. The sim in `src/sim/` never learns
+follows; `land()` is the one terminus every ending arrives at. The sim in `src/sim/` never learns
 about presentation — a transition, a panel, a freeze, all of that is the UI
 holding off on ticking.
 
@@ -837,6 +850,14 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. 
   never produces one. The meeting is at the END of a cleared descent, after a
   walk to the exit and a walk over to him, so that wait covers a whole one —
   and the skill it picks is Blight, which takes about a minute over its first.
+- **The meeting is the one modal `guide.mjs` never Escapes.** Its dormant
+  branch reads the state, then reads what is open, then presses Escape — and a
+  Lampwright panel that appeared between those two reads was being dismissed
+  without being taken. `meet_crystal` sleeps on `ctx.top !== 'met'`, so a panel
+  that is up has already woken the step: the harness waits a beat and lets the
+  normal path ring **Take it**. The failure it produced was `the opening met
+  the Lampwright 1 times, not twice`, intermittently, with nothing wrong in the
+  app — the gift stayed owed and a later descent handed it over.
 - **The guide plays the opening in REAL TIME**, and every descent in it is
   played. `again` sits through exactly one — the second clear, which is what
   `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to

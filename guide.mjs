@@ -134,8 +134,17 @@ for (let turn = 0; turn < 900; turn++) {
     // A descent that ended while the guide still held the lock left a report
     // and a haul on top of it, so the way back into the loop is out of those
     // and then in through the same button a player uses.
-    const open = await page.$$eval('.modal:not([hidden])', (ns) => ns.length);
-    if (open > 0) {
+    const open = await page.$$eval('.modal:not([hidden])', (ns) => ns.map((n) => n.id));
+    // The meeting is the one modal that is never in the way: `meet_crystal`
+    // sleeps on `ctx.top !== 'met'`, so a panel that opened between reading
+    // the state and acting on it has already woken the step. Escaping it here
+    // dismissed the Lampwright without taking what he held, and the opening
+    // recovered on a later descent having taught the step to nobody.
+    if (open.includes('met')) {
+      await page.waitForTimeout(300);
+      continue;
+    }
+    if (open.length > 0) {
       await page.keyboard.press('Escape');
     } else if (now.phase !== 'running') {
       const button = now.phase === 'results' ? '#run-again' : '#run-launch';
