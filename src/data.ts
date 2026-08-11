@@ -1929,6 +1929,9 @@ export interface EncounterDef {
   size: number;
   /** Multiplier on the xp and gold each one is worth. */
   bounty: number;
+  /** How it comes up the hole: `size` bodies at a time, `every` seconds apart.
+   *  Twenty on one tile reads as two. */
+  wave: { size: number; every: number };
 }
 
 export const ENCOUNTERS: EncounterDef[] = [
@@ -1942,6 +1945,7 @@ export const ENCOUNTERS: EncounterDef[] = [
     damage: 2.2,
     size: 2.1,
     bounty: 14,
+    wave: { size: 1, every: 0 },
   },
   {
     id: 'honour_guard',
@@ -1953,6 +1957,7 @@ export const ENCOUNTERS: EncounterDef[] = [
     damage: 1.5,
     size: 1.35,
     bounty: 3.5,
+    wave: { size: 1, every: 0.9 },
   },
   {
     id: 'swarm',
@@ -1964,6 +1969,7 @@ export const ENCOUNTERS: EncounterDef[] = [
     damage: 0.9,
     size: 0.95,
     bounty: 0.7,
+    wave: { size: 5, every: 1.1 },
   },
 ];
 

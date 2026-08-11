@@ -426,15 +426,35 @@ carrying so Abandon mid-drop lands THAT one rather than building a second and
 banking the loot twice. The hole itself is a `mouth()` decal on the ENTRANCE
 and EXIT tiles, per zone, so both renderers get it.
 
+**Walking out.** A descent does not end where you killed the last thing. The
+flood finding nothing reachable puts the hero on a walk to `map.exit`, and three
+things hang off that walk: coming within `FINALE_RANGE` triggers the closing
+encounter, reaching `AT_EXIT` clears the run, and a route that does not exist is
+the same answer as being there already — nothing waits forever. The exit is
+drawn by the `mouth()` decal and by nothing else; a marker on the vfx layer
+paints over the thing you are fighting.
+
+**The finale comes UP the hole.** `spawnFinale` builds every body at
+`map.exit` and queues them in `pending`; `climbOut` releases `EncounterDef.wave`
+— `size` at a time, `every` seconds — and `step` runs that clock whether or not
+you are winning. `s.totalMonsters` counts the whole encounter the moment it
+starts, or the readout ticks down and then climbs again. Twenty bodies on one
+tile read as two, which is what the wave shape exists to stop.
+
 **A meeting.** The Lampwright is `RunState.lampwright`, an `Entity` kept
 deliberately OUT of `monsters` so nothing in combat can ever see them.
 `giftWaiting` in `src/game/crystals.ts` answers what is waiting at the mouth,
 read AFTER the report so the level that descent just bought counts.
-`RunSim.greetAtExit()` stands them on `map.exit` facing the hero; `takeHandover`
-grants everything the meeting holds and `src/ui/met.ts` draws it; `giftSchedule`
-is the same answer in words, for the collection screen. A meeting is a HALT of
-the idle loop — `halt = 'met'` — landing on the same report as any other ending,
-so the clear is banked before anyone is standing there.
+`RunSim.greetAtExit()` stands them `GREET_STEP` off the hole — beside it, never
+in it — and does NOT begin the meeting; `RunSim.walkOut(dt)` is the hero
+crossing that last stride, ticked by the frame loop alone (the descent is over,
+so `step` would be wrong and the clock the report read has stopped), and
+ARRIVING sets `meeting`. `takeHandover` grants everything the meeting holds and
+`src/ui/met.ts` draws it; `giftSchedule` is the same answer in words, for the
+collection screen. A meeting is a HALT of the idle loop — `halt = 'met'` —
+landing on the same report as any other ending, so the clear is banked before
+anyone is standing there. `walkToMeeting` is the headless version of the walk,
+bounded like `runToCompletion`.
 
 **The Lampwright speaks in FLAVOUR.** `LAMPWRIGHT.first`, `.crystal` and
 `.again` in `src/data.ts` describe what he has seen the rock do and name no
@@ -529,15 +549,19 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   already satisfied is SKIPPED and never comes back, so "do this thing that
   happens at a random moment" belongs as a branch inside an existing step's
   `text`/`target`, not as a step of its own. The meeting is the worked example.
-  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop,
-  buy_making, select_weapon, use_making, equip, descend, again, meet_crystal,
+  A step's `done` may not read a MOMENT the UI passes through — `meet` ended on
+  the panel being shut, and the walk out put a second between the clear and the
+  panel in which that was already true, so the opening skipped the meeting and
+  then rang a header button underneath it. It ends on the thing having been
+  handed over instead.
+  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop, buy_making, select_weapon, use_making, equip, descend, again, meet_crystal,
   bench_crystal, craft_crystal, socket. The demo walks the same list headlessly
   with a hand-written action per step — add a step and that action list needs
   one too, or the walkthrough reports the opening as STUCK.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
   a minute for the Lampwright panel and fails the run if a first descent never
-  produces one. The meeting is at the END of a cleared descent now, so that
-  wait has to cover a whole one rather than part of it.
+  produces one. The meeting is at the END of a cleared descent, after a walk to
+  the exit and a walk over to him, so that wait covers a whole descent.
 - **The guide plays the opening in REAL TIME**, and every descent in it is
   played. `again` sits through exactly one — the second clear, which is what
   `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to

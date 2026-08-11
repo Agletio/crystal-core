@@ -29,65 +29,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Walking out
-
-One moment of the game: what happens between the last monster and the next
-descent. It is currently three things happening on one tile at once.
-
-**What is true today.**
-
-- **A citrine square, pulsing, drawn on the VFX layer** — `state.map.exit` in
-  both `src/render/pixi.ts` and `src/render/canvas2d.ts`. The vfx layer is above
-  the entities, so it paints over monsters and over the Lampwright. It predates
-  `mouth()`, which now draws the exit as the hole it is.
-- `spawnFinale()` in `src/sim/run.ts` fires the moment the flood finds nothing
-  reachable left, and rings the whole encounter around `map.exit` at once —
-  `count` entities on a circle of radius `0.8 + count*0.09`. A Swarm is 20
-  bodies on one point.
-- `greetAtExit()` puts the Lampwright ON `map.exit`, sets `meeting` in the same
-  call, and `src/ui/run.ts` opens the panel immediately. The hero is already
-  standing there, so the fight ends, a panel appears, and the descent is over —
-  all without moving.
-
-**Why it is wrong.** A marker that clips over the thing you are fighting is a
-bug on screen. Twenty monsters spawning inside each other reads as two. And the
-end of a descent is a place you should walk to rather than a tile you were
-already standing on.
-
-- [ ] **The exit marker goes.** The exit is the `mouth()` decal, the same one
-      the entrance has — you came out of one and you drop into the next, and
-      they should look alike. Nothing on the vfx layer marks a tile.
-- [ ] The finale arena and the EXIT are near each other and not the same place.
-      Clearing the map leaves you with a walk, short enough to be a beat and not
-      a chore.
-- [ ] The finale is triggered by the hero coming NEAR the exit, not by the map
-      going empty — so it is a thing that happens to you on the way out.
-- [ ] They come OUT of the exit — the same hole the Lampwright climbs out of.
-- [ ] Arrival is STAGGERED, per encounter (`ENCOUNTERS` in `src/data.ts`):
-      the Warden is one and arrives alone; the Honour Guard's four come out one
-      at a time; the Swarm's twenty come in groups. A `wave` shape on
-      `EncounterDef` — how many at once and how long between — so the pacing is
-      data rather than a special case per encounter.
-- [ ] `s.totalMonsters` still counts the whole encounter the moment it starts,
-      or the readout counts down and then goes back up.
-- [ ] The Lampwright **climbs out and steps clear** — a tile or two off the
-      hole, not standing in it — and the hero **walks to him**. `greetAtExit`
-      stops setting `meeting`; reaching him does. That is the pre-existing
-      walk-to-him behaviour, at the end of a cleared descent where it is safe
-      rather than in the middle of one where it was not.
-- [ ] The panel opening is what ends the run, so a meeting is still the same
-      halt (`halt = 'met'`) landing on the same report.
-
-**What must not break.** `runToCompletion` has a seconds guard and the demo's
-TERMINATION CHECK runs 28 of them: nothing that waits on the hero reaching a
-place may wait forever — not the finale, and not the meeting. `npm run guide`
-clicks `met-take` twice and `npm run shots` waits a minute for the panel; both
-now depend on a walk finishing first. `runToCompletion` also needs a way to let
-a headless run reach a meeting it now has to walk to. The report reads
-`RunState.elapsed`, and `normal_iv` asks for a clear inside 90 seconds — a walk
-added to every descent moves that, and the demo measures it.
-
-### Phase 2 — Three save slots
+### Phase 1 — Three save slots
 
 **What is true today.** `src/game/save.ts` writes ONE localStorage key
 (`crystal-core.save`) plus a timestamp. The Save screen (`src/ui/savedata.ts`)
@@ -129,7 +71,7 @@ these functions, and its "every collection a save can hold items in claims its
 ids" list goes through `readSave`. The guided opening survives a reload twice
 (`RULES.md`) — that has to keep working with a live slot.
 
-### Phase 3 — Every number said out loud
+### Phase 2 — Every number said out loud
 
 The rule is in `RULES.md`. This is the sweep, and the check that keeps it swept.
 

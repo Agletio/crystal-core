@@ -184,19 +184,6 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       v.tile * 0.1
     );
     ctx.globalAlpha = 1;
-
-    // Exit — a slow pulse so your eye finds the goal.
-    const x = state.map.exit;
-    const pulse = 0.75 + 0.25 * Math.sin(state.elapsed * 3);
-    ctx.save();
-    ctx.translate(cx(v, x.x), cy(v, x.y));
-    ctx.rotate(Math.PI / 4);
-    ctx.fillStyle = palette.citrine;
-    ctx.globalAlpha = pulse;
-    const s = v.tile * 0.42;
-    ctx.fillRect(-s, -s, s * 2, s * 2);
-    ctx.restore();
-    ctx.globalAlpha = 1;
   }
 
   /** Shown on everything alive; dimmed while untouched. */

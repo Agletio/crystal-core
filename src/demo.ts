@@ -14,6 +14,7 @@ import {
   DROP_BANDS,
   monsterResStat,
   LEVELLING,
+  ENCOUNTERS,
   PLAYER_SKILLS,
   AURA,
   AURAS,
@@ -66,7 +67,7 @@ import {
   sellPrice,
 } from './economy';
 import { hasArmourArt } from './ui/icons';
-import { RunSim, TICK, runToCompletion } from './sim/run';
+import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -78,7 +79,7 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, generateMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap } from './sim/grid';
 import { HERO_FRAMES, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
@@ -3159,6 +3160,64 @@ rule('THE FINALE — what is waiting at the exit?');
   }
   line();
   line(`  spread: ${JSON.stringify(tally)}`);
+
+  // WHERE and WHEN it happens, which is the half a tally cannot see. It comes
+  // up the hole you are walking towards, a few at a time, and the readout
+  // knows how many are coming before they are all out.
+  const arrivals: string[] = [];
+  const problems: string[] = [];
+
+  for (const seed of [11, 13, 15]) {
+    const c = rollCrystal(3, pool, rng);
+    const sim = new RunSim([c], makeCharacter(starterLoadout(new Rng(7), 70), 'strike'), new Rng(seed * 101));
+    let started = 0;
+    let atStart = 0;
+    let toExit = 99;
+    let peak = 0;
+    let counted = 0;
+
+    for (let i = 0; i < 30 * 400 && sim.state.status === 'running'; i++) {
+      const was = sim.state.finale;
+      sim.step(TICK);
+      const live = sim.state.monsters.filter((m) => !m.dead).length;
+      if (!was && sim.state.finale) {
+        started = sim.state.totalMonsters;
+        atStart = live;
+        counted = sim.state.totalMonsters - sim.state.killed;
+        toExit = dist(sim.state.hero, sim.state.map.exit);
+      }
+      if (sim.state.finale) peak = Math.max(peak, live);
+    }
+
+    const def = ENCOUNTERS.find((e) => e.name === sim.state.finale);
+    arrivals.push(
+      `${sim.state.finale} ${atStart}→${peak} of ${def?.count} at ${toExit.toFixed(1)} tiles`
+    );
+    if (toExit > 5.5) problems.push(`${sim.state.finale} started ${toExit.toFixed(1)} tiles out`);
+    // Counted whole at the start: everything still owed, whether or not it is
+    // standing on the map yet.
+    if (counted < (def?.count ?? 0)) {
+      problems.push(`${sim.state.finale} counted ${counted} of ${def?.count}`);
+    }
+    if (def && def.count > def.wave.size && atStart >= def.count) {
+      problems.push(`${sim.state.finale} arrived all at once`);
+    }
+    if (sim.state.status === 'cleared' && sim.state.killed !== started) {
+      problems.push(`${sim.state.finale} left ${started - sim.state.killed} down the hole`);
+    }
+  }
+
+  line(`  arrivals: ${arrivals.join(' · ')}`);
+  check(
+    problems.length === 0,
+    'it comes up the hole as you near it, a wave at a time, counted whole',
+    problems.join('; ')
+  );
+  check(
+    ENCOUNTERS.every((e) => e.wave.size >= 1 && e.wave.every >= 0),
+    'and every encounter says how it arrives',
+    ENCOUNTERS.filter((e) => !(e.wave.size >= 1)).map((e) => e.id).join(', ')
+  );
 }
 
 // ===========================================================================
@@ -3939,15 +3998,22 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     buildReport(g, sim.state);
     const waiting = giftWaiting(g, facts(g, sim.state));
     check(
-      waiting?.weapon === true && sim.greetAtExit() && sim.state.meeting,
-      'and climbs out of the exit once it is cleared',
+      waiting?.weapon === true && sim.greetAtExit() && !sim.state.meeting,
+      'and climbs out of the exit once it is cleared, without a word yet',
       `waiting ${JSON.stringify(waiting)}, meeting ${sim.state.meeting}`
     );
+    // Out of the hole and CLEAR of it: standing in it is the one place he
+    // cannot be, since it is the thing the hero is about to drop through.
+    const off = dist(sim.state.lampwright!, sim.state.map.exit);
     check(
-      Math.round(sim.state.lampwright!.x) === Math.round(sim.state.map.exit.x) &&
-        Math.round(sim.state.lampwright!.y) === Math.round(sim.state.map.exit.y),
-      'out of the hole the hero would have dropped through, and nowhere else',
-      `${sim.state.lampwright!.x},${sim.state.lampwright!.y} against ${sim.state.map.exit.x},${sim.state.map.exit.y}`
+      off > 0.9 && off < 3,
+      'a stride off the hole rather than standing in it',
+      `${off.toFixed(2)} tiles from the exit`
+    );
+    check(
+      walkToMeeting(sim) && dist(sim.state.hero, sim.state.lampwright!) <= 1.2,
+      'and the meeting is the hero walking over, not a panel appearing',
+      `meeting ${sim.state.meeting}, ${dist(sim.state.hero, sim.state.lampwright!).toFixed(2)} apart`
     );
 
     // What the panel does. The run is already banked, so this is a handover

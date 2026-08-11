@@ -142,14 +142,19 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
     done: (g) => g.firstClearDone,
   },
-  // The clear ends at the mouth with someone standing in it, so this is
-  // reached with the panel already up rather than waiting for it.
+  // The clear ends at the mouth, but the hero has a stride to walk first — so
+  // this is reached BEFORE the panel is up, and may not end on the panel being
+  // shut. It ends on the thing having been handed over.
   {
     id: "meet",
-    text: "Take what they are holding.",
+    text: (ctx) =>
+      ctx.top === "met"
+        ? "Take what they are holding."
+        : "Someone climbed out of the hole at the exit.",
     hint: "Everything you are ever given is handed over up here, on a run you finished.",
-    target: "met-take",
-    done: (_g, ctx) => ctx.top !== "met",
+    target: (ctx) => (ctx.top === "met" ? "met-take" : viaHeader(ctx, "run-loot")),
+    ring: (ctx) => ctx.top === "met" || ctx.phase !== "running",
+    done: (g, ctx) => ctx.top !== "met" && (g.given ?? []).includes("weapon"),
   },
   {
     id: "take_haul",

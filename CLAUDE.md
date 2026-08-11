@@ -125,8 +125,8 @@ rarity argues with it. The Sigil of Finality drops only in the Seam.
 ## Where crystals come from
 
 Never a shop, never a report, and never a roll. **The Lampwright** climbs out of
-the hole at the exit of a CLEARED descent holding whatever is owed, and that
-meeting ends the run — so a gift is never a thing standing next to the monsters,
+the hole at the exit of a CLEARED descent holding whatever is owed, steps clear
+of it, and waits for you to walk over — and that meeting ends the run — so a gift is never a thing standing next to the monsters,
 and the loot it walks you out with is already banked. `giftWaiting` is what is
 owed, `takeHandover` is the panel granting it, and `giftSchedule` is the same
 answer in words for the collection screen.

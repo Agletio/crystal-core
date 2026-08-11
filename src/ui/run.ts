@@ -21,6 +21,7 @@ import { crystalProgress, giftWaiting } from '../game/crystals';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
+import type { Waiting } from '../game/crystals';
 import { openMet } from './met';
 import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
@@ -76,8 +77,10 @@ let handover = 0;
 let banked: RunReport | null = null;
 /** Set to `banked` when the loop is stopping and the drop has still to play. */
 let pending: RunReport | null = null;
-/** Held while the Lampwright's panel is up, for `land()` to take afterwards. */
+/** Held while the Lampwright is being walked to, for `land()` afterwards. */
 let greeted: RunReport | null = null;
+/** What he is holding, until the hero reaches him and the panel opens. */
+let greeting: Waiting | null = null;
 /**
  * Close enough to see what's happening. Fit (1×) shows the whole Fissure, and
  * at that scale a monster is four pixels. Fit is one click away.
@@ -119,6 +122,7 @@ export function metTaken(): void {
   sim?.takeGift();
   const report = greeted;
   greeted = null;
+  greeting = null;
   if (report) land(report);
 }
 
@@ -310,11 +314,13 @@ function finish(left = false): void {
     : null;
 
   // Somebody at the mouth. Already banked, so it is a reason the loop stopped
-  // rather than a new ending — same `land()`, same report.
+  // rather than a new ending — same `land()`, same report. Arriving is what
+  // puts the panel up, so what he holds waits here until the hero gets there.
   if (waiting && sim.greetAtExit()) {
     halt = 'met';
     greeted = report;
-    openMet(waiting);
+    greeting = waiting;
+    absorbEvents();
     return;
   }
 
@@ -611,6 +617,18 @@ function frame(now: number): void {
   const emerge = emergeNow();
   $('run-fade').style.opacity = String(1 - emerge);
 
+  // Over, and someone is standing there. Nothing ticks but the walk.
+  if (greeting && sim && !sim.state.meeting) {
+    accumulator += dt;
+    let steps = 0;
+    while (accumulator >= TICK && steps < 400) {
+      sim.walkOut(TICK);
+      accumulator -= TICK;
+      steps++;
+    }
+    if (sim.state.meeting) openMet(greeting);
+  }
+
   if (playing && handover === 0 && sim && sim.state.status === 'running') {
     // One pace, always. Speed multipliers were papering over combat that
     // will change as the character scales; tuning the real pace is the
@@ -740,6 +758,8 @@ export function initRun(state: GameState): void {
   // banked as it happened, so it ends on the same card and the same haul.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
     if (!sim || phase !== 'running') return;
+    // Walking over to him: already banked, so nothing to walk out of.
+    if (greeting) return;
     // Mid-drop the descent is already over and banked, so this means "do not
     // go back down": the report lands at the bottom instead of a new map.
     if (handover > 0 && !playing && banked) {

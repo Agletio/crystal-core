@@ -369,12 +369,6 @@ export async function createPixiRenderer(
       }
     };
 
-    const x = state.map.exit;
-    const pulse = 0.75 + 0.25 * Math.sin(state.elapsed * 3);
-    vfxLayer
-      .rect(cx(x.x) - 0.32, cy(x.y) - 0.32, 0.64, 0.64)
-      .fill({ color: toHexNumber(palette.citrine), alpha: pulse });
-
     // Life bars on everything alive, not just the wounded — the point is
     // seeing at a glance who is and isn't taking damage. Untouched bars are
     // dimmed so a full room doesn't shout.

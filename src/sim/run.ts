@@ -73,6 +73,15 @@ const SEPARATION_PASSES = 2;
 /** How far waking one wakes its neighbours. ONE hop, or a dense map cascades. */
 const AGGRO_CHAIN_RADIUS = 4.5;
 
+/** How near the way out the last encounter comes up the hole behind you. */
+const FINALE_RANGE = 5;
+
+/** Close enough to be standing on the way out, and the descent is over. */
+const AT_EXIT = 0.5;
+
+/** How far off the hole the Lampwright steps: out of it, still beside it. */
+const GREET_STEP = 1.6;
+
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 
@@ -198,7 +207,6 @@ export interface Vfx {
   ttl: number;
 }
 
-/** The hero hunts everything, then the finale spawns at the exit. */
 export interface RunOptions {
   /** Thins the packs without touching the map. Harness use only. */
   densityScale?: number;
@@ -274,8 +282,12 @@ export class RunSim {
   private useCrit: boolean | null = null;
   /** How many times the hero has cast, for nodes that count casts. */
   private casts = 0;
-  /** Set once the closing encounter has been spawned. */
+  /** Set once the closing encounter has been triggered. */
   private finale: EncounterDef | null = null;
+  /** Bodies of it still to climb out, oldest first. */
+  private pending: Entity[] = [];
+  /** Countdown to the next of them. */
+  private waveTimer = 0;
   /** Countdown to the next aura pass. */
   private auraTimer = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
@@ -532,6 +544,13 @@ export class RunSim {
       this.readAuras();
     }
 
+    // Whatever is still climbing out, on its own clock rather than on the
+    // room emptying: reinforcements arrive whether or not you are winning.
+    if (this.pending.length > 0) {
+      this.waveTimer -= dt;
+      if (this.waveTimer <= 0) this.climbOut();
+    }
+
     // Ailments tick before anyone acts, so a poisoned monster can die on its
     // own without first getting a free swing.
     this.stepAilments(s.hero, dt);
@@ -694,15 +713,28 @@ export class RunSim {
       return;
     }
 
-    // Nothing reachable is left — the flood is authoritative about that, so
-    // no separate bookkeeping is needed to be sure.
-    // Map is empty. Something takes its place at the exit, once.
-    if (!this.finale) {
+    // Nothing reachable is left, and the way out is a place you walk to.
+    const exit = s.map.exit;
+    const out = dist(hero, exit);
+
+    // Near enough for something to notice you leaving: the last fight comes up
+    // the hole you were walking towards, rather than filling a room behind you.
+    if (!this.finale && out <= FINALE_RANGE) {
       this.spawnFinale();
       return;
     }
 
-    // Finale down too — that's the run.
+    // The rest of it is still climbing out; hold rather than walk into it.
+    if (this.pending.length > 0) {
+      this.face(hero, exit.x, exit.y);
+      this.settleAction(hero, false);
+      return;
+    }
+
+    hero.targetId = null;
+    // A route that does not exist is the same answer as being there already.
+    if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
+
     s.status = 'cleared';
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
   }
@@ -718,6 +750,7 @@ export class RunSim {
     if (s.lampwright || s.met) return false;
     const exit = s.map.exit;
     const hero = s.hero;
+    const at = this.besideTheHole(exit);
 
     s.lampwright = {
       id: this.nextId++,
@@ -727,9 +760,9 @@ export class RunSim {
       rank: 'common',
       radius: 0.3,
       skillId: null,
-      x: exit.x,
-      y: exit.y,
-      facing: Math.atan2(hero.y - exit.y, hero.x - exit.x),
+      x: at.x,
+      y: at.y,
+      facing: Math.atan2(hero.y - at.y, hero.x - at.x),
       action: 'idle',
       actionTimer: 0,
       deathAge: 0,
@@ -745,9 +778,36 @@ export class RunSim {
       hitFlash: 0,
       dead: false,
     };
-    s.meeting = true;
     this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.seen });
     return true;
+  }
+
+  /** A tile or two off the hole, on the first side of it with room, starting
+   *  with the side the hero is on. */
+  private besideTheHole(exit: Vec2): Vec2 {
+    const grid = this.state.map.grid;
+    const towards = Math.atan2(this.state.hero.y - exit.y, this.state.hero.x - exit.x);
+    for (let i = 0; i < 8; i++) {
+      const angle = towards + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 4);
+      const at = { x: exit.x + Math.cos(angle) * GREET_STEP, y: exit.y + Math.sin(angle) * GREET_STEP };
+      if (grid.fits(at.x, at.y, 0.3)) return at;
+    }
+    return exit;
+  }
+
+  /** The descent is over and the only thing still moving is the hero, walking
+   *  over. Not `step`: the clock the report already read has stopped. */
+  walkOut(dt: number): void {
+    const s = this.state;
+    const met = s.lampwright;
+    if (!met || s.meeting) return;
+
+    // A walk that cannot finish still hands the thing over.
+    if (dist(s.hero, met) > 1.1 && this.advance(s.hero, met, dt)) return;
+    s.hero.path = [];
+    this.face(s.hero, met.x, met.y);
+    this.settleAction(s.hero, false);
+    s.meeting = true;
   }
 
   /** The meeting is over and the crystal is in hand — granted by whoever calls
@@ -784,12 +844,10 @@ export class RunSim {
 
     const exit = s.map.exit;
     for (let i = 0; i < def.count; i++) {
-      // Ring them around the exit so a swarm doesn't spawn inside itself;
-      // separation sorts out the rest on the first tick.
+      // Out of the hole, and separation unstacks them as they land.
       const angle = (i / Math.max(1, def.count)) * Math.PI * 2;
-      const spread = def.count > 1 ? 0.8 + def.count * 0.09 : 0;
 
-      const entity: Entity = {
+      this.pending.push({
         id: this.nextId++,
         kind: 'monster',
         sprite: def.count === 1 ? biggest.sprite : commonest.sprite,
@@ -799,9 +857,9 @@ export class RunSim {
         rank: 'rare',
         radius: 0.34 * def.size,
         skillId: null,
-        x: exit.x + Math.cos(angle) * spread,
-        y: exit.y + Math.sin(angle) * spread,
-        facing: angle + Math.PI,
+        x: exit.x + Math.cos(angle) * 0.15,
+        y: exit.y + Math.sin(angle) * 0.15,
+        facing: Math.atan2(s.hero.y - exit.y, s.hero.x - exit.x),
         action: 'idle',
         actionTimer: 0,
         deathAge: 0,
@@ -817,14 +875,27 @@ export class RunSim {
         aggroed: true,
         hitFlash: 0,
         dead: false,
-      };
-      s.monsters.push(entity);
-      this.byId.set(entity.id, entity);
+      });
     }
 
+    // Counted whole the moment it starts: a readout that ticks down and then
+    // climbs again reads as a bug.
     s.totalMonsters += def.count;
     s.finale = def.name;
     this.events.push({ kind: 'finale', name: def.name, herald: def.herald });
+    this.climbOut();
+  }
+
+  /** One wave up the hole, and the clock for the next. */
+  private climbOut(): void {
+    const def = this.finale;
+    if (!def) return;
+    for (let i = 0; i < Math.max(1, def.wave.size) && this.pending.length > 0; i++) {
+      const entity = this.pending.shift()!;
+      this.state.monsters.push(entity);
+      this.byId.set(entity.id, entity);
+    }
+    this.waveTimer = def.wave.every;
   }
 
   private stepMonster(m: Entity, dt: number): void {
@@ -1412,4 +1483,12 @@ export function runToCompletion(sim: RunSim, maxSeconds = 600): RunState {
   let guard = Math.ceil(maxSeconds / TICK);
   while (sim.state.status === 'running' && guard-- > 0) sim.step(TICK);
   return sim.state;
+}
+
+/** The walk over to whoever climbed out, for a harness with no frame loop.
+ *  Bounded like the run itself: nobody may wait on an arrival forever. */
+export function walkToMeeting(sim: RunSim, maxSeconds = 30): boolean {
+  let guard = Math.ceil(maxSeconds / TICK);
+  while (!sim.state.meeting && guard-- > 0) sim.walkOut(TICK);
+  return sim.state.meeting;
 }
