@@ -13,12 +13,14 @@ a phase you can still see in a stale clone may already be built.
 **Where these came from.** Two batches of asks, dictated by the user in one go
 each. The number in brackets is the user's own numbering within its batch, kept
 so a phase can be matched back to the ask — it says nothing about when to build
-it. They are listed in DEPENDENCY order, not in the order they were asked for.
+it. A phase with no bracket came out of a design conversation rather than a
+batch, and is no less asked for. They are listed in DEPENDENCY order, not in
+the order they were asked for.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
-nothing here is tuned until every system is in, because attributes, trades and
-jobs each hand out more power than the last and anything tuned before them is
-thrown away. Lean too easy. Measure, print, carry on.
+nothing here is tuned until every system is in, because attributes and trades
+each hand out more power than the last and anything tuned before them is thrown
+away. Lean too easy. Measure, print, carry on.
 
 Mana costs, the potions that answer running dry, the attributes that scale the
 pool and the starved penalty that replaced the dry swing have all landed. That
@@ -69,7 +71,9 @@ their own currency** — fund them from skill points and the beeline is back.
 
 A trade is not a class: every skill, every attribute and every piece of gear
 stays available to every trade. The word is the world's own — the only person
-in the game is named for his trade — and it carries none of the rigidity.
+in the game is named for his trade — and it carries none of the rigidity. The
+user calls these JOBS; this file calls them trades, and they are the same
+thing.
 
 - [ ] A trade tree is **20 nodes: 10 that matter and 10 travel**, roughly
       alternating, and a character has **10 points** — so half the tree, and
@@ -85,19 +89,61 @@ in the game is named for his trade — and it carries none of the rigidity.
       `sim/grants.ts` is already a table of switches rather than numbers and a
       trade hands them out the same way a node or a unique does — declared,
       read by something, and paid for.
-- [ ] **One trade is enough to ship this.** The framework is what is expensive,
-      and one good trade beats six thin ones — a second only lands with it if
-      one has been designed by the time this phase is taken. The first is the
-      **Alchemist**: potions
-      stop being a safety net and become the character's engine — they carry
-      buffs, they refresh themselves, and charges come back during a descent,
-      so a potion is a cooldown rather than a budget. What the buff DOES is
-      specialised inside the tree (fire, projectiles, critical, whatever the
-      nodes offer), and the real decision inside it is UPTIME: magnitude
-      against duration against how fast charges return. Stack magnitude and you
-      get windows of enormous power between dry spells; stack regeneration and
-      you are permanently a little better. Same points, different characters,
-      and a harness can measure both.
+- [ ] **Two trades ship, and the framework is what is expensive.** Both are
+      designed below and both change a rule. If the phase runs long, the
+      **Alchemist** is the one that ships — it needs no new sim concept — and
+      the Aethermancer follows as its own phase on the same framework. Do not
+      ship a third: one good trade beats six thin ones, and two is already a
+      comparison the player can make.
+- [ ] **The Alchemist.** Potions stop being a safety net and become the
+      character's engine — they carry buffs, they refresh themselves, and
+      charges come back during a descent, so a potion is a cooldown rather than
+      a budget. What the buff DOES is specialised inside the tree (fire,
+      projectiles, critical, whatever the nodes offer), and the real decision
+      inside it is UPTIME: magnitude against duration against how fast charges
+      return. Stack magnitude and you get windows of enormous power between dry
+      spells; stack regeneration and you are permanently a little better. Same
+      points, different characters, and a harness can measure both.
+      `POTIONS`/`POTION_BY_ID` in `src/data.ts` are the table; a potion is
+      already an EFFECT with a duration pushed onto `hero.effects` by `drink()`
+      in `src/sim/run.ts`, so a buff that rides along is another field on that
+      effect rather than a new system.
+- [ ] **The Aethermancer.** Mana is your second health bar and your damage
+      multiplier at once. Three rules, and they all pull on ONE pool, which is
+      the whole of the trade:
+      - **Mana absorbs.** A share of damage taken comes off mana before life.
+        Today nothing but a cast touches the pool, and life is reduced in
+        exactly two places: `defender.life -= dmg` in `dealDamage` is every
+        hit, and `e.life -= total` in `stepAilments` is every ailment tick,
+        both in `src/sim/run.ts`. Decide whether the pool eats ailments too,
+        and say why — ailments are already the thing armour cannot stop, so
+        letting mana eat them is a real gift.
+      - **Casting harder costs the pool.** A node lets an ability spend an
+        extra share of MAXIMUM mana on top of its own cost, and the ability
+        deals more damage in proportion to what it spent. Note the axis: the
+        existing `manaMultiplier` grant in `src/sim/grants.ts` multiplies the
+        SKILL'S cost, so a cheap skill stays cheap. A share of the pool does
+        not — it is the only cost in the game that grows when you stack mana,
+        which is what makes the stacking pay for itself.
+      - **More mana, by every road there is.** `HERO_BASE.mana` scaled by the
+        `mana` stat, `manaRegenPercent: 4.5` behind `manaRegen`, and
+        Intelligence at `mana` inc 6 a point (`ATTRIBUTES` in `src/data.ts`)
+        are the three that exist. The trade wants at least one road nothing
+        else offers, or it is a percentage trade wearing a rule's clothes.
+      **The tension is that all three want the same pool and only one of them
+      can have it**: the hit pool wants it full, the damage node empties it,
+      and an empty pool is `starvedMultiplier` — `MANA.starvedDamage = 0.5` in
+      `src/data.ts`, folded with the declared `starvedDamage` grant in
+      `src/sim/grants.ts`, so half your damage. A build that spends its pool
+      for damage is a build that is one bad pack from having neither, and the
+      trade's own nodes are where you buy your way out of that. Nothing here
+      needs a rewrite: `swing()` in `src/sim/run.ts` is the ONE place mana is
+      spent and the one place `starved` is set, and regeneration is one line in
+      the same file's tick.
+- [ ] **Neither trade may be strictly better for a skill than the other.**
+      Both are open to every skill, so measure both on Strike and on Blight
+      before this phase is called done; a trade that is only ever right for one
+      skill is a skill node that got lost.
 - [ ] Trade grants reach the sim through `treeGrants` in `src/sim/stats.ts`,
       which already merges the tree with what is worn. A third source is a
       third argument, not a new concept.
@@ -126,6 +172,14 @@ characters those harnesses measure — decide what trade a measured character ha
 before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
+
+The Aethermancer specifically moves the mana check: the demo holds every bare
+skill to `MANA.costPerSecond` within `MANA.costTolerance`, and a cost that is a
+share of the pool is not a per-skill number that check can read. Decide whether
+that check measures the bare skill only — which is what it is for — before
+changing it. A grant that reduces damage taken also moves the survival ladder
+and the Seam margin the demo prints; both are expected to move, so print, do
+not assert.
 
 ### Phase 2 — Every monster brings its own element [user 10]
 
@@ -223,9 +277,11 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. **None of them blocks a phase** — the three that did
-have been answered and are written into the phases above, so every phase in
-this file is buildable today.
+Do not guess at these. **None of them blocks a phase** — the four that did have
+been answered and are written into the phases above, so every phase in this
+file is buildable today. Both trades are now designed; what is still open about
+them is only how a character COMES BY one, which the phase ships a placeholder
+for.
 
 1. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
    and the intent is a storyline with the Lampwright rather than a level
@@ -235,25 +291,12 @@ this file is buildable today.
    The phase ships a placeholder that the story replaces without touching the
    tree or the points, so this blocks the STORY and not the system.
 
-2. **What the second trade is.** The Alchemist is designed, and a second is
-   now half-designed: **a trade that stacks MANA** — a large upside for solving
-   mana at all, and a bigger downside for running out, which is a rule change
-   rather than a percentage. The starved damage penalty already arrives
-   through a declared `starvedDamage` grant, so this trade moves it with a
-   table entry rather than a rewrite. What it grants and what it takes
-   away is still unwritten. The user calls these JOBS; this file calls them
-   trades, and they are the same thing.
-   Other candidates, all of which change a rule the game already has: crystals
-   that level while carried rather than only while socketed; a descent that
-   runs longer and pays per clear rather than per kill; danger that hurts less
-   and pays less.
-
-3. **What is the fifth socket?** Wanted as an endgame slot holding something
+2. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-4. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
+3. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
    was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
    BELOW** four Demonic crystals on damage taken per second, and with mana
    removed entirely it is only 2.0% above — so the ordering was always inside
@@ -268,7 +311,7 @@ this file is buildable today.
    an ordering, and `CLAUDE.md` says it is an open question rather than a claim.
    Nothing is blocked on it: it is a balance answer, and balance waits.
 
-5. **The Cavern and the Fissure have no currency of their own.** Retiring the
+4. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
