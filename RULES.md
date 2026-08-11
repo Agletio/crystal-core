@@ -489,6 +489,17 @@ begin at level 2, so without the second one nothing but a played descent
 reaches the screen this phase built — and `smoke.mjs` is what proves the
 buttons and the badge work.
 
+**A badge is ONE mechanism.** `badge(buttonId, count)` in `src/ui/badge.ts`
+adds or removes a `<span class="tabbadge">`, and `renderBadges()` in
+`src/ui/run.ts` is the only thing that calls it — from `refreshRunPanels()`,
+which every screen's change callback runs, and from `finish()`, where the level
+a descent bought lands. Character carries `attributePointsLeft`, Skills carries
+`spareTreePoints` for the EQUIPPED skill rather than the web being read. Zero
+removes the badge; one reading 0 is a permanent nag. The node carries a class
+and no id, because the demo walks header ids for tutorial targets and a badge
+must never become one. `spareTreePoints` exists so drawing one cannot mint a
+progress record: a read may not write to the save.
+
 **The tooltip is the TOP LAYER.** `.tip` is `z-index: 100`, over every popup,
 menu, guide card and toast the app can raise — what explains a thing may not
 sit under what points at it, and on the skill web the opening's own card used

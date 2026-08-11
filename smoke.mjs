@@ -1423,6 +1423,13 @@ assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.len
 // Three depths now. The old screen put every skill and every node on one
 // page, which was fine at ten nodes and is a wall at a hundred.
 $('sheet-close').click();
+// The other half of the badge. A level 1 character already has a tree point,
+// which is why the guided opening has a step for spending one.
+assert(
+  text('open-skills').includes('1'),
+  'the Skills button says a point is waiting',
+  text('open-skills')
+);
 assert($('skills').hidden === true, 'skills modal starts closed');
 $('open-skills').click();
 assert($('skills').hidden === false, 'skills modal opens');
@@ -1539,6 +1546,14 @@ assert(
   buyable().length === 0,
   'with no points left, nothing can be bought',
   String(buyable().length)
+);
+// The badge counts the skill you PLAY, not the web you happen to be reading:
+// this is Fireball's tree and Strike is what is equipped, so its own point is
+// still waiting.
+assert(
+  text('open-skills').includes('1'),
+  'the badge counts the equipped skill, not the web on screen',
+  text('open-skills')
 );
 
 // Clicking it again refunds it — nothing hangs off it, so nothing is stranded.
@@ -1713,6 +1728,20 @@ $('skills-close').click();
     'a node that scales the poison down is allocated',
     canopy().getAttribute('class')
   );
+
+  // Blight is equipped now, so the badge is its spare points — read against
+  // the screen's own count rather than against a number written here, and
+  // absent rather than zero when there is nothing left.
+  {
+    const [spent, granted] = (/(\d+)\/(\d+) points spent/.exec(text('skills-sub')) ?? []).slice(1);
+    const spare = Number(granted) - Number(spent);
+    const shown = $('open-skills').querySelector('.tabbadge')?.textContent ?? null;
+    assert(
+      spare > 0 ? shown === String(spare) : shown === null,
+      'the Skills badge is the equipped skill’s spare points, and nothing at zero',
+      `${shown} against ${spare} spare`
+    );
+  }
   $('skills-close').click();
 
   $('open-character').click();

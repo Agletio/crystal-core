@@ -230,7 +230,9 @@ The character level also still scales the skill's own base damage
 for life. Attributes are the layer you BUY on top of both.
 
 A count of what is waiting to be spent sits on the header button that spends it
-(`badge` in `src/ui/badge.ts`). Zero shows nothing at all.
+(`badge` in `src/ui/badge.ts`) — Character carries unspent attribute points and
+Skills carries the ACTIVE skill's spare tree points, whatever web is on screen.
+Zero shows nothing at all, since a badge reading 0 is a permanent nag.
 
 ## What a skill costs
 

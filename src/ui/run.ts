@@ -11,7 +11,7 @@ import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent, RunState } from '../sim/run';
 import { characterStats } from '../sim/stats';
-import { attributePointsLeft, xpToNext } from '../sim/character';
+import { attributePointsLeft, spareTreePoints, xpToNext } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import { FAMILY_BY_ID, LAMPWRIGHT, POTIONS, RUN_SLOTS, THEME_BY_ID } from '../data';
@@ -927,5 +927,6 @@ export function refreshRunPanels(): void {
  *  after everything that could change one. */
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
+  badge('open-skills', spareTreePoints(game.character, game.character.skillId));
 }
 
