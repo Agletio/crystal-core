@@ -109,3 +109,40 @@ export function canDeallocate(
 
 /** Levels past the cap still arrive; they just stop buying tree points. */
 export const treePointsFor = (level: number): number => Math.min(level, MAX_TREE_POINTS);
+
+export const hasNotable = (skillId: string, allocated: readonly string[]): boolean =>
+  allocated.some((id) => nodeById(skillId, id)?.kind === 'notable');
+
+/**
+ * The nodes to take, in order, to reach the nearest notable — empty once one is
+ * allocated. Distance is the whole price, so the shortest route is the cheapest
+ * one and its LENGTH is what a notable costs from where you are standing.
+ */
+export function pathToNotable(
+  skillId: string,
+  allocated: readonly string[]
+): SkillNodeDef[] {
+  if (hasNotable(skillId, allocated)) return [];
+
+  const seen = new Set<string>(allocated);
+  const queue: string[][] = [];
+  for (const node of treeFor(skillId)) {
+    if (!canAllocate(skillId, node.id, allocated)) continue;
+    seen.add(node.id);
+    queue.push([node.id]);
+  }
+
+  for (let i = 0; i < queue.length; i++) {
+    const path = queue[i];
+    const at = path[path.length - 1];
+    if (nodeById(skillId, at)?.kind === 'notable') {
+      return path.map((id) => nodeById(skillId, id)!);
+    }
+    for (const next of neighboursOf(skillId, at)) {
+      if (next === CENTRE || seen.has(next)) continue;
+      seen.add(next);
+      queue.push([...path, next]);
+    }
+  }
+  return [];
+}

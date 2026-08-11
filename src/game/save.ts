@@ -15,7 +15,6 @@ import {
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
   GEAR_BASE_BY_ID,
-  INTRO,
   PLAYER_SKILLS,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -307,15 +306,11 @@ export function heal(game: GameState): Healed {
     if (ownedCrystals(game).some((c) => crystalFamily(c) === 'normal')) game.given.push('crystal');
   }
 
-  // Before descents were counted: read off the milestones the save already
-  // holds. Only the first crystal is scheduled on it, so a save that has one
-  // is past the whole of what the number decides.
+  // Before descents were counted: read the count off the one milestone the
+  // save already holds. Nothing is scheduled on it, so an undercount costs
+  // a number on a screen rather than a gift.
   if (!Number.isFinite(game.clears)) {
-    game.clears = (game.given ?? []).includes('crystal')
-      ? INTRO.firstCrystalClear
-      : game.firstClearDone
-        ? 1
-        : 0;
+    game.clears = game.firstClearDone ? 1 : 0;
   }
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {

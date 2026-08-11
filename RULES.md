@@ -174,6 +174,16 @@ a chain. Tutorial-popup purgatory is the failure this avoids, and it is why
 that is already satisfied is skipped, and a step nobody can satisfy yet should
 not be on screen at all.
 
+`TutorialStep.waits` is HOW. True while the step cannot be reached, and while
+it is the card is hidden, the lockdown comes off and nothing advances — so the
+loop chains descents by itself and every screen is live. A hidden card means
+FINISHED to everything outside the module, so dormancy also stamps
+`document.body.dataset.guideWaiting` with the step's id: that attribute is the
+only thing telling a harness the difference between an opening that is over and
+one that is asleep. Three steps use it — `take_notable` waits for the levels a
+notable costs, `meet_crystal` for someone to be standing at the mouth, and
+`bench_crystal` for the crystal to grow a slot.
+
 **Balance is deliberately loose.** Lean overpowered — too much currency,
 characters too strong. It makes testing faster. Do not spend time tuning what is
 about to be replaced.
@@ -593,22 +603,31 @@ over; with `GameState.clears` and `INTRO` it is the whole of the schedule, and
 order cannot break it since nothing reads a flag another step of the same
 report sets.
 
-**The schedule is counted in cleared descents, never in character levels.**
-`GameState.clears` goes up inside `buildReport` on a clear, before anything
-reads it, and `giftWaiting` is asked after the report — so the descent that
-just finished is one the schedule already knows about. A level would say the
-same thing in a number that moves every time the XP curve does. `heal()` reads
-the count off an older save's own milestones, once.
+**The schedule is read off what you have DONE, and asked after the report.**
+`giftWaiting` runs once `buildReport` has banked the clear, levelled the
+sockets and paid the experience, so the descent that just finished is one the
+schedule already knows about. `GameState.clears` is still counted there, but
+nothing is scheduled on it any more — it is a number on a screen.
 
 - The **weapon**, on the first clear. `STARTER_WEAPON` in `src/data.ts` maps
   `SkillDef.category` to a base and `SkillDef.weapon` overrides it, so it is one
   the chosen skill can swing. `starterWeapon()` resolving to nothing is a demo
   failure rather than a fallback.
-- The **first crystal**, on the `INTRO.firstCrystalClear`th cleared descent —
-  the second, so one clear teaches wearing and crafting and the next is about
-  what a crystal is. It is a LEVEL 2 crystal (`LAMPWRIGHT.level`): level 1 holds
-  no modifiers at all, and the meeting is followed by the craft that teaches
-  what one does to a room. A Shard of Making comes with it.
+- The **first crystal**, on the first clear after the ACTIVE skill has reached
+  `INTRO.crystalSkillLevel` AND taken a notable in its tree — `crystalEarned`
+  in `src/game/crystals.ts`. Both halves, because the level is what buys the
+  point and the allocation is what spends it: it arrives for the thing that
+  makes a character a build, where a count of clears paid it out for pressing
+  Enter twice. The cheapest notable in every tree is exactly 3 points away and 3
+  skill levels buy exactly 3 points, which is where the number comes from;
+  `pathToNotable` in `src/skills-tree.ts` is what measures the distance, and the
+  demo holds the two to each other. It is a LEVEL 1 crystal
+  (`LAMPWRIGHT.level`), holding 0 modifiers: it is socketed BLANK, and making
+  the descent longer is the whole of what it does until being used buys it a
+  slot — five cleared descents at no danger, since `CRYSTAL_XP.perClear` is 1
+  and level 2 costs 5. The Shard of Making comes with it anyway, several
+  descents early, because everything is handed over in person and that rule
+  outranks tidiness.
 - Every **quest** in `CRYSTAL_QUESTS`, which is the other three Normal crystals
   as well as the two other worlds. `CrystalQuest.need` is a list of clauses
   ANDed together; `kind` names an entry in `QUEST_CONDITIONS` in
@@ -633,8 +652,8 @@ Everything in `CLAUDE.md` still applies — the comment budget above all.
 
 ### How long the suite takes
 
-About **seven minutes** end to end, and three of the eight are slow enough that
-a two-minute tool timeout will kill them mid-run:
+About **fifteen minutes** end to end, and three of the eight are slow enough
+that a two-minute tool timeout will kill them mid-run:
 
 | | |
 |---|---|
@@ -642,10 +661,16 @@ a two-minute tool timeout will kill them mid-run:
 | `smoke` | ~10s, 463 checks |
 | `demo` | ~85s |
 | `shots` | ~3min — two viewports, each waiting out a whole first descent |
-| `guide` | ~2min |
+| `guide` | ~9½min — it plays about eleven descents in real time |
 
 None of them hangs. If one looks stuck it is one of the bottom three, and the
 answer is to wait or run it in the background, never to assume it broke.
+
+`guide` is the long one and it is long for a reason that is not fixable in the
+harness: the opening spans the levels a first notable costs and the clears a
+first crystal takes to grow a slot, and every one of those descents is PLAYED.
+Its turn budget is 900, which is roughly double what a pass uses — the budget
+is not the binding constraint, the wall clock is.
 
 ### Reading the demo's output
 
@@ -682,10 +707,19 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
   "Ash Wand" three times and lied to every character handed a sword, so the
   demo now renders every step's text for every skill and fails on any weapon
   name that is not the one that character was given.
-  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop, buy_making, select_weapon, use_making, equip, descend, again, meet_crystal,
-  bench_crystal, craft_crystal, socket. The demo walks the same list headlessly
-  with a hand-written action per step — add a step and that action list needs
-  one too, or the walkthrough reports the opening as STUCK.
+  There are **sixteen** steps: enter, watch, meet, take_haul, to_shop,
+  buy_making, select_weapon, use_making, equip, descend, spend_point,
+  take_notable, meet_crystal, socket, bench_crystal, craft_crystal. The demo
+  walks the same list headlessly with a hand-written action per step — add a
+  step and that action list needs one too, or the walkthrough reports the
+  opening as STUCK. A step that WAITS is asleep when the walkthrough arrives at
+  it and is woken by that step's own action, which is the check that a triggered
+  step is dormant rather than stuck.
+  A step can point INTO the skill web: `GuideCtx` carries the Skills screen's
+  `category` and `viewing` so `towardNode` can walk you down all three depths,
+  and `skillCatId` / `skillRowId` / `skillNodeId` are the ids it names. A node
+  is an SVG group rather than a button, so it carries `role="button"` and the
+  guide harness clicks it on that rather than on containing one.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
   two minutes for the Lampwright panel and fails the run if a first descent
   never produces one. The meeting is at the END of a cleared descent, after a

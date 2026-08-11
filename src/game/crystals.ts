@@ -13,9 +13,11 @@ import {
   INTRO,
   LAMPWRIGHT,
   QUEST_BY_ID,
+  SKILL_BY_ID,
   crystalName,
 } from '../data';
 import type { CrystalQuest } from '../data';
+import { hasNotable, nodeById } from '../skills-tree';
 import { giveGift, lampwrightWeapon } from './state';
 import type { GameState, GiftPlace } from './state';
 import { grant, makeCrystal } from '../economy';
@@ -41,13 +43,21 @@ export interface Waiting {
   quests: CrystalQuest[];
 }
 
+/**
+ * What the first crystal is earned by. BOTH: the level is what buys the point
+ * and the allocation is what spends it.
+ */
+export function crystalEarned(game: GameState): boolean {
+  const skillId = game.character.skillId;
+  const progress = game.character.skills?.[skillId];
+  if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
+  return hasNotable(skillId, progress.allocated ?? []);
+}
+
 export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
   const given = game.given ?? [];
   const weapon = !given.includes('weapon');
-  const crystal =
-    !weapon &&
-    !given.includes('crystal') &&
-    (game.clears ?? 0) >= INTRO.firstCrystalClear;
+  const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
   const quests = clear ? openQuests(game).filter((q) => questMet(q, clear)) : [];
   if (!weapon && !crystal && quests.length === 0) return null;
   return { weapon, crystal, quests };
@@ -61,10 +71,21 @@ export function giftSchedule(game: GameState): string {
     return `${who} meets you at the mouth of your first cleared descent.`;
   }
   if (!given.includes('crystal')) {
-    const away = INTRO.firstCrystalClear - (game.clears ?? 0);
-    return away > 0
-      ? `${who} brings your first crystal at ${INTRO.firstCrystalClear} cleared descents — ${away} to go.`
-      : `${who} is waiting at the mouth of your next cleared descent.`;
+    if (crystalEarned(game)) {
+      return `${who} is waiting at the mouth of your next cleared descent.`;
+    }
+    const skillId = game.character.skillId;
+    const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
+    const progress = game.character.skills?.[skillId];
+    const allocated = progress?.allocated ?? [];
+    const notables = allocated.filter(
+      (id) => nodeById(skillId, id)?.kind === 'notable'
+    ).length;
+    return (
+      `${who} brings your first crystal to the mouth of a cleared descent once ` +
+      `${name} is level ${INTRO.crystalSkillLevel} with a notable taken in its tree. ` +
+      `${name} is level ${progress?.level ?? 1}, with ${notables} notables taken.`
+    );
   }
   return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;
 }

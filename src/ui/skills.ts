@@ -27,6 +27,7 @@ import {
   treePointsFor,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
+import { skillCatId, skillNodeId, skillRowId } from './tutorial';
 import { attachTooltip, hideTooltip } from './tooltip';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
@@ -273,6 +274,7 @@ function renderCategories(): void {
   for (const cat of SKILL_CATEGORIES) {
     const skills = skillsInCategory(cat.id);
     const card = el('button', 'catcard') as HTMLButtonElement;
+    card.id = skillCatId(cat.id);
     const head = el('span', 'catcard__head');
     head.append(categoryIcon(cat.id, 26));
     head.append(el('span', 'catcard__name', cat.name));
@@ -311,6 +313,7 @@ function renderSkillList(): void {
     const spare = treePointsFor(progress.level) - progress.allocated.length;
 
     const btn = el('button', 'skillrow') as HTMLButtonElement;
+    btn.id = skillRowId(skill.id);
     const head = el('span', 'skillrow__head');
     head.append(el('span', 'skillrow__name', skill.name));
     if (skill.id === game.character.skillId) {
@@ -490,6 +493,7 @@ function renderWeb(): void {
         (node.kind === 'notable' ? ' web__node--notable' : '') +
         (open ? ' web__node--open' : '') +
         (!owned && !reachable ? ' web__node--locked' : ''),
+      id: skillNodeId(node.id),
       tabindex: '0',
       role: 'button',
       'data-node': node.id,
@@ -654,6 +658,10 @@ export function closeSkills(): void {
 export function isSkillsOpen(): boolean {
   return !$('skills').hidden;
 }
+
+/** Which shelf is showing and whose web is up, for a step walking you to a node. */
+export const skillsDepth = (): { category: string | null; viewing: string | null } =>
+  isSkillsOpen() ? { category, viewing } : { category: null, viewing: null };
 
 /** Escape steps back one level, and only closes from the top. */
 export function skillsEscape(): void {

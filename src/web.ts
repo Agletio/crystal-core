@@ -35,7 +35,14 @@ import {
   isCharacterOpen,
   pickingSlot,
 } from './ui/character';
-import { initSkills, openSkills, closeSkills, isSkillsOpen, skillsEscape } from './ui/skills';
+import {
+  initSkills,
+  openSkills,
+  closeSkills,
+  isSkillsOpen,
+  skillsDepth,
+  skillsEscape,
+} from './ui/skills';
 import {
   initHistory,
   openHistory,
@@ -295,6 +302,7 @@ function guideContext(): GuideCtx {
     phase: runPhase(),
     top,
     picking: pickingSlot(),
+    ...skillsDepth(),
   };
 }
 

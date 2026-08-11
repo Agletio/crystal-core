@@ -11,7 +11,7 @@ before starting one, `git fetch` and check you are on the tip of the branch:
 a phase you can still see in a stale clone may already be built.
 
 **Where these came from.** Ten asks, dictated by the user in one go, and the
-six questions they raised have been answered — so these eleven phases are all
+six questions they raised have been answered — so the phases left here are all
 unblocked, and they are listed in dependency order. The number in brackets is
 the user's own numbering of what they asked for, kept so a phase can be matched
 back to the ask — it says nothing about when to build it.
@@ -41,84 +41,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The first crystal is earned with a notable [user 6]
-
-**What is true today.** `giftWaiting` in `src/game/crystals.ts` schedules the
-first crystal off `INTRO.firstCrystalClear = 2` — the second cleared descent —
-and `LAMPWRIGHT.level = 2`, so it arrives already holding one modifier slot,
-with a `shard_of_making` beside it and `INTRO.scriptedMod` forced into it. The
-guided opening runs straight through: `descend`, `again`, `meet_crystal`,
-`bench_crystal`, `craft_crystal`, `socket`, fifteen steps end to end.
-
-Tree points come from the SKILL's level, not the character's:
-`treePointsFor(p.level)` in `src/skills-tree.ts`, and `addSkillXp` gives the
-active skill the same XP the character gets. **The cheapest notable in every
-tree costs exactly 3 points** — measured: `st_rend`, `fb_detonation` and
-`bl_rupture` are all 3 — so skill level 3 buys a first notable and nothing
-earlier does.
-
-A crystal's LEVEL is its modifier capacity: `CRYSTAL_LEVELS` gives level 1 zero
-slots, level 2 one, level 3 two, level 4 three. `xpForClear` levels a socketed
-crystal, and level 2 costs 5 xp — one cleared descent at any danger.
-
-**Why it is wrong.** The crystal arrives because you cleared twice, which is a
-number nobody is looking at. It should arrive because you did the thing that
-makes a character feel like a build — took your first notable.
-
-- [ ] The first crystal is scheduled on the first cleared descent AFTER the
-      active skill has reached level 3 AND a notable is allocated in its tree.
-      Both: the level buys the point and the allocation spends it.
-- [ ] It is a **level 1** crystal, which holds NO modifiers. It is socketed
-      blank, and the descent it makes longer is the whole of what it does at
-      first — which is also the honest lesson about what a level is.
-- [ ] A step gains `waits`: true while it cannot be reached yet. A waiting step
-      hides the card, drops the lockdown and advances nothing — the guide is
-      DORMANT rather than stuck, which is the whole of "no popup purgatory".
-      `npm run guide` reads the card being hidden as FINISHED, so dormancy has
-      to be visible from outside it (a `data-` attribute on `body`, say) or the
-      harness will report the opening as over the moment it lets go.
-- [ ] The order changes: the crystal arrives BLANK, so it is socketed first and
-      crafted later. `meet_crystal` → `socket` → (dormant) → `bench_crystal` →
-      `craft_crystal`, and the `again` step goes: the dormant stretch is what
-      replaces it.
-- [ ] The shard still comes WITH the crystal at the meeting — everything is
-      handed over in person, and that rule outranks tidiness — so the player
-      may hold it for several descents and can spend it elsewhere. The craft
-      step therefore has to survive an empty wallet: with no shard it points at
-      the shop, which is where the gold from the first clear is already for.
-- [ ] The craft is TRIGGERED, not queued. Nothing about crafting is taught at
-      the meeting; when that crystal reaches level 2 by being used, the guide
-      comes back on its own for the two steps that put a modifier on it, and
-      lets go again. `INTRO.scriptedMod` stays on the crystal from the moment
-      it is handed over — it is inert until there is a slot to fill — so what
-      moves to the trigger is the TEACHING and not the items.
-- [ ] The opening runs to the end of the first descent as it does now, plus one
-      step: spend your first skill point. Then it LETS GO — lockdown off, and
-      what it is waiting for said somewhere you can read it rather than in a
-      card that follows you. Nothing is locked while you are levelling.
-- [ ] `giftSchedule` says the new condition in words, the way it says the clear
-      count today, and the collection screen is where it is read.
-- [ ] The dev preset still marks everything given (`game.given`), so a stocked
-      game does not walk into the opening.
-
-**MEASURED, so nobody derives it twice.** A fresh character on bare descents
-reaches skill level 2 on the 2nd clear and **skill level 3 on the 5th**, about
-**133 seconds** of play (three trials, all the same shape). So the crystal
-arrives on roughly the fifth descent, which is a fine pace for a player and a
-problem for one harness only:
-
-**What must not break.** `npm run guide` plays the opening in REAL TIME and
-sits through every descent in it. Five descents is ~2¼ minutes of waiting on
-top of everything else, and its turn budget is 240 turns of ~320–500ms — about
-two minutes total. **Raise it to ~600 turns and write the new suite timing into
-`RULES.md`;** the harness being too impatient is this phase's problem, not a
-reason to move the condition. While the guide is DORMANT the lockdown is off,
-so `looping()` is true and descents chain by themselves — the harness only has
-to wait, not click. The demo walks the same steps headlessly with one hand-written
-action each, and a TRIGGERED step is a new shape for both of them: a step that
-is not reachable yet must not be reported as stuck.
-
-### Phase 2 — Mana, and what a skill costs [user 3a]
+### Phase 1 — Mana, and what a skill costs [user 3a]
 
 **What is true today.** There is no mana anywhere: no resource on `Character`
 (`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
@@ -153,7 +76,7 @@ band clears, and a skill that can run dry moves all of them. Measure before and
 after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
 character that cannot afford to attack is the newest way for one not to.
 
-### Phase 3 — Two potions, two charges [user 3b]
+### Phase 2 — Two potions, two charges [user 3b]
 
 **What is true today.** Nothing. There are no consumables, and — more to the
 point — **there is no player input during a descent at all.** The guided
@@ -207,7 +130,7 @@ arriving between ticks must land on a tick boundary like everything else, or
 the same seed stops giving the same run. `npm run smoke` and `npm run guide`
 both drive real descents.
 
-### Phase 4 — Character level buys attributes [user 7]
+### Phase 3 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -246,7 +169,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 5 — Trades: the part of a character that is not the skill
+### Phase 4 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -328,7 +251,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 6 — Every monster brings its own element [user 10]
+### Phase 5 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -384,7 +307,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 7 — What a node does, shown and not overlapped [user 8]
+### Phase 6 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

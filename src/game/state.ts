@@ -174,7 +174,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
-  game.clears = mode === 'dev' ? INTRO.firstCrystalClear : 0; // past the schedule
+  game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
   // The dev kit is armed and holds every crystal: nothing waits at the mouth.
   game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
   game.tutorialStep = null;

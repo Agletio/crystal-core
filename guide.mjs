@@ -55,6 +55,17 @@ await page.waitForTimeout(700);
 /** What the guide is showing and pointing at, right now. */
 const state = () =>
   page.evaluate(() => {
+    const phaseNow = document.getElementById('run-results')?.hidden === false
+      ? 'results'
+      : document.getElementById('run-stagewrap')?.hidden === false
+        ? 'running'
+        : 'menu';
+    // Dormant is not finished. The card is down and the lockdown is off while
+    // the opening waits for a level or a crystal to grow, and the only thing
+    // that says so from out here is the attribute the guide stamps on body.
+    const waiting = document.body.dataset.guideWaiting ?? null;
+    if (waiting) return { done: false, waiting, phase: phaseNow };
+
     const card = document.getElementById('guide');
     if (!card || card.hidden) return { done: true };
     const ring = document.querySelector('.guide-on');
@@ -65,14 +76,11 @@ const state = () =>
       hint: document.getElementById('guide-hint')?.textContent ?? '',
       ring: ring ? ring.id || ring.className : null,
       locked: document.body.classList.contains('guided'),
+      waiting: null,
       // Nothing lit is only ever legitimate while the sim is doing the work.
       // Any other time it means the step is waiting on something no click can
       // cause — which is what a reload during the fight used to leave behind.
-      phase: document.getElementById('run-results')?.hidden === false
-        ? 'results'
-        : document.getElementById('run-stagewrap')?.hidden === false
-          ? 'running'
-          : 'menu',
+      phase: phaseNow,
       // A modal over the lit control, while the lockdown holds that modal's
       // own Close switched off, is a room with no doors. The dock is never
       // covered — popups stop above it — so an overlap is always a trap.
@@ -104,10 +112,38 @@ let escaped = false;
 let met = 0;
 let metAt = '';
 
-// Generous: a descent takes a while, and one step is "watch it happen".
-for (let turn = 0; turn < 400; turn++) {
+/** Dormant stretches, once each: the trace says what the opening is asleep on. */
+const slept = new Set();
+
+// Generous: the opening now contains a dormant stretch of five or six descents
+// while the skill levels towards its first notable, and every one of them is
+// played in real time.
+for (let turn = 0; turn < 900; turn++) {
   const now = await state();
   if (now.done) break;
+
+  // Asleep. The lockdown is off, so the loop chains descents by itself and the
+  // harness is a player waiting — except at a report, where somebody has to
+  // press Go again to start the chain back up.
+  if (now.waiting) {
+    if (!slept.has(now.waiting)) {
+      slept.add(now.waiting);
+      trace.push(`Dormant     the opening let go, waiting on ${now.waiting}`);
+    }
+    stuck = 0;
+    // A descent that ended while the guide still held the lock left a report
+    // and a haul on top of it, so the way back into the loop is out of those
+    // and then in through the same button a player uses.
+    const open = await page.$$eval('.modal:not([hidden])', (ns) => ns.length);
+    if (open > 0) {
+      await page.keyboard.press('Escape');
+    } else if (now.phase !== 'running') {
+      const button = now.phase === 'results' ? '#run-again' : '#run-launch';
+      await page.locator(button).click({ timeout: 1200 }).catch(() => {});
+    }
+    await page.waitForTimeout(900);
+    continue;
+  }
 
   if (now.step !== last) {
     trace.push(`${now.step}  ${now.text.slice(0, 62)}`);
@@ -200,7 +236,9 @@ for (let turn = 0; turn < 400; turn++) {
   // slot — so regions get their first live control instead.
   const isControl = await page.evaluate(() => {
     const ring = document.querySelector('.guide-on');
-    return ring instanceof HTMLButtonElement;
+    // A tree node is an SVG group with no button in it, so "contains a button"
+    // is not the test — what it CLAIMS to be is.
+    return ring instanceof HTMLButtonElement || ring?.getAttribute('role') === 'button';
   });
   const target = isControl
     ? page.locator('.guide-on').first()
@@ -232,6 +270,11 @@ if (!finished && problems.length === 0) {
 // opening that did not contain one is the meeting having stopped happening.
 if (finished && met < 2) {
   problems.push(`the opening met the Lampwright ${met} times, not twice`);
+}
+// Both dormant stretches have to actually happen, or the opening is a chain of
+// cards again and the whole of "no popup purgatory" went with them.
+if (finished && slept.size < 3) {
+  problems.push(`the opening went dormant on ${[...slept].join(', ') || 'nothing'}, not on all three`);
 }
 
 // The opening is over, so the app is unlocked and the tree can be worked with

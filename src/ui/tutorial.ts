@@ -12,9 +12,13 @@
  * through six modules' renders, and the same tick repositions the card.
  */
 import { balance } from "../economy";
-import { INTRO } from "../data";
+import { INTRO, SKILL_BY_ID } from "../data";
 import { carryRoom, craftItem, crystalsIn, gearKindOf, giftWeapon, socketed } from "../game/state";
 import type { GameState } from "../game/state";
+import { ownedCrystals } from "../game/crystals";
+import { pointsAvailable, skillProgress } from "../sim/character";
+import { hasNotable, pathToNotable } from "../skills-tree";
+import { modCapacity } from "../mods";
 import { crystalMoveId } from "./crystals";
 import { crystalSlotId } from "./craft";
 import type { Item } from "../types";
@@ -31,6 +35,10 @@ export interface GuideCtx {
   top: string | null;
   /** The slot waiting to be filled: picking one moves the next click to the dock. */
   picking: string | null;
+  /** Which shelf the Skills screen is on, and whose web is up. Both null
+   *  anywhere else, so a step can walk you all the way down to a node. */
+  category: string | null;
+  viewing: string | null;
 }
 
 export interface TutorialStep {
@@ -43,6 +51,13 @@ export interface TutorialStep {
   ring?: boolean | ((ctx: GuideCtx) => boolean);
   /** Optional aside under the text — what this costs, or what to expect. */
   hint?: string;
+  /**
+   * True while the step cannot be reached yet — a level away, a crystal that
+   * has to grow. The card goes, the lockdown drops and nothing advances: the
+   * opening is DORMANT rather than following you about with something you
+   * cannot do. It comes back the moment this turns false.
+   */
+  waits?(game: GameState, ctx: GuideCtx): boolean;
   done(game: GameState, ctx: GuideCtx): boolean;
 }
 
@@ -56,6 +71,11 @@ export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
 /** Id of one item's slot in the dock. Same reason again. */
 export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
+
+/** The three depths of the Skills screen, for the same reason once more. */
+export const skillCatId = (categoryId: string): string => `skillcat-${categoryId}`;
+export const skillRowId = (skillId: string): string => `skillrow-${skillId}`;
+export const skillNodeId = (nodeId: string): string => `skillnode-${nodeId}`;
 
 const isWeapon = (i: Item) => i.kind === 'gear' && gearKindOf(i) === 'weapon';
 
@@ -83,9 +103,39 @@ const itsName = (g: GameState): string => given(g)?.name ?? 'weapon';
 const takeable = (g: GameState): boolean =>
   g.haul.some((i) => carryRoom(g, i.kind) > 0);
 
-/** The crystal beside the bench, and the same one's row on the collection. */
+/** The active skill's tree, and how far off a notable is from where it stands. */
+const treeOf = (g: GameState) => {
+  const skillId = g.character.skillId;
+  const progress = skillProgress(g.character, skillId);
+  return { skillId, progress, path: pathToNotable(skillId, progress.allocated) };
+};
+
+/**
+ * The next click on the way to spending a point: out of whatever is covering
+ * the header, into Skills, down two shelves to the active skill, then the node
+ * itself. Wander into another category and the way on is Back.
+ */
+function towardNode(ctx: GuideCtx, g: GameState): string {
+  if (ctx.top !== "skills") return viaHeader(ctx, "open-skills");
+  const { skillId, path } = treeOf(g);
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (!category) return "skills-close";
+  if (ctx.viewing !== null && ctx.viewing !== skillId) return "skills-back";
+  if (ctx.category !== null && ctx.category !== category) return "skills-back";
+  if (ctx.category === null) return skillCatId(category);
+  if (ctx.viewing === null) return skillRowId(skillId);
+  return path[0] ? skillNodeId(path[0].id) : "skills-fit";
+}
+
+/** The crystal a modifier could go on, else the first one you hold. Socketed
+ *  ones are in the bench's column too, which is where this points. */
+const roomyCrystal = (g: GameState): Item | undefined => {
+  const all = ownedCrystals(g);
+  return all.find((c) => modCapacity(c) > c.mods.length) ?? all[0];
+};
+
 const theCrystal = (g: GameState): string => {
-  const held = crystalsIn(g)[0];
+  const held = roomyCrystal(g);
   return held ? crystalSlotId(held.id) : "craft-crystals";
 };
 
@@ -264,46 +314,107 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
     done: (_g, ctx) => ctx.phase === "running",
   },
-  // The loop runs itself, so there is nothing to click and nothing to teach
-  // until the descent the crystal is scheduled on comes back up.
+  // The last thing taught before the opening lets go. A point is what the
+  // first crystal is bought with, so the screen it is spent on is the one
+  // thing a player cannot be left to find on their own.
   {
-    id: "again",
-    text: (ctx) =>
-      blocked(ctx)
-        ? "Close this and keep going."
-        : ctx.phase === "running"
-          ? "Keep going."
-          : "Go again.",
-    hint: `Every descent you come back up from is one banked. Someone is waiting with a crystal at ${INTRO.firstCrystalClear}.`,
-    target: (ctx) =>
-      ctx.phase === "running"
-        ? viaHeader(ctx, "run-loot")
-        : viaHeader(ctx, ctx.phase === "results" ? "run-again" : "run-launch"),
-    ring: (ctx) => blocked(ctx) || ctx.phase !== "running",
-    done: (g, ctx) => ctx.top === "met" || (g.given ?? []).includes("crystal"),
+    id: "spend_point",
+    text: (ctx, g) => {
+      if (ctx.top !== "skills") {
+        return blocked(ctx) ? "Close this and open Skills." : "Open Skills.";
+      }
+      const { skillId, path } = treeOf(g);
+      const name = SKILL_BY_ID[skillId]?.name ?? "your skill";
+      return ctx.viewing === skillId
+        ? path[0]
+          ? `Take ${path[0].name}.`
+          : "Spend a point on the web."
+        : `Open ${name}.`;
+    },
+    hint: "1 point every skill level, and a point spent is what the tree costs. Nothing here is permanent — a node refunds when you click it again.",
+    target: towardNode,
+    done: (g) => skillProgress(g.character, g.character.skillId).allocated.length > 0,
   },
+  // Two levels off at this point, so it sleeps through them. Nothing is locked
+  // while you are levelling, and the Crystals screen is where the wait is
+  // written down.
+  {
+    id: "take_notable",
+    waits: (g) => {
+      const { progress, path } = treeOf(g);
+      return path.length > 0 && pointsAvailable(progress) < path.length;
+    },
+    text: (ctx, g) => {
+      if (ctx.top !== "skills") {
+        return blocked(ctx)
+          ? "Close this — you can afford a notable."
+          : "You can afford a notable. Open Skills.";
+      }
+      const { skillId, path } = treeOf(g);
+      const name = SKILL_BY_ID[skillId]?.name ?? "your skill";
+      return ctx.viewing === skillId
+        ? path[0]
+          ? `Take ${path[0].name}. ${path.length} to go.`
+          : "Take the big node."
+        : `Open ${name}.`;
+    },
+    hint: "The big nodes are the reason to walk in a direction, and the run of small ones in front of one is its whole price. Take a notable and someone brings you a crystal on your next clear.",
+    target: towardNode,
+    done: (g) => hasNotable(g.character.skillId, treeOf(g).progress.allocated),
+  },
+  // Dormant until the clear that the notable bought puts someone at the mouth.
   {
     id: "meet_crystal",
+    waits: (_g, ctx) => ctx.top !== "met",
     text: "Take what they are holding.",
     target: "met-take",
-    done: (_g, ctx) => ctx.top !== "met",
+    // BOTH, and the panel half is not decoration: granting the crystal and
+    // shutting the panel are a tick apart, and a step that ended on the grant
+    // alone rang the next one's button underneath a popup that was still up.
+    done: (g, ctx) => ctx.top !== "met" && (g.given ?? []).includes("crystal"),
   },
   {
-    id: "bench_crystal",
-    // The second meeting ends a descent, and every ending opens the haul — so
-    // this step is reached with a full one on top of it. Empty it rather than
-    // saying "close this", which is the opposite of what step 4 taught.
+    id: "socket",
+    // A meeting ends a descent, and every ending opens the haul — so this step
+    // is reached with a full one on top of it. Empty it rather than saying
+    // "close this", which is the opposite of what step 4 taught.
     text: (ctx, g) =>
       ctx.top === "haul"
         ? takeable(g)
           ? "Take what fits — this run banked too."
           : "Nothing here fits. Close it and carry on."
+        : ctx.top === "crystals"
+          ? "Socket it."
+          : blocked(ctx)
+            ? "Close this and open Crystals."
+            : "Open Crystals.",
+    hint: "Four sockets, permanent. Their count is how long a descent is; what is rolled on them is the whole of how hard. This one is level 1 and holds 0 modifiers, so all it does yet is make the descent longer.",
+    target: (ctx, g) =>
+      ctx.top === "haul"
+        ? takeable(g)
+          ? "haul-take"
+          : "haul-close"
+        : ctx.top === "crystals"
+          ? theCrystalRow(g)
+          : viaHeader(ctx, "open-crystals"),
+    done: (g) => socketed(g).length > 0,
+  },
+  // And dormant again until being used has bought that crystal a slot. The
+  // craft is TRIGGERED by the level, never queued behind the meeting.
+  {
+    id: "bench_crystal",
+    waits: (g) => !ownedCrystals(g).some((c) => modCapacity(c) > c.mods.length),
+    text: (ctx, g) =>
+      ctx.top === "haul"
+        ? takeable(g)
+          ? "Take what fits first."
+          : "Nothing here fits. Close it and carry on."
         : ctx.view === "craft"
           ? "Click your crystal, beside the bench."
           : blocked(ctx)
             ? "Close this and open Crafting."
-            : "Open Crafting.",
-    hint: "A crystal is never carried, so the column beside the bench is the only way one gets worked on.",
+            : "Your crystal levelled and has room in it now. Open Crafting.",
+    hint: "A crystal is never carried, so the column beside the bench is the only way one gets worked on — a socketed one is in there too.",
     target: (ctx, g) =>
       ctx.top === "haul"
         ? takeable(g)
@@ -314,25 +425,27 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
           : viaHeader(ctx, "open-craft"),
     done: (g) => craftItem(g)?.kind === "crystal",
   },
+  // The shard was handed over with the crystal, several descents ago. Spend it
+  // elsewhere and the way back is the shop, which is what the first clear's
+  // gold has been sitting there for.
   {
     id: "craft_crystal",
-    text: "Click the Shard of Making.",
+    text: (ctx, g) =>
+      has(g, INTRO.scriptedCurrency)
+        ? "Click the Shard of Making."
+        : ctx.top === "shop"
+          ? "Buy a Shard of Making."
+          : blocked(ctx)
+            ? "Close this — you need another Shard of Making."
+            : "You spent your shard. Open the Shop.",
     hint: "One modifier. Every crystal modifier is a downside, and what the descent pays is derived from it.",
-    target: "inv-currency",
-    done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
-  },
-  {
-    id: "socket",
-    text: (ctx) =>
-      ctx.top === "crystals"
-        ? "Socket it."
-        : blocked(ctx)
-          ? "Close this and open Crystals."
-          : "Open Crystals.",
-    hint: "Four sockets, permanent. Their count is how long a descent is; what is rolled on them is the whole of how hard.",
     target: (ctx, g) =>
-      ctx.top === "crystals" ? theCrystalRow(g) : viaHeader(ctx, "open-crystals"),
-    done: (g) => socketed(g).length > 0,
+      has(g, INTRO.scriptedCurrency)
+        ? "inv-currency"
+        : ctx.top === "shop"
+          ? recipeButtonId("make_shard_of_making")
+          : viaHeader(ctx, "open-shop"),
+    done: (g) => (craftItem(g)?.mods.length ?? 0) > 0,
   },
 ];
 
@@ -342,6 +455,8 @@ let context: () => GuideCtx = () => ({
   phase: "menu",
   top: null,
   picking: null,
+  category: null,
+  viewing: null,
 });
 let highlighted: Element | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -518,6 +633,19 @@ function setLock(on: boolean): void {
   document.body.classList.toggle("guided", on);
 }
 
+/**
+ * Dormancy, said out loud. A hidden card means FINISHED to everything looking
+ * in from outside, and an opening waiting for a level is not finished.
+ */
+function setWaiting(id: string | null): void {
+  if (id === null) delete document.body.dataset.guideWaiting;
+  else document.body.dataset.guideWaiting = id;
+}
+
+/** The step the opening is asleep on, or null. */
+export const guideWaitingOn = (): string | null =>
+  document.body.dataset.guideWaiting ?? null;
+
 /** True while the guided opening owns the screen. */
 export const isGuided = (): boolean => document.body.classList.contains("guided");
 
@@ -546,16 +674,19 @@ function guardKeys(event: KeyboardEvent): void {
 function paint(): void {
   const step = TUTORIAL_STEPS[game.tutorialStep ?? -1];
   const card = $("guide");
+  const ctx = context();
+  const dormant = step?.waits?.(game, ctx) === true;
 
-  if (!step) {
+  if (!step || dormant) {
     card.hidden = true;
     setLock(false);
     clearHighlight();
+    setWaiting(dormant ? step.id : null);
     return;
   }
+  setWaiting(null);
   setLock(true);
 
-  const ctx = context();
   card.hidden = false;
   $("guide-text").textContent =
     typeof step.text === "function" ? step.text(ctx, game) : step.text;
@@ -615,6 +746,7 @@ export function stopTutorial(): void {
   game.tutorialStep = null;
   clearHighlight();
   setLock(false);
+  setWaiting(null);
   $("guide").hidden = true;
 }
 

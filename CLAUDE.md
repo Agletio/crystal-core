@@ -144,13 +144,17 @@ shoulders-up, because a 24-grid silhouette blown up is a blob. What he SAYS is
 flavour — he names no screen, no currency and no number, since teaching the
 buttons is the guided opening's job.
 
-Two things are SCHEDULED, off `GameState.given` and `GameState.clears` — a
-count of cleared descents, since a character level drifts every time the XP
-curve moves. The first weapon on the first clear, picked off the skill
-(`STARTER_WEAPON`), and the first Normal crystal on the
-`INTRO.firstCrystalClear`th — the second — a level 2, with a Shard of Making
-beside it, because the meeting is followed by the craft that teaches
-what a modifier does to a room. That roll is the one arranged thing in the game:
+Two things are SCHEDULED, off `GameState.given`. The first weapon on the first
+cleared descent, picked off the skill (`STARTER_WEAPON`). The first Normal
+crystal on the first clear after the ACTIVE SKILL has reached
+`INTRO.crystalSkillLevel` and taken a NOTABLE in its tree (`crystalEarned`) —
+the level buys the point and the allocation spends it, so the crystal is paid
+for by the thing that makes a character a build rather than by pressing Enter
+twice. It arrives at LEVEL 1, which holds no modifiers: it is socketed blank,
+and the descent it makes longer is the whole of what it does. A Shard of Making
+comes with it for later, since everything is handed over in person. Five
+cleared descents socketed at no danger buy it its first slot, and THAT is when
+the craft is taught. That roll is the one arranged thing in the game:
 `crystal.meta.scripted` names the family, `add_mod` takes its cheapest tier and
 clears the mark. It rides on the CRYSTAL so the currency lies to nobody.
 

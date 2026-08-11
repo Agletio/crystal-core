@@ -1191,9 +1191,9 @@ export const LAMPWRIGHT = {
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   /** Said in the log the moment they appear, before you have walked over. */
   seen: 'A lantern, further back than you have been. Something is holding it up.',
-  /** Level 2, because a level 1 crystal holds nothing and the crystal meeting
-   *  is followed by the craft that teaches what a modifier does to a room. */
-  level: 2,
+  /** Level 1 holds 0 modifiers: it is socketed blank, and the descent it makes
+   *  longer is the whole of what it does until using it buys a slot. */
+  level: 1,
   family: 'normal' as MonsterFamily,
 
   /**
@@ -1231,9 +1231,10 @@ export const LAMPWRIGHT = {
 /** The opening, in numbers: the one stretch where what happens next is
  *  scheduled rather than earned. */
 export const INTRO = {
-  /** CLEARED descents, not a character level: the first teaches wearing and
-   *  crafting, the second is the one about what a crystal is. */
-  firstCrystalClear: 2,
+  /** What the first crystal is paid for, with a notable taken in the ACTIVE
+   *  skill's tree: the cheapest notable in every tree is 3 points away, so 3
+   *  is the first level that can afford one. */
+  crystalSkillLevel: 3,
   /** Forced onto that crystal by the first Shard of Making spent on it, at its
    *  cheapest tier, so a first crystal can never be what walls the game. */
   scriptedMod: 'layout_maze',

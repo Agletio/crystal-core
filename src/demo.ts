@@ -50,6 +50,7 @@ import {
   RECIPES,
   SKILLS,
   SKILL_BY_ID,
+  SKILL_CATEGORIES,
   UNIQUES,
   UNIQUE_BY_ID,
 } from './data';
@@ -110,15 +111,24 @@ import {
   canDeallocate,
   neighboursOf,
   nodeById,
+  pathToNotable,
   treeFor,
 } from './skills-tree';
-import { addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
+import { addSkillXp, addXp, makeCharacter, skillProgress, xpToNext } from './sim/character';
 import type { Character } from './sim/character';
 import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
-import { TUTORIAL_STEPS, dockSlotId, recipeButtonId, slotButtonId } from './ui/tutorial';
+import {
+  TUTORIAL_STEPS,
+  dockSlotId,
+  recipeButtonId,
+  skillCatId,
+  skillNodeId,
+  skillRowId,
+  slotButtonId,
+} from './ui/tutorial';
 import { crystalMoveId } from './ui/crystals';
 import { crystalSlotId } from './ui/craft';
 import type { GuideCtx } from './ui/tutorial';
@@ -1491,32 +1501,51 @@ rule('GUIDED OPENING — does every step actually complete?');
 // invisible from the UI until someone sits there clicking.
 {
   const game = createGame('fresh');
-  const ctx: GuideCtx = { view: 'run', phase: 'menu', top: null, picking: null };
+  const AT: GuideCtx = {
+    view: 'run',
+    phase: 'menu',
+    top: null,
+    picking: null,
+    category: null,
+    viewing: null,
+  };
+  const ctx: GuideCtx = { ...AT };
   let step = 0;
   const trace: string[] = [];
   const targetless: string[] = [];
   const MARKUP = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
 
+  const mine = game.character.skillId;
+  const myCategory = SKILL_BY_ID[mine]!.category!;
+  const elsewhere = SKILL_CATEGORIES.find((c) => c.id !== myCategory)!.id;
+  const another = PLAYER_SKILLS.find((s) => s.id !== mine)!.id;
+
   /** Every surface a step could be pointing at when it fires. */
   const SITUATIONS: GuideCtx[] = [
-    { view: 'run', phase: 'menu', top: null, picking: null },
-    { view: 'run', phase: 'running', top: null, picking: null },
-    { view: 'run', phase: 'results', top: null, picking: null },
-    { view: 'craft', phase: 'results', top: 'craft', picking: null },
-    { view: 'craft', phase: 'results', top: 'shop', picking: null },
-    { view: 'run', phase: 'results', top: 'shop', picking: null },
-    { view: 'run', phase: 'results', top: 'stash', picking: null },
-    { view: 'run', phase: 'results', top: 'sheet', picking: null },
+    { ...AT },
+    { ...AT, phase: 'running' },
+    { ...AT, phase: 'results' },
+    { ...AT, view: 'craft', phase: 'results', top: 'craft' },
+    { ...AT, view: 'craft', phase: 'results', top: 'shop' },
+    { ...AT, phase: 'results', top: 'shop' },
+    { ...AT, phase: 'results', top: 'stash' },
+    { ...AT, phase: 'results', top: 'sheet' },
     // The sheet with a slot already chosen. A distinct situation, because it
     // is the one where the next click leaves this window for the dock.
-    { view: 'run', phase: 'results', top: 'sheet', picking: 'weapon' },
-    { view: 'run', phase: 'menu', top: 'skills', picking: null },
+    { ...AT, phase: 'results', top: 'sheet', picking: 'weapon' },
+    // All three depths of the Skills screen, plus the two wrong turns: a step
+    // walking you to a node has to know the way back out of both.
+    { ...AT, top: 'skills' },
+    { ...AT, top: 'skills', category: myCategory },
+    { ...AT, top: 'skills', category: myCategory, viewing: mine },
+    { ...AT, top: 'skills', category: elsewhere },
+    { ...AT, top: 'skills', category: myCategory, viewing: another },
     // Screens the opening never sends you to. Reachable anyway now that only
     // spending is locked, so every step has to know the way back out of them.
-    { view: 'run', phase: 'menu', top: 'history', picking: null },
-    { view: 'run', phase: 'menu', top: 'save', picking: null },
-    { view: 'run', phase: 'running', top: 'save', picking: null },
-    { view: 'craft', phase: 'running', top: 'craft', picking: null },
+    { ...AT, top: 'history' },
+    { ...AT, top: 'save' },
+    { ...AT, phase: 'running', top: 'save' },
+    { ...AT, view: 'craft', phase: 'running', top: 'craft' },
   ];
 
   const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
@@ -1545,12 +1574,18 @@ rule('GUIDED OPENING — does every step actually complete?');
     UI_SRC.includes(`'${id}'`) ||
     RECIPES.some((r) => recipeButtonId(r.id) === id) ||
     EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id) ||
+    // The three depths of the Skills screen, minted per category, per skill
+    // and per node of whichever web is up.
+    SKILL_CATEGORIES.some((c) => skillCatId(c.id) === id) ||
+    PLAYER_SKILLS.some((s) => skillRowId(s.id) === id) ||
+    PLAYER_SKILLS.some((s) => treeFor(s.id).some((n) => skillNodeId(n.id) === id)) ||
     // Minted per item by the dock, so it exists exactly while that item does.
     [...game.inventory, ...Object.values(game.character.equipment)].some(
       (i) => dockSlotId(i.id) === id
     ) ||
-    // Minted per crystal by the bench column and by the collection.
-    crystalsIn(game).some((i) => crystalSlotId(i.id) === id || crystalMoveId(i.id) === id);
+    // Minted per crystal by the bench column and by the collection. A socketed
+    // one is in the bench's column too, which is where the craft step points.
+    ownedCrystals(game).some((i) => crystalSlotId(i.id) === id || crystalMoveId(i.id) === id);
 
   // Everything the guide asks for, in order. Each entry is what a player
   // would do; the step should then satisfy itself.
@@ -1604,39 +1639,67 @@ rule('GUIDED OPENING — does every step actually complete?');
     },
     // Close the sheet, dismiss the report, enter again.
     () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
-    // One more descent of the loop running itself. The COUNT is what ends it.
+    // The first point, which is what the first crystal is bought with.
     () => {
-      game.clears = INTRO.firstCrystalClear;
-      ctx.top = 'met';
+      ctx.top = 'skills';
+      ctx.category = myCategory;
+      ctx.viewing = mine;
+      const progress = skillProgress(game.character, mine);
+      progress.allocated.push(pathToNotable(mine, progress.allocated)[0]!.id);
     },
+    // Then the levels the notable costs, which is what the dormant stretch is.
     () => {
-      takeHandover(game, { weapon: false, crystal: true, quests: [] });
+      const progress = skillProgress(game.character, mine);
+      while (progress.level < INTRO.crystalSkillLevel) {
+        addSkillXp(game.character, mine, xpToNext(progress.level));
+      }
+      for (const node of pathToNotable(mine, progress.allocated)) {
+        progress.allocated.push(node.id);
+      }
+      ctx.top = null;
+      ctx.category = null;
+      ctx.viewing = null;
+    },
+    // The clear that buys puts him at the mouth holding it.
+    () => {
+      ctx.top = 'met';
+      takeHandover(game, giftWaiting(game)!);
       // A meeting ends a descent and every ending opens the haul, so the step
       // after it is reached with one on top. That is the step's first branch.
       ctx.top = 'haul';
       bankToHaul(game, [makeGear('shiv', 8)]);
     },
+    // Socketed BLANK: a level 1 crystal holds nothing, so all it does is make
+    // the descent longer, and being used is what buys it a slot.
     () => {
       takeWhatFits(game);
+      ctx.top = 'crystals';
+      const crystal = crystalsIn(game)[0];
+      socketItem(game, crystal, socketFor(game, crystal)!);
+    },
+    // Several cleared descents later it has room, and the guide comes back for
+    // it. The count is measured in the collection section below.
+    () => {
+      while (modCapacity(socketed(game)[0]) === 0) {
+        addCrystalXp(socketed(game)[0], xpForClear(0));
+      }
       ctx.view = 'craft';
       ctx.top = 'craft';
-      selectForCraft(game, crystalsIn(game)[0]);
+      selectForCraft(game, socketed(game)[0]);
     },
     () => {
       const crystal = craftItem(game)!;
       const result = craft(crystal, CURRENCY_BY_ID[INTRO.scriptedCurrency], pool, rng);
       if (result.ok) replaceItem(game, result.item);
     },
-    () => {
-      ctx.view = 'run';
-      ctx.top = 'crystals';
-      const crystal = crystalsIn(game)[0];
-      socketItem(game, crystal, socketFor(game, crystal)!);
-    },
   ];
+
+  /** Whether a step that waits was DORMANT at the moment the guide reached it. */
+  const asleepOnArrival = new Map<string, boolean>();
 
   for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
     const current = TUTORIAL_STEPS[step];
+    if (current.waits) asleepOnArrival.set(current.id, current.waits(game, ctx));
     actions[i]?.();
     // Advance past everything now satisfied, as the real driver does.
     while (step < TUTORIAL_STEPS.length && TUTORIAL_STEPS[step].done(game, ctx)) step++;
@@ -1663,6 +1726,26 @@ rule('GUIDED OPENING — does every step actually complete?');
     'every step points at an element that exists',
     `points at nothing: ${targetless.join(', ')}`
   );
+
+  // The other shape a step can be in. A step that cannot be reached yet is
+  // DORMANT — card down, lockdown off, nothing advancing — and that must never
+  // read as stuck. Each one is asleep when the guide arrives at it and is woken
+  // by the game rather than by the step in front of it.
+  {
+    const asleep = TUTORIAL_STEPS.filter((s) => s.waits);
+    const fresh = createGame('fresh');
+    check(
+      asleep.length > 0 && asleep.every((s) => s.waits!(fresh, AT)),
+      `${asleep.length} steps wait, and every one is dormant on a fresh character`,
+      asleep.filter((s) => !s.waits!(fresh, AT)).map((s) => s.id).join(', ')
+    );
+    const awake = asleep.filter((s) => asleepOnArrival.get(s.id) !== true);
+    check(
+      awake.length === 0,
+      'and every one was still asleep when the opening reached it',
+      `already awake: ${awake.map((s) => s.id).join(', ')}`
+    );
+  }
 
   // Existing is not the same as reachable. The header and the Fissure panel sit
   // UNDER every popup, so a step still naming one of them while something is
@@ -1745,7 +1828,14 @@ rule('GUIDED OPENING — does every step actually complete?');
   {
     const step = TUTORIAL_STEPS.find((s) => s.id === 'select_weapon')!;
     const at = createGame('fresh');
-    const ctx: GuideCtx = { view: 'craft', top: 'craft', phase: 'menu', picking: null };
+    const ctx: GuideCtx = {
+      view: 'craft',
+      top: 'craft',
+      phase: 'menu',
+      picking: null,
+      category: null,
+      viewing: null,
+    };
 
     // Everything a first run can drop, in the shapes that fooled every earlier
     // reading of this step: a modded piece, a blank helmet, and — the one that
@@ -4193,34 +4283,64 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       JSON.stringify(giftWaiting(g))
     );
 
-    // The crystal is the SECOND meeting, counted in cleared descents: the
-    // first one teaches wearing and crafting, and this one is about what a
-    // crystal does to a room.
+    // The crystal is the SECOND meeting, and it is EARNED rather than counted
+    // out: the active skill at INTRO.crystalSkillLevel with a notable taken in
+    // its tree — the level buys the point and the allocation spends it.
     check(
       g.clears === 1,
       'and the clear it banked is counted',
       String(g.clears)
     );
-    g.clears = INTRO.firstCrystalClear - 1;
+    const mine = g.character.skillId;
+    const progress = skillProgress(g.character, mine);
     check(
       giftWaiting(g) === null &&
-        giftSchedule(g).includes(`${INTRO.firstCrystalClear} cleared descents`),
-      `and says how far off the first crystal is below ${INTRO.firstCrystalClear} clears`,
+        giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`) &&
+        giftSchedule(g).includes('0 notables'),
+      'and says what the first crystal is waiting on, in numbers',
       giftSchedule(g)
     );
-    g.clears = INTRO.firstCrystalClear;
+    while (progress.level < INTRO.crystalSkillLevel) {
+      addSkillXp(g.character, mine, xpToNext(progress.level));
+    }
+    check(
+      giftWaiting(g) === null,
+      `and ${INTRO.crystalSkillLevel} skill levels with nothing spent is still nothing owed`,
+      JSON.stringify(giftWaiting(g))
+    );
+    const route = pathToNotable(mine, progress.allocated);
+    check(
+      route.length === INTRO.crystalSkillLevel && route[route.length - 1].kind === 'notable',
+      `and the cheapest notable is ${INTRO.crystalSkillLevel} points away, which is exactly what that many levels buys`,
+      `${route.length} nodes: ${route.map((n) => n.id).join(' → ')}`
+    );
+    for (const node of route) progress.allocated.push(node.id);
     const owed = giftWaiting(g);
-    check(owed?.crystal === true, 'and is waiting with one at it', JSON.stringify(owed));
+    check(owed?.crystal === true, 'and taking it is what puts one at the mouth', JSON.stringify(owed));
 
     const second = takeHandover(g, owed!);
     const crystal = second.items[0];
     check(
       crystal?.kind === 'crystal' &&
-        modCapacity(crystal) > 0 &&
+        modCapacity(crystal) === 0 &&
+        crystal.meta.scripted === INTRO.scriptedMod &&
         balance(g.wallet, INTRO.scriptedCurrency) > 0,
-      'handing over a crystal with room in it and the shard to fill it',
+      'handing over a BLANK crystal, the shard for later, and the roll still waiting on it',
       `level ${crystal?.meta.level}, room ${modCapacity(crystal!)}, ` +
-        `${balance(g.wallet, INTRO.scriptedCurrency)} shards`
+        `scripted ${crystal?.meta.scripted}, ${balance(g.wallet, INTRO.scriptedCurrency)} shards`
+    );
+
+    // Being used is the only thing that gives it room, which is what the
+    // guided opening's craft steps wait for rather than queue behind.
+    let bare = 0;
+    while (modCapacity(crystal!) === 0 && bare < 100) {
+      addCrystalXp(crystal!, xpForClear(0));
+      bare++;
+    }
+    check(
+      modCapacity(crystal!) === 1,
+      `and ${bare} cleared descents socketed at no danger buy it 1 slot`,
+      `level ${crystal?.meta.level}, room ${modCapacity(crystal!)}`
     );
 
     // The one arranged roll in the game. It rides on the CRYSTAL, so the
@@ -4703,21 +4823,20 @@ rule('THE SAVE — does a save survive the game changing under it?');
     game.quests.join(', ')
   );
 
-  // Written before descents were counted. Only the first crystal is scheduled
-  // on the number, so a save already holding one is past all of what it says.
+  // Written before descents were counted. Nothing is scheduled on the number
+  // now, so it reads off the one milestone the save does hold.
   {
     const banked = createGame('fresh');
     banked.firstClearDone = true;
     delete (banked as { clears?: number }).clears;
     heal(banked);
-    const held = createGame('fresh');
-    held.given = ['weapon', 'crystal'];
-    delete (held as { clears?: number }).clears;
-    heal(held);
+    const never = createGame('fresh');
+    delete (never as { clears?: number }).clears;
+    heal(never);
     check(
-      banked.clears === 1 && held.clears >= INTRO.firstCrystalClear,
-      'a save from before descents were counted reads the count off its milestones',
-      `${banked.clears} after one clear, ${held.clears} already holding the crystal`
+      banked.clears === 1 && never.clears === 0,
+      'a save from before descents were counted reads the count off its milestone',
+      `${banked.clears} after one clear, ${never.clears} after none`
     );
   }
   check(
