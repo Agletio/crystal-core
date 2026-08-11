@@ -1093,9 +1093,13 @@ export const FAMILY_ART: Record<string, FamilyArt> = {
 };
 
 /**
- * Weapons, drawn against the grip at (17, 14): hanging at rest, and swung round
+ * Weapons, drawn against the grip at (17, 14): held at rest, and driven forward
  * on the strike. Two grids rather than a rotation, because turning a pixel
  * sprite by anything but a quarter is how pixel art stops being pixel art.
+ *
+ * A sword is held OUT with the point slightly up, and the strike is the same
+ * blade levelled and driven forward — a pair, so the swing does not snap
+ * between two unrelated poses.
  */
 export interface WeaponArt {
   rest: string[];
@@ -1190,70 +1194,63 @@ export const WEAPON_ART: Record<string, WeaponArt> = {
   // Notched, pitted, and still the length of your arm.
   rusted_sword: {
     rest: rows({
-      12: '...............#ww#.....',
-      13: '...............#ww#.....',
-      14: '..............##ww##....',
-      15: '...............#mM#.....',
-      16: '...............#mM#.....',
-      17: '...............#m.#.....',
-      18: '...............#mM#.....',
-      19: '...............#mM#.....',
-      20: '...............#mM#.....',
-      21: '................##......',
+      11: '.....................###',
+      12: '..................###MMM',
+      13: '..............####mMMmm#',
+      14: '..............#wwwmmm##.',
+      15: '..............####m##...',
+      16: '..................#.....',
     }),
     strike: rows({
-      13: '...............#######..',
-      14: '...............#wwmmM#..',
-      15: '...............#wwmmM#..',
-      16: '...............#######..',
+      13: '..............########..',
+      14: '..............#wwwmmmM#.',
+      15: '..............#wwwmmM#..',
+      16: '..............########..',
     }),
   },
   // A straight bar with a wide guard and a bright edge.
   iron_sword: {
     rest: rows({
-      12: '...............#ww#.....',
-      13: '...............#ww#.....',
-      14: '.............###ww###...',
-      15: '...............#mM#.....',
-      16: '...............#mM#.....',
-      17: '...............#mM#.....',
-      18: '...............#mM#.....',
-      19: '...............#mM#.....',
-      20: '...............#mM#.....',
-      21: '................##......',
+      11: '..................#..###',
+      12: '..................m##MMM',
+      13: '..............####mMMmm#',
+      14: '..............#wwwmmm##.',
+      15: '..............####m##...',
+      16: '..................m.....',
+      17: '..................#.....',
     }),
     strike: rows({
-      13: '...............########.',
-      14: '...............#wwmmmM#.',
-      15: '...............#wwmmmM#.',
-      16: '...............########.',
+      13: '..............#########.',
+      14: '..............#wwwmmmmM#',
+      15: '..............#wwwmmmM#.',
+      16: '..............#########.',
     }),
   },
   // A fullered blade with a long guard. Nothing wasted.
   steel_sword: {
     rest: rows({
-      10: '...............#ww#.....',
-      11: '...............#ww#.....',
-      12: '...............#ww#.....',
-      13: '...............#ww#.....',
-      14: '............####ww####..',
-      15: '...............#mM#.....',
-      16: '...............#mM#.....',
-      17: '...............#mM#.....',
-      18: '...............#mM#.....',
-      19: '...............#mM#.....',
-      20: '...............#mM#.....',
-      21: '...............#mM#.....',
-      22: '................##......',
+      10: '..................#.....',
+      11: '..................m..###',
+      12: '..................m##MMM',
+      13: '.............#####mMMmmm',
+      14: '.............#wwwwmmmmm#',
+      15: '.............#####mmm##.',
+      16: '..................m##...',
+      17: '..................m.....',
+      18: '..................#.....',
     }),
     strike: rows({
-      12: '...............########.',
-      13: '...............#wwmmmmM#',
-      14: '...............#wwmmmmM#',
-      15: '...............#wwmmmmM#',
-      16: '...............########.',
+      12: '.............##########.',
+      13: '.............#wwwwmmmM#.',
+      14: '.............#wwwwmmmmM#',
+      15: '.............#wwwwmmmM#.',
+      16: '.............##########.',
     }),
   },
+  // The daggers hold POINT DOWN, which is a reverse grip and a real way to
+  // hold one. Swords used to do it too and read as enormous daggers; these
+  // keep it on purpose, so do not "fix" them to match.
+  //
   // A ground-down sliver with cloth for a handle.
   shiv: {
     rest: rows({

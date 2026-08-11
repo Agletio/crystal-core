@@ -41,42 +41,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — A sword is held out, not hung [user 3]
-
-**What is true today.** `WEAPON_ART` in `src/render/gear-art.ts` draws every
-weapon against the doll's grip at (17, 14), as two 24-grids: `rest` and
-`strike`. `rusted_sword`, `iron_sword` and `steel_sword` all hang STRAIGHT
-DOWN from the grip — a single column of blade running from row 14 to row 21,
-directly below the hand. The daggers (`shiv`, `stiletto`, `fang`) do the same,
-shorter.
-
-**Why it is wrong.** A sword hanging point-down out of the fist reads as a
-dagger held in a reverse grip. It is the first weapon half the characters in
-the game are given.
-
-- [ ] The three swords are held OUT with the point slightly up, from the grip
-      the doll already has. The grip does not move: those coordinates are
-      absolute whole pixels and everything else is drawn against them.
-- [ ] The daggers KEEP the point-down hold, which is what it always read as —
-      it is a reverse grip and on a dagger that is a real way to hold one.
-      Write down that it is deliberate, or the next session "fixes" it too.
-- [ ] The other way round is on the table and is the user's own suggestion:
-      the current sword art is a good DAGGER, so rename the base and draw a
-      sword from scratch instead of bending the one that exists. Renaming a
-      base id costs every player whatever pointed at it (`RULES.md`), so it is
-      a new base and a retired one rather than a rename — decide which of the
-      two routes before drawing anything.
-- [ ] `strike` is redrawn to match the new rest, or the swing snaps between two
-      unrelated poses.
-- [ ] `npm run demo`'s sprite checks still pass: every grid exactly 24 wide,
-      trailing dots included, and no highlight directly under a shadow — the
-      light is from above and slightly in front, and the demo fails on it.
-
-**What must not break.** Art claims need a screenshot: `tools/model-sheet.mts
-out.png` draws every look, `tools/model-peek.mts out.png family` draws a few
-large. Neither is in the suite, so LOOK at one.
-
-### Phase 2 — The first crystal is earned with a notable [user 6]
+### Phase 1 — The first crystal is earned with a notable [user 6]
 
 **What is true today.** `giftWaiting` in `src/game/crystals.ts` schedules the
 first crystal off `INTRO.firstCrystalClear = 2` — the second cleared descent —
@@ -128,7 +93,7 @@ harness's. The demo walks the same steps headlessly with one hand-written
 action each, and a TRIGGERED step is a new shape for both of them: a step that
 is not reachable yet must not be reported as stuck.
 
-### Phase 3 — Mana, and what a skill costs [user 3a]
+### Phase 2 — Mana, and what a skill costs [user 3a]
 
 **What is true today.** There is no mana anywhere: no resource on `Character`
 (`src/sim/character.ts`), no field on `CombatStats` (`src/sim/stats.ts`), no
@@ -163,7 +128,7 @@ band clears, and a skill that can run dry moves all of them. Measure before and
 after. `TERMINATION CHECK` runs 28 descents and proves every one ends — a
 character that cannot afford to attack is the newest way for one not to.
 
-### Phase 4 — Two potions, two charges [user 3b]
+### Phase 3 — Two potions, two charges [user 3b]
 
 **What is true today.** Nothing. There are no consumables, and — more to the
 point — **there is no player input during a descent at all.** The guided
@@ -216,7 +181,7 @@ arriving between ticks must land on a tick boundary like everything else, or
 the same seed stops giving the same run. `npm run smoke` and `npm run guide`
 both drive real descents.
 
-### Phase 5 — Character level buys attributes [user 7]
+### Phase 4 — Character level buys attributes [user 7]
 
 **What is true today.** `character.level` (`src/sim/character.ts`) does almost
 nothing: it scales the skill's own base damage through `skillBase(skill,
@@ -255,7 +220,7 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 6 — Trades: the part of a character that is not the skill
+### Phase 5 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -337,7 +302,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 7 — Every monster brings its own element [user 10]
+### Phase 6 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -393,7 +358,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 8 — What a node does, shown and not overlapped [user 8]
+### Phase 7 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key

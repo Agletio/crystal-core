@@ -234,6 +234,13 @@ empty box. Both read their palette at CALL time, so a colour change reaches
 both, and both are held to `wellFormed(rows, grid)` — every row exactly `grid`
 wide, trailing dots included.
 
+**A sword is held OUT, point slightly up; a dagger is held POINT DOWN.** Both
+are deliberate. The swords used to hang point-down from the fist and read as
+enormous daggers; the daggers keep that hold because on a dagger it is a
+reverse grip and a real way to carry one. A weapon's `strike` is the same blade
+levelled and driven forward, so rest and strike are a PAIR — two unrelated
+poses snap rather than swing.
+
 **The doll's grip is (17, 14)** and every weapon is drawn against that one
 point. `POSES` shifts move it: those numbers are absolute whole pixels, so
 anything that changes the figure's size changes all of them.
