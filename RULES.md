@@ -227,9 +227,28 @@ player gets and what `runToCompletion` measures cannot come apart. A press is
 QUEUED and drained at the top of the next tick, never applied where it arrives,
 or the same seed stops replaying the same run.
 
-**Balance is deliberately loose.** Lean overpowered — too much currency,
-characters too strong. It makes testing faster. Do not spend time tuning what is
-about to be replaced.
+**Balance is NOT TUNED, and a balance number never blocks a phase.** Standing,
+and it is meant to outlast a context clear. Lean too easy — too much currency,
+characters too strong, every wall softer than it ought to be. Systems are still
+going in and each one hands out more power than the last (attributes, then
+trades, then jobs), so anything tuned now is tuned against a game that does not
+exist yet and gets thrown away. There will be a balance pass when every system
+is in, and it is a phase of its own.
+
+Until then:
+
+- **No phase stops because a difficulty or reward measurement moved.** Measure
+  it, PRINT it, and carry on. A phase that ends with "this made the deep end
+  easier" has done its job and said so.
+- **The demo's balance checks report rather than fail.** Anything asserting a
+  TARGET — the share that gets through the deep end, what a band clears, the
+  Seam's margin, the share of swings that go unpaid — is a `line()`, not a
+  `check()`.
+- **What still fails is MECHANISM.** A run that does not end, a determinism
+  break, a step nobody can finish, a screen that overflows, a modifier that
+  does nothing, a save that cannot be healed. Those are bugs at any balance.
+- **One difficulty check stays a failure:** a brand new character clearing the
+  bare Fissure. A game you cannot start is not a balance question.
 
 ### Room for a fifth socket
 
@@ -488,10 +507,14 @@ downside on the item. Every world drops something of its own, the Fissure two.
 **The deep end is not a band.** Power is clamped at `POWER.max`, so the top drop
 band is reached long before danger runs out — the hardest set in the game is
 nobody's target, and `deepestSet` in `src/sim/loadout.ts` is the only thing that
-builds it. `THE LADDER` measures it against gear a band below the top: it has to
-be a wall (a third or less), and it has to still be beatable, or it is a ceiling
-rather than a wall. Past the power cap, danger still pays in RARITY, which reads
-`payingDanger` directly — that is the whole reason to build it.
+builds it. `THE LADDER` measures it against gear a band below the top and
+PRINTS what got through. It used to have to be a wall — a third or less — and
+that target is SUSPENDED under the no-tuning rule above: it was a number set for
+a character whose levels bought nothing, it was already at 31% over 36 runs
+before attributes existed, and every system still to land hands out more power.
+It comes back at the balance pass. Past the power cap, danger still pays in
+RARITY, which reads `payingDanger` directly — that is the whole reason to build
+it.
 
 **A crystal is never carried.** It is never spent, sold or moved anywhere, so
 there is no dock column for it and `carryRoom(game, 'crystal')` is `Infinity`.

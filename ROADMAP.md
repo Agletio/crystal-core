@@ -10,11 +10,15 @@ tuning — a measurement beats them. A landed phase is DELETED from here, so
 before starting one, `git fetch` and check you are on the tip of the branch:
 a phase you can still see in a stale clone may already be built.
 
-**Where these came from.** Ten asks, dictated by the user in one go, and the
-six questions they raised have been answered — so the phases left here are all
-unblocked, and they are listed in dependency order. The number in brackets is
-the user's own numbering of what they asked for, kept so a phase can be matched
-back to the ask — it says nothing about when to build it.
+**Where these came from.** Two batches of asks, dictated by the user in one go
+each. The number in brackets is the user's own numbering within its batch, kept
+so a phase can be matched back to the ask — it says nothing about when to build
+it. They are listed in DEPENDENCY order, not in the order they were asked for.
+
+**Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
+nothing here is tuned until every system is in, because attributes, trades and
+jobs each hand out more power than the last and anything tuned before them is
+thrown away. Lean too easy. Measure, print, carry on.
 
 Three of them are one idea in three landable pieces — mana costs, then the
 potions that answer running dry, then the attributes that scale the pool — and
@@ -41,7 +45,39 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Character level buys attributes [user 7]
+### Phase 1 — The harnesses report balance instead of failing on it
+
+**What is true today.** `src/demo.ts` asserts difficulty and reward TARGETS
+with `check()`, so a phase that moves one fails the suite: the deep end has to
+be a third or less (`through <= deep / 3`), a naked character has to walk out
+of the Fissure under 70% life, every band has to clear in the band below's
+gear, the Seam has to sit within 15% of the hardest single world, and a bare
+skill has to spend between 5% and 50% of its swings unable to pay for itself.
+
+**Why it is wrong.** `RULES.md` now says balance is not tuned until every
+system is in, because each one still to land hands out more power than the
+last. A check that fails on a number nobody is tuning is a check that stops
+work for no reason — it has already blocked one phase.
+
+- [ ] Every check asserting a TARGET becomes a `line()` that prints the number.
+      The list is above; `grep "check(" src/demo.ts` around `THE LADDER`,
+      `FAMILIES`, `MANA` and `WHAT A BAND IS WORTH` finds them.
+- [ ] The numbers keep being printed, and printed in the same place, so a
+      balance pass later has a before and an after to read. Deleting the
+      measurement is the one wrong answer.
+- [ ] **One survives as a `check()`:** a brand new character clears the bare
+      Fissure. A game you cannot start is not a balance question.
+- [ ] Everything asserting a MECHANISM stays a `check()` and is not touched —
+      termination, determinism, every step completing, ids existing, every
+      modifier doing something, saves healing, geometry.
+- [ ] The demo's last line still counts only real failures, so `✓ every check
+      passed` keeps meaning what it says.
+
+**What must not break.** `npm run demo` has to stay green and stay honest: a
+suite that passes because it stopped asking is worse than one that fails. The
+count of checks will drop; say by how many in the commit.
+
+### Phase 2 — Character level buys attributes [user 7]
 
 **Potions landed first, and they moved the floor.** Every number below that
 compares against "today" was measured with the flasks firing themselves, which
@@ -88,34 +124,234 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-**BLOCKED on open question 1 below, and here is the measurement that blocks it.**
-The groundwork was built and reverted rather than half-landed: four attributes
-as a synthetic `RolledMod` beside the tree's (`attributeMod` in
-`sim/stats.ts`), `Character.attributes`, `attributePointsFor(level)`, a spread
-in `ladderCharacter`, and `critChance` reading `skill.tags` so an attack
-attribute does nothing for a spell. All of that is straightforward and none of
-it is where the phase stops.
+**ANSWERED, and it is 3 points a level.** The phase was blocked on the deep
+end: `RULES.md` used to require the hardest set in the game to stay a wall — a
+third or less gets through — and measured over 36 runs it was already at 31%
+before attributes existed. Three points a level puts it at 39%. The user's
+answer is that **balance is not tuned at all** until every system is in, so
+that target is suspended and this phase does not have to hold it. Build it at
+3 points a level and PRINT what the deep end does.
 
-Where it stops is the deep end. `RULES.md` says the hardest set in the game has
-to be a WALL — a third or less gets through — and, measured over 36 runs rather
-than the 12 the demo uses, it was ALREADY at 31% before this phase. Attributes
-are a power increase, so there is no room underneath it:
+**MEASURED, so nobody derives it twice.** With `LEVELLING.damagePerLevel` set
+to 0 and a spread character (points split four ways by `ladderCharacter`), at
+5% damage / 2% life / 2% speed / 0.6 crit per step:
 
-| what a level buys | deep end, 36 runs |
-|---|---|
-| today: nothing but life and `damagePerLevel` | **31%** |
-| 3 points/level, 5% damage · 2% life · 2% speed · 0.6 crit, no `damagePerLevel` | 39% |
-| 2 points/level, same rates | 36% |
-| 1 point/level, same rates | 33% |
+| points a level | deep end, 36 runs | bands, 12 each |
+|---|---|---|
+| none (before this phase) | 31% | 12/12/12/12/12/11 |
+| 1 | 33% | — |
+| 2 | 36% | 12/12/12/12/12/12 |
+| **3** | **39%** | 12/12/12/12/12/12 |
 
-One point a level is the only setting that holds the invariant, and it buys a
-level-40 character 2 steps per attribute — 10% attack damage — which is the
-phase's own complaint about levelling, restated. Dropping `damagePerLevel`
-does NOT buy the room back: the deep end is survival-limited, not
-damage-limited, so it is the life, speed and crit that soften it. The demo's
-own 12-run check reads 25% at baseline and hides how tight this already was.
+Dropping `damagePerLevel` does NOT make room: the deep end is survival-limited
+rather than damage-limited, so what softens it is the life, the speed and the
+crit rather than the damage.
 
-### Phase 2 — Trades: the part of a character that is not the skill
+**The groundwork was built once and reverted rather than half-landed.** It is
+about forty lines and none of it is hard — rebuild it rather than hunting for
+it:
+
+- `ATTRIBUTES` / `ATTRIBUTE_STEP` / `ATTRIBUTE_BY_ID` in `src/data.ts`, each
+  attribute holding `per: StatRoll[]` — what ONE step is worth, in ordinary
+  stat lines under names the engine already reads. `StatRoll` has to be added
+  to data.ts's type import.
+- `LEVELLING.attributePointsPerLevel = 3`, and `ATTRIBUTE_STEP = 5` points to
+  a step, so a step is bought over a level and a bit.
+- `Character.attributes: Record<string, number>` in `src/sim/character.ts`,
+  `{}` from `makeCharacter`, plus `attributePointsFor(level)`,
+  `attributesSpent`, `attributePointsLeft` and `attributeSteps(character, id)`
+  (which FLOORS: a part-step buys nothing yet).
+- `attributeMod(character)` in `src/sim/stats.ts` building ONE synthetic
+  `RolledMod` exactly the way `treeMod` does, and `statMods` returning it
+  beside the tree's. Nothing downstream learns a new concept.
+- `heroStats` passes `skill.tags` into the `critChance` `computeStat`, which is
+  what makes an ATTACK critical-chance line do nothing for a spell. It is the
+  same seam `areaOfEffect` already rides on, and untagged gear lines are
+  unaffected.
+- `ladderCharacter` in `src/sim/loadout.ts` splits the points four ways.
+
+The rates that were measured, as a starting point rather than a target: 5%
+increased damage tagged `['attack']` and 3% increased life for Strength; 5%
+tagged `['spell']` and 6% mana for Intelligence; 0.6 flat critical chance
+tagged `['attack']` and 2% attack speed for Dexterity; the same tagged
+`['spell']` with cast speed for Acuity.
+
+### Phase 3 — Two things the run screen gets wrong [user 1, user 2]
+
+Two unrelated one-screen fixes, both small, both about the screen showing you
+the wrong thing. Do them together.
+
+**Keep going is not a choice.** `docs/index.html` has a `.keepgoing` label
+holding `<input type="checkbox" id="run-repeat" checked>` beside Enter the
+Fissure; it writes `GameState.autoRepeat`, which `looping()` in
+`src/ui/run.ts` reads (`game.autoRepeat && !isGuided()`). Chaining descents is
+what this game IS, and the two buttons that stop it — **Leave after this run**
+and **Abandon** — already cover every way you might want out. A checkbox
+offering to make the idle game not idle is a decision nobody needs.
+
+- [ ] The checkbox and its label go from the markup, and `run-repeat`'s
+      `onchange` handler goes from `initRun`.
+- [ ] `looping()` becomes `!isGuided()`. The guided opening still suppresses
+      chaining, which is deliberate: its later steps are written against a
+      report that is still on screen.
+- [ ] `GameState.autoRepeat` goes, and `heal()` needs nothing — a field a save
+      still carries is simply never read again.
+- [ ] `grep -rn autoRepeat src smoke.mjs` finds every reader. `smoke.mjs` and
+      `src/demo.ts` both touch it.
+
+**A tooltip is the top layer.** `.tip` in `docs/index.html` sits at
+`z-index: 40`. The guide card is 50, the item menu 95 and the toast 96, so the
+thing explaining what you are looking at is UNDER the thing telling you to
+click it. On the skills web this is at its worst: the guided opening rings a
+node and its own card covers the tooltip naming it.
+
+- [ ] `.tip` goes above everything the app can put on screen. It is
+      `pointer-events: none`, so nothing can be trapped behind it.
+- [ ] Check it against the item menu (right-click a dock slot), the toast (equip
+      by drag), the guide card, and a modal — the tooltip has to win all four.
+- [ ] `npm run shots` renders a tooltip at two viewports and is where a
+      regression would show.
+
+**What must not break.** `npm run smoke` drives the checkbox today; `npm run
+guide` clicks through the opening with a real pointer and would notice a
+tooltip that started swallowing clicks.
+
+### Phase 4 — A badge on every tab holding points to spend [user 6]
+
+**What is true today.** Unspent points are invisible from outside the screen
+that spends them. `pointsAvailable(progress)` in `src/sim/character.ts` is the
+tree's spare points and is only ever read inside `src/ui/skills.ts`;
+`attributePointsLeft(character)` (Phase 2) is the same for attributes and is
+only read on the sheet. The header buttons — `#open-skills`, `#open-character`
+in `docs/index.html` — say nothing.
+
+**Why it is wrong.** A point nobody spends is a level that did nothing, and the
+guided opening is the only thing that has ever told a player they have one.
+
+- [ ] A small badge on a header button when that screen has something to spend:
+      a circle with the COUNT in it, top-right of the button. `4` rather than
+      `!` — every number is said out loud.
+- [ ] Skills carries the ACTIVE skill's spare tree points. Character carries
+      unspent attribute points.
+- [ ] One mechanism, not two: a `badge(buttonId, count)` helper that adds or
+      removes a `<span class="tabbadge">`, and one place that recomputes both.
+      `refreshRunPanels()` in `src/ui/run.ts` is called after everything that
+      could change them.
+- [ ] Zero shows NOTHING at all — a badge reading 0 is a permanent nag.
+- [ ] It has to read at 390px, where the header already wraps to three rows.
+
+**What must not break.** `npm run shots` fails on overflow and the header is
+the tightest row in the game. The demo's "every step points at an element that
+exists" walks header ids and a badge must not become one of them.
+
+### Phase 5 — Out of mana is a penalty, not a wall [user 5]
+
+**What is true today.** `RunSim.swing` in `src/sim/run.ts` pays
+`hero.stats.manaCost` and, short of it, casts `DRY_SKILL` instead — a
+single-target swing at `MANA.dryDamage` (half) of your damage with NONE of the
+tree behind it. `DRY_SKILL` is in `src/data.ts` and its behaviour `dry_swing`
+is in `src/sim/skills.ts`. `RunState.dryCasts` counts them.
+
+**Why it is wrong.** Being unable to cast your own skill deletes the build you
+walked to, which makes mana a wall rather than a cost. It should be a downside
+you may simply choose to ignore: run dry, hit softer, and answer it by scaling
+damage instead of by scaling sustain if that is the build you want.
+
+- [ ] The dry swing goes. You ALWAYS cast your own skill, with every grant the
+      tree gives it — `DRY_SKILL`, `dry_swing` and `MANA.dryDamage` are
+      deleted, not left unreferenced.
+- [ ] Short of the cost you are **starved**: mana drains to 0 and the cast
+      happens anyway, at a penalty. `RunState.dryCasts` keeps its meaning —
+      casts made while starved — and so does the demo's calibration section.
+- [ ] The penalty is a `more` multiplier on damage, so more damage from
+      anywhere genuinely overcomes it. **See open question 3 for whether it is
+      also a speed penalty; do not guess.**
+- [ ] It is VISIBLE. The mana bar already turns rust when short of a cast
+      (`.hp--dry`); a starved cast needs to read on the map or in the readout
+      too, or damage silently halves for a reason nobody can see.
+- [ ] Balance is not tuned (see `RULES.md`) — pick a generous placeholder,
+      print what the calibration section measures, and move on.
+
+**What must not break.** The `TERMINATION CHECK` holds a character with no pool
+at all to finishing its descent; that check gets EASIER here, since it can now
+always cast, but it still has to pass. `npm run demo`'s determinism check
+replays a seed with the same presses and must still match.
+
+### Phase 6 — The opening spends every point [user 3]
+
+**What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
+steps. `spend_point` rings ONE specific node — `towardNode` walks you into
+Skills, down two shelves, and points at `pathToNotable(...)[0]` — and is done
+when `allocated.length > 0`. `take_notable` then sleeps (`waits`) until the
+skill can afford the run of nodes to a notable, wakes, and rings them one at a
+time until `hasNotable(...)` is true. The first crystal is gated on exactly
+that: `crystalEarned` in `src/game/crystals.ts` wants
+`INTRO.crystalSkillLevel` AND a notable allocated.
+
+**Why it is wrong.** By the time the opening reaches Skills the character is
+usually skill level 2, so a step that ends at one point spent leaves a point
+unspent and teaches that unspent points are normal. Ringing one particular node
+also tells the player what to build, which is the one decision the tree exists
+to hand them.
+
+- [ ] One step, not two: spend EVERY point you have. Done when
+      `pointsAvailable(progress) === 0`.
+- [ ] It rings the web rather than a node — the player picks. `npm run guide`
+      clicks only what is lit, so whatever it rings has to be something the
+      harness can click into a real allocation; a region gets its first live
+      control, and `.web__node--open` is what a free point makes clickable.
+- [ ] Nothing on the main screen is held while it runs.
+- [ ] **The first crystal's gate has to move with it — see open question 2.**
+      Spending three points on three minors leaves you with no notable, so as
+      written the crystal would never arrive and the opening would sleep
+      forever on `meet_crystal`. Do not build this half.
+- [ ] `pathToNotable` in `src/skills-tree.ts` may end up with no callers. If so
+      it goes, unless the answer to question 2 keeps it.
+
+**What must not break.** `npm run guide` plays the whole opening with a real
+pointer and is the only thing that proves a step is finishable; the demo walks
+the same list headlessly with one hand-written action per step, and the step
+count in `RULES.md` needs updating with it.
+
+### Phase 7 — Three skills, three icons, and stats that belong to a skill [user 4]
+
+**What is true today.** A character has ONE skill: `Character.skillId`, and
+`SKILL_CATEGORIES` in `src/data.ts` lists four kinds — spell, attack, passive,
+movement — of which the last two say "Nothing here yet" and have no entries in
+`SKILLS`. The run panel's readout begins with a `mana a swing` row
+(`#run-mana-cost`) directly under the xp bar. The character sheet
+(`src/ui/character.ts`) mixes stats that belong to the CHARACTER (life, armour,
+resistances, move speed, mana pool and regeneration) with stats that belong to
+the SKILL you happen to have equipped (damage, damage/sec, crit chance and
+damage, casts or attacks per second, mana per use, reach).
+
+**Why it is wrong.** A sheet that mixes the two cannot answer either question,
+and the moment a character carries more than one skill it cannot even be
+written down.
+
+- [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
+      three skill icons: your main skill, your passive, your movement.
+      `skillIcon(skillId, size)` in `src/ui/icons.ts` already draws one.
+- [ ] HOVER gives the short version. CLICK opens the character sheet at that
+      skill's own section.
+- [ ] The sheet gains a section per equipped skill holding everything that is
+      only true of that skill: the damage breakdown that is on it today, mana
+      per use, damage per second, crit chance and crit damage, casts or attacks
+      per second, reach. Those rows LEAVE the general stats, which keeps life,
+      armour, resistances, move speed, regeneration, the mana pool and its
+      regeneration.
+- [ ] **Whether passive and movement are real slots or two empty ones — see
+      open question 4.** If they are real, this phase grows a way to equip
+      three skills and `characterStats` grows a skill argument; if they are
+      placeholders, the two icons draw empty and say what will go there.
+- [ ] An empty slot says what it is for. A dark square teaches nothing.
+
+**What must not break.** `characterStats(character)` resolves ONE skill today
+and every harness calls it; `damageDetail` and `skillBase` are per skill
+already. `npm run shots` renders the sheet and the run panel at 390px, where
+three icons and a per-skill section are the tight fit.
+
+### Phase 8 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -197,7 +433,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 3 — Every monster brings its own element [user 10]
+### Phase 9 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -253,7 +489,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 4 — What a node does, shown and not overlapped [user 8]
+### Phase 10 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -293,28 +529,40 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. **The first one BLOCKS Phase 1** and is the only thing
-standing between the roadmap and a session's work; the rest block nothing.
+Do not guess at these. **Questions 1 and 2 block Phases 6 and 7**; nothing else
+blocks anything. Every phase before those is buildable today.
 
-1. **How much stronger should a level make you, and does the deep end get
-   retuned to match?** Attributes are a power increase and `RULES.md` requires
-   the hardest set in the game to stay a wall (a third or less gets through).
-   It is already at 31% over 36 runs, so the two cannot both hold. Three
-   answers, and they are different work:
+1. **What gates the first crystal once the opening stops pointing at a
+   notable?** Phase 6 replaces "take this node" with "spend every point", and a
+   player can spend three points on three minors and own no notable — at which
+   point `crystalEarned` in `src/game/crystals.ts` is never satisfied, the
+   Lampwright never comes, and the opening sleeps on `meet_crystal` forever.
+   Three answers:
 
-   - **Shrink the attributes** to 1 point a level. The invariant holds
-     untouched, and levelling stays nearly as inert as the phase complains it
-     is — 10% attack damage at level 40.
-   - **Retune the deep end** so the wall is restored against a character who
-     now has attributes. That is monster and danger numbers, which is a
-     balance phase rather than this one, and it moves every band with it.
-   - **Move the wall.** Decide that a third was the number for a character
-     whose levels bought nothing, and say what it is now.
+   - **Points spent** rather than a notable: the skill at
+     `INTRO.crystalSkillLevel` with every point of it spent. Closest to what
+     the opening now teaches, and it cannot dead-end.
+   - **Skill level alone.** Simplest; the tree stops being part of the price.
+   - **Keep the notable** and let the opening come back a third time when one
+     is affordable, which is the dormancy mechanism doing what it is for — but
+     it is the "take THIS node" step the phase is trying to remove.
 
-   Nothing else in the phase is blocked — the mechanism, the sheet, the saving
-   and the replaying are all buildable the moment this is answered.
+2. **Are passive and movement real skill slots, or two empty ones?** Phase 7
+   draws three icons and there is only one skill on a `Character`, no passive
+   or movement skills in `SKILLS`, and both categories say "Nothing here yet".
+   Either the phase is a UI change over one real skill and two placeholders
+   that say what will go there, or it is the system that lets a character equip
+   three skills at once — `Character.skillId` becomes a slot table,
+   `characterStats` takes which skill it is resolving, and every harness that
+   builds a character changes with it. The second is several times the first.
 
-2. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
+3. **What being starved of mana costs.** Phase 5 makes running dry a penalty
+   rather than a wall. Less damage, slower casting, or both? Damage alone is
+   the cleanest answer to what was asked — "scale more damage to overcome the
+   downside" works directly against a damage penalty and only indirectly
+   against a speed one — but both is defensible and reads more like exhaustion.
+
+4. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
    and the intent is a storyline with the Lampwright rather than a level
    threshold — he is the only person in the game and the only voice it has.
    Nothing about it is written: what he is doing down there, what he asks for,
@@ -322,19 +570,19 @@ standing between the roadmap and a session's work; the rest block nothing.
    The phase ships a placeholder that the story replaces without touching the
    tree or the points, so this blocks the STORY and not the system.
 
-3. **What the second trade is.** The Alchemist is designed. The framework phase
+5. **What the second trade is.** The Alchemist is designed. The framework phase
    asks for two, and the rule the second has to clear is the same one: it
    changes what is POSSIBLE rather than by how much. Candidates, all of which
    change a rule the game already has: crystals that level while carried rather
    than only while socketed; a descent that runs longer and pays per clear
    rather than per kill; danger that hurts less and pays less. None is picked.
 
-4. **What is the fifth socket?** Wanted as an endgame slot holding something
+6. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-5. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
+7. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
    was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
    BELOW** four Demonic crystals on damage taken per second, and with mana
    removed entirely it is only 2.0% above — so the ordering was always inside
@@ -345,12 +593,11 @@ standing between the roadmap and a session's work; the rest block nothing.
    composition does — both auras on one pack, or a Seam-only carrier — which is
    a balance decision rather than a measurement. The gap also MOVES several
    percent either way whenever anything in the sim changes — mana shifted it,
-   potions shifted it back — so the demo holds the Seam to the same CLASS as the
-   hardest single world (within 15%) rather than to an ordering, and PRINTS the
-   margin so an answer has something to read. `CLAUDE.md` says it is an open
-   question rather than a claim.
+   potions shifted it back — so the demo PRINTS the margin rather than asserting
+   an ordering, and `CLAUDE.md` says it is an open question rather than a claim.
+   Nothing is blocked on it: it is a balance answer, and balance waits.
 
-6. **The Cavern and the Fissure have no currency of their own.** Retiring the
+8. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
