@@ -303,9 +303,14 @@ than the fight.
 **Why it is wrong.** With mana costed, running dry has no answer, and a run
 you can only watch has no moment in it that is yours.
 
-- [ ] A life potion and a mana potion. **Two charges each per descent**,
-      refilled on the descent after — so they are part of a descent's budget
-      rather than a stockpile, and a cleared run always starts full.
+- [ ] A potion is an EFFECT WITH A DURATION, not an instant heal. The life one
+      is a few seconds of heavy life regeneration and the mana one is the same
+      for mana — the plainest possible instance of "a thing that is true for a
+      while". Built any other way, the trade that turns potions into buffs is a
+      rewrite rather than a table entry, and that trade is already designed.
+- [ ] **Two charges each per descent**, refilled on the descent after — so they
+      are part of a descent's budget rather than a stockpile, and a cleared run
+      always starts full.
 - [ ] Charges are RUN state, not save state: they live on `RunState`, and
       `RunSim` grows the one input it has ever had. Nothing about a potion is
       in `GameState` yet — the ways to modify them come later.
@@ -314,9 +319,20 @@ you can only watch has no moment in it that is yours.
 - [ ] The tutorial's opening hint stops saying there is nothing to time, and
       the opening teaches the two keys somewhere. This is the first thing a
       player DOES in a fight and it cannot be a secret.
-- [ ] A headless run has to be able to drink, or every balance harness measures
-      a character playing with one hand — `runToCompletion` decides when, and
-      the rule it uses is written down rather than clever.
+- [ ] **Automation is universal and is never a build choice.** Potions
+      auto-use on a threshold, the threshold is the player's to set, and the
+      shipped default is the one every harness runs — so `runToCompletion` and
+      the in-game automation are ONE rule with one implementation. A build
+      whose power needs the player present is a build no harness can hold, and
+      `RULES.md` forbids it.
+- [ ] The ladder is measured with potions ON, as the floor. Auto-firing potions
+      hand every character in the game the equivalent of extra life at all
+      times; counted as a bonus on top of the existing numbers rather than as
+      part of them, every band is quietly softer than it reads.
+- [ ] On-screen buttons beside the map, with 1 and 2 as the shortcut rather
+      than the interface. `npm run shots` runs a 390px viewport: a phone has no
+      number row, and a potion nobody can reach there is not optional, it is
+      missing.
 
 **What must not break.** The sim is deterministic and replay-safe: an input
 arriving between ticks must land on a tick boundary like everything else, or
@@ -362,7 +378,87 @@ print, and the retune that set them was a phase of its own. Measure before and
 after, and give `ladderCharacter` a spread so a measured character is not a
 character with no attributes at all.
 
-### Phase 10 — Every monster brings its own element [user 10]
+### Phase 10 — Trades: the part of a character that is not the skill
+
+**What is true today.** Every scrap of build identity in this game belongs to
+the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
+(`character.skills[skillId].allocated`), funded by that skill's own level
+through `treePointsFor` and capped at `MAX_TREE_POINTS = 30`. Change from
+Strike to Blight and the whole of what your character was is gone. Character
+level funds attributes and nothing else; gear and crystals are things you find
+rather than things you chose to become.
+
+**Why it is wrong.** Nothing about a character persists across the one choice
+the game most wants you to experiment with, and there is no reason to keep a
+character rather than start another — which is a strange thing to be true the
+week three save slots landed.
+
+**The shape, and why it is a SEPARATE tree.** On one tree, "specialist
+identity" and "generic stats" compete for the same points, so the play is to
+beeline the cheapest path to the payoff and take whatever is on the way. Two
+trees cannot be compared, so the identity is chosen on taste and the stats on
+arithmetic. That is the entire mechanism, and it means **trade points must be
+their own currency** — fund them from skill points and the beeline is back.
+
+A trade is not a class: every skill, every attribute and every piece of gear
+stays available to every trade. The word is the world's own — the only person
+in the game is named for his trade — and it carries none of the rigidity.
+
+- [ ] A trade tree is **20 nodes: 10 that matter and 10 travel**, roughly
+      alternating, and a character has **10 points** — so half the tree, and
+      about five of the big ones. Smaller and denser than a skill tree, which
+      is 30 points over a much wider web.
+- [ ] **1 point every 5 character levels**, capped at 10 — so a full trade is a
+      character at level 50. This is the second job character level has and the
+      first one that is a choice.
+- [ ] **Every trade changes a RULE, not a number.** A trade that hands out
+      percentages competes with the others on percentages and one of them wins;
+      a trade that changes what is POSSIBLE cannot be compared to another one.
+      This is the rule the whole system lives or dies on. `GRANTS` in
+      `sim/grants.ts` is already a table of switches rather than numbers and a
+      trade hands them out the same way a node or a unique does — declared,
+      read by something, and paid for.
+- [ ] **Two trades to start, not six.** The framework is what is expensive and
+      two good ones beat six thin ones. The first is the **Alchemist**: potions
+      stop being a safety net and become the character's engine — they carry
+      buffs, they refresh themselves, and charges come back during a descent,
+      so a potion is a cooldown rather than a budget. What the buff DOES is
+      specialised inside the tree (fire, projectiles, critical, whatever the
+      nodes offer), and the real decision inside it is UPTIME: magnitude
+      against duration against how fast charges return. Stack magnitude and you
+      get windows of enormous power between dry spells; stack regeneration and
+      you are permanently a little better. Same points, different characters,
+      and a harness can measure both.
+- [ ] Trade grants reach the sim through `treeGrants` in `src/sim/stats.ts`,
+      which already merges the tree with what is worn. A third source is a
+      third argument, not a new concept.
+- [ ] Allocation goes through `canAllocate` and is REPLAYED by `heal()` the way
+      skill trees are, so a reshaped trade refunds its points rather than
+      leaving a build nobody could have walked to. Node ids take a `prefix` no
+      other tree uses — a save points at them.
+- [ ] Whether `TreeSpec`/`buildTree`/`layout.ts` bend to a 20-node tree or a
+      trade gets a sibling of them. `buildTree` currently REFUSES anything that
+      is not six branches and six trunk notables, so one of those two things
+      has to give. Either way the demo's geometry rules apply unchanged: no
+      link crosses another, and none passes under a node it does not join.
+- [ ] Changing trade is allowed, at a price. Everything else in this game is
+      forgiving — `heal()` refunds what a reshaped tree stranded, allocations
+      are replayed rather than trusted — and a hard lock would be the only
+      unforgiving thing in it.
+- [ ] **How you GET a trade is a placeholder and is marked as one.** It is
+      meant to come out of a storyline with the Lampwright that does not exist
+      yet — see the open question. Until it does, you pick when you earn the
+      first point, and the story replaces the ACQUISITION without touching the
+      tree, the points or the allocation.
+
+**What must not break.** Two trades that change rules move every ladder number
+in `src/demo.ts`, and `ladderCharacter` in `src/sim/loadout.ts` builds the
+characters those harnesses measure — decide what trade a measured character has
+before reading anything into the numbers. The demo already holds every tree to
+its geometry and every grant to being declared and read; a trade tree that
+skips those checks is a tree nobody is checking.
+
+### Phase 11 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -418,7 +514,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 11 — What a node does, shown and not overlapped [user 8]
+### Phase 12 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -458,16 +554,31 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. Both are the user's to answer and neither blocks a phase
-in this file — the six that did have been answered and are written into the
-phases above.
+Do not guess at these. None of them blocks a phase in this file — the six that
+did have been answered and are written into the phases above. The first two are
+new and come out of the trade system.
 
-1. **What is the fifth socket?** Wanted as an endgame slot holding something
+1. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
+   and the intent is a storyline with the Lampwright rather than a level
+   threshold — he is the only person in the game and the only voice it has.
+   Nothing about it is written: what he is doing down there, what he asks for,
+   how many beats it runs, whether it hands out anything besides the trade.
+   The phase ships a placeholder that the story replaces without touching the
+   tree or the points, so this blocks the STORY and not the system.
+
+2. **What the second trade is.** The Alchemist is designed. The framework phase
+   asks for two, and the rule the second has to clear is the same one: it
+   changes what is POSSIBLE rather than by how much. Candidates, all of which
+   change a rule the game already has: crystals that level while carried rather
+   than only while socketed; a descent that runs longer and pays per clear
+   rather than per kill; danger that hurts less and pays less. None is picked.
+
+3. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think
    about it. `RULES.md` says how to keep it cheap to add; nothing else may
    assume it.
 
-2. **The Cavern and the Fissure have no currency of their own.** Retiring the
+4. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated

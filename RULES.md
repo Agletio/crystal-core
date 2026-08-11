@@ -143,6 +143,21 @@ changes WHICH damage type and names no amount; the two currencies that act on
 every modifier or on no particular one; and the flavour above. `GRANTS[].what`
 is out too, because it describes a switch with no value attached — see below.
 
+**No build's power may depend on the player being present.** This is an idle
+game whose every balance number comes from headless runs — the ladder grids,
+the quest timings, the termination check. A build that only pays out while
+somebody is watching is a build no harness can hold, which makes it a build
+nobody can tune. So automation is universal and never a build choice: anything
+a player can do mid-descent has a shipped default policy, that policy is what
+`runToCompletion` runs, and the two are ONE implementation. The reward for
+watching is the small gap between a threshold and a person, and it stays small
+on purpose — five or ten percent, not thirty.
+
+Nothing hidden and nothing to aim at, either: a policy can see everything a
+player can, so any advantage a player has here is judgement rather than
+reflexes. Keep it that way — the day something needs positioning or aiming,
+this rule stops holding and the harnesses stop meaning anything.
+
 **The guided opening teaches in bursts and lets go between them.** A step that
 cannot be finished right now must never hold the screen: no card following you
 about, no lockdown, while what it is waiting for is a level or a drop or a
