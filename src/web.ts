@@ -51,6 +51,7 @@ import {
   skillsDepth,
   skillsEscape,
 } from './ui/skills';
+import { initTrade, openTrade, closeTrade, isTradeOpen } from './ui/trade';
 import {
   initHistory,
   openHistory,
@@ -119,6 +120,7 @@ document.getElementById('open-crystals')!.addEventListener('click', openCrystals
 document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-character')!.addEventListener('click', () => openCharacter());
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
+document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', openSaveData);
 // The dev kit wipes what you are playing, and it sits in a row you click all
@@ -147,6 +149,7 @@ globalThis.addEventListener('keydown', (event) => {
   else if (isSaveDataOpen()) closeSaveData();
   // Skills is three deep, so Escape backs out a level, like Back.
   else if (isSkillsOpen()) skillsEscape();
+  else if (isTradeOpen()) closeTrade();
   else if (isCharacterOpen()) closeCharacter();
   else if (isHistoryOpen()) closeHistory();
   else if (isHaulOpen()) closeHaul();
@@ -192,6 +195,8 @@ initSaveData(
 // screen's readouts have to re-read after either.
 initCharacter(game, refreshRunPanels, onRunFocused);
 initSkills(game, refreshRunPanels);
+// A trade node changes what the sim does, so the map's readouts re-read too.
+initTrade(game, refreshRunPanels);
 // A craft can land on a worn piece now, so the map's readouts re-read after one.
 initCraft(game, onRunFocused, () => {
   refreshRunPanels();
@@ -290,6 +295,8 @@ function guideContext(): GuideCtx {
       ? 'save'
     : isSkillsOpen()
       ? 'skills'
+    : isTradeOpen()
+      ? 'trade'
       : isCharacterOpen()
         ? 'sheet'
         : isHistoryOpen()

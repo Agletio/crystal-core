@@ -21,7 +21,7 @@ import {
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
-import { critBuff, starvedMultiplier } from './grants';
+import { critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { equippedSkill, mainSkillId, monsterXp } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
@@ -284,6 +284,12 @@ export interface RunState {
   charges: Record<string, number>;
   /** Charges spent, so a harness can say whether the floor was actually used. */
   drunk: number;
+  /** Charges a trade handed back mid-descent. Zero without one. */
+  regained: number;
+  /** Uses that spent a share of the pool for damage. Zero without the node. */
+  overcharges: number;
+  /** Damage the mana pool paid for instead of your life. */
+  absorbed: number;
 }
 
 const FLOATER_LIFE = 1.1;
@@ -308,6 +314,10 @@ export class RunSim {
   private useCrit: boolean | null = null;
   /** True for the length of a cast the hero could not pay for. */
   private starved = false;
+  /** True for the length of a cast that bought extra damage with the pool. */
+  private overcharged = false;
+  /** Fractions of a flask charge banked back, by potion id. */
+  private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
   private blinkIn = 0;
   /** The movement skill in the slot, resolved once. Null without one. */
@@ -412,6 +422,9 @@ export class RunSim {
       casts: 0,
       charges: Object.fromEntries(POTIONS.map((p) => [p.id, p.charges])),
       drunk: 0,
+      regained: 0,
+      overcharges: 0,
+      absorbed: 0,
       lampwright: null,
       meeting: false,
       met: false,
@@ -1175,6 +1188,7 @@ export class RunSim {
   private stepPotions(dt: number): void {
     const hero = this.state.hero;
 
+    this.stepRecharge(dt);
     for (const id of this.queued) this.drink(id);
     this.queued.length = 0;
 
@@ -1185,23 +1199,49 @@ export class RunSim {
     }
 
     if (hero.effects.length === 0) return;
+    const potency = (this.grants.potionPotency as number) ?? 1;
     for (const effect of hero.effects) {
       effect.remaining -= dt;
       const potion = POTION_BY_ID[effect.id];
       if (!potion) continue;
       const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
-      const gain = ((max * potion.percentPerSecond) / 100) * dt;
+      const gain = ((max * potion.percentPerSecond * potency) / 100) * dt;
       if (potion.pool === 'life') hero.life = Math.min(max, hero.life + gain);
       else hero.mana = Math.min(max, hero.mana + gain);
     }
     hero.effects = hero.effects.filter((e) => e.remaining > 0);
   }
 
+  /** A charge as a cooldown rather than a budget: banked fractionally per flask
+   *  and never past what that flask holds, so it is never a stockpile. */
+  private stepRecharge(dt: number): void {
+    const rate = (this.grants.chargeRegen as number) ?? 0;
+    if (rate <= 0) return;
+    for (const potion of POTIONS) {
+      if ((this.state.charges[potion.id] ?? 0) >= potion.charges) continue;
+      const banked = (this.recharging[potion.id] ?? 0) + rate * dt;
+      const whole = Math.floor(banked);
+      this.recharging[potion.id] = banked - whole;
+      if (whole <= 0) continue;
+      this.state.charges[potion.id] = Math.min(
+        potion.charges,
+        (this.state.charges[potion.id] ?? 0) + whole
+      );
+      this.state.regained += whole;
+    }
+  }
+
+  /** True while any flask is pouring. What every `potion*` grant is waiting on. */
+  private flasked(): boolean {
+    return this.state.hero.effects.some((e) => POTION_BY_ID[e.id] !== undefined);
+  }
+
   private drink(id: string): void {
     if (!this.canDrink(id)) return;
     this.state.charges[id]--;
     this.state.drunk++;
-    this.state.hero.effects.push({ id, remaining: POTION_BY_ID[id].seconds });
+    const longer = (this.grants.potionDuration as number) ?? 1;
+    this.state.hero.effects.push({ id, remaining: POTION_BY_ID[id].seconds * longer });
   }
 
   /** The one place mana is spent. Short of it you are STARVED: the pool drains
@@ -1213,8 +1253,23 @@ export class RunSim {
     hero.mana = paid ? hero.mana - cost : 0;
     if (!paid) this.state.dryCasts++;
     this.starved = !paid;
+    // A cost that is a SHARE of the pool, so stacking mana pays for itself.
+    this.overcharged = paid && this.spendOvercharge(hero);
     this.useSkill(hero, target, this.skill);
     this.starved = false;
+    this.overcharged = false;
+  }
+
+  /** Whether this use was overcharged. Silently skipped when the pool is short,
+   *  so the trade never turns a payable cast into a starved one. */
+  private spendOvercharge(hero: Entity): boolean {
+    const deal = overchargeOf(this.grants);
+    if (!deal) return false;
+    const price = hero.stats.maxMana * deal.share;
+    if (price <= 0 || hero.mana < price) return false;
+    hero.mana -= price;
+    this.state.overcharges++;
+    return true;
   }
 
   private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
@@ -1228,8 +1283,8 @@ export class RunSim {
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
-    const crit =
-      user.stats.critChance > 0 && this.rng.chance(user.stats.critChance / 100);
+    const chance = this.critChanceOf(user);
+    const crit = chance > 0 && this.rng.chance(chance / 100);
 
     // Kindling and the like: the roll still HAPPENS — the behaviour needs to
     // know a crit came up so it can do something else with it — but the hit
@@ -1260,7 +1315,19 @@ export class RunSim {
     });
 
     this.useCrit = null;
-    user.cooldown = 1 / user.stats.attacksPerSecond;
+    user.cooldown = 1 / (user.stats.attacksPerSecond * this.hasteOf(user));
+  }
+
+  /** Critical chance, plus whatever a running flask is adding to the hero's. */
+  private critChanceOf(e: Entity): number {
+    const flask = e.kind === 'hero' && this.flasked() ? (this.grants.potionCrit as number) ?? 0 : 0;
+    return e.stats.critChance + flask;
+  }
+
+  /** Rate multiplier from a running flask. One for everyone else, always. */
+  private hasteOf(e: Entity): number {
+    if (e.kind !== 'hero' || !this.flasked()) return 1;
+    return 1 + ((this.grants.potionHaste as number) ?? 0) / 100;
   }
 
   private dealDamage(
@@ -1274,15 +1341,18 @@ export class RunSim {
 
     // Inside a skill use, crit was decided once for the whole cast. A plain
     // monster swing rolls its own.
-    const crit =
-      this.useCrit ??
-      (attacker.stats.critChance > 0 &&
-        this.rng.chance(attacker.stats.critChance / 100));
+    const own = this.critChanceOf(attacker);
+    const crit = this.useCrit ?? (own > 0 && this.rng.chance(own / 100));
 
     let scale = multiplier * this.rng.float(0.9, 1.1);
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
+    // Conditions on the WHOLE use: a burst is worth what made it.
+    if (attacker.kind === 'hero') {
+      if (this.overcharged) scale *= 1 + (overchargeOf(this.grants)?.more ?? 0);
+      if (this.flasked()) scale *= (this.grants.potionMore as number) ?? 1;
+    }
     // From a crit that landed BEFORE this one: the crit granting it never
     // hits harder for doing so.
     const buff = attacker.kind === 'hero' ? critBuff(this.grants) : null;
@@ -1312,6 +1382,18 @@ export class RunSim {
     // The floor is on the HIT, not per type: a hit split six ways would
     // otherwise be worth six times the minimum.
     dmg = Math.max(1, dmg);
+
+    // The pool takes its share before life does, and what it took comes off
+    // every type in proportion — so the overlay reports what actually landed.
+    if (defender.kind === 'hero') {
+      const before = dmg;
+      dmg = this.absorb(defender, dmg);
+      if (dmg < before) {
+        const kept = dmg / before;
+        for (const type of Object.keys(byType)) byType[type] *= kept;
+      }
+    }
+    if (attacker.kind === 'hero') this.leech(attacker, dmg);
 
     // Being hit is the most reliable way to notice someone, whatever the
     // range or the line of sight.
@@ -1431,6 +1513,7 @@ export class RunSim {
   private stepAilments(e: Entity, dt: number): void {
     if (e.ailments.length === 0 || e.dead) return;
     let total = 0;
+    const byType: Record<string, number> = {};
     let contagious: Ailment['spread'][] = [];
 
     for (const ailment of e.ailments) {
@@ -1457,12 +1540,21 @@ export class RunSim {
       for (const [type, dps] of Object.entries(ailment.dps)) {
         const dealt = this.afterResistance(e, dps * scale, type);
         total += dealt;
-        if (e.kind === 'hero') {
-          this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + dealt;
-        }
+        if (e.kind === 'hero') byType[type] = (byType[type] ?? 0) + dealt;
       }
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);
+
+    // The pool eats a poison exactly as it eats a hit. Armour never could,
+    // which is the whole reason letting mana do it is worth a trade.
+    if (e.kind === 'hero') {
+      const before = total;
+      total = this.absorb(e, total);
+      const kept = before > 0 ? total / before : 1;
+      for (const [type, dealt] of Object.entries(byType)) {
+        this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + dealt * kept;
+      }
+    }
 
     // Spread BEFORE the victim can die, so a killing tick still infects the
     // pack — the corpse is exactly when you want the disease to jump.
@@ -1507,6 +1599,25 @@ export class RunSim {
       spread.skill.damageTypes[0] ?? 'poison',
       jumped ? 0.5 : 0.3
     );
+  }
+
+  /** A share of what would reach the hero, paid at one point of pool for one of
+   *  damage. Returns what gets through, and is the one seam a hit and an
+   *  ailment tick both ask, so the two can never drift. */
+  private absorb(hero: Entity, damage: number): number {
+    const share = shieldShare(this.grants);
+    if (share <= 0 || hero.mana <= 0 || damage <= 0) return damage;
+    const paid = Math.min(hero.mana, damage * share);
+    hero.mana -= paid;
+    this.state.absorbed += paid;
+    return damage - paid;
+  }
+
+  /** Damage dealt, back as mana. The road that pays for spending the pool. */
+  private leech(hero: Entity, damage: number): void {
+    const share = (this.grants.manaLeech as number) ?? 0;
+    if (share <= 0 || damage <= 0) return;
+    hero.mana = Math.min(hero.stats.maxMana, hero.mana + damage * share);
   }
 
   /** A defender's armour once the room has had its say. The stat pipeline's

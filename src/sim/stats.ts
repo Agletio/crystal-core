@@ -22,6 +22,7 @@ import {
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
+import { tradeGrants } from '../trades';
 import { critBuff, mergeGrants } from './grants';
 import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
 
@@ -256,7 +257,10 @@ export function heroStats(
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
 
-  const maxMana = computeStat(HERO_BASE.mana, mods, 'mana');
+  // The Aethermancer's one road to mana that nothing else offers: it lands on
+  // the BASE, so Intelligence and a ring of the Well scale it like any other.
+  const vein = typeof grants.poolFromLife === 'number' ? grants.poolFromLife : 0;
+  const maxMana = computeStat(HERO_BASE.mana + maxLife * vein, mods, 'mana');
 
   return {
     maxLife,
@@ -358,9 +362,8 @@ export function attributeMod(character: Character): RolledMod | null {
   };
 }
 
-/** Behaviour switches from every allocated node, merged. */
-/** Every switch the sim is holding: the tree, then what is WORN — gear merges
- *  last, so a unique bought with a downside wins a tie against a node. */
+/** Every switch the sim is holding: the skill's tree, the TRADE, then what is
+ *  WORN — gear merges last, so a unique bought with a downside wins a tie. */
 export function treeGrants(character: Character): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const progress = character.skills[mainSkillId(character)];
@@ -371,6 +374,9 @@ export function treeGrants(character: Character): Record<string, unknown> {
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
     mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
   }
+  // A third SOURCE, not a third concept: a trade node is declared in the same
+  // table and merged by the same rules as a tree node and a unique.
+  mergeGrants(out, tradeGrants(character.trade, character.tradeAllocated ?? []));
   for (const worn of equippedItems(character)) {
     const def = UNIQUE_BY_ID[String(worn.meta.unique)];
     if (def?.grants) mergeGrants(out, def.grants);

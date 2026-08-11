@@ -2268,6 +2268,105 @@ assert(
   );
 }
 
+// --- the trade: the part of a character that is not the skill -------------
+// Last, because it grants character levels to reach the first point and every
+// check above reads a character this one has moved.
+{
+  // A row for a rule you do not have is a row about nothing.
+  assert(
+    $('run-warded-row').hidden === true && $('run-overcharged-row').hidden === true,
+    'the run readout says nothing about a trade rule that is not firing'
+  );
+  assert($('open-trade') !== null, 'there is a Trade button in the header');
+  $('open-trade').click();
+  assert($('trade').hidden === false, 'and it opens a screen of its own');
+  assert(
+    all('#trade-pick .catcard').length === 2,
+    'two trades are offered, and neither is picked for you',
+    String(all('#trade-pick .catcard').length)
+  );
+  assert($('trade-swap').hidden === true, 'and nothing offers to change one you do not have');
+  assert(
+    all('#trade-pick .catcard').every((c) => c.disabled === true),
+    'and neither can be taken up before a level has paid for a point'
+  );
+  assert($('trade-webwrap').hidden === true, 'no web is drawn before one is taken up');
+  assert(
+    $('open-trade').querySelector('.tabbadge') === null,
+    'and nothing is waiting before a level pays for it'
+  );
+  const before = text('trade-sub');
+  assert(/\d/.test(before), 'the screen says which level hands over the first point', before);
+
+  // Five character levels buy the first point. Levelling is the only thing
+  // that does, which is what makes a trade the second job a level has.
+  $('trade-close').click();
+  $('open-character').click();
+  for (let i = 0; i < 6; i++) $('sheet-devlevel').click();
+  $('sheet-close').click();
+  assert(
+    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
+    'the header says one trade point is waiting',
+    $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
+  );
+
+  $('open-trade').click();
+  $('trade-pick-alchemist').click();
+  assert($('trade-webwrap').hidden === false, 'taking one up draws its web');
+  assert(
+    all('#trade-web .web__node').length === 20,
+    'twenty nodes, drawn to fit rather than scrolled',
+    String(all('#trade-web .web__node').length)
+  );
+  assert(
+    $('trade-web').querySelector('.web--drag') === null &&
+      window.getComputedStyle($('trade-web')).cursor === 'default',
+    'and it is a picture rather than a map — nothing to drag'
+  );
+
+  const open = () => all('#trade-web .web__node--open');
+  assert(open().length === 5, 'five ways in, one per spoke', String(open().length));
+  open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#trade-web .web__node--on').length === 1,
+    'a point spends on the node you clicked',
+    String(all('#trade-web .web__node--on').length)
+  );
+  assert(
+    $('open-trade').querySelector('.tabbadge') === null,
+    'and the badge goes away rather than reading 0'
+  );
+  assert(open().length === 0, 'nothing else lights up with nothing left to spend');
+
+  all('#trade-web .web__node--on')[0].dispatchEvent(
+    new window.MouseEvent('click', { bubbles: true })
+  );
+  assert(
+    all('#trade-web .web__node--on').length === 0 &&
+      $('open-trade').querySelector('.tabbadge')?.textContent === '1',
+    'clicking it again refunds the point',
+    String(all('#trade-web .web__node--on').length)
+  );
+
+  // Changing trade names its price. Nothing is unforgiving in this game.
+  assert(
+    /\d+ gold/.test(text('trade-swap')),
+    'and swapping says what it costs, in figures',
+    text('trade-swap')
+  );
+  $('trade-swap').click();
+  assert(
+    $('trade-pick').hidden === false && $('trade-webwrap').hidden === true &&
+      all('#trade-pick .catcard').length === 1,
+    'asking to change offers the other trade, and only the other one',
+    String(all('#trade-pick .catcard').length)
+  );
+  $('trade-swap').click();
+  assert($('trade-webwrap').hidden === false, 'and backing out puts the web back');
+  $('trade-close').click();
+  assert($('trade').hidden === true, 'and it closes again');
+}
+
 // --- keeping going is not a choice ----------------------------------------
 // Chaining descents is what this game is; Leave after this run and Abandon are
 // the two ways out and there is no third.

@@ -9,6 +9,7 @@ import {
   SKILL_SLOT_BY_ID,
 } from '../data';
 import { treePointsFor } from '../skills-tree';
+import { TRADE_BY_ID, canAllocateTrade, canDeallocateTrade, tradePointsFor } from '../trades';
 import type { Item } from '../types';
 
 /**
@@ -38,6 +39,10 @@ export interface Character {
   /** Attribute id → points put in. What a character LEVEL bought, spent by
    *  hand on the sheet; the tree is per skill and this is not. */
   attributes: Record<string, number>;
+  /** The trade taken up, or null before one is. Survives every skill swap. */
+  trade: string | null;
+  /** Nodes walked on it, out of a budget character level funds. */
+  tradeAllocated: string[];
 }
 
 export function makeCharacter(
@@ -52,7 +57,42 @@ export function makeCharacter(
     equipped: { [MAIN_SLOT]: skillId },
     skills: {},
     attributes: {},
+    trade: null,
+    tradeAllocated: [],
   };
+}
+
+/** Points a character level has bought toward a trade, and what is left of them. */
+export const tradePointsLeft = (character: Character): number =>
+  tradePointsFor(character.level) - (character.tradeAllocated?.length ?? 0);
+
+/**
+ * IN PLACE. Taking up a trade for the first time, or swapping to another —
+ * which refunds every point, since what a swap costs is gold and the walk.
+ */
+export function takeUpTrade(character: Character, tradeId: string): boolean {
+  if (!TRADE_BY_ID[tradeId] || character.trade === tradeId) return false;
+  character.trade = tradeId;
+  character.tradeAllocated = [];
+  return true;
+}
+
+/** One node, or nothing when it is not reachable or nothing is spare. */
+export function allocateTrade(character: Character, nodeId: string): boolean {
+  const trade = character.trade;
+  if (!trade || tradePointsLeft(character) <= 0) return false;
+  character.tradeAllocated ??= [];
+  if (!canAllocateTrade(trade, nodeId, character.tradeAllocated)) return false;
+  character.tradeAllocated.push(nodeId);
+  return true;
+}
+
+/** Refused when it would strand another node, exactly as a tree refund is. */
+export function deallocateTrade(character: Character, nodeId: string): boolean {
+  const trade = character.trade;
+  if (!trade || !canDeallocateTrade(trade, nodeId, character.tradeAllocated ?? [])) return false;
+  character.tradeAllocated = character.tradeAllocated.filter((id) => id !== nodeId);
+  return true;
 }
 
 /** What is in a slot, or null. Nothing else may read `equipped` directly. */

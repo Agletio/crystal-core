@@ -26,7 +26,8 @@ import {
   UNIQUE_BY_ID,
   crystalName,
 } from '../data';
-import { canAllocate, nodeById, treeFor, treePointsFor } from '../skills-tree';
+import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
+import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
 import { reserveItemIds } from '../economy';
 import { attributePointsFor } from '../sim/character';
 import type { Character } from '../sim/character';
@@ -210,33 +211,13 @@ const baseExists = (item: Item): boolean => {
   return GEAR_BASE_BY_ID[item.base] !== undefined;
 };
 
-/**
- * Re-walks the allocation with the game's own rule instead of trusting it.
- *
- * Anything that cannot be re-bought — its node is gone, its path home went
- * through a node that is gone, or the gate it sits behind is now further out
- * than the points left — falls out and is refunded. Order does not matter: the
- * pass repeats until nothing more can be taken.
- */
+/** Re-walked with the game's own rule instead of trusted: anything that cannot
+ *  be re-bought falls out and is refunded. */
 function replayTree(character: Character, skillId: string): number {
   const progress = character.skills[skillId];
   if (!progress) return 0;
 
-  const wanted = progress.allocated.filter((id) => nodeById(skillId, id));
-  const cap = Math.min(treePointsFor(progress.level), wanted.length);
-  const kept: string[] = [];
-
-  for (let added = true; added && kept.length < cap; ) {
-    added = false;
-    for (const id of wanted) {
-      if (kept.includes(id)) continue;
-      if (!canAllocate(skillId, id, kept)) continue;
-      kept.push(id);
-      added = true;
-      if (kept.length >= cap) break;
-    }
-  }
-
+  const kept = replayTreeNodes(skillId, progress.allocated, treePointsFor(progress.level));
   const lost = progress.allocated.length - kept.length;
   progress.allocated = kept;
 
@@ -271,6 +252,27 @@ function replayAttributes(character: Character): number {
 
   character.attributes = kept;
   return lost;
+}
+
+/**
+ * And the same for a trade, against the points character level granted. A
+ * trade that is cut takes the walk with it and hands back every point; nothing
+ * else about the character moves, because a trade owns nothing else.
+ */
+function replayTrade(character: Character): number {
+  const wanted = (Array.isArray(character.tradeAllocated) ? character.tradeAllocated : []).filter(
+    (id) => typeof id === 'string'
+  );
+  const trade = character.trade;
+
+  if (!trade || !TRADE_BY_ID[trade]) {
+    character.trade = null;
+    character.tradeAllocated = [];
+    return wanted.length;
+  }
+  const kept = replayTradeNodes(trade, wanted, tradePointsFor(character.level));
+  character.tradeAllocated = kept;
+  return wanted.length - kept.length;
 }
 
 /**
@@ -420,6 +422,7 @@ export function heal(game: GameState): Healed {
   }
 
   out.points += replayAttributes(game.character);
+  out.points += replayTrade(game.character);
 
   out.skill = healSkillSlots(game.character);
   return out;

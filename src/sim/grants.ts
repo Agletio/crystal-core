@@ -73,7 +73,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${more(n)} damage while out of mana`;
+      return n === null ? null : `${more(n)} more damage while out of mana`;
     },
   },
 
@@ -86,6 +86,128 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const p = pair(v, 'more', 'seconds');
       return p && `Critical hits deal no extra damage; landing one grants ${p[0]}% more damage for ${p[1]}s`;
+    },
+  },
+
+  // --- what a TRADE hands over ---------------------------------------------
+  //
+  // Every one of these reads STATS, which is the layer that runs whatever the
+  // skill's delivery is: a trade belongs to the character, so a switch that
+  // only worked for one behaviour would be a trade you had to pick a skill for.
+  {
+    id: 'potionMore',
+    what: 'you deal more damage while a flask is running',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${more(n)} more damage while a flask is running`;
+    },
+  },
+  {
+    id: 'potionHaste',
+    what: 'you attack and cast faster while a flask is running',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${n}% increased attack and cast speed while a flask is running`;
+    },
+  },
+  {
+    id: 'potionCrit',
+    what: 'you critically strike more often while a flask is running',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n}% critical chance while a flask is running`;
+    },
+  },
+  {
+    id: 'potionDuration',
+    what: 'a flask runs for longer',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Flasks run ${more(n)} longer`;
+    },
+  },
+  {
+    id: 'potionPotency',
+    what: 'a flask pours harder',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Flasks restore ${more(n)} more per second`;
+    },
+  },
+  {
+    id: 'chargeRegen',
+    what: 'flask charges come back during a descent',
+    // The Alchemist's whole rule: charges stop being a descent's budget and
+    // become a cooldown. Summed, so two nodes shorten the wait together.
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null || n <= 0
+        ? null
+        : `Each flask regains a charge every ${(1 / n).toFixed(1)}s`;
+    },
+  },
+
+  {
+    id: 'manaShield',
+    what: 'damage taken comes off mana before life',
+    // Ailments included: they are already the thing armour cannot stop, so the
+    // pool eating them is the whole reason this is worth a trade.
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of damage taken, ailments included, is paid out of mana first`;
+    },
+  },
+  {
+    id: 'overcharge',
+    what: 'a cast may spend a share of your maximum mana for more damage',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'share', 'more');
+      return p && `Each use spends a further ${pct(p[0])} of your maximum mana and deals ${pct(p[1])} more damage`;
+    },
+  },
+  {
+    id: 'overchargeMore',
+    what: 'an overcharged cast deals more still',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `An overcharged use deals a further ${pct(n)} more damage`;
+    },
+  },
+  {
+    id: 'manaLeech',
+    what: 'damage you deal comes back as mana',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of the damage you deal returns as mana`;
+    },
+  },
+  {
+    id: 'poolFromLife',
+    what: 'part of your life counts toward your mana pool',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of your maximum life is added to your mana pool`;
     },
   },
 
@@ -300,3 +422,22 @@ export function starvedMultiplier(grants: Record<string, unknown>): number {
   const own = typeof grants.starvedDamage === 'number' ? grants.starvedDamage : 1;
   return Math.max(0, Math.min(1, MANA.starvedDamage * own));
 }
+
+/**
+ * What an overcharged use costs and what it is worth, or null. The base node
+ * declares both halves and every amplifier after it sums into `more`, so the
+ * sim, the sheet and the card all read one answer.
+ */
+export function overchargeOf(
+  grants: Record<string, unknown>
+): { share: number; more: number } | null {
+  const v = grants.overcharge as { share?: unknown; more?: unknown } | undefined;
+  if (typeof v?.share !== 'number' || typeof v?.more !== 'number') return null;
+  const extra = typeof grants.overchargeMore === 'number' ? grants.overchargeMore : 0;
+  return { share: Math.max(0, v.share), more: Math.max(0, v.more + extra) };
+}
+
+/** The share of a hit the mana pool pays before life does. Capped: a pool that
+ *  ate everything would be a second life bar rather than a trade. */
+export const shieldShare = (grants: Record<string, unknown>): number =>
+  Math.max(0, Math.min(MANA.shieldCap, (grants.manaShield as number) ?? 0));

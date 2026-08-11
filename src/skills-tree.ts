@@ -7,6 +7,7 @@
  * `stats` are ordinary stat lines; `grants` are switches that CHANGE HOW THE
  * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
  */
+import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
 import { buildTree } from './trees/layout';
 import { BLIGHT_SPEC } from './trees/blight';
 import { FIREBALL_SPEC } from './trees/fireball';
@@ -38,74 +39,28 @@ export function nodeById(skillId: string, nodeId: string): SkillNodeDef | undefi
   return treeFor(skillId).find((n) => n.id === nodeId);
 }
 
-/**
- * Every node's neighbours, both directions. Links are declared one-way; naming
- * both ends by hand is how a web ends up with one that only works left to right.
- */
-const adjacency = new Map<string, Map<string, Set<string>>>();
+/** How a web is walked lives in `webgraph.ts`, over any list of nodes: a trade
+ *  tree asks the same three questions and two copies is one that is wrong. */
+export const neighboursOf = (skillId: string, nodeId: string): Set<string> =>
+  neighboursIn(treeFor(skillId), nodeId);
 
-export function neighboursOf(skillId: string, nodeId: string): Set<string> {
-  let table = adjacency.get(skillId);
-  if (!table) {
-    table = new Map();
-    const nodes = treeFor(skillId);
-    const add = (a: string, b: string) => {
-      if (!table!.has(a)) table!.set(a, new Set());
-      table!.get(a)!.add(b);
-    };
-    for (const node of nodes) {
-      for (const other of node.links) {
-        add(node.id, other);
-        add(other, node.id);
-      }
-    }
-    adjacency.set(skillId, table);
-  }
-  return table.get(nodeId) ?? new Set();
-}
-
-/** Open if it touches the centre or something you own. Distance is the price. */
-export function canAllocate(
+export const canAllocate = (
   skillId: string,
   nodeId: string,
   allocated: readonly string[]
-): boolean {
-  const node = nodeById(skillId, nodeId);
-  if (!node || allocated.includes(nodeId)) return false;
+): boolean => canAllocateIn(treeFor(skillId), nodeId, allocated);
 
-  const near = neighboursOf(skillId, nodeId);
-  if (near.has(CENTRE)) return true;
-  return allocated.some((id) => near.has(id));
-}
-
-/**
- * Refused when it would strand something — a reachability question, not a
- * dependency one, since a node with two routes home survives losing either.
- */
-export function canDeallocate(
+export const canDeallocate = (
   skillId: string,
   nodeId: string,
   allocated: readonly string[]
-): boolean {
-  if (!allocated.includes(nodeId)) return false;
+): boolean => canDeallocateIn(treeFor(skillId), nodeId, allocated);
 
-  const left = new Set(allocated.filter((id) => id !== nodeId));
-  if (left.size === 0) return true;
-
-  const seen = new Set<string>();
-  const queue = [...left].filter((id) => neighboursOf(skillId, id).has(CENTRE));
-  for (const id of queue) seen.add(id);
-
-  while (queue.length) {
-    const at = queue.pop()!;
-    for (const next of neighboursOf(skillId, at)) {
-      if (!left.has(next) || seen.has(next)) continue;
-      seen.add(next);
-      queue.push(next);
-    }
-  }
-  return seen.size === left.size;
-}
+export const replayTreeNodes = (
+  skillId: string,
+  wanted: readonly string[],
+  cap: number
+): string[] => replayWeb(treeFor(skillId), wanted, cap);
 
 /** Levels past the cap still arrive; they just stop buying tree points. */
 export const treePointsFor = (level: number): number => Math.min(level, MAX_TREE_POINTS);

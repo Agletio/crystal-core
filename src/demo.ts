@@ -60,6 +60,7 @@ import {
   SKILLS,
   SKILL_BY_ID,
   SKILL_CATEGORIES,
+  TRADE,
   UNIQUES,
   UNIQUE_BY_ID,
 } from './data';
@@ -118,9 +119,21 @@ import {
   behaviourReads,
   critBuff,
   mergeGrants,
+  overchargeOf,
+  shieldShare,
   starvedMultiplier,
 } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
+import { TRADE_NODES } from './trades/layout';
+import {
+  TRADES,
+  TRADE_BY_ID,
+  canAllocateTrade,
+  canDeallocateTrade,
+  neighboursOfTrade,
+  tradePointsFor,
+  tradeSwitchCost,
+} from './trades';
 import {
   BUILT_TREES,
   CENTRE,
@@ -146,6 +159,10 @@ import {
   pointsAvailable,
   skillProgress,
   spendAttribute,
+  allocateTrade,
+  deallocateTrade,
+  takeUpTrade,
+  tradePointsLeft,
   xpToNext,
 } from './sim/character';
 import type { Character } from './sim/character';
@@ -259,7 +276,9 @@ const rule = (t: string) => {
  * red instead of printing a cross into a log nobody reads.
  */
 let failed = 0;
+let ran = 0;
 function check(ok: boolean, good: string, bad: string): void {
+  ran++;
   if (ok) {
     line(`  ✓ ${good}`);
     return;
@@ -1584,6 +1603,9 @@ rule('GUIDED OPENING — does every step actually complete?');
     { ...AT, top: 'skills', category: myCategory, viewing: mine },
     { ...AT, top: 'skills', category: elsewhere },
     { ...AT, top: 'skills', category: myCategory, viewing: another },
+    // Every modal a step could fire under has to have a way back OUT of it.
+    { ...AT, top: 'trade' },
+    { ...AT, phase: 'results', top: 'trade' },
     // Screens the opening never sends you to. Reachable anyway now that only
     // spending is locked, so every step has to know the way back out of them.
     { ...AT, top: 'history' },
@@ -3551,6 +3573,11 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
       holds(`${tree.spec.skillId}/${node.id}`, node.description);
     }
   }
+  // Every trade node too. A trade is nothing but rules with numbers on them,
+  // so a line here with no figure is a decision the player cannot make.
+  for (const trade of TRADES) {
+    for (const node of trade.nodes) holds(`${trade.spec.id}/${node.id}`, node.description);
+  }
   for (const c of CURRENCIES) {
     // Two of them act on EVERY modifier or on none in particular. There is no
     // figure being withheld, so there is none to print.
@@ -3858,6 +3885,463 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
       `${attributesSpent(spread)} points spread four ways: ` +
       ATTRIBUTES.map((a) => `${a.name.slice(0, 3).toLowerCase()} ${spread.attributes[a.id]}`).join(', ')
   );
+}
+
+// ===========================================================================
+rule('TRADES — is the part that is not the skill worth keeping a character for?');
+
+// A skill tree belongs to the SKILL: change from Strike to Blight and the whole
+// of what your character was is gone. A trade belongs to the character, out of
+// its own budget, and it survives every skill you ever swap to. What can break
+// quietly is a switch nobody reads, a walk that cheats the distance it is meant
+// to cost, or a rule that reads on a card and does nothing in the sim.
+{
+  line(
+    `  ${TRADES.length} trades · ${TRADE.maxPoints} points at level ` +
+      `${TRADE.maxPoints * TRADE.levelsPerPoint}, one every ${TRADE.levelsPerPoint}`
+  );
+
+  check(
+    tradePointsFor(TRADE.levelsPerPoint - 1) === 0
+      && tradePointsFor(TRADE.levelsPerPoint) === 1
+      && tradePointsFor(TRADE.maxPoints * TRADE.levelsPerPoint) === TRADE.maxPoints
+      && tradePointsFor(999) === TRADE.maxPoints,
+    'character level funds it, on its own curve, capped',
+    `${[4, 5, 50, 999].map(tradePointsFor).join(', ')}`
+  );
+
+  for (const trade of TRADES) {
+    const id = trade.spec.id;
+    const nodes = trade.nodes;
+    const notables = nodes.filter((n) => n.kind === 'notable');
+    line(`  ${id}: ${nodes.length} nodes, ${notables.length} of them notable`);
+
+    check(
+      nodes.length === TRADE_NODES
+        && notables.length === TRADE_NODES / 2
+        && new Set(nodes.map((n) => n.id)).size === nodes.length,
+      `${TRADE_NODES} nodes, half of them notables, and no id used twice`,
+      `${nodes.length} nodes, ${notables.length} notable`
+    );
+
+    // Distance is the only price here too: what a node costs is the walk.
+    const distance = new Map<string, number>();
+    let edge = nodes.filter((n) => neighboursOfTrade(id, n.id).has(CENTRE));
+    let step = 1;
+    for (const n of edge) distance.set(n.id, step);
+    while (edge.length) {
+      const next: typeof edge = [];
+      step++;
+      for (const at of edge) {
+        for (const other of neighboursOfTrade(id, at.id)) {
+          if (other === CENTRE || distance.has(other)) continue;
+          const node = nodes.find((n) => n.id === other);
+          if (!node) continue;
+          distance.set(other, step);
+          next.push(node);
+        }
+      }
+      edge = next;
+    }
+    const orphans = nodes.filter((n) => !distance.has(n.id));
+    const dear = nodes.filter((n) => (distance.get(n.id) ?? Infinity) > TRADE.maxPoints);
+    check(
+      orphans.length === 0 && dear.length === 0,
+      'every node connects to the middle and is affordable inside the budget',
+      [...orphans, ...dear].map((n) => n.id).join(', ')
+    );
+
+    // The alternating claim, and the whole of what makes the tree a decision:
+    // every other node out is a notable, so ten points are always five of them
+    // — and the far one on a spoke costs its whole arm, so only two fit.
+    const wrong = notables.filter((n) => (distance.get(n.id) ?? 0) % 2 !== 0);
+    const deepest = Math.max(...nodes.map((n) => distance.get(n.id) ?? 0));
+    const arms = Math.floor(TRADE.maxPoints / deepest);
+    line(`  the deepest node costs ${deepest} of ${TRADE.maxPoints} — ${arms} whole arms fit`);
+    check(
+      wrong.length === 0 && arms === 2,
+      'notables alternate with travel, and only 2 whole arms fit in the budget',
+      `${wrong.map((n) => n.id).join(', ')} · ${arms} arms`
+    );
+
+    // Every switch declared, read whatever the skill's delivery is, and able to
+    // say its own number: a trade belongs to the character, so a grant only one
+    // behaviour read would be a trade you had to pick a skill for.
+    const unread: string[] = [];
+    const silent: string[] = [];
+    for (const n of nodes) {
+      for (const [key, value] of Object.entries(n.grants ?? {})) {
+        const def = GRANT_BY_ID[key];
+        if (!def) unread.push(`${n.id}: ${key} is not declared`);
+        else if (!def.reads.includes(STATS)) unread.push(`${n.id}: ${key} is not read by every skill`);
+        else if (!def.say?.(value)) silent.push(`${n.id}: ${key}`);
+      }
+    }
+    check(unread.length === 0, 'every grant is declared and reaches every skill', unread.join(', '));
+    check(silent.length === 0, 'and every one of them says its own number', silent.join(', '));
+
+    // A trade changes a RULE, not a number. A notable that only carried stat
+    // lines would be a percentage competing with the other trade's percentage,
+    // and one of them would win.
+    const numbers = notables.filter((n) => Object.keys(n.grants ?? {}).length === 0);
+    check(numbers.length === 0, 'every notable changes a rule rather than a number', numbers.map((n) => n.name).join(', '));
+
+    const handed = new Map<string, number>();
+    for (const n of nodes) {
+      for (const key of Object.keys(n.grants ?? {})) handed.set(key, (handed.get(key) ?? 0) + 1);
+    }
+    const lossy = [...handed]
+      .filter(([key, count]) => count > 1 && !GRANT_BY_ID[key]?.merge)
+      .map(([key, count]) => `${key} on ${count} nodes`);
+    check(lossy.length === 0, 'and anything granted twice says how it stacks', lossy.join(', '));
+
+    // `needs` is the trap this catches: a switch that does nothing without
+    // another one, sitting where you could buy it first.
+    const stranded: string[] = [];
+    for (const n of nodes) {
+      for (const key of Object.keys(n.grants ?? {})) {
+        const wants = trade.spec.needs[key];
+        if (!wants || n.id === wants) continue;
+        if (trade.spokeOf[n.id] !== trade.spokeOf[wants]) stranded.push(`${n.id} needs ${wants}`);
+        else if ((distance.get(n.id) ?? 0) <= (distance.get(wants) ?? 0)) {
+          stranded.push(`${n.id} is reachable before ${wants}`);
+        }
+      }
+    }
+    check(stranded.length === 0, 'nothing conditional can be bought before what it needs', stranded.join(', '));
+
+    // Geometry, exactly as the skill webs are held to it: both defects read on
+    // screen as a link to somewhere it does not go.
+    {
+      const at = new Map<string, { x: number; y: number }>(nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
+      at.set(CENTRE, { x: 0, y: 0 });
+      const edges = new Set<string>();
+      for (const n of nodes) {
+        for (const other of neighboursOfTrade(id, n.id)) edges.add([n.id, other].sort().join('|'));
+      }
+      const pairs = [...edges].map((key) => key.split('|') as [string, string]);
+      type P = { x: number; y: number };
+      const side = (a: P, b: P, c: P) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+
+      const crossed: string[] = [];
+      for (let i = 0; i < pairs.length; i++) {
+        for (let j = i + 1; j < pairs.length; j++) {
+          const [a1, b1] = pairs[i];
+          const [a2, b2] = pairs[j];
+          if (a1 === a2 || a1 === b2 || b1 === a2 || b1 === b2) continue;
+          const [p1, q1, p2, q2] = [at.get(a1)!, at.get(b1)!, at.get(a2)!, at.get(b2)!];
+          if (
+            side(p2, q2, p1) > 0 !== side(p2, q2, q1) > 0 &&
+            side(p1, q1, p2) > 0 !== side(p1, q1, q2) > 0
+          ) {
+            crossed.push(`${a1}~${b1} over ${a2}~${b2}`);
+          }
+        }
+      }
+      const grazed: string[] = [];
+      for (const [a, b] of pairs) {
+        const p = at.get(a)!;
+        const q = at.get(b)!;
+        const dx = q.x - p.x;
+        const dy = q.y - p.y;
+        const span = dx * dx + dy * dy;
+        for (const [other, n] of at) {
+          if (other === a || other === b) continue;
+          const t = span === 0 ? 0 : Math.max(0, Math.min(1, ((n.x - p.x) * dx + (n.y - p.y) * dy) / span));
+          if (Math.hypot(n.x - (p.x + t * dx), n.y - (p.y + t * dy)) < 0.45) {
+            grazed.push(`${a}~${b} through ${other}`);
+          }
+        }
+      }
+      check(
+        crossed.length === 0 && grazed.length === 0,
+        'no link crosses another, and none runs through a node it does not join',
+        [...crossed, ...grazed].join(', ')
+      );
+    }
+
+    // What the shape is really worth. A point spent on a minor whose notable
+    // you never buy is a point spent on travel to nowhere, so the ceiling is
+    // half the budget and reaching it means finishing what you start.
+    const fresh = (): Character => {
+      const who = makeCharacter({}, 'strike');
+      who.level = TRADE.maxPoints * TRADE.levelsPerPoint;
+      takeUpTrade(who, id);
+      return who;
+    };
+    const notablesIn = (who: Character) =>
+      who.tradeAllocated.filter((x) => nodes.find((n) => n.id === x)?.kind === 'notable').length;
+
+    const spendRng = new Rng(5150);
+    let stuck = 0;
+    let most = 0;
+    let fewest = Infinity;
+    let walker = fresh();
+    for (let walk = 0; walk < 200; walk++) {
+      walker = fresh();
+      while (tradePointsLeft(walker) > 0) {
+        const open = nodes.filter((n) => canAllocateTrade(id, n.id, walker.tradeAllocated));
+        if (open.length === 0) break;
+        allocateTrade(walker, spendRng.pick(open)!.id);
+      }
+      if (walker.tradeAllocated.length !== TRADE.maxPoints) stuck++;
+      most = Math.max(most, notablesIn(walker));
+      fewest = Math.min(fewest, notablesIn(walker));
+    }
+
+    // The deliberate walk: two spokes finished, then pairs. Nothing on the web
+    // reaches a sixth notable, and a careless walk reaches fewer than five.
+    const aimed = fresh();
+    for (const spoke of trade.spec.spokes) {
+      for (const step of [`${trade.spec.prefix}_${spoke.id}_m0`, spoke.notables[0].id]) {
+        allocateTrade(aimed, step);
+      }
+    }
+    line(
+      `  200 random walks reached ${fewest} to ${most} notables; walked on purpose, ${notablesIn(aimed)}`
+    );
+    check(
+      stuck === 0 && most === TRADE.maxPoints / 2 && notablesIn(aimed) === TRADE.maxPoints / 2,
+      `${TRADE.maxPoints} points always spend, and ${TRADE.maxPoints / 2} notables is the ceiling`,
+      `${stuck} walks short, ${most} the most reached`
+    );
+    check(fewest < TRADE.maxPoints / 2, 'and a careless walk pays for travel it never uses', String(fewest));
+
+    while (walker.tradeAllocated.length > 0) {
+      const loose = walker.tradeAllocated.find((x) =>
+        canDeallocateTrade(id, x, walker.tradeAllocated)
+      );
+      if (!loose || !deallocateTrade(walker, loose)) break;
+    }
+    check(walker.tradeAllocated.length === 0, 'and every one of them refunds again', `${walker.tradeAllocated.length} stuck`);
+  }
+
+  // The whole reason it exists: what a trade gave you is still there after the
+  // one choice the game most wants you to experiment with.
+  {
+    const who = makeCharacter({}, 'strike');
+    who.level = 50;
+    takeUpTrade(who, 'aethermancer');
+    allocateTrade(who, TRADE_BY_ID.aethermancer.nodes[0].id);
+    allocateTrade(who, 'aet_ward');
+    const before = treeGrants(who).manaShield;
+    equipSkill(who, 'blight');
+    check(
+      mainSkillId(who) === 'blight' && treeGrants(who).manaShield === before && before === 0.2,
+      'a trade survives changing skill, where a skill tree does not',
+      `${before} → ${treeGrants(who).manaShield}`
+    );
+  }
+
+  // And what a swap costs: gold, and the walk. Never the points — a hard lock
+  // would be the only unforgiving thing in a game that replays allocations.
+  {
+    const who = makeCharacter({}, 'strike');
+    who.level = 30;
+    takeUpTrade(who, 'alchemist');
+    allocateTrade(who, TRADE_BY_ID.alchemist.nodes[0].id);
+    const cost = tradeSwitchCost(who.level);
+    takeUpTrade(who, 'aethermancer');
+    line(`  changing trade at level ${who.level} costs ${cost} gold`);
+    check(
+      cost > 0 && who.trade === 'aethermancer' && who.tradeAllocated.length === 0
+        && tradePointsLeft(who) === tradePointsFor(who.level),
+      'a swap hands every point back and charges gold for the walk',
+      `${who.tradeAllocated.length} points still spent`
+    );
+  }
+
+  // Replayed on load like everything else: a trade that is cut, or a level
+  // curve that moves, hands the points back rather than leaving a build nobody
+  // could have walked to.
+  {
+    const saved = createGame('fresh');
+    saved.character.level = 50;
+    takeUpTrade(saved.character, 'alchemist');
+    for (const n of ['alc_reaction_m0', 'alc_volatile', 'alc_reaction_m1', 'alc_detonation']) {
+      allocateTrade(saved.character, n);
+    }
+    const walked = saved.character.tradeAllocated.length;
+
+    saved.character.level = 1;
+    const cut = heal(saved);
+    check(
+      walked === 4 && saved.character.tradeAllocated.length === 0 && cut.points >= walked,
+      'a level that never paid for a trade point hands it back on load',
+      `${walked} walked, ${saved.character.tradeAllocated.length} kept, ${cut.points} refunded`
+    );
+
+    const gone = createGame('fresh');
+    gone.character.level = 50;
+    gone.character.trade = 'tanner';
+    gone.character.tradeAllocated = ['tan_hide'];
+    heal(gone);
+    check(
+      gone.character.trade === null && gone.character.tradeAllocated.length === 0,
+      'and a trade that no longer exists takes its walk with it',
+      `${gone.character.trade}`
+    );
+  }
+}
+
+// ===========================================================================
+rule('TRADE RULES — does each one actually change what the sim does?');
+
+// A card that says a thing and a sim that does not is the failure mode a table
+// of switches invites. Each of these is the SAME seed and the same character
+// with one node added, so what moved is the node.
+{
+  const armed = (nodes: string[], skillId = 'strike'): Character => {
+    const who = makeCharacter(starterLoadout(new Rng(21), 30), skillId);
+    who.level = 50;
+    takeUpTrade(who, TRADE_BY_ID[nodes[0]?.startsWith('alc') ? 'alchemist' : 'aethermancer'].spec.id);
+    who.tradeAllocated = nodes;
+    return who;
+  };
+  const descend = (who: Character, seed = 9091) => {
+    const sim = new RunSim(ladderSet(2, new Rng(4), pool), who, new Rng(seed));
+    const final = runToCompletion(sim, 900);
+    return { sim, final };
+  };
+
+  // The pool takes hits, and ailments, before life does.
+  {
+    const bare = descend(armed([]));
+    const ward = descend(armed(['aet_warding_m0', 'aet_ward', 'aet_warding_m1', 'aet_bulwark']));
+    const lost = (r: typeof bare) => Object.values(r.sim.state.damageTaken).reduce((a, b) => a + b, 0);
+    line(
+      `  damage taken over one descent: ${Math.round(lost(bare))} bare, ` +
+        `${Math.round(lost(ward))} warded, ${Math.round(ward.sim.state.absorbed)} of it paid in mana`
+    );
+    check(
+      ward.sim.state.absorbed > 0 && lost(ward) < lost(bare),
+      'the Aether Ward pays for damage out of mana, so less of it reaches your life',
+      `${ward.sim.state.absorbed} absorbed`
+    );
+    check(
+      shieldShare({ manaShield: 9 }) === MANA.shieldCap,
+      'and the share it can take is capped, so the pool is never a second life bar',
+      String(shieldShare({ manaShield: 9 }))
+    );
+  }
+
+  // A cast that spends the pool for damage, and the pool that fills itself out
+  // of what that damage did.
+  {
+    const over = descend(armed(['aet_overflow_m0', 'aet_overcharge']));
+    check(
+      over.sim.state.overcharges > 0,
+      'Overcharge spends a share of the maximum pool on uses it can pay for',
+      `${over.sim.state.overcharges} of ${over.sim.state.casts} casts`
+    );
+    const deal = overchargeOf(treeGrants(armed(['aet_overflow_m0', 'aet_overcharge', 'aet_overflow_m1', 'aet_cataclysm'])));
+    check(
+      deal !== null && Math.abs(deal.more - 0.85) < 1e-9 && deal.share === 0.12,
+      'and an amplifier past it sums into what an overcharged use is worth',
+      `${deal?.share} for ${deal?.more}`
+    );
+
+    const dry = armed(['aet_siphoning_m0', 'aet_siphon']);
+    check(
+      (treeGrants(dry).manaLeech as number) === 0.04,
+      'the Siphon returns a share of the damage you deal as mana',
+      String(treeGrants(dry).manaLeech)
+    );
+  }
+
+  // The one road to mana nothing else offers, and it lands on the sheet.
+  {
+    const plain = characterStats(armed([]));
+    const vessel = characterStats(armed(['aet_vessel_m0', 'aet_vessel', 'aet_vessel_m1', 'aet_confluence']));
+    line(`  the mana pool: ${Math.round(plain.maxMana)} bare, ${Math.round(vessel.maxMana)} with the Vessel walked`);
+    check(
+      vessel.maxMana > plain.maxMana * 1.5,
+      'the Vessel builds the pool out of life, which is the stat everything grants',
+      `${plain.maxMana} → ${vessel.maxMana}`
+    );
+  }
+
+  // Charges as a cooldown rather than a budget, and a flask that carries a buff.
+  {
+    const still = descend(armed(['alc_condensate_m0', 'alc_still', 'alc_condensate_m1', 'alc_cascade']));
+    line(
+      `  the Still over one descent: ${still.sim.state.drunk} charges drunk, ` +
+        `${still.sim.state.regained} handed back`
+    );
+    check(
+      still.sim.state.regained > 0 && still.sim.state.drunk > POTIONS[0].charges,
+      'charges come back mid-descent, so a flask is a cooldown rather than a budget',
+      `${still.sim.state.regained} regained`
+    );
+
+    const buffed = treeGrants(armed(['alc_reaction_m0', 'alc_volatile', 'alc_reaction_m1', 'alc_detonation']));
+    check(
+      Math.abs((buffed.potionMore as number) - 1.56) < 1e-9,
+      'and two magnitude nodes compound into what a flask is worth while it runs',
+      String(buffed.potionMore)
+    );
+  }
+
+  // Whether a trade FAVOURS a skill. Some pairings being stronger is the system
+  // working; a trade with exactly one correct skill is a skill node that got
+  // lost. Three skills is too few to tell the two apart, so this is PRINTED and
+  // nothing is tuned to it — see the roadmap.
+  {
+    const WALKS: Record<string, string[]> = {
+      'no trade': [],
+      alchemist: ['alc_reaction_m0', 'alc_volatile', 'alc_condensate_m0', 'alc_still',
+        'alc_quicksilver_m0', 'alc_quicksilver', 'alc_steeping_m0', 'alc_slow_burn',
+        'alc_etching_m0', 'alc_etched'],
+      aethermancer: ['aet_warding_m0', 'aet_ward', 'aet_overflow_m0', 'aet_overcharge',
+        'aet_siphoning_m0', 'aet_siphon', 'aet_vessel_m0', 'aet_vessel',
+        'aet_drought_m0', 'aet_dry_season'],
+    };
+    // The deep end, where a band is not: below it everything clears and the
+    // measurement says nothing at all.
+    const runs = 4;
+    const sets = Array.from({ length: runs }, (_, i) => deepestSet(new Rng(400 + i), pool));
+    const spread: number[] = [];
+
+    for (const [name, walk] of Object.entries(WALKS)) {
+      const said: string[] = [];
+      for (const skill of MAIN_SKILLS) {
+        const who = ladderCharacter(6, new Rng(70), skill.id);
+        if (walk.length > 0) {
+          takeUpTrade(who, walk[0].startsWith('alc') ? 'alchemist' : 'aethermancer');
+          who.tradeAllocated = [...walk];
+        }
+        // Kills a second, not clears: at the deep end a clear count saturates
+        // and the measurement stops being able to tell the three apart.
+        let killed = 0;
+        let seconds = 0;
+        sets.forEach((set, i) => {
+          const final = runToCompletion(new RunSim(set, who, new Rng(900 + i)), 600);
+          killed += final.killed;
+          seconds += final.elapsed;
+        });
+        const rate = killed / Math.max(1, seconds);
+        said.push(`${skill.id} ${rate.toFixed(2)}`);
+        spread.push(rate);
+      }
+      line(`  ${name.padEnd(13)} ${said.join('  ')} kills/s`);
+    }
+    gauge(
+      `at the deep end a trade moves the kill rate between ${Math.min(...spread).toFixed(2)} and ` +
+        `${Math.max(...spread).toFixed(2)}/s, and no pairing is meant to be the only one that works`
+    );
+  }
+
+  // What the harnesses measure. Every ladder number in this file is a character
+  // with NO trade, deliberately — a trade is a choice, and measuring one would
+  // measure that choice rather than the rung.
+  {
+    const measured = ladderCharacter(DROP_BANDS.length - 1, new Rng(11));
+    check(
+      measured.trade === null && measured.tradeAllocated.length === 0,
+      'and every measured ladder character has no trade at all, so a rung is a rung',
+      `${measured.trade}`
+    );
+  }
 }
 
 // ===========================================================================
@@ -5649,7 +6133,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
 rule('RESULT');
 line(
   failed === 0
-    ? '  ✓ every check passed'
+    ? `  ✓ every check passed (${ran})`
     : `  ✗ ${failed} check${failed === 1 ? '' : 's'} failed — see above`
 );
 process.exitCode = failed === 0 ? 0 : 1;

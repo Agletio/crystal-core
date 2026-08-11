@@ -10,6 +10,25 @@ tuning — a measurement beats them. A landed phase is DELETED from here, so
 before starting one, `git fetch` and check you are on the tip of the branch:
 a phase you can still see in a stale clone may already be built.
 
+**What the trades phase turned out to know that its writing did not.** Kept
+here because the next thing built on top of them will want it.
+
+- **Five notables, not "about five".** Twenty nodes alternating minor and
+  notable over ten points makes five the CEILING and not the average: a spoke's
+  prefix of odd length wastes its last point on travel, so a careless walk
+  reaches three. That is the decision the shape hands the player, and the demo
+  measures both ends of it over 200 random walks.
+- **`buildTree` did not bend.** A trade got a sibling — `src/trades/layout.ts`
+  — and what the two share is `src/webgraph.ts`, which is where reach, refund
+  and replay now live for any list of nodes. `src/ui/webart.ts` is the same
+  answer for the studs.
+- **A trade barely moves a kill rate, and that is correct.** Both trades'
+  offensive halves are CONDITIONAL — a flask running, a pool with room to
+  overcharge — so a flat average across a descent understates a window. The
+  demo prints kills a second at the deep end for every trade against every
+  skill and asserts nothing about it; whether a pairing is a favourite or a
+  requirement needs a wider roster than three skills to tell.
+
 **Where these came from.** Two batches of asks, dictated by the user in one go
 each. The number in brackets is the user's own numbering within its batch, kept
 so a phase can be matched back to the ask — it says nothing about when to build
@@ -23,8 +42,11 @@ each hand out more power than the last and anything tuned before them is thrown
 away. Lean too easy. Measure, print, carry on.
 
 Mana costs, the potions that answer running dry, the attributes that scale the
-pool and the starved penalty that replaced the dry swing have all landed. That
-idea is finished.
+pool and the starved penalty that replaced the dry swing have all landed. So
+have TRADES, which is the last of the systems that were going to hand out more
+power — `CLAUDE.md` and `RULES.md` describe both of them as built. The balance
+pass is now the only thing standing between this list and a tuned game, and it
+is still not a phase in it: ask before starting one.
 
 ---
 
@@ -47,144 +69,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Trades: the part of a character that is not the skill
-
-**What is true today.** Every scrap of build identity in this game belongs to
-the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
-(`character.skills[skillId].allocated`), funded by that skill's own level
-through `treePointsFor` and capped at `MAX_TREE_POINTS = 30`. Change from
-Strike to Blight and the whole of what your character was is gone. Character
-level funds attributes and nothing else; gear and crystals are things you find
-rather than things you chose to become.
-
-**Why it is wrong.** Nothing about a character persists across the one choice
-the game most wants you to experiment with, and there is no reason to keep a
-character rather than start another — which is a strange thing to be true the
-week three save slots landed.
-
-**The shape, and why it is a SEPARATE tree.** On one tree, "specialist
-identity" and "generic stats" compete for the same points, so the play is to
-beeline the cheapest path to the payoff and take whatever is on the way. Two
-trees cannot be compared, so the identity is chosen on taste and the stats on
-arithmetic. That is the entire mechanism, and it means **trade points must be
-their own currency** — fund them from skill points and the beeline is back.
-
-A trade is not a class: every skill, every attribute and every piece of gear
-stays available to every trade. The word is the world's own — the only person
-in the game is named for his trade — and it carries none of the rigidity. The
-user calls these JOBS; this file calls them trades, and they are the same
-thing.
-
-- [ ] A trade tree is **20 nodes: 10 that matter and 10 travel**, roughly
-      alternating, and a character has **10 points** — so half the tree, and
-      about five of the big ones. Smaller and denser than a skill tree, which
-      is 30 points over a much wider web.
-- [ ] **1 point every 5 character levels**, capped at 10 — so a full trade is a
-      character at level 50. This is the second job character level has and the
-      first one that is a choice.
-- [ ] **Every trade changes a RULE, not a number.** A trade that hands out
-      percentages competes with the others on percentages and one of them wins;
-      a trade that changes what is POSSIBLE cannot be compared to another one.
-      This is the rule the whole system lives or dies on. `GRANTS` in
-      `sim/grants.ts` is already a table of switches rather than numbers and a
-      trade hands them out the same way a node or a unique does — declared,
-      read by something, and paid for.
-- [ ] **Two trades ship, and the framework is what is expensive.** Both are
-      designed below and both change a rule. If the phase runs long, the
-      **Alchemist** is the one that ships — it needs no new sim concept — and
-      the Aethermancer follows as its own phase on the same framework. Do not
-      ship a third: one good trade beats six thin ones, and two is already a
-      comparison the player can make.
-- [ ] **The Alchemist.** Potions stop being a safety net and become the
-      character's engine — they carry buffs, they refresh themselves, and
-      charges come back during a descent, so a potion is a cooldown rather than
-      a budget. What the buff DOES is specialised inside the tree (fire,
-      projectiles, critical, whatever the nodes offer), and the real decision
-      inside it is UPTIME: magnitude against duration against how fast charges
-      return. Stack magnitude and you get windows of enormous power between dry
-      spells; stack regeneration and you are permanently a little better. Same
-      points, different characters, and a harness can measure both.
-      `POTIONS`/`POTION_BY_ID` in `src/data.ts` are the table; a potion is
-      already an EFFECT with a duration pushed onto `hero.effects` by `drink()`
-      in `src/sim/run.ts`, so a buff that rides along is another field on that
-      effect rather than a new system.
-- [ ] **The Aethermancer.** Mana is your second health bar and your damage
-      multiplier at once. Three rules, and they all pull on ONE pool, which is
-      the whole of the trade:
-      - **Mana absorbs.** A share of damage taken comes off mana before life.
-        Today nothing but a cast touches the pool, and life is reduced in
-        exactly two places: `defender.life -= dmg` in `dealDamage` is every
-        hit, and `e.life -= total` in `stepAilments` is every ailment tick,
-        both in `src/sim/run.ts`. Decide whether the pool eats ailments too,
-        and say why — ailments are already the thing armour cannot stop, so
-        letting mana eat them is a real gift.
-      - **Casting harder costs the pool.** A node lets an ability spend an
-        extra share of MAXIMUM mana on top of its own cost, and the ability
-        deals more damage in proportion to what it spent. Note the axis: the
-        existing `manaMultiplier` grant in `src/sim/grants.ts` multiplies the
-        SKILL'S cost, so a cheap skill stays cheap. A share of the pool does
-        not — it is the only cost in the game that grows when you stack mana,
-        which is what makes the stacking pay for itself.
-      - **More mana, by every road there is.** `HERO_BASE.mana` scaled by the
-        `mana` stat, `manaRegenPercent: 4.5` behind `manaRegen`, and
-        Intelligence at `mana` inc 6 a point (`ATTRIBUTES` in `src/data.ts`)
-        are the three that exist. The trade wants at least one road nothing
-        else offers, or it is a percentage trade wearing a rule's clothes.
-      **The tension is that all three want the same pool and only one of them
-      can have it**: the hit pool wants it full, the damage node empties it,
-      and an empty pool is `starvedMultiplier` — `MANA.starvedDamage = 0.5` in
-      `src/data.ts`, folded with the declared `starvedDamage` grant in
-      `src/sim/grants.ts`, so half your damage. A build that spends its pool
-      for damage is a build that is one bad pack from having neither, and the
-      trade's own nodes are where you buy your way out of that. Nothing here
-      needs a rewrite: `swing()` in `src/sim/run.ts` is the ONE place mana is
-      spent and the one place `starved` is set, and regeneration is one line in
-      the same file's tick.
-- [ ] **A trade may favour a skill; it may not have exactly one.** Some
-      pairings being stronger than others is the system working — what would be
-      wrong is a trade with a single correct skill, which makes it a skill node
-      that got lost. **This is NOT a bar to clear in this phase**: three skills
-      is too few to tell a favourite from a requirement, so print what the
-      harness measures and do not tune to it. Revisit when the roster is wide
-      enough for the difference to show.
-- [ ] Trade grants reach the sim through `treeGrants` in `src/sim/stats.ts`,
-      which already merges the tree with what is worn. A third source is a
-      third argument, not a new concept.
-- [ ] Allocation goes through `canAllocate` and is REPLAYED by `heal()` the way
-      skill trees are, so a reshaped trade refunds its points rather than
-      leaving a build nobody could have walked to. Node ids take a `prefix` no
-      other tree uses — a save points at them.
-- [ ] Whether `TreeSpec`/`buildTree`/`layout.ts` bend to a 20-node tree or a
-      trade gets a sibling of them. `buildTree` currently REFUSES anything that
-      is not six branches and six trunk notables, so one of those two things
-      has to give. Either way the demo's geometry rules apply unchanged: no
-      link crosses another, and none passes under a node it does not join.
-- [ ] Changing trade is allowed, at a price. Everything else in this game is
-      forgiving — `heal()` refunds what a reshaped tree stranded, allocations
-      are replayed rather than trusted — and a hard lock would be the only
-      unforgiving thing in it.
-- [ ] **How you GET a trade is a placeholder and is marked as one.** It is
-      meant to come out of a storyline with the Lampwright that does not exist
-      yet — see the open question. Until it does, you pick when you earn the
-      first point, and the story replaces the ACQUISITION without touching the
-      tree, the points or the allocation.
-
-**What must not break.** A trade that changes rules moves every ladder number
-in `src/demo.ts`, and `ladderCharacter` in `src/sim/loadout.ts` builds the
-characters those harnesses measure — decide what trade a measured character has
-before reading anything into the numbers. The demo already holds every tree to
-its geometry and every grant to being declared and read; a trade tree that
-skips those checks is a tree nobody is checking.
-
-The Aethermancer specifically moves the mana check: the demo holds every bare
-skill to `MANA.costPerSecond` within `MANA.costTolerance`, and a cost that is a
-share of the pool is not a per-skill number that check can read. Decide whether
-that check measures the bare skill only — which is what it is for — before
-changing it. A grant that reduces damage taken also moves the survival ladder
-and the Seam margin the demo prints; both are expected to move, so print, do
-not assert.
-
-### Phase 2 — Every monster brings its own element [user 10]
+### Phase 1 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -240,7 +125,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 3 — What a node does, shown and not overlapped [user 8]
+### Phase 2 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -286,13 +171,14 @@ file is buildable today. Both trades are now designed; what is still open about
 them is only how a character COMES BY one, which the phase ships a placeholder
 for.
 
-1. **What the Lampwright wants.** The trade phase needs a way to GET a trade,
-   and the intent is a storyline with the Lampwright rather than a level
-   threshold — he is the only person in the game and the only voice it has.
-   Nothing about it is written: what he is doing down there, what he asks for,
-   how many beats it runs, whether it hands out anything besides the trade.
-   The phase ships a placeholder that the story replaces without touching the
-   tree or the points, so this blocks the STORY and not the system.
+1. **What the Lampwright wants.** Trades have landed and the placeholder is in:
+   anyone may take one up at level 5, and the Trade screen says so in as many
+   words. The intent was always a storyline with the Lampwright rather than a
+   level threshold — he is the only person in the game and the only voice it
+   has. Nothing about it is written: what he is doing down there, what he asks
+   for, how many beats it runs, whether it hands out anything besides the trade.
+   Replacing the placeholder touches the ACQUISITION only — not the tree, not
+   the points, not the allocation — so this blocks the STORY and not the system.
 
 2. **What is the fifth socket?** Wanted as an endgame slot holding something
    that is not a crystal. Deliberately unspecified — the user wants to think

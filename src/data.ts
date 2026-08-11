@@ -1419,6 +1419,24 @@ export const MANA = {
   /** How far one may sit either side of it before the demo objects. */
   costTolerance: 0.12,
   starvedDamage: 0.5, // STARVED: the share of your damage a cast with an empty pool lands for
+  /** Ceiling on `manaShield`: past this the pool would be a second life bar. */
+  shieldCap: 0.6,
+};
+
+/**
+ * A trade is the part of a character that is not the skill, and its points are
+ * their own currency: funded by CHARACTER level, so walking one never competes
+ * with a skill tree for the same point.
+ */
+export const TRADE = {
+  levelsPerPoint: 5, // level 5 buys the first point, and picks the trade
+  maxPoints: 10,
+  /**
+   * Gold to take up a different trade, per character level. Every point comes
+   * back — what you pay for is the walk — because a hard lock would be the only
+   * unforgiving thing in a game that replays allocations rather than trusting them.
+   */
+  switchPerLevel: 40,
 };
 
 /**

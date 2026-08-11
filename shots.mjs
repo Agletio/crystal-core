@@ -283,10 +283,31 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('skill-web');
 
+  // The trade, walked. Two picker cards over a web drawn to fit is a tall
+  // stack on a phone, and the web is the part with nothing to scroll it.
+  await page.evaluate(() => document.getElementById('skills-close')?.click());
+  await page.evaluate(() => {
+    document.getElementById('open-character')?.click();
+    for (let i = 0; i < 24; i++) document.getElementById('sheet-devlevel')?.click();
+    document.getElementById('sheet-close')?.click();
+    document.getElementById('open-trade')?.click();
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    document.getElementById('trade-pick-aethermancer')?.click();
+    for (let i = 0; i < 10; i++) {
+      const open = document.querySelector('#trade-web .web__node--open');
+      if (!open) break;
+      open.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(300);
+  await shoot('trade');
+  await page.evaluate(() => document.getElementById('trade-close')?.click());
+
   // The bench, stocked. It is the widest thing in the game — a crystals
   // column, a worn column and the item — and the only screen where three
   // panels have to fit side by side on a phone.
-  await page.evaluate(() => document.getElementById('skills-close')?.click());
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
   await page.evaluate(() => document.getElementById('confirm-yes')?.click());
   await page.waitForTimeout(500);

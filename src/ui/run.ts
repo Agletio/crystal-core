@@ -16,6 +16,7 @@ import {
   equippedSkill,
   mainSkillId,
   spareTreePoints,
+  tradePointsLeft,
   xpToNext,
 } from '../sim/character';
 import { describeMod } from '../crafting';
@@ -573,6 +574,12 @@ function renderReadout(): void {
   starved.textContent = `${s.dryCasts} at ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}%`;
   starved.classList.toggle('readout__v--bad', s.dryCasts > 0);
 
+  // What a trade is doing to this descent, and only while it is doing it.
+  $('run-warded-row').hidden = s.absorbed <= 0;
+  $('run-warded').textContent = `${Math.round(s.absorbed)} damage`;
+  $('run-overcharged-row').hidden = s.overcharges <= 0;
+  $('run-overcharged').textContent = `${s.overcharges} of ${s.casts} casts`;
+
   // A walked-out run is still 'running' to the sim — it was never finished —
   // so the chip reads the phase for that one case rather than the sim.
   const left = phase === 'results' && s.status === 'running';
@@ -976,5 +983,6 @@ function renderSkillIcons(): void {
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
+  badge('open-trade', tradePointsLeft(game.character));
 }
 

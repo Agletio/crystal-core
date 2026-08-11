@@ -265,6 +265,56 @@ A count of what is waiting to be spent sits on the header button that spends it
 Skills carries the ACTIVE skill's spare tree points, whatever web is on screen.
 Zero shows nothing at all, since a badge reading 0 is a permanent nag.
 
+## A trade: the part of a character that is not the skill
+
+Every scrap of build identity used to belong to the SKILL, and changing skill
+threw the whole of it away. A **trade** is funded by CHARACTER level out of its
+own budget (`TRADE` in `data.ts`: one point every 5 levels, 10 at level 50), so
+nothing about walking one competes with a tree for the same point — and it
+survives every skill you ever swap to.
+
+A trade tree is its OWN shape, not a skill web: five spokes off one middle, four
+nodes each, **alternating minor and notable** — 20 nodes, half of them notables,
+and 10 points. Every other node out is a notable, so five is the ceiling and a
+point spent on a minor whose notable you never buy is a point spent on travel to
+nowhere. Two whole arms fit and no more, so the outer notable of a spoke is a
+commitment. No ring and no fork: a link sideways would let a build hop into a
+neighbour's far notable without walking its arm, and the arm IS the price.
+
+**Every notable changes a RULE, not a number.** A trade handing out percentages
+would compete with the other on percentages and one of them would win; a trade
+that changes what is POSSIBLE cannot be compared. They reach the sim through
+`GRANTS` in `sim/grants.ts` exactly as a tree node and a unique do, merged by
+`treeGrants` as a third SOURCE rather than a third concept.
+
+**The Alchemist** turns potions from a safety net into the engine: a flask
+carries a buff while it runs (`potionMore`, `potionHaste`, `potionCrit`), runs
+longer and pours harder (`potionDuration`, `potionPotency`), and its charges
+come BACK during a descent (`chargeRegen`) — so 2 charges are a cooldown rather
+than the whole budget. The decision inside it is UPTIME: magnitude against
+duration against how fast charges return.
+
+**The Aethermancer** makes mana your second health bar and your damage
+multiplier at once, and all five spokes pull on the SAME pool. `manaShield` pays
+for a share of damage taken — ailments included, since armour never could —
+`overcharge` spends a share of your MAXIMUM pool for proportional damage,
+`manaLeech` returns a share of what you deal, `starvedDamage` makes an empty
+pool survivable, and `poolFromLife` builds the pool out of the one stat
+everything grants. The Ward wants it full and Overflow empties it; that tension
+is the trade.
+
+**How you GET one is a placeholder and says so on the screen.** It is meant to
+come out of a storyline with the Lampwright that does not exist yet, and that
+story replaces the ACQUISITION without touching the tree, the points or the
+allocation. Changing trade refunds every point and costs gold
+(`tradeSwitchCost`) — a hard lock would be the only unforgiving thing in a game
+that replays allocations rather than trusting them.
+
+`src/ui/trade.ts` draws it. Twenty nodes FIT, so that web carries a viewBox and
+has no pan, no zoom and no Fit button; the stud art both webs are made of lives
+in `src/ui/webart.ts`, and how a web is WALKED lives in `src/webgraph.ts`, over
+any list of nodes.
+
 ## What a skill costs
 
 Every use of your skill is paid out of **mana** — `HERO_BASE.mana`, and
@@ -380,7 +430,9 @@ been walked to.
 src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
-src/skills-tree.ts allocation rules; src/trees/* are the webs
+src/webgraph.ts    how ANY web is walked: reach, refund, replay
+src/skills-tree.ts per-skill webs; src/trees/* are their content
+src/trades.ts      the character's own web; src/trades/* are the two trades
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
 src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation

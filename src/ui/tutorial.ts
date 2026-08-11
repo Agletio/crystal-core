@@ -157,6 +157,7 @@ const CLOSES: Record<string, string> = {
   shop: 'shop-close',
   sheet: 'sheet-close',
   skills: 'skills-close',
+  trade: 'trade-close',
   history: 'history-close',
   save: 'save-close',
   craft: 'craft-close',

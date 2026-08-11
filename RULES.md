@@ -230,7 +230,60 @@ that paid and got nothing.
 level. Life does, and one that grew alongside it would leave the cost
 meaningless by level 10 — the whole pressure is that casting more, or casting
 something bigger, gets paid for. Gear reaches it through the modifier engine
-like every other stat, and so does Intelligence.
+like every other stat, and so does Intelligence. The Aethermancer's
+`poolFromLife` is not an exception: it is bought with trade points, and it lands
+on the BASE the `mana` stat scales, so it is another road to the same purchase.
+
+**A trade is funded by CHARACTER level, out of its own budget.** `TRADE` in
+`src/data.ts` — one point every 5 levels, capped at 10. Fund them from skill
+points and the beeline is back: on one tree, "specialist identity" and "generic
+stats" compete for the same point and the play is the cheapest path to the
+payoff. Two trees cannot be compared, so the identity is chosen on taste and
+the stats on arithmetic, and that separation is the whole mechanism.
+
+**A trade tree is FIVE SPOKES OF FOUR, alternating minor and notable.** Its own
+geometry in `src/trades/layout.ts`, not `buildTree`'s six branches. Twenty
+nodes, ten of them notables, ten points — so five notables is the CEILING and
+every other node out is one. No ring and no fork: a link sideways would let a
+build reach a neighbour's far notable without walking its arm, and the arm is
+the price. The demo holds it to the same geometry as a skill web — no link
+crosses another, none runs through a node it does not join.
+
+**Every trade notable changes a RULE, not a number.** This is the rule the
+system lives or dies on. A trade handing out percentages competes with the other
+on percentages and one of them wins; a trade that changes what is POSSIBLE
+cannot be compared to another one. The demo fails a notable whose whole content
+is stat lines.
+
+**A trade reaches the sim through the same table as everything else.**
+Declared in `GRANTS`, read by STATS so it works whatever the skill's delivery
+is — a switch only one behaviour read would be a trade you had to pick a skill
+for — and merged by `treeGrants` as a third SOURCE beside the tree and what is
+worn. `tradeGrants` in `src/trades.ts` is that source; nothing downstream learns
+the word "trade".
+
+**Changing trade refunds every point and costs gold.** `tradeSwitchCost`. A hard
+lock would be the only unforgiving thing in a game where `heal()` refunds what a
+reshaped tree stranded and allocations are replayed rather than trusted — and
+`replayTrade` in `src/game/save.ts` does for a trade exactly what `replayTree`
+does for a skill, through the one `replayWeb` both call.
+
+**How you GET a trade is a PLACEHOLDER and says so on its own screen.** Anyone
+may take one up. It is meant to come out of a storyline with the Lampwright that
+is not written; that story replaces the ACQUISITION and touches neither the
+tree, the points nor the allocation. Do not quietly promote the placeholder into
+a design.
+
+**A measured character has NO trade.** `ladderCharacter` does not take one up,
+and the demo holds it to that: a trade is a choice, so measuring one would
+measure the choice rather than the rung. What a trade is WORTH is printed beside
+the deep end as a kill rate and asserted nowhere.
+
+**How a web is WALKED lives in `src/webgraph.ts`,** over any list of nodes:
+`neighboursIn`, `canAllocateIn`, `canDeallocateIn`, `replayWeb`. A skill tree
+and a trade tree are different content on the same shape, and two copies of a
+reachability rule is one copy that is wrong. `src/ui/webart.ts` is the same
+answer for the stud art both webs are drawn out of.
 
 **A level GRANTS a baseline and SELLS the rest.** `LEVELLING.lifePerLevel` and
 `LEVELLING.damagePerLevel` are the baseline, handed over for nothing;
@@ -332,10 +385,11 @@ Until then:
   exit code, and the line CARRIES the number and the figure that was wanted, so
   the balance pass has a before and an after to read. Deleting a measurement to
   silence it is the one wrong answer.
-- **Six of them**, and they are the whole list: the naked character's life left
-  and the blank-crystal rung under `THE LADDER`, the band ladder and the deep
-  end beside them, the Seam's margin under `FAMILIES`, and the unpaid share
-  under `MANA`.
+- **Eight of them**, and they are the whole list: the naked character's life
+  left and the blank-crystal rung under `THE LADDER`, the band ladder and the
+  deep end beside them, the Seam's margin under `FAMILIES`, the unpaid share and
+  what a starved cast lands for under `MANA`, and what a trade is worth at the
+  deep end under `TRADE RULES`.
 - **What still fails is MECHANISM.** A run that does not end, a determinism
   break, a step nobody can finish, a screen that overflows, a modifier that
   does nothing, a save that cannot be healed. Those are bugs at any balance.
@@ -544,12 +598,20 @@ begin at level 2, so without the second one nothing but a played descent
 reaches the screen this phase built — and `smoke.mjs` is what proves the
 buttons and the badge work.
 
+**A web inside a modal carries a viewBox, never a measurement.** The trade web
+is drawn in WEB units and framed by `viewBox` with `xMidYMid meet`. Reading
+`getBoundingClientRect` there is reading a box the modal's own flex layout has
+not finished deciding: measured once, it drew at a height the wrapper then
+squeezed, and half the web was clipped below the fold. The skill web measures
+because it PANS, which needs pixels; nothing that only has to fit does.
+
 **A badge is ONE mechanism.** `badge(buttonId, count)` in `src/ui/badge.ts`
 adds or removes a `<span class="tabbadge">`, and `renderBadges()` in
 `src/ui/run.ts` is the only thing that calls it — from `refreshRunPanels()`,
 which every screen's change callback runs, and from `finish()`, where the level
 a descent bought lands. Character carries `attributePointsLeft`, Skills carries
-`spareTreePoints` for the EQUIPPED skill rather than the web being read. Zero
+`spareTreePoints` for the EQUIPPED skill rather than the web being read, and
+Trade carries `tradePointsLeft`. Zero
 removes the badge; one reading 0 is a permanent nag. The node carries a class
 and no id, because the demo walks header ids for tutorial targets and a badge
 must never become one. `spareTreePoints` exists so drawing one cannot mint a
@@ -561,6 +623,10 @@ sit under what points at it, and on the skill web the opening's own card used
 to cover the tooltip naming the node it was ringing. It is
 `pointer-events: none`, so nothing can be trapped behind it. `smoke.mjs`
 measures it against each of those layers rather than against the number.
+
+**A dock-less modal is still four places.** The Trade screen is the worked
+example: markup in `docs/index.html`, the Escape chain in `src/web.ts`,
+`guideContext()`'s `top`, and `CLOSES` in `src/ui/tutorial.ts`.
 
 **Adding a modal is four places, not one.** The markup in `docs/index.html`;
 the Escape chain in `src/web.ts`, which closes the topmost thing and must know
@@ -870,9 +936,10 @@ is not the binding constraint, the wall clock is.
   currency's REFUSAL, on purpose. It is the only place a failure message is
   ever read, so those lines are the point of that section.
 
-The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
-`· ` line is a `gauge` — a balance number that reports and can never fail; it is
-371 checks and 7 gauges.
+The last line is `✓ every check passed (N)` or `✗ N checks failed`. Trust that,
+and read the count off it rather than out of this file — a number written down
+here goes stale the first time a phase adds a check. A `· ` line is a `gauge`: a
+balance number that reports and can never fail.
 
 ### The harnesses have their own rules
 
@@ -959,8 +1026,10 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. 
     halved to find the corner, and an odd one lands the loop on half-tiles and
     silently draws nothing where the landmark should be.
 - `npm run shots` covers the welcome, the Fissure, the collection, the SHEET,
-  the SLOTS, the HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH
-  and an item TOOLTIP at two sizes. The sheet shot grants three levels first
+  the SLOTS, the HANDOVER, a descent, the LAMPWRIGHT, the skill web, the TRADE,
+  the BENCH and an item TOOLTIP at two sizes. The trade shot grants the levels
+  for a full walk and spends them, because an unwalked web shows neither the lit
+  links nor whether the whole star fits. The sheet shot grants three levels first
   and scrolls the attributes into view, because at 390px the two columns stack
   and the rows it is there to catch are below the fold. The bench shot catches a third column not fitting; the
   tooltip shot rolls four modifiers onto a piece first, because a blank one
