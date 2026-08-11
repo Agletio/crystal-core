@@ -192,9 +192,15 @@ the game are given.
 - [ ] The three swords are held OUT with the point slightly up, from the grip
       the doll already has. The grip does not move: those coordinates are
       absolute whole pixels and everything else is drawn against them.
-- [ ] The daggers KEEP the point-down hold, which is what it always read as.
-      Decide and write down whether that is the dagger family's look on
-      purpose or a thing to redraw later.
+- [ ] The daggers KEEP the point-down hold, which is what it always read as —
+      it is a reverse grip and on a dagger that is a real way to hold one.
+      Write down that it is deliberate, or the next session "fixes" it too.
+- [ ] The other way round is on the table and is the user's own suggestion:
+      the current sword art is a good DAGGER, so rename the base and draw a
+      sword from scratch instead of bending the one that exists. Renaming a
+      base id costs every player whatever pointed at it (`RULES.md`), so it is
+      a new base and a retired one rather than a rename — decide which of the
+      two routes before drawing anything.
 - [ ] `strike` is redrawn to match the new rest, or the swing snaps between two
       unrelated poses.
 - [ ] `npm run demo`'s sprite checks still pass: every grid exactly 24 wide,
@@ -329,6 +335,12 @@ you can only watch has no moment in it that is yours.
       hand every character in the game the equivalent of extra life at all
       times; counted as a bonus on top of the existing numbers rather than as
       part of them, every band is quietly softer than it reads.
+- [ ] Potions are one of THREE postures and the other two are built later, so
+      leave room for them: this phase is the reactive safety net; a node
+      somewhere that deletes potions outright for flat power is the second;
+      and the Alchemist, who turns them into the character's engine, is the
+      third and has a phase of its own. All three are automatic — see the rule
+      in `RULES.md` about builds that need the player present.
 - [ ] On-screen buttons beside the map, with 1 and 2 as the shortcut rather
       than the interface. `npm run shots` runs a 390px viewport: a phone has no
       number row, and a potion nobody can reach there is not optional, it is
@@ -418,8 +430,10 @@ in the game is named for his trade — and it carries none of the rigidity.
       `sim/grants.ts` is already a table of switches rather than numbers and a
       trade hands them out the same way a node or a unique does — declared,
       read by something, and paid for.
-- [ ] **Two trades to start, not six.** The framework is what is expensive and
-      two good ones beat six thin ones. The first is the **Alchemist**: potions
+- [ ] **One trade is enough to ship this.** The framework is what is expensive,
+      and one good trade beats six thin ones — a second only lands with it if
+      one has been designed by the time this phase is taken. The first is the
+      **Alchemist**: potions
       stop being a safety net and become the character's engine — they carry
       buffs, they refresh themselves, and charges come back during a descent,
       so a potion is a cooldown rather than a budget. What the buff DOES is
@@ -451,7 +465,7 @@ in the game is named for his trade — and it carries none of the rigidity.
       first point, and the story replaces the ACQUISITION without touching the
       tree, the points or the allocation.
 
-**What must not break.** Two trades that change rules move every ladder number
+**What must not break.** A trade that changes rules moves every ladder number
 in `src/demo.ts`, and `ladderCharacter` in `src/sim/loadout.ts` builds the
 characters those harnesses measure — decide what trade a measured character has
 before reading anything into the numbers. The demo already holds every tree to
