@@ -140,10 +140,13 @@ thing.
       needs a rewrite: `swing()` in `src/sim/run.ts` is the ONE place mana is
       spent and the one place `starved` is set, and regeneration is one line in
       the same file's tick.
-- [ ] **Neither trade may be strictly better for a skill than the other.**
-      Both are open to every skill, so measure both on Strike and on Blight
-      before this phase is called done; a trade that is only ever right for one
-      skill is a skill node that got lost.
+- [ ] **A trade may favour a skill; it may not have exactly one.** Some
+      pairings being stronger than others is the system working — what would be
+      wrong is a trade with a single correct skill, which makes it a skill node
+      that got lost. **This is NOT a bar to clear in this phase**: three skills
+      is too few to tell a favourite from a requirement, so print what the
+      harness measures and do not tune to it. Revisit when the roster is wide
+      enough for the difference to show.
 - [ ] Trade grants reach the sim through `treeGrants` in `src/sim/stats.ts`,
       which already merges the tree with what is worn. A third source is a
       third argument, not a new concept.
