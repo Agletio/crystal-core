@@ -17,8 +17,8 @@ it. They are listed in DEPENDENCY order, not in the order they were asked for.
 
 **A character will end up holding three skills**, one from each of three slots
 — something that kills, something always on, something that moves you — and
-`Character.skillId` is one field until Phase 7 changes it. Anything built
-before then that assumes one skill is something Phase 7 has to undo, so prefer
+`Character.skillId` is one field until Phase 6 changes it. Anything built
+before then that assumes one skill is something Phase 6 has to undo, so prefer
 `characterStats(character)` over reaching for `character.skillId` yourself.
 
 **Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
@@ -26,9 +26,8 @@ nothing here is tuned until every system is in, because attributes, trades and
 jobs each hand out more power than the last and anything tuned before them is
 thrown away. Lean too easy. Measure, print, carry on.
 
-Three of them are one idea in three landable pieces — mana costs, then the
-potions that answer running dry, then the attributes that scale the pool — and
-each leaves the game playable on its own.
+Mana costs and the potions that answer running dry have both landed. Phase 1
+is the last piece of that idea — the attributes that scale the pool.
 
 ---
 
@@ -51,39 +50,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The harnesses report balance instead of failing on it
-
-**What is true today.** `src/demo.ts` asserts difficulty and reward TARGETS
-with `check()`, so a phase that moves one fails the suite: the deep end has to
-be a third or less (`through <= deep / 3`), a naked character has to walk out
-of the Fissure under 70% life, every band has to clear in the band below's
-gear, the Seam has to sit within 15% of the hardest single world, and a bare
-skill has to spend between 5% and 50% of its swings unable to pay for itself.
-
-**Why it is wrong.** `RULES.md` now says balance is not tuned until every
-system is in, because each one still to land hands out more power than the
-last. A check that fails on a number nobody is tuning is a check that stops
-work for no reason — it has already blocked one phase.
-
-- [ ] Every check asserting a TARGET becomes a `line()` that prints the number.
-      The list is above; `grep "check(" src/demo.ts` around `THE LADDER`,
-      `FAMILIES`, `MANA` and `WHAT A BAND IS WORTH` finds them.
-- [ ] The numbers keep being printed, and printed in the same place, so a
-      balance pass later has a before and an after to read. Deleting the
-      measurement is the one wrong answer.
-- [ ] **One survives as a `check()`:** a brand new character clears the bare
-      Fissure. A game you cannot start is not a balance question.
-- [ ] Everything asserting a MECHANISM stays a `check()` and is not touched —
-      termination, determinism, every step completing, ids existing, every
-      modifier doing something, saves healing, geometry.
-- [ ] The demo's last line still counts only real failures, so `✓ every check
-      passed` keeps meaning what it says.
-
-**What must not break.** `npm run demo` has to stay green and stay honest: a
-suite that passes because it stopped asking is worse than one that fails. The
-count of checks will drop; say by how many in the commit.
-
-### Phase 2 — Character level buys attributes [user 7]
+### Phase 1 — Character level buys attributes [user 7]
 
 **Potions landed first, and they moved the floor.** Every number below that
 compares against "today" was measured with the flasks firing themselves, which
@@ -182,7 +149,7 @@ tagged `['spell']` and 6% mana for Intelligence; 0.6 flat critical chance
 tagged `['attack']` and 2% attack speed for Dexterity; the same tagged
 `['spell']` with cast speed for Acuity.
 
-### Phase 3 — Two things the run screen gets wrong [user 1, user 2]
+### Phase 2 — Two things the run screen gets wrong [user 1, user 2]
 
 Two unrelated one-screen fixes, both small, both about the screen showing you
 the wrong thing. Do them together.
@@ -222,12 +189,12 @@ node and its own card covers the tooltip naming it.
 guide` clicks through the opening with a real pointer and would notice a
 tooltip that started swallowing clicks.
 
-### Phase 4 — A badge on every tab holding points to spend [user 6]
+### Phase 3 — A badge on every tab holding points to spend [user 6]
 
 **What is true today.** Unspent points are invisible from outside the screen
 that spends them. `pointsAvailable(progress)` in `src/sim/character.ts` is the
 tree's spare points and is only ever read inside `src/ui/skills.ts`;
-`attributePointsLeft(character)` (Phase 2) is the same for attributes and is
+`attributePointsLeft(character)` (Phase 1) is the same for attributes and is
 only read on the sheet. The header buttons — `#open-skills`, `#open-character`
 in `docs/index.html` — say nothing.
 
@@ -250,7 +217,7 @@ guided opening is the only thing that has ever told a player they have one.
 the tightest row in the game. The demo's "every step points at an element that
 exists" walks header ids and a badge must not become one of them.
 
-### Phase 5 — Out of mana is a penalty, not a wall [user 5]
+### Phase 4 — Out of mana is a penalty, not a wall [user 5]
 
 **What is true today.** `RunSim.swing` in `src/sim/run.ts` pays
 `hero.stats.manaCost` and, short of it, casts `DRY_SKILL` instead — a
@@ -291,7 +258,7 @@ at all to finishing its descent; that check gets EASIER here, since it can now
 always cast, but it still has to pass. `npm run demo`'s determinism check
 replays a seed with the same presses and must still match.
 
-### Phase 6 — The opening spends every point [user 3]
+### Phase 5 — The opening spends every point [user 3]
 
 **What is true today.** `TUTORIAL_STEPS` in `src/ui/tutorial.ts` has two tree
 steps. `spend_point` rings ONE specific node — `towardNode` walks you into
@@ -334,7 +301,7 @@ pointer and is the only thing that proves a step is finishable; the demo walks
 the same list headlessly with one hand-written action per step, and the step
 count in `RULES.md` needs updating with it.
 
-### Phase 7 — Three skill slots, and a skill to put in each [user 4]
+### Phase 6 — Three skill slots, and a skill to put in each [user 4]
 
 **What is true today.** A character has ONE skill — `Character.skillId` —
 and `characterStats(character)` resolves exactly that one. `SKILL_CATEGORIES`
@@ -382,7 +349,7 @@ through `makeCharacter(equipment, skillId)`; that signature changing touches
 guide` equips a skill with a real pointer. The blink is a new way for a run to
 end early or never end — `TERMINATION CHECK` is the one that would catch it.
 
-### Phase 8 — Three icons, and the stats that belong to a skill [user 4]
+### Phase 7 — Three icons, and the stats that belong to a skill [user 4]
 
 **What is true today.** The run panel's readout begins with a `mana a swing`
 row (`#run-mana-cost` in `docs/index.html`) directly under the xp bar. The
@@ -393,7 +360,7 @@ damage per second, crit chance and crit damage, casts or attacks per second,
 mana per use, reach.
 
 **Why it is wrong.** A sheet that mixes the two cannot answer either question,
-and with three skills equipped (Phase 7) it cannot even be written down.
+and with three skills equipped (Phase 6) it cannot even be written down.
 
 - [ ] The `mana a swing` row goes, and in its place — right under the xp bar —
       three skill icons, one per slot. `skillIcon(skillId, size)` in
@@ -412,7 +379,7 @@ and with three skills equipped (Phase 7) it cannot even be written down.
 harness in `src/demo.ts` checks every number on it survives being recomputed,
 and it walks the rows.
 
-### Phase 9 — Trades: the part of a character that is not the skill
+### Phase 8 — Trades: the part of a character that is not the skill
 
 **What is true today.** Every scrap of build identity in this game belongs to
 the SKILL. `BUILT_TREES` is one tree per skill, allocated per skill
@@ -494,7 +461,7 @@ before reading anything into the numbers. The demo already holds every tree to
 its geometry and every grant to being declared and read; a trade tree that
 skips those checks is a tree nobody is checking.
 
-### Phase 10 — Every monster brings its own element [user 10]
+### Phase 9 — Every monster brings its own element [user 10]
 
 **What is true today, and it is not what it looks like.** One crystal modifier
 does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
@@ -550,7 +517,7 @@ against what its stats say, across every rank and the finale, and it holds
 `DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
 Three elements against per-type resistances moves every ladder number: measure.
 
-### Phase 11 — What a node does, shown and not overlapped [user 8]
+### Phase 10 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -605,7 +572,7 @@ this file is buildable today.
 2. **What the second trade is.** The Alchemist is designed, and a second is
    now half-designed: **a trade that stacks MANA** — a large upside for solving
    mana at all, and a bigger downside for running out, which is a rule change
-   rather than a percentage. Phase 5 is built with that in mind: the starved
+   rather than a percentage. Phase 4 is built with that in mind: the starved
    damage penalty arrives through a declared grant so this trade can move it
    with a table entry rather than a rewrite. What it grants and what it takes
    away is still unwritten. The user calls these JOBS; this file calls them

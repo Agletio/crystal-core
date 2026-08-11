@@ -242,8 +242,15 @@ Until then:
   easier" has done its job and said so.
 - **The demo's balance checks report rather than fail.** Anything asserting a
   TARGET — the share that gets through the deep end, what a band clears, the
-  Seam's margin, the share of swings that go unpaid — is a `line()`, not a
-  `check()`.
+  Seam's margin, the share of swings that go unpaid — is a `gauge()`, not a
+  `check()`. `gauge` prints `· ` where a check prints `✓`, it never touches the
+  exit code, and the line CARRIES the number and the figure that was wanted, so
+  the balance pass has a before and an after to read. Deleting a measurement to
+  silence it is the one wrong answer.
+- **Six of them**, and they are the whole list: the naked character's life left
+  and the blank-crystal rung under `THE LADDER`, the band ladder and the deep
+  end beside them, the Seam's margin under `FAMILIES`, and the unpaid share
+  under `MANA`.
 - **What still fails is MECHANISM.** A run that does not end, a determinism
   break, a step nobody can finish, a screen that overflows, a modifier that
   does nothing, a save that cannot be healed. Those are bugs at any balance.
@@ -508,11 +515,12 @@ downside on the item. Every world drops something of its own, the Fissure two.
 band is reached long before danger runs out — the hardest set in the game is
 nobody's target, and `deepestSet` in `src/sim/loadout.ts` is the only thing that
 builds it. `THE LADDER` measures it against gear a band below the top and
-PRINTS what got through. It used to have to be a wall — a third or less — and
-that target is SUSPENDED under the no-tuning rule above: it was a number set for
-a character whose levels bought nothing, it was already at 31% over 36 runs
-before attributes existed, and every system still to land hands out more power.
-It comes back at the balance pass. Past the power cap, danger still pays in
+PRINTS what got through, as a `gauge` rather than a check. A wall is a third or
+less and a ceiling is nothing at all; both figures are named on the line, and
+neither is asserted — under the no-tuning rule above the wall is a number set
+for a character whose levels bought nothing, and every system still to land
+hands out more power. It comes back at the balance pass, and until then 3/12 is
+news rather than a failure. Past the power cap, danger still pays in
 RARITY, which reads `payingDanger` directly — that is the whole reason to build
 it.
 
@@ -747,7 +755,9 @@ is not the binding constraint, the wall clock is.
   currency's REFUSAL, on purpose. It is the only place a failure message is
   ever read, so those lines are the point of that section.
 
-The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
+The last line is `✓ every check passed` or `✗ N checks failed`. Trust that. A
+`· ` line is a `gauge` — a balance number that reports and can never fail; it is
+351 checks and 6 gauges.
 
 ### The harnesses have their own rules
 

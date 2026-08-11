@@ -238,6 +238,17 @@ function check(ok: boolean, good: string, bad: string): void {
   line(`  ✗ FAILED — ${bad}`);
 }
 
+/**
+ * A balance number: measured, printed, and never a failure.
+ *
+ * `RULES.md` — nothing is tuned until every system is in, and each one still
+ * to land hands out more power than the last. So the difficulty and reward
+ * TARGETS report instead of asserting, and the figure beside each is what the
+ * balance pass reads for a before and an after. What must not break is
+ * MECHANISM, and that is still `check()`.
+ */
+const gauge = (s: string) => line(`  · ${s}`);
+
 function aim(item: Item, currencyId: string, chosen?: string): Item {
   const currency = CURRENCY_BY_ID[currencyId];
   const res = craft(item, currency, pool, rng, chosen);
@@ -3073,14 +3084,9 @@ rule('FAMILIES — a different fight, or a harder one?');
   // actually worst is an open question in ROADMAP.md, and this prints the
   // margin so an answer has something to read.
   const hardest = Math.max(lived.demonic.perSec, lived.prismatic.perSec);
-  line(
-    `  the Seam is ${(((lived.seam.perSec - hardest) / hardest) * 100).toFixed(1)}% ` +
-      'over the hardest single world'
-  );
-  check(
-    lived.seam.perSec >= hardest * 0.85,
-    'and the Seam is in the same class as the hardest of them, within 15%',
-    `the Seam at ${lived.seam.perSec.toFixed(1)} is well under ${hardest.toFixed(1)}`
+  gauge(
+    `the Seam is ${(((lived.seam.perSec - hardest) / hardest) * 100).toFixed(1)}% ` +
+      'over the hardest single world — the same class within 15%'
   );
   // Harder, never a wall: the same under-geared character still walks out of
   // every one of them more often than not.
@@ -3602,15 +3608,11 @@ rule('MANA — is a bare skill just barely sustainable?');
   );
   const worst = Math.max(...dryShare);
   const best = Math.min(...dryShare);
-  check(
-    worst < 0.5,
-    `and never spends half its swings unable to pay — worst is ${(worst * 100).toFixed(0)}%`,
-    `${(worst * 100).toFixed(0)}% of swings are bare: the skill you chose is not the one you cast`
-  );
-  check(
-    worst > 0.05,
-    `and is not comfortable either — ${(best * 100).toFixed(0)}% to ${(worst * 100).toFixed(0)}% of swings go unpaid`,
-    'nothing ever runs dry: the resource is decoration'
+  // Both ends of one knob: half a character's swings bare is a skill it never
+  // gets to cast, and none of them bare is a resource nobody notices.
+  gauge(
+    `${(best * 100).toFixed(0)}% to ${(worst * 100).toFixed(0)}% of swings go unpaid — ` +
+      'the skill is cast most of the time between 5% and 50%'
   );
 
   // The pressure the phase exists to create. Nodes that change what the skill
@@ -3902,7 +3904,10 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     }
   }
   const share = cleared / runs;
-  line(`  naked, level 1, no tree: ${cleared}/${runs} cleared, ${((lifeLeft / Math.max(1, cleared)) * 100).toFixed(0)}% life left`);
+  const spare = (lifeLeft / Math.max(1, cleared)) * 100;
+  line(`  naked, level 1, no tree: ${cleared}/${runs} cleared`);
+  // The one difficulty check that stays a failure. A game you cannot start is
+  // not a balance question.
   check(
     share >= 0.85,
     'a brand new character clears the Fissure',
@@ -3910,11 +3915,7 @@ rule('THE LADDER — is every rung reachable from the one below it?');
   );
   // The other half of the same knob: a Fissure nobody can lose teaches nothing
   // about the fight, and the tier above it is where the lesson is meant to land.
-  check(
-    lifeLeft / Math.max(1, cleared) < 0.7,
-    'and is made to work for it',
-    'walks out barely touched — the Fissure is not teaching anything'
-  );
+  gauge(`and walks out on ${spare.toFixed(0)}% life — it is teaching the fight under 70%`);
 
   // 1b. The rung the game actually puts in front of you: the first crystal is
   //     given on that first clear, and the opening says to socket it. One
@@ -3929,11 +3930,9 @@ rule('THE LADDER — is every rung reachable from the one below it?');
       const sim = new RunSim([makeCrystal(1)], hero, new Rng(5200 + i * 11));
       if (runToCompletion(sim, 400).status === 'cleared') survived++;
     }
-    line(`  one blank crystal, straight after that first clear: ${survived}/${tries} cleared`);
-    check(
-      survived / tries >= 0.6,
-      'and the first crystal it hands you is a descent that character can take',
-      `${survived}/${tries} — socketing the gift is a death sentence`
+    gauge(
+      `one blank crystal, straight after that first clear: ${survived}/${tries} cleared — ` +
+        'the gift is a descent that character can take above 60%'
     );
   }
 
@@ -3954,10 +3953,10 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     line(`   ${band}    ${ok}/${tries}`);
     if (ok === 0) wall.push(`band ${band}`);
   }
-  check(
-    wall.length === 0,
-    'every band can be cleared in gear the band below it drops',
-    `${wall.join(', ')} cannot be entered in anything that band hands out`
+  gauge(
+    wall.length === 0
+      ? 'every band is clearable in gear the band below it drops'
+      : `${wall.join(', ')} cannot be entered in anything that band hands out`
   );
 
   // 3. The deep end, which is not a band. Power caps at the top one long
@@ -3974,16 +3973,9 @@ rule('THE LADDER — is every rung reachable from the one below it?');
     const sim = new RunSim(set, ladderCharacter(6, new Rng(70 + i)), new Rng(900 + i));
     if (runToCompletion(sim, 600).status === 'cleared') through++;
   }
-  line(`  the deep end: four crystals rolled for danger, ${Math.round(deepest / deep)} danger: ${through}/${deep}`);
-  check(
-    through <= deep / 3,
-    'and the top of what four sockets can hold is a wall',
-    `${through}/${deep} — the deep end is a farm`
-  );
-  check(
-    through > 0,
-    'and a wall rather than a ceiling — a build gets through it',
-    'nothing gets through the deep end at all'
+  gauge(
+    `the deep end: four crystals rolled for danger, ${Math.round(deepest / deep)} danger: ` +
+      `${through}/${deep} through — a wall under 4/12, a ceiling at 0`
   );
 }
 
