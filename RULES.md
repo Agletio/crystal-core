@@ -15,18 +15,31 @@ does not exist.
 
 One phase at a time, and **no stop between them**. Every pass:
 
-1. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
-2. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
+1. **`git fetch` and check you are standing on the tip of the branch.** A
+   session's clone is taken when its container starts and the branch moves
+   under it — so the `ROADMAP.md` you were handed can list phases that are
+   already built, in a file whose own copy is out of date. This has cost a
+   whole phase's work once already: it was rebuilt from scratch, tested, and
+   thrown away on discovering it had landed hours earlier. `git log --oneline
+   -15 origin/<branch>` reads the phases that have landed, and a commit message
+   here names what it did in the roadmap's own words. If the local branch is
+   behind, reset onto the remote tip and read the roadmap AGAIN before picking
+   anything.
+2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
+3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
    open question, and do the WHOLE of it. Not part.
-3. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
+4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
-4. Commit and push.
-5. Update `ROADMAP.md`: delete the phase, renumber the rest, move anything that
+5. Commit and push. Push BEFORE starting the next phase, so the next session
+   to fetch sees the work rather than rebuilding it.
+6. Update `ROADMAP.md`: delete the phase, renumber the rest, move anything that
    turned out to be wrong into its Open questions, and write down anything the
    next session would otherwise have to rediscover. Update this file if a rule
-   changed or a new invariant now holds.
-6. **Start the next phase immediately.** Same turn, same context, no pause.
+   changed or a new invariant now holds, and `CLAUDE.md` if the GAME changed —
+   between them those two files are the answer to "has this been built already",
+   so a phase that lands without them updated is a phase somebody does twice.
+7. **Start the next phase immediately.** Same turn, same context, no pause.
 
 **Finishing a phase is not a stopping point.** It is the signal to begin the
 next one. Do not end the turn to report what was done, do not ask whether to
@@ -625,9 +638,10 @@ The last line is `✓ every check passed` or `✗ N checks failed`. Trust that.
     real generated map, centred on the entrance. **`span` must be EVEN**: it is
     halved to find the corner, and an odd one lands the loop on half-tiles and
     silently draws nothing where the landmark should be.
-- `npm run shots` covers the welcome, the Fissure, the collection, the
-  HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH and an item
+- `npm run shots` covers the welcome, the Fissure, the collection, the SLOTS,
+  the HANDOVER, a descent, the LAMPWRIGHT, the skill web, the BENCH and an item
   TOOLTIP at two sizes. The bench shot catches a third column not fitting; the
   tooltip shot rolls four modifiers onto a piece first, because a blank one
   shows none of the grouping; the handover shot fires 180ms into a launch,
-  which is the hero half out of the entrance.
+  which is the hero half out of the entrance; the slots shot is three rows of
+  name, level, age and two buttons, which is where a narrow screen tears.

@@ -13,6 +13,13 @@ A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework.
 **Start every session by reading `RULES.md`, then `ROADMAP.md`.** This file is
 loaded for you; those two are not.
 
+**Before either of them, `git fetch` and check you are on the tip of the
+branch.** The clone is taken when the container starts and the branch moves
+under it, so the roadmap you were handed can be listing work that has already
+landed — that has cost a whole phase, built and tested and thrown away.
+`git log --oneline -15 origin/<branch>` is the fastest read of what is done;
+reset onto the tip and re-read the roadmap before picking anything.
+
 One phase at a time, and **no stop between them**: take the lowest-numbered
 phase in the roadmap that is not blocked on an open question, do the WHOLE of
 it, leave the suite green, commit and push, update `ROADMAP.md` and `RULES.md`
@@ -190,14 +197,23 @@ decision.
 ## The loop
 
 You press Enter once. A cleared descent launches the next one by itself, and it
-keeps going until it is stopped: **you die**, **the haul fills**, or you say so.
-Saying so has two prices. **Leave after this run** finishes the descent you are
-in and banks it; **Abandon** walks out now, and that descent pays nothing — the
-same rule as dying in it. Every one of the four ends on the same report and
-opens the same haul, so there is one screen that means "the run is over, deal
-with your things", and what earlier clears banked is visible rather than
-assumed. Only the descent you are standing in can be lost; each clear banks as
-it happens and nothing reaches back for it.
+keeps going until it is stopped: **you die**, **the haul fills**, **someone is
+waiting at the mouth**, or you say so. Saying so has two prices. **Leave after
+this run** finishes the descent you are in and banks it; **Abandon** walks out
+now, and that descent pays nothing — the same rule as dying in it. A meeting is
+the gentlest of the five and costs nothing at all: the descent is already
+cleared and banked when he climbs out, and he walks you up. Every one of the
+five ends on the same report and opens the same haul, so there is one screen
+that means "the run is over, deal with your things", and what earlier clears
+banked is visible rather than assumed. Only the descent you are standing in can
+be lost; each clear banks as it happens and nothing reaches back for it.
+
+**A descent ends at a place you walk to.** Killing the last thing is not the
+end of it: the hero walks to the exit, and coming near the hole is what brings
+the closing encounter up out of it, a few at a time, so the last fight is
+something that happens on the way out. Reaching the hole is the clear. The exit
+is drawn as the hole it is — the same `mouth()` the entrance has — and nothing
+paints a marker over it.
 
 The **haul** (`GameState.haul`, `HAUL_CAP`) is where a cleared run's loot lands
 — never in your bags, which are yours to arrange. It is inert exactly as the
@@ -238,7 +254,7 @@ src/skills-tree.ts allocation rules; src/trees/* are the webs
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
 src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation
-src/game/crystals.ts  gifts, quests, and a crystal's climb from T1 to T4
+src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/            one module per screen
 ```

@@ -8,6 +8,13 @@ Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it from here and renumber. Numbers in a phase are intent, not
 tuning — a measurement beats them.
 
+**There are no phases in this file.** Everything that was written down has been
+built; what is here is two open questions the user has to answer and a backlog
+nothing comes out of without being asked. If you are reading a phase below,
+your clone is behind the branch — fetch, reset onto the tip, and read this
+file again. A landed phase is DELETED from here, so a phase you can still see
+is either genuinely open or a copy of the file from before it landed.
+
 ---
 
 ## Phases
