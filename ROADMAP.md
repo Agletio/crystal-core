@@ -221,6 +221,36 @@ floats ON it:
       phase. Keep the button IDS (`open-shop`, `open-craft`, `open-character`,
       `open-save`, …) whatever the presentation becomes — the guided opening
       navigates by them and so does the shots lockdown probe.
+
+      **A first attempt at this was built and thrown away. Read this before the
+      second.** Everything below is written down because it was paid for once.
+      The work itself is saved as a patch under the session scratchpad, but the
+      findings matter more than the diff.
+      - **It broke dock drag-and-drop, and that is what killed it.** With the
+        rail in and `guide.mjs` UNCHANGED, `npm run guide` failed
+        `dragging a dock slot did not reorder it` and
+        `a click after a drag opened "Level 2 Crystal"`. Confirmed as a game
+        regression, not a harness artifact, by reverting the harness and
+        re-running. The cause was never found. **Find it before building the
+        rail again**, and the way to find it is to dump
+        `document.elementFromPoint` at the drop coordinates together with the
+        rects of `.dock`, the open `.modal__card` and `#craft-crystals` at the
+        moment of failure — reasoning about z-order and `--dock-h` from
+        screenshots produced four wrong answers in a row.
+      - **The dock's handler is the thing to suspect.** `#inv-gear` slot
+        `aria-label`s read `Wear as …` when the sheet owns the dock and
+        `Open on bench: …` when the bench does. `setInventoryHandler` is set by
+        whichever screen last took focus, and `setPhase` puts the RUN's handler
+        back — so a descent ending while the bench is open silently stops dock
+        clicks reaching it. That is a REAL BUG independent of the rail, worth
+        fixing on its own: a screen that is open should not lose the dock
+        because a descent ticked over.
+      - Windows must not cover the rail, since the rail is how a window gets
+        closed. `.modal { bottom: max(var(--dock-h, 0px), 106px) }` did it.
+      - The rail wraps, and at `max-width: 560px` its wrapped row reaches the
+        bottom-centre flasks. 336px keeps it a compact block in the corner.
+      - Grid-art glyphs at 10×10 in `src/ui/screenicons.ts` worked and read
+        fine at 18px; that part is done and is in the saved patch.
 - [ ] **The minimize has to have a way back.** Exactly one affordance never
       hides, and it takes a key — `Space` is already recentre-camera, so pick
       another `BINDINGS` entry. The guided opening should UN-minimize rather
@@ -237,6 +267,17 @@ floats ON it:
       way the toggle points, and the browser can leave fullscreen without
       asking (Escape), so listen for `fullscreenchange` rather than tracking a
       boolean of your own.
+
+**`npm run guide` is the harness that costs the most, and it can be made cheap.**
+It plays REAL descents, so the opening takes eight minutes of wall clock. The
+frame loop accumulates real `dt` and steps the sim in fixed `TICK`s, so scaling
+`dt` runs it faster with an IDENTICAL tick sequence and an identical outcome —
+the seed still replays. A `?fast=` read gated to loopback hosts (so the hosted
+game can never be handed it, which in an idle game would be a cheat) took the
+guide to **1m52s**. The saved patch has it. Two things learned with it:
+the harness's own static server did not strip query strings, so any URL with a
+`?` 404'd; and the post-opening drag checks need the loop STOPPED, not merely
+slowed, because a descent ending mid-drag redraws the dock underneath it.
 
 **What must not break.** Nothing here can touch the sim: it is in tile space
 and never reads a pixel, so a different canvas size replays the same seed and
