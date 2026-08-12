@@ -330,6 +330,8 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
   await page.evaluate(() => document.getElementById('confirm-yes')?.click());
   await page.waitForTimeout(500);
+  // The tooltip below is a REAL hover, which a hidden slot refuses.
+  await page.evaluate(() => document.getElementById('open-inventory')?.click());
   await page.evaluate(() => {
     document.getElementById('open-craft')?.click();
     const first = document.querySelector('#craft-crystals .wornslot');

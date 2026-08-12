@@ -124,7 +124,22 @@ export function initInventory(state: GameState): void {
     sortInventory(game!);
     renderInventory();
   };
+
+  ($('inv-close') as HTMLButtonElement).onclick = closeInventory;
 }
+
+/** A window, and the only one whose home is a corner. Drawn on the way open:
+ *  nothing behind a `hidden` attribute is worth keeping current. */
+export function openInventory(): void {
+  $('dock').hidden = false;
+  renderInventory();
+}
+
+export const closeInventory = (): void => {
+  $('dock').hidden = true;
+};
+
+export const isInventoryOpen = (): boolean => !$('dock').hidden;
 
 /** Screens call this when they take focus, and again when their state moves. */
 export function setInventoryHandler(next: InventoryHandler | null): void {

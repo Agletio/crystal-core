@@ -14,7 +14,14 @@ import { EQUIP_SLOTS, POTIONS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
-import { initInventory, renderInventory, setItemActions } from './ui/inventory';
+import {
+  closeInventory,
+  initInventory,
+  isInventoryOpen,
+  openInventory,
+  renderInventory,
+  setItemActions,
+} from './ui/inventory';
 import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
@@ -118,6 +125,7 @@ document.getElementById('open-shop')!.addEventListener('click', openShop);
 document.getElementById('open-haul')!.addEventListener('click', () => openHaul());
 document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
 document.getElementById('open-stash')!.addEventListener('click', openStash);
+document.getElementById('open-inventory')!.addEventListener('click', openInventory);
 document.getElementById('open-character')!.addEventListener('click', () => openCharacter());
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
@@ -157,6 +165,7 @@ globalThis.addEventListener('keydown', (event) => {
   else if (isStashOpen()) closeStash();
   else if (isShopOpen()) closeShop();
   else if (isCraftOpen()) closeCraft();
+  else if (isInventoryOpen()) closeInventory();
   // Last, so it never eats the press that was meant to close a window.
   else dismissToast();
 });
@@ -166,7 +175,9 @@ const dock = document.querySelector('.dock') as HTMLElement;
 function measureDock(): void {
   // To the bottom of the WINDOW, not the dock's own height: the shell's
   // padding sits below it, and a popup stopping short would clip the top row.
-  const gap = globalThis.innerHeight - dock.getBoundingClientRect().top;
+  // Closed it reserves nothing, or a hidden window would push every other one
+  // up by the height of the space it is not occupying.
+  const gap = dock.hidden ? 0 : globalThis.innerHeight - dock.getBoundingClientRect().top;
   document.documentElement.style.setProperty('--dock-h', `${Math.max(0, Math.round(gap))}px`);
 }
 // The resize listener covers environments with no ResizeObserver, like jsdom.
@@ -317,6 +328,7 @@ function guideContext(): GuideCtx {
     phase: runPhase(),
     top,
     picking: pickingSlot(),
+    dock: isInventoryOpen(),
     ...skillsDepth(),
   };
 }

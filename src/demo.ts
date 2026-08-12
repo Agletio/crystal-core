@@ -1590,6 +1590,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     phase: 'menu',
     top: null,
     picking: null,
+    dock: true,
     category: null,
     viewing: null,
   };
@@ -1920,6 +1921,7 @@ rule('GUIDED OPENING — does every step actually complete?');
       top: 'craft',
       phase: 'menu',
       picking: null,
+      dock: true,
       category: null,
       viewing: null,
     };

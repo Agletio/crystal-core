@@ -364,8 +364,9 @@ if (finished) {
     await page.waitForTimeout(80);
   }
 
-  // The opening leaves you with a wand and little else, so stock the dock. The
-  // guide has already made every assertion it is going to by this point.
+  // Stock the dock, opened first because a drag needs a box to grab. Every
+  // assertion the guide is going to make has been made by this point.
+  await page.locator('#open-inventory').click();
   if ((await gearSlots().count()) < 4) {
     await page.locator('#dev-kit').click();
     await page.locator('#confirm-yes').click();

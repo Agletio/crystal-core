@@ -36,6 +36,8 @@ export interface GuideCtx {
   top: string | null;
   /** The slot waiting to be filled: picking one moves the next click to the dock. */
   picking: string | null;
+  /** Whether the dock is up: a step pointing INTO it has to open it first. */
+  dock: boolean;
   /** Which shelf the Skills screen is on, and whose web is up. Both null
    *  anywhere else, so a step can walk you all the way down to a node. */
   category: string | null;
@@ -95,8 +97,9 @@ const given = (g: GameState): Item | undefined => {
   return (gift && g.inventory.includes(gift) ? gift : undefined) ?? anyWeapon(g);
 };
 
-/** The weapon itself, if it is still in the dock to be clicked. */
-const theWeapon = (g: GameState): string => {
+/** The weapon in the dock, or the way in when the dock is shut. */
+const theWeapon = (g: GameState, ctx: GuideCtx): string => {
+  if (!ctx.dock) return 'open-inventory';
   const item = given(g);
   return item ? dockSlotId(item.id) : slotButtonId('weapon');
 };
@@ -276,7 +279,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
       ctx.top === "shop"
         ? "shop-close"
         : ctx.view === "craft"
-          ? theWeapon(g)
+          ? theWeapon(g, ctx)
           : viaHeader(ctx, "open-craft"),
     // THE weapon. Every looser reading — any gear, any blank weapon — let a
     // first run's drops satisfy this step, and with it the next one.
@@ -304,7 +307,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
         ? // Once a slot is picked the gear is what you click, and it is in the
           // dock — ringing the slot lights the button you just pressed.
           ctx.picking
-          ? theWeapon(g)
+          ? theWeapon(g, ctx)
           : slotButtonId("weapon")
         : viaHeader(ctx, "open-character"),
     done: (g) => !!g.character.equipment.weapon,
@@ -436,6 +439,7 @@ let context: () => GuideCtx = () => ({
   phase: "menu",
   top: null,
   picking: null,
+  dock: true,
   category: null,
   viewing: null,
 });

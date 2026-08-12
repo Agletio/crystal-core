@@ -377,8 +377,8 @@
   /* A window like the rest: full bleed it would cover the header and dock, and
      a finished run is exactly when you go and deal with what it dropped. */
   body.mapfull #run-stagewrap .results {
-    position: fixed; inset: 0; z-index: 15;
-    pointer-events: none; background: none;
+    position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px);
+    z-index: 15; pointer-events: none; background: none;
   }
   body.mapfull #run-stagewrap .resultcard { pointer-events: auto; }
   /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
@@ -581,7 +581,14 @@
   /* Fixed height at the bottom of the frame. Icons in slots rather than rows
      of text: forty item names is a wall you read past, forty icons is a thing
      you scan. The name and every modifier are one hover away. */
-  .dock { flex: none; padding: 10px 14px 12px; }
+  /* Bottom left, and its own width rather than the shell's: centred it would
+     be a window covering the map like any other, and the whole point of this
+     one is being open WHILE something else works on it. */
+  .dock {
+    position: fixed; left: 20px; bottom: 16px; z-index: 18;
+    width: min(760px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
+    padding: 10px 14px 12px;
+  }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
   .dock__head .panel__title { margin: 0; }
   .wallet { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -1237,6 +1244,7 @@
       <button class="mini" id="open-skills">Skills</button>
       <button class="mini" id="open-trade">Trade</button>
       <button class="mini" id="open-history">History</button>
+      <button class="mini" id="open-inventory">Inventory</button>
       <button class="mini" id="open-save">Save &amp; Load</button>
       <span class="devsep"></span>
       <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, gold and every currency">Dev kit</button>
@@ -1363,13 +1371,15 @@
   </div>
   </div>
 
-  <!-- The dock: what you carry and what you spend, always on screen and never
-       scrolled past. Icons only — reading forty names was never the point of a
-       stash, and the modifiers are a hover away. -->
-  <div class="panel dock" id="dock">
+  <!-- What you carry and what you spend. A window off the menu like every other
+       screen, but its home is the BOTTOM LEFT rather than the middle: it is the
+       one you want open while another screen is doing something to it. Icons
+       only — reading forty names was never the point of a stash. -->
+  <div class="panel dock" id="dock" hidden>
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
       <div class="wallet" id="wallet"></div>
+      <button class="mini" id="inv-close">Close</button>
     </div>
     <div class="dock__cols">
       <div class="dockcol">
