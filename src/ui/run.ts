@@ -127,9 +127,17 @@ function setPhase(next: Phase): void {
  * while a map is up or the two fight over the height. It belongs to the run
  * view SHOWING A MAP: left on while you tabbed to the bench, it froze that
  * page with its items out of reach.
+ *
+ * `mapfull` rides on the same answer and is the whole of what makes the map the
+ * screen — one class on the body, read only by CSS.
  */
 export function syncViewportLock(): void {
-  document.querySelector('.viewport')?.classList.toggle('viewport--locked', phase !== 'menu');
+  const showing = phase !== 'menu';
+  document.querySelector('.viewport')?.classList.toggle('viewport--locked', showing);
+  document.body.classList.toggle('mapfull', showing);
+  // The stage's box just changed shape, and nothing else will tell the
+  // renderer: `fitCanvas` runs off resize, which a class does not fire.
+  if (showing) fitCanvas();
 }
 
 /** Which of the three states the Fissure is in. The guide branches on it. */
@@ -781,6 +789,21 @@ const FLASK_GAP = 8;
 function fitCanvas(): void {
   const box = $('run-stage');
   const width = box.clientWidth;
+  const height = document.body.classList.contains('mapfull')
+    ? // Full bleed, so the box IS the answer. Deriving it from `.runcols` the
+      // way the framed layout does would measure the side panel: the stage is
+      // fixed and has left that row entirely.
+      box.clientHeight
+    : framedHeight(box, width);
+  renderer?.resize(width, height);
+
+  // Now that the surface has a real size, pick the scale that fits it. At
+  // startup the stage is still unmeasured, so this is the first honest chance.
+  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)));
+}
+
+/** The stage as a CELL: whatever the row has left once the panels have theirs. */
+function framedHeight(box: HTMLElement, width: number): number {
   // Below the stacking breakpoint the panels sit under the stage and the view
   // scrolls again, so there's no "space left over" to measure. Same number as
   // the media query, because they describe the same layout.
@@ -792,12 +815,7 @@ function fitCanvas(): void {
   const flasks = $('run-flasks').getBoundingClientRect().height;
   const reserve = flasks > 0 ? flasks + FLASK_GAP : 0;
   const available = !stacked && row ? row.clientHeight - 2 - reserve : 0;
-  const height = available > 240 ? available : Math.max(320, Math.round(width * 0.66));
-  renderer?.resize(width, height);
-
-  // Now that the surface has a real size, pick the scale that fits it. At
-  // startup the stage is still unmeasured, so this is the first honest chance.
-  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)));
+  return available > 240 ? available : Math.max(320, Math.round(width * 0.66));
 }
 
 function setZoom(next: number, at?: { x: number; y: number }): void {

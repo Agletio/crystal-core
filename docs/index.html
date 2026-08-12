@@ -169,9 +169,8 @@
   .wrap {
     position: relative; z-index: 1;
     max-width: 1180px; margin: 0 auto; padding: 14px 20px 16px;
-    /* Longhands after the shorthand, so they win. max() means the insets only
-       ever ADD room — on a device without a notch they resolve to 0 and the
-       padding above stands. */
+    /* Longhands after the shorthand, so they win, and max() means an inset
+       only ever ADDS room. */
     padding-left: max(20px, env(safe-area-inset-left));
     padding-right: max(20px, env(safe-area-inset-right));
     padding-bottom: max(16px, env(safe-area-inset-bottom));
@@ -330,10 +329,9 @@
   .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
 
-  /* Watching a map is an application screen, not a document: it fills the
-     frame exactly and the stage takes whatever height is left, so the page
-     never grows a scrollbar mid-run. Only the loot list — the one region that
-     can genuinely run long — scrolls, and only once it has to. */
+  /* Watching a map is an application screen, not a document, so the page never
+     grows a scrollbar mid-run. Only the loot list scrolls, and only once it
+     has to. */
   .viewport--locked { overflow: hidden; }
   .viewport--locked #view-run { height: 100%; }
   #run-stagewrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
@@ -352,6 +350,19 @@
     #run-stagewrap .runcols { flex: 0 0 auto; flex-direction: column; }
     #run-stagewrap .runside { flex: 0 0 auto; overflow: visible; }
     #run-loot { overflow-y: visible; }
+  }
+
+  /* --- the map is the screen ---------------------------------------------
+     z-index -1, not 0: `.wrap` is a stacking context, and a POSITIONED child
+     at 0 paints above the non-positioned header and dock rather than behind
+     them. Negative stays under the shell and above `body::before`, which is
+     the wall and belongs to the root context. */
+  body.mapfull .wrap { max-width: none; }
+  body.mapfull #run-stagewrap .stagebox {
+    position: fixed; inset: 0; z-index: -1;
+  }
+  body.mapfull #run-stagewrap .stage {
+    border: 0; box-shadow: none; height: 100%;
   }
 
   .stage { background: var(--void); border: 2px solid var(--seam); box-shadow: var(--bevel); line-height: 0; }
