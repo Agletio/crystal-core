@@ -620,9 +620,6 @@ export function initSkills(state: GameState, changed?: () => void): void {
     fit();
     renderWeb();
   };
-  $('skills').addEventListener('click', (event) => {
-    if (event.target === $('skills')) closeSkills();
-  });
 
   const svg = $('skills-web');
 

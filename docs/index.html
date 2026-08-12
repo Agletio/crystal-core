@@ -185,9 +185,8 @@
   h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--bone); text-shadow: 2px 2px 0 #000; }
   h1 span { color: var(--rust); }
   .sub { font-size: 12px; color: var(--dust); }
-  /* Wraps for the same reason <header> does. Six buttons on one unbreakable
-     line is 404px, which is wider than a phone, and the overflow drags the
-     whole page sideways rather than just the bar. */
+  /* Wraps for the same reason <header> does: one unbreakable row overflows,
+     and that drags the whole page sideways rather than just the bar. */
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
   .seedbar code { color: var(--quartz); }
 
@@ -353,16 +352,30 @@
   }
 
   /* --- the map is the screen ---------------------------------------------
-     z-index -1, not 0: `.wrap` is a stacking context, and a POSITIONED child
-     at 0 paints above the non-positioned header and dock rather than behind
-     them. Negative stays under the shell and above `body::before`, which is
-     the wall and belongs to the root context. */
+     Each is its OWN fixed layer, never a box holding the rest: `position:
+     fixed` is a stacking context whatever its z-index, so put the map's -1 on
+     a wrapper and the report is stuck behind the header too, visible and dead.
+     -1 rather than 0 because `.wrap` is a context as well, and a POSITIONED
+     child at 0 paints above the non-positioned header. The fade shares the -1
+     and wins on document order: it hides a map swap, never the UI. */
   body.mapfull .wrap { max-width: none; }
-  body.mapfull #run-stagewrap .stagebox {
+  body.mapfull #run-stagewrap .stage,
+  body.mapfull #run-stagewrap .fade {
     position: fixed; inset: 0; z-index: -1;
   }
-  body.mapfull #run-stagewrap .stage {
-    border: 0; box-shadow: none; height: 100%;
+  body.mapfull #run-stagewrap .stage { border: 0; box-shadow: none; }
+  /* A window like the rest: full bleed it would cover the header and dock, and
+     a finished run is exactly when you go and deal with what it dropped. */
+  body.mapfull #run-stagewrap .results {
+    position: fixed; inset: 0; z-index: 15;
+    pointer-events: none; background: none;
+  }
+  body.mapfull #run-stagewrap .resultcard { pointer-events: auto; }
+  /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
+  body.mapfull #run-stagewrap .flasks {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(var(--dock-h, 0px) + 14px);
+    width: min(420px, 70vw); margin: 0;
   }
 
   .stage { background: var(--void); border: 2px solid var(--seam); box-shadow: var(--bevel); line-height: 0; }
@@ -518,8 +531,7 @@
   [data-drop].drop--over, [data-equip].drop--over { outline: 2px dashed var(--citrine); outline-offset: -4px; }
 
   /* --- the toast --------------------------------------------------------- */
-  /* Above every popup, and clear of the dock: what it reports is usually a
-     thing you did to the dock, and it must not cover the answer. */
+  /* Above every popup, clear of the dock: it must not cover what it reports on. */
   .toast {
     position: fixed; z-index: 96; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 14px);
@@ -803,12 +815,15 @@
   .lootrow--lost { opacity: .5; text-decoration: line-through; }
   .lootrow--lost .lootrow__v { color: var(--ember); }
 
-  /* --- modals --------------------------------------------------------- */
-  /* Every popup stops above the dock. The bench works ON your inventory, so
-     covering it with the thing that needs it would be the one mistake this
-     layout can't afford; the rest stop there too, for consistency. --dock-h
-     is measured and written by the shell. */
-  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; background: rgba(6,5,8,.86); padding: 20px; }
+  /* --- windows -------------------------------------------------------- */
+  /* A SCREEN is a window: no scrim, and the layer is click-through so the map
+     and any other window stay reachable. Only the CARD takes a click, which is
+     what makes stacking two harmless. Each still stops above the dock, because
+     the bench works ON the inventory it would otherwise cover. */
+  .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
+  /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. */
+  .modal--stop { background: rgba(6,5,8,.86); pointer-events: auto; }
+  .modal__card { pointer-events: auto; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
@@ -1324,11 +1339,9 @@
   </div>
   </div>
 
-  <!-- The dock. Everything you own, always on screen, never scrolled past:
-       crystals first because they're what you spend to play, then gear, then
-       the currency you spend on both. Icons only — the name and the modifiers
-       are a hover away, and reading forty names was never the point of a
-       stash. -->
+  <!-- The dock: what you carry and what you spend, always on screen and never
+       scrolled past. Icons only — reading forty names was never the point of a
+       stash, and the modifiers are a hover away. -->
   <div class="panel dock" id="dock">
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
@@ -1409,7 +1422,7 @@
 <!-- The Lampwright. A body on the map you walk to, not a line in a report:
      the crystal is handed over here and is yours from that moment, whatever
      happens further down. -->
-<div class="modal" id="met" hidden>
+<div class="modal modal--stop" id="met" hidden>
   <div class="modal__card modal__card--narrow">
     <div class="modal__head modal__head--who">
       <!-- Their own sprite, so who is talking is a look rather than a name. -->
@@ -1689,7 +1702,7 @@
 
 <!-- First run: choose how you fight, then straight into the Fissure. Nothing
      to buy, nothing to understand first. -->
-<div class="modal" id="welcome" hidden>
+<div class="modal modal--stop" id="welcome" hidden>
   <div class="modal__card">
     <div class="modal__head">
       <h2 class="modal__title">Who are you?</h2>
@@ -1730,7 +1743,7 @@
 
 <!-- Are you sure? Only the buttons that throw away a save use it, and it sits
      outside .wrap so it can cover whatever asked the question. -->
-<div class="modal" id="confirm" hidden>
+<div class="modal modal--stop" id="confirm" hidden>
   <div class="modal__card modal__card--ask">
     <div class="modal__head">
       <h2 class="modal__title" id="confirm-title">Are you sure?</h2>

@@ -515,8 +515,4 @@ export function initCharacter(
     addXp(game.character, xpToNext(game.character.level));
     render();
   };
-  $('sheet').addEventListener('click', (event) => {
-    // Click the backdrop to dismiss; clicks inside the card shouldn't.
-    if (event.target === $('sheet')) closeCharacter();
-  });
 }

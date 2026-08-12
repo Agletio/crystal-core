@@ -259,7 +259,4 @@ export function initSaveData(
     render();
   };
 
-  $('savedata').addEventListener('click', (event) => {
-    if (event.target === $('savedata')) closeSaveData();
-  });
 }

@@ -76,8 +76,5 @@ export function closeHistory(): void {
 export function initHistory(): void {
   ($('history-close') as HTMLButtonElement).onclick = closeHistory;
   ($('history-clear') as HTMLButtonElement).onclick = clearHistory;
-  $('history').addEventListener('click', (event) => {
-    if (event.target === $('history')) closeHistory();
-  });
   renderHistory();
 }

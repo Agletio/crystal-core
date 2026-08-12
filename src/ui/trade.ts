@@ -321,7 +321,4 @@ export function initTrade(state: GameState, changed?: () => void): void {
   onChanged = changed ?? null;
 
   ($('trade-close') as HTMLButtonElement).onclick = closeTrade;
-  $('trade').addEventListener('click', (event) => {
-    if (event.target === $('trade')) closeTrade();
-  });
 }
