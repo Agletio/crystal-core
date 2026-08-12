@@ -321,6 +321,15 @@ and the demo holds it to that: a trade is a choice, so measuring one would
 measure the choice rather than the rung. What a trade is WORTH is printed beside
 the deep end as a kill rate and asserted nowhere.
 
+**A trade may FAVOUR a skill; it may not have exactly one.** A pairing being
+stronger than another is the system working — what would be wrong is a trade
+with a single correct skill, which makes it a skill node that got lost. **It is
+not a bar anything clears today.** Three main skills is too few to tell a
+favourite from a requirement, so the demo PRINTS what each trade is worth per
+skill and asserts nothing about the spread. Do not tune to that print, and do
+not add a check that fails on it; it becomes answerable when the roster is wide
+enough for the difference to show.
+
 **How a web is WALKED lives in `src/webgraph.ts`,** over any list of nodes:
 `neighboursIn`, `canAllocateIn`, `canDeallocateIn`, `replayWeb`. A skill tree
 and a trade tree are different content on the same shape, and two copies of a

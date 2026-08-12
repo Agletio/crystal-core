@@ -219,6 +219,12 @@ Every one is parked deliberately. Ask before acting on any of them.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
+- **Whether a trade has exactly one right skill.** `RULES.md` states the line:
+  favouring a skill is fine, requiring one is a skill node that got lost. It is
+  UNANSWERABLE today — `MAIN_SKILLS` holds three, which is too few to tell a
+  favourite from a requirement — so the demo prints what each trade is worth
+  per skill and asserts nothing. Deferred by the user's decision, and what
+  un-defers it is a wider roster, not a measurement.
 - **Jewellery has three rungs but no implicit.** `amulet`/`jade_amulet`/
   `onyx_amulet` and `ring`/`silver_band`/`gold_band` differ in exactly one
   way: how many modifiers they hold. That is the clearest statement of what a
