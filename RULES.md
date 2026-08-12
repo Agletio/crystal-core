@@ -1138,6 +1138,23 @@ it is down. Marked at the door instead, a room you died in would be gone
 forever — and the way back to a second one runs through having put the first
 one down.
 
+**A boss KEY is a wallet entry in its own table.** `BOSS_KEYS`, never
+`CURRENCIES`: every currency is reachable by the bench's two registries, and a
+bench that can pour a boss key onto a helmet is the failure that table avoids.
+`heal()` keeps it for exactly that reason — the wallet drops what is neither
+gold, a currency, nor a key.
+
+**A key drops off a DESCENT and never out of a room**, and only once its boss
+is down. A key that drops in the room it opens is a loop rather than a reason
+to run the Fissure, and a key to a door nobody has found reads as junk. The
+roll is the SIM's — it owns the rng and the replay — and `RunOptions.beaten` is
+how the caller says which doors have been found.
+
+**A key is spent at the LAUNCH.** The button arms it (`calling`, UI state like
+`leaving`) and pressing Enter takes it, which is why abandoning a descent costs
+you the way in. What is SAVED is `GameState.called`: the room a spent key has
+already paid for, cleared when you arrive in it.
+
 **Escape takes the lot.** From any line, `skipToGift` skips the rest and
 grants. The gift is already yours by the time a panel is on screen, so refusing
 it would be worse than taking it — and `guide.mjs` presses Escape at a moment

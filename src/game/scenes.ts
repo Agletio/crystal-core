@@ -5,7 +5,7 @@
  * schedules nobody can read off a screen.
  */
 import { INTRO, LAMPWRIGHT } from '../data';
-import { SCENE_BY_ID } from '../scenes';
+import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { giftWaiting } from './crystals';
 import type { QuestFacts, Waiting } from './crystals';
@@ -17,22 +17,24 @@ export interface SceneCall {
   gift: Waiting | null; // null once a scene exists that hands nothing over
 }
 
-/** What `given` records once a boss is DOWN, so a room happens once. Marked at
- *  the clear and not at the door: a room you died in comes back. */
-export const bossGiven = (id: string): string => `boss:${id}`;
-
+/** At the clear, never the door: a room you died in comes back. */
 export function takeBoss(game: GameState, id: string): void {
-  const mark = bossGiven(id);
-  if (!(game.given ?? []).includes(mark)) game.given = [...(game.given ?? []), mark];
+  if (!(game.bosses ?? []).includes(id)) game.bosses = [...(game.bosses ?? []), id];
 }
 
-/** Rung 2 up, read off the game the way a gift is: a condition, never a roll. */
+export const bossBeaten = (game: GameState, id: string): boolean =>
+  (game.bosses ?? []).includes(id);
+
+/** Rung 2 up: a condition, never a roll, and a room a key PAID for goes first. */
 function scheduled(game: GameState): SceneDef[] {
   const out: SceneDef[] = [];
+  const called = SCENES.find((s) => s.encounter && s.encounter === game.called);
+  if (called) out.push(called);
+
   const boss = SCENE_BY_ID[INTRO.bossScene];
   const socketed = Object.keys(game.sockets ?? {}).length;
-  if (boss?.encounter && socketed >= INTRO.bossSockets) {
-    if (!(game.given ?? []).includes(bossGiven(boss.encounter))) out.push(boss);
+  if (boss?.encounter && socketed >= INTRO.bossSockets && !bossBeaten(game, boss.encounter)) {
+    out.push(boss);
   }
   return out;
 }

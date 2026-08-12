@@ -2113,6 +2113,39 @@ export const BOSS_BY_ID: Record<string, BossDef> = Object.fromEntries(
   BOSSES.map((b) => [b.id, b])
 );
 
+/** A way back to a boss you have put down. Its own table and NEVER a
+ *  `CurrencyDef` — a real currency is reachable by the bench's registries,
+ *  which is a bench that can pour a boss key onto a helmet. */
+export interface BossKeyDef {
+  id: string;
+  name: string;
+  boss: string; // a `BossDef` id
+  description: string;
+  /** Chance a cleared descent drops one, before power, and only once its boss
+   *  is down: a way back to somewhere you have never been reads as junk. */
+  chance: number;
+  perPower: number; // per point of run power, so more crystals buys more fights
+}
+
+export const BOSS_KEYS: BossKeyDef[] = [
+  {
+    id: 'written_name',
+    name: 'A Written Name',
+    boss: 'answering',
+    description: 'Three marks copied off a wall. Said aloud in the right place, something turns round.',
+    chance: 0.12,
+    perPower: 1.08,
+  },
+];
+
+export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
+  BOSS_KEYS.map((k) => [k.id, k])
+);
+
+/** The key that opens a given boss's room, or nothing. */
+export const keyForBoss = (bossId: string): BossKeyDef | undefined =>
+  BOSS_KEYS.find((k) => k.boss === bossId);
+
 export interface EncounterDef {
   id: string;
   name: string;
@@ -2610,6 +2643,8 @@ export const DEV_CURRENCY: Record<string, number> = {
   // ever look at.
   sigil_of_finality: 2,
   sigil_of_upheaval: 2,
+  // Every key, so the way back to a room can be pressed without farming.
+  ...Object.fromEntries(BOSS_KEYS.map((k) => [k.id, 2])),
 };
 
 /**

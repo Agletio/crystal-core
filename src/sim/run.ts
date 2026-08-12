@@ -30,6 +30,7 @@ import {
   AURA,
   AURA_BY_ID,
   BOSS_BY_ID,
+  BOSS_KEYS,
   MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
@@ -220,6 +221,10 @@ export interface RunOptions {
   /** Share of a pool below which a potion fires itself, by potion id. A
    *  missing one takes the table's default, which is what every harness runs. */
   potionThresholds?: Record<string, number>;
+  /** Bosses already put down, so the keys that lead back to them may drop. The
+   *  sim rolls them — it owns the rng and the replay — and the caller owns
+   *  which doors have been found. */
+  beaten?: string[];
   /**
    * A `SceneDef` id: an authored room instead of a generated descent, with the
    * people in it and no packs at all. The sim is TOLD to build one — nothing
@@ -868,7 +873,24 @@ export class RunSim {
     if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
 
     s.status = 'cleared';
+    this.dropKeys();
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
+  }
+
+  /**
+   * A way back to a room you have already put down. Per cleared DESCENT rather
+   * than per kill, and never out of a scene — a key that drops in the room it
+   * opens is a loop rather than a reason to run the Fissure.
+   */
+  private dropKeys(): void {
+    if (this.options.scene) return;
+    const beaten = this.options.beaten ?? [];
+    for (const key of BOSS_KEYS) {
+      if (!beaten.includes(key.boss)) continue;
+      const odds = key.chance * Math.pow(key.perPower, Math.max(0, this.set.power));
+      if (!this.rng.chance(Math.min(1, odds))) continue;
+      this.state.loot.currency[key.id] = (this.state.loot.currency[key.id] ?? 0) + 1;
+    }
   }
 
   /** The room is a place you have arrived in and the only thing moving is the

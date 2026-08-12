@@ -11,6 +11,8 @@ import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
   ALL_MODS,
+  BOSS_BY_ID,
+  BOSS_KEY_BY_ID,
   ATTRIBUTE_BY_ID,
   CRYSTAL_LEVELS,
   CURRENCY_BY_ID,
@@ -355,6 +357,11 @@ export function heal(game: GameState): Healed {
   }
   healQuests(game);
 
+  // A boss id no table resolves is the whole cost of ever renaming one, and a
+  // room called up by a key that has since been cut is a room nobody can enter.
+  game.bosses = (Array.isArray(game.bosses) ? game.bosses : []).filter((id) => BOSS_BY_ID[id]);
+  if (game.called && !BOSS_BY_ID[game.called]) game.called = null;
+
   // A threshold for a potion that no longer exists costs its entry; one out of
   // range is clamped rather than dropped, so a save never fires a flask at a
   // share nothing can reach.
@@ -406,9 +413,11 @@ export function heal(game: GameState): Healed {
     if (pick) pick.meta.firstClear = true;
   }
 
-  // `gold` is the feedstock rather than a currency, so it has no entry.
+  // `gold` is the feedstock rather than a currency, so it has no entry — and a
+  // boss key is COUNTED in the wallet without being one, which is the whole
+  // point of it having its own table.
   for (const id of Object.keys(game.wallet)) {
-    if (id === 'gold' || CURRENCY_BY_ID[id]) continue;
+    if (id === 'gold' || CURRENCY_BY_ID[id] || BOSS_KEY_BY_ID[id]) continue;
     delete game.wallet[id];
     out.currencies++;
   }

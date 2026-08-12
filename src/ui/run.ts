@@ -22,6 +22,8 @@ import {
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
 import {
+  BOSS_BY_ID,
+  BOSS_KEYS,
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
@@ -29,11 +31,13 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   THEME_BY_ID,
+  keyForBoss,
 } from '../data';
+import { spend } from '../economy';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { sceneWaiting, takeBoss } from '../game/scenes';
+import { bossBeaten, sceneWaiting, takeBoss } from '../game/scenes';
 import { SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -91,6 +95,9 @@ let streak = 0;
 let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
 let leaving = false;
+/** A boss whose key is armed, spent by the launch. UI state like `leaving`:
+ *  what is SAVED is the room a spent key has already paid for. */
+let calling: string | null = null;
 
 /** The handover: down the hole at the exit, dark for the moment the map is
  *  swapped, out of the entrance of whatever is at the bottom. Nothing in
@@ -284,6 +291,8 @@ function renderMenu(): void {
     )
   );
 
+  renderCall();
+
   // The one thing that can shut the Fissure — and never a dead end, because
   // selling out of the haul needs no room anywhere.
   const blocked = haulFull(game);
@@ -293,6 +302,32 @@ function renderMenu(): void {
   $('run-blocked').textContent = blocked
     ? 'Your haul is full. Empty some of it before you go back down.'
     : '';
+}
+
+/**
+ * Going back for one you have already put down. The button ARMS it and the
+ * launch spends the key, so a descent you abandon costs you the way in — the
+ * same rule as everywhere else.
+ */
+function renderCall(): void {
+  const button = $('run-call') as HTMLButtonElement;
+  const key = BOSS_KEYS.find((k) => (game.wallet[k.id] ?? 0) > 0 && bossBeaten(game, k.boss));
+  button.hidden = !key || game.called !== null;
+  if (!key) {
+    calling = null;
+    return;
+  }
+  if (calling && calling !== key.boss) calling = null;
+  const who = BOSS_BY_ID[key.boss];
+  button.textContent = calling
+    ? `Calling ${who?.name ?? key.boss} — ${key.name} spent on entering`
+    : `Call ${who?.name ?? key.boss} — 1 ${key.name}`;
+  button.classList.toggle('mini--on', calling !== null);
+  button.title = key.description;
+  button.onclick = () => {
+    calling = calling ? null : key.boss;
+    renderCall();
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,10 +344,24 @@ function launch(): void {
   // running out of crystals a setback rather than an end.
   const set = socketed(game);
 
+  // Spent HERE and not at the clear: a descent you walk out of costs you the
+  // way in, which is what abandoning costs everywhere else.
+  if (calling) {
+    const key = keyForBoss(calling);
+    if (key && spend(game.wallet, { [key.id]: 1 })) {
+      game.called = calling;
+      note(`${key.name} spent. ${BOSS_BY_ID[calling]?.name ?? calling} is listening.`);
+    }
+    calling = null;
+  }
+
   seed = Math.floor(Math.random() * 1e9);
   // Who you might meet is the player's business, not the set's: the chance
   // falls as the collection fills, and the sim is only told the number.
-  sim = new RunSim(set, game.character, new Rng(seed), { potionThresholds: game.potions });
+  sim = new RunSim(set, game.character, new Rng(seed), {
+    potionThresholds: game.potions,
+    beaten: game.bosses ?? [],
+  });
 
   note(
     `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
@@ -451,6 +500,8 @@ function endEncounter(): void {
  *  — the packs are what a scene leaves out — so both renderers draw it with no
  *  changes, and nothing ticks: the walk across is the whole of it. */
 function enterScene(def: SceneDef): void {
+  // The key bought this room, and arriving is what it bought.
+  if (def.encounter && game.called === def.encounter) game.called = null;
   arriving = null;
   arrivedIn = def.id;
   spoke = false;

@@ -256,6 +256,17 @@ the objective. Then it says its `after` lines, and a boss room is a DESCENT:
 its loot banks, its clear counts, and it lands on the same report. Dying in it
 costs that room and stops the loop.
 
+**A way BACK is a key.** `BOSS_KEYS` in `src/data.ts` is its own table and
+never a `CurrencyDef` — a real currency is reachable by the bench's registries,
+which is a bench that can pour a boss key onto a helmet — and it rides in
+`game.wallet` like everything else that is counted. It drops off a cleared
+DESCENT, never out of a room, at a rate that climbs with run power, and only
+once its boss is down: `GameState.bosses` is what you have beaten. Spending it
+is a button on the Fissure that ARMS the call; the launch spends the key and
+sets `GameState.called`, so a descent you walk out of costs you the way in.
+That room then comes at the end of the next clear, through `sceneWaiting` at
+rung 2 like everything else.
+
 **The Lambengolmor** is the second voice the game has, met once two crystals
 are set in the wall. His pitch is *stop blindly feeding the stone; learn its
 true names and command it* — the crystals are punctuation in an old spell and

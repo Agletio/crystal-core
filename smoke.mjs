@@ -2436,6 +2436,28 @@ assert(
   );
 }
 
+// --- going back for one you have already put down --------------------------
+// The dev kit is handed every key and every door, so the way back is a button
+// on the Fissure rather than a thing you farm for before you can test it.
+{
+  const call = $('run-call');
+  assert(call !== null, 'the Fissure offers a way back to somebody you put down');
+  assert(call.hidden === false, 'and it is offered while you are holding the way in');
+  assert(/^Call /.test(call.textContent), 'it names who, before you press it', call.textContent);
+  assert(/1 /.test(call.textContent), 'and what it costs, in figures', call.textContent);
+
+  call.click();
+  assert(call.classList.contains('mini--on'), 'pressing it arms the call');
+  assert(/^Calling /.test(call.textContent), 'and says so', call.textContent);
+  assert(
+    /spent on entering/.test(call.textContent),
+    'naming when the key actually goes',
+    call.textContent
+  );
+  call.click();
+  assert(!call.classList.contains('mini--on'), 'and pressing it again puts the key back');
+}
+
 // --- he talks in the room, not over a sheet covering it --------------------
 // A scene IS a stop — nothing is ticking and the map is not yours to click —
 // so it does not need a scrim to prove it.

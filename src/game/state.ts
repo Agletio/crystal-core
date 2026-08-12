@@ -6,6 +6,7 @@
  */
 import { Rng } from '../rng';
 import {
+  BOSSES,
   CRYSTAL_QUESTS,
   EQUIP_SLOTS,
   FISSURE,
@@ -108,6 +109,8 @@ export interface GameState {
   potions: Record<string, number>;
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
+  bosses: string[]; // put down: stops one being scheduled twice, opens its key
+  called: string | null; // a room a spent key has paid for, owed at the next clear
 }
 
 export interface SoldEntry {
@@ -141,6 +144,8 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     keys: {},
     potions: {},
     parked: false,
+    bosses: [],
+    called: null,
   };
   resetGame(game, mode);
   return game;
@@ -183,6 +188,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
+  game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
+  game.called = null;
   game.sold = [];
   // Zero, not the character's level, so the next open restocks rather than
   // showing whatever the previous game happened to be carrying.

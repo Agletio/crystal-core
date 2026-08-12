@@ -34,6 +34,9 @@ import {
   CRYSTAL_LEVELS,
   INTRO,
   BOSSES,
+  BOSS_BY_ID,
+  BOSS_KEYS,
+  BOSS_KEY_BY_ID,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -5974,6 +5977,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         JSON.stringify(sceneWaiting(at, facts(at, sim.state))?.def.id)
       );
       const two = createGame('dev');
+      two.bosses = []; // the kit is handed every door; this is somebody meeting one
       two.sockets = { first: makeCrystal(2, 'normal'), second: makeCrystal(2, 'normal') };
       const called = sceneWaiting(two, facts(two, sim.state));
       check(
@@ -5981,11 +5985,64 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         'two crystals set in the wall is what it takes for somebody to object',
         called?.def.id ?? 'nobody'
       );
-      takeBoss(two, SCENE_BY_ID[INTRO.bossScene].encounter!);
+      const bossId = SCENE_BY_ID[INTRO.bossScene].encounter!;
+      takeBoss(two, bossId);
       check(
         sceneWaiting(two, facts(two, sim.state)) === null,
         'and once it is down it is never scheduled again',
         JSON.stringify(sceneWaiting(two, facts(two, sim.state))?.def.id)
+      );
+
+      // --- going back for one you have already put down -----------------
+      // A key is a wallet entry in its own table. Never a currency: the bench's
+      // registries reach every one of those, which is a bench that can pour a
+      // boss key onto a helmet.
+      const asCurrency = BOSS_KEYS.filter((k) => CURRENCY_BY_ID[k.id]).map((k) => k.id);
+      check(asCurrency.length === 0, 'a boss key is never a currency', asCurrency.join(', '));
+      const doorless = BOSS_KEYS.filter((k) => !BOSS_BY_ID[k.boss]).map((k) => k.id);
+      check(doorless.length === 0, 'and every one of them opens a door', doorless.join(', '));
+
+      // Only once its boss is down: a key to a door nobody has found reads as
+      // junk, and the roll is the SIM's, so a seed still replays.
+      const unopened = new RunSim([], g.character, new Rng(77));
+      runToCompletion(unopened, 400);
+      check(
+        BOSS_KEYS.every((k) => !unopened.state.loot.currency[k.id]),
+        'no key drops before its boss has been put down',
+        JSON.stringify(unopened.state.loot.currency)
+      );
+      let dropped = 0;
+      for (let seed = 0; seed < 40; seed++) {
+        const run = new RunSim([], g.character, new Rng(900 + seed), { beaten: [bossId] });
+        runToCompletion(run, 400);
+        dropped += Object.entries(run.state.loot.currency)
+          .filter(([id]) => BOSS_KEY_BY_ID[id])
+          .reduce((n, [, amount]) => n + amount, 0);
+      }
+      check(dropped > 0, 'and one does once it has been', `${dropped} in 40 bare clears`);
+      gauge(`a way back drops ${dropped} times in 40 bare clears`);
+
+      // A key already SPENT puts the room at the end of the next clear, and it
+      // goes in front of a room you have not met yet.
+      const back = createGame('dev');
+      back.sockets = {};
+      back.called = bossId;
+      check(
+        sceneWaiting(back, facts(back, sim.state))?.def.id === INTRO.bossScene,
+        'a key already spent puts the room at the end of the next clear',
+        JSON.stringify(sceneWaiting(back, facts(back, sim.state))?.def.id)
+      );
+      // And a room never drops the key that opens it, or the loop feeds itself.
+      const inRoom = new RunSim([], g.character, new Rng(900), {
+        scene: INTRO.bossScene,
+        beaten: [bossId],
+      });
+      inRoom.beginEncounter();
+      runToCompletion(inRoom, 600);
+      check(
+        BOSS_KEYS.every((k) => !inRoom.state.loot.currency[k.id]),
+        'and a room never drops the key that opens it',
+        JSON.stringify(inRoom.state.loot.currency)
       );
 
       // Played out, with the character the ladder measures everything with.

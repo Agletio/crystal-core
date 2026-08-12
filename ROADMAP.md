@@ -4,12 +4,12 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**There are four phases, and they are one arc**, dictated in one go: the game
+**There are three phases, and they are one arc**, dictated in one go: the game
 gets **rooms you arrive in and people standing in them**. The machinery is
 BUILT — a scene is a `RunSim` over an authored map, people talk in bubbles over
-their own heads, and a room may have a boss in it with a reinforcement clock
-that stops when it dies. `CLAUDE.md` and `RULES.md` describe the whole of it,
-and what is left is content on top of it plus one lesson-moving phase.
+their own heads, a room may have a boss in it, and a key takes you back to one
+you have put down. `CLAUDE.md` and `RULES.md` describe the whole of it; what is
+left is one new item kind, one more character, and moving lessons into rooms.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -23,10 +23,9 @@ these is the **balance pass**, written up below.
 with different content in it:
 
 ```
-1  the key              going back for a boss you have already put down
-2  the Osteomancer      a third item kind, and a scene that spends one
-3  the Astral-Geometer  phase 2's machinery, jewellery, a calmer voice
-4  teaching in a room   the guided opening's lessons, moved into the scenes
+1  the Osteomancer      a third item kind, and a scene that spends one
+2  the Astral-Geometer  phase 1's machinery, jewellery, a calmer voice
+3  teaching in a room   the guided opening's lessons, moved into the scenes
 ```
 
 If a phase here has to be reordered, say so and reorder the WHOLE ladder rather
@@ -38,8 +37,17 @@ one still here. Before starting any of them, read **Before you touch the
 ladder**, below — it holds the parts that belong to no single phase, and every
 one of them is something a phase would otherwise get wrong on its own.
 
-**What the last seven phases turned out to know that their writing did not.**
+**What the last eight phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **`heal()` drops a wallet entry that is not a `CurrencyDef`**, which is
+  exactly what a boss key is. The rule that keeps a key off the bench is the
+  rule that deleted it on every load until `heal` learnt the second table. Any
+  future thing counted in the wallet has the same shape.
+- **The dev preset holding every DOOR closed the room it was meant to open.**
+  `game.bosses` is what stops a boss being scheduled twice, so handing the kit
+  every id meant the Lambengolmor was never scheduled at all. The kit gets the
+  keys and the doors both, and the test that walks the schedule clears them.
 
 - **A room that goes live may not end through `finish()`.** Routed there, a
   cleared boss room took the chain-another-descent branch and dropped into a
@@ -238,7 +246,7 @@ so overruling it is one sentence rather than an excavation.
 **Read this whole section first. It is the part that belongs to no single
 phase, and skipping it is how the same thing gets built twice.**
 
-Every one of the four is the SAME object with different content in it: a
+Every one of the three is the SAME object with different content in it: a
 **scene** — an authored room you arrive in at the end of a cleared descent,
 with somebody standing in it who talks to you. It is BUILT, and `RULES.md` holds
 the rules it is bound by. Nothing below may introduce a second way of doing any
@@ -253,7 +261,7 @@ of it.
 | `src/game/scenes.ts` | the SCHEDULE: what happens at the end of this clear | as `src/game/crystals.ts` is for gifts |
 | `src/ui/speech.ts` | the bubble: a line over the body saying it | one module, one screen |
 
-**ONE scene per cleared descent, and the order is fixed.** By Phase 3 four
+**ONE scene per cleared descent, and the order is fixed.** By Phase 2 four
 things can be owed at the same moment — a crystal, a boss, a corpse to hand
 over, dust to trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
 one function that answers what happens next, it returns **at most one** scene,
@@ -315,62 +323,22 @@ measurements all drive `RunSim` directly and never ask for a scene.
 
 | harness | what it will catch, and it will |
 |---|---|
-| `demo` | a run that never ends, a container that does not claim its ids (Phase 2), a banned phrasing anywhere |
+| `demo` | a run that never ends, a container that does not claim its ids (Phase 1), a banned phrasing anywhere |
 | `shots` | it WAITS up to two minutes for the Lampwright panel and fails the run if a first descent never produces one. Phases 2 and 3 both move that panel and both must move the shot with it |
 | `guide` | `meet` and `meet_crystal`. Its dormant branch reads the state, reads what is open, then presses Escape — and `RULES.md` records that the meeting is the one modal it never Escapes |
-| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 2's third column goes at the END of the file |
+| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 1's third column goes at the END of the file |
 | `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it before `guide` the moment a new layer stops taking a click |
 
 **Every phase from here puts itself in the dev kit.** `START_PRESETS.dev` and
 `DEV_CURRENCY` in `src/data.ts` are how a screen gets opened without farming for
-it. A key, a relic — each goes into the dev preset in the same phase that adds
-it. A screen nobody can reach is a screen nobody tested. The reading room is the
+it. A relic — and anything else like one — goes into the dev preset in the same
+phase that adds it. A screen nobody can reach is a screen nobody tested. The reading room is the
 worked exception and the reason is written down: the dev kit is handed every
 crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — Going back for one you have already put down
-
-**What is true today.** Nothing you do decides what a descent contains except
-which crystals are socketed. The Lambengolmor's boss happens once — `takeBoss`
-marks `boss:answering` in `given` at the clear — and can never happen again.
-
-**Why it is wrong.** The best fight in the game is a thing that occurred to you
-once, and an idle game whose loop you cannot point at anything is a loop with
-one setting.
-
-- [ ] **A key is a wallet entry declared in its own table** — `BOSS_KEYS` in
-      `src/data.ts` — and NEVER in `CURRENCIES`, so no shard, no sigil and no
-      bench registry can ever reach it. `game.wallet` is already
-      `Record<string, number>` and takes it for nothing.
-- [ ] **It drops off a cleared descent**, at a rate that reads run power the way
-      currency does, so running more crystals is the thing that buys another
-      fight. Gated behind having put that boss down once.
-- [ ] **`GameState.bosses`** — the ids you have beaten — beside `given` and
-      `quests`, and `heal()` drops an id no table resolves, which is the whole
-      cost of ever renaming one.
-- [ ] **Spending it is a button on the Fissure screen** (`renderMenu` in
-      `src/ui/run.ts`), naming the boss and what it costs, and it is consumed at
-      the LAUNCH rather than at the clear: abandoning a boss room is abandoning,
-      and that is the rule everywhere else.
-- [ ] **The key is in the dev preset.** See the shared section.
-
-**Traps.**
-
-- The drop rate is a balance number and blocks nothing. Print it if it is worth
-  knowing; do not tune the phase around it.
-- A key spent puts the boss room at the end of the NEXT cleared descent, through
-  `sceneWaiting` like everything else. It does not replace the descent, and it
-  does not jump the order — it enters the queue at rung 2.
-
-**Done when.** Clearing descents earns keys, and spending one puts the boss in
-front of you again.
-
-**What must not break, in this order.** `smoke` for the new menu button, then
-`demo`.
-
-### Phase 2 — The Osteomancer, and what a corpse is for
+### Phase 1 — The Osteomancer, and what a corpse is for
 
 **What is true today.**
 
@@ -484,9 +452,9 @@ kind touches `heal()`, the id counter and the drop pipeline, and the demo's
 container list is where a missed one shows up. Then `smoke`, with the dock
 column's checks at the END of the file. Then `shots`.
 
-### Phase 3 — The Astral-Geometer
+### Phase 2 — The Astral-Geometer
 
-**What is true today.** After Phase 2, one world pays in something you carry to
+**What is true today.** After Phase 1, one world pays in something you carry to
 a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
 covers three armour slots, and the Cavern has nothing of its own — which Open
 question 5 has been saying about the Prismatic world since the quality ladder
@@ -495,7 +463,7 @@ was retired.
 **Why it is wrong.** A mechanism that exists in exactly one world is a
 mechanism half the game never meets.
 
-**What it is.** Phase 2's machinery with different content in it, which is
+**What it is.** Phase 1's machinery with different content in it, which is
 exactly why it is a separate phase and a small one. He is in the Prismatic
 world, he is calm, and he offers a trade rather than begging for one.
 
@@ -516,15 +484,15 @@ world, he is calm, and he offers a trade rather than begging for one.
   balance pass to set rather than a reason to give jewellery implicits here.
   Giving them implicits is a balance change and belongs to the balance pass; do
   not smuggle one in under a phase about a character.
-- Nothing in Phase 2's work may need changing to make this fit. If it does,
-  Phase 2 hard-coded something that should have been a table.
+- Nothing in Phase 1's work may need changing to make this fit. If it does,
+  Phase 1 hard-coded something that should have been a table.
 
 **Done when.** A Prismatic descent pays in dust, and a ring walks out of his
 room carrying something a ring cannot otherwise hold.
 
-**What must not break.** The same list as Phase 2, same order.
+**What must not break.** The same list as Phase 1, same order.
 
-### Phase 4 — Teaching in a room instead of over one
+### Phase 3 — Teaching in a room instead of over one
 
 > **Under-specified on purpose. Which lessons move is Open question 8** — write
 > the answer into this phase before starting it.
@@ -630,7 +598,7 @@ Every one is parked deliberately. Ask before acting on any of them.
    question 1 and still the user's; what has changed is that answering it is now
    content under `src/scenes/` rather than a system.
 
-8. **What does a scene TEACH?** Phase 4 is written and under-specified on
+8. **What does a scene TEACH?** Phase 3 is written and under-specified on
    purpose. Four rooms where somebody talks straight at the player is the best
    teaching surface the game has ever had, and the list of lessons worth moving
    into one — what a crystal does, what a socket costs, what a ward is for, why
@@ -689,7 +657,7 @@ without being asked.
   way: how many modifiers they hold. That is the clearest statement of what a
   base tier is, and it is also the least interesting pair of slots in the
   game. Implicits for them would fix that; they are a balance change, so not
-  in a phase about capacity — and Phase 3 leans on this rather than fixing it:
+  in a phase about capacity — and Phase 2 leans on this rather than fixing it:
   a graft ADDS on jewellery because there is nothing there to replace.
 - **Fewer items per clear.** Measured before the tooltip and shop work: gear
   is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two
