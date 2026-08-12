@@ -17,6 +17,7 @@ import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   auraLook,
   burstRadius,
+  clampOffset,
   fireBolt,
   lightningArc,
   sweepRing,
@@ -114,10 +115,8 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       return { tile, offX: (cssWidth - mapW) / 2, offY: (cssHeight - mapH) / 2 };
     }
 
-    let offX = cssWidth / 2 - (on.x + 0.5) * tile;
-    let offY = cssHeight / 2 - (on.y + 0.5) * tile;
-    offX = mapW <= cssWidth ? (cssWidth - mapW) / 2 : Math.min(0, Math.max(cssWidth - mapW, offX));
-    offY = mapH <= cssHeight ? (cssHeight - mapH) / 2 : Math.min(0, Math.max(cssHeight - mapH, offY));
+    const offX = clampOffset(cssWidth / 2 - (on.x + 0.5) * tile, cssWidth, mapW);
+    const offY = clampOffset(cssHeight / 2 - (on.y + 0.5) * tile, cssHeight, mapH);
     return { tile, offX, offY };
   }
 

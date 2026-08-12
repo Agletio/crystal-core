@@ -27,6 +27,7 @@ import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   auraLook,
   burstRadius,
+  clampOffset,
   fireBolt,
   lightningArc,
   sweepRing,
@@ -216,10 +217,8 @@ export async function createPixiRenderer(
       offX = (w - mapW) / 2;
       offY = (h - mapH) / 2;
     } else {
-      offX = w / 2 - (on.x + 0.5) * tile;
-      offY = h / 2 - (on.y + 0.5) * tile;
-      offX = mapW <= w ? (w - mapW) / 2 : Math.min(0, Math.max(w - mapW, offX));
-      offY = mapH <= h ? (h - mapH) / 2 : Math.min(0, Math.max(h - mapH, offY));
+      offX = clampOffset(w / 2 - (on.x + 0.5) * tile, w, mapW);
+      offY = clampOffset(h / 2 - (on.y + 0.5) * tile, h, mapH);
     }
 
     world.scale.set(tile);
