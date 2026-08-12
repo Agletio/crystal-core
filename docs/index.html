@@ -359,6 +359,16 @@
      child at 0 paints above the non-positioned header. The fade shares the -1
      and wins on document order: it hides a map swap, never the UI. */
   body.mapfull .wrap { max-width: none; }
+  /* The map is UNDER the shell, so the shell's own wrappers — plain divs that
+     paint nothing — would still swallow every drag and every wheel meant for
+     it, because hit testing asks what is on top and not what is opaque.
+     Nothing structural takes a pointer; the leaves take one back. */
+  body.mapfull .viewport { pointer-events: none; }
+  body.mapfull .viewport .stage,
+  body.mapfull .viewport .runbar,
+  body.mapfull .viewport .panel,
+  body.mapfull .viewport .flasks,
+  body.mapfull .viewport .resultcard { pointer-events: auto; }
   body.mapfull #run-stagewrap .stage,
   body.mapfull #run-stagewrap .fade {
     position: fixed; inset: 0; z-index: -1;

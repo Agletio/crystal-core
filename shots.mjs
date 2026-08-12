@@ -128,6 +128,24 @@ const lockProbe = () => {
   return wrong.length ? wrong : null;
 };
 
+/** Can a drag still reach the map? It sits UNDER the shell, so a wrapper that
+ *  forgets `pointer-events: none` kills the whole camera at once — and the page
+ *  looks perfectly correct while it does. */
+const mapProbe = () => {
+  if (!document.body.classList.contains('mapfull')) return null;
+  const stage = document.getElementById('run-stage');
+  if (!stage || document.querySelector('.modal:not([hidden])')) return null;
+  const w = document.documentElement.clientWidth;
+  const h = document.documentElement.clientHeight;
+  const spots = [
+    [w * 0.5, h * 0.35],
+    [w * 0.62, h * 0.55],
+    [w * 0.42, h * 0.62],
+  ];
+  const reached = spots.some(([x, y]) => stage.contains(document.elementFromPoint(x, y)));
+  return reached ? null : 'the map takes no pointer — drag, zoom and follow are dead';
+};
+
 const browser = await chromium.launch();
 const problems = [];
 const written = [];
@@ -171,6 +189,8 @@ for (const vp of VIEWPORTS) {
         `${vp.name}/${state}: the guide covers ${covering.who} by ${covering.covered}px²`
       );
     }
+    const deaf = await page.evaluate(mapProbe);
+    if (deaf) problems.push(`${vp.name}/${state}: ${deaf}`);
   };
 
   await shoot('welcome');
