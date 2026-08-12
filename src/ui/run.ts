@@ -51,6 +51,8 @@ import { note } from './history';
 import { badge } from './badge';
 import { openCharacter, skillLines } from './character';
 import { skillIcon } from './icons';
+import { itemIcon } from './icons';
+import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
 import type { Item } from '../types';
@@ -475,22 +477,18 @@ function renderCarrying(): void {
     line.append(el('span', 'lootline__v', row.value));
     host.append(line);
   }
-  // Capped, same as the report. Gear drops are uncapped by design, so a good
-  // map turns a live readout into a list that outgrows the panel it lives in
-  // — and the panel is beside the map, so it grows over the fight.
-  const shown = items.slice(0, LOOT_ROWS);
-  for (const item of shown) {
-    const line = el('div', 'lootline');
-    line.append(el('span', 'lootline__k', item.name));
-    line.append(el('span', 'lootline__v', '+1'));
-    host.append(line);
-  }
-  const rest = items.length - shown.length;
-  if (rest > 0) {
-    const line = el('div', 'lootline');
-    line.append(el('span', 'lootline__k', `and ${rest} more`));
-    line.append(el('span', 'lootline__v', `+${rest}`));
-    host.append(line);
+  // Icons, not names: a good map turns a written list into something that
+  // outgrows the panel, and a row of pictures does not. Hover is the name.
+  if (items.length) {
+    const grid = el('div', 'lootgrid');
+    for (const item of items) {
+      const cell = el('div', 'lootgrid__cell');
+      const icon = itemIcon(item, 26);
+      if (icon) cell.append(icon);
+      attachTooltip(cell, () => itemCard(item));
+      grid.append(cell);
+    }
+    host.append(grid);
   }
 }
 
@@ -613,12 +611,6 @@ function renderReadout(): void {
   $('run-overcharged-row').hidden = s.overcharges <= 0;
   $('run-overcharged').textContent = `${s.overcharges} of ${s.casts} casts`;
 
-  // A walked-out run is still 'running' to the sim — it was never finished —
-  // so the chip reads the phase for that one case rather than the sim.
-  const left = phase === 'results' && s.status === 'running';
-  const status = $('run-status');
-  status.textContent = left ? 'left' : s.status;
-  status.className = `run-status run-status--${left ? 'died' : s.status}`;
 }
 
 /** The overlay. Rows come from the report, so a new stat needs nothing here. */
@@ -969,6 +961,16 @@ export function initRun(state: GameState): void {
   stage.addEventListener('pointerup', release);
   stage.addEventListener('pointercancel', release);
   stage.addEventListener('pointerleave', release);
+
+  // A drawer under its own button. Closed by default, because a descent is
+  // something you watch and the numbers are something you go and look at.
+  const details = $('run-details') as HTMLButtonElement;
+  details.onclick = () => {
+    const panel = $('run-details-panel');
+    panel.hidden = !panel.hidden;
+    details.setAttribute('aria-expanded', String(!panel.hidden));
+    details.classList.toggle('mini--on', !panel.hidden);
+  };
 
   globalThis.addEventListener('resize', fitCanvas);
 
