@@ -93,6 +93,30 @@ one rule is: **do not bake a position into a content module.** That costs
 nothing today, because it is already true. Anything more than that — responsive
 breakpoints, touch gestures, a second layout — is not being paid for now.
 
+**It may be packaged as a standalone app one day, and it is already shaped for
+it. Do not add a shell to make that truer.** Three things make a web game
+wrappable and all three are already true: `build` is one esbuild command to one
+static `docs/app.js` with no server behind it, storage is behind the single
+private `store()` in `src/game/save.ts` with every consumer going through the
+exported API, and nothing talks to a network. Wrapping it later is a shell
+loading `docs/index.html` plus swapping that one function for a file-backed
+one — so the work is ALREADY done, and there is nothing to buy by doing it
+early.
+
+So: **`requestFullscreen()` is the whole of the browser's answer**, and to
+develop against something that looks like the shipped thing, run Chromium with
+`--app=<url> --start-fullscreen` — no tabs, no URL bar, no install, no
+dependency, and each change is a rebuild and a reload. An Electron or Tauri
+shell buys nothing over that for layout work, since Electron IS Chromium in a
+bare window; add one when a NATIVE capability is actually needed (saves on
+disk, a Steam SDK), not to preview a layout. It would also be a thing no
+harness here could keep green: this is a headless container, and the suite
+drives headless Chromium.
+
+What this costs going forward is one rule: **assume nothing a shell would not
+have.** No URL bar, no browser back button, no tab title, no difference between
+being served and being opened from a file.
+
 **The game is meant to be WATCHED, and the screen has to allow it.** Automation
 is universal, the loop relaunches itself, and no build's power may depend on the
 player being present — so the payoff of assembling a build is seeing it work.

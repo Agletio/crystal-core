@@ -230,6 +230,13 @@ floats ON it:
       UI preference has somewhere to live and `heal()` defaults a missing key.
 - [ ] Launching a descent does **not** auto-minimize. Surprise is worse than a
       click.
+- [ ] **`requestFullscreen()` on a control and a keybind.** It needs a user
+      gesture, so it cannot be automatic. This is the whole of what the phase
+      does about packaging — see `RULES.md` on why no app shell is being added
+      to get it. Guard it: `document.fullscreenElement` is how you know which
+      way the toggle points, and the browser can leave fullscreen without
+      asking (Escape), so listen for `fullscreenchange` rather than tracking a
+      boolean of your own.
 
 **What must not break.** Nothing here can touch the sim: it is in tile space
 and never reads a pixel, so a different canvas size replays the same seed and
