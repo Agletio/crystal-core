@@ -29,6 +29,8 @@ import type { RunSet } from './crystal';
 import {
   AURA,
   AURA_BY_ID,
+  BOSS_BY_ID,
+  MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
   DEFENCE,
@@ -51,7 +53,7 @@ import {
   socketPacks,
   socketSize,
 } from '../data';
-import type { EncounterDef } from '../data';
+import type { BossDef, EncounterDef } from '../data';
 import { SCENE_BY_ID } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
@@ -271,6 +273,9 @@ export interface RunState {
   folk: Entity[];
   /** True from the moment the hero reaches them until the panel is dismissed. */
   meeting: boolean;
+  /** What has to be put down before a room is yours, once it has been called
+   *  up. Null everywhere else — a descent has a finale, never a boss. */
+  boss: Entity | null;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
   /** Swings that could not pay, and swings in all: the calibration is a share. */
@@ -334,6 +339,9 @@ export class RunSim {
   private auraDamage = 0;
   /** Where a pacing body started and which way it is going. */
   private pacing: { home: Vec2; side: number } | null = null;
+  /** The boss's own clock, beside `waveTimer` and stopped by the same death. */
+  private reinforce: BossDef['reinforce'] | null = null;
+  private reinforceTimer = 0;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -401,8 +409,10 @@ export class RunSim {
       dead: false,
     };
 
-    // A scene has no packs at all, which is the whole of what makes it one.
+    // A scene has no packs at all, which is the whole of what makes it one —
+    // whatever it does hold is called up by name, later and on purpose.
     const monsters = def ? [] : this.spawn(map);
+    if (def) this.priceKills();
     this.byId = new Map(monsters.map((m) => [m.id, m]));
 
     this.state = {
@@ -429,6 +439,7 @@ export class RunSim {
       absorbed: 0,
       folk: [],
       meeting: false,
+      boss: null,
       damageTaken: {},
     };
 
@@ -485,6 +496,23 @@ export class RunSim {
     return grid.fits(x, y, radius) ? { x, y } : roomCenter(room);
   }
 
+  /** What one body on this map is worth, and what one aura adds. Read by a
+   *  descent and by a boss room alike: a room that pays nothing is a room you
+   *  would rather not be in. */
+  private priceKills(): void {
+    // A flat aura is stated as a multiple of what a monster on THIS map hits
+    // for, so it stays worth something once the crystals scale the room.
+    this.auraDamage = computeStat(MONSTER_BASE.damage, this.set.mods, 'monsterDamage');
+    // Run power pays here: it is the one number a reward reads.
+    this.xpPerKill = monsterXp(this.set.power);
+    // Power is the whole of it, times what the worlds in the set pay.
+    this.goldPerKill =
+      LOOT.goldPerKill *
+      Math.pow(LOOT.powerScale, this.set.power) *
+      this.set.yield *
+      this.set.pays.gold;
+  }
+
   /** Packs land in rooms other than the entrance: a moment to look first. */
   private spawn(map: GameMap): Entity[] {
     const filled = this.set.filled;
@@ -494,18 +522,7 @@ export class RunSim {
     // room. Scaling both would square it.
     const packCount = Math.max(1, Math.round(density.packCount * thin * socketPacks(filled)));
     const packSize = Math.max(1, Math.round(density.packSize * socketPackSize(filled)));
-    // A flat aura is stated as a multiple of what a monster on THIS map hits
-    // for, so it stays worth something once the crystals scale the room.
-    this.auraDamage = computeStat(MONSTER_BASE.damage, this.set.mods, 'monsterDamage');
-
-    // Run power pays here: it is the one number a reward reads.
-    this.xpPerKill = monsterXp(this.set.power);
-    // Power is the whole of it, times what the worlds in the set pay.
-    this.goldPerKill =
-      LOOT.goldPerKill *
-      Math.pow(LOOT.powerScale, this.set.power) *
-      this.set.yield *
-      this.set.pays.gold;
+    this.priceKills();
 
     // One family per pack, for the same reason as one kind per pack.
     const plan = familyPlan(this.set.composition, packCount);
@@ -640,6 +657,13 @@ export class RunSim {
     if (this.pending.length > 0) {
       this.waveTimer -= dt;
       if (this.waveTimer <= 0) this.climbOut();
+    }
+
+    // A boss room's own clock. STOPS with the boss, which is the whole of why
+    // a room with something endless in it still terminates.
+    if (s.boss && !s.boss.dead) {
+      this.reinforceTimer -= dt;
+      if (this.reinforceTimer <= 0) this.sendReinforcements();
     }
 
     // Ailments tick before anyone acts, so a poisoned monster can die on its
@@ -808,6 +832,19 @@ export class RunSim {
       return;
     }
 
+    // A boss room is cleared by putting the boss DOWN, never by walking out:
+    // it has no way out, and the adds are what fills the gap while it lives.
+    if (s.boss) {
+      if (!s.boss.dead) {
+        this.face(hero, s.boss.x, s.boss.y);
+        this.settleAction(hero, false);
+        return;
+      }
+      s.status = 'cleared';
+      this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
+      return;
+    }
+
     // Nothing reachable is left, and the way out is a place you walk to.
     const exit = s.map.exit;
     const out = dist(hero, exit);
@@ -879,6 +916,121 @@ export class RunSim {
     who.path = [];
     this.face(who, this.state.hero.x, this.state.hero.y);
     this.settleAction(who, false);
+  }
+
+  /**
+   * The room goes live. Called by the UI once the lines before the fight have
+   * been said — `src/sim` never decides that a scene happens and never decides
+   * when one starts either. Everything about the thing is a multiplier on the
+   * same baseline every other body in the game is built from.
+   */
+  beginEncounter(): boolean {
+    const s = this.state;
+    const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
+    if (!def || s.boss) return false;
+
+    const ability = this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    const base = monsterStats(this.set.mods, MONSTERS[0], ability);
+    const stats: CombatStats = {
+      ...base,
+      maxLife: base.maxLife * def.life,
+      damage: base.damage * def.damage,
+      damageByType: Object.fromEntries(
+        Object.entries(base.damageByType).map(([t, v]) => [t, v * def.damage])
+      ),
+      ...(thrown ? { attackRange: thrown.range, aggroRange: thrown.range + 2 } : {}),
+    };
+
+    // At the far end of the room from the hero, so it has to cross the floor.
+    const room = s.map.rooms[0];
+    const at = this.placeIn(s.map.grid, room, 0.34 * def.size);
+    const boss: Entity = {
+      id: this.nextId++,
+      kind: 'monster',
+      sprite: def.sprite,
+      scale: def.size,
+      rank: 'rare',
+      radius: 0.34 * def.size,
+      skillId: thrown ? ability.skill : null,
+      x: at.x,
+      y: at.y,
+      facing: Math.atan2(s.hero.y - at.y, s.hero.x - at.x),
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: def.bounty,
+      life: stats.maxLife,
+      mana: 0,
+      effects: [],
+      stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      aggroed: true,
+      hitFlash: 0,
+      dead: false,
+    };
+    s.boss = boss;
+    s.monsters.push(boss);
+    this.byId.set(boss.id, boss);
+    // The boss only. What keeps arriving is not counted, because a readout
+    // that climbs while you are winning reads as a bug.
+    s.totalMonsters = 1;
+    this.reinforce = def.reinforce;
+    this.reinforceTimer = def.reinforce.every;
+    this.events.push({ kind: 'finale', name: def.name, herald: def.herald });
+    return true;
+  }
+
+  /** One more of the smaller things, out of the hole you came up. Stops dead
+   *  when the boss does: the adds are pressure, never the objective. */
+  private sendReinforcements(): void {
+    const s = this.state;
+    const from = MONSTER_BY_ID[this.reinforce?.from ?? ''];
+    if (!from || !this.reinforce || !s.boss || s.boss.dead) return;
+
+    const ability = this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    const stats = monsterStats(this.set.mods, from, ability);
+    const mouth = s.map.entrance;
+
+    for (let i = 0; i < Math.max(1, this.reinforce.size); i++) {
+      const angle = (i / Math.max(1, this.reinforce.size)) * Math.PI * 2;
+      const body: Entity = {
+        id: this.nextId++,
+        kind: 'monster',
+        sprite: from.sprite,
+        scale: from.scale,
+        rank: 'common',
+        radius: 0.3,
+        skillId: thrown ? ability.skill : null,
+        x: mouth.x + Math.cos(angle) * 0.15,
+        y: mouth.y + Math.sin(angle) * 0.15,
+        facing: Math.atan2(s.hero.y - mouth.y, s.hero.x - mouth.x),
+        action: 'idle',
+        actionTimer: 0,
+        deathAge: 0,
+        ailments: [],
+        bounty: 1,
+        life: stats.maxLife,
+        mana: 0,
+        effects: [],
+        stats,
+        cooldown: 0,
+        path: [],
+        pathTimer: 0,
+        targetId: null,
+        aggroed: true,
+        hitFlash: 0,
+        dead: false,
+      };
+      s.monsters.push(body);
+      this.byId.set(body.id, body);
+    }
+    this.reinforceTimer = this.reinforce.every;
   }
 
   /** The meeting is over and the crystal is in hand — granted by whoever calls

@@ -1086,6 +1086,11 @@ of it.
   `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
   every headless harness alone: they drive `RunSim` directly and never ask.
 
+**A bubble is FROZEN where the speaker was when the line went up.** It follows
+the camera and not the body: a bubble that slides about while somebody paces is
+a bubble you cannot click, and no harness can hit a moving target either. The
+camera moving under it is the case it is anchored for.
+
 **A line is a BUBBLE over the body saying it.** `src/ui/speech.ts` owns it,
 built once and UPDATED per frame — `renderFlasks` / `syncFlasks` is the
 precedent and the reason is the same. Where it hangs is `Renderer.screenAt`,
@@ -1100,6 +1105,38 @@ the words on the speaker.
 — no new art and no new frames. Only Pixi draws sprites, so an act is a pose
 there and a moving circle in the fallback: **a beat may never lean on one to
 carry meaning its words do not.** He can pour a lantern; he cannot mime one.
+
+**A BOSS is not in `MONSTERS`.** `BOSSES` in `src/data.ts` is its own table —
+`MONSTERS` is the pack pool and nothing in one may leak into the other, or a
+slab of the rock arrives four at a time in a corridor. Life, damage and size
+are multipliers on `MONSTER_BASE` like every other body in the game, so a boss
+scales with the socketed set rather than being a fixed lump of numbers, and
+`MONSTER_ABILITIES` gives it an element you can answer with a ward. Its art is
+its own `BEASTIARY` entry, and the demo sweeps that table for one.
+
+**The reinforcement clock STOPS when the boss dies, and that is the
+termination proof.** It sits beside `waveTimer` in `RunSim`, it runs whether or
+not you are winning, and the room is cleared by putting the boss DOWN — never
+by walking out, because a scene has no way out. Killing it is the objective;
+the adds are pressure. A clock with no stop condition is a run nobody can leave,
+and the demo drives the room to completion for every main skill at two bands.
+
+**A boss room is a DESCENT.** Its loot banks, its clear counts, and it lands on
+the report every other ending lands on; dying in it costs that room and stops
+the loop, exactly as dying anywhere does. It ends in its OWN terminus rather
+than through `finish()` — routed through that one it took the chaining branch
+and dropped into a hole with no descent at the bottom, which is a frozen screen.
+
+**A scene never schedules a scene.** `sceneWaiting` is asked at the end of a
+DESCENT and not at the end of a room, or a room hands you straight into the
+next room.
+
+**A boss is scheduled and marked at the CLEAR, never at the door.**
+`INTRO.bossSockets` crystals set in the wall is the condition, read off
+`GameState` the way a gift is; `takeBoss` writes `boss:<id>` into `given` once
+it is down. Marked at the door instead, a room you died in would be gone
+forever — and the way back to a second one runs through having put the first
+one down.
 
 **Escape takes the lot.** From any line, `skipToGift` skips the rest and
 grants. The gift is already yours by the time a panel is on screen, so refusing

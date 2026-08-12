@@ -244,6 +244,24 @@ one** scene per clear, highest rung first and never rolled; it ASKS
 happens — `finish()` in `src/ui/run.ts` does, which is why every headless
 harness drives `RunSim` directly and is left alone by all of it.
 
+**A room may have something in it.** `SceneDef.encounter` names a `BossDef` in
+`BOSSES` — its own art, its own rank, life and damage as multipliers on
+`MONSTER_BASE` like every other body, and `reinforce` for the smaller things
+that keep arriving while it lives. A boss is NEVER in `MONSTERS`, which is the
+pack pool. The room says its `beats`, `RunSim.beginEncounter` calls the thing
+up, the reinforcement clock runs beside `waveTimer` and **stops the moment the
+boss is down** — which is the whole of why a room with something endless in it
+still terminates. Killing the boss clears it; the adds are pressure and never
+the objective. Then it says its `after` lines, and a boss room is a DESCENT:
+its loot banks, its clear counts, and it lands on the same report. Dying in it
+costs that room and stops the loop.
+
+**The Lambengolmor** is the second voice the game has, met once two crystals
+are set in the wall. His pitch is *stop blindly feeding the stone; learn its
+true names and command it* — the crystals are punctuation in an old spell and
+the Lampwright is waking something. He calls **The Answering** up to prove it.
+The game never says which of them is right.
+
 **He talks over his own head, a line at a time.** `src/ui/speech.ts` is the
 bubble: built once and updated per frame, anchored off `Renderer.screenAt` so
 the camera moving under it keeps the words on the speaker. A **beat**
@@ -551,6 +569,7 @@ src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/scenes.ts      the authored rooms; src/scenes/* are their content
 src/game/scenes.ts what happens at the end of THIS clear, at most one thing
+src/ui/speech.ts   a line over the head of whoever is saying it
 src/skills-tree.ts per-skill webs; src/trees/* are their content
 src/trades.ts      the character's own web; src/trades/* are the two trades
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes

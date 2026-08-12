@@ -1333,6 +1333,9 @@ export const INTRO = {
   scriptedMod: 'layout_maze',
   /** Handed over with it: a taught craft nobody can afford teaches nothing. */
   scriptedCurrency: 'shard_of_making',
+  /** Two crystals set in the wall is what it takes for somebody to object. */
+  bossSockets: 2,
+  bossScene: 'reading_room',
 };
 
 /**
@@ -2069,6 +2072,46 @@ export const MONSTER_ABILITY_BY_ID: Record<string, MonsterAbilityDef> = Object.f
 // socket the crystal that suits it. Three shapes — one huge target, a handful
 // of tough ones, a swarm — so no one build owns the ending. Multipliers apply
 // to whatever the descent's monsters already are.
+
+/**
+ * A boss. NEVER in `MONSTERS`, which is the pack pool and nothing else — its
+ * own art, its own rank, and life and damage as multipliers on `MONSTER_BASE`
+ * like every other body in the game, so a boss scales with the socketed set
+ * rather than being a fixed lump of numbers.
+ */
+export interface BossDef {
+  id: string;
+  name: string;
+  sprite: string; // its own `BEASTIARY` entry, never a monster's
+  herald: string;
+  life: number;
+  damage: number;
+  size: number;
+  bounty: number;
+  /** The smaller things that keep arriving while it is alive. `from` names a
+   *  `MonsterDef`; the clock STOPS the moment the boss is down, because the
+   *  adds are pressure and the boss is the objective. `size` at a time, or
+   *  twenty bodies on one tile read as two. */
+  reinforce: { every: number; size: number; from: string };
+}
+
+export const BOSSES: BossDef[] = [
+  {
+    id: 'answering',
+    name: 'The Answering',
+    sprite: 'answering',
+    herald: 'Something in the rock has heard its own name.',
+    life: 260,
+    damage: 2.4,
+    size: 2.4,
+    bounty: 30,
+    reinforce: { every: 6, size: 2, from: 'husk' },
+  },
+];
+
+export const BOSS_BY_ID: Record<string, BossDef> = Object.fromEntries(
+  BOSSES.map((b) => [b.id, b])
+);
 
 export interface EncounterDef {
   id: string;

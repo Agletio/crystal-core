@@ -1,16 +1,17 @@
 /**
  * Scenes: the authored rooms you come up into at the end of a cleared descent.
- * A `RunSim` over a map nobody generated — one room, no packs, the props where
- * somebody put them and the people in it. Everything a later room adds is a
- * field here rather than a second kind of run, and `src/scenes/*` is content.
+ * A `RunSim` over a map nobody generated — one room, the props where somebody
+ * put them, the people in it, and at most one thing to put down. What a later
+ * room adds is a field here, and `src/scenes/*` is content.
  */
 import type { MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
 import { WORKSHOP } from './scenes/workshop';
+import { READING_ROOM } from './scenes/reading-room';
 
 /** What somebody DOES between two lines, off the pose machinery that already
- *  exists. Only Pixi draws sprites, so an act is a pose there and a moving
- *  circle in the fallback: a beat may never lean on one for meaning. */
+ *  exists. An act is a pose in Pixi and a moving circle in the fallback, so a
+ *  beat may never lean on one for meaning. */
 export type SceneAct = 'pace' | 'work' | 'face';
 
 export interface SceneBeat {
@@ -32,10 +33,12 @@ export interface SceneDef {
   theme: MapTheme; // some world's rock: a room is a PLACE, not the last descent
   plan: ScenePlan;
   said: string; // noted on arrival; what a PERSON says is beats, per gift
-  encounter: string | null; // what has to be put down; null is a quiet room
+  beats?: SceneBeat[]; // the room's own person, before the fight
+  after?: SceneBeat[]; // and once it is down
+  encounter: string | null; // a `BossDef` id; null is a quiet room
 }
 
-export const SCENES: SceneDef[] = [WORKSHOP];
+export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM];
 
 export const SCENE_BY_ID: Record<string, SceneDef> = Object.fromEntries(
   SCENES.map((s) => [s.id, s])

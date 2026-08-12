@@ -18,6 +18,10 @@ const ABOVE = 0.6;
 let beats: SceneBeat[] = [];
 let at = 0;
 let done: (() => void) | null = null;
+/** Where the speaker was when this line went up. FROZEN for the length of it:
+ *  a bubble that slides about while somebody paces is a bubble you cannot
+ *  click. The camera still moves it, which is what it is anchored for. */
+let stood: { x: number; y: number } | null = null;
 
 export const isSpeaking = (): boolean => !$('speech').hidden;
 
@@ -29,12 +33,14 @@ function show(): void {
   if (!beat) return finish();
   $('speech-said').textContent = beat.said;
   $('speech').hidden = false;
+  stood = null;
 }
 
 /** Every line has been said, or somebody pressed Escape through the lot. */
 function finish(): void {
   $('speech').hidden = true;
   beats = [];
+  stood = null;
   const after = done;
   done = null;
   after?.();
@@ -68,8 +74,9 @@ export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y
 
 /** Per frame, for whatever is currently anchored to a body. */
 export function syncSpeech(renderer: Renderer, on: { x: number; y: number }): void {
-  if (isSpeaking()) anchor($('speech'), renderer, on);
-  if (!$('met').hidden) anchor($('met-card'), renderer, on);
+  stood ??= { x: on.x, y: on.y };
+  if (isSpeaking()) anchor($('speech'), renderer, stood);
+  if (!$('met').hidden) anchor($('met-card'), renderer, stood);
 }
 
 export function initSpeech(): void {

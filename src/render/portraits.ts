@@ -23,6 +23,73 @@ const rows = gridRows(48);
 
 export const PORTRAITS: Record<string, PortraitArt> = {
   /**
+   * No hood: the whole point of him is that he wants to be looked at while he
+   * explains. Cropped hair, a long jaw, and a rule held up beside the face —
+   * the tool he thinks the rock answers to, where the other man carries a lamp.
+   */
+  lambengolmor: {
+    grid: 48,
+    rows: rows({
+        4: '.................###########....................',
+        5: '..............###MMMMMMMMMMM###.................',
+        6: '............##MMMMMMMMMMMMMMMMM##...............',
+        7: '...........#MMMMMMMMMMMMMMMMMMMss#..............',
+        8: '..........#MMMMMMMMMMMMMMMMMMMMsss#.............',
+        9: '.........#MMMMMMMMMMMMMMMMMMMMMssss#............',
+        10: '........#MMMMhhhhhhhhhhhhhhhhMMMssss#...........',
+        11: '........#MMhhhhhhhhhhhhhhhhhhhhhssss#...........',
+        12: '.......#MMhhhhhhhhhhhhhhhhhhhhhhssss#...........',
+        13: '.......#Mhhhddddddddddddddddddhhhssss#..........',
+        14: '.......#Mhhdddddddddddddddddddddhssss#..........',
+        15: '.......#Mhddddddddddddddddddddddddsss#..........',
+        16: '.......#Mhdddddddddddddddddddddddssss#..........',
+        17: '.......#Mhddddkkkkkddddddkkkkkddddsss#..bbbb....',
+        18: '.......#Mhdddkkeeekkddddkkeeekkdddsss#..bBBb....',
+        19: '.......#Mhdddkkeeekkddddkkeeekkdddsss#..bBBb....',
+        20: '.......#Mhddddkkkkkddddddkkkkkddddsss#..bBBb....',
+        21: '.......#Mhdddddddddddddddddddddddssss#..bBBb....',
+        22: '.......#Mhddddddddddwwwddddddddddssss#..bBBb....',
+        23: '.......#Mhdddddddddwwwwwdddddddddssss#..bBBb....',
+        24: '.......#Mhddddddddddwwwddddddddddssss#..bBBb....',
+        25: '........#Mhdddddddddddddddddddddssss#...bBBb....',
+        26: '........#Mhddddddkkkkkkkkkdddddssss#....bBBb....',
+        27: '.........#Mhdddddkkkkkkkkkddddsss#......bBBb....',
+        28: '..........#Mhddddddddddddddddss#........bBBb....',
+        29: '...........#Mhdddddddddddddss#..........bBBb....',
+        30: '............##Mhddddddddds##............bBBb....',
+        31: '..............###hddddd###..............bBBb....',
+        32: '.................#ddddd#................bBBb....',
+        33: '.................#ddddd#................bBBb....',
+        34: '...............###MMMMM###..............bBBb....',
+        35: '............###MMMMMMMMMMM###...........bBBb....',
+        36: '.........###MMMMMMMMMMMMMMMMM###........bBBb....',
+        37: '.......##MMMMMMMMMMMMMMMMMMMMMss##......bBBb....',
+        38: '......#MMMMMMMMMMMMMMMMMMMMMMMssss#.....bBBb....',
+        39: '.....#MMMMMMMMMMMMMMMMMMMMMMMMMssss#....bBBb....',
+        40: '....#MMMMMMMMMMMMMMMMMMMMMMMMMMMssss#...bBBb....',
+        41: '...#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMssss#..bBBb....',
+        42: '..#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMssss#.bBBb....',
+        43: '.#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMssss#bBBb....',
+        44: '#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMssss#bBb....',
+        45: '#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMsss#bBb....',
+        46: '#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMsss#bBb....',
+        47: '#MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMsss#bbb....',
+    }),
+    ink: (p) => ({
+      '#': mix(p.void, p.rockDeep, 0.7),
+      M: mix(p.bone, p.rockDeep, 0.45),
+      s: mix(p.bone, p.void, 0.66),
+      d: mix(p.chalk, p.rust, 0.28),
+      h: mix(p.rockDeep, p.void, 0.35),
+      k: mix(p.chalk, p.void, 0.62),
+      w: mix(p.chalk, p.rust, 0.5),
+      e: p.amethyst,
+      b: mix(p.quartz, p.rockDeep, 0.35),
+      B: mix(p.quartz, p.chalk, 0.2),
+    }),
+  },
+
+  /**
    * A hood, a lamp on a crook, and not much face. What light there is comes
    * off the lamp, so the near edge of the cowl is lit and the far side is
    * gone — which is also why the only things you meet are two eyes.

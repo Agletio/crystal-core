@@ -33,6 +33,7 @@ import {
   CRYSTAL_QUESTS,
   CRYSTAL_LEVELS,
   INTRO,
+  BOSSES,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -86,8 +87,9 @@ import {
 } from './economy';
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
-import { sceneWaiting } from './game/scenes';
-import { SCENES } from './scenes';
+import { findPath } from './sim/pathfind';
+import { sceneWaiting, takeBoss } from './game/scenes';
+import { SCENES, SCENE_BY_ID } from './scenes';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -1343,13 +1345,21 @@ rule('SPRITES — is the pixel art well formed?');
   check(noProp.length === 0, 'and every prop in one is drawn', noProp.join(', '));
 
   // Every monster the tables can spawn has to have a drawing, or a pack of
-  // them arrives as whatever the fallback happens to be.
-  const undrawn = MONSTERS.filter((m) => !MONSTER_FRAMES[m.sprite]).map((m) => m.id);
+  // them arrives as whatever the fallback happens to be. A boss is not in
+  // `MONSTERS` — that is the pack pool — so its own table is swept too.
+  const undrawn = [
+    ...MONSTERS.filter((m) => !MONSTER_FRAMES[m.sprite]).map((m) => m.id),
+    ...BOSSES.filter((b) => !MONSTER_FRAMES[b.sprite]).map((b) => b.id),
+  ];
   check(
     undrawn.length === 0,
-    `all ${MONSTERS.length} monsters are drawn`,
+    `all ${MONSTERS.length} monsters and ${BOSSES.length} bosses are drawn`,
     undrawn.join(', ')
   );
+  // And nothing in the boss table may leak into the pack pool: a slab of the
+  // rock arriving four at a time in a corridor is not a boss.
+  const leaked = BOSSES.filter((b) => MONSTERS.some((m) => m.sprite === b.sprite)).map((b) => b.id);
+  check(leaked.length === 0, 'and no boss is also a monster', leaked.join(', '));
 
   // A rank has to be visible before it reaches you: a halo that adds nothing,
   // or one that eats the body it rings, is a rank you find out about by dying.
@@ -5887,18 +5897,31 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'one hole and furniture somebody put there',
       `${room.state.map.props.length} props`
     );
-    // Everything authored has to be standing on floor: a bench in the rock is
-    // a bench nobody can see, and the cut worries the edges of the room away.
-    const grid = room.state.map.grid;
-    const off = [
-      ...room.state.map.props.map((p) => [p.id, p.x, p.y] as const),
-      ['the man', room.state.folk[0].x, room.state.folk[0].y] as const,
-      ['the hole', room.state.map.entrance.x, room.state.map.entrance.y] as const,
-    ].filter(([, x, y]) => !grid.fits(x, y, 0.3));
+    // Everything authored has to be standing on floor, in EVERY room: a bench
+    // in the rock is a bench nobody can see, and the cut worries the edges of
+    // a room away tile by tile.
+    const misplaced: string[] = [];
+    for (const scene of SCENES) {
+      const built = new RunSim([], g.character, new Rng(6100), { scene: scene.id });
+      const grid = built.state.map.grid;
+      const put: Array<readonly [string, number, number]> = [
+        ...built.state.map.props.map((p) => [p.id, p.x, p.y] as const),
+        [scene.who, built.state.folk[0].x, built.state.folk[0].y] as const,
+        ['the hole', built.state.map.entrance.x, built.state.map.entrance.y] as const,
+      ];
+      for (const [id, x, y] of put) {
+        if (!grid.fits(x, y, 0.3)) misplaced.push(`${scene.id}: ${id} at ${x},${y}`);
+      }
+      // And the hole has to reach the person, or you arrive in a room you
+      // cannot cross and the beats never start.
+      if (!findPath(grid, built.state.map.entrance, built.state.folk[0]).length) {
+        misplaced.push(`${scene.id}: no way across to ${scene.who}`);
+      }
+    }
     check(
-      off.length === 0,
-      'and every one of them fits where it was put',
-      off.map(([id, x, y]) => `${id} at ${x},${y}`).join(', ')
+      misplaced.length === 0,
+      `every prop and every person in all ${SCENES.length} rooms fits where it was put`,
+      misplaced.join(', ')
     );
     check(
       dist(room.state.hero, room.state.folk[0]) > 3,
@@ -5937,6 +5960,68 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'and pacing walks off and comes back rather than leaving the room',
       `${away.toFixed(1)} tiles out, ${dist(who, stood).toFixed(1)} now`
     );
+
+    // --- the one who thinks the Lampwright is wrong --------------------
+    // A boss room is a descent with one thing in it that matters. The check
+    // that outranks every other one here is that it ENDS: a reinforcement
+    // clock with no stop condition is a run nobody can walk out of.
+    {
+      const at = createGame('dev');
+      at.sockets = {};
+      check(
+        sceneWaiting(at, facts(at, sim.state)) === null,
+        'nobody objects to a wall with nothing in it',
+        JSON.stringify(sceneWaiting(at, facts(at, sim.state))?.def.id)
+      );
+      const two = createGame('dev');
+      two.sockets = { first: makeCrystal(2, 'normal'), second: makeCrystal(2, 'normal') };
+      const called = sceneWaiting(two, facts(two, sim.state));
+      check(
+        called?.def.id === INTRO.bossScene && called.gift === null,
+        'two crystals set in the wall is what it takes for somebody to object',
+        called?.def.id ?? 'nobody'
+      );
+      takeBoss(two, SCENE_BY_ID[INTRO.bossScene].encounter!);
+      check(
+        sceneWaiting(two, facts(two, sim.state)) === null,
+        'and once it is down it is never scheduled again',
+        JSON.stringify(sceneWaiting(two, facts(two, sim.state))?.def.id)
+      );
+
+      // Played out, with the character the ladder measures everything with.
+      const ends: string[] = [];
+      for (const band of [1, 6]) for (const skill of MAIN_SKILLS) {
+        const fighter = ladderCharacter(band, new Rng(11), skill.id);
+        const room = new RunSim([], fighter, new Rng(4200), { scene: INTRO.bossScene });
+        room.beginEncounter();
+        check(
+          room.state.boss !== null && room.state.totalMonsters === 1,
+          `band ${band} ${skill.id}: the room counts the boss, not what arrives`,
+          String(room.state.totalMonsters)
+        );
+        const over = runToCompletion(room, 600);
+        const adds = room.state.monsters.length - 1;
+        ends.push(
+          `${skill.id}@${band} ${room.state.status} ${room.state.elapsed.toFixed(0)}s +${adds}`
+        );
+        check(
+          over && room.state.status !== 'running',
+          `band ${band} ${skill.id}: a room with something endless in it ends`,
+          `${room.state.status} after ${room.state.elapsed.toFixed(0)}s`
+        );
+        if (room.state.status === 'cleared') {
+          check(
+            room.state.boss?.dead === true,
+            `band ${band} ${skill.id}: and the boss going down is what clears it`,
+            `boss ${room.state.boss?.dead ? 'down' : 'up'}`
+          );
+        }
+      }
+      // Balance, so it prints and never fails: how long the thing lives and
+      // how many smaller ones turned up while it did.
+      gauge(`the reading room — wanted: the adds arrive at all`);
+      for (const e of ends) gauge(`  ${e}`);
+    }
 
     // What the panel does. The run is already banked, so this is a handover
     // and not a payout — nothing about it can be lost.

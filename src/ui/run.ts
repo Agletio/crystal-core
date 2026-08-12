@@ -33,7 +33,7 @@ import {
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { sceneWaiting } from '../game/scenes';
+import { sceneWaiting, takeBoss } from '../game/scenes';
 import { SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -358,7 +358,9 @@ function finish(left = false): void {
   // in exactly as a chained descent does and come up somewhere else. Asked
   // AFTER the report, so the level and the crystal experience this descent
   // just bought both count towards the meeting it schedules.
-  const scene = report.cleared
+  // A scene never schedules a scene: the queue is read at the end of a
+  // DESCENT, or a room hands you straight into the next room.
+  const scene = report.cleared && phase !== 'scene'
     ? sceneWaiting(game, {
         set: sim.state.set,
         elapsed: sim.state.elapsed,
@@ -407,10 +409,42 @@ function finish(left = false): void {
  *  frame after arriving from starting the whole thing again. */
 function speak(): void {
   spoke = true;
+  const def = SCENE_BY_ID[arrivedIn];
+  if (!def) return;
+  // A room with something in it says its piece and then goes live; a quiet one
+  // ends on the panel, which is where the gift is.
+  if (def.encounter) {
+    startSpeech(def.who, def.beats ?? [], () => {
+      if (sim?.beginEncounter()) playing = true;
+      absorbEvents();
+      setLeaveLabel();
+    });
+    return;
+  }
   if (!greeting) return;
   const words = lampwrightWords(greeting);
   const held = greeting;
-  startSpeech(SCENE_BY_ID[arrivedIn]?.who ?? '', words.beats, () => openMet(held));
+  startSpeech(def.who, words.beats, () => openMet(held));
+}
+
+/** The boss is down, or you are. A boss room is a DESCENT: its loot banks, its
+ *  clear counts, and it lands on the report every other ending lands on. */
+function endEncounter(): void {
+  if (!sim) return;
+  playing = false;
+  const report = buildReport(game, sim.state, false);
+  renderBadges();
+  if (report.cleared) streak++;
+  halt = report.cleared ? 'once' : 'died';
+
+  const def = SCENE_BY_ID[arrivedIn];
+  const state = sim.state;
+  // Marked at the clear, so a room you died in is one you meet again.
+  if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
+
+  const after = report.cleared ? (def?.after ?? []) : [];
+  if (after.length === 0) return land(report, state);
+  startSpeech(def!.who, after, () => land(report, state));
 }
 
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other
@@ -797,7 +831,7 @@ function frame(now: number): void {
 
   // In the room, and someone is standing in it. Nothing ticks but the walk
   // across, and then whatever they are doing while they say a line.
-  if (sim && phase === 'scene') {
+  if (sim && phase === 'scene' && !playing) {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
@@ -807,7 +841,9 @@ function frame(now: number): void {
       steps++;
     }
     if (sim.state.meeting && !spoke) speak();
-    if (renderer && sim.state.folk[0]) syncSpeech(renderer, sim.state.folk[0]);
+  }
+  if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
+    syncSpeech(renderer, sim.state.folk[0]);
   }
 
   if (playing && handover === 0 && sim && sim.state.status === 'running') {
@@ -825,7 +861,10 @@ function frame(now: number): void {
 
     if (sim.state.status !== 'running') {
       setLeaveLabel();
-      finish();
+      // A room that went live ends in its OWN terminus: through `finish` it
+      // chains, and drops into a hole with no descent at the bottom of it.
+      if (phase === 'scene') endEncounter();
+      else finish();
     }
   }
 
@@ -841,8 +880,8 @@ function frame(now: number): void {
  */
 function setLeaveLabel(): void {
   const btn = $('run-leave') as HTMLButtonElement;
-  // Neither button means anything outside a descent, and a scene is the one
-  // place that mattered: offering to abandon a room with a gift standing in it.
+  // Neither means anything outside a descent, and a room with a fight in it is
+  // the one you may not walk out of — leaving would be a way to skip a boss.
   ($('run-abandon') as HTMLButtonElement).disabled = phase !== 'running';
   const live = phase === 'running' && looping();
   btn.textContent = !live
