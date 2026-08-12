@@ -27,10 +27,11 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part. There is currently one:
-   the UI phase that floats every panel over a full-screen map. The roadmap
-   names the balance pass as what is most likely to be asked for after it; it
-   is not a phase until somebody asks.
+   open question, and do the WHOLE of it. Not part. There are currently eight:
+   what is left of the UI, then a seven-phase ladder that gives the game rooms
+   you arrive in and people standing in them. That ladder's order is
+   load-bearing and the roadmap says why. The balance pass is written up there
+   too and is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
