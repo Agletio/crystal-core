@@ -27,12 +27,10 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part. **There are none right
-   now** — both batches landed, and the vocabulary pass after them was asked
-   for directly rather than written down — so this step currently ends the
-   session under the first of the three below rather than starting work. The
-   roadmap names the balance pass as what is most likely to be asked for next;
-   it is not a phase until somebody asks.
+   open question, and do the WHOLE of it. Not part. There is currently one:
+   the UI phase that floats every panel over a full-screen map. The roadmap
+   names the balance pass as what is most likely to be asked for after it; it
+   is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
@@ -77,6 +75,30 @@ the reply, stop, and wait. Once it is answered, carry on without stopping again
 ## Design decisions
 
 Settled. Do not relitigate without the user saying so.
+
+**This is a DESKTOP game and mobile is deferred.** The user's call, made
+outright: they are done working on mobile for now. So stop paying for it —
+hover is allowed to carry meaning, an icon may rely on a keybind, and no layout
+gets contorted to survive 390px. Anywhere a rule in this file is justified by
+"it works on a phone", the rule may still be a good rule, but the phone is no
+longer the argument for it.
+
+**What mobile costs later is a SHELL, not the screens, and that stays true for
+free.** One module per screen in `src/ui/`, each rendering CONTENT into ids the
+markup owns, with position and size in CSS — that is already how this codebase
+is built, and only five modules touch geometry at all (`tooltip`, `skills`,
+`tutorial`, `menu`, `inventory`), each for a reason. Keep it that way and a
+mobile version later is new CSS and a new shell over the same screens. So the
+one rule is: **do not bake a position into a content module.** That costs
+nothing today, because it is already true. Anything more than that — responsive
+breakpoints, touch gestures, a second layout — is not being paid for now.
+
+**The game is meant to be WATCHED, and the screen has to allow it.** Automation
+is universal, the loop relaunches itself, and no build's power may depend on the
+player being present — so the payoff of assembling a build is seeing it work.
+There are two ways to play this game, menus and watching, and any change that
+serves the first at the cost of the second is taking from the half that has
+less.
 
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
@@ -169,8 +191,10 @@ lies the first time the constant moves.
 `pointer-events: none` and that rule outranks this one, so a word inside a
 tooltip can never be hovered again. `src/ui/glossary.ts` marks it where it
 appears and prints what it means at the bottom of the SAME card. A keyword the
-player has to go and look up somewhere else is a keyword they will not learn,
-and on a phone there is no hover to look it up with.
+player has to go and look up somewhere else is a keyword they will not learn.
+This one SURVIVES the desktop-only decision: the reason is the mechanical one
+above — a tooltip cannot be hovered — and the phone was only ever the second
+argument for it.
 
 **Every Projectile lands for full damage.** The falloff on extra Projectiles is
 gone, and with it the notable that removed it — a keyword promising a thing is

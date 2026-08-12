@@ -4,17 +4,16 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**There are no phases in this file.** Every one of both batches has landed. If
-you are a session looking for work, there is none here to take: say so, list the
-Open questions, and stop. Do not invent a phase and do not promote a backlog
-item into one without being asked. The thing most likely to be asked for next is
-the **balance pass**, written up below.
+**There is one phase, and it is the UI.** Both original batches landed; Phase 1
+below came out of a design conversation afterwards and is the work to take.
 
-When there ARE phases again: do the lowest-numbered one that is not blocked on
-an open question, all of it, then delete it and renumber. Numbers in a phase are
-intent, not tuning — a measurement beats them. A landed phase is DELETED from
-here, so before starting one, `git fetch` and check you are on the tip of the
-branch: a phase you can still see in a stale clone may already be built.
+Do the lowest-numbered phase that is not blocked on an open question, all of it,
+then delete it and renumber. Numbers in a phase are intent, not tuning — a
+measurement beats them. A landed phase is DELETED from here, so before starting
+one, `git fetch` and check you are on the tip of the branch: a phase you can
+still see in a stale clone may already be built. Do not promote a backlog item
+into a phase without being asked; the thing most likely to be asked for after
+this one is the **balance pass**, written up below.
 
 **What the last four phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
@@ -136,11 +135,6 @@ written as one.
 
 ## Phases
 
-**There are none.** Every phase in both batches has landed. What is left in this
-file is the balance pass above, Open questions, and a Backlog — and `RULES.md`
-says plainly what to do with that: say so and list them, do not invent work, and
-do not promote a backlog item into a phase without being asked.
-
 **Writing one.** The test is whether a session with no memory of this
 conversation could execute it. That takes four things, and the second is the one
 usually missing:
@@ -157,6 +151,104 @@ usually missing:
 
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
+
+### Phase 1 — The map is the screen, and the UI floats on it
+
+**What is true today.** The map is one cell of a layout, and three things box
+it in. `<header>` is a title and ten word buttons. `.runside` is
+`flex: 0 0 290px` during a descent — a fixed column holding name, level, life,
+mana, xp, skill icons, the readout and Carrying. `.dock` is a permanent strip
+below everything, and it does not merely sit there: the shell measures it into
+`--dock-h`, and `.modal` is `bottom: var(--dock-h)` with
+`max-height: calc(100dvh - var(--dock-h) - 40px)`, so the dock reserves height
+from every screen in the game. `.modal` also paints `rgba(6,5,8,.86)` over the
+whole window, which is what makes a screen MODAL: one at a time, and the map
+gone while it is up.
+
+**Why it is wrong.** This game is built to be WATCHED — automation is
+universal, potions and Blink fire themselves, `runToCompletion` is the shipped
+policy, and no build's power may depend on the player being present. You
+assemble a thing and then you want to see it work. There are two ways to play
+and the game only supports one of them: menus, crafting and theorycrafting are
+well served, and the actual action happens in a box in the corner that you
+cannot make bigger even for a minute.
+
+**The shape, as drawn.** The map fills the window edge to edge. Everything else
+floats ON it:
+
+- **Top left — the character HUD.** Life, mana, xp. Level at the top or the
+  bottom of that cluster. This is HUD, not a menu: it does not hide, because a
+  build you cannot see the life bar of is a build you are watching blind.
+- **Bottom left, wide and horizontal — the inventory.** Its own window, opened
+  like the others.
+- **Bottom right — the menu.** Every system, icon based, each showing its
+  keybind.
+- **Centred, more vertical — every other screen**, opening over the map.
+
+- [ ] **The scrim is the mechanical change.** `.modal`'s full-window
+      `rgba(6,5,8,.86)` is what makes these modal rather than windows. Remove it
+      and a screen stops covering the map and stops being one-at-a-time;
+      everything else in this phase follows from that. `.modal__card` already
+      paints itself solid (`--matrix` + `--grit`), so a window reads as a slab
+      over the map with no new art.
+- [ ] **`--dock-h` goes to zero and its two consumers simplify.** The dock stops
+      being in the flow, so nothing needs to reserve height for it. `fitCanvas`
+      in `src/ui/run.ts` also reserves height for the flasks because *"taking it
+      all pushes them off the bottom, where the dock covers them"* — that reason
+      dies here too, and the flasks become HUD over the map like the life bar.
+- [ ] **Inventory is horizontal at the bottom and everything else is centred
+      above it, and that is not a new idea — it is what the code already
+      believes.** `--dock-h` exists precisely so an open screen does not cover
+      the inventory. The player's instinct and the current design agree: the
+      inventory is the OBJECT and every other screen is a verb applied to it
+      (craft it, sell it, stash it, wear it), so it is the one that stays up
+      while another is open.
+- [ ] **Windows can be dragged where you want them**, and this is its own
+      checkbox so it can slip cleanly: get the default positions right first,
+      because a good default is what most players never drag away from. The
+      trap is that the map is ALREADY drag-to-look (`panBy` on the renderer), so
+      a drag on a window must not pan the map underneath it.
+- [ ] **Multiple windows open at once makes z-order real, and Escape with it.**
+      `src/web.ts` closes "whatever is on top" through a hand-written chain of
+      `isXOpen()` checks that assumes one screen at a time. Decide what the top
+      one is when three are up — most recently raised is the usual answer — and
+      make the chain read that rather than a fixed order.
+- [ ] **The menu is icons with keybinds, bottom right.** `src/ui/keys.ts` and
+      `BINDINGS` exist and `C` already opens Character, so every icon can print
+      its own key. Icons do not exist yet: `src/ui/icons.ts` has `itemIcon`,
+      `currencyIcon` and `portraitIcon` and no screen glyphs, and ten of those
+      in this game's grid pixel style is the most underestimated part of this
+      phase. Keep the button IDS (`open-shop`, `open-craft`, `open-character`,
+      `open-save`, …) whatever the presentation becomes — the guided opening
+      navigates by them and so does the shots lockdown probe.
+- [ ] **The minimize has to have a way back.** Exactly one affordance never
+      hides, and it takes a key — `Space` is already recentre-camera, so pick
+      another `BINDINGS` entry. The guided opening should UN-minimize rather
+      than ring a button that is not on screen.
+- [ ] Minimized state persists across sessions — a watcher next session is
+      still a watcher. `GameState` already carries `keys` and `potions`, so a
+      UI preference has somewhere to live and `heal()` defaults a missing key.
+- [ ] Launching a descent does **not** auto-minimize. Surprise is worse than a
+      click.
+
+**What must not break.** Nothing here can touch the sim: it is in tile space
+and never reads a pixel, so a different canvas size replays the same seed and
+moves no demo number. `fitCanvas` already measures its box and resizes whichever
+renderer is live, and both implement `resize(width, height)` — full-bleed is
+mostly giving `#run-stage` a bigger box.
+
+`npm run guide` is the harness that matters, because it plays the opening with a
+real pointer: `viaHeader()`, `blocked()` and `CLOSES` in `src/ui/tutorial.ts` all
+assume a header bar that a modal covers, and `blocked()` is literally
+`ctx.top !== null`, which stops meaning "the header is covered" the moment a
+window is not modal. `npm run shots` runs a lockdown probe that hard-codes
+`open-shop`, `open-craft`, `open-character` and `open-save` as doors that must
+stay clickable, and finds any element covering the guide card.
+
+**Desktop only — see `RULES.md`.** `shots.mjs` runs a 390×844 phone viewport and
+FAILS on overflow there. A floating-window UI has no meaning at 390px, so that
+viewport is the first thing this phase has to deal with: keep it as a print, or
+drop it, but do not contort the layout to satisfy it.
 
 ---
 
