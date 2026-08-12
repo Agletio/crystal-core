@@ -124,6 +124,41 @@ There are two ways to play this game, menus and watching, and any change that
 serves the first at the cost of the second is taking from the half that has
 less.
 
+**The map is the SCREEN and the panels float on it.** `body.mapfull` is the one
+switch, off `syncViewportLock`. Three rules keep it working and each was a bug
+first: the stage is UNDER the shell, so every structural wrapper needs
+`pointer-events: none` and the leaves take one back — hit testing asks what is
+on top, not what is opaque, and forgetting it kills drag, zoom and follow
+together. A fixed box at `bottom: 0` is still pushed by its own margin. And a
+rule for a floating element loses every specificity tie to the class it shares
+markup with, so `.hp.xpbar` and not `.xpbar`.
+
+**A screen is a WINDOW; only a question stops you.** No scrim, click-through
+layer, card takes the pointer. `.modal--stop` is the short list that blocks:
+a confirm, the welcome, the Lampwright. Anything new is a window unless it is
+asking something.
+
+**The map is the GROUND, not a screen.** `override ?? screenHandler ?? base`.
+The run sets `base` on every phase change; a screen sets `screenHandler` when it
+takes focus. Both in one slot and a descent ticking over takes the dock off
+whatever screen is holding it — which reads as flaky rather than broken, because
+it needs a clear to land while a screen is open.
+
+**A rail button's ID outlives its presentation.** `open-shop`, `open-craft`,
+`open-character`, `open-save` and the rest are what the guided opening walks and
+what the shots lockdown probe asserts. Rearrange the bar freely; renaming an id
+is a much bigger job than it looks.
+
+**Anything drawn per frame must UPDATE, not rebuild.** `renderFlasks` builds and
+`syncFlasks` updates, and the split is not tidiness: rebuilt sixty times a
+second, a press that straddled a rebuild landed on a node no longer in the
+document, and the threshold buttons did nothing at all for as long as they
+existed.
+
+**A button that clears a heap may not eat a decision.** Both bulk sells —
+the shop's and the haul's — exclude uniques, because a named piece is only ever
+a decision. Selling one is still a menu action on the piece.
+
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
 are harder — and they pay in currencies Normal does not. Normal keeps its own
@@ -1057,32 +1092,33 @@ Everything in `CLAUDE.md` still applies — the comment budget above all.
 
 ### How long the suite takes
 
-About **sixteen minutes** end to end, and three of the eight are slow enough
-that a two-minute tool timeout will kill them mid-run:
+About **seven minutes** end to end, and three of the nine are slow enough that a
+two-minute tool timeout will kill them mid-run:
 
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s, 505 checks |
+| `smoke` | ~10s, 527 checks |
 | `demo` | ~2min |
-| `shots` | ~3min — two viewports, each waiting out a whole first descent |
-| `guide` | ~10min — it plays about eleven descents in real time |
+| `shots` | ~2min — desktop only now, waiting out a whole first descent |
+| `guide` | ~2min — it plays about eleven descents, at `?fast=16` |
 | `drag` | ~20s — one dock reorder, with and without the bench open |
 
-None of them hangs. If one looks stuck it is one of the bottom three, and the
+None of them hangs. If one looks stuck it is `demo`, `shots` or `guide`, and the
 answer is to wait or run it in the background, never to assume it broke.
 
-`guide` is the long one and it is long for a reason that is not fixable in the
-harness: the opening spans the levels a first notable costs and the clears a
-first crystal takes to grow a slot, and every one of those descents is PLAYED.
+`guide` used to be ten minutes and is now about two. The frame loop scales its
+`dt` off `?fast=`, gated to a loopback host, so the sim takes the SAME ticks to
+the same end and merely gets there sooner — the seed still replays. It drops
+back to real time for the drag checks: at 16x a descent can finish between a
+mouse-down and a mouse-up and redraw the dock under the drag.
 Its turn budget is 900, which is roughly double what a pass uses — the budget
 is not the binding constraint, the wall clock is.
 
 ### Run what the change can break, and nothing else
 
-The suite is sixteen minutes. Running all of it after every edit is how an hour
-goes on a change to a number, so the rule is to run what the change can actually
-reach. `comments` and `typecheck` are not on this list because they are seconds
+Running all of it after every edit is how an hour goes on a change to a number,
+so the rule is to run what the change can actually reach. `comments` and `typecheck` are not on this list because they are seconds
 and already automatic.
 
 | what changed | what to run |

@@ -152,151 +152,32 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — The map is the screen, and the UI floats on it
+### Phase 1 — What is left of the UI
 
-**What is true today.** The map is one cell of a layout, and three things box
-it in. `<header>` is a title and ten word buttons. `.runside` is
-`flex: 0 0 290px` during a descent — a fixed column holding name, level, life,
-mana, xp, skill icons, the readout and Carrying. `.dock` is a permanent strip
-below everything, and it does not merely sit there: the shell measures it into
-`--dock-h`, and `.modal` is `bottom: var(--dock-h)` with
-`max-height: calc(100dvh - var(--dock-h) - 40px)`, so the dock reserves height
-from every screen in the game. `.modal` also paints `rgba(6,5,8,.86)` over the
-whole window, which is what makes a screen MODAL: one at a time, and the map
-gone while it is up.
+**Most of it landed.** The map is the screen, every panel floats on it, and the
+rail replaced the header. What remains is two checkboxes off the original phase
+and nothing else; `CLAUDE.md` describes what exists and `RULES.md` holds the
+rules it is now bound by.
 
-**Why it is wrong.** This game is built to be WATCHED — automation is
-universal, potions and Blink fire themselves, `runToCompletion` is the shipped
-policy, and no build's power may depend on the player being present. You
-assemble a thing and then you want to see it work. There are two ways to play
-and the game only supports one of them: menus, crafting and theorycrafting are
-well served, and the actual action happens in a box in the corner that you
-cannot make bigger even for a minute.
+- [ ] **Windows can be dragged where you want them.** Deliberately last: good
+      default positions are what most players never drag away from, and those
+      are now in. The trap is that the map is ALREADY drag-to-look (`panBy` on
+      the renderer), so a drag on a window must not pan the map underneath it.
+      `npm run drag` is the check — it is 20 seconds and it prints what
+      `elementFromPoint` hits at the drop.
+- [ ] **Z-order is static, and "on top" should mean most recently raised.**
+      Today `.dock` is 18, `.modal` 20, `.rail` 22, and the Escape chain in
+      `src/web.ts` is a hand-written order of `isXOpen()` checks. With several
+      windows open, Escape closes by that fixed order rather than by which one
+      you last touched. Raising on focus is the usual answer, and it is what
+      dragging will want anyway — do the two together.
+- [ ] **Minimized state does not persist.** `parked` in `src/ui/rail.ts` is
+      module state, so hiding the panels lasts until reload. It belongs in
+      `GameState` beside `keys` and `potions`; a missing key takes its default
+      and `heal()` needs nothing.
 
-**The shape, as drawn.** The map fills the window edge to edge. Everything else
-floats ON it:
-
-- **Top left — the character HUD.** Life, mana, xp. Level at the top or the
-  bottom of that cluster. This is HUD, not a menu: it does not hide, because a
-  build you cannot see the life bar of is a build you are watching blind.
-- **Bottom left, wide and horizontal — the inventory.** Its own window, opened
-  like the others.
-- **Bottom right — the menu.** Every system, icon based, each showing its
-  keybind.
-- **Centred, more vertical — every other screen**, opening over the map.
-
-- [ ] **The scrim is the mechanical change.** `.modal`'s full-window
-      `rgba(6,5,8,.86)` is what makes these modal rather than windows. Remove it
-      and a screen stops covering the map and stops being one-at-a-time;
-      everything else in this phase follows from that. `.modal__card` already
-      paints itself solid (`--matrix` + `--grit`), so a window reads as a slab
-      over the map with no new art.
-- [ ] **`--dock-h` goes to zero and its two consumers simplify.** The dock stops
-      being in the flow, so nothing needs to reserve height for it. `fitCanvas`
-      in `src/ui/run.ts` also reserves height for the flasks because *"taking it
-      all pushes them off the bottom, where the dock covers them"* — that reason
-      dies here too, and the flasks become HUD over the map like the life bar.
-- [ ] **Inventory is horizontal at the bottom and everything else is centred
-      above it, and that is not a new idea — it is what the code already
-      believes.** `--dock-h` exists precisely so an open screen does not cover
-      the inventory. The player's instinct and the current design agree: the
-      inventory is the OBJECT and every other screen is a verb applied to it
-      (craft it, sell it, stash it, wear it), so it is the one that stays up
-      while another is open.
-- [ ] **Windows can be dragged where you want them**, and this is its own
-      checkbox so it can slip cleanly: get the default positions right first,
-      because a good default is what most players never drag away from. The
-      trap is that the map is ALREADY drag-to-look (`panBy` on the renderer), so
-      a drag on a window must not pan the map underneath it.
-- [ ] **Multiple windows open at once makes z-order real, and Escape with it.**
-      `src/web.ts` closes "whatever is on top" through a hand-written chain of
-      `isXOpen()` checks that assumes one screen at a time. Decide what the top
-      one is when three are up — most recently raised is the usual answer — and
-      make the chain read that rather than a fixed order.
-- [ ] **The menu is icons with keybinds, bottom right.** `src/ui/keys.ts` and
-      `BINDINGS` exist and `C` already opens Character, so every icon can print
-      its own key. Icons do not exist yet: `src/ui/icons.ts` has `itemIcon`,
-      `currencyIcon` and `portraitIcon` and no screen glyphs, and ten of those
-      in this game's grid pixel style is the most underestimated part of this
-      phase. Keep the button IDS (`open-shop`, `open-craft`, `open-character`,
-      `open-save`, …) whatever the presentation becomes — the guided opening
-      navigates by them and so does the shots lockdown probe.
-
-      **A first attempt at this was built and thrown away. Read this before the
-      second.** Everything below is written down because it was paid for once.
-      The work itself is saved as a patch under the session scratchpad, but the
-      findings matter more than the diff.
-      - **It broke dock drag-and-drop, and that is what killed it.** With the
-        rail in and `guide.mjs` UNCHANGED, `npm run guide` failed
-        `dragging a dock slot did not reorder it` and
-        `a click after a drag opened "Level 2 Crystal"`. Confirmed as a game
-        regression, not a harness artifact, by reverting the harness and
-        re-running. The cause was never found. **Find it before building the
-        rail again**, and the way to find it is to dump
-        `document.elementFromPoint` at the drop coordinates together with the
-        rects of `.dock`, the open `.modal__card` and `#craft-crystals` at the
-        moment of failure — reasoning about z-order and `--dock-h` from
-        screenshots produced four wrong answers in a row.
-      - **The dock's handler is the thing to suspect.** `#inv-gear` slot
-        `aria-label`s read `Wear as …` when the sheet owns the dock and
-        `Open on bench: …` when the bench does. `setInventoryHandler` is set by
-        whichever screen last took focus, and `setPhase` puts the RUN's handler
-        back — so a descent ending while the bench is open silently stops dock
-        clicks reaching it. That is a REAL BUG independent of the rail, worth
-        fixing on its own: a screen that is open should not lose the dock
-        because a descent ticked over.
-      - Windows must not cover the rail, since the rail is how a window gets
-        closed. `.modal { bottom: max(var(--dock-h, 0px), 106px) }` did it.
-      - The rail wraps, and at `max-width: 560px` its wrapped row reaches the
-        bottom-centre flasks. 336px keeps it a compact block in the corner.
-      - Grid-art glyphs at 10×10 in `src/ui/screenicons.ts` worked and read
-        fine at 18px; that part is done and is in the saved patch.
-- [ ] **The minimize has to have a way back.** Exactly one affordance never
-      hides, and it takes a key — `Space` is already recentre-camera, so pick
-      another `BINDINGS` entry. The guided opening should UN-minimize rather
-      than ring a button that is not on screen.
-- [ ] Minimized state persists across sessions — a watcher next session is
-      still a watcher. `GameState` already carries `keys` and `potions`, so a
-      UI preference has somewhere to live and `heal()` defaults a missing key.
-- [ ] Launching a descent does **not** auto-minimize. Surprise is worse than a
-      click.
-- [ ] **`requestFullscreen()` on a control and a keybind.** It needs a user
-      gesture, so it cannot be automatic. This is the whole of what the phase
-      does about packaging — see `RULES.md` on why no app shell is being added
-      to get it. Guard it: `document.fullscreenElement` is how you know which
-      way the toggle points, and the browser can leave fullscreen without
-      asking (Escape), so listen for `fullscreenchange` rather than tracking a
-      boolean of your own.
-
-**`npm run guide` is the harness that costs the most, and it can be made cheap.**
-It plays REAL descents, so the opening takes eight minutes of wall clock. The
-frame loop accumulates real `dt` and steps the sim in fixed `TICK`s, so scaling
-`dt` runs it faster with an IDENTICAL tick sequence and an identical outcome —
-the seed still replays. A `?fast=` read gated to loopback hosts (so the hosted
-game can never be handed it, which in an idle game would be a cheat) took the
-guide to **1m52s**. The saved patch has it. Two things learned with it:
-the harness's own static server did not strip query strings, so any URL with a
-`?` 404'd; and the post-opening drag checks need the loop STOPPED, not merely
-slowed, because a descent ending mid-drag redraws the dock underneath it.
-
-**What must not break.** Nothing here can touch the sim: it is in tile space
-and never reads a pixel, so a different canvas size replays the same seed and
-moves no demo number. `fitCanvas` already measures its box and resizes whichever
-renderer is live, and both implement `resize(width, height)` — full-bleed is
-mostly giving `#run-stage` a bigger box.
-
-`npm run guide` is the harness that matters, because it plays the opening with a
-real pointer: `viaHeader()`, `blocked()` and `CLOSES` in `src/ui/tutorial.ts` all
-assume a header bar that a modal covers, and `blocked()` is literally
-`ctx.top !== null`, which stops meaning "the header is covered" the moment a
-window is not modal. `npm run shots` runs a lockdown probe that hard-codes
-`open-shop`, `open-craft`, `open-character` and `open-save` as doors that must
-stay clickable, and finds any element covering the guide card.
-
-**Desktop only — see `RULES.md`.** `shots.mjs` runs a 390×844 phone viewport and
-FAILS on overflow there. A floating-window UI has no meaning at 390px, so that
-viewport is the first thing this phase has to deal with: keep it as a print, or
-drop it, but do not contort the layout to satisfy it.
+**What must not break.** `npm run drag`, then `shots`. `guide` only if the
+change touches what the opening navigates — see the table in `RULES.md`.
 
 ---
 

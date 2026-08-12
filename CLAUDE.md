@@ -48,6 +48,11 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | screenshots, overflow and lockdown probes |
 | `npm run guide` | plays the opening with a real pointer |
+| `npm run drag` | 20s: the dock still reorders, with and without the bench |
+
+**Run what the change can reach, not the whole suite** — `RULES.md` has the
+table. `guide` is the tutorial test and takes minutes; it is not a general
+regression check.
 
 Build before `smoke`, `shots` or `guide` — they load the bundle, not the source.
 
@@ -288,7 +293,7 @@ The character level also still scales the skill's own base damage
 (`LEVELLING.damagePerLevel`), which is the granted baseline `lifePerLevel` is
 for life. Attributes are the layer you BUY on top of both.
 
-A count of what is waiting to be spent sits on the header button that spends it
+A count of what is waiting to be spent sits on the rail button that spends it
 (`badge` in `src/ui/badge.ts`) — Character carries unspent attribute points and
 Skills carries the ACTIVE skill's spare tree points, whatever web is on screen.
 Zero shows nothing at all, since a badge reading 0 is a permanent nag.
@@ -414,7 +419,35 @@ be lost; each clear banks as it happens and nothing reaches back for it.
 
 **The camera is yours.** Scroll to zoom, drag to look somewhere else, and one
 key puts it back on your character and keeps it there. Dragging is what stops
-it following; zooming never does.
+it following; zooming never does. It may sit `CAMERA_SLACK` — a quarter of a
+view — past the map's edge, which is what lets a fight in a corner be centred;
+clamped to the edge itself, as it was, the camera refuses and you spend the
+fight dragging against it.
+
+**The map is the SCREEN, and everything else floats on it.** `body.mapfull`,
+toggled by `syncViewportLock`, is the whole of the mechanism: the stage goes
+fixed at `inset: 0` behind the shell, and every panel is a corner. Life, mana
+and level are a thin HUD bottom left; the three skill slots and the rail are one
+stack bottom right; a skinny XP bar runs the full width of the floor under
+everything; the flasks are bottom centre.
+
+**A screen is a WINDOW, and only a question stops you.** `.modal` paints no
+scrim and is `pointer-events: none` with its card `auto`, so screens no longer
+block the map or each other and several can be open at once. `.modal--stop`
+is the exception — the confirm, the welcome and the Lampwright — where a scrim
+is the point. The inventory is a window like the rest, centred and low, because
+every other screen is a verb applied to it.
+
+**The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
+`src/ui/screenicons.ts`), bottom right. The button IDS are what the guided
+opening walks and what the shots lockdown probe asks for, so they outlive any
+rearrangement of it. Two of its buttons are its own: Hide parks every panel and
+survives its own press, and Fill asks the browser for the screen.
+
+**The map is the GROUND, not a screen.** The dock resolves
+`override ?? screenHandler ?? base`; the run sets `base` on every phase change
+and a screen sets `screenHandler` when it takes focus. Set from the same slot,
+a descent ticking over stole the dock from whatever screen was holding it.
 
 **A descent ends at a place you walk to.** Killing the last thing is not the
 end of it: the hero walks to the exit, and coming near the hole is what brings
