@@ -15,11 +15,22 @@ export const STATS = 'stats';
 /** What two nodes granting the same thing come to. `replace` is the default. */
 export type Merge = 'sum' | 'product' | 'max' | 'append' | 'replace';
 
+/**
+ * What MECHANISM a grant touches. Two grants can only interact if they touch
+ * the same one, or if one changes what the other is made of — so the audit of
+ * "what does taking both come to" is over CLASSES rather than over nodes. At
+ * node level it is 742 pairs across three trees and nobody reads that; at class
+ * level it is 28 rows and a new node cannot add a pair without adding a class.
+ */
+export type Changes = 'scale' | 'duration' | 'targets' | 'burst' | 'field' | 'crit' | 'type';
+
 export interface GrantDef {
   id: string;
   what: string;
   reads: string[];
   merge?: Merge;
+  /** Absent for a switch that changes no delivery — see INTERACTIONS. */
+  changes?: Changes;
   /**
    * The same switch with a VALUE in it, for anything handing a player one
    * specific amount of it — a unique's card. Null when the value is not a
@@ -47,7 +58,7 @@ const SHARED = ['projectile', 'cleave', 'ailment_burst'];
 const HITTERS = ['projectile', 'cleave'];
 
 export const GRANTS: GrantDef[] = [
-  { id: 'convertTree', what: 'the skill deals another damage type', reads: [STATS] },
+  { id: 'convertTree', what: 'the skill deals another damage type', reads: [STATS], changes: 'type' },
   { id: 'addTags', what: 'the skill gains a tag, so more modifiers reach it', reads: [STATS], merge: 'append' },
   {
     id: 'manaMultiplier',
@@ -211,10 +222,11 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
-  { id: 'everyNth', what: 'every nth cast is worth more', reads: SHARED },
-  { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SHARED },
+  { id: 'everyNth', what: 'every nth cast is worth more', reads: SHARED, changes: 'scale' },
+  { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SHARED, changes: 'scale' },
   {
     id: 'moreClose',
+    changes: 'scale',
     what: 'more damage to enemies near you',
     reads: SHARED,
     say: (v) => {
@@ -224,6 +236,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'moreFar',
+    changes: 'scale',
     what: 'more damage to enemies far from you',
     reads: SHARED,
     say: (v) => {
@@ -233,6 +246,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'moreVsLow',
+    changes: 'scale',
     what: 'more damage to enemies low on life',
     reads: SHARED,
     say: (v) => {
@@ -242,6 +256,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'moreVsFull',
+    changes: 'scale',
     what: 'more damage to enemies near full life',
     reads: SHARED,
     say: (v) => {
@@ -250,9 +265,10 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
-  { id: 'critAilment', what: 'a crit leaves an ailment instead', reads: HITTERS },
+  { id: 'critAilment', what: 'a crit leaves an ailment instead', reads: HITTERS, changes: 'crit' },
   {
     id: 'ailmentMultiplier',
+    changes: 'scale',
     what: 'ailments you apply deal more',
     reads: SHARED,
     merge: 'product',
@@ -263,6 +279,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'ailmentDuration',
+    changes: 'duration',
     what: 'ailments you apply last longer',
     reads: SHARED,
     merge: 'product',
@@ -271,10 +288,11 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `Ailments you apply last ${more(n)} longer`;
     },
   },
-  { id: 'ailmentSpread', what: 'a critical tick spreads the ailment', reads: HITTERS },
+  { id: 'ailmentSpread', what: 'a critical tick spreads the ailment', reads: HITTERS, changes: 'crit' },
 
   {
     id: 'explode',
+    changes: 'burst',
     what: 'the hit bursts where it lands',
     reads: SHARED,
     say: (v) => {
@@ -284,6 +302,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'explodeRadius',
+    changes: 'burst',
     what: 'the burst covers more ground',
     reads: SHARED,
     merge: 'product',
@@ -294,6 +313,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'explodeMultiplierAdd',
+    changes: 'burst',
     what: 'the burst hits harder',
     reads: SHARED,
     merge: 'sum',
@@ -304,6 +324,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'explodeOnKill',
+    changes: 'burst',
     what: 'a killed enemy bursts',
     reads: HITTERS,
     say: (v) => {
@@ -314,6 +335,7 @@ export const GRANTS: GrantDef[] = [
 
   {
     id: 'extraTargets',
+    changes: 'targets',
     what: 'more enemies near the target are hit',
     reads: ['projectile', 'single_target'],
     merge: 'sum',
@@ -324,6 +346,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'extraTargetDamage',
+    changes: 'targets',
     what: 'those extra targets take full damage',
     reads: ['projectile'],
     say: (v) => {
@@ -333,6 +356,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'pierce',
+    changes: 'targets',
     what: 'the shot carries on through an enemy',
     reads: ['projectile'],
     merge: 'sum',
@@ -343,6 +367,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'pierceDamage',
+    changes: 'targets',
     what: 'pierced enemies take full damage',
     reads: ['projectile'],
     say: (v) => {
@@ -350,16 +375,17 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `Pierced enemies take ${pct(n)} of the damage`;
     },
   },
-  { id: 'chains', what: 'the shot leaps to another enemy', reads: ['projectile'], merge: 'sum' },
-  { id: 'chainDamage', what: 'leaps deal full damage', reads: ['projectile'] },
+  { id: 'chains', what: 'the shot leaps to another enemy', reads: ['projectile'], merge: 'sum', changes: 'targets' },
+  { id: 'chainDamage', what: 'leaps deal full damage', reads: ['projectile'], changes: 'targets' },
 
-  { id: 'splashMultiplier', what: 'what the swing deals to everything else', reads: ['cleave'], merge: 'max' },
-  { id: 'splashRadius', what: 'how far the swing reaches', reads: ['cleave'], merge: 'product' },
-  { id: 'doubleStrike', what: 'extra swings at the target', reads: ['cleave'], merge: 'sum' },
+  { id: 'splashMultiplier', what: 'what the swing deals to everything else', reads: ['cleave'], merge: 'max', changes: 'targets' },
+  { id: 'splashRadius', what: 'how far the swing reaches', reads: ['cleave'], merge: 'product', changes: 'targets' },
+  { id: 'doubleStrike', what: 'extra swings at the target', reads: ['cleave'], merge: 'sum', changes: 'targets' },
 
-  { id: 'fieldRadius', what: 'the cloud covers more ground', reads: ['ailment_burst'], merge: 'product' },
+  { id: 'fieldRadius', what: 'the cloud covers more ground', reads: ['ailment_burst'], merge: 'product', changes: 'field' },
   {
     id: 'extraFields',
+    changes: 'targets',
     what: 'more clouds, on other enemies',
     reads: ['ailment_burst'],
     merge: 'sum',
@@ -368,7 +394,7 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `+${n} more cloud${n === 1 ? '' : 's'}, on other enemies`;
     },
   },
-  { id: 'contagionRadius', what: 'a critical tick plants a fresh cloud', reads: ['ailment_burst'], merge: 'sum' },
+  { id: 'contagionRadius', what: 'a critical tick plants a fresh cloud', reads: ['ailment_burst'], merge: 'sum', changes: 'field' },
 ];
 
 export const GRANT_BY_ID: Record<string, GrantDef> = Object.fromEntries(

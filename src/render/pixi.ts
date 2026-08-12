@@ -29,6 +29,7 @@ import {
   burstRadius,
   fireBolt,
   lightningArc,
+  sweepRing,
   fireBurst,
   fireShades,
   fireSparks,
@@ -472,6 +473,12 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'arc') {
         blocks(lightningArc(from, to, t), fx.damageType, 1);
+        continue;
+      }
+
+      if (fx.kind === 'sweep') {
+        // Second point carries the radius, same contract as the burst.
+        blocks(sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
         continue;
       }
 

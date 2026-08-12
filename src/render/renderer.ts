@@ -1230,6 +1230,34 @@ export function fireSparks(at: Vec2, t: number): FirePixel[] {
 }
 
 /**
+ * The sweep: the circle a swing actually covers, at the radius the sim used. A
+ * node widening the reach by a quarter has to READ as a wider ring, which the
+ * old fixed-size arc aimed at one target could never do.
+ */
+export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  if (radius <= 0) return pixels;
+  const grown = radius * (0.55 + 0.45 * Math.min(1, t * 1.6));
+  const step = FIRE_PX * 2;
+  const count = Math.max(24, Math.round((grown * Math.PI * 2) / step));
+
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const noise = tileNoise(i, Math.round(grown * 24), 71);
+    // Broken rather than solid: a closed hoop reads as a shield.
+    if (noise < 0.22) continue;
+    pixels.push({
+      x: onGrid(origin.x + Math.cos(angle) * grown * (0.97 + noise * 0.06)),
+      y: onGrid(origin.y + Math.sin(angle) * grown * (0.97 + noise * 0.06)),
+      size: FIRE_PX * (noise > 0.7 ? 2 : 1),
+      shade: noise > 0.7 ? 2 : 1,
+      alpha: (1 - t) * 0.9,
+    });
+  }
+  return pixels;
+}
+
+/**
  * The lightning arc: a jag drawn WHOLE from the first frame and burning out
  * rather than travelling — what separates an arc from a bolt is that it is
  * already there. Each kink is hashed off the two ends, so a leap is the same

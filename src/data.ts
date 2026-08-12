@@ -2634,7 +2634,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
-    vfxKind: 'slash',
+    vfxKind: 'sweep',
     // Splash is placeholder-cheap: the mechanism is the point, not the 10%.
     params: { splashRadius: 2.2, splashMultiplier: 0.1 },
   },

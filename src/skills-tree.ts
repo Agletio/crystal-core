@@ -8,6 +8,9 @@
  * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
  */
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
+import { GRANT_BY_ID } from './sim/grants';
+import type { Changes } from './sim/grants';
+import { interactionOf } from './trees/interactions';
 import { buildTree } from './trees/layout';
 import { BLIGHT_SPEC } from './trees/blight';
 import { FIREBALL_SPEC } from './trees/fireball';
@@ -48,7 +51,53 @@ export const canAllocate = (
   skillId: string,
   nodeId: string,
   allocated: readonly string[]
-): boolean => canAllocateIn(treeFor(skillId), nodeId, allocated);
+): boolean =>
+  canAllocateIn(treeFor(skillId), nodeId, allocated) &&
+  blockedBy(skillId, nodeId, allocated) === null;
+
+/** Every class a node changes, its chosen option included. */
+function classesOf(node: SkillNodeDef | undefined, chosen?: string): Changes[] {
+  const bags = [
+    node?.grants ?? {},
+    ...(node?.choices ?? []).filter((c) => !chosen || c.id === chosen).map((c) => c.grants ?? {}),
+  ];
+  const out = new Set<Changes>();
+  for (const bag of bags) {
+    for (const id of Object.keys(bag)) {
+      const cls = GRANT_BY_ID[id]?.changes;
+      if (cls) out.add(cls);
+    }
+  }
+  return [...out];
+}
+
+/**
+ * The node already allocated that this one cannot be taken with, or null.
+ *
+ * A combination with no coherent answer is REFUSED and says why, because a
+ * silently ignored point is a point spent on nothing. Nothing is blocked today
+ * — every pair in `INTERACTIONS` composes — so this is the mechanism for when
+ * one appears rather than a rule anybody is currently hitting.
+ */
+export function blockedBy(
+  skillId: string,
+  nodeId: string,
+  allocated: readonly string[]
+): { node: SkillNodeDef; says: string } | null {
+  const mine = classesOf(nodeById(skillId, nodeId));
+  if (mine.length === 0) return null;
+
+  for (const id of allocated) {
+    const held = nodeById(skillId, id);
+    for (const theirs of classesOf(held)) {
+      for (const own of mine) {
+        const pair = interactionOf(own, theirs);
+        if (pair?.blocked) return { node: held!, says: pair.says };
+      }
+    }
+  }
+  return null;
+}
 
 export const canDeallocate = (
   skillId: string,

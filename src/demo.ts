@@ -121,6 +121,7 @@ import { damageWorkings, readWorkings } from './damage-text';
 import { describeStatLine } from './mod-text';
 import { SKILL_BEHAVIOURS } from './sim/skills';
 import {
+  GRANTS,
   GRANT_BY_ID,
   STATS,
   behaviourReads,
@@ -141,10 +142,13 @@ import {
   tradePointsFor,
   tradeSwitchCost,
 } from './trades';
+import { INTERACTIONS, interactionOf } from './trees/interactions';
+import { canAllocateIn } from './webgraph';
 import {
   BUILT_TREES,
   CENTRE,
   MAX_TREE_POINTS,
+  blockedBy,
   canAllocate,
   canDeallocate,
   neighboursOf,
@@ -181,6 +185,7 @@ import {
   floorPalette,
   lightningArc,
   livingDecals,
+  sweepRing,
   paletteFrom,
   tileDecals,
 } from './render/renderer';
@@ -2504,6 +2509,162 @@ rule('EVERY TREE — does every notable actually change the cast?');
       inert.length === 0,
       `${tree.spec.skillId}: every notable that grants a switch changes the cast`,
       inert.join(', ')
+    );
+  }
+}
+
+// ===========================================================================
+rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
+
+// `mergeGrants` says what two nodes granting the SAME switch fold to. What
+// nothing said is what two nodes changing DIFFERENT things about one cast come
+// to. Audited over CLASSES rather than nodes: at node level it is 742 pairs
+// across three trees, which goes stale the day a node is added.
+{
+  const classed = GRANTS.filter((g) => g.changes);
+  const classes = [...new Set(classed.map((g) => g.changes!))].sort();
+  line(`  ${classed.length} switches in ${classes.length} classes: ${classes.join(', ')}`);
+
+  // Every switch a BEHAVIOUR reads has to be classed, or it is a mechanism the
+  // audit cannot see. The stat layer is exempt: those change no delivery.
+  const unclassed = GRANTS.filter(
+    (g) => !g.changes && !g.reads.includes(STATS)
+  );
+  check(
+    unclassed.length === 0,
+    'every switch a delivery reads declares what it changes',
+    unclassed.map((g) => g.id).join(', ')
+  );
+
+  // The audit is COMPLETE: every unordered pair of classes, self-pairs
+  // included, has a written answer. This is the check that stops a new node
+  // quietly adding a combination nobody decided.
+  const missing: string[] = [];
+  const wanted = new Set<string>();
+  for (const a of classes) {
+    for (const b of classes) {
+      const key = [a, b].sort().join('|');
+      if (wanted.has(key)) continue;
+      wanted.add(key);
+      if (!interactionOf(a, b)) missing.push(key);
+    }
+  }
+  line(`  ${INTERACTIONS.length} pairs written down, ${wanted.size} the classes can make`);
+  check(
+    missing.length === 0 && INTERACTIONS.length === wanted.size,
+    'every pair of classes has a written answer, and none is written twice',
+    missing.join(', ') || `${INTERACTIONS.length} rows against ${wanted.size} pairs`
+  );
+  check(
+    INTERACTIONS.every((i) => i.says.length > 30 && interactionOf(i.pair[0], i.pair[1]) === i),
+    'and each says what taking both comes to rather than that it is fine',
+    INTERACTIONS.filter((i) => i.says.length <= 30).map((i) => i.pair.join('|')).join(', ')
+  );
+
+  // What the audit FOUND. Nothing is blocked: every pair composes, and the
+  // worked example the phase was written around — a burst under a tree about a
+  // cloud — turns out to be a trade rather than a contradiction.
+  const blocked = INTERACTIONS.filter((i) => i.blocked);
+  line(`  ${blocked.length} of them have no coherent answer and are refused`);
+  const rupture = interactionOf('burst', 'field');
+  check(
+    !rupture?.blocked && /armour/.test(rupture?.says ?? ''),
+    'Rupture under the cloud tree is a trade the card names, not a contradiction',
+    rupture?.says ?? 'no answer written'
+  );
+
+  // Nothing currently allocatable is refused. This is the safety check the
+  // phase demanded: allocations are REPLAYED on load, so a wrong refusal costs
+  // every player their build the next time they open the game.
+  const refused: string[] = [];
+  for (const tree of BUILT_TREES) {
+    const skillId = tree.spec.skillId;
+    const held: string[] = [];
+    const spendRng = new Rng(31337);
+    while (held.length < MAX_TREE_POINTS) {
+      const open = tree.nodes.filter(
+        (n) => canAllocateIn(tree.nodes, n.id, held) && !held.includes(n.id)
+      );
+      if (open.length === 0) break;
+      const pick = spendRng.pick(open)!;
+      if (blockedBy(skillId, pick.id, held)) refused.push(`${skillId}/${pick.id}`);
+      held.push(pick.id);
+    }
+  }
+  check(
+    refused.length === 0,
+    'and no build anybody has already walked is refused by it',
+    refused.join(', ')
+  );
+
+  // The mechanism itself, proved on a pair the table does not block — by
+  // blocking one for the length of this check. A refusal nobody can trigger is
+  // a refusal nobody has tested.
+  {
+    const pair = interactionOf('burst', 'field')!;
+    const was = pair.blocked;
+    pair.blocked = true;
+    const held = ['bl_rupture'];
+    const stopped = blockedBy('blight', 'bl_canopy', held);
+    const free = blockedBy('blight', 'bl_slowrot', held);
+    pair.blocked = was;
+
+    check(
+      stopped?.node.id === 'bl_rupture' && stopped.says === pair.says,
+      'a blocked pair refuses the second node and names the first',
+      stopped ? `${stopped.node.id}` : 'nothing was refused'
+    );
+    check(
+      free === null && blockedBy('blight', 'bl_canopy', held) === null,
+      'and it catches only what it means to, in both directions',
+      free ? free.node.id : 'a class it does not touch was refused'
+    );
+  }
+
+  // The sweep. Strike's reach is a CIRCLE around the swinger and a node widens
+  // it by a quarter; the old slash was an arc at a fixed size aimed at one
+  // target, so the point you spent on Whirlwind moved nothing on screen.
+  {
+    const strike = SKILL_BY_ID.strike;
+    const shot: Array<{ kind: string; points: Array<{ x: number; y: number }> }> = [];
+    const dummy = (x: number, y: number) =>
+      ({
+        x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
+        stats: { maxLife: 1e6, attacksPerSecond: 1 },
+      }) as any;
+    const swing = (grants: Record<string, unknown>) => {
+      shot.length = 0;
+      SKILL_BEHAVIOURS.cleave({
+        skill: strike,
+        user: dummy(0, 0),
+        primary: dummy(1, 0),
+        enemies: [dummy(1, 0)],
+        rng: new Rng(3), grants, crit: false, castIndex: 0,
+        hit: () => {},
+        ailment: () => {},
+        areaRadius: (base: number) => base,
+        vfx: (kind: string, points: any[]) => shot.push({ kind, points }),
+      } as any);
+      const drawn = shot.find((v) => v.kind === strike.vfxKind);
+      return Math.hypot(drawn!.points[1].x - drawn!.points[0].x, drawn!.points[1].y - drawn!.points[0].y);
+    };
+
+    const bare = swing({});
+    const wide = swing({ splashRadius: 1.25 });
+    line(`  the swing draws its reach at ${bare.toFixed(2)} tiles, and ${wide.toFixed(2)} under Whirlwind`);
+    check(
+      Math.abs(bare - (strike.params!.splashRadius as number)) < 1e-6 &&
+        Math.abs(wide - bare * 1.25) < 1e-6,
+      'the sweep is drawn at the radius the sim actually swung',
+      `${bare} then ${wide}`
+    );
+
+    const ring = sweepRing({ x: 0, y: 0 }, wide, 0.9);
+    const out = ring.filter((p) => Math.hypot(p.x, p.y) > wide * 1.1);
+    check(
+      ring.length > 20 && out.length === 0,
+      'and the ring it draws stays inside what the swing caught',
+      `${ring.length} blocks, ${out.length} outside`
     );
   }
 }

@@ -21,6 +21,7 @@ import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
   MAX_TREE_POINTS,
+  blockedBy,
   canAllocate,
   canDeallocate,
   neighboursOf,
@@ -439,15 +440,20 @@ function renderWeb(): void {
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
+      // A refusal says WHO it clashes with and what the pair comes to: "cannot
+      // be taken with Rupture" is a decision, where a dark node is a mystery.
+      const clash = owned ? null : blockedBy(skillId, node.id, progress.allocated);
       const state = owned
         ? canDeallocate(skillId, node.id, progress.allocated)
           ? 'allocated — click to refund'
           : 'allocated — refunding it would strand another node'
-        : !reachable
-          ? 'not connected to anything you own'
-          : spare > 0
-            ? 'available'
-            : 'no points left';
+        : clash
+          ? `cannot be taken with ${clash.node.name} — ${clash.says}`
+          : !reachable
+            ? 'not connected to anything you own'
+            : spare > 0
+              ? 'available'
+              : 'no points left';
       const choice = node.choices
         ? `\n${picked ? `chosen: ${picked.name} — ${picked.description}` : 'click to choose'}`
         : '';

@@ -350,9 +350,13 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       }
     }
 
+    // The REACH, drawn as the circle it is. The old slash was an arc in the
+    // direction of the target, which was wrong twice: the hitbox is a circle
+    // around the SWINGER, and a node widening it by a quarter moved nothing on
+    // screen. Second point carries the radius, the same contract as a burst.
     use.vfx(use.skill.vfxKind ?? 'swing', [
       { x: use.user.x, y: use.user.y },
-      { x: use.primary.x, y: use.primary.y },
+      { x: use.user.x + radius, y: use.user.y },
     ]);
   },
 

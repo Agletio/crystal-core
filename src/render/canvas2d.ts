@@ -19,6 +19,7 @@ import {
   burstRadius,
   fireBolt,
   lightningArc,
+  sweepRing,
   fireBurst,
   fireShades,
   fireSparks,
@@ -349,6 +350,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         blocks(v, fireBolt(from, to, t), fx.damageType, 1 - t);
       } else if (fx.kind === 'arc') {
         blocks(v, lightningArc(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'sweep') {
+        // Second point carries the radius, same contract as the burst.
+        blocks(v, sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
       } else if (fx.kind === 'bolt') {
         const travel = Math.min(1, t * 1.5);
         const tail = Math.max(0, travel - 0.3);

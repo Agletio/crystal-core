@@ -23,6 +23,12 @@ Kept here because the next thing built on top of them will want it.
 - **A pack's element is rolled per PACK, not per monster** — the phase asked for
   per monster and the code already said why not, in `RANGED_PACK_CHANCE`'s own
   comment. Mixed packs read as noise.
+- **The node-pair audit was 742 pairs and could not be written.** It is 28 once
+  it is done over grant CLASSES (`GrantDef.changes`), which is the altitude the
+  codebase already works at — a node is a bag of switches. And the answer it
+  produced is that NOTHING needs blocking: every pair composes, Rupture's burst
+  under Blight's cloud tree included, which is a trade its own card already
+  names. The refusal mechanism shipped anyway, unused and tested.
 - **Five notables, not "about five".** Twenty nodes alternating minor and
   notable over ten points makes five the CEILING and not the average: a spoke's
   prefix of odd length wastes its last point on travel, so a careless walk
@@ -62,6 +68,14 @@ is still not a phase in it: ask before starting one.
 
 ## Phases
 
+**There are none.** Every phase in both batches has landed. What is left in
+this file is Open questions and a Backlog, and `RULES.md` says plainly what to
+do with that: say so and list them, do not invent work, and do not promote a
+backlog item into a phase without being asked. The one thing everybody knows is
+coming is the **balance pass** — every system that was going to hand out more
+power is now in, so the reason nothing is tuned has expired — and it is a phase
+of its own that has to be asked for.
+
 **Writing one.** The test is whether a session with no memory of this
 conversation could execute it. That takes four things, and the second is the one
 usually missing:
@@ -78,42 +92,6 @@ usually missing:
 
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
-
-### Phase 1 — What a node does, shown and not overlapped [user 8]
-
-**What is true today.** A tree node hands the sim switches out of `GRANTS`
-(`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
-by a declared rule. What it does NOT do is notice that two nodes change the
-same thing in incompatible ways: Blight's `bl_rupture` turns the cast into a
-HIT that bursts, while the rest of its tree is about the poison cloud, and
-`bl_transmutation` changes the damage type under both. Nothing says what
-happens when you take them together, and the player cannot tell either.
-
-Strike's `st_whirlwind` grants `splashMultiplier: 1, splashRadius: 1.25` — the
-swing now hits everything in reach for full — and the animation is the same
-`slash` it was before, so a hitbox that grew by a quarter is invisible.
-
-**Why it is wrong.** A point spent on something you cannot see, on a
-combination nobody has decided the meaning of.
-
-- [ ] Every skill's changing nodes are audited in PAIRS, per tree, and the
-      result is written down: what each combination does. That written list is
-      the phase's real output.
-- [ ] Combinations that have no coherent answer are BLOCKED from being taken
-      together, and the node says why on its own card — "cannot be taken with
-      Rupture" is a decision the player can act on; a silently ignored point is
-      not. `canAllocate` in `src/skills-tree.ts` is where a refusal lives.
-- [ ] A demo check that the block holds, and that no PAIR of allocatable nodes
-      is left un-audited, so a new node cannot quietly add a new combination.
-- [ ] Strike's sweep gets an animation that shows its actual reach — the arc
-      the hitbox now covers, not the old slash. `vfxKind` picks the shape and
-      both renderers draw it.
-
-**What must not break.** Tree allocations are REPLAYED through `canAllocate` on
-every load (`heal()` in `src/game/save.ts`), so a new refusal retroactively
-refunds points in saves that already spent them. That is the intended
-behaviour, not a bug — but it means a wrong refusal costs every player their
-build, so the demo has to prove the block only catches what it means to.
 
 ---
 

@@ -512,6 +512,27 @@ landmark: the two holes are how you read the room. Pixi draws it into a
 `propLayer` over the map built once; canvas2d draws it in the same loop as
 everything else. Both clip to what is on screen.
 
+**What two changing nodes come to is AUDITED, and the audit is over CLASSES.**
+`GrantDef.changes` classes every switch a delivery reads; `INTERACTIONS` holds
+every unordered pair of classes with what taking both comes to, and the demo
+fails a pair nobody wrote. Never audit at node level: it is 742 pairs across
+three trees and it goes stale the day a node is added. A new node that invents
+a mechanism invents a class, and the class is what gets a row.
+
+**A combination with no coherent answer is REFUSED and says why.** `blocked` on
+an `Interaction`, read by `blockedBy` and asked by `canAllocate`, and the node's
+tooltip names the allocated node it clashes with. Nothing is blocked today —
+that is a finding, not an omission. Adding one is retroactive: allocations are
+replayed on every load, so a wrong refusal costs every player their build, and
+the demo holds a randomly walked 30-point build in every tree to being refused
+by nothing.
+
+**A swing's reach is a CIRCLE around the swinger, and the vfx draws it at the
+radius the sim used.** `sweepRing`, emitted by `cleave` with the radius as its
+second point — the same contract as a burst. The old `slash` was an arc at a
+fixed size in the direction of one target, which was wrong twice: wrong shape,
+and a node widening the reach by a quarter moved nothing on screen.
+
 **A vfx SHAPE is a pure function in `render/renderer.ts`.** `fireBolt`,
 `fireBurst`, `poisonDrops` and `lightningArc` return `FirePixel[]` in tile
 units, and both renderers stamp them through their own `blocks()`. A kind drawn

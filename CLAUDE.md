@@ -471,6 +471,20 @@ dropping the extras.
 Content only: `layout.ts` owns every coordinate. Give the tree a `prefix` no
 other tree uses, because node ids are what a save points at.
 
+**What two nodes come to is written down.** `GrantDef.changes` puts every
+switch a delivery reads into one of seven CLASSES — scale, duration, targets,
+burst, field, crit, type — and `INTERACTIONS` in `src/trees/interactions.ts` is
+all 28 pairs of them with what taking both comes to. The audit is over classes
+rather than nodes because at node level it is 742 pairs across three trees,
+which goes stale the day a node is added; a new node cannot invent a
+combination without inventing a class, and the demo fails an unwritten pair.
+
+Nothing is `blocked` today — every pair composes, Rupture's burst under
+Blight's cloud tree included, which turns out to be a trade the card already
+names rather than a contradiction. The refusal exists for when one appears:
+`blockedBy` in `src/skills-tree.ts` is what `canAllocate` asks, and the node's
+tooltip says which allocated node it clashes with and why.
+
 **Distance is the only price.** There are no spent-point gates: what a notable
 costs is the run of minors in front of it. A twig may only `forkFrom` the twig
 beside it — a fork from further away has to sweep across everything between,
