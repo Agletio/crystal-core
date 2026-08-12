@@ -184,30 +184,32 @@ export const hasIcon = (id: string): boolean => id in ICONS;
 
 const NS = 'http://www.w3.org/2000/svg';
 
-export function screenIcon(id: string, size = 18): SVGSVGElement | null {
-  const rows = ICONS[id];
-  if (!rows) return null;
-
+/** Any grid of `#` ink and `+` accent as an SVG. The flasks draw through this
+ *  too, on their own grid — the builder does not care how wide the art is. */
+export function gridIcon(rows: string[], size: number, extra?: string): SVGSVGElement {
+  const span = rows[0]?.length ?? GRID;
   const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${GRID} ${GRID}`);
+  svg.setAttribute('viewBox', `0 0 ${span} ${rows.length}`);
   svg.setAttribute('width', String(size));
   svg.setAttribute('height', String(size));
   svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('sicon');
+  if (extra) svg.classList.add(extra);
 
   // One path per colour rather than a rect per pixel: a rail of thirteen icons
   // is 1300 cells, and most of them are nothing.
-  const runs: Record<string, string[]> = { '#': [], '+': [] };
+  const runs: Record<string, string[]> = { '#': [], '+': [], o: [] };
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const c = row[x];
-      if (c === '#' || c === '+') runs[c].push(`M${x} ${y}h1v1h-1z`);
+      if (c === '#' || c === '+' || c === 'o') runs[c].push(`M${x} ${y}h1v1h-1z`);
     }
   });
 
   for (const [mark, cls] of [
     ['#', 'sicon__ink'],
     ['+', 'sicon__lit'],
+    ['o', 'sicon__fill'],
   ] as const) {
     if (runs[mark].length === 0) continue;
     const path = document.createElementNS(NS, 'path');
@@ -216,4 +218,9 @@ export function screenIcon(id: string, size = 18): SVGSVGElement | null {
     svg.append(path);
   }
   return svg;
+}
+
+export function screenIcon(id: string, size = 18): SVGSVGElement | null {
+  const rows = ICONS[id];
+  return rows ? gridIcon(rows, size) : null;
 }

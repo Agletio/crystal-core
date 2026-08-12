@@ -190,8 +190,13 @@
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
   .seedbar code { color: var(--quartz); }
 
+  /* The bottom-right stack: skills, then the rail beneath them. One column, so
+     a rail wrapping to a third row pushes the skills UP rather than under. */
+  .corner {
+    position: fixed; right: 16px; bottom: 22px; z-index: 22;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
   .rail {
-    position: fixed; right: 16px; bottom: 16px; z-index: 22;
     display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
     align-items: center; gap: 6px; max-width: 248px;
   }
@@ -411,9 +416,36 @@
   /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: calc(var(--dock-h, 0px) + 14px);
-    width: min(420px, 70vw); margin: 0;
+    bottom: calc(var(--dock-h, 0px) + 20px);
+    width: auto; margin: 0; gap: 20px; grid-template-columns: auto auto;
   }
+  .flask { display: flex; align-items: center; gap: 6px; }
+  .flask__use {
+    position: relative; display: grid; place-items: center;
+    width: 40px; height: 44px; padding: 0;
+    background: var(--matrix); background-image: var(--grit);
+    border: 2px solid var(--seam); box-shadow: var(--bevel); cursor: pointer;
+  }
+  .flask__use:hover:not(:disabled) { border-color: var(--citrine); }
+  .flask__use:disabled { opacity: .55; cursor: default; }
+  .flask--live .flask__use { border-color: var(--citrine); }
+  .flask__key {
+    position: absolute; right: 2px; bottom: 0;
+    font-family: var(--display); font-size: 8px; line-height: 1; color: var(--dust);
+  }
+  .sicon--flask .sicon__ink { fill: var(--dust); }
+  .flask--life .sicon--flask .sicon__fill { fill: #C4553F; }
+  .flask--mana .sicon--flask .sicon__fill { fill: #58B4E0; }
+  /* Each control keeps its own box. Squeezed onto one line beside the name the
+     `+` shrank to nothing and stopped taking clicks at all. */
+  .flask__auto { display: flex; align-items: center; gap: 4px; }
+  .flask__step {
+    width: 20px; height: 20px; padding: 0; flex: none;
+    background: var(--matrix); color: var(--dust);
+    border: 2px solid var(--seam); cursor: pointer; font: inherit; line-height: 1;
+  }
+  .flask__step:hover { border-color: var(--citrine); color: var(--citrine); }
+  .flask__at { min-width: 30px; text-align: center; font-size: 10px; color: var(--dust); }
 
   /* Corners, and each is a CHOICE rather than wherever the flow left it. The
      HUD takes the top left; the numbers stay in the column, which is the right
@@ -431,20 +463,15 @@
   .hp--slim { height: 13px; }
   .hp--slim .hp__text { font-size: 9px; line-height: 13px; }
 
-  /* Above the rail, right-aligned with it. */
-  body.mapfull .skillrow-icons--float {
-    position: fixed; right: 16px; bottom: 108px; z-index: 19;
-    display: flex; justify-content: flex-end; gap: 6px;
-  }
-
-  /* The full width of the very bottom, and UNDER everything: it is read at a
-     glance and never clicked, so a window opening over it costs nothing. */
-  body.mapfull .xpbar {
+  /* Flush with the floor, and UNDER everything: read at a glance, never clicked,
+     so a window over it costs nothing. `margin: 0` is load-bearing — a fixed box
+     at `bottom: 0` is still pushed up by its own bottom margin, and `.hp--xp`
+     carries 14px of it. */
+  .hp.xpbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
-    height: 10px; border-left: 0; border-right: 0; border-bottom: 0;
-    pointer-events: none;
+    height: 10px; margin: 0; border: 0; pointer-events: none;
   }
-  body.mapfull .xpbar .hp__text { font-size: 8px; line-height: 10px; }
+  .hp.xpbar .hp__text { font-size: 8px; line-height: 10px; }
   /* The column now holds only the numbers, so it stops reserving the HUD's
      height and lets the map have it. */
   body.mapfull #run-stagewrap .runside { align-self: flex-start; }
@@ -1286,7 +1313,12 @@
     <h1>Crystal <span>Core</span></h1>
   </header>
 
-  <nav class="rail" id="rail">
+  <div class="corner" id="corner">
+    <!-- One per slot: what you ARE, over what you can open. In the stack rather
+         than positioned beside it, because a rail that wraps to a third row
+         would otherwise grow up into them. -->
+    <div class="skillrow-icons" id="run-skills"></div>
+    <nav class="rail" id="rail">
     <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
     <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
     <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
@@ -1302,7 +1334,15 @@
     <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
     <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
     <button class="railbtn railbtn--dev" id="dev-kit" title="Dev only">Dev kit</button>
-  </nav>
+    </nav>
+  </div>
+
+  <!-- Flush with the floor and UNDER everything: read at a glance, never
+       clicked, so a window over it costs nothing. -->
+  <div class="hp hp--xp xpbar">
+    <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
+    <div class="hp__text" id="run-xp-text">0 / 0</div>
+  </div>
 
 
   <div class="viewport">
@@ -1387,19 +1427,6 @@
             <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
             <div class="hp__text" id="run-mana-text">—</div>
           </div>
-        </div>
-
-        <!-- One per slot, and the way into the sheet section explaining it.
-             Above the rail: the three things you are, over the eleven you can
-             open. -->
-        <div class="skillrow-icons skillrow-icons--float" id="run-skills"></div>
-
-        <!-- The one bar that is not about this second. Full width along the
-             very bottom, skinny, under everything — an XP bar is read at a
-             glance and never interacted with. -->
-        <div class="hp hp--xp xpbar">
-          <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
-          <div class="hp__text" id="run-xp-text">0 / 0</div>
         </div>
 
         <!-- The numbers, which are READING rather than watching. -->

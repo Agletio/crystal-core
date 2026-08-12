@@ -44,6 +44,7 @@ import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
+import { flaskIcon } from './flaskart';
 import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
@@ -509,20 +510,21 @@ function renderFlasks(): void {
     const drinking = sim?.state.hero.effects.some((e) => e.id === potion.id) ?? false;
     const share = game.potions?.[potion.id] ?? potion.threshold;
 
-    const row = el('div', `flask${drinking ? ' flask--live' : ''}`);
+    const row = el('div', `flask flask--${potion.pool}${drinking ? ' flask--live' : ''}`);
     const use = el('button', 'flask__use') as HTMLButtonElement;
     use.id = `flask-${potion.id}`;
+    use.append(flaskIcon(left, potion.charges));
     use.append(el('span', 'flask__key', keyName(keyFor(game, potion.binding))));
-    use.append(el('span', 'flask__name', potion.name));
-    use.append(el('span', 'flask__charges', `${left} / ${potion.charges}`));
+    use.dataset.at = String(left);
     use.disabled = !live || !sim!.canDrink(potion.id);
     use.onclick = () => drinkPotion(potion.id);
-    use.title = potion.blurb;
+    // The art carries the count; the title is where the number belongs now.
+    use.title = `${potion.name} — ${left} of ${potion.charges}. ${potion.blurb}`;
     row.append(use);
 
     const auto = el('div', 'flask__auto');
     for (const step of [-5, 5]) {
-      const button = el('button', 'mini', step < 0 ? '−' : '+') as HTMLButtonElement;
+      const button = el('button', 'flask__step', step < 0 ? '\u2212' : '+') as HTMLButtonElement;
       button.onclick = () => {
         const next = Math.max(0, Math.min(0.95, share + step / 100));
         game.potions = { ...(game.potions ?? {}), [potion.id]: next };
@@ -530,7 +532,7 @@ function renderFlasks(): void {
       };
       if (step < 0) auto.append(button);
       else {
-        auto.append(el('span', undefined, `${Math.round(share * 100)}%`));
+        auto.append(el('span', 'flask__at', `${Math.round(share * 100)}%`));
         auto.append(button);
       }
     }
@@ -540,11 +542,33 @@ function renderFlasks(): void {
   }
 }
 
+/**
+ * Per frame, and it must NOT rebuild. Rebuilt sixty times a second, a press
+ * that straddled one landed on a node no longer in the document — which is why
+ * the threshold buttons did nothing at all. Only what changes is touched.
+ */
+function syncFlasks(): void {
+  const live = sim && playing;
+  for (const potion of POTIONS) {
+    const use = document.getElementById(`flask-${potion.id}`) as HTMLButtonElement | null;
+    if (!use) continue;
+    const left = sim?.state.charges[potion.id] ?? potion.charges;
+    const drinking = sim?.state.hero.effects.some((e) => e.id === potion.id) ?? false;
+    use.disabled = !live || !sim!.canDrink(potion.id);
+    use.parentElement?.classList.toggle('flask--live', drinking);
+    if (use.dataset.at !== String(left)) {
+      use.dataset.at = String(left);
+      use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges));
+      use.title = `${potion.name} \u2014 ${left} of ${potion.charges}. ${potion.blurb}`;
+    }
+  }
+}
+
 /** A press, from a key or from the button. The sim queues it for the next tick. */
 function drinkPotion(id: string): void {
   if (!sim || !playing) return;
   sim.usePotion(id);
-  renderFlasks();
+  syncFlasks();
 }
 
 function renderReadout(): void {
@@ -552,7 +576,7 @@ function renderReadout(): void {
   const s = sim.state;
 
   renderCarrying();
-  renderFlasks();
+  syncFlasks();
 
   $('run-elapsed').textContent = `${s.elapsed.toFixed(1)}s`;
   $('run-killed').textContent = `${s.killed}/${s.totalMonsters}`;

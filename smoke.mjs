@@ -228,8 +228,10 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
     $('run-flasks').closest('.stagebox') !== null,
     'and attached to the map rather than to the side panel'
   );
-  const charges = () => all('#run-flasks .flask__charges').map((n) => n.textContent);
-  assert(charges().every((c) => c === '2 / 2'), 'each starting the descent full', charges().join(' '));
+  // The ART carries the count now, so `data-at` is what a test can read — it is
+  // the same value the picture is drawn from rather than a second copy of it.
+  const charges = () => all('#run-flasks .flask__use').map((n) => n.dataset.at);
+  assert(charges().every((c) => c === '2'), 'each starting the descent full', charges().join(' '));
 
   // A press is QUEUED and drained on the next TICK, and the sim does not tick
   // while the hero is still climbing out — so this has to outlast the handover
@@ -238,14 +240,14 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
   assert(!use.disabled, 'and a flask you can drink is a button you can press');
   use.click();
   await new Promise((r) => setTimeout(r, 1500));
-  assert(charges()[0] === '1 / 2', 'drinking one spends a charge', charges().join(' '));
+  assert(charges()[0] === '1', 'drinking one spends a charge', charges().join(' '));
 
   $('run-abandon').click();
   $('run-again').click();
   $('run-launch').click();
   await new Promise((r) => setTimeout(r, 60));
   assert(
-    charges().every((c) => c === '2 / 2'),
+    charges().every((c) => c === '2'),
     'and the next descent starts full: a budget, never a stockpile',
     charges().join(' ')
   );
