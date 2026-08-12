@@ -1,7 +1,7 @@
 /**
  * Renders the committed page in real Chromium and writes PNGs to shots/. jsdom
  * has no layout engine, so smoke cannot tell you the header is 34px wider than
- * a phone; this can.
+ * the window; this can.
  *
  * A guard, not just a camera: any element whose right edge lands past the
  * viewport fails the run. Requires a current bundle.
@@ -22,11 +22,10 @@ if (!existsSync(join(docs, 'app.js'))) {
   process.exit(1);
 }
 
-/** The sizes worth having an opinion about. Phone first: it is the one that breaks. */
-const VIEWPORTS = [
-  { name: 'phone', width: 390, height: 844 },
-  { name: 'desktop', width: 1280, height: 800 },
-];
+/** Desktop only, per `RULES.md`. Windows floating on a full-screen map mean
+ *  nothing at 390px, so the phone viewport reported a layout nobody maintains;
+ *  mobile returns as its own shell, and returns here. */
+const VIEWPORTS = [{ name: 'desktop', width: 1280, height: 800 }];
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 
@@ -49,8 +48,8 @@ await mkdir(outDir, { recursive: true });
 
 /**
  * Right edge past the viewport. Content inside something that scrolls sideways
- * ON PURPOSE does not count — the dock is wider than a phone by design, and
- * flagging its contents would report the feature as the bug.
+ * ON PURPOSE does not count — the dock scrolls sideways by design, and flagging
+ * its contents would report the feature as the bug.
  */
 const overflowProbe = () => {
   const cw = document.documentElement.clientWidth;
@@ -284,7 +283,7 @@ for (const vp of VIEWPORTS) {
   await shoot('skill-web');
 
   // The trade, walked. Two picker cards over a web drawn to fit is a tall
-  // stack on a phone, and the web is the part with nothing to scroll it.
+  // stack, and the web is the part with nothing to scroll it.
   await page.evaluate(() => document.getElementById('skills-close')?.click());
   await page.evaluate(() => {
     document.getElementById('open-character')?.click();
@@ -307,7 +306,7 @@ for (const vp of VIEWPORTS) {
 
   // The bench, stocked. It is the widest thing in the game — a crystals
   // column, a worn column and the item — and the only screen where three
-  // panels have to fit side by side on a phone.
+  // panels have to fit side by side.
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
   await page.evaluate(() => document.getElementById('confirm-yes')?.click());
   await page.waitForTimeout(500);
@@ -320,7 +319,7 @@ for (const vp of VIEWPORTS) {
   await shoot('bench');
 
   // An item tooltip, on a piece with something rolled on it — the densest
-  // thing the game draws, and the one most likely to run off a phone. A blank
+  // thing the game draws, and the one most likely to run off the edge. A blank
   // piece would show none of the grouping this shot exists to check.
   await page.evaluate(() => {
     const piece = document.querySelector('#inv-gear .slot:not(.slot--empty)');

@@ -378,6 +378,17 @@
     width: min(420px, 70vw); margin: 0;
   }
 
+  /* Corners, and each is a CHOICE rather than wherever the flow left it. The
+     HUD takes the top left; the numbers stay in the column, which is the right
+     hand side; the dock is the bottom, wide and shallow. */
+  body.mapfull #run-hud {
+    position: fixed; top: var(--hud-top, 96px); left: 20px;
+    width: 288px; z-index: 3;
+  }
+  /* The column now holds only the numbers, so it stops reserving the HUD's
+     height and lets the map have it. */
+  body.mapfull #run-stagewrap .runside { align-self: flex-start; }
+
   .stage { background: var(--void); border: 2px solid var(--seam); box-shadow: var(--bevel); line-height: 0; }
   #run-canvas, .icon, .slot svg { image-rendering: pixelated; }
   #run-canvas { display: block; width: 100%; }
@@ -1286,11 +1297,11 @@
         <div class="flasks" id="run-flasks"></div>
       </div>
 
-      <!-- One panel rather than three. The inventory dock below needs the
-           height, and three sets of padding and titles were most of what was
-           filling this column. -->
       <div class="runside">
-        <div class="panel">
+        <!-- What is TRUE OF YOU RIGHT NOW, and the only part that is HUD: it
+             sits on the map in its own corner and never hides, because a build
+             you cannot see the life bar of is one you are watching blind. -->
+        <div class="panel hud" id="run-hud">
           <div class="whoami">
             <span class="whoami__name" id="run-name">—</span>
             <span class="whoami__level">level <b id="run-level">1</b></span>
@@ -1313,7 +1324,10 @@
 
           <!-- One per slot, and the way into the sheet section explaining it. -->
           <div class="skillrow-icons" id="run-skills"></div>
+        </div>
 
+        <!-- The numbers, which are READING rather than watching. -->
+        <div class="panel">
           <div class="readout">
             <!-- Rust once there are any: the damage is down, and this is why. -->
             <div><span>starved casts</span><code id="run-starved">0</code></div>
