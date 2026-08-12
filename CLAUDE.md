@@ -244,6 +244,17 @@ one** scene per clear, highest rung first and never rolled; it ASKS
 happens — `finish()` in `src/ui/run.ts` does, which is why every headless
 harness drives `RunSim` directly and is left alone by all of it.
 
+**He talks over his own head, a line at a time.** `src/ui/speech.ts` is the
+bubble: built once and updated per frame, anchored off `Renderer.screenAt` so
+the camera moving under it keeps the words on the speaker. A **beat**
+(`SceneBeat`) is a line and what is DONE while it is up — `SceneAct` is `pace`,
+`work` or `face`, performed by `RunSim.perform` off the walk and pose machinery
+that already exists, so an act is `Entity.action` and nothing else. Clicking
+advances one; the LAST beat is `#met`, which carries what he is holding and the
+one button, anchored exactly like every line before it. Escape skips the rest
+and grants, because the gift is yours the moment a panel is up. The scrim is
+gone: a scene is already a stop, and a sheet over the room hid the room.
+
 A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
 rail stays up, but nothing is ticking, and Leave and Abandon go quiet because
 there is nothing to abandon.

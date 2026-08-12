@@ -65,6 +65,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       setZoom: () => {},
       panBy: () => {},
       follow: () => {},
+      screenAt: () => ({ x: 0, y: 0 }),
       destroy: () => canvas.remove(),
     };
   }
@@ -123,6 +124,15 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
   const cx = (v: View, x: number) => v.offX + (x + 0.5) * v.tile;
   const cy = (v: View, y: number) => v.offY + (y + 0.5) * v.tile;
+
+  /** The view the last draw used. Cached because it is worked out per frame
+   *  from the camera, and asking for a tile's place between frames must not
+   *  recompute one against a map this renderer has not drawn yet. */
+  let seen: View = { tile: 0, offX: 0, offY: 0 };
+  const screenAt = (v: { x: number; y: number }) => ({
+    x: cx(seen, v.x),
+    y: cy(seen, v.y),
+  });
 
   function drawMap(state: RunState, v: View): void {
     const { grid } = state.map;
@@ -441,7 +451,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   }
 
   function draw(state: RunState, emerge = 1): void {
-    const v = viewFor(state);
+    const v = (seen = viewFor(state));
 
     ctx.fillStyle = palette.void;
     ctx.fillRect(0, 0, cssWidth, cssHeight);
@@ -480,5 +490,5 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   };
 
   resize(cssWidth, cssHeight);
-  return { resize, draw, setZoom, panBy, follow, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, panBy, follow, screenAt, destroy: () => canvas.remove() };
 }

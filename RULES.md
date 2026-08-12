@@ -134,9 +134,15 @@ rule for a floating element loses every specificity tie to the class it shares
 markup with, so `.hp.xpbar` and not `.xpbar`.
 
 **A screen is a WINDOW; only a question stops you.** No scrim, click-through
-layer, card takes the pointer. `.modal--stop` is the short list that blocks:
-a confirm, the welcome, the Lampwright. Anything new is a window unless it is
-asking something.
+layer, card takes the pointer. `.modal--stop` is the short list that blocks,
+and it is now TWO: a confirm and the welcome. Anything new is a window unless
+it is asking something.
+
+**A scene does not need a scrim, because a scene IS a stop.** The Lampwright
+left that list when he got a room: nothing is ticking, the map is not yours to
+click, and painting a sheet over the workshop hid the only thing the room was
+built to show. What he says is a bubble over his own head and the panel is the
+last of those bubbles — same anchor, same layer.
 
 **ON TOP means touched last, and it is one mechanism.** `src/ui/windows.ts`
 holds the stack; touching a card raises it, opening one is touching it, and
@@ -1079,6 +1085,33 @@ of it.
 - **`src/sim` never decides that a scene happens.** `finish()` in
   `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
   every headless harness alone: they drive `RunSim` directly and never ask.
+
+**A line is a BUBBLE over the body saying it.** `src/ui/speech.ts` owns it,
+built once and UPDATED per frame — `renderFlasks` / `syncFlasks` is the
+precedent and the reason is the same. Where it hangs is `Renderer.screenAt`,
+asked every frame off the same seam the camera rides on: the anchor is the
+UI's and the tile size is the renderer's. A drag or a zoom mid-sentence keeps
+the words on the speaker.
+
+**A beat is a line and what is DONE while it is on screen.** `SceneBeat` in
+`src/scenes.ts`; `SceneAct` is `pace`, `work` or `face`, performed by
+`RunSim.perform` off the walk and pose machinery that already exists. Setting
+`Entity.action` and `actionTimer` is the whole of the interface `poseOf` reads
+— no new art and no new frames. Only Pixi draws sprites, so an act is a pose
+there and a moving circle in the fallback: **a beat may never lean on one to
+carry meaning its words do not.** He can pour a lantern; he cannot mime one.
+
+**Escape takes the lot.** From any line, `skipToGift` skips the rest and
+grants. The gift is already yours by the time a panel is on screen, so refusing
+it would be worse than taking it — and `guide.mjs` presses Escape at a moment
+nobody controls.
+
+**Anything that positions ITSELF has to say so against `.guide-on`.** That rule
+sets `position: relative` and is one class, so it wins the tie and drops a
+fixed bubble back into the flow at the foot of the page — where the opening
+then rings it and asks you to scroll. `.speech.guide-on` is the answer, and the
+same trap waits for anything fixed the opening can ring. `.modal__card` is one
+class too, and sets a width: a card that wants its own needs two.
 
 **A meeting.** `giftWaiting` in `src/game/crystals.ts` answers what is owed,
 read AFTER the report so the level that descent just bought counts;

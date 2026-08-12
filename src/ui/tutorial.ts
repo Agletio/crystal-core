@@ -37,6 +37,8 @@ export interface GuideCtx {
   top: string | null;
   /** The slot waiting to be filled: picking one moves the next click to the dock. */
   picking: string | null;
+  /** A line is on screen over somebody's head, waiting to be clicked on. */
+  speaking: boolean;
   /** Whether the dock is up: a step pointing INTO it has to open it first. */
   dock: boolean;
   /** Which shelf the Skills screen is on, and whose web is up. Both null
@@ -226,10 +228,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === "met"
         ? "Take what they are holding."
-        : "The way up came out somewhere else.",
+        : ctx.speaking
+          ? "Hear him out."
+          : "The way up came out somewhere else.",
     hint: "Everything you are ever given is handed over in person, on a run you finished.",
-    target: (ctx) => (ctx.top === "met" ? "met-take" : viaHeader(ctx, "run-loot")),
-    ring: (ctx) => ctx.top === "met" || ctx.phase !== "running",
+    target: (ctx) =>
+      ctx.top === "met" ? "met-take" : ctx.speaking ? "speech" : viaHeader(ctx, "run-loot"),
+    ring: (ctx) => ctx.top === "met" || ctx.speaking || ctx.phase !== "running",
     done: (g, ctx) => ctx.top !== "met" && (g.given ?? []).includes("weapon"),
   },
   {
@@ -350,9 +355,9 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   // Dormant until the clear that the notable bought puts someone at the mouth.
   {
     id: "meet_crystal",
-    waits: (_g, ctx) => ctx.top !== "met",
-    text: "Take what they are holding.",
-    target: "met-take",
+    waits: (_g, ctx) => ctx.top !== "met" && !ctx.speaking,
+    text: (ctx) => (ctx.speaking ? "Hear him out." : "Take what they are holding."),
+    target: (ctx) => (ctx.speaking ? "speech" : "met-take"),
     // BOTH, and the panel half is not decoration: granting the crystal and
     // shutting the panel are a tick apart, and a step that ended on the grant
     // alone rang the next one's button underneath a popup that was still up.
@@ -440,6 +445,7 @@ let context: () => GuideCtx = () => ({
   phase: "menu",
   top: null,
   picking: null,
+  speaking: false,
   dock: true,
   category: null,
   viewing: null,

@@ -1,9 +1,9 @@
 /**
- * Meeting the Lampwright: a panel over a finished descent — their words, what
- * they are holding drawn as the things they are, and one button. It is granted
- * HERE, never in the report, so it is yours from the moment you are handed it.
- * The freeze is not a pause: the loop has no pause state, the UI just stops
- * ticking the sim.
+ * The LAST beat: what they are holding drawn as the things it is, and one
+ * button, in a bubble over their own head like every line before it. Granted
+ * HERE and never in the report, so it is yours from the moment you are handed
+ * it. Nothing has been ticking since you came up the hole — a scene is already
+ * a stop, which is why this needs no scrim over the room to prove it.
  */
 import { CURRENCY_BY_ID, LAMPWRIGHT } from '../data';
 import type { Handover, Waiting } from '../game/crystals';
@@ -30,6 +30,11 @@ let taken: Handover | null = null;
 
 export const isMetOpen = (): boolean => !$('met').hidden;
 
+/** Which of his three speeches this meeting is. Read by the run loop to play
+ *  the beats, and again here for the title and the button on the last one. */
+export const lampwrightWords = (waiting: Waiting) =>
+  waiting.weapon ? LAMPWRIGHT.first : waiting.crystal ? LAMPWRIGHT.crystal : LAMPWRIGHT.again;
+
 function row(icon: SVGElement, name: string, card: () => HTMLElement | string): HTMLElement {
   const line = el('div', 'met__row');
   line.append(icon);
@@ -48,16 +53,12 @@ export function openMet(waiting: Waiting): void {
   if (hand.items.length === 0 && Object.keys(hand.currency).length === 0) return;
   taken = hand;
 
-  const words = waiting.weapon
-    ? LAMPWRIGHT.first
-    : waiting.crystal
-      ? LAMPWRIGHT.crystal
-      : LAMPWRIGHT.again;
+  const words = lampwrightWords(waiting);
   // The same sprite standing on the map. Who is speaking should be something
   // you recognise rather than something you read.
   const face = $('met-face');
   face.replaceChildren();
-  const portrait = portraitIcon(LAMPWRIGHT.sprite, 120);
+  const portrait = portraitIcon(LAMPWRIGHT.sprite, 56);
   if (portrait) face.append(portrait);
   $('met-title').textContent = words.title;
   ($('met-take') as HTMLButtonElement).textContent = words.button;
@@ -72,10 +73,6 @@ export function openMet(waiting: Waiting): void {
     if (!def) continue;
     gift.append(row(currencyIcon(def, 28), `${def.name} \u00d7${n}`, () => def.description));
   }
-
-  const said = $('met-said');
-  said.replaceChildren();
-  for (const line of words.said) said.append(el('p', 'met__said', line));
 
   $('met').hidden = false;
   ($('met-take') as HTMLButtonElement).focus();

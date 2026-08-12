@@ -53,6 +53,7 @@ import {
 } from '../data';
 import type { EncounterDef } from '../data';
 import { SCENE_BY_ID } from '../scenes';
+import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
@@ -78,6 +79,9 @@ const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
+
+/** How far a pacing body walks from where it was standing, and back. */
+const PACE_STEP = 2;
 
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
@@ -328,6 +332,8 @@ export class RunSim {
   private auraTimer = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
   private auraDamage = 0;
+  /** Where a pacing body started and which way it is going. */
+  private pacing: { home: Vec2; side: number } | null = null;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -841,6 +847,38 @@ export class RunSim {
     this.face(s.hero, met.x, met.y);
     this.settleAction(s.hero, false);
     s.meeting = true;
+  }
+
+  /**
+   * What the person in the room is doing while a line is on screen. Ticked by
+   * the frame loop like the walk — a scene has no clock of its own — and it
+   * only ever sets `action` and `actionTimer`, which is the whole of the
+   * interface `poseOf` reads.
+   */
+  perform(act: SceneAct | undefined, dt: number): void {
+    const who = this.state.folk[0];
+    if (!who) return;
+
+    if (act === 'work') {
+      who.actionTimer -= dt;
+      if (who.actionTimer <= 0) {
+        who.action = 'attack';
+        who.actionTimer = ATTACK_POSE;
+      }
+      return;
+    }
+
+    if (act === 'pace') {
+      this.pacing ??= { home: { x: who.x, y: who.y }, side: 1 };
+      const to = { x: this.pacing.home.x + this.pacing.side * PACE_STEP, y: this.pacing.home.y };
+      if (dist(who, to) > 0.4 && this.advance(who, to, dt)) return;
+      this.pacing.side *= -1;
+      return;
+    }
+
+    who.path = [];
+    this.face(who, this.state.hero.x, this.state.hero.y);
+    this.settleAction(who, false);
   }
 
   /** The meeting is over and the crystal is in hand — granted by whoever calls

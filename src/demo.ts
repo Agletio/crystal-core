@@ -1608,6 +1608,7 @@ rule('GUIDED OPENING — does every step actually complete?');
     phase: 'menu',
     top: null,
     picking: null,
+    speaking: false,
     dock: true,
     category: null,
     viewing: null,
@@ -1939,6 +1940,7 @@ rule('GUIDED OPENING — does every step actually complete?');
       top: 'craft',
       phase: 'menu',
       picking: null,
+      speaking: false,
       dock: true,
       category: null,
       viewing: null,
@@ -3801,7 +3803,8 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
   // GRANTS[].what describes a SWITCH with no value attached; a unique prints
   // `say` instead, which is checked where the uniques are.
   check(
-    ENCOUNTERS.every((e) => e.herald.length > 0) && LAMPWRIGHT.first.said.length > 0,
+    ENCOUNTERS.every((e) => e.herald.length > 0) &&
+      LAMPWRIGHT.first.beats.every((b) => b.said.length > 0),
     'and the lines that are voice rather than mechanics are left alone',
     'flavour went missing'
   );
@@ -5906,6 +5909,33 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       walkToMeeting(room) && dist(room.state.hero, room.state.folk[0]) <= 1.2,
       'and the meeting is the hero walking over, not a panel appearing',
       `meeting ${room.state.meeting}, ${dist(room.state.hero, room.state.folk[0]).toFixed(2)} apart`
+    );
+
+    // What he says, and what he does while he says it. An act only ever sets
+    // `action` and `actionTimer`, which is the whole of what `poseOf` reads.
+    const script = [LAMPWRIGHT.first, LAMPWRIGHT.crystal, LAMPWRIGHT.again];
+    check(
+      script.every((w) => w.beats.length > 0 && w.beats.every((b) => b.said.length > 0)),
+      'every one of his three speeches is beats, and every beat has words',
+      script.map((w) => w.beats.length).join('/')
+    );
+    const who = room.state.folk[0];
+    who.action = 'idle';
+    room.perform('work', TICK);
+    check(
+      (who.action as string) === 'attack',
+      'working at the bench is a pose, not a new frame',
+      who.action
+    );
+
+    const stood = { x: who.x, y: who.y };
+    for (let i = 0; i < 200; i++) room.perform('pace', TICK);
+    const away = dist(who, stood);
+    for (let i = 0; i < 400; i++) room.perform('pace', TICK);
+    check(
+      away > 0.5 && dist(who, stood) < away + 0.5,
+      'and pacing walks off and comes back rather than leaving the room',
+      `${away.toFixed(1)} tiles out, ${dist(who, stood).toFixed(1)} now`
     );
 
     // What the panel does. The run is already banked, so this is a handover

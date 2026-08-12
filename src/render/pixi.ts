@@ -653,6 +653,8 @@ export async function createPixiRenderer(
     if (builtMap) camera(builtMap);
   }
 
+  const screenAt = (v: { x: number; y: number }) => ({ x: sx(v.x), y: sy(v.y) });
+
   function panBy(dx: number, dy: number): void {
     if (tile <= 0) return;
     looking = { x: at.x - dx / tile, y: at.y - dy / tile };
@@ -668,5 +670,5 @@ export async function createPixiRenderer(
     app.destroy(true, { children: true });
   }
 
-  return { resize, draw, setZoom, panBy, follow, destroy };
+  return { resize, draw, setZoom, panBy, follow, screenAt, destroy };
 }

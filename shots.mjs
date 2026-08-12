@@ -249,14 +249,25 @@ for (const vp of VIEWPORTS) {
 
   // The Lampwright, at the END of a cleared descent and after the walk across
   // to him: the wait covers a whole descent, and Blight takes a minute over
-  // one. The ROOM first, before the panel covers it.
+  // one. The ROOM first, then a line over his head, then what he is holding.
   try {
     await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
       timeout: 120000,
     });
     await shoot('scene');
-    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+    await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
       timeout: 30000,
+    });
+    await shoot('speech');
+    // Clicking is how a beat advances, so this is the interaction rather than
+    // a wait: bounded, because a bubble nobody can advance is the failure.
+    for (let i = 0; i < 8; i++) {
+      if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
+      await page.locator('#speech').click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(250);
+    }
+    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+      timeout: 5000,
     });
     await shoot('lampwright');
     // A FACE, at its own grid. A map sprite blown up is a silhouette, and this

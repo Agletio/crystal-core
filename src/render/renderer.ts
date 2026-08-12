@@ -63,6 +63,9 @@ export interface Renderer {
   setZoom(zoom: number, at?: { x: number; y: number }): void;
   /** Drag by a screen-pixel delta. STOPS the follow until `follow()`. */
   panBy(dx: number, dy: number): void;
+  /** Where a tile is on the SURFACE, in CSS pixels from its top left — the
+   *  same split the camera rides on. */
+  screenAt(at: Vec2): { x: number; y: number };
   follow(): void;
   /** Release the surface and any GPU resources. */
   destroy(): void;
@@ -873,8 +876,7 @@ export const PROPS: Record<string, (floor: FloorPalette, x: number, y: number) =
 };
 
 /** A lamp: a foot, two uprights, a handle, and a light in it or not. The dark
- *  ones are why the lit ones read as lit, so nothing on an unlit one may be
- *  brighter than the flame on a lit one. */
+ *  ones are why the lit ones read as lit, so nothing on one may be brighter. */
 function lantern(floor: FloorPalette, alight: boolean): Decal[] {
   const out: Decal[] = [];
   // The glow under everything, so the flame sits on top of its own light.

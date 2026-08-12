@@ -34,12 +34,14 @@ import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { sceneWaiting } from '../game/scenes';
+import { SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
 import type { Waiting } from '../game/crystals';
-import { openMet } from './met';
+import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
+import { endSpeech, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
@@ -111,6 +113,9 @@ let greetedState: RunState | null = null;
 let greeting: Waiting | null = null;
 /** The room waiting at the bottom of the hole, until the drop has played. */
 let arriving: SceneDef | null = null;
+/** The room you are standing in, and whether its beats have been started. */
+let arrivedIn = '';
+let spoke = false;
 /**
  * Close enough to see what's happening. Fit (1×) shows the whole Fissure, and
  * at that scale a monster is four pixels. Fit is one click away.
@@ -165,6 +170,14 @@ export function metTaken(): void {
   if (report && state) land(report, state);
 }
 
+/** Escape, anywhere in a meeting: the rest of the lines are skipped and what
+ *  is held is granted. Refusing a gift already yours would be worse, and
+ *  `guide.mjs` presses this at a moment nobody controls. */
+export function skipToGift(): void {
+  endSpeech();
+  if (isMetOpen()) closeMet();
+}
+
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
   setInventoryBase(runHandler());
@@ -172,11 +185,8 @@ export function onRunFocused(): void {
   refreshRunPanels();
 }
 
-/**
- * Nothing. Crystals are socketed from the collection, and the dock holds only
- * gear — which the Fissure has nothing of its own to do with, so the shell's
- * own actions (wear it, stash it) are what a click there means.
- */
+/** Nothing. Crystals are socketed from the collection and the dock holds only
+ *  gear, so the shell's own actions are what a click there means. */
 function runHandler() {
   return {
     actionFor: () => null,
@@ -392,11 +402,24 @@ function finish(left = false): void {
   land(report, sim.state);
 }
 
+/** Arriving. The lines come first, one at a time over his own head, and the
+ *  last of them is the panel, which is where the gift is. `spoke` stops the
+ *  frame after arriving from starting the whole thing again. */
+function speak(): void {
+  spoke = true;
+  if (!greeting) return;
+  const words = lampwrightWords(greeting);
+  const held = greeting;
+  startSpeech(SCENE_BY_ID[arrivedIn]?.who ?? '', words.beats, () => openMet(held));
+}
+
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other
  *  — the packs are what a scene leaves out — so both renderers draw it with no
  *  changes, and nothing ticks: the walk across is the whole of it. */
 function enterScene(def: SceneDef): void {
   arriving = null;
+  arrivedIn = def.id;
+  spoke = false;
   banked = null;
   sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
   playing = false;
@@ -772,16 +795,19 @@ function frame(now: number): void {
   const emerge = emergeNow();
   $('run-fade').style.opacity = String(1 - emerge);
 
-  // In the room, and someone is standing in it. Nothing ticks but the walk.
-  if (sim && phase === 'scene' && !sim.state.meeting) {
+  // In the room, and someone is standing in it. Nothing ticks but the walk
+  // across, and then whatever they are doing while they say a line.
+  if (sim && phase === 'scene') {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
-      sim.walkOut(TICK);
+      if (sim.state.meeting) sim.perform(speakingBeat()?.act, TICK);
+      else sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;
     }
-    if (sim.state.meeting && greeting) openMet(greeting);
+    if (sim.state.meeting && !spoke) speak();
+    if (renderer && sim.state.folk[0]) syncSpeech(renderer, sim.state.folk[0]);
   }
 
   if (playing && handover === 0 && sim && sim.state.status === 'running') {

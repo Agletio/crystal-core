@@ -27,7 +27,8 @@ import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './u
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
-import { closeMet, initMet, isMetOpen } from './ui/met';
+import { initMet, isMetOpen } from './ui/met';
+import { initSpeech, isSpeaking } from './ui/speech';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import {
   centreCamera,
@@ -35,6 +36,7 @@ import {
   initRun,
   metTaken,
   onRunFocused,
+  skipToGift,
   refreshRunPanels,
   runPhase,
 } from './ui/run';
@@ -150,9 +152,10 @@ globalThis.addEventListener('keydown', (event) => {
   // control with its own Close switched off.
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
-  // The crystal is already granted by the time this is on screen, so Escape
-  // takes it rather than refusing it.
-  else if (isMetOpen()) closeMet();
+  // The crystal is already granted by the time a panel is on screen, so Escape
+  // takes it rather than refusing it — and from a line before the panel it
+  // skips the rest of them and takes it anyway.
+  else if (isSpeaking() || isMetOpen()) skipToGift();
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.
   else if (isMenuOpen()) closeMenu();
@@ -232,6 +235,7 @@ initMet(game, () => {
   refreshRunPanels();
 });
 initRun(game);
+initSpeech();
 initMenu();
 
 /**
@@ -330,6 +334,7 @@ function guideContext(): GuideCtx {
     phase: runPhase(),
     top,
     picking: pickingSlot(),
+    speaking: isSpeaking(),
     dock: isInventoryOpen(),
     ...skillsDepth(),
   };

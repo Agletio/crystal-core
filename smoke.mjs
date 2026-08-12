@@ -2261,9 +2261,13 @@ assert(
     return z;
   };
   const tip = layer('tip');
-  for (const cls of ['modal', 'guide', 'dragghost', 'itemmenu', 'toast']) {
+  for (const cls of ['modal', 'speech', 'guide', 'dragghost', 'itemmenu', 'toast']) {
     assert(tip > layer(cls), `the tooltip draws over .${cls}`, `${tip} vs ${layer(cls)}`);
   }
+  // A bubble is a new layer, and it sits between the windows it must cover and
+  // the opening's card, which points AT it.
+  assert(layer('speech') > layer('modal'), 'a bubble draws over a window');
+  assert(layer('guide') > layer('speech'), 'and under the card telling you to click it');
   assert(
     window.getComputedStyle($('tooltip')).pointerEvents === 'none',
     'and is never hit-tested, so nothing can be trapped behind it'
@@ -2430,6 +2434,27 @@ assert(
     !document.body.classList.contains('panelsoff') && saved().parked === false,
     'pressing it again brings them back'
   );
+}
+
+// --- he talks in the room, not over a sheet covering it --------------------
+// A scene IS a stop — nothing is ticking and the map is not yours to click —
+// so it does not need a scrim to prove it.
+{
+  assert($('speech') !== null, 'there is a bubble to say a line in');
+  assert($('speech').hidden === true, 'and nothing is being said before anyone speaks');
+  assert(
+    $('speech').getAttribute('role') === 'button',
+    'it says it is a control, which is what the opening clicks'
+  );
+  assert(
+    !$('met').classList.contains('modal--stop'),
+    'the Lampwright no longer paints a scrim over his own workshop'
+  );
+  assert(
+    $('met').classList.contains('modal--speech') && $('met-card') !== null,
+    'his panel is the last bubble, anchored like every line before it'
+  );
+  assert($('met-said') === null, 'and his words are beats rather than a block of text');
 }
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));

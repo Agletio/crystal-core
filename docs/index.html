@@ -951,6 +951,39 @@
   .modal__card.win--moved { transform: translate(var(--wx, 0px), var(--wy, 0px)); }
   .dock.win--moved { transform: translate(calc(-50% + var(--wx, 0px)), var(--wy, 0px)); }
   body.windowdrag, body.windowdrag * { user-select: none; }
+
+  /* A bubble over the body that is talking. Anchored per frame off `screenAt`,
+     so the camera moving under it keeps the words on the speaker; the
+     transform hangs it above the head rather than on it. Over every window and
+     every scrim, under the guided opening's own card. TWO classes on the card,
+     because `.modal__card` is one and sets a width later in this same sheet. */
+  .speech, .modal--speech { z-index: 40; }
+  .speech {
+    position: fixed; left: 0; top: 0;
+    transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
+    width: max-content; max-width: min(340px, calc(100vw - 32px));
+    display: flex; align-items: flex-start; gap: 10px;
+    background-color: var(--matrix); background-image: var(--grit);
+    border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55);
+    padding: 10px 12px; cursor: pointer;
+  }
+  .speech:hover, .speech:focus-visible { border-color: var(--citrine); }
+  .speech__said { margin: 0; line-height: 1.55; font-size: 13px; }
+  .speech__who { flex: none; line-height: 0; }
+  .speech__who .icon { image-rendering: pixelated; }
+  .speech__more { align-self: flex-end; color: var(--citrine); font-size: 11px; line-height: 1; }
+  /* The panel is the LAST beat, so it hangs where the bubble hangs rather than
+     in the middle of a room it is meant to be standing in. */
+  .modal.modal--speech { display: block; padding: 0; }
+  .modal__card.modal__card--bubble {
+    position: fixed; left: 0; top: 0;
+    transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
+    width: min(340px, calc(100vw - 32px));
+    max-height: none;
+  }
+  .modal__card--bubble .modal__head { padding: 9px 12px; }
+  .modal__card--bubble .modal__body { padding: 10px 12px; }
+  .modal__card--bubble .met { padding: 0; gap: 10px; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
@@ -1077,6 +1110,10 @@
     outline-offset: 3px;
     animation: guidepulse 1.4s ease-in-out infinite;
   }
+  /* Anything that positions ITSELF has to say so here: the rule above is one
+     class, so it wins the tie and drops a fixed bubble back into the flow at
+     the bottom of the page, where the opening then asks you to scroll to it. */
+  .speech.guide-on, .modal__card--bubble.guide-on { position: fixed; }
   @keyframes guidepulse {
     0%, 100% { outline-color: var(--citrine); box-shadow: 0 0 0 0 rgba(232,184,75,.55); }
     50% { outline-color: rgba(232,184,75,.55); box-shadow: 0 0 18px 6px rgba(232,184,75,.22); }
@@ -1553,8 +1590,8 @@
 <!-- The Lampwright. A body on the map you walk to, not a line in a report:
      the crystal is handed over here and is yours from that moment, whatever
      happens further down. -->
-<div class="modal modal--stop" id="met" hidden>
-  <div class="modal__card modal__card--narrow">
+<div class="modal modal--speech" id="met" hidden>
+  <div class="modal__card modal__card--narrow modal__card--bubble" id="met-card">
     <div class="modal__head modal__head--who">
       <!-- Their own sprite, so who is talking is a look rather than a name. -->
       <span class="met__who" id="met-face"></span>
@@ -1563,11 +1600,18 @@
     <div class="modal__body">
       <div class="panel met">
         <div class="met__gift" id="met-gift"></div>
-        <div id="met-said"></div>
         <button class="mini mini--go" id="met-take">Take it</button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- One line, over the head of whoever is saying it. Anchored per frame, so a
+     drag or a zoom mid-sentence keeps it where the words are coming from. -->
+<div class="speech" id="speech" role="button" tabindex="0" hidden>
+  <span class="speech__who" id="speech-face"></span>
+  <p class="speech__said" id="speech-said"></p>
+  <span class="speech__more">&#9656;</span>
 </div>
 
 <div class="modal" id="haul" hidden>

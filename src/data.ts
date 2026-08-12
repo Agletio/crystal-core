@@ -23,6 +23,8 @@ import type {
   StatSpec,
   UniqueDef,
 } from './types';
+// Type-only, and it has to stay that way: `src/scenes/*` reads this file back.
+import type { SceneBeat } from './scenes';
 
 // --- damage types ----------------------------------------------------------
 //
@@ -1277,26 +1279,44 @@ export const LAMPWRIGHT = {
    */
   first: {
     title: 'The Lampwright',
-    said: [
-      'You came back up. Most do not. I hear the ones that do not, sometimes, still going.',
-      'You went down there with nothing in your hands. Do not do that again. Take this one — I have carried it a long way and it has never once been any use to me.',
-      'Things that come out of the rock can be argued with. Not much. A little. You will find out what I mean and then you will not stop.',
-    ],
+    beats: [
+      {
+        said: 'You came back up. Most do not. I hear the ones that do not, sometimes, still going.',
+        act: 'face',
+      },
+      {
+        said: 'You went down there with nothing in your hands. Do not do that again. Take this one — I have carried it a long way and it has never once been any use to me.',
+        act: 'work',
+      },
+      {
+        said: 'Things that come out of the rock can be argued with. Not much. A little. You will find out what I mean and then you will not stop.',
+        act: 'face',
+      },
+    ] as SceneBeat[],
     button: 'Take it',
   },
   /** The crystal, which is the first thing that changes what a descent IS. */
   crystal: {
     title: 'The Lampwright',
-    said: [
-      'Now this. I have been keeping it for whoever came back up enough times, and that is you.',
-      'Carry one of these down and the Fissure goes on. And on. Same crack, same rock, and it does not end when it used to end. I have never worked out where the extra comes from.',
-      'And it changes, the longer you hold it. Slowly. Whatever you feed it, it wants the same thing again.',
-    ],
+    beats: [
+      {
+        said: 'Now this. I have been keeping it for whoever came back up enough times, and that is you.',
+        act: 'face',
+      },
+      {
+        said: 'Carry one of these down and the Fissure goes on. And on. Same crack, same rock, and it does not end when it used to end. I have never worked out where the extra comes from.',
+        act: 'pace',
+      },
+      {
+        said: 'And it changes, the longer you hold it. Slowly. Whatever you feed it, it wants the same thing again.',
+        act: 'work',
+      },
+    ] as SceneBeat[],
     button: 'Take it',
   },
   again: {
     title: 'The Lampwright',
-    said: ['You went and got this one. I only carried it up.'],
+    beats: [{ said: 'You went and got this one. I only carried it up.', act: 'work' }] as SceneBeat[],
     button: 'Take it',
   },
 };
