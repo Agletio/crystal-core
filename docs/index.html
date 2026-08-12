@@ -193,7 +193,7 @@
   .rail {
     position: fixed; right: 16px; bottom: 16px; z-index: 22;
     display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
-    align-items: center; gap: 6px; max-width: 336px;
+    align-items: center; gap: 6px; max-width: 248px;
   }
   .railbtn {
     position: relative; display: grid; place-items: center;
@@ -418,10 +418,33 @@
   /* Corners, and each is a CHOICE rather than wherever the flow left it. The
      HUD takes the top left; the numbers stay in the column, which is the right
      hand side; the dock is the bottom, wide and shallow. */
+  /* Bottom left, thin, and no panel around it: a slab of chrome around two
+     bars is most of what made the old one big. */
   body.mapfull #run-hud {
-    position: fixed; top: var(--hud-top, 96px); left: 20px;
-    width: 288px; z-index: 3;
+    position: fixed; left: 16px; bottom: 26px; z-index: 19;
+    width: 232px; display: flex; flex-direction: column; gap: 3px;
   }
+  .hud__who { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; }
+  .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--quartz); }
+  .hud__level { color: var(--dust); }
+  .hud__level b { color: var(--citrine); }
+  .hp--slim { height: 13px; }
+  .hp--slim .hp__text { font-size: 9px; line-height: 13px; }
+
+  /* Above the rail, right-aligned with it. */
+  body.mapfull .skillrow-icons--float {
+    position: fixed; right: 16px; bottom: 108px; z-index: 19;
+    display: flex; justify-content: flex-end; gap: 6px;
+  }
+
+  /* The full width of the very bottom, and UNDER everything: it is read at a
+     glance and never clicked, so a window opening over it costs nothing. */
+  body.mapfull .xpbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
+    height: 10px; border-left: 0; border-right: 0; border-bottom: 0;
+    pointer-events: none;
+  }
+  body.mapfull .xpbar .hp__text { font-size: 8px; line-height: 10px; }
   /* The column now holds only the numbers, so it stops reserving the HUD's
      height and lets the map have it. */
   body.mapfull #run-stagewrap .runside { align-self: flex-start; }
@@ -612,8 +635,8 @@
      be a window covering the map like any other, and the whole point of this
      one is being open WHILE something else works on it. */
   .dock {
-    position: fixed; left: 20px; bottom: 16px; z-index: 18;
-    width: min(760px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 18;
+    width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
     padding: 10px 14px 12px;
   }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
@@ -1349,29 +1372,34 @@
         <!-- What is TRUE OF YOU RIGHT NOW, and the only part that is HUD: it
              sits on the map in its own corner and never hides, because a build
              you cannot see the life bar of is one you are watching blind. -->
-        <div class="panel hud" id="run-hud">
-          <div class="whoami">
-            <span class="whoami__name" id="run-name">—</span>
-            <span class="whoami__level">level <b id="run-level">1</b></span>
+        <!-- Thin, and only what is TRUE OF YOU: the two pools you watch and
+             the level they belong to. Bottom left, out of the way of the map. -->
+        <div class="hud" id="run-hud">
+          <div class="hud__who">
+            <span class="hud__name" id="run-name">—</span>
+            <span class="hud__level">lv <b id="run-level">1</b></span>
           </div>
-
-          <div class="hp">
+          <div class="hp hp--slim">
             <div class="hp__fill" id="run-hp-fill"></div>
             <div class="hp__text" id="run-hp-text">—</div>
           </div>
-
-          <div class="hp hp--mana">
+          <div class="hp hp--slim hp--mana">
             <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
             <div class="hp__text" id="run-mana-text">—</div>
           </div>
+        </div>
 
-          <div class="hp hp--xp">
-            <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
-            <div class="hp__text" id="run-xp-text">0 / 0</div>
-          </div>
+        <!-- One per slot, and the way into the sheet section explaining it.
+             Above the rail: the three things you are, over the eleven you can
+             open. -->
+        <div class="skillrow-icons skillrow-icons--float" id="run-skills"></div>
 
-          <!-- One per slot, and the way into the sheet section explaining it. -->
-          <div class="skillrow-icons" id="run-skills"></div>
+        <!-- The one bar that is not about this second. Full width along the
+             very bottom, skinny, under everything — an XP bar is read at a
+             glance and never interacted with. -->
+        <div class="hp hp--xp xpbar">
+          <div class="hp__fill hp__fill--xp" id="run-xp-fill"></div>
+          <div class="hp__text" id="run-xp-text">0 / 0</div>
         </div>
 
         <!-- The numbers, which are READING rather than watching. -->

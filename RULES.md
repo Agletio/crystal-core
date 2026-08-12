@@ -1067,6 +1067,7 @@ that a two-minute tool timeout will kill them mid-run:
 | `demo` | ~2min |
 | `shots` | ~3min — two viewports, each waiting out a whole first descent |
 | `guide` | ~10min — it plays about eleven descents in real time |
+| `drag` | ~20s — one dock reorder, with and without the bench open |
 
 None of them hangs. If one looks stuck it is one of the bottom three, and the
 answer is to wait or run it in the background, never to assume it broke.
@@ -1076,6 +1077,38 @@ harness: the opening spans the levels a first notable costs and the clears a
 first crystal takes to grow a slot, and every one of those descents is PLAYED.
 Its turn budget is 900, which is roughly double what a pass uses — the budget
 is not the binding constraint, the wall clock is.
+
+### Run what the change can break, and nothing else
+
+The suite is sixteen minutes. Running all of it after every edit is how an hour
+goes on a change to a number, so the rule is to run what the change can actually
+reach. `comments` and `typecheck` are not on this list because they are seconds
+and already automatic.
+
+| what changed | what to run |
+|---|---|
+| a NUMBER in a table — balance, a tree, a modifier's range | `mods`, and `demo` if the sim or `GRANTS` reads it |
+| the sim, grants, economy, crystals, trees | `demo` |
+| UI logic — a handler, a screen's state, what a button does | `smoke` |
+| layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
+| the dock, a window's position, a drag target | `drag` first — it answers in 20s what `guide` answers in ten minutes |
+| `tutorial.ts`, a button id the opening walks, dock or bench focus | `guide` |
+| art, sprites, icons | `shots` |
+
+**`guide` is not a general regression test and must not be used as one.** It
+exists to prove the guided opening can be finished by clicking only what is lit.
+Run it when the change touches what the opening navigates. A skill tree number
+cannot break it in any way worth ten minutes of waiting for.
+
+**When a UI change breaks something, reach for `drag` before `guide`.** It found
+the handler race that four rounds of guessing at `guide` output did not, because
+on a failure it prints what `elementFromPoint` actually hits at the drop point
+rather than leaving stacking to be inferred from a screenshot. Reasoning about
+z-order and `--dock-h` by eye produced four wrong answers in a row; one hit test
+produced the right one.
+
+**Before a push, the whole suite.** This section is about the loop while you
+work, not about what a commit is held to.
 
 ### Reading the demo's output
 
