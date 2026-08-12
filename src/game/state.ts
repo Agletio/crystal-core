@@ -106,6 +106,8 @@ export interface GameState {
   keys: Record<string, string>;
   /** Share of a pool a potion fires at, by id. Charges are `RunState`'s. */
   potions: Record<string, number>;
+  /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
+  parked: boolean;
 }
 
 export interface SoldEntry {
@@ -138,6 +140,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     shopLevel: 0,
     keys: {},
     potions: {},
+    parked: false,
   };
   resetGame(game, mode);
   return game;

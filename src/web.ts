@@ -69,7 +69,8 @@ import {
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initKeys } from './ui/keys';
-import { dressRail, toggleFullscreen, toggleParkedPanels } from './ui/rail';
+import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
+import { initWindows, topWindow, windowOffset } from './ui/windows';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
 const game = createGame('fresh');
@@ -155,20 +156,16 @@ globalThis.addEventListener('keydown', (event) => {
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.
   else if (isMenuOpen()) closeMenu();
-  else if (isSaveDataOpen()) closeSaveData();
-  // Skills is three deep, so Escape backs out a level, like Back.
-  else if (isSkillsOpen()) skillsEscape();
-  else if (isTradeOpen()) closeTrade();
-  else if (isCharacterOpen()) closeCharacter();
-  else if (isHistoryOpen()) closeHistory();
-  else if (isHaulOpen()) closeHaul();
-  else if (isCrystalsOpen()) closeCrystals();
-  else if (isStashOpen()) closeStash();
-  else if (isShopOpen()) closeShop();
-  else if (isCraftOpen()) closeCraft();
-  else if (isInventoryOpen()) closeInventory();
-  // Last, so it never eats the press that was meant to close a window.
-  else dismissToast();
+  else {
+    // Below those three it is whichever window you touched last, since with
+    // several open a fixed order closes one you are not looking at.
+    const top = topWindow();
+    // Skills is three deep, so Escape backs out a level, like Back.
+    if (top === 'skills') skillsEscape();
+    else if (top) SCREENS[top].close();
+    // Last, so it never eats the press that was meant to close a window.
+    else dismissToast();
+  }
 });
 
 /** Measured, not guessed: a constant is wrong the first time the wallet wraps. */
@@ -178,7 +175,10 @@ function measureDock(): void {
   // padding sits below it, and a popup stopping short would clip the top row.
   // Closed it reserves nothing, or a hidden window would push every other one
   // up by the height of the space it is not occupying.
-  const gap = dock.hidden ? 0 : globalThis.innerHeight - dock.getBoundingClientRect().top;
+  // The dock's HOME, not wherever it has been dragged: reflowing every other
+  // window each time somebody nudges this one is not what dragging asked for.
+  const top = dock.getBoundingClientRect().top - windowOffset(dock).y;
+  const gap = dock.hidden ? 0 : globalThis.innerHeight - top;
   document.documentElement.style.setProperty('--dock-h', `${Math.max(0, Math.round(gap))}px`);
 }
 // The resize listener covers environments with no ResizeObserver, like jsdom.
@@ -195,6 +195,7 @@ initSaveData(
   (healed) => {
     const said = healingNote(healed);
     if (said) note(said);
+    syncParkedPanels();
     refreshRunPanels();
     onRunFocused();
     maybeShowWelcome();
@@ -338,19 +339,30 @@ function guideContext(): GuideCtx {
 // A binding is a table entry, so the screen that rebinds them is a screen.
 /** Every screen is the same pair, so its key is a TOGGLE and this is a table
  *  rather than eleven near-identical handlers. */
-const SCREENS: Record<string, { open: () => void; close: () => void; isOpen: () => boolean }> = {
-  inventory: { open: openInventory, close: closeInventory, isOpen: isInventoryOpen },
-  character: { open: () => openCharacter(), close: closeCharacter, isOpen: isCharacterOpen },
-  skills: { open: openSkills, close: closeSkills, isOpen: isSkillsOpen },
-  trade: { open: openTrade, close: closeTrade, isOpen: isTradeOpen },
-  craft: { open: openCraft, close: closeCraft, isOpen: isCraftOpen },
-  shop: { open: openShop, close: closeShop, isOpen: isShopOpen },
-  haul: { open: openHaul, close: closeHaul, isOpen: isHaulOpen },
-  crystals: { open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
-  stash: { open: openStash, close: closeStash, isOpen: isStashOpen },
-  history: { open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
-  save: { open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
+/** `el` is the window: what gets dragged, raised, and closed by Escape. */
+const SCREENS: Record<
+  string,
+  { el: string; open: () => void; close: () => void; isOpen: () => boolean }
+> = {
+  inventory: { el: 'dock', open: openInventory, close: closeInventory, isOpen: isInventoryOpen },
+  character: {
+    el: 'sheet',
+    open: () => openCharacter(),
+    close: closeCharacter,
+    isOpen: isCharacterOpen,
+  },
+  skills: { el: 'skills', open: openSkills, close: closeSkills, isOpen: isSkillsOpen },
+  trade: { el: 'trade', open: openTrade, close: closeTrade, isOpen: isTradeOpen },
+  craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
+  shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
+  haul: { el: 'haul', open: openHaul, close: closeHaul, isOpen: isHaulOpen },
+  crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
+  stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
+  history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
+  save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
 };
+
+initWindows(Object.fromEntries(Object.entries(SCREENS).map(([id, s]) => [id, s.el])));
 
 initKeys(game, {
   centre: centreCamera,

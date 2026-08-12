@@ -48,7 +48,7 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | screenshots, overflow and lockdown probes |
 | `npm run guide` | plays the opening with a real pointer |
-| `npm run drag` | 20s: the dock still reorders, with and without the bench |
+| `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
 table. `guide` is the tutorial test and takes minutes; it is not a general
@@ -438,11 +438,21 @@ is the exception — the confirm, the welcome and the Lampwright — where a scr
 is the point. The inventory is a window like the rest, centred and low, because
 every other screen is a verb applied to it.
 
+**A window is DRAGGED by its head, and ON TOP means touched last.**
+`src/ui/windows.ts` owns both. A drag writes `--wx` / `--wy` on the card and the
+transform is behind `.win--moved`, so the default position stays in CSS and a
+window nobody moved is where the layout put it; double-clicking the head puts a
+moved one back. Touching or opening one raises it within a band of z-indexes
+(`Z_BASE`, under the rail), and `topWindow()` is what Escape answers — with
+several open, a hand-written order shuts the one you are not looking at.
+
 **The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
 `src/ui/screenicons.ts`), bottom right. The button IDS are what the guided
 opening walks and what the shots lockdown probe asks for, so they outlive any
-rearrangement of it. Two of its buttons are its own: Hide parks every panel and
-survives its own press, and Fill asks the browser for the screen.
+rearrangement of it. It draws over every window and every scrim, since it is how
+a screen is opened and shut. Two of its buttons are its own: Hide parks every
+panel and survives its own press AND a reload — `GameState.parked` is a
+preference like a keybind — and Fill asks the browser for the screen.
 
 **The map is the GROUND, not a screen.** The dock resolves
 `override ?? screenHandler ?? base`; the run sets `base` on every phase change

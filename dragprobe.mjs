@@ -1,6 +1,7 @@
 /**
- * Does the dock still drag? Boots, stocks, opens the inventory, reorders one
- * slot onto another, and says whether it moved.
+ * Does the dock still drag, and does a window still go where you put it? Boots,
+ * stocks, reorders one dock slot onto another, then drags a window by its head
+ * and checks the stack it landed in.
  *
  * Exists because `npm run guide` answers this in minutes by playing real
  * descents, and a question this small should cost seconds — 20 of them. Run it
@@ -121,6 +122,50 @@ await page.waitForTimeout(300);
   }
 }
 
+// A window goes where you put it, and the map does not come along. The map is
+// ALREADY drag-to-look, so the one thing this can get wrong is panning the
+// ground under the card you meant to move.
+{
+  const head = page.locator('#craft .modal__head');
+  const box = await head.boundingBox();
+  const card = () => page.locator('#craft .modal__card').boundingBox();
+  const before = await card();
+  if (!box || !before) problems.push('the bench has no head to drag it by');
+  else {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 120, box.y + box.height / 2 + 60, { steps: 8 });
+    const panned = await page.evaluate(() =>
+      document.querySelector('.stage')?.classList.contains('stage--drag')
+    );
+    await page.mouse.up();
+    if (panned) problems.push('dragging a window panned the map underneath it');
+
+    const after = await card();
+    const moved = Math.round(after.x - before.x);
+    if (moved > -100) problems.push(`the bench moved ${moved}px, not about -120`);
+
+    // Double-click the head puts it back: the only way home for a window
+    // somebody has dragged into a corner.
+    await head.dblclick();
+    const home = await card();
+    if (Math.abs(home.x - before.x) > 2) problems.push('double-clicking the head did not reset it');
+  }
+}
+
+// On top is what you touched last, and the rail is over the lot of it.
+{
+  await page.evaluate(() => document.getElementById('open-stash')?.click());
+  await page.waitForTimeout(200);
+  const z = (id) =>
+    page.evaluate((n) => Number(getComputedStyle(document.getElementById(n)).zIndex), id);
+  if ((await z('stash')) <= (await z('craft'))) problems.push('the window opened last is not on top');
+  await page.locator('#craft .modal__head').click();
+  await page.waitForTimeout(100);
+  if ((await z('craft')) <= (await z('stash'))) problems.push('clicking a window did not raise it');
+  if ((await z('corner')) <= (await z('craft'))) problems.push('a window can cover the rail');
+}
+
 await browser.close();
 server.close();
 
@@ -129,4 +174,4 @@ if (problems.length) {
   for (const p of problems) console.error(`  ${p}`);
   process.exit(1);
 }
-console.log('drag: a dock slot reorders');
+console.log('drag: a dock slot reorders, and a window goes where you put it');

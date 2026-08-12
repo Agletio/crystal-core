@@ -192,8 +192,10 @@
 
   /* The bottom-right stack: skills, then the rail beneath them. One column, so
      a rail wrapping to a third row pushes the skills UP rather than under. */
+  /* Over every window and every scrim: the rail is how a screen is opened and
+     shut, so it is the one thing that may never end up underneath one. */
   .corner {
-    position: fixed; right: 16px; bottom: 22px; z-index: 22;
+    position: fixed; right: 16px; bottom: 22px; z-index: 34;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
   .rail {
@@ -666,7 +668,7 @@
      be a window covering the map like any other, and the whole point of this
      one is being open WHILE something else works on it. */
   .dock {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 18;
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 20; /* the band's floor; the stack raises it */
     width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
     padding: 10px 14px 12px;
   }
@@ -934,9 +936,21 @@
      what makes stacking two harmless. Each still stops above the dock, because
      the bench works ON the inventory it would otherwise cover. */
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
-  /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. */
-  .modal--stop { background: rgba(6,5,8,.86); pointer-events: auto; }
+  /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
+     the whole window band, since raising one on focus would otherwise let a
+     screen you touched earlier paint through the scrim. Still under the rail. */
+  .modal--stop { background: rgba(6,5,8,.86); pointer-events: auto; z-index: 32; }
   .modal__card { pointer-events: auto; }
+  /* A window is dragged by its HEAD, and the drag is a delta on top of whatever
+     the layout decided — so a window nobody moves is exactly where it was, and
+     a default that changes still reaches one that has been dragged. The class
+     gates the transform: a transform makes a card a containing block for
+     anything fixed inside it, and that is a price only a moved window pays.
+     Double-click the head to put it back. */
+  .modal:not(.modal--stop) .modal__head, .dock__head { cursor: move; }
+  .modal__card.win--moved { transform: translate(var(--wx, 0px), var(--wy, 0px)); }
+  .dock.win--moved { transform: translate(calc(-50% + var(--wx, 0px)), var(--wy, 0px)); }
+  body.windowdrag, body.windowdrag * { user-select: none; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }

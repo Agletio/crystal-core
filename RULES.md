@@ -27,11 +27,10 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part. There are currently eight:
-   what is left of the UI, then a seven-phase ladder that gives the game rooms
-   you arrive in and people standing in them. That ladder's order is
-   load-bearing and the roadmap says why. The balance pass is written up there
-   too and is not a phase until somebody asks.
+   open question, and do the WHOLE of it. Not part. There are currently seven,
+   and they are one ladder: the game gets rooms you arrive in and people
+   standing in them. That order is load-bearing and the roadmap says why. The
+   balance pass is written up there too and is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
@@ -138,6 +137,27 @@ markup with, so `.hp.xpbar` and not `.xpbar`.
 layer, card takes the pointer. `.modal--stop` is the short list that blocks:
 a confirm, the welcome, the Lampwright. Anything new is a window unless it is
 asking something.
+
+**ON TOP means touched last, and it is one mechanism.** `src/ui/windows.ts`
+holds the stack; touching a card raises it, opening one is touching it, and
+`topWindow()` is what Escape answers. A hand-written chain of `isXOpen()` checks
+is what this replaced, and with several windows open it shut the one you were
+not looking at. The z-indexes are a BAND from `Z_BASE`, under the rail — the
+rail is how a screen is opened and shut, so nothing may ever cover it — and
+`.modal--stop` sits above the whole band, or a scrim is a sheet you can read a
+raised screen through.
+
+**A window is dragged by its HEAD, and the drag is a DELTA.** `--wx` / `--wy` on
+the card, with the transform behind `.win--moved`: the default position stays in
+CSS, so a window nobody moved is exactly where the layout put it and a default
+that changes still reaches one that has been dragged. The class gates the
+transform because a transform makes a card a containing block for anything fixed
+inside it. A control on the head is a control, not a handle; a double-click on
+the head puts a moved window back; and the clamp keeps the head on screen,
+because there is nothing else on a window that moves it. Where a window sits is
+NOT saved — the good default is what most players never drag away from — but
+`--dock-h` is measured against the dock's HOME rather than where it has been
+dragged, or nudging one window reflows every other one.
 
 **The map is the GROUND, not a screen.** `override ?? screenHandler ?? base`.
 The run sets `base` on every phase change; a screen sets `screenHandler` when it
@@ -793,12 +813,13 @@ example: markup in `docs/index.html`, the Escape chain in `src/web.ts`,
 `guideContext()`'s `top`, and `CLOSES` in `src/ui/tutorial.ts`.
 
 **Adding a modal is four places, not one.** The markup in `docs/index.html`;
-the Escape chain in `src/web.ts`, which closes the topmost thing and must know
-where yours sits in that stack; `guideContext()`'s `top`, which is what lets a
-tutorial step point at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`,
-which is how `viaHeader` walks a player back OUT of it. Miss either of the last
-two and the guided opening rings something a popup is covering, which `npm run
-guide` reports as being trapped.
+the `SCREENS` table in `src/web.ts`, which is one row of open, close, is-open
+and the element id — Escape and the window stack both come off it, so neither is
+a fifth place; `guideContext()`'s `top`, which is what lets a tutorial step point
+at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`, which is how
+`viaHeader` walks a player back OUT of it. Miss either of the last two and the
+guided opening rings something a popup is covering, which `npm run guide`
+reports as being trapped.
 
 **Three save slots, one of them LIVE.** `crystal-core.slot` remembers which,
 `liveSlot()` is the default argument of `saveGame`/`loadGame`/`savedAt`/
@@ -954,6 +975,14 @@ changes what a CLICK means, and a mode that survived a reload would turn the
 first click of a session into something nobody asked for. None of them is in
 `GameState` and none of them should be.
 
+**A PREFERENCE is saved, and parking the panels is one.** `GameState.parked`
+sits beside `keys` and `potions` — a missing key takes its default, `heal()`
+needs nothing, and `resetGame` leaves all three alone, because a wipe is a new
+game rather than a new set of habits. Hide was module state and lasted until a
+reload, which made it a thing you did again every session. The test is whether
+it changes what a click MEANS: a mode does and may not be saved, a preference
+does not and should be.
+
 **Chaining descents is not a setting.** `looping()` is `!isGuided()` and
 nothing else — the guided opening is the only thing that suppresses it, because
 its later steps are written against a report still on screen. **Leave after
@@ -1103,7 +1132,7 @@ two-minute tool timeout will kill them mid-run:
 | `demo` | ~2min |
 | `shots` | ~2min — desktop only now, waiting out a whole first descent |
 | `guide` | ~2min — it plays about eleven descents, at `?fast=16` |
-| `drag` | ~20s — one dock reorder, with and without the bench open |
+| `drag` | ~20s — one dock reorder, and a window dragged by its head |
 
 None of them hangs. If one looks stuck it is `demo`, `shots` or `guide`, and the
 answer is to wait or run it in the background, never to assume it broke.

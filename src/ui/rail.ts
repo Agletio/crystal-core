@@ -31,17 +31,25 @@ function dress(button: HTMLElement, game: GameState): void {
   button.title = `${label} (${keyName(key)})`;
 }
 
-let parked = false;
+/** The save is where parking lives, so it survives a reload like a keybind. */
+let state: GameState | null = null;
+const parked = (): boolean => document.body.classList.contains('panelsoff');
 
 /** Panels away, map alone. One rail button stays, and it is the way back. */
 export function toggleParkedPanels(force?: boolean): void {
-  parked = force ?? !parked;
-  document.body.classList.toggle('panelsoff', parked);
+  const next = force ?? !parked();
+  document.body.classList.toggle('panelsoff', next);
+  if (state) state.parked = next;
 }
+
+/** After a load: another slot's game may have been playing with them away. */
+export const syncParkedPanels = (): void => {
+  if (state) document.body.classList.toggle('panelsoff', state.parked);
+};
 
 /** The opening cannot ring a button that is parked, so it un-parks first. */
 export const unparkPanels = (): void => {
-  if (parked) toggleParkedPanels(false);
+  if (parked()) toggleParkedPanels(false);
 };
 
 /** Reads `fullscreenElement`, never a boolean of its own: the browser leaves
@@ -52,6 +60,8 @@ export function toggleFullscreen(): void {
 }
 
 export function dressRail(game: GameState): void {
+  state = game;
+  syncParkedPanels();
   for (const button of document.querySelectorAll<HTMLElement>('.railbtn')) {
     dress(button, game);
   }

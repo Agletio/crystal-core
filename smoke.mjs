@@ -2378,6 +2378,60 @@ assert(
   'and the two buttons that stop the loop are still there'
 );
 
+// --- windows: on top is what you touched last ------------------------------
+// Escape used to close by a hand-written order, which with several open answers
+// a window you are not looking at. Last in the file, because it opens screens
+// over the dock and every check above picks dock items by position.
+{
+  const z = (id) => Number(window.getComputedStyle($(id)).zIndex);
+  // Opening one is noticed by a MutationObserver, delivered on a microtask —
+  // prompt in a browser, where it lands before the frame is painted.
+  const settled = () => Promise.resolve();
+
+  $('open-stash').click();
+  await settled();
+  $('open-history').click();
+  await settled();
+  assert(z('history') > z('stash'), 'the window opened last draws over the one before it');
+  assert(z('corner') > z('history'), 'and never over the rail, which is how a screen is shut');
+
+  $('stash')
+    .querySelector('.modal__card')
+    .dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0 }));
+  assert(z('stash') > z('history'), 'touching one puts it back on top');
+
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert(
+    $('stash').hidden === true && $('history').hidden === false,
+    'and Escape answers that one rather than the one opened last'
+  );
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert($('history').hidden === true, 'then the one under it');
+
+  // A question is above the whole band whatever has been raised into it, or
+  // the scrim is a sheet you can read a screen through.
+  assert(z('confirm') > z('stash'), 'a scrim covers every window, raised or not');
+}
+
+// --- the panels stay away ---------------------------------------------------
+// Module state lasted until a reload, which made Hide a thing you did again
+// every session.
+{
+  // The autosave is on a timer, and a tab going away is what it listens for.
+  const saved = () => {
+    window.dispatchEvent(new window.Event('pagehide'));
+    return JSON.parse(window.localStorage.getItem('crystal-core.save.3') ?? '{}');
+  };
+  $('ui-hide').click();
+  assert(document.body.classList.contains('panelsoff'), 'Hide parks the panels');
+  assert(saved().parked === true, 'and the save remembers it, like a keybind');
+  $('ui-hide').click();
+  assert(
+    !document.body.classList.contains('panelsoff') && saved().parked === false,
+    'pressing it again brings them back'
+  );
+}
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();
