@@ -32,6 +32,7 @@ import { categoryIcon, skillIcon } from './icons';
 import { disc, gem, stud, svgEl } from './webart';
 import { skillCatId, skillNodeId, skillRowId } from './tutorial';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { nodeCard } from './glossary';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { addSkillXp, equipSkill, equippedSkill, mainSkillId, skillProgress, slotForSkill, xpToNext } from '../sim/character';
@@ -314,7 +315,7 @@ function cost(node: SkillNodeDef): string {
   const value = node.grants?.manaMultiplier;
   if (value === undefined) return '';
   const said = GRANT_BY_ID.manaMultiplier?.say?.(value);
-  return said ? `\n${said}.` : '';
+  return said ? `${said}.` : '';
 }
 
 function renderWeb(): void {
@@ -455,9 +456,11 @@ function renderWeb(): void {
               ? 'available'
               : 'no points left';
       const choice = node.choices
-        ? `\n${picked ? `chosen: ${picked.name} — ${picked.description}` : 'click to choose'}`
+        ? picked
+          ? `Chosen: ${picked.name} — ${picked.description}`
+          : 'Click to choose.'
         : '';
-      return `${node.name}  (${state})\n${node.description}${cost(node)}${choice}`;
+      return nodeCard(node.name, state, [node.description, cost(node), choice]);
     });
 
     const act = () => {

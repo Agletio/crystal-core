@@ -25,6 +25,7 @@ import {
 import { CENTRE } from '../trees/node';
 import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '../sim/character';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { nodeCard } from './glossary';
 import { disc, gem, stud, svgEl } from './webart';
 import { ask } from './confirm';
 import { note } from './history';
@@ -237,9 +238,7 @@ function renderWeb(): void {
           : spare > 0
             ? 'available'
             : 'no points left';
-      const said = saidBy(node);
-      return `${node.name}  (${state})\n${node.description}` +
-        (said.length ? `\n${said.join('\n')}` : '');
+      return nodeCard(node.name, state, [node.description, ...saidBy(node)]);
     });
 
     const act = () => {

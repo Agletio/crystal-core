@@ -119,6 +119,8 @@ import {
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
 import { describeStatLine } from './mod-text';
+import { KEYWORDS, KEYWORD_BY_GRANT, bannedIn, keywordsIn } from './keywords';
+import type { KeywordDef } from './keywords';
 import { SKILL_BEHAVIOURS } from './sim/skills';
 import {
   GRANTS,
@@ -3783,6 +3785,130 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
     'and the lines that are voice rather than mechanics are left alone',
     'flavour went missing'
   );
+}
+
+// ===========================================================================
+rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?');
+
+// A keyword is only worth anything if it is the ONLY way the game says that
+// thing. Learn what Pierce means once and every later card saying +1 Pierce is
+// free to read — unless something somewhere still says "passes through", in
+// which case the player has learnt one of two vocabularies.
+{
+  // Everything a player reads that could name a mechanism. Modifier lines are
+  // in it because "increased" and "more" are keywords, and a rolled line is
+  // where most players meet them.
+  const lines: { where: string; text: string }[] = [];
+  const read = (where: string, text: string): void => {
+    lines.push({ where, text });
+  };
+
+  for (const tree of BUILT_TREES) {
+    for (const node of tree.nodes) {
+      read(`${tree.spec.skillId}/${node.id}`, node.description);
+      for (const choice of node.choices ?? []) {
+        read(`${tree.spec.skillId}/${node.id}/${choice.id}`, choice.description);
+      }
+    }
+  }
+  for (const trade of TRADES) {
+    read(`${trade.spec.id}`, trade.spec.blurb);
+    for (const node of trade.nodes) read(`${trade.spec.id}/${node.id}`, node.description);
+  }
+  for (const skill of PLAYER_SKILLS) read(`skill/${skill.id}`, skill.description);
+  for (const c of CURRENCIES) read(`currency/${c.id}`, c.description);
+  for (const q of CRYSTAL_QUESTS) read(`quest/${q.id}`, q.detail);
+  for (const g of GRANTS) read(`grant/${g.id}`, g.what);
+  for (const def of ALL_MODS) {
+    for (const s of def.tiers[0]?.stats ?? []) {
+      read(`mod/${def.id}`, describeStatLine({ ...s, value: s.range[0] } as never));
+    }
+  }
+
+  // 1. Nothing says it the old way.
+  const wrong = lines.flatMap(({ where, text }) =>
+    bannedIn(text).map((b) => `${where} says "${b.said}" — use ${b.use}`)
+  );
+  line(`  ${lines.length} lines read, ${KEYWORDS.length} keywords defined`);
+  check(
+    wrong.length === 0,
+    'no line says in its own words what a keyword already says',
+    wrong.join('; ')
+  );
+
+  // 2. Every keyword is actually MET. Vocabulary nobody runs into is a
+  //    glossary entry rather than a word, and it goes stale unread.
+  const met = new Set(keywordsIn(lines.map((l) => l.text)).map((k) => k.id));
+  const unmet = KEYWORDS.filter((k) => !met.has(k.id));
+  check(
+    unmet.length === 0,
+    'and every keyword is one the player actually runs into',
+    unmet.map((k) => k.name).join(', ')
+  );
+
+  // 3. A node handing over a keyword's switch NAMES it. This is the half that
+  //    makes "+1 Pierce" compulsory rather than a style anyone may drop.
+  const silent: string[] = [];
+  const names = (text: string, keyword: KeywordDef): boolean =>
+    keywordsIn([text]).some((k) => k.id === keyword.id || k.kin === keyword.id);
+
+  for (const web of [
+    ...BUILT_TREES.map((t) => ({ id: t.spec.skillId, nodes: t.nodes })),
+    ...TRADES.map((t) => ({ id: t.spec.id, nodes: t.nodes })),
+  ]) {
+    for (const node of web.nodes) {
+      for (const id of Object.keys(node.grants ?? {})) {
+        const keyword = KEYWORD_BY_GRANT[id];
+        if (keyword && !names(node.description, keyword)) {
+          silent.push(`${web.id}/${node.id} grants ${id} without saying ${keyword.name}`);
+        }
+      }
+    }
+  }
+  check(
+    silent.length === 0,
+    'and a node handing over a keyword’s switch says the keyword',
+    silent.join('; ')
+  );
+
+  // 4. So does the switch's own generic line, which is what a unique with no
+  //    `say` falls back to.
+  const mute = GRANTS.filter((g) => {
+    const keyword = KEYWORD_BY_GRANT[g.id];
+    return keyword && !names(g.what, keyword);
+  });
+  check(
+    mute.length === 0,
+    'and so does the switch’s own description in GRANTS',
+    mute.map((g) => g.id).join(', ')
+  );
+
+  // 5. A definition with a figure behind it says the figure — the same rule as
+  //    every other line, applied to the place the figure is explained.
+  const QUANTIFIED = [
+    'projectile', 'pierce', 'arc', 'spread', 'critical',
+    'resistance', 'armour', 'starved', 'charge', 'increased', 'more',
+  ];
+  const vague = KEYWORDS.filter((k) => QUANTIFIED.includes(k.id) && !/\d/.test(k.means));
+  check(
+    vague.length === 0,
+    'and a definition with a number behind it says the number',
+    vague.map((k) => k.name).join(', ')
+  );
+
+  // 6. No grant is claimed twice, and nothing claims a grant that is gone.
+  const claimed = KEYWORDS.flatMap((k) => k.grants ?? []);
+  const twice = claimed.filter((id, i) => claimed.indexOf(id) !== i);
+  const ghosts = claimed.filter((id) => !GRANT_BY_ID[id]);
+  check(
+    twice.length === 0 && ghosts.length === 0,
+    'and every grant a keyword claims exists, and belongs to one keyword',
+    `${twice.join(', ')} / ${ghosts.join(', ')}`
+  );
+
+  // What the player is shown, so a session can read the vocabulary without
+  // opening the table.
+  for (const k of KEYWORDS) line(`  ${k.name.padEnd(15)}${k.means.slice(0, 88)}`);
 }
 
 // ===========================================================================

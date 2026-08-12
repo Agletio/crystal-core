@@ -16,8 +16,8 @@ export const ALCHEMIST: TradeSpec = {
   id: 'alchemist',
   name: 'Alchemist',
   blurb:
-    'A flask carries a buff while it runs, and its charges come back during a ' +
-    'descent — so 2 charges are a cooldown rather than the whole budget.',
+    'A flask carries a buff while it runs, and its Charges come back during a ' +
+    'descent — so 2 Charges are a cooldown rather than the whole budget.',
   prefix: 'alc',
   // Nothing here is useless without something else: every notable is worth its
   // point alone, and the spoke is the only thing making one cost more.
@@ -78,13 +78,13 @@ export const ALCHEMIST: TradeSpec = {
         {
           id: 'alc_etched',
           name: 'Etched Glass',
-          description: 'While a flask is running you have +8% critical chance.',
+          description: 'While a flask is running you have +8% Critical Chance.',
           grants: { potionCrit: 8 },
         },
         {
           id: 'alc_facets',
           name: 'Cut Facets',
-          description: 'And a further +12% while one runs.',
+          description: 'And a further +12% Critical Chance while one runs.',
           grants: { potionCrit: 12 },
         },
       ],
@@ -122,14 +122,14 @@ export const ALCHEMIST: TradeSpec = {
         {
           id: 'alc_still',
           name: 'The Still',
-          description: 'Each flask regains a charge every 14.3s of a descent.',
+          description: 'Each flask regains a Charge every 14.3s of a descent.',
           grants: { chargeRegen: 0.07 },
         },
         {
           id: 'alc_cascade',
           name: 'Cascade',
           description:
-            'Another charge every 12.5s on its own, and one every 6.7s with ' +
+            'Another Charge every 12.5s on its own, and one every 6.7s with ' +
             'the Still in front of it.',
           grants: { chargeRegen: 0.08 },
         },

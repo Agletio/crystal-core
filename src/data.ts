@@ -1458,6 +1458,20 @@ export const MANA = {
 };
 
 /**
+ * What the projectile keywords are worth. `KEYWORDS` quotes these and
+ * `SKILL_BEHAVIOURS.projectile` acts on them, so glossary and sim cannot
+ * drift. Area of Effect reaches none: it would turn +1 Projectile into a room.
+ */
+export const PROJECTILE = {
+  spread: 3.5, // how far a Projectile past the first looks, from your target
+  arc: 4.5, // how far an Arc leaps, from the last thing hit
+  pierce: 4.5, // how far past the target a Pierce carries
+  corridor: 0.85, // half-width of the corridor a Pierce searches
+  pierceDamage: 0.7, // what a pierced enemy takes unless a talent says otherwise
+  arcDamage: 0.7, // and what an arced-to one takes
+};
+
+/**
  * A trade is the part of a character that is not the skill, and its points are
  * their own currency: funded by CHARACTER level, so walking one never competes
  * with a skill tree for the same point.
@@ -2343,7 +2357,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'armour', form: 'inc', range: [-40, -30] },
       { stat: 'rarity', form: 'flat', range: [18, 30] },
     ],
-    grants: { extraTargets: 2, extraTargetDamage: 1, extraFields: 1 },
+    grants: { extraTargets: 2, extraFields: 1 },
     gate: { zone: 'prismatic', minPower: 3 },
   },
   // The Seam, and the only piece that asks for both worlds at once.
@@ -2695,7 +2709,7 @@ export const SKILLS: SkillDef[] = [
     // projectile behaviour sums the two.
     id: 'arc',
     name: 'Lightning Arc',
-    description: 'A strike that leaps to 2 more, for 60% of the damage each.',
+    description: 'A strike with 2 Arcs, each for 60% of the damage.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -2717,7 +2731,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Creeping Blight',
     category: 'spell',
     description:
-      'Drops a circle of poison on the target for 10s. No target limit — ' +
+      'Drops a Cloud of Poison on the target for 10s. No target limit — ' +
       'Area of Effect is what makes it hit more.',
     // 'occult' is a damage GROUP and must not appear here. Skill tags ride
     // along in every damage pass, so a stat line tagged 'occult' would scale
@@ -2748,7 +2762,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Killing Surge',
     category: 'passive',
     description:
-      'Critical hits deal no extra damage. Landing one grants 35% more damage for 5 seconds.',
+      'A Critical deals no extra damage. Landing one grants 35% more damage for 5 seconds.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],

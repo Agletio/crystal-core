@@ -1130,6 +1130,21 @@
   .tip__note { margin-top: 7px; font-size: 10px; color: var(--dust); font-style: italic; }
   .tip__note + .tip__note { margin-top: 2px; }
 
+  /* A KEYWORD. One word per mechanism, and one colour for it wherever it is
+     written — the point is recognising it on a card you have never seen. */
+  .kw { color: var(--quartz); }
+  .tip__glossary .kw { font-weight: 600; }
+  .tip__kw { font-size: 10px; color: var(--dust); line-height: 1.45; }
+  .tip__kw + .tip__kw { margin-top: 4px; }
+
+  /* A tree or trade node. The state rides on the name's line rather than
+     under it: it is one word and it is never the thing you came to read. */
+  .tip__card--node { border-left-color: var(--seam-lit); }
+  .tip__card--node > .tip__name { color: var(--chalk); }
+  .tip__state { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+                color: var(--dust); margin-left: 7px; }
+  .tip__body { margin-top: 4px; }
+
   /*
    * A node is three stacked bitmaps: a dark casing, the stone itself, and a
    * highlight on its upper left. Studs — a disc for a minor, a cut gem for a

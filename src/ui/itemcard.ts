@@ -11,6 +11,7 @@ import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
 import { FAMILY_BY_ID, UNIQUE_BY_ID } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
+import { glossaryOf, keywordLine } from './glossary';
 import type { Item, RolledMod } from '../types';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -20,12 +21,15 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-/** A rolled value and the words around it, kept apart. */
+/** A rolled value and the words around it, kept apart — and the words carry
+ *  the keywords, since "increased" and "more" are the two that decide what a
+ *  second copy of a line is worth. */
 export function statLine(line: RolledMod['stats'][number]): HTMLElement {
   const { value, label } = statParts(line);
   const row = el('div', 'rolled');
   row.append(el('span', 'rolled__v', value));
-  row.append(el('span', 'rolled__k', label));
+  const words = keywordLine(label, 'rolled__k');
+  row.append(words);
   return row;
 }
 
@@ -124,12 +128,19 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   // a currency refusing it for no reason the card gives.
   if (unique) {
     const box = group('it does this');
+    const grants: string[] = [];
     for (const [id, value] of Object.entries(unique.grants ?? {})) {
       const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
-      if (said) box.append(el('div', 'tip__grant', said));
+      if (said) {
+        grants.push(said);
+        box.append(keywordLine(said, 'tip__grant'));
+      }
     }
     box.append(el('div', 'tip__none', 'Fixed. Nothing at a bench can change it.'));
     card.append(box);
+    // A named piece holds no modifiers, so there is room for the vocabulary.
+    const glossary = glossaryOf(grants);
+    if (glossary) card.append(glossary);
     card.append(el('div', 'tip__flavour', unique.flavour));
   } else if (item.mods.length === 0) {
     card.append(el('div', 'tip__none', 'No modifiers'));

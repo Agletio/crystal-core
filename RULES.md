@@ -27,11 +27,12 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part. **As of `e811da6` there are
-   none** — every phase of both batches has landed — so this step currently
-   ends the session under the first of the three below rather than starting
-   work. The roadmap names the balance pass as what is most likely to be asked
-   for next; it is not a phase until somebody asks.
+   open question, and do the WHOLE of it. Not part. **There are none right
+   now** — both batches landed, and the vocabulary pass after them was asked
+   for directly rather than written down — so this step currently ends the
+   session under the first of the three below rather than starting work. The
+   roadmap names the balance pass as what is most likely to be asked for next;
+   it is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
@@ -145,6 +146,43 @@ not covered: the Lampwright says what he sees, a unique's own line is a line
 about a dead man, an encounter's herald announces an arrival the kill readout
 counts a second later, and none of them is a stat. The test is whether a player
 could act differently knowing the figure — if yes, the figure goes in.
+
+**One word per mechanism, and it is the ONLY word.** `KEYWORDS` in
+`src/keywords.ts` is the vocabulary — Projectile, Pierce, Arc, Spread, Repeat,
+Burst, Splash, Cloud, Ailment and its three kinds, Area of Effect, increased,
+more, Critical, Resistance, Armour, Starved, Charge. A keyword is worth
+something only because learning it once pays off everywhere: the day one talent
+says "+1 Arc" and another says "leaps to one more enemy", the player has learnt
+one of two vocabularies and the whole idea is gone. `BANNED` is every phrasing
+that has been retired and the keyword that replaced it, and the demo sweeps
+every tree node, trade node, skill, currency, quest, modifier line and
+`GrantDef.what` for one. It also holds a node handing over a keyword's SWITCH
+to naming that keyword — "+1 Pierce" is compulsory, not a style.
+
+**A definition carries its own numbers, out of the table the sim reads.**
+`KeywordDef.means` interpolates `PROJECTILE`, `DEFENCE`, `MANA` and `POTIONS`
+rather than quoting a figure by hand — the same discipline as `GrantDef.say`,
+and for the same reason: a glossary that repeats a constant is a glossary that
+lies the first time the constant moves.
+
+**A keyword is shown, never hidden behind a second hover.** `.tip` is
+`pointer-events: none` and that rule outranks this one, so a word inside a
+tooltip can never be hovered again. `src/ui/glossary.ts` marks it where it
+appears and prints what it means at the bottom of the SAME card. A keyword the
+player has to go and look up somewhere else is a keyword they will not learn,
+and on a phone there is no hover to look it up with.
+
+**Every Projectile lands for full damage.** The falloff on extra Projectiles is
+gone, and with it the notable that removed it — a keyword promising a thing is
+thrown promises the thing lands. Pierce and Arc keep theirs (70%,
+`PROJECTILE.pierceDamage` / `.arcDamage`) because those are the same shot
+carrying on, and each has a notable that buys it back to full.
+
+**Widening a Spread is worth nothing on its own.** Measured: with N extra
+Projectiles there are almost always N enemies inside the bare 3.5 tiles, so a
+wider radius changes which enemies only if the PICK changes too. `spreadFar`
+is why Scattershot is a notable rather than a dead point, and the demo's
+"every notable changes the cast" check is what caught it.
 
 **The demo sweeps it**, over every tree node, every currency, every quest and
 every aura: a line with no digit in it fails. Three things are deliberately out

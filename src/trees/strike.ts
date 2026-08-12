@@ -27,8 +27,8 @@ const BRANCHES: Branch[] = [
       id: 'st_sweep',
       name: 'Sweep',
       description:
-        'The swing deals 45% damage to everything in reach instead of 10%. ' +
-        'Strike stops being aimed at one enemy and starts clearing a circle.',
+        'Splash deals 45% of the swing instead of 10%. Strike stops being aimed ' +
+        'at one enemy and starts clearing a circle.',
       grants: { splashMultiplier: 0.45, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -37,7 +37,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_widearc',
           name: 'Wide Arc',
-          description: 'The swing reaches 40% further.',
+          description: 'Splash reaches 40% further.',
           grants: { splashRadius: 1.4, manaMultiplier: 1.08 },
         },
       },
@@ -46,7 +46,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_carve',
           name: 'Carve',
-          description: 'The swing deals 70% to everything in reach.',
+          description: 'Splash deals 70% of the swing.',
           grants: { splashMultiplier: 0.7, manaMultiplier: 1.08 },
         },
       },
@@ -56,16 +56,16 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_whirlwind',
           name: 'Whirlwind',
-          description: 'Everything in reach takes 100% of the swing, and reach grows 25%.',
+          description: 'Splash deals 100% of the swing, and reaches 25% further.',
           grants: { splashMultiplier: 1, splashRadius: 1.25, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
-      { text: '+5% increased swing reach', grants: { splashRadius: 1.05 } },
+      { text: '+5% increased Splash reach', grants: { splashRadius: 1.05 } },
       COMMON[1],
       COMMON[0],
-      { text: '+4% increased swing reach', grants: { splashRadius: 1.04 } },
+      { text: '+4% increased Splash reach', grants: { splashRadius: 1.04 } },
     ],
   },
   {
@@ -75,8 +75,8 @@ const BRANCHES: Branch[] = [
       id: 'st_rend',
       name: 'Rend',
       description:
-        'Strike can no longer critically strike. A swing that would have crit ' +
-        'instead leaves the target bleeding for 240% of the hit over 5s.',
+        'Strike can no longer Critically strike. A swing that would have ' +
+        'instead leaves a Bleed worth 240% of the hit over 5s.',
       grants: { critAilment: { multiplier: 2.4, seconds: 5 } },
     },
     twigs: [
@@ -105,7 +105,7 @@ const BRANCHES: Branch[] = [
           id: 'st_butchery',
           name: 'Butchery',
           description:
-            'A bleed that ticks critically opens the same wound on everything ' +
+            'A Bleed ticking Critically opens the same wound on everything ' +
             'within 2 tiles.',
           grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
         },
@@ -124,7 +124,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_onslaught',
       name: 'Onslaught',
-      description: 'Strike swings +1 more time at what you aimed at, and stops once it is down.',
+      description: 'Strike gains +1 Repeat.',
       grants: { doubleStrike: 1, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -133,7 +133,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_flurry',
           name: 'Flurry',
-          description: 'And +1 swing on top of that, for three.',
+          description: 'And +1 Repeat on top of that, for three swings.',
           grants: { doubleStrike: 1, manaMultiplier: 1.15 },
         },
       },
@@ -142,7 +142,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_frenzy',
           name: 'Frenzy',
-          description: 'And +2 more swings beyond that.',
+          description: 'And +2 more Repeats beyond that, for five swings.',
           grants: { doubleStrike: 2, manaMultiplier: 1.15 },
         },
       },
@@ -156,7 +156,7 @@ const BRANCHES: Branch[] = [
       id: 'st_shockwave',
       name: 'Shockwave',
       description:
-        'Every enemy the swing lands on takes a burst, dealing 50% damage within ' +
+        'Every enemy the swing lands on Bursts, for 50% of the damage within ' +
         '1.6 tiles. Strike gains the Area tag.',
       grants: { explode: { radius: 1.6, multiplier: 0.5 }, addTags: ['area'], manaMultiplier: 1.15 },
     },
@@ -166,7 +166,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_faultline',
           name: 'Faultline',
-          description: 'The burst covers 45% more ground.',
+          description: 'The Burst covers 45% more ground.',
           grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
@@ -176,7 +176,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_upheaval',
           name: 'Upheaval',
-          description: 'The burst carries +50% of the damage, for all of it.',
+          description: 'The Burst carries +50% of the damage, for all of it.',
           grants: { explodeMultiplierAdd: 0.5, manaMultiplier: 1.08 },
         },
       },
@@ -186,14 +186,14 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_aftershock',
           name: 'Aftershock',
-          description: 'An enemy killed by Strike bursts, dealing 60% damage within 2.2 tiles.',
+          description: 'An enemy killed by Strike Bursts, for 60% of the damage within 2.2 tiles.',
           grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger burst', grants: { explodeRadius: 1.04 } },
+      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
       COMMON[0],
       { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
     ],
@@ -252,7 +252,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_cruelty',
       name: 'Cruelty',
-      description: 'Strike deals 25% more damage to enemies that are already bleeding.',
+      description: 'Strike deals 25% more damage to enemies carrying an Ailment.',
       grants: { moreVsAiling: 0.25 },
     },
     twigs: [
@@ -338,7 +338,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_focus',
     name: 'Killer Instinct',
-    description: 'Strike criticals +11% more often, for +45% critical damage.',
+    description: 'Strike has +11% Critical Chance and +45% Critical Damage.',
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {

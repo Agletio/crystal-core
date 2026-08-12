@@ -16,8 +16,26 @@ intent, not tuning — a measurement beats them. A landed phase is DELETED from
 here, so before starting one, `git fetch` and check you are on the tip of the
 branch: a phase you can still see in a stale clone may already be built.
 
-**What the last three phases turned out to know that their writing did not.**
+**What the last four phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **Widening a Spread is worth nothing on its own.** The first version of
+  Scattershot only granted `spreadRange: 1.6`, and the demo's "every notable
+  changes the cast" check failed it flat: with 1–4 extra Projectiles there are
+  almost always that many enemies inside the bare 3.5 tiles, so a wider radius
+  never changes which enemies are picked. It needed `spreadFar` — turn the pick
+  around — before the wider radius bought anything at all. Any future "reaches
+  further" node on a picker with a target CAP has the same hole in it.
+- **A keyword has to be shown where the word is, not behind a second hover.**
+  `.tip` is `pointer-events: none`, so a glossary that needed hovering the word
+  inside a tooltip was never possible. Marking the word and printing the
+  definitions at the foot of the same card is not a compromise: it is the only
+  version that works on a phone.
+- **The vocabulary pass cost the extra-Projectile falloff.** Making Split Cast
+  full damage retired `extraTargetDamage`, which retired Focused Volley, which
+  is why the Salvo branch has a new third notable. A keyword that promises a
+  thing is thrown has to promise it lands, and a notable existing only to undo
+  a falloff was the tell that the falloff was one number too many.
 
 - **Adding an element to every monster did not change what a modifier is
   worth.** "of Cinders" always multiplied a hit by (1 + share/100) and still
@@ -52,9 +70,16 @@ Kept here because the next thing built on top of them will want it.
   requirement needs a wider roster than three skills to tell.
 
 **Where the phases came from.** Two batches of asks, dictated by the user in
-one go each, plus a few out of design conversations. All of them are built. The
-bracketed numbers in the git log — [user 8], [user 10] — are the user's own
-numbering within a batch, kept so a commit can be matched back to the ask.
+one go each, plus a few out of design conversations, plus the vocabulary pass
+asked for directly after them. All of them are built. The bracketed numbers in
+the git log — [user 8], [user 10] — are the user's own numbering within a
+batch, kept so a commit can be matched back to the ask.
+
+**The vocabulary is a place new work lands.** `KEYWORDS` covers the three trees
+and the two trades as they stand. A new skill, a new trade or a new modifier
+either uses a word that is already in the table or adds one — and the demo's
+`ONE WORD PER MECHANISM` sweep is what makes that not optional. A bow skill
+saying "+5 Arc" is the case the whole thing was built for.
 
 ---
 
@@ -72,11 +97,12 @@ the game is deliberately soft everywhere.
 
 **What it would read.** Eight `gauge()` lines in `npm run demo` — measured,
 printed, never asserted, and each carrying the figure that was wanted beside the
-figure it got. They are the before. Taken at `e811da6`, with 414 checks passing:
+figure it got. They are the before. Taken after the vocabulary pass, with 420
+checks passing:
 
 ```
 the Seam is -0.1% over the hardest single world     — wanted: same class within 15%
-a trade moves the deep-end kill rate 3.90–7.86/s    — no pairing should be the only one
+a trade moves the deep-end kill rate 3.90–7.50/s    — no pairing should be the only one
 1% to 33% of swings go unpaid                       — wanted: 5%–50%
 a starved cast lands for 50% of your damage
 a naked character walks out on 53% life             — wanted: under 70%
@@ -84,6 +110,12 @@ one blank crystal after the first clear: 18/24      — wanted: above 60%
 every band is clearable in gear the band below drops
 the deep end: 1253 danger, 4/12 through             — wall under 4/12, ceiling at 0
 ```
+
+Every one of them is where it was at `e811da6` except the trade's top kill rate,
+7.86 → 7.50, which is the Splintered Eye losing `extraTargetDamage` — its two
+Projectiles were already at full damage through that grant and now are through
+the rule. Nothing about the tree changes these: `ladderCharacter` spends no
+tree points.
 
 The deep end at 4/12 is the one sitting exactly on its own wall line, and the
 unpaid-swing spread reaching 33% is the widest of these. Neither is a bug.
@@ -216,11 +248,11 @@ without being asked.
   the answer has moved.
 - **Blight, Strike and Fireball are not the same game.** The old note here said
   Blight cleared the top 12/12 against Strike's 3/12. That number is dead;
-  `TRADE RULES` now measures all three at the deep end every run, and at
-  `e811da6` it reads **Fireball 7.62, Strike 4.37, Blight 3.90 kills/s** with no
-  trade — so the ordering has entirely inverted since, and Fireball is now the
-  outlier at roughly twice Blight. Do not act on it outside the balance pass:
-  it is three skills, and the demo prints it fresh on every run.
+  `TRADE RULES` now measures all three at the deep end every run, and it reads
+  **Fireball 7.50, Strike 4.37, Blight 3.90 kills/s** with no trade — so the
+  ordering has entirely inverted since, and Fireball is now the outlier at
+  roughly twice Blight. Do not act on it outside the balance pass: it is three
+  skills, and the demo prints it fresh on every run.
 - More tutorial steps for systems added since the opening was written: the
   collection screen, the bench's crystals column, sell mode, the counter.
 - **A third way to get rid of a piece.** Selling is now a mode with a buy-back

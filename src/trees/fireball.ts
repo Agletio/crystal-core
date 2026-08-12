@@ -35,8 +35,8 @@ const BRANCHES: Branch[] = [
       id: 'fb_kindling',
       name: 'Kindling',
       description:
-        'Fireball can no longer critically strike. A cast that would have crit ' +
-        'instead sets the target alight for 260% of the hit over 4s.',
+        'Fireball can no longer Critically strike. A cast that would have ' +
+        'instead leaves a Burn worth 260% of the hit over 4s.',
       grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
     },
     twigs: [
@@ -65,13 +65,13 @@ const BRANCHES: Branch[] = [
           id: 'fb_wildfire',
           name: 'Wildfire',
           description:
-            'A burn that ticks critically sets everything within 2 tiles alight as well.',
+            'A Burn ticking Critically lays the same Burn on everything within 2 tiles.',
           grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
-      { text: '+6% increased Burning Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: '+6% increased Burn Damage', grants: { ailmentMultiplier: 1.06 } },
       { text: '+5% increased Burn Duration', grants: { ailmentDuration: 1.05 } },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
@@ -84,8 +84,8 @@ const BRANCHES: Branch[] = [
       id: 'fb_detonation',
       name: 'Detonation',
       description:
-        'Fireball bursts where it lands, dealing 55% damage to everything within ' +
-        '1.8 tiles. Fireball gains the Area tag.',
+        'Fireball Bursts where it lands, for 55% of the damage within 1.8 ' +
+        'tiles. Fireball gains the Area tag.',
       grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'], manaMultiplier: 1.15 },
     },
     twigs: [
@@ -94,7 +94,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_concussive',
           name: 'Concussive Blast',
-          description: 'The burst covers 45% more ground.',
+          description: 'The Burst covers 45% more ground.',
           grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
@@ -104,7 +104,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_fuelair',
           name: 'Fuel-Air Charge',
-          description: 'The burst carries +45% of the damage, for all of it.',
+          description: 'The Burst carries +45% of the damage, for all of it.',
           grants: { explodeMultiplierAdd: 0.45, manaMultiplier: 1.08 },
         },
       },
@@ -113,16 +113,16 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 1 },
         notable: {
           id: 'fb_chainreaction',
-          name: 'Chain Reaction',
+          name: 'Cascade',
           description:
-            'An enemy killed by Fireball bursts, dealing 60% damage within 2.2 tiles.',
+            'An enemy killed by Fireball Bursts, for 60% of the damage within 2.2 tiles.',
           grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger burst', grants: { explodeRadius: 1.04 } },
+      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
       COMMON[0],
       { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
     ],
@@ -133,8 +133,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_splitcast',
       name: 'Split Cast',
-      description:
-        'Fireball strikes one additional enemy near the target, for 70% damage.',
+      description: 'Fireball throws +1 Projectile.',
       grants: { extraTargets: 1, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -142,9 +141,11 @@ const BRANCHES: Branch[] = [
         minors: 3,
         notable: {
           id: 'fb_focused',
-          name: 'Focused Volley',
-          description: 'Additional targets take full damage instead of 70%.',
-          grants: { extraTargetDamage: 1, manaMultiplier: 1.08 },
+          name: 'Scattershot',
+          description:
+            'Projectiles Spread 60% further, and take the enemies furthest ' +
+            'into it rather than the nearest.',
+          grants: { spreadRange: 1.6, spreadFar: true, manaMultiplier: 1.08 },
         },
       },
       {
@@ -152,7 +153,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_volley',
           name: 'Volley',
-          description: 'Fireball strikes +1 enemy on top of that, for 70% damage.',
+          description: 'Fireball throws +1 Projectile on top of that, for three.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
         },
       },
@@ -162,7 +163,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_barrage',
           name: 'Barrage',
-          description: 'Fireball strikes two more enemies near the target, for 70% damage.',
+          description: 'And +2 more Projectiles beyond that, for five.',
           grants: { extraTargets: 2, manaMultiplier: 1.15 },
         },
       },
@@ -175,9 +176,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_piercing',
       name: 'Piercing Flame',
-      description:
-        'Fireball passes through one enemy for 70% damage, carrying on to ' +
-        'whatever is behind it.',
+      description: 'Fireball gains +1 Pierce.',
       grants: { pierce: 1, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -186,7 +185,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_momentum',
           name: 'Momentum',
-          description: 'Enemies pierced take full damage instead of 70%.',
+          description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
         },
       },
@@ -195,7 +194,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overpen',
           name: 'Overpenetration',
-          description: 'Fireball passes through one more enemy, also for 70%.',
+          description: 'Fireball gains +1 more Pierce, for two.',
           grants: { pierce: 1, manaMultiplier: 1.15 },
         },
       },
@@ -208,9 +207,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_arcing',
       name: 'Arcing Flame',
-      description:
-        'Fireball leaps from the enemy it hits to one more within 4.5 tiles, ' +
-        'for 70% damage.',
+      description: 'Fireball gains +1 Arc.',
       grants: { chains: 1, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -219,7 +216,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_rebound',
           name: 'Rebound',
-          description: 'Leaps deal full damage instead of 70%.',
+          description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
         },
       },
@@ -229,7 +226,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_leaping',
           name: 'Leaping Flame',
-          description: 'Fireball leaps one more time, also for 70%.',
+          description: 'Fireball gains +1 more Arc, for two.',
           grants: { chains: 1, manaMultiplier: 1.15 },
         },
       },
@@ -242,7 +239,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_immolate',
       name: 'Immolate',
-      description: 'Fireball deals 25% more damage to enemies that are already burning.',
+      description: 'Fireball deals 25% more damage to enemies carrying an Ailment.',
       grants: { moreVsAiling: 0.25 },
     },
     twigs: [
@@ -327,7 +324,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_focus',
     name: 'Sharpened Focus',
-    description: 'Fireball criticals +11% more often, for +45% critical damage.',
+    description: 'Fireball has +11% Critical Chance and +45% Critical Damage.',
     stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
   },
   {
@@ -353,7 +350,8 @@ export const FIREBALL_SPEC: TreeSpec = {
     ailmentMultiplier: 'fb_kindling',
     ailmentDuration: 'fb_kindling',
     ailmentSpread: 'fb_kindling',
-    extraTargetDamage: 'fb_splitcast',
+    spreadRange: 'fb_splitcast',
+    spreadFar: 'fb_splitcast',
     pierceDamage: 'fb_piercing',
     chainDamage: 'fb_arcing',
   },

@@ -75,7 +75,7 @@ export const GRANTS: GrantDef[] = [
 
   {
     id: 'starvedDamage',
-    what: 'casting while out of mana costs you less damage',
+    what: 'a Starved use costs you less damage',
     // Every skill, whatever its delivery: being unable to pay is not a thing
     // one behaviour does. It MULTIPLIES `MANA.starvedDamage` rather than
     // replacing it, so a trade that makes running dry worse and one that
@@ -84,19 +84,19 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${more(n)} more damage while out of mana`;
+      return n === null ? null : `${more(n)} more damage while Starved`;
     },
   },
 
   {
     id: 'critIntoBuff',
-    what: 'critical hits buff you instead of hitting harder',
+    what: 'a Critical buffs you instead of hitting harder',
     // The passive's whole TRADE, as ONE switch: half-applying it would be a
     // character that gave up crit damage and got nothing for it.
     reads: [STATS],
     say: (v) => {
       const p = pair(v, 'more', 'seconds');
-      return p && `Critical hits deal no extra damage; landing one grants ${p[0]}% more damage for ${p[1]}s`;
+      return p && `A Critical deals no extra damage; landing one grants ${p[0]}% more damage for ${p[1]}s`;
     },
   },
 
@@ -127,12 +127,12 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'potionCrit',
-    what: 'you critically strike more often while a flask is running',
+    what: 'you Critically strike more often while a flask is running',
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n}% critical chance while a flask is running`;
+      return n === null ? null : `+${n}% Critical Chance while a flask is running`;
     },
   },
   {
@@ -157,7 +157,7 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'chargeRegen',
-    what: 'flask charges come back during a descent',
+    what: 'flask Charges come back during a descent',
     // The Alchemist's whole rule: charges stop being a descent's budget and
     // become a cooldown. Summed, so two nodes shorten the wait together.
     reads: [STATS],
@@ -166,20 +166,20 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null || n <= 0
         ? null
-        : `Each flask regains a charge every ${(1 / n).toFixed(1)}s`;
+        : `Each flask regains a Charge every ${(1 / n).toFixed(1)}s`;
     },
   },
 
   {
     id: 'manaShield',
     what: 'damage taken comes off mana before life',
-    // Ailments included: they are already the thing armour cannot stop, so the
+    // Ailments included: they are already the thing Armour cannot stop, so the
     // pool eating them is the whole reason this is worth a trade.
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of damage taken, ailments included, is paid out of mana first`;
+      return n === null ? null : `${pct(n)} of damage taken, Ailments included, is paid out of mana first`;
     },
   },
   {
@@ -265,11 +265,11 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
-  { id: 'critAilment', what: 'a crit leaves an ailment instead', reads: HITTERS, changes: 'crit' },
+  { id: 'critAilment', what: 'a Critical leaves an Ailment instead', reads: HITTERS, changes: 'crit' },
   {
     id: 'ailmentMultiplier',
     changes: 'scale',
-    what: 'ailments you apply deal more',
+    what: 'Ailments you apply deal more',
     reads: SHARED,
     merge: 'product',
     say: (v) => {
@@ -280,7 +280,7 @@ export const GRANTS: GrantDef[] = [
   {
     id: 'ailmentDuration',
     changes: 'duration',
-    what: 'ailments you apply last longer',
+    what: 'Ailments you apply last longer',
     reads: SHARED,
     merge: 'product',
     say: (v) => {
@@ -288,113 +288,194 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `Ailments you apply last ${more(n)} longer`;
     },
   },
-  { id: 'ailmentSpread', what: 'a critical tick spreads the ailment', reads: HITTERS, changes: 'crit' },
+  { id: 'ailmentSpread', what: 'a Critical tick spreads the Ailment', reads: HITTERS, changes: 'crit' },
 
   {
     id: 'explode',
     changes: 'burst',
-    what: 'the hit bursts where it lands',
+    what: 'the hit Bursts where it lands',
     reads: SHARED,
     say: (v) => {
       const p = pair(v, 'radius', 'multiplier');
-      return p && `The hit bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
+      return p && `The hit Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
     },
   },
   {
     id: 'explodeRadius',
     changes: 'burst',
-    what: 'the burst covers more ground',
+    what: 'the Burst covers more ground',
     reads: SHARED,
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `The burst covers ${more(n)} more ground`;
+      return n === null ? null : `The Burst covers ${more(n)} more ground`;
     },
   },
   {
     id: 'explodeMultiplierAdd',
     changes: 'burst',
-    what: 'the burst hits harder',
+    what: 'the Burst hits harder',
     reads: SHARED,
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `The burst carries +${pct(n)} of the damage`;
+      return n === null ? null : `The Burst carries +${pct(n)} of the damage`;
     },
   },
   {
     id: 'explodeOnKill',
     changes: 'burst',
-    what: 'a killed enemy bursts',
+    what: 'a killed enemy Bursts',
     reads: HITTERS,
     say: (v) => {
       const p = pair(v, 'radius', 'multiplier');
-      return p && `A killed enemy bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
+      return p && `A killed enemy Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
     },
   },
 
   {
     id: 'extraTargets',
     changes: 'targets',
-    what: 'more enemies near the target are hit',
+    what: 'the skill throws more Projectiles',
     reads: ['projectile', 'single_target'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n} more enem${n === 1 ? 'y' : 'ies'} near the target is hit`;
+      return n === null ? null : `+${n} Projectile${n === 1 ? '' : 's'}`;
     },
   },
   {
-    id: 'extraTargetDamage',
+    id: 'spreadRange',
     changes: 'targets',
-    what: 'those extra targets take full damage',
-    reads: ['projectile'],
+    what: 'a Projectile Spreads further to find its own enemy',
+    reads: ['projectile', 'single_target'],
+    merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Those extra targets take ${pct(n)} of the damage`;
+      return n === null ? null : `Projectiles Spread ${more(n)} further`;
     },
+  },
+  {
+    id: 'spreadFar',
+    changes: 'targets',
+    // Widening the Spread alone is worth nothing in a packed room, where there
+    // are always enough enemies inside the bare radius: what a wider one buys
+    // is only reachable if the pick changes with it.
+    what: 'a Projectile takes the enemy furthest into its Spread',
+    reads: ['projectile', 'single_target'],
+    say: (v) =>
+      v === true ? 'Projectiles take the enemies furthest into their Spread' : null,
   },
   {
     id: 'pierce',
     changes: 'targets',
-    what: 'the shot carries on through an enemy',
+    what: 'the Projectile gains Pierce',
     reads: ['projectile'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `The shot carries on through +${n} enem${n === 1 ? 'y' : 'ies'}`;
+      return n === null ? null : `+${n} Pierce`;
     },
   },
   {
     id: 'pierceDamage',
     changes: 'targets',
-    what: 'pierced enemies take full damage',
+    what: 'Pierce lands for more of the damage',
     reads: ['projectile'],
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Pierced enemies take ${pct(n)} of the damage`;
+      return n === null ? null : `Pierce deals ${pct(n)} of the damage`;
     },
   },
-  { id: 'chains', what: 'the shot leaps to another enemy', reads: ['projectile'], merge: 'sum', changes: 'targets' },
-  { id: 'chainDamage', what: 'leaps deal full damage', reads: ['projectile'], changes: 'targets' },
+  {
+    id: 'chains',
+    changes: 'targets',
+    what: 'the Projectile leaves an Arc behind it',
+    reads: ['projectile'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n} Arc`;
+    },
+  },
+  {
+    id: 'chainDamage',
+    changes: 'targets',
+    what: 'an Arc lands for more of the damage',
+    reads: ['projectile'],
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Arcs deal ${pct(n)} of the damage`;
+    },
+  },
 
-  { id: 'splashMultiplier', what: 'what the swing deals to everything else', reads: ['cleave'], merge: 'max', changes: 'targets' },
-  { id: 'splashRadius', what: 'how far the swing reaches', reads: ['cleave'], merge: 'product', changes: 'targets' },
-  { id: 'doubleStrike', what: 'extra swings at the target', reads: ['cleave'], merge: 'sum', changes: 'targets' },
+  {
+    id: 'splashMultiplier',
+    changes: 'targets',
+    what: 'what the Splash deals',
+    reads: ['cleave'],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Splash deals ${pct(n)} of the swing`;
+    },
+  },
+  {
+    id: 'splashRadius',
+    changes: 'targets',
+    what: 'how far the Splash reaches',
+    reads: ['cleave'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Splash reaches ${more(n)} further`;
+    },
+  },
+  {
+    id: 'doubleStrike',
+    changes: 'targets',
+    what: 'more Repeats at the enemy you aimed at',
+    reads: ['cleave'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n} Repeat${n === 1 ? '' : 's'}`;
+    },
+  },
 
-  { id: 'fieldRadius', what: 'the cloud covers more ground', reads: ['ailment_burst'], merge: 'product', changes: 'field' },
+  {
+    id: 'fieldRadius',
+    changes: 'field',
+    what: 'the Cloud covers more ground',
+    reads: ['ailment_burst'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Clouds cover ${more(n)} more ground`;
+    },
+  },
   {
     id: 'extraFields',
     changes: 'targets',
-    what: 'more clouds, on other enemies',
+    what: 'the skill drops more Clouds, on other enemies',
     reads: ['ailment_burst'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n} more cloud${n === 1 ? '' : 's'}, on other enemies`;
+      return n === null ? null : `+${n} Cloud${n === 1 ? '' : 's'}, on other enemies`;
     },
   },
-  { id: 'contagionRadius', what: 'a critical tick plants a fresh cloud', reads: ['ailment_burst'], merge: 'sum', changes: 'field' },
+  {
+    id: 'contagionRadius',
+    changes: 'field',
+    what: 'a Critical tick plants a fresh Cloud',
+    reads: ['ailment_burst'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A Critical tick plants a Cloud ${n} tiles across`;
+    },
+  },
 ];
 
 export const GRANT_BY_ID: Record<string, GrantDef> = Object.fromEntries(

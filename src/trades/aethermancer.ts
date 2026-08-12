@@ -16,7 +16,7 @@ export const AETHERMANCER: TradeSpec = {
   id: 'aethermancer',
   name: 'Aethermancer',
   blurb:
-    'Mana takes hits before your life does, and a cast can spend the pool for ' +
+    'Mana takes hits before your life does, and a use can spend the pool for ' +
     'more damage. Every one of the five roads runs through the same pool.',
   prefix: 'aet',
   needs: { overchargeMore: 'aet_overcharge' },
@@ -34,7 +34,7 @@ export const AETHERMANCER: TradeSpec = {
           name: 'Aether Ward',
           description:
             '20% of damage taken is paid out of mana before it reaches your ' +
-            'life — ailments included, which armour never blunts.',
+            'life — Ailments included, which Armour never blunts.',
           grants: { manaShield: 0.2 },
         },
         {
@@ -102,13 +102,13 @@ export const AETHERMANCER: TradeSpec = {
         {
           id: 'aet_dry_season',
           name: 'Dry Season',
-          description: 'A cast you cannot pay for lands at 65% of your damage rather than 50%.',
+          description: 'A Starved use lands for 65% of your damage rather than 50%.',
           grants: { starvedDamage: 1.3 },
         },
         {
           id: 'aet_last_drop',
           name: 'The Last Drop',
-          description: 'And 81% rather than 65%, so an empty pool costs you almost nothing.',
+          description: 'And 81% rather than 65%, so being Starved costs you almost nothing.',
           grants: { starvedDamage: 1.25 },
         },
       ],

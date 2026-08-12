@@ -9,7 +9,7 @@
  */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
-import { MANA } from '../data';
+import { MANA, PROJECTILE } from '../data';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -61,23 +61,25 @@ export function within(at: Entity, enemy: Entity, radius: number): boolean {
   return separation(at, enemy) - enemy.radius <= radius;
 }
 
-/**
- * How far the tree's targeting grants reach, in tiles. Hard limits, and none
- * of them scale: "nearest other enemy" with no distance limit is a teleport,
- * and area scaling would turn "one more target" into "the whole room".
- */
-const REACH = {
-  spread: 3.5, // extra targets, from the primary
-  chain: 4.5, // each leap, from the last thing hit
-  pierce: 4.5, // how far past the primary a pierced shot carries
-  corridor: 0.85, // half-width of the pierce corridor
-};
-
-/** Fractions applied to secondary hits unless a node says otherwise. */
-const FALLOFF = { extra: 0.7, chain: 0.7, pierce: 0.7 };
-
 const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
+
+/**
+ * Which enemies the Projectiles past the first take. Nearest by default; a node
+ * may widen the Spread and turn the pick around, which is the only way a wider
+ * one is worth anything in a room already full inside the bare radius.
+ */
+function spreadTargets(use: SkillUse, from: Entity[], count: number): Entity[] {
+  const reach = PROJECTILE.spread * num(use.grants.spreadRange, 1);
+  const far = use.grants.spreadFar === true;
+  return from
+    .filter((e) => separation(use.primary, e) <= reach)
+    .sort((a, b) => {
+      const d = separation(use.primary, a) - separation(use.primary, b);
+      return far ? -d : d;
+    })
+    .slice(0, count);
+}
 
 // --- the shared vocabulary --------------------------------------------------
 // A behaviour opts into a grant by calling these, and the demo holds each tree
@@ -170,10 +172,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
     const extra = (use.grants.extraTargets as number) ?? 0;
     if (extra > 0) {
-      const others = use.enemies
-        .filter((e) => e !== use.primary && separation(use.primary, e) <= REACH.spread)
-        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
-        .slice(0, extra);
+      const others = spreadTargets(use, use.enemies.filter((e) => e !== use.primary), extra);
       for (const other of others) {
         use.hit(other, 1);
         use.vfx(use.skill.vfxKind ?? 'swing', [
@@ -249,48 +248,52 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         .map((e) => ({ e, ...alongRay(use.user, use.primary, e) }))
         .filter(
           (c) =>
-            c.off <= REACH.corridor &&
+            c.off <= PROJECTILE.corridor &&
             c.along > separation(use.user, use.primary) &&
-            c.along <= separation(use.user, use.primary) + REACH.pierce
+            c.along <= separation(use.user, use.primary) + PROJECTILE.pierce
         )
         .sort((a, b) => a.along - b.along)
         .slice(0, pierce);
 
       for (const { e } of behind) {
-        if (!strike(e, num(g.pierceDamage, FALLOFF.pierce))) continue;
+        if (!strike(e, num(g.pierceDamage, PROJECTILE.pierceDamage))) continue;
         use.vfx(kind, [{ x: last.x, y: last.y }, { x: e.x, y: e.y }]);
         last = e;
       }
     }
 
-    // Chain: from the last thing hit to the nearest thing that hasn't been.
+    // Arc: from the last thing hit to the nearest thing that hasn't been.
     // `params` are the skill's OWN baseline and grants are what a build adds,
-    // so the two sum — the monsters' Lightning Arc leaps without a tree.
-    const chains = num(g.chains, 0) + num(use.skill.params?.chains, 0);
-    for (let i = 0; i < chains; i++) {
+    // so the two sum — the monsters' Lightning Arc reaches without a tree.
+    const arcs = num(g.chains, 0) + num(use.skill.params?.chains, 0);
+    for (let i = 0; i < arcs; i++) {
       const next = use.enemies
-        .filter((e) => !e.dead && !struck.has(e) && separation(last, e) <= REACH.chain)
+        .filter((e) => !e.dead && !struck.has(e) && separation(last, e) <= PROJECTILE.arc)
         .sort((a, b) => separation(last, a) - separation(last, b))[0];
       if (!next) break;
       const from = last;
-      const falloff = num(g.chainDamage, num(use.skill.params?.chainDamage, FALLOFF.chain));
+      const falloff = num(
+        g.chainDamage,
+        num(use.skill.params?.chainDamage, PROJECTILE.arcDamage)
+      );
       if (!strike(next, falloff)) break;
       use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }]);
       last = next;
     }
 
-    // Spread: everything else close to what you aimed at.
+    // Every Projectile past the first, at FULL damage: a shot that is thrown
+    // is a shot that lands, and a falloff on it was one number too many for
+    // what the keyword promises.
     const extra = num(g.extraTargets, 0);
     if (extra > 0) {
-      const others = use.enemies
-        .filter(
-          (e) => !e.dead && !struck.has(e) && separation(use.primary, e) <= REACH.spread
-        )
-        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
-        .slice(0, extra);
+      const others = spreadTargets(
+        use,
+        use.enemies.filter((e) => !e.dead && !struck.has(e)),
+        extra
+      );
 
       for (const other of others) {
-        if (!strike(other, num(g.extraTargetDamage, FALLOFF.extra))) continue;
+        if (!strike(other, 1)) continue;
         use.vfx(kind, [
           { x: use.user.x, y: use.user.y },
           { x: other.x, y: other.y },
@@ -414,11 +417,13 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
     field(use.primary);
 
-    // More clouds, on whatever else is close — never twice on the same enemy.
+    // More Clouds, on whatever else is close — never twice on the same enemy.
     const extra = num(g.extraFields, 0);
     if (extra > 0) {
       const others = use.enemies
-        .filter((e) => e !== use.primary && !e.dead && separation(use.primary, e) <= REACH.spread)
+        .filter(
+          (e) => e !== use.primary && !e.dead && separation(use.primary, e) <= PROJECTILE.spread
+        )
         .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
         .slice(0, extra);
       for (const other of others) field(other);

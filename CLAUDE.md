@@ -104,9 +104,9 @@ a pack throwing two elements reads as noise where a uniform one reads as a thing
 you recognise. The three ranged entries weigh a quarter of the table between
 them, which is exactly the share that used to shoot. `MONSTER_ABILITY_BY_ID`
 names them; a monster skill has no `category`, so it never reaches the Skills
-screen. **Lightning Arc** is the one that is not a line to one target: it leaps
-twice for 60% each off the skill's own `params`, which the projectile behaviour
-sums with whatever a tree grants.
+screen. **Lightning Arc** is the one that is not a line to one target: it
+carries 2 Arcs at 60% each off the skill's own `params`, which the projectile
+behaviour sums with whatever a tree grants.
 
 A crystal **adds** rather than converts. "of Cinders", "of Frost" and "of Storms"
 each roll `monsterFire` / `monsterCold` / `monsterLightning`, a share of what a
@@ -350,7 +350,7 @@ Bare, every skill costs the same PER SECOND (`MANA.costPerSecond`).
 the demo holds all three to the same rate.
 
 **What a node changes, it charges for.** The 42 notables that change what the
-skill DOES — a burst, a sweep, another projectile, another cloud — each grant
+skill DOES — a Burst, a Splash, another Projectile, another Cloud — each grant
 `manaMultiplier`, which merges by PRODUCT, so a build stacking four of them
 pays about half again a cast. Conditional damage is free: "more against enemies
 below a third of their life" changes a number rather than what the skill is.
@@ -461,6 +461,45 @@ src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/            one module per screen
 ```
+
+## One word per mechanism
+
+`KEYWORDS` in `src/keywords.ts` is the game's vocabulary, and it is the only
+way any of these things may be said. A talent used to say "strikes one
+additional enemy near the target" and another "passes through one enemy", which
+is two phrasings of one idea and neither word worth anything anywhere else.
+Now it is **+1 Projectile** and **+1 Pierce** — and a bow skill that says
++5 Arc later costs nothing to learn.
+
+Twenty of them, in three groups. How a use reaches more than one enemy —
+**Projectile**, **Pierce**, **Arc**, **Spread**, **Repeat**, **Burst**,
+**Splash**, **Cloud**. Damage over time — **Ailment** and the three that are
+kinds of one, **Burn**, **Bleed**, **Poison**. And the words every line leans
+on — **Area of Effect**, **increased**, **more**, **Critical**, **Resistance**,
+**Armour**, **Starved**, **Charge**.
+
+`means` carries its own numbers out of the same tables the sim reads
+(`PROJECTILE`, `DEFENCE`, `MANA`, `POTIONS` in `data.ts`), so a glossary cannot
+quote a figure the sim stopped using. `KeywordDef.grants` names the switches
+that ARE the keyword, and `kin` is a keyword that is a KIND of another — saying
+Burn satisfies a node granting an Ailment switch, because Burn is the better
+line.
+
+**It is shown, not hidden behind a second hover.** `.tip` is
+`pointer-events: none` and always will be, so a word inside a tooltip cannot be
+hovered again. `src/ui/glossary.ts` marks every keyword where it appears
+(`.kw`, one colour everywhere) and prints what each one means at the bottom of
+the same card — so you read the definition where you meet the word, and it
+works on a phone, which has no hover at all. Both webs draw their node cards
+through `nodeCard`; item cards MARK keywords and a unique also carries the
+definitions, since a named piece holds no modifiers and has the room.
+
+**`BANNED` is what the game may no longer say** — "chain", "leaps", "passes
+through", "additional target", "explodes" — mapped to the keyword that owns
+each. The demo sweeps every tree node, trade node, skill, currency, quest,
+modifier line and `GrantDef.what` and fails on any of them, and it also holds a
+node handing over a keyword's switch to naming that keyword. A talent cannot
+quietly invent a second word for Pierce.
 
 ## Adding a skill tree
 
