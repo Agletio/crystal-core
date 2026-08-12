@@ -90,10 +90,8 @@ export function defaultZoom(shortAxisPx: number): number {
 }
 
 /** Tile size in CSS px. Fit and below shows the whole map; above is absolute. */
-/** How far past a map edge the camera may sit, as a share of the view. Enough
- *  that a fight in a corner can be looked at squarely — clamped to the edges
- *  themselves, it never can — and no more: the grid is PADDED with empty tiles,
- *  so a half-view of slack puts the rock off screen entirely. */
+/** Slack past a map edge, as a share of the view: enough to centre a corner
+ *  fight, but not a half — the grid is PADDED, so that loses the rock. */
 export const CAMERA_SLACK = 0.25;
 
 export function clampOffset(want: number, view: number, span: number): number {
