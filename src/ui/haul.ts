@@ -7,9 +7,15 @@
  * because taking is the move you can undo; the two that need thought are in
  * the menu beside it.
  */
-import { HAUL_CAP, carryRoom, fromHaul, haulToStash, sellAll, sellItem, sortGear, stashRoom, takeWhatFits } from '../game/state';
+import { HAUL_CAP, carryRoom, fromHaul, haulToStash, isUnique, sellAll, sellItem, sortGear, stashRoom, takeWhatFits } from '../game/state';
 import type { GameState } from '../game/state';
 import { canSell, sellPrice } from '../economy';
+
+/** What "Sell all" may take. Never a unique: the same rule the shop's bulk
+ *  button follows, because a button that clears a heap must not eat a decision
+ *  — and a named piece is only ever a decision. Selling one is still a menu
+ *  action on the piece itself. */
+const bulkSellable = (i: Item): boolean => canSell(i) && !isUnique(i);
 import { itemMatches } from '../crafting';
 import { baseTier } from '../mods';
 import { itemCard } from './itemcard';
@@ -100,7 +106,9 @@ export function render(): void {
     const take = actionsFor(item)[0];
     const btn = el(
       'button',
-      `slot slot--${item.kind} slot--t${baseTier(item)}${item.meta.corrupted ? ' slot--locked' : ''}`
+      `slot slot--${item.kind} slot--t${baseTier(item)}` +
+        (item.meta.corrupted ? ' slot--locked' : '') +
+        (isUnique(item) ? ' slot--unique' : '')
     ) as HTMLButtonElement;
     btn.append(itemIcon(item, 30));
     if (item.mods.length > 0) btn.classList.add('slot--modded');
@@ -158,7 +166,7 @@ export function render(): void {
   // The way out of a full everything, and the reason the loop cannot wedge:
   // a sale needs room nowhere. Behind a confirm because it takes the pieces
   // you have not looked at yet.
-  const all = game.haul.filter(canSell);
+  const all = game.haul.filter(bulkSellable);
   const allWorth = all.reduce((n, i) => n + sellPrice(i), 0);
   const sellAllBtn = $('haul-sellall') as HTMLButtonElement;
   sellAllBtn.textContent =
@@ -173,12 +181,12 @@ export function render(): void {
 }
 
 async function sellEverything(): Promise<void> {
-  const all = game.haul.filter(canSell);
+  const all = game.haul.filter(bulkSellable);
   if (all.length === 0) return;
   const worth = all.reduce((n, i) => n + sellPrice(i), 0);
   const yes = await ask({
     title: `Sell all ${all.length} pieces for ${worth} gold?`,
-    text: 'Everything still in the haul, whatever is rolled on it. The shop buys the last twelve back.',
+    text: 'Everything still in the haul, whatever is rolled on it. Named pieces stay. The shop buys the last twelve back.',
     confirm: 'Sell all',
   });
   if (!yes) return;

@@ -343,11 +343,13 @@ export function buyBack(game: GameState, entry: SoldEntry): { ok: boolean; error
   return { ok: true };
 }
 
+export const isUnique = (i: Item): boolean => i.meta.unique !== undefined; // set by makeUnique
+
 /** Gear with nothing rolled on it: the heap you can clear without reading it.
  *  A named piece rolls nothing and is never in it — the bulk button exists
  *  because it cannot eat a decision, and a unique is only a decision. */
 export const plainGear = (items: Item[]): Item[] =>
-  items.filter((i) => i.kind === 'gear' && i.mods.length === 0 && i.meta.unique === undefined);
+  items.filter((i) => i.kind === 'gear' && i.mods.length === 0 && !isUnique(i));
 
 /** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
 export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {

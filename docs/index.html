@@ -758,6 +758,10 @@
   }
   /* A crafted item is worth spotting in a full dock. */
   .slot--modded { box-shadow: inset 0 0 0 1px rgba(212,175,79,.35); }
+  /* A named piece, and the border says so before the tooltip does. Last of the
+     border rules so it beats every base tier: what a unique IS outranks what it
+     is a version of. */
+  .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
   .icon { flex: none; display: block; }
 
   /* Narrow: the columns wrap rather than shrink, and the dock scrolls
