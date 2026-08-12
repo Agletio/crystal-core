@@ -842,6 +842,64 @@ export function mouth(floor: FloorPalette, surface: Surface, x: number, y: numbe
   return out;
 }
 
+/** Furniture: what somebody PUT in a room, where a decal is what the rock does
+ *  on its own. Pure functions in tile units, so both renderers draw them. */
+export const PROPS: Record<string, (floor: FloorPalette, x: number, y: number) => Decal[]> = {
+  /** A trestle. The top spans the WHOLE tile, so two bench tiles side by side
+   *  are one bench rather than two with a gap down the middle. */
+  bench: (floor, x, y) => {
+    const out: Decal[] = [
+      { x: 0, y: 0.42, w: 1, h: U * 2, colour: floor.timber, alpha: 1 },
+      { x: 0, y: 0.42 + U * 2, w: 1, h: U, colour: floor.rockShade, alpha: 0.7 },
+    ];
+    for (const leg of [0.16, 0.76]) {
+      out.push({ x: leg, y: 0.45, w: U, h: 0.3, colour: floor.timber, alpha: 0.75 });
+    }
+    // Half-built: a ring and a pane, never a whole lamp. `chip` and not
+    // `glint`, or the parts are the brightest thing in the room.
+    for (let i = 0; i < 3; i++) {
+      const at = snap(0.16 + i * 0.28);
+      const tall = tileNoise(x, y, 70 + i) < 0.5;
+      out.push({ x: at, y: snap(0.42 - U * 2), w: U, h: U * 2, colour: floor.chip, alpha: 0.9 });
+      if (tall) {
+        out.push({ x: snap(at + U), y: snap(0.42 - U), w: U, h: U, colour: floor.chip, alpha: 0.7 });
+      }
+    }
+    return out;
+  },
+
+  lantern_dark: (floor) => lantern(floor, false),
+  lantern_lit: (floor) => lantern(floor, true),
+};
+
+/** A lamp: a foot, two uprights, a handle, and a light in it or not. The dark
+ *  ones are why the lit ones read as lit, so nothing on an unlit one may be
+ *  brighter than the flame on a lit one. */
+function lantern(floor: FloorPalette, alight: boolean): Decal[] {
+  const out: Decal[] = [];
+  // The glow under everything, so the flame sits on top of its own light.
+  if (alight) {
+    out.push({ x: 0.14, y: 0.1, w: 0.72, h: 0.76, colour: floor.flame, alpha: 0.16 });
+  }
+  out.push(
+    { x: 0.3, y: 0.74, w: 0.4, h: U, colour: floor.rockShade, alpha: 0.9 }, // foot
+    { x: 0.46, y: 0.6, w: U * 2, h: 0.16, colour: floor.timber, alpha: 1 }, // post
+    // The cage, one colour whether it burns or not: what is INSIDE says which.
+    { x: 0.28, y: 0.22, w: 0.44, h: U, colour: floor.chip, alpha: 1 },
+    { x: 0.28, y: 0.56, w: 0.44, h: U, colour: floor.chip, alpha: 1 },
+    { x: 0.28, y: 0.22, w: U, h: 0.38, colour: floor.chip, alpha: 1 },
+    { x: 0.68, y: 0.22, w: U, h: 0.38, colour: floor.chip, alpha: 1 },
+    { x: 0.4, y: 0.12, w: 0.2, h: U, colour: floor.chip, alpha: 0.9 } // the handle
+  );
+  if (!alight) {
+    out.push({ x: 0.34, y: 0.28, w: 0.32, h: 0.28, colour: floor.shade, alpha: 0.95 });
+    return out;
+  }
+  out.push({ x: 0.34, y: 0.28, w: 0.32, h: 0.28, colour: floor.flame, alpha: 1 });
+  out.push({ x: 0.42, y: 0.34, w: 0.16, h: 0.16, colour: floor.flameCore, alpha: 1 });
+  return out;
+}
+
 /**
  * Everything drawn ON a tile past its base colour. What gets drawn is the
  * zone's `surface`: the Fissure is masonry and rubble, the Rot is meat, the

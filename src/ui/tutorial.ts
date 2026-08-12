@@ -31,8 +31,8 @@ const $ = (id: string) => document.getElementById(id)!;
 export interface GuideCtx {
   /** Which surface has focus: the crafting popup, or the Fissure underneath. */
   view: "craft" | "run";
-  /** Choosing, descending, or reading the report — which hides Enter. */
-  phase: "menu" | "running" | "results";
+  /** Choosing, descending, in a room, or reading the report. Hides Enter. */
+  phase: "menu" | "running" | "scene" | "results";
   /** Topmost popup, so a step can point at the right close button. */
   top: string | null;
   /** The slot waiting to be filled: picking one moves the next click to the dock. */
@@ -226,8 +226,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     text: (ctx) =>
       ctx.top === "met"
         ? "Take what they are holding."
-        : "Someone climbed out of the hole at the exit.",
-    hint: "Everything you are ever given is handed over up here, on a run you finished.",
+        : "The way up came out somewhere else.",
+    hint: "Everything you are ever given is handed over in person, on a run you finished.",
     target: (ctx) => (ctx.top === "met" ? "met-take" : viaHeader(ctx, "run-loot")),
     ring: (ctx) => ctx.top === "met" || ctx.phase !== "running",
     done: (g, ctx) => ctx.top !== "met" && (g.given ?? []).includes("weapon"),

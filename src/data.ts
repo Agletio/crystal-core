@@ -1261,7 +1261,8 @@ export const CRYSTAL_XP = {
 export const LAMPWRIGHT = {
   name: 'the Lampwright',
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
-  /** Said in the log the moment they appear, before you have walked over. */
+  scene: 'workshop', // the room he is met in, in `SCENES`
+  /** Said in the log the moment you come up in his room, before the walk. */
   seen: 'A lantern, further back than you have been. Something is holding it up.',
   /** Level 1 holds 0 modifiers: it is socketed blank, and the descent it makes
    *  longer is the whole of what it does until using it buys a slot. */

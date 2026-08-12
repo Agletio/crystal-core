@@ -4,12 +4,11 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**There are seven phases, and they are one arc**, dictated in one go: the game
-gets **rooms you arrive in and people standing in them**, and the machinery that
-carries all of it is built once, in Phase 1, on the one character who already
-exists. The UI phase that stood in front of them has landed — windows drag,
-raise on focus and remember being parked — and `CLAUDE.md` describes what it
-left behind.
+**There are six phases, and they are one arc**, dictated in one go: the game
+gets **rooms you arrive in and people standing in them**. The machinery is
+BUILT — a scene is a `RunSim` over an authored map, the Lampwright is met in his
+own workshop, and `CLAUDE.md` and `RULES.md` describe the whole of it. What is
+left is content on top of it, and one lesson-moving phase at the end.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -19,22 +18,20 @@ still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked; the thing most likely to be asked for after
 these is the **balance pass**, written up below.
 
-**The ladder's order is load-bearing.** Every one of them is the same mechanism
-with different content in it, and 1 is the only one that builds the mechanism:
+**The ladder's order is load-bearing.** Every one of them is the same object
+with different content in it:
 
 ```
-1  the scene            an authored room, props in it, someone standing in it
-2  the bubble           he talks in the room instead of over a sheet covering it
-3  the Lambengolmor     a scene with a fight in it — the first boss
-4  the key              going back for a boss you have already put down
-5  the Osteomancer      a third item kind, and a scene that spends one
-6  the Astral-Geometer  phase 5's machinery, jewellery, a calmer voice
-7  teaching in a room   the guided opening's lessons, moved into the scenes
+1  the bubble           he talks in the room instead of over a sheet covering it
+2  the Lambengolmor     a scene with a fight in it — the first boss
+3  the key              going back for a boss you have already put down
+4  the Osteomancer      a third item kind, and a scene that spends one
+5  the Astral-Geometer  phase 4's machinery, jewellery, a calmer voice
+6  teaching in a room   the guided opening's lessons, moved into the scenes
 ```
 
-Doing 3 before 2 or 5 before 1 means building the room machinery twice. If a
-phase here has to be reordered, say so and reorder the WHOLE ladder rather than
-lifting one out of it.
+Doing 2 before 1 means writing the bubble twice. If a phase here has to be
+reordered, say so and reorder the WHOLE ladder rather than lifting one out.
 
 **Nothing is blocked on an open question.** Every decision the arc needed has
 been taken and written down, so the phase to pick is simply the lowest-numbered
@@ -42,8 +39,27 @@ one still here. Before starting any of them, read **Before you touch the
 ladder**, below — it holds the parts that belong to no single phase, and every
 one of them is something a phase would otherwise get wrong on its own.
 
-**What the last four phases turned out to know that their writing did not.**
+**What the last five phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **A scene needs no rng, and the phase asked for one.** The trap said to feed
+  `sceneMap` the run's seed or the props would move; with an absolute plan and a
+  cut hashed off the tile it lands on, a room is the same room every time by
+  CONSTRUCTION, which is stronger than seeding it. A parameter nothing reads is
+  a parameter that lies about what varies.
+- **The first map smaller than the screen found a camera bug three years of
+  descents could not.** `viewW()` was `renderer.width / resolution`, which at a
+  device ratio of 2 is half the real view — invisible for a descent, because a
+  descent overflows the view and clamps against its edges, and glaring for a
+  room, which centred itself in a quarter of the screen. `renderer.screen` is
+  the accessor that cannot be wrong.
+- **The climb out plays for the rest of the handover, so the branch at the
+  bottom of the hole runs every frame of it.** `launch()` and `land()` both
+  clear their own trigger; a room does too, and then has to say it is already
+  in one or the next frame launches a descent on top of it.
+- **A room's report is the DESCENT's.** `renderResults` reads a `RunState` for
+  the loot, and the scene is a different sim with nothing in it. The state is
+  held beside the report rather than taken from `sim` at the end.
 
 - **Widening a Spread is worth nothing on its own.** The first version of
   Scattershot only granted `spreadRange: 1.6`, and the demo's "every notable
@@ -192,22 +208,22 @@ so overruling it is one sentence rather than an excavation.
 **Read this whole section first. It is the part that belongs to no single
 phase, and skipping it is how the same thing gets built twice.**
 
-Every one of the seven is the SAME object with different content in it: a
+Every one of the six is the SAME object with different content in it: a
 **scene** — an authored room you arrive in at the end of a cleared descent,
-with somebody standing in it who talks to you. Phase 1 builds it. Nothing after
-Phase 1 may introduce a second way of doing any of this.
+with somebody standing in it who talks to you. It is BUILT, and `RULES.md` holds
+the rules it is bound by. Nothing below may introduce a second way of doing any
+of it.
 
-**Where the pieces go.** Four new places, each shaped like something that is
-already there:
+**Where the pieces go.** Three of these exist; the fourth is Phase 1's.
 
 | | | |
 |---|---|---|
 | `src/scenes.ts` | the types and the registry | as `src/skills-tree.ts` is for trees |
 | `src/scenes/*.ts` | one file per room, content only | as `src/trees/*` and `src/trades/*` are |
 | `src/game/scenes.ts` | the SCHEDULE: what happens at the end of this clear | as `src/game/crystals.ts` is for gifts |
-| `src/ui/speech.ts` | the bubble (Phase 2) | one module, one screen |
+| `src/ui/speech.ts` | the bubble (Phase 1) | one module, one screen |
 
-**ONE scene per cleared descent, and the order is fixed.** By Phase 6 four
+**ONE scene per cleared descent, and the order is fixed.** By Phase 5 four
 things can be owed at the same moment — a crystal, a boss, a corpse to hand
 over, dust to trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
 one function that answers what happens next, it returns **at most one** scene,
@@ -238,12 +254,11 @@ whole opening in real time; a boss room landing in the middle of it is fifteen
 steps that no longer describe what is on screen. `sceneWaiting` returns only the
 Lampwright while `isGuided()` is true.
 
-**`src/sim` never decides that a scene happens.** The decision is `finish()` in
-`src/ui/run.ts`, off `sceneWaiting`, which is exactly where the meeting is
-decided today; the sim is TOLD to build one through `RunOptions.scene`. This is
-why the whole ladder leaves every headless harness alone — `runToCompletion`,
-the ladder grids, the quest timings and the mana measurements all drive `RunSim`
-directly and never ask for a scene.
+**`src/sim` never decides that a scene happens.** BUILT: the decision is
+`finish()` in `src/ui/run.ts`, off `sceneWaiting`, and the sim is TOLD through
+`RunOptions.scene`. This is why the whole ladder leaves every headless harness
+alone — `runToCompletion`, the ladder grids, the quest timings and the mana
+measurements all drive `RunSim` directly and never ask for a scene.
 
 **What does NOT change, and must not be quietly "fixed" into changing.**
 
@@ -257,7 +272,7 @@ directly and never ask for a scene.
   to be a hazard, and it is the reason a scene is on the far side of the hole
   rather than in the room you just cleared.
 - **Automation is universal.** No build's power may depend on the player being
-  present. The only thing in any scene that can be fought is Phase 3's boss, and
+  present. The only thing in any scene that can be fought is Phase 2's boss, and
   it is fought by the shipped policy like everything else.
 - **Every number is said out loud, and every mechanism has one word.** Four new
   characters is a great deal of new prose. The demo sweeps modifier lines, quest
@@ -270,10 +285,10 @@ directly and never ask for a scene.
 
 | harness | what it will catch, and it will |
 |---|---|
-| `demo` | a run that never ends (Phase 3's reinforcements), a container that does not claim its ids (Phase 5), a banned phrasing anywhere |
+| `demo` | a run that never ends (Phase 2's reinforcements), a container that does not claim its ids (Phase 4), a banned phrasing anywhere |
 | `shots` | it WAITS up to two minutes for the Lampwright panel and fails the run if a first descent never produces one. Phases 2 and 3 both move that panel and both must move the shot with it |
 | `guide` | `meet` and `meet_crystal`. Its dormant branch reads the state, reads what is open, then presses Escape — and `RULES.md` records that the meeting is the one modal it never Escapes |
-| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 5's third column goes at the END of the file |
+| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 4's third column goes at the END of the file |
 | `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it before `guide` the moment a new layer stops taking a click |
 
 **Every phase from 3 on puts itself in the dev kit.** `START_PRESETS.dev` and
@@ -281,115 +296,16 @@ directly and never ask for a scene.
 it. A boss schedule, a key, a relic — each goes into the dev preset in the same
 phase that adds it. A screen nobody can reach is a screen nobody tested.
 
-### Phase 1 — The room through the hole
-
-**What is true today.** A meeting happens on the floor of the descent you just
-cleared. `RunSim.greetAtExit()` in `src/sim/run.ts` stands the Lampwright
-`GREET_STEP` tiles off `map.exit`, `besideTheHole` picks the side, `walkOut(dt)`
-is the hero crossing that last stride, and `finish()` in `src/ui/run.ts` takes
-the `halt = 'met'` branch and holds the report until the panel is dismissed.
-`generateMap` in `src/sim/grid.ts` is the ONLY thing in the game that builds a
-map, and every map it builds is rooms, corridors and packs.
-
-**Why it is wrong.** The one man who lives down there is standing in the room
-you killed forty things in a moment ago, which makes the only place in the game
-with nothing in it look exactly like the place that was full.
-
-**What it becomes.** You drop into the hole the way you always do, and you come
-up somewhere else: a small chamber nobody generated, cut out of the same rock,
-with no packs in it, a bench with half-built lanterns on it, finished ones
-standing about lit and unlit, and him.
-
-- [ ] **`SceneDef` in `src/scenes.ts`.** `id`; `who`, a sprite id that is in
-      `BEASTIARY` and in `PORTRAITS` both; `theme`, a `MapTheme`, so a scene is
-      cut and inked out of a world that exists rather than being a fourth kind
-      of rock; `plan`, the room and where the props stand; `said`, the words;
-      `encounter`, null here and not null in Phase 3. One file per room under
-      `src/scenes/`.
-- [ ] **`sceneMap(def, rng): GameMap` in `src/sim/grid.ts`**, beside
-      `generateMap`, sharing `carveRoom` with it and nothing else. ONE room, cut
-      the way its theme cuts (`CUT`), and an `entrance` you come up out of. Not
-      `generateMap` with a flag on it: a generator that also builds authored
-      rooms is a generator nobody can read.
-- [ ] **A scene has no exit to walk to.** `GameMap.exit` is required by the
-      interface, so it is set to the entrance and nothing draws a second hole.
-      A peaceful scene ENDS when the last beat is dismissed, and Phase 3's ends
-      when the boss is down. There is no walk out, no `AT_EXIT` check and no
-      second `mouth()`.
-- [ ] **`GameMap.props`: `{ id, x, y }[]`, empty on every generated map.** A
-      prop is PLACED where a decal is hashed off the tile — a bench with three
-      half-built lanterns on it is a fact about a room, not a texture. Each prop
-      id is a pure function returning `Decal[]` in `src/render/renderer.ts`
-      beside `mouth()`, so BOTH renderers draw them and the colours come out of
-      CSS custom properties like every other colour in the game. Nothing new in
-      `BEASTIARY`: a prop is decals, not a sprite.
-- [ ] **`RunState.folk: Entity[]` replaces `RunState.lampwright`.** Kept out of
-      `monsters` for exactly the reason it is kept out today — nothing in combat
-      may ever see a person — and a LIST because later phases put more than one
-      body in a room. Both renderers draw folk where they draw the Lampwright
-      now.
-- [ ] **A scene is a `RunSim` over an authored map with no packs.**
-      `RunOptions.scene` names the def; the constructor calls `sceneMap` instead
-      of `generateMap` and spawns nothing. This is the decision the whole ladder
-      rests on: a boss room is then one filled-in field, and Phase 3 is content
-      rather than a second mechanism.
-- [ ] **A fourth `Phase`: `'scene'`.** `Phase` in `src/ui/run.ts` is
-      `'menu' | 'running' | 'results'` and `setPhase` is what `syncViewportLock`
-      and `setInventoryBase(runHandler())` hang off. A scene is a map on screen,
-      so `mapfull` stays on, the HUD and the rail stay up, and the dock's `base`
-      handler is set from the same one slot as every other phase change — the
-      map is the GROUND and a screen may still take `screenHandler` over it.
-- [ ] **The run loop arrives there.** In `finish()`, the branch that today sets
-      `halt = 'met'` and returns instead drops into the hole (`handover`,
-      `banked = report`, exactly as a chained descent already does) and comes up
-      in the scene rather than in the next descent. Three things stay as they
-      are, and the phase is wrong if any of them moves: the report is the one
-      that descent produced, the loot was banked before anybody spoke, and the
-      meeting still STOPS the loop and lands on the same report screen.
-- [ ] **The walk is the scene's own.** The hero walks in from the entrance and
-      he walks to meet them; arriving sets `meeting` and opens the panel, as it
-      does today. `takeHandover` and `#met` are untouched this phase — the card
-      is Phase 2's job, and doing both at once is how a phase stops being
-      reviewable.
-- [ ] **`greetAtExit` and `besideTheHole` go.** Nothing stands beside a hole any
-      more.
-- [ ] **Leave and Abandon during a scene.** `setLeaveLabel` reads
-      `phase === 'running'`; a scene is not running and has nothing to leave, so
-      both go quiet rather than offering to abandon a room with a gift in it.
-
-**Traps.**
-
-- `launch()` calls `renderer.follow()` because a camera left pointed at a corner
-  of the last map is a black screen with no obvious way out. A scene is a new
-  map and needs the same call.
-- The scene needs an `Rng`. Feed it the run's seed, not `Math.random()`, or the
-  props move every time the same room is entered.
-- `walkToMeeting` in `src/sim/run.ts` is the headless version of the walk and
-  the demo drives it. It stays a bounded walk, over the scene's floor.
-- The meeting checks near the end of `src/demo.ts` are written against
-  `greetAtExit`, `state.lampwright` and the distance from `map.exit`. They are
-  REWRITTEN against the scene, never deleted — they are what proves a gift can
-  still never be missed.
-
-**Done when.** Clearing a descent the Lampwright owes something for drops you
-into the hole and stands you up in a lit workshop with a bench in it, he walks
-over, the existing panel opens, and the run ends on the same report it always
-did.
-
-**What must not break, in this order.** `demo`, then `shots` — and add a SCENE
-shot to it, because an art claim needs a screenshot and a room whose props draw
-in one renderer only is precisely what that rule exists to catch. Then `guide`,
-then `smoke`.
-
-### Phase 2 — He says it out loud, in the room
+### Phase 1 — He says it out loud, in the room
 
 **What is true today.** `src/ui/met.ts` puts up `#met`: a `.modal--stop` card in
 the middle of the screen, a 120px portrait through `portraitIcon`, every line of
 `LAMPWRIGHT.first.said` in one block, and one button. `.modal--stop` paints a
 scrim over everything behind it.
 
-**Why it is wrong.** Phase 1 builds a room and then covers it with a sheet, so
-nobody ever sees the room or the man standing in it.
+**Why it is wrong.** There is a room now, with a bench and lit lanterns in it
+and him standing at the far end — and the moment you reach him a sheet drops
+over the lot of it, so nobody ever sees any of it.
 
 - [ ] **`src/ui/speech.ts` — a bubble anchored to a body on the map.** Built
       once and UPDATED per frame, never rebuilt: `renderFlasks` / `syncFlasks`
@@ -401,7 +317,8 @@ nobody ever sees the room or the man standing in it.
       already rides on, where the UI sends `panBy` in pixels and each renderer
       converts with the tile size only it knows.
 - [ ] **Beats.** `SceneBeat { said: string; act?: SceneAct }`, and
-      `SceneDef.said` becomes `SceneDef.beats`. `SceneAct` is what he does
+      `SceneDef.said` — today ONE line, printed to the history on arrival —
+      becomes `SceneDef.beats`. `SceneAct` is what he does
       BETWEEN lines — `pace`, `work`, `face` — performed by the scene's own step
       off the walk and pose machinery that already exists: `WALK_POSES` in
       `src/render/pose.ts`, and `poseOf` in `src/render/pixi.ts`, which picks a
@@ -449,7 +366,7 @@ time, and pours a lantern between two of them.
 clicks `#met-take` twice and now has beats in front of it. Then `smoke`, then
 `shots`, then `drag`.
 
-### Phase 3 — The one who thinks the Lampwright is wrong
+### Phase 2 — The one who thinks the Lampwright is wrong
 
 **What is true today.** `ENCOUNTERS` in `src/data.ts` is three closing shapes,
 rolled from the run's own rng at the exit of any descent, and there is no such
@@ -516,10 +433,10 @@ down banks the room.
 everything. Then `smoke`, then `shots`, and `tools/model-sheet.mts` for the new
 art, which is the only view that judges a silhouette.
 
-### Phase 4 — Going back for one you have already put down
+### Phase 3 — Going back for one you have already put down
 
 **What is true today.** Nothing you do decides what a descent contains except
-which crystals are socketed. Phase 3's boss happens once and can never happen
+which crystals are socketed. Phase 2's boss happens once and can never happen
 again.
 
 **Why it is wrong.** The best fight in the game is a thing that occurred to you
@@ -556,7 +473,7 @@ front of you again.
 **What must not break, in this order.** `smoke` for the new menu button, then
 `demo`.
 
-### Phase 5 — The Osteomancer, and what a corpse is for
+### Phase 4 — The Osteomancer, and what a corpse is for
 
 **What is true today.**
 
@@ -670,9 +587,9 @@ kind touches `heal()`, the id counter and the drop pipeline, and the demo's
 container list is where a missed one shows up. Then `smoke`, with the dock
 column's checks at the END of the file. Then `shots`.
 
-### Phase 6 — The Astral-Geometer
+### Phase 5 — The Astral-Geometer
 
-**What is true today.** After Phase 5, one world pays in something you carry to
+**What is true today.** After Phase 4, one world pays in something you carry to
 a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
 covers three armour slots, and the Cavern has nothing of its own — which Open
 question 5 has been saying about the Prismatic world since the quality ladder
@@ -681,7 +598,7 @@ was retired.
 **Why it is wrong.** A mechanism that exists in exactly one world is a
 mechanism half the game never meets.
 
-**What it is.** Phase 5's machinery with different content in it, which is
+**What it is.** Phase 4's machinery with different content in it, which is
 exactly why it is a separate phase and a small one. He is in the Prismatic
 world, he is calm, and he offers a trade rather than begging for one.
 
@@ -702,15 +619,15 @@ world, he is calm, and he offers a trade rather than begging for one.
   balance pass to set rather than a reason to give jewellery implicits here.
   Giving them implicits is a balance change and belongs to the balance pass; do
   not smuggle one in under a phase about a character.
-- Nothing in Phase 5's work may need changing to make this fit. If it does,
-  Phase 5 hard-coded something that should have been a table.
+- Nothing in Phase 4's work may need changing to make this fit. If it does,
+  Phase 4 hard-coded something that should have been a table.
 
 **Done when.** A Prismatic descent pays in dust, and a ring walks out of his
 room carrying something a ring cannot otherwise hold.
 
-**What must not break.** The same list as Phase 5, same order.
+**What must not break.** The same list as Phase 4, same order.
 
-### Phase 7 — Teaching in a room instead of over one
+### Phase 6 — Teaching in a room instead of over one
 
 > **Under-specified on purpose. Which lessons move is Open question 8** — write
 > the answer into this phase before starting it.
@@ -816,7 +733,7 @@ Every one is parked deliberately. Ask before acting on any of them.
    question 1 and still the user's; what has changed is that answering it is now
    content under `src/scenes/` rather than a system.
 
-8. **What does a scene TEACH?** Phase 7 is written and under-specified on
+8. **What does a scene TEACH?** Phase 6 is written and under-specified on
    purpose. Four rooms where somebody talks straight at the player is the best
    teaching surface the game has ever had, and the list of lessons worth moving
    into one — what a crystal does, what a socket costs, what a ward is for, why
@@ -875,7 +792,7 @@ without being asked.
   way: how many modifiers they hold. That is the clearest statement of what a
   base tier is, and it is also the least interesting pair of slots in the
   game. Implicits for them would fix that; they are a balance change, so not
-  in a phase about capacity — and Phase 6 leans on this rather than fixing it:
+  in a phase about capacity — and Phase 5 leans on this rather than fixing it:
   a graft ADDS on jewellery because there is nothing there to replace.
 - **Fewer items per clear.** Measured before the tooltip and shop work: gear
   is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two

@@ -169,12 +169,16 @@ rarity argues with it. The Sigil of Finality drops only in the Seam.
 
 ## Where crystals come from
 
-Never a shop, never a report, and never a roll. **The Lampwright** climbs out of
-the hole at the exit of a CLEARED descent holding whatever is owed, steps clear
-of it, and waits for you to walk over — and that meeting ends the run — so a gift is never a thing standing next to the monsters,
-and the loot it walks you out with is already banked. `giftWaiting` is what is
-owed, `takeHandover` is the panel granting it, and `giftSchedule` is the same
-answer in words for the collection screen.
+Never a shop, never a report, and never a roll. At the end of a CLEARED descent
+that owes something you drop into the hole exactly as you always do, and come up
+in a **scene** rather than in the next descent: **the Lampwright's workshop**, a
+small chamber nobody generated with a bench of half-built lanterns in it and
+finished ones standing about lit and unlit. He is across the room; walking over
+is the meeting, and the meeting ends the run — so a gift is never a thing
+standing next to the monsters, and the loot he walks you out with was banked
+before anybody spoke. `giftWaiting` is what is owed, `takeHandover` is the panel
+granting it, and `giftSchedule` is the same answer in words for the collection
+screen.
 
 The panel draws a PORTRAIT, not the map sprite: `PORTRAITS` in
 `src/render/portraits.ts` is a separate table at grid 48, one frame,
@@ -211,6 +215,38 @@ by fewer than all four — and never removes what is already rolled on it.
 
 `src/ui/crystals.ts` is where the collection is compared, since four sockets
 against everything you have ever been given is a comparison rather than a bag.
+
+## A room you arrive in
+
+A **scene** is an authored room you come up into at the end of a cleared
+descent: one chamber nobody generated, no packs at all, the props where somebody
+put them and the people standing in it. It is a `RunSim` like any other —
+`RunOptions.scene` names a `SceneDef` and the constructor calls `sceneMap`
+instead of `generateMap` — so both renderers draw one with no changes, and a
+room with a fight in it will be a filled-in field rather than a second engine.
+
+`sceneMap` in `src/sim/grid.ts` sits beside `generateMap` and shares `carveRoom`
+with it, so a room is cut out of some world's rock the way that world cuts.
+There is no rng: a plan is absolute tiles and a cut is hashed off the tile it
+lands on, so a place is the same place every time you come up in it. There is
+also no exit — `GameMap.exit` is the entrance, so nothing draws a second hole
+and there is nothing to walk to.
+
+`GameMap.props` is furniture, empty on every generated map, drawn by `PROPS` in
+`src/render/renderer.ts` beside `mouth()`: pure functions returning `Decal[]`, so
+a prop is decals rather than a sprite and never appears in `BEASTIARY`.
+`RunState.folk` is who is in the room, a LIST and deliberately out of `monsters`,
+because nothing in combat may ever be able to see a person.
+
+`sceneWaiting` in `src/game/scenes.ts` is the schedule and returns **at most
+one** scene per clear, highest rung first and never rolled; it ASKS
+`giftWaiting` rather than replacing it. `src/sim` never decides that a scene
+happens — `finish()` in `src/ui/run.ts` does, which is why every headless
+harness drives `RunSim` directly and is left alone by all of it.
+
+A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
+rail stays up, but nothing is ticking, and Leave and Abandon go quiet because
+there is nothing to abandon.
 
 ## Uniques
 
@@ -502,6 +538,8 @@ src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
+src/scenes.ts      the authored rooms; src/scenes/* are their content
+src/game/scenes.ts what happens at the end of THIS clear, at most one thing
 src/skills-tree.ts per-skill webs; src/trees/* are their content
 src/trades.ts      the character's own web; src/trades/* are the two trades
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes

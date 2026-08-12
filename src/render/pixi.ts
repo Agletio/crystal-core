@@ -41,6 +41,7 @@ import {
   poisonDrops,
   poisonFieldRadius,
   livingDecals,
+  PROPS,
   tileDecals,
   tileSize,
   toHexNumber,
@@ -179,8 +180,12 @@ export async function createPixiRenderer(
   const sprites = new Map<number, Sprite>();
   const floaters: Text[] = [];
 
-  const viewW = () => app.renderer.width / app.renderer.resolution;
-  const viewH = () => app.renderer.height / app.renderer.resolution;
+  // `screen`, never `width / resolution`: the renderer's own logical box, in
+  // the CSS pixels the world container is positioned in. Halved by a device
+  // ratio of 2, a map SMALLER than the view centred itself in a quarter of the
+  // screen — invisible for a descent, which always overflows and clamps.
+  const viewW = () => app.renderer.screen.width;
+  const viewH = () => app.renderer.screen.height;
 
   /** World units are tiles, so a centre is just the tile plus a half. */
   const cx = (x: number) => x + 0.5;
@@ -280,6 +285,16 @@ export async function createPixiRenderer(
     for (const batch of batches.values()) {
       for (const [rx, ry, rw, rh] of batch.rects) mapLayer.rect(rx, ry, rw, rh);
       mapLayer.fill({ color: batch.colour, alpha: batch.alpha });
+    }
+
+    // Authored furniture, over the grain of the tile it is standing on. Not
+    // grouped: there are a handful in a room, against ten thousand decals.
+    for (const prop of map.props) {
+      for (const d of PROPS[prop.id]?.(floor, prop.x, prop.y) ?? []) {
+        mapLayer
+          .rect(prop.x + d.x, prop.y + d.y, d.w, d.h)
+          .fill({ color: toHexNumber(d.colour), alpha: d.alpha });
+      }
     }
 
     // The way in: a hole in the floor with a lit lip, not a coloured block.
@@ -562,8 +577,8 @@ export async function createPixiRenderer(
     const tile = world.scale.x;
     const x0 = Math.max(0, Math.floor(-world.position.x / tile));
     const y0 = Math.max(0, Math.floor(-world.position.y / tile));
-    const x1 = Math.min(grid.width, Math.ceil((app.renderer.width - world.position.x) / tile) + 1);
-    const y1 = Math.min(grid.height, Math.ceil((app.renderer.height - world.position.y) / tile) + 1);
+    const x1 = Math.min(grid.width, Math.ceil((viewW() - world.position.x) / tile) + 1);
+    const y1 = Math.min(grid.height, Math.ceil((viewH() - world.position.y) / tile) + 1);
 
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
@@ -607,8 +622,8 @@ export async function createPixiRenderer(
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawEntity(m, state.elapsed);
     }
-    // Not a monster and not in the monster list, so it is drawn by name.
-    if (state.lampwright) drawEntity(state.lampwright, state.elapsed);
+    // Never monsters and never in the monster list, so they are drawn apart.
+    for (const f of state.folk) drawEntity(f, state.elapsed);
     if (!state.hero.dead) drawEntity(state.hero, state.elapsed, 1 - emerge);
 
     drawOverlays(state);

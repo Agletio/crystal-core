@@ -223,12 +223,13 @@ locks the item for doing it; the demo holds every other currency to the rule.
 **Only the adding currency is sold.** Everything else drops. A shop that stocks
 the whole bench is a shop that replaces the map.
 
-**Every crystal is handed over in person, at the mouth of a cleared descent.**
-The Lampwright climbs out of the hole you would have dropped through, hands the
-thing over and walks you out — so a meeting is always the END of a run and
-never a hazard inside one. It is granted at the panel rather than paid out by
-the report, which is what keeps a gift a gift; and because the run is already
-cleared when he appears, that loot is already banked. Nothing about a crystal
+**Every crystal is handed over in person, in a room you came up into.** At the
+end of a cleared descent that owes something you drop into the hole exactly as a
+chained descent does, and come up in the Lampwright's workshop rather than in
+the next map — so a meeting is always the END of a run and never a hazard inside
+one. It is granted at the panel rather than paid out by the report, which is
+what keeps a gift a gift; and because the descent was cleared and banked before
+anybody spoke, that loot can never be lost to it. Nothing about a crystal
 arrives as a line in a report.
 
 **A gift is scheduled, never rolled.** What decides whether the Lampwright is
@@ -1000,6 +1001,13 @@ holding off on ticking.
 and there is not going to be one. Both of the things that stop a descent work
 the same way, and anything that stops one in future should too.
 
+**A view is measured in the CSS pixels the world is positioned in.**
+`app.renderer.screen`, never `width / resolution`. Halved by a device ratio of
+2, a map SMALLER than the view centred itself in a quarter of the screen — which
+no descent ever showed, because a descent overflows the view and clamps against
+its edges. The first map smaller than the screen was an authored room, and it is
+where this surfaced.
+
 **The camera is the RENDERER's, and gestures are the UI's.** `src/ui/run.ts`
 sends what the pointer did — `setZoom(zoom, at)` with a focal point in CSS
 pixels from the view's middle, `panBy(dx, dy)` in pixels, `follow()` — and each
@@ -1045,20 +1053,45 @@ you are winning. `s.totalMonsters` counts the whole encounter the moment it
 starts, or the readout ticks down and then climbs again. Twenty bodies on one
 tile read as two, which is what the wave shape exists to stop.
 
-**A meeting.** The Lampwright is `RunState.lampwright`, an `Entity` kept
-deliberately OUT of `monsters` so nothing in combat can ever see them.
-`giftWaiting` in `src/game/crystals.ts` answers what is waiting at the mouth,
-read AFTER the report so the level that descent just bought counts.
-`RunSim.greetAtExit()` stands them `GREET_STEP` off the hole — beside it, never
-in it — and does NOT begin the meeting; `RunSim.walkOut(dt)` is the hero
-crossing that last stride, ticked by the frame loop alone (the descent is over,
-so `step` would be wrong and the clock the report read has stopped), and
-ARRIVING sets `meeting`. `takeHandover` grants everything the meeting holds and
+**A SCENE is an authored room, and it is one mechanism.** A `RunSim` over a map
+nobody generated: `RunOptions.scene` names a `SceneDef` and the constructor
+calls `sceneMap` instead of `generateMap` and spawns nothing. Both renderers
+draw one with no changes at all, because they already draw a `RunState` — which
+is the whole reason a room with a fight in it can be a filled-in field rather
+than a second engine. Nothing after this may introduce a second way of doing any
+of it.
+
+- `sceneMap` sits BESIDE `generateMap` and shares `carveRoom`. A generator that
+  also builds authored rooms is a generator nobody can read.
+- **No rng.** A plan is absolute tiles and a cut is hashed off the tile it lands
+  on, so a place is the same place every time you come up in it by construction.
+- **A scene has no exit.** `GameMap.exit` is the entrance, so nothing draws a
+  second hole, there is no `AT_EXIT` check and there is nothing to walk to.
+- **A room belongs to the SCENE, never to the descent you came out of.**
+  `SceneDef.theme` is the def's: the rock is some world's rock but the place is
+  a place.
+- **`GameMap.props` is furniture and is empty on every generated map.** A prop
+  is PLACED, where a decal is hashed off the tile; it is drawn by `PROPS` in
+  `render/renderer.ts` beside `mouth()` as pure `Decal[]` functions, so a prop
+  is decals rather than a sprite and never enters `BEASTIARY`.
+- **`RunState.folk` is who is in the room** — a LIST, and out of `monsters` for
+  the reason it always was: nothing in combat may ever be able to see a person.
+- **`src/sim` never decides that a scene happens.** `finish()` in
+  `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
+  every headless harness alone: they drive `RunSim` directly and never ask.
+
+**A meeting.** `giftWaiting` in `src/game/crystals.ts` answers what is owed,
+read AFTER the report so the level that descent just bought counts;
+`sceneWaiting` in `src/game/scenes.ts` ASKS it and returns AT MOST ONE scene per
+clear, highest rung first and never rolled. `RunSim.walkOut(dt)` is the hero
+crossing the room, ticked by the frame loop alone — the descent is over, so
+`step` would be wrong and the clock the report read has stopped — and ARRIVING
+sets `meeting`. `takeHandover` grants everything the meeting holds and
 `src/ui/met.ts` draws it; `giftSchedule` is the same answer in words, for the
 collection screen. A meeting is a HALT of the idle loop — `halt = 'met'` —
-landing on the same report as any other ending, so the clear is banked before
-anyone is standing there. `walkToMeeting` is the headless version of the walk,
-bounded like `runToCompletion`.
+landing on the same report as any other ending, and the report and the STATE it
+lands with are the DESCENT's, never the room's. `walkToMeeting` is the headless
+version of the walk, bounded like `runToCompletion`.
 
 **The Lampwright speaks in FLAVOUR.** `LAMPWRIGHT.first`, `.crystal` and
 `.again` in `src/data.ts` describe what he has seen the rock do and name no
@@ -1228,10 +1261,12 @@ balance number that reports and can never fail.
   is an SVG group rather than a button, so it carries `role="button"` and the
   guide harness clicks it on that rather than on containing one.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
-  two minutes for the Lampwright panel and fails the run if a first descent
-  never produces one. The meeting is at the END of a cleared descent, after a
-  walk to the exit and a walk over to him, so that wait covers a whole one —
-  and the skill it picks is Blight, which takes about a minute over its first.
+  two minutes for the SCENE and then for the Lampwright panel, and fails the run
+  if a first descent never produces one. The meeting is at the END of a cleared
+  descent, through the hole and across his workshop, so that wait covers a whole
+  one — and the skill it picks is Blight, which takes about a minute over its
+  first. `document.body.dataset.runPhase` is what tells a harness a room from a
+  descent: both are a map with everything else hidden, so nothing else can.
 - **The meeting is the one modal `guide.mjs` never Escapes.** Its dormant
   branch reads the state, then reads what is open, then presses Escape — and a
   Lampwright panel that appeared between those two reads was being dismissed

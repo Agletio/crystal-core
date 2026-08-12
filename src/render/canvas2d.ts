@@ -32,6 +32,7 @@ import {
   poisonFieldRadius,
   spriteColour,
   livingDecals,
+  PROPS,
   tileDecals,
   tileSize,
   vfxColour,
@@ -181,6 +182,20 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
             Math.max(1, Math.ceil(d.h * v.tile))
           );
         }
+      }
+    }
+
+    // Authored furniture, over the grain of the tile it stands on.
+    for (const prop of state.map.props) {
+      for (const d of PROPS[prop.id]?.(floor, prop.x, prop.y) ?? []) {
+        ctx.globalAlpha = d.alpha;
+        ctx.fillStyle = d.colour;
+        ctx.fillRect(
+          v.offX + (prop.x + d.x) * v.tile,
+          v.offY + (prop.y + d.y) * v.tile,
+          Math.max(1, Math.ceil(d.w * v.tile)),
+          Math.max(1, Math.ceil(d.h * v.tile))
+        );
       }
     }
     ctx.globalAlpha = 1;
@@ -437,7 +452,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
     }
-    if (state.lampwright) drawMonster(v, state.lampwright);
+    for (const f of state.folk) drawMonster(v, f);
     if (!state.hero.dead) drawHero(v, state.hero, emerge);
     drawVfx(v, state);
     for (const f of state.floaters) drawFloater(v, f);

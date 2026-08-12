@@ -86,6 +86,8 @@ import {
 } from './economy';
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
+import { sceneWaiting } from './game/scenes';
+import { SCENES } from './scenes';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -187,6 +189,7 @@ import {
   floorPalette,
   lightningArc,
   livingDecals,
+  PROPS,
   sweepRing,
   paletteFrom,
   tileDecals,
@@ -1323,6 +1326,21 @@ rule('SPRITES — is the pixel art well formed?');
     'and drawn at a bigger grid than the sprite that walks around',
     small.join(', ')
   );
+
+  // A scene needs BOTH tables: one of them walks about the room and the other
+  // one speaks, and a character with only half of that is half a person.
+  const halfDrawn = SCENES.filter((s) => !BEASTIARY[s.who] || !PORTRAITS[s.who]).map((s) => s.id);
+  check(
+    halfDrawn.length === 0,
+    `all ${SCENES.length} scenes have a sprite AND a portrait for whoever is in them`,
+    halfDrawn.join(', ')
+  );
+  // A prop is decals and never a sprite, so a mis-typed id is a bench that
+  // silently is not there rather than a missing texture.
+  const noProp = SCENES.flatMap((s) =>
+    s.plan.props.filter((p) => !PROPS[p.id]).map((p) => `${s.id}: ${p.id}`)
+  );
+  check(noProp.length === 0, 'and every prop in one is drawn', noProp.join(', '));
 
   // Every monster the tables can spawn has to have a drawing, or a pack of
   // them arrives as whatever the fallback happens to be.
@@ -5832,43 +5850,69 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     bySkill.join(' ')
   );
 
-  // Played out. The meeting is at the MOUTH, so it is only ever reached on a
-  // clear — a gift is never a thing standing next to the monsters.
+  // Played out. The meeting is through the HOLE, at the end of a cleared
+  // descent — a gift is never a thing standing next to the monsters, and the
+  // loot is banked before anybody speaks.
   {
     const g = createGame('fresh');
     const sim = new RunSim([], g.character, new Rng(6100));
     runToCompletion(sim, 400);
     check(
-      sim.state.status === 'cleared' && !sim.state.lampwright && !sim.state.meeting,
+      sim.state.status === 'cleared' && sim.state.folk.length === 0 && !sim.state.meeting,
       'nobody is on the map during a descent',
-      `${sim.state.status}, lampwright ${sim.state.lampwright ? 'placed' : 'absent'}`
+      `${sim.state.status}, ${sim.state.folk.length} folk`
     );
 
     buildReport(g, sim.state);
-    const waiting = giftWaiting(g, facts(g, sim.state));
+    const call = sceneWaiting(g, facts(g, sim.state));
     check(
-      waiting?.weapon === true && sim.greetAtExit() && !sim.state.meeting,
-      'and climbs out of the exit once it is cleared, without a word yet',
-      `waiting ${JSON.stringify(waiting)}, meeting ${sim.state.meeting}`
+      call?.gift?.weapon === true && call.def.encounter === null,
+      'and a cleared descent that owes something schedules a quiet room',
+      `${call ? call.def.id : 'nothing'}`
     );
-    // Out of the hole and CLEAR of it: standing in it is the one place he
-    // cannot be, since it is the thing the hero is about to drop through.
-    const off = dist(sim.state.lampwright!, sim.state.map.exit);
+
+    // The room. A `RunSim` like any other, which is what makes a boss room a
+    // filled-in field rather than a second engine.
+    const room = new RunSim([], g.character, new Rng(6100), { scene: call!.def.id });
     check(
-      off > 0.9 && off < 3,
-      'a stride off the hole rather than standing in it',
-      `${off.toFixed(2)} tiles from the exit`
+      room.state.monsters.length === 0 && room.state.folk.length === 1,
+      'the room has nobody in it but the man standing in it',
+      `${room.state.monsters.length} monsters, ${room.state.folk.length} folk`
     );
     check(
-      walkToMeeting(sim) && dist(sim.state.hero, sim.state.lampwright!) <= 1.2,
+      room.state.map.exit === room.state.map.entrance && room.state.map.props.length > 0,
+      'one hole and furniture somebody put there',
+      `${room.state.map.props.length} props`
+    );
+    // Everything authored has to be standing on floor: a bench in the rock is
+    // a bench nobody can see, and the cut worries the edges of the room away.
+    const grid = room.state.map.grid;
+    const off = [
+      ...room.state.map.props.map((p) => [p.id, p.x, p.y] as const),
+      ['the man', room.state.folk[0].x, room.state.folk[0].y] as const,
+      ['the hole', room.state.map.entrance.x, room.state.map.entrance.y] as const,
+    ].filter(([, x, y]) => !grid.fits(x, y, 0.3));
+    check(
+      off.length === 0,
+      'and every one of them fits where it was put',
+      off.map(([id, x, y]) => `${id} at ${x},${y}`).join(', ')
+    );
+    check(
+      dist(room.state.hero, room.state.folk[0]) > 3,
+      'you arrive across the room from him, so meeting him is a walk',
+      `${dist(room.state.hero, room.state.folk[0]).toFixed(1)} tiles`
+    );
+    check(
+      walkToMeeting(room) && dist(room.state.hero, room.state.folk[0]) <= 1.2,
       'and the meeting is the hero walking over, not a panel appearing',
-      `meeting ${sim.state.meeting}, ${dist(sim.state.hero, sim.state.lampwright!).toFixed(2)} apart`
+      `meeting ${room.state.meeting}, ${dist(room.state.hero, room.state.folk[0]).toFixed(2)} apart`
     );
 
     // What the panel does. The run is already banked, so this is a handover
     // and not a payout — nothing about it can be lost.
+    const waiting = call!.gift;
     const hand = takeHandover(g, waiting!);
-    sim.takeGift();
+    room.takeGift();
     const weapon = hand.items[0];
     check(
       weapon?.meta.firstClear === true &&

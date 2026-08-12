@@ -7,6 +7,7 @@ import { Rng } from '../rng';
 import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
+import type { ScenePlan } from '../scenes';
 
 export interface Vec2 {
   x: number;
@@ -70,11 +71,9 @@ export class Grid {
     return this.at(Math.round(x), Math.round(y)) !== WALL;
   }
 
-  /**
-   * Whether a BODY of this radius fits, rather than whether its centre does: a
-   * centre-only test lets a sprite sit half a tile into the rock. Tile n covers
-   * [n-0.5, n+0.5], so the body spans the tiles its extent rounds to.
-   */
+  /** Whether a BODY of this radius fits, rather than whether its centre does:
+   *  a centre-only test lets a sprite sit half a tile into the rock. Tile n
+   *  covers [n-0.5, n+0.5], so a body spans the tiles its extent rounds to. */
   fits(x: number, y: number, radius: number): boolean {
     const r = Math.min(radius, BODY_MAX);
     for (let ty = Math.round(y - r); ty <= Math.round(y + r); ty++) {
@@ -89,12 +88,10 @@ export class Grid {
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
 
-/**
- * Can a straight line between two points avoid a wall? Sampled along the
- * segment, not Bresenham: entities sit at fractional positions and the line
- * between their real centres is what matters. The step is well under a tile, so
- * a one-tile wall can never be stepped over.
- */
+/** Can a straight line between two points avoid a wall? Sampled along the
+ *  segment, not Bresenham: entities sit at fractional positions and the line
+ *  between their real centres is what matters. The step is well under a tile,
+ *  so a one-tile wall can never be stepped over. */
 export function hasLineOfSight(grid: Grid, a: Vec2, b: Vec2): boolean {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -109,16 +106,25 @@ export function hasLineOfSight(grid: Grid, a: Vec2, b: Vec2): boolean {
   return true;
 }
 
+/** Furniture, in tiles. `id` names an entry in the prop table both renderers
+ *  draw from — a prop is decals, never a sprite and never in `BEASTIARY`. */
+export interface MapProp {
+  id: string;
+  x: number;
+  y: number;
+}
+
 export interface GameMap {
   grid: Grid;
   rooms: Room[];
   entrance: Vec2;
   exit: Vec2;
-  /**
-   * Which mineral runs through this rock. Presentation reads it, the sim never
-   * does — but it is a fact about the MAP, so the two renderers cannot invent
-   * different seams for the same crystal.
-   */
+  /** Empty on every generated map: a prop is a fact about a room somebody
+   *  built, where a decal is a texture hashed off the tile it lands on. */
+  props: MapProp[];
+  /** Which mineral runs through this rock. Presentation reads it, the sim
+   *  never does — but it is a fact about the MAP, so the two renderers cannot
+   *  invent different seams for the same crystal. */
   vein: number;
   /** Which world this rock belongs to. Presentation only, same as the vein. */
   theme: MapTheme;
@@ -133,12 +139,9 @@ function overlaps(a: Room, b: Room, pad: number): boolean {
   );
 }
 
-/**
- * How a zone is cut out of the rock. NOTHING is built: the Fissure is a
- * working dug at and given up on, so a square corner exists nowhere in the
- * game. The Seam is grown throughout rather than a room of each — the average
- * of two hard rooms is not the hardest room going.
- */
+/** How a zone is cut. NOTHING is built: a square corner exists nowhere in the
+ *  game. The Seam is grown throughout rather than a room of each — the average
+ *  of two hard rooms is not the hardest room going. */
 export type Cut = 'dug' | 'grown' | 'gullet';
 
 const CUT: Record<MapTheme, Cut> = {
@@ -288,11 +291,9 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
   return seen;
 }
 
-/**
- * Rooms joined by corridors. `layoutComplexity` off the crystal and the tier's
- * own `sizeScale` both drive the map's size and its room count, so "of Winding
- * Ways" and a deeper tier each produce a genuinely longer walk.
- */
+/** Rooms joined by corridors. `layoutComplexity` off the crystal and the
+ *  tier's own `sizeScale` both drive the map's size and its room count, so "of
+ *  Winding Ways" and a deeper tier each produce a genuinely longer walk. */
 export function generateMap(
   mods: RolledMod[],
   rng: Rng,
@@ -357,5 +358,26 @@ export function generateMap(
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit, vein, theme };
+  return { grid, rooms, entrance, exit, props: [], vein, theme };
+}
+
+/**
+ * The map an authored room is: ONE chamber, cut the way its world cuts, with
+ * the hole you came up out of and nothing else. Beside `generateMap` rather
+ * than a flag on it, and sharing `carveRoom` — the part that makes a scene the
+ * same rock as a descent. No rng: the plan is absolute tiles and the cut is
+ * hashed off the tile it lands on, so a room is the same room every time it is
+ * entered by construction, which is stronger than seeding it.
+ */
+export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
+  const room = plan.room;
+  const grid = new Grid(room.x + room.w + 1, room.y + room.h + 1);
+  carveRoom(grid, room, CUT[theme] ?? 'dug');
+
+  const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
+  grid.set(entrance.x, entrance.y, ENTRANCE);
+
+  // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
+  // walk to, and one tile carrying both means nothing draws a second hole.
+  return { grid, rooms: [room], entrance, exit: entrance, props: plan.props, vein, theme };
 }

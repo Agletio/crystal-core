@@ -32,7 +32,9 @@ import {
 } from '../data';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress, giftWaiting } from '../game/crystals';
+import { crystalProgress } from '../game/crystals';
+import { sceneWaiting } from '../game/scenes';
+import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
@@ -66,7 +68,9 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-export type Phase = 'menu' | 'running' | 'results';
+/** `scene` is an authored room on screen: a map, so `mapfull` stays on and the
+ *  rail stays up, but nothing is ticking and there is nothing to abandon. */
+export type Phase = 'menu' | 'running' | 'results' | 'scene';
 
 /** Gear drops named in the report before it starts counting instead. */
 const LOOT_ROWS = 6;
@@ -86,12 +90,9 @@ let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
 let leaving = false;
 
-/**
- * The handover between descents: down the hole at the exit, dark for the
- * moment the map is swapped, out of the entrance of the next one. Short,
- * because it plays twenty times in a session. Nothing in `src/sim` knows it
- * exists — this is the UI declining to tick for a moment while it draws.
- */
+/** The handover: down the hole at the exit, dark for the moment the map is
+ *  swapped, out of the entrance of whatever is at the bottom. Nothing in
+ *  `src/sim` knows it exists — the UI declines to tick while it draws. */
 const HANDOVER = 1.2;
 /** How much of it is going down. The rest is climbing out of the next one. */
 const DESCEND = 0.45;
@@ -101,10 +102,15 @@ let handover = 0;
 let banked: RunReport | null = null;
 /** Set to `banked` when the loop is stopping and the drop has still to play. */
 let pending: RunReport | null = null;
-/** Held while the Lampwright is being walked to, for `land()` afterwards. */
+/** Held while the room is being crossed, for `land()` afterwards — the report
+ *  and the STATE are the descent's, not the scene's, or the card that lands
+ *  lists the loot of a room with nothing in it. */
 let greeted: RunReport | null = null;
+let greetedState: RunState | null = null;
 /** What he is holding, until the hero reaches him and the panel opens. */
 let greeting: Waiting | null = null;
+/** The room waiting at the bottom of the hole, until the drop has played. */
+let arriving: SceneDef | null = null;
 /**
  * Close enough to see what's happening. Fit (1×) shows the whole Fissure, and
  * at that scale a monster is four pixels. Fit is one click away.
@@ -118,6 +124,10 @@ let zoom = DEFAULT_ZOOM;
 
 function setPhase(next: Phase): void {
   phase = next;
+  // A scene and a descent are both a map with nothing else on screen, so from
+  // outside they are indistinguishable by what is hidden. A harness needs to
+  // be able to tell the two apart, and this is the only thing that says so.
+  document.body.dataset.runPhase = next;
   $('run-menu').hidden = next !== 'menu';
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
@@ -127,12 +137,9 @@ function setPhase(next: Phase): void {
 
 /**
  * The stage sizes itself to the frame, so the scroll container stops scrolling
- * while a map is up or the two fight over the height. It belongs to the run
- * view SHOWING A MAP: left on while you tabbed to the bench, it froze that
- * page with its items out of reach.
- *
- * `mapfull` rides on the same answer and is the whole of what makes the map the
- * screen — one class on the body, read only by CSS.
+ * while a map is up or the two fight over the height. Left on while you tabbed
+ * to the bench, it froze that page with its items out of reach. `mapfull`
+ * rides on the same answer and is what makes the map the screen.
  */
 export function syncViewportLock(): void {
   const showing = phase !== 'menu';
@@ -146,16 +153,16 @@ export function syncViewportLock(): void {
 /** Which of the three states the Fissure is in. The guide branches on it. */
 export const runPhase = (): Phase => phase;
 
-/**
- * The panel is done. The descent it ended was already cleared and already
- * banked, so this is the report landing rather than the run resuming.
- */
+/** The panel is done. The descent it ended was cleared and banked long before
+ *  anyone spoke, so this is the report landing rather than the run resuming. */
 export function metTaken(): void {
   sim?.takeGift();
   const report = greeted;
+  const state = greetedState;
   greeted = null;
+  greetedState = null;
   greeting = null;
-  if (report) land(report);
+  if (report && state) land(report, state);
 }
 
 /** Called when the bench popup closes — the dock answers to the map again. */
@@ -336,23 +343,27 @@ function finish(left = false): void {
 
   if (report.cleared) streak++;
 
+  // A room through the hole. Already banked, so it is a reason the loop
+  // stopped rather than a new ending — same `land()`, same report. You drop
+  // in exactly as a chained descent does and come up somewhere else. Asked
   // AFTER the report, so the level and the crystal experience this descent
   // just bought both count towards the meeting it schedules.
-  const waiting = report.cleared
-    ? giftWaiting(game, {
+  const scene = report.cleared
+    ? sceneWaiting(game, {
         set: sim.state.set,
         elapsed: sim.state.elapsed,
         socketed: socketed(game),
       })
     : null;
-
-  // Somebody at the mouth. Already banked, so it is a reason the loop stopped
-  // rather than a new ending — same `land()`, same report. Arriving is what
-  // puts the panel up, so what he holds waits here until the hero gets there.
-  if (waiting && sim.greetAtExit()) {
+  if (scene) {
     halt = 'met';
     greeted = report;
-    greeting = waiting;
+    greetedState = sim.state;
+    greeting = scene.gift;
+    arriving = scene.def;
+    handover = 0.0001;
+    banked = report;
+    pending = null;
     absorbEvents();
     return;
   }
@@ -378,17 +389,37 @@ function finish(left = false): void {
     return;
   }
 
-  land(report);
+  land(report, sim.state);
 }
 
+/** Up out of the hole, into a room nobody generated. A `RunSim` like any other
+ *  — the packs are what a scene leaves out — so both renderers draw it with no
+ *  changes, and nothing ticks: the walk across is the whole of it. */
+function enterScene(def: SceneDef): void {
+  arriving = null;
+  banked = null;
+  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
+  playing = false;
+  accumulator = 0;
+  note(def.said, 'add');
+  // A camera left pointed at a corner of the descent that just ended is a
+  // black screen with no obvious way out of it.
+  renderer?.follow();
+  setPhase('scene');
+  setLeaveLabel();
+  fitCanvas();
+  renderReadout();
+}
 
-function land(report: RunReport): void {
-  if (!sim) return;
+/** The one terminus. `run` is the DESCENT's state — a scene has no loot. */
+function land(report: RunReport, run: RunState): void {
   handover = 0;
   pending = null;
   banked = null;
-  renderResults(report, sim.state);
+  arriving = null;
+  renderResults(report, run);
   setPhase('results');
+  setLeaveLabel();
   renderInventory();
   // Nothing to sort is the one case a grid of empty slots is wrong for.
   if (game.haul.length > 0) openHaul(haltLine(report));
@@ -714,7 +745,6 @@ function absorbEvents(): void {
   // actually explain a run, and the kill count is already on screen.
   for (const e of sim.drainEvents() as RunEvent[]) {
     if (e.kind === 'finale') note(e.herald, 'note', at);
-    else if (e.kind === 'met') note(e.said, 'add', at);
     else if (e.kind === 'cleared') {
       note(`Cleared in ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'add', at);
     } else if (e.kind === 'died') {
@@ -731,17 +761,19 @@ function frame(now: number): void {
   if (handover > 0) {
     handover += dt;
     if (playing === false && handover >= HANDOVER * DESCEND) {
-      // The bottom of the hole.
-      if (pending) land(pending);
-      else launch();
+      // The bottom of the hole: a report, a room, or the next descent. This
+      // runs every frame of the climb out, so a room already entered says so.
+      if (pending) land(pending, greetedState ?? sim!.state);
+      else if (arriving) enterScene(arriving);
+      else if (phase !== 'scene') launch();
     }
     if (handover >= HANDOVER) handover = 0;
   }
   const emerge = emergeNow();
   $('run-fade').style.opacity = String(1 - emerge);
 
-  // Over, and someone is standing there. Nothing ticks but the walk.
-  if (greeting && sim && !sim.state.meeting) {
+  // In the room, and someone is standing in it. Nothing ticks but the walk.
+  if (sim && phase === 'scene' && !sim.state.meeting) {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
@@ -749,7 +781,7 @@ function frame(now: number): void {
       accumulator -= TICK;
       steps++;
     }
-    if (sim.state.meeting) openMet(greeting);
+    if (sim.state.meeting && greeting) openMet(greeting);
   }
 
   if (playing && handover === 0 && sim && sim.state.status === 'running') {
@@ -783,6 +815,9 @@ function frame(now: number): void {
  */
 function setLeaveLabel(): void {
   const btn = $('run-leave') as HTMLButtonElement;
+  // Neither button means anything outside a descent, and a scene is the one
+  // place that mattered: offering to abandon a room with a gift standing in it.
+  ($('run-abandon') as HTMLButtonElement).disabled = phase !== 'running';
   const live = phase === 'running' && looping();
   btn.textContent = !live
     ? 'Last descent'
@@ -900,9 +935,10 @@ export function initRun(state: GameState): void {
   // banks nothing, exactly as dying in it would. Every clear before it already
   // banked as it happened, so it ends on the same card and the same haul.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
-    if (!sim || phase !== 'running') return;
+    if (!sim || phase === 'scene') return;
     // Walking over to him: already banked, so nothing to walk out of.
     if (greeting) return;
+    if (phase !== 'running') return;
     // Mid-drop the descent is already over and banked, so this means "do not
     // go back down": the report lands at the bottom instead of a new map.
     if (handover > 0 && !playing && banked) {

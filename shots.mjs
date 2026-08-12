@@ -247,11 +247,16 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(4300);
   await shoot('descent');
 
-  // The Lampwright, at the END of a cleared descent and after the walk out to
-  // it: the wait covers a whole descent, and Blight takes a minute over one.
+  // The Lampwright, at the END of a cleared descent and after the walk across
+  // to him: the wait covers a whole descent, and Blight takes a minute over
+  // one. The ROOM first, before the panel covers it.
   try {
-    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
       timeout: 120000,
+    });
+    await shoot('scene');
+    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+      timeout: 30000,
     });
     await shoot('lampwright');
     // A FACE, at its own grid. A map sprite blown up is a silhouette, and this

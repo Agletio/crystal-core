@@ -5,7 +5,7 @@
  * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
-import { WALL, generateMap, dist, hasLineOfSight, roomCenter } from './grid';
+import { WALL, generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
@@ -35,7 +35,6 @@ import {
   ENCOUNTERS,
   ALL_MODS,
   HERO_BASE,
-  LAMPWRIGHT,
   LOOT,
   MONSTER_BASE,
   MONSTERS,
@@ -53,6 +52,7 @@ import {
   socketSize,
 } from '../data';
 import type { EncounterDef } from '../data';
+import { SCENE_BY_ID } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
@@ -79,9 +79,6 @@ const FINALE_RANGE = 5;
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
 
-/** How far off the hole the Lampwright steps: out of it, still beside it. */
-const GREET_STEP = 1.6;
-
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
 
@@ -90,11 +87,9 @@ const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 
 export type EntityKind = 'hero' | 'monster';
 
-/**
- * A damage-over-time stack. Resisted, but NOT armoured, which is what makes an
- * ailment the answer to a target you cannot punch through. Separate entries
- * rather than a merged number, so each expires on its own clock.
- */
+/** A damage-over-time stack. Resisted, but NOT armoured, which is what makes
+ *  an ailment the answer to a target you cannot punch through. Separate
+ *  entries rather than one number, so each expires on its own clock. */
 export interface Ailment {
   /** What the ailment IS, for naming and for what contagion plants. */
   type: string;
@@ -219,6 +214,12 @@ export interface RunOptions {
   /** Share of a pool below which a potion fires itself, by potion id. A
    *  missing one takes the table's default, which is what every harness runs. */
   potionThresholds?: Record<string, number>;
+  /**
+   * A `SceneDef` id: an authored room instead of a generated descent, with the
+   * people in it and no packs at all. The sim is TOLD to build one — nothing
+   * in `src/sim` ever decides that a scene happens.
+   */
+  scene?: string;
 }
 
 /** A thing that is true for a while. `id` names a `PotionDef` for now. */
@@ -229,7 +230,6 @@ export interface TimedEffect {
 
 export type RunEvent =
   | { kind: 'finale'; name: string; herald: string }
-  | { kind: 'met'; who: string; said: string }
   | { kind: 'kill'; total: number; xp: number }
   | { kind: 'hurt'; life: number; maxLife: number }
   | { kind: 'cleared'; seconds: number; killed: number }
@@ -262,16 +262,11 @@ export interface RunState {
   loot: RunLoot;
   /** The socketed set this was launched with. Never changes mid-descent. */
   set: RunSet;
-  /**
-   * The Lampwright, standing where they turned up, or null. Deliberately NOT
-   * in `monsters`: nothing in combat should ever be able to see them.
-   */
-  lampwright: Entity | null;
+  /** Who is standing in this room. Deliberately NOT in `monsters`: nothing in
+   *  combat may ever see a person. A LIST — a room can hold more than one. */
+  folk: Entity[];
   /** True from the moment the hero reaches them until the panel is dismissed. */
   meeting: boolean;
-  /** Whether the crystal has been handed over. Granted on the spot, not in the
-   *  report — you keep it even if you die further down. */
-  met: boolean;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
   /** Swings that could not pay, and swings in all: the calibration is a share. */
@@ -356,15 +351,18 @@ export class RunSim {
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
     this.set = runSet(crystals);
 
+    const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
     // Sockets are the only thing that lengthens a descent. An empty Fissure is
     // index zero of the same table, not a special case beside it.
-    const map = generateMap(
-      this.set.mods,
-      rng,
-      socketSize(this.set.filled),
-      Math.max(1, Math.round(this.set.power)),
-      this.set.theme
-    );
+    const map = def
+      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)))
+      : generateMap(
+          this.set.mods,
+          rng,
+          socketSize(this.set.filled),
+          Math.max(1, Math.round(this.set.power)),
+          this.set.theme
+        );
     const stats = characterStats(character);
 
     const hero: Entity = {
@@ -397,7 +395,8 @@ export class RunSim {
       dead: false,
     };
 
-    const monsters = this.spawn(map);
+    // A scene has no packs at all, which is the whole of what makes it one.
+    const monsters = def ? [] : this.spawn(map);
     this.byId = new Map(monsters.map((m) => [m.id, m]));
 
     this.state = {
@@ -422,12 +421,46 @@ export class RunSim {
       regained: 0,
       overcharges: 0,
       absorbed: 0,
-      lampwright: null,
+      folk: [],
       meeting: false,
-      met: false,
       damageTaken: {},
     };
 
+    if (def) this.state.folk.push(this.stand(def.who, def.plan.stands));
+  }
+
+  /** A person in a room: no stats worth anything, no bounty, and out of
+   *  `monsters`, so nothing in combat can ever be pointed at them. */
+  private stand(sprite: string, at: Vec2): Entity {
+    const hero = this.state.hero;
+    return {
+      id: this.nextId++,
+      kind: 'monster',
+      sprite,
+      scale: 0.9,
+      rank: 'common',
+      radius: 0.3,
+      skillId: null,
+      x: at.x,
+      y: at.y,
+      facing: Math.atan2(hero.y - at.y, hero.x - at.x),
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: 0,
+      life: 1,
+      mana: 0,
+      effects: [],
+      stats: hero.stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      aggroed: false,
+      hitFlash: 0,
+      dead: false,
+    };
   }
 
   /**
@@ -795,69 +828,11 @@ export class RunSim {
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
   }
 
-  /**
-   * Someone is waiting at the mouth. Called on a CLEARED descent, so the run
-   * is already over and already banked — a gift is never a thing standing next
-   * to the monsters. They climb out of the hole the hero would have dropped
-   * through, which is the `mouth()` decal already on the exit tile.
-   */
-  greetAtExit(): boolean {
-    const s = this.state;
-    if (s.lampwright || s.met) return false;
-    const exit = s.map.exit;
-    const hero = s.hero;
-    const at = this.besideTheHole(exit);
-
-    s.lampwright = {
-      id: this.nextId++,
-      kind: 'monster',
-      sprite: LAMPWRIGHT.sprite,
-      scale: 0.9,
-      rank: 'common',
-      radius: 0.3,
-      skillId: null,
-      x: at.x,
-      y: at.y,
-      facing: Math.atan2(hero.y - at.y, hero.x - at.x),
-      action: 'idle',
-      actionTimer: 0,
-      deathAge: 0,
-      ailments: [],
-      bounty: 0,
-      life: 1,
-      mana: 0,
-      effects: [],
-      stats: hero.stats,
-      cooldown: 0,
-      path: [],
-      pathTimer: 0,
-      targetId: null,
-      aggroed: false,
-      hitFlash: 0,
-      dead: false,
-    };
-    this.events.push({ kind: 'met', who: LAMPWRIGHT.name, said: LAMPWRIGHT.seen });
-    return true;
-  }
-
-  /** A tile or two off the hole, on the first side of it with room, starting
-   *  with the side the hero is on. */
-  private besideTheHole(exit: Vec2): Vec2 {
-    const grid = this.state.map.grid;
-    const towards = Math.atan2(this.state.hero.y - exit.y, this.state.hero.x - exit.x);
-    for (let i = 0; i < 8; i++) {
-      const angle = towards + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 4);
-      const at = { x: exit.x + Math.cos(angle) * GREET_STEP, y: exit.y + Math.sin(angle) * GREET_STEP };
-      if (grid.fits(at.x, at.y, 0.3)) return at;
-    }
-    return exit;
-  }
-
-  /** The descent is over and the only thing still moving is the hero, walking
-   *  over. Not `step`: the clock the report already read has stopped. */
+  /** The room is a place you have arrived in and the only thing moving is the
+   *  hero, crossing it. Not `step`: nothing in a scene has a clock. */
   walkOut(dt: number): void {
     const s = this.state;
-    const met = s.lampwright;
+    const met = s.folk[0];
     if (!met || s.meeting) return;
 
     // A walk that cannot finish still hands the thing over.
@@ -874,8 +849,7 @@ export class RunSim {
     const s = this.state;
     if (!s.meeting) return;
     s.meeting = false;
-    s.lampwright = null;
-    s.met = true;
+    s.folk = [];
   }
 
   /** Rolled from the run's rng, so the same crystal does not always end the same. */

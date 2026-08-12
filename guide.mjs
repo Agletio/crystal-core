@@ -162,13 +162,13 @@ for (let turn = 0; turn < 900; turn++) {
     stuck++;
   }
 
-  // The Lampwright is at the MOUTH of the cleared descent, handing over in
-  // person. The guide clicks that button like any other, so a meeting nobody
-  // could dismiss shows up as being stuck rather than as being skipped.
+  // The Lampwright is in his own room, at the end of a cleared descent,
+  // handing over in person. The guide clicks that button like any other, so a
+  // meeting nobody could dismiss shows up as stuck rather than as skipped.
   if (now.ring === 'met-take' && now.step !== metAt) {
     met++;
     metAt = now.step;
-    trace.push(`Met         the Lampwright, at the mouth (${met})`);
+    trace.push(`Met         the Lampwright, in his own room (${met})`);
   }
 
   if (now.trapped) {
