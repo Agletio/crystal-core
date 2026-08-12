@@ -41,8 +41,7 @@ import {
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
-  MONSTER_RANGED_SKILL,
-  RANGED_PACK_CHANCE,
+  MONSTER_ABILITIES,
   SKILLS,
   SKILL_BY_ID,
   opensHere,
@@ -334,8 +333,6 @@ export class RunSim {
   private auraTimer = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
   private auraDamage = 0;
-  /** Baseline monster stats for this map, scaled into the finale. */
-  private finaleStats!: CombatStats;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -485,7 +482,6 @@ export class RunSim {
     // Baseline for the finale, so it scales with the crystal like everything
     // else rather than being a fixed lump of numbers. Fixed to one monster
     // across every family: the closing fight is the same fight in all three.
-    this.finaleStats = monsterStats(this.set.mods, MONSTERS[0]);
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -494,8 +490,10 @@ export class RunSim {
       // a thing you can recognise and react to.
       const pool = MONSTERS_BY_FAMILY[plan[p] ?? 'normal'];
       const def = this.rng.weighted(pool, (m) => m.weight) ?? pool[0];
-      const ranged = this.rng.chance(RANGED_PACK_CHANCE);
-      const bolt = SKILL_BY_ID[MONSTER_RANGED_SKILL];
+      // Per PACK: a pack throwing two elements reads as noise.
+      const ability =
+        this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+      const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
       // One carrier per pack, whatever the kind. Five Chanters would stack
       // five chants on their own neighbours, and read on screen as fog rather
       // than as a thing in the middle of the room worth killing first.
@@ -509,27 +507,22 @@ export class RunSim {
         // pack you look at. Stats key on the rank too, or every rare in the
         // run would share the common one's life.
         const rank = this.rng.weighted(MONSTER_RANKS, (r) => r.weight) ?? MONSTER_RANKS[0];
-        const statsKey = `${def.id}:${ranged ? 'r' : 'm'}:${rank.id}`;
+        const statsKey = `${def.id}:${ability.id}:${rank.id}`;
         let stats = statsFor.get(statsKey);
         if (!stats) {
-          const base = monsterStats(this.set.mods, def);
-          const damage = base.damage * rank.damage;
+          const base = monsterStats(this.set.mods, def, ability);
           stats = {
             ...base,
             maxLife: base.maxLife * rank.life,
-            damage,
-            // Beside `damage`, never derived from it later: a rank that scaled
-            // one and not the other is a rare that hits like a common.
-            damageByType: { [base.damageType ?? 'physical']: damage },
+            damage: base.damage * rank.damage,
+            // Every type scaled together and never re-derived: a rank that
+            // scales one and not the other is a rare that hits like a common.
+            damageByType: Object.fromEntries(
+              Object.entries(base.damageByType).map(([t, v]) => [t, v * rank.damage])
+            ),
           };
-          if (ranged && bolt) {
-            stats = {
-              ...stats,
-              attackRange: bolt.range,
-              aggroRange: bolt.range + 2,
-              // What it throws, not what the map is made of.
-              damageByType: { [bolt.damageTypes[0] ?? 'physical']: damage },
-            };
+          if (thrown) {
+            stats = { ...stats, attackRange: thrown.range, aggroRange: thrown.range + 2 };
           }
           statsFor.set(statsKey, stats);
         }
@@ -543,7 +536,7 @@ export class RunSim {
           scale: def.scale * rank.scale,
           rank: rank.id,
           radius,
-          skillId: ranged && bolt ? MONSTER_RANGED_SKILL : null,
+          skillId: thrown ? ability.skill : null,
           ...(def.aura && i === carrier ? { aura: def.aura } : {}),
           x: at.x,
           y: at.y,
@@ -898,13 +891,19 @@ export class RunSim {
     const biggest = pool.reduce((a, b) => (b.scale > a.scale ? b : a));
     const commonest = pool.reduce((a, b) => (b.weight > a.weight ? b : a));
 
-    const base = this.finaleStats;
-    const damage = base.damage * def.damage;
+    // One ability for the whole encounter: what comes up the hole is one thing.
+    const ability =
+      this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    const base = monsterStats(this.set.mods, MONSTERS[0], ability);
     const stats: CombatStats = {
       ...base,
       maxLife: base.maxLife * def.life,
-      damage,
-      damageByType: { [base.damageType ?? 'physical']: damage },
+      damage: base.damage * def.damage,
+      damageByType: Object.fromEntries(
+        Object.entries(base.damageByType).map(([t, v]) => [t, v * def.damage])
+      ),
+      ...(thrown ? { attackRange: thrown.range, aggroRange: thrown.range + 2 } : {}),
     };
 
     const exit = s.map.exit;
@@ -921,7 +920,7 @@ export class RunSim {
         scale: (def.count === 1 ? biggest.scale : commonest.scale) * def.size,
         rank: 'rare',
         radius: 0.34 * def.size,
-        skillId: null,
+        skillId: thrown ? ability.skill : null,
         x: exit.x + Math.cos(angle) * 0.15,
         y: exit.y + Math.sin(angle) * 0.15,
         facing: Math.atan2(s.hero.y - exit.y, s.hero.x - exit.x),

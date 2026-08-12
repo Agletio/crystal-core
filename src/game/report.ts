@@ -8,6 +8,7 @@ import type { GameState } from './state';
 import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
+import { DAMAGE_TYPE_BY_ID } from '../data';
 import { addXp, addSkillXp, mainSkillId } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
@@ -115,14 +116,20 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
   }
 
-  // Damage taken, split by type. Nothing reads this yet beyond the overlay —
-  // it's here as the worked example of a diagnostic stat.
+  // Damage taken, split by type — worst first and under its own name, because
+  // a monster brings its own element now and a descent routinely shows three
+  // of these. What you read off it is which resistance to go and find.
   const totalTaken = Object.values(run.damageTaken).reduce((n, v) => n + v, 0);
   if (totalTaken > 0) {
     rows.push({ label: 'damage taken', value: String(round(totalTaken)) });
-    for (const [type, amount] of Object.entries(run.damageTaken)) {
-      if (round(amount) <= 0) continue;
-      rows.push({ label: `  ${type}`, value: String(round(amount)) });
+    const split = Object.entries(run.damageTaken)
+      .filter(([, amount]) => round(amount) > 0)
+      .sort((a, b) => b[1] - a[1]);
+    for (const [type, amount] of split) {
+      rows.push({
+        label: `  ${DAMAGE_TYPE_BY_ID[type]?.name ?? type}`,
+        value: `${round(amount)}  (${Math.round((amount / totalTaken) * 100)}%)`,
+      });
     }
   }
 

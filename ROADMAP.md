@@ -10,9 +10,19 @@ tuning — a measurement beats them. A landed phase is DELETED from here, so
 before starting one, `git fetch` and check you are on the tip of the branch:
 a phase you can still see in a stale clone may already be built.
 
-**What the trades phase turned out to know that its writing did not.** Kept
-here because the next thing built on top of them will want it.
+**What the last two phases turned out to know that their writing did not.**
+Kept here because the next thing built on top of them will want it.
 
+- **Adding an element to every monster did not change what a modifier is
+  worth.** "of Cinders" always multiplied a hit by (1 + share/100) and still
+  does; only the SPLIT moved. Dropping its `DANGER_STATS` weight from 0.9 to 0.6
+  on the assumption that added damage is softer than a conversion flattened the
+  reward ladder until band 6 paid no more than band 5, which the existing check
+  caught within one run. Weigh a stat by the arithmetic it does, not by the
+  story about it.
+- **A pack's element is rolled per PACK, not per monster** — the phase asked for
+  per monster and the code already said why not, in `RANGED_PACK_CHANCE`'s own
+  comment. Mixed packs read as noise.
 - **Five notables, not "about five".** Twenty nodes alternating minor and
   notable over ten points makes five the CEILING and not the average: a spoke's
   prefix of odd length wastes its last point on travel, so a careless walk
@@ -69,63 +79,7 @@ usually missing:
 Anything you are unsure about goes in Open questions, never into a phase as an
 assumption. A phase that guesses is a phase that has to be undone.
 
-### Phase 1 — Every monster brings its own element [user 10]
-
-**What is true today, and it is not what it looks like.** One crystal modifier
-does the whole job. **"of Cinders"** (`monster_fire` in `src/data.ts`) rolls
-`monsterFire` at +35–75% on its cheap tier and +225–375% on its ilvl 40 tier,
-and `monsterStats` in `src/sim/stats.ts` reads it like this:
-
-```
-const fire = percentStat(mods, 'monsterFire');
-const dealt = computeStat(damage, mods, 'monsterDamage') * (1 + fire / 100);
-const type = fire > 0 ? 'fire' : 'physical';
-```
-
-So it is a CONVERSION with a damage bonus welded to it: any amount at all flips
-every monster on the map from physical to fire, and the number is how much more
-damage they do while doing it. One type for the whole map, decided by the
-crystal. Nothing else in the game deals anything but physical — and because a
-ward is one type and caps at `DEFENCE.resistanceCap`, one fire ward turns that
-entire modifier off.
-
-Ranged monsters share one skill: `MONSTER_RANGED_SKILL = 'bolt'`, a monster-only
-`SkillDef` with no `category` so it never reaches the Skills screen, and
-`RANGED_PACK_CHANCE` decides whether a pack carries it.
-
-**Why it is wrong.** A monster's element belongs to the monster, not the room,
-and a danger modifier that one ward switches off entirely is a modifier that is
-either free or fatal with nothing in between.
-
-- [ ] A TABLE of monster abilities, each with its own damage type, and a
-      monster rolls one at spawn off the run's own rng. Three to start: a fire
-      bolt (the look it has now), a frost bolt (blue-white, icy) and a
-      lightning arc (a strike that chains).
-- [ ] The ability's type is what that monster deals. `MONSTER_RANGED_SKILL`
-      becomes the table, and the melee monsters get their entry too rather than
-      being physical by definition.
-- [ ] `monster_fire` stops CONVERTING. It becomes **added damage of a type**:
-      a share of what a monster already hits for, dealt as fire on top. You can
-      then stack it and armour yourself against it — and because it is on top
-      of the monster's own element, you still need some defence against the
-      rest, which is the whole point of the change.
-- [ ] Whether the other elements get their own map modifier beside Cinders, or
-      one modifier rolls which element it adds. Either is defensible; pick one
-      and say why.
-- [ ] `DANGER_STATS` re-reads it. `monsterFire` is weighted `0.9` today as a
-      convert-everything mod; as added damage it is worth something else, and
-      danger is what every reward is derived from.
-- [ ] The arc chains, so it needs a `vfxKind` both renderers draw — the sim
-      already emits `points` for a shape, which is what a chain is.
-- [ ] The results overlay splits damage taken by type already and will show
-      three where it showed one. That is the point; check that it reads.
-
-**What must not break.** `npm run demo` measures what a monster hits for
-against what its stats say, across every rank and the finale, and it holds
-`DEFENCE.monsterHitFloor` — a quarter of every hit lands whatever the wards do.
-Three elements against per-type resistances moves every ladder number: measure.
-
-### Phase 2 — What a node does, shown and not overlapped [user 8]
+### Phase 1 — What a node does, shown and not overlapped [user 8]
 
 **What is true today.** A tree node hands the sim switches out of `GRANTS`
 (`src/sim/grants.ts`), and `mergeGrants` folds two nodes granting the same key
@@ -165,11 +119,10 @@ build, so the demo has to prove the block only catches what it means to.
 
 ## Open questions
 
-Do not guess at these. **None of them blocks a phase** — the four that did have
-been answered and are written into the phases above, so every phase in this
-file is buildable today. Both trades are now designed; what is still open about
-them is only how a character COMES BY one, which the phase ships a placeholder
-for.
+Do not guess at these. **None of them blocks a phase** — the one phase left in
+this file is buildable today. Trades have landed; what is still open about them
+is only how a character COMES BY one, and the placeholder for that shipped
+with them.
 
 1. **What the Lampwright wants.** Trades have landed and the placeholder is in:
    anyone may take one up at level 5, and the Trade screen says so in as many
@@ -200,7 +153,14 @@ for.
    an ordering, and `CLAUDE.md` says it is an open question rather than a claim.
    Nothing is blocked on it: it is a balance answer, and balance waits.
 
-4. **The Cavern and the Fissure have no currency of their own.** Retiring the
+4. **Nothing but the Fissure hands out an element.** Every monster brings its
+   own now, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack
+   is as likely to throw frost as a Cavern one. Biasing the table by monster
+   FAMILY would make a world's fights feel like that world's, and is one field
+   on `MonsterFamilyDef` plus a weight lookup. Not a phase, and not asked for:
+   written down because the table it needs already exists.
+
+5. **The Cavern and the Fissure have no currency of their own.** Retiring the
    quality ladder took `sigil_of_refinement` with it, which was Prismatic's
    exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
    Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated

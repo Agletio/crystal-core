@@ -250,6 +250,16 @@ export interface Boost {
   incArmour: number;
 }
 
+/** What a monster DOES, and the damage type it deals doing it. Its own, not
+ *  the map's — see MONSTER_ABILITIES. */
+export interface MonsterAbilityDef {
+  id: string;
+  name: string;
+  damageType: string;
+  skill: string | null; // null is a plain swing at the monster's own reach
+  weight: number;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;

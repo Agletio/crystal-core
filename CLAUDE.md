@@ -97,6 +97,27 @@ The Seam, which therefore takes exactly two crystals of each. A zone is a LOOK:
 same generator, same packs, different stone under them. It rides on `GameMap`,
 so both renderers read one answer.
 
+**An element belongs to the MONSTER, not the room.** `MONSTER_ABILITIES` is a
+table of what a monster does and what it deals doing it — Claws, Emberbite,
+Rimebite, and three thrown ones — rolled per PACK off the run's own rng, because
+a pack throwing two elements reads as noise where a uniform one reads as a thing
+you recognise. The three ranged entries weigh a quarter of the table between
+them, which is exactly the share that used to shoot. `MONSTER_ABILITY_BY_ID`
+names them; a monster skill has no `category`, so it never reaches the Skills
+screen. **Lightning Arc** is the one that is not a line to one target: it leaps
+twice for 60% each off the skill's own `params`, which the projectile behaviour
+sums with whatever a tree grants.
+
+A crystal **adds** rather than converts. "of Cinders", "of Frost" and "of Storms"
+each roll `monsterFire` / `monsterCold` / `monsterLightning`, a share of what a
+monster already hits for dealt as that type ON TOP of its own. The total is what
+it always was — a hit is still multiplied by (1 + share/100) — so `DANGER_STATS`
+weighs them exactly as before; what changed is that carrying one ward blunts a
+part of a hit instead of switching a modifier off. Three modifiers rather than
+one that rolls which element, because a name saying Cinders over a roll saying
+cold is a lie about which resistance to bring. The report splits damage taken by
+type, worst first, and that split is what you read to know which ward to find.
+
 **Auras** (`AURAS`) are why the aura worlds hurt about twice as much as the
 Fissure. One carrier per pack, never buffing itself: Demonic adds a fixed amount
 of damage and of armour, Prismatic multiplies both. Alone each is a hazard;

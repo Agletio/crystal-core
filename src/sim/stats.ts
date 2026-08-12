@@ -5,6 +5,7 @@ import {
   AILMENT_NAMES,
   ATTRIBUTES,
   DAMAGE_TYPES,
+  ADDED_DAMAGE_TYPES,
   DEFENCE,
   DROP_GROUPS,
   HERO_BASE,
@@ -13,6 +14,7 @@ import {
   MONSTER_BASE,
   SKILLS,
   findStat,
+  monsterAddedStat,
   monsterResStat,
   SKILL_BY_ID,
   SKILL_SLOTS,
@@ -24,7 +26,7 @@ import type { Character } from './character';
 import { nodeById } from '../skills-tree';
 import { tradeGrants } from '../trades';
 import { critBuff, mergeGrants } from './grants';
-import type { Item, MonsterDef, RolledMod, SkillDef } from '../types';
+import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -445,15 +447,28 @@ export function characterStats(character: Character): CombatStats {
  * multipliers on top, so danger and monster identity compose instead of
  * competing. Nothing else makes a monster stronger: socket count is length.
  */
-export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
+export function monsterStats(
+  mods: RolledMod[],
+  def: MonsterDef,
+  ability?: MonsterAbilityDef
+): CombatStats {
   const life = MONSTER_BASE.life * def.life;
   const damage = MONSTER_BASE.damage * def.damage;
 
-  // Socketed danger mods land here: armour blunts your hits, crit spikes
-  // theirs, and fire changes what you're actually being killed by.
-  const fire = percentStat(mods, 'monsterFire');
-  const dealt = computeStat(damage, mods, 'monsterDamage') * (1 + fire / 100);
-  const type = fire > 0 ? 'fire' : 'physical';
+  // What this monster deals is its ABILITY's, never the map's — an element
+  // belongs to the thing swinging it.
+  const type = ability?.damageType ?? 'physical';
+  const own = computeStat(damage, mods, 'monsterDamage');
+
+  // And the crystal ADDS on top of that rather than converting it, so a ward
+  // for one element blunts a share of the hit instead of switching a modifier
+  // off, and you still have the monster's own element to answer.
+  const byType: Record<string, number> = { [type]: own };
+  for (const added of ADDED_DAMAGE_TYPES) {
+    const share = percentStat(mods, monsterAddedStat(added));
+    if (share > 0) byType[added] = (byType[added] ?? 0) + (own * share) / 100;
+  }
+  const dealt = Object.values(byType).reduce((n, v) => n + v, 0);
 
   // Nothing resists anything until a ward says so, and a ward is ONE type — a
   // reason to carry a second damage type rather than a wall.
@@ -472,8 +487,7 @@ export function monsterStats(mods: RolledMod[], def: MonsterDef): CombatStats {
   return {
     maxLife: computeStat(life, mods, 'monsterLife'),
     damage: dealt,
-    // One type, so the same delivery the hero uses reduces to a single pass.
-    damageByType: { [type]: dealt },
+    damageByType: byType,
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
     critChance: percentStat(mods, 'monsterCrit'),
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,

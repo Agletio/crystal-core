@@ -512,6 +512,14 @@ landmark: the two holes are how you read the room. Pixi draws it into a
 `propLayer` over the map built once; canvas2d draws it in the same loop as
 everything else. Both clip to what is on screen.
 
+**A vfx SHAPE is a pure function in `render/renderer.ts`.** `fireBolt`,
+`fireBurst`, `poisonDrops` and `lightningArc` return `FirePixel[]` in tile
+units, and both renderers stamp them through their own `blocks()`. A kind drawn
+in one renderer and not the other is a skill that is invisible in the fallback.
+An arc's kinks ALTERNATE sides and are hashed off its two ends: left to the hash
+alone, consecutive joints land the same way half the time and the whole thing
+reads as a wavy rope rather than as lightning.
+
 **One light, from above and slightly in front** (every sprite faces +x). Mass
 takes the lit ink where nothing is above it and the shade where nothing is
 below or behind it; a highlight sitting directly under a shadow is light from
@@ -659,6 +667,28 @@ anything that overwrites — a copy onto an occupied slot, and every load.
 demo's "every collection a save can hold items in claims its ids" list, which
 walks each one through `readSave` and proves the id counter moved. Miss the
 third and a save can hand out an id the next item then reuses.
+
+**An element belongs to the MONSTER.** `MONSTER_ABILITIES` in `src/data.ts` says
+what a monster does and what it deals doing it, and `monsterStats` takes one as
+its third argument. Nothing about the map decides a damage type any more. Rolled
+per PACK, exactly as being ranged was and for the same reason — a pack throwing
+two elements reads as noise where a uniform one reads as a thing you recognise
+and answer — and the ranged entries weigh a quarter of the table, which is the
+constant they replaced.
+
+**A crystal ADDS damage; it never converts it.** A share of what a monster
+already hits for, dealt as one type on top of the monster's own. The arithmetic
+is unchanged — the hit is still multiplied by (1 + share/100) — so the
+`DANGER_STATS` weight stays where it was at 0.9; what moved is only that a ward
+now blunts part of a hit rather than switching a modifier off. Three modifiers
+(`monster_fire`, `monster_cold`, `monster_lightning`), one per element, because
+a crystal modifier is read and answered with a resistance and a name that lied
+about which one would be worse than two more table rows. `monsterFire` keeps its
+stat id from when it was a conversion: a save points at rolled stat ids and
+renaming one costs the player that line silently.
+
+**A monster skill has no `category`.** That is the whole of what keeps it off
+the Skills screen, and the demo holds every ability's skill to it.
 
 **Danger only counts what the sim still reads.** `DangerStat.cap` in
 `DANGER_STATS` is where a stat saturates — a ward at `DEFENCE.resistanceCap`, a

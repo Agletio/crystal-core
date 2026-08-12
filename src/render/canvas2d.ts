@@ -18,6 +18,7 @@ import {
   auraLook,
   burstRadius,
   fireBolt,
+  lightningArc,
   fireBurst,
   fireShades,
   fireSparks,
@@ -346,6 +347,8 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         ctx.stroke();
       } else if (fx.kind === 'flame') {
         blocks(v, fireBolt(from, to, t), fx.damageType, 1 - t);
+      } else if (fx.kind === 'arc') {
+        blocks(v, lightningArc(from, to, t), fx.damageType, 1);
       } else if (fx.kind === 'bolt') {
         const travel = Math.min(1, t * 1.5);
         const tail = Math.max(0, travel - 0.3);

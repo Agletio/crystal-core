@@ -7,6 +7,7 @@ import type {
   GearBase,
   ModDef,
   MonsterDef,
+  MonsterAbilityDef,
   MonsterFamily,
   AuraDef,
   DropGate,
@@ -53,6 +54,13 @@ export const DAMAGE_TYPE_BY_ID: Record<string, DamageTypeDef> = Object.fromEntri
 /** What a crystal hardens its monsters against one damage type with. */
 export const monsterResStat = (type: string): string =>
   `monster${type[0].toUpperCase()}${type.slice(1)}Res`;
+
+/** What a crystal ADDS to a monster's hit, as one type. */
+export const monsterAddedStat = (type: string): string =>
+  `monster${type[0].toUpperCase()}${type.slice(1)}`;
+
+export const ADDED_DAMAGE_TYPES = ['fire', 'cold', 'lightning'];
+export const ADDED_DAMAGE_STATS = ADDED_DAMAGE_TYPES.map(monsterAddedStat);
 
 export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
 
@@ -587,8 +595,12 @@ export const CRYSTAL_MODS: ModDef[] = [
       { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCrit', form: 'inc', range: [10, 20] }] },
     ],
   },
+  /* Three modifiers, one per element, rather than one that rolls which: a
+     crystal modifier is read and answered with a resistance, and a name saying
+     Cinders over a roll saying cold is worse than two more rows. Each ADDS a
+     share of what a monster already hits for, as its own type on top of what
+     the monster brings, so a ward blunts it rather than switching it off. */
   {
-    // Physical instead of fire: the first mod a character can be built to shrug off.
     id: 'monster_fire',
     slot: 'mod',
     name: 'of Cinders',
@@ -597,6 +609,28 @@ export const CRYSTAL_MODS: ModDef[] = [
     tiers: [
       { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [225, 375] }] },
       { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [35, 75] }] },
+    ],
+  },
+  {
+    id: 'monster_cold',
+    slot: 'mod',
+    name: 'of Frost',
+    appliesTo: ['crystal'],
+    tags: ['danger', 'cold'],
+    tiers: [
+      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterCold', form: 'inc', range: [225, 375] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCold', form: 'inc', range: [35, 75] }] },
+    ],
+  },
+  {
+    id: 'monster_lightning',
+    slot: 'mod',
+    name: 'of Storms',
+    appliesTo: ['crystal'],
+    tags: ['danger', 'lightning'],
+    tiers: [
+      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterLightning', form: 'inc', range: [225, 375] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterLightning', form: 'inc', range: [35, 75] }] },
     ],
   },
   {
@@ -1977,8 +2011,22 @@ export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
   MONSTERS.map((m) => [m.id, m])
 );
 
-/** Rolled per PACK, so "they shoot" is something you can recognise. */
-export const RANGED_PACK_CHANCE = 0.25;
+/** What a monster does, and what it deals doing it: an element belongs to the
+ *  MONSTER, not the room. Rolled per PACK, as being ranged was, since a pack
+ *  throwing two elements reads as noise — and the three ranged entries weigh
+ *  250 of 1000, which is the 25% `RANGED_PACK_CHANCE` used to be. */
+export const MONSTER_ABILITIES: MonsterAbilityDef[] = [
+  { id: 'claws', name: 'Claws', damageType: 'physical', skill: null, weight: 600 },
+  { id: 'emberbite', name: 'Emberbite', damageType: 'fire', skill: null, weight: 75 },
+  { id: 'rimebite', name: 'Rimebite', damageType: 'cold', skill: null, weight: 75 },
+  { id: 'fire_bolt', name: 'Fire Bolt', damageType: 'fire', skill: 'bolt', weight: 84 },
+  { id: 'frost_bolt', name: 'Frost Bolt', damageType: 'cold', skill: 'frost_bolt', weight: 83 },
+  { id: 'lightning_arc', name: 'Lightning Arc', damageType: 'lightning', skill: 'arc', weight: 83 },
+];
+
+export const MONSTER_ABILITY_BY_ID: Record<string, MonsterAbilityDef> = Object.fromEntries(
+  MONSTER_ABILITIES.map((a) => [a.id, a])
+);
 
 // --- finale ----------------------------------------------------------------
 //
@@ -2044,8 +2092,6 @@ export const ENCOUNTERS: EncounterDef[] = [
   },
 ];
 
-/** Which skill a ranged pack uses. */
-export const MONSTER_RANGED_SKILL = 'bolt';
 
 /**
  * A thing that is TRUE FOR A WHILE, and the first instances of one. A potion
@@ -2135,7 +2181,14 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   monsterLife: { weight: 0.7, rewards: true },
   monsterArmour: { weight: 0.55, rewards: true, cap: ARMOUR_SATURATION },
   monsterCrit: { weight: 0.5, rewards: true, cap: 100 }, // a chance saturates at certain
-  monsterFire: { weight: 0.9, rewards: true },
+  // Unchanged at 0.9 from when this was a conversion, and deliberately: the
+  // arithmetic is the same either way — a hit is still multiplied by
+  // (1 + share/100) — and what moved is only that the share now lands as its
+  // own type on TOP of the monster's rather than replacing the whole hit. That
+  // makes it harder to answer, not easier, so nothing here comes down.
+  ...Object.fromEntries(
+    ADDED_DAMAGE_STATS.map((stat) => [stat, { weight: 0.9, rewards: true }])
+  ),
   monsterMoveSpeed: { weight: 0.6, rewards: true },
   layoutComplexity: { weight: 0.2, rewards: true },
   packCount: { weight: 0.5, rewards: false },
@@ -2621,6 +2674,38 @@ export const SKILLS: SkillDef[] = [
     manaCost: 0,
     range: 6.5,
     vfxKind: 'bolt',
+  },
+  {
+    id: 'frost_bolt',
+    name: 'Frost Bolt',
+    description: 'A shard of ice at range. Single target, from much further away.',
+    tags: ['spell', 'projectile'],
+    behaviour: 'single_target',
+    damageTypes: ['cold'],
+    baseDamage: 72,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 6.5,
+    vfxKind: 'bolt',
+  },
+  {
+    // The one monster skill that is not one line to one target. `params` are
+    // the skill's own baseline where grants are what a build ADDS; the
+    // projectile behaviour sums the two.
+    id: 'arc',
+    name: 'Lightning Arc',
+    description: 'A strike that leaps to 2 more, for 60% of the damage each.',
+    tags: ['spell', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['lightning'],
+    baseDamage: 72,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 5.5,
+    vfxKind: 'arc',
+    params: { chains: 2, chainDamage: 0.6 },
   },
   {
     /**

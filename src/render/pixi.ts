@@ -28,6 +28,7 @@ import {
   auraLook,
   burstRadius,
   fireBolt,
+  lightningArc,
   fireBurst,
   fireShades,
   fireSparks,
@@ -466,6 +467,11 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'flame') {
         blocks(fireBolt(from, to, t), fx.damageType, 1 - t);
+        continue;
+      }
+
+      if (fx.kind === 'arc') {
+        blocks(lightningArc(from, to, t), fx.damageType, 1);
         continue;
       }
 

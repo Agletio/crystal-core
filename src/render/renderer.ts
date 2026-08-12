@@ -1230,6 +1230,64 @@ export function fireSparks(at: Vec2, t: number): FirePixel[] {
 }
 
 /**
+ * The lightning arc: a jag drawn WHOLE from the first frame and burning out
+ * rather than travelling — what separates an arc from a bolt is that it is
+ * already there. Each kink is hashed off the two ends, so a leap is the same
+ * shape in both renderers and two leaps do not share a silhouette.
+ */
+export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const span = Math.hypot(dx, dy);
+  if (span < 1e-3) return fireSparks(to, t);
+
+  // Across the line, for the kink to travel along.
+  const nx = -dy / span;
+  const ny = dx / span;
+  const salt = Math.round(from.x * 13 + from.y * 29 + to.x * 7 + to.y * 3);
+  const JOINTS = 5;
+  const kink = Math.min(0.7, span * 0.3);
+
+  const at = (i: number): Vec2 => {
+    const along = i / JOINTS;
+    // Sides ALTERNATE: left to the hash, consecutive joints land the same way
+    // half the time and it reads as a wavy rope. The noise only says how far.
+    const off =
+      i === 0 || i === JOINTS
+        ? 0
+        : (i % 2 === 0 ? 1 : -1) * (0.4 + tileNoise(i, salt, 53) * 0.6) * kink;
+    return { x: from.x + dx * along + nx * off, y: from.y + dy * along + ny * off };
+  };
+
+  // Stamped one block at a time, or the line is a row of dots at joint spacing.
+  for (let i = 0; i < JOINTS; i++) {
+    const a = at(i);
+    const b = at(i + 1);
+    const steps = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / FIRE_PX));
+    for (let s = 0; s <= steps; s++) {
+      const x = a.x + (b.x - a.x) * (s / steps);
+      const y = a.y + (b.y - a.y) * (s / steps);
+      pixels.push({ x: onGrid(x), y: onGrid(y), size: FIRE_PX, shade: 2, alpha: 1 - t });
+      // A cooler sheath on one side: a filament with a glow, not a rope.
+      const flare = tileNoise(i * 9 + s, salt, 67);
+      if (flare > 0.55) {
+        pixels.push({
+          x: onGrid(x + nx * FIRE_PX * (flare > 0.8 ? 2 : 1)),
+          y: onGrid(y + ny * FIRE_PX * (flare > 0.8 ? 2 : 1)),
+          size: FIRE_PX,
+          shade: flare > 0.8 ? 0 : 1,
+          alpha: (1 - t) * 0.7,
+        });
+      }
+    }
+  }
+  // The ends spit, which is what makes it read as landing on something.
+  for (const spark of fireSparks(to, t)) pixels.push(spark);
+  return pixels;
+}
+
+/**
  * The falling-poison animation, as pure geometry, so the radius DRAWN is the
  * radius the sim used — the skill emits it as a second point and nothing here
  * invents a size. Tile units; `t` runs 0 to 1 over the effect's life.

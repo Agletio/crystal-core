@@ -39,6 +39,13 @@ import {
   DAMAGE_TYPES,
   ARMOUR_BASES,
   ARMOUR_FAMILIES,
+  ADDED_DAMAGE_STATS,
+  ADDED_DAMAGE_TYPES,
+  DANGER_STATS,
+  DAMAGE_TYPE_BY_ID,
+  MONSTER_ABILITIES,
+  MONSTER_ABILITY_BY_ID,
+  monsterAddedStat,
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
@@ -169,7 +176,14 @@ import type { Character } from './sim/character';
 import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
-import { auraLook, floorPalette, livingDecals, paletteFrom, tileDecals } from './render/renderer';
+import {
+  auraLook,
+  floorPalette,
+  lightningArc,
+  livingDecals,
+  paletteFrom,
+  tileDecals,
+} from './render/renderer';
 import {
   TUTORIAL_STEPS,
   dockSlotId,
@@ -4898,6 +4912,230 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
     'and one it does not reach is left alone',
     'the area reaches past what it draws'
   );
+}
+
+// ===========================================================================
+rule('ELEMENTS — does a monster bring its own, and does a ward still matter?');
+
+// One crystal modifier used to do the whole job: any amount of "of Cinders" at
+// all flipped every monster on the map from physical to fire, so one fire ward
+// turned the modifier off entirely and nothing else in the game dealt anything
+// but physical. An element belongs to the MONSTER now, and the crystal adds on
+// top of it.
+{
+  line(
+    `  ${MONSTER_ABILITIES.length} abilities: ` +
+      MONSTER_ABILITIES.map((a) => `${a.name} (${a.damageType})`).join(', ')
+  );
+
+  const broken = MONSTER_ABILITIES.filter(
+    (a) => !DAMAGE_TYPE_BY_ID[a.damageType] || (a.skill !== null && !SKILL_BY_ID[a.skill])
+  );
+  check(
+    broken.length === 0 && MONSTER_ABILITIES.length >= 3,
+    'every ability names a real damage type and a skill that exists',
+    broken.map((a) => a.id).join(', ')
+  );
+
+  // A monster skill is monster-only: no category means it never reaches the
+  // Skills screen, and a player who could equip one would be a player holding
+  // a skill with no tree and no mana cost.
+  const leaked = MONSTER_ABILITIES.filter(
+    (a) => a.skill && SKILL_BY_ID[a.skill]?.category !== undefined
+  );
+  check(leaked.length === 0, 'and none of them is a skill you could equip', leaked.map((a) => a.id).join(', '));
+
+  // The share that shoots, held to what RANGED_PACK_CHANCE used to be — the
+  // table replaced a constant and must not have quietly moved the game.
+  const total = MONSTER_ABILITIES.reduce((n, a) => n + a.weight, 0);
+  const ranged = MONSTER_ABILITIES.filter((a) => a.skill).reduce((n, a) => n + a.weight, 0);
+  const elemental = MONSTER_ABILITIES.filter((a) => a.damageType !== 'physical')
+    .reduce((n, a) => n + a.weight, 0);
+  line(
+    `  ${Math.round((ranged / total) * 100)}% of packs shoot, and ` +
+      `${Math.round((elemental / total) * 100)}% bring an element of their own`
+  );
+  check(
+    Math.abs(ranged / total - 0.25) < 0.001,
+    'a quarter of packs shoot, which is exactly what the constant it replaced said',
+    `${(ranged / total).toFixed(3)}`
+  );
+  check(
+    elemental / total > 0.2 && elemental / total < 0.6,
+    'and an element is something a descent shows you without being made of it',
+    `${(elemental / total).toFixed(2)}`
+  );
+
+  // What a monster carrying one actually deals. Bare, with nothing socketed:
+  // no crystal is saying anything, so every point of this is the monster's.
+  const bare: string[] = [];
+  for (const ability of MONSTER_ABILITIES) {
+    const m = monsterStats([], MONSTER_BY_ID.grub, ability);
+    const types = Object.keys(m.damageByType);
+    if (types.length !== 1 || types[0] !== ability.damageType) {
+      bare.push(`${ability.id} deals ${types.join('+')}`);
+    }
+  }
+  check(bare.length === 0, 'a monster deals its ability’s type and nothing else', bare.join(', '));
+
+  // And the crystal ADDS. The total is what it always was — the hit is still
+  // multiplied by (1 + share/100) — but the monster's own element survives it,
+  // so a ward blunts part of a hit rather than switching a modifier off.
+  {
+    const share = 200;
+    const cinders: RolledMod[] = [
+      {
+        entryId: 'x', defId: 'monster_fire', group: 'g', slot: 'mod', name: 'of Cinders',
+        tier: 1, tags: [],
+        stats: [{ stat: 'monsterFire', form: 'inc', value: share, tags: [] }],
+      },
+    ];
+    const claws = MONSTER_ABILITY_BY_ID.claws;
+    const frost = MONSTER_ABILITY_BY_ID.frost_bolt;
+    const plain = monsterStats([], MONSTER_BY_ID.grub, claws);
+    const burned = monsterStats(cinders, MONSTER_BY_ID.grub, claws);
+    const chilled = monsterStats(cinders, MONSTER_BY_ID.grub, frost);
+
+    line(
+      `  a clawing grub under +${share}% Cinders: ${plain.damage.toFixed(1)} → ` +
+        `${burned.damage.toFixed(1)}, as ` +
+        Object.entries(burned.damageByType).map(([t, v]) => `${v.toFixed(1)} ${t}`).join(' + ')
+    );
+    check(
+      Math.abs(burned.damage - plain.damage * (1 + share / 100)) < 1e-6,
+      'the total a modifier adds is exactly what it always was',
+      `${burned.damage} against ${plain.damage * (1 + share / 100)}`
+    );
+    check(
+      Math.abs((burned.damageByType.physical ?? 0) - plain.damage) < 1e-6 &&
+        (burned.damageByType.fire ?? 0) > 0,
+      'and the monster keeps its own element under it, rather than being converted',
+      Object.keys(burned.damageByType).join('+')
+    );
+    // The whole point: carrying one resistance no longer switches the modifier
+    // off, because the part it does not answer belongs to the monster.
+    check(
+      (chilled.damageByType.cold ?? 0) > 0 && (chilled.damageByType.fire ?? 0) > 0,
+      'a frost-throwing pack under Cinders deals both, so one ward is never the whole answer',
+      Object.keys(chilled.damageByType).join('+')
+    );
+  }
+
+  // Three modifiers, one per element, each with the ward that answers it. One
+  // modifier rolling WHICH element would be a name that lies about which
+  // resistance to bring.
+  {
+    const missing = ADDED_DAMAGE_TYPES.filter(
+      (t) =>
+        !ALL_MODS.some((m) => m.tiers.some((x) => x.stats.some((st) => st.stat === monsterAddedStat(t)))) ||
+        !ALL_MODS.some((m) => m.tiers.some((x) => x.stats.some((st) => st.stat === monsterResStat(t))))
+    );
+    check(
+      missing.length === 0 && ADDED_DAMAGE_TYPES.length === 3,
+      'every element a crystal adds has its own modifier and its own ward',
+      missing.join(', ')
+    );
+    const unnamed = ADDED_DAMAGE_STATS.filter(
+      (stat) => !/Damage Added as /.test(describeStatLine({ stat, form: 'inc', value: 50, tags: [] }))
+    );
+    check(
+      unnamed.length === 0,
+      'and each says it is ADDED, in the order it happens',
+      unnamed.join(', ')
+    );
+    const weighed = ADDED_DAMAGE_STATS.filter((stat) => !DANGER_STATS[stat]?.rewards);
+    check(weighed.length === 0, 'and each is danger the run is paid for', weighed.join(', '));
+  }
+
+  // The arc is the one monster skill that is not a line to one target, and it
+  // leaps off the skill's own `params` rather than a tree it does not have.
+  {
+    const arc = SKILL_BY_ID.arc;
+    const dummy = (x: number, y: number) =>
+      ({
+        x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
+        stats: { maxLife: 1e6, attacksPerSecond: 1 },
+      }) as any;
+    const dummies = Array.from({ length: 5 }, (_, i) => dummy(3 + i * 1.2, 0));
+    const hit = new Set<unknown>();
+    SKILL_BEHAVIOURS[arc.behaviour]({
+      skill: arc,
+      user: dummy(0, 0),
+      primary: dummies[0],
+      enemies: dummies,
+      grants: {},
+      crit: false,
+      castIndex: 0,
+      rng: new Rng(5),
+      hit: (target: any) => hit.add(target),
+      ailment: () => {},
+      areaRadius: (base: number) => base,
+      vfx: () => {},
+    } as any);
+    line(`  the Lightning Arc struck ${hit.size} of ${dummies.length} standing in a line`);
+    check(
+      hit.size === 1 + ((arc.params?.chains as number) ?? 0),
+      'it leaps as many times as its own params say, with no tree behind it',
+      `${hit.size} struck`
+    );
+    check(
+      typeof arc.vfxKind === 'string' && arc.vfxKind !== 'bolt',
+      'and it draws as something other than a bolt, since it is not one',
+      String(arc.vfxKind)
+    );
+
+    // The shape itself is a pure function in `render/renderer.ts`, so both
+    // renderers draw the same jag — and it has to STAY between its two ends,
+    // or a leap reads as lightning fired at the map corner.
+    const from = { x: 2, y: 3 };
+    const to = { x: 7, y: 6 };
+    const drawn = lightningArc(from, to, 0.2);
+    const span = Math.hypot(to.x - from.x, to.y - from.y);
+    const strayed = drawn.filter((p) => {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const t = ((p.x - from.x) * dx + (p.y - from.y) * dy) / (span * span);
+      const off = Math.hypot(p.x - (from.x + t * dx), p.y - (from.y + t * dy));
+      return t < -0.25 || t > 1.25 || off > 1;
+    });
+    line(`  the arc is ${drawn.length} blocks long, ${strayed.length} of them off the line`);
+    check(
+      drawn.length > 40 && strayed.length === 0,
+      'the jag stays between the two things it joined',
+      `${drawn.length} blocks, ${strayed.length} strayed`
+    );
+    check(
+      JSON.stringify(lightningArc(from, to, 0.2)) === JSON.stringify(drawn) &&
+        JSON.stringify(lightningArc(to, from, 0.2)) !== JSON.stringify(drawn),
+      'and it is hashed off its own ends, so two leaps never share a silhouette',
+      'the arc is not deterministic'
+    );
+  }
+
+  // What a descent actually shows you. Three elements against per-type
+  // resistances moves every ladder number, so this PRINTS rather than asserts.
+  {
+    const set = ladderSet(4, new Rng(6100), pool);
+    const taken: Record<string, number> = {};
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim(set, ladderCharacter(4, new Rng(300 + i)), new Rng(880 + i));
+      runToCompletion(sim, 600);
+      for (const [type, amount] of Object.entries(sim.state.damageTaken)) {
+        taken[type] = (taken[type] ?? 0) + amount;
+      }
+    }
+    const total = Object.values(taken).reduce((n, v) => n + v, 0);
+    const split = Object.entries(taken).sort((a, b) => b[1] - a[1]);
+    line(
+      `  six descents at band 4 hurt for ` +
+        split.map(([t, v]) => `${Math.round((v / total) * 100)}% ${t}`).join(', ')
+    );
+    check(
+      split.length >= 2,
+      'a descent hurts you in more than one way, which is what the report now splits',
+      split.map(([t]) => t).join('+')
+    );
+  }
 }
 
 // ===========================================================================

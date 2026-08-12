@@ -4,11 +4,14 @@
  * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
 import {
+  ADDED_DAMAGE_TYPES,
   DAMAGE_TYPES,
+  DAMAGE_TYPE_BY_ID,
   DAMAGE_GROUPS,
   DELIVERY_TAGS,
   DROP_GROUPS,
   findStat,
+  monsterAddedStat,
   monsterResStat,
 } from './data';
 import type { StatRoll } from './types';
@@ -41,9 +44,17 @@ const NAMED: Record<string, string> = {
   monsterArmour: 'Monster Armour',
   monsterCrit: 'Monster Critical Chance',
   monsterMoveSpeed: 'Monster Movement Speed',
-  monsterFire: 'Monster Fire Damage',
   ...Object.fromEntries(
     DAMAGE_TYPES.map((t) => [monsterResStat(t.id), `Monster ${t.name} Resistance`])
+  ),
+  // ADDED, said out loud, and in the order it happens: a share of what the
+  // monster already hits for, dealt as this type on top. "Monster Fire Damage"
+  // would still be describing the conversion this stopped being.
+  ...Object.fromEntries(
+    ADDED_DAMAGE_TYPES.map((t) => [
+      monsterAddedStat(t),
+      `Monster Damage Added as ${DAMAGE_TYPE_BY_ID[t]?.name ?? t}`,
+    ])
   ),
   ...Object.fromEntries(DROP_GROUPS.map((g) => [findStat(g.id), `Chance to Find ${titled(g.id)}`])),
 };

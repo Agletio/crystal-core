@@ -264,14 +264,17 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     }
 
     // Chain: from the last thing hit to the nearest thing that hasn't been.
-    const chains = num(g.chains, 0);
+    // `params` are the skill's OWN baseline and grants are what a build adds,
+    // so the two sum — the monsters' Lightning Arc leaps without a tree.
+    const chains = num(g.chains, 0) + num(use.skill.params?.chains, 0);
     for (let i = 0; i < chains; i++) {
       const next = use.enemies
         .filter((e) => !e.dead && !struck.has(e) && separation(last, e) <= REACH.chain)
         .sort((a, b) => separation(last, a) - separation(last, b))[0];
       if (!next) break;
       const from = last;
-      if (!strike(next, num(g.chainDamage, FALLOFF.chain))) break;
+      const falloff = num(g.chainDamage, num(use.skill.params?.chainDamage, FALLOFF.chain));
+      if (!strike(next, falloff)) break;
       use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }]);
       last = next;
     }
