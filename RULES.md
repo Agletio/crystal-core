@@ -27,10 +27,11 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part. There are currently seven,
-   and they are one ladder: the game gets rooms you arrive in and people
-   standing in them. That order is load-bearing and the roadmap says why. The
-   balance pass is written up there too and is not a phase until somebody asks.
+   open question, and do the WHOLE of it. Not part. They are one ladder — the
+   game gets rooms you arrive in and people standing in them — and that order is
+   load-bearing, so read the roadmap for the count and the reason rather than
+   trusting a number written here. The balance pass is written up there too, and
+   is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
