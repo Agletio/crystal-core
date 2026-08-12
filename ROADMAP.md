@@ -4,13 +4,19 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-Do the lowest-numbered phase that is not blocked on an open question, all of it,
-then delete it from here and renumber. Numbers in a phase are intent, not
-tuning — a measurement beats them. A landed phase is DELETED from here, so
-before starting one, `git fetch` and check you are on the tip of the branch:
-a phase you can still see in a stale clone may already be built.
+**There are no phases in this file.** Every one of both batches has landed. If
+you are a session looking for work, there is none here to take: say so, list the
+Open questions, and stop. Do not invent a phase and do not promote a backlog
+item into one without being asked. The thing most likely to be asked for next is
+the **balance pass**, written up below.
 
-**What the last two phases turned out to know that their writing did not.**
+When there ARE phases again: do the lowest-numbered one that is not blocked on
+an open question, all of it, then delete it and renumber. Numbers in a phase are
+intent, not tuning — a measurement beats them. A landed phase is DELETED from
+here, so before starting one, `git fetch` and check you are on the tip of the
+branch: a phase you can still see in a stale clone may already be built.
+
+**What the last three phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
 - **Adding an element to every monster did not change what a modifier is
@@ -45,36 +51,63 @@ Kept here because the next thing built on top of them will want it.
   skill and asserts nothing about it; whether a pairing is a favourite or a
   requirement needs a wider roster than three skills to tell.
 
-**Where these came from.** Two batches of asks, dictated by the user in one go
-each. The number in brackets is the user's own numbering within its batch, kept
-so a phase can be matched back to the ask — it says nothing about when to build
-it. A phase with no bracket came out of a design conversation rather than a
-batch, and is no less asked for. They are listed in DEPENDENCY order, not in
-the order they were asked for.
+**Where the phases came from.** Two batches of asks, dictated by the user in
+one go each, plus a few out of design conversations. All of them are built. The
+bracketed numbers in the git log — [user 8], [user 10] — are the user's own
+numbering within a batch, kept so a commit can be matched back to the ask.
 
-**Balance is not a phase and not a blocker.** `RULES.md` says it plainly now:
-nothing here is tuned until every system is in, because attributes and trades
-each hand out more power than the last and anything tuned before them is thrown
-away. Lean too easy. Measure, print, carry on.
+---
 
-Mana costs, the potions that answer running dry, the attributes that scale the
-pool and the starved penalty that replaced the dry swing have all landed. So
-have TRADES, which is the last of the systems that were going to hand out more
-power — `CLAUDE.md` and `RULES.md` describe both of them as built. The balance
-pass is now the only thing standing between this list and a tuned game, and it
-is still not a phase in it: ask before starting one.
+## The balance pass
+
+**Not a phase, and not started. Documented so that asking for it is one
+sentence rather than a re-derivation.**
+
+**Why it is now possible.** `RULES.md` has said since the start that nothing is
+tuned until every system is in, because each one hands out more power than the
+last and anything tuned before it is thrown away. That list was attributes, then
+trades, then jobs — and trades WERE the jobs. Every one of them has landed, so
+the reason to lean too easy has expired. Nothing has been tuned to compensate;
+the game is deliberately soft everywhere.
+
+**What it would read.** Eight `gauge()` lines in `npm run demo` — measured,
+printed, never asserted, and each carrying the figure that was wanted beside the
+figure it got. They are the before. Taken at `e811da6`, with 414 checks passing:
+
+```
+the Seam is -0.1% over the hardest single world     — wanted: same class within 15%
+a trade moves the deep-end kill rate 3.90–7.86/s    — no pairing should be the only one
+1% to 33% of swings go unpaid                       — wanted: 5%–50%
+a starved cast lands for 50% of your damage
+a naked character walks out on 53% life             — wanted: under 70%
+one blank crystal after the first clear: 18/24      — wanted: above 60%
+every band is clearable in gear the band below drops
+the deep end: 1253 danger, 4/12 through             — wall under 4/12, ceiling at 0
+```
+
+The deep end at 4/12 is the one sitting exactly on its own wall line, and the
+unpaid-swing spread reaching 33% is the widest of these. Neither is a bug.
+
+**What must not break.** Everything in `RULES.md` under "Balance is NOT TUNED"
+inverts when this starts, and that section has to be rewritten in the same
+breath — it is the file's own statement that the pass has not happened. The one
+difficulty check that is a `check()` rather than a `gauge()` — a brand new
+character clearing the bare Fissure — stays a failure throughout. And the
+per-skill numbers are three skills wide, which the trades phase already found is
+too few to tell a favourite from a requirement.
+
+**What it is NOT.** Not a licence to change systems. A balance pass moves
+numbers in tables; if it wants a mechanism changed, that is a phase and it gets
+written as one.
 
 ---
 
 ## Phases
 
-**There are none.** Every phase in both batches has landed. What is left in
-this file is Open questions and a Backlog, and `RULES.md` says plainly what to
-do with that: say so and list them, do not invent work, and do not promote a
-backlog item into a phase without being asked. The one thing everybody knows is
-coming is the **balance pass** — every system that was going to hand out more
-power is now in, so the reason nothing is tuned has expired — and it is a phase
-of its own that has to be asked for.
+**There are none.** Every phase in both batches has landed. What is left in this
+file is the balance pass above, Open questions, and a Backlog — and `RULES.md`
+says plainly what to do with that: say so and list them, do not invent work, and
+do not promote a backlog item into a phase without being asked.
 
 **Writing one.** The test is whether a session with no memory of this
 conversation could execute it. That takes four things, and the second is the one
@@ -97,10 +130,9 @@ assumption. A phase that guesses is a phase that has to be undone.
 
 ## Open questions
 
-Do not guess at these. **None of them blocks a phase** — the one phase left in
-this file is buildable today. Trades have landed; what is still open about them
-is only how a character COMES BY one, and the placeholder for that shipped
-with them.
+Do not guess at these. **None of them ever blocked a phase**, and none of them
+is work waiting to be picked up — they are decisions the user has not made.
+Every one is parked deliberately. Ask before acting on any of them.
 
 1. **What the Lampwright wants.** Trades have landed and the placeholder is in:
    anyone may take one up at level 5, and the Trade screen says so in as many
@@ -155,7 +187,6 @@ with them.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
-
 - **Jewellery has three rungs but no implicit.** `amulet`/`jade_amulet`/
   `onyx_amulet` and `ring`/`silver_band`/`gold_band` differ in exactly one
   way: how many modifiers they hold. That is the clearest statement of what a
@@ -183,10 +214,13 @@ without being asked.
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like — and now that uniques drop,
   the answer has moved.
-- **Blight and Strike are not the same game.** Last measured, Blight cleared
-  the top of the ladder 12/12 where Strike managed 3/12. That number is OLD —
-  it predates the capacity rework, the retune and everything since — so
-  re-measure before acting on it.
+- **Blight, Strike and Fireball are not the same game.** The old note here said
+  Blight cleared the top 12/12 against Strike's 3/12. That number is dead;
+  `TRADE RULES` now measures all three at the deep end every run, and at
+  `e811da6` it reads **Fireball 7.62, Strike 4.37, Blight 3.90 kills/s** with no
+  trade — so the ordering has entirely inverted since, and Fireball is now the
+  outlier at roughly twice Blight. Do not act on it outside the balance pass:
+  it is three skills, and the demo prints it fresh on every run.
 - More tutorial steps for systems added since the opening was written: the
   collection screen, the bench's crystals column, sell mode, the counter.
 - **A third way to get rid of a piece.** Selling is now a mode with a buy-back

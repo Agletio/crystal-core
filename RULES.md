@@ -27,7 +27,11 @@ One phase at a time, and **no stop between them**. Every pass:
    anything.
 2. Read this file, then `ROADMAP.md`. `CLAUDE.md` is loaded for you.
 3. Pick the **lowest-numbered phase** in the roadmap that is not blocked on an
-   open question, and do the WHOLE of it. Not part.
+   open question, and do the WHOLE of it. Not part. **As of `e811da6` there are
+   none** — every phase of both batches has landed — so this step currently
+   ends the session under the first of the three below rather than starting
+   work. The roadmap names the balance pass as what is most likely to be asked
+   for next; it is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
    `smoke`, `shots`, `guide`. Build before the last three — they load the
    bundle, not the source.
