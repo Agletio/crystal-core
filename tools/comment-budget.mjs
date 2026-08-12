@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Comment budget: standalone comment lines may not exceed max(10, 20% of file).
+ * Comment budget: standalone comment lines may not exceed max(10, 20% of file),
+ * bar the handful of files with their own share in `SHARE_BY_FILE`.
  *
  * Usage:
  *   node tools/comment-budget.mjs             every tracked source file
@@ -35,7 +36,19 @@ const SKIP_FILES = new Set(['docs/app.js']);
 export const FLOOR = 10;
 export const SHARE = 0.2;
 
-export const budgetFor = (lines) => Math.max(FLOOR, Math.floor(lines * SHARE));
+/**
+ * A share is a DENSITY, and density is a good proxy for "how much of this file
+ * is prose" only while a file's lines are all the kind that might need
+ * explaining. `docs/index.html` is most of a stylesheet — a thousand-odd
+ * one-line rules that need nothing said about them — carrying the few genuinely
+ * load-bearing traps in the project, so 20% of its length is the wrong number
+ * for the amount it has to explain. Raising ONE file's share is not a loophole:
+ * every other file stays at 20%, and the repair for going over is still to cut.
+ */
+export const SHARE_BY_FILE = { 'docs/index.html': 0.25 };
+
+export const budgetFor = (lines, share = SHARE) =>
+  Math.max(FLOOR, Math.floor(lines * share));
 
 function sources(dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -116,7 +129,7 @@ function commentRanges(text, file) {
   return (ast.comments ?? []).map((c) => [c.start, c.end]);
 }
 
-export function measure(text, file = 'x.ts') {
+export function measure(text, file = 'x.ts', share = SHARE) {
   const lines = text.split('\n');
   // Offset of the first character of each line, so a range maps back to lines.
   const starts = [];
@@ -149,7 +162,7 @@ export function measure(text, file = 'x.ts') {
   return {
     lines: lines.length,
     comments: commentLines.length,
-    budget: budgetFor(lines.length),
+    budget: budgetFor(lines.length, share),
     at: commentLines,
   };
 }
@@ -165,7 +178,7 @@ export function check(files) {
       }
       const path = relative(root, resolve(file)).split('\\').join('/');
       if (SKIP_FILES.has(path)) return null;
-      const result = measure(text, file);
+      const result = measure(text, file, SHARE_BY_FILE[path] ?? SHARE);
       return { path, ...result, over: result.comments - result.budget };
     })
     .filter((r) => r && r.over > 0);

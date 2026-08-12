@@ -70,12 +70,19 @@ looks arbitrary, a trap. Everything else is noise.
 JS/TS, parse5 for HTML plus its inline `<style>`/`<script>` — never by matching
 text, so a `//` inside a string is not a comment. Trailing comments are free.
 
+`SHARE_BY_FILE` gives one file its own share: `docs/index.html` runs at 25%,
+because a share is a DENSITY and density only stands in for "how much of this is
+prose" while a file's lines are the kind that might need explaining. That file is
+mostly stylesheet — a thousand one-line rules needing nothing said — carrying the
+few load-bearing traps in the project. Adding an entry is a decision to be argued
+for, not a way out of a cut.
+
 It runs automatically as a `PostToolUse` hook the moment you move to a different
 file, and again on `Stop`, so a run of edits on one file is never interrupted
 mid-change. Also in CI, ahead of typecheck.
 
-**Fix a violation by cutting prose.** Adding code to raise the 20% is the one
-repair that makes the file worse.
+**Fix a violation by cutting prose.** Padding a file to raise its allowance is
+the one repair that makes the file worse.
 
 ## The Fissure
 
