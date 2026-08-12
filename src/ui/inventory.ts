@@ -87,7 +87,10 @@ let find = '';
 let screenHandler: InventoryHandler | null = null;
 /** A mode over the screen that owns the dock; off restores what was under. */
 let override: InventoryHandler | null = null;
-const handlerFor = (): InventoryHandler | null => override ?? screenHandler;
+/** The MAP's own, which is the ground rather than a screen: a descent ticking
+ *  over must not take the dock off whichever screen is holding it. */
+let base: InventoryHandler | null = null;
+const handlerFor = (): InventoryHandler | null => override ?? screenHandler ?? base;
 let extras: ItemActions | null = null;
 
 export function setItemActions(next: ItemActions | null): void {
@@ -144,6 +147,12 @@ export const isInventoryOpen = (): boolean => !$('dock').hidden;
 /** Screens call this when they take focus, and again when their state moves. */
 export function setInventoryHandler(next: InventoryHandler | null): void {
   screenHandler = next;
+  renderInventory();
+}
+
+/** What the dock does with nothing open — never overwrites a screen's claim. */
+export function setInventoryBase(next: InventoryHandler | null): void {
+  base = next;
   renderInventory();
 }
 

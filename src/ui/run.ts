@@ -44,7 +44,7 @@ import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
-import { renderInventory, setInventoryHandler } from './inventory';
+import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
@@ -119,7 +119,7 @@ function setPhase(next: Phase): void {
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
   syncViewportLock();
-  setInventoryHandler(runHandler());
+  setInventoryBase(runHandler());
 }
 
 /**
@@ -157,7 +157,8 @@ export function metTaken(): void {
 
 /** Called when the bench popup closes — the dock answers to the map again. */
 export function onRunFocused(): void {
-  setInventoryHandler(runHandler());
+  setInventoryBase(runHandler());
+  setInventoryHandler(null);
   refreshRunPanels();
 }
 

@@ -2478,9 +2478,21 @@ export interface BindingDef {
 
 export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
-  { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'potion_life', what: 'Drink the Flask of Blood', key: '1' },
   { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '2' },
+  { id: 'inventory', what: 'Open what you are carrying', key: 'i' },
+  { id: 'character', what: 'Open the character sheet', key: 'c' },
+  { id: 'skills', what: 'Open the skills and their webs', key: 's' },
+  { id: 'trade', what: 'Open your trade', key: 't' },
+  { id: 'craft', what: 'Open the bench', key: 'b' },
+  { id: 'shop', what: 'Open the shop', key: 'v' },
+  { id: 'haul', what: 'Open the haul', key: 'h' },
+  { id: 'crystals', what: 'Open the crystal collection', key: 'y' },
+  { id: 'stash', what: 'Open the stash', key: 'x' },
+  { id: 'history', what: 'Open the log', key: 'l' },
+  { id: 'save', what: 'Open saving and loading', key: 'o' },
+  { id: 'hide', what: 'Hide every panel and watch the map', key: 'z' },
+  { id: 'fullscreen', what: 'Fill the screen', key: 'f' },
 ];
 
 export const BINDING_BY_ID: Record<string, BindingDef> = Object.fromEntries(

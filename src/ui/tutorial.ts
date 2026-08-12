@@ -23,6 +23,7 @@ import { keyFor, keyName } from "./keys";
 import { crystalMoveId } from "./crystals";
 import { crystalSlotId } from "./craft";
 import type { Item } from "../types";
+import { unparkPanels } from './rail';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -681,6 +682,8 @@ function paint(): void {
     `Step ${(game.tutorialStep ?? 0) + 1} of ${TUTORIAL_STEPS.length}`;
 
   const id = typeof step.target === "function" ? step.target(ctx, game) : step.target;
+  // Parked panels hide most of what a step points at.
+  unparkPanels();
   const target = document.getElementById(id);
   const wants = typeof step.ring === "function" ? step.ring(ctx) : step.ring !== false;
   const ring = wants ? target : null;

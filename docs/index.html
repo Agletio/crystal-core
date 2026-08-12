@@ -190,6 +190,33 @@
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
   .seedbar code { color: var(--quartz); }
 
+  .rail {
+    position: fixed; right: 16px; bottom: 16px; z-index: 22;
+    display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
+    align-items: center; gap: 6px; max-width: 336px;
+  }
+  .railbtn {
+    position: relative; display: grid; place-items: center;
+    width: 38px; height: 38px; padding: 0; font-size: 0;
+    background: var(--matrix); background-image: var(--grit); color: var(--dust);
+    border: 2px solid var(--seam); box-shadow: var(--bevel); cursor: pointer;
+  }
+  .railbtn:hover:not(:disabled), .railbtn:focus-visible { border-color: var(--citrine); color: var(--citrine); }
+  .railbtn--dev { border-style: dashed; }
+  .sicon { display: block; image-rendering: pixelated; }
+  .sicon__ink { fill: currentColor; }
+  .sicon__lit { fill: var(--citrine); }
+  .rail__sep { width: 2px; height: 22px; background: var(--seam); margin: 0 2px; }
+  body.panelsoff .rail > :not(.railbtn--keep) { display: none; }
+  body.panelsoff .viewport .panel,
+  body.panelsoff .dock,
+  body.panelsoff header { display: none; }
+  .railbtn__key {
+    position: absolute; right: 2px; bottom: 1px;
+    font-family: var(--display); font-size: 8px; line-height: 1;
+    color: var(--dust); opacity: .8; pointer-events: none;
+  }
+
   /* Stamped metal, not a web control: two whole pixels of border, a chiselled
      bevel and no radius anywhere. Pressing it drops it into the frame. */
   button {
@@ -1234,22 +1261,25 @@
 <div class="wrap">
   <header>
     <h1>Crystal <span>Core</span></h1>
-    <div class="seedbar">
-      <button class="mini" id="open-craft">Crafting</button>
-      <button class="mini" id="open-shop">Shop</button>
-      <button class="mini" id="open-haul">Haul</button>
-      <button class="mini" id="open-crystals">Crystals</button>
-      <button class="mini" id="open-stash">Stash</button>
-      <button class="mini" id="open-character">Character</button>
-      <button class="mini" id="open-skills">Skills</button>
-      <button class="mini" id="open-trade">Trade</button>
-      <button class="mini" id="open-history">History</button>
-      <button class="mini" id="open-inventory">Inventory</button>
-      <button class="mini" id="open-save">Save &amp; Load</button>
-      <span class="devsep"></span>
-      <button class="mini mini--dev" id="dev-kit" title="Dev only: grant gear, gold and every currency">Dev kit</button>
-    </div>
   </header>
+
+  <nav class="rail" id="rail">
+    <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
+    <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
+    <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
+    <button class="railbtn" id="open-haul" data-key="haul">Haul</button>
+    <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
+    <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
+    <button class="railbtn" id="open-character" data-key="character">Character</button>
+    <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
+    <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
+    <button class="railbtn" id="open-history" data-key="history">History</button>
+    <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
+    <span class="rail__sep"></span>
+    <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
+    <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
+    <button class="railbtn railbtn--dev" id="dev-kit" title="Dev only">Dev kit</button>
+  </nav>
 
 
   <div class="viewport">

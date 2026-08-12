@@ -69,6 +69,7 @@ import {
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initKeys } from './ui/keys';
+import { dressRail, toggleFullscreen, toggleParkedPanels } from './ui/rail';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
 const game = createGame('fresh');
@@ -335,15 +336,34 @@ function guideContext(): GuideCtx {
 
 // Every key in the game but Escape, which is the shell's own chain above.
 // A binding is a table entry, so the screen that rebinds them is a screen.
+/** Every screen is the same pair, so its key is a TOGGLE and this is a table
+ *  rather than eleven near-identical handlers. */
+const SCREENS: Record<string, { open: () => void; close: () => void; isOpen: () => boolean }> = {
+  inventory: { open: openInventory, close: closeInventory, isOpen: isInventoryOpen },
+  character: { open: () => openCharacter(), close: closeCharacter, isOpen: isCharacterOpen },
+  skills: { open: openSkills, close: closeSkills, isOpen: isSkillsOpen },
+  trade: { open: openTrade, close: closeTrade, isOpen: isTradeOpen },
+  craft: { open: openCraft, close: closeCraft, isOpen: isCraftOpen },
+  shop: { open: openShop, close: closeShop, isOpen: isShopOpen },
+  haul: { open: openHaul, close: closeHaul, isOpen: isHaulOpen },
+  crystals: { open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
+  stash: { open: openStash, close: closeStash, isOpen: isStashOpen },
+  history: { open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
+  save: { open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
+};
+
 initKeys(game, {
   centre: centreCamera,
-  character: () => {
-    if (isCharacterOpen()) closeCharacter();
-    else openCharacter();
-  },
+  hide: () => toggleParkedPanels(),
+  fullscreen: toggleFullscreen,
+  ...Object.fromEntries(
+    Object.entries(SCREENS).map(([id, s]) => [id, () => (s.isOpen() ? s.close() : s.open())])
+  ),
   // One entry per potion, off the same table the flasks are drawn from.
   ...Object.fromEntries(POTIONS.map((p) => [p.binding, () => drinkFlask(p.id)])),
 });
+
+dressRail(game);
 
 initTutorial(game, guideContext);
 onRunFocused();
