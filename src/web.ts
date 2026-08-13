@@ -38,26 +38,21 @@ import {
   onRunFocused,
   skipToGift,
   refreshRunPanels,
-  runPhase,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
-import { initTutorial, startTutorial, stopTutorial } from './ui/tutorial';
-import type { GuideCtx } from './ui/tutorial';
 import {
   initCharacter,
   refreshCharacter,
   openCharacter,
   closeCharacter,
   isCharacterOpen,
-  pickingSlot,
 } from './ui/character';
 import {
   initSkills,
   openSkills,
   closeSkills,
   isSkillsOpen,
-  skillsDepth,
   skillsEscape,
 } from './ui/skills';
 import { initTrade, openTrade, closeTrade, isTradeOpen } from './ui/trade';
@@ -100,7 +95,6 @@ function restart(mode: StartMode): void {
   // The old save outlives the wipe otherwise, and the next reload undoes it.
   clearSave();
   saveGame(game);
-  stopTutorial();
   clearHistory();
   note(mode === 'fresh' ? 'New game — nothing but the Fissure.' : 'Dev kit granted.');
   refreshRunPanels();
@@ -118,11 +112,10 @@ function restart(mode: StartMode): void {
   maybeShowWelcome();
 }
 
-/** After choosing a skill: the Fissure, with the guide already pointing at Enter. */
-function begin(guided: boolean): void {
+/** After choosing a skill: the Fissure, and nothing explaining it. */
+function begin(): void {
   refreshRunPanels();
   onRunFocused();
-  if (guided) startTutorial();
 }
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
@@ -148,9 +141,6 @@ guard('dev-kit', 'Restart with the dev kit?', 'dev');
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  // Live during the opening too: closing a popup spends nothing and skips
-  // nothing, and it is the only way out of one that has landed over the lit
-  // control with its own Close switched off.
   // The question is on top of everything, and Escape can only answer it "no".
   if (isConfirmOpen()) cancelConfirm();
   // The crystal is already granted by the time a panel is on screen, so Escape
@@ -175,12 +165,10 @@ globalThis.addEventListener('keydown', (event) => {
 /** Measured, not guessed: a constant is wrong the first time the wallet wraps. */
 const dock = document.querySelector('.dock') as HTMLElement;
 function measureDock(): void {
-  // To the bottom of the WINDOW, not the dock's own height: the shell's
-  // padding sits below it, and a popup stopping short would clip the top row.
-  // Closed it reserves nothing, or a hidden window would push every other one
-  // up by the height of the space it is not occupying.
-  // The dock's HOME, not wherever it has been dragged: reflowing every other
-  // window each time somebody nudges this one is not what dragging asked for.
+  // To the bottom of the WINDOW, not the dock's own height: the shell's padding
+  // sits below it, and a popup stopping short would clip the top row. Closed it
+  // reserves nothing. The dock's HOME, not wherever it has been dragged, or
+  // nudging this one reflows every other window.
   const top = dock.getBoundingClientRect().top - windowOffset(dock).y;
   const gap = dock.hidden ? 0 : globalThis.innerHeight - top;
   document.documentElement.style.setProperty('--dock-h', `${Math.max(0, Math.round(gap))}px`);
@@ -231,7 +219,7 @@ initHaul(game, () => {
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
 initCrystals(game, refreshRunPanels);
 // The crystal is in your hands the moment the panel closes, so the collection
-// and the Fissure's own counts are both already out of date.
+// and the Fissure's counts are both already out of date.
 initMet(game, () => {
   metTaken();
   refreshRunPanels();
@@ -242,9 +230,9 @@ initMenu();
 
 /**
  * What an item can do wherever you are standing. The dock's click belongs to
- * the open screen — it is what the opening teaches — so wearing a helmet you
- * just picked up used to mean walking to the sheet and picking its slot first.
- * These are offered beside that click rather than instead of it.
+ * the open screen, so wearing a helmet you just picked up would otherwise mean
+ * walking to the sheet and picking its slot first. These are offered BESIDE
+ * that click rather than instead of it.
  */
 setItemActions({
   extrasFor: (item) => {
@@ -305,43 +293,6 @@ onWearChanged(() => {
   refreshCraft();
   renderInventory();
 });
-/** What the guide needs that game state cannot tell it: focus, phase, and what's on top. */
-function guideContext(): GuideCtx {
-  // Every popup: the guide can only walk you out of one it knows you are in.
-  const top = isMetOpen()
-    ? 'met'
-    : isSaveDataOpen()
-      ? 'save'
-    : isSkillsOpen()
-      ? 'skills'
-    : isTradeOpen()
-      ? 'trade'
-      : isCharacterOpen()
-        ? 'sheet'
-        : isHistoryOpen()
-          ? 'history'
-          : isCrystalsOpen()
-            ? 'crystals'
-            : isHaulOpen()
-              ? 'haul'
-              : isStashOpen()
-                ? 'stash'
-                : isShopOpen()
-                  ? 'shop'
-                  : isCraftOpen()
-                    ? 'craft'
-                    : null;
-  return {
-    view: isCraftOpen() ? 'craft' : 'run',
-    phase: runPhase(),
-    top,
-    picking: pickingSlot(),
-    speaking: isSpeaking(),
-    dock: isInventoryOpen(),
-    ...skillsDepth(),
-  };
-}
-
 // Every key in the game but Escape, which is the shell's own chain above.
 // A binding is a table entry, so the screen that rebinds them is a screen.
 /** Every screen is the same pair, so its key is a TOGGLE and this is a table
@@ -384,12 +335,10 @@ initKeys(game, {
 
 dressRail(game);
 
-initTutorial(game, guideContext);
 onRunFocused();
 
 // The Fissure is home, and boot always lands there. Opening a screen over it
-// belongs to the dev kit's stocked start: a restored save can be mid-opening,
-// where a popup would cover the one control you are allowed to click.
+// belongs to the dev kit's stocked start.
 initWelcome(game, begin);
 
 // The title, and what it opens onto: choosing a game comes before playing one,

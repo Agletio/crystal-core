@@ -46,13 +46,13 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run smoke` | headless boot and interaction |
 | `npm run demo` | sim, economy, trees, balance |
 | `npm run mods` | every modifier rolls, does something, reads |
-| `npm run shots` | screenshots, overflow and lockdown probes |
+| `npm run shots` | screenshots, and an overflow probe |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
-table. The guided opening has NO harness: `guide` was retired when the title
-screen changed the boot it drove, and the phase that deletes the opening owes
-its replacement.
+table. **Nothing teaches, by decision:** the guided opening was deleted so the
+first hour can be PLAYED with nothing explaining it, and teaching comes back as
+a quest log once somebody has played it and got stuck.
 
 Build before `smoke`, `shots` or `drag` — they load the bundle, not the source.
 
@@ -183,8 +183,8 @@ screen.
 The panel draws a PORTRAIT, not the map sprite: `PORTRAITS` in
 `src/render/portraits.ts` is a separate table at grid 48, one frame,
 shoulders-up, because a 24-grid silhouette blown up is a blob. What he SAYS is
-flavour — he names no screen, no currency and no number, since teaching the
-buttons is the guided opening's job.
+flavour — he names no screen, no currency and no number. Nothing in the game
+teaches what to click.
 
 Two things are SCHEDULED, off `GameState.given`. The first weapon on the first
 cleared descent, picked off the skill (`STARTER_WEAPON`). The first Normal
@@ -288,12 +288,6 @@ and the LAST beat is `#met`, the same shape with what he is holding in it and
 Take it instead of Next. Escape skips the rest and grants, because the gift is
 yours the moment a panel is up. The scrim is gone: a scene is already a stop,
 and a sheet over the room hid the room.
-
-**A room is not narrated.** The guided opening's card is suppressed while
-anyone is speaking or the panel is up: a portrait, a name and one button is
-already the whole instruction, and a card telling you to press the only control
-on screen is the opening explaining what the screen explains. The steps still
-TRACK a scene, so the opening knows where it is; they just do not talk over it.
 
 A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
 rail stays up, but nothing is ticking, and Leave and Abandon go quiet because
@@ -534,9 +528,8 @@ moved one back. Touching or opening one raises it within a band of z-indexes
 several open, a hand-written order shuts the one you are not looking at.
 
 **The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
-`src/ui/screenicons.ts`), bottom right. The button IDS are what the guided
-opening walks and what the shots lockdown probe asks for, so they outlive any
-rearrangement of it. It draws over every window and every scrim, since it is how
+`src/ui/screenicons.ts`), bottom right. The button IDS are what every harness
+names, so they outlive any rearrangement of it. It draws over every window and every scrim, since it is how
 a screen is opened and shut. Two of its buttons are its own: Hide parks every
 panel and survives its own press AND a reload — `GameState.parked` is a
 preference like a keybind — and Fill asks the browser for the screen.

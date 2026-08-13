@@ -24,13 +24,15 @@ import { crystalIcon, currencyIcon, itemIcon } from './icons';
 import { openMenu } from './menu';
 import { renderInventory, setInventoryOverride } from './inventory';
 import { attachTooltip, hideTooltip } from './tooltip';
-import { recipeButtonId } from './tutorial';
 import type { Item, ItemKind, Recipe } from '../types';
 
 /** Same pool the sim rolls drops from, for the same reason: authored data. */
 const POOL = new ModPool(ALL_MODS);
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** Id of one recipe's buy button, for the same reason as every other. */
+export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -183,8 +185,6 @@ export function render(): void {
     const room = hasRoomFor(recipe);
 
     const btn = el('button', 'buy') as HTMLButtonElement;
-    // Stable id so the guided opening can point at one recipe rather than the
-    // whole shelf. The demo asserts every step's target exists.
     btn.id = recipeButtonId(recipe.id);
 
     const icon = outputIcon(recipe);

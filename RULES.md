@@ -87,8 +87,8 @@ longer the argument for it.
 **What mobile costs later is a SHELL, not the screens, and that stays true for
 free.** One module per screen in `src/ui/`, each rendering CONTENT into ids the
 markup owns, with position and size in CSS — that is already how this codebase
-is built, and only five modules touch geometry at all (`tooltip`, `skills`,
-`tutorial`, `menu`, `inventory`), each for a reason. Keep it that way and a
+is built, and only four modules touch geometry at all (`tooltip`, `skills`,
+`menu`, `inventory`), each for a reason. Keep it that way and a
 mobile version later is new CSS and a new shell over the same screens. So the
 one rule is: **do not bake a position into a content module.** That costs
 nothing today, because it is already true. Anything more than that — responsive
@@ -173,9 +173,8 @@ whatever screen is holding it — which reads as flaky rather than broken, becau
 it needs a clear to land while a screen is open.
 
 **A rail button's ID outlives its presentation.** `open-shop`, `open-craft`,
-`open-character`, `open-save` and the rest are what the guided opening walks and
-what the shots lockdown probe asserts. Rearrange the bar freely; renaming an id
-is a much bigger job than it looks.
+`open-character`, `open-save` and the rest are what every harness names.
+Rearrange the bar freely; renaming an id is a much bigger job than it looks.
 
 **Anything drawn per frame must UPDATE, not rebuild.** `renderFlasks` builds and
 `syncFlasks` updates, and the split is not tidiness: rebuilt sixty times a
@@ -318,36 +317,22 @@ player can, so any advantage a player has here is judgement rather than
 reflexes. Keep it that way — the day something needs positioning or aiming,
 this rule stops holding and the harnesses stop meaning anything.
 
-**The guided opening teaches in bursts and lets go between them.** A step that
-cannot be finished right now must never hold the screen: no card following you
-about, no lockdown, while what it is waiting for is a level or a drop or a
-crystal that has to grow. It teaches a thing, releases, and comes BACK when the
-game reaches the next thing worth teaching — triggered by state, not queued in
-a chain. Tutorial-popup purgatory is the failure this avoids, and it is why
-`TUTORIAL_STEPS` is data with `done` predicates rather than a script: a step
-that is already satisfied is skipped, and a step nobody can satisfy yet should
-not be on screen at all.
+**NOTHING TEACHES, and that is the user's call.** *"I wanna start from scratch
+with it honestly. Like its just kinda all broken. Remove it all, and once all
+the systems are in place and we see how the intro plays out then we add it in
+small parts as needed."* `src/ui/tutorial.ts`, `TUTORIAL_STEPS`, `GuideCtx`,
+`body.guided`, `.guide-on`, the spending lock and the `#guide` card are all
+gone, and so are the probes and the walkthrough that watched them. The point is
+to see what the game is like with nothing explaining it, and that is not visible
+while any of it survives — so do NOT put back a smaller tutorial, a hint bar or
+a first-run tooltip. Teaching comes back as a QUEST LOG, in small parts, driven
+by what actually confused somebody. `ROADMAP.md` holds that phase, and it waits
+until the opening has been played.
 
-`TutorialStep.waits` is HOW. True while the step cannot be reached, and while
-it is the card is hidden, the lockdown comes off and nothing advances — so the
-loop chains descents by itself and every screen is live. A hidden card means
-FINISHED to everything outside the module, so dormancy also stamps
-`document.body.dataset.guideWaiting` with the step's id: that attribute is the
-only thing telling a harness the difference between an opening that is over and
-one that is asleep. Three steps use it — `spend_points` waits for the skill to
-reach `INTRO.crystalSkillLevel`, `meet_crystal` for someone to be standing at
-the mouth, and `bench_crystal` for the crystal to grow a slot.
-
-**The tree step rings the WEB, never a node.** Which node to take is the one
-decision the tree exists to hand the player, and ringing one answers it for
-them — so `towardWeb` ends at `skills-webwrap` and the step is done when
-`crystalEarned` is, which is every point spent at
-`INTRO.crystalSkillLevel`. The WRAPPER and not the svg: `.webwrap` clips its
-children, so an outline on the web inside it is drawn where nobody can see it.
-The step SUGGESTS the nearest notable by name off `pathToNotable` and never
-requires one. The retired `guide.mjs` clicked a region's first live control, and the web's
-are SVG groups rather than buttons, so its selector takes
-`.web__node--open` as well.
+**Nothing is ever prevented.** A new character lands at the Fissure with every
+screen live, every purchase spendable and no card in the way. Whatever teaches
+next may not reintroduce a cage — a log that greys out what you have not been
+told about is the same cop out in a new coat.
 
 **The sheet splits what is TRUE OF YOU from what is true of a SKILL.** The run
 panel carries three skill icons under the xp bar, one per `SKILL_SLOTS` entry;
@@ -837,29 +822,23 @@ a descent bought lands. Character carries `attributePointsLeft`, Skills carries
 `spareTreePoints` for the EQUIPPED skill rather than the web being read, and
 Trade carries `tradePointsLeft`. Zero
 removes the badge; one reading 0 is a permanent nag. The node carries a class
-and no id, because the demo walks header ids for tutorial targets and a badge
-must never become one. `spareTreePoints` exists so drawing one cannot mint a
+and no id, because a badge is a count on a button rather than a thing anything
+else may point at. `spareTreePoints` exists so drawing one cannot mint a
 progress record: a read may not write to the save.
 
 **The tooltip is the TOP LAYER.** `.tip` is `z-index: 100`, over every popup,
-menu, guide card and toast the app can raise — what explains a thing may not
-sit under what points at it, and on the skill web the opening's own card used
-to cover the tooltip naming the node it was ringing. It is
+menu and toast the app can raise — what explains a thing may not sit under what
+points at it. It is
 `pointer-events: none`, so nothing can be trapped behind it. `smoke.mjs`
 measures it against each of those layers rather than against the number.
 
-**A dock-less modal is still four places.** The Trade screen is the worked
-example: markup in `docs/index.html`, the Escape chain in `src/web.ts`,
-`guideContext()`'s `top`, and `CLOSES` in `src/ui/tutorial.ts`.
+**A dock-less modal is still two places.** The Trade screen is the worked
+example: markup in `docs/index.html`, and the Escape chain in `src/web.ts`.
 
-**Adding a modal is four places, not one.** The markup in `docs/index.html`;
-the `SCREENS` table in `src/web.ts`, which is one row of open, close, is-open
-and the element id — Escape and the window stack both come off it, so neither is
-a fifth place; `guideContext()`'s `top`, which is what lets a tutorial step point
-at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`, which is how
-`viaHeader` walks a player back OUT of it. Miss either of the last two and the
-guided opening rings something a popup is covering, which nothing now catches
-but playing it.
+**Adding a modal is two places, not one.** The markup in `docs/index.html`, and
+the `SCREENS` table in `src/web.ts` — one row of open, close, is-open and the
+element id, off which Escape and the window stack both come, so neither is a
+third place.
 
 **Three save slots, one of them LIVE.** `crystal-core.slot` remembers which,
 `liveSlot()` is the default argument of `saveGame`/`loadGame`/`savedAt`/
@@ -1023,11 +1002,10 @@ reload, which made it a thing you did again every session. The test is whether
 it changes what a click MEANS: a mode does and may not be saved, a preference
 does not and should be.
 
-**Chaining descents is not a setting.** `looping()` is `!isGuided()` and
-nothing else — the guided opening is the only thing that suppresses it, because
-its later steps are written against a report still on screen. **Leave after
-this run** and **Abandon** are the two ways out and there is no third; a
-checkbox offering to make the idle game not idle is a decision nobody needs.
+**Chaining descents is not a setting, and nothing suppresses it.** A cleared
+descent launches the next one, full stop. **Leave after this run** and
+**Abandon** are the two ways out and there is no third; a checkbox offering to
+make the idle game not idle is a decision nobody needs.
 `smoke.mjs` holds `#run-repeat` to not existing.
 
 **The run loop lives in `src/ui/run.ts`.** `launch()` builds a `RunSim` and
@@ -1190,15 +1168,12 @@ already paid for, cleared when you arrive in it.
 
 **Escape takes the lot.** From any line, `skipToGift` skips the rest and
 grants. The gift is already yours by the time a panel is on screen, so refusing
-it would be worse than taking it — and `guide.mjs` presses Escape at a moment
-nobody controls.
+it would be worse than taking it.
 
-**Anything that positions ITSELF has to say so against `.guide-on`.** That rule
-sets `position: relative` and is one class, so it wins the tie and drops a
-fixed bubble back into the flow at the foot of the page — where the opening
-then rings it and asks you to scroll. `.speech.guide-on` is the answer, and the
-same trap waits for anything fixed the opening can ring. `.modal__card` is one
-class too, and sets a width: a card that wants its own needs two.
+**A rule for a fixed element loses every specificity tie to the class it shares
+markup with.** `.modal__card` is one class and sets a width, so a card that
+wants its own needs two — `.modal__card--bubble` alone loses the tie and the
+bubble is drawn at the shell's width.
 
 **A meeting.** `giftWaiting` in `src/game/crystals.ts` answers what is owed,
 read AFTER the report so the level that descent just bought counts;
@@ -1215,9 +1190,9 @@ version of the walk, bounded like `runToCompletion`.
 
 **The Lampwright speaks in FLAVOUR.** `LAMPWRIGHT.first`, `.crystal` and
 `.again` in `src/data.ts` describe what he has seen the rock do and name no
-screen, no currency and no number. Teaching what to click is the guided
-opening's job, and the numbers rule above is about mechanics rather than voice — do
-not "fix" his lines by putting figures in them.
+screen, no currency and no number, and the numbers rule above is about
+mechanics rather than voice — do not "fix" his lines by putting figures in
+them.
 
 **What is owed.** `Waiting` is everything the mouth is holding — a weapon, the
 scheduled crystal, and every quest the clear just finished — and `takeHandover`
@@ -1309,13 +1284,6 @@ and already automatic.
 | layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
 | the dock, a window's position, a drag target | `drag` — 20s, and it prints what `elementFromPoint` hits on a failure |
 | art, sprites, icons | `shots` |
-| `src/ui/tutorial.ts` | nothing automated — play it, and say so |
-
-**The guided opening has NO harness.** `npm run guide` was retired with the
-user's agreement when the title screen changed the boot it drove, because the
-phase that deletes `TUTORIAL_STEPS` was already written. Until that phase lands,
-a change to `src/ui/tutorial.ts` is checked by playing it and nothing else — say
-so rather than implying coverage.
 
 **When a UI change breaks something, reach for `drag` first.** It found the
 handler race that four rounds of reading a slower harness's output did not,
@@ -1350,35 +1318,6 @@ balance number that reports and can never fail.
   exactly this reason. Adding a test in the middle that sells, wears or sorts
   will break checks hundreds of lines further down, and the failure will name a
   piece rather than your change.
-- **The guided opening has no harness; `src/ui/tutorial.ts` is data.** Steps
-  with `done` predicates, so when a change breaks it the fix is editing those
-  steps. Everything below is what the retired harness taught, and it is kept
-  because the steps still behave this way. A step that is
-  already satisfied is SKIPPED and never comes back, so "do this thing that
-  happens at a random moment" belongs as a branch inside an existing step's
-  `text`/`target`, not as a step of its own. The meeting is the worked example.
-  A step's `done` may not read a MOMENT the UI passes through — `meet` ended on
-  the panel being shut, and the walk out put a second between the clear and the
-  panel in which that was already true, so the opening skipped the meeting and
-  then rang a header button underneath it. It ends on the thing having been
-  handed over instead.
-  A step may not name a thing the player might not be holding: the opening said
-  "Ash Wand" three times and lied to every character handed a sword, so the
-  demo now renders every step's text for every skill and fails on any weapon
-  name that is not the one that character was given.
-  There are **fifteen** steps: enter, watch, meet, take_haul, to_shop,
-  buy_making, select_weapon, use_making, equip, descend, spend_points,
-  meet_crystal, socket, bench_crystal, craft_crystal. The demo
-  walks the same list headlessly with a hand-written action per step — add a
-  step and that action list needs one too, or the walkthrough reports the
-  opening as STUCK. A step that WAITS is asleep when the walkthrough arrives at
-  it and is woken by that step's own action, which is the check that a triggered
-  step is dormant rather than stuck.
-  A step can point INTO the skill web: `GuideCtx` carries the Skills screen's
-  `category` and `viewing` so `towardNode` can walk you down all three depths,
-  and `skillCatId` / `skillRowId` / `skillNodeId` are the ids it names. A node
-  is an SVG group rather than a button, so it carries `role="button"` and the
-  guide harness clicks it on that rather than on containing one.
 - **`npm run shots` can fail on content, not just on layout.** It waits up to
   two minutes for the SCENE and then for the Lampwright panel, and fails the run
   if a first descent never produces one. The meeting is at the END of a cleared
@@ -1386,21 +1325,6 @@ balance number that reports and can never fail.
   one — and the skill it picks is Blight, which takes about a minute over its
   first. `document.body.dataset.runPhase` is what tells a harness a room from a
   descent: both are a map with everything else hidden, so nothing else can.
-- **The meeting is the one modal `guide.mjs` never Escapes.** Its dormant
-  branch reads the state, then reads what is open, then presses Escape — and a
-  Lampwright panel that appeared between those two reads was being dismissed
-  without being taken. `meet_crystal` sleeps on `ctx.top !== 'met'`, so a panel
-  that is up has already woken the step: the harness waits a beat and lets the
-  normal path ring **Take it**. The failure it produced was `the opening met
-  the Lampwright 1 times, not twice`, intermittently, with nothing wrong in the
-  app — the gift stayed owed and a later descent handed it over.
-- **The guide plays the opening in REAL TIME**, and every descent in it is
-  played. `again` sits through exactly one — the second clear, which is what
-  `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to
-  reach a step.
-- **The opening ends inside a popup.** The last step sockets the crystal from
-  the collection, so anything driving the UI afterwards has to close what is
-  open first — the tree, the dock and the worn column all sit under a modal.
 - **Pointer DRAG tests flake.** `npm run drag` is the one that does this now,
   and a reorder has been seen to fail once on a bundle that passed either side
   of it. Re-run before treating one as a regression; the cause is below.

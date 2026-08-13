@@ -4,15 +4,13 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Four phases, and they are not one thing.** Phase 1 takes the tutorial out —
-a deletion, so the opening can be played with nothing explaining it. Phases 2
-and 3 continue the arc dictated in one go: the
+**Three phases.** Phases 1 and 2 continue the arc dictated in one go: the
 game gets **rooms you arrive in and people standing in them**, and the
 machinery for that is BUILT — a scene is a `RunSim` over an authored map, people
 talk in bubbles over their own heads, a room may have a boss in it, and a key
 takes you back to one you have put down. `CLAUDE.md` and `RULES.md` describe
 the whole of it; what is left there is one new item kind and one more
-character. Phase 4 is teaching, and it WAITS: see its own note.
+character. Phase 3 is teaching, and it WAITS: see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -40,8 +38,24 @@ one still here. Before starting any of them, read **Before you touch the
 ladder**, below — it holds the parts that belong to no single phase, and every
 one of them is something a phase would otherwise get wrong on its own.
 
-**What the last nine phases turned out to know that their writing did not.**
+**What the last ten phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **The demo's `GUIDED OPENING` section was not all about the steps.** Three of
+  its checks were about the GAME and had to survive the deletion: the mark on
+  the weapon the Lampwright hands over (and that a craft keeps it, and that
+  `heal` puts it on a save that predates it), that the bench resolves to a
+  piece you are WEARING and to a crystal you have SOCKETED, and that a first
+  clear pays for the one currency the shop sells. They are `THE OPENING` now.
+  A section named after a feature is worth reading line by line before it goes.
+- **The ids the opening needed are still rendered, and now nothing proves they
+  exist.** `dockSlotId`, `slotButtonId`, `recipeButtonId` and the three
+  `skill*Id`s moved to the modules that mint them; the check that every one
+  resolved was the walkthrough's, and it went with the steps. Whatever teaches
+  next inherits that debt along with the harness debt already written down.
+- **`pickingSlot` and `skillsDepth` were `GuideCtx` and nothing else.** Two
+  exported accessors with no other reader, which is what an interface built for
+  one consumer looks like once the consumer goes.
 
 - **A `<canvas>` is a REPLACED element, and `inset: 0` does not size one.**
   With `width: auto` it lays out at its own backing store — the viewport times
@@ -85,19 +99,13 @@ Kept here because the next thing built on top of them will want it.
   A boss room paid nothing at all until `priceKills` came out of it. Anything
   else that only a descent runs is worth checking for the same shape.
 
-- **`.guide-on` sets `position: relative`, and it is one class.** A bubble that
-  positions itself lost the tie and was dropped back into the flow at the foot
-  of the page, where the opening rang it and asked the player to scroll down to
-  reach it. `.speech.guide-on` is the answer and the trap is general: anything
-  fixed that the opening can ring has to say so, and `.modal__card` is one class
-  with a width in it for the same reason.
+- **A rule for a FIXED element loses every specificity tie to the class it
+  shares markup with.** `.modal__card` is one class and sets a width, so a card
+  that wants its own needs two. The bubble was dropped back into the flow at the
+  foot of the page by exactly this once already.
 - **A scene needed the panel restyled, not replaced.** `#met` keeps its markup
-  and its `met-take` id — the opening rings that — and became the LAST beat by
-  anchoring the same way the bubble does. Nothing about the handover moved.
-- **The guided opening's card lands under the bubble it points at**, which on
-  the first meeting covers the man. `guideProbe` passes because the card does
-  not cover its own TARGET, and after the opening there is no card at all. Not
-  worth a phase; worth knowing before somebody reports it as a bug.
+  and its `met-take` id, and became the LAST beat by anchoring the same way the
+  bubble does. Nothing about the handover moved.
 
 - **A scene needs no rng, and the phase asked for one.** The trap said to feed
   `sceneMap` the run's seed or the props would move; with an absolute plan and a
@@ -305,12 +313,6 @@ def's, so the rock is some world's rock but the place is a place. Which world a
 character is met THROUGH is decided by the trigger — the Osteomancer's corpse
 only drops in the Demonic world — and never by the room.
 
-**No scene but the Lampwright's happens during the guided opening.**
-`isGuided()` already suppresses the chained descent, and `guide.mjs` plays the
-whole opening in real time; a boss room landing in the middle of it is fifteen
-steps that no longer describe what is on screen. `sceneWaiting` returns only the
-Lampwright while `isGuided()` is true.
-
 **`src/sim` never decides that a scene happens.** BUILT: the decision is
 `finish()` in `src/ui/run.ts`, off `sceneWaiting`, and the sim is TOLD through
 `RunOptions.scene`. This is why the whole ladder leaves every headless harness
@@ -356,51 +358,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — Take the tutorial out
-
-**The user's call, and the whole of it:** *"I wanna start from scratch with it
-honestly. Like its just kinda all broken. Remove it all, and once all the
-systems are in place and we see how the intro plays out then we add it in small
-parts as needed."*
-
-This is a DELETION and nothing else. Do not replace it with a smaller tutorial,
-a hint bar, or a first-run tooltip. The point is to see what the game is like
-with nothing explaining it, and that is not visible while any of it survives.
-
-**What is true today.** `src/ui/tutorial.ts` is fifteen `TUTORIAL_STEPS` with
-`done` predicates, a card anchored to one lit control, and `body.guided`
-switching spending off. It has no harness at all — `npm run guide` was retired
-with the title screen — so nothing is currently checking it either.
-
-- [ ] **`src/ui/tutorial.ts` goes**, and with it `TUTORIAL_STEPS`, `GuideCtx`,
-      `guideContext()` in `src/web.ts`, and every `viaHeader`/`CLOSES` helper
-      that exists only to walk a player out of a popup.
-- [ ] **The lockdown goes**: `body.guided`, `.guide-on`, the spending lock and
-      the `#guide` card in `docs/index.html`. Nothing may replace them.
-- [ ] **The probes that watch it go.** `lockProbe` and `guideProbe` in
-      `shots.mjs` exist only for the lockdown. `mapProbe` and the overflow
-      probe stay — they are about the layout, not the opening.
-- [ ] **The demo's walkthrough goes.** It walks `TUTORIAL_STEPS` and holds each
-      `done` to being reachable; there will be no steps to walk.
-- [ ] **`GameState.tutorialStep` goes, and `heal()` ignores it.** A save
-      carrying one must load: a missing key takes its default, and a key
-      nothing reads is harmless. Do NOT bump `SAVE_VERSION` for this.
-- [ ] **Ids the opening needed may now be unused, and that is fine.** Do not
-      chase `dockSlotId`, `slotButtonId`, `skillNodeId` and friends out of the
-      other screens in the same commit — anything still rendering them keeps
-      them, and the rest can go when something else wants that file.
-- [ ] **`RULES.md` names the fifteen steps and states the lockdown's rules.**
-      Same commit, or the file describes a thing that is gone — which is the
-      exact failure this project has already paid for twice.
-
-**What must not break.** `smoke` and `shots` — and expect both to shrink, since
-a chunk of each is about the opening. `INTRO` in `src/data.ts` is read by the
-crystal schedule as well, so check before deleting anything in it.
-
-**Done when.** A brand new character lands in the Fissure with nothing lit,
-nothing locked, and no card — and the game is playable start to finish anyway.
-
-### Phase 2 — The Osteomancer, and what a corpse is for
+### Phase 1 — The Osteomancer, and what a corpse is for
 
 **What is true today.**
 
@@ -514,7 +472,7 @@ kind touches `heal()`, the id counter and the drop pipeline, and the demo's
 container list is where a missed one shows up. Then `smoke`, with the dock
 column's checks at the END of the file. Then `shots`.
 
-### Phase 3 — The Astral-Geometer
+### Phase 2 — The Astral-Geometer
 
 **What is true today.** After the Osteomancer, one world pays in something you carry to
 a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
@@ -554,9 +512,9 @@ room carrying something a ring cannot otherwise hold.
 
 **What must not break.** The same list as the Osteomancer, same order.
 
-### Phase 4 — A quest log instead of a pointing finger
+### Phase 3 — A quest log instead of a pointing finger
 
-**Not next, and deliberately.** The tutorial's deletion takes it out outright so the
+**Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
 eventually becomes, and it does not start until that has happened and the
 systems have settled — the user's words are "once all the systems are in place
@@ -565,8 +523,8 @@ Small parts, driven by what actually confused somebody. Do not take this phase
 because it is next in the list; take it when asked.
 
 **What is true today.** Nothing teaches anything: `TUTORIAL_STEPS`, the card
-and `body.guided` are gone by the time this is read. What that leaves is a game
-that never prevents a click and never explains one either.
+and `body.guided` are gone. What that leaves is a game that never prevents a
+click and never explains one either.
 
 **Why it is wrong, in the user's words.** *"The whole click here highlighting
 stuff works but it feels like a cop out and mobile gamey. Everyone I've seen
@@ -612,7 +570,10 @@ always a crystal.
 - **Teaching has no harness and this phase owes one**: can a fresh character
   reach the first crystal by doing what the log says? `npm run guide` was
   retired and its walkthrough deleted with the steps, so the debt is real and
-  it is this phase's to pay.
+  it is this phase's to pay. It owes a second one with it: the ids the opening
+  needed — `dockSlotId`, `slotButtonId`, `recipeButtonId`, `skillCatId`,
+  `skillRowId`, `skillNodeId` — are still minted by the screens that render
+  them, and the check that each one resolved went with the steps.
 
 **Done when.** A new character is never prevented from clicking anything, and
 a player who stops knowing what to do can open one screen that tells them.
@@ -754,12 +715,10 @@ without being asked.
   buy-back mean a heap of drops is a few clicks rather than a chore. So the
   question is now answerable rather than deferred: play it, and if it still
   feels like too much, measure the rate before changing it.
-- **The opening can skip the haul step.** `take_haul` is satisfied when the
-  haul is empty, and a first descent drops gear at 5% a kill — so about a
-  third of the time there is nothing to take and the step the opening exists
-  to teach is silently skipped, and nothing catches it — which is the part that
-  makes it worth writing down. The fix is probably a guaranteed
-  first drop rather than a change to the step.
+- **A first descent can drop nothing at all.** Gear rolls at 5% a kill, so
+  about a third of first clears bank an empty haul — which is a new player
+  meeting the loop's payoff screen with nothing in it. A guaranteed first drop
+  is the obvious answer. Written down as the opening's, and it outlived it.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
   right once you know what a good drop looks like — and now that uniques drop,
@@ -771,8 +730,6 @@ without being asked.
   ordering has entirely inverted since, and Fireball is now the outlier at
   roughly twice Blight. Do not act on it outside the balance pass: it is three
   skills, and the demo prints it fresh on every run.
-- More tutorial steps for systems added since the opening was written: the
-  collection screen, the bench's crystals column, sell mode, the counter.
 - **A third way to get rid of a piece.** Selling is now a mode with a buy-back
   behind it, which is enough that this is no longer urgent — but everything
   still ends at the same counter, and a game where the only verb is "sell" has

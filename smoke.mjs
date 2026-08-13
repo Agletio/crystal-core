@@ -99,11 +99,6 @@ assert($('welcome').hidden === false, 'and a game with no skill still asks for o
 assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
 assert($('welcome-name') !== null, 'and asks who you are');
 
-// A dev lever on the welcome card: choose a skill without the opening running.
-// Off on every reload, so the default path is still the guided one.
-assert($('welcome-skip') !== null, 'the opening can be skipped');
-assert(/on/i.test(text('welcome-skip')), 'and is on by default', text('welcome-skip'));
-
 $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
@@ -150,82 +145,15 @@ assert(
   'the Fissure consumes nothing',
   `${dockItems().length} vs ${beforeFissure}`
 );
-// --- the guided opening ----------------------------------------------------
-// It runs from the very first click now, so a new player is never looking at
-// a screen full of buttons with no idea which one. Only the plumbing is
-// checked here; the step machine itself is walked headlessly in the demo,
-// where state can be built directly.
-assert($('guide').hidden === false, 'the guide is up from the start');
-assert(/step 1 of/i.test(text('guide-step')), 'starting at step one', text('guide-step'));
-assert(
-  all('.guide-on').length === 1,
-  'exactly one thing is highlighted',
-  String(all('.guide-on').length)
-);
-assert(
-  $('run-launch').classList.contains('guide-on'),
-  'and it is the button that starts the game'
-);
-// No Skip. It only ever got pressed to dismiss the card during a descent —
-// where there is nothing to click — and the guide never came back for the
-// part that teaches you the loop.
-assert($('guide-skip') === null, 'there is no way to skip it');
-
-// --- the opening locks spending, and only spending ------------------------
-// It hands you a fixed amount of gold and then asks you to buy two specific
-// things with it. Spend it on stash space instead and no wording gets you
-// back, so the shelves are switched off. Everything else stays live:
-// locking the lot meant a step with nothing lit — a reload during the fight —
-// was a room with no doors, New game included.
-assert(document.body.classList.contains('guided'), 'a live step locks the app down');
-
-// Keyboard is the half pointer-events does not cover: a blocked button is
-// still focusable and still fires on Enter. It has to narrow the same way, or
-// the two halves disagree about what is allowed.
-{
-  const fire = (el, key) => {
-    const ev = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-    el.dispatchEvent(ev);
-    return ev.defaultPrevented;
-  };
-
-  $('open-shop').click();
-  const buy = all('#shop .buy').find((b) => !b.classList.contains('guide-on'));
-  assert(!!buy, 'the shop has a shelf to check');
-  assert(fire(buy, 'Enter'), 'Enter on a purchase is swallowed');
-  assert(fire(buy, ' '), 'and so is Space');
-  $('shop-close').click();
-
-  // The doors. Every one of these was dead under the old lock.
-  assert(!fire($('open-shop'), 'Enter'), 'but opening a screen is not');
-  assert(!fire($('open-skills'), 'Enter'), 'nor is any other screen');
-  assert(!fire($('open-save'), ' '), 'and Save & Load always opens');
-  assert(
-    !fire($('welcome-name') ?? $('run-launch'), 'Enter') || true,
-    'typing is never swallowed'
-  );
-}
-
-// The card floats over the popups rather than living in the shell — half its
-// steps point at things inside a modal.
-assert(
-  !document.querySelector('.wrap').contains($('guide')),
-  'the guide is not trapped inside the shell'
-);
-
 $('dev-kit').click();
 $('confirm-yes').click();
 await new Promise((r) => setTimeout(r, 0));
-assert($('guide').hidden === true, 'a wipe ends it');
-assert(all('.guide-on').length === 0, 'and takes the highlight with it');
-assert(!document.body.classList.contains('guided'), 'and lifts the lock');
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('craft').hidden === false, 'a stocked game opens on the bench');
 
 // --- the flasks --------------------------------------------------------------
 // The one thing a player DOES in a fight, and the first input a descent has
-// ever had. AFTER the wipe: a press only lands once the sim ticks, and the
-// waiting that needs would walk the guided opening on past the step above.
+// ever had. AFTER the wipe, which is what stocks the dock the flasks read.
 {
   $('craft-close').click();
   $('run-launch').click();
@@ -764,7 +692,7 @@ assert(
 // --- the haul -------------------------------------------------------------
 // One terminus for the loop: a death and a full haul both land here. Only its
 // shape is checked in jsdom — a run takes a minute of real time, so the loop
-// itself is walked headlessly in the demo and played for real in the guide.
+// itself is walked headlessly in the demo.
 assert($('haul').hidden === true, 'the haul starts closed');
 $('open-haul').click();
 assert($('haul').hidden === false, 'and opens from the header');
@@ -1520,7 +1448,7 @@ $('sheet-close').click();
 }
 
 // The other half of the badge. A level 1 character already has a tree point,
-// which is why the guided opening has a step for spending one.
+// so the button says so from the first screen you look at.
 assert(
   text('open-skills').includes('1'),
   'the Skills button says a point is waiting',
@@ -2167,26 +2095,6 @@ assert($('history').hidden === true, 'history closes');
   assert($('savedata').hidden === true, 'and the screen closes');
 }
 
-// --- skipping the opening --------------------------------------------------
-// The wipe above put the welcome card back up, which is the only place the
-// lever exists. Choosing a skill with it off must start the game with no guide
-// and no lockdown — a half-skipped opening would leave the app switched off.
-{
-  assert($('welcome').hidden === false, 'a wipe asks who you are again');
-
-  $('welcome-skip').click();
-  assert(/skip/i.test(text('welcome-skip')), 'the lever says so', text('welcome-skip'));
-
-  all('#welcome-skills .welcomecard')[0].click();
-  assert($('guide').hidden === true, 'choosing a skill runs no opening');
-  assert(all('.guide-on').length === 0, 'and highlights nothing', String(all('.guide-on').length));
-  assert(
-    !document.body.classList.contains('guided'),
-    'and leaves the app unlocked'
-  );
-  assert($('run-launch').disabled === false, 'the Fissure is ready anyway');
-}
-
 // --- the page itself must not scroll --------------------------------------
 assert(
   window.getComputedStyle(document.body).overflow === 'hidden',
@@ -2278,13 +2186,11 @@ assert(
     return z;
   };
   const tip = layer('tip');
-  for (const cls of ['modal', 'speech', 'guide', 'dragghost', 'itemmenu', 'toast']) {
+  for (const cls of ['modal', 'speech', 'dragghost', 'itemmenu', 'toast']) {
     assert(tip > layer(cls), `the tooltip draws over .${cls}`, `${tip} vs ${layer(cls)}`);
   }
-  // A bubble is a new layer, and it sits between the windows it must cover and
-  // the opening's card, which points AT it.
+  // A bubble is its own layer, over the windows it has to cover.
   assert(layer('speech') > layer('modal'), 'a bubble draws over a window');
-  assert(layer('guide') > layer('speech'), 'and under the card telling you to click it');
   assert(
     window.getComputedStyle($('tooltip')).pointerEvents === 'none',
     'and is never hit-tested, so nothing can be trapped behind it'

@@ -1,6 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import { canApply, craft, describeItem, describeMod, itemMatches } from './crafting';
@@ -60,7 +58,6 @@ import {
   opensHere,
   WEAPON_BASES,
   BASE_TIER_ILVL,
-  EQUIP_SLOTS,
   GEAR_BASES,
   GEAR_BASE_BY_ID,
   BASE_TIER_MODS,
@@ -70,7 +67,6 @@ import {
   RECIPES,
   SKILLS,
   SKILL_BY_ID,
-  SKILL_CATEGORIES,
   TRADE,
   UNIQUES,
   UNIQUE_BY_ID,
@@ -199,18 +195,6 @@ import {
   paletteFrom,
   tileDecals,
 } from './render/renderer';
-import {
-  TUTORIAL_STEPS,
-  dockSlotId,
-  recipeButtonId,
-  skillCatId,
-  skillNodeId,
-  skillRowId,
-  slotButtonId,
-} from './ui/tutorial';
-import { crystalMoveId } from './ui/crystals';
-import { crystalSlotId } from './ui/craft';
-import type { GuideCtx } from './ui/tutorial';
 import {
   CARRY,
   addItem,
@@ -1608,443 +1592,74 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
 }
 
 // ===========================================================================
-rule('GUIDED OPENING — does every step actually complete?');
+rule('THE OPENING — is the first hour walkable with nothing explaining it?');
 
-// Steps are predicates over game state, so the whole sequence can be walked
-// here without a browser. This is the check that matters: a step whose `done`
-// can never become true would strand a new player on it forever, and that is
-// invisible from the UI until someone sits there clicking.
+// Nothing teaches any more. What has to hold is that the road EXISTS: the
+// first clear pays for the one currency the shop sells, the weapon handed
+// over at the mouth is the one the bench then works on, and the bench
+// reaches a piece wherever that piece is kept.
 {
   const game = createGame('fresh');
-  const AT: GuideCtx = {
-    view: 'run',
-    phase: 'menu',
-    top: null,
-    picking: null,
-    speaking: false,
-    dock: true,
-    category: null,
-    viewing: null,
-  };
-  const ctx: GuideCtx = { ...AT };
-  let step = 0;
-  const trace: string[] = [];
-  const targetless: string[] = [];
-  const MARKUP = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
-
-  const mine = mainSkillId(game.character);
-  const myCategory = SKILL_BY_ID[mine]!.category!;
-  const elsewhere = SKILL_CATEGORIES.find((c) => c.id !== myCategory)!.id;
-  const another = MAIN_SKILLS.find((s) => s.id !== mine)!.id;
-
-  /** Every surface a step could be pointing at when it fires. */
-  const SITUATIONS: GuideCtx[] = [
-    { ...AT },
-    { ...AT, phase: 'running' },
-    { ...AT, phase: 'results' },
-    { ...AT, view: 'craft', phase: 'results', top: 'craft' },
-    { ...AT, view: 'craft', phase: 'results', top: 'shop' },
-    { ...AT, phase: 'results', top: 'shop' },
-    { ...AT, phase: 'results', top: 'stash' },
-    { ...AT, phase: 'results', top: 'sheet' },
-    // The sheet with a slot already chosen. A distinct situation, because it
-    // is the one where the next click leaves this window for the dock.
-    { ...AT, phase: 'results', top: 'sheet', picking: 'weapon' },
-    // All three depths of the Skills screen, plus the two wrong turns: a step
-    // walking you to a node has to know the way back out of both.
-    { ...AT, top: 'skills' },
-    { ...AT, top: 'skills', category: myCategory },
-    { ...AT, top: 'skills', category: myCategory, viewing: mine },
-    { ...AT, top: 'skills', category: elsewhere },
-    { ...AT, top: 'skills', category: myCategory, viewing: another },
-    // Every modal a step could fire under has to have a way back OUT of it.
-    { ...AT, top: 'trade' },
-    { ...AT, phase: 'results', top: 'trade' },
-    // Screens the opening never sends you to. Reachable anyway now that only
-    // spending is locked, so every step has to know the way back out of them.
-    { ...AT, top: 'history' },
-    { ...AT, top: 'save' },
-    { ...AT, phase: 'running', top: 'save' },
-    { ...AT, view: 'craft', phase: 'running', top: 'craft' },
-  ];
-
-  const targetsOf = (s: (typeof TUTORIAL_STEPS)[number]): string[] =>
-    typeof s.target === 'string'
-      ? [s.target]
-      : [
-          ...new Set(
-            SITUATIONS.map((c) => (s.target as (c: GuideCtx, g: GameState) => string)(c, game))
-          ),
-        ];
-
-  // Everything the UI assigns an id to at runtime — every ui module except
-  // the one under test, since the guide quotes its own targets and would
-  // happily vouch for a typo it made itself.
-  const UI = join(fileURLToPath(new URL('./ui/', import.meta.url)));
-  const UI_SRC = readdirSync(UI)
-    .filter((f) => f.endsWith('.ts') && f !== 'tutorial.ts')
-    .map((f) => readFileSync(join(UI, f), 'utf8'))
-    .join('\n');
-
-  // Four ways for an id to be real: written into the markup, assigned as a
-  // literal somewhere in the UI, or built by the shop from a recipe or by the
-  // sheet from an equipment slot.
-  const exists = (id: string): boolean =>
-    MARKUP.includes(`id="${id}"`) ||
-    UI_SRC.includes(`'${id}'`) ||
-    RECIPES.some((r) => recipeButtonId(r.id) === id) ||
-    EQUIP_SLOTS.some((s) => slotButtonId(s.id) === id) ||
-    // The three depths of the Skills screen, minted per category, per skill
-    // and per node of whichever web is up.
-    SKILL_CATEGORIES.some((c) => skillCatId(c.id) === id) ||
-    PLAYER_SKILLS.some((s) => skillRowId(s.id) === id) ||
-    PLAYER_SKILLS.some((s) => treeFor(s.id).some((n) => skillNodeId(n.id) === id)) ||
-    // Minted per item by the dock, so it exists exactly while that item does.
-    [...game.inventory, ...Object.values(game.character.equipment)].some(
-      (i) => dockSlotId(i.id) === id
-    ) ||
-    // Minted per crystal by the bench column and by the collection. A socketed
-    // one is in the bench's column too, which is where the craft step points.
-    ownedCrystals(game).some((i) => crystalSlotId(i.id) === id || crystalMoveId(i.id) === id);
-
-  // Everything the guide asks for, in order. Each entry is what a player
-  // would do; the step should then satisfy itself.
-  const actions: Array<() => void> = [
-    () => { ctx.phase = 'running'; },
-    () => {
-      // Clearing it leaves the report on screen — and it STAYS there through
-      // everything below, because nothing in the guided opening dismisses it.
-      // That is why the last step has to point at "Back to the Fissure".
-      ctx.phase = 'results';
-      grantFirstClear(game);
-      // A cleared run banks into the haul, so the step after this one has
-      // something to take. Without it the step satisfies itself and proves
-      // nothing about the screen it is teaching.
-      bankToHaul(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-      // The clear ends at the mouth with the Lampwright in it.
-      ctx.top = 'met';
-      line(
-        `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
-          `${game.inventory.length} items`
-      );
-    },
-    () => {
-      // The panel's one button: the weapon is handed over and it closes.
-      takeHandover(game, { weapon: true, crystal: false, quests: [] });
-      ctx.top = null;
-    },
-    () => {
-      // The drops went to the haul, not the bag. Taking them is the step.
-      ctx.top = 'haul';
-      takeWhatFits(game);
-    },
-    () => { ctx.top = 'shop'; },
-    () => { runRecipe(game.wallet, 'make_shard_of_making'); },
-    () => {
-      // Currency is spent from the dock onto the bench, so getting to the
-      // next step means leaving the shop for crafting.
-      ctx.view = 'craft';
-      ctx.top = 'craft';
-      const wand = game.inventory.find((i) => i.kind === 'gear');
-      if (wand) selectForCraft(game, wand);
-    },
-    () => {
-      const wand = craftItem(game)!;
-      const result = craft(wand, CURRENCY_BY_ID.shard_of_making, pool, rng);
-      if (result.ok) replaceItem(game, result.item);
-    },
-    () => {
-      const wand = craftItem(game)!;
-      equipItem(game, wand, 'weapon');
-    },
-    // Close the sheet, dismiss the report, enter again.
-    () => { ctx.view = 'run'; ctx.top = null; ctx.phase = 'running'; },
-    // Dormant until the skill reaches the level the crystal is gated on, then
-    // every point of it spent — which is what the first crystal is bought
-    // with, and WHICH nodes they went on is nobody's business but the
-    // player's. Walked here the way an idle player would: cheapest first.
-    () => {
-      const progress = skillProgress(game.character, mine);
-      while (progress.level < INTRO.crystalSkillLevel) {
-        addSkillXp(game.character, mine, xpToNext(progress.level));
-      }
-      ctx.top = 'skills';
-      ctx.category = myCategory;
-      ctx.viewing = mine;
-      while (pointsAvailable(progress) > 0) {
-        const open = treeFor(mine).filter((n) => canAllocate(mine, n.id, progress.allocated));
-        if (open.length === 0) break;
-        progress.allocated.push(open[0].id);
-      }
-      ctx.top = null;
-      ctx.category = null;
-      ctx.viewing = null;
-    },
-    // The clear that buys puts him at the mouth holding it.
-    () => {
-      ctx.top = 'met';
-      takeHandover(game, giftWaiting(game)!);
-      // A meeting ends a descent and every ending opens the haul, so the step
-      // after it is reached with one on top. That is the step's first branch.
-      ctx.top = 'haul';
-      bankToHaul(game, [makeGear('shiv', 8)]);
-    },
-    // Socketed BLANK: a level 1 crystal holds nothing, so all it does is make
-    // the descent longer, and being used is what buys it a slot.
-    () => {
-      takeWhatFits(game);
-      ctx.top = 'crystals';
-      const crystal = crystalsIn(game)[0];
-      socketItem(game, crystal, socketFor(game, crystal)!);
-    },
-    // Several cleared descents later it has room, and the guide comes back for
-    // it. The count is measured in the collection section below.
-    () => {
-      while (modCapacity(socketed(game)[0]) === 0) {
-        addCrystalXp(socketed(game)[0], xpForClear(0));
-      }
-      ctx.view = 'craft';
-      ctx.top = 'craft';
-      selectForCraft(game, socketed(game)[0]);
-    },
-    () => {
-      const crystal = craftItem(game)!;
-      const result = craft(crystal, CURRENCY_BY_ID[INTRO.scriptedCurrency], pool, rng);
-      if (result.ok) replaceItem(game, result.item);
-    },
-  ];
-
-  /** Whether a step that waits was DORMANT at the moment the guide reached it. */
-  const asleepOnArrival = new Map<string, boolean>();
-
-  for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
-    const current = TUTORIAL_STEPS[step];
-    if (current.waits) asleepOnArrival.set(current.id, current.waits(game, ctx));
-    actions[i]?.();
-    // Advance past everything now satisfied, as the real driver does.
-    while (step < TUTORIAL_STEPS.length && TUTORIAL_STEPS[step].done(game, ctx)) step++;
-    trace.push(`${current.id} -> ${step}`);
-
-    // Every step must name an element that exists, or it highlights nothing
-    // and the card floats in a corner pointing at empty space. Targets that
-    // branch on what's open are checked in EVERY branch, not just the one
-    // this walkthrough happens to be in — the whole point of a moving target
-    // is that it fires in situations the happy path never visits.
-    for (const id of targetsOf(current)) {
-      if (!exists(id)) targetless.push(`${current.id} -> #${id}`);
-    }
-  }
-
-  for (const entry of trace) line(`  ${entry}`);
-  check(
-    step >= TUTORIAL_STEPS.length,
-    `all ${TUTORIAL_STEPS.length} steps completed, and affordable`,
-    `STUCK on '${TUTORIAL_STEPS[step]?.id}' — a new player cannot finish`
-  );
-  check(
-    targetless.length === 0,
-    'every step points at an element that exists',
-    `points at nothing: ${targetless.join(', ')}`
+  grantFirstClear(game);
+  bankToHaul(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
+  takeHandover(game, { weapon: true, crystal: false, quests: [] });
+  takeWhatFits(game);
+  line(
+    `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
+      `${game.inventory.length} items`
   );
 
-  // The other shape a step can be in. A step that cannot be reached yet is
-  // DORMANT — card down, lockdown off, nothing advancing — and that must never
-  // read as stuck. Each one is asleep when the guide arrives at it and is woken
-  // by the game rather than by the step in front of it.
-  {
-    const asleep = TUTORIAL_STEPS.filter((s) => s.waits);
-    const fresh = createGame('fresh');
-    check(
-      asleep.length > 0 && asleep.every((s) => s.waits!(fresh, AT)),
-      `${asleep.length} steps wait, and every one is dormant on a fresh character`,
-      asleep.filter((s) => !s.waits!(fresh, AT)).map((s) => s.id).join(', ')
-    );
-    const awake = asleep.filter((s) => asleepOnArrival.get(s.id) !== true);
-    check(
-      awake.length === 0,
-      'and every one was still asleep when the opening reached it',
-      `already awake: ${awake.map((s) => s.id).join(', ')}`
-    );
-  }
-
-  // Existing is not the same as reachable. The header and the Fissure panel sit
-  // UNDER every popup, so a step still naming one of them while something is
-  // open is pointing through a modal at a button nobody can click. That is the
-  // shape of every hard lock this opening has had, and now only spending is
-  // switched off, any screen can be the one in the way.
-  const COVERED = new Set([
-    'run-launch',
-    'run-again',
-    'run-loot',
-    'dev-kit',
-    ...['craft', 'shop', 'stash', 'character', 'skills', 'history', 'save', 'crystals'].map(
-      (s) => `open-${s}`
-    ),
-  ]);
-  const unreachable: string[] = [];
-  for (const step of TUTORIAL_STEPS) {
-    for (const ctx of SITUATIONS) {
-      if (ctx.top === null && ctx.view !== 'craft') continue;
-      const id = typeof step.target === 'function' ? step.target(ctx, game) : step.target;
-      if (COVERED.has(id)) {
-        unreachable.push(`${step.id} -> #${id} with ${ctx.top ?? ctx.view} open`);
-      }
-    }
-  }
-  check(
-    unreachable.length === 0,
-    'and never at one a popup is covering',
-    `unreachable: ${unreachable.join(', ')}`
-  );
-
-  // No step may name a weapon it cannot know you are holding. The opening
-  // used to say "Ash Wand" three times, which is a lie to every character who
-  // took Strike and was handed a sword — and would be a fresh lie for every
-  // weapon added after.
-  {
-    const wrong: string[] = [];
-    for (const skill of MAIN_SKILLS) {
-      const at = createGame('fresh');
-      at.character = makeCharacter({}, skill.id);
-      const mine = lampwrightWeapon(at)?.item;
-      if (!mine) continue;
-      // Every OTHER weapon in the game: none of their names may appear.
-      const theirs = WEAPON_BASES.filter((b) => b.id !== mine.base).map((b) => b.name);
-      for (const step of TUTORIAL_STEPS) {
-        for (const situation of SITUATIONS) {
-          const said =
-            typeof step.text === 'function' ? step.text(situation, at) : step.text;
-          for (const name of theirs) {
-            if (said.includes(name)) wrong.push(`${skill.id}/${step.id}: "${name}"`);
-          }
-        }
-      }
-    }
-    check(
-      wrong.length === 0,
-      'and no step names a weapon the character is not holding',
-      [...new Set(wrong)].join(', ')
-    );
-  }
-
-  // The other half of a dead end: a step with nothing lit that nothing can
-  // finish. Only 'watch' has no ring, and only while a run is actually going.
-  const unlit: string[] = [];
-  for (const step of TUTORIAL_STEPS) {
-    for (const ctx of SITUATIONS) {
-      const wants = typeof step.ring === 'function' ? step.ring(ctx) : step.ring !== false;
-      if (!wants && ctx.phase !== 'running') unlit.push(`${step.id} with phase ${ctx.phase}`);
-    }
-  }
-  check(
-    unlit.length === 0,
-    'and lights something whenever the sim is not doing the work',
-    `nothing to click: ${unlit.join(', ')}`
-  );
-  // A first run drops things. Benching a dropped item that already has
-  // modifiers used to satisfy "put your wand on the bench" AND the step after
-  // it, which waits for a modifier to appear — so the shard the guide just
-  // walked you to the shop for was never spent on anything.
-  {
-    const step = TUTORIAL_STEPS.find((s) => s.id === 'select_weapon')!;
-    const at = createGame('fresh');
-    const ctx: GuideCtx = {
-      view: 'craft',
-      top: 'craft',
-      phase: 'menu',
-      picking: null,
-      speaking: false,
-      dock: true,
-      category: null,
-      viewing: null,
-    };
-
-    // Everything a first run can drop, in the shapes that fooled every earlier
-    // reading of this step: a modded piece, a blank helmet, and — the one that
-    // beat "any blank weapon" — a blank wand off the floor.
-    const impostors = [
-      rollGear('cudgel', 20, 2, pool, new Rng(5)),
-      makeGear('bulwark_helmet_t1', 20),
-      makeGear('ash_wand', 1),
-    ];
-    const fooled: string[] = [];
-    for (const item of impostors) {
-      at.inventory = [item];
-      selectForCraft(at, item);
-      if (step.done(at, ctx)) fooled.push(item.name);
-    }
-    check(fooled.length === 0, 'nothing a first run drops passes for your wand', fooled.join(', '));
-
-    // The one the Lampwright hands you, marked by lampwrightWeapon.
-    const given = createGame('fresh');
-    given.firstClearDone = false;
-    const gift = lampwrightWeapon(given)!.item;
-    selectForCraft(given, gift);
-    check(
-      step.done(given, ctx) &&
-        TUTORIAL_STEPS.find((s) => s.id === 'use_making')!.done(given, ctx) === false,
-      'and the one it hands you does, with the modifier step still waiting',
-      'the gifted wand did not satisfy the step it is meant to'
-    );
-
-    // The mark has to survive being worked on, or the step it teaches breaks
-    // the moment you use the shard it just sent you to buy.
-    const worked = craft(gift, CURRENCY_BY_ID.shard_of_making, pool, new Rng(3));
-    check(
-      worked.ok && worked.item.meta.firstClear === true,
-      'and it keeps the mark through a craft',
-      'crafting the wand lost what identifies it'
-    );
-
-    // A save from before the mark: heal() picks one, ONCE, so an opening in
-    // progress is not left pointing at nothing.
-    const old = createGame('fresh');
-    old.firstClearDone = true;
-    old.inventory = [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 20)];
-    heal(old);
-    check(
-      giftWeapon(old)?.base === 'ash_wand',
-      'and a save that predates it is marked on load',
-      `heal marked ${giftWeapon(old)?.name ?? 'nothing'}`
-    );
-  }
-
-  // The guide walks you into wearing one benched item and socketing another.
-  // Neither move may lose the bench: worn gear and socketed crystals are both
-  // worked on where they live, which is what the two columns beside it are for.
-  const benched = craftItem(game);
-  check(
-    benched !== null && socketed(game).some((c) => c.id === benched.id),
-    'the benched crystal stays on the bench once you socket it',
-    'socketing the benched crystal lost it — the bench resolves to nothing'
-  );
-  const armed = game.character.equipment.weapon!;
-  selectForCraft(game, armed);
-  check(
-    craftItem(game)?.id === armed.id,
-    'and it reaches a weapon you are wearing',
-    'wearing the benched item lost it — the bench resolves to nothing'
-  );
-  // The gold it hands out has to cover the two purchases it then asks for,
-  // and the shelves are locked, so there is no recovering from a shortfall.
-  const asked = ['make_shard_of_making'];
-  const bill = asked.reduce(
-    (n, id) => n + (RECIPES.find((r) => r.id === id)?.inputs.gold ?? 0),
-    0
-  );
+  const bill = RECIPES.find((r) => r.id === 'make_shard_of_making')?.inputs.gold ?? 0;
   check(
     FISSURE.firstClear.gold >= bill,
-    `the first clear pays ${FISSURE.firstClear.gold} gold and asks for ${bill} of it`,
-    `it pays ${FISSURE.firstClear.gold} but asks for ${bill}`
+    `the first clear pays ${FISSURE.firstClear.gold} gold and the shard it can buy costs ${bill}`,
+    `it pays ${FISSURE.firstClear.gold} but the shard costs ${bill}`
   );
-  // Where it leaves you: armed, and one socket filled with a crystal that has
-  // a modifier on it — every screen the game asks you to use, used once.
-  const set = socketed(game);
+
+  // The mark on the gift. It is what tells the weapon he handed over from
+  // anything a first run dropped, and it has to survive being worked on.
+  const gift = giftWeapon(game);
   check(
-    !!game.character.equipment.weapon && set.length === 1 && set[0].mods.length === 1,
-    'the opening ends armed, with one crystal socketed and rolled',
-    `weapon ${game.character.equipment.weapon?.base ?? 'none'}, ` +
-      `${set.length} socketed, ${set[0]?.mods.length ?? 0} modifiers`
+    gift?.meta.firstClear === true,
+    'the weapon he hands over is marked as his',
+    `the gift is ${gift?.name ?? 'nothing'}`
+  );
+  const worked = craft(gift!, CURRENCY_BY_ID.shard_of_making, pool, new Rng(3));
+  check(
+    worked.ok && worked.item.meta.firstClear === true,
+    'and keeps the mark through a craft',
+    'crafting the gift lost what identifies it'
+  );
+
+  // A save from before the mark existed: heal() picks one, ONCE.
+  const old = createGame('fresh');
+  old.firstClearDone = true;
+  old.inventory = [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 20)];
+  heal(old);
+  check(
+    giftWeapon(old)?.base === 'ash_wand',
+    'and a save that predates it is marked on load',
+    `heal marked ${giftWeapon(old)?.name ?? 'nothing'}`
+  );
+
+  // Worn gear and socketed crystals are both worked on where they LIVE, which
+  // is what the two columns beside the bench are for. Either move losing the
+  // bench is a bench that resolves to nothing mid-craft.
+  equipItem(game, gift!, 'weapon');
+  selectForCraft(game, game.character.equipment.weapon!);
+  check(
+    craftItem(game)?.id === game.character.equipment.weapon!.id,
+    'the bench reaches a weapon you are wearing',
+    'wearing the benched item lost it — the bench resolves to nothing'
+  );
+  takeHandover(game, { weapon: false, crystal: true, quests: [] });
+  const crystal = crystalsIn(game)[0];
+  selectForCraft(game, crystal);
+  socketItem(game, crystal, socketFor(game, crystal)!);
+  check(
+    socketed(game).some((c) => c.id === craftItem(game)?.id),
+    'and a crystal stays on it once you socket it',
+    'socketing the benched crystal lost it — the bench resolves to nothing'
   );
 }
 

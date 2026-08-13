@@ -38,11 +38,14 @@ import { gearIcon } from './icons';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { itemCard } from './itemcard';
-import { slotButtonId } from './tutorial';
 import { setInventoryHandler } from './inventory';
 import type { EquipSlotDef, Item, SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** Id of an equipment slot's button. Stable so a screenshot probe or a step in
+ *  whatever teaches next can name one slot rather than the grid. */
+export const slotButtonId = (slotId: string): string => `slot-${slotId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -76,8 +79,6 @@ function renderSlots(): void {
     cell.append(el('div', 'slotcell__label', slot.name));
 
     const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
-    // Stable id so the guided opening can point at one slot rather than the
-    // grid. The demo asserts every step's target exists.
     btn.id = slotButtonId(slot.id);
     if (worn) {
       btn.append(gearIcon((worn.meta.art as string) ?? 'body', 30));
@@ -483,13 +484,6 @@ export function closeCharacter(): void {
   hideTooltip();
   onClosed?.();
 }
-
-/**
- * Which slot is waiting, if any. The guided opening needs it: picking a slot
- * moves the next thing to click OUT of this window and into the dock, and a
- * guide that cannot see that rings a slot while the gear sits switched off.
- */
-export const pickingSlot = (): string | null => picking;
 
 export function isCharacterOpen(): boolean {
   return !$('sheet').hidden;

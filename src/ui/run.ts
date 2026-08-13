@@ -47,7 +47,6 @@ import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
 import { endSpeech, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
-import { isGuided } from './tutorial';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
@@ -152,7 +151,7 @@ export function syncViewportLock(): void {
   if (showing) fitCanvas();
 }
 
-/** Which of the three states the Fissure is in. The guide branches on it. */
+/** Which of the four states the Fissure is in. */
 export const runPhase = (): Phase => phase;
 
 /** The panel is done. The descent it ended was cleared and banked long before
@@ -168,8 +167,7 @@ export function metTaken(): void {
 }
 
 /** Escape, anywhere in a meeting: the rest of the lines are skipped and what
- *  is held is granted. Refusing a gift already yours would be worse, and
- *  `guide.mjs` presses this at a moment nobody controls. */
+ *  is held is granted. Refusing a gift already yours would be worse. */
 export function skipToGift(): void {
   endSpeech();
   if (isMetOpen()) closeMet();
@@ -324,10 +322,6 @@ function renderCall(): void {
 // Run
 // ---------------------------------------------------------------------------
 
-/** A cleared descent always starts the next one. The guided opening is the
- *  one exception: its later steps read a report still on screen. */
-const looping = (): boolean => !isGuided();
-
 function launch(): void {
   // An empty set is a real descent, not a missing choice: the bare Fissure is
   // generated fresh each time and never taken from you, which is what makes
@@ -425,14 +419,14 @@ function finish(left = false): void {
       ? 'died'
       : report.haulFull
         ? 'full'
-        : leaving && looping()
+        : leaving
           ? 'chose'
           : 'once';
 
   // `leaving` is the only stop you choose while the fight is still on, so it
   // is checked here rather than at the launch: the descent you armed it during
   // still finishes and still banks.
-  if (report.cleared && !report.haulFull && !leaving && looping()) {
+  if (report.cleared && !report.haulFull && !leaving) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -799,8 +793,6 @@ function renderResults(report: RunReport, run: RunState): void {
   }
 
   const again = el('button', 'mini', 'Back to the Fissure') as HTMLButtonElement;
-  // Stable id: the guided opening's last step points here while the report is
-  // up, because this is the click that gets you back to Enter.
   again.id = 'run-again';
   again.onclick = () => {
     sim = null;
@@ -901,7 +893,7 @@ function setLeaveLabel(): void {
   // Neither means anything outside a descent, and a room with a fight in it is
   // the one you may not walk out of — leaving would be a way to skip a boss.
   ($('run-abandon') as HTMLButtonElement).disabled = phase !== 'running';
-  const live = phase === 'running' && looping();
+  const live = phase === 'running';
   btn.textContent = !live
     ? 'Last descent'
     : leaving

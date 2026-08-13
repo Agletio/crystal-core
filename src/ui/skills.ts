@@ -30,7 +30,6 @@ import {
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
 import { disc, gem, stud, svgEl } from './webart';
-import { skillCatId, skillNodeId, skillRowId } from './tutorial';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
 import type { SkillNodeDef } from '../skills-tree';
@@ -41,6 +40,11 @@ import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** The three depths of this screen, each with a stable id. */
+export const skillCatId = (categoryId: string): string => `skillcat-${categoryId}`;
+export const skillRowId = (skillId: string): string => `skillrow-${skillId}`;
+export const skillNodeId = (nodeId: string): string => `skillnode-${nodeId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -599,10 +603,6 @@ export function closeSkills(): void {
 export function isSkillsOpen(): boolean {
   return !$('skills').hidden;
 }
-
-/** Which shelf is showing and whose web is up, for a step walking you to a node. */
-export const skillsDepth = (): { category: string | null; viewing: string | null } =>
-  isSkillsOpen() ? { category, viewing } : { category: null, viewing: null };
 
 /** Escape steps back one level, and only closes from the top. */
 export function skillsEscape(): void {

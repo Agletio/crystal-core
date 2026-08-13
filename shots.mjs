@@ -74,60 +74,6 @@ const overflowProbe = () => {
   return worst ? { past: Math.round(worst - cw), who: String(who).split(' ')[0] } : null;
 };
 
-/**
- * Does the guide card sit on top of what it is telling you to click? `place()`
- * puts the card INSIDE a target big enough to hold it, which is how "click your
- * wand" ends up printed over the wand. Needs real layout.
- */
-const guideProbe = () => {
-  const card = document.getElementById('guide');
-  if (!card || card.hidden) return null;
-  const target = document.querySelector('.guide-on');
-  if (!target) return null;
-
-  const a = card.getBoundingClientRect();
-  const t = target.getBoundingClientRect();
-  const x = Math.max(0, Math.min(a.right, t.right) - Math.max(a.left, t.left));
-  const y = Math.max(0, Math.min(a.bottom, t.bottom) - Math.max(a.top, t.top));
-  const covered = Math.round(x * y);
-  return covered > 0 ? { covered, who: target.id || target.className } : null;
-};
-
-/**
- * With the opening running, is spending shut and everything else open?
- *
- * The lock is pure CSS, so nothing in jsdom can see it. elementFromPoint is
- * the honest test: it answers what a real click would actually hit.
- *
- * Both directions matter. A purchase that stays live can strand a new player
- * on the opening's gold; a door that does not is worse, because a step with
- * nothing lit then has no way out at all.
- */
-const lockProbe = () => {
-  if (!document.body.classList.contains('guided')) return null;
-  const reaches = (el) => {
-    const r = el.getBoundingClientRect();
-    if (r.width === 0) return null;
-    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    return hit === el || el.contains(hit);
-  };
-
-  const wrong = [];
-  for (const el of document.querySelectorAll('.buy, #inv-currency .slot')) {
-    if (el.closest('.guide-on')) continue;
-    if (reaches(el)) wrong.push(`${el.id || el.className} spends and is live`);
-  }
-  // Only when the header is not under a popup, which is an ordinary state and
-  // not the lock. The guide rings a Close when something is on top.
-  if (!document.querySelector('.modal:not([hidden])')) {
-    for (const id of ['open-shop', 'open-craft', 'open-character', 'open-save']) {
-      const el = document.getElementById(id);
-      if (el && reaches(el) === false) wrong.push(`${id} is a door that will not open`);
-    }
-  }
-  return wrong.length ? wrong : null;
-};
-
 /** Can a drag still reach the map? It sits UNDER the shell, so a wrapper that
  *  forgets `pointer-events: none` kills the whole camera at once — and the page
  *  looks perfectly correct while it does. */
@@ -179,16 +125,6 @@ for (const vp of VIEWPORTS) {
     written.push(file);
     const over = await page.evaluate(overflowProbe);
     if (over) problems.push(`${vp.name}/${state}: .${over.who} overflows by ${over.past}px`);
-    const leaks = await page.evaluate(lockProbe);
-    if (leaks) {
-      problems.push(`${vp.name}/${state}: the opening's lock is wrong — ${leaks.join('; ')}`);
-    }
-    const covering = await page.evaluate(guideProbe);
-    if (covering) {
-      problems.push(
-        `${vp.name}/${state}: the guide covers ${covering.who} by ${covering.covered}px²`
-      );
-    }
     const deaf = await page.evaluate(mapProbe);
     if (deaf) problems.push(`${vp.name}/${state}: ${deaf}`);
   };

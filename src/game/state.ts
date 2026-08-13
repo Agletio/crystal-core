@@ -93,8 +93,6 @@ export interface GameState {
   clears: number;
   /** What the Lampwright has already handed over. `giftWaiting` reads it. */
   given: string[];
-  /** Index into the guided steps, or null when not running / finished. */
-  tutorialStep: number | null;
   /** Quest ids already paid out. What is not in here is still open. */
   quests: string[];
   /** What you sold, newest first, each at what it paid. Buying one back costs
@@ -136,7 +134,6 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     firstClearDone: false,
     clears: 0,
     given: [],
-    tutorialStep: null,
     quests: [],
     sold: [],
     shopStock: [],
@@ -184,7 +181,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
   // The dev kit is armed and holds every crystal: nothing waits at the mouth.
   game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
-  game.tutorialStep = null;
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];

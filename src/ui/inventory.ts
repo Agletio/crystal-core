@@ -18,10 +18,12 @@ import { CURRENCIES } from '../data';
 import { CARRY, fitsSlot, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
-import { dockSlotId } from './tutorial';
 import type { CurrencyDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** Id of one item's slot in the dock. */
+export const dockSlotId = (itemId: string): string => `dock-${itemId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -495,8 +497,6 @@ function fill(host: HTMLElement, items: Item[]): void {
     if (item.mods.length > 0) btn.classList.add('slot--modded');
     attachTooltip(btn, () => tooltip(item));
     btn.dataset.itemId = item.id;
-    // Stable id so the guided opening can ring one item rather than the whole
-    // column, which is what "click your Ash Wand" was pointing at.
     btn.id = dockSlotId(item.id);
     btn.addEventListener('pointerdown', (e) => pressItem(e as PointerEvent, btn, item));
     btn.addEventListener('contextmenu', (e) => {
