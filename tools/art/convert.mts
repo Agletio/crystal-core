@@ -1,0 +1,95 @@
+/**
+ * A generated PNG, reduced to the character grid a `BeastArt` frame is. The
+ * conversion is LOSSY and the grid is what ships, so the grid is what gets
+ * reviewed — never the PNG it came from.
+ */
+import type { Decoded } from './png.mts';
+
+/** The inks a creature is authored in. `x` is the per-rank accent and `b`/`o`
+ *  are the halo, all three applied at RUNTIME — so nothing generated may hold
+ *  them, and nothing here may emit them. */
+export type Inks = { '#': string; M: string; m: string; s: string; e: string };
+
+export const INK_CHARS = ['#', 'M', 'm', 's', 'e'] as const;
+
+/** Below this an averaged block is floor rather than creature. */
+const SOLID = 0.5;
+
+function rgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '').trim();
+  const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
+  const n = Number.parseInt(full, 16);
+  return Number.isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** Redmean: how far apart two colours LOOK. Plain Euclidean RGB puts a dark
+ *  blue nearer a dark red than the eye does, which on a five-ink palette is
+ *  the difference between mass and shade. */
+function apart(a: [number, number, number], b: [number, number, number]): number {
+  const r = (a[0] + b[0]) / 2;
+  const dr = a[0] - b[0];
+  const dg = a[1] - b[1];
+  const db = a[2] - b[2];
+  return (2 + r / 256) * dr * dr + 4 * dg * dg + (2 + (255 - r) / 256) * db * db;
+}
+
+/** Block-average, then snap. Integer factors only: a non-integer downscale
+ *  resamples across pixel boundaries, which is the blur pixel art exists to
+ *  not be — so it REFUSES rather than producing something plausible. */
+export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
+  if (image.width !== image.height) {
+    throw new Error(`${image.width}x${image.height} is not square`);
+  }
+  if (image.width % grid !== 0) {
+    throw new Error(`${image.width}px does not divide into a ${grid} grid — generate at a multiple`);
+  }
+
+  const block = image.width / grid;
+  const targets = INK_CHARS.map((c) => ({ char: c, rgb: rgb(inks[c]) }));
+  const rows: string[] = [];
+
+  for (let gy = 0; gy < grid; gy++) {
+    let row = '';
+    for (let gx = 0; gx < grid; gx++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let a = 0;
+      for (let y = 0; y < block; y++) {
+        for (let x = 0; x < block; x++) {
+          const at = ((gy * block + y) * image.width + (gx * block + x)) * 4;
+          // Weighted by alpha, so a block half off the edge takes the colour
+          // of the half that IS creature.
+          const w = image.rgba[at + 3] / 255;
+          r += image.rgba[at] * w;
+          g += image.rgba[at + 1] * w;
+          b += image.rgba[at + 2] * w;
+          a += w;
+        }
+      }
+
+      if (a / (block * block) < SOLID) {
+        row += '.';
+        continue;
+      }
+      const mean: [number, number, number] = [r / a, g / a, b / a];
+      let best = targets[0];
+      let bestBy = Infinity;
+      for (const target of targets) {
+        const by = apart(mean, target.rgb);
+        if (by < bestBy) {
+          bestBy = by;
+          best = target;
+        }
+      }
+      row += best.char;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/** The rows as a bestiary entry holds them, ready to paste into the table. */
+export function asSource(rows: string[]): string {
+  return `[\n${rows.map((r) => `  '${r}',`).join('\n')}\n]`;
+}

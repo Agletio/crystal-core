@@ -1,0 +1,101 @@
+/**
+ * The ONLY module that knows PixelLab's API. Swapping generators costs this
+ * file and nothing else, which is why the manifest speaks in our terms —
+ * a grid, a size, inks — and the translation happens here.
+ *
+ * Written against https://api.pixellab.ai/v1/openapi.json, read rather than
+ * guessed at. Auth is a bearer token in `PIXELLAB_API_KEY`.
+ */
+import { encodePng } from './png.mts';
+
+const BASE = 'https://api.pixellab.ai/v1';
+
+/** What a row asks for, in the game's terms rather than the API's. */
+export type Ask = {
+  description: string;
+  /** Generated square, in pixels. The converter needs a multiple of the grid. */
+  size: number;
+  seed?: number;
+  /** Forced palette. Handed over as an image, which is the only way it takes one. */
+  inks?: string[];
+};
+
+/** The style every creature is drawn in, sent on every ask. Flat and unlit
+ *  because the rank accent and the halo are added at RUNTIME — art arriving
+ *  with a glow on it already makes every rank look the same. */
+const HOUSE_STYLE = {
+  outline: 'single color black outline',
+  shading: 'flat shading',
+  detail: 'low detail',
+  view: 'side',
+  // Sprites are authored facing +x and the renderer MIRRORS rather than rotates.
+  direction: 'east',
+  no_background: true,
+  isometric: false,
+} as const;
+
+function key(): string {
+  const found = process.env.PIXELLAB_API_KEY;
+  if (!found) throw new Error('PIXELLAB_API_KEY is not set');
+  return found;
+}
+
+function rgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '').trim();
+  const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
+  const n = Number.parseInt(full, 16);
+  return Number.isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** The inks as a 1px-tall image, which is the shape `color_image` wants. */
+function paletteImage(inks: string[]): string {
+  const rgba = new Uint8Array(inks.length * 4);
+  inks.forEach((ink, i) => {
+    const [r, g, b] = rgb(ink);
+    rgba[i * 4] = r;
+    rgba[i * 4 + 1] = g;
+    rgba[i * 4 + 2] = b;
+    rgba[i * 4 + 3] = 255;
+  });
+  return encodePng(inks.length, 1, rgba).toString('base64');
+}
+
+async function call(path: string, body: unknown): Promise<Record<string, unknown>> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${key()}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    // 402 is the one worth naming: the free tier is spent, and every later row
+    // in the manifest would fail the same way.
+    const why = res.status === 402 ? 'out of credit' : text.slice(0, 300);
+    throw new Error(`pixellab ${path} ${res.status}: ${why}`);
+  }
+  return JSON.parse(text) as Record<string, unknown>;
+}
+
+/** Credit left, in USD. A free tier's generations may not show here at all. */
+export async function balance(): Promise<number> {
+  const res = await fetch(`${BASE}/balance`, { headers: { authorization: `Bearer ${key()}` } });
+  if (!res.ok) throw new Error(`pixellab /balance ${res.status}`);
+  return ((await res.json()) as { usd: number }).usd;
+}
+
+/** One generation. Returns PNG bytes; nothing here decides what happens to them. */
+export async function generate(ask: Ask): Promise<Buffer> {
+  const body: Record<string, unknown> = {
+    ...HOUSE_STYLE,
+    description: ask.description,
+    image_size: { width: ask.size, height: ask.size },
+    ...(ask.seed === undefined ? {} : { seed: ask.seed }),
+    ...(ask.inks?.length
+      ? { color_image: { type: 'base64', base64: paletteImage(ask.inks) } }
+      : {}),
+  };
+  const res = await call('/generate-image-pixflux', body);
+  const image = res.image as { base64?: string } | undefined;
+  if (!image?.base64) throw new Error('pixellab returned no image');
+  return Buffer.from(image.base64, 'base64');
+}

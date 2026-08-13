@@ -1,0 +1,27 @@
+{
+  "style": 1,
+  "sprites": [
+    {
+      "id": "test_quadruped",
+      "prompt": "a small four-legged beast standing in profile, lean and rangy, head low, thin tail, flat solid colours, no background",
+      "tone": "cinder_hound",
+      "grid": 24,
+      "size": 48,
+      "seed": 1,
+      "accepted": false,
+      "rows": null,
+      "hash": null
+    },
+    {
+      "id": "test_crystalline",
+      "prompt": "a creature made of angular crystal shards standing in profile, faceted body, sharp geometric limbs, flat solid colours, no background",
+      "tone": "shardling",
+      "grid": 24,
+      "size": 48,
+      "seed": 1,
+      "accepted": false,
+      "rows": null,
+      "hash": null
+    }
+  ]
+}
