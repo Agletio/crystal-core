@@ -4,13 +4,10 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Three phases.** Phases 1 and 2 continue the arc dictated in one go: the
-game gets **rooms you arrive in and people standing in them**, and the
-machinery for that is BUILT — a scene is a `RunSim` over an authored map, people
-talk in bubbles over their own heads, a room may have a boss in it, and a key
-takes you back to one you have put down. `CLAUDE.md` and `RULES.md` describe
-the whole of it; what is left there is one new item kind and one more
-character. Phase 3 is teaching, and it WAITS: see its own note.
+**Two phases.** Phase 1 finishes the arc dictated in one go: the game has
+**rooms you arrive in and people standing in them**, and what is left of that
+arc is one more character with the Osteomancer's machinery and different content
+in it. Phase 2 is teaching, and it WAITS: see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -24,9 +21,8 @@ these is the **balance pass**, written up below.
 with different content in it:
 
 ```
-1  the Osteomancer      a third item kind, and a scene that spends one
-2  the Astral-Geometer  the Osteomancer's machinery, jewellery, a calmer voice
-3  the quest log        teaching by quests, and the pointing finger deleted
+1  the Astral-Geometer  the Osteomancer's machinery, jewellery, a calmer voice
+2  the quest log        teaching by quests, and the pointing finger deleted
 ```
 
 If a phase here has to be reordered, say so and reorder the WHOLE ladder rather
@@ -38,8 +34,30 @@ one still here. Before starting any of them, read **Before you touch the
 ladder**, below — it holds the parts that belong to no single phase, and every
 one of them is something a phase would otherwise get wrong on its own.
 
-**What the last ten phases turned out to know that their writing did not.**
+**What the last eleven phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **`fromHaul` pushed straight into `game.inventory`.** Every kind that is not
+  gear was routed correctly by `addItem` and then routed WRONG the moment it
+  came out of the haul, which is the one door a drop actually walks through. It
+  calls `addItem` now. Anything that adds a container has to check both.
+- **The dev preset carrying a relic scheduled his room over two boss checks.**
+  Holding one IS the schedule, so the kit holding every relic means the ossuary
+  is always owed — and two checks asserting "nobody is waiting" started
+  failing. They clear `relics` the way they already cleared `bosses`. The dev
+  kit has now broken a scheduled-room test twice, for the same reason both
+  times: it is the game with everything, and every schedule reads what you have.
+- **`tools/model-sheet.mts` keeps its own partial palette.** It lists the
+  custom properties by hand and had none of the two far worlds' inks, so the
+  first creature drawn out of the Rot handed `mix` an undefined and killed the
+  tool. It has the whole list now; a new palette entry still needs adding there.
+- **A bubble is anchored ABOVE its point, and nothing clamped it.** The first
+  panel taller than four lines was drawn off the top of the screen. `anchor` in
+  `src/ui/speech.ts` clamps to the window now.
+- **A base with no implicit cannot show what a graft costs.** Half the armour
+  families spend their whole budget on the rating, so `bulwark_*` has no line to
+  write over — a check meant to prove the trade proved nothing on one. The
+  reference family is `skirmisher`, which spends on three.
 
 - **The demo's `GUIDED OPENING` section was not all about the steps.** Three of
   its checks were about the GAME and had to survive the deletion: the mark on
@@ -273,7 +291,7 @@ so overruling it is one sentence rather than an excavation.
 **Read this whole section first. It is the part that belongs to no single
 phase, and skipping it is how the same thing gets built twice.**
 
-Every one of the three is the SAME object with different content in it: a
+Every one of them is the SAME object with different content in it: a
 **scene** — an authored room you arrive in at the end of a cleared descent,
 with somebody standing in it who talks to you. It is BUILT, and `RULES.md` holds
 the rules it is bound by. Nothing below may introduce a second way of doing any
@@ -296,8 +314,9 @@ and everything else keeps waiting for the clear after. The order is:
 
 1. the Lampwright, whenever `giftWaiting` says something is owed
 2. the Lambengolmor, when a boss is scheduled or a key was spent
-3. the Osteomancer
-4. the Astral-Geometer
+3. whoever wants a relic you are carrying — the Osteomancer today, and the
+   Astral-Geometer through the same clause, since rung 3 asks the SCENES table
+   which room somebody is holding a relic for rather than naming one
 
 Highest first, every time, with no interleaving and no roll. `RULES.md` says a
 gift is scheduled and never rolled; the same reason covers all four, because a
@@ -344,9 +363,9 @@ measurements all drive `RunSim` directly and never ask for a scene.
 
 | harness | what it will catch, and it will |
 |---|---|
-| `demo` | a run that never ends, a container that does not claim its ids (the Osteomancer's relics), a banned phrasing anywhere |
+| `demo` | a run that never ends, a container that does not claim its ids, a banned phrasing anywhere |
 | `shots` | it WAITS up to two minutes for the SCENE and then for the Lampwright panel, and fails the run if a first descent never produces one. Anything that moves that panel has to move the shot with it |
-| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so the relic column goes at the END of the file |
+| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so anything that reorders the dock goes at the END of the file |
 | `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it the moment a new layer stops taking a click |
 
 **Every phase from here puts itself in the dev kit.** `START_PRESETS.dev` and
@@ -358,127 +377,13 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The Osteomancer, and what a corpse is for
+### Phase 1 — The Astral-Geometer
 
-**What is true today.**
-
-- `ItemKind` in `src/types.ts` is `'gear' | 'crystal'`, and `addItem`,
-  `carryRoom`, `plainGear` and `sortGear` in `src/game/state.ts` all branch on
-  it.
-- An implicit is the base's own line. `GearBase.implicit` is authored for
-  weapons and GENERATED for armour — `armourBases()` in `src/data.ts` spends a
-  family's `mix` over `armourBudget`, which is what makes a Skirmisher chest
-  different from a Bulwark one. `implicitsFor` in `src/economy.ts` rolls it onto
-  the item as `Item.implicits`, and `applyCurrency` in `src/crafting.ts` clones
-  it untouched, which is exactly why implicits survive every craft in the game.
-- `statMods` in `src/sim/stats.ts` reads `[...i.mods, ...i.implicits]` off every
-  equipped piece — its own comment says implicits count exactly like rolled mods
-  and the only difference is that crafting cannot reach them — so a grafted STAT
-  line needs no new path at all. Only a grafted GRANT does.
-- A switch out of `GRANTS` reaches the sim from a tree node, a trade node, a
-  passive skill or a unique. Never from a line on a piece of gear.
-
-**Why it is wrong.** Nothing in the game lets one piece of gear give a thing up
-to get a thing.
-
-**Who.** The **Osteomancer**, in the Demonic world only, and frantic with it —
-*gimme, gimme.* He wants the corpse and he will pay in something no drop can
-roll.
-
-**What a graft IS, and it is the shape of the whole feature.** It **replaces the
-implicit.** The line the base gave you goes, and a `FORGED_MODS` line stands in
-`Item.implicits` in its place. That is the trade: you give up what the base was
-for.
-
-- [ ] **A third `ItemKind`: `'relic'`.** `RULES.md` says adding a container is
-      three places and it is right — the field on `GameState`, `heal()` dropping
-      what no longer resolves, and the demo's "every collection a save can hold
-      items in claims its ids" list. Plus `addItem` / `carryRoom` routing and a
-      third column on the dock, which is the generic section the ask called for.
-- [ ] **`RELICS` in `src/data.ts`**, `pristine_specimen` its first entry: a
-      `DropGate` of `{ zone: 'demonic' }` and a low chance per kill. A gate is a
-      wall and the pool is filtered before the pick, so no amount of rarity ever
-      argues one out of the Fissure.
-- [ ] **A relic cannot be sold**, exactly as a crystal cannot, and no bulk
-      button may ever see one.
-- [ ] **His scene is triggered by holding one**, and it is a scene like every
-      other: cleared descent, down the hole, up into his room.
-- [ ] **The graft is not a currency.** It happens in his room, spends the relic
-      and one item, and writes the line. A currency is a thing you carry to a
-      bench; this is a thing you carry to a man — and `CURRENCIES` effects clone
-      straight past implicits on purpose.
-- [ ] **`helmet`, `body` and `boots` only.**
-- [ ] **A unique is REFUSED, and missing this one ruins saves.** `makeUnique`
-      puts a named piece's whole identity into `implicits`; grafting over it
-      deletes the item's reason to exist and no currency can put it back.
-      `isUnique(item)` in `src/game/state.ts` is the test and it already exists.
-- [ ] **The armour rating is not the implicit and is not touched.**
-      `Item.armour` comes off the base out of the same family budget, so a
-      grafted Bulwark helmet keeps its rating. Decided rather than overlooked,
-      and cheap to overrule.
-- [ ] **A second graft replaces the first.** The base's own line is gone the
-      moment the first one lands and is never coming back; leaving the piece
-      stuck on one choice forever would make a first graft a mistake nobody can
-      walk back.
-- [ ] **`item.meta.grafted` marks it**, because `itemCard` in
-      `src/ui/itemcard.ts` draws implicits under a "base" heading and a grafted
-      line sitting under that heading is a lie about where it came from.
-- [ ] **`heal()` restores the base's implicit** when a graft's def no longer
-      resolves — `GEAR_BASE_BY_ID[item.base].implicit` is still there. Without
-      it the piece keeps a hole where its base line used to be. Note that
-      `heal()` drops items by BASE and has never healed a MOD, so this is the
-      first one of its kind and belongs beside the crystal repairs.
-- [ ] **`ModDef.grants`**, merged by `treeGrants` in `src/sim/stats.ts` off worn
-      gear exactly as `UNIQUE_BY_ID[...].grants` already is. Enemies bursting on
-      death and hits leaving a Bleed are SWITCHES, not stat lines, and `GRANTS`
-      is the one table a switch may be declared in. Each obeys every rule a tree
-      node's grant obeys: declared, read by a behaviour a player can actually
-      pick, and `say` printing its own number out of the table the sim reads.
-- [ ] **Watch the class count.** `GrantDef.changes` has seven classes and
-      `INTERACTIONS` in `src/trees/interactions.ts` holds all 28 pairs; the demo
-      fails an unwritten pair. Reuse an existing class where the switch honestly
-      fits one — a burst on death is a `burst` — and if a new class is genuinely
-      needed, budget for the rows, because eight classes is 36 pairs.
-- [ ] **A forged line never drops.** Weight 0 and excluded from the drop pool,
-      but present in `ALL_MODS` so a save resolves it and `npm run mods` holds it
-      to rolling, doing something and reading.
-- [ ] **The vocabulary.** Bleed is already in `KEYWORDS`. "Explodes" is in
-      `BANNED` and maps to Burst, and the demo sweeps every modifier line for it.
-
-**Traps.**
-
-- `sellPrice` in `src/economy.ts` counts `item.mods.length` and never implicits,
-  so a graft moves an item's price by nothing. Deliberate — leave it.
-- `sigil_of_finality`'s `scale_values` walks `ctx.item.mods` only, so nothing at
-  the bench can push a grafted line past its own maximum. Deliberate — leave it.
-- `implicitSpend` and the demo's family-budget check read `GearBase.implicit` —
-  the DEF, not a rolled item — so grafting cannot make that check fail. Do not
-  "fix" it into walking items.
-- Relics are loot, so they land in the HAUL. `sortGear`, `itemMatches`, the
-  haul's counts and both Sell all buttons all have to learn that a third kind
-  exists. `plainGear` already filters `kind === 'gear'`; check it rather than
-  assuming it.
-- The Seam's theme id is `seam`, not `demonic`, so a Seam run drops no
-  specimens even when half its packs are Demonic. That is a consequence of
-  `DropGate.zone` being a zone and not a family, and it is worth a deliberate
-  answer rather than a surprise.
-
-**Done when.** A Demonic descent drops a pristine specimen, the next cleared
-descent lands you in his room, and a chest piece walks out with its base line
-replaced by something no drop in the game can roll.
-
-**What must not break, in this order.** `mods` and `demo` first — a new item
-kind touches `heal()`, the id counter and the drop pipeline, and the demo's
-container list is where a missed one shows up. Then `smoke`, with the dock
-column's checks at the END of the file. Then `shots`.
-
-### Phase 2 — The Astral-Geometer
-
-**What is true today.** After the Osteomancer, one world pays in something you carry to
-a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
-covers three armour slots, and the Cavern has nothing of its own — which Open
-question 5 has been saying about the Prismatic world since the quality ladder
-was retired.
+**What is true today.** One world pays in something you carry to a person, and
+it is the Demonic one. `RELICS` has one entry (`pristine_specimen`), `FORGED`
+has three lines covering `helmet`, `body` and `boots`, and the Cavern has
+nothing of its own — which Open question 5 has been saying about the Prismatic
+world since the quality ladder was retired.
 
 **Why it is wrong.** A mechanism that exists in exactly one world is a
 mechanism half the game never meets.
@@ -487,12 +392,20 @@ mechanism half the game never meets.
 exactly why it is a separate phase and a small one. He is in the Prismatic
 world, he is calm, and he offers a trade rather than begging for one.
 
-- [ ] A second `RELICS` entry — prismatic dust — gated `{ zone: 'prismatic' }`.
-- [ ] His scene, triggered the same way, at rung 4 of the order.
-- [ ] `FORGED_MODS` for `ring` and `amulet` only.
-- [ ] Art: `PORTRAITS` at 48, `BEASTIARY` at 24, no `attack` frame.
+- [ ] A second `RELICS` entry — prismatic dust — gated `{ zone: 'prismatic' }`,
+      with `wants` naming his room. `sceneWaiting`'s rung 3 already picks the
+      first `SCENES` entry somebody is holding a relic for, so a second one
+      needs no schedule of its own — check that before writing one.
+- [ ] His room in `src/scenes/`, and a line in `SCENES`.
+- [ ] `FORGED` entries for `ring` and `amulet` only. `graftRefusal` reads
+      `graftableKinds()` off the table, so the two new slots open themselves.
+- [ ] Art: `PORTRAITS` at 48, `BEASTIARY` at 24, no `attack` frame. Any new
+      palette entry the tone mixes has to be added to `tools/model-sheet.mts`.
 - [ ] Voice: he is the one who is not desperate. Same rule as every other
       character — flavour, no screen named, no number quoted.
+- [ ] The panel is `src/ui/graft.ts` and it should not need touching. If it
+      does, it hard-coded something about the Osteomancer that should have been
+      a field on `SceneDef` — `openGraft` already takes the speaker.
 
 **Traps.**
 
@@ -505,14 +418,18 @@ world, he is calm, and he offers a trade rather than begging for one.
   Giving them implicits is a balance change and belongs to the balance pass; do
   not smuggle one in under a phase about a character.
 - Nothing in the Osteomancer's work may need changing to make this fit. If it
-  does, that phase hard-coded something that should have been a table.
+  does, that phase hard-coded something that should have been a table. The one
+  place to look first is `src/ui/graft.ts`, which names `OSTEOMANCER` for the
+  title — that is the field that should move to `SceneDef`.
+- **The dev preset holds every relic**, so the kit will schedule HIS room too.
+  Any check asserting nothing is owed has to clear `relics`, as two already do.
 
 **Done when.** A Prismatic descent pays in dust, and a ring walks out of his
 room carrying something a ring cannot otherwise hold.
 
 **What must not break.** The same list as the Osteomancer, same order.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

@@ -28,7 +28,12 @@ const PALETTE = {
   rockDeep: VAR('rock-deep'), chalk: VAR('chalk'), dust: VAR('dust'), amethyst: VAR('amethyst'),
   citrine: VAR('citrine'), quartz: VAR('quartz'), verdite: VAR('verdite'), ember: VAR('ember'),
   flame: VAR('flame'), flameCore: VAR('flame-core'), rust: VAR('rust'), venom: VAR('venom'),
-  bone: VAR('bone'),
+  bone: VAR('bone'), gloom: VAR('gloom'),
+  // The two far worlds. A creature drawn out of one of them mixes an ink this
+  // list has to hold, or `mix` is handed undefined and the tool dies.
+  flesh: VAR('flesh'), fleshLit: VAR('flesh-lit'), gore: VAR('gore'), char: VAR('char'),
+  sinew: VAR('sinew'), rose: VAR('rose'), blush: VAR('blush'), lilac: VAR('lilac'),
+  orchid: VAR('orchid'), pearl: VAR('pearl'),
 } as never;
 const KEY: Record<string, string> = lookKeyColours(PALETTE);
 

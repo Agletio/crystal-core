@@ -78,6 +78,9 @@ const dockItems = () => filled('#inv-gear');
 const benchCrystals = () => all('#craft-crystals .wornslot');
 const crystalCards = () => all('#crystals-list .crystal');
 const currencySlots = () => filled('#inv-currency');
+// Its own column, and drawn only while you are holding one. Nothing in it has
+// a click: a relic is carried to a person, never spent at the bench.
+const relicSlots = () => filled('#inv-relics');
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
 // --- the way in: title, then a slot, then one question ---------------------
@@ -226,7 +229,8 @@ assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 assert(all('#wallet .coin').length === 1, 'wallet shows gold only', text('wallet'));
 assert(text('wallet').includes('gold'), 'gold is held', text('wallet'));
 assert(
-  all('.dock .slot .icon').length === invItems().length + currencySlots().length,
+  all('.dock .slot .icon').length ===
+    invItems().length + currencySlots().length + relicSlots().length,
   'every item and every stack has an icon'
 );
 
@@ -2400,6 +2404,29 @@ assert(
     'his panel is the last bubble, anchored like every line before it'
   );
   assert($('met-said') === null, 'and his words are beats rather than a block of text');
+}
+
+// --- the Osteomancer's bench ----------------------------------------------
+// LAST in the file: it adds a dock column and grafts a piece, and roughly a
+// dozen assertions above pick a dock item by POSITION.
+{
+  assert($('graft').hidden === true, 'his bench starts closed');
+  assert(
+    $('graft').classList.contains('modal--speech') && $('graft-card') !== null,
+    'and it is the last bubble of his room rather than a screen'
+  );
+  assert(
+    !$('graft').classList.contains('modal--stop'),
+    'so it paints no scrim over the room it is standing in'
+  );
+
+  // The dev kit carries one, which is the whole of what schedules him.
+  assert(relicSlots().length > 0, 'the dev kit carries a specimen', String(relicSlots().length));
+  assert($('inv-relics-col').hidden === false, 'and the column it lives in is up');
+  assert(
+    relicSlots().every((b) => b.disabled),
+    'and nothing in it has a click: it is carried to a person, never spent'
+  );
 }
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));

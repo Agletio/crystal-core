@@ -38,6 +38,7 @@ import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, sceneWaiting, takeBoss } from '../game/scenes';
+import { relicFor } from '../game/graft';
 import { SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -45,6 +46,7 @@ import type { RunReport } from '../game/report';
 import { openHaul } from './haul';
 import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
+import { closeGraft, isGraftOpen, openGraft } from './graft';
 import { endSpeech, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { createCanvasRenderer } from '../render/canvas2d';
@@ -154,9 +156,10 @@ export function syncViewportLock(): void {
 /** Which of the four states the Fissure is in. */
 export const runPhase = (): Phase => phase;
 
-/** The panel is done. The descent it ended was cleared and banked long before
- *  anyone spoke, so this is the report landing rather than the run resuming. */
-export function metTaken(): void {
+/** The last beat is done, whichever panel it was. The descent it ended was
+ *  cleared and banked long before anyone spoke, so this is the report landing
+ *  rather than the run resuming. */
+export function sceneEnded(): void {
   sim?.takeGift();
   const report = greeted;
   const state = greetedState;
@@ -171,6 +174,9 @@ export function metTaken(): void {
 export function skipToGift(): void {
   endSpeech();
   if (isMetOpen()) closeMet();
+  // His is not a gift: skipping it walks out still carrying the specimen,
+  // which is what Keep it does, and he is owed the same room again.
+  else if (isGraftOpen()) closeGraft();
 }
 
 /** Called when the bench popup closes — the dock answers to the map again. */
@@ -452,6 +458,14 @@ function speak(): void {
       absorbEvents();
       setLeaveLabel();
     });
+    return;
+  }
+  // Somebody who wants what you are carrying. His bench is the last beat, the
+  // same shape as a gift's panel — the difference is that nothing is handed
+  // over until you press the button, and Keep it walks out still holding it.
+  const wanted = relicFor(game, def.id);
+  if (wanted) {
+    startSpeech(def.who, def.name, def.beats ?? [], () => openGraft(def.who, wanted));
     return;
   }
   if (!greeting) return;

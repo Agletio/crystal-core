@@ -11,6 +11,7 @@ import {
   EQUIP_SLOTS,
   FISSURE,
   INTRO,
+  RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
   START_PRESETS,
@@ -19,7 +20,7 @@ import {
   starterWeapon,
 } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
-import { canSell, grant, makeCrystal, makeGear, makeUnique, sellPrice } from '../economy';
+import { canSell, grant, makeCrystal, makeGear, makeRelic, makeUnique, sellPrice } from '../economy';
 import { baseTier } from '../mods';
 import { mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
@@ -69,6 +70,9 @@ export interface GameState {
   stash: Item[];
   /** Every crystal you own that is not socketed. Uncapped, and never gear. */
   crystals: Item[];
+  /** What you are carrying to a PERSON. Uncapped for the reason crystals are:
+   *  nothing sells one, so a cap could only lose loot. */
+  relics: Item[];
   /** A cleared run's loot. Inert as the stash is: take it out to use it. */
   haul: Item[];
   /** How big the stash currently is. Bought up with gold. */
@@ -125,6 +129,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     inventory: [],
     stash: [],
     crystals: [],
+    relics: [],
     haul: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
@@ -163,6 +168,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
     if (def) game.inventory.push(makeUnique(def, CRYSTAL_ILVL, rng));
   }
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
+  game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
   game.stash = [];
   game.haul = [];
   game.stashSlots = STASH_START;
@@ -220,10 +226,16 @@ export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlac
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
-  kind === 'crystal' ? (game.crystals ?? []) : game.inventory.filter((i) => i.kind === kind);
+  kind === 'crystal'
+    ? (game.crystals ?? [])
+    : kind === 'relic'
+      ? (game.relics ?? [])
+      : game.inventory.filter((i) => i.kind === kind);
 
+/** Only gear is capped. A crystal is never carried and a relic is never sold,
+ *  so a limit on either could only throw loot away. */
 export const carryRoom = (game: GameState, kind: ItemKind): number =>
-  kind === 'crystal' ? Infinity : CARRY.gear - carried(game, 'gear').length;
+  kind === 'gear' ? CARRY.gear - carried(game, 'gear').length : Infinity;
 
 export const stashRoom = (game: GameState): number =>
   game.stashSlots - game.stash.length;
@@ -238,6 +250,10 @@ export type Placement = 'carried' | 'stashed' | 'lost';
 export function addItem(game: GameState, item: Item): Placement {
   if (item.kind === 'crystal') {
     game.crystals.push(item);
+    return 'carried';
+  }
+  if (item.kind === 'relic') {
+    game.relics.push(item);
     return 'carried';
   }
   if (carryRoom(game, item.kind) > 0) {
@@ -291,7 +307,8 @@ export function bankToHaul(game: GameState, items: Item[]): void {
 export function fromHaul(game: GameState, item: Item): boolean {
   if (carryRoom(game, item.kind) <= 0) return false;
   if (!takeFrom(game.haul, item)) return false;
-  game.inventory.push(item);
+  // By KIND: a relic taken out of the haul belongs in its own column.
+  addItem(game, item);
   return true;
 }
 
@@ -491,6 +508,8 @@ export function replaceItem(game: GameState, item: Item): void {
 }
 
 export const crystalsIn = (game: GameState): Item[] => game.crystals ?? [];
+
+export const relicsIn = (game: GameState): Item[] => game.relics ?? [];
 
 /** In slot order, so the set reads the same way it is drawn. */
 export const socketed = (game: GameState): Item[] =>

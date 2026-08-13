@@ -9,7 +9,7 @@ import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, UNIQUE_BY_ID } from '../data';
+import { FAMILY_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import { glossaryOf, keywordLine } from './glossary';
 import type { Item, RolledMod } from '../types';
@@ -71,6 +71,16 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   if (unique) name.classList.add('tip__name--unique');
   card.append(name);
 
+  // A relic is not on any ladder: no tier, no item level and no capacity. What
+  // it IS is the whole card, and the person who wants it is the rest.
+  if (item.kind === 'relic') {
+    const def = RELIC_BY_ID[item.base];
+    card.append(el('div', 'tip__sub', 'Relic'));
+    if (def) card.append(el('div', 'tip__flavour', def.flavour));
+    for (const note of notes) card.append(el('div', 'tip__note', `— ${note}`));
+    return card;
+  }
+
   const facts = [tierName(item), `ilvl ${item.ilvl}`];
   if (item.kind === 'crystal') {
     facts[1] = FAMILY_BY_ID[crystalFamily(item)]?.name ?? 'Normal';
@@ -97,10 +107,10 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     card.append(chips);
   }
 
-  // The base: what the piece IS before anything rolled on it, and nothing at
-  // the bench can reach any of it.
+  // The base, or what stands where it stood: a grafted line under a heading
+  // reading "base" is a lie about where it came from.
   if (item.armour || item.implicits.length > 0) {
-    const base = group('base');
+    const base = group(item.meta.grafted !== undefined ? 'grafted' : 'base');
     if (item.armour) {
       const row = el('div', 'rolled');
       row.append(el('span', 'rolled__v', String(item.armour)));

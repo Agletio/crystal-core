@@ -213,6 +213,45 @@ free slot does not destroy four of them. You triage before continuing.
 
 **Crystals are given, never bought.**
 
+**A relic is carried to a PERSON, never to a bench.** `RELICS` is its own table
+and `'relic'` is its own `ItemKind`: `canSell` refuses one, no bulk button can
+see one, and the two registries in `src/crafting.ts` never reach it. It is loot
+and lands in the haul; `GameState.relics` is where it lives once taken out, and
+`carryRoom` is `Infinity` there for the reason it is for a crystal — nothing
+sells one, so a cap could only throw loot away. Its dock column has NO click in
+it: the only thing you can do with one is walk it to somebody.
+
+**A graft replaces the IMPLICIT, and that is the whole trade.** *The user's
+answer, asked and given.* What the base was FOR goes and a `FORGED` line stands
+in `Item.implicits` in its place. `helmet`, `body` and `boots`; a unique is
+REFUSED, because `makeUnique` puts a named piece's entire identity into
+`implicits` and no currency in the game could put it back — `isUnique` is the
+test and missing it ruins saves. The armour rating is not the implicit and is
+not touched. A second graft replaces the first, so a first one is never a
+mistake nobody can walk back, and `item.meta.grafted` marks it so the card stops
+calling it "base".
+
+**A graft is not a currency.** It happens in a room, spends a relic and one
+piece, and writes the line — `src/game/graft.ts`, beside `crafting.ts` rather
+than inside it. Every `CurrencyDef` is reachable by `CONDITIONS` and `EFFECTS`,
+whose `clone` goes straight past `implicits` on purpose; a graft that went
+through them would be a currency that happens to be a man.
+
+**A LINE may grant, through the one table everything else grants through.**
+`ModDef.grants`, merged by `treeGrants` off what is WORN, exactly as a unique's
+is. Each obeys every rule a tree node's grant obeys: declared in `GRANTS`, read
+by a behaviour a player can actually pick, and `say` printing its own number out
+of the table the sim reads. A stat line needs none of this — `statMods` already
+reads implicits exactly like rolled mods, and its own comment says so.
+
+**`heal()` puts a base's line BACK when a forged def is gone.** The first repair
+in the file that heals a MOD rather than dropping an item: without it the piece
+keeps a hole where its base line used to be and nothing can ever fill it.
+
+**A forged line never drops.** Weight 0, so the weighted pick can never reach
+one; in `ALL_MODS` anyway, so a save resolves it and `npm run mods` holds it to
+landing, doing something and reading.
+
 **A crystal has LEVELS, never tiers.** Gear has tiers, mods have tiers and a
 map has an item level; a fourth ladder called tier on the one thing that gains
 experience was the confusing one. The word never reaches the player — the
@@ -1096,6 +1135,12 @@ of it.
 - **`src/sim` never decides that a scene happens.** `finish()` in
   `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
   every headless harness alone: they drive `RunSim` directly and never ask.
+
+**A bubble is CLAMPED to the window.** The transform hangs a card above its
+anchor point, so a TALL one over somebody standing near the top of the room is
+drawn off the screen entirely — which the Osteomancer's bench, the first panel
+bigger than four lines, found at once. A bubble a few tiles off the speaker
+beats one nobody can read.
 
 **A bubble is FROZEN where the speaker was when the line went up.** It follows
 the camera and not the body: a bubble that slides about while somebody paces is

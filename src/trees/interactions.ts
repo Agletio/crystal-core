@@ -60,6 +60,18 @@ export const INTERACTIONS: Interaction[] = [
   { pair: ['crit', 'type'], says: 'The ailment a crit leaves is the converted type’s ailment.' },
 
   { pair: ['type', 'type'], says: 'One conversion. A second would silently replace the first, which is why it is a CHOICE node.' },
+
+  // An Ailment the CAST never had. Everything else here changes a cast; this
+  // hangs a second thing off each hit the cast lands, which is why it needed a
+  // class of its own rather than being filed under crit or duration.
+  { pair: ['ailment', 'scale'], says: 'The Bleed is a share of the hit, so it carries the scaling with it.' },
+  { pair: ['ailment', 'duration'], says: 'Independent. A grafted Bleed runs its own seconds, off the line that wrote it.' },
+  { pair: ['ailment', 'targets'], says: 'Every target hit is left with its own Bleed, and each runs separately.' },
+  { pair: ['ailment', 'burst'], says: 'A Burst is a hit, so it Bleeds too — which is how one kill leaves a room bleeding.' },
+  { pair: ['ailment', 'field'], says: 'A cloud is applications, and each application is a hit that Bleeds.' },
+  { pair: ['ailment', 'crit'], says: 'A crit suppressed into an Ailment still landed a hit, so the Bleed is left as well.' },
+  { pair: ['ailment', 'type'], says: 'A Bleed is Physical whatever the skill was converted to: it is the wound, not the cast.' },
+  { pair: ['ailment', 'ailment'], says: 'Refreshed rather than stacked twice by one line: the oldest stack falls off at the cap.' },
 ];
 
 const key = (a: Changes, b: Changes): string => [a, b].sort().join('|');

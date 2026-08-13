@@ -955,6 +955,20 @@
   .met__who .icon { image-rendering: pixelated; }
   .met__gift { display: flex; flex-direction: column; gap: 7px; }
   .met__row { display: flex; gap: 10px; align-items: center; }
+  /* His bench. The piece grid is the dock's own slot, so a helmet in here and
+     a helmet in the bag are the same picture. */
+  .graft__pieces { --cols: 6; max-width: 264px; }
+  .graft__go { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .graft__line {
+    display: flex; gap: 8px; align-items: baseline; width: 100%;
+    text-align: left; padding: 6px 8px; cursor: pointer;
+    background: none; border: 1px solid var(--seam); color: var(--bone); font: inherit;
+  }
+  .graft__line:hover { border-color: var(--dust); }
+  .graft__line--on { border-color: var(--citrine); color: var(--citrine); }
+  .graft__line b { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }
+  .graft__line span { font-size: 12px; color: var(--dust); }
+  .graft__line--on span { color: var(--bone); }
   .met__name { font-size: 13px; color: var(--citrine); }
   .met__said { line-height: 1.6; }
   .met__said + .met__said { margin-top: 9px; }
@@ -1480,6 +1494,13 @@
         <div class="dockcol__label">Currency</div>
         <div class="slots" id="inv-currency"></div>
       </div>
+      <!-- LAST, and drawn only when you are holding one: nothing sells a relic
+           and nothing at the bench sees it, so an empty column every run would
+           be a permanent reminder of a thing that happens rarely. -->
+      <div class="dockcol" id="inv-relics-col" hidden>
+        <div class="dockcol__label">Carrying</div>
+        <div class="slots" id="inv-relics"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1553,6 +1574,30 @@
       <div class="panel met">
         <div class="met__gift" id="met-gift"></div>
         <button class="mini mini--go" id="met-take">Take it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The Osteomancer's bench: the LAST beat of his room, in the same bubble the
+     lines came in. Two picks and a button — nothing is spent until it. -->
+<div class="modal modal--speech" id="graft" hidden>
+  <div class="modal__card modal__card--bubble" id="graft-card">
+    <div class="modal__head modal__head--who">
+      <span class="met__who" id="graft-face"></span>
+      <h2 class="modal__title" id="graft-title">The Osteomancer</h2>
+    </div>
+    <div class="modal__body">
+      <div class="panel met">
+        <div class="met__row" id="graft-relic"></div>
+        <div class="dockcol__label">What he takes it out on</div>
+        <div class="slots graft__pieces" id="graft-pieces"></div>
+        <div class="dockcol__label" id="graft-lineslabel">What he writes</div>
+        <div class="met__gift" id="graft-lines"></div>
+        <div class="graft__go">
+          <button class="mini mini--go" id="graft-do">Give it to him</button>
+          <button class="mini" id="graft-leave">Keep it</button>
+        </div>
       </div>
     </div>
   </div>

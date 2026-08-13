@@ -140,7 +140,7 @@ export const KEYWORDS: KeywordDef[] = [
       '— a Burn, a Bleed or a Poison. Resistance blunts an Ailment; Armour ' +
       'never does, which is what makes one the answer to something you cannot ' +
       'punch through.',
-    grants: ['critAilment', 'ailmentMultiplier', 'ailmentDuration', 'ailmentSpread'],
+    grants: ['critAilment', 'ailmentMultiplier', 'ailmentDuration', 'ailmentSpread', 'bleedOnHit'],
   },
   { id: 'burn', name: 'Burn', says: ['Burn', 'Burns', 'Burning'], means: 'The Fire Ailment.', kin: 'ailment' },
   { id: 'bleed', name: 'Bleed', says: ['Bleed', 'Bleeds', 'Bleeding'], means: 'The Physical Ailment.', kin: 'ailment' },

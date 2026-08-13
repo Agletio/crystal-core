@@ -7,7 +7,7 @@
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
-export type ItemKind = 'gear' | 'crystal';
+export type ItemKind = 'gear' | 'crystal' | 'relic';
 
 /** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;
@@ -45,6 +45,8 @@ export interface ModDef {
   name: string;
   appliesTo: string[]; // item must have ALL of these tags
   tags?: string[]; // matched by tag-filtered currencies
+  /** Switches out of `GRANTS`, merged by `treeGrants` off what is WORN. */
+  grants?: Record<string, unknown>;
   /** Best tier first. ilvl is the minimum item level to roll it. */
   tiers: Array<{
     ilvl: number;
@@ -130,6 +132,17 @@ export interface UniqueDef {
   grants?: Record<string, unknown>; // every id declared in GRANTS and read by a skill
   flavour: string; // the line under the name
   gate?: DropGate;
+}
+
+/** Carried to a PERSON rather than to a bench: never spent at a currency's
+ *  registries and never sold. `wants` is the room whose occupant takes it. */
+export interface RelicDef {
+  id: string;
+  name: string;
+  flavour: string;
+  gate: DropGate;
+  chance: number; // per kill, in the zone its gate opens on
+  wants: string; // a `SceneDef` id
 }
 
 export interface CurrencyDef {

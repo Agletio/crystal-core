@@ -1012,10 +1012,39 @@ export function portraitIcon(id: string, size = 96): SVGSVGElement | null {
   return sprite(art.rows, art.ink(readPalette(document.body)), size, `face-${id}`);
 }
 
+/**
+ * A relic: a skull with the jaw still on, which is the one shape that reads as
+ * "a body" at twelve pixels. One picture for every relic — what tells them
+ * apart is the name, and there is only ever one in a room.
+ */
+const SPECIMEN = [
+  '...oooooo...',
+  '..obbbbbbo..',
+  '.obbbbbbbbo.',
+  'obbbbbbbbbbo',
+  'obbllbbllbbo',
+  'oblLLbbLLlbo',
+  'obbllbbllbbo',
+  'obbbbwwbbbbo',
+  '.obbbwwbbbo.',
+  '..obbbbbbo..',
+  '..oblllllo..',
+  '...oooooo...',
+];
+
+export const relicIcon = (size = 26): SVGSVGElement =>
+  sprite(
+    SPECIMEN,
+    { o: INK, b: 'var(--chalk)', l: 'var(--dust)', L: 'var(--void)', w: 'var(--rust)' },
+    size,
+    'relic'
+  );
+
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
     return crystalIcon((item.meta.level as number) ?? 1, size);
   }
+  if (item.kind === 'relic') return relicIcon(size);
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }
 

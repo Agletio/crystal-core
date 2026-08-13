@@ -19,6 +19,7 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   MAIN_SLOT,
+  MOD_BY_ID,
   UNIQUE_BY_ID,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -382,6 +383,12 @@ export function treeGrants(character: Character): Record<string, unknown> {
   for (const worn of equippedItems(character)) {
     const def = UNIQUE_BY_ID[String(worn.meta.unique)];
     if (def?.grants) mergeGrants(out, def.grants);
+    // A LINE may grant too, by the same path a unique's does. A grafted
+    // implicit is the only thing that writes one.
+    for (const line of [...worn.mods, ...worn.implicits]) {
+      const mod = MOD_BY_ID[line.defId]?.grants;
+      if (mod) mergeGrants(out, mod);
+    }
   }
   // The other two slots. A passive never casts and has no delivery of its own:
   // its `grants` ARE the skill, and they land on the one that swings.

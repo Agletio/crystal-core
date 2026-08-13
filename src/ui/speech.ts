@@ -14,6 +14,7 @@ const $ = (id: string) => document.getElementById(id)!;
 
 /** How far above a body the bubble's point sits, in tiles. */
 const ABOVE = 0.6;
+const EDGE = 12; // pixels of window a clamped bubble keeps around itself
 
 let beats: SceneBeat[] = [];
 let at = 0;
@@ -74,8 +75,21 @@ export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y
   const box = document.getElementById('run-canvas')?.getBoundingClientRect();
   if (!box) return;
   const seen = renderer.screenAt({ x: on.x, y: on.y - ABOVE });
-  node.style.setProperty('--sx', `${Math.round(box.left + seen.x)}px`);
-  node.style.setProperty('--sy', `${Math.round(box.top + seen.y)}px`);
+  // The transform hangs the card ABOVE the point, so a TALL one over somebody
+  // standing near the top of the room is drawn off the screen entirely. A
+  // bubble a few tiles off the speaker beats one nobody can read.
+  const size = node.getBoundingClientRect();
+  const x = box.left + seen.x;
+  const y = box.top + seen.y;
+  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
+  node.style.setProperty(
+    '--sx',
+    `${Math.round(clamp(x, size.width / 2 + EDGE, globalThis.innerWidth - size.width / 2 - EDGE))}px`
+  );
+  node.style.setProperty(
+    '--sy',
+    `${Math.round(clamp(y, size.height + EDGE, globalThis.innerHeight - EDGE))}px`
+  );
 }
 
 /** Per frame, for whatever is currently anchored to a body. */
@@ -83,6 +97,7 @@ export function syncSpeech(renderer: Renderer, on: { x: number; y: number }): vo
   stood ??= { x: on.x, y: on.y };
   if (isSpeaking()) anchor($('speech'), renderer, stood);
   if (!$('met').hidden) anchor($('met-card'), renderer, stood);
+  if (!$('graft').hidden) anchor($('graft-card'), renderer, stood);
 }
 
 export function initSpeech(): void {

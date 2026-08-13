@@ -31,6 +31,67 @@ const rows = gridRows(24);
 
 export const BEASTIARY: Record<string, BeastArt> = {
   /**
+   * The Osteomancer: bent double and already reaching, a bone half-mask shoved
+   * up on his brow and one eye under it. He is the only body in the game with
+   * both hands OUT — nothing else down here wants anything from you.
+   */
+  osteomancer: {
+    tone: {
+      mass: (p) => mix(p.gore, p.void, 0.3),
+      lit: (p) => mix(p.flesh, p.sinew, 0.35),
+      shade: (p) => mix(p.char, p.void, 0.25),
+      eye: (p) => p.venom,
+    },
+    grid: 24,
+    frames: [
+      rows({
+        3: '.........######.........',
+        4: '........#MMmmmm#........',
+        5: '.......#MMmmbbbb#.......',
+        6: '.......#MMmmbebb#.......',
+        7: '.......#MMmmbbbb#.......',
+        8: '.......#MMmmmmmm#.......',
+        9: '....####MMmmmmmms#......',
+        10: '...#MMMMMMmmmmmmss#.....',
+        11: '..#MMMMMMMmmmmmmsss#MM#.',
+        12: '..#MMMMMMmmmmmmmsss#mms#',
+        13: '..#MMMMMmmmmmmmmsss##ss#',
+        14: '..#MMMMmmmmmmmmssss#.##.',
+        15: '...#MMMmmmmmmmssss#MMM#.',
+        16: '...#MMmmmmmmmsss#.#mmms#',
+        17: '...#MMmmmmmmmsss#..#sss#',
+        18: '....#Mmm#..#mss#....###.',
+        19: '....#Mm#....#ms#........',
+        20: '....#Mm#....#ms#........',
+        21: '...#mmm#...#mmm#........',
+        22: '...#####...#####........',
+      }),
+      rows({
+        3: '.........######.........',
+        4: '........#MMmmmm#........',
+        5: '.......#MMmmbbbb#.......',
+        6: '.......#MMmmbebb#.......',
+        7: '.......#MMmmbbbb#.......',
+        8: '.......#MMmmmmmm#..MM#..',
+        9: '....####MMmmmmmms#.mms#.',
+        10: '...#MMMMMMmmmmmmss##ss#.',
+        11: '..#MMMMMMMmmmmmmsss#mm#.',
+        12: '..#MMMMMMmmmmmmmsss#mm#.',
+        13: '..#MMMMMmmmmmmmmsss#ss#.',
+        14: '..#MMMMmmmmmmmmssss#.#..',
+        15: '...#MMMmmmmmmmssss#.....',
+        16: '...#MMmmmmmmmsss#mmm#...',
+        17: '...#MMmmmmmmmsss#mmms#..',
+        18: '....#Mmm#..#mss#.#sss#..',
+        19: '....#Mm#....#ms#..###...',
+        20: '....#Mm#....#ms#........',
+        21: '...#mmm#...#mmm#........',
+        22: '...#####...#####........',
+      }),
+    ],
+  },
+
+  /**
    * The Lambengolmor: upright where the Lampwright stoops, bare-headed where he
    * is hooded, and carrying a rule rather than a lamp. Pale and cold — he is
    * the one who thinks the rock can be read.

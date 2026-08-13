@@ -15,7 +15,7 @@ import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance } from '../economy';
 import { CURRENCIES } from '../data';
-import { CARRY, fitsSlot, sendToEnd, sortInventory, swapItems } from '../game/state';
+import { CARRY, fitsSlot, relicsIn, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
 import type { CurrencyDef, Item } from '../types';
@@ -57,6 +57,8 @@ export interface CurrencyHandler {
  * this is only about a fixed shape; for items the slot count IS the limit.
  */
 const CURRENCY_SLOTS = 16;
+/** How many relic slots the column draws when there is anything in it. */
+const RELIC_SLOTS = 4;
 
 /**
  * Rows in every dock column. The grid states both dimensions — an auto-filled
@@ -464,10 +466,35 @@ function drop(event: PointerEvent): void {
   renderInventory();
 }
 
+/** What you are carrying to a PERSON. Its own column because a corpse that
+ *  sorted into the dock beside a pair of boots is a corpse you sell by
+ *  accident — and nothing here has a click at all. */
+function renderRelics(): void {
+  if (!game) return;
+  const held = relicsIn(game);
+  $('inv-relics-col').hidden = held.length === 0;
+  const host = $('inv-relics');
+  host.replaceChildren();
+  if (held.length === 0) return;
+  sizeGrid(host, Math.max(RELIC_SLOTS, held.length));
+
+  for (const item of held) {
+    const btn = el('button', 'slot slot--gear slot--off') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.append(itemIcon(item, 30));
+    attachTooltip(btn, () => itemCard(item, ['somebody down here wants this']));
+    host.append(btn);
+  }
+  for (let i = held.length; i < RELIC_SLOTS; i++) {
+    host.append(el('div', 'slot slot--empty'));
+  }
+}
+
 export function renderInventory(): void {
   if (!game) return;
   renderWallet();
   renderCurrencies();
+  renderRelics();
 
   const items = game.inventory.filter((i) => i.kind === 'gear');
   fill($(GEAR_HOST), items.filter((i) => itemMatches(i, find)));

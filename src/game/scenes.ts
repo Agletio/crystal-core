@@ -8,6 +8,7 @@ import { INTRO, LAMPWRIGHT } from '../data';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { giftWaiting } from './crystals';
+import { relicFor } from './graft';
 import type { QuestFacts, Waiting } from './crystals';
 import type { GameState } from './state';
 
@@ -45,5 +46,10 @@ export function sceneWaiting(game: GameState, clear: QuestFacts): SceneCall | nu
   if (gift && workshop) return { def: workshop, gift };
 
   const next = scheduled(game)[0];
-  return next ? { def: next, gift: null } : null;
+  if (next) return { def: next, gift: null }; // rung 2
+
+  // Rung 3: HOLDING one is the whole condition. Nothing is rolled, and a room
+  // owed keeps being owed until you have walked into it.
+  const wanted = SCENES.find((s) => relicFor(game, s.id) !== null);
+  return wanted ? { def: wanted, gift: null } : null;
 }

@@ -293,6 +293,43 @@ A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
 rail stays up, but nothing is ticking, and Leave and Abandon go quiet because
 there is nothing to abandon.
 
+## What a corpse is for
+
+**The Osteomancer** is in the Rot and frantic with it — *gimme, gimme*. He wants
+what the world did not finish and he pays in something no drop can roll.
+
+A **relic** (`RELICS` in `data.ts`) is a third `ItemKind` beside gear and
+crystals: `pristine_specimen`, gated to the Demonic zone, rolled per kill off
+the sim's own rng. It is loot, so it lands in the haul like everything else, and
+`GameState.relics` is where it goes when you take it out — uncapped for the
+reason crystals are, since nothing sells one and a cap could only lose it. Its
+own dock column, drawn only while you are holding something and with no click in
+it at all. Holding one is the WHOLE of what schedules his room, at rung 3 of
+`sceneWaiting`.
+
+**A graft replaces the IMPLICIT.** `FORGED` in `data.ts` is the lines only he
+can write — weight 0 so nothing rolls one, in `ALL_MODS` anyway so a save
+resolves it — and `graft()` in `src/game/graft.ts` puts one in `Item.implicits`
+where the base's own line stood. That is the trade: what the smith meant the
+piece to be is gone. `helmet`, `body` and `boots` only; a unique is REFUSED,
+because `makeUnique` puts a named piece's whole identity into `implicits` and
+nothing could put it back. The armour rating is not the implicit and is
+untouched. A second graft replaces the first, so a first one is never a mistake
+you cannot walk back, and `item.meta.grafted` is what makes the card say
+"grafted" rather than "base".
+
+**`ModDef.grants` is how a LINE changes a rule.** Merged by `treeGrants` off
+what is worn, out of the same `GRANTS` table a tree node, a trade node and a
+unique use. Bone-Ledger bursts a killed enemy (`explodeOnKill`, which already
+existed); Wound-Keeper leaves a **Bleed** on every hit (`bleedOnHit`, which is a
+new `Changes` class — `ailment` — and its eight rows in `INTERACTIONS`);
+Long-Gait is a stat line and needs no path at all, since `statMods` already
+reads implicits exactly like rolled mods.
+
+His bench is the LAST BEAT of his room, in the same bubble his lines came in:
+two picks and a button, and nothing is spent until the button. **Keep it** walks
+out still carrying the specimen, so he is owed the same room again.
+
 ## Uniques
 
 `UNIQUES` in `data.ts` is a table of named pieces: a base it is a version of,
@@ -609,6 +646,7 @@ src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
 src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation
 src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
+src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/            one module per screen
 ```

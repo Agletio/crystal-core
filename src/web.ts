@@ -28,13 +28,14 @@ import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/sho
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
 import { initMet, isMetOpen } from './ui/met';
+import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import {
   centreCamera,
   drinkFlask,
   initRun,
-  metTaken,
+  sceneEnded,
   onRunFocused,
   skipToGift,
   refreshRunPanels,
@@ -146,7 +147,7 @@ globalThis.addEventListener('keydown', (event) => {
   // The crystal is already granted by the time a panel is on screen, so Escape
   // takes it rather than refusing it — and from a line before the panel it
   // skips the rest of them and takes it anyway.
-  else if (isSpeaking() || isMetOpen()) skipToGift();
+  else if (isSpeaking() || isMetOpen() || isGraftOpen()) skipToGift();
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.
   else if (isMenuOpen()) closeMenu();
@@ -221,8 +222,15 @@ initCrystals(game, refreshRunPanels);
 // The crystal is in your hands the moment the panel closes, so the collection
 // and the Fissure's counts are both already out of date.
 initMet(game, () => {
-  metTaken();
+  sceneEnded();
   refreshRunPanels();
+});
+// His bench spends what you carried in and writes over a piece you are holding,
+// so the dock and the sheet are both already out of date.
+initGraft(game, () => {
+  sceneEnded();
+  refreshRunPanels();
+  renderInventory();
 });
 initRun(game);
 initSpeech();

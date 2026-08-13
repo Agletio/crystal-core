@@ -8,6 +8,7 @@ import type { MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
 import { WORKSHOP } from './scenes/workshop';
 import { READING_ROOM } from './scenes/reading-room';
+import { OSSUARY } from './scenes/ossuary';
 
 /** What somebody DOES between two lines, off the pose machinery that already
  *  exists. An act is a pose in Pixi and a moving circle in the fallback, so a
@@ -39,7 +40,7 @@ export interface SceneDef {
   encounter: string | null; // a `BossDef` id; null is a quiet room
 }
 
-export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM];
+export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, OSSUARY];
 
 export const SCENE_BY_ID: Record<string, SceneDef> = Object.fromEntries(
   SCENES.map((s) => [s.id, s])

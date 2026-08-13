@@ -17,6 +17,7 @@ import type {
   MonsterFamilyDef,
   MonsterRankDef,
   Recipe,
+  RelicDef,
   RunSlotDef,
   SkillCategory,
   SkillDef,
@@ -1119,7 +1120,75 @@ export const GEAR_MODS: ModDef[] = [
   ...DELIVERY_DAMAGE_MODS,
   ...RESISTANCE_MODS,
 ];
-export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS];
+
+/**
+ * What the Osteomancer will write over a base's own line, and nothing else in
+ * the game can. Never rolled — weight 0, and the pool is weighted — but present
+ * in `ALL_MODS`, so a save resolves one and `npm run mods` holds it to the same
+ * rules as a line that drops.
+ *
+ * `kinds` is which armour a line may be grafted onto, read by the panel rather
+ * than by `appliesTo`: a graft is not a currency and never asks the pool.
+ */
+export interface ForgedDef {
+  mod: ModDef;
+  kinds: string[];
+}
+
+export const FORGED: ForgedDef[] = [
+  {
+    kinds: ['helmet'],
+    mod: {
+      id: 'forged_burst',
+      slot: 'implicit',
+      name: 'Bone-Ledger',
+      appliesTo: ['gear'],
+      tags: ['forged'],
+      grants: { explodeOnKill: { radius: 2, multiplier: 0.35 } },
+      tiers: [
+        { ilvl: 1, weight: 0, stats: [{ stat: 'critChance', form: 'flat', range: [4, 4] }] },
+      ],
+    },
+  },
+  {
+    kinds: ['body'],
+    mod: {
+      id: 'forged_bleed',
+      slot: 'implicit',
+      name: 'Wound-Keeper',
+      appliesTo: ['gear'],
+      tags: ['forged'],
+      grants: { bleedOnHit: { seconds: 3, multiplier: 0.4 } },
+      tiers: [
+        { ilvl: 1, weight: 0, stats: [{ stat: 'life', form: 'flat', range: [40, 40] }] },
+      ],
+    },
+  },
+  {
+    kinds: ['boots'],
+    mod: {
+      id: 'forged_stride',
+      slot: 'implicit',
+      name: 'Long-Gait',
+      appliesTo: ['gear'],
+      tags: ['forged'],
+      tiers: [
+        { ilvl: 1, weight: 0, stats: [{ stat: 'moveSpeed', form: 'more', range: [18, 18] }] },
+      ],
+    },
+  },
+];
+
+export const FORGED_MODS: ModDef[] = FORGED.map((f) => f.mod);
+export const FORGED_BY_ID: Record<string, ForgedDef> = Object.fromEntries(
+  FORGED.map((f) => [f.mod.id, f])
+);
+
+export const ALL_MODS: ModDef[] = [...CRYSTAL_MODS, ...GEAR_MODS, ...FORGED_MODS];
+
+export const MOD_BY_ID: Record<string, ModDef> = Object.fromEntries(
+  ALL_MODS.map((m) => [m.id, m])
+);
 
 /**
  * The crafting currencies. Adding one is an entry here; new code is only for a
@@ -2146,6 +2215,55 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
 export const keyForBoss = (bossId: string): BossKeyDef | undefined =>
   BOSS_KEYS.find((k) => k.boss === bossId);
 
+
+/**
+ * The Osteomancer, who is in the Rot and wants what it did not finish. His
+ * lines are FLAVOUR like everyone else's: no screen, no currency, no number.
+ */
+export const OSTEOMANCER = {
+  name: 'the Osteomancer',
+  sprite: 'osteomancer',
+  scene: 'ossuary',
+  seen: 'Somebody has been sorting down here. The sorting is not finished.',
+  /** Said over his own head while you cross to him, before the bench is up. */
+  beats: [
+    {
+      said: 'You have one. You have one on you, I can hear it not rotting. Give it here, give it here — no, hold it up, let me look at it first.',
+      act: 'face' as const,
+    },
+    {
+      said: 'They come apart wrong down here. Everything does. This one came apart RIGHT, which means something was still deciding when it stopped, and a thing that was still deciding can be asked what it decided.',
+      act: 'pace' as const,
+    },
+    {
+      said: 'I will put it in something of yours. Not on top of — into. Whatever the smith meant that piece to be, it will stop being, and it will be this instead. You choose which. I do not care which. Choose.',
+      act: 'work' as const,
+    },
+  ],
+  /** Once the graft is written. */
+  done: 'There. Do not thank me, bring me another one. Bring me a worse one, I want to see a worse one.',
+};
+
+/**
+ * Something you carry to a PERSON. It is loot, so it lands in the haul like
+ * everything else; it is never sold, never spent at the bench, and it is the
+ * whole of what schedules the room of whoever wants it.
+ */
+export const RELICS: RelicDef[] = [
+  {
+    id: 'pristine_specimen',
+    name: 'Pristine Specimen',
+    flavour: 'A body the Rot did not finish with. It is still deciding what to be.',
+    gate: { zone: 'demonic' },
+    chance: 0.006,
+    wants: 'ossuary',
+  },
+];
+
+export const RELIC_BY_ID: Record<string, RelicDef> = Object.fromEntries(
+  RELICS.map((r) => [r.id, r])
+);
+
 export interface EncounterDef {
   id: string;
   name: string;
@@ -2602,6 +2720,7 @@ export interface StartPreset {
   crystals: Array<{ level: number; family: MonsterFamily }>;
   gear: Array<{ base: string; ilvl: number }>;
   uniques?: string[];
+  relics?: string[];
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -2625,6 +2744,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     gear: [],
     // One of each, so the kit can look at a named piece without farming for it.
     uniques: UNIQUES.map((u) => u.id),
+    // And one of every relic, so the room it schedules is one press away.
+    relics: RELICS.map((r) => r.id),
     equipped: true,
   },
 };

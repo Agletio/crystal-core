@@ -56,6 +56,9 @@ import {
   REWARD,
   findStat,
   opensHere,
+  FORGED,
+  FORGED_BY_ID,
+  RELICS,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   GEAR_BASES,
@@ -80,6 +83,8 @@ import {
   rollCrystal,
   makeGear,
   makeUnique,
+  makeRelic,
+  canSell,
   rollGear,
   runRecipe,
   sellPrice,
@@ -88,6 +93,7 @@ import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
+import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { SCENES, SCENE_BY_ID } from './scenes';
 import type { RunState } from './sim/run';
 import {
@@ -135,6 +141,7 @@ import {
   overchargeOf,
   shieldShare,
   starvedMultiplier,
+  bleedOf,
 } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import { TRADE_NODES } from './trades/layout';
@@ -221,6 +228,7 @@ import {
   socketItem,
   socketed,
   sortGear,
+  relicsIn,
   sortInventory,
   stashRoom,
   stashUpgradeCost,
@@ -1182,8 +1190,8 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
 {
   const game = createGame('fresh');
   game.inventory = [];
-  const first = makeGear('bulwark_helmet_t1', 20);
-  const spacer = makeGear('bulwark_body_t1', 20);
+  const first = makeGear('skirmisher_helmet_t1', 20);
+  const spacer = makeGear('skirmisher_body_t1', 20);
   const second = makeGear('bulwark_helmet_t2', 30);
   for (const item of [first, spacer, second]) addItem(game, item);
 
@@ -1634,7 +1642,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   // A save from before the mark existed: heal() picks one, ONCE.
   const old = createGame('fresh');
   old.firstClearDone = true;
-  old.inventory = [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 20)];
+  old.inventory = [makeGear('ash_wand', 1), makeGear('skirmisher_helmet_t1', 20)];
   heal(old);
   check(
     giftWeapon(old)?.base === 'ash_wand',
@@ -5586,6 +5594,9 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     {
       const at = createGame('dev');
       at.sockets = {};
+      // The kit is handed a specimen too, and holding one is a room of its own
+      // at a lower rung — this question is about the wall, not about him.
+      at.relics = [];
       check(
         sceneWaiting(at, facts(at, sim.state)) === null,
         'nobody objects to a wall with nothing in it',
@@ -5602,6 +5613,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       );
       const bossId = SCENE_BY_ID[INTRO.bossScene].encounter!;
       takeBoss(two, bossId);
+      two.relics = [];
       check(
         sceneWaiting(two, facts(two, sim.state)) === null,
         'and once it is down it is never scheduled again',
@@ -6157,6 +6169,180 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 }
 
 // ===========================================================================
+rule('THE OSTEOMANCER — does a corpse buy a line no drop can roll?');
+
+// A graft is the one thing in the game that makes a piece of gear give a thing
+// UP to get a thing. Everything here is about that trade actually happening:
+// the specimen only comes out of one world, the line lands where the base's own
+// line stood, and a named piece is refused.
+{
+  const g = createGame('fresh');
+
+  // A gate is a WALL: the pool is filtered before the roll, so no amount of
+  // rarity finds a specimen anywhere but the Rot.
+  const wrong = MAP_THEMES.filter(
+    (t) => t.id !== 'demonic' && RELICS.some((r) => opensHere(r.gate, POWER.max, t.id))
+  ).map((t) => t.id);
+  check(wrong.length === 0, 'a specimen only exists in the Rot', wrong.join(', '));
+  check(
+    RELICS.every((r) => SCENE_BY_ID[r.wants] !== undefined),
+    'and every relic names a room somebody is standing in',
+    RELICS.filter((r) => !SCENE_BY_ID[r.wants]).map((r) => r.id).join(', ')
+  );
+
+  // It is loot, so it lands in the haul with everything else — and nothing
+  // sells one, which is what keeps a bulk button from eating it.
+  const specimen = makeRelic(RELICS[0]);
+  bankToHaul(g, [specimen, makeGear('ash_wand', 1)]);
+  check(sellPrice(specimen) === 0 && !canSell(specimen), 'nothing sells a specimen', String(sellPrice(specimen)));
+  takeWhatFits(g);
+  check(
+    relicsIn(g).length === 1 && g.inventory.every((i) => i.kind === 'gear'),
+    'and taking it out of the haul puts it in its own column',
+    `${relicsIn(g).length} relics, ${g.inventory.length} in the bag`
+  );
+
+  // Holding one IS the schedule, and it is rung 3: nothing is rolled, and the
+  // two above him have to be settled before he is the one at the top.
+  const sim = new RunSim([], g.character, new Rng(3));
+  runToCompletion(sim);
+  const settled = createGame('dev');
+  settled.sockets = {};
+  settled.relics = [];
+  const facts = { set: sim.state.set, elapsed: sim.state.elapsed, socketed: [] };
+  check(sceneWaiting(settled, facts) === null, 'nothing is owed with nothing carried', String(sceneWaiting(settled, facts)?.def.id));
+  settled.relics = [makeRelic(RELICS[0])];
+  const owed = sceneWaiting(settled, facts);
+  check(owed?.def.id === RELICS[0].wants, 'and holding one is the whole of what schedules his room', owed?.def.id ?? 'nobody');
+
+  // The trade. `helmet`, `body` and `boots` only, and the base's own line is
+  // what it is written over.
+  const helm = makeGear('skirmisher_helmet_t1', 20);
+  const was = helm.implicits.map(describeMod).join('; ');
+  check(was.length > 0, 'a helmet arrives with a line off its base', was || 'none');
+  g.inventory.push(helm);
+  const forged = forgedFor(helm)[0];
+  const made = spendRelic(g, relicsIn(g)[0], helm, forged.mod.id)!;
+  check(
+    made !== null && made.implicits.length === 1 && made.implicits[0].defId === forged.mod.id,
+    `the graft writes ${forged.mod.name} where the base's line stood`,
+    made?.implicits.map(describeMod).join('; ') ?? 'nothing'
+  );
+  check(
+    made.implicits.every((m) => describeMod(m) !== was),
+    'and the base line is gone, which is the whole trade',
+    describeMod(made.implicits[0])
+  );
+  check(relicsIn(g).length === 0, 'the specimen is spent', String(relicsIn(g).length));
+  check(
+    made.armour === helm.armour && made.armour !== undefined,
+    'and the armour rating is not the implicit and is untouched',
+    `${helm.armour} → ${made.armour}`
+  );
+
+  // Wherever it was kept, it stays there. Worn is the one that matters: a
+  // graft that dropped a worn helmet into the bag would undress you.
+  const worn = createGame('fresh');
+  const boots = makeGear('skirmisher_boots_t1', 20);
+  worn.inventory.push(boots);
+  equipItem(worn, boots, 'boots');
+  worn.relics = [makeRelic(RELICS[0])];
+  const bootLine = forgedFor(boots)[0];
+  spendRelic(worn, worn.relics[0], boots, bootLine.mod.id);
+  check(
+    worn.character.equipment.boots?.meta.grafted === bootLine.mod.id,
+    'a piece you are WEARING is grafted where it stands',
+    String(worn.character.equipment.boots?.meta.grafted)
+  );
+
+  // A unique is REFUSED, and missing this ruins saves: `makeUnique` puts a
+  // named piece's whole identity into `implicits`, and nothing puts it back.
+  const named = UNIQUES.map((u) => makeUnique(u, 70, new Rng(4))).filter(
+    (i) => graftableKinds().includes(String(i.meta.gearKind))
+  );
+  check(named.length > 0, 'there is a named piece in a slot he works on', String(named.length));
+  const took = named.filter((i) => graftRefusal(i) === null);
+  check(took.length === 0, 'and every one of them is refused', took.map((i) => i.name).join(', '));
+
+  // A second graft replaces the first. The base's line went the moment one
+  // landed, so a piece stuck on one choice would make a first graft a mistake
+  // nobody could walk back.
+  const again = graft(made, forgedFor(made)[forgedFor(made).length - 1].mod.id)!;
+  check(again !== null && again.implicits.length === 1, 'a second graft replaces the first', String(again?.implicits.length));
+
+  // A forged line never drops. Weight 0 and out of the pool, but IN `ALL_MODS`
+  // so a save resolves it.
+  const rollable = new ModPool(ALL_MODS).entries.filter(
+    (e) => FORGED_BY_ID[e.defId] && e.weight > 0
+  );
+  check(rollable.length === 0, 'no forged line has a weight to be rolled at', rollable.map((e) => e.id).join(', '));
+  check(
+    FORGED.every((f) => ALL_MODS.includes(f.mod)),
+    'and every one is in ALL_MODS anyway, so a save resolves it',
+    FORGED.filter((f) => !ALL_MODS.includes(f.mod)).map((f) => f.mod.id).join(', ')
+  );
+
+  // A switch on a LINE obeys every rule a tree node's does: declared, read by
+  // a delivery a player can pick, and printing its own number.
+  const undeclared: string[] = [];
+  const unread: string[] = [];
+  const mute: string[] = [];
+  for (const f of FORGED) {
+    for (const [id, value] of Object.entries(f.mod.grants ?? {})) {
+      const def = GRANT_BY_ID[id];
+      if (!def) { undeclared.push(`${f.mod.id}/${id}`); continue; }
+      if (!MAIN_SKILLS.some((s) => behaviourReads(s.behaviour, id))) unread.push(`${f.mod.id}/${id}`);
+      if (def.say?.(value) === null || def.say === undefined) mute.push(`${f.mod.id}/${id}`);
+    }
+  }
+  check(undeclared.length === 0, 'every switch a forged line hands over is declared in GRANTS', undeclared.join(', '));
+  check(unread.length === 0, 'and read by a skill you can actually pick', unread.join(', '));
+  check(mute.length === 0, 'and says its own number out of the table the sim reads', mute.join(', '));
+
+  // It reaches the sim by the ONE path a unique's does: worn, through
+  // `treeGrants`. A switch nothing merges is a graft that does nothing.
+  const wearing = createGame('fresh');
+  const chest = makeGear('skirmisher_body_t1', 20);
+  wearing.inventory.push(chest);
+  equipItem(wearing, chest, 'body');
+  const bleeder = FORGED.find((f) => f.mod.grants?.bleedOnHit)!;
+  wearing.character.equipment.body = graft(chest, bleeder.mod.id)!;
+  check(
+    bleedOf(treeGrants(wearing.character)) !== null,
+    'a grafted switch reaches the sim off what is WORN',
+    JSON.stringify(treeGrants(wearing.character))
+  );
+
+  // And it does something: the same character, the same seed, with and without.
+  const bare = createGame('fresh');
+  bare.inventory.push(makeGear('skirmisher_body_t1', 20));
+  equipItem(bare, bare.inventory[0], 'body');
+  const before = new RunSim([], bare.character, new Rng(21));
+  runToCompletion(before);
+  const after = new RunSim([], wearing.character, new Rng(21));
+  runToCompletion(after);
+  check(
+    after.state.elapsed < before.state.elapsed,
+    `a Bleed on every hit clears the same seed faster: ${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`,
+    `${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`
+  );
+
+  // `heal()` puts the base's line BACK when a forged def is gone. It drops
+  // items by BASE and has never healed a MOD, so this is the first of its kind.
+  const stale = createGame('fresh');
+  const old = graft(makeGear('skirmisher_helmet_t1', 20), forged.mod.id)!;
+  old.meta.grafted = 'a_line_that_was_cut';
+  stale.inventory = [old];
+  heal(stale);
+  check(
+    stale.inventory[0].meta.grafted === undefined &&
+      describeMod(stale.inventory[0].implicits[0]) === was,
+    'a graft whose line was cut hands the base its own line back',
+    stale.inventory[0].implicits.map(describeMod).join('; ') || 'nothing at all'
+  );
+}
+
+// ===========================================================================
 rule('THE SAVE — does a save survive the game changing under it?');
 {
   const game = createGame('dev');
@@ -6455,6 +6641,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     ['inventory', (g, item) => { g.inventory = [item]; }],
     ['stash', (g, item) => { g.stash = [item]; }],
     ['crystals', (g, item) => { g.crystals = [item]; }],
+    ['relics', (g, item) => { g.relics = [item]; }],
     ['sold', (g, item) => { g.sold = [{ item, price: 1 }]; }],
     ['shopStock', (g, item) => { g.shopStock = [item]; }],
     ['equipment', (g, item) => { g.character.equipment = { weapon: item }; }],
@@ -6467,7 +6654,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     const mark = HIGH + (i + 1) * 1000;
     const save = {
       ...createGame('fresh'),
-      inventory: [], stash: [], crystals: [], sold: [], shopStock: [], craftId: null,
+      inventory: [], stash: [], crystals: [], relics: [], sold: [], shopStock: [], craftId: null,
     };
     save.character = { ...save.character, equipment: {} };
     const item = makeGear('ash_wand', 1);

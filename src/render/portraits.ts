@@ -23,10 +23,82 @@ const rows = gridRows(48);
 
 export const PORTRAITS: Record<string, PortraitArt> = {
   /**
-   * No hood: the whole point of him is that he wants to be looked at while he
-   * explains. Cropped hair, a long jaw, and a rule held up beside the face —
-   * the tool he thinks the rock answers to, where the other man carries a lamp.
+   * Leaning INTO the frame, which nobody else does. A bone half-mask shoved up
+   * onto the brow, one eye wide under it and the mouth open mid-ask; small
+   * bones strung on cords across the shoulders, because he keeps the good ones.
    */
+  osteomancer: {
+    grid: 48,
+    rows: rows({
+        1: '..................##########....................',
+        2: '...............####hhhhhhhhhh####...............',
+        3: '.............##hhhhhhhhhhhhhhhhhh##.............',
+        4: '...........##hhhHHHHHhhhhhhhhhhhhhh##...........',
+        5: '..........#hhhHHHHHHHhhhhhhhhhhhhhhh#...........',
+        6: '.........#hhhHHHHHHHhhhhhhhhhhhhhhhhh#..........',
+        7: '.........#hhhhhhhhhhhhhhhhhhhhhhhhhhh#..........',
+        8: '.........#hhh###################hhhhh#..........',
+        9: '.........#hh##PPPPPPPPPPPPPPPPpp##hhh#..........',
+        10: '.........#h##PPPPPPPPPPPPPPPPPPpp##hh#..........',
+        11: '.........#h#PPPPPPPPPPPPPPPPPPPPpp#hh#..........',
+        12: '.........#h#PPPPPPPPPPPPPPPPPPPPppp#h#..........',
+        13: '.........#h#PPPPPPPPPPPPPPPPPPPPppp#h#..........',
+        14: '.........#h#PPPkkkkkPPPPPPkkkkkPppp#h#..........',
+        15: '.........#h#PPkkkkkkkPPPPkkkkkkkppp#h#..........',
+        16: '.........#h#PPkkeekkkPPPPkkkeekkkpp#h#..........',
+        17: '.........#h#PPkkeekkkPPPPkkkeekkkpp#h#..........',
+        18: '.........#h#PPkkkkkkkPPPPkkkkkkkkpp#h#..........',
+        19: '.........#h#PPPkkkkkPPPPPPkkkkkPppp#h#..........',
+        20: '.........#h#PPPPPPPPPPPPPPPPPPPPppp#h#..........',
+        21: '.........#h#PPPPPPPPPkkkkPPPPPPPPpp#h#..........',
+        22: '.........#h##PPPPPPPPkkkkPPPPPPPpp##h#..........',
+        23: '..........#h#PPPPPPPPkkkkPPPPPPPpp#hh#..........',
+        24: '..........#h######################hhh#..........',
+        25: '..........#hh#wwbbbbbbbbbbbbbbbww#hhh#..........',
+        26: '..........#hh#wbbbbbbbbbbbbbbbbbw#hhh#..........',
+        27: '..........#hhh#bbbbkkbbbbkkbbbbb#hhh#...........',
+        28: '...........#hh#bbbbkkbbbbkkbbbbb#hhh#...........',
+        29: '...........#hh#bbbbbbbbbbbbbbbbb#hh#............',
+        30: '...........#hh#BbbbbbbbbbbbbbbbB#hh#............',
+        31: '............#h#BBbbbbbbbbbbbbbBB#hh#............',
+        32: '............#h#BBBbbbbbbbbbbbBBB#h#.............',
+        33: '............#h##BBBBbbbbbbbBBBB##h#.............',
+        34: '.............#h###BBBBBBBBBBB###hh#.............',
+        35: '.............#hhh###########hhhhh#..............',
+        36: '..............#hhhhhhhhhhhhhhhhh#...............',
+        37: '...............##hhhhhhhhhhhhh##................',
+        38: '.........########hhhhhhhhhhhhh########..........',
+        39: '......####gggggggggggggggggggggggggg####........',
+        40: '....##ggggggggwbwgggggggggggggwbwgggggg##.......',
+        41: '..##gggggggggggwbwgggggggggggwbwggggggggg##.....',
+        42: '.#ggggggggggggggwbwgggggggggwbwgggggggggggg#....',
+        43: '#gggggggggggggggggwbwgggggwbwgggggggggggggg#....',
+        44: 'gggggggggggggggggggwbwgggwbwggggggggggggggggg#..',
+        45: 'gggggggggggggggggggggwbwwbwgggggggggggggggggg#..',
+        46: 'ggggggggggggggggggggGGGwbwGGGggggggggggggggggg#.',
+        47: 'gggggggggggggggggggGGGGGGGGGGGgggggggggggggggg#.',
+    }),
+    ink: (p) => ({
+      '#': mix(p.char, p.void, 0.35),
+      // Wrapped rather than hooded: he has bound his own head up out of the
+      // way, which is a different silhouette from the man with the lamp.
+      h: mix(p.char, p.gore, 0.35),
+      H: mix(p.gore, p.char, 0.35),
+      // What is left of a face above the plate. Dark: he has been down here.
+      P: mix(p.flesh, p.char, 0.35),
+      p: mix(p.flesh, p.char, 0.62),
+      k: mix(p.char, p.void, 0.15),
+      e: p.venom,
+      // The plate over his nose and mouth, and the small bones on the cords.
+      // The only pale things on him: what he keeps, he cleans.
+      b: mix(p.chalk, p.dust, 0.4),
+      B: mix(p.dust, p.char, 0.5),
+      w: mix(p.chalk, p.dust, 0.1),
+      g: mix(p.gore, p.void, 0.2),
+      G: mix(p.gore, p.char, 0.5),
+    }),
+  },
+
   lambengolmor: {
     grid: 48,
     rows: rows({

@@ -17,12 +17,14 @@ import {
   CRYSTAL_LEVELS,
   CURRENCY_BY_ID,
   FAMILY_BY_ID,
+  FORGED_BY_ID,
   GEAR_BASE_BY_ID,
   MAIN_SKILLS,
   MAIN_SLOT,
   PLAYER_SKILLS,
   SKILL_SLOTS,
   POTION_BY_ID,
+  RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
   UNIQUE_BY_ID,
@@ -30,7 +32,7 @@ import {
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
-import { reserveItemIds } from '../economy';
+import { makeGear, reserveItemIds } from '../economy';
 import { attributePointsFor } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
@@ -209,6 +211,7 @@ const baseExists = (item: Item): boolean => {
   if (item.kind === 'crystal') {
     return CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`);
   }
+  if (item.kind === 'relic') return RELIC_BY_ID[item.base] !== undefined;
   if (item.meta.unique !== undefined && !UNIQUE_BY_ID[String(item.meta.unique)]) return false;
   return GEAR_BASE_BY_ID[item.base] !== undefined;
 };
@@ -314,6 +317,7 @@ export function heal(game: GameState): Healed {
   // Hand-edited saves reach here, and one that predates the haul has no key.
   game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
+  game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
     const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);
@@ -325,8 +329,9 @@ export function heal(game: GameState): Healed {
   // a save written before that moves its collection across rather than leaving
   // it holding gear slots it can never free.
   const container = (list: Item[]): Item[] => {
-    const stays = list.filter((i) => i.kind !== 'crystal');
+    const stays = list.filter((i) => i.kind === 'gear');
     game.crystals.push(...list.filter((i) => i.kind === 'crystal'));
+    game.relics.push(...list.filter((i) => i.kind === 'relic'));
     return stays;
   };
   game.inventory = container(game.inventory);
@@ -354,6 +359,16 @@ export function heal(game: GameState): Healed {
     if (item.mods.length > 0 || !ALL_MODS.some((m) => m.id === item.meta.scripted)) {
       delete item.meta.scripted;
     }
+  }
+  // The first heal that repairs a LINE rather than dropping an item. A graft
+  // stands where the base's own implicit stood, so a forged def that no longer
+  // resolves has to put that line BACK — otherwise the piece keeps a hole
+  // where the base's line used to be and nothing can ever fill it.
+  for (const item of [...game.inventory, ...game.stash, ...game.haul, ...wornItems(game)]) {
+    if (item.meta.grafted === undefined || FORGED_BY_ID[String(item.meta.grafted)]) continue;
+    item.implicits = makeGear(item.base, item.ilvl).implicits;
+    delete item.meta.grafted;
+    out.items++;
   }
   healQuests(game);
 

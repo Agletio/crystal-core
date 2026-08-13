@@ -21,7 +21,7 @@ import {
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
-import { critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
+import { bleedOf, critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { equippedSkill, mainSkillId, monsterXp } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
@@ -48,6 +48,7 @@ import {
   SKILL_BY_ID,
   opensHere,
   GEAR_BASE_BY_ID,
+  RELICS,
   UNIQUES,
   UNIQUE_DROP,
   socketPackSize,
@@ -58,7 +59,7 @@ import type { BossDef, EncounterDef } from '../data';
 import { SCENE_BY_ID } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
-import { makeUnique, pickGearBase, rollGear } from '../economy';
+import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -1626,7 +1627,31 @@ export class RunSim {
       this.events.push({ kind: 'hurt', life: Math.max(0, defender.life), maxLife: defender.stats.maxLife });
     }
 
+    // A line no drop can roll: the wound, not the cast. Off the damage that
+    // actually landed, so a starved swing leaves a smaller Bleed and no corner
+    // of a build runs dry for free.
+    const bleed = attacker.kind === 'hero' ? bleedOf(this.grants) : null;
+    if (bleed && defender.life > 0) this.leaveBleed(defender, dmg, bleed);
+
     if (defender.life <= 0) this.kill(defender);
+  }
+
+  /** Physical, whatever the skill deals: a Bleed is what the hit opened. */
+  private leaveBleed(
+    target: Entity,
+    dealt: number,
+    bleed: { seconds: number; multiplier: number }
+  ): void {
+    if (bleed.seconds <= 0 || dealt <= 0) return;
+    if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
+    target.ailments.push({
+      type: 'physical',
+      dps: { physical: (dealt * bleed.multiplier) / bleed.seconds },
+      remaining: bleed.seconds,
+      tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
+      critChance: 0,
+      critMultiplier: 0,
+    });
   }
 
   /** `chain` is false on the second hop, so a pack wakes but the map does not. */
@@ -1872,6 +1897,7 @@ export class RunSim {
       (s.loot.currency.gold ?? 0) + this.goldPerKill * victim.bounty;
     this.rollCurrency();
     this.rollGearDrop();
+    this.rollRelicDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
   }
@@ -1907,6 +1933,15 @@ export class RunSim {
 
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
     this.state.loot.items.push(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng));
+  }
+
+  /** A corpse for whoever wants one. A gate is a wall, so the pool is filtered
+   *  before the roll: no amount of rarity finds a specimen outside the Rot. */
+  private rollRelicDrop(): void {
+    for (const def of RELICS) {
+      if (!opensHere(def.gate, this.set.power, this.set.theme)) continue;
+      if (this.rng.chance(def.chance)) this.state.loot.items.push(makeRelic(def));
+    }
   }
 
   private rollCurrency(): void {

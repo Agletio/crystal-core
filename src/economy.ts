@@ -19,6 +19,7 @@ import type {
   MonsterFamily,
   Recipe,
   RolledMod,
+  RelicDef,
   UniqueDef,
   Wallet,
 } from './types';
@@ -221,6 +222,26 @@ export function makeUnique(def: UniqueDef, ilvl: number, rng: Rng): Item {
   ];
   item.meta.unique = def.id;
   return item;
+}
+
+/**
+ * A relic. No slots, no lines and no tier: it is not a thing you improve, it is
+ * a thing you hand over. `canSell` refuses one and the bench's registries never
+ * see it, which is what keeps it out of every other pipeline.
+ */
+export function makeRelic(def: RelicDef): Item {
+  return {
+    id: uid('relic'),
+    kind: 'relic',
+    base: def.id,
+    name: def.name,
+    tags: ['relic', def.id],
+    ilvl: 1,
+    slots: {},
+    mods: [],
+    implicits: [],
+    meta: {},
+  };
 }
 
 export function makeItem(base: string, ilvl = 1): Item {

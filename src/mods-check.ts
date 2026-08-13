@@ -10,6 +10,7 @@
 import {
   ALL_MODS,
   CRYSTAL_MODS,
+  FORGED,
   GEAR_BASES,
   GEAR_MODS,
   SKILLS,
@@ -21,6 +22,7 @@ import { dropBias, heroStats, monsterStats, mapDensity } from './sim/stats';
 import { describeMod } from './crafting';
 import { describeStatLine, tagWord } from './mod-text';
 import { treeFor } from './skills-tree';
+import { graft } from './game/graft';
 import { Rng } from './rng';
 import { DAMAGE_TYPES, MONSTER_BY_ID } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
@@ -307,6 +309,45 @@ line('\n── TEXT — does the player read words, not identifiers? ───�
     'no two mod families render as the same line',
     collisions.slice(0, 3).map(([text, ids]) => `"${text}" ← ${[...new Set(ids)].join(', ')}`).join(' | ')
   );
+}
+
+// ---------------------------------------------------------------------------
+line('\n── FORGED — a line no drop can roll is still a line ────────────');
+// ---------------------------------------------------------------------------
+//
+// A graft never goes through the pool, so nothing above has looked at one. It
+// is held to the same three questions anyway: does it land, does the engine
+// read it, and does it read on a card.
+{
+  const landed: string[] = [];
+  const inert: string[] = [];
+  const wordless: string[] = [];
+  for (const def of FORGED) {
+    const kind = def.kinds[0];
+    const base = GEAR_BASES.find((b) => b.kind === kind && (b.implicit?.length ?? 0) > 0);
+    if (!base) {
+      landed.push(`${def.mod.id} (no ${kind} base to write over)`);
+      continue;
+    }
+    const made = graft(makeItem(base.id, 60), def.mod.id);
+    if (!made || made.implicits.length !== 1 || made.implicits[0].defId !== def.mod.id) {
+      landed.push(def.mod.id);
+      continue;
+    }
+    // A stat line has to MOVE a stat. A switch is the demo's question — it is
+    // read by a behaviour rather than by the stat block, so it is excused here
+    // and held to being declared and read over there.
+    const line0 = made.implicits[0];
+    const bare = SKILLS.map((k) => JSON.stringify(heroStats([], 30, k))).join('|');
+    const with0 = SKILLS.map((k) => JSON.stringify(heroStats([line0], 30, k))).join('|');
+    if (with0 === bare && Object.keys(def.mod.grants ?? {}).length === 0) inert.push(def.mod.id);
+    for (const stat of line0.stats) {
+      if (!describeStatLine(stat).trim()) wordless.push(def.mod.id);
+    }
+  }
+  check(landed.length === 0, `all ${FORGED.length} forged lines land where a base's own line stood`, landed.join(', '));
+  check(inert.length === 0, 'and every one of them changes something', inert.join(', '));
+  check(wordless.length === 0, 'and every line on one reads', wordless.join(', '));
 }
 
 // ---------------------------------------------------------------------------

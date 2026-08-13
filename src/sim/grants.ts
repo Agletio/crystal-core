@@ -22,7 +22,15 @@ export type Merge = 'sum' | 'product' | 'max' | 'append' | 'replace';
  * node level it is 742 pairs across three trees and nobody reads that; at class
  * level it is 28 rows and a new node cannot add a pair without adding a class.
  */
-export type Changes = 'scale' | 'duration' | 'targets' | 'burst' | 'field' | 'crit' | 'type';
+export type Changes =
+  | 'scale'
+  | 'duration'
+  | 'targets'
+  | 'burst'
+  | 'field'
+  | 'crit'
+  | 'type'
+  | 'ailment';
 
 export interface GrantDef {
   id: string;
@@ -266,6 +274,16 @@ export const GRANTS: GrantDef[] = [
   },
 
   { id: 'critAilment', what: 'a Critical leaves an Ailment instead', reads: HITTERS, changes: 'crit' },
+  {
+    id: 'bleedOnHit',
+    changes: 'ailment',
+    what: 'every hit leaves a Bleed',
+    reads: HITTERS,
+    say: (v) => {
+      const p = pair(v, 'seconds', 'multiplier');
+      return p && `Every hit leaves a Bleed worth ${pct(p[1])} of it, over ${p[0]} seconds`;
+    },
+  },
   {
     id: 'ailmentMultiplier',
     changes: 'scale',
@@ -528,6 +546,15 @@ export function critBuff(grants: Record<string, unknown>): { more: number; secon
 export function starvedMultiplier(grants: Record<string, unknown>): number {
   const own = typeof grants.starvedDamage === 'number' ? grants.starvedDamage : 1;
   return Math.max(0, Math.min(1, MANA.starvedDamage * own));
+}
+
+/** What a grafted line leaves on every hit, or null. */
+export function bleedOf(
+  grants: Record<string, unknown>
+): { seconds: number; multiplier: number } | null {
+  const v = grants.bleedOnHit as { seconds?: unknown; multiplier?: unknown } | undefined;
+  if (typeof v?.seconds !== 'number' || typeof v?.multiplier !== 'number') return null;
+  return { seconds: v.seconds, multiplier: v.multiplier };
 }
 
 /**
