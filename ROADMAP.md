@@ -4,9 +4,10 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Five phases, and they are not one thing.** Phase 1 takes the tutorial out —
-a deletion, so the opening can be played with nothing explaining it. Phase 2 is
-the title's background. Phases 3 and 4 continue the arc dictated in one go: the
+**Five phases, and they are not one thing.** Phase 1 is the title's background:
+the two far worlds meeting on a ragged diagonal. Phase 2 takes the tutorial out
+— a deletion, so the opening can be played with nothing explaining it. Phases 3
+and 4 continue the arc dictated in one go: the
 game gets **rooms you arrive in and people standing in them**, and the
 machinery for that is BUILT — a scene is a `RunSim` over an authored map, people
 talk in bubbles over their own heads, a room may have a boss in it, and a key
@@ -264,7 +265,7 @@ of it.
 | `src/game/scenes.ts` | the SCHEDULE: what happens at the end of this clear | as `src/game/crystals.ts` is for gifts |
 | `src/ui/speech.ts` | the bubble: a line over the body saying it | one module, one screen |
 
-**ONE scene per cleared descent, and the order is fixed.** By Phase 2 four
+**ONE scene per cleared descent, and the order is fixed.** By the Astral-Geometer four
 things can be owed at the same moment — a crystal, a boss, a corpse to hand
 over, dust to trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
 one function that answers what happens next, it returns **at most one** scene,
@@ -326,9 +327,9 @@ measurements all drive `RunSim` directly and never ask for a scene.
 
 | harness | what it will catch, and it will |
 |---|---|
-| `demo` | a run that never ends, a container that does not claim its ids (Phase 1), a banned phrasing anywhere |
+| `demo` | a run that never ends, a container that does not claim its ids (the Osteomancer's relics), a banned phrasing anywhere |
 | `shots` | it WAITS up to two minutes for the Lampwright panel and fails the run if a first descent never produces one. Phases 2 and 3 both move that panel and both must move the shot with it |
-| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 1's third column goes at the END of the file |
+| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so the relic column goes at the END of the file |
 | `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it the moment a new layer stops taking a click |
 
 **Every phase from here puts itself in the dev kit.** `START_PRESETS.dev` and
@@ -340,7 +341,54 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — Take the tutorial out
+### Phase 1 — A title that is the two worlds meeting
+
+**What is true today.** `.title` in `docs/index.html` is a flat `--void` fill
+with `--grit` over it and two `radial-gradient`s in `.title::after`. It is
+tasteful and it says nothing about the game.
+
+**What is wanted, as dictated.** The background is a WALL of each of the two far
+worlds, with a front running diagonally across the screen:
+
+- **Top left is The Cavern** (`prismatic`) — crystal to the ceiling.
+- **Bottom right is The Rot** (`demonic`) — rock given way to what grew after.
+- **They meet on a diagonal**, corner to corner across the whole screen.
+- **The front is NOT a straight line.** *"Not a straight line like some parts
+  the rot's winning some the prism is winning."* It is a contested edge: each
+  side pushes into the other in places and is pushed back in others, so the
+  boundary reads as two things fighting rather than two rectangles touching.
+
+**That last point is the phase.** A clean diagonal is a wipe transition and will
+look like one. What makes it worth doing is that the seam is ragged and
+interlocking — fingers of crystal reaching down into the rot, patches of rot
+holding out inside the crystal.
+
+- [ ] **Decide DRAWN or painted, and be honest about the cheaper answer.** Both
+      renderers already draw a themed map, and `sceneMap` in `src/sim/grid.ts`
+      already cuts an authored room with no rng — so a still, wide chamber at a
+      fixed seed rendered behind the title is reachable with what exists. CSS
+      gradients are cheaper and will look like CSS gradients.
+- [ ] **The front needs a shape somebody chose.** Whatever draws it, the seam
+      wants a per-column (or per-tile) offset with a bias — noise, a hand-written
+      profile, anything — so it wanders around the diagonal rather than sitting
+      on it. Straight is the failure mode; symmetric-looking noise is the second.
+- [ ] **`MAP_THEMES` is a LOOK over one generator**, which is why this is worth
+      building rather than faking: the two halves are the same stone drawn two
+      ways. No map today changes theme ACROSS itself — that is the new part, and
+      whether it lives in `GameMap` or only in the title is a decision to make
+      and write down. Only the title needs it; do not generalise on spec.
+- [ ] **It must not cost the boot.** The title is the first thing drawn, and a
+      renderer starting up behind it before anything is playable is the wrong
+      trade. Measure it. Fall back to a still image if it is not close to free.
+- [ ] The logo, the sub-line and the cast list keep their contrast over it —
+      the busiest background in the game is about to be behind the smallest
+      text. `shots` takes the title already, so this is checkable.
+
+**What must not break.** `shots` — it screenshots the title and fails on any
+element past the viewport. Nothing in `src/sim` may learn about this: a title
+background is a picture, and the sim does not draw pictures.
+
+### Phase 2 — Take the tutorial out
 
 **The user's call, and the whole of it:** *"I wanna start from scratch with it
 honestly. Like its just kinda all broken. Remove it all, and once all the
@@ -383,31 +431,6 @@ crystal schedule as well, so check before deleting anything in it.
 
 **Done when.** A brand new character lands in the Fissure with nothing lit,
 nothing locked, and no card — and the game is playable start to finish anyway.
-
-### Phase 2 — A title that is the two worlds meeting
-
-**What is true today.** `.title` in `docs/index.html` is a flat `--void` fill
-with `--grit` over it and two `radial-gradient`s in `.title::after`. It is
-tasteful and it says nothing about the game.
-
-**What is wanted.** The background is the two far worlds melding — **The Rot**
-(`demonic`) on one half, **The Cavern** (`prismatic`) on the other, meeting in
-the middle. Not two flat colours: the actual stone, the way a descent draws it.
-
-- [ ] **Decide whether it is DRAWN or painted.** The renderers already draw a
-      themed map, and `sceneMap` in `src/sim/grid.ts` already cuts an authored
-      room with no rng — so a still, wide chamber generated once at a fixed
-      seed and rendered behind the title is reachable with what exists. The
-      cheaper answer is CSS, and the cheaper answer will look like CSS.
-- [ ] **The meld is the point.** A hard seam down the middle is two pictures.
-      `MAP_THEMES` is a LOOK over one generator, so the interesting version is
-      one room whose theme changes across it — which no map does today, and is
-      the part to design rather than assume.
-- [ ] **It must not cost the boot.** The title is the first thing drawn; a
-      renderer starting up behind it before anything is playable is the wrong
-      trade. Measure it, and fall back to a still image if it is not free.
-- [ ] The logo, the sub-line and the cast list keep their contrast over it.
-      `shots` takes the title already.
 
 ### Phase 3 — The Osteomancer, and what a corpse is for
 
@@ -525,7 +548,7 @@ column's checks at the END of the file. Then `shots`.
 
 ### Phase 4 — The Astral-Geometer
 
-**What is true today.** After Phase 1, one world pays in something you carry to
+**What is true today.** After the Osteomancer, one world pays in something you carry to
 a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
 covers three armour slots, and the Cavern has nothing of its own — which Open
 question 5 has been saying about the Prismatic world since the quality ladder
@@ -534,7 +557,7 @@ was retired.
 **Why it is wrong.** A mechanism that exists in exactly one world is a
 mechanism half the game never meets.
 
-**What it is.** Phase 1's machinery with different content in it, which is
+**What it is.** The Osteomancer's machinery with different content in it, which is
 exactly why it is a separate phase and a small one. He is in the Prismatic
 world, he is calm, and he offers a trade rather than begging for one.
 
@@ -555,17 +578,17 @@ world, he is calm, and he offers a trade rather than begging for one.
   balance pass to set rather than a reason to give jewellery implicits here.
   Giving them implicits is a balance change and belongs to the balance pass; do
   not smuggle one in under a phase about a character.
-- Nothing in Phase 1's work may need changing to make this fit. If it does,
-  Phase 1 hard-coded something that should have been a table.
+- Nothing in the Osteomancer's work may need changing to make this fit. If it
+  does, that phase hard-coded something that should have been a table.
 
 **Done when.** A Prismatic descent pays in dust, and a ring walks out of his
 room carrying something a ring cannot otherwise hold.
 
-**What must not break.** The same list as Phase 1, same order.
+**What must not break.** The same list as the Osteomancer, same order.
 
 ### Phase 5 — A quest log instead of a pointing finger
 
-**Not next, and deliberately.** Phase 1 deletes the tutorial outright so the
+**Not next, and deliberately.** Phase 2 deletes the tutorial outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
 eventually becomes, and it does not start until that has happened and the
 systems have settled — the user's words are "once all the systems are in place
@@ -614,7 +637,7 @@ always a crystal.
 - [ ] **Start from what actually confused a player**, not from a list of
       systems. The suspected pair is the bench and the socket — nobody
       discovers "drag a currency onto an item" by clicking about — but that is
-      a guess until somebody has played Phase 1's opening and got stuck.
+      a guess until somebody has played the stripped opening and got stuck.
 
 **Traps.**
 
@@ -750,8 +773,8 @@ without being asked.
   way: how many modifiers they hold. That is the clearest statement of what a
   base tier is, and it is also the least interesting pair of slots in the
   game. Implicits for them would fix that; they are a balance change, so not
-  in a phase about capacity — and Phase 2 leans on this rather than fixing it:
-  a graft ADDS on jewellery because there is nothing there to replace.
+  in a phase about capacity — and the Astral-Geometer leans on this rather than
+  fixing it: a graft ADDS on jewellery because there is nothing to replace.
 - **Fewer items per clear.** Measured before the tooltip and shop work: gear
   is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two
   to eleven pieces a clear** across the bands. The plan was to halve that and
