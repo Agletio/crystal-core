@@ -80,8 +80,22 @@ const crystalCards = () => all('#crystals-list .crystal');
 const currencySlots = () => filled('#inv-currency');
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
-// --- first run asks one question, then plays -------------------------------
-assert($('welcome').hidden === false, 'a new game asks you to choose a skill');
+// --- the way in: title, then a slot, then one question ---------------------
+assert($('title').hidden === false, 'a load lands on the title');
+$('title').click();
+assert($('title').hidden === true, 'which anything dismisses');
+assert($('savedata').hidden === false, 'and it opens onto the slots, full screen');
+assert(
+  $('savedata').classList.contains('modal--full') && $('save-play').hidden === false,
+  'with a Play now on it and no Close to leave by',
+  $('savedata').className
+);
+$('save-play').click();
+$('save-play').click();
+assert($('savedata').hidden === true, 'Play now takes you into the live slot');
+// A slot can hold a game that was never asked what it swings, so playing one
+// still puts the question up rather than assuming a save answered it.
+assert($('welcome').hidden === false, 'and a game with no skill still asks for one');
 assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
 assert($('welcome-name') !== null, 'and asks who you are');
 

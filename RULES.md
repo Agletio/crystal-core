@@ -33,7 +33,7 @@ One phase at a time, and **no stop between them**. Every pass:
    trusting a number written here. The balance pass is written up there too, and
    is not a phase until somebody asks.
 4. Leave the full suite green: `comments`, `typecheck`, `mods`, `build`,
-   `smoke`, `shots`, `guide`. Build before the last three — they load the
+   `smoke`, `shots`, `drag`. Build before the last three — they load the
    bundle, not the source.
 5. Commit and push. Push BEFORE starting the next phase, so the next session
    to fetch sees the work rather than rebuilding it — and because a session's
@@ -345,7 +345,7 @@ them — so `towardWeb` ends at `skills-webwrap` and the step is done when
 `INTRO.crystalSkillLevel`. The WRAPPER and not the svg: `.webwrap` clips its
 children, so an outline on the web inside it is drawn where nobody can see it.
 The step SUGGESTS the nearest notable by name off `pathToNotable` and never
-requires one. `guide.mjs` clicks a region's first live control, and the web's
+requires one. The retired `guide.mjs` clicked a region's first live control, and the web's
 are SVG groups rather than buttons, so its selector takes
 `.web__node--open` as well.
 
@@ -1252,7 +1252,6 @@ two-minute tool timeout will kill them mid-run:
 | `smoke` | ~10s, 527 checks |
 | `demo` | ~2min |
 | `shots` | ~2min — desktop only now, waiting out a whole first descent |
-| `guide` | ~2min — it plays about eleven descents, at `?fast=16` |
 | `drag` | ~20s — one dock reorder, and a window dragged by its head |
 
 None of them hangs. If one looks stuck it is `demo`, `shots` or `guide`, and the
@@ -1279,13 +1278,13 @@ and already automatic.
 | UI logic — a handler, a screen's state, what a button does | `smoke` |
 | layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
 | the dock, a window's position, a drag target | `drag` first — it answers in 20s what `guide` answers in ten minutes |
-| `tutorial.ts`, a button id the opening walks, dock or bench focus | `guide` |
 | art, sprites, icons | `shots` |
 
-**`guide` is not a general regression test and must not be used as one.** It
-exists to prove the guided opening can be finished by clicking only what is lit.
-Run it when the change touches what the opening navigates. A skill tree number
-cannot break it in any way worth ten minutes of waiting for.
+**The guided opening has NO harness.** `npm run guide` was retired with the
+user's agreement when the title screen changed the boot it drove, because the
+phase that deletes `TUTORIAL_STEPS` was already written. Until that phase lands,
+a change to `src/ui/tutorial.ts` is checked by playing it and nothing else — say
+so rather than implying coverage.
 
 **When a UI change breaks something, reach for `drag` before `guide`.** It found
 the handler race that four rounds of guessing at `guide` output did not, because

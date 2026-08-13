@@ -71,6 +71,7 @@ import {
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initKeys } from './ui/keys';
+import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
 import { initWindows, topWindow, windowOffset } from './ui/windows';
 
@@ -134,7 +135,7 @@ document.getElementById('open-character')!.addEventListener('click', () => openC
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
-document.getElementById('open-save')!.addEventListener('click', openSaveData);
+document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
 // The dev kit wipes what you are playing, and it sits in a row you click all
 // day. A new game is a SLOT's action now, on the Save & Load screen.
 const guard = (id: string, title: string, mode: StartMode) =>
@@ -205,7 +206,8 @@ initSaveData(
   },
   // A new game in another slot. The slot has already moved, so `restart` is
   // wiping and writing the one being started rather than the one left behind.
-  () => restart('fresh')
+  () => restart('fresh'),
+  maybeShowWelcome
 );
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
@@ -389,6 +391,10 @@ onRunFocused();
 // belongs to the dev kit's stocked start: a restored save can be mid-opening,
 // where a popup would cover the one control you are allowed to click.
 initWelcome(game, begin);
+
+// The title, and what it opens onto: choosing a game comes before playing one,
+// and a fresh browser goes title -> slots -> New game -> name and skill.
+initTitle(() => openSaveData(true));
 startAutosave(game);
 
 // After the history exists, so the line has somewhere to land.

@@ -47,14 +47,14 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run demo` | sim, economy, trees, balance |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | screenshots, overflow and lockdown probes |
-| `npm run guide` | plays the opening with a real pointer |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
-table. `guide` is the tutorial test and takes minutes; it is not a general
-regression check.
+table. The guided opening has NO harness: `guide` was retired when the title
+screen changed the boot it drove, and the phase that deletes the opening owes
+its replacement.
 
-Build before `smoke`, `shots` or `guide` — they load the bundle, not the source.
+Build before `smoke`, `shots` or `drag` — they load the bundle, not the source.
 
 ## Comments
 

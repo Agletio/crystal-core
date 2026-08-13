@@ -30,6 +30,9 @@ const $ = (id: string) => document.getElementById(id)!;
 let game: GameState;
 let onLoaded: ((healed: Healed) => void) | null = null;
 let onFresh: (() => void) | null = null;
+/** Straight-in: the slot is already loaded, but it may never have been asked
+ *  which skill it swings, so playing one still has to put that question up. */
+let onPlay: (() => void) | null = null;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -233,10 +236,24 @@ async function restore(file: File): Promise<void> {
   onLoaded?.(healed);
 }
 
-export function openSaveData(): void {
+/** `full` is the title's route in: the whole screen, and a Play now that gets
+ *  you into the live slot without reading three rows first. */
+export function openSaveData(full = false): void {
   $('savedata').hidden = false;
+  $('savedata').classList.toggle('modal--full', full);
+  ($('save-play') as HTMLButtonElement).hidden = !full;
+  ($('save-close') as HTMLButtonElement).hidden = full;
   say('');
   render();
+}
+
+/** Straight into the live slot — or, with nothing in it, a new game there. The
+ *  live slot is ALREADY loaded by the time any of this is on screen, so playing
+ *  it is closing the screen rather than loading anything. */
+function playNow(): void {
+  if (!peekSlot(liveSlot())) return newIn(liveSlot());
+  closeSaveData();
+  onPlay?.();
 }
 
 export const closeSaveData = (): void => {
@@ -248,13 +265,16 @@ export const isSaveDataOpen = (): boolean => !$('savedata').hidden;
 export function initSaveData(
   state: GameState,
   loaded: (healed: Healed) => void,
-  fresh: () => void
+  fresh: () => void,
+  play: () => void
 ): void {
   game = state;
   onLoaded = loaded;
   onFresh = fresh;
+  onPlay = play;
 
   ($('save-close') as HTMLButtonElement).onclick = closeSaveData;
+  ($('save-play') as HTMLButtonElement).onclick = playNow;
   ($('save-download') as HTMLButtonElement).onclick = download;
 
   const file = $('save-file') as HTMLInputElement;

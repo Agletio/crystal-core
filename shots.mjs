@@ -198,6 +198,9 @@ for (const vp of VIEWPORTS) {
   // Choosing a skill dismisses the welcome modal and drops you at the Fissure.
   // Blight, when it's on offer, because its poison field is the effect most
   // worth being able to see in a still.
+  await page.evaluate(() => document.getElementById('title')?.click());
+  await page.evaluate(() => document.getElementById('save-play')?.click());
+  await page.waitForTimeout(200);
   await page.evaluate(() => {
     const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
     const blight = cards.find((c) => /blight/i.test(c.textContent ?? ''));

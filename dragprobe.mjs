@@ -40,6 +40,9 @@ await page.goto(`${base}/index.html`, { waitUntil: 'load' });
 await page.waitForTimeout(700);
 
 // Straight to a stocked game: the dev kit start is the one with gear in it.
+await page.evaluate(() => document.getElementById('title')?.click());
+await page.evaluate(() => document.getElementById('save-play')?.click());
+await page.waitForTimeout(200);
 await page.evaluate(() => {
   document.getElementById('welcome-name').value = 'Probe';
   document.querySelectorAll('#welcome-skills .welcomecard')[0]?.click();

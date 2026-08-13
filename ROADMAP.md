@@ -541,11 +541,11 @@ always a crystal.
 
 **Traps.**
 
-- **`npm run guide` loses its subject.** It exists to prove the opening is
-  completable by clicking only what is lit; with nothing lit it has no question
-  to ask. Its replacement is a better one — can a fresh character reach the
-  first crystal by doing what the log says — and writing that is part of this
-  phase, not after it. Do not delete the harness without replacing it.
+- **`npm run guide` is already GONE**, retired when the title screen changed
+  the boot it drove. The opening therefore has no coverage at all right now, and
+  this phase owes its replacement: can a fresh character reach the first crystal
+  by doing what the log says? Write that harness as part of the phase — the debt
+  is real and it is this phase's to pay.
 - The demo walks `TUTORIAL_STEPS` and holds every step's `done` predicate to
   being reachable. That walkthrough goes with the steps it walks.
 - `RULES.md` names the fifteen steps by id. Same commit.

@@ -190,6 +190,44 @@
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
   .seedbar code { color: var(--quartz); }
 
+  /* --- the title ---------------------------------------------------------
+     The seam, lit from below: the same wall `body::before` paints, turned up
+     so it reads as a place rather than as a background. */
+  .title {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; cursor: pointer; text-align: center;
+    background-color: var(--void); background-image: var(--grit);
+  }
+  .title::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(120% 70% at 50% 118%, rgba(196,99,30,.30), transparent 62%),
+      radial-gradient(90% 55% at 50% -12%, rgba(88,180,224,.10), transparent 60%);
+  }
+  .title > * { position: relative; z-index: 1; }
+  .title__logo { margin: 0; font-size: clamp(34px, 7vw, 68px); letter-spacing: .06em; }
+  .title__logo span { color: var(--rust); }
+  .title__sub { margin: -6px 0 0; font-size: 13px; color: var(--dust); letter-spacing: .18em; text-transform: uppercase; }
+  .title__cast { display: flex; align-items: flex-end; gap: 8px; margin-top: 10px; }
+  .title__cast .icon { image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.55)); }
+  .title__go {
+    margin: 10px 0 0; font-family: var(--display); font-size: 12px;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--citrine);
+    animation: titlepulse 1.9s ease-in-out infinite;
+  }
+  @keyframes titlepulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+  /* Opened FROM the title it is the whole screen, not a window: there is
+     nothing behind it yet to be a window over. */
+  .modal--full {
+    bottom: 0; z-index: 55; pointer-events: auto;
+    background-color: var(--void); background-image: var(--grit);
+  }
+  .modal--full .modal__card { width: min(720px, calc(100vw - 40px)); }
+  /* Nothing behind it is reachable, because nothing behind it is chosen yet. */
+  body:has(.modal--full:not([hidden])) .corner,
+  body:has(.modal--full:not([hidden])) .dock { display: none; }
+
   /* The bottom-right stack: skills, then the rail beneath them. One column, so
      a rail wrapping to a third row pushes the skills UP rather than under. */
   /* Over every window and every scrim: the rail is how a screen is opened and
@@ -1875,10 +1913,20 @@
 </div>
 <!-- Where the save lives. There is no account behind the hosted build, so the
      screen's real job is saying which browser your progress is in. -->
+<!-- The first thing a load lands on. Above every window, because nothing else
+     is up yet and nothing else may be reached past it. -->
+<div class="title" id="title">
+  <h1 class="title__logo">Crystal <span>Core</span></h1>
+  <p class="title__sub">A thin place in the rock.</p>
+  <div class="title__cast" id="title-cast"></div>
+  <p class="title__go">Click anywhere to begin</p>
+</div>
+
 <div class="modal" id="savedata" hidden>
   <div class="modal__card modal__card--ask">
     <div class="modal__head">
       <h2 class="modal__title">Save &amp; Load</h2>
+      <button class="mini mini--go mini--enter" id="save-play" hidden>Play now</button>
       <button class="mini" id="save-close">Close</button>
     </div>
     <div class="modal__body">

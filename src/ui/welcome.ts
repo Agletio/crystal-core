@@ -59,7 +59,6 @@ export function initWelcome(state: GameState, chosen: (guided: boolean) => void)
     skip.classList.toggle('mini--off', !guided);
   };
 
-  maybeShowWelcome();
 }
 
 export function maybeShowWelcome(): void {

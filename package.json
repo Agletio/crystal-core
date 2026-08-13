@@ -11,7 +11,6 @@
     "smoke": "node smoke.mjs",
     "shots": "node shots.mjs",
     "mods": "tsx src/mods-check.ts",
-    "guide": "node guide.mjs",
     "drag": "node dragprobe.mjs",
     "comments": "node tools/comment-budget.mjs"
   },
