@@ -4,11 +4,13 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Two phases. Phase 1 is buildable now; Phase 2 WAITS.** The arc dictated in one
-go is finished — the game has rooms you arrive in and people standing in them,
-and all four people are built. Phase 1 is a later batch: the skills screen, and
-a second way to move. Phase 2 is teaching, and it does not start until the
-stripped opening has been played — see its own note.
+**Three phases. Phases 1 and 2 are buildable now; Phase 3 WAITS.** The arc
+dictated in one go is finished — the game has rooms you arrive in and people
+standing in them, and all four people are built. Phase 1 is an art pipeline with
+a generator behind it, which the user redirected onto and which therefore goes
+first. Phase 2 is the batch after the arc: the skills screen, and a second way
+to move. Phase 3 is teaching, and it does not start until the stripped opening
+has been played — see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -377,7 +379,115 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The skills screen, and a second way to move
+### Phase 1 — An art pipeline, and a generator behind it
+
+**The user redirected onto this mid-session, so it goes FIRST. Nothing about
+the movement phase below changed — it is written, it is ready, and it is now
+Phase 2. Putting art first is the user's ordering, not a judgement that the
+other one is worth less.**
+
+**What the user asked for, in their words.** *"I want the art to be as good as
+we can get it without becoming impossible to build/balance the game later.
+Don't want it to lag, don't want it to be impossible to sim and test the
+balance later on."* They are trialling **PixelLab** on a free tier of **40
+generations**, so a wasted generation is a real cost and the pipeline exists
+before the first call, not after it.
+
+**Three things were MEASURED this session. Do not re-derive them.**
+
+- **Art cannot hurt the sim, at all.** `src/sim/` imports exactly two things
+  from `src/render/`: the `MonsterRank` TYPE, which is erased at compile, and
+  `hasFamilyArt` / `hasWeaponArt`, which only ask whether art exists for a base
+  id. No pixel data and no dimensions cross that line. So the balance harnesses,
+  the demo and every headless run are immune to anything in this phase — the
+  user's worry about not being able to sim or test later is already answered by
+  the architecture.
+- **The lag ceiling is ONE function.** `makeSheet` in `src/render/sprites.ts`
+  eagerly draws every `SPRITE_KINDS` × every rank × every frame at boot — 234
+  cells today, ~2 MB of canvas. A descent only ever uses about 8 creature types,
+  so drawing lazily on first use and memoising drops boot work by roughly 8×
+  and is what moves the ceiling from hundreds of frames to thousands. Do this
+  FIRST: it is small, it is measurable, and every later decision reads it.
+- **The game needs about 300 authored grids, not tens of thousands.** 26
+  creatures × 6 frames (4 walk, attack, hurt) = 156; 27 armour families × 4
+  pieces = 108 — poses are whole-pixel SHIFTS, never new art; 13 weapons; ~10
+  portraits. Ranks are a runtime RECOLOUR and are not authored. Roughly 600 if
+  creatures ever go 4-directional, which today they are not: sprites are drawn
+  facing +x and MIRRORED (`s.scale.x = -1` in `pixi.ts`), so directions would be
+  a renderer change as well as a 4× count.
+
+**The decision, and what it beat.** *Mine, and the whole shape of the phase.*
+**A generator is an AUTHORING tool, never a shipping format.** Its output is
+converted into the character grids the game already uses, a human accepts it,
+and the accepted grid is committed as TypeScript. That keeps every standing
+rule — no binary assets, colours out of CSS at runtime, zones recolouring for
+free, the canvas2d fallback untouched, `shots` untouched. What it beat was
+shipping a packed atlas, which is the right answer at tens of thousands of
+sprites and the wrong one at 300: it would trade the runtime palette away to
+solve a problem this game does not have. If the ceiling is ever genuinely hit,
+atlases are still there, chosen against a real number.
+
+- [ ] **`makeSheet` draws lazily.** One function, and the lag ceiling.
+- [ ] **A converter**: PNG → the character grid a `BeastArt` frame is. Decode
+      with Node's own `zlib` — this repo carries no dependency it does not need
+      — block-average down to the target grid, snap every pixel to the nearest
+      of that creature's inks, and emit the `rows({ … })` a bestiary entry
+      holds. Integer downscale ONLY: a non-integer one destroys pixel art, and
+      the tool should refuse rather than blur.
+- [ ] **A manifest is the source of truth, not the images.** One row per
+      sprite — id, prompt, params, seed — with generation a pure function of the
+      row and content-addressed on its hash, so nothing is ever paid for twice
+      and a diff reads "14 sprites requested" instead of a wall of binaries.
+- [ ] **A contact sheet, and an accept flag written back to the manifest.** At
+      volume the bottleneck stops being generation and becomes deciding what is
+      good enough to ship. Review the CONVERTED grid rather than the raw PNG:
+      the conversion is lossy and the grid is what actually ships.
+- [ ] **One adapter module is the only thing that knows PixelLab's API**, so
+      swapping generators costs one file. Written blind — see the trap below.
+- [ ] **Two generations, spent on a test pair**: one organic quadruped and one
+      crystalline creature. Between them they answer the only question that can
+      kill this, which is whether the output survives being reduced to our inks.
+
+**Traps.**
+
+- **The API could not be read from the cloud VM.** `api.pixellab.ai` was
+  hard-blocked at the egress proxy — 403 on the CONNECT tunnel, for `curl` and
+  `WebFetch` alike — so their docs are UNREAD and the adapter is written against
+  an API nobody here has seen. The fix is the environment's **network access**
+  set to `Custom` with `api.pixellab.ai` and `*.pixellab.ai` allowed, **and the
+  "also include default list of common package managers" box ticked** — Custom
+  REPLACES the trusted list, so leaving it unticked kills npm and the build. The
+  key arrives as `PIXELLAB_API_KEY` in the environment's variables. Read their
+  docs before trusting a line of the adapter.
+- **A creature is EIGHT inks, not four.** `#` outline, `m` mass, `M` lit, `s`
+  shade, `e` eye, `x` a per-rank accent, and `b`/`o` for the magic and rare
+  halos — see `monsterArt`. The accent and the halo are applied at RUNTIME off
+  `MonsterRank`, so generated art must contain neither. Ask the generator for
+  one flat creature with no glow and no rim light, or every rank looks the same.
+- **The demo fails art that is lit from underneath.** One light, from above and
+  slightly in front, and a highlight directly under a shadow is a failure. A
+  generator does not know that, so it is an acceptance criterion at review.
+- **A cloud VM is reclaimed on inactivity, so a generated PNG on disk is not
+  durable.** It does not matter: the committed grid is the artifact and the PNG
+  is disposable. Do not build a cache that assumes the disk survives.
+- **Resolution is the real quality lever, and it is deferred on purpose.**
+  Grid 24 with flat inks is a tight box; grid 32 is where generated art starts
+  to beat hand-authored. `RULES.md` has the rule — 32 needs `CELL` raised to 96
+  first, because 48/32 is 1.5 and the rect seams stop landing on pixel
+  boundaries. Do it AFTER the test pair, never before: there is no point paying
+  4× the canvas per cell until the palette question is answered.
+
+**Done when.** A row can be added to the manifest, generated, converted,
+reviewed and committed without anybody hand-carrying a file, and the suite is
+green with the first accepted creature in `BEASTIARY`.
+
+**What must not break.** `wellFormed(frames, grid)` holds every frame square and
+matching its declared grid, and the demo sweeps `BEASTIARY` for it. `npm run
+shots` and `tools/model-sheet.mts` are how art claims get evidence — a
+screenshot, never an impression. And nothing in `src/sim` may learn what a
+pixel is.
+
+### Phase 2 — The skills screen, and a second way to move
 
 **Dictated in one go. Five asks, and the last two are most of the work.**
 
@@ -500,7 +610,7 @@ descent it is in still ends, and that nobody moves across an authored room; all
 four now have a second skill to hold to. `MAIN_SKILLS` is what every harness
 builds a character to fight with and Leap is not in it.
 
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
