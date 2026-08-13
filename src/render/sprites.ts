@@ -16,10 +16,11 @@ import type { PoseId } from './pose';
 import type { Look } from '../types';
 
 /**
- * Pixels per sprite cell. Generous so the shapes stay crisp when scaled up, and
- * divisible by every grid art is authored on: 48/16 is 3, 48/24 is 2.
+ * Pixels per sprite cell. It has to divide by every grid art is authored on or
+ * the rect seams stop landing on pixel boundaries: 96/16 is 6, 96/24 is 4,
+ * 96/32 is 3. Pixi scales by 1/CELL, so raising it costs texture, not size.
  */
-export const CELL = 48;
+export const CELL = 96;
 /** A CREATURE's cycle, and its own: the doll walks on `WALK_POSES`, which is
  *  longer. Two is enough for legs to alternate on something with none. */
 export const WALK_FRAMES = 2;
