@@ -21,7 +21,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { balance, generate } from './pixellab.mts';
+import { HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate } from './pixellab.mts';
+import type { Point } from './pixellab.mts';
 import { decodePng } from './png.mts';
 import { asSource, debackground, toGrid } from './convert.mts';
 import { inksFor, paletteAsk } from './inks.mts';
@@ -35,6 +36,8 @@ type Sprite = {
   seed: number;
   accepted: boolean;
   rows: string[] | null;
+  /** The three the game wants: two of the walk, then the swing. */
+  frames?: string[][] | null;
   hash: string | null;
 };
 type Manifest = { style: number; sprites: Sprite[] };
@@ -49,11 +52,40 @@ const write = (m: Manifest): void => writeFileSync(MANIFEST, `${JSON.stringify(m
 /** What a generation depends on, and nothing else. The grid is a conversion
  *  setting, so changing it must not invalidate a PNG already paid for. */
 function hashOf(sprite: Sprite, style: number): string {
-  const of = { prompt: sprite.prompt, size: sprite.size, seed: sprite.seed, style };
+  // HOUSE_WORDS is part of the ask, so a change to the look has to invalidate
+  // every row the way a changed prompt does.
+  const of = { prompt: sprite.prompt + HOUSE_WORDS, size: sprite.size, seed: sprite.seed, style };
   return createHash('sha256').update(JSON.stringify(of)).digest('hex').slice(0, 16);
 }
 
 const pngPath = (hash: string): string => join(CACHE, `${hash}.png`);
+
+/**
+ * Two of the walk and a swing, written against the joints the estimator found.
+ * Contact has the legs apart, pass brings them under and lifts the body, and
+ * the swing throws the right arm forward — the same three `POSES` describes.
+ */
+function walkPoses(base: Point[]): Point[][] {
+  const shift = (by: Record<string, [number, number]>, lift = 0): Point[] =>
+    base.map((k) => {
+      const d = by[k.label] ?? [0, 0];
+      return { ...k, x: k.x + d[0], y: k.y + d[1] - lift };
+    });
+  const STRIDE = 0.06;
+  const contact = shift({
+    'LEFT KNEE': [STRIDE, 0], 'LEFT LEG': [STRIDE * 1.6, 0],
+    'RIGHT KNEE': [-STRIDE, 0], 'RIGHT LEG': [-STRIDE * 1.6, 0],
+    'LEFT ELBOW': [-STRIDE, 0], 'LEFT ARM': [-STRIDE * 1.4, 0],
+    'RIGHT ELBOW': [STRIDE, 0], 'RIGHT ARM': [STRIDE * 1.4, 0],
+  });
+  const pass = shift({}, 0.02);
+  const swing = shift({
+    'RIGHT SHOULDER': [STRIDE * 0.5, 0],
+    'RIGHT ELBOW': [STRIDE * 2, -STRIDE], 'RIGHT ARM': [STRIDE * 3.2, -STRIDE * 1.6],
+    'LEFT ELBOW': [-STRIDE, 0], 'LEFT ARM': [-STRIDE * 1.5, 0],
+  });
+  return [contact, pass, swing];
+}
 
 function pick(m: Manifest, ids: string[]): Sprite[] {
   if (!ids.length) return m.sprites;
@@ -125,6 +157,31 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'skeleton') {
+    const [s] = pick(m, rest);
+    const found = await estimateSkeleton(readFileSync(pngPath(hashOf(s, m.style))));
+    console.log(`  ${s.id}: ${found.length} joints`);
+    for (const k of found) console.log(`    ${k.label.padEnd(16)} ${k.x.toFixed(1)}, ${k.y.toFixed(1)}`);
+    return;
+  }
+
+  if (command === 'animate') {
+    for (const s of pick(m, rest)) {
+      const hash = hashOf(s, m.style);
+      const png = readFileSync(pngPath(hash));
+      const base = await estimateSkeleton(png);
+      console.log(`  ${s.id}: ${base.length} joints -> 3 frames`);
+      const made = await animateSkeleton(png, s.size, walkPoses(base), paletteAsk(s.tone));
+      s.frames = made.map((frame, i) => {
+        writeFileSync(join(CACHE, `${hash}-f${i}.png`), frame);
+        return toGrid(debackground(decodePng(frame)), s.grid, inksFor(s.tone));
+      });
+      write(m);
+      console.log(`  ${s.id}: ${s.frames.length} frames converted`);
+    }
+    return;
+  }
+
   if (command === 'accept') {
     const [id] = rest;
     const [s] = pick(m, [id]);
@@ -136,10 +193,22 @@ async function main(): Promise<void> {
   }
 
   if (command === 'emit') {
-    for (const s of pick(m, rest)) {
-      if (!s.rows) continue;
-      console.log(`\n// ${s.id}\n${asSource(s.rows)}`);
-    }
+    // Machine-written and never edited by hand: a 256 grid is 65,536 characters
+    // a frame, which would bury the hand-drawn table it would otherwise sit in.
+    const done = m.sprites.filter((s) => s.accepted && s.frames?.length);
+    const body = done
+      .map((s) => `  ${s.id}: {\n    grid: ${s.grid},\n    frames: [\n${(s.frames ?? [])
+        .map((f) => `      ${asSource(f).replace(/\n/g, '\n      ')},`)
+        .join('\n')}\n    ],\n  },`)
+      .join('\n');
+    writeFileSync(
+      new URL('../../src/render/generated-art.ts', import.meta.url).pathname,
+      `/**\n * Written by \`tools/art/art.mts emit\`. Do not edit by hand.\n *\n` +
+        ` * Every accepted generated creature, as the grids the renderer draws.\n */\n` +
+        `export type GeneratedArt = { grid: number; frames: string[][] };\n\n` +
+        `export const GENERATED: Record<string, GeneratedArt> = {\n${body}\n};\n`
+    );
+    console.log(`  emitted ${done.length} to src/render/generated-art.ts`);
     return;
   }
 

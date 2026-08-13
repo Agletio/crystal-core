@@ -24,10 +24,11 @@ export type Ask = {
  *  look cannot drift. The limbs clause is for the ANIMATOR rather than the eye:
  *  `estimate-skeleton` cannot find joints on a body whose legs are one mass. */
 export const HOUSE_WORDS =
-  ', a grim creature of an underground dark-fantasy world, no modern clothing,' +
-  ' no tools, no props, no text, side view facing right, full body in frame,' +
-  ' limbs clearly separated and visible, dark outline, flat solid colours,' +
-  ' no background, no ground shadow';
+  ', gothic horror creature, gaunt and menacing, filthy and weathered, caked in' +
+  ' dirt and dried blood, grim adult tone, never cute, never chibi, no modern' +
+  ' clothing, no tools, no props, no text, side view facing right, full body in' +
+  ' frame, limbs clearly separated and visible, dark outline, no background,' +
+  ' no ground shadow, lit from above and from the front right';
 
 /** Flat and unlit: the rank accent and the halo are added at RUNTIME, and art
  *  arriving with a glow on it already makes every rank look the same. */
@@ -89,6 +90,40 @@ export async function balance(): Promise<number> {
   const res = await fetch(`${BASE}/balance`, { headers: { authorization: `Bearer ${key()}` } });
   if (!res.ok) throw new Error(`pixellab /balance ${res.status}`);
   return ((await res.json()) as { usd: number }).usd;
+}
+
+export type Point = { x: number; y: number; label: string; z_index?: number };
+
+/** Where the joints are in a drawing, so a pose can be written against them. */
+export async function estimateSkeleton(png: Buffer): Promise<Point[]> {
+  const res = await call('/estimate-skeleton', {
+    image: { type: 'base64', base64: png.toString('base64') },
+  });
+  return res.keypoints as Point[];
+}
+
+/**
+ * Three poses in, three frames out — the model is a 3-frame window and rejects
+ * any other count, which happens to be exactly `CREATURE_FRAMES`: two of the
+ * walk and the swing. Text-driven animation is locked to 64px, so this is the
+ * only road to a moving 256 sprite.
+ */
+export async function animateSkeleton(
+  reference: Buffer,
+  size: number,
+  poses: Point[][],
+  inks?: string[]
+): Promise<Buffer[]> {
+  if (poses.length !== 3) throw new Error(`animate wants 3 poses, got ${poses.length}`);
+  const res = await call('/animate-with-skeleton', {
+    view: HOUSE_STYLE.view,
+    direction: HOUSE_STYLE.direction,
+    image_size: { width: size, height: size },
+    reference_image: { type: 'base64', base64: reference.toString('base64') },
+    skeleton_keypoints: poses,
+    ...(inks?.length ? { color_image: { type: 'base64', base64: paletteImage(inks) } } : {}),
+  });
+  return (res.images as Array<{ base64: string }>).map((i) => Buffer.from(i.base64, 'base64'));
 }
 
 /** One generation. Returns PNG bytes; nothing here decides what happens to them. */

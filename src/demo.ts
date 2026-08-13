@@ -1414,14 +1414,22 @@ rule('SPRITES — is the pixel art well formed?');
     }
     return bad;
   };
+  // Against the RIGHT way round rather than against zero or a share. A count
+  // is not comparable across grids — an artist places 576 pixels and holds it
+  // to none, where a generated frame is 65,536 and its grime speckles both ways
+  // — but texture speckles them EVENLY, so a sprite lit correctly still has far
+  // more shadow-under-highlight than highlight-under-shadow. Only an inverted
+  // light flips that, which is the thing worth failing on.
+  const inverted = (g: string[], l: string, s: string): boolean =>
+    upsideDown(g, l, s) > upsideDown(g, s, l);
   const wrongWay =
     Object.values(BEASTIARY)
       .flatMap((a) => [...a.frames, ...(a.attack ? [a.attack] : [])])
-      .reduce((n, g) => n + upsideDown(g, 'M', 's'), 0) +
+      .filter((g) => inverted(g, 'M', 's')).length +
     Object.values(FAMILY_ART)
       .flatMap((a) => [a.helmet, a.body, a.gloves, ...a.boots])
-      .reduce((n, g) => n + upsideDown(g, 'P', 'd'), 0);
-  check(wrongWay === 0, 'and every one of them is lit from above', `${wrongWay} pixels are not`);
+      .filter((g) => inverted(g, 'P', 'd')).length;
+  check(wrongWay === 0, 'and every one of them is lit from above', `${wrongWay} are lit from under`);
 
   // Two frames that are identical are not a walk cycle. Cheap to write, and
   // exactly the thing you would not notice from a still.
