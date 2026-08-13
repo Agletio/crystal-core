@@ -56,7 +56,7 @@ import {
   socketSize,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
-import { SCENE_BY_ID } from '../scenes';
+import { SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
@@ -460,7 +460,7 @@ export class RunSim {
       id: this.nextId++,
       kind: 'monster',
       sprite,
-      scale: 0.9,
+      scale: scaleFor(sprite),
       rank: 'common',
       radius: 0.3,
       skillId: null,

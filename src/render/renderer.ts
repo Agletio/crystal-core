@@ -849,6 +849,129 @@ export const PROPS: Record<string, (floor: FloorPalette, x: number, y: number) =
 
   lantern_dark: (floor) => lantern(floor, false),
   lantern_lit: (floor) => lantern(floor, true),
+
+  /** A case of volumes, and the one prop that is TALL. It runs well above its
+   *  own tile: height is the whole silhouette, and a room of these cannot be
+   *  mistaken for a room of trestles. */
+  shelf: (floor, x, y) => {
+    const out: Decal[] = [
+      { x: 0.1, y: -0.62, w: U, h: 1.5, colour: floor.timber, alpha: 1 },
+      { x: 0.84, y: -0.62, w: U, h: 1.5, colour: floor.timber, alpha: 1 },
+    ];
+    for (let i = 0; i < 4; i++) {
+      const at = snap(-0.5 + i * 0.34);
+      out.push({ x: 0.1, y: at, w: 0.78, h: U, colour: floor.timber, alpha: 0.9 });
+      let cursor = 0.14;
+      for (let n = 0; cursor < 0.78; n++) {
+        const wide = tileNoise(x, y, 30 + i * 5 + n) < 0.45;
+        const w = wide ? U * 2 : U;
+        const tall = snap(0.18 + tileNoise(x, y, 51 + i * 5 + n) * 0.1);
+        out.push({ x: snap(cursor), y: snap(at - tall), w, h: tall, colour: floor.chip, alpha: 0.85 });
+        cursor += w + U;
+      }
+    }
+    return out;
+  },
+
+  /** A stone table: WIDE and low, the opposite silhouette to the shelf. Spans
+   *  the whole tile like the bench so two side by side are one slab. */
+  slab: (floor, x, y) => {
+    const out: Decal[] = [
+      { x: 0, y: 0.5, w: 1, h: U * 3, colour: floor.rockLit, alpha: 1 },
+      { x: 0, y: 0.5 + U * 3, w: 1, h: U * 2, colour: floor.rockShade, alpha: 0.9 },
+    ];
+    for (const leg of [0.1, 0.78]) {
+      out.push({ x: leg, y: 0.5 + U * 5, w: U * 2, h: 0.22, colour: floor.rockShade, alpha: 0.8 });
+    }
+    // Something part-sorted on top, low and never symmetrical.
+    for (let i = 0; i < 3; i++) {
+      if (tileNoise(x, y, 80 + i) < 0.4) continue;
+      out.push({
+        x: snap(0.12 + i * 0.3),
+        y: snap(0.5 - U * 2),
+        w: U * 2,
+        h: U * 2,
+        colour: floor.chip,
+        alpha: 0.8,
+      });
+    }
+    return out;
+  },
+
+  /** A heap: ROUND and low, with no straight edge anywhere on it. */
+  bones: (floor, x, y) => {
+    const out: Decal[] = [];
+    for (let i = 0; i < 7; i++) {
+      const n = tileNoise(x, y, 90 + i);
+      const w = n < 0.5 ? U * 3 : U * 2;
+      out.push({
+        x: snap(0.1 + n * 0.6),
+        y: snap(0.5 + tileNoise(x, y, 97 + i) * 0.32),
+        w,
+        h: U,
+        colour: i % 3 === 0 ? floor.rockLit : floor.chip,
+        alpha: 0.85,
+      });
+    }
+    return out;
+  },
+
+  /** The thing he is watching: a RING, hung, and the only curve in the game's
+   *  furniture. Drawn as a ring of blocks because a circle at this size is one. */
+  orrery: (floor, x, y) => {
+    const out: Decal[] = [
+      { x: 0.49, y: -0.7, w: U, h: 0.55, colour: floor.timber, alpha: 0.8 },
+    ];
+    const ring: Array<[number, number]> = [
+      [0.38, -0.2], [0.5, -0.24], [0.62, -0.2],
+      [0.7, -0.08], [0.72, 0.06], [0.7, 0.2],
+      [0.62, 0.3], [0.5, 0.34], [0.38, 0.3],
+      [0.3, 0.2], [0.28, 0.06], [0.3, -0.08],
+    ];
+    for (const [rx, ry] of ring) {
+      out.push({ x: snap(rx), y: snap(ry), w: U, h: U, colour: floor.glint, alpha: 0.9 });
+    }
+    // One bead on it, and the middle it goes round.
+    const spin = Math.floor(tileNoise(x, y, 12) * ring.length);
+    const [bx, by] = ring[spin];
+    out.push({ x: snap(bx), y: snap(by), w: U * 2, h: U * 2, colour: floor.flame, alpha: 0.85 });
+    out.push({ x: 0.47, y: 0.02, w: U * 2, h: U * 2, colour: floor.lit, alpha: 0.7 });
+    return out;
+  },
+
+  /** A pedestal: NARROW and upright, so the orrery room has a vertical that is
+   *  not a shelf and not a lamp. */
+  plinth: (floor) => [
+    { x: 0.3, y: 0.62, w: 0.4, h: U * 2, colour: floor.rockShade, alpha: 0.95 },
+    { x: 0.36, y: 0.16, w: 0.28, h: 0.46, colour: floor.rockLit, alpha: 1 },
+    { x: 0.28, y: 0.08, w: 0.44, h: U * 2, colour: floor.rockLit, alpha: 1 },
+    { x: 0.42, y: -0.02, w: U * 2, h: U * 2, colour: floor.glint, alpha: 0.9 },
+  ],
+
+  /** A frame of lamps hung in a row: the workshop's own shape, and the only
+   *  prop that is wide AND tall. */
+  lamprack: (floor, x, y) => {
+    const out: Decal[] = [
+      { x: 0.08, y: -0.5, w: U, h: 1.3, colour: floor.timber, alpha: 1 },
+      { x: 0.88, y: -0.5, w: U, h: 1.3, colour: floor.timber, alpha: 1 },
+      { x: 0.08, y: -0.5, w: 0.82, h: U, colour: floor.timber, alpha: 1 },
+    ];
+    for (let i = 0; i < 3; i++) {
+      const at = snap(0.18 + i * 0.28);
+      const drop = snap(0.1 + tileNoise(x, y, 60 + i) * 0.2);
+      out.push({ x: at, y: -0.5, w: U, h: drop, colour: floor.timber, alpha: 0.7 });
+      const alight = tileNoise(x, y, 68 + i) > 0.55;
+      out.push({
+        x: snap(at - U),
+        y: snap(-0.5 + drop),
+        w: U * 3,
+        h: U * 3,
+        colour: alight ? floor.flame : floor.chip,
+        alpha: alight ? 0.9 : 0.65,
+      });
+    }
+    return out;
+  },
 };
 
 /** A lamp: a foot, two uprights, a handle, and a light in it or not. The dark

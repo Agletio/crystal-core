@@ -1340,6 +1340,32 @@ rule('SPRITES — is the pixel art well formed?');
   );
   check(noProp.length === 0, 'and every prop in one is drawn', noProp.join(', '));
 
+  // Where a prop is PUT, which the id check cannot see. A room is authored by
+  // hand in absolute tiles, so the three ways to get that wrong are outside the
+  // walls, stacked on another prop, and standing on the hole or on the person.
+  const misplaced = SCENES.flatMap((s) => {
+    const { room, entrance, stands, props } = s.plan;
+    const seen = new Set<string>();
+    return props.flatMap((p) => {
+      const at = `${p.x},${p.y}`;
+      const wrong: string[] = [];
+      const inside =
+        p.x >= room.x && p.y >= room.y && p.x < room.x + room.w && p.y < room.y + room.h;
+      if (!inside) wrong.push('outside the room');
+      if (seen.has(at)) wrong.push('stacked');
+      if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
+      if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
+      seen.add(at);
+      return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
+    });
+  });
+  check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
+
+  // A room of one shape is a room that reads as the last one. Each has its own
+  // signature furniture; the lanterns are the only thing they all share.
+  const thin = SCENES.filter((s) => new Set(s.plan.props.map((p) => p.id)).size < 3).map((s) => s.id);
+  check(thin.length === 0, 'and no room is furnished out of one or two shapes', thin.join(', '));
+
   // Every monster the tables can spawn has to have a drawing, or a pack of
   // them arrives as whatever the fallback happens to be. A boss is not in
   // `MONSTERS` — that is the pack pool — so its own table is swept too.
