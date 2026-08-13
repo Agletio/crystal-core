@@ -826,8 +826,8 @@ and the element id — Escape and the window stack both come off it, so neither 
 a fifth place; `guideContext()`'s `top`, which is what lets a tutorial step point
 at a button inside it; and `CLOSES` in `src/ui/tutorial.ts`, which is how
 `viaHeader` walks a player back OUT of it. Miss either of the last two and the
-guided opening rings something a popup is covering, which `npm run guide`
-reports as being trapped.
+guided opening rings something a popup is covering, which nothing now catches
+but playing it.
 
 **Three save slots, one of them LIVE.** `crystal-core.slot` remembers which,
 `liveSlot()` is the default argument of `saveGame`/`loadGame`/`savedAt`/
@@ -1249,21 +1249,19 @@ two-minute tool timeout will kill them mid-run:
 | | |
 |---|---|
 | `comments`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s, 527 checks |
+| `smoke` | ~10s; it prints its own count, and that is the number |
 | `demo` | ~2min |
 | `shots` | ~2min — desktop only now, waiting out a whole first descent |
 | `drag` | ~20s — one dock reorder, and a window dragged by its head |
 
-None of them hangs. If one looks stuck it is `demo`, `shots` or `guide`, and the
-answer is to wait or run it in the background, never to assume it broke.
+None of them hangs. If one looks stuck it is `demo` or `shots`, and the answer
+is to wait or run it in the background, never to assume it broke.
 
-`guide` used to be ten minutes and is now about two. The frame loop scales its
-`dt` off `?fast=`, gated to a loopback host, so the sim takes the SAME ticks to
-the same end and merely gets there sooner — the seed still replays. It drops
-back to real time for the drag checks: at 16x a descent can finish between a
+**A harness that plays the game runs it at `?fast=`.** The frame loop scales its
+`dt` off that query, gated to a loopback host, so the sim takes the SAME ticks
+to the same end and merely gets there sooner — the seed still replays. Drop back
+to real time before any pointer work: at 16x a descent can finish between a
 mouse-down and a mouse-up and redraw the dock under the drag.
-Its turn budget is 900, which is roughly double what a pass uses — the budget
-is not the binding constraint, the wall clock is.
 
 ### Run what the change can break, and nothing else
 
@@ -1277,8 +1275,9 @@ and already automatic.
 | the sim, grants, economy, crystals, trees | `demo` |
 | UI logic — a handler, a screen's state, what a button does | `smoke` |
 | layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
-| the dock, a window's position, a drag target | `drag` first — it answers in 20s what `guide` answers in ten minutes |
+| the dock, a window's position, a drag target | `drag` — 20s, and it prints what `elementFromPoint` hits on a failure |
 | art, sprites, icons | `shots` |
+| `src/ui/tutorial.ts` | nothing automated — play it, and say so |
 
 **The guided opening has NO harness.** `npm run guide` was retired with the
 user's agreement when the title screen changed the boot it drove, because the
@@ -1286,12 +1285,12 @@ phase that deletes `TUTORIAL_STEPS` was already written. Until that phase lands,
 a change to `src/ui/tutorial.ts` is checked by playing it and nothing else — say
 so rather than implying coverage.
 
-**When a UI change breaks something, reach for `drag` before `guide`.** It found
-the handler race that four rounds of guessing at `guide` output did not, because
-on a failure it prints what `elementFromPoint` actually hits at the drop point
-rather than leaving stacking to be inferred from a screenshot. Reasoning about
-z-order and `--dock-h` by eye produced four wrong answers in a row; one hit test
-produced the right one.
+**When a UI change breaks something, reach for `drag` first.** It found the
+handler race that four rounds of reading a slower harness's output did not,
+because on a failure it prints what `elementFromPoint` actually hits at the drop
+point rather than leaving stacking to be inferred from a screenshot. Reasoning
+about z-order and `--dock-h` by eye produced four wrong answers in a row; one
+hit test produced the right one.
 
 **Before a push, the whole suite.** This section is about the loop while you
 work, not about what a commit is held to.
@@ -1319,9 +1318,10 @@ balance number that reports and can never fail.
   exactly this reason. Adding a test in the middle that sells, wears or sorts
   will break checks hundreds of lines further down, and the failure will name a
   piece rather than your change.
-- **The guided opening (`npm run guide`) walks the real UI with a real pointer.**
-  `src/ui/tutorial.ts` is data — steps with `done` predicates — so when a change
-  breaks it, the fix is editing those steps, not the harness. A step that is
+- **The guided opening has no harness; `src/ui/tutorial.ts` is data.** Steps
+  with `done` predicates, so when a change breaks it the fix is editing those
+  steps. Everything below is what the retired harness taught, and it is kept
+  because the steps still behave this way. A step that is
   already satisfied is SKIPPED and never comes back, so "do this thing that
   happens at a random moment" belongs as a branch inside an existing step's
   `text`/`target`, not as a step of its own. The meeting is the worked example.
@@ -1366,15 +1366,12 @@ balance number that reports and can never fail.
   played. `again` sits through exactly one — the second clear, which is what
   `INTRO.firstCrystalClear` costs — so nothing in the harness edits the save to
   reach a step.
-- **The opening ends inside a popup.** The last step sockets the crystal from the
-  collection, so `guide.mjs` closes whatever is open before its post-opening
-  work — the tree, the dock and the worn column all click header buttons a
-  modal covers.
-- **The post-opening DRAG tests flake.** `npm run guide` ends by dragging a
-  dock slot, a worn piece and a tree node with a real pointer, and
-  `dragging a dock slot did not reorder it` has been seen once on a bundle
-  that passed the same test either side of it. Re-run before treating one as a
-  regression; the same class of flake is the one below.
+- **The opening ends inside a popup.** The last step sockets the crystal from
+  the collection, so anything driving the UI afterwards has to close what is
+  open first — the tree, the dock and the worn column all sit under a modal.
+- **Pointer DRAG tests flake.** `npm run drag` is the one that does this now,
+  and a reorder has been seen to fail once on a bundle that passed either side
+  of it. Re-run before treating one as a regression; the cause is below.
 - **Measure a box with `hover()` first when a drag test aims at one.** Playwright's
   actionability waits for the element to stop MOVING; a raw `boundingBox()`
   does not. The bench going from empty to full grows the card and re-centres

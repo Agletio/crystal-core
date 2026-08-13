@@ -325,9 +325,8 @@ measurements all drive `RunSim` directly and never ask for a scene.
 |---|---|
 | `demo` | a run that never ends, a container that does not claim its ids (Phase 1), a banned phrasing anywhere |
 | `shots` | it WAITS up to two minutes for the Lampwright panel and fails the run if a first descent never produces one. Phases 2 and 3 both move that panel and both must move the shot with it |
-| `guide` | `meet` and `meet_crystal`. Its dormant branch reads the state, reads what is open, then presses Escape — and `RULES.md` records that the meeting is the one modal it never Escapes |
 | `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so Phase 1's third column goes at the END of the file |
-| `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it before `guide` the moment a new layer stops taking a click |
+| `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it the moment a new layer stops taking a click |
 
 **Every phase from here puts itself in the dev kit.** `START_PRESETS.dev` and
 `DEV_CURRENCY` in `src/data.ts` are how a screen gets opened without farming for
@@ -693,8 +692,8 @@ without being asked.
 - **The opening can skip the haul step.** `take_haul` is satisfied when the
   haul is empty, and a first descent drops gear at 5% a kill — so about a
   third of the time there is nothing to take and the step the opening exists
-  to teach is silently skipped. `npm run guide` passes either way, which is
-  the part that makes it worth writing down. The fix is probably a guaranteed
+  to teach is silently skipped, and nothing catches it — which is the part that
+  makes it worth writing down. The fix is probably a guaranteed
   first drop rather than a change to the step.
 - **No per-item "keep" rule for the haul.** Every drop goes to the haul and
   triage is manual. A filter that hides a drop is the kind of thing you only get
