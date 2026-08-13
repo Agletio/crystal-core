@@ -1013,9 +1013,9 @@ export function portraitIcon(id: string, size = 96): SVGSVGElement | null {
 }
 
 /**
- * A relic: a skull with the jaw still on, which is the one shape that reads as
- * "a body" at twelve pixels. One picture for every relic — what tells them
- * apart is the name, and there is only ever one in a room.
+ * A relic is one silhouette each. A skull with the jaw on is the shape that
+ * reads as "a body" at twelve pixels; the dust is grains, all the same shape,
+ * which is the whole of what the man who wants it says about it.
  */
 const SPECIMEN = [
   '...oooooo...',
@@ -1032,19 +1032,46 @@ const SPECIMEN = [
   '...oooooo...',
 ];
 
-export const relicIcon = (size = 26): SVGSVGElement =>
+const DUST = [
+  '............',
+  '...o..o.....',
+  '..occo..o...',
+  '..occo.occo.',
+  '...oo..occo.',
+  '.o..o...oo..',
+  'occo...o....',
+  'occo..occo..',
+  '.oo...occo..',
+  '...o...oo...',
+  '..occo......',
+  '..occo...o..',
+];
+
+const RELIC_ART: Record<string, string[]> = {
+  pristine_specimen: SPECIMEN,
+  prismatic_dust: DUST,
+};
+
+export const relicIcon = (id: string, size = 26): SVGSVGElement =>
   sprite(
-    SPECIMEN,
-    { o: INK, b: 'var(--chalk)', l: 'var(--dust)', L: 'var(--void)', w: 'var(--rust)' },
+    RELIC_ART[id] ?? SPECIMEN,
+    {
+      o: INK,
+      b: 'var(--chalk)',
+      l: 'var(--dust)',
+      L: 'var(--void)',
+      w: 'var(--rust)',
+      c: 'var(--pearl)',
+    },
     size,
-    'relic'
+    `relic-${id}`
   );
 
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
     return crystalIcon((item.meta.level as number) ?? 1, size);
   }
-  if (item.kind === 'relic') return relicIcon(size);
+  if (item.kind === 'relic') return relicIcon(item.base, size);
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }
 

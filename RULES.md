@@ -223,13 +223,25 @@ it: the only thing you can do with one is walk it to somebody.
 
 **A graft replaces the IMPLICIT, and that is the whole trade.** *The user's
 answer, asked and given.* What the base was FOR goes and a `FORGED` line stands
-in `Item.implicits` in its place. `helmet`, `body` and `boots`; a unique is
+in `Item.implicits` in its place. A unique is
 REFUSED, because `makeUnique` puts a named piece's entire identity into
 `implicits` and no currency in the game could put it back — `isUnique` is the
 test and missing it ruins saves. The armour rating is not the implicit and is
 not touched. A second graft replaces the first, so a first one is never a
 mistake nobody can walk back, and `item.meta.grafted` marks it so the card stops
 calling it "base".
+
+**A line belongs to the person who writes it.** `ForgedDef.who` names a room,
+and `forgedFor` / `graftRefusal` / `graftable` all take it. The man who takes
+bodies has no opinion about a ring and says so in his own beats, so the panel
+has to agree with him — a single table keyed only by slot would have both of
+them offering everything and neither of them meaning what they said.
+
+**Jewellery has no implicit, so a graft there ADDS.** *Decided, and the phase's
+own note.* That makes a ring the one slot where a graft costs no base line —
+so the line that changes the DELIVERY charges `manaMultiplier` for it, which is
+the rule the trees already follow, and conditional damage stays free. Giving
+jewellery implicits is a balance change and belongs to the balance pass.
 
 **A graft is not a currency.** It happens in a room, spends a relic and one
 piece, and writes the line — `src/game/graft.ts`, beside `crafting.ts` rather

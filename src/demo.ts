@@ -59,6 +59,7 @@ import {
   FORGED,
   FORGED_BY_ID,
   RELICS,
+  RELIC_BY_ID,
   WEAPON_BASES,
   BASE_TIER_ILVL,
   GEAR_BASES,
@@ -6169,7 +6170,7 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 }
 
 // ===========================================================================
-rule('THE OSTEOMANCER — does a corpse buy a line no drop can roll?');
+rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
 
 // A graft is the one thing in the game that makes a piece of gear give a thing
 // UP to get a thing. Everything here is about that trade actually happening:
@@ -6180,10 +6181,12 @@ rule('THE OSTEOMANCER — does a corpse buy a line no drop can roll?');
 
   // A gate is a WALL: the pool is filtered before the roll, so no amount of
   // rarity finds a specimen anywhere but the Rot.
-  const wrong = MAP_THEMES.filter(
-    (t) => t.id !== 'demonic' && RELICS.some((r) => opensHere(r.gate, POWER.max, t.id))
-  ).map((t) => t.id);
-  check(wrong.length === 0, 'a specimen only exists in the Rot', wrong.join(', '));
+  const wrong = RELICS.flatMap((r) =>
+    MAP_THEMES.filter((t) => t.id !== r.gate.zone && opensHere(r.gate, POWER.max, t.id)).map(
+      (t) => `${r.id} in ${t.id}`
+    )
+  );
+  check(wrong.length === 0, `each of the ${RELICS.length} relics exists in ONE world`, wrong.join(', '));
   check(
     RELICS.every((r) => SCENE_BY_ID[r.wants] !== undefined),
     'and every relic names a room somebody is standing in',
@@ -6291,7 +6294,12 @@ rule('THE OSTEOMANCER — does a corpse buy a line no drop can roll?');
     for (const [id, value] of Object.entries(f.mod.grants ?? {})) {
       const def = GRANT_BY_ID[id];
       if (!def) { undeclared.push(`${f.mod.id}/${id}`); continue; }
-      if (!MAIN_SKILLS.some((s) => behaviourReads(s.behaviour, id))) unread.push(`${f.mod.id}/${id}`);
+      // A switch read by the STAT pass rather than by a delivery is read by
+      // every skill there is — the cost multiplier is the worked example.
+      const byStats = def.reads.includes(STATS);
+      if (!byStats && !MAIN_SKILLS.some((s) => behaviourReads(s.behaviour, id))) {
+        unread.push(`${f.mod.id}/${id}`);
+      }
       if (def.say?.(value) === null || def.say === undefined) mute.push(`${f.mod.id}/${id}`);
     }
   }
@@ -6326,6 +6334,66 @@ rule('THE OSTEOMANCER — does a corpse buy a line no drop can roll?');
     `a Bleed on every hit clears the same seed faster: ${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`,
     `${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`
   );
+
+  // --- jewellery, which has no implicit to replace ----------------------
+  // Decided: the graft ADDS where there is nothing, so a ring is the one slot
+  // where it costs no base line. The one that changes the DELIVERY charges
+  // mana for it instead, which is the rule the trees already follow.
+  {
+    const jewels = ['ring', 'amulet'];
+    const has = jewels.filter((k) => graftableKinds().includes(k));
+    check(has.length === jewels.length, 'a ring and an amulet are both worked on', has.join(', '));
+
+    const bare = GEAR_BASES.filter((b) => jewels.includes(b.kind));
+    const withLine = bare.filter((b) => (b.implicit?.length ?? 0) > 0).map((b) => b.id);
+    check(
+      withLine.length === 0,
+      `none of the ${bare.length} jewellery bases has a line of its own to lose`,
+      withLine.join(', ')
+    );
+
+    // Each person writes their OWN lines. The man who takes bodies has no
+    // opinion about a ring and says so out loud, so the panel must agree.
+    const homeless = FORGED.filter((f) => !SCENE_BY_ID[f.who]).map((f) => f.mod.id);
+    check(homeless.length === 0, 'every forged line is written in a room somebody stands in', homeless.join(', '));
+    const barren = RELICS.filter((r) => FORGED.every((f) => f.who !== r.wants)).map((r) => r.id);
+    check(barren.length === 0, 'and every relic buys something where it is taken', barren.join(', '));
+
+    const at = createGame('fresh');
+    const ring = makeGear('silver_band', 40);
+    check(
+      graftRefusal(ring, 'ossuary') !== null && graftRefusal(ring, 'orrery') === null,
+      'a ring taken to the man who wants bodies is a piece he refuses',
+      `${graftRefusal(ring, 'ossuary')} / ${graftRefusal(ring, 'orrery')}`
+    );
+    const helm2 = makeGear('skirmisher_helmet_t1', 20);
+    check(
+      graftRefusal(helm2, 'orrery') !== null && graftRefusal(helm2, 'ossuary') === null,
+      'and a helmet taken to the one who wants dust is refused the other way',
+      `${graftRefusal(helm2, 'orrery')} / ${graftRefusal(helm2, 'ossuary')}`
+    );
+    at.inventory.push(ring);
+    at.relics = [makeRelic(RELIC_BY_ID.prismatic_dust)];
+    const forgedRing = forgedFor(ring, 'orrery')[0];
+    const cut = spendRelic(at, at.relics[0], ring, forgedRing.mod.id)!;
+    check(
+      cut !== null && cut.implicits.length === 1,
+      'and a graft on one ADDS where there was nothing',
+      String(cut?.implicits.length)
+    );
+    equipItem(at, cut, 'ring1');
+    const grants = treeGrants(at.character);
+    check(
+      grants.explode !== undefined,
+      'a ring walks out carrying something a ring cannot otherwise hold',
+      JSON.stringify(grants)
+    );
+    // The one that changes the delivery pays for it, wherever the switch came
+    // from. Conditional damage stays free, the same as on a tree.
+    const delivery = FORGED.filter((f) => GRANT_BY_ID[Object.keys(f.mod.grants ?? {})[0] ?? '']?.changes === 'targets' || f.mod.grants?.explode);
+    const free = delivery.filter((f) => f.mod.grants?.manaMultiplier === undefined).map((f) => f.mod.id);
+    check(free.length === 0, 'and the line that changes the cast charges mana for it', free.join(', '));
+  }
 
   // `heal()` puts the base's line BACK when a forged def is gone. It drops
   // items by BASE and has never healed a MOD, so this is the first of its kind.

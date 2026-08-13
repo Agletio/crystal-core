@@ -4,10 +4,10 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Two phases.** Phase 1 finishes the arc dictated in one go: the game has
-**rooms you arrive in and people standing in them**, and what is left of that
-arc is one more character with the Osteomancer's machinery and different content
-in it. Phase 2 is teaching, and it WAITS: see its own note.
+**One phase, and it WAITS.** The arc dictated in one go is finished: the game
+has **rooms you arrive in and people standing in them**, and all four people
+are built. What is left here is teaching, which does not start until the
+stripped opening has been played — see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -17,25 +17,24 @@ still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked; the thing most likely to be asked for after
 these is the **balance pass**, written up below.
 
-**The ladder's order is load-bearing.** Every one of them is the same object
-with different content in it:
-
-```
-1  the Astral-Geometer  the Osteomancer's machinery, jewellery, a calmer voice
-2  the quest log        teaching by quests, and the pointing finger deleted
-```
-
-If a phase here has to be reordered, say so and reorder the WHOLE ladder rather
-than lifting one out of it.
-
 **Nothing is blocked on an open question.** Every decision the arc needed has
-been taken and written down, so the phase to pick is simply the lowest-numbered
-one still here. Before starting any of them, read **Before you touch the
-ladder**, below — it holds the parts that belong to no single phase, and every
-one of them is something a phase would otherwise get wrong on its own.
+been taken and written down. Before starting anything, read **Before you touch
+the ladder**, below — it holds the parts that belong to no single phase, and
+every one of them is something a phase would otherwise get wrong on its own.
 
-**What the last eleven phases turned out to know that their writing did not.**
+**What the last twelve phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **A table keyed only by SLOT made both men offer everything.** The phase said
+  "`FORGED_MODS` for `ring` and `amulet` only", which is true of the lines and
+  false of the panel: with `kinds` as the only key, the man who takes bodies
+  offered a ring the graft he had just said he had no opinion about.
+  `ForgedDef.who` names the room. A table keyed by the thing rather than by the
+  person is the shape to watch the next time two characters share one.
+- **A check written for one entry breaks on the second.** "A specimen only
+  exists in the Rot" was written as `RELICS.some(...)` and started failing the
+  moment a relic existed that was meant to be somewhere else. Sweeping a table
+  is only right when it asks each row about ITSELF.
 
 - **`fromHaul` pushed straight into `game.inventory`.** Every kind that is not
   gear was routed correctly by `addItem` and then routed WRONG the moment it
@@ -306,17 +305,17 @@ of it.
 | `src/game/scenes.ts` | the SCHEDULE: what happens at the end of this clear | as `src/game/crystals.ts` is for gifts |
 | `src/ui/speech.ts` | the bubble: a line over the body saying it | one module, one screen |
 
-**ONE scene per cleared descent, and the order is fixed.** By the Astral-Geometer four
-things can be owed at the same moment — a crystal, a boss, a corpse to hand
-over, dust to trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
+**ONE scene per cleared descent, and the order is fixed.** Four things can be
+owed at the same moment — a crystal, a boss, a corpse to hand over, dust to
+trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
 one function that answers what happens next, it returns **at most one** scene,
 and everything else keeps waiting for the clear after. The order is:
 
 1. the Lampwright, whenever `giftWaiting` says something is owed
 2. the Lambengolmor, when a boss is scheduled or a key was spent
-3. whoever wants a relic you are carrying — the Osteomancer today, and the
-   Astral-Geometer through the same clause, since rung 3 asks the SCENES table
-   which room somebody is holding a relic for rather than naming one
+3. whoever wants a relic you are carrying. Rung 3 asks the SCENES table which
+   room somebody is holding a relic for rather than naming anyone, so the
+   Osteomancer and the Astral-Geometer come through one clause
 
 Highest first, every time, with no interleaving and no roll. `RULES.md` says a
 gift is scheduled and never rolled; the same reason covers all four, because a
@@ -377,59 +376,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The Astral-Geometer
-
-**What is true today.** One world pays in something you carry to a person, and
-it is the Demonic one. `RELICS` has one entry (`pristine_specimen`), `FORGED`
-has three lines covering `helmet`, `body` and `boots`, and the Cavern has
-nothing of its own — which Open question 5 has been saying about the Prismatic
-world since the quality ladder was retired.
-
-**Why it is wrong.** A mechanism that exists in exactly one world is a
-mechanism half the game never meets.
-
-**What it is.** The Osteomancer's machinery with different content in it, which is
-exactly why it is a separate phase and a small one. He is in the Prismatic
-world, he is calm, and he offers a trade rather than begging for one.
-
-- [ ] A second `RELICS` entry — prismatic dust — gated `{ zone: 'prismatic' }`,
-      with `wants` naming his room. `sceneWaiting`'s rung 3 already picks the
-      first `SCENES` entry somebody is holding a relic for, so a second one
-      needs no schedule of its own — check that before writing one.
-- [ ] His room in `src/scenes/`, and a line in `SCENES`.
-- [ ] `FORGED` entries for `ring` and `amulet` only. `graftRefusal` reads
-      `graftableKinds()` off the table, so the two new slots open themselves.
-- [ ] Art: `PORTRAITS` at 48, `BEASTIARY` at 24, no `attack` frame. Any new
-      palette entry the tone mixes has to be added to `tools/model-sheet.mts`.
-- [ ] Voice: he is the one who is not desperate. Same rule as every other
-      character — flavour, no screen named, no number quoted.
-- [ ] The panel is `src/ui/graft.ts` and it should not need touching. If it
-      does, it hard-coded something about the Osteomancer that should have been
-      a field on `SceneDef` — `openGraft` already takes the speaker.
-
-**Traps.**
-
-- **Jewellery has no implicit to replace.** `amulet`/`jade_amulet`/`onyx_amulet`
-  and `ring`/`silver_band`/`gold_band` differ in exactly one way — how many
-  modifiers they hold — and the backlog note about that lives next door to this
-  phase. **Decided: the graft ADDS where there is nothing**, so jewellery is the
-  one slot where a graft costs nothing, and that asymmetry is a price for the
-  balance pass to set rather than a reason to give jewellery implicits here.
-  Giving them implicits is a balance change and belongs to the balance pass; do
-  not smuggle one in under a phase about a character.
-- Nothing in the Osteomancer's work may need changing to make this fit. If it
-  does, that phase hard-coded something that should have been a table. The one
-  place to look first is `src/ui/graft.ts`, which names `OSTEOMANCER` for the
-  title — that is the field that should move to `SceneDef`.
-- **The dev preset holds every relic**, so the kit will schedule HIS room too.
-  Any check asserting nothing is owed has to clear `relics`, as two already do.
-
-**Done when.** A Prismatic descent pays in dust, and a ring walks out of his
-room carrying something a ring cannot otherwise hold.
-
-**What must not break.** The same list as the Osteomancer, same order.
-
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -600,8 +547,11 @@ editing two places.
   that sorts into the dock beside a pair of boots is a corpse you sell by
   accident.
 - **A graft leaves the armour rating alone**, adds where jewellery has no
-  implicit to replace, and can be done again over itself. Three small ones,
-  each written into the phase that owns it.
+  implicit to replace, and can be done again over itself. Three small ones.
+- **A forged line belongs to the PERSON, not the slot.** `ForgedDef.who`. The
+  Astral-Geometer's phase said "for `ring` and `amulet` only", which described
+  the lines and not the panel — keyed by slot alone, the man who takes bodies
+  offered a ring the graft he had just said he had no opinion about.
 
 ## Backlog
 
@@ -619,8 +569,10 @@ without being asked.
   way: how many modifiers they hold. That is the clearest statement of what a
   base tier is, and it is also the least interesting pair of slots in the
   game. Implicits for them would fix that; they are a balance change, so not
-  in a phase about capacity — and the Astral-Geometer leans on this rather than
-  fixing it: a graft ADDS on jewellery because there is nothing to replace.
+  in a phase about capacity — and the Astral-Geometer leans on it rather than
+  fixing it: a graft ADDS on jewellery because there is nothing to replace, so
+  the line that changes the delivery charges mana instead. Giving jewellery
+  implicits would change what that graft costs, which is the balance pass's.
 - **Fewer items per clear.** Measured before the tooltip and shop work: gear
   is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two
   to eleven pieces a clear** across the bands. The plan was to halve that and

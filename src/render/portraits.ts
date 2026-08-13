@@ -23,6 +23,80 @@ const rows = gridRows(48);
 
 export const PORTRAITS: Record<string, PortraitArt> = {
   /**
+   * Calm, and looking THROUGH something: a banded lens set across the eyes with
+   * a light travelling it, where the other two have faces you can meet. Pale
+   * and cool, and nothing about him is in a hurry.
+   */
+  geometer: {
+    grid: 48,
+    rows: rows({
+        1: '..................##########....................',
+        2: '...............####HHHHHHHH####.................',
+        3: '.............##HHHHHHHHHHHHHHHH##...............',
+        4: '...........##HHHHHHHHHHHHHHHHHHHH##.............',
+        5: '..........#HHHHHHHHHHHHHHHHHHHHHHHh#............',
+        6: '.........#HHHHHHHHHHHHHHHHHHHHHHHhhh#...........',
+        7: '.........#HHHHH##############HHHhhhhh#..........',
+        8: '.........#HHHH#PPPPPPPPPPPPPP#Hhhhhhhh#.........',
+        9: '.........#HHH#PPPPPPPPPPPPPPPPp#hhhhhhh#........',
+        10: '.........#HHH#PPPPPPPPPPPPPPPPpp#hhhhhhh#.......',
+        11: '.........#HH#PPPPPPPPPPPPPPPPPPpp#hhhhhhh#......',
+        12: '.........#HH#PPPPPPPPPPPPPPPPPPpp#hhhhhh#.......',
+        13: '.........#HH#######################hhhhhh#......',
+        14: '.........#HH#vvvvvvvvvvvvvvvvvvvv#hhhhhh#.......',
+        15: '.........#HH#vVVvvvvvvvvvvvvvvvVv#hhhhhh#.......',
+        16: '.........#HH#vVeVvvvvvvvvvvvvVeVv#hhhhh#........',
+        17: '.........#HH#vVVvvvvvvvvvvvvvvVVv#hhhhh#........',
+        18: '.........#HH#vvvvvvvvvvvvvvvvvvvv#hhhhh#........',
+        19: '.........#HH######################hhhhh#........',
+        20: '.........#HH#PPPPPPPPPPPPPPPPPPpp#hhhh#.........',
+        21: '.........#HH#PPPPPPPPPPPPPPPPPPpp#hhhh#.........',
+        22: '.........#HH#PPPPPPPPkkkkPPPPPPpp#hhhh#.........',
+        23: '.........#HH#PPPPPPPkkkkkkPPPPPpp#hhhh#.........',
+        24: '.........#HH#PPPPPPPkkkkkkPPPPPpp#hhh#..........',
+        25: '..........#H#PPPPPPPPkkkkPPPPPPpp#hhh#..........',
+        26: '..........#H#PPPPPPPPPPPPPPPPPPpp#hh#...........',
+        27: '..........#H#PPPPPPPPPPPPPPPPPPpp#hh#...........',
+        28: '..........#H#PPPPPPkkkkkkkkPPPPpp#hh#...........',
+        29: '..........#H#PPPPPPPPPPPPPPPPPPpp#hh#...........',
+        30: '...........#h#PPPPPPPPPPPPPPPPpp#hh#............',
+        31: '...........#h##PPPPPPPPPPPPPPp##hh#.............',
+        32: '............#hh###PPPPPPPPP###hhh#..............',
+        33: '.............#hhh##########hhhhh#...............',
+        34: '..............#hhhhhhhhhhhhhhh#.................',
+        35: '...............###hhhhhhhhh###..................',
+        36: '..................#########.....................',
+        37: '.........########PPPPPPPPPP########.............',
+        38: '......####rrrrrrrrrrrrrrrrrrrrrrrr####..........',
+        39: '....##rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr##........',
+        40: '..##rrrrrrrrrrrrrrVVrrrrrrrrrrrrrrrrrrrr##......',
+        41: '.#rrrrrrrrrrrrrrrVeeVrrrrrrrrrrrrrrrrrrrr#......',
+        42: '#rrrrrrrrrrrrrrrrVeeVrrrrrrrrrrrrrrrrrrrrr#.....',
+        43: 'rrrrrrrrrrrrrrrrrrVVrrrrrrrrrrrrrrrrrrrrrrr#....',
+        44: 'rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr#...',
+        45: 'rrrrrrrrrrrrrrrrRRRRRRRRRRrrrrrrrrrrrrrrrrrrr#..',
+        46: 'rrrrrrrrrrrrrrrRRRRRRRRRRRRrrrrrrrrrrrrrrrrrr#..',
+        47: 'rrrrrrrrrrrrrrRRRRRRRRRRRRRRrrrrrrrrrrrrrrrrr#..',
+    }),
+    ink: (p) => ({
+      '#': mix(p.gloom, p.void, 0.55),
+      // Grown long and never cut, the colour of the rock he lives in.
+      H: mix(p.rose, p.blush, 0.35),
+      h: mix(p.rose, p.gloom, 0.45),
+      P: mix(p.blush, p.pearl, 0.35),
+      p: mix(p.blush, p.rose, 0.5),
+      k: mix(p.gloom, p.void, 0.3),
+      // The lens. Dark glass with a light going along it, which is what the
+      // Cavern's own rock does — he is wearing a piece of the place.
+      v: mix(p.gloom, p.void, 0.15),
+      V: mix(p.lilac, p.gloom, 0.35),
+      e: p.pearl,
+      r: mix(p.orchid, p.void, 0.35),
+      R: mix(p.orchid, p.gloom, 0.5),
+    }),
+  },
+
+  /**
    * Leaning INTO the frame, which nobody else does. A bone half-mask shoved up
    * onto the brow, one eye wide under it and the mouth open mid-ask; small
    * bones strung on cords across the shoulders, because he keeps the good ones.

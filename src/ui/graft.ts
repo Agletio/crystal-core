@@ -1,13 +1,16 @@
 /**
- * The Osteomancer's bench, and it is the LAST BEAT of his room rather than a
- * screen: the same bubble his lines came in, anchored over his own head.
+ * Somebody's bench, and it is the LAST BEAT of their room rather than a screen:
+ * the same bubble their lines came in, anchored over their own head. Whose it
+ * is comes in as an argument — the room says who is standing in it, and this
+ * module names nobody.
  *
  * Two picks and a button. Nothing is spent until the button, and Keep it walks
- * out holding the specimen — he keeps waiting, since holding one is the whole
- * of what schedules him.
+ * out still holding the relic — they keep waiting, since carrying one is the
+ * whole of what schedules them.
  */
-import { OSTEOMANCER, RELIC_BY_ID } from '../data';
+import { RELIC_BY_ID } from '../data';
 import type { ForgedDef } from '../data';
+import type { SceneDef } from '../scenes';
 import { forgedFor, graftable, spendRelic } from '../game/graft';
 import type { GameState } from '../game/state';
 import { baseTier } from '../mods';
@@ -31,6 +34,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let onDone: (() => void) | null = null;
 let relic: Item | null = null;
+let room: SceneDef | null = null;
 let piece: Item | null = null;
 let line: ForgedDef | null = null;
 
@@ -65,7 +69,7 @@ function renderLines(): void {
   $('graft-lineslabel').hidden = piece === null;
   if (!piece) return;
 
-  for (const def of forgedFor(piece)) {
+  for (const def of forgedFor(piece, room?.id)) {
     const btn = el('button', `graft__line${def === line ? ' graft__line--on' : ''}`);
     btn.append(el('b', undefined, def.mod.name));
     btn.append(el('span', undefined, forgedSays(def)));
@@ -82,9 +86,9 @@ function renderPieces(): void {
   const host = $('graft-pieces');
   host.replaceChildren();
 
-  const all = graftable(game);
+  const all = graftable(game, room?.id);
   if (all.length === 0) {
-    host.append(el('p', 'empty', 'Nothing you are carrying is any use to him.'));
+    host.append(el('p', 'empty', 'Nothing you are carrying is any use here.'));
     return;
   }
   for (const item of all) {
@@ -93,12 +97,12 @@ function renderPieces(): void {
       `slot slot--gear slot--t${baseTier(item)}${item === piece ? ' slot--on' : ''}`
     ) as HTMLButtonElement;
     btn.append(itemIcon(item, 30));
-    attachTooltip(btn, () => itemCard(item, ['its base line is what he writes over']));
+    attachTooltip(btn, () => itemCard(item, ['what the base gave it is what gets written over']));
     btn.onclick = () => {
       piece = item;
       // The lines are per slot, so a pick that no longer fits is a pick that
       // would write a helmet's line onto a pair of boots.
-      if (line && !forgedFor(item).includes(line)) line = null;
+      if (line && !forgedFor(item, room?.id).includes(line)) line = null;
       renderPieces();
       renderLines();
       sync();
@@ -111,23 +115,24 @@ function sync(): void {
   ($('graft-do') as HTMLButtonElement).disabled = piece === null || line === null;
 }
 
-export function openGraft(who: string, held: Item): void {
+export function openGraft(def: SceneDef, held: Item): void {
   relic = held;
+  room = def;
   piece = null;
   line = null;
 
   const face = $('graft-face');
   face.replaceChildren();
-  const portrait = portraitIcon(who, 52);
+  const portrait = portraitIcon(def.who, 52);
   if (portrait) face.append(portrait);
-  $('graft-title').textContent = OSTEOMANCER.name;
+  $('graft-title').textContent = def.name;
 
   const row = $('graft-relic');
   row.replaceChildren();
   row.append(itemIcon(held, 34));
   row.append(el('span', 'met__name', held.name));
-  const def = RELIC_BY_ID[held.base];
-  if (def) attachTooltip(row, () => def.flavour);
+  const relicDef = RELIC_BY_ID[held.base];
+  if (relicDef) attachTooltip(row, () => relicDef.flavour);
 
   renderPieces();
   renderLines();
@@ -139,6 +144,7 @@ export function openGraft(who: string, held: Item): void {
 /** Walking out with it. Nothing is spent, so he is owed the same room again. */
 export function closeGraft(): void {
   relic = null;
+  room = null;
   piece = null;
   line = null;
   $('graft').hidden = true;
@@ -153,7 +159,7 @@ export function initGraft(state: GameState, done: () => void): void {
   ($('graft-do') as HTMLButtonElement).onclick = () => {
     if (!relic || !piece || !line) return;
     const made = spendRelic(game, relic, piece, line.mod.id);
-    if (made) note(`${OSTEOMANCER.name} wrote ${line.mod.name} into your ${made.name}`, 'add');
+    if (made) note(`${room?.name} wrote ${line.mod.name} into your ${made.name}`, 'add');
     closeGraft();
   };
 }

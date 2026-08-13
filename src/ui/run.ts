@@ -465,7 +465,7 @@ function speak(): void {
   // over until you press the button, and Keep it walks out still holding it.
   const wanted = relicFor(game, def.id);
   if (wanted) {
-    startSpeech(def.who, def.name, def.beats ?? [], () => openGraft(def.who, wanted));
+    startSpeech(def.who, def.name, def.beats ?? [], () => openGraft(def, wanted));
     return;
   }
   if (!greeting) return;

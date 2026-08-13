@@ -13,24 +13,29 @@ import { gearKindOf, isUnique, relicsIn, wornItems } from './state';
 import type { GameState } from './state';
 import type { Item, RolledMod } from '../types';
 
-export const graftableKinds = (): string[] => [...new Set(FORGED.flatMap((f) => f.kinds))];
+export const graftableKinds = (who?: string): string[] => [
+  ...new Set(FORGED.filter((f) => who === undefined || f.who === who).flatMap((f) => f.kinds)),
+];
 
-/** Why this piece cannot be worked on, or null. A unique's whole identity is
- *  in `implicits`, so grafting over one deletes it and nothing restores it. */
-export function graftRefusal(item: Item): string | null {
-  if (item.kind !== 'gear') return 'he only wants armour';
+/** Why this piece cannot be worked on HERE, or null. A unique's identity is
+ *  all in `implicits`: graft over one and nothing can restore it. */
+export function graftRefusal(item: Item, who?: string): string | null {
+  if (item.kind !== 'gear') return 'nothing here is done to that';
   if (isUnique(item)) return 'a named piece is already what it is';
   const kind = gearKindOf(item);
-  if (!kind || !graftableKinds().includes(kind)) return 'he has no use for that piece';
+  if (!kind || !graftableKinds(who).includes(kind)) return 'no use for that piece';
   return null;
 }
 
-export const graftable = (game: GameState): Item[] =>
-  [...game.inventory, ...wornItems(game)].filter((i) => graftRefusal(i) === null);
+export const graftable = (game: GameState, who?: string): Item[] =>
+  [...game.inventory, ...wornItems(game)].filter((i) => graftRefusal(i, who) === null);
 
-export const forgedFor = (item: Item): ForgedDef[] => {
+/** What THIS person writes on this piece: the man who takes bodies has no
+ *  opinion about a ring, and says so out loud. */
+export const forgedFor = (item: Item, who?: string): ForgedDef[] => {
   const kind = gearKindOf(item);
-  return kind ? FORGED.filter((f) => f.kinds.includes(kind)) : [];
+  if (!kind) return [];
+  return FORGED.filter((f) => f.kinds.includes(kind) && (who === undefined || f.who === who));
 };
 
 /** Fixed values: a decision that rolls badly is a gamble rather than a trade. */
@@ -68,7 +73,7 @@ export function graft(item: Item, forgedId: string): Item | null {
   return out;
 }
 
-/** The relic he is owed, or null. Held is the whole of the condition. */
+/** The relic this room is owed, or null. Holding one is the whole condition. */
 export const relicFor = (game: GameState, sceneId: string): Item | null =>
   relicsIn(game).find((r) => RELIC_BY_ID[r.base]?.wants === sceneId) ?? null;
 
@@ -83,7 +88,6 @@ export function spendRelic(game: GameState, relic: Item, item: Item, forgedId: s
   return made;
 }
 
-/** Wherever the piece was kept — the bag or a worn slot — it stays there. */
 function replaceGraft(game: GameState, was: Item, now: Item): void {
   const at = game.inventory.indexOf(was);
   if (at >= 0) {

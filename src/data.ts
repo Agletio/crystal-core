@@ -1122,21 +1122,25 @@ export const GEAR_MODS: ModDef[] = [
 ];
 
 /**
- * What the Osteomancer will write over a base's own line, and nothing else in
- * the game can. Never rolled — weight 0, and the pool is weighted — but present
- * in `ALL_MODS`, so a save resolves one and `npm run mods` holds it to the same
+ * What somebody will write over a base's own line, and nothing else in the game
+ * can. Never rolled — weight 0, and the pool is weighted — but present in
+ * `ALL_MODS`, so a save resolves one and `npm run mods` holds it to the same
  * rules as a line that drops.
  *
- * `kinds` is which armour a line may be grafted onto, read by the panel rather
+ * `kinds` is which gear a line may be grafted onto, read by the panel rather
  * than by `appliesTo`: a graft is not a currency and never asks the pool.
+ * `who` is whose room it is written in — the man who takes bodies has no
+ * opinion about a ring, and says so out loud.
  */
 export interface ForgedDef {
   mod: ModDef;
   kinds: string[];
+  who: string; // a `SceneDef` id
 }
 
 export const FORGED: ForgedDef[] = [
   {
+    who: 'ossuary',
     kinds: ['helmet'],
     mod: {
       id: 'forged_burst',
@@ -1151,6 +1155,7 @@ export const FORGED: ForgedDef[] = [
     },
   },
   {
+    who: 'ossuary',
     kinds: ['body'],
     mod: {
       id: 'forged_bleed',
@@ -1165,6 +1170,7 @@ export const FORGED: ForgedDef[] = [
     },
   },
   {
+    who: 'ossuary',
     kinds: ['boots'],
     mod: {
       id: 'forged_stride',
@@ -1174,6 +1180,39 @@ export const FORGED: ForgedDef[] = [
       tags: ['forged'],
       tiers: [
         { ilvl: 1, weight: 0, stats: [{ stat: 'moveSpeed', form: 'more', range: [18, 18] }] },
+      ],
+    },
+  },
+  // Jewellery has no implicit, so a graft here ADDS where there is nothing —
+  // which is why the one that changes the DELIVERY charges mana for it, the
+  // same rule the trees follow. The other is conditional damage, and free.
+  {
+    who: 'orrery',
+    kinds: ['ring'],
+    mod: {
+      id: 'forged_facet',
+      slot: 'implicit',
+      name: 'Facet-Cut',
+      appliesTo: ['gear'],
+      tags: ['forged'],
+      grants: { explode: { radius: 1.4, multiplier: 0.3 }, manaMultiplier: 1.15 },
+      tiers: [
+        { ilvl: 1, weight: 0, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [10, 10] }] },
+      ],
+    },
+  },
+  {
+    who: 'orrery',
+    kinds: ['amulet'],
+    mod: {
+      id: 'forged_angle',
+      slot: 'implicit',
+      name: 'Long-Angle',
+      appliesTo: ['gear'],
+      tags: ['forged'],
+      grants: { moreFar: { beyond: 4, more: 1.25 } },
+      tiers: [
+        { ilvl: 1, weight: 0, stats: [{ stat: 'attackRange', form: 'flat', range: [1, 1] }] },
       ],
     },
   },
@@ -2245,9 +2284,37 @@ export const OSTEOMANCER = {
 };
 
 /**
+ * The Astral-Geometer, who is in the Cavern and is the one down here who is not
+ * in a hurry. He measures the rock and thinks it is measuring back. Flavour
+ * like everyone else's: no screen, no currency, no number.
+ */
+export const ASTRAL_GEOMETER = {
+  name: 'the Astral-Geometer',
+  sprite: 'geometer',
+  scene: 'orrery',
+  seen: 'Something turning, slowly, and a long way in. Somebody hung it there.',
+  beats: [
+    {
+      said: 'Do not put that down. Hold it where the light is — there, you see the angle it makes. It makes that angle everywhere. I have measured it in nine rooms and it has never once been wrong.',
+      act: 'face' as const,
+    },
+    {
+      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding, and it is the only honest thing down here. A body is an opinion. Dust is a measurement.',
+      act: 'pace' as const,
+    },
+    {
+      said: 'I will set it into something small of yours. Small, because the angle does not care how much of it there is. Give me a ring, or the thing you wear at your throat, and I will show you what it does.',
+      act: 'work' as const,
+    },
+  ],
+  done: 'Now walk somewhere with it and watch. Come back and tell me if the angle held. It will have held.',
+};
+
+/**
  * Something you carry to a PERSON. It is loot, so it lands in the haul like
  * everything else; it is never sold, never spent at the bench, and it is the
- * whole of what schedules the room of whoever wants it.
+ * whole of what schedules the room of whoever wants it. One per world that
+ * has somebody in it.
  */
 export const RELICS: RelicDef[] = [
   {
@@ -2257,6 +2324,14 @@ export const RELICS: RelicDef[] = [
     gate: { zone: 'demonic' },
     chance: 0.006,
     wants: 'ossuary',
+  },
+  {
+    id: 'prismatic_dust',
+    name: 'Prismatic Dust',
+    flavour: 'What the Cavern leaves when it has finished growing. Every grain of it is the same shape.',
+    gate: { zone: 'prismatic' },
+    chance: 0.006,
+    wants: 'orrery',
   },
 ];
 

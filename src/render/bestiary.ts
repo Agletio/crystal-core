@@ -31,6 +31,69 @@ const rows = gridRows(24);
 
 export const BEASTIARY: Record<string, BeastArt> = {
   /**
+   * The Astral-Geometer: upright and still, both hands up holding a shard to
+   * the light. The one body down here that is not going anywhere — where the
+   * Osteomancer is bent double and reaching, this one is measuring.
+   */
+  geometer: {
+    tone: {
+      mass: (p) => mix(p.rose, p.gloom, 0.35),
+      lit: (p) => mix(p.blush, p.rose, 0.3),
+      shade: (p) => mix(p.gloom, p.void, 0.3),
+      eye: (p) => p.pearl,
+    },
+    grid: 24,
+    frames: [
+      rows({
+        2: '.........####...........',
+        3: '........#MMmm#..........',
+        4: '........#Mmmmm#.........',
+        5: '........#Meemms#........',
+        6: '........#Mmmmmms#.......',
+        7: '.........#mmmmms#.......',
+        8: '...##.....####....##....',
+        9: '..#xx#..#MMmmss#..#xx#..',
+        10: '..#xx#.#MMMmmmss#.#xx#..',
+        11: '..#MM#.#MMMmmmss#.#ss#..',
+        12: '..#MM##MMMMmmmsss##ss#..',
+        13: '...#MMMMMMmmmmmsssss#...',
+        14: '....#MMMMmmmmmmssss#....',
+        15: '....#MMMmmmmmmmsss#.....',
+        16: '....#MMMmmmmmmmsss#.....',
+        17: '.....#MMmmmmmmmss#......',
+        18: '.....#MMmmmmmmmss#......',
+        19: '.....#MMmm#.#mmss#......',
+        20: '.....#MMm#...#mss#......',
+        21: '....#mmmm#...#mmmm#.....',
+        22: '....######...######.....',
+      }),
+      rows({
+        2: '.........####...........',
+        3: '........#MMmm#..........',
+        4: '........#Mmmmm#.........',
+        5: '........#Meemms#........',
+        6: '........#Mmmmmms#.......',
+        7: '.........#mmmmms#.......',
+        8: '..........####....##....',
+        9: '........#MMmmss#..#xx#..',
+        10: '..##...#MMMmmmss#.#xx#..',
+        11: '..#MM#.#MMMmmmss#.#ss#..',
+        12: '..#MM##MMMMmmmsss##ss#..',
+        13: '..#MMMMMMMmmmmmsssss#...',
+        14: '...#MMMMMmmmmmmssss#....',
+        15: '....#MMMmmmmmmmsss#.....',
+        16: '....#MMMmmmmmmmsss#.....',
+        17: '.....#MMmmmmmmmss#......',
+        18: '.....#MMmmmmmmmss#......',
+        19: '.....#MMmm#.#mmss#......',
+        20: '.....#MMm#...#mss#......',
+        21: '....#mmmm#...#mmmm#.....',
+        22: '....######...######.....',
+      }),
+    ],
+  },
+
+  /**
    * The Osteomancer: bent double and already reaching, a bone half-mask shoved
    * up on his brow and one eye under it. He is the only body in the game with
    * both hands OUT — nothing else down here wants anything from you.

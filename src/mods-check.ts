@@ -324,9 +324,12 @@ line('\n── FORGED — a line no drop can roll is still a line ────�
   const wordless: string[] = [];
   for (const def of FORGED) {
     const kind = def.kinds[0];
-    const base = GEAR_BASES.find((b) => b.kind === kind && (b.implicit?.length ?? 0) > 0);
+    // Prefer a base that HAS a line, since replacing one is the case with two
+    // halves — but jewellery has none at all and a graft there simply adds.
+    const fit = GEAR_BASES.filter((b) => b.kind === kind);
+    const base = fit.find((b) => (b.implicit?.length ?? 0) > 0) ?? fit[0];
     if (!base) {
-      landed.push(`${def.mod.id} (no ${kind} base to write over)`);
+      landed.push(`${def.mod.id} (no ${kind} base at all)`);
       continue;
     }
     const made = graft(makeItem(base.id, 60), def.mod.id);
@@ -345,7 +348,11 @@ line('\n── FORGED — a line no drop can roll is still a line ────�
       if (!describeStatLine(stat).trim()) wordless.push(def.mod.id);
     }
   }
-  check(landed.length === 0, `all ${FORGED.length} forged lines land where a base's own line stood`, landed.join(', '));
+  check(
+    landed.length === 0,
+    `all ${FORGED.length} forged lines land in the implicit, replacing whatever was there`,
+    landed.join(', ')
+  );
   check(inert.length === 0, 'and every one of them changes something', inert.join(', '));
   check(wordless.length === 0, 'and every line on one reads', wordless.join(', '));
 }
