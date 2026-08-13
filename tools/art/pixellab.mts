@@ -29,9 +29,8 @@ export const HOUSE_WORDS =
   ' limbs clearly separated and visible, dark outline, flat solid colours,' +
   ' no background, no ground shadow';
 
-/** The style every creature is drawn in, sent on every ask. Flat and unlit
- *  because the rank accent and the halo are added at RUNTIME — art arriving
- *  with a glow on it already makes every rank look the same. */
+/** Flat and unlit: the rank accent and the halo are added at RUNTIME, and art
+ *  arriving with a glow on it already makes every rank look the same. */
 const HOUSE_STYLE = {
   outline: 'single color black outline',
   shading: 'flat shading',
