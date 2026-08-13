@@ -47,7 +47,7 @@ import { openHaul } from './haul';
 import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
 import { closeGraft, isGraftOpen, openGraft } from './graft';
-import { endSpeech, speakingBeat, startSpeech, syncSpeech } from './speech';
+import { endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
@@ -859,7 +859,7 @@ function frame(now: number): void {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
-      if (sim.state.meeting) sim.perform(speakingBeat()?.act, TICK);
+      if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
       else sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;

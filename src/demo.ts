@@ -95,7 +95,7 @@ import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
-import { SCENES, SCENE_BY_ID } from './scenes';
+import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -5595,23 +5595,59 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'every one of his three speeches is beats, and every beat has words',
       script.map((w) => w.beats.length).join('/')
     );
+    // Who crosses the room. A person who stands still while you walk over is
+    // furniture; the one who lurks is the exception and has to stay one.
+    const crossed: string[] = [];
+    for (const scene of SCENES) {
+      const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
+      const them = arriving.state.folk[0];
+      const themAt = { x: them.x, y: them.y };
+      const youAt = { x: arriving.state.hero.x, y: arriving.state.hero.y };
+      let ticks = 0;
+      while (!arriving.state.meeting && ticks++ < 4000) arriving.walkOut(TICK);
+      const theyMoved = dist(them, themAt);
+      const youMoved = dist(arriving.state.hero, youAt);
+      const shouldLurk = LURKS.has(scene.who);
+      if (!arriving.state.meeting) crossed.push(`${scene.id}: never met`);
+      else if (shouldLurk && youMoved <= theyMoved) crossed.push(`${scene.id}: the lurker came to you`);
+      else if (!shouldLurk && theyMoved <= youMoved) crossed.push(`${scene.id}: you went to them`);
+    }
+    check(
+      crossed.length === 0,
+      'everyone crosses the room to you, and the one who lurks makes you come to him',
+      crossed.join(', ')
+    );
+
     const who = room.state.folk[0];
     who.action = 'idle';
-    room.perform('work', TICK);
+    room.perform(0, 'work', TICK);
     check(
       (who.action as string) === 'attack',
       'working at the bench is a pose, not a new frame',
       who.action
     );
 
+    // One act per LINE. Left running, pacing turned round the moment it
+    // arrived and walked back for as long as the bubble was up, which reads as
+    // twitching rather than as somebody moving.
     const stood = { x: who.x, y: who.y };
-    for (let i = 0; i < 200; i++) room.perform('pace', TICK);
+    for (let i = 0; i < 200; i++) room.perform(1, 'pace', TICK);
     const away = dist(who, stood);
-    for (let i = 0; i < 400; i++) room.perform('pace', TICK);
+    const restedAt = { x: who.x, y: who.y };
+    for (let i = 0; i < 400; i++) room.perform(1, 'pace', TICK);
     check(
-      away > 0.5 && dist(who, stood) < away + 0.5,
-      'and pacing walks off and comes back rather than leaving the room',
-      `${away.toFixed(1)} tiles out, ${dist(who, stood).toFixed(1)} now`
+      away > 0.5 && dist(who, restedAt) < 0.01,
+      'a line paces once and then stands still until the next one',
+      `${away.toFixed(1)} out, then moved ${dist(who, restedAt).toFixed(2)} more`
+    );
+
+    // And the next line goes the other way, or a long speech walks somebody
+    // out of their own room a line at a time.
+    for (let i = 0; i < 200; i++) room.perform(2, 'pace', TICK);
+    check(
+      dist(who, stood) < away + 0.01,
+      'and the line after it comes back rather than carrying on',
+      `${dist(who, stood).toFixed(1)} from where he started`
     );
 
     // --- the one who thinks the Lampwright is wrong --------------------

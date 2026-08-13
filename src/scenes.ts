@@ -45,6 +45,8 @@ export interface SceneDef {
 export const FOLK_SCALE: Record<string, number> = { lampwright: 1.45 };
 export const FOLK_SCALE_DEFAULT = 1.3; // over the hero's 1.15, and the 1.1 topping MONSTERS
 
+export const LURKS = new Set(['osteomancer']); // everyone else crosses to you
+
 export const scaleFor = (sprite: string): number =>
   FOLK_SCALE[sprite] ?? FOLK_SCALE_DEFAULT;
 

@@ -29,6 +29,8 @@ export const isSpeaking = (): boolean => !$('speech').hidden;
 /** The beat on screen, so the caller can act it out. */
 export const speakingBeat = (): SceneBeat | undefined => (isSpeaking() ? beats[at] : undefined);
 
+export const speakingAt = (): number => (isSpeaking() ? at : -1); // -1: no line is up
+
 function show(): void {
   const beat = beats[at];
   if (!beat) return finish();

@@ -56,7 +56,7 @@ import {
   socketSize,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
-import { SCENE_BY_ID, scaleFor } from '../scenes';
+import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
@@ -86,6 +86,8 @@ const AT_EXIT = 0.5;
 
 /** How far a pacing body walks from where it was standing, and back. */
 const PACE_STEP = 2;
+/** How close you get before the one who lurks comes out at you. */
+const LURK_RANGE = 4;
 
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
@@ -343,8 +345,8 @@ export class RunSim {
   private auraTimer = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
   private auraDamage = 0;
-  /** Where a pacing body started and which way it is going. */
-  private pacing: { home: Vec2; side: number } | null = null;
+  /** The line being acted out, and whether its one act has finished. */
+  private acting: { beat: number; done: boolean; to?: Vec2 } | null = null;
   /** The boss's own clock, beside `waveTimer` and stopped by the same death. */
   private reinforce: BossDef['reinforce'] | null = null;
   private reinforceTimer = 0;
@@ -894,17 +896,32 @@ export class RunSim {
     }
   }
 
-  /** The room is a place you have arrived in and the only thing moving is the
-   *  hero, crossing it. Not `step`: nothing in a scene has a clock. */
+  /** Arriving in a room. THEY cross it, not you — a person who stands still
+   *  while you walk over is furniture. The one who lurks is the exception, and
+   *  he does not move until you are close enough to be worth coming out for.
+   *  Not `step`: nothing in a scene has a clock. */
   walkOut(dt: number): void {
     const s = this.state;
     const met = s.folk[0];
     if (!met || s.meeting) return;
 
-    // A walk that cannot finish still hands the thing over.
-    if (dist(s.hero, met) > 1.1 && this.advance(s.hero, met, dt)) return;
+    const apart = dist(s.hero, met);
+    const lurking = LURKS.has(met.sprite) && apart > LURK_RANGE;
+    // A walk that cannot finish still hands the thing over, whoever is walking.
+    if (apart > 1.1) {
+      if (lurking) {
+        // Still behind whatever he is behind. You close the distance instead.
+        if (this.advance(s.hero, met, dt)) return;
+      } else if (this.advance(met, s.hero, dt)) {
+        this.face(s.hero, met.x, met.y);
+        return;
+      }
+    }
+    met.path = [];
     s.hero.path = [];
+    this.face(met, s.hero.x, s.hero.y);
     this.face(s.hero, met.x, met.y);
+    this.settleAction(met, false);
     this.settleAction(s.hero, false);
     s.meeting = true;
   }
@@ -915,27 +932,42 @@ export class RunSim {
    * only ever sets `action` and `actionTimer`, which is the whole of the
    * interface `poseOf` reads.
    */
-  perform(act: SceneAct | undefined, dt: number): void {
+  perform(beat: number, act: SceneAct | undefined, dt: number): void {
     const who = this.state.folk[0];
     if (!who) return;
 
-    if (act === 'work') {
-      who.actionTimer -= dt;
-      if (who.actionTimer <= 0) {
+    // ONE act per line, armed when the line changes. Left running, `pace`
+    // turned round the moment it arrived and walked back, and `work` swung
+    // again every time its timer ran out — which is the twitching.
+    if (this.acting?.beat !== beat) {
+      this.acting = { beat, done: act === undefined };
+      if (act === 'pace') {
+        // Alternating by LINE rather than on arrival, so nobody paces a hole
+        // in the floor while one bubble is up.
+        const side = beat % 2 === 0 ? 1 : -1;
+        this.acting.to = { x: who.x + side * PACE_STEP, y: who.y };
+      }
+      if (act === 'work') {
         who.action = 'attack';
         who.actionTimer = ATTACK_POSE;
       }
-      return;
+    }
+    const doing = this.acting!;
+
+    if (!doing.done) {
+      if (act === 'pace' && doing.to) {
+        if (dist(who, doing.to) > 0.4 && this.advance(who, doing.to, dt)) return;
+        doing.done = true;
+      } else if (act === 'work') {
+        who.actionTimer -= dt;
+        if (who.actionTimer > 0) return;
+        doing.done = true;
+      } else {
+        doing.done = true;
+      }
     }
 
-    if (act === 'pace') {
-      this.pacing ??= { home: { x: who.x, y: who.y }, side: 1 };
-      const to = { x: this.pacing.home.x + this.pacing.side * PACE_STEP, y: this.pacing.home.y };
-      if (dist(who, to) > 0.4 && this.advance(who, to, dt)) return;
-      this.pacing.side *= -1;
-      return;
-    }
-
+    // Done, and still until the next line: `face` is what every act ends on.
     who.path = [];
     this.face(who, this.state.hero.x, this.state.hero.y);
     this.settleAction(who, false);
