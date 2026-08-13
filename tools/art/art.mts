@@ -23,7 +23,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { balance, generate } from './pixellab.mts';
 import { decodePng } from './png.mts';
-import { asSource, toGrid } from './convert.mts';
+import { asSource, debackground, toGrid } from './convert.mts';
 import { inksFor, paletteAsk } from './inks.mts';
 
 type Sprite = {
@@ -116,7 +116,7 @@ async function main(): Promise<void> {
         console.log(`  ${s.id}: nothing generated for this row yet`);
         continue;
       }
-      s.rows = toGrid(decodePng(readFileSync(pngPath(hash))), s.grid, inksFor(s.tone));
+      s.rows = toGrid(debackground(decodePng(readFileSync(pngPath(hash)))), s.grid, inksFor(s.tone));
       s.hash = hash;
       write(m);
       const used = new Set(s.rows.join(''));
@@ -158,10 +158,11 @@ async function main(): Promise<void> {
  */
 async function sheet(m: Manifest, out: string): Promise<void> {
   const { chromium } = await import('playwright');
-  const SCALE = 10;
   const cells = m.sprites
     .filter((s) => s.rows)
     .map((s) => {
+      // Per sprite, so a 24 and a 256 land at comparable size on the sheet.
+      const SCALE = Math.max(1, Math.round(384 / s.grid));
       const inks = inksFor(s.tone) as Record<string, string>;
       const px = (s.rows ?? [])
         .flatMap((row, y) =>
@@ -173,7 +174,7 @@ async function sheet(m: Manifest, out: string): Promise<void> {
         )
         .join('');
       const mark = s.accepted ? 'accepted' : 'not accepted';
-      return `<div class="cell"><div class="art" style="width:${s.grid * SCALE}px;height:${s.grid * SCALE}px">${px}</div><span>${s.id}<br>${mark}</span></div>`;
+      return `<div class="cell"><div class="art" style="--px:${SCALE}px;width:${s.grid * SCALE}px;height:${s.grid * SCALE}px">${px}</div><span>${s.id}<br>${mark}</span></div>`;
     })
     .join('');
 
@@ -181,7 +182,7 @@ async function sheet(m: Manifest, out: string): Promise<void> {
     body { background:#0d0a10; color:#cfc7d8; font:12px monospace; margin:0; padding:16px; }
     #sheet { display:flex; gap:18px; flex-wrap:wrap; }
     .art { position:relative; background:#191320; outline:1px solid #2a2233; }
-    .art i { position:absolute; width:${SCALE}px; height:${SCALE}px; }
+    .art i { position:absolute; width:var(--px); height:var(--px); }
     .cell span { display:block; text-align:center; font-size:10px; color:#6a5f78; margin-top:5px; }
   </style><div id="sheet">${cells || '<b>nothing converted yet</b>'}</div>`;
 

@@ -36,6 +36,42 @@ function apart(a: [number, number, number], b: [number, number, number]): number
 /** Block-average, then snap. Integer factors only: a non-integer downscale
  *  resamples across pixel boundaries, which is the blur pixel art exists to
  *  not be — so it REFUSES rather than producing something plausible. */
+/** Fraction of the canvas that must already be clear for the ask to have worked. */
+const ASSUME_CUT_OUT = 0.02;
+
+/**
+ * `no_background` is not always obeyed — at 256 the cat came back on a solid
+ * field — so the ground is FLOODED away from the edges rather than replaced
+ * globally, or a body pixel of the same colour goes with it.
+ */
+export function debackground(image: Decoded): Decoded {
+  const { width, height, rgba } = image;
+  let clear = 0;
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 128) clear++;
+  if (clear / (width * height) > ASSUME_CUT_OUT) return image;
+
+  const at = (x: number, y: number): number => (y * width + x) * 4;
+  const near = (i: number, j: number): boolean =>
+    Math.abs(rgba[i] - rgba[j]) + Math.abs(rgba[i + 1] - rgba[j + 1]) + Math.abs(rgba[i + 2] - rgba[j + 2]) < 24;
+
+  const out = new Uint8Array(rgba);
+  const seed = at(0, 0);
+  const stack: Array<[number, number]> = [];
+  for (let x = 0; x < width; x++) stack.push([x, 0], [x, height - 1]);
+  for (let y = 0; y < height; y++) stack.push([0, y], [width - 1, y]);
+  const done = new Uint8Array(width * height);
+
+  while (stack.length) {
+    const [x, y] = stack.pop()!;
+    if (x < 0 || y < 0 || x >= width || y >= height || done[y * width + x]) continue;
+    done[y * width + x] = 1;
+    if (!near(at(x, y), seed)) continue;
+    out[at(x, y) + 3] = 0;
+    stack.push([x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]);
+  }
+  return { width, height, rgba: out };
+}
+
 export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
   if (image.width !== image.height) {
     throw new Error(`${image.width}x${image.height} is not square`);

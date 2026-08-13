@@ -668,6 +668,12 @@ and hope. The forced palette is otherwise exact — measured at 100% on-palette 
 every size, so the ink-snap is very nearly a no-op and what limits a sprite is
 COMPOSITION rather than colour.
 
+**`no_background` is not always obeyed, so the ground is FLOODED away.** At 256
+the generator returned a creature on a solid field. `debackground()` runs before
+the reduction, and only when under 2% of the canvas is already clear: it floods
+inward from the EDGES rather than replacing the colour globally, or a body pixel
+that happens to match the ground goes with it.
+
 **Generated art carries no accent and no halo.** `x`, `b` and `o` are applied at
 RUNTIME off `MonsterRank`, so the converter emits none of the three and the ask
 is for one flat creature with no glow and no rim light — art arriving lit makes
