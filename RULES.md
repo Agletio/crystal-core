@@ -595,6 +595,38 @@ tick and has no sprites at all. Sprite work is not visible in the fallback,
 and that is correct — do not "fix" it. MAP work is the exception: decals are
 shared pure functions, so both renderers get them.
 
+**The title is a PICTURE, drawn out of the decals rather than of gradients.**
+`src/ui/titleart.ts` paints one 2d canvas behind `#title`: the Cavern top left,
+the Rot bottom right, and a front across the diagonal that neither of them holds
+straight. It reaches for `floorColour`, `tileDecals` and `livingDecals` — the
+same pure functions both renderers stamp — so the two halves are one generator's
+stone drawn two ways, which is the whole reason it is worth drawing rather than
+faking. A CSS gradient is cheaper and looks like a CSS gradient.
+
+**Two palettes over ONE grid, and the mixing stops at the title.** Every one of
+those functions takes the `FloorPalette` as a parameter, so a picture that
+changes world across itself costs neither renderer a line and `src/sim` nothing
+at all. A `GameMap` still carries a single `theme` and no map generalises this
+— a title background is a picture, and the sim does not draw pictures.
+
+**A still, painted once per size.** No renderer boots behind the title and
+nothing ticks: `livingDecals` is drawn at one instant of its own clock, and a
+resize repaints rather than animates. Measured at 30–38ms for 77×49 tiles at a
+device ratio of 2, in headless Chromium with no GPU — two frames, once, before
+anything is playable. Dismissing the title sets the canvas to 0×0, because a
+screen of rock at twice the device ratio is megabytes nobody will look at again.
+
+**The front is DISPLACED, never straight.** Three terms over the diagonal in
+`rotHolds`: lobes several tiles wide, whole holdouts cut off behind the line,
+and a per-tile ragged edge. A clean diagonal is a wipe transition and reads as
+one; smooth noise on its own reads as a wobble. The interlocking is the point.
+
+**A `<canvas>` is a REPLACED element and `inset: 0` does not size one.** With
+`width: auto` it lays out at its own backing store — the viewport times the
+device ratio — so a full-screen canvas painted correctly shows its top-left
+quarter. `width: 100%; height: 100%` goes with the `inset`, and the same trap
+waits for any `<img>` or `<video>` positioned that way.
+
 **`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
 grid has to divide it: 16 gives 3 device pixels per art pixel, 24 gives 2, 32
 gives 1.5 and the rect seams stop landing on pixel boundaries. **24 is the last

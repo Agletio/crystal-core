@@ -7,7 +7,7 @@ import { ENTRANCE, EXIT, TUNNEL, WALL } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Vec2 } from '../sim/grid';
 import type { AuraDef, MapTheme } from '../types';
-import { tileNoise } from '../noise';
+import { patchNoise, tileNoise } from '../noise';
 
 export interface Palette {
   void: string;
@@ -233,30 +233,6 @@ export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alp
   // A percentage aura is the one that needs the other to be worth much, so it
   // reads as the fainter of the two.
   return { colour, alpha: aura.incDamage || aura.incArmour ? 0.07 : 0.09 };
-}
-
-/**
- * The same hash, smoothed across a coarse lattice. Per-tile hashing reads as
- * television static; rock varies in PATCHES, so interpolating between lattice
- * points several tiles apart is what gives broad areas of lighter stone.
- */
-function patchNoise(x: number, y: number, scale: number, salt: number): number {
-  const fx = x / scale;
-  const fy = y / scale;
-  const x0 = Math.floor(fx);
-  const y0 = Math.floor(fy);
-  // Smoothstep, so the lattice itself never shows up as a grid.
-  const tx = fx - x0;
-  const ty = fy - y0;
-  const sx = tx * tx * (3 - 2 * tx);
-  const sy = ty * ty * (3 - 2 * ty);
-
-  const top =
-    tileNoise(x0, y0, salt) + (tileNoise(x0 + 1, y0, salt) - tileNoise(x0, y0, salt)) * sx;
-  const bottom =
-    tileNoise(x0, y0 + 1, salt) +
-    (tileNoise(x0 + 1, y0 + 1, salt) - tileNoise(x0, y0 + 1, salt)) * sx;
-  return top + (bottom - top) * sy;
 }
 
 /** Parse `#rgb` / `#rrggbb` into components. */

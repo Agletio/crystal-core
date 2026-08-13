@@ -5,10 +5,23 @@
  */
 import { PORTRAITS } from '../render/portraits';
 import { portraitIcon } from './icons';
+import { clearTitleArt, paintTitle } from './titleart';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 let onStart: (() => void) | null = null;
+
+/** The art is a still, so a resize is what repaints it — coalesced, because a
+ *  drag of a window edge is a hundred of them. */
+let repaint: ReturnType<typeof setTimeout> | undefined;
+
+function art(): HTMLCanvasElement {
+  return $('title-art') as HTMLCanvasElement;
+}
+
+function draw(): void {
+  paintTitle(art(), globalThis.innerWidth, globalThis.innerHeight);
+}
 
 /** Everyone the game has a face for, in the order met. */
 const FACES = ['lampwright', 'lambengolmor'].filter((id) => id in PORTRAITS);
@@ -18,11 +31,20 @@ export const isTitleUp = (): boolean => !$('title').hidden;
 function dismiss(): void {
   if ($('title').hidden) return;
   $('title').hidden = true;
+  // A screen of rock is several megabytes of canvas nothing will look at again.
+  clearTitleArt(art());
   onStart?.();
 }
 
 export function initTitle(start: () => void): void {
   onStart = start;
+
+  draw();
+  globalThis.addEventListener('resize', () => {
+    if (!isTitleUp()) return;
+    globalThis.clearTimeout(repaint);
+    repaint = globalThis.setTimeout(draw, 150);
+  });
 
   const cast = $('title-cast');
   cast.replaceChildren();

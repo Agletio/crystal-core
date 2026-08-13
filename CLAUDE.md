@@ -562,6 +562,24 @@ the haul ends up over its limit rather than a descent's drops being split.
 A full haul is the only thing that shuts the Fissure, and it can never wedge:
 selling needs room nowhere.
 
+## The first thing you land on
+
+The title is a WALL of the two far worlds. **The Cavern top left** and **The Rot
+bottom right**, meeting on a front that runs corner to corner and that neither
+of them holds straight — fingers of crystal reaching down into the meat, patches
+of rot holding out inside the crystal. `src/ui/titleart.ts` paints it into one
+2d canvas behind `#title` out of `floorColour`, `tileDecals` and `livingDecals`,
+which is the same stone both renderers draw a descent with: `MAP_THEMES` is a
+LOOK over one generator, so the two halves are that generator seen twice rather
+than a picture of it. Two `FloorPalette`s over one grid, and the mixing lives in
+that module — a `GameMap` still carries a single theme.
+
+It is a still. Nothing ticks behind the title, no renderer boots, and a resize
+repaints rather than animates; `rotHolds` is the front, three displacements over
+the diagonal — lobes, holdouts and a per-tile ragged edge. The logo, the sub-line
+and the cast stand on their own scrim, because the busiest background in the
+game is now behind the smallest text in it.
+
 ## Saves
 
 The save is `JSON.stringify(game)` in a localStorage key per SLOT — three of
