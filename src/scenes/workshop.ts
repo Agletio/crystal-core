@@ -12,6 +12,7 @@ import type { SceneDef } from '../scenes';
 export const WORKSHOP: SceneDef = {
   id: 'workshop',
   who: LAMPWRIGHT.sprite,
+  name: LAMPWRIGHT.name,
   theme: 'fissure', // a working, and it is the shallow end's
   plan: {
     room: { x: 1, y: 1, w: 15, h: 11 },

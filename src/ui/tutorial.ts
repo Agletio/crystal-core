@@ -358,9 +358,8 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     waits: (_g, ctx) => ctx.top !== "met" && !ctx.speaking,
     text: (ctx) => (ctx.speaking ? "Hear him out." : "Take what they are holding."),
     target: (ctx) => (ctx.speaking ? "speech" : "met-take"),
-    // BOTH, and the panel half is not decoration: granting the crystal and
-    // shutting the panel are a tick apart, and a step that ended on the grant
-    // alone rang the next one's button underneath a popup that was still up.
+    // BOTH: the grant and the panel shutting are a tick apart, and ending on
+    // the grant alone rang the next step's button under a popup still up.
     done: (g, ctx) => ctx.top !== "met" && (g.given ?? []).includes("crystal"),
   },
   {
@@ -669,7 +668,8 @@ function paint(): void {
   const ctx = context();
   const dormant = step?.waits?.(game, ctx) === true;
 
-  if (!step || dormant) {
+  // A room explains itself; steps still TRACK a scene without narrating one.
+  if (!step || dormant || ctx.speaking || ctx.top === 'met') {
     card.hidden = true;
     setLock(false);
     clearHighlight();

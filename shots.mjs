@@ -259,11 +259,11 @@ for (const vp of VIEWPORTS) {
       timeout: 30000,
     });
     await shoot('speech');
-    // Clicking is how a beat advances, so this is the interaction rather than
-    // a wait: bounded, because a bubble nobody can advance is the failure.
+    // The BUTTON advances a beat, so this is the interaction rather than a
+    // wait: bounded, because a bubble nobody can advance is the failure.
     for (let i = 0; i < 8; i++) {
       if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
-      await page.locator('#speech').click({ timeout: 2000 }).catch(() => {});
+      await page.locator('#speech-next').click({ timeout: 2000 }).catch(() => {});
       await page.waitForTimeout(250);
     }
     await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {

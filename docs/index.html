@@ -961,29 +961,39 @@
   .speech {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
-    width: max-content; max-width: min(340px, calc(100vw - 32px));
-    display: flex; align-items: flex-start; gap: 10px;
+    width: max-content; max-width: min(300px, calc(100vw - 32px));
+    display: flex; align-items: flex-end; gap: 8px;
     background-color: var(--matrix); background-image: var(--grit);
     border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55);
-    padding: 10px 12px; cursor: pointer;
+    padding: 9px 11px 9px 8px;
   }
-  .speech:hover, .speech:focus-visible { border-color: var(--citrine); }
-  .speech__said { margin: 0; line-height: 1.55; font-size: 13px; }
-  .speech__who { flex: none; line-height: 0; }
+  /* Out of the box on two sides. A portrait cropped to the padding reads as an
+     icon; one that breaks the frame reads as somebody leaning in. */
+  .speech__who {
+    flex: none; line-height: 0; margin: -18px 0 -9px -14px; align-self: flex-start;
+  }
   .speech__who .icon { image-rendering: pixelated; }
-  .speech__more { align-self: flex-end; color: var(--citrine); font-size: 11px; line-height: 1; }
+  .speech__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .speech__name {
+    margin: 0; font-family: var(--display); font-size: 10px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--rust);
+  }
+  .speech__said { margin: 0; line-height: 1.5; font-size: 13px; }
+  .speech__next { align-self: flex-end; padding: 2px 10px; font-size: 11px; }
   /* The panel is the LAST beat, so it hangs where the bubble hangs rather than
      in the middle of a room it is meant to be standing in. */
   .modal.modal--speech { display: block; padding: 0; }
   .modal__card.modal__card--bubble {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
-    width: min(340px, calc(100vw - 32px));
+    width: min(300px, calc(100vw - 32px));
     max-height: none;
   }
-  .modal__card--bubble .modal__head { padding: 9px 12px; }
-  .modal__card--bubble .modal__body { padding: 10px 12px; }
-  .modal__card--bubble .met { padding: 0; gap: 10px; }
+  .modal__card--bubble .modal__head { padding: 8px 11px 8px 8px; }
+  .modal__card--bubble .modal__body { padding: 9px 11px; }
+  .modal__card--bubble .met { padding: 0; gap: 9px; }
+  /* Out of the frame, like the bubble's. Same person, same lean. */
+  .modal__card--bubble .met__who { margin: -18px 0 -8px -14px; align-self: flex-start; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
@@ -1611,10 +1621,13 @@
 
 <!-- One line, over the head of whoever is saying it. Anchored per frame, so a
      drag or a zoom mid-sentence keeps it where the words are coming from. -->
-<div class="speech" id="speech" role="button" tabindex="0" hidden>
+<div class="speech" id="speech" hidden>
   <span class="speech__who" id="speech-face"></span>
-  <p class="speech__said" id="speech-said"></p>
-  <span class="speech__more">&#9656;</span>
+  <div class="speech__body">
+    <p class="speech__name" id="speech-name"></p>
+    <p class="speech__said" id="speech-said"></p>
+    <button class="mini speech__next" id="speech-next">Next</button>
+  </div>
 </div>
 
 <div class="modal" id="haul" hidden>

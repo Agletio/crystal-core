@@ -3,9 +3,10 @@
  *
  * The demo proves each step's `done` predicate CAN become true. This is the
  * other question: the opening locks the app down, so a step whose highlight is
- * not the thing you must click is a dead end no predicate can see. Clicking
- * only the ring, and failing when the guide stops advancing, is the only way to
- * answer "can a new player finish". Requires a current bundle.
+ * not the thing you must click is a dead end no predicate can see. Clicking only
+ * the ring — and, in a room, the one button the room offers — then failing when
+ * it stops advancing, is the only way to answer "can a new player finish".
+ * Requires a current bundle.
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -66,7 +67,15 @@ const state = () =>
     const waiting = document.body.dataset.guideWaiting ?? null;
     if (waiting) return { done: false, waiting, phase: phaseNow };
 
+    // A scene is not narrated any more: the room shows a portrait, a name and
+    // one button, so the harness drives it the way a player would rather than
+    // waiting for a ring that will never come.
+    const bubble = document.getElementById('speech');
+    const met = document.getElementById('met');
+    const scene =
+      bubble && !bubble.hidden ? 'speech-next' : met && !met.hidden ? 'met-take' : null;
     const card = document.getElementById('guide');
+    if (scene) return { done: false, scene, step: '(a room)', text: '', hint: '', ring: null };
     if (!card || card.hidden) return { done: true };
     const ring = document.querySelector('.guide-on');
     return {
@@ -151,6 +160,20 @@ for (let turn = 0; turn < 900; turn++) {
       await page.locator(button).click({ timeout: 1200 }).catch(() => {});
     }
     await page.waitForTimeout(900);
+    continue;
+  }
+
+  // Somebody is talking. Press the one control the room offers.
+  if (!now.scene) metAt = '';
+  if (now.scene) {
+    if (now.scene === 'met-take' && metAt !== 'room') {
+      met++;
+      metAt = 'room';
+      trace.push(`Met         the Lampwright, in his own room (${met})`);
+    }
+    await page.locator(`#${now.scene}`).click({ timeout: 1500 }).catch(() => {});
+    await page.waitForTimeout(200);
+    dark = 0;
     continue;
   }
 

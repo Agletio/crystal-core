@@ -463,7 +463,7 @@ function speak(): void {
   // A room with something in it says its piece and then goes live; a quiet one
   // ends on the panel, which is where the gift is.
   if (def.encounter) {
-    startSpeech(def.who, def.beats ?? [], () => {
+    startSpeech(def.who, def.name, def.beats ?? [], () => {
       if (sim?.beginEncounter()) playing = true;
       absorbEvents();
       setLeaveLabel();
@@ -473,7 +473,7 @@ function speak(): void {
   if (!greeting) return;
   const words = lampwrightWords(greeting);
   const held = greeting;
-  startSpeech(def.who, words.beats, () => openMet(held));
+  startSpeech(def.who, def.name, words.beats, () => openMet(held));
 }
 
 /** The boss is down, or you are. A boss room is a DESCENT: its loot banks, its
@@ -493,7 +493,7 @@ function endEncounter(): void {
 
   const after = report.cleared ? (def?.after ?? []) : [];
   if (after.length === 0) return land(report, state);
-  startSpeech(def!.who, after, () => land(report, state));
+  startSpeech(def!.who, def!.name, after, () => land(report, state));
 }
 
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other

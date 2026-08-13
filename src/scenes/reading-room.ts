@@ -10,6 +10,7 @@ import type { SceneDef } from '../scenes';
 export const READING_ROOM: SceneDef = {
   id: 'reading_room',
   who: 'lambengolmor',
+  name: 'The Lambengolmor',
   theme: 'prismatic',
   plan: {
     room: { x: 1, y: 1, w: 21, h: 17 },

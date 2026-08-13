@@ -2465,8 +2465,8 @@ assert(
   assert($('speech') !== null, 'there is a bubble to say a line in');
   assert($('speech').hidden === true, 'and nothing is being said before anyone speaks');
   assert(
-    $('speech').getAttribute('role') === 'button',
-    'it says it is a control, which is what the opening clicks'
+    $('speech-next') !== null && $('speech-next').tagName === 'BUTTON',
+    'and a Next button advances it, rather than the box being secretly clickable'
   );
   assert(
     !$('met').classList.contains('modal--stop'),

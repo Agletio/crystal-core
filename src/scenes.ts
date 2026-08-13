@@ -30,6 +30,7 @@ export interface ScenePlan {
 export interface SceneDef {
   id: string;
   who: string; // a sprite id in BOTH `BEASTIARY` and `PORTRAITS`
+  name: string; // what the bubble calls them, since a portrait is not a label
   theme: MapTheme; // some world's rock: a room is a PLACE, not the last descent
   plan: ScenePlan;
   said: string; // noted on arrival; what a PERSON says is beats, per gift

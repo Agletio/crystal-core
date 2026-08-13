@@ -278,11 +278,22 @@ bubble: built once and updated per frame, anchored off `Renderer.screenAt` so
 the camera moving under it keeps the words on the speaker. A **beat**
 (`SceneBeat`) is a line and what is DONE while it is up — `SceneAct` is `pace`,
 `work` or `face`, performed by `RunSim.perform` off the walk and pose machinery
-that already exists, so an act is `Entity.action` and nothing else. Clicking
-advances one; the LAST beat is `#met`, which carries what he is holding and the
-one button, anchored exactly like every line before it. Escape skips the rest
-and grants, because the gift is yours the moment a panel is up. The scrim is
-gone: a scene is already a stop, and a sheet over the room hid the room.
+that already exists, so an act is `Entity.action` and nothing else.
+
+**Every line looks the same and says who is speaking**: a PORTRAIT out of the
+top-left corner of the box, the speaker's `SceneDef.name` above the words, and
+a **Next** button. The portrait breaks the frame on purpose — cropped to the
+padding it reads as an icon, over the edge it reads as somebody leaning in —
+and the LAST beat is `#met`, the same shape with what he is holding in it and
+Take it instead of Next. Escape skips the rest and grants, because the gift is
+yours the moment a panel is up. The scrim is gone: a scene is already a stop,
+and a sheet over the room hid the room.
+
+**A room is not narrated.** The guided opening's card is suppressed while
+anyone is speaking or the panel is up: a portrait, a name and one button is
+already the whole instruction, and a card telling you to press the only control
+on screen is the opening explaining what the screen explains. The steps still
+TRACK a scene, so the opening knows where it is; they just do not talk over it.
 
 A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
 rail stays up, but nothing is ticking, and Leave and Abandon go quiet because

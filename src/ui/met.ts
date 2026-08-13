@@ -58,7 +58,7 @@ export function openMet(waiting: Waiting): void {
   // you recognise rather than something you read.
   const face = $('met-face');
   face.replaceChildren();
-  const portrait = portraitIcon(LAMPWRIGHT.sprite, 56);
+  const portrait = portraitIcon(LAMPWRIGHT.sprite, 52);
   if (portrait) face.append(portrait);
   $('met-title').textContent = words.title;
   ($('met-take') as HTMLButtonElement).textContent = words.button;

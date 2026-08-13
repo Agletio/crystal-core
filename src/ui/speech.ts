@@ -51,13 +51,19 @@ export function endSpeech(): void {
   if (isSpeaking()) finish();
 }
 
-export function startSpeech(who: string, script: SceneBeat[], after: () => void): void {
+export function startSpeech(
+  who: string,
+  name: string,
+  script: SceneBeat[],
+  after: () => void
+): void {
   beats = script;
   at = 0;
   done = after;
+  $('speech-name').textContent = name;
   const face = $('speech-face');
   face.replaceChildren();
-  const portrait = portraitIcon(who, 34);
+  const portrait = portraitIcon(who, 52);
   if (portrait) face.append(portrait);
   show();
 }
@@ -80,16 +86,8 @@ export function syncSpeech(renderer: Renderer, on: { x: number; y: number }): vo
 }
 
 export function initSpeech(): void {
-  const bubble = $('speech');
-  bubble.addEventListener('click', () => {
-    at++;
-    show();
-  });
-  // A bubble is a control, so the key that presses a control presses it.
-  bubble.addEventListener('keydown', (event) => {
-    const key = (event as KeyboardEvent).key;
-    if (key !== 'Enter' && key !== ' ') return;
-    event.preventDefault();
+  // Only the button advances it: nothing about a box of words says it is one.
+  $('speech-next').addEventListener('click', () => {
     at++;
     show();
   });
