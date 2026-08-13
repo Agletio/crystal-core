@@ -4,12 +4,15 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**There are three phases, and they are one arc**, dictated in one go: the game
-gets **rooms you arrive in and people standing in them**. The machinery is
-BUILT — a scene is a `RunSim` over an authored map, people talk in bubbles over
-their own heads, a room may have a boss in it, and a key takes you back to one
-you have put down. `CLAUDE.md` and `RULES.md` describe the whole of it; what is
-left is one new item kind, one more character, and teaching by quest.
+**Five phases, and they are not one thing.** Phase 1 takes the tutorial out —
+a deletion, so the opening can be played with nothing explaining it. Phase 2 is
+the title's background. Phases 3 and 4 continue the arc dictated in one go: the
+game gets **rooms you arrive in and people standing in them**, and the
+machinery for that is BUILT — a scene is a `RunSim` over an authored map, people
+talk in bubbles over their own heads, a room may have a boss in it, and a key
+takes you back to one you have put down. `CLAUDE.md` and `RULES.md` describe
+the whole of it; what is left there is one new item kind and one more
+character. Phase 5 is teaching, and it WAITS: see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -337,7 +340,76 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The Osteomancer, and what a corpse is for
+### Phase 1 — Take the tutorial out
+
+**The user's call, and the whole of it:** *"I wanna start from scratch with it
+honestly. Like its just kinda all broken. Remove it all, and once all the
+systems are in place and we see how the intro plays out then we add it in small
+parts as needed."*
+
+This is a DELETION and nothing else. Do not replace it with a smaller tutorial,
+a hint bar, or a first-run tooltip. The point is to see what the game is like
+with nothing explaining it, and that is not visible while any of it survives.
+
+**What is true today.** `src/ui/tutorial.ts` is fifteen `TUTORIAL_STEPS` with
+`done` predicates, a card anchored to one lit control, and `body.guided`
+switching spending off. It has no harness at all — `npm run guide` was retired
+with the title screen — so nothing is currently checking it either.
+
+- [ ] **`src/ui/tutorial.ts` goes**, and with it `TUTORIAL_STEPS`, `GuideCtx`,
+      `guideContext()` in `src/web.ts`, and every `viaHeader`/`CLOSES` helper
+      that exists only to walk a player out of a popup.
+- [ ] **The lockdown goes**: `body.guided`, `.guide-on`, the spending lock and
+      the `#guide` card in `docs/index.html`. Nothing may replace them.
+- [ ] **The probes that watch it go.** `lockProbe` and `guideProbe` in
+      `shots.mjs` exist only for the lockdown. `mapProbe` and the overflow
+      probe stay — they are about the layout, not the opening.
+- [ ] **The demo's walkthrough goes.** It walks `TUTORIAL_STEPS` and holds each
+      `done` to being reachable; there will be no steps to walk.
+- [ ] **`GameState.tutorialStep` goes, and `heal()` ignores it.** A save
+      carrying one must load: a missing key takes its default, and a key
+      nothing reads is harmless. Do NOT bump `SAVE_VERSION` for this.
+- [ ] **Ids the opening needed may now be unused, and that is fine.** Do not
+      chase `dockSlotId`, `slotButtonId`, `skillNodeId` and friends out of the
+      other screens in the same commit — anything still rendering them keeps
+      them, and the rest can go when something else wants that file.
+- [ ] **`RULES.md` names the fifteen steps and states the lockdown's rules.**
+      Same commit, or the file describes a thing that is gone — which is the
+      exact failure this project has already paid for twice.
+
+**What must not break.** `smoke` and `shots` — and expect both to shrink, since
+a chunk of each is about the opening. `INTRO` in `src/data.ts` is read by the
+crystal schedule as well, so check before deleting anything in it.
+
+**Done when.** A brand new character lands in the Fissure with nothing lit,
+nothing locked, and no card — and the game is playable start to finish anyway.
+
+### Phase 2 — A title that is the two worlds meeting
+
+**What is true today.** `.title` in `docs/index.html` is a flat `--void` fill
+with `--grit` over it and two `radial-gradient`s in `.title::after`. It is
+tasteful and it says nothing about the game.
+
+**What is wanted.** The background is the two far worlds melding — **The Rot**
+(`demonic`) on one half, **The Cavern** (`prismatic`) on the other, meeting in
+the middle. Not two flat colours: the actual stone, the way a descent draws it.
+
+- [ ] **Decide whether it is DRAWN or painted.** The renderers already draw a
+      themed map, and `sceneMap` in `src/sim/grid.ts` already cuts an authored
+      room with no rng — so a still, wide chamber generated once at a fixed
+      seed and rendered behind the title is reachable with what exists. The
+      cheaper answer is CSS, and the cheaper answer will look like CSS.
+- [ ] **The meld is the point.** A hard seam down the middle is two pictures.
+      `MAP_THEMES` is a LOOK over one generator, so the interesting version is
+      one room whose theme changes across it — which no map does today, and is
+      the part to design rather than assume.
+- [ ] **It must not cost the boot.** The title is the first thing drawn; a
+      renderer starting up behind it before anything is playable is the wrong
+      trade. Measure it, and fall back to a still image if it is not free.
+- [ ] The logo, the sub-line and the cast list keep their contrast over it.
+      `shots` takes the title already.
+
+### Phase 3 — The Osteomancer, and what a corpse is for
 
 **What is true today.**
 
@@ -451,7 +523,7 @@ kind touches `heal()`, the id counter and the drop pipeline, and the demo's
 container list is where a missed one shows up. Then `smoke`, with the dock
 column's checks at the END of the file. Then `shots`.
 
-### Phase 2 — The Astral-Geometer
+### Phase 4 — The Astral-Geometer
 
 **What is true today.** After Phase 1, one world pays in something you carry to
 a person, and it is the Demonic one. `RELICS` has one entry, `FORGED_MODS`
@@ -491,12 +563,19 @@ room carrying something a ring cannot otherwise hold.
 
 **What must not break.** The same list as Phase 1, same order.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 5 — A quest log instead of a pointing finger
 
-**What is true today.** Teaching is `TUTORIAL_STEPS` in `src/ui/tutorial.ts`:
-fifteen steps, a card beside ONE lit control, and `body.guided` switching
-spending off so you cannot wander. It is good at "press this" and cannot say
-why anything matters.
+**Not next, and deliberately.** Phase 1 deletes the tutorial outright so the
+opening can be PLAYED with nothing explaining it. This phase is what teaching
+eventually becomes, and it does not start until that has happened and the
+systems have settled — the user's words are "once all the systems are in place
+and we see how the intro plays out then we add it in small parts as needed".
+Small parts, driven by what actually confused somebody. Do not take this phase
+because it is next in the list; take it when asked.
+
+**What is true today.** Nothing teaches anything: `TUTORIAL_STEPS`, the card
+and `body.guided` are gone by the time this is read. What that leaves is a game
+that never prevents a click and never explains one either.
 
 **Why it is wrong, in the user's words.** *"The whole click here highlighting
 stuff works but it feels like a cop out and mobile gamey. Everyone I've seen
@@ -529,25 +608,20 @@ always a crystal.
       resolves, exactly as it does for items and tree nodes. A quest offered,
       taken and finished is three states, where today a quest is a condition
       that is either met or not.
-- [ ] **The lockdown goes.** `body.guided` and the spending lock are the "cop
-      out" — deleting them is most of what this phase is for. Nothing may
-      replace them with a softer cage.
-- [ ] **What survives of the opening, if anything**, is a decision this phase
-      has to state before it starts. The genuinely non-obvious things are the
-      bench and the socket: nobody discovers "drag a currency onto an item" by
-      clicking about. A room can say it and the log can repeat it — but the
-      very first descent happens before anybody has spoken.
+- [ ] **Nothing may reintroduce a cage.** The lockdown is already gone; a log
+      that greys out what you have not been told about is the same cop out in
+      a new coat.
+- [ ] **Start from what actually confused a player**, not from a list of
+      systems. The suspected pair is the bench and the socket — nobody
+      discovers "drag a currency onto an item" by clicking about — but that is
+      a guess until somebody has played Phase 1's opening and got stuck.
 
 **Traps.**
 
-- **`npm run guide` is already GONE**, retired when the title screen changed
-  the boot it drove. The opening therefore has no coverage at all right now, and
-  this phase owes its replacement: can a fresh character reach the first crystal
-  by doing what the log says? Write that harness as part of the phase — the debt
-  is real and it is this phase's to pay.
-- The demo walks `TUTORIAL_STEPS` and holds every step's `done` predicate to
-  being reachable. That walkthrough goes with the steps it walks.
-- `RULES.md` names the fifteen steps by id. Same commit.
+- **Teaching has no harness and this phase owes one**: can a fresh character
+  reach the first crystal by doing what the log says? `npm run guide` was
+  retired and its walkthrough deleted with the steps, so the debt is real and
+  it is this phase's to pay.
 
 **Done when.** A new character is never prevented from clicking anything, and
 a player who stops knowing what to do can open one screen that tells them.
