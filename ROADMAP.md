@@ -428,6 +428,69 @@ entry, `blink`.
       shockwave that slows is a **Splash** that does something; check the table
       before naming anything.
 
+**Traps, all seven MEASURED rather than guessed.** Read every one before
+starting: the first three are why the last two checkboxes are not an afternoon,
+and none of them is visible from the files a fresh session would open.
+
+- **Only the MAIN skill takes a run's XP.** `report.ts:97` is
+  `addSkillXp(game.character, mainSkillId(character), xp)`. A skill web is
+  funded by that SKILL's level, and a mover never gains one — so a movement web
+  would sit at level 1 holding a single point, forever, and every node past the
+  first would be unreachable in a played game. The fix is to bank the run's XP
+  for every EQUIPPED skill, as a loop over `SKILL_SLOTS`, which costs one change
+  and is generic over a fourth slot. The rule it seems to bend is not bent:
+  "committing to one skill advances its tree" is about the MAIN slot, and you
+  only ever hold one mover.
+- **`treeGrants` merges the MAIN skill's tree and nothing else.**
+  `src/sim/stats.ts` — the other two slots contribute their static
+  `SkillDef.grants` only, so a mover's ALLOCATIONS never reach the sim and every
+  node of both new webs would do nothing at all. Extend that same loop to merge
+  each non-main slot's own web, so a web reaches the sim by the one path a tree
+  node, a trade node and a unique already use.
+- **`treePointsFor(level)` is `Math.min(level, MAX_TREE_POINTS)` — 30, globally.**
+  A nine-node web is therefore OWNED by level 9, and `MAX_TREE_POINTS`' own
+  comment is "a tree you can fill in is not a decision". A small web has to
+  declare its own budget, which means `treePointsFor` takes a skillId. Every
+  call site has one in scope: `ui/skills.ts` ×3, `game/save.ts:225`,
+  `sim/loadout.ts:69`, and `sim/character.ts` — where `pointsAvailable(progress)`
+  has to grow one too, and its callers are `game/crystals.ts:54` and `:80`.
+- **`BANNED` maps the bare word `leap` to Arc**, and the demo sweeps every
+  skill's own description — so the skill cannot say its own name. Narrow it to
+  the PHRASE that actually means Arc (`leaps to`, `leaping to`) and Arc keeps
+  its word, since its `means` line already says "leaps from what it hits". This
+  is a DECISION taken on the user's behalf: the ask names the skill Leap, and
+  the alternative is renaming the thing they asked for.
+- **The demo's sweeps name `BUILT_TREES` and `TRADES` one at a time.** A third
+  web family is invisible to all of them until it is added by hand to each: the
+  every-line-says-its-number sweep (~3429), the two vocabulary sweeps (~3491,
+  ~3541), and the per-tree reachability and grant checks (~1707). Adding the
+  family is adding a row to each of those, not adding a file.
+- **A monster's swing rate is set in TWO places** — `run.ts:1211` for a melee
+  body and `run.ts:1541` for anything with a skill — and `Entity.effects` is
+  ticked for the HERO alone. A Slow on landing therefore needs one rate helper
+  that both call, plus a tick for monster effects; put it in either place only
+  and ranged packs, or melee ones, ignore it silently.
+- **`SKILL_BEHAVIOURS` has no `no_cast` entry and does not need one** —
+  `run.ts:1499` falls back. So giving the two movers their own behaviour names
+  costs nothing and is what lets `GrantDef.reads` tell a jump's shockwave from a
+  step: a landing switch on the web of a skill that does not land is exactly the
+  point spent on nothing the demo already fails a tree for.
+
+**Decisions taken, each cheap to overrule while this is still a phase.**
+
+- **What makes Leap a jump rather than a second Blink**: a step needs a clear
+  line and goes THROUGH, a jump does not and goes OVER. Both still land on
+  walkable ground and both stay on the path already found, so a leap can never
+  put you somewhere the walk could not reach — it cuts the corner instead.
+- **A movement web is three arms of three**, minor-minor-notable, with a budget
+  smaller than the web: what is decided is which arms you walk, and the arm is
+  the price, exactly as a trade spoke is. Its own layout beside
+  `src/trades/layout.ts`, sharing `webgraph.ts` and `webart.ts`.
+- **Slow becomes a KEYWORD.** Nothing in the game slows an enemy today, so the
+  shockwave is a new mechanism, and `RULES.md` says a new mechanism either uses
+  a word in the table or adds one. It is not a Splash: that word is defined as a
+  swing dealing a share of its damage in a circle, and the landing deals none.
+
 **What must not break.** `equipSkill` refuses a skill whose category the slot
 does not accept, and the demo checks it — equipping a mover must never be what
 stops you swinging. `heal()` empties a slot naming a skill that is gone, so
