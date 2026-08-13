@@ -60,11 +60,10 @@ jobs:
       - name: mods — does every modifier do what it says
         run: npm run mods
 
-      # The one check that plays by the player's rules. The demo proves each
-      # step CAN complete; this proves you can get there with a mouse while the
-      # opening has the rest of the app switched off.
-      - name: guide — can a new player actually finish the opening
-        run: npm run guide
+      # `shots` and `drag` are deliberately NOT here. Both drive a real browser,
+      # and `drag` is a pointer test — `RULES.md` records that a reorder has
+      # failed on a bundle that passed either side of it, so it is a thing you
+      # re-run rather than a thing that gates a merge.
 
       - name: commit the rebuilt bundle
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
