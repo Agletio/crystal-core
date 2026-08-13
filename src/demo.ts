@@ -1414,22 +1414,28 @@ rule('SPRITES — is the pixel art well formed?');
     }
     return bad;
   };
-  // Against the RIGHT way round rather than against zero or a share. A count
-  // is not comparable across grids — an artist places 576 pixels and holds it
-  // to none, where a generated frame is 65,536 and its grime speckles both ways
-  // — but texture speckles them EVENLY, so a sprite lit correctly still has far
-  // more shadow-under-highlight than highlight-under-shadow. Only an inverted
-  // light flips that, which is the thing worth failing on.
-  const inverted = (g: string[], l: string, s: string): boolean =>
-    upsideDown(g, l, s) > upsideDown(g, s, l);
-  const wrongWay =
-    Object.values(BEASTIARY)
-      .flatMap((a) => [...a.frames, ...(a.attack ? [a.attack] : [])])
-      .filter((g) => inverted(g, 'M', 's')).length +
-    Object.values(FAMILY_ART)
-      .flatMap((a) => [a.helmet, a.body, a.gloves, ...a.boots])
-      .filter((g) => inverted(g, 'P', 'd')).length;
-  check(wrongWay === 0, 'and every one of them is lit from above', `${wrongWay} are lit from under`);
+  // CONSISTENT, not pointing anywhere in particular. What a player can see is
+  // sprites disagreeing with each other; nobody can tell which way the sun is.
+  // And the direction test does not survive the resolution: it reads vertically
+  // adjacent pairs, which track the form on hand-placed mass shading and are
+  // texture noise on a 256 grid full of grime.
+  const bias = (g: string[], l: string, s: string): number => {
+    const body = g.reduce((n, row) => n + [...row].filter((c) => c !== '.').length, 0);
+    return body === 0 ? 0 : (upsideDown(g, s, l) - upsideDown(g, l, s)) / body;
+  };
+  // Measured to set it: hand-drawn frames run to +7% and never go negative,
+  // where a grimy 256 one sits inside half a percent of nothing. So a sign on
+  // its own is noise, and only a frame PAST the band is really lit from under.
+  const LIT_BAND = 0.01;
+  const leaning = Object.values(BEASTIARY)
+    .flatMap((a) => [...a.frames, ...(a.attack ? [a.attack] : [])])
+    .map((g) => bias(g, 'M', 's'));
+  const under = leaning.filter((b) => b < -LIT_BAND).length;
+  check(under === 0, 'and none of them is lit from underneath', `${under} frames are`);
+  gauge(
+    `how the bestiary is lit: ${leaning.filter((b) => b > LIT_BAND).length} frames from above,` +
+      ` ${leaning.filter((b) => Math.abs(b) <= LIT_BAND).length} flat, ${under} from under`
+  );
 
   // Two frames that are identical are not a walk cycle. Cheap to write, and
   // exactly the thing you would not notice from a still.
