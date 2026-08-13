@@ -1355,6 +1355,10 @@ export class RunSim {
   private maybeBlink(hero: Entity): void {
     const skill = this.mover;
     if (!skill || this.blinkIn > 0 || hero.path.length === 0) return;
+    // Never in an authored room. Crossing one is somebody walking over to say
+    // something, and blinking the last of it reads as a bug rather than as a
+    // build — there is nothing in here to get to faster.
+    if (this.options.scene) return;
 
     const reach = (skill.params?.distance as number) ?? 0;
     const grid = this.state.map.grid;

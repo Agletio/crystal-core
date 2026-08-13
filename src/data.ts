@@ -2883,12 +2883,12 @@ export const LEVELLING = {
   curveExponent: 1.8,
 };
 
-/** Points to one STEP, and a part-step pays nothing: three a level against
- *  five to a step is a step every level and two thirds. */
-export const ATTRIBUTE_STEP = 5;
+/** Every POINT pays. There is no step to bank toward and nothing is floored,
+ *  so a point spent is a number that moved. */
+export const ATTRIBUTE_STEP = 1;
 
 /**
- * The four, and what one step of each is worth. Every line is an ordinary
+ * The four, and what one POINT of each is worth. Every line is an ordinary
  * stat under a name the modifier engine already reads, so an attribute
  * reaches the sim by exactly the path gear does. The TAGS are the whole of
  * what keeps them apart: a critical chance tagged `attack` does nothing for a
@@ -2900,32 +2900,32 @@ export const ATTRIBUTES: AttributeDef[] = [
     id: 'strength',
     name: 'Strength',
     per: [
-      { stat: 'damage', form: 'inc', value: 5, tags: ['attack'] },
-      { stat: 'life', form: 'inc', value: 3, tags: [] },
+      { stat: 'damage', form: 'inc', value: 1, tags: ['attack'] },
+      { stat: 'life', form: 'inc', value: 0.6, tags: [] },
     ],
   },
   {
     id: 'intelligence',
     name: 'Intelligence',
     per: [
-      { stat: 'damage', form: 'inc', value: 5, tags: ['spell'] },
-      { stat: 'mana', form: 'inc', value: 6, tags: [] },
+      { stat: 'damage', form: 'inc', value: 1, tags: ['spell'] },
+      { stat: 'mana', form: 'inc', value: 1.2, tags: [] },
     ],
   },
   {
     id: 'dexterity',
     name: 'Dexterity',
     per: [
-      { stat: 'critChance', form: 'flat', value: 0.6, tags: ['attack'] },
-      { stat: 'attackSpeed', form: 'inc', value: 2, tags: [] },
+      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['attack'] },
+      { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
     ],
   },
   {
     id: 'acuity',
     name: 'Acuity',
     per: [
-      { stat: 'critChance', form: 'flat', value: 0.6, tags: ['spell'] },
-      { stat: 'castSpeed', form: 'inc', value: 2, tags: [] },
+      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['spell'] },
+      { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
     ],
   },
 ];

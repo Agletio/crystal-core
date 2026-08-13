@@ -6,7 +6,6 @@ import {
   AILMENT,
   ALL_MODS,
   ATTRIBUTES,
-  ATTRIBUTE_STEP,
   DEFENCE,
   FISSURE,
   BINDING_BY_ID,
@@ -3742,16 +3741,15 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
 
 // A level hands out points, the sheet spends them, and everything downstream
 // has to see them as ordinary stat lines. Three things can break silently: a
-// step that pays before it is whole, a tag that lets an attack line arm a
-// spell, and a point no level ever granted surviving a load.
+// point that pays nothing, a tag that lets an attack line arm a spell, and a
+// point no level ever granted surviving a load.
 {
-  const step = ATTRIBUTE_STEP;
   const round = (n: number) => Math.round(n).toString();
 
-  // What one step is worth, measured on the character it is meant for. Half
+  // What one point is worth, measured on the character it is meant for. Half
   // of each attribute is tagged, so the skill is what decides whether it
   // lands — which is the whole of how the four stay apart.
-  line('  attribute      one step, on the skill it is for');
+  line('  attribute      one point, on the skill it is for');
   for (const attr of ATTRIBUTES) {
     line(`  ${attr.name.padEnd(13)} ${attr.per.map((s) => describeStatLine(s)).join(', ')}`);
   }
@@ -3764,19 +3762,17 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
   };
   const bare = (skillId: string) => characterStats(withPoints(skillId, 'strength', 0));
 
-  // A part-step is banked, not spent. Points short of a whole one buying
-  // anything at all would make the granularity a lie.
+  // EVERY point pays. Flooring meant four in five spent points showed the
+  // player nothing at all, and the one that mattered was invisible until it
+  // landed — so the thing to hold is that each one in a row moves the number.
   {
-    const none = characterStats(withPoints('strike', 'strength', step - 1));
-    const one = characterStats(withPoints('strike', 'strength', step));
-    line(
-      `  ${step - 1} points into Strength: ${round(none.maxLife)} life; ` +
-        `${step}: ${round(one.maxLife)}`
-    );
+    const life = [0, 1, 2, 3].map((n) => characterStats(withPoints('strike', 'strength', n)).maxLife);
+    line(`  1 point at a time into Strength: ${life.map(round).join(' -> ')} life`);
+    const rising = life.every((v, i) => i === 0 || v > life[i - 1]);
     check(
-      none.maxLife === bare('strike').maxLife && one.maxLife > none.maxLife,
-      `a part-step buys nothing and the ${step}th point buys the lot`,
-      `${none.maxLife} then ${one.maxLife} against a bare ${bare('strike').maxLife}`
+      rising && life[0] === bare('strike').maxLife,
+      'every single point moves the number, with nothing banked toward a step',
+      life.map(round).join(' -> ')
     );
   }
 
@@ -3784,11 +3780,11 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
   // rolls, it shows, it stacks, and it does nothing — which is exactly what
   // `heroStats` passing the skill's tags into `critChance` prevents.
   {
-    const dexOnStrike = characterStats(withPoints('strike', 'dexterity', step * 4));
-    const dexOnBlight = characterStats(withPoints('blight', 'dexterity', step * 4));
-    const acuOnBlight = characterStats(withPoints('blight', 'acuity', step * 4));
+    const dexOnStrike = characterStats(withPoints('strike', 'dexterity', 20));
+    const dexOnBlight = characterStats(withPoints('blight', 'dexterity', 20));
+    const acuOnBlight = characterStats(withPoints('blight', 'acuity', 20));
     line(
-      `  4 steps of Dexterity: ${dexOnStrike.critChance.toFixed(1)}% crit on Strike, ` +
+      `  20 points of Dexterity: ${dexOnStrike.critChance.toFixed(1)}% crit on Strike, ` +
         `${dexOnBlight.critChance.toFixed(1)}% on Blight — Acuity gives it ` +
         `${acuOnBlight.critChance.toFixed(1)}%`
     );
@@ -3802,16 +3798,16 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
     // Speed is the same split, and it rides on a seam that already existed:
     // a spell reads castSpeed and never attackSpeed.
     check(
-      characterStats(withPoints('blight', 'dexterity', step * 4)).attacksPerSecond
+      characterStats(withPoints('blight', 'dexterity', 20)).attacksPerSecond
         === bare('blight').attacksPerSecond
-        && characterStats(withPoints('blight', 'acuity', step * 4)).attacksPerSecond
+        && characterStats(withPoints('blight', 'acuity', 20)).attacksPerSecond
           > bare('blight').attacksPerSecond,
       'and cast speed is bought with Acuity rather than with Dexterity',
       'the wrong attribute moved a spell’s rate'
     );
     // Damage, the same way round.
-    const str = characterStats(withPoints('strike', 'strength', step * 4));
-    const int = characterStats(withPoints('strike', 'intelligence', step * 4));
+    const str = characterStats(withPoints('strike', 'strength', 20));
+    const int = characterStats(withPoints('strike', 'intelligence', 20));
     check(
       str.damage > bare('strike').damage && int.damage === bare('strike').damage,
       'and a spell damage attribute leaves an attack exactly where it was',
@@ -5617,6 +5613,17 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'everyone crosses the room to you, and the one who lurks makes you come to him',
       crossed.join(', ')
     );
+
+    // And nobody blinks across an authored room: there is nothing in here to
+    // get to faster, and the movement skill firing mid-conversation reads as a
+    // bug rather than as a build.
+    const blinked = SCENES.filter((scene) => {
+      const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
+      let t = 0;
+      while (!arriving.state.meeting && t++ < 4000) arriving.walkOut(TICK);
+      return arriving.state.blinks > 0;
+    }).map((scene) => scene.id);
+    check(blinked.length === 0, 'and nobody blinks across one', blinked.join(', '));
 
     const who = room.state.folk[0];
     who.action = 'idle';

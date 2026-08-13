@@ -8,7 +8,6 @@
  */
 import {
   ATTRIBUTES,
-  ATTRIBUTE_STEP,
   MAIN_SLOT,
   SKILL_BY_ID,
   SKILL_SLOTS,
@@ -190,20 +189,18 @@ function renderAttributes(): void {
     };
     row.append(buy);
 
-    const bought = attr.per.map((s) => describeStatLine({ ...s, value: s.value * steps }));
+    // The line says what ONE point buys, always — a row that changes what it
+    // describes as you spend is a row you cannot compare the four by.
     const each = attr.per.map((s) => describeStatLine(s));
-    row.append(
-      el(
-        'span',
-        'attr__how',
-        `${steps > 0 ? bought.join(', ') : `${ATTRIBUTE_STEP} points buys ${each.join(', ')}`}` +
-          ` · ${held % ATTRIBUTE_STEP} of ${ATTRIBUTE_STEP} toward the next`
-      )
-    );
+    const bought = attr.per.map((s) => describeStatLine({ ...s, value: s.value * steps }));
+    row.append(el('span', 'attr__how', `${each.join(', ')} per point`));
     attachTooltip(
       row,
       () =>
-        `${attr.name}\nEvery ${ATTRIBUTE_STEP} points: ${each.join(', ')}.\n` +
+        `${attr.name}\nPer point: ${each.join(', ')}.\n` +
+        (held > 0
+          ? `${held} spent: ${bought.join(', ')}.\n`
+          : 'Nothing spent here yet.\n') +
         `A level hands you ${LEVELLING.attributePointsPerLevel}.`
     );
     host.append(row);

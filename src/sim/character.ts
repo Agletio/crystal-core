@@ -128,7 +128,7 @@ export const attributesSpent = (character: Character): number =>
 export const attributePointsLeft = (character: Character): number =>
   attributePointsFor(character.level) - attributesSpent(character);
 
-/** FLOORS: a part-step is points banked toward one, and pays nothing yet. */
+/** Points spent, which is now what pays: `ATTRIBUTE_STEP` is 1. */
 export const attributeSteps = (character: Character, id: string): number =>
   Math.floor((character.attributes?.[id] ?? 0) / ATTRIBUTE_STEP);
 
