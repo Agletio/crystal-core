@@ -927,7 +927,10 @@ $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
 assert($('run-menu').hidden === false, 'and the Fissure is waiting underneath');
 assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
-assert(all('#run-stats .stat').length >= 6, 'character stats shown');
+// The Fissure screen is the sockets and the one button, and nothing else:
+// what a character IS is on the sheet, which has its own checks below.
+assert($('run-stats') === null, 'and the Fissure carries no character panel');
+assert($('run-launch') !== null, 'only the sockets and the way in');
 
 // --- socketing a crystal --------------------------------------------------
 // One screen holds every crystal you own, socketed or not, because four

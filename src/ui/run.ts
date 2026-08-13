@@ -123,16 +123,9 @@ let arriving: SceneDef | null = null;
 /** The room you are standing in, and whether its beats have been started. */
 let arrivedIn = '';
 let spoke = false;
-/**
- * Close enough to see what's happening. Fit (1×) shows the whole Fissure, and
- * at that scale a monster is four pixels. Fit is one click away.
- */
+/** Close enough to see it. Fit (1×) makes a monster four pixels. */
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
-
-// ---------------------------------------------------------------------------
-// Phase
-// ---------------------------------------------------------------------------
 
 function setPhase(next: Phase): void {
   phase = next;
@@ -147,12 +140,9 @@ function setPhase(next: Phase): void {
   setInventoryBase(runHandler());
 }
 
-/**
- * The stage sizes itself to the frame, so the scroll container stops scrolling
- * while a map is up or the two fight over the height. Left on while you tabbed
- * to the bench, it froze that page with its items out of reach. `mapfull`
- * rides on the same answer and is what makes the map the screen.
- */
+/** The stage sizes itself to the frame, so the scroll container stops while a
+ *  map is up. Left on while you tabbed to the bench it froze that page with its
+ *  items out of reach. `mapfull` rides on the same answer. */
 export function syncViewportLock(): void {
   const showing = phase !== 'menu';
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', showing);
@@ -560,32 +550,9 @@ function haltLine(report: RunReport): string {
   return `Cleared ${runs}.`;
 }
 
+/** The HUD's name. What a character IS lives on the sheet. */
 function renderStatsPanel(): void {
-  const s = characterStats(game.character);
-  const host = $('run-stats');
-  host.replaceChildren();
-  $('run-menu-level').textContent = String(game.character.level);
   $('run-name').textContent = game.character.name;
-
-  const rows: Array<[string, string]> = [
-    ['life', Math.round(s.maxLife).toString()],
-    ['damage', Math.round(s.damage).toString()],
-    ['atk/sec', s.attacksPerSecond.toFixed(2)],
-    ['crit', `${Math.round(s.critChance)}%`],
-    ['move', s.moveSpeed.toFixed(1)],
-    ['armour', Math.round(s.armour).toString()],
-    ['regen/s', s.lifeRegen.toFixed(1)],
-    ['mana', Math.round(s.maxMana).toString()],
-    ['mana/s', s.manaRegen.toFixed(1)],
-    ['cost', s.manaCost.toFixed(1)],
-  ];
-
-  for (const [k, v] of rows) {
-    const row = el('div', 'stat');
-    row.append(el('span', 'stat__k', k));
-    row.append(el('span', 'stat__v', v));
-    host.append(row);
-  }
 }
 
 /**

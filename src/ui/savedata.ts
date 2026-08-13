@@ -109,6 +109,20 @@ async function copyInto(slot: Slot): Promise<void> {
   render();
 }
 
+async function wipeSlot(slot: Slot): Promise<void> {
+  const held = peekSlot(slot);
+  if (!held) return;
+  const yes = await ask({
+    title: `Delete ${held.name}?`,
+    text: `Level ${held.level}, saved ${when(held.at)}. This one goes; the others stay.`,
+    confirm: 'Delete',
+  });
+  if (!yes) return;
+  clearSave(slot);
+  say(`Slot ${slot} deleted.`);
+  render();
+}
+
 function newIn(slot: Slot): void {
   // Nothing is lost: the game being played is in its own slot and loading it
   // back is one click. That is the whole reason a new game is a slot's action.
@@ -140,13 +154,20 @@ function slotRow(slot: Slot, live: Slot): HTMLElement {
   row.append(about);
 
   const acts = el('div', 'saveslot__acts');
+  // The live row offers nothing: copying a game onto itself is not a thing, and
+  // deleting the one you are standing in is a question nobody meant to ask.
   if (mine) acts.append(el('span', 'saveslot__live', 'Playing here'));
-  else if (held) {
+  else {
+    if (held) acts.append(button(slot, 'load', 'Load', () => void loadSlot(slot)));
     acts.append(button(slot, 'copy', 'Copy here', () => void copyInto(slot)));
-    acts.append(button(slot, 'load', 'Load', () => void loadSlot(slot)));
-  } else {
-    acts.append(button(slot, 'copy', 'Copy here', () => void copyInto(slot)));
-    acts.append(button(slot, 'new', 'New game', () => newIn(slot)));
+    if (!held) acts.append(button(slot, 'new', 'New game', () => newIn(slot)));
+    // Its OWN delete. One button that took all three could not do the thing
+    // anybody actually wants, which is losing ONE game.
+    if (held) {
+      const gone = button(slot, 'wipe', 'Delete', () => void wipeSlot(slot));
+      gone.classList.add('mini--danger');
+      acts.append(gone);
+    }
   }
   row.append(acts);
   return row;
@@ -245,17 +266,9 @@ export function initSaveData(
     if (chosen) void restore(chosen);
   };
 
-  // Every slot, because the reason to press this is "get my game off this
-  // machine" rather than "free up a row" — nothing here needs freeing.
-  ($('save-wipe') as HTMLButtonElement).onclick = async () => {
-    const yes = await ask({
-      title: 'Delete all three saves?',
-      text: 'Every slot in this browser goes. The game on screen keeps running until you close the tab.',
-      confirm: 'Delete',
-    });
-    if (!yes) return;
-    for (const slot of SLOTS) clearSave(slot);
-    say('All three deleted. This game is still running — closing the tab loses it.');
+  ($('save-now') as HTMLButtonElement).onclick = () => {
+    saveGame(game);
+    say(`Saved just now, in slot ${liveSlot()}.`);
     render();
   };
 

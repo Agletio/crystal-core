@@ -878,6 +878,21 @@
   .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
 
   .mini--go { border-color: var(--rust); color: var(--bone); }
+  /* The one decision on the screen, sized like it. */
+  .mini--enter {
+    padding: 12px 30px; font-size: 15px; letter-spacing: .1em;
+    border-width: 3px; box-shadow: var(--bevel), 0 4px 0 rgba(0,0,0,.5);
+  }
+  .mini--enter:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
+  .runbar--go { margin-top: 20px; justify-content: center; }
+  /* Centred and roomier, now that nothing shares the screen with it. */
+  .fissurecard {
+    width: min(620px, 100%); margin: min(6vh, 60px) auto 0;
+    padding: 22px 26px; text-align: center;
+  }
+  .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
+  .fissurecard .panel__title { font-size: 15px; }
+  .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
   .mini--go:hover:not(:disabled) { background: var(--seam); }
 
   .chosen__name { font-family: var(--display); font-size: 15px; }
@@ -1413,41 +1428,30 @@
   <div class="viewport">
   <div id="view-run">
     <div id="run-menu">
-      <div class="cols">
-        <!-- One place, always open. A crystal doesn't take you somewhere
-             else, it empowers what's already down there — so the socket is
-             optional and Enter is never disabled. -->
-        <div class="panel">
-          <p class="panel__title">The Fissure</p>
-          <p class="fissure">
-            A thin place in the rock. Always open, always free.
-          </p>
+      <!-- One place, always open. A crystal doesn't take you somewhere else,
+           it empowers what's already down there — so the socket is optional
+           and Enter is never disabled. Nothing else is on this screen: what a
+           character IS lives on the sheet, one key away, and putting it here
+           too made the one decision the screen exists for share the room. -->
+      <div class="panel fissurecard">
+        <p class="panel__title">The Fissure</p>
+        <p class="fissure">A thin place in the rock. Always open, always free.</p>
 
-          <div class="sockets" id="run-sockets"></div>
-          <div id="run-selected"></div>
+        <div class="sockets" id="run-sockets"></div>
+        <div id="run-selected"></div>
 
-          <div class="runbar" style="margin-top:16px">
-            <button class="mini mini--go" id="run-launch">Enter the Fissure</button>
-            <!-- A way back to somebody you have already put down. Hidden until
-                 you are holding the way in. -->
-            <button class="mini" id="run-call" hidden></button>
-          </div>
-          <p class="runblocked" id="run-blocked"></p>
-          <p class="runsrc">
-            Clear it all, then something waits at the exit.
-            A socketed crystal stays socketed, and a cleared descent starts the
-            next one until you die or the haul fills.
-          </p>
+        <div class="runbar runbar--go">
+          <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
+          <!-- A way back to somebody you have already put down. Hidden until
+               you are holding the way in. -->
+          <button class="mini" id="run-call" hidden></button>
         </div>
-
-        <div class="panel">
-          <p class="panel__title">Character</p>
-          <div class="levelrow">
-            <span class="levelrow__label">level</span>
-            <span class="levelrow__value" id="run-menu-level">1</span>
-          </div>
-          <div id="run-stats"></div>
-        </div>
+        <p class="runblocked" id="run-blocked"></p>
+        <p class="runsrc">
+          Clear it all, then something waits at the exit.
+          A socketed crystal stays socketed, and a cleared descent starts the
+          next one until you die or the haul fills.
+        </p>
       </div>
     </div>
 
@@ -1880,10 +1884,11 @@
     <div class="modal__body">
       <div id="save-where"></div>
       <div class="ask__row" style="justify-content:flex-start">
+        <!-- It autosaves, and people do not believe it. A button that writes
+             now and says so costs one line and buys the confidence to reload. -->
+        <button class="mini" id="save-now">Save now</button>
         <button class="mini" id="save-download">Download backup</button>
         <button class="mini" id="save-load">Load backup</button>
-        <span class="spacer" style="flex:1 1 auto"></span>
-        <button class="mini mini--danger" id="save-wipe">Delete all saves</button>
       </div>
       <input type="file" id="save-file" accept="application/json,.json" hidden />
       <p class="savenote" id="save-note"></p>
