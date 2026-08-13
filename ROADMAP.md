@@ -9,7 +9,7 @@ gets **rooms you arrive in and people standing in them**. The machinery is
 BUILT — a scene is a `RunSim` over an authored map, people talk in bubbles over
 their own heads, a room may have a boss in it, and a key takes you back to one
 you have put down. `CLAUDE.md` and `RULES.md` describe the whole of it; what is
-left is one new item kind, one more character, and moving lessons into rooms.
+left is one new item kind, one more character, and teaching by quest.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -25,7 +25,7 @@ with different content in it:
 ```
 1  the Osteomancer      a third item kind, and a scene that spends one
 2  the Astral-Geometer  phase 1's machinery, jewellery, a calmer voice
-3  teaching in a room   the guided opening's lessons, moved into the scenes
+3  the quest log        teaching by quests, and the pointing finger deleted
 ```
 
 If a phase here has to be reordered, say so and reorder the WHOLE ladder rather
@@ -492,42 +492,70 @@ room carrying something a ring cannot otherwise hold.
 
 **What must not break.** The same list as Phase 1, same order.
 
-### Phase 3 — Teaching in a room instead of over one
+### Phase 3 — A quest log instead of a pointing finger
 
-> **Under-specified on purpose. Which lessons move is Open question 8** — write
-> the answer into this phase before starting it.
+**What is true today.** Teaching is `TUTORIAL_STEPS` in `src/ui/tutorial.ts`:
+fifteen steps, a card beside ONE lit control, and `body.guided` switching
+spending off so you cannot wander. It is good at "press this" and cannot say
+why anything matters.
 
-**What is true today.** Everything the game teaches is taught by
-`TUTORIAL_STEPS` in `src/ui/tutorial.ts`: fifteen steps, a card beside one lit
-control, a lockdown on spending. It is good at "press this" and has no way at
-all to say why any of it matters. Meanwhile phases 2–7 build four rooms where
-somebody is talking directly to the player and nothing is ticking.
+**Why it is wrong, in the user's words.** *"The whole click here highlighting
+stuff works but it feels like a cop out and mobile gamey. Everyone I've seen
+play immediately wants to click on things the tutorial doesn't let them."* The
+lockdown does not merely fail to help exploration — it FORBIDS it. What is
+wanted is the opposite shape: nothing blocks you, and there is somewhere to
+look when you get stuck.
 
-- [ ] **A beat may SHOW a keyword.** `SceneBeat.shows` names entries in
-      `KEYWORDS`, and the bubble marks them and prints what each one means at
-      the foot of the same bubble through `src/ui/glossary.ts`. The rule is
-      already that a keyword is shown where it appears and never hidden behind a
-      second hover; this is one more place it appears.
-- [ ] **A scene may SATISFY a step.** A `TutorialStep` whose lesson a scene now
-      carries is DELETED, not disabled, and the demo's hand-written action list
-      loses its row in the same commit. `RULES.md` names the fifteen steps by id
-      and that list is updated in the same breath.
-- [ ] **The bursts rule still holds.** A scene teaches and then lets go. Nothing
-      from this phase may follow the player out of the room, and no step may
-      wait on something a scene has not reached yet.
+**The machinery is already here, and it is most of the job.** `CRYSTAL_QUESTS`
+in `src/data.ts` is a table of `{ id, name, detail, need, gives }`; `need` is
+clauses ANDed together, `kind` names an entry in `QUEST_CONDITIONS`, and
+`detail` is *the objective already written in words*. A new objective is a
+registry entry and a table row. What is missing is only: a screen to read them
+on, a way for a person in a room to hand one over, and a reward that is not
+always a crystal.
+
+- [ ] **A quest log, on the rail like every other screen.** Active quests with
+      their `detail`, and what is done. `detail` is the specific instruction —
+      the thing you open when stuck — so the dialogue can stay atmospheric and
+      the log can say "put a Shard of Making on a socketed crystal".
+- [ ] **A quest is GIVEN, in a room.** A `SceneDef` names the quest its person
+      hands over, so meeting somebody is what starts one. The existing crystal
+      quests are ambient and complete in any order; decide whether they become
+      given too or stay as they are, and say why.
+- [ ] **`gives` stops being crystal-shaped.** It is `{ level, family }` today.
+      A quest that teaches the bench pays a currency, or nothing at all — the
+      teaching is the point. Generalise it the way `GrantDef` generalised a
+      switch, so a new reward is a table row.
+- [ ] **Quest state goes in the save**, and `heal()` drops an id that no longer
+      resolves, exactly as it does for items and tree nodes. A quest offered,
+      taken and finished is three states, where today a quest is a condition
+      that is either met or not.
+- [ ] **The lockdown goes.** `body.guided` and the spending lock are the "cop
+      out" — deleting them is most of what this phase is for. Nothing may
+      replace them with a softer cage.
+- [ ] **What survives of the opening, if anything**, is a decision this phase
+      has to state before it starts. The genuinely non-obvious things are the
+      bench and the socket: nobody discovers "drag a currency onto an item" by
+      clicking about. A room can say it and the log can repeat it — but the
+      very first descent happens before anybody has spoken.
 
 **Traps.**
 
-- `guide` is the primary harness for this phase rather than the expensive one,
-  and it plays the opening in real time over about eleven descents.
-- A step that is already satisfied is SKIPPED and never comes back. A lesson
-  moved into a scene that the player reaches LATER than the step is a lesson
-  nobody is ever taught.
+- **`npm run guide` loses its subject.** It exists to prove the opening is
+  completable by clicking only what is lit; with nothing lit it has no question
+  to ask. Its replacement is a better one — can a fresh character reach the
+  first crystal by doing what the log says — and writing that is part of this
+  phase, not after it. Do not delete the harness without replacing it.
+- The demo walks `TUTORIAL_STEPS` and holds every step's `done` predicate to
+  being reachable. That walkthrough goes with the steps it walks.
+- `RULES.md` names the fifteen steps by id. Same commit.
 
-**Done when.** The opening teaches fewer things and the game teaches more of
-them, in rooms, and `npm run guide` still finishes by clicking only what is lit.
+**Done when.** A new character is never prevented from clicking anything, and
+a player who stops knowing what to do can open one screen that tells them.
 
-**What must not break.** `guide`, all of it, and the demo's step walkthrough.
+**What must not break.** The demo's quest checks — every quest's clauses must
+still be satisfiable, which is the check that already exists and is the reason
+this phase is cheaper than it looks.
 
 ---
 
@@ -597,14 +625,6 @@ Every one is parked deliberately. Ask before acting on any of them.
    beats you click through. Nothing about the story is written, so it is still
    question 1 and still the user's; what has changed is that answering it is now
    content under `src/scenes/` rather than a system.
-
-8. **What does a scene TEACH?** Phase 3 is written and under-specified on
-   purpose. Four rooms where somebody talks straight at the player is the best
-   teaching surface the game has ever had, and the list of lessons worth moving
-   into one — what a crystal does, what a socket costs, what a ward is for, why
-   the report splits damage by type — has not been picked. The one thing already
-   decided is the shape: a step a scene now carries is DELETED from
-   `TUTORIAL_STEPS` rather than left in beside it.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
