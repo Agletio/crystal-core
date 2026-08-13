@@ -20,6 +20,15 @@ export type Ask = {
   inks?: string[];
 };
 
+/** Appended to every description, so a row carries only its SUBJECT and the
+ *  look cannot drift. The limbs clause is for the ANIMATOR rather than the eye:
+ *  `estimate-skeleton` cannot find joints on a body whose legs are one mass. */
+export const HOUSE_WORDS =
+  ', a grim creature of an underground dark-fantasy world, no modern clothing,' +
+  ' no tools, no props, no text, side view facing right, full body in frame,' +
+  ' limbs clearly separated and visible, dark outline, flat solid colours,' +
+  ' no background, no ground shadow';
+
 /** The style every creature is drawn in, sent on every ask. Flat and unlit
  *  because the rank accent and the halo are added at RUNTIME — art arriving
  *  with a glow on it already makes every rank look the same. */
@@ -87,7 +96,7 @@ export async function balance(): Promise<number> {
 export async function generate(ask: Ask): Promise<Buffer> {
   const body: Record<string, unknown> = {
     ...HOUSE_STYLE,
-    description: ask.description,
+    description: ask.description + HOUSE_WORDS,
     image_size: { width: ask.size, height: ask.size },
     ...(ask.seed === undefined ? {} : { seed: ask.seed }),
     ...(ask.inks?.length
