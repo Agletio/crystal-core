@@ -244,9 +244,12 @@ export const RANKS: MonsterRank[] = ['common', 'magic', 'rare'];
 /** How a creature and its rank name one set of frames. */
 export const rankedKey = (sprite: string, rank: MonsterRank): string => `${sprite}:${rank}`;
 
-export type SpriteSheet = Record<string, HTMLCanvasElement[]>;
+/** Frames for one creature at one rank, or null when nothing draws that sprite. */
+export type SpriteSheet = { frames(sprite: string, rank: MonsterRank): HTMLCanvasElement[] | null };
 
 export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY)] as const;
+
+const DRAWABLE = new Set<string>(SPRITE_KINDS);
 
 function cell(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   const canvas = document.createElement('canvas');
@@ -275,14 +278,27 @@ function drawCreature(
   if (art) drawPixels(ctx, art);
 }
 
-/** Null when there is no canvas at all, which callers read as "another renderer". */
+/**
+ * Null when there is no canvas at all, which callers read as "another renderer".
+ *
+ * Frames are drawn on FIRST USE and memoised. A descent reaches about 8 of the
+ * creatures in the table, so drawing all of them at boot paid for the whole
+ * bestiary at every rank to open one map.
+ */
 export function makeSheet(palette: Palette): SpriteSheet | null {
-  const sheet: SpriteSheet = {};
+  if (!cell()) return null;
 
   // One set of frames per creature AND rank: a halo is pixels, so it belongs
   // in the texture rather than in a filter that would blur off the grid.
-  for (const sprite of SPRITE_KINDS) {
-    for (const rank of RANKS) {
+  const drawn = new Map<string, HTMLCanvasElement[]>();
+
+  return {
+    frames(sprite, rank) {
+      if (!DRAWABLE.has(sprite)) return null;
+      const key = rankedKey(sprite, rank);
+      const already = drawn.get(key);
+      if (already) return already;
+
       const frames: HTMLCanvasElement[] = [];
       for (let frame = 0; frame < CREATURE_FRAMES; frame++) {
         const made = cell();
@@ -290,8 +306,8 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
         drawCreature(made.ctx, sprite, frame, palette, rank);
         frames.push(made.canvas);
       }
-      sheet[rankedKey(sprite, rank)] = frames;
-    }
-  }
-  return sheet;
+      drawn.set(key, frames);
+      return frames;
+    },
+  };
 }

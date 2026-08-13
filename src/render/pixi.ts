@@ -49,6 +49,7 @@ import {
   ZOOM_MIN,
 } from './renderer';
 import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
+import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
@@ -66,17 +67,28 @@ export async function createPixiRenderer(
   const sheet = makeSheet(palette);
   if (!sheet) return null;
 
-  const textures: Record<string, Texture[]> = {};
-  for (const [name, frames] of Object.entries(sheet)) {
-    textures[name] = frames.map((canvas) => {
-      const texture = Texture.from(canvas);
-      // Nearest, not linear. The hero is authored on a 16-pixel grid and is
-      // then drawn at whatever fraction of a tile the zoom works out to —
-      // under the default smoothing that grid is interpolated away and you get
-      // back the small blurry drawing pixel art exists to not be.
-      texture.source.scaleMode = 'nearest';
-      return texture;
-    });
+  const textures = new Map<string, Texture[] | null>();
+
+  /** Uploaded on first use, beside the canvases: an eager loop here would pay
+   *  the boot cost the lazy sheet exists to avoid. */
+  function texturesFor(sprite: string, rank: MonsterRank): Texture[] | null {
+    const key = rankedKey(sprite, rank);
+    const already = textures.get(key);
+    if (already !== undefined) return already;
+
+    const frames = sheet!.frames(sprite, rank);
+    const made =
+      frames?.map((canvas) => {
+        const texture = Texture.from(canvas);
+        // Nearest, not linear. The hero is authored on a 16-pixel grid and is
+        // then drawn at whatever fraction of a tile the zoom works out to —
+        // under the default smoothing that grid is interpolated away and you get
+        // back the small blurry drawing pixel art exists to not be.
+        texture.source.scaleMode = 'nearest';
+        return texture;
+      }) ?? null;
+    textures.set(key, made);
+    return made;
   }
 
   const app = new Application();
@@ -171,9 +183,9 @@ export async function createPixiRenderer(
   /** A creature's frames at its rank, falling back to the common ones. */
   function framesFor(e: Entity): Texture[] {
     return (
-      textures[rankedKey(e.sprite, e.rank)] ??
-      textures[rankedKey(e.sprite, 'common')] ??
-      textures[rankedKey('grub', 'common')]
+      texturesFor(e.sprite, e.rank) ??
+      texturesFor(e.sprite, 'common') ??
+      texturesFor('grub', 'common')!
     );
   }
 
