@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import { balance, generate } from './pixellab.mts';
 import { decodePng } from './png.mts';
 import { asSource, toGrid } from './convert.mts';
-import { inksFor } from './inks.mts';
+import { inksFor, paletteAsk } from './inks.mts';
 
 type Sprite = {
   id: string;
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
         description: s.prompt,
         size: s.size,
         seed: s.seed,
-        inks: Object.values(inksFor(s.tone)),
+        inks: paletteAsk(s.tone),
       });
       writeFileSync(pngPath(hash), png);
       s.hash = hash;

@@ -86,7 +86,23 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
     }
     rows.push(row);
   }
-  return rows;
+  return outlined(rows);
+}
+
+/** The dark edge every creature carries, DERIVED rather than asked for: offered
+ *  the ink the generator fills bodies with it, denied it there is no edge at
+ *  all. Drawn INSIDE the silhouette, so a creature never grows by a pixel. */
+function outlined(rows: string[]): string[] {
+  const clear = (x: number, y: number): boolean => (rows[y]?.[x] ?? '.') === '.';
+  return rows.map((row, y) =>
+    [...row]
+      .map((c, x) =>
+        c !== '.' && (clear(x - 1, y) || clear(x + 1, y) || clear(x, y - 1) || clear(x, y + 1))
+          ? '#'
+          : c
+      )
+      .join('')
+  );
 }
 
 /** The rows as a bestiary entry holds them, ready to paste into the table. */

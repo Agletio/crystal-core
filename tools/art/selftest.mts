@@ -49,7 +49,12 @@ check(same, 'every pixel survives encode and decode');
 const grid = toGrid(back, 24, inks);
 check(grid.length === 24 && grid.every((r) => r.length === 24), 'reduces to a square 24 grid');
 check(grid[0] === '.'.repeat(24), 'a transparent row becomes dots');
-check(grid[12].startsWith('m') && grid[12].endsWith('M'), 'each half snaps to its own ink');
+const middle = grid[12];
+check(middle[1] === 'm' && middle[22] === 'M', 'each half snaps to its own ink');
+check(
+  middle.startsWith('#') && middle.endsWith('#') && grid[1] === '#'.repeat(24),
+  'the silhouette carries a derived outline, inside its own edge',
+);
 check(
   !grid.join('').includes('x') && !grid.join('').includes('b') && !grid.join('').includes('o'),
   'nothing emits the rank accent or the halo',

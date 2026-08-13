@@ -1,9 +1,8 @@
 /**
  * A creature's five authored inks, resolved the way `monsterArt` builds them.
- *
  * The palette is read WHOLE out of the stylesheet rather than listed by hand:
- * a partial list is how `tools/model-sheet.mts` died the first time a creature
- * mixed an ink nobody had transcribed.
+ * a partial list is how `tools/model-sheet.mts` died on the first creature
+ * mixing an ink nobody had transcribed.
  */
 import { readFileSync } from 'node:fs';
 import { BEASTIARY } from '../../src/render/bestiary';
@@ -21,6 +20,15 @@ export const PALETTE: Palette = (() => {
   }
   return found as unknown as Palette;
 })();
+
+/** The palette to ASK for: BODY inks only. Offered the outline, the generator
+ *  fills with it — 96% of one creature came back near-black. The converter
+ *  derives the edge instead. */
+export function paletteAsk(tone: string): string[] {
+  const inks = inksFor(tone);
+  return [...Array<string>(4).fill(inks.m), ...Array<string>(3).fill(inks.M),
+    ...Array<string>(3).fill(inks.s), inks.e];
+}
 
 export function inksFor(tone: string): Inks {
   const art = BEASTIARY[tone];

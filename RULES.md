@@ -657,6 +657,17 @@ throws rather than producing something plausible. Generate at a multiple of the
 grid; `image_size` takes 16–400, so 48px into grid 24 is a factor of 2 and there
 is no reason to generate big.
 
+**The generator is asked for BODY inks, and the outline is DERIVED.** Measured
+twice: offered the outline ink as one of five equals it fills whole bodies with
+it — 96% of one creature came back near-black — and denied it entirely it draws
+no edge at all. So `paletteAsk` sends the four body inks weighted, and
+`outlined()` in `convert.mts` walks the silhouette and puts `#` on every body
+pixel touching transparency, INSIDE the edge, the way the hand-authored art does
+it. An outline is a house rule; a rule is not something to ask a generator for
+and hope. The forced palette is otherwise exact — measured at 100% on-palette at
+every size, so the ink-snap is very nearly a no-op and what limits a sprite is
+COMPOSITION rather than colour.
+
 **Generated art carries no accent and no halo.** `x`, `b` and `o` are applied at
 RUNTIME off `MonsterRank`, so the converter emits none of the three and the ask
 is for one flat creature with no glow and no rim light — art arriving lit makes
