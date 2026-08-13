@@ -83,13 +83,20 @@ export const TILE_AT_1X = 18;
 /** The hero's reach is ~6.5 tiles; tighter hides what it is already shooting. */
 export const MIN_TILES_VISIBLE = 16;
 
-/** 2x when there is room, tighter only to keep the hero's reach on screen. */
+/**
+ * As close as the hero's reach allows. `MIN_TILES_VISIBLE` is the governor —
+ * the ceiling is only there so a tall monitor does not fill itself with four
+ * tiles — because how big a creature is on screen is what decides how much of
+ * its art can be seen at all, and a sprite is one tile.
+ */
+export const ZOOM_CEILING = 3;
+
 export function defaultZoom(shortAxisPx: number): number {
   // Unmeasured: headless, or not laid out yet. 1x here would boot at Fit,
   // which is the one scale a fight is unreadable at.
   if (!(shortAxisPx > 0)) return 2;
   const affordable = shortAxisPx / MIN_TILES_VISIBLE / TILE_AT_1X;
-  return clampZoom(Math.min(2, affordable));
+  return clampZoom(Math.min(ZOOM_CEILING, affordable));
 }
 
 /** Tile size in CSS px. Fit and below shows the whole map; above is absolute. */

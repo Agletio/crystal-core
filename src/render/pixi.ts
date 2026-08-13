@@ -80,11 +80,11 @@ export async function createPixiRenderer(
     const made =
       frames?.map((canvas) => {
         const texture = Texture.from(canvas);
-        // Nearest, not linear. The hero is authored on a 16-pixel grid and is
-        // then drawn at whatever fraction of a tile the zoom works out to —
-        // under the default smoothing that grid is interpolated away and you get
-        // back the small blurry drawing pixel art exists to not be.
-        texture.source.scaleMode = 'nearest';
+        // Linear, because a cell is ALWAYS bigger than the tile it lands in —
+        // 256 into 87 device pixels at the default camera. Downscaling with
+        // nearest drops rows and shimmers as a body moves; linear supersamples,
+        // which is the whole reason to author above what the screen shows.
+        texture.source.scaleMode = 'linear';
         return texture;
       }) ?? null;
     textures.set(key, made);
@@ -158,7 +158,7 @@ export async function createPixiRenderer(
     if (!frames) return null;
     const made = frames.map((canvas) => {
       const texture = Texture.from(canvas);
-      texture.source.scaleMode = 'nearest';
+      texture.source.scaleMode = 'linear';
       return texture;
     });
     looks.set(key, made);

@@ -16,11 +16,12 @@ import type { PoseId } from './pose';
 import type { Look } from '../types';
 
 /**
- * Pixels per sprite cell. It has to divide by every grid art is authored on or
- * the rect seams stop landing on pixel boundaries: 96/16 is 6, 96/24 is 4,
- * 96/32 is 3. Pixi scales by 1/CELL, so raising it costs texture, not size.
+ * Pixels per sprite cell, and the ceiling on how much of a sprite can ever be
+ * seen. Generated art is authored at 256, which is what `animate-with-skeleton`
+ * tops out at, so the cell is that. Pixi scales by 1/CELL: this costs texture
+ * rather than size on screen.
  */
-export const CELL = 96;
+export const CELL = 256;
 /** A CREATURE's cycle, and its own: the doll walks on `WALK_POSES`, which is
  *  longer. Two is enough for legs to alternate on something with none. */
 export const WALK_FRAMES = 2;
@@ -47,18 +48,50 @@ export function wellFormed(frames: string[][], grid: number): string[] {
   return bad;
 }
 
+/** Any CSS colour to bytes, through the canvas that already knows how. */
+const INK_BYTES = new Map<string, [number, number, number, number]>();
+function inkBytes(colour: string): [number, number, number, number] {
+  const held = INK_BYTES.get(colour);
+  if (held) return held;
+  const probe = document.createElement('canvas');
+  probe.width = 1;
+  probe.height = 1;
+  const ctx = probe.getContext('2d');
+  let bytes: [number, number, number, number] = [255, 0, 255, 255];
+  if (ctx) {
+    ctx.fillStyle = colour;
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+    bytes = [r, g, b, a];
+  }
+  INK_BYTES.set(colour, bytes);
+  return bytes;
+}
+
+/**
+ * Written as pixels rather than as rects. At grid 256 a cell is 65,536 of them,
+ * and that many `fillRect` calls is a visible hitch the first time a creature
+ * appears. Sampling per DESTINATION pixel also means the grid need not divide
+ * the cell evenly — no seams, whatever it is authored at.
+ */
 function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
-  const px = CELL / art.grid;
-  art.rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      const colour = art.key[row[x]];
+  const image = ctx.createImageData(CELL, CELL);
+  const data = image.data;
+  const step = art.grid / CELL;
+  for (let y = 0; y < CELL; y++) {
+    const row = art.rows[Math.floor(y * step)] ?? '';
+    for (let x = 0; x < CELL; x++) {
+      const colour = art.key[row[Math.floor(x * step)]];
       if (!colour) continue;
-      // +1 on the size closes the hairline seams that appear between
-      // neighbouring rects when the canvas is later scaled by a fraction.
-      ctx.fillStyle = colour;
-      ctx.fillRect(x * px, y * px, px + 0.5, px + 0.5);
+      const [r, g, b, a] = inkBytes(colour);
+      const at = (y * CELL + x) * 4;
+      data[at] = r;
+      data[at + 1] = g;
+      data[at + 2] = b;
+      data[at + 3] = a;
     }
-  });
+  }
+  ctx.putImageData(image, 0, 0);
 }
 
 /**
