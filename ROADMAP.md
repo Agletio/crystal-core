@@ -4,9 +4,10 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**One phase, and it WAITS.** The arc dictated in one go is finished: the game
-has **rooms you arrive in and people standing in them**, and all four people
-are built. What is left here is teaching, which does not start until the
+**Two phases. Phase 1 is buildable now; Phase 2 WAITS.** The arc dictated in one
+go is finished — the game has rooms you arrive in and people standing in them,
+and all four people are built. Phase 1 is a later batch: the skills screen, and
+a second way to move. Phase 2 is teaching, and it does not start until the
 stripped opening has been played — see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
@@ -376,7 +377,67 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — The skills screen, and a second way to move
+
+**Dictated in one go. Five asks, and the last two are most of the work.**
+
+**What is true today.** `src/ui/skills.ts` is three deep — category, then skill,
+then its web — and it holds `category` and `viewing` as MODULE state, so
+reopening the screen puts you back where you left rather than at the top. Every
+skill with a web gets one from `BUILT_TREES`; a skill with none renders "no web
+yet", which is what both passives and Blink do today. `movement` has exactly one
+entry, `blink`.
+
+- [ ] **The scene guard is for the SLOT, not for Blink.** Already true and worth
+      keeping true: `maybeMove` reads `this.mover`, which is
+      `equippedSkill(character, 'movement')`, so `if (this.options.scene) return`
+      suppresses whatever fills the slot. What is still Blink-shaped is the
+      BEHAVIOUR — the method teleports along the path — and the `'blink'` event
+      both renderers draw. Leap needs its own of each.
+- [ ] **Skills always opens at the top.** `openSkills` clears `category` and
+      `viewing`. Escape still steps back a level, which is `skillsEscape` and
+      stays.
+- [ ] **A top row of the three equipped slots**, on the home page. Each shows
+      the equipped skill or an empty slot, off `SKILL_SLOTS` and
+      `Character.equipped`. Clicking a filled one goes straight to that skill's
+      web; clicking an empty one goes to the list of skills that slot ACCEPTS —
+      `SkillSlotDef.accepts` already says which shelves those are.
+- [ ] **A passive has no web and must not pretend to.** Clicking one equips it,
+      or asks first when the slot is filled. It never opens a tree — "no web
+      yet" is a promise the game is not going to keep for a passive.
+- [ ] **Leap**, the second movement skill: a jump rather than a step through.
+      Same slot, same automation — `runToCompletion` is the shipped policy and
+      no build's power may depend on somebody watching — but it LANDS, and
+      landing is what its tree hangs off.
+- [ ] **A web for Blink and one for Leap**, smaller than a skill tree. Simple
+      things: cooldown off the `cooldown` param, and effects that fire on the
+      MOVE. The examples asked for are mana regeneration after a blink, and a
+      shockwave on landing a leap that slows attack speed nearby.
+- [ ] **`buildTree` will refuse both.** It throws unless a spec has exactly six
+      branches and six trunk notables (`BRANCH_COUNT` in `src/trees/layout.ts`).
+      A smaller web needs its own layout the way the trade tree got
+      `src/trades/layout.ts` — and what the two already share is
+      `src/webgraph.ts` for reach, refund and replay, and `src/ui/webart.ts` for
+      the studs. Do not bend `buildTree`; give the movement webs a sibling.
+- [ ] Every grant a node hands over is declared in `sim/grants.ts` and READ by
+      something, with a `merge` if two nodes can both grant it, and the demo
+      holds that line. A move that grants regeneration and a move that grants a
+      shockwave are two new readers, not two new concepts.
+- [ ] The vocabulary. `KEYWORDS` is the only way these may be said, and the
+      demo's `ONE WORD PER MECHANISM` sweep fails an invented synonym. A
+      shockwave that slows is a **Splash** that does something; check the table
+      before naming anything.
+
+**What must not break.** `equipSkill` refuses a skill whose category the slot
+does not accept, and the demo checks it — equipping a mover must never be what
+stops you swinging. `heal()` empties a slot naming a skill that is gone, so
+adding one costs nothing but removing one does. `npm run demo` measures that the
+mover fires itself with nobody watching and never lands in rock, that every
+descent it is in still ends, and that nobody moves across an authored room; all
+four now have a second skill to hold to. `MAIN_SKILLS` is what every harness
+builds a character to fight with and Leap is not in it.
+
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

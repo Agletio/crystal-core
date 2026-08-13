@@ -289,7 +289,7 @@ export interface RunState {
   /** Swings that could not pay, and swings in all: the calibration is a share. */
   dryCasts: number;
   /** Times the movement skill fired. Zero without one equipped. */
-  blinks: number;
+  blinks: number; // any movement skill's uses, whichever fills the slot
   casts: number;
   /** Potion charges left this descent, by id. A descent always begins full. */
   charges: Record<string, number>;
@@ -330,7 +330,7 @@ export class RunSim {
   /** Fractions of a flask charge banked back, by potion id. */
   private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
-  private blinkIn = 0;
+  private moveIn = 0;
   /** The movement skill in the slot, resolved once. Null without one. */
   private readonly mover: SkillDef | null;
   /** How many times the hero has cast, for nodes that count casts. */
@@ -810,7 +810,7 @@ export class RunSim {
     const hero = s.hero;
 
     if (hero.cooldown > 0) hero.cooldown -= dt;
-    if (this.blinkIn > 0) this.blinkIn -= dt;
+    if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
@@ -1316,7 +1316,7 @@ export class RunSim {
       e.pathTimer = 0.4 + this.rng.float(0, 0.25);
       if (e.path.length === 0) return false;
     }
-    if (e.kind === 'hero') this.maybeBlink(e);
+    if (e.kind === 'hero') this.maybeMove(e);
 
     const startX = e.x;
     const startY = e.y;
@@ -1352,12 +1352,13 @@ export class RunSim {
   /** The movement skill, firing ITSELF, along the path already found: the
    *  furthest waypoint in reach with a clear line to it, so it never lands a
    *  body in rock and never cuts a corner the walk could not. */
-  private maybeBlink(hero: Entity): void {
+  private maybeMove(hero: Entity): void {
     const skill = this.mover;
-    if (!skill || this.blinkIn > 0 || hero.path.length === 0) return;
-    // Never in an authored room. Crossing one is somebody walking over to say
-    // something, and blinking the last of it reads as a bug rather than as a
-    // build — there is nothing in here to get to faster.
+    if (!skill || this.moveIn > 0 || hero.path.length === 0) return;
+    // Never in an authored room, and this is the guard for EVERY movement
+    // skill rather than for the one that exists: `mover` is whatever fills the
+    // movement slot. Crossing a room is somebody walking over to say something,
+    // and skipping the last of it reads as a bug rather than as a build.
     if (this.options.scene) return;
 
     const reach = (skill.params?.distance as number) ?? 0;
@@ -1376,7 +1377,7 @@ export class RunSim {
     hero.y = landing.y;
     hero.path = hero.path.slice(steps);
     this.state.blinks++;
-    this.blinkIn = (skill.params?.cooldown as number) ?? 1;
+    this.moveIn = (skill.params?.cooldown as number) ?? 1;
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
