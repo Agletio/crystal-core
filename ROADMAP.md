@@ -559,6 +559,16 @@ editing two places.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
+- **The Osteomancer is drawn wrong, and the user has said what he should be.**
+  Sméagol, except the thing that has ruined him is corpses rather than a ring.
+  **Super skinny and frail** — the silhouette is the whole of it, and it should
+  read as starved at 24 beside the Lampwright's bulk. **Keep the red.** He wants
+  the body and is not strong enough to take it, which is why he asks rather than
+  takes. Both grids are his: `osteomancer` in `src/render/bestiary.ts` at 24 and
+  in `src/render/portraits.ts` at 48 — `CLAUDE.md` says why a 24 blown up is a
+  blob, so the portrait is its own drawing and not a scale of the sprite.
+  Frailty at 24 is negative space: thin limbs, a big head, a stoop. The failure
+  to avoid is a second Lampwright in another colour.
 - **Whether a trade has exactly one right skill.** `RULES.md` states the line:
   favouring a skill is fine, requiring one is a skill node that got lost. It is
   UNANSWERABLE today — `MAIN_SKILLS` holds three, which is too few to tell a
