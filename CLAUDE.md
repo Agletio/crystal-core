@@ -56,6 +56,14 @@ a quest log once somebody has played it and got stuck.
 
 Build before `smoke`, `shots` or `drag` — they load the bundle, not the source.
 
+**Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
+the pipeline and `manifest.json` is one row per sprite and the source of truth:
+generation is content-addressed on the row's hash, and the converted GRID is
+written back into the manifest, so the PNG stays disposable and what ships is
+the same list of strings everything else is. `npx tsx tools/art/art.mts` takes
+`balance`, `list`, `generate`, `convert`, `sheet`, `accept` and `emit`, and
+`selftest.mts` proves the conversion without spending a generation.
+
 ## Comments
 
 Comments carry what the code cannot: an invariant, a unit, a constraint that
@@ -647,6 +655,7 @@ been walked to.
 ## Shape
 
 ```
+tools/art/         the art pipeline: a row is generated, converted, accepted
 src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data

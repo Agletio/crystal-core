@@ -20,10 +20,12 @@ still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked; the thing most likely to be asked for after
 these is the **balance pass**, written up below.
 
-**Nothing is blocked on an open question.** Every decision the arc needed has
-been taken and written down. Before starting anything, read **Before you touch
-the ladder**, below — it holds the parts that belong to no single phase, and
-every one of them is something a phase would otherwise get wrong on its own.
+**One thing is blocked on an open question, and it is the last line of Phase 1**
+— which creature the first generated sprite should BE, question 8. Everything
+else in that phase is built and pushed, so the next phase to pick up is Phase 2.
+Before starting anything, read **Before you touch the ladder**, below — it holds
+the parts that belong to no single phase, and every one of them is something a
+phase would otherwise get wrong on its own.
 
 **What the last twelve phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
@@ -427,59 +429,84 @@ sprites and the wrong one at 300: it would trade the runtime palette away to
 solve a problem this game does not have. If the ceiling is ever genuinely hit,
 atlases are still there, chosen against a real number.
 
-- [ ] **`makeSheet` draws lazily.** One function, and the lag ceiling.
-- [ ] **A converter**: PNG → the character grid a `BeastArt` frame is. Decode
-      with Node's own `zlib` — this repo carries no dependency it does not need
-      — block-average down to the target grid, snap every pixel to the nearest
-      of that creature's inks, and emit the `rows({ … })` a bestiary entry
-      holds. Integer downscale ONLY: a non-integer one destroys pixel art, and
-      the tool should refuse rather than blur.
-- [ ] **A manifest is the source of truth, not the images.** One row per
-      sprite — id, prompt, params, seed — with generation a pure function of the
-      row and content-addressed on its hash, so nothing is ever paid for twice
-      and a diff reads "14 sprites requested" instead of a wall of binaries.
-- [ ] **A contact sheet, and an accept flag written back to the manifest.** At
-      volume the bottleneck stops being generation and becomes deciding what is
-      good enough to ship. Review the CONVERTED grid rather than the raw PNG:
-      the conversion is lossy and the grid is what actually ships.
-- [ ] **One adapter module is the only thing that knows PixelLab's API**, so
-      swapping generators costs one file. Written blind — see the trap below.
-- [ ] **Two generations, spent on a test pair**: one organic quadruped and one
-      crystalline creature. Between them they answer the only question that can
-      kill this, which is whether the output survives being reduced to our inks.
+**Everything below is BUILT except the last line, and the last line is a
+question rather than work.** `tools/art/` is the pipeline: `manifest.json` is
+the source of truth, `pixellab.mts` is the only module that knows the API,
+`png.mts` decodes and encodes, `convert.mts` reduces, `art.mts` is the CLI
+(`balance`, `list`, `generate`, `convert`, `sheet`, `accept`, `emit`) and
+`selftest.mts` proves the lot without spending a generation.
+
+- [x] **`makeSheet` draws lazily.** Measured in headless Chromium: **243 sprite
+      cells at boot became 1, and a whole 20s descent draws 30.** Pixi uploads
+      its textures on the same schedule, or the eager loop there pays it back.
+- [x] **A converter**, on Node's own `zlib`. Block-average, then snap to the
+      creature's five authored inks; integer factors only and it refuses rather
+      than blurring.
+- [x] **A manifest is the source of truth.** Generation is a pure function of
+      the row, content-addressed on its hash. The converted GRID is written
+      BACK into the manifest, which is what makes the PNG disposable.
+- [x] **A contact sheet of the CONVERTED grids, and an accept flag.**
+- [x] **One adapter module**, and it is no longer blind — see below.
+- [x] **Two generations, spent on the test pair.** Both are in the manifest.
+
+- [ ] **The first accepted creature in `BEASTIARY`.** This is the one thing
+      left and it is a CONTENT decision, not work: see Open question 8. The
+      accepted grid is `test_quadruped` in the manifest and `art.mts emit`
+      prints it ready to paste.
+
+**What the test pair answered.** *The question that could have killed this was
+whether generated output survives being reduced to our inks. It does.*
+
+- **The organic one converts cleanly.** A four-legged body in profile facing
+  east, in `cinder_hound`'s own inks, reading as a creature at grid 24.
+- **The crystalline one does not.** It came back as a spray of disconnected
+  shards with no silhouette — and at grid 24 the silhouette is the whole read.
+  So the palette is not the limit; COHERENCE at 24 is. A crystalline creature
+  needs a prompt that asks for one solid mass, not "shards".
+- **The eye ink is the brightest of the five, so every bright detail snaps to
+  it** — the hound's hooves came through as eye-coloured. Nothing is wrong with
+  the converter; five inks is simply a tight box, and it is an acceptance
+  criterion at review rather than a bug to fix.
 
 **Traps.**
 
-- **The API could not be read from the cloud VM.** `api.pixellab.ai` was
-  hard-blocked at the egress proxy — 403 on the CONNECT tunnel, for `curl` and
-  `WebFetch` alike — so their docs are UNREAD and the adapter is written against
-  an API nobody here has seen. The fix is the environment's **network access**
-  set to `Custom` with `api.pixellab.ai` and `*.pixellab.ai` allowed, **and the
-  "also include default list of common package managers" box ticked** — Custom
-  REPLACES the trusted list, so leaving it unticked kills npm and the build. The
-  key arrives as `PIXELLAB_API_KEY` in the environment's variables. Read their
-  docs before trusting a line of the adapter.
+- **The egress block is GONE and the API has been read.** `curl` to
+  `api.pixellab.ai` answers **405** where it used to answer 403, and the spec is
+  at `https://api.pixellab.ai/v1/openapi.json` — read it rather than guessing.
+  Three things in it that the phase did not know:
+  - **`color_image` is a forced palette**, taken as an IMAGE, so a creature can
+    be ASKED for in its own inks rather than only snapped to them afterwards.
+    `pixellab.mts` encodes the five inks into a 1px-tall PNG for it.
+  - **`image_size` accepts 16–400.** There is no need to generate big and
+    downscale: 48px into grid 24 is a factor of 2. Generate at a multiple.
+  - **`outline` / `shading` / `detail` / `view` / `direction` are enums** that
+    map onto this game's rules exactly — `single color black outline`, `flat
+    shading`, `side`, `east` (sprites face +x), and `no_background: true`.
+- **`/v1/balance` reads `$0.00` and generations work anyway.** The free tier is
+  not reflected in the USD balance, so balance is NOT a gate — do not refuse to
+  generate on it. A spent tier shows up as **402** on the generate call, which
+  the adapter names.
 - **A creature is EIGHT inks, not four.** `#` outline, `m` mass, `M` lit, `s`
   shade, `e` eye, `x` a per-rank accent, and `b`/`o` for the magic and rare
   halos — see `monsterArt`. The accent and the halo are applied at RUNTIME off
-  `MonsterRank`, so generated art must contain neither. Ask the generator for
-  one flat creature with no glow and no rim light, or every rank looks the same.
+  `MonsterRank`, so generated art must contain neither, and the converter emits
+  none of the three.
 - **The demo fails art that is lit from underneath.** One light, from above and
   slightly in front, and a highlight directly under a shadow is a failure. A
   generator does not know that, so it is an acceptance criterion at review.
 - **A cloud VM is reclaimed on inactivity, so a generated PNG on disk is not
-  durable.** It does not matter: the committed grid is the artifact and the PNG
-  is disposable. Do not build a cache that assumes the disk survives.
+  durable.** The GRID in the manifest is the artifact; `tools/art/cache/` is
+  gitignored and may vanish. Re-generating a row that has already been converted
+  costs a generation for nothing — convert once and the manifest holds it.
 - **Resolution is the real quality lever, and it is deferred on purpose.**
   Grid 24 with flat inks is a tight box; grid 32 is where generated art starts
   to beat hand-authored. `RULES.md` has the rule — 32 needs `CELL` raised to 96
   first, because 48/32 is 1.5 and the rect seams stop landing on pixel
-  boundaries. Do it AFTER the test pair, never before: there is no point paying
-  4× the canvas per cell until the palette question is answered.
+  boundaries. The test pair now says this is where the next quality comes from:
+  the palette was never the problem.
 
-**Done when.** A row can be added to the manifest, generated, converted,
-reviewed and committed without anybody hand-carrying a file, and the suite is
-green with the first accepted creature in `BEASTIARY`.
+**Done when.** The first accepted creature is in `BEASTIARY` and the suite is
+green. Everything else in this phase is done and pushed.
 
 **What must not break.** `wellFormed(frames, grid)` holds every frame square and
 matching its declared grid, and the demo sweeps `BEASTIARY` for it. `npm run
@@ -749,6 +776,20 @@ Every one is parked deliberately. Ask before acting on any of them.
    something. Nothing about the story is written, so it is still question 1 and
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
+
+8. **Which creature is the first generated one?** The pipeline works and
+   `test_quadruped` is accepted in `tools/art/manifest.json` — a four-legged
+   body in profile, generated in `cinder_hound`'s inks. What is NOT decided is
+   what it should BE in the game. Three shapes, and it is the user's call:
+   a NEW creature, which needs a name, a world and a `MONSTERS` row to be worth
+   drawing; a REPLACEMENT for a hand-authored one, which `cinder_hound` is the
+   obvious candidate for since it is already a quadruped and lent its inks; or
+   neither, if the answer is that generated art is for the creatures that do not
+   exist yet. Nothing is blocked but the last checkbox of Phase 1: a placeholder
+   called `test_quadruped` was deliberately NOT put into the shipping bestiary,
+   because a table row is permanent and this one has no role. A creature also
+   needs TWO walk frames and an `attack`; the pair spent so far is one frame,
+   so whichever answer is taken costs two or three more generations.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls

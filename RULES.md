@@ -620,6 +620,49 @@ of strings — one character per pixel — drawn at runtime onto an offscreen ca
 by `drawPixels` in `src/render/sprites.ts`. Adding a binary asset is a change to
 how the game ships, not an art decision.
 
+**A sheet is drawn on FIRST USE, never all of it at boot.** `makeSheet` memoises
+per creature and rank, and pixi uploads its textures on the same schedule — an
+eager loop in either place pays the cost back. Measured: 243 sprite cells at boot
+became 1, and a whole 20-second descent draws 30. A descent reaches about eight
+creatures, so drawing the table costs the bestiary to open one map.
+
+**A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
+the pipeline and its output is a character grid like every other — generated,
+converted, reviewed, accepted, and committed as TypeScript. Every standing rule
+survives that way: no binary assets, colours out of CSS at runtime, zones
+recolouring for free, the canvas2d fallback untouched. An atlas is the right
+answer at tens of thousands of sprites and the wrong one at ~300, because it
+trades the runtime palette away to solve a problem this game does not have.
+
+**`tools/art/manifest.json` is the source of truth, not the images.** A sprite
+is a ROW; generation is a pure function of that row and content-addressed on its
+hash, so nothing is paid for twice. The converted GRID is written back into the
+manifest, which is what makes the PNG disposable — `tools/art/cache/` is
+gitignored and a cloud VM is reclaimed on inactivity. Re-generating a row that
+has already been converted spends a generation for nothing.
+
+**One module knows the generator's API**, `tools/art/pixellab.mts`, so swapping
+one costs a file. It is written against the spec at
+`https://api.pixellab.ai/v1/openapi.json`, which is READABLE — the old egress
+block is gone and `curl` answers 405 rather than 403. Two things it settles:
+`color_image` takes a forced palette as an image, so a creature is asked for in
+its own inks rather than only snapped to them; and `/v1/balance` reads `$0.00`
+while generations work, so balance is not a gate and a spent tier is a 402 on
+the generate call.
+
+**A conversion is INTEGER, or it is refused.** Block-average down to the grid
+and snap to the creature's five authored inks. A non-integer downscale resamples
+across pixel boundaries, which is the blur pixel art exists to not be — the tool
+throws rather than producing something plausible. Generate at a multiple of the
+grid; `image_size` takes 16–400, so 48px into grid 24 is a factor of 2 and there
+is no reason to generate big.
+
+**Generated art carries no accent and no halo.** `x`, `b` and `o` are applied at
+RUNTIME off `MonsterRank`, so the converter emits none of the three and the ask
+is for one flat creature with no glow and no rim light — art arriving lit makes
+every rank look the same. What is REVIEWED is the converted grid, never the PNG:
+the conversion is lossy and the grid is what ships.
+
 **Colours come from CSS at runtime.** `readPalette` pulls custom properties out
 of the document, and every art key maps a character to a `Palette` entry or a
 `mix()` of two. Never write a literal colour into art code: a palette change has
