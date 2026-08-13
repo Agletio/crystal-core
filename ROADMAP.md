@@ -509,11 +509,12 @@ Every one is parked deliberately. Ask before acting on any of them.
 
 7. **The Lampwright's story is now BUILDABLE, which changes question 1.**
    Question 1 has stood since trades landed: the trade acquisition is a
-   placeholder and is meant to come out of a storyline with him. Phases 2 and 3
-   build exactly the thing that story would be told in — a room, a person in it,
-   beats you click through. Nothing about the story is written, so it is still
-   question 1 and still the user's; what has changed is that answering it is now
-   content under `src/scenes/` rather than a system.
+   placeholder and is meant to come out of a storyline with him. The thing that
+   story would be told in is now BUILT and has been used three times — a room,
+   a person in it, beats you click through, and a panel at the end that does
+   something. Nothing about the story is written, so it is still question 1 and
+   still the user's; what has changed is that answering it is content under
+   `src/scenes/` rather than a system.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
