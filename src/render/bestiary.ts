@@ -33,7 +33,7 @@ export const BEASTIARY: Record<string, BeastArt> = {
   /**
    * The Astral-Geometer: upright and still, both hands up holding a shard to
    * the light. The one body down here that is not going anywhere — where the
-   * Osteomancer is bent double and reaching, this one is measuring.
+   * Osteomancer stoops and reaches, this one is measuring.
    */
   geometer: {
     tone: {
@@ -94,62 +94,64 @@ export const BEASTIARY: Record<string, BeastArt> = {
   },
 
   /**
-   * The Osteomancer: bent double and already reaching, a bone half-mask shoved
-   * up on his brow and one eye under it. He is the only body in the game with
-   * both hands OUT — nothing else down here wants anything from you.
+   * The Osteomancer: starved. A skull too big for the body under it, a bone
+   * half-mask shoved up on the brow, and both hands out — nothing else down
+   * here wants anything from you. The silhouette carries it: the head is ten
+   * pixels across and the chest is six, and the gap between his arms and his
+   * ribs is most of what says he is not strong enough to take what he asks for.
    */
   osteomancer: {
     tone: {
-      mass: (p) => mix(p.gore, p.void, 0.3),
-      lit: (p) => mix(p.flesh, p.sinew, 0.35),
-      shade: (p) => mix(p.char, p.void, 0.25),
+      mass: (p) => mix(p.flesh, p.gore, 0.4),
+      lit: (p) => mix(p.fleshLit, p.sinew, 0.3),
+      shade: (p) => mix(p.gore, p.char, 0.45),
       eye: (p) => p.venom,
     },
     grid: 24,
     frames: [
       rows({
         3: '.........######.........',
-        4: '........#MMmmmm#........',
-        5: '.......#MMmmbbbb#.......',
-        6: '.......#MMmmbebb#.......',
-        7: '.......#MMmmbbbb#.......',
-        8: '.......#MMmmmmmm#.......',
-        9: '....####MMmmmmmms#......',
-        10: '...#MMMMMMmmmmmmss#.....',
-        11: '..#MMMMMMMmmmmmmsss#MM#.',
-        12: '..#MMMMMMmmmmmmmsss#mms#',
-        13: '..#MMMMMmmmmmmmmsss##ss#',
-        14: '..#MMMMmmmmmmmmssss#.##.',
-        15: '...#MMMmmmmmmmssss#MMM#.',
-        16: '...#MMmmmmmmmsss#.#mmms#',
-        17: '...#MMmmmmmmmsss#..#sss#',
-        18: '....#Mmm#..#mss#....###.',
-        19: '....#Mm#....#ms#........',
-        20: '....#Mm#....#ms#........',
-        21: '...#mmm#...#mmm#........',
-        22: '...#####...#####........',
+        4: '........#Mmmmmms#.......',
+        5: '.......#Mbbbbbbs#.......',
+        6: '.......#MMmmmmms#.......',
+        7: '.......#Mmeemees#.......',
+        8: '.......#Mmmsmmss#.......',
+        9: '........#Mm###s#........',
+        10: '.........#Mmms#.........',
+        11: '.....#Mm#.#ms#..........',
+        12: '....#MMmmmmms#..........',
+        13: '....#MMmsm##########....',
+        14: '....#MMmmsmmmmmmmmmm#...',
+        15: '....#Mmmss#######mmms#..',
+        16: '....#MMmms#####.#####...',
+        17: '....#Mmmssmmmmm#........',
+        18: '....#Mmmss#####.........',
+        19: '....#Mmmsmmms#..........',
+        20: '....#Mm#..#ms#..........',
+        21: '...#mmm#..#mmm#.........',
+        22: '...#####..#####.........',
       }),
       rows({
         3: '.........######.........',
-        4: '........#MMmmmm#........',
-        5: '.......#MMmmbbbb#.......',
-        6: '.......#MMmmbebb#.......',
-        7: '.......#MMmmbbbb#.......',
-        8: '.......#MMmmmmmm#..MM#..',
-        9: '....####MMmmmmmms#.mms#.',
-        10: '...#MMMMMMmmmmmmss##ss#.',
-        11: '..#MMMMMMMmmmmmmsss#mm#.',
-        12: '..#MMMMMMmmmmmmmsss#mm#.',
-        13: '..#MMMMMmmmmmmmmsss#ss#.',
-        14: '..#MMMMmmmmmmmmssss#.#..',
-        15: '...#MMMmmmmmmmssss#.....',
-        16: '...#MMmmmmmmmsss#mmm#...',
-        17: '...#MMmmmmmmmsss#mmms#..',
-        18: '....#Mmm#..#mss#.#sss#..',
-        19: '....#Mm#....#ms#..###...',
-        20: '....#Mm#....#ms#........',
-        21: '...#mmm#...#mmm#........',
-        22: '...#####...#####........',
+        4: '........#Mmmmmms#.......',
+        5: '.......#Mbbbbbbs#.......',
+        6: '.......#MMmmmmms#.......',
+        7: '.......#Mmeemees#.......',
+        8: '.......#Mmmsmmss#.......',
+        9: '........#Mm###s#........',
+        10: '.........#Mmms#.........',
+        11: '.....#Mm#.#ms#..........',
+        12: '....#MMmmmmms#..........',
+        13: '....#MMmsm######........',
+        14: '....#MMmmsmmmmmm#.......',
+        15: '....#Mmmss#####mmmm#....',
+        16: '....#MMmms######mmms#...',
+        17: '....#Mmmssmmmmm#.####...',
+        18: '....#Mmmss#####.........',
+        19: '....#Mmmsmmms#..........',
+        20: '...#mmm#..#ms#..........',
+        21: '...#####..#mmm#.........',
+        22: '..........#####.........',
       }),
     ],
   },

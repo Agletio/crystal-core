@@ -689,6 +689,15 @@ empty box. Both read their palette at CALL time, so a colour change reaches
 both, and both are held to `wellFormed(rows, grid)` — every row exactly `grid`
 wide, trailing dots included.
 
+**A body is told apart by its SILHOUETTE, and at 24 that is negative space.**
+The Osteomancer is starved: a head 10 pixels across over a chest of 6, one arm
+out and one held in, and gaps you can see the floor through between his limbs
+and his ribs. What makes it read is what is not drawn — filled in, he was a
+Lampwright in another colour, which is the failure any second character in one
+palette walks into. The portrait is its own drawing at 48 and answers to the
+same test: he is NARROWER than everyone else in `PORTRAITS`, and the dark either
+side of him is the read.
+
 **A sword is held OUT, point slightly up; a dagger is held POINT DOWN.** Both
 are deliberate. The swords used to hang point-down from the fist and read as
 enormous daggers; the daggers keep that hold because on a dagger it is a

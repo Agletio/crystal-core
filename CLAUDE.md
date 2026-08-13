@@ -297,7 +297,9 @@ there is nothing to abandon.
 
 **Two people take something off you and write with it.** The **Osteomancer** is
 in the Rot and frantic — *gimme, gimme* — and wants what the world did not
-finish. The **Astral-Geometer** is in the Cavern, is the one down here who is
+finish. He is drawn STARVED, in both tables: a skull too big for the chest under
+it, a bone half-mask shoved up on the brow, and enough gap between his limbs to
+see the floor. He is not strong enough to take a body, which is why he asks. The **Astral-Geometer** is in the Cavern, is the one down here who is
 not in a hurry, and wants the dust, because a body is an opinion and dust is a
 measurement. Each has their OWN lines and refuses what the other works on.
 
