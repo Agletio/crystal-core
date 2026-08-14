@@ -7,7 +7,6 @@
  * rare. The rank also grows the body and puts a halo round it; see `haloed`.
  */
 import { gridRows, mix } from './gear-art';
-import { GENERATED } from './generated-art';
 import type { Palette } from './renderer';
 
 export interface BeastTone {
@@ -361,17 +360,86 @@ export const BEASTIARY: Record<string, BeastArt> = {
   husk: {
     tone: {
       mass: (p) => mix(p.bone, p.rockDeep, 0.5),
-      lit: (p) => mix(p.bone, p.chalk, 0.3),
-      shade: (p) => mix(p.bone, p.void, 0.62),
-      eye: (p) => mix(p.venom, p.chalk, 0.2),
+    lit: (p) => mix(p.bone, p.chalk, 0.3),
+    shade: (p) => mix(p.bone, p.void, 0.62),
+    eye: (p) => mix(p.venom, p.chalk, 0.2),
     },
-    // The first creature off the generator: 256, and three frames of its own
-    // rather than two and a reused pose.
-    grid: GENERATED.husk.grid,
-    frames: [GENERATED.husk.frames[0], GENERATED.husk.frames[1]],
-    attack: GENERATED.husk.frames[2],
-    key: GENERATED.husk.key,
+    grid: 24,
+    frames: [
+      rows({
+        2: '.........######.........',
+        3: '........#mMMMMm#........',
+        4: '........#mMMMMm#........',
+        5: '........#emMMme#........',
+        6: '........#mMssMm#........',
+        7: '.......##msssm##........',
+        8: '.......###mmmm###.......',
+        9: '.....#MM##mMMm##MM#.....',
+        10: '.....#MM#MMxxMM#MM#.....',
+        11: '.....#Ms#MMssMM#sM#.....',
+        12: '.....#Mm#MMxxMM#mM#.....',
+        13: '.....#MM#MMssMM#MM#.....',
+        14: '.....#Ms##MmmM##sM#.....',
+        15: '.....#Mm##MMMM##mM#.....',
+        16: '.....##m##MmmM##m##.....',
+        17: '......##..MMMM..##......',
+        18: '........#MM##MM#........',
+        19: '........#Mm##mM#........',
+        20: '........#MM##MM#........',
+        21: '........#MM##MM#........',
+        22: '........##s##s##........',
+        23: '........##....##........',
+      }),
+      rows({
+        2: '.........######.........',
+        3: '........#mMMMMm#........',
+        4: '........#mMMMMm#........',
+        5: '........#emMMme#........',
+        6: '........#mMssMm#........',
+        7: '.......##msssm##........',
+        8: '.......###mmmm###.......',
+        9: '.....#MM##mMMm##MM#.....',
+        10: '.....#MM#MMxxMM#MM#.....',
+        11: '.....#Ms#MMssMM#sM#.....',
+        12: '.....#Mm#MMxxMM#mM#.....',
+        13: '.....#MM#MMssMM#MM#.....',
+        14: '.....#Ms##MmmM##sM#.....',
+        15: '.....#Mm##MMMM##mM#.....',
+        16: '.....##m##MmmM##m##.....',
+        17: '......##.#MMMM#.##......',
+        18: '.......#MMM##MM#........',
+        19: '.......#MM#..#MM#.......',
+        20: '.......#Mm#..#mM#.......',
+        21: '......#MM#...#MM#.......',
+        22: '......##m#...#s##.......',
+        23: '.......##......##.......',
+      }),
+    ],
+    attack: rows({
+      3: '...######...............',
+      4: '..#mMMMMm#..............',
+      5: '..#emMMme#..............',
+      6: '..#mMssMm#..............',
+      7: '.##msssm##..............',
+      8: '.###mmmm###.####........',
+      9: '.#MM##mMMm##MMMM#.......',
+      10: '.#MM#MMxxMM##MM##.......',
+      11: '.#Ms#MMssMM##...........',
+      12: '.#Mm#MMxxMM#............',
+      13: '.##m#MMssMM#............',
+      14: '..##.#MmmM#.............',
+      15: '.....#MMMM#.............',
+      16: '.....#MmmM#.............',
+      17: '.....#MMMM#.............',
+      18: '...#MM##MM#.............',
+      19: '...#Mm#.#mM#............',
+      20: '..#MM#..#MM#............',
+      21: '..#MM#...#MM#...........',
+      22: '..##m#...#m##...........',
+      23: '..####....####..........',
+    }),
   },
+  /** A wedge on long legs. Nothing on it is vertical; it always looks mid-stride. */
   stalker: {
     tone: {
       mass: (p) => mix(p.citrine, p.rockDeep, 0.48),

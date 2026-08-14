@@ -8,7 +8,8 @@ or something you need in order to do one, it is in the wrong file.
 dictated in one go is finished — the game has rooms you arrive in and people
 standing in them, and all four people are built. Phase 1 is an art pipeline with
 a generator behind it, which the user redirected onto and which therefore goes
-first. Phase 2 is the batch after the arc: the skills screen, and a second way
+first — it is now a SANDBOX to judge that art in, since the pipeline itself is
+built and the real tools turned out to be an MCP server. Phase 2 is the batch after the arc: the skills screen, and a second way
 to move. Phase 3 is teaching, and it does not start until the stripped opening
 has been played — see its own note.
 
@@ -20,12 +21,13 @@ still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked; the thing most likely to be asked for after
 these is the **balance pass**, written up below.
 
-**One thing is blocked on an open question, and it is the last line of Phase 1**
-— which creature the first generated sprite should BE, question 8. Everything
-else in that phase is built and pushed, so the next phase to pick up is Phase 2.
-Before starting anything, read **Before you touch the ladder**, below — it holds
-the parts that belong to no single phase, and every one of them is something a
-phase would otherwise get wrong on its own.
+**Nothing is blocked on an open question.** Phase 1 was rewritten after a long
+session with the generator: the pipeline it asked for is BUILT, and what is left
+is a sandbox to look at the art in. **Read all of Phase 1 before touching it** —
+it holds what that session cost, including the fact that the generator is an
+MCP server and not the REST API everything was first written against. Then read
+**Before you touch the ladder**, below, which holds the parts belonging to no
+single phase.
 
 **What the last twelve phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
@@ -381,138 +383,104 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — An art pipeline, and a generator behind it
+### Phase 1 — A sandbox, and the real generator behind it
 
-**The user redirected onto this mid-session, so it goes FIRST. Nothing about
-the movement phase below changed — it is written, it is ready, and it is now
-Phase 2. Putting art first is the user's ordering, not a judgement that the
-other one is worth less.**
+**Read this whole section before touching anything.** Everything below was paid
+for in generations and in wrong turns, and almost none of it is guessable.
 
-**What the user asked for, in their words.** *"I want the art to be as good as
-we can get it without becoming impossible to build/balance the game later.
-Don't want it to lag, don't want it to be impossible to sim and test the
-balance later on."* They are trialling **PixelLab** on a free tier of **40
-generations**, so a wasted generation is a real cost and the pipeline exists
-before the first call, not after it.
+**THE GENERATOR IS AN MCP SERVER, NOT THE REST API.** `https://api.pixellab.ai/mcp`,
+with its guide at `/mcp/docs`. `.mcp.json` is committed and expands
+`${PIXELLAB_API_KEY}`, so the tools appear as `mcp__pixellab__*` once a session
+connects. **Use those and not `tools/art/pixellab.mts`,** which speaks to the
+REST API — a fraction of what exists, and the reason a whole day went into
+fighting problems the real tools do not have. The REST spec is also WRONG in
+places: `/rotate` documents 16–200 and accepts only 128, 64, 32 or 16, and
+refuses a reference image that is not already that size.
 
-**Three things were MEASURED this session. Do not re-derive them.**
+What the MCP has that REST does not:
 
-- **Art cannot hurt the sim, at all.** `src/sim/` imports exactly two things
-  from `src/render/`: the `MonsterRank` TYPE, which is erased at compile, and
-  `hasFamilyArt` / `hasWeaponArt`, which only ask whether art exists for a base
-  id. No pixel data and no dimensions cross that line. So the balance harnesses,
-  the demo and every headless run are immune to anything in this phase — the
-  user's worry about not being able to sim or test later is already answered by
-  the architecture.
-- **The lag ceiling is ONE function.** `makeSheet` in `src/render/sprites.ts`
-  eagerly draws every `SPRITE_KINDS` × every rank × every frame at boot — 234
-  cells today, ~2 MB of canvas. A descent only ever uses about 8 creature types,
-  so drawing lazily on first use and memoising drops boot work by roughly 8×
-  and is what moves the ceiling from hundreds of frames to thousands. Do this
-  FIRST: it is small, it is measurable, and every later decision reads it.
-- **The game needs about 300 authored grids, not tens of thousands.** 26
-  creatures × 6 frames (4 walk, attack, hurt) = 156; 27 armour families × 4
-  pieces = 108 — poses are whole-pixel SHIFTS, never new art; 13 weapons; ~10
-  portraits. Ranks are a runtime RECOLOUR and are not authored. Roughly 600 if
-  creatures ever go 4-directional, which today they are not: sprites are drawn
-  facing +x and MIRRORED (`s.scale.x = -1` in `pixi.ts`), so directions would be
-  a renderer change as well as a 4× count.
+- **`create_character`** — `body_type`, `template` (bear, cat, dog, horse,
+  lion), `proportions`, `n_directions` 4 or 8. This is the rigged MANNEQUIN
+  the website uses, and it is the whole quality gap. It also answers the
+  quadrupeds and the amorphous creatures, which have no skeleton for the REST
+  animator to find. Characters are STORED and reusable.
+- **`animate_character`** — queued against a stored character, every direction
+  at once, non-blocking. REST's `animate-with-text` is locked to 64px and its
+  `animate-with-skeleton` needs hand-authored keypoints.
+- **`create_topdown_tileset`** — a WANG tileset: 16 tiles covering every corner
+  combination, 25 at full transition, chainable so one terrain blends into the
+  next. This is the seam problem solved, and it is why CHUNKS are not needed.
+- Creation is NON-BLOCKING: a job returns an id in moments and finishes in
+  2–5 minutes. Queue several, then collect. Downloads need no auth.
 
-**The decision, and what it beat.** *Mine, and the whole shape of the phase.*
-**A generator is an AUTHORING tool, never a shipping format.** Its output is
-converted into the character grids the game already uses, a human accepts it,
-and the accepted grid is committed as TypeScript. That keeps every standing
-rule — no binary assets, colours out of CSS at runtime, zones recolouring for
-free, the canvas2d fallback untouched, `shots` untouched. What it beat was
-shipping a packed atlas, which is the right answer at tens of thousands of
-sprites and the wrong one at 300: it would trade the runtime palette away to
-solve a problem this game does not have. If the ceiling is ever genuinely hit,
-atlases are still there, chosen against a real number.
+**Sizes, measured.** Characters export at 128. Tiles cap at 64 (16/32 standard,
+64 in `mode: 'pro'`). Creatures are therefore about two tiles tall — normal for
+top-down, but LOOK at one before generating a set.
 
-**Everything below is BUILT except the last line, and the last line is a
-question rather than work.** `tools/art/` is the pipeline: `manifest.json` is
-the source of truth, `pixellab.mts` is the only module that knows the API,
-`png.mts` decodes and encodes, `convert.mts` reduces, `art.mts` is the CLI
-(`balance`, `list`, `generate`, `convert`, `sheet`, `accept`, `emit`) and
-`selftest.mts` proves the lot without spending a generation.
+**Do not put generated art in the game outside the sandbox.** The husk was
+swapped and is now reverted; `src/render/generated-art.ts` is left in place and
+nothing imports it.
 
-- [x] **`makeSheet` draws lazily.** Measured in headless Chromium: **243 sprite
-      cells at boot became 1, and a whole 20s descent draws 30.** Pixi uploads
-      its textures on the same schedule, or the eager loop there pays it back.
-- [x] **A converter**, on Node's own `zlib`. Block-average, then snap to the
-      creature's five authored inks; integer factors only and it refuses rather
-      than blurring.
-- [x] **A manifest is the source of truth.** Generation is a pure function of
-      the row, content-addressed on its hash. The converted GRID is written
-      BACK into the manifest, which is what makes the PNG disposable.
-- [x] **A contact sheet of the CONVERTED grids, and an accept flag.**
-- [x] **One adapter module**, and it is no longer blind — see below.
-- [x] **Two generations, spent on the test pair.** Both are in the manifest.
+- [ ] **A dev button that opens a SANDBOX descent.** Its own `RunOptions`, its
+      own tileset and its own bodies, reachable from the dev kit and from
+      nowhere a player goes. It must not touch `MONSTERS`, `BEASTIARY` or any
+      balance table, or the demo's measurements move under it.
+- [ ] **Nothing dies in it and nothing ends it.** The point is to WATCH: walk
+      about, swing in every direction, and look at the art for as long as you
+      like. So the bodies do not take damage and the run has no clear
+      condition. `RunSim` already ticks a map with no exit — that is what a
+      scene is — so this is a scene with monsters in it rather than a new mode.
+- [ ] **One tileset, one enemy, one character**, all through the MCP tools and
+      all only in the sandbox.
+- [ ] **Then judge it, and only then decide** whether the roster follows.
 
-- [ ] **The first accepted creature in `BEASTIARY`.** This is the one thing
-      left and it is a CONTENT decision, not work: see Open question 8. The
-      accepted grid is `test_quadruped` in the manifest and `art.mts emit`
-      prints it ready to paste.
+**What was learned about the art itself.** All of it still applies:
 
-**What the test pair answered.** *The question that could have killed this was
-whether generated output survives being reduced to our inks. It does.*
+- **The five inks were never a limit.** `PixelArt.key` is an arbitrary record;
+  `BeastArt.key` is optional and merges over the hand-drawn five. An export of
+  64 colours takes 64 characters and needs no quantising at all.
+- **`no_background` is not always obeyed**, and the flood that clears it works
+  from the EDGES — so the gap between a pair of legs stays filled. `debackground`
+  now also clears what the flood could not reach.
+- **A cast shadow is drawn even when asked away twice**, and it is found by
+  being wider than the WIDEST row of the body. Measured against the median it
+  ate the feet.
+- **Nothing may derive an outline.** The art carries its own edge; an added one
+  is a slab of black, and eleven rings inward eats a thin limb whole.
+- **A body must be FITTED to its frame**, or a cell drawn as one tile means two
+  different things depending on where the art came from.
+- **A rank is LIGHT, not a band.** `glowed` in `sprites.ts`, in the texture,
+  alpha falling off squared. A solid border is a low-resolution convention and
+  reads as a sticker at 128 and above.
+- **The prompt owns the POSE and the parameter owns the CAMERA.** Changing both
+  at once is what made `low top-down` look broken; kept apart it is right for
+  this map, and bodies stay in profile so the renderer can still mirror them.
+- **Wrongness is normalised away.** A panther asked for with no head came back
+  with a head. Exaggerate proportions; do not ask for impossible anatomy.
+- **`e.facing` is already a full angle** (`Math.atan2`), and only the renderer
+  throws it away, collapsing it to a left/right flip. So directional sprites are
+  a RENDERER change and nothing in the sim, the saves or the tables moves.
+- **Mirroring halves a direction set**: 8 ways needs 5 generated (E, NE, SE, N,
+  S) and 4 ways needs 3. Check the mirrors match before discarding — asymmetric
+  detail on a body flips with it.
+- **Every animation needs every direction you support**, or a creature pops
+  between styles as it turns. Decide the direction count BEFORE generating
+  states, because it multiplies everything after it.
 
-- **The organic one converts cleanly.** A four-legged body in profile facing
-  east, in `cinder_hound`'s own inks, reading as a creature at grid 24.
-- **The crystalline one does not.** It came back as a spray of disconnected
-  shards with no silhouette — and at grid 24 the silhouette is the whole read.
-  So the palette is not the limit; COHERENCE at 24 is. A crystalline creature
-  needs a prompt that asks for one solid mass, not "shards".
-- **The eye ink is the brightest of the five, so every bright detail snaps to
-  it** — the hound's hooves came through as eye-coloured. Nothing is wrong with
-  the converter; five inks is simply a tight box, and it is an acceptance
-  criterion at review rather than a bug to fix.
+**What the bundle costs, since art ships as STRINGS in a committed
+`docs/app.js` that is 901 KB today.** One direction at 128 is about 1 MB across
+the roster; five directions about 5 MB; eight about 8 MB. Past that it stops
+being strings and needs an atlas, which costs the runtime palette — and the
+runtime palette is what makes a zone recolour for free. That is a decision
+about how the game SHIPS, not an art decision.
 
-**Traps.**
-
-- **The egress block is GONE and the API has been read.** `curl` to
-  `api.pixellab.ai` answers **405** where it used to answer 403, and the spec is
-  at `https://api.pixellab.ai/v1/openapi.json` — read it rather than guessing.
-  Three things in it that the phase did not know:
-  - **`color_image` is a forced palette**, taken as an IMAGE, so a creature can
-    be ASKED for in its own inks rather than only snapped to them afterwards.
-    `pixellab.mts` encodes the five inks into a 1px-tall PNG for it.
-  - **`image_size` accepts 16–400.** There is no need to generate big and
-    downscale: 48px into grid 24 is a factor of 2. Generate at a multiple.
-  - **`outline` / `shading` / `detail` / `view` / `direction` are enums** that
-    map onto this game's rules exactly — `single color black outline`, `flat
-    shading`, `side`, `east` (sprites face +x), and `no_background: true`.
-- **`/v1/balance` reads `$0.00` and generations work anyway.** The free tier is
-  not reflected in the USD balance, so balance is NOT a gate — do not refuse to
-  generate on it. A spent tier shows up as **402** on the generate call, which
-  the adapter names.
-- **A creature is EIGHT inks, not four.** `#` outline, `m` mass, `M` lit, `s`
-  shade, `e` eye, `x` a per-rank accent, and `b`/`o` for the magic and rare
-  halos — see `monsterArt`. The accent and the halo are applied at RUNTIME off
-  `MonsterRank`, so generated art must contain neither, and the converter emits
-  none of the three.
-- **The demo fails art that is lit from underneath.** One light, from above and
-  slightly in front, and a highlight directly under a shadow is a failure. A
-  generator does not know that, so it is an acceptance criterion at review.
-- **A cloud VM is reclaimed on inactivity, so a generated PNG on disk is not
-  durable.** The GRID in the manifest is the artifact; `tools/art/cache/` is
-  gitignored and may vanish. Re-generating a row that has already been converted
-  costs a generation for nothing — convert once and the manifest holds it.
-- **Resolution is the real quality lever, and it is deferred on purpose.**
-  Grid 24 with flat inks is a tight box; grid 32 is where generated art starts
-  to beat hand-authored. `RULES.md` has the rule — 32 needs `CELL` raised to 96
-  first, because 48/32 is 1.5 and the rect seams stop landing on pixel
-  boundaries. The test pair now says this is where the next quality comes from:
-  the palette was never the problem.
-
-**Done when.** The first accepted creature is in `BEASTIARY` and the suite is
-green. Everything else in this phase is done and pushed.
-
-**What must not break.** `wellFormed(frames, grid)` holds every frame square and
-matching its declared grid, and the demo sweeps `BEASTIARY` for it. `npm run
-shots` and `tools/model-sheet.mts` are how art claims get evidence — a
-screenshot, never an impression. And nothing in `src/sim` may learn what a
-pixel is.
+**Tools, all committed.** `tools/art/art.mts` drives the REST pipeline
+(`balance`, `list`, `generate`, `convert`, `skeleton`, `animate`, `turn`,
+`sheet <out> [id...]`, `accept`, `emit`); `import.mts` reads a website export
+(`metadata.json` plus `rotations`) straight into grids; `selftest.mts` proves
+the conversion without spending anything. `convert` re-derives animation frames
+from cached PNGs, so refining the reduction costs no generations. Keep them:
+they hold the conversion, and only the ASKING moves to MCP.
 
 ### Phase 2 — The skills screen, and a second way to move
 

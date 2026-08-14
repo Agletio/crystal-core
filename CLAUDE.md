@@ -56,6 +56,12 @@ a quest log once somebody has played it and got stuck.
 
 Build before `smoke`, `shots` or `drag` — they load the bundle, not the source.
 
+**The generator is an MCP server** — `https://api.pixellab.ai/mcp`, guide at
+`/mcp/docs`, wired up in `.mcp.json`. Its tools (`create_character`,
+`animate_character`, `create_topdown_tileset`) are what the website uses and are
+far beyond the REST API; reach for them first. `tools/art/import.mts` takes a
+website export straight into grids.
+
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
 generation is content-addressed on the row's hash, and the converted GRID is

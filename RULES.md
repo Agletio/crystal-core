@@ -626,6 +626,17 @@ eager loop in either place pays the cost back. Measured: 243 sprite cells at boo
 became 1, and a whole 20-second descent draws 30. A descent reaches about eight
 creatures, so drawing the table costs the bestiary to open one map.
 
+**The generator is an MCP SERVER, and the REST API is a fraction of it.**
+`https://api.pixellab.ai/mcp`, guide at `/mcp/docs`, configured in the committed
+`.mcp.json` which expands `${PIXELLAB_API_KEY}` rather than carrying a token.
+`create_character` takes a rigged template and every direction at once,
+`animate_character` queues states against a stored character, and
+`create_topdown_tileset` returns a WANG set whose corners match. None of that is
+in the REST spec, and a whole session was spent working around its absence. The
+REST spec also LIES: `/rotate` documents 16–200 and takes only 128, 64, 32 or
+16. Reach for the MCP tools first; `tools/art/*` still holds the CONVERSION,
+which is worth keeping whatever does the asking.
+
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,
 converted, reviewed, accepted, and committed as TypeScript. Every standing rule
@@ -673,6 +684,16 @@ the generator returned a creature on a solid field. `debackground()` runs before
 the reduction, and only when under 2% of the canvas is already clear: it floods
 inward from the EDGES rather than replacing the colour globally, or a body pixel
 that happens to match the ground goes with it.
+
+**A creature may carry its OWN key.** `BeastArt.key` merges over the hand-drawn
+five, which were `monsterArt`'s palette and never a limit of anything that
+draws. An export of 64 colours takes 64 characters and is not quantised.
+
+**Nothing derives an outline, and a rank is LIGHT.** The art carries its own
+edge; one added on top is a slab, and grown inward it eats a thin limb whole. A
+rank is `glowed` in the texture with alpha falling off squared — a solid border
+is a low-resolution convention that reads as a sticker once the art is not
+chunky.
 
 **Generated art carries no accent and no halo.** `x`, `b` and `o` are applied at
 RUNTIME off `MonsterRank`, so the converter emits none of the three and the ask
