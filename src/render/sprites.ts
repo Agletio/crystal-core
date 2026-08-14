@@ -9,7 +9,7 @@ import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
 import { lookRows, roleChar } from './look';
 import { DOLL_GRID, FAMILY_ART } from './gear-art';
-import { BEASTIARY, HALO, haloRings, haloed } from './bestiary';
+import { BEASTIARY, HALO, HALO_RANK, haloRings, haloed } from './bestiary';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
@@ -179,7 +179,7 @@ export function monsterArt(
     frame >= ATTACK_FRAME ? (art.attack ?? art.frames[0]) : (art.frames[frame] ?? art.frames[0]);
   return {
     grid: art.grid,
-    rows: haloed(drawn, HALO[rank], haloRings(art.grid)),
+    rows: haloed(drawn, HALO[rank], haloRings(art.grid) * HALO_RANK[rank]),
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),
       M: art.tone.lit(palette),
@@ -187,8 +187,8 @@ export function monsterArt(
       s: art.tone.shade(palette),
       e: art.tone.eye(palette),
       x: accent[rank],
-      // Blue for magic, gold for rare, as every loot game has said it.
-      b: mix(palette.quartz, palette.chalk, 0.3),
+      // Gold for magic, white for rare. The user's call over the usual blue.
+      b: palette.chalk,
       o: palette.citrine,
     },
   };

@@ -126,16 +126,14 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
   // one pixel is 1/24 of a hand-drawn body and 1/256 of a generated one. Same
   // number as `haloRings`, which is what the ring outside this one uses.
   const rings = Math.max(1, Math.round(grid / 24));
-  return outlined(fitted(deshadow(rows), rings), rings);
+  // Room for the outline AND the rank ring outside it, the widest of which is
+  // the rare one at twice a normal ring.
+  return outlined(fitted(deshadow(rows), rings * 3), rings);
 }
 
-/**
- * The body, scaled to fill its grid and stood on a common baseline. A cell is
- * drawn as one tile whatever it was authored at, so a generated body that fills
- * 57% of its frame renders 40% smaller than a hand-drawn one at the same
- * `scale` — which is a size table that means two different things. The margin
- * is what the outline and the halo need to fit.
- */
+/** The body, scaled to fill its grid and stood on a common baseline. A cell is
+ *  one tile whatever it was authored at, so a body filling 57% of its frame
+ *  renders 40% smaller at the same `scale`. The margin is the rings' room. */
 export function fitted(rows: string[], margin: number): string[] {
   const grid = rows.length;
   let top = grid;
@@ -200,24 +198,19 @@ export function deshadow(rows: string[]): string[] {
 
 /** The dark edge every creature carries, DERIVED rather than asked for: offered
  *  the ink the generator fills bodies with it, denied it there is no edge at
- *  all. Drawn INSIDE the silhouette, so a creature never grows by a pixel. */
+ *  all. Grown OUTWARD into the margin — inward it ate a thin limb whole, since
+ *  eleven rings off each side of a thirty-pixel leg leaves almost nothing. */
 function outlined(rows: string[], thickness: number): string[] {
-  const out = rows.map((row) => [...row]);
-  const spent = (x: number, y: number): boolean => {
-    const c = out[y]?.[x] ?? '.';
-    return c === '.' || c === '#';
-  };
+  let out = rows.map((row) => [...row]);
   for (let ring = 0; ring < thickness; ring++) {
-    const edge: Array<[number, number]> = [];
-    out.forEach((row, y) =>
-      row.forEach((c, x) => {
-        if (c === '.' || c === '#') return;
-        if (spent(x - 1, y) || spent(x + 1, y) || spent(x, y - 1) || spent(x, y + 1)) {
-          edge.push([x, y]);
-        }
+    const grown = out;
+    const body = (x: number, y: number): boolean => (grown[y]?.[x] ?? '.') !== '.';
+    out = grown.map((row, y) =>
+      row.map((c, x) => {
+        if (c !== '.') return c;
+        return body(x - 1, y) || body(x + 1, y) || body(x, y - 1) || body(x, y + 1) ? '#' : c;
       })
     );
-    for (const [x, y] of edge) out[y][x] = '#';
   }
   return out.map((row) => row.join(''));
 }
