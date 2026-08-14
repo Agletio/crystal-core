@@ -218,10 +218,12 @@ export const HUNG_PROPS = new Set(['roots', 'torch', 'hung']);
  * other side. It blocks nothing and furniture stands on it.
  */
 export const COVER_PROPS: Weighted[] = [
-  { id: 'rubble', weight: 100 },
-  { id: 'grit', weight: 90 },
+  { id: 'grit', weight: 100 },
+  { id: 'rubble', weight: 70 },
+  { id: 'chips', weight: 60 },
+  { id: 'cobbles', weight: 50 },
   { id: 'pebbles', weight: 30 },
-  { id: 'dirt', weight: 35 },
+  { id: 'tendrils', weight: 14 },
   { id: 'vines', weight: 10 },
 ];
 export const COVER_RATE = [0.46, 0.2, 0.07, 0.025];

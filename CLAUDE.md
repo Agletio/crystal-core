@@ -107,6 +107,15 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
+**A chasm is the third thing a cell can be.** `VOID` beside `WALL` and `FLOOR`:
+nothing walks on it, and it is KEYED as though it were stone so the floor ends
+at a proper edge rather than trailing off. `ScenePlan.chasms` cuts one the way
+its world cuts a room, and it is cut BEFORE the passages — so a corridor that
+crosses one is a bridge, and that is the whole of how a bridge gets made. The
+tile over a hole is drawn from the same set and then faded to nothing by
+`VOID_FADE`: left out entirely, the drop-off comes out a black SQUARE, because
+that tile is what interlocks with its neighbours.
+
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary. The renderer then draws that row

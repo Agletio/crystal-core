@@ -304,6 +304,30 @@
    "dull": 0.5,
    "size": 64,
    "say": "A few thin dead creeping stems trailing FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another with bare stone showing between them, dry and shrivelled and colourless. They lie ON the ground. NOT green, NOT leaves, NOT a plant, NOT a bush, NOT healthy, NOT growing, NOT standing up, NOT a rope, NOT a chain. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+  },
+  {
+   "id": "chips",
+   "tiles": 0.8,
+   "tone": 0.72,
+   "dull": 0.35,
+   "size": 64,
+   "say": "Sharp angular shards of split stone lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, each with straight broken edges and a pale sheared face, every one a different size and turned a different way. The scatter is UNEVEN and MESSY — some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+  },
+  {
+   "id": "cobbles",
+   "tiles": 0.9,
+   "tone": 0.74,
+   "dull": 0.35,
+   "size": 64,
+   "say": "Rounded worn stones of different sizes lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, smooth and dulled with dust, one bigger than the others and off to one side. The scatter is UNEVEN and MESSY — some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+  },
+  {
+   "id": "tendrils",
+   "tiles": 0.9,
+   "tone": 0.7,
+   "dull": 0.5,
+   "size": 64,
+   "say": "A few thin dead roots creeping FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another and forking, with bare stone showing between them. They lie ON the ground and are dry and colourless. NOT green, NOT leaves, NOT a plant, NOT healthy, NOT standing up, NOT a rope. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   }
  ]
 }

@@ -322,6 +322,27 @@
    "tiles": 0.9,
    "tone": 0.7,
    "dull": 0.5
+  },
+  {
+   "id": "chips",
+   "object": "902ab314-a764-4619-83f2-9cb257f38048",
+   "tiles": 0.8,
+   "tone": 0.72,
+   "dull": 0.35
+  },
+  {
+   "id": "cobbles",
+   "object": "1383ddf1-f343-4e39-8c32-60313afd3eef",
+   "tiles": 0.9,
+   "tone": 0.74,
+   "dull": 0.35
+  },
+  {
+   "id": "tendrils",
+   "object": "f65cdf55-b457-44b7-97ed-958363a2fd5e",
+   "tiles": 0.9,
+   "tone": 0.7,
+   "dull": 0.5
   }
  ]
 }

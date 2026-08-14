@@ -19,7 +19,7 @@
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
-import { WALL } from '../sim/grid';
+import { VOID, WALL } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
@@ -112,6 +112,10 @@ const ROCK_DARK = 0.06;
 /** How tall the cut face is drawn, and how far up it what hangs on it sits. */
 const WALL_TALL = 2;
 const WALL_LIFT = 0.35;
+/** What is left of a tile over a hole, by how deep in it is. The RIM keeps
+ *  enough to read as broken ground: a flat black takes the interlocking edge
+ *  with it and the drop-off comes out square. */
+const VOID_FADE = [0.42, 0.13, 0.04];
 
 const GRAIN = 0.18;
 /** What a flame leaves a surface reading as, at the middle of its own pool. */
@@ -371,7 +375,8 @@ export async function createPixiRenderer(
     if (!textures) return false;
 
     const { grid } = map;
-    const at = (gx: number, gy: number) => grid.at(gx, gy);
+    // A HOLE is keyed as stone, so the floor ends at a proper edge.
+    const at = (gx: number, gy: number) => (grid.at(gx, gy) === VOID ? WALL : grid.at(gx, gy));
 
     // Tiles from the nearest cell of a kind, as one 8-way flood out of all of
     // them at once. Capped, so it costs the band it is allowed to reach.
@@ -418,10 +423,13 @@ export async function createPixiRenderer(
       return row(cy) * (1 - ty) + row(cy + 1) * ty;
     };
 
-    /** How lit ONE cell is, before anything smooths it. */
-    const litAt = (x: number, y: number): number => {
+    /** How lit ONE cell is, before anything smooths it. Null for a HOLE, which
+     *  takes no part in the blend — a corner it shared would fade the floor's
+     *  own edge out, where a drop-off is the ground STOPPING. */
+    const litAt = (x: number, y: number): number | null => {
       if (!grid.inBounds(x, y)) return ROCK_TOP * ROCK_DARK;
       const k = y * grid.width + x;
+      if (grid.tiles[k] === VOID) return null;
       const grain = 1 - GRAIN + GRAIN * smooth(x, y);
       const lit =
         grid.tiles[k] === WALL
@@ -458,8 +466,13 @@ export async function createPixiRenderer(
       const image = ink.createImageData(canvas.width, canvas.height);
       for (let cy = 0; cy <= grid.height; cy++) {
         for (let cx = 0; cx <= grid.width; cx++) {
-          const lit =
-            (litAt(cx - 1, cy - 1) + litAt(cx, cy - 1) + litAt(cx - 1, cy) + litAt(cx, cy)) / 4;
+          const round = [
+            litAt(cx - 1, cy - 1),
+            litAt(cx, cy - 1),
+            litAt(cx - 1, cy),
+            litAt(cx, cy),
+          ].filter((v): v is number => v !== null);
+          const lit = round.length > 0 ? round.reduce((a, b) => a + b, 0) / round.length : 0;
           const glow = glowAt(cx - 0.5, cy - 0.5);
           const at = (cy * canvas.width + cx) * 4;
           for (let c = 0; c < 3; c++) {
@@ -484,6 +497,11 @@ export async function createPixiRenderer(
       return sprite;
     }
 
+    // Black under the lot, so a HOLE is a hole and not the page behind it.
+    groundLayer.addChild(
+      new Graphics().rect(0, 0, grid.width, grid.height).fill(0x000000)
+    );
+
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         const raw = wangCorners(at, x, y);
@@ -497,18 +515,24 @@ export async function createPixiRenderer(
         const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
         // One texture across exactly one tile, and a hair over to close seams.
         const size = 1.01 / (alt[0]?.width ?? 32);
-        // The bottom row of a wall run is the CUT FACE, and a set draws it one
-        // tile tall — under a body drawn at one and a half, that is a kerb. So
-        // it grows UP, over as much SOLID rock as stands behind it: a tile with
-        // a floor corner in it still draws floor, and painting the face over
-        // one is where a wall melts into the ground.
+        // The CUT FACE, one tile tall under a body drawn at one and a half,
+        // is a kerb — so it grows up over as much SOLID rock as stands behind
+        // it. A tile with a floor corner still draws floor, and painting the
+        // face over one is where a wall melts into the ground.
         let tall = 1;
-        if (grid.at(x, y) === WALL && grid.at(x, y + 1) !== WALL) {
+        if (grid.at(x, y) === WALL && at(x, y + 1) !== WALL) {
           while (tall < WALL_TALL && wangCorners(at, x, y - tall) === ALL_ROCK) tall++;
         }
         sprite.x = x;
         sprite.y = y + 1 - tall;
         sprite.scale.set(size, size * tall);
+        if (grid.at(x, y) === VOID) {
+          const deep = Math.round(
+            VOID_FADE[Math.min(VOID_FADE.length - 1, Math.max(0, intoRock[y * grid.width + x] - 1))] *
+              255
+          );
+          sprite.tint = (deep << 16) | (deep << 8) | deep;
+        }
         groundLayer.addChild(sprite);
       }
     }

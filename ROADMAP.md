@@ -537,6 +537,11 @@ that worked, and these are what it cost:
   square between two cliffs. Scoring every key the set holds, with the cut face
   one step from either terrain and floor three from rock, fixed it without a
   generation.
+- **A drop-off is the ground STOPPING, and everything soft ruins it.** Three
+  goes: the lightmap blurred the edge into a shadow, then skipping the void's
+  tile made a black square, and what works is drawing the tile from the same
+  set and fading it — the tile IS the interlocking edge. A void also has to
+  take no part in the light's blend or the floor fades out at its own rim.
 - **Uniform density is NOISE, and it took three rounds to see it.** Cover at
   one rate over every tile is confetti; the fix is the SAME fix as the tile
   repetition, arrived at from the other side — the density has to vary. Indexed

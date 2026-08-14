@@ -23,6 +23,9 @@ export const EXIT = 3;
 /** Corridor floor. Walkable exactly like FLOOR — it exists so a renderer can
  *  tell a chamber from a passage without re-deriving it from the rectangles. */
 export const TUNNEL = 4;
+/** A hole where the floor gave way. Neither ground nor rock: nothing walks on
+ *  it, and it is keyed as stone so the floor ends at a proper edge. */
+export const VOID = 5;
 
 export interface Room {
   x: number;
@@ -48,8 +51,7 @@ export class Grid {
   readonly height: number;
   readonly tiles: Uint8Array;
   /** Furniture standing on a walkable tile. A SECOND layer, because the tile
-   *  under an altar is still floor: every renderer keys its ground off `tiles`,
-   *  and marking it rock would cut a hole in the floor to draw a table in. */
+   *  under an altar is still floor and every renderer keys off `tiles`. */
   readonly solid: Uint8Array;
 
   constructor(width: number, height: number) {
@@ -78,7 +80,8 @@ export class Grid {
     const tx = Math.round(x);
     const ty = Math.round(y);
     if (!this.inBounds(tx, ty)) return false;
-    return this.tiles[ty * this.width + tx] !== WALL && !this.solid[ty * this.width + tx];
+    const tile = this.tiles[ty * this.width + tx];
+    return tile !== WALL && tile !== VOID && !this.solid[ty * this.width + tx];
   }
 
   /** Whether a BODY of this radius fits, rather than whether its centre does:
@@ -192,7 +195,7 @@ function islandsIn(r: Room, spare: Vec2[]): { x: number; y: number; r: number }[
 
 /** A room, cut the way its world cuts. The `Room` RECTANGLE never changes —
  *  every spawn, the entrance and the exit are placed off it. */
-function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = []): void {
+function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLOOR): void {
   if (cut !== 'grown') {
     // Both keep the rectangle's AREA: a fifth smaller with the same pack in
     // it is a pack that arrives all at once.
@@ -204,7 +207,7 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = []): void {
         if (dx + dy < corner) continue;
         // Worried at the edge rather than rounded off: no run of it is straight
         if (cut === 'dug' && Math.min(dx, dy) === 0 && tileNoise(x, y, 53) < RAG) continue;
-        grid.set(x, y, FLOOR);
+        grid.set(x, y, fill);
       }
     }
     return;
@@ -236,22 +239,21 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = []): void {
         0.11 * (1 + Math.sin(turn * 3 + swellA)) + 0.07 * (1 + Math.sin(turn * 5 + swellB));
       if (d > 0.8 + swell + tileNoise(x, y, 50) * 0.35) continue;
       if (islands.some((i) => (x - i.x) ** 2 + (y - i.y) ** 2 < i.r * i.r)) continue;
-      grid.set(x, y, FLOOR);
+      grid.set(x, y, fill);
     }
   }
 }
 
 /** Rock a CORNER set cannot draw. A corner is rock only where all four cells
- *  round it are, so a finger of stone one cell thick holds no rock corner at
- *  all and comes out as cut faces with no stone between them — on screen, a
- *  wall melting into the floor. Cut back to floor, twice, since cutting one
- *  cell can leave its neighbour thin. Every cell of a two-thick wall is inside
- *  a solid square, so nothing here eats a real one. */
+ *  round it are, so stone one cell thick holds no rock corner at all and comes
+ *  out as cut faces with nothing between them — a wall melting into the floor.
+ *  Cut back twice, since cutting one cell can leave its neighbour thin; every
+ *  cell of a two-thick wall is inside a solid square, so none of those go. */
 function thinRock(grid: Grid): void {
   for (let pass = 0; pass < 2; pass++) {
     const was = Uint8Array.from(grid.tiles);
     const rock = (x: number, y: number) =>
-      !grid.inBounds(x, y) || was[y * grid.width + x] === WALL;
+      !grid.inBounds(x, y) || was[y * grid.width + x] === WALL || was[y * grid.width + x] === VOID;
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         if (was[y * grid.width + x] !== WALL) continue;
@@ -296,9 +298,9 @@ export function dressRooms(
     return true;
   };
 
-  /** A spot in the room, and then what fits IN it. Picking the arrangement
-   *  first and hunting for room leaves a chamber bare: a ragged ellipse holds
-   *  a four-tile square in about one spot in fifteen. */
+  /** A spot in the room, and then what fits IN it: picking the arrangement first
+   *  leaves a chamber bare, since a ragged ellipse holds a four-tile square in
+   *  about one spot in fifteen. */
   const drop = (room: Room, least: number): boolean => {
     for (let attempt = 0; attempt < 20; attempt++) {
       // Tested against the FLOOR, a tile outside the rectangle each way: a
@@ -345,7 +347,7 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
   }
 }
 
-/** Tiles to the nearest rock, capped at the length of `COVER_RATE`. */
+/** Tiles to the nearest rock, capped at what `COVER_RATE` indexes. */
 function offRock(grid: Grid, x: number, y: number): number {
   for (let r = 1; r < COVER_RATE.length; r++) {
     for (let dy = -r; dy <= r; dy++) {
@@ -358,13 +360,13 @@ function offRock(grid: Grid, x: number, y: number): number {
 }
 
 /** Loose stone and dust, DRIFTED at the foot of the rock and thinning to almost
- *  nothing in the open. It claims no tile and blocks nothing — furniture stands
- *  on top of it — so it is laid without asking what is taken. */
+ *  nothing in the open. It claims no tile and blocks nothing, so it is laid
+ *  without asking what is taken. */
 export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   const out: MapProp[] = [];
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
-      if (grid.at(x, y) === WALL) continue;
+      if (!grid.walkable(x, y) && grid.at(x, y) !== FLOOR) continue;
       if (!rng.chance(COVER_RATE[offRock(grid, x, y) - 1])) continue;
       out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
     }
@@ -393,7 +395,7 @@ export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[
 
   for (let y = 2; y < grid.height - 1; y++) {
     for (let x = 1; x < grid.width - 1; x++) {
-      if (grid.at(x, y) === WALL || authored(x, y)) continue;
+      if (!grid.walkable(x, y) || authored(x, y)) continue;
       const rock = (dx: number, dy: number) => grid.at(x + dx, y + dy) === WALL;
       // A RUN of wall, never a nub: something hanging off a one-tile island in
       // the middle of a room reads as a light fixture floating in mid air.
@@ -411,7 +413,10 @@ export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[
  *  rock, or a passage would relabel the middle of the chamber it joins. */
 function carve(grid: Grid, x: number, y: number): void {
   if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
-  if (grid.at(x, y) === WALL) grid.set(x, y, TUNNEL);
+  // Over a hole as well as through rock: a passage crossing a chasm is a
+  // BRIDGE, and cutting the chasm first is the whole of how one gets made.
+  const tile = grid.at(x, y);
+  if (tile === WALL || tile === VOID) grid.set(x, y, TUNNEL);
 }
 
 function band(width: number): number[] {
@@ -595,6 +600,12 @@ export function sceneMap(
   const cut = plan.cut ?? CUT[theme] ?? 'dug';
   const spare = [...plan.props, plan.entrance, plan.stands, ...(plan.patrol ?? [])];
   for (const r of rooms) carveRoom(grid, r, cut, spare);
+  // Holes BEFORE the passages, so whatever crosses one is a bridge — and never
+  // under anything the room stands somebody on.
+  for (const r of plan.chasms ?? []) carveRoom(grid, r, 'grown', [], VOID);
+  for (const v of [...spare, ...(plan.busy ?? [])]) {
+    if (grid.at(v.x, v.y) === VOID) grid.set(v.x, v.y, FLOOR);
+  }
   if (plan.joins) {
     const rng = new Rng(1);
     for (const [a, b] of plan.joins) {

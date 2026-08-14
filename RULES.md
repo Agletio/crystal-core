@@ -1460,6 +1460,16 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   sandbox's are generated — so a map with `ground` set has to skip the
   hand-drawn pass entirely. It did not, and every bone pile in the sandbox
   carried a pale rectangle nobody could find in the art.
+- **A hole is cut BEFORE the passages.** `VOID` is neither ground nor rock;
+  `carve` writes over one, so the corridor that crosses a chasm is a bridge and
+  no second mechanism is needed to make one. Nothing a room stands somebody on
+  is ever left as void — the reserved tiles are restored after the cut, since a
+  hole under the hero is a room nobody can be in.
+- **A hole is DRAWN, not skipped.** The tile over one carries the edge that
+  interlocks with its neighbours, so leaving it out makes the drop-off a black
+  square. It is drawn from the same set and faded by `VOID_FADE`, deepest in.
+  And it takes no part in the lightmap's blend: a corner it shared would fade
+  the floor's own edge out, where a drop-off is the ground STOPPING.
 - **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
   where all four cells round it are, so a finger of stone one cell thick holds
   no rock corner at all and comes out as cut faces with nothing between them —

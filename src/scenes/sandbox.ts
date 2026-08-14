@@ -40,6 +40,14 @@ const RING: [number, number][] = [
  *  by, from the other end. */
 const PATROL = [0, 1, 2, 3, 4, 6, 5];
 
+/** Where the floor gave way. Cut before the passages, so the corridor that
+ *  crosses one is a ledge over a drop rather than a hole in the walk. */
+const CHASMS = [
+  { x: 31, y: 25, w: 6, h: 6 }, // eats the east of room 4 and the spur to 6
+  { x: 44, y: 18, w: 8, h: 5 }, // the north of room 3, which its tunnel crosses
+  { x: 12, y: 15, w: 6, h: 8 }, // and a gulf the 5-to-0 tunnel crosses
+];
+
 /** Whole tiles, as `roomCenter` rounds: a fraction leaves the hero short. */
 const middle = (i: number) => ({
   x: ROOMS[i].x + Math.floor((ROOMS[i].w - 1) / 2),
@@ -113,6 +121,7 @@ export const SANDBOX: SceneDef = {
     })),
     props: SHRINE.map(([id, x, y]) => ({ id, x, y })),
     plain: [ROOMS[0]],
+    chasms: CHASMS,
     grown: true, // the rock's own cover and growth. Nothing else is scattered
   },
   said: 'A room with nothing in it but the art.',
