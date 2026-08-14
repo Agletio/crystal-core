@@ -188,7 +188,11 @@ export function deshadow(rows: string[]): string[] {
     .sort((a, b) => a - b);
   if (!middle.length) return rows;
 
-  const wide = middle[Math.floor(middle.length / 2)] * GROUND;
+  // Against the WIDEST row of the body, not its median: a shadow is wider than
+  // the whole creature, where a standing figure's feet are merely wider than
+  // its waist — and measuring from the median took the feet off with the blob.
+  const widest = Math.max(...body.filter(([i]) => i <= top + tall * 0.75).map(([, n]) => n));
+  const wide = Math.max(middle[Math.floor(middle.length / 2)] * GROUND, widest * 1.15);
   const from = body.find(([i, n]) => i > top + tall * 0.75 && n > wide)?.[0];
   if (from === undefined) return rows;
   return rows.map((row, y) => (y >= from ? '.'.repeat(row.length) : row));
