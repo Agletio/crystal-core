@@ -96,8 +96,7 @@ const ALL_ROCK = 40;
  * reads as damp, as dust, as where the roof came down.
  *
  * None of it is a TINT: every falloff a per-tile one can express is a staircase
- * of flat rectangles. `lightMap` bakes the lot into one texel per lattice
- * corner and lets the GPU interpolate.
+ * of flat rectangles. `lightMap` is a texel per lattice corner, interpolated.
  */
 const ROCK_TOP = 0.8;
 const ROCK_REACH = 2.6;
@@ -106,18 +105,17 @@ const ROCK_DARK = 0.06;
 const WALL_LIFT = 0.35;
 /** What a tile made entirely of cut face is worth against a lit one. */
 const WALL_FACE = 0.4;
-/** The shaft: how much stone is left, a ring at a time, going down a hole. */
-const VOID_WALL = [0.25];
-const VOID_DEEP = VOID_WALL.length;
+/** What the wall inside a hole is worth. It gets no light of its own: the map
+ *  would smear a rim across the whole tile. */
+const VOID_WALL = 0.35;
 const grey = (of: number): number => {
   const v = Math.max(0, Math.min(255, Math.round(of * 255)));
   return (v << 16) | (v << 8) | v;
 };
 
 /** How far past the grid the rock is drawn. Cut off at the boundary, a chamber
- *  near it ends on a straight lit line; out there every cell is rock further
- *  from a floor than `ROCK_REACH`, so the border IS the fade, and the black
- *  behind it carries on forever. */
+ *  near it ends on a straight lit line; out there every cell is further from a
+ *  floor than `ROCK_REACH`, so the border IS the fade and black is past it. */
 const EDGE = 3;
 
 const GRAIN = 0.18;
@@ -522,8 +520,8 @@ export async function createPixiRenderer(
     const lay = (x: number, y: number, key: number): Sprite | null => {
       const want = wangShadow(key) ? 0 : key;
       const mask = wangNear(want, (k) => !!textures[k]);
-      // Alternates are for the two UNIFORM masks only: a floor tile is lit from
-      // one side and an edge tile's neighbour has to continue the cut face.
+      // Alternates are for the two UNIFORM masks: elsewhere a second picture
+      // clashes with the neighbour whose cut face it has to continue.
       const plain = mask === 0 || mask === ALL_ROCK;
       const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
       if (!alt?.length) return null;
@@ -547,19 +545,6 @@ export async function createPixiRenderer(
     for (let y = -EDGE; y < grid.height + EDGE; y++) {
       for (let x = -EDGE; x < grid.width + EDGE; x++) {
         if (grid.at(x, y) !== VOID) lay(x, y, wangCorners(at, x, y));
-      }
-    }
-    // THE LIP. A drop is a wall seen from the other side, and the set draws
-    // only one of them — rock above, face below — so a hole keyed as stone
-    // comes out a raised BLOCK. Keyed again with the world inverted, the hole
-    // is the low ground and what the pass puts down is the ground's own edge
-    // ending in a face. Only where there IS one, or it paints over the map.
-    if (holed) {
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
-          const key = wangCorners(drop, x, y);
-          if (wangFaces(key) > 0) lay(x, y, key);
-        }
       }
     }
     // Furniture, anchored at the FOOT of its tile rather than the middle: a
@@ -595,17 +580,20 @@ export async function createPixiRenderer(
     }
     const light = lightMap();
     if (light) groundLayer.addChild(light);
-    // THE WALL GOING DOWN: rings of stone inside the hole at FIXED values, and
-    // black past them. Over the light, because what the lightmap touches at a
-    // rim it interpolates across the tile, and a drop interpolated is fog.
+    // THE WALL GOING DOWN. Keyed with the world INVERTED — the hole is the low
+    // ground, everything else stands over it — which puts a face wherever the
+    // ground's edge drops away. Then laid ONE ROW LOWER than it was keyed, so
+    // the wall is inside the hole and the floor above it stays floor: the same
+    // tile a wall is made of, placed to read as BELOW the floor. Over the light
+    // at a fixed value, or the map smears the rim across the tile and a drop
+    // smeared is fog. Under it is the ground layer's own black.
     if (holed) {
-      const into = spread((i) => grid.tiles[i] !== VOID, VOID_DEEP + 1);
       for (let y = 0; y < grid.height; y++) {
         for (let x = 0; x < grid.width; x++) {
-          const deep = into[y * grid.width + x];
-          if (grid.at(x, y) !== VOID || deep > VOID_DEEP) continue;
-          const sprite = lay(x, y, wangCorners(at, x, y));
-          if (sprite) sprite.tint = grey(VOID_WALL[Math.max(0, deep - 1)]);
+          const key = wangCorners(drop, x, y);
+          if (wangFaces(key) === 0) continue;
+          const sprite = lay(x, y + 1, key);
+          if (sprite) sprite.tint = grey(VOID_WALL);
         }
       }
     }
