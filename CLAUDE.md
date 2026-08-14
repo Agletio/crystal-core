@@ -108,8 +108,9 @@ whether any of it goes in the game is the user's call and is open question 8.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
-cliff fills the cell BELOW the boundary, so a wall spans two rows and is a real
-face rather than a kerb. `wangCorners` marks a floor vertex under a rock one,
+cliff fills the cell BELOW the boundary. The renderer then draws that row
+`WALL_TALL` tiles tall, up over the rock behind it — a set draws a face one
+tile high, and under a body rendered at one and a half that is a kerb. `wangCorners` marks a floor vertex under a rock one,
 and `wangNear` is the fallback for a corner no set answers, since a key nothing
 draws is a hole in the floor. `wangShadow` is the one key class NOT drawn: a
 cut face at a corner with no rock at any of them is the cell below a cliff, and
@@ -150,6 +151,9 @@ keys its own surface off `tiles`. A tile is blocked one at a time and UNDONE
 the moment it cuts anything off, since a prop across a passage is a map the
 hero stands still in forever. `STAIN_PROPS` is the other half: a mark IN the
 floor, drawn back so the generator's own domed shading stops reading as a lump.
+Open floor is nearly all `grit` — a few specks read as a floor with something
+on it, where anything with a SHAPE out in the middle of a room reads as
+something somebody threw there.
 
 **One chamber is laid out by HAND** — `SHRINE` in `src/scenes/sandbox.ts`, and
 `ScenePlan.plain` is what keeps the scatter out of it. It is the reference the

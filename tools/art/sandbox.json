@@ -239,12 +239,14 @@
   {
    "id": "torch",
    "object": "b3f03f32-5890-4a44-b2fc-9b860df64900",
-   "tiles": 0.8
+   "tiles": 0.9
   },
   {
    "id": "roots",
    "object": "c86dc030-73e1-466e-b021-7e31ef92283e",
-   "tiles": 1.2
+   "tiles": 1.8,
+   "tone": 0.6,
+   "dull": 0.55
   },
   {
    "id": "pebbles",
@@ -281,6 +283,12 @@
    "id": "stake",
    "object": "271d802c-ef28-4ffc-9e52-06560a2ba101",
    "tiles": 0.9
+  },
+  {
+   "id": "grit",
+   "object": "b6d9a4de-f7b1-4551-8bf4-af72507fcddf",
+   "tiles": 0.5,
+   "tone": 0.7
   }
  ]
 }

@@ -1455,6 +1455,20 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   hunting for room leaves the chamber bare; picking a spot and taking the
   biggest that fits there, biggest first, lands it. Weight is multiplied by
   AREA, or the small ones take every space big enough for the large ones.
+- **A generated map draws ONLY the generated furniture.** `PROPS` and
+  `PROP_ART` share ids on purpose — the ossuary's bones are drawn and the
+  sandbox's are generated — so a map with `ground` set has to skip the
+  hand-drawn pass entirely. It did not, and every bone pile in the sandbox
+  carried a pale rectangle nobody could find in the art.
+- **The cut face is drawn `WALL_TALL` tiles tall.** A set draws it one, which
+  under a body rendered at one and a half reads as a kerb you could step over.
+  The bottom row of a wall run is stretched upward over the rock behind it,
+  which is a surface nobody ever stands on. What HANGS on it lifts by
+  `WALL_LIFT` to match, or a torch is a torch lying at the foot of a wall.
+- **Open floor is nearly all GRIT.** A few specks read as a floor with
+  something on it; a bucket in the middle of a room reads as a bucket somebody
+  threw there. Anything with a shape belongs against a wall or inside a
+  `Vignette`, which is somebody having had a reason.
 - **A `WALL_PROPS` entry is the one thing placed INTO rock**, and only on a
   cut face — rock with rock above it and floor below. It is drawn side-on,
   which is what that surface is; anywhere else it is a picture inside a cliff.

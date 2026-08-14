@@ -537,6 +537,16 @@ that worked, and these are what it cost:
   square between two cliffs. Scoring every key the set holds, with the cut face
   one step from either terrain and floor three from rock, fixed it without a
   generation.
+- **A wall has to be TALLER than one tile.** A generated set draws its cut
+  face one tile high; a body is rendered at one and a half, so the wall read as
+  a kerb and every prop looked oversized against it. The fix is in the drawing
+  rather than in the set — the bottom row of a wall run is stretched up over
+  the rock behind it, which is a surface nobody stands on.
+- **An id in BOTH prop tables is drawn twice.** `bones` is in `PROPS` (the
+  ossuary's, hand-drawn) and in `PROP_ART` (the sandbox's, generated), and the
+  hand-drawn pass was still running over a generated map — a pale rectangle
+  across every bone pile that could not be found in the art, because it was
+  not in the art.
 - **Every remaining tileset problem was answered with LIGHT.** The stone came
   lighter than the floor and read as masonry; the floor was one picture over
   the whole map. `ROCK_TOP` / `ROCK_REACH` / `FOOT_DARK` / `GRAIN` in

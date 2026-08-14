@@ -210,23 +210,25 @@ export interface Weighted {
 }
 
 export const FRINGE_PROPS: Weighted[] = [
-  { id: 'pebbles', weight: 100 },
-  { id: 'stub', weight: 80 },
-  { id: 'fungus', weight: 70 },
-  { id: 'bones', weight: 40 },
-  { id: 'ribs', weight: 35 },
-  { id: 'spoil', weight: 35 },
-  { id: 'plank', weight: 12 },
-  { id: 'bucket', weight: 15 },
-  { id: 'web', weight: 14 },
+  { id: 'grit', weight: 130 },
+  { id: 'pebbles', weight: 90 },
+  { id: 'stub', weight: 60 },
+  { id: 'fungus', weight: 45 },
+  { id: 'spoil', weight: 25 },
+  { id: 'bones', weight: 18 },
+  { id: 'ribs', weight: 14 },
+  { id: 'web', weight: 10 },
 ];
 
+/** Open floor is nearly all GRIT: a few specks read as a floor with something
+ *  on it, where a bucket in the middle of a room reads as a bucket somebody
+ *  threw there. Anything with a shape belongs against a wall or in a
+ *  `Vignette`, which is somebody having had a reason. */
 export const LOOSE_PROPS: Weighted[] = [
-  { id: 'splash', weight: 100 },
-  { id: 'pebbles', weight: 60 },
-  { id: 'stub', weight: 40 },
-  { id: 'bones', weight: 35 },
-  { id: 'stake', weight: 25 },
+  { id: 'grit', weight: 200 },
+  { id: 'pebbles', weight: 30 },
+  { id: 'splash', weight: 14 },
+  { id: 'stub', weight: 10 },
 ];
 
 export const WALL_PROPS: Weighted[] = [

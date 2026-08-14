@@ -69,7 +69,9 @@ import {
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
-import { GLOW_PROPS, STAIN_ALPHA, STAIN_PROPS } from '../vignettes';
+import { GLOW_PROPS, STAIN_ALPHA, STAIN_PROPS, WALL_PROPS } from '../vignettes';
+
+const WALL_HUNG = new Set(WALL_PROPS.map((w) => w.id));
 import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
@@ -100,6 +102,11 @@ const ALL_ROCK = 40;
 const ROCK_TOP = 0.9;
 const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
+/** How many tiles tall the cut face is drawn, and how far up it what
+ *  hangs on it sits. */
+const WALL_TALL = 2;
+const WALL_LIFT = 0.35;
+
 const GRAIN = 0.18;
 /** What a flame leaves a surface reading as, at the middle of its own pool. */
 const WARM = [1, 0.88, 0.66];
@@ -484,9 +491,14 @@ export async function createPixiRenderer(
         const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
         // One texture across exactly one tile, and a hair over to close seams.
         const size = 1.01 / (alt[0]?.width ?? 32);
+        // The bottom row of a wall run is the CUT FACE, and a set draws it one
+        // tile tall — under a body drawn at one and a half, that is a kerb.
+        // At `WALL_TALL` it eats the rock above it, which nobody stands on.
+        const face =
+          grid.at(x, y) === WALL && grid.at(x, y - 1) === WALL && grid.at(x, y + 1) !== WALL;
         sprite.x = x;
-        sprite.y = y;
-        sprite.scale.set(size);
+        sprite.y = face ? y + 1 - WALL_TALL : y;
+        sprite.scale.set(size, size * (face ? WALL_TALL : 1));
         groundLayer.addChild(sprite);
       }
     }
@@ -503,7 +515,9 @@ export async function createPixiRenderer(
       const sprite = new Sprite(canvas);
       sprite.anchor.set(0.5, 1);
       sprite.x = prop.x + 0.5;
-      sprite.y = prop.y + 1;
+      // Lifted, because the FACE is `WALL_TALL` tiles rather than the one its
+      // tile covers: a torch at the foot of a wall is a torch on the floor.
+      sprite.y = prop.y + 1 - (WALL_HUNG.has(prop.id) ? WALL_LIFT : 0);
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
       groundLayer.addChild(sprite);
@@ -576,7 +590,9 @@ export async function createPixiRenderer(
 
     // Authored furniture, over the grain of the tile it is standing on. Not
     // grouped: there are a handful in a room, against ten thousand decals.
-    for (const prop of map.props) {
+    // Never over a generated one — a tileset brings its OWN furniture, and an
+    // id in both tables was drawing a hand-drawn rectangle over the picture.
+    for (const prop of generated ? [] : map.props) {
       for (const d of PROPS[prop.id]?.(floor, prop.x, prop.y) ?? []) {
         mapLayer
           .rect(prop.x + d.x, prop.y + d.y, d.w, d.h)

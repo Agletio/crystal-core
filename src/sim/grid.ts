@@ -320,7 +320,7 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
 
 /** How often a tile of each kind takes something. What reads as a cavern is
  *  the FOOT of the rock, so open floor stays nearly bare. */
-const EDGE_RATE = { face: 0.17, fringe: 0.34, open: 0.07 };
+const EDGE_RATE = { face: 0.14, fringe: 0.22, open: 0.13 };
 
 /**
  * The rock's own leavings, a tile at a time — debris and growth against the

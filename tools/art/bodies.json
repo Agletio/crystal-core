@@ -210,15 +210,17 @@
   },
   {
    "id": "torch",
-   "tiles": 0.8,
+   "tiles": 0.9,
    "say": "a bent iron bracket bolted flat to stone holding a short burnt-down brand, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, one small dirty guttering flame at the top of it and soot streaked up the rock above, the iron black and scaled with rust. The flame is SMALL and dim. NOT bright, NOT a bonfire, NOT a lantern, NOT glass, NOT orange light spilling everywhere. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "view": "side"
   },
   {
    "id": "roots",
-   "tiles": 1.2,
+   "tiles": 1.8,
    "say": "a hanging curtain of dead roots and fibrous strands coming down out of stone, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, thin and tangled with big gaps between the strands, some snapped off short, some reaching further down than others, furred with damp. NOT leaves, NOT green, NOT a plant, NOT a vine, NOT healthy, NOT a curtain of cloth. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
-   "view": "side"
+   "view": "side",
+   "tone": 0.6,
+   "dull": 0.55
   },
   {
    "id": "pebbles",
@@ -259,6 +261,13 @@
    "id": "stake",
    "tiles": 0.9,
    "say": "a rough wooden stake driven upright into the stone floor at a slight lean, seen from HIGH ABOVE looking down, splintered at the top, a loop of black rusted wire twisted round it and trailing off across the ground. NOT a post, NOT a fence, NOT planed timber, NOT clean, NOT new. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "grit",
+   "tiles": 0.5,
+   "tone": 0.7,
+   "size": 48,
+   "say": "Five or six TINY specks of grit lying on bare rock, seen from DIRECTLY ABOVE looking straight down, each one only a few pixels across, scattered wide apart with plenty of empty floor between them. They are barely there. NOT a pile, NOT a heap, NOT a mound, NOT a cluster, NOT boulders, NOT big. Most of the picture is EMPTY bare floor. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
   }
  ]
 }
