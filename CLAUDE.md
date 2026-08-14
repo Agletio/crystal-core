@@ -117,24 +117,32 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
-**A chasm is the third thing a cell can be, and NOTHING cuts one today.**
-`VOID` beside `WALL` and `FLOOR`: nothing walks on it, and it is KEYED as though
-it were stone so the floor ends at a proper edge rather than trailing off.
-`ScenePlan.chasms` cuts one the way its world cuts a room, BEFORE the passages —
-so a corridor that crosses one is a bridge, and that is the whole of how a
-bridge gets made. The tile over a hole is drawn from the same set and faded by
-`VOID_FADE`, because that tile is what interlocks with its neighbours. The
-sandbox had three and they are GONE: a `grown` cut shreds a hole into a diagonal
-band of two- and three-tile scraps woven through rock, and at the size a cell
-draws that is not a drop but a handful of black squares nobody put there. Black
-belongs to the rock. The mechanism is intact and one line puts a chasm back.
+**A chasm is the third thing a cell can be, and it is what makes an edge a
+LEDGE.** `VOID` beside `WALL` and `FLOOR`: nothing walks on it, and it is KEYED
+as though it were stone so the floor ends at a proper edge. `ScenePlan.chasms`
+cuts one the way its world cuts a room, BEFORE the passages — so a corridor that
+crosses one is a walkway, and that is the whole of how a bridge gets made. No
+islands are left standing in one, because ground in mid air ragged round is
+black scraps rather than a drop. The sandbox has four, each biting a chamber's
+rim: every edge being rock going UP is a room in a hall, and the point of a
+chasm is the variation.
+
+**A DROP is drawn TWICE.** The set knows one relationship — rock above, face
+below — so a hole keyed as stone comes out a raised BLOCK, its cliff on the
+wrong rim. So `buildGround` keys it again INVERTED, the hole as the low ground
+and everything else as the high, and lays that pass over the first wherever it
+holds a face. What it puts down is the LIP: the ground's own edge, lit, ending
+in a cut face over the black. The tile over the hole itself is drawn from the
+same set and faded by `VOID_FADE`, because that tile is what interlocks.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary, which is what makes the face two thirds
 of a tile rather than a seventh of one. It is drawn at THAT size and never
 stretched: the face is a run of rounded columns, so a tile of it made taller is
-a row of grey posts standing along the wall. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
+a row of grey posts standing along the wall. And it STANDS DOWN by `WALL_FACE`,
+because a cut face is a vertical surface and `intoRock` lights the rock's edge
+cell — which is exactly that one — brightest of all the stone on the map. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
 corner anywhere, so `thinRock` cuts it back to floor after every carve rather
 than leave a wall melting into the ground. `wangCorners` marks a floor vertex under a rock one,
 and `wangNear` is the fallback for a corner no set answers, since a key nothing

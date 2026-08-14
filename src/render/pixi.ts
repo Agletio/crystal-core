@@ -4,11 +4,9 @@
  * Same Renderer interface as canvas2d, and the only one that draws sprites.
  *
  * Everything geometric lives inside a `world` container measured in TILE
- * units, and the camera is that container's transform. This is what makes
- * zooming and following cheap: the map is built once and then moved, rather
- * than 2,000 rectangles being redrawn at new pixel coordinates every frame.
- * Text is the exception — it sits in screen space so it stays crisp instead
- * of being scaled up into a blur.
+ * units, and the camera is that container's transform: the map is built once
+ * and then moved, rather than 2,000 rectangles being redrawn every frame. Text
+ * is the exception — it sits in screen space so it stays crisp.
  *
  * Construction is async (Pixi 8 initialises the GPU device asynchronously) and
  * can fail — no WebGL, headless, a hostile driver. It returns null in that
@@ -16,7 +14,7 @@
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
-import { VOID, WALL } from '../sim/grid';
+import { FLOOR, VOID, WALL } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
@@ -47,6 +45,7 @@ import {
   toHexNumber,
   vfxColour,
   wangCorners,
+  wangFaces,
   wangNear,
   wangShadow,
   ZOOM_MIN,
@@ -106,10 +105,15 @@ const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
 /** How far up the cut face what hangs on it sits. */
 const WALL_LIFT = 0.35;
-/** What is left of a tile over a hole, by how deep in it is. The RIM keeps
- *  enough to read as broken ground: a flat black takes the interlocking edge
- *  with it and the drop-off comes out square. */
+/** What is left of a tile over a hole, by how deep in. The RIM keeps enough to
+ *  read as broken ground; flat black comes out a square. */
 const VOID_FADE = [0.42, 0.13, 0.04];
+/** What a tile made entirely of cut face is worth against a lit one. */
+const WALL_FACE = 0.4;
+const grey = (of: number): number => {
+  const v = Math.max(0, Math.min(255, Math.round(of * 255)));
+  return (v << 16) | (v << 8) | v;
+};
 
 /** How far past the grid the rock is drawn. Cut off at the boundary, a chamber
  *  near it ends on a straight lit line; out there every cell is rock further
@@ -377,6 +381,9 @@ export async function createPixiRenderer(
     const { grid } = map;
     // A HOLE is keyed as stone, so the floor ends at a proper edge.
     const at = (gx: number, gy: number) => (grid.at(gx, gy) === VOID ? WALL : grid.at(gx, gy));
+    // And INVERTED for the lip: the hole is the ground, the rest stands over it.
+    const drop = (gx: number, gy: number) => (grid.at(gx, gy) === VOID ? FLOOR : WALL);
+    const holed = grid.tiles.some((t) => t === VOID);
 
     // Tiles from the nearest cell of a kind, as one 8-way flood out of all of
     // them at once. Capped, so it costs the band it is allowed to reach.
@@ -512,33 +519,51 @@ export async function createPixiRenderer(
         .fill(0x000000)
     );
 
+    /** One cell of the set, keyed however it is asked to be. */
+    const lay = (x: number, y: number, key: number): Sprite | null => {
+      const want = wangShadow(key) ? 0 : key;
+      const mask = wangNear(want, (k) => !!textures[k]);
+      // Alternates are for the two UNIFORM masks only: a floor tile is lit from
+      // one side and an edge tile's neighbour has to continue the cut face.
+      const plain = mask === 0 || mask === ALL_ROCK;
+      const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
+      if (!alt?.length) return null;
+      const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
+      // One texture across exactly one tile, and a hair over to close seams.
+      // Never stretched: the face is a run of rounded columns, and taller than
+      // the set drew it every column becomes a post.
+      const size = 1.01 / (alt[0]?.width ?? 32);
+      sprite.x = x;
+      sprite.y = y;
+      sprite.scale.set(size);
+      // The CUT FACE stands down, by how much of the tile is face: it is a
+      // VERTICAL surface, and `intoRock` lights that very cell brightest.
+      const faces = wangFaces(key);
+      if (faces > 0) sprite.tint = grey(1 - (1 - WALL_FACE) * (faces / 4));
+      groundLayer.addChild(sprite);
+      return sprite;
+    };
+
     for (let y = -EDGE; y < grid.height + EDGE; y++) {
       for (let x = -EDGE; x < grid.width + EDGE; x++) {
-        const raw = wangCorners(at, x, y);
-        const want = wangShadow(raw) ? 0 : raw;
-        const mask = wangNear(want, (k) => !!textures[k]);
-        // Alternates are for the two UNIFORM masks only: a floor tile is lit
-        // from one side and an edge tile's neighbour has to continue the cut
-        // face, so anywhere else a second picture clashes with its neighbour.
-        const plain = mask === 0 || mask === ALL_ROCK;
-        const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
-        const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
-        // One texture across exactly one tile, and a hair over to close seams.
-        // Never stretched: the cut face is drawn as a run of rounded columns,
-        // and taller than the set drew it every column becomes a post — a row
-        // of grey uprights standing along the wall rather than a cliff.
-        const size = 1.01 / (alt[0]?.width ?? 32);
-        sprite.x = x;
-        sprite.y = y;
-        sprite.scale.set(size);
-        if (grid.at(x, y) === VOID) {
-          const deep = Math.round(
-            VOID_FADE[Math.min(VOID_FADE.length - 1, Math.max(0, intoRock[y * grid.width + x] - 1))] *
-              255
-          );
-          sprite.tint = (deep << 16) | (deep << 8) | deep;
+        const sprite = lay(x, y, wangCorners(at, x, y));
+        if (sprite && grid.at(x, y) === VOID) {
+          const deep = Math.min(VOID_FADE.length, Math.max(1, intoRock[y * grid.width + x]));
+          sprite.tint = grey(VOID_FADE[deep - 1]);
         }
-        groundLayer.addChild(sprite);
+      }
+    }
+    // THE LIP. A drop is a wall seen from the other side, and the set draws
+    // only one of them — rock above, face below — so a hole keyed as stone
+    // comes out a raised BLOCK. Keyed again with the world inverted, the hole
+    // is the low ground and what the pass puts down is the ground's own edge
+    // ending in a face. Only where there IS one, or it paints over the map.
+    if (holed) {
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          const key = wangCorners(drop, x, y);
+          if (wangFaces(key) > 0) lay(x, y, key);
+        }
       }
     }
     // Furniture, anchored at the FOOT of its tile rather than the middle: a

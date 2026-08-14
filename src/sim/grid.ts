@@ -222,7 +222,9 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
   const ry = r.h / 2;
   const swellA = phaseOf(r, 54);
   const swellB = phaseOf(r, 55);
-  const islands = islandsIn(r, spare);
+  // Nothing stands up inside a HOLE: an island there is ground in mid air, and
+  // ragged round as well it leaves black scraps rather than a drop.
+  const islands = fill === FLOOR ? islandsIn(r, spare) : [];
 
   for (let y = r.y - 1; y < r.y + r.h + 1; y++) {
     for (let x = r.x - 1; x < r.x + r.w + 1; x++) {
@@ -232,8 +234,7 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
       const d = dx * dx + dy * dy;
       // HEADLANDS, at a scale that reads across a whole room where `tileNoise`
       // only roughens one tile. It only ever ADDS: a swell that can pull IN
-      // puts a room's authored furniture in the rock, and the bays are already
-      // the ragging's job.
+      // puts a room's authored furniture in the rock.
       const turn = Math.atan2(dy, dx);
       const swell =
         0.11 * (1 + Math.sin(turn * 3 + swellA)) + 0.07 * (1 + Math.sin(turn * 5 + swellB));
@@ -246,9 +247,8 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
 
 /** Rock a CORNER set cannot draw. A corner is rock only where all four cells
  *  round it are, so stone one cell thick holds no rock corner at all and comes
- *  out as cut faces with nothing between them — a wall melting into the floor.
- *  Cut back twice, since cutting one cell can leave its neighbour thin; every
- *  cell of a two-thick wall is inside a solid square, so none of those go. */
+ *  out as a wall melting into the floor. Cut back twice, since cutting one cell
+ *  can leave its neighbour thin; a two-thick wall is inside a solid square. */
 function thinRock(grid: Grid): void {
   for (let pass = 0; pass < 2; pass++) {
     const was = Uint8Array.from(grid.tiles);

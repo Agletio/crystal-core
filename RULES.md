@@ -1467,12 +1467,35 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   near the boundary was ending on a straight lit line with flat colour past it.
   A map with no generated ground keeps `rockDeep`, for the reason it always
   had: it draws only the band you could see from a room.
-- **BLACK belongs to the rock.** *The user's call, looking at it.* It is what
-  answers the repeating stone — a set has one picture per corner combination,
-  and the deep rock going out is what stops that being a field of wallpaper.
-  Anything else black at the size a cell draws reads as a tile somebody
-  forgot: the sandbox's three chasms came out as scraps of black square in the
-  open floor, and they are gone.
+- **BLACK belongs to the rock, or to a hole that reads as one.** *The user's
+  call, looking at it.* Deep rock going out is what answers the repeating
+  stone. Anything else black at the size a cell draws has to EARN it: the
+  sandbox's first three chasms were shredded into scraps of black square in
+  the open floor, which reads as tiles somebody forgot.
+- **The CUT FACE stands down.** `WALL_FACE`, by how many of the tile's corners
+  are face. It is a vertical surface under a light from above, and `intoRock`
+  was doing the exact opposite — the rock's edge cell is the best lit stone on
+  the map, and that cell is the one the set draws as cliff. So every wall wore
+  a band paler than the floor at its foot, which is a grey slab standing there
+  rather than a drop. This one is a per-tile tint on PURPOSE, and does not
+  break the rule against those: a cliff is a discrete surface with a hard edge,
+  not a falloff, so there is no gradient to staircase.
+- **A DROP is keyed a SECOND time, with the world inverted.** The set draws one
+  relationship — rock above, face below — so a hole keyed as stone comes out a
+  raised BLOCK: the cliff lands on the wrong rim and the near edge just stops.
+  `drop` in `buildGround` makes the hole the low ground and everything else the
+  high, and the pass is drawn over the first WHERE THERE IS A FACE — everywhere
+  else that keying is solid rock, and drawing it would paint over the map. What
+  it puts down is the lip: the ground's own edge, lit, ending in a face.
+- **Nothing stands up inside a HOLE.** `carveRoom` skips its islands when the
+  fill is not `FLOOR`. An island in a chasm is ground in mid air, and ragged
+  round as well it comes out as black scraps rather than as a drop.
+- **A chasm BITES a chamber's rim.** That is what makes it a ledge rather than
+  a pit in the rock nobody can walk to, and it is the whole reason to cut one:
+  every edge being rock going UP is a room in a hall. A join across one arrives
+  as a walkway for free, since a passage pinches to two tiles and `carve`
+  writes over a hole. None may cover a tile somebody stands on — restoring
+  those tile by tile is what shredded the first three.
 - **A hole is cut BEFORE the passages.** `VOID` is neither ground nor rock;
   `carve` writes over one, so the corridor that crosses a chasm is a bridge and
   no second mechanism is needed to make one. Nothing a room stands somebody on

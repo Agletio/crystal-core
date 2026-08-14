@@ -513,6 +513,11 @@ export function wangNear(key: number, has: (of: number) => boolean): number {
   return best;
 }
 
+/** How much of a tile is the CUT FACE — a vertical surface, not ground or top. */
+export function wangFaces(key: number): number {
+  return CORNERS.filter((place) => Math.floor(key / place) % 3 === 2).length;
+}
+
 /** BOTH top corners the cut face and no ROCK anywhere: the cell squarely BELOW
  *  a cliff, which a set draws as a flat dark rectangle — a run of those along a
  *  wall is paving laid at the foot of it, so it is drawn as plain floor. ONE
