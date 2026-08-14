@@ -1459,6 +1459,20 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   sandbox's are generated — so a map with `ground` set has to skip the
   hand-drawn pass entirely. It did not, and every bone pile in the sandbox
   carried a pale rectangle nobody could find in the art.
+- **The rock does not stop at the GRID.** It is drawn `EDGE` tiles past it on
+  every side, where every cell is further from a floor than `ROCK_REACH`, and
+  the last ring fades to true black — which is the renderer's background under
+  a generated map, so the fade arrives somewhere however far the camera pulls
+  back. The grid is sized off the rooms plus a couple of tiles, so a chamber
+  near the boundary was ending on a straight lit line with flat colour past it.
+  A map with no generated ground keeps `rockDeep`, for the reason it always
+  had: it draws only the band you could see from a room.
+- **BLACK belongs to the rock.** *The user's call, looking at it.* It is what
+  answers the repeating stone — a set has one picture per corner combination,
+  and the deep rock going out is what stops that being a field of wallpaper.
+  Anything else black at the size a cell draws reads as a tile somebody
+  forgot: the sandbox's three chasms came out as scraps of black square in the
+  open floor, and they are gone.
 - **A hole is cut BEFORE the passages.** `VOID` is neither ground nor rock;
   `carve` writes over one, so the corridor that crosses a chasm is a bridge and
   no second mechanism is needed to make one. Nothing a room stands somebody on
@@ -1484,12 +1498,16 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   stands about, and goes again — off HOME rather than off wherever it stopped,
   or a body walks across the room a wander at a time. A `rooted` one has no
   speed, so a caster still holds the post the layout wants.
-- **The cut face is drawn `WALL_TALL` tiles tall, over SOLID rock only.** A set
-  draws it one, which under a body rendered at one and a half is a kerb.
-  The bottom row of a wall run grows upward over as much SOLID rock as stands
-  behind it — a tile with a floor corner in it still draws floor, and painting
-  the face over one is the other way a wall melts into the ground. What HANGS
-  on it lifts by `WALL_LIFT`, or a torch lies at the foot of a wall.
+- **The cut face is drawn at the size the SET drew it, and never stretched.**
+  It was grown two tiles tall over the rock behind it, on the finding that a
+  face one tile high is a kerb under a body rendered at one and a half — but
+  that finding was made against a shallow set, and `transition_size` had
+  already answered it by giving the face two thirds of a tile. Stretched on
+  top, every one of the face's rounded columns becomes a POST: what reads is a
+  row of grey uprights standing along the wall, worst where a rock stub two
+  cells wide turns into a crate on the floor. Measured at 1, 1.5 and 2 — 1.5
+  is still a palisade. What HANGS on the face lifts by `WALL_LIFT`, which is
+  into the lower part of its own tile.
 - **The floor is broken up UNDER the furniture, never with it.** `coverFloor`
   lays loose stone and dust; the renderer draws that pass FIRST, so a slab
   stands on the rubble rather than beside it. Cover claims no tile, blocks
@@ -1757,6 +1775,18 @@ and already automatic.
 | layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
 | the dock, a window's position, a drag target | `drag` — 20s, and it prints what `elementFromPoint` hits on a failure |
 | art, sprites, icons | `shots` |
+| the SANDBOX room — its layout, its floor, what the renderer does with a generated tileset | `peek`, and nothing else |
+
+**While the work is the sandbox, the main game's harnesses are OUT of the
+loop.** *The user's decision, in their words: "we need to stop testing anything
+on the main game for a while. I want to focus entirely on the demo sandbox
+area. We shouldn't need to test anything in the main game cause we shouldn't be
+changing anything in it."* So the rule is the second half of that sentence
+rather than the first: a sandbox change that reaches the main game is the thing
+to notice, and the way to keep it from reaching is that everything a generated
+tileset does sits behind `buildGround` returning early on a map with no
+`ground`. `comments` and `typecheck` still run — they are seconds and already
+automatic. This lapses the moment a change touches something a player runs.
 
 **When a UI change breaks something, reach for `drag` first.** It found the
 handler race that four rounds of reading a slower harness's output did not,
@@ -1818,6 +1848,13 @@ balance number that reports and can never fail.
   - `tools/model-sheet.mts out.png` — every look, and `out-beasts.png` beside
     it with every creature at every rank. The only view that judges a halo.
   - `tools/model-peek.mts out.png family[,family]` — a few looks, drawn large.
+  - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale]` — the
+    SANDBOX room, off the committed bundle in real Chromium, because Pixi is
+    the only renderer that draws a generated tileset and the room cannot be
+    drawn out of the source. The crop is magnified NEAREST: every fault found
+    in that room so far — the posts along the wall, the black scraps in the
+    floor, the seam where the drawn border stopped — was invisible at the size
+    it ships at and obvious at 5x.
   - `tools/zone-peek.mts out.png [px] [time] [span]` — all four zones off a
     real generated map, centred on the entrance. **`span` must be EVEN**: it is
     halved to find the corner, and an odd one lands the loop on half-tiles and

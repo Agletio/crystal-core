@@ -362,6 +362,45 @@ module does, so an absent client is not a blocker.
   renderer already does. Nothing here argues for more directions; the argument
   for those is diagonal movement looking wrong, and it does not yet.
 
+### What LOOKING at the room caught next, and it was three things
+
+**The user's own list, off a screenshot with the faults circled on it.** All
+three are fixed; each is now a rule in `RULES.md`, and each is the same shape —
+something correct in the small that reads as a different object at the size a
+cell actually draws.
+
+- **Black scraps in the open floor were the CHASMS.** A `grown` cut shreds a
+  hole: the three the sandbox had came out as a diagonal band of two- and
+  three-tile pieces with rock and tunnel woven through them, plus single tiles
+  stranded on the far side of a bridge. At a tile across, that is not a drop —
+  it is a black square nobody put there. The user's rule out of it is that
+  black belongs to the ROCK, where it is what answers the repeating stone. The
+  chasms are gone from `src/scenes/sandbox.ts`; `ScenePlan.chasms`, `VOID` and
+  `VOID_FADE` are all intact and one line puts them back.
+- **`WALL_TALL` was a fix applied twice.** "A set draws its face one tile high
+  and that is a kerb" was measured against a SHALLOW set, and raising
+  `transition_size` had already answered it — the face is two thirds of a tile
+  now. The 2x stretch on top turned each of the face's rounded columns into a
+  post, so every wall in the room was a row of grey uprights and every two-cell
+  rock stub was a crate standing on the floor. Shot at 1, 1.5 and 2: 1.5 is
+  still a palisade. **When a fault is fixed twice from both ends, check whether
+  the first fix is still needed before keeping both.**
+- **The map's own edge was a straight lit line.** The grid is the rooms plus
+  two tiles, so a chamber near the boundary never got the `ROCK_REACH` of rock
+  it needed to go dark, and past it was flat background. The rock is drawn
+  `EDGE` tiles past the grid now and the last ring fades to true black, which
+  is also the background under a generated map. Two half-fixes each looked
+  done on their own: extending the rock left a faint step where the border
+  stopped, and blacking the background alone left the lit line.
+
+**`npm run shots` is RED, and it predates all of this.** `desktop: the first
+descent never met the Lampwright` — it reaches the room and the first bubble
+(both shots are written) and then never advances to `#met`. Verified by
+stashing: it fails identically at `9c85286` with nothing modified. Not
+diagnosed, and not this work's — written down so the next session does not
+spend the two minutes discovering it, and so nobody mistakes it for a
+regression.
+
 ### Where the room stands, and what is next for it
 
 **The look is settled and the ROOM is not.** What the cavern is made of has

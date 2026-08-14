@@ -48,13 +48,17 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | screenshots, and an overflow probe |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
+| `npm run peek` | the sandbox room, at a zoom, a pan and a magnified crop |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
-table. **Nothing teaches, by decision:** the guided opening was deleted so the
-first hour can be PLAYED with nothing explaining it, and teaching comes back as
-a quest log once somebody has played it and got stuck.
+table, and while the work is the SANDBOX the main game's harnesses are out of
+that loop by the user's decision. **Nothing teaches, by decision:** the guided
+opening was deleted so the first hour can be PLAYED with nothing explaining it,
+and teaching comes back as a quest log once somebody has played it and got
+stuck.
 
-Build before `smoke`, `shots` or `drag` — they load the bundle, not the source.
+Build before `smoke`, `shots`, `drag` or `peek` — they load the bundle, not the
+source.
 
 **The generator is an MCP server** — `https://api.pixellab.ai/mcp`, guide at
 `/mcp/docs`, wired up in `.mcp.json`. Its tools (`create_character`,
@@ -113,20 +117,24 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
-**A chasm is the third thing a cell can be.** `VOID` beside `WALL` and `FLOOR`:
-nothing walks on it, and it is KEYED as though it were stone so the floor ends
-at a proper edge rather than trailing off. `ScenePlan.chasms` cuts one the way
-its world cuts a room, and it is cut BEFORE the passages — so a corridor that
-crosses one is a bridge, and that is the whole of how a bridge gets made. The
-tile over a hole is drawn from the same set and then faded to nothing by
-`VOID_FADE`: left out entirely, the drop-off comes out a black SQUARE, because
-that tile is what interlocks with its neighbours.
+**A chasm is the third thing a cell can be, and NOTHING cuts one today.**
+`VOID` beside `WALL` and `FLOOR`: nothing walks on it, and it is KEYED as though
+it were stone so the floor ends at a proper edge rather than trailing off.
+`ScenePlan.chasms` cuts one the way its world cuts a room, BEFORE the passages —
+so a corridor that crosses one is a bridge, and that is the whole of how a
+bridge gets made. The tile over a hole is drawn from the same set and faded by
+`VOID_FADE`, because that tile is what interlocks with its neighbours. The
+sandbox had three and they are GONE: a `grown` cut shreds a hole into a diagonal
+band of two- and three-tile scraps woven through rock, and at the size a cell
+draws that is not a drop but a handful of black squares nobody put there. Black
+belongs to the rock. The mechanism is intact and one line puts a chasm back.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
-cliff fills the cell BELOW the boundary. The renderer then draws that row
-`WALL_TALL` tiles tall, up over the rock behind it — a set draws a face one
-tile high, and under a body rendered at one and a half that is a kerb. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
+cliff fills the cell BELOW the boundary, which is what makes the face two thirds
+of a tile rather than a seventh of one. It is drawn at THAT size and never
+stretched: the face is a run of rounded columns, so a tile of it made taller is
+a row of grey posts standing along the wall. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
 corner anywhere, so `thinRock` cuts it back to floor after every carve rather
 than leave a wall melting into the ground. `wangCorners` marks a floor vertex under a rock one,
 and `wangNear` is the fallback for a corner no set answers, since a key nothing
@@ -134,6 +142,15 @@ draws is a hole in the floor. `wangShadow` is the one key class NOT drawn: a
 cut face at a corner with no rock at any of them is the cell below a cliff, and
 the set draws it as a flat dark rectangle that reads as paving at the foot of
 the wall. It falls back to plain floor.
+
+**The map has no EDGE.** The grid is where the stone stops being stored, not
+where it stops: a chamber sitting two tiles from the boundary ends on a straight
+lit line with flat background past it. So the rock is drawn `EDGE` tiles beyond
+the grid on every side, out there is further from any floor than `ROCK_REACH`,
+and the last ring fades to true black — which is also the background under a
+generated map, so what the fade arrives at carries on forever. The zone's own
+rock keeps `rockDeep`: it draws only the band you could see from a room, and
+black behind THAT is a chamber floating in nothing.
 
 **The LIGHT is a MAP, and it is the renderer's rather than the set's.** A set
 is drawn to be looked at as terrain, so its stone is lit like the floor; flat

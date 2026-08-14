@@ -1,10 +1,7 @@
 /**
  * WebGL renderer, built on PixiJS.
  *
- * Same Renderer interface as canvas2d — the sim can't tell them apart. This
- * one draws actual sprites with animation, batches on the GPU, and is what a
- * real art pass plugs into: replace makeSheet() in sprites.ts with a loader
- * and nothing in this file changes.
+ * Same Renderer interface as canvas2d, and the only one that draws sprites.
  *
  * Everything geometric lives inside a `world` container measured in TILE
  * units, and the camera is that container's transform. This is what makes
@@ -96,26 +93,29 @@ const ALL_ROCK = 40;
  *
  * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
  * tiles, leaving a lit rim and nothing past it. `GRAIN` answers the other half:
- * a set has ONE picture per corner combination, turning the tile or mixing in a
- * second set's both read worse than repeating, and a rise and fall over
+ * a set has ONE picture per corner combination, and a rise and fall over
  * `GRAIN_SPAN` tiles reads as damp, as dust, as where the roof came down.
  *
  * None of it is a TINT. A tint is per tile, so every falloff it can express is
- * a staircase of flat rectangles, and a wall's shadow drawn that way is a grey
- * box. `lightMap` bakes all of this into one texel per lattice corner and lets
- * the GPU interpolate, so the whole thing is smooth and the wall's shadow is
- * the rock's own dark bleeding half a tile onto the floor.
+ * a staircase of flat rectangles. `lightMap` bakes the lot into one texel per
+ * lattice corner and lets the GPU interpolate, so a wall's shadow is the rock's
+ * own dark bleeding half a tile onto the floor.
  */
 const ROCK_TOP = 0.8;
 const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
-/** How tall the cut face is drawn, and how far up it what hangs on it sits. */
-const WALL_TALL = 2;
+/** How far up the cut face what hangs on it sits. */
 const WALL_LIFT = 0.35;
 /** What is left of a tile over a hole, by how deep in it is. The RIM keeps
  *  enough to read as broken ground: a flat black takes the interlocking edge
  *  with it and the drop-off comes out square. */
 const VOID_FADE = [0.42, 0.13, 0.04];
+
+/** How far past the grid the rock is drawn. Cut off at the boundary, a chamber
+ *  near it ends on a straight lit line; out there every cell is rock further
+ *  from a floor than `ROCK_REACH`, so the border IS the fade, and the black
+ *  behind it carries on forever. */
+const EDGE = 3;
 
 const GRAIN = 0.18;
 /** What a flame leaves a surface reading as, at the middle of its own pool. */
@@ -427,7 +427,12 @@ export async function createPixiRenderer(
      *  takes no part in the blend — a corner it shared would fade the floor's
      *  own edge out, where a drop-off is the ground STOPPING. */
     const litAt = (x: number, y: number): number | null => {
-      if (!grid.inBounds(x, y)) return ROCK_TOP * ROCK_DARK;
+      if (!grid.inBounds(x, y)) {
+        // Deep rock, until the last ring of the drawn border: past that there
+        // is nothing, so the stone goes out rather than stopping on an edge.
+        const past = Math.max(-x, -y, x - grid.width + 1, y - grid.height + 1);
+        return past >= EDGE ? 0 : ROCK_TOP * ROCK_DARK;
+      }
       const k = y * grid.width + x;
       if (grid.tiles[k] === VOID) return null;
       const grain = 1 - GRAIN + GRAIN * smooth(x, y);
@@ -459,13 +464,15 @@ export async function createPixiRenderer(
      *  the dark out of it. */
     function lightMap(): Sprite | null {
       const canvas = document.createElement('canvas');
-      canvas.width = grid.width + 1;
-      canvas.height = grid.height + 1;
+      canvas.width = grid.width + 1 + EDGE * 2;
+      canvas.height = grid.height + 1 + EDGE * 2;
       const ink = canvas.getContext('2d');
       if (!ink) return null;
       const image = ink.createImageData(canvas.width, canvas.height);
-      for (let cy = 0; cy <= grid.height; cy++) {
-        for (let cx = 0; cx <= grid.width; cx++) {
+      for (let ty = 0; ty < canvas.height; ty++) {
+        for (let tx = 0; tx < canvas.width; tx++) {
+          const cx = tx - EDGE;
+          const cy = ty - EDGE;
           const round = [
             litAt(cx - 1, cy - 1),
             litAt(cx, cy - 1),
@@ -474,7 +481,7 @@ export async function createPixiRenderer(
           ].filter((v): v is number => v !== null);
           const lit = round.length > 0 ? round.reduce((a, b) => a + b, 0) / round.length : 0;
           const glow = glowAt(cx - 0.5, cy - 0.5);
-          const at = (cy * canvas.width + cx) * 4;
+          const at = (ty * canvas.width + tx) * 4;
           for (let c = 0; c < 3; c++) {
             image.data[at + c] = Math.round(
               Math.max(0, Math.min(1, lit + glow * (WARM[c] - lit))) * 255
@@ -489,21 +496,24 @@ export async function createPixiRenderer(
       const sprite = new Sprite(texture);
       // Texel k is the corner at k - 0.5, which puts the sheet's own edge a
       // tile outside the grid on the top and left.
-      sprite.x = -1;
-      sprite.y = -1;
+      sprite.x = -1 - EDGE;
+      sprite.y = -1 - EDGE;
       sprite.width = canvas.width;
       sprite.height = canvas.height;
       sprite.blendMode = 'multiply';
       return sprite;
     }
 
-    // Black under the lot, so a HOLE is a hole and not the page behind it.
+    // Black under the lot and out past the drawn border, so a HOLE is a hole
+    // and the fade arrives somewhere however far the camera pulls back.
     groundLayer.addChild(
-      new Graphics().rect(0, 0, grid.width, grid.height).fill(0x000000)
+      new Graphics()
+        .rect(-EDGE, -EDGE, grid.width + EDGE * 2, grid.height + EDGE * 2)
+        .fill(0x000000)
     );
 
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
+    for (let y = -EDGE; y < grid.height + EDGE; y++) {
+      for (let x = -EDGE; x < grid.width + EDGE; x++) {
         const raw = wangCorners(at, x, y);
         const want = wangShadow(raw) ? 0 : raw;
         const mask = wangNear(want, (k) => !!textures[k]);
@@ -514,18 +524,13 @@ export async function createPixiRenderer(
         const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
         const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
         // One texture across exactly one tile, and a hair over to close seams.
+        // Never stretched: the cut face is drawn as a run of rounded columns,
+        // and taller than the set drew it every column becomes a post — a row
+        // of grey uprights standing along the wall rather than a cliff.
         const size = 1.01 / (alt[0]?.width ?? 32);
-        // The CUT FACE, one tile tall under a body drawn at one and a half,
-        // is a kerb — so it grows up over as much SOLID rock as stands behind
-        // it. A tile with a floor corner still draws floor, and painting the
-        // face over one is where a wall melts into the ground.
-        let tall = 1;
-        if (grid.at(x, y) === WALL && at(x, y + 1) !== WALL) {
-          while (tall < WALL_TALL && wangCorners(at, x, y - tall) === ALL_ROCK) tall++;
-        }
         sprite.x = x;
-        sprite.y = y + 1 - tall;
-        sprite.scale.set(size, size * tall);
+        sprite.y = y;
+        sprite.scale.set(size);
         if (grid.at(x, y) === VOID) {
           const deep = Math.round(
             VOID_FADE[Math.min(VOID_FADE.length - 1, Math.max(0, intoRock[y * grid.width + x] - 1))] *
@@ -536,13 +541,10 @@ export async function createPixiRenderer(
         groundLayer.addChild(sprite);
       }
     }
-    // Furniture, over the ground it stands on. Anchored at the FOOT of its
-    // tile rather than at the middle: a prop taller than one tile has to grow
-    // upward out of the floor, or it looks like it is sinking into it.
-    // COVER first and everything else after, so furniture stands ON the
-    // rubble. Nearest LAST within the furniture: a prop grows upward out of its
-    // own tile, so one in front has to cover what is behind it or a hanging
-    // body is drawn inside the rock it hangs on.
+    // Furniture, anchored at the FOOT of its tile rather than the middle: a
+    // prop taller than a tile grows upward out of the floor rather than sinking
+    // into it. COVER first, so furniture stands ON the rubble, and nearest LAST
+    // within the furniture, or a hanging body is drawn inside its own rock.
     const cover = map.props.filter((p) => COVER_SET.has(p.id));
     const over = map.props.filter((p) => !COVER_SET.has(p.id)).sort((a, b) => a.y - b.y);
     for (const prop of [...cover, ...over]) {
@@ -552,8 +554,8 @@ export async function createPixiRenderer(
       const sprite = new Sprite(canvas);
       sprite.anchor.set(0.5, 1);
       sprite.x = prop.x + 0.5;
-      // Lifted, because the FACE is `WALL_TALL` tiles rather than the one its
-      // tile covers: a torch at the foot of a wall is a torch on the floor.
+      // Lifted onto the cut face, which is the lower part of its tile: anchored
+      // at the foot, a torch on a wall is a torch lying on the floor.
       sprite.y = prop.y + 1 - (HUNG_PROPS.has(prop.id) ? WALL_LIFT : 0);
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
@@ -580,10 +582,13 @@ export async function createPixiRenderer(
     const { grid } = map;
     mapLayer.clear();
 
-    // A tileset is the WHOLE surface, so the zone's own rock and its decals
-    // both stand down for one: masonry with the Fissure's flagstones stamped
-    // over it is two floors at once.
+    // A tileset is the WHOLE surface: the zone's own rock and decals stand down
+    // for one, and past its border that surface is the dark the rock fades
+    // into. The zone's own rock keeps `rockDeep` — it draws only the band you
+    // could see from a room, so black behind THAT is a chamber floating in
+    // nothing.
     const generated = buildGround(map);
+    app.renderer.background.color = generated ? 0x000000 : toHexNumber(palette.rockDeep);
     const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
