@@ -98,57 +98,83 @@
       "character": "34dba097-261e-4118-9a31-31e273795920"
     }
   ],
-  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, or an object comes back 3/4-projected and reads as furniture from a different game standing on the floor. The palette words are the tileset's own, by exclusion as well as by number, or a prop lands warmer and more saturated than the stone around it.",
+  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it.",
   "props": [
     {
       "id": "pitprop",
       "tiles": 0.8,
-      "say": "a short squat sawn timber pit prop standing upright on a stone floor, seen from HIGH ABOVE looking down so the round top end-grain reads first and only a little of the side shows, rough grey weathered wood, dusty. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "a rotted timber pit prop standing upright on a stone floor, seen from HIGH ABOVE looking down so the round split top reads first, black with damp, splitting and furred with mould. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "plank",
       "tiles": 1.0,
-      "say": "two broken planks of grey weathered timber lying FLAT on the ground, seen from DIRECTLY ABOVE looking straight down, splintered ends, dusty. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "two rotted broken planks lying FLAT on the ground, seen from DIRECTLY ABOVE looking straight down, black with damp, splintered and warped. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "spoil",
       "tiles": 1.1,
-      "say": "a low heap of broken rock and rubble spilled on the ground, seen from HIGH ABOVE looking down, angular grey chips of stone, dusty. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "a low heap of broken rock and spoil on the ground, seen from HIGH ABOVE looking down, angular wet grey chips, dark between them. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "bucket",
       "tiles": 0.6,
-      "say": "a small wooden bucket tipped over on its side on the ground, seen from HIGH ABOVE looking down, grey weathered staves and dull rusted iron bands. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "a small wooden bucket tipped on its side, seen from HIGH ABOVE looking down, rotted staves and black rusted iron bands, something dark dried inside it. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "candle",
       "tiles": 0.5,
-      "say": "a short stub of candle burning in a shallow dish on the ground, seen from HIGH ABOVE looking down, one small warm flame and a little pool of light, everything else dull grey. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "tone": 0.1,
+      "say": "a guttering candle stub in a pool of run wax on the ground, seen from HIGH ABOVE looking down, one small dirty flame, everything around it swallowed by dark. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "web",
       "tiles": 1.2,
-      "say": "a torn ragged cobweb stretched flat across the ground, seen from DIRECTLY ABOVE looking straight down, thin pale grey threads radiating from an off-centre point with big gaps and broken strands, uneven edges, the stone floor visible THROUGH it. NOT a square, NOT a solid sheet, NOT a cloth. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "a torn ragged cobweb stretched flat across the ground, seen from DIRECTLY ABOVE looking straight down, thin filthy grey threads from an off-centre point with big gaps and broken strands, the floor visible THROUGH it. NOT a square, NOT a sheet. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "rail",
-      "tiles": 1.2,
-      "say": "a short broken length of narrow-gauge mine rail track lying on the ground, two rusted iron rails on rotten sleepers, seen from DIRECTLY ABOVE looking straight down, dull rust. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "tiles": 1.9,
+      "say": "a LONG straight run of narrow-gauge mine rail, two black rusted rails on rotten sleepers running the whole length of the picture from edge to edge, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "cart",
-      "tiles": 1.1,
-      "say": "a small mine cart overturned on the ground, rusted iron body and broken spoked wheels, seen from HIGH ABOVE looking down, dull rust. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "tiles": 1.3,
+      "say": "a mine cart overturned and half wrecked, black rusted iron and broken spoked wheels, seen from HIGH ABOVE looking down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "beam",
-      "tiles": 1.3,
-      "say": "a fallen roof beam of dark timber lying across the ground with broken rock scattered on it, seen from DIRECTLY ABOVE looking straight down. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "tiles": 1.4,
+      "say": "a fallen roof beam of black rotted timber lying across the ground with broken rock spilled over it, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
     },
     {
       "id": "bones",
       "tiles": 1.0,
-      "say": "a loose scatter of a few small dry bones lying spread apart on stone with gaps between them — a couple of ribs, one long bone, some finger bones — seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole, nothing bright. Cool desaturated grey and grey-brown, #4F4941 in shadow and #635C52 where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT saturated brown. Dim underground light, nothing bright and nothing glowing."
+      "say": "a loose scatter of a few dry bones lying spread apart with gaps between them — a couple of ribs, one long bone, some finger bones — seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    },
+    {
+      "id": "altar",
+      "tiles": 1.7,
+      "say": "one long slab of rough unworked stone laid FLAT across two smaller boulders like a low bench, knee high, leaning and uneven, the top slab dished and dark with old dried stains that have run over the edge, seen from HIGH ABOVE looking down. NOT stacked, NOT stepped, NOT a pyramid, NOT a cube, NOT masonry, NOT carved, NOT decorated. Any stain is OLD and NEARLY BLACK, a dried near-black brown. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy. Cold desaturated grey and near-black, #33302B in shadow and #4A443C where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT bright, NOT clean."
+    },
+    {
+      "id": "gore",
+      "tiles": 1.3,
+      "say": "a wide FLAT stain of old blood soaked into bare stone, seen from DIRECTLY ABOVE looking straight down, an irregular ragged edge with thin runs and spatter thrown off it. It has NO thickness — it is a stain IN the floor. NOT a puddle, NOT a pool, NOT a blob, NOT raised, NOT domed. Every stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black and cold desaturated grey, #33302B in shadow and #4A443C where light reaches. Almost no light down here. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT clean, NOT cheerful."
+    },
+    {
+      "id": "skulls",
+      "tiles": 1.1,
+      "say": "a small heap of stacked skulls piled on the ground, seen from HIGH ABOVE looking down, cracked and stained the colour of the rock, jaws missing. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    },
+    {
+      "id": "chains",
+      "tiles": 1.2,
+      "say": "a length of heavy black rusted chain and an open shackle bolted into the stone floor, lying slack in a loose coil, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    },
+    {
+      "id": "husk",
+      "tiles": 1.3,
+      "say": "a dead body lying FLAT on its front on bare stone, arms flung out to the sides, seen from DIRECTLY ABOVE looking straight down at the back of it. Shrunken and dried, covered by rotted sacking and rags of coarse undyed cloth. NOT standing, NOT upright, NOT modern clothes, NOT denim, NOT a jacket, NOT boots, NOT a hat, NOT blue, NOT any colour but dust. Any stain is OLD and NEARLY BLACK, a dried near-black brown. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy. Cold desaturated grey and near-black, #33302B in shadow and #4A443C where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT bright, NOT clean."
     }
   ]
 }

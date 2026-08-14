@@ -459,14 +459,13 @@ export function makeProp(id: string): HTMLCanvasElement | null {
   return made.canvas;
 }
 
-/** By corner mask, a LIST each: a second set of the same terrain is alts. */
-export function makeTiles(id: string): HTMLCanvasElement[][] | null {
+/** By corner KEY, a list each: a second set of the same terrain is alts. Keys
+ *  are sparse — base three over four corners — so this is never an array. */
+export function makeTiles(id: string): Record<number, HTMLCanvasElement[]> | null {
   const set = TILESETS[id];
   if (!set) return null;
-  const out: HTMLCanvasElement[][] = [];
-  for (let mask = 0; mask < 16; mask++) {
-    const all = set.tiles[mask];
-    if (!all?.length) return null;
+  const out: Record<number, HTMLCanvasElement[]> = {};
+  for (const [key, all] of Object.entries(set.tiles)) {
     const drawn: HTMLCanvasElement[] = [];
     for (const rows of all) {
       const made = cell(set.grid);
@@ -474,9 +473,9 @@ export function makeTiles(id: string): HTMLCanvasElement[][] | null {
       drawPixels(made.ctx, { rows, key: set.key, grid: set.grid }, set.grid);
       drawn.push(made.canvas);
     }
-    out.push(drawn);
+    out[Number(key)] = drawn;
   }
-  return out;
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 function shade(ctx: CanvasRenderingContext2D, colour: string, dark: string): void {

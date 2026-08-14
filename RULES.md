@@ -758,6 +758,17 @@ over a real swing they are a second motion fighting the first, which is the
 shove-the-model-forward look. `animates` asks whether there are frames for what
 the body is doing, and the demo fails one that is still being moved.
 
+**A tile is keyed by CORNERS in base three, and a key nothing draws is a HOLE.**
+0 floor, 1 rock, 2 the cut face: a deep-walled set puts that third value at a
+vertex and the cliff fills the cell below the boundary, so a wall spans two
+rows. `wangNear` falls back through floor and then rock, because a set may have
+no tile for a given cliff corner and a missing one is a gap in the ground.
+
+**A tile may not be TURNED and two sets may not be mixed on an edge.** A floor
+tile is lit from one side, so a rotated one clashes with its neighbour and the
+floor reads as a checkerboard — worse than the repetition it was meant to fix.
+An edge tile carries the cut face and its neighbour has to continue it.
+
 **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
 `GENERATED`, so an id in both is a generated body that never draws, silently —
 it cost a whole session's judgement of generated art, which was made about the

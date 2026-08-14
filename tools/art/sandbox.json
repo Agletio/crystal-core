@@ -3,12 +3,9 @@
   "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
   "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
   "tileset": {
-    "id": "7030baac-8411-4c96-b518-075c78da2835",
+    "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
     "floorIs": "lower",
-    "also": [
-      "9438bd82-2b9e-4e67-897c-6a04184c676c",
-      "b7935198-98f1-42e3-b323-829c21840e94"
-    ]
+    "shade": 0.55
   },
   "hero": {
     "sprite": "delver",
@@ -135,54 +132,83 @@
   "props": [
     {
       "id": "pitprop",
-      "object": "80f3a8b9-5eb1-4c0a-8e8d-4c8d8df313d3",
+      "object": "9667f5a0-70c1-4d49-9460-c68454fdc433",
       "tiles": 0.8
     },
     {
       "id": "plank",
-      "object": "2fc3d95a-b0bf-43cd-8e5e-0e6e572cfb9b",
+      "object": "a5d0015a-7817-4f91-a54a-0ce9fbb7ad0f",
       "tiles": 1.0
     },
     {
       "id": "spoil",
-      "object": "33c5b77b-1e27-4fe4-ae9a-f0ea1f2de04e",
+      "object": "0c1a733c-a130-4f39-8148-9ac85bfbdc1c",
       "tiles": 1.1
     },
     {
       "id": "bucket",
-      "object": "26afe3bf-c226-4ae1-9ace-34a4f3a7106d",
+      "object": "9cf1fc02-6dfa-4c64-be34-18946912afd1",
       "tiles": 0.6
     },
     {
       "id": "candle",
-      "object": "1ff212cb-0113-4aba-86dd-0aaefbf35f71",
+      "object": "eae3b1fd-576d-4a3c-bd2a-28da78ea0695",
       "tiles": 0.5,
       "tone": 0.1
     },
     {
       "id": "web",
-      "object": "6c138958-28b3-4a97-9b8e-64809db0707a",
-      "tiles": 1.2
+      "object": "a63202e9-defa-4508-b628-dc73aa6d7889",
+      "tiles": 1.2,
+      "tone": 0.65
     },
     {
       "id": "rail",
-      "object": "54c157be-d2fe-40c9-b398-f8fe238972a9",
-      "tiles": 1.2
+      "object": "6069eca5-2bbb-43fc-b5b3-4ef88563a4c0",
+      "tiles": 1.9
     },
     {
       "id": "cart",
-      "object": "f56ea68c-25b0-427a-999f-885b45861e58",
-      "tiles": 1.1
-    },
-    {
-      "id": "beam",
-      "object": "b97d821a-daeb-4636-b510-23f0f7b19343",
+      "object": "f642af51-bedc-405b-b6df-162c42aa814b",
       "tiles": 1.3
     },
     {
+      "id": "beam",
+      "object": "37c3c6f8-f86e-4a9e-a3ec-fe349a93c950",
+      "tiles": 1.4
+    },
+    {
       "id": "bones",
-      "object": "0e670c37-0009-4cdd-890e-689d51b6ee2f",
+      "object": "cddecc09-5fc7-4564-9970-8268a391df02",
       "tiles": 1.0
+    },
+    {
+      "id": "altar",
+      "object": "caa92648-e989-4ab5-b6bd-8c0504e8877d",
+      "tiles": 1.7,
+      "tone": 0.55
+    },
+    {
+      "id": "gore",
+      "object": "3ef19048-11c4-4ce1-a688-a53aee7f3024",
+      "tiles": 1.3,
+      "tone": 0.55
+    },
+    {
+      "id": "skulls",
+      "object": "6a400f6f-0af5-42d1-8c28-68a2272b79c7",
+      "tiles": 1.1
+    },
+    {
+      "id": "chains",
+      "object": "b8fc6b5f-85ae-46e2-9690-014978fcc1f1",
+      "tiles": 1.2
+    },
+    {
+      "id": "husk",
+      "object": "6bc59321-112f-49f7-9c93-d3c2269c9011",
+      "tiles": 1.3,
+      "tone": 0.55
     }
   ]
 }

@@ -508,6 +508,18 @@ that worked, and these are what it cost:
   says.** `PropSpec.tone` pulls it toward the ground's own mean and spread —
   0.4 by default, which settles it into the scene, and 0.1 for the candle,
   because a flame pulled to grey stops being one.
+- **The NOUN is the prior, and it fights you.** "altar" draws a tidy ziggurat,
+  "ritual circle" a stone medallion, "a dead miner" a modern man in denim and a
+  hard hat. Describing the SHAPE and the MATERIAL and naming nothing — "one
+  slab laid flat across two boulders" — is what got the thing asked for. The
+  sigil never came, over three passes, and was dropped.
+- **"Blood" comes back BRIGHT PINK** however dark the words are, until the
+  exclusions name the colour: NOT red, NOT pink, NOT crimson, NOT magenta.
+- **`transition_size` past 0.25 is a different tileset**, not a deeper one: 25
+  tiles, a third corner value, and a cliff that spans two rows. Worth it — the
+  face was a seventh of a tile and read as a kerb — but three sets each traded
+  the floor's quality for the wall's, and what settled it was darkening the
+  floor-side row in the importer rather than re-rolling for it.
 - **Naming a thing gets you ONE of it.** "a scatter of bones" came back as a
   single large skull and "a sheet of cobweb" as a square of cloth. Saying what
   it is NOT, and saying "spread apart with gaps between them / the floor

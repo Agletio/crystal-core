@@ -95,6 +95,8 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
+import { VIGNETTES } from './vignettes';
+import { PROP_ART } from './render/generated-props';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -1489,22 +1491,46 @@ rule('SPRITES — is the pixel art well formed?');
     halfDrawn.join(', ')
   );
   // A prop is decals and never a sprite, so a mis-typed id is a bench that
-  // silently is not there rather than a missing texture.
-  const noProp = SCENES.flatMap((s) =>
-    s.plan.props.filter((p) => !PROPS[p.id]).map((p) => `${s.id}: ${p.id}`)
+  // silently is not there rather than a missing texture. A room with GENERATED
+  // ground draws its furniture out of the generated table instead — a tileset
+  // is the whole surface, and the hand-drawn decals stand down with it.
+  const noProp = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
+    if (!s) return [];
+    const drawn = s.ground ? PROP_ART : PROPS;
+    return sceneMap(s.plan, s.theme, 1, s.ground)
+      .props.filter((p) => !drawn[p.id])
+      .map((p) => `${s.id}: ${p.id}`);
+  });
+  check(noProp.length === 0, 'and every prop in one is drawn', [...new Set(noProp)].join(', '));
+
+  // A VIGNETTE is placed as one thing, so its own props have to fit inside the
+  // footprint it declares — over the edge, two of them overlap and a cart ends
+  // up inside an altar.
+  const spilling = VIGNETTES.flatMap((v) => [
+    ...v.props.filter((p) => p.x < 0 || p.y < 0 || p.x >= v.w || p.y >= v.h).map((p) => `${v.id}/${p.id}`),
+    ...v.props.filter((p) => !PROP_ART[p.id]).map((p) => `${v.id}/${p.id} undrawn`),
+  ]);
+  check(spilling.length === 0, `all ${VIGNETTES.length} arrangements fit the room they claim`, spilling.join(', '));
+
+  // And the dressing actually happened. A scene asking for it and getting
+  // nothing is a room that reads as empty for a reason nobody would look for.
+  const bare = [...SCENES, SCENE_BY_ID.sandbox].filter(
+    (s) => s?.plan.dress && sceneMap(s.plan, s.theme, 1, s.ground).props.length < 6
   );
-  check(noProp.length === 0, 'and every prop in one is drawn', noProp.join(', '));
+  check(bare.length === 0, 'and a room that asks to be dressed is', bare.map((s) => s?.id).join(', '));
 
   // Where a prop is PUT, which the id check cannot see. A room is authored by
   // hand in absolute tiles, so the three ways to get that wrong are outside the
   // walls, stacked on another prop, and standing on the hole or on the person.
   const misplaced = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
     if (!s) return [];
-    const { entrance, stands, props, patrol } = s.plan;
+    const { entrance, stands, patrol } = s.plan;
     // The GRID, not the rectangle: a plan may carve more chambers and join
     // them with corridors, so where the floor actually is is a thing only the
     // carve knows. Everything placed by hand has to stand on it.
-    const { grid } = sceneMap(s.plan, s.theme, 1, s.ground);
+    // The MAP's props, not the plan's: a plan may ask to be dressed, and what
+    // that put down is exactly what has to be somewhere it can be.
+    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.ground);
     const seen = new Set<string>();
     const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
     return [

@@ -102,13 +102,24 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
-**A Wang set is ONE picture per corner combination**, so an open floor is that
-picture in every cell and reads as graph paper. Two things break it up and
-neither invents geometry: the two UNIFORM masks carry no direction, so they are
-turned and mirrored per cell, and `tileset.also` names more sets of the same
-terrain whose tiles are ALTERNATES. Chaining them off one base tile does not
-make them MATCH — `tone`/`retoned` move each onto the first's mean and spread,
-or mixing them per cell reads as a checkerboard.
+**A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
+cut face between them. A deep-walled set has that third value at a vertex: the
+cliff fills the cell BELOW the boundary, so a wall spans two rows and is a real
+face rather than a kerb. `wangCorners` marks a floor vertex under a rock one,
+and `wangNear` is the fallback for a corner no set answers, since a key nothing
+draws is a hole in the floor. `tileset.shade` darkens the floor-side row: it is
+SHADOW, and it comes back as a lit ledge about half the time.
+
+A set has ONE picture per corner combination, so an open floor is that picture
+in every cell. What cannot fix that is TURNING a tile or swapping in another
+set's — a floor tile is lit from one side, so a turned one clashes and the
+floor reads as a checkerboard, which is worse than the repetition; an edge tile
+is worse still, since its neighbour has to continue the cut face.
+
+**Furniture is placed a CLUSTER at a time.** `VIGNETTES` in `src/vignettes.ts`
+is small authored arrangements — a hauling run, an altar with its candles — and
+`dressRooms` drops them where the whole footprint is clear. A prop scattered one
+at a time reads as one scattered one at a time.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

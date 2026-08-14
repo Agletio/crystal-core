@@ -56,19 +56,10 @@ const PACKS: { room: number; at: [number, number]; ability: string; of?: string 
   { room: 5, at: [0, 0], ability: 'rimebite' },
 ];
 
-/** What the working left, in the chambers and along the tunnels rather than
- *  spread over open floor — a prop every third tile is a warehouse. */
+/** A couple of things put exactly here; everything else is a VIGNETTE. */
 const LEFT: { id: string; at: [number, number][] }[] = [
-  { id: 'pitprop', at: [[6, 6], [19, 4], [35, 8], [22, 22]] },
-  { id: 'beam', at: [[9, 9], [36, 20]] },
-  { id: 'rail', at: [[13, 7], [14, 7], [26, 6], [27, 6]] },
-  { id: 'cart', at: [[38, 19], [8, 20]] },
-  { id: 'plank', at: [[20, 6], [24, 23]] },
-  { id: 'spoil', at: [[7, 8], [33, 9], [21, 24], [10, 21]] },
-  { id: 'bucket', at: [[18, 5], [37, 18]] },
-  { id: 'bones', at: [[23, 22], [11, 19], [34, 21]] },
-  { id: 'candle', at: [[5, 7], [21, 4], [9, 22]] },
-  { id: 'web', at: [[17, 7], [38, 22], [7, 19]] },
+  { id: 'candle', at: [[5, 7]] },
+  { id: 'web', at: [[17, 7]] },
 ];
 
 export const SANDBOX: SceneDef = {
@@ -87,6 +78,7 @@ export const SANDBOX: SceneDef = {
     stands: middle(2), // nobody stands in this room; a scene wants the field
     patrol: ROOMS.map((_, i) => middle(i)),
     props: LEFT.flatMap((kind) => kind.at.map(([x, y]) => ({ id: kind.id, x, y }))),
+    dress: 2, // and two arrangements scattered into each chamber besides
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,

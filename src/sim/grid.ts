@@ -8,6 +8,7 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
+import { VIGNETTES } from '../vignettes';
 
 export interface Vec2 {
   x: number;
@@ -200,6 +201,54 @@ function carveRoom(grid: Grid, r: Room, cut: Cut): void {
       grid.set(x, y, FLOOR);
     }
   }
+}
+
+/** Furniture, a CLUSTER at a time: a prop dropped one at a time reads as one,
+ *  equally far from everything and there for no reason. A `Vignette` lands
+ *  only where its whole footprint is floor and nothing has claimed it, and the
+ *  rng is handed in — a scene's fixed seed makes the same place every time. */
+export function dressRooms(
+  grid: Grid,
+  rooms: Room[],
+  rng: Rng,
+  per = 2,
+  keep: Vec2[] = []
+): MapProp[] {
+  const out: MapProp[] = [];
+  // The hand-placed props, the hole and whoever stands in the room are all
+  // already there: dressing over one is furniture on top of furniture.
+  const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
+  const total = VIGNETTES.reduce((n, v) => n + v.weight, 0);
+
+  const clear = (x: number, y: number, w: number, h: number): boolean => {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        if (grid.at(x + dx, y + dy) === WALL) return false;
+        if (taken.has((y + dy) * grid.width + (x + dx))) return false;
+      }
+    }
+    return true;
+  };
+
+  for (const room of rooms) {
+    for (let n = 0; n < per; n++) {
+      let roll = rng.next() * total;
+      const pick = VIGNETTES.find((v) => (roll -= v.weight) < 0) ?? VIGNETTES[0];
+      // A handful of tries and then give up: a small room with one clear
+      // corner should not be searched exhaustively for a four-tile altar.
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const x = room.x + rng.int(0, Math.max(0, room.w - pick.w));
+        const y = room.y + rng.int(0, Math.max(0, room.h - pick.h));
+        if (!clear(x, y, pick.w, pick.h)) continue;
+        for (let dy = 0; dy < pick.h; dy++) {
+          for (let dx = 0; dx < pick.w; dx++) taken.add((y + dy) * grid.width + (x + dx));
+        }
+        for (const p of pick.props) out.push({ id: p.id, x: x + p.x, y: y + p.y });
+        break;
+      }
+    }
+  }
+  return out;
 }
 
 /** One corridor tile, leaving a permanent wall border. Only ever writes into
@@ -401,5 +450,13 @@ export function sceneMap(
 
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
-  return { grid, rooms, entrance, exit: entrance, props: plan.props, vein, theme, ground };
+  // Hand-placed props first, then whatever the plan asks to be DRESSED with:
+  // an authored room may still want one thing exactly where it put it.
+  const props = [
+    ...plan.props,
+    ...(plan.dress
+      ? dressRooms(grid, rooms, new Rng(2), plan.dress, [...plan.props, entrance, plan.stands])
+      : []),
+  ];
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, ground };
 }

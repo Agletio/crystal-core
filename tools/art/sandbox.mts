@@ -61,7 +61,7 @@ interface Manifest {
    *  lower base tile. Their tiles are ALTERNATES for the mask they carry: a
    *  Wang set has one picture per corner combination, so an open floor is that
    *  one picture in every cell of it and reads as graph paper. */
-  tileset: { id: string; floorIs: string; also?: string[] };
+  tileset: { id: string; floorIs: string; also?: string[]; shade?: number };
   hero: BodySpec;
   bodies: BodySpec[];
   props: PropSpec[];
@@ -306,17 +306,20 @@ interface WangTile {
 }
 
 /**
- * NW, NE, SW, SE as one bit each, high to low, SET meaning floor. Which of the
- * two terrains that is belongs to the SET and not to the renderer: a tileset's
- * `lower` may be the dirt you walk on or the rock beside it, and the
- * descriptions do not say which — the pictures do. So it is a manifest field,
- * and what ships always means the same thing.
+ * NW, NE, SW, SE in base THREE — 0 floor, 1 rock, 2 the cut face between them.
+ * A deep-walled set has a third terrain at a vertex: the cliff fills the cell
+ * BELOW the boundary, so a wall spans two rows and cannot be said in one bit
+ * per corner. Which of `lower`/`upper` is the floor belongs to the SET and not
+ * to the renderer — the descriptions do not say and the pictures do — so it is
+ * a manifest field, and what ships always means the same thing.
  */
-const cornerMask = (t: WangTile, floorIs: string): number =>
-  (['NW', 'NE', 'SW', 'SE'] as const).reduce(
-    (n, c) => (n << 1) | (t.corners[c] === floorIs ? 1 : 0),
-    0
-  );
+const CORNER_VALUE = { floor: 0, rock: 1, cut: 2 };
+
+const cornerKey = (t: WangTile, floorIs: string): number =>
+  (['NW', 'NE', 'SW', 'SE'] as const).reduce((n, c) => {
+    const v = t.corners[c];
+    return n * 3 + (v === 'transition' ? CORNER_VALUE.cut : v === floorIs ? CORNER_VALUE.floor : CORNER_VALUE.rock);
+  }, 0);
 
 /** The sheet and the tile rects, which every other reader of a tileset wants. */
 async function sheetOf(tilesetId: string): Promise<{ sheet: Decoded; tiles: WangTile[] }> {
@@ -367,7 +370,34 @@ function retoned(sheet: Decoded, has: Tone, want: Tone, by = 1): Decoded {
   return { width: sheet.width, height: sheet.height, rgba };
 }
 
-async function ground(spec: { id: string; floorIs: string; also?: string[] }): Promise<Ground> {
+/** The floor-side row of a cut face is SHADOW cast by the rock, and it comes
+ *  back as a lit LEDGE about half the time — a light band along every wall,
+ *  which reads as paving dropped on the floor. Darkened here rather than a
+ *  whole set re-rolled for one class of tile, and on the SHEET before
+ *  quantising, since one key serves every tile in it. */
+function darkened(sheet: Decoded, boxes: Box[], by: number): Decoded {
+  const rgba = new Uint8Array(sheet.rgba);
+  for (const box of boxes) {
+    for (let y = 0; y < box.h; y++) {
+      for (let x = 0; x < box.w; x++) {
+        const at = ((box.y + y) * sheet.width + (box.x + x)) * 4;
+        for (let c = 0; c < 3; c++) rgba[at + c] = Math.round(rgba[at + c] * (1 - by));
+      }
+    }
+  }
+  return { width: sheet.width, height: sheet.height, rgba };
+}
+
+/** NW and NE both the cut face: the cell BELOW a cliff, which is its shadow. */
+const isShadowRow = (key: number): boolean =>
+  Math.floor(key / 27) % 3 === 2 && Math.floor(key / 9) % 3 === 2;
+
+async function ground(spec: {
+  id: string;
+  floorIs: string;
+  also?: string[];
+  shade?: number;
+}): Promise<Ground> {
   const raw = await Promise.all([spec.id, ...(spec.also ?? [])].map(sheetOf));
   const rect = (t: WangTile): Box => ({
     x: t.bounding_box.x,
@@ -385,10 +415,17 @@ async function ground(spec: { id: string; floorIs: string; also?: string[] }): P
     );
     return { sheet: retoned(sheet, has, want), tiles: list };
   });
-  const boxes = sets.flatMap(({ sheet, tiles: list }) => {
-    if (list.length !== 16) throw new Error(`${list.length} tiles is not a 16-tile Wang set`);
-    return list.map((t) => ({ sheet, mask: cornerMask(t, spec.floorIs), box: rect(t) }));
-  });
+  // Darken the shadow row on each sheet before anything reads it.
+  if (spec.shade) {
+    for (const set of sets) {
+      const dim = set.tiles.filter((t) => isShadowRow(cornerKey(t, spec.floorIs))).map(rect);
+      if (dim.length > 0) set.sheet = darkened(set.sheet, dim, spec.shade);
+    }
+  }
+
+  const boxes = sets.flatMap(({ sheet, tiles: list }) =>
+    list.map((t) => ({ sheet, mask: cornerKey(t, spec.floorIs), box: rect(t) }))
+  );
 
   const inks = new Inks();
   for (const { sheet, box } of boxes) noted(sheet, inks, box);
@@ -396,11 +433,10 @@ async function ground(spec: { id: string; floorIs: string; also?: string[] }): P
 
   const tiles: Record<number, string[][]> = {};
   for (const { sheet, mask, box } of boxes) (tiles[mask] ??= []).push(rowsOf(sheet, inks, box));
-  if (Object.keys(tiles).length !== 16) throw new Error('a mask is missing from the set');
   const grid = boxes[0].box.w;
   console.log(
-    `ground: ${grid} grid, ${sets.length} set(s), ${boxes.length} tiles over 16 masks, ` +
-      `${inks.distinct} colours into ${inks.size}`
+    `ground: ${grid} grid, ${sets.length} set(s), ${boxes.length} tiles over ` +
+      `${Object.keys(tiles).length} corner keys, ${inks.distinct} colours into ${inks.size}`
   );
   return { grid, tiles, key: inks.key, tone: want };
 }
@@ -518,7 +554,8 @@ if (manifest.tileset.id) {
     header(
       `The sandbox's ground: a Wang set whose CORNERS match, so a floor meets rock\n` +
         ` * without a seam. Keyed by NW/NE/SW/SE as one bit each, high to low, with a\n` +
-        ` * set bit meaning floor — all sixteen, so no map can ask for one it lacks.`
+        ` * NW/NE/SW/SE in base three: 0 floor, 1 rock, 2 the cut face between\n` +
+        ` * them, which fills the cell BELOW a boundary so a wall spans two rows.`
     ) +
       `export type GeneratedTiles = {\n  grid: number;\n` +
       `  /** Every tile that fits a corner combination. More than one is an\n` +

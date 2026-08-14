@@ -40,7 +40,8 @@ export interface ScenePlan {
   entrance: Vec2; // the only hole: `GameMap.exit` is this tile too
   stands: Vec2; // where the person is before the hero has crossed to them
   patrol?: Vec2[]; // a circuit the SANDBOX hero walks, so every facing shows
-  props: MapProp[];
+  props: MapProp[]; // put exactly here, by hand
+  dress?: number; // and this many VIGNETTES scattered per chamber besides
 }
 
 export interface SceneDef {

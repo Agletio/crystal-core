@@ -50,6 +50,7 @@ import {
   toHexNumber,
   vfxColour,
   wangCorners,
+  wangNear,
   ZOOM_MIN,
 } from './renderer';
 import {
@@ -73,6 +74,9 @@ import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
 import type { PoseId } from './pose';
+
+/** Every corner rock, in the base-three key `wangCorners` returns. */
+const ALL_ROCK = 40;
 
 const FLOATER_LIFE = 1.1;
 
@@ -276,7 +280,7 @@ export async function createPixiRenderer(
     world.position.set(offX, offY);
   }
 
-  const tilesets = new Map<string, Texture[][] | null>();
+  const tilesets = new Map<string, Record<number, Texture[]> | null>();
   const props = new Map<string, Texture | null>();
 
   /** A generated prop as a texture, uploaded on first use like everything else. */
@@ -292,20 +296,25 @@ export async function createPixiRenderer(
 
   /** A generated Wang set as textures, uploaded on first use like everything
    *  else. Null once, null for good: a name nothing draws is not an error. */
-  function tilesFor(id: string): Texture[][] | null {
+  function tilesFor(id: string): Record<number, Texture[]> | null {
     const already = tilesets.get(id);
     if (already !== undefined) return already;
-    const made =
-      makeTiles(id)?.map((all) =>
-        all.map((canvas) => {
-          const texture = Texture.from(canvas);
-          // NEAREST, where a body is linear: a tile is drawn at or above its
-          // own size, so the sampling to protect is the enlargement rather
-          // than the reduction, and linear is the blur pixel art is not.
-          texture.source.scaleMode = 'nearest';
-          return texture;
-        })
-      ) ?? null;
+    const built = makeTiles(id);
+    const made = built
+      ? Object.fromEntries(
+          Object.entries(built).map(([key, all]) => [
+            Number(key),
+            all.map((canvas) => {
+              const texture = Texture.from(canvas);
+              // NEAREST, where a body is linear: a tile is drawn at or above
+              // its own size, so what has to survive is the enlargement, and
+              // linear there is the blur pixel art exists to not be.
+              texture.source.scaleMode = 'nearest';
+              return texture;
+            }),
+          ])
+        )
+      : null;
     tilesets.set(id, made);
     return made;
   }
@@ -325,23 +334,27 @@ export async function createPixiRenderer(
     const at = (gx: number, gy: number) => grid.at(gx, gy);
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        const mask = wangCorners(at, x, y);
+        // A key nothing answers is a HOLE in the floor, so a cut-face corner
+        // falls back to floor and then to rock.
+        const want = wangCorners(at, x, y);
+        const mask = textures[want] ? want : (wangNear(want).find((k) => textures[k]) ?? 0);
         // A Wang set has ONE picture per corner combination, so an open floor
-        // is that picture in every cell of it and reads as graph paper. Two
-        // things break it up, and neither invents geometry: an ALTERNATE off a
-        // second set of the same terrain, and — for the two UNIFORM masks,
-        // which carry no direction at all — turning and mirroring. No other
-        // mask may turn: rotating one makes a tile for a DIFFERENT mask.
-        const alt = textures[mask];
+        // is that picture in every cell of it. What CANNOT fix that is turning
+        // the tile or swapping in another set's: a floor tile is lit from one
+        // side, so a turned one clashes with its neighbour and the floor reads
+        // as a checkerboard — which is worse than the repetition. An edge tile
+        // is worse still, since its neighbour has to continue the cut face.
+        //
+        // So alternates are for the two UNIFORM masks and come from a set that
+        // is genuinely the same picture drawn again, or from nothing.
+        const plain = mask === 0 || mask === ALL_ROCK;
+        const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
         const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
         // One texture across exactly one tile, and a hair over to close seams.
-        const size = 1.01 / alt[0].width;
-        const spun = mask === 0 || mask === 15 ? Math.floor(tileNoise(x, y, 61) * 8) : 0;
-        sprite.anchor.set(0.5);
-        sprite.x = x + 0.5;
-        sprite.y = y + 0.5;
-        sprite.rotation = (spun % 4) * (Math.PI / 2);
-        sprite.scale.set(spun >= 4 ? -size : size, size);
+        const size = 1.01 / (alt[0]?.width ?? 32);
+        sprite.x = x;
+        sprite.y = y;
+        sprite.scale.set(size);
         groundLayer.addChild(sprite);
       }
     }

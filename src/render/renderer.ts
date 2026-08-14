@@ -471,14 +471,32 @@ export function floorColour(floor: FloorPalette, tile: number, x: number, y: num
  * set is drawn instead of a tile per cell.
  */
 export function wangCorners(at: (x: number, y: number) => number, x: number, y: number): number {
+  const rock = (cx: number, cy: number): boolean =>
+    at(cx - 1, cy - 1) === WALL && at(cx, cy - 1) === WALL &&
+    at(cx - 1, cy) === WALL && at(cx, cy) === WALL;
+  // 0 floor, 1 rock, 2 the CUT FACE — a floor vertex directly under a rock one.
+  // That band is what gives a wall height: the face fills the cell below the
+  // boundary, so the rock and its face are two rows rather than one edge.
   const corner = (cx: number, cy: number): number =>
-    at(cx - 1, cy - 1) !== WALL || at(cx, cy - 1) !== WALL ||
-    at(cx - 1, cy) !== WALL || at(cx, cy) !== WALL
-      ? 1
-      : 0;
+    rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
   return (
-    (corner(x, y) << 3) | (corner(x + 1, y) << 2) | (corner(x, y + 1) << 1) | corner(x + 1, y + 1)
+    ((corner(x, y) * 3 + corner(x + 1, y)) * 3 + corner(x, y + 1)) * 3 + corner(x + 1, y + 1)
   );
+}
+
+/** The same corners with the cut face read as something else — floor first,
+ *  then rock. A set may have no tile for a given cliff corner at all (and one
+ *  with no cut face has none of them), and a key nothing answers is a HOLE in
+ *  the floor, so every reader needs somewhere to fall back to. */
+export function wangNear(key: number): number[] {
+  const at = [
+    Math.floor(key / 27) % 3,
+    Math.floor(key / 9) % 3,
+    Math.floor(key / 3) % 3,
+    key % 3,
+  ];
+  const as = (v: number): number => at.reduce((n, c) => n * 3 + (c === 2 ? v : c), 0);
+  return [as(0), as(1), 0];
 }
 
 /**
