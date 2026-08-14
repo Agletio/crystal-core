@@ -221,7 +221,7 @@ async function main(): Promise<void> {
   }
 
   if (command === 'sheet') {
-    await sheet(m, rest[0] ?? '/tmp/art.png');
+    await sheet(m, rest[0] ?? '/tmp/art.png', rest.slice(1));
     return;
   }
 
@@ -233,11 +233,11 @@ async function main(): Promise<void> {
  * conversion is lossy and the grid is what ships, so reviewing the PNG reviews
  * something nobody will ever see.
  */
-async function sheet(m: Manifest, out: string): Promise<void> {
+async function sheet(m: Manifest, out: string, only: string[] = []): Promise<void> {
   const { chromium } = await import('playwright');
   const cells = m.sprites
-    .filter((s) => s.rows)
-    .map((s) => {
+    .filter((s) => s.rows && (!only.length || only.includes(s.id)))
+    .map((s, n) => {
       // Per sprite, so a 24 and a 256 land at comparable size on the sheet.
       const SCALE = Math.max(1, Math.round(384 / s.grid));
       const inks = inksFor(s.tone) as Record<string, string>;
@@ -251,7 +251,7 @@ async function sheet(m: Manifest, out: string): Promise<void> {
         )
         .join('');
       const mark = s.accepted ? 'accepted' : 'not accepted';
-      return `<div class="cell"><div class="art" style="--px:${SCALE}px;width:${s.grid * SCALE}px;height:${s.grid * SCALE}px">${px}</div><span>${s.id}<br>${mark}</span></div>`;
+      return `<div class="cell"><div class="art" style="--px:${SCALE}px;width:${s.grid * SCALE}px;height:${s.grid * SCALE}px">${px}</div><span><b>${n + 1}</b> &middot; ${s.id}<br>${mark}</span></div>`;
     })
     .join('');
 
@@ -260,7 +260,8 @@ async function sheet(m: Manifest, out: string): Promise<void> {
     #sheet { display:flex; gap:18px; flex-wrap:wrap; }
     .art { position:relative; background:#191320; outline:1px solid #2a2233; }
     .art i { position:absolute; width:var(--px); height:var(--px); }
-    .cell span { display:block; text-align:center; font-size:10px; color:#6a5f78; margin-top:5px; }
+    .cell span { display:block; text-align:center; font-size:13px; color:#8a7f98; margin-top:6px; }
+    .cell b { color:#f0c46a; font-size:18px; }
   </style><div id="sheet">${cells || '<b>nothing converted yet</b>'}</div>`;
 
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
