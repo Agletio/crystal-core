@@ -704,6 +704,12 @@ than there are characters to name them — so the commonest are the key and
 everything else snaps by redmean. `Inks` in `tools/art/sandbox.mts` is two
 passes for that: `note` every pixel, `settle`, then `char`.
 
+**The fit MARGIN is the rank glow's room and nothing else.** At `rings * 4` a
+generated body spans 69% of its grid where the hand-drawn doll spans nearly all
+of its 24, so one rendered a third smaller at the same `scale` — invisible
+until something correctly sized stood next to it. It is `rings * 2`, and a
+generated body still wants a bigger `scale` than the doll does.
+
 **Frames of ONE body are fitted TOGETHER, never one at a time.** `fitted`
 measures the frame it is handed, so per frame a walk cycle is scaled and
 re-centred on every step and the body jitters against its own feet.
@@ -1337,6 +1343,15 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   `livingDecals` and its entrance rect all stand down. Masonry with the
   Fissure's flagstones stamped over it is two floors at once. Pixi only —
   `canvas2d` has no sprites and that stays correct.
+- **A generated PROP is a picture; a hand-drawn one is decals.** `PROP_ART`
+  beside `PROPS`, anchored at the FOOT of its tile rather than the middle, or
+  anything taller than a tile looks like it is sinking into the floor. `tiles`
+  is how much of the floor it covers and belongs to the ART: a generator hands
+  back a square with a lot of nothing in it, so a prop is cropped to what it
+  actually draws before anything measures it.
+- **A room may draw the HERO as a body.** `SceneDef.hero` replaces the doll and
+  its `look` both. It carries its own scale for the reason below, and it is the
+  last thing that made a sandbox use none of the game's own art.
 - **`wangCorners` is a pure function in `render/renderer.ts`**, like every
   other per-tile answer, so both renderers could only ever agree. A corner is a
   LATTICE point with four cells round it and is floor if ANY of them is, which

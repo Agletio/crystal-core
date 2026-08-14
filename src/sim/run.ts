@@ -396,12 +396,14 @@ export class RunSim {
         );
     const stats = characterStats(character);
 
+    // A room may draw the hero as a BODY rather than as the doll: a sandbox
+    // uses none of the game's own art, and the doll is most of it.
     const hero: Entity = {
       id: 0,
       kind: 'hero',
-      sprite: 'hero',
-      look: lookOf(character),
-      scale: 1.15,
+      sprite: def?.hero?.sprite ?? 'hero',
+      ...(def?.hero ? {} : { look: lookOf(character) }),
+      scale: def?.hero?.scale ?? 1.15,
       rank: 'common',
       x: map.entrance.x,
       y: map.entrance.y,
@@ -427,9 +429,8 @@ export class RunSim {
     };
 
     // A scene has no packs at all, which is the whole of what makes it one —
-    // whatever it does hold is called up by name, later and on purpose. A
-    // sandbox names its bodies in the def and gets them at once, because
-    // looking at them is the only thing it is for.
+    // whatever it does hold is called up by name, later and on purpose, and a
+    // sandbox names its bodies in the def.
     const monsters = def ? (def.dummies ?? []).map((d) => this.dummy(d, hero)) : this.spawn(map);
     if (def) this.priceKills();
     this.byId = new Map(monsters.map((m) => [m.id, m]));
@@ -466,8 +467,7 @@ export class RunSim {
   }
 
   /** A body for the sandbox: a monster in every way the sim reads, off
-   *  `MONSTER_BASE` and the empty set, so none of it comes out of a balance
-   *  table. What makes it a dummy is that nothing loses life. */
+   *  `MONSTER_BASE` and the empty set. Nothing loses life while one is up. */
   private dummy(spec: SceneDummy, hero: Entity): Entity {
     const stats = monsterStats([], {
       id: spec.sprite,

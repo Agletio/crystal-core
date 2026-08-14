@@ -1,0 +1,14 @@
+{
+  "_": "What the sandbox is made of, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/sandbox.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+  "tileset": { "id": "7030baac-8411-4c96-b518-075c78da2835", "floorIs": "lower" },
+  "hero": { "sprite": "delver", "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe" },
+  "bodies": [{ "sprite": "husk", "character": "3927eeb1-736c-4b9e-a4db-614acc990431" }],
+  "props": [
+    { "id": "pitprop", "object": "1bee5b76-8208-4171-9df8-5e0b04ab8f78", "tiles": 1.1 },
+    { "id": "plank", "object": "d44371dd-c866-474a-9f0c-4d125ac3869d", "tiles": 1.2 },
+    { "id": "spoil", "object": "add1faa9-3bb6-4b31-9afb-a45945009e20", "tiles": 1 },
+    { "id": "bucket", "object": "a81b13b1-b10a-4ec4-b7df-23ccb2fa62d0", "tiles": 0.9 },
+    { "id": "candle", "object": "45afc147-42f4-4667-b12e-b59d6364939b", "tiles": 0.7 },
+    { "id": "web", "object": "c89da20e-f81d-465b-ba48-f01afb257923", "tiles": 1.2 }
+  ]
+}

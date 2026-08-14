@@ -54,10 +54,12 @@ import {
   CELL,
   WALK_FRAMES,
   makeLookFrames,
+  makeProp,
   makeSheet,
   makeTiles,
   rankedKey,
 } from './sprites';
+import { PROP_ART } from './generated-props';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
@@ -255,6 +257,18 @@ export async function createPixiRenderer(
   }
 
   const tilesets = new Map<string, Texture[] | null>();
+  const props = new Map<string, Texture | null>();
+
+  /** A generated prop as a texture, uploaded on first use like everything else. */
+  function propTextures(id: string): Texture | null {
+    const already = props.get(id);
+    if (already !== undefined) return already;
+    const canvas = makeProp(id);
+    const made = canvas ? Texture.from(canvas) : null;
+    if (made) made.source.scaleMode = 'nearest';
+    props.set(id, made);
+    return made;
+  }
 
   /** A generated Wang set as textures, uploaded on first use like everything
    *  else. Null once, null for good: a name nothing draws is not an error. */
@@ -296,6 +310,20 @@ export async function createPixiRenderer(
         sprite.scale.set(1.01 / textures[0].width);
         groundLayer.addChild(sprite);
       }
+    }
+    // Furniture, over the ground it stands on. Anchored at the FOOT of its
+    // tile rather than at the middle: a prop taller than one tile has to grow
+    // upward out of the floor, or it looks like it is sinking into it.
+    for (const prop of map.props) {
+      const art = PROP_ART[prop.id];
+      const canvas = art ? propTextures(prop.id) : null;
+      if (!art || !canvas) continue;
+      const sprite = new Sprite(canvas);
+      sprite.anchor.set(0.5, 1);
+      sprite.x = prop.x + 0.5;
+      sprite.y = prop.y + 1;
+      sprite.scale.set(art.tiles / canvas.width);
+      groundLayer.addChild(sprite);
     }
     return true;
   }

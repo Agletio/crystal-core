@@ -66,11 +66,17 @@ renderer reads. `tools/art/import.mts` takes a website export straight into
 grids.
 
 **The sandbox** is where generated art is judged: `#dev-sandbox` on the rail,
-generated ground and generated bodies, nothing dies and nothing ends it. It is
-a scene with `dummies` rather than a mode — the room is `src/scenes/sandbox.ts`
-and is the one scene outside `SCENES`, so the schedule can never hand you it.
-Everything it showed is written up in `ROADMAP.md`; whether any of it goes in
-the game is the user's call and is open question 8.
+nothing dies and nothing ends it. It is a scene with `dummies` rather than a
+mode — the room is `src/scenes/sandbox.ts` and is the one scene outside
+`SCENES`, so the schedule can never hand you it. **Nothing the game itself
+draws is in it**: the ground is a generated Wang set, the furniture is
+generated pictures, the bodies are generated and so is the HERO, over the doll
+it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
+— "a working somebody gave up on. Rotted props, webs, a candle still going."
+`tools/art/sandbox.json` is the source of truth, one row per thing, and
+`sandbox.mts` reads it and writes the three tables. Everything looking at it
+showed is written up in `ROADMAP.md`; whether any of it goes in the game is the
+user's call and is open question 8.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
@@ -261,7 +267,9 @@ is there the zone's own rock stands down entirely — floor, decals, the moving
 parts and the entrance — because a tileset is the whole surface. `wangCorners`
 in `render/renderer.ts` says which of a tile's four corners are floor, and Pixi
 draws one sprite per cell off that; `canvas2d` has no sprites and keeps its
-colours.
+colours. `PROP_ART` is the same idea for the furniture: a prop is a PICTURE
+anchored at the foot of its tile, where `PROPS` is decals, and `tiles` says how
+much of the floor it covers — a fact about the art, not about the room.
 
 `GameMap.props` is furniture, empty on every generated map, drawn by `PROPS` in
 `src/render/renderer.ts` beside `mouth()`: pure functions returning `Decal[]`, so

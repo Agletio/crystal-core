@@ -49,6 +49,7 @@ export interface SceneDef {
   encounter: string | null; // a `BossDef` id; null is a quiet room
   dummies?: SceneDummy[]; // and their presence is what makes a room a SANDBOX
   ground?: string; // a generated tileset, over the zone's own rock. Pixi only
+  hero?: SceneDummy; // a body the hero is drawn as, over the doll it is made of
 }
 
 // A person smaller than the things you kill reads as set dressing.

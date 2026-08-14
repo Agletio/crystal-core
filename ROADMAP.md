@@ -296,11 +296,14 @@ written as one.
 
 **BUILT, and the reason it existed is now a set of findings rather than a
 task.** `#dev-sandbox` on the rail opens `SCENES`' one room that is not in
-`SCENES`: generated ground, six generated bodies, nothing dies and nothing ends
-it. `RULES.md` holds the rules it is bound by; `CLAUDE.md` describes it. What
-follows is what LOOKING at it settled, and it is written here rather than there
-because it is an input to a decision the user has not made — **open question 8**,
-which is now the only thing standing between this and a roster.
+`SCENES`, and **nothing the game itself draws is in it**: a generated Wang
+floor, six generated props, generated bodies and a generated HERO over the doll.
+It is dressed as THE FISSURE, off that zone's own line. `RULES.md` holds the
+rules it is bound by; `CLAUDE.md` describes it; `tools/art/sandbox.json` is the
+list of ids it is made of. What follows is what LOOKING at it settled, and it is
+written here rather than there because it is an input to a decision the user has
+not made — **open question 8**, which is the only thing standing between this
+and a roster.
 
 **The generator itself is everything the last session said it was.** A rigged
 character at 128px with eight directions and template animations at one
@@ -322,12 +325,15 @@ module does, so an absent client is not a blocker.
   it is SILHOUETTE**, which is the same finding the Osteomancer's portrait
   produced from the other direction.
 - **A 16-tile Wang set has exactly ONE interior tile, and it is visible.** The
-  floor is that tile stamped five hundred times and it reads as wallpaper.
+  floor is that tile stamped five hundred times and it reads as wallpaper —
+  its own grain forms a regular lattice you can pick out across the room.
   `tileDecals` hashes off the tile it lands on and never repeats, which is why
   hand-drawn rock does not do this. A generated floor needs either several
   interior variants (a second tileset chained off `base_tile_ids`, or the
   `create_tiles_pro` route) or the decals kept on top of it — and the second
-  is two floors at once, which is why the sandbox turns them off.
+  is two floors at once, which is why the sandbox turns them off. **PROPS are
+  the cheap half of the answer and they work**: six generated pictures grouped
+  the way the zone's own `leavings` are, and the room stops reading as a field.
 - **Generated art carries BAKED colour, and that is the real cost.** Every
   other pixel in the game takes its ink from a CSS custom property at draw
   time, which is what makes a zone recolour for free. A generated body and a
@@ -344,6 +350,33 @@ module does, so an absent client is not a blocker.
   that one east-facing set flipped for west reads fine, which is what the
   renderer already does. Nothing here argues for more directions; the argument
   for those is diagonal movement looking wrong, and it does not yet.
+
+**What asking for a REAL zone taught, on the second pass.** The first tileset
+was a generic mine shaft; the second was written off the Fissure's own line in
+`MAP_THEMES` — "a working somebody gave up on. Rotted props, webs, a candle
+still going" — plus its `THEME_INK` hexes and its `dug` cut. That is the ask
+that worked, and these are what it cost:
+
+- **Naming a hex does not get you the hex, but naming what it is NOT does.**
+  "Cold desaturated grey-brown around #4F4941" came back olive-khaki. Adding
+  "NOT olive, NOT khaki, NOT yellow, NOT green, NOT sandy brown" is what
+  actually moved it. Describe the colour by exclusion as well as by number.
+- **`mode: 'pro'` with `raggedness` is what makes rock look DUG.** The standard
+  pipeline draws coursed masonry whatever the prompt says, which is a wall
+  somebody BUILT — the opposite of what `CUT` means by `dug`. Pro at
+  `raggedness: 0.85` gives broken irregular stone and a real cut face.
+- **A `transition` becomes a bright RIM if you let it.** "Pale rock dust banked
+  at the foot" was drawn as a white hairline round every rock, which reads as a
+  UI stroke rather than as stone. `outline: 'lineless'` does not stop it — the
+  rim is the transition. Ask for the boundary as a shadow, or set
+  `transition_size: 0`.
+- **Props do NOT inherit the style you hand them.** `create_map_object` takes a
+  `background_image` for style matching and all six still came back warmer and
+  more 3/4-projected than the top-down floor under them. `background_image` and
+  `inpainting` are both JSON **strings**, not objects — passing an object is a
+  validation error, and that is not in the schema's own types.
+- **Six objects at once is a rate limit.** ~15-30s each and roughly five in
+  flight; the sixth came back `rate limit exceeded` with a hint to wait.
 
 **What was paid for in this session and is not guessable.**
 

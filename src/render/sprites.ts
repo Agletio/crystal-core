@@ -12,6 +12,7 @@ import { DOLL_GRID, FAMILY_ART } from './gear-art';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
 import { TILESETS } from './generated-tiles';
+import { PROP_ART } from './generated-props';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
@@ -376,6 +377,17 @@ function cell(size = CELL): { canvas: HTMLCanvasElement; ctx: CanvasRenderingCon
 /** A generated Wang set: sixteen canvases indexed by which of NW/NE/SW/SE are
  *  floor, at the tileset's OWN grid — a tile covers one tile, and 16px blown
  *  up to `CELL` is a megabyte of texture showing the same pixels. */
+/** One generated prop, painted at its own grid: a prop is a picture standing
+ *  on a tile, so nothing about it belongs in `CELL`. */
+export function makeProp(id: string): HTMLCanvasElement | null {
+  const art = PROP_ART[id];
+  if (!art) return null;
+  const made = cell(art.grid);
+  if (!made) return null;
+  drawPixels(made.ctx, { rows: art.rows, key: art.key, grid: art.grid }, art.grid);
+  return made.canvas;
+}
+
 export function makeTiles(id: string): HTMLCanvasElement[] | null {
   const set = TILESETS[id];
   if (!set) return null;
