@@ -27,6 +27,7 @@ export interface SceneDummy {
   sprite: string;
   at: Vec2;
   scale: number;
+  ability?: string; // a `MONSTER_ABILITIES` id: the thrown ones are the cast
 }
 
 /** The room and everything standing in it, in absolute tiles. */

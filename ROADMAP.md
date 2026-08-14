@@ -316,14 +316,19 @@ module does, so an absent client is not a blocker.
 
 **What it looks like on the map, which is the only view that counts.**
 
-- **A generated body reads WORSE in a descent than in its own model sheet.**
-  The skeleton is excellent at 128px and mush at the ~30 device pixels a body
-  actually occupies: the cloak, the ribs and the skull all resolve into one
-  pale smear. The hand-drawn 24-grid creatures read better at that size for
-  the obvious reason — they were drawn for it. Authoring above what the screen
-  shows buys supersampling, not legibility. **The fix is not more resolution;
-  it is SILHOUETTE**, which is the same finding the Osteomancer's portrait
-  produced from the other direction.
+- **~~A generated body reads WORSE in a descent than in its own model sheet.~~
+  WRONG, and the way it was wrong is the finding.** The sandbox's body was
+  called `husk`, which is also a `BEASTIARY` id — and `monsterArt` asks
+  `BEASTIARY` first. So every judgement made about "generated bodies in game"
+  was made about the HAND-DRAWN husk, in silence, for a whole session. A
+  generated body at a correct scale reads FINE at the size a body occupies.
+  The demo fails a shared id now. **An id in two tables is one of them never
+  drawing, and nothing about that is visible on screen** — it is the shape to
+  watch every time a second table shadows a first.
+- **A generated body wants a bigger `scale` than the doll.** `fitted` leaves
+  room for the rank glow, so at `rings * 4` a body spans 69% of its grid where
+  the doll spans nearly all of its 24 — a third smaller at the same number.
+  That, not resolution, was most of "it reads worse".
 - **A 16-tile Wang set has exactly ONE interior tile, and it is visible.** The
   floor is that tile stamped five hundred times and it reads as wallpaper —
   its own grain forms a regular lattice you can pick out across the room.
@@ -341,15 +346,51 @@ module does, so an absent client is not a blocker.
   in every zone and the skeleton is lit by whatever the generator felt like.
   This is the atlas trade arriving early: the roadmap said it would cost the
   runtime palette past ~5 MB, and it turns out to cost it at the FIRST sprite.
-- **A template animation does not preserve a silhouette.** `cross-punch` came
-  back correct and without the cape the character is defined by. The v3 custom
-  route keeps more but draws on a larger canvas and, asked for a "raises both
-  hands", came back with a spell aura painted on — which `RULES.md` forbids,
-  since a rank is light applied at runtime.
+- **A template animation DEGRADES across its run, and that is the important
+  one.** Measured over three of them on one body: the first ~60% of the frames
+  are on-model and the tail drifts — a walking skeleton grows a crook in its
+  last frame, a `cross-punch` turns to face the camera and sprouts a floating
+  pick, a `fireball` flickers a shield in and out. So a state names WHICH
+  WINDOW of its animation to keep (`from`/`to` in `sandbox.json`), and picking
+  the window is a per-generation judgement nothing can guess. It also does not
+  preserve a silhouette: `cross-punch` dropped the cape a character was defined
+  by. The v3 custom route keeps more but draws on a larger canvas and, asked
+  for a "raises both hands", painted a spell aura on — which `RULES.md`
+  forbids, since a rank is light applied at runtime.
 - **Mirroring holds at this camera.** `high top-down` is near enough to profile
   that one east-facing set flipped for west reads fine, which is what the
   renderer already does. Nothing here argues for more directions; the argument
   for those is diagonal movement looking wrong, and it does not yet.
+
+### The process, as it now stands
+
+**This is the part to duplicate.** Everything below has been run end to end
+twice — once for a zone, once for a body — and each step is a row in a file
+rather than a change to code.
+
+1. **Write the ask off the game's OWN documentation.** `MAP_THEMES` gives a
+   zone its line, `THEME_INK` gives the hexes, `CUT` says how it is carved,
+   `MONSTER_FAMILIES` says what lives there. A generic prompt gives generic
+   art; the Fissure's own sentence gives the Fissure.
+2. **Ask, then LOOK, then re-ask.** Nothing is right first time and a
+   generation is 2–5 minutes. Both the tileset and the body took two passes.
+3. **Add the id to `tools/art/sandbox.json`.** Nothing else. A body names its
+   character and its STATES; a prop names its object and how many tiles it
+   covers; the tileset names which of its two terrains is the floor.
+4. **`npx tsx tools/art/sandbox.mts`.** Reads the manifest, writes the three
+   tables in `src/render`, asks the generator for nothing. Re-running is free.
+5. **Look at the STATES**, then look at the room. The grid is what ships, so
+   the grid is what gets reviewed — never the PNG.
+
+**What a body costs**: one `create_character` (1 generation) and one
+`animate_character` per state (1 generation each, east only). A skeleton with a
+walk, a melee swing and a cast is four generations and about twelve minutes of
+waiting. **A roster of twenty is eighty generations**, which the subscription
+covers several times over — the cost is the LOOKING, not the asking.
+
+**What is still hand-work, and would have to be solved to scale past a dozen:**
+picking each animation's usable window (below), naming a prop's footprint in
+tiles, and judging. None of it is automatable today.
 
 **What asking for a REAL zone taught, on the second pass.** The first tileset
 was a generic mine shaft; the second was written off the Fissure's own line in

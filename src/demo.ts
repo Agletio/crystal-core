@@ -110,6 +110,8 @@ import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap } from './sim/gr
 import { GLOW, HERO_FRAMES, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
+import { GENERATED } from './render/generated-art';
+import { generatedFrame } from './render/sprites';
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
@@ -1330,6 +1332,35 @@ rule('SPRITES — is the pixel art well formed?');
     small.join(', ')
   );
 
+  // GENERATED bodies are their own table, and `monsterArt` asks `BEASTIARY`
+  // FIRST — so a sprite id in both is a generated body that never draws, in
+  // silence. That cost a whole session's judgement of generated art once: the
+  // sandbox's `husk` was the hand-drawn one the entire time it was being
+  // looked at and reasoned about.
+  {
+    const shared = Object.keys(GENERATED).filter((id) => BEASTIARY[id]);
+    check(
+      shared.length === 0,
+      `all ${Object.keys(GENERATED).length} generated bodies have an id no hand-drawn one uses`,
+      shared.join(', ')
+    );
+    // And every frame of one is square, exactly as a hand-drawn one is, plus
+    // every state naming frames that exist — a run past the end is a body that
+    // stops mid-animation and never says why.
+    const bad: string[] = [];
+    for (const [id, art] of Object.entries(GENERATED)) {
+      bad.push(...wellFormed(art.frames, art.grid).map((b) => `${id} ${b}`));
+      for (const [state, run] of Object.entries(art.states)) {
+        if (run.length === 0) bad.push(`${id}/${state} is empty`);
+        for (const at of run) {
+          if (!art.frames[at]) bad.push(`${id}/${state} wants frame ${at} of ${art.frames.length}`);
+        }
+      }
+      if (!art.states.walk) bad.push(`${id} has no walk`);
+    }
+    check(bad.length === 0, 'and every state of one names frames that exist', bad.join('; '));
+  }
+
   // A scene needs BOTH tables: one of them walks about the room and the other
   // one speaks, and a character with only half of that is half a person.
   const halfDrawn = SCENES.filter((s) => !BEASTIARY[s.who] || !PORTRAITS[s.who]).map((s) => s.id);
@@ -1978,6 +2009,63 @@ for (const tree of BUILT_TREES) {
     held = held.filter((id) => id !== loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+}
+
+// ===========================================================================
+rule('THE SANDBOX — does the room show what a body can DO?');
+
+// It is a dev screen, so nothing here is balance. What it IS is the one place
+// generated art gets judged, and a room where half the animations never play
+// is a room that cannot be judged. So: every ability the def names actually
+// fires, and the renderer picks a different run of frames for a melee swing
+// and for a thrown one.
+{
+  const room = SCENE_BY_ID.sandbox;
+  const bodies = room?.dummies ?? [];
+  const named = bodies.map((d) => d.ability).filter(Boolean) as string[];
+  check(
+    named.length === bodies.length && named.every((a) => MONSTER_ABILITY_BY_ID[a]),
+    `all ${bodies.length} bodies in the sandbox name an ability that exists`,
+    named.join(', ')
+  );
+  // One of each SHAPE — a room of six melee bodies never plays the cast.
+  const thrown = named.filter((a) => MONSTER_ABILITY_BY_ID[a]?.skill);
+  check(
+    thrown.length > 0 && thrown.length < named.length,
+    'and both shapes are in it: something to swing and something to throw',
+    `${thrown.length} thrown of ${named.length}`
+  );
+
+  const sim = new RunSim([], createGame('dev').character, new Rng(5), { scene: 'sandbox' });
+  const kinds = new Set<string>();
+  const frames = new Set<number>();
+  for (let i = 0; i < 4000 && sim.state.status === 'running'; i++) {
+    sim.step(TICK);
+    for (const v of sim.state.vfx) kinds.add(v.kind);
+    for (const m of sim.state.monsters) {
+      if (m.action === 'attack') {
+        frames.add(generatedFrame(m.sprite, m.action, 0.5, sim.state.elapsed, !!m.skillId));
+      }
+    }
+  }
+  line(`  ${sim.state.monsters.length} bodies, ${kinds.size} kinds of effect: ${[...kinds].sort().join(', ')}`);
+  // Every thrown ability's own vfx, so a skill that stopped firing is caught
+  // rather than being one of six things nobody looked at.
+  const missing = thrown
+    .map((a) => SKILL_BY_ID[MONSTER_ABILITY_BY_ID[a]!.skill!]?.vfxKind ?? '')
+    .filter((k) => k && !kinds.has(k));
+  check(missing.length === 0, 'and everything that throws something is throwing it', missing.join(', '));
+  check(
+    frames.size > 1,
+    'a melee swing and a cast draw DIFFERENT frames',
+    `${[...frames].sort().join(', ')} — one run for both`
+  );
+  // The two rules the room lives by, measured rather than assumed.
+  check(
+    sim.state.status === 'running' && sim.state.monsters.every((m) => !m.dead),
+    'nothing died in it, and it never ended',
+    `${sim.state.status}, ${sim.state.monsters.filter((m) => m.dead).length} down`
+  );
 }
 
 // ===========================================================================

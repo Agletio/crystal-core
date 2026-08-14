@@ -24,6 +24,18 @@ const CHARS =
 interface BodySpec {
   sprite: string;
   character: string;
+  /**
+   * State name -> which animation group on the generator, and WHICH WINDOW of
+   * it to keep. The whole of what makes a body's states data: a fourth one is
+   * a row here and nothing else anywhere.
+   *
+   * `from`/`to` are fractions of the animation, defaulting to the whole of it.
+   * They are not a nicety: a template animation DEGRADES across its run — the
+   * skeleton's `cross-punch` is clean for three frames and then grows a
+   * floating pick and turns to face the camera — so which part is usable is a
+   * fact about that generation and belongs beside its id.
+   */
+  states: Record<string, { group: string; frames: number; from?: number; to?: number }>;
 }
 
 /** `tiles` is how much of the FLOOR it covers, which the generator cannot know. */
@@ -40,7 +52,12 @@ interface Manifest {
   props: PropSpec[];
 }
 
-type Art = { grid: number; frames: string[][]; key: Record<string, string> };
+type Art = {
+  grid: number;
+  frames: string[][];
+  states: Record<string, number[]>;
+  key: Record<string, string>;
+};
 type Ground = { grid: number; tiles: Record<number, string[]>; key: Record<string, string> };
 type Prop = { grid: number; tiles: number; rows: string[]; key: Record<string, string> };
 
@@ -194,41 +211,41 @@ function rotation(text: string, direction: string): string {
   return found[1];
 }
 
-/** The walk and the swing, in order of preference. A character accumulates the
- *  tries that came before it, so read strongly first: on the loose reading
- *  alone an old spell wins the swing slot and arrives with its halo on. */
-const WALK = [/walk/i, /run|step|stride/i];
-const SWING = [/swing|punch|jab|kick|slash|attack|strike/i, /hand|cast|throw/i];
+/** Frames spread evenly over a WINDOW of an animation. A walk of 8 down to 2
+ *  wants the two CONTACTS, not the first two frames of one step. */
+function spread(urls: string[], want: number, from = 0, to = 1): string[] {
+  const first = Math.floor(from * urls.length);
+  const last = Math.max(first + 1, Math.ceil(to * urls.length));
+  const window = urls.slice(first, last);
+  return Array.from({ length: want }, (_, i) =>
+    window[Math.min(window.length - 1, Math.round((i * window.length) / want))]
+  );
+}
 
-const pick = (animations: Map<string, string[]>, tiers: RegExp[]): string[] => {
-  for (const tier of tiers) {
-    const found = [...animations].find(([name]) => tier.test(name));
-    if (found) return found[1];
-  }
-  return [];
-};
-
-async function creature(characterId: string): Promise<Art> {
-  const text = await callTool('get_character', { character_id: characterId });
+async function creature(spec: BodySpec): Promise<Art> {
+  const text = await callTool('get_character', { character_id: spec.character });
   const animations = animationFrames(text, 'east');
-  const walk = pick(animations, WALK);
-  const swing = pick(animations, SWING);
   const idle = rotation(text, 'east');
 
-  // Two of the walk and one of the swing, which is what `CREATURE_FRAMES` is.
-  // A walk of n frames contacts at 0 and passes near the middle; with no walk
-  // at all the rotation stands in and the body slides rather than steps.
-  const wanted = walk.length >= 2 ? [walk[0], walk[Math.floor(walk.length / 2)]] : [idle, idle];
-  // The swing is held for the whole of the pose, so it wants the frame the arm
-  // is furthest through rather than the one it starts from.
-  wanted.push(swing.length ? swing[Math.floor(swing.length * 0.6)] : idle);
+  // Every state's frames, in one flat list, with a run of indexes each. The
+  // rotation stands in for a group the character does not have, so a body with
+  // no walk still draws rather than throwing.
+  const wanted: string[] = [];
+  const states: Record<string, number[]> = {};
+  for (const [name, want] of Object.entries(spec.states)) {
+    const urls = animations.get(want.group) ?? [];
+    if (urls.length === 0) console.log(`  ${name}: no group named ${want.group} — using the rotation`);
+    const taken = urls.length > 0 ? spread(urls, want.frames, want.from, want.to) : [idle];
+    states[name] = taken.map((_, i) => wanted.length + i);
+    wanted.push(...taken);
+  }
 
   const images = await Promise.all(
     wanted.map(async (url) => debackground(decodePng(await download(url))))
   );
   // A template animation comes back on the character's own canvas and a v3 one
   // on a larger one, so frames of one body arrive at two sizes. Centred in the
-  // biggest of them they share a grid, and the common fit keeps the raised arms
+  // biggest of them they share a grid, and the common fit keeps a raised arm
   // taller than the walk rather than scaling each frame to fill its own box.
   const widest = Math.max(...images.map((i) => i.width));
   const square = images.map((i) => centred(i, widest));
@@ -247,9 +264,9 @@ async function creature(characterId: string): Promise<Art> {
   );
   console.log(
     `  ${widest}px into a ${GRID} grid, ${inks.distinct} colours into ${inks.size}, ` +
-      `${walk.length ? 'walk' : 'no walk'} + ${swing.length ? 'swing' : 'no swing'}`
+      Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ')
   );
-  return { grid: GRID, frames, key: inks.key };
+  return { grid: GRID, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
@@ -373,7 +390,7 @@ const write = (name: string, text: string): void =>
 const bodies: Record<string, Art> = {};
 for (const spec of [...manifest.bodies, ...(manifest.hero.character ? [manifest.hero] : [])]) {
   console.log(`${spec.sprite}:`);
-  bodies[spec.sprite] = await creature(spec.character);
+  bodies[spec.sprite] = await creature(spec);
 }
 write(
   'generated-art.ts',
@@ -382,13 +399,18 @@ write(
       ` * same list of strings every hand-drawn one is. Each carries its OWN key: the\n` +
       ` * five inks belong to \`BEASTIARY\`, not to the renderer.`
   ) +
-    `export type GeneratedArt = { grid: number; frames: string[][]; key: Record<string, string> };\n\n` +
+    `export type GeneratedArt = {\n  grid: number;\n  frames: string[][];\n` +
+    `  /** Which indexes of \`frames\` are which STATE. A body has a walk, a melee\n` +
+    `   *  swing and — if it throws anything — a cast, and adding a fourth is a\n` +
+    `   *  manifest row rather than a change to anything that draws. */\n` +
+    `  states: Record<string, number[]>;\n  key: Record<string, string>;\n};\n\n` +
     `export const GENERATED: Record<string, GeneratedArt> = {\n` +
     Object.entries(bodies)
       .map(
         ([id, art]) =>
           `  ${id}: {\n    grid: ${art.grid},\n` +
           `    frames: [${art.frames.map((f) => rowSource(f, '    ')).join(', ')}],\n` +
+          `    states: ${JSON.stringify(art.states)},\n` +
           `    key: ${JSON.stringify(art.key)},\n  },`
       )
       .join('\n') +

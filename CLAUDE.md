@@ -61,8 +61,8 @@ Build before `smoke`, `shots` or `drag` — they load the bundle, not the source
 `animate_character`, `create_topdown_tileset`) are what the website uses and are
 far beyond the REST API; reach for them first. `tools/art/mcp.mts` speaks to it
 over plain JSON-RPC, so a session with no client for it is not blocked, and
-`tools/art/sandbox.mts` pulls a character and a tileset into the two tables the
-renderer reads. `tools/art/import.mts` takes a website export straight into
+`tools/art/sandbox.mts` pulls characters, a tileset and props into the three
+tables the renderer reads. `tools/art/import.mts` takes a website export straight into
 grids.
 
 **The sandbox** is where generated art is judged: `#dev-sandbox` on the rail,
@@ -74,9 +74,12 @@ generated pictures, the bodies are generated and so is the HERO, over the doll
 it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
 — "a working somebody gave up on. Rotted props, webs, a candle still going."
 `tools/art/sandbox.json` is the source of truth, one row per thing, and
-`sandbox.mts` reads it and writes the three tables. Everything looking at it
-showed is written up in `ROADMAP.md`; whether any of it goes in the game is the
-user's call and is open question 8.
+`sandbox.mts` reads it and writes the three tables. A body declares its own
+STATES there — a walk, a melee swing, and a cast for anything that throws —
+and `MONSTER_ABILITIES` decides which a body plays, so the one skeleton in the
+room shows claws, an ember bite and all three thrown bolts. What looking at it
+showed — and the PROCESS for doing it again — is in `ROADMAP.md`; whether any of
+it goes in the game is the user's call and is open question 8.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

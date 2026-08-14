@@ -52,7 +52,9 @@ import {
 import {
   ATTACK_FRAME,
   CELL,
+  WALK_CYCLE,
   WALK_FRAMES,
+  generatedFrame,
   makeLookFrames,
   makeProp,
   makeSheet,
@@ -60,6 +62,7 @@ import {
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
+import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
@@ -67,9 +70,6 @@ import { lookKey } from './look';
 import type { PoseId } from './pose';
 
 const FLOATER_LIFE = 1.1;
-
-/** Tiles per second of leg movement — how fast the walk cycle plays. */
-const WALK_CYCLE = 7;
 
 export async function createPixiRenderer(
   host: HTMLElement,
@@ -449,14 +449,18 @@ export async function createPixiRenderer(
       s.texture = worn[POSE_IDS.indexOf(poseOf(e, elapsed))] ?? worn[0];
     } else {
       const frames = framesFor(e);
-      // A swing is its own frame, held for as long as the sim holds the pose.
-      const frame =
-        e.action === 'attack'
+      // A generated body has named STATES and picks among them off what it is
+      // DOING — a melee swing and a cast are different animations, and which
+      // one is showing is whether it has a skill to throw. A hand-drawn one
+      // has the fixed walk-walk-swing it always had.
+      const frame = GENERATED[e.sprite]
+        ? generatedFrame(e.sprite, e.action, through(e), elapsed, !!e.skillId)
+        : e.action === 'attack'
           ? ATTACK_FRAME
           : e.action === 'move'
             ? Math.floor(elapsed * WALK_CYCLE) % WALK_FRAMES
             : 0;
-      s.texture = frames[frame];
+      s.texture = frames[frame] ?? frames[0];
     }
 
     // One texture cell should cover roughly one tile of world.

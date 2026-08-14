@@ -18,17 +18,13 @@ import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
 import type { Look } from '../types';
 
-/**
- * Pixels per sprite cell, and the ceiling on how much of a sprite can ever be
- * seen. Generated art is authored at 256, which is what `animate-with-skeleton`
- * tops out at, so the cell is that. Pixi scales by 1/CELL: this costs texture
- * rather than size on screen.
- */
+/** Pixels per sprite cell, and the ceiling on how much of one can be seen.
+ *  Pixi scales by 1/CELL: this costs texture, never size on screen. */
 export const CELL = 256;
-/** A CREATURE's cycle, and its own: the doll walks on `WALK_POSES`, which is
- *  longer. Two is enough for legs to alternate on something with none. */
+/** A hand-drawn creature's cycle: two is enough for legs to alternate on
+ *  something with none, and after it comes the swing. A GENERATED body has
+ *  named states instead — see `generatedFrame`. */
 export const WALK_FRAMES = 2;
-/** After the walk cycle: the swing. */
 export const ATTACK_FRAME = WALK_FRAMES;
 export const CREATURE_FRAMES = WALK_FRAMES + 1;
 
@@ -224,9 +220,10 @@ export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: 
   rare: { colour: (p) => p.citrine, reach: 26 },
 };
 
-/** A generated body: its own grid, key and frames, and the rank's light off
- *  the same table a hand-drawn one gets. Beside `BEASTIARY` rather than in it,
- *  and nothing in `MONSTERS` names one. */
+/** A generated body: its own grid, key and frames, and the rank's light off the
+ *  same table a hand-drawn one gets. `BEASTIARY` is asked FIRST, so an id in
+ *  both tables is a generated body that never draws — silent, and it cost a
+ *  session's judgement of generated art once. The demo fails a shared id. */
 function generatedArt(palette: Palette, sprite: string, frame: number, rank: MonsterRank): PixelArt | null {
   const art = GENERATED[sprite];
   if (!art) return null;
@@ -238,6 +235,32 @@ function generatedArt(palette: Palette, sprite: string, frame: number, rank: Mon
     glow: glow ? { colour: glow.colour(palette), reach: glow.reach } : undefined,
   };
 }
+
+/** Which frame of a generated body is showing. A state is a RUN of frames in
+ *  the flat list `frames` is, so a body can have a melee swing AND a cast and a
+ *  third is a manifest row. `through` is how far into its own action it is,
+ *  never elapsed time: off the clock a fast swing and a slow one are one. */
+export function generatedFrame(
+  sprite: string,
+  action: string,
+  through: number,
+  elapsed: number,
+  ranged: boolean
+): number {
+  const states = GENERATED[sprite]?.states;
+  if (!states) return action === 'attack' ? ATTACK_FRAME : 0;
+
+  if (action === 'attack') {
+    const run = (ranged ? states.cast : null) ?? states.attack ?? states.walk;
+    return run[Math.min(run.length - 1, Math.floor(through * run.length))] ?? 0;
+  }
+  const walk = states.walk ?? [0];
+  if (action !== 'move') return walk[0];
+  return walk[Math.floor(elapsed * WALK_CYCLE) % walk.length];
+}
+
+/** Tiles per second of leg movement — how fast a walk cycle plays. */
+export const WALK_CYCLE = 7;
 
 /** Its own inks, plus the rank: the accent brightens and the light comes off. */
 export function monsterArt(

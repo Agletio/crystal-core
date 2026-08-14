@@ -704,6 +704,30 @@ than there are characters to name them — so the commonest are the key and
 everything else snaps by redmean. `Inks` in `tools/art/sandbox.mts` is two
 passes for that: `note` every pixel, `settle`, then `char`.
 
+**A generated body has named STATES; a hand-drawn one has walk-walk-swing.**
+`GeneratedArt.states` maps a name to a RUN of indexes in the one flat `frames`
+list, and `generatedFrame` picks among them off what the body is DOING — a
+melee swing and a cast are different animations, and which is showing is
+whether the body has a skill to throw. A fourth state is a row in
+`tools/art/sandbox.json` and a change to nothing that draws.
+
+**A state names WHICH WINDOW of its animation to keep.** A template animation
+degrades across its run: measured over three on one body, the first ~60% is
+on-model and the tail drifts — a walk grows a crook in its last frame, a
+`cross-punch` turns to face the camera and sprouts a floating pick. `from`/`to`
+are fractions and they are not a nicety; which part is usable is a fact about
+that generation and belongs beside its id.
+
+**A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
+`GENERATED`, so an id in both is a generated body that never draws, silently —
+it cost a whole session's judgement of generated art, which was made about the
+hand-drawn `husk` throughout. The demo fails a shared id.
+
+**How far a thrower stands off is ONE answer.** `thrownReach(skill)` — the
+skill's own range, plus two for noticing you. It was written by hand at three
+call sites and a fourth was about to be added; a new thrown ability is a table
+row and nothing else.
+
 **The fit MARGIN is the rank glow's room and nothing else.** At `rings * 4` a
 generated body spans 69% of its grid where the hand-drawn doll spans nearly all
 of its 24, so one rendered a third smaller at the same `scale` — invisible

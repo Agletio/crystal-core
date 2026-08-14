@@ -1,24 +1,24 @@
 /**
  * The sandbox: one wide room made of NOTHING the game itself draws — generated
- * ground, furniture, a body to swing at and one to swing with. A scene with
- * monsters in it: nothing dies and nothing ends it, so all it does is let the
- * art be looked at. Dressed as THE FISSURE, off that zone's line — "a working
- * somebody gave up on. Rotted props, webs, a candle still going" — and ragged,
- * since a Wang set is corners and straight walls show four of its sixteen.
+ * ground, furniture, a body to swing at and one to swing with. Nothing dies and
+ * nothing ends it, so all it does is let the art be looked at. Dressed as THE
+ * FISSURE, off that zone's line — "a working somebody gave up on. Rotted props,
+ * webs, a candle still going" — and ragged, since a Wang set is corners.
  */
 import type { SceneDef } from '../scenes';
 
-const BODY = 'husk'; // both in `GENERATED` rather than in `BEASTIARY`
+const BODY = 'skeleton'; // both in `GENERATED`, and in no other table
 const HERO = 'delver';
 
-// Spread wide, so the hero walks between them and turns as it goes.
+// Spread wide so the hero turns as it goes, and one of each thing a body DOES:
+// a melee swing and a thrown bolt are different animations.
 const STANDING = [
-  { x: 8, y: 6 },
-  { x: 20, y: 5 },
-  { x: 24, y: 12 },
-  { x: 15, y: 15 },
-  { x: 6, y: 14 },
-  { x: 22, y: 17 },
+  { at: { x: 8, y: 6 }, ability: 'claws' },
+  { at: { x: 13, y: 13 }, ability: 'claws' },
+  { at: { x: 6, y: 14 }, ability: 'emberbite' },
+  { at: { x: 14, y: 6 }, ability: 'fire_bolt' },
+  { at: { x: 15, y: 11 }, ability: 'frost_bolt' },
+  { at: { x: 11, y: 16 }, ability: 'lightning_arc' },
 ];
 
 // What the working left, GROUPED: a prop every third tile is a warehouse.
@@ -46,5 +46,5 @@ export const SANDBOX: SceneDef = {
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,
-  dummies: STANDING.map((at) => ({ sprite: BODY, at, scale: 1.45 })),
+  dummies: STANDING.map((s) => ({ sprite: BODY, ...s, scale: 1.45 })),
 };

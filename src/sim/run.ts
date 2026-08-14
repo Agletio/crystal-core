@@ -44,6 +44,7 @@ import {
   MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
   MONSTER_ABILITIES,
+  MONSTER_ABILITY_BY_ID,
   SKILLS,
   SKILL_BY_ID,
   opensHere,
@@ -71,6 +72,11 @@ export const TICK = 1 / 30;
 
 /** Monsters beyond this range of the hero don't think at all. */
 const ACTIVE_RANGE = 16;
+
+/** How far a body with something to THROW stands off, and notices you from:
+ *  the skill's own reach, in the four places that used to say it by hand. */
+const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
+  skill ? { attackRange: skill.range, aggroRange: skill.range + 2 } : {};
 
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
@@ -428,9 +434,8 @@ export class RunSim {
       dead: false,
     };
 
-    // A scene has no packs at all, which is the whole of what makes it one —
-    // whatever it does hold is called up by name, later and on purpose, and a
-    // sandbox names its bodies in the def.
+    // A scene has no packs at all, which is what makes it one: whatever it
+    // holds is called up by name, and a sandbox names its bodies in the def.
     const monsters = def ? (def.dummies ?? []).map((d) => this.dummy(d, hero)) : this.spawn(map);
     if (def) this.priceKills();
     this.byId = new Map(monsters.map((m) => [m.id, m]));
@@ -469,6 +474,7 @@ export class RunSim {
   /** A body for the sandbox: a monster in every way the sim reads, off
    *  `MONSTER_BASE` and the empty set. Nothing loses life while one is up. */
   private dummy(spec: SceneDummy, hero: Entity): Entity {
+    const ability = MONSTER_ABILITY_BY_ID[spec.ability ?? ''];
     const stats = monsterStats([], {
       id: spec.sprite,
       name: spec.sprite,
@@ -482,7 +488,9 @@ export class RunSim {
       sprite: spec.sprite,
       scale: spec.scale,
       weight: 0,
-    });
+    }, ability);
+    const thrown = SKILL_BY_ID[ability?.skill ?? ''];
+    const reach = { ...stats, ...thrownReach(thrown) };
     return {
       id: this.nextId++,
       kind: 'monster',
@@ -490,7 +498,8 @@ export class RunSim {
       scale: spec.scale,
       rank: 'common',
       radius: 0.3,
-      skillId: null,
+      // A body with a skill goes through the path a ranged pack does.
+      skillId: ability?.skill ?? null,
       x: spec.at.x,
       y: spec.at.y,
       facing: Math.atan2(hero.y - spec.at.y, hero.x - spec.at.x),
@@ -499,10 +508,10 @@ export class RunSim {
       deathAge: 0,
       ailments: [],
       bounty: 0,
-      life: stats.maxLife,
+      life: reach.maxLife,
       mana: 0,
       effects: [],
-      stats,
+      stats: reach,
       cooldown: 0,
       path: [],
       pathTimer: 0,
@@ -644,9 +653,7 @@ export class RunSim {
               Object.entries(base.damageByType).map(([t, v]) => [t, v * rank.damage])
             ),
           };
-          if (thrown) {
-            stats = { ...stats, attackRange: thrown.range, aggroRange: thrown.range + 2 };
-          }
+          stats = { ...stats, ...thrownReach(thrown) };
           statsFor.set(statsKey, stats);
         }
 
@@ -1056,7 +1063,7 @@ export class RunSim {
       damageByType: Object.fromEntries(
         Object.entries(base.damageByType).map(([t, v]) => [t, v * def.damage])
       ),
-      ...(thrown ? { attackRange: thrown.range, aggroRange: thrown.range + 2 } : {}),
+      ...thrownReach(thrown),
     };
 
     // At the far end of the room from the hero, so it has to cross the floor.
@@ -1184,7 +1191,7 @@ export class RunSim {
       damageByType: Object.fromEntries(
         Object.entries(base.damageByType).map(([t, v]) => [t, v * def.damage])
       ),
-      ...(thrown ? { attackRange: thrown.range, aggroRange: thrown.range + 2 } : {}),
+      ...thrownReach(thrown),
     };
 
     const exit = s.map.exit;
