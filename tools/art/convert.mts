@@ -126,9 +126,9 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
   // one pixel is 1/24 of a hand-drawn body and 1/256 of a generated one. Same
   // number as `haloRings`, which is what the ring outside this one uses.
   const rings = Math.max(1, Math.round(grid / 24));
-  // Room for the outline AND the rank ring outside it, the widest of which is
-  // the rare one at twice a normal ring.
-  return outlined(fitted(deshadow(rows), rings * 3), rings);
+  // Twice, so the rank has something to recolour: the magic takes the outer
+  // half of it and the rare the lot, which is what makes one band wider.
+  return outlined(fitted(deshadow(rows), rings * 3), rings * 2);
 }
 
 /** The body, scaled to fill its grid and stood on a common baseline. A cell is

@@ -1602,29 +1602,31 @@ export const HALO: Record<MonsterRank, string | null> = {
 export const HALO_RANK: Record<MonsterRank, number> = { common: 0, magic: 1, rare: 2 };
 
 /**
- * A one-pixel ring around whatever the creature already is, so the border
- * follows its silhouette rather than boxing it. Grown outward only: a halo
+ * The creature's own dark edge, RECOLOURED from the outside in. Grown outward
+ * instead it was a hairline of gold outside a thick black border, which reads
+ * as a fringe rather than as a rank. Stops at the body, so nothing is eaten and
+ * a `#` used for detail INSIDE a creature stays dark. Grown outward: a halo
  * that ate a pixel of the body would thin every leg it touched.
  */
 export function haloed(frame: string[], ink: string | null, rings = 1): string[] {
-  if (!ink) return frame;
-  let out = frame;
+  if (!ink || rings <= 0) return frame;
+  const out = frame.map((row) => [...row]);
+  const open = (x: number, y: number): boolean => {
+    const c = out[y]?.[x] ?? '.';
+    return c === '.' || c === ink;
+  };
   for (let ring = 0; ring < rings; ring++) {
-    const grown = out;
-    const lit = (x: number, y: number) => (grown[y]?.[x] ?? '.') !== '.';
-    out = grown.map((row, y) =>
-      row
-        .split('')
-        .map((ch, x) => {
-          if (ch !== '.') return ch;
-          const near =
-            lit(x - 1, y) || lit(x + 1, y) || lit(x, y - 1) || lit(x, y + 1);
-          return near ? ink : ch;
-        })
-        .join('')
+    const edge: Array<[number, number]> = [];
+    out.forEach((row, y) =>
+      row.forEach((c, x) => {
+        if (c !== '#') return;
+        if (open(x - 1, y) || open(x + 1, y) || open(x, y - 1) || open(x, y + 1)) edge.push([x, y]);
+      })
     );
+    if (!edge.length) break;
+    for (const [x, y] of edge) out[y][x] = ink;
   }
-  return out;
+  return out.map((row) => row.join(''));
 }
 
 /**
