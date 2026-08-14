@@ -132,9 +132,10 @@ below — so a hole keyed as stone comes out a raised BLOCK, its cliff on the
 wrong rim. So `buildGround` keys it again INVERTED, the hole as the low ground
 and everything else as the high, and lays that pass over the first wherever it
 holds a face. What it puts down is the LIP: the ground's own edge, lit, ending
-in a cut face over the black. The hole itself gets NO tile — black is under the
-whole layer and the light multiplies, so nothing can lift it and the drop is a
-HARD edge. Faded instead, it reads as an unlit patch of the same floor.
+in a cut face over the black. Inside the hole is `VOID_WALL` — ONE ring of
+stone, drawn OVER the lightmap so nothing interpolates it, and hard black past
+that. There is never a floor down there. Anything the light touches at a rim it
+smears across the tile, and a drop smeared is fog rather than a drop.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the

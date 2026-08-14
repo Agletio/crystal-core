@@ -1501,14 +1501,20 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   no second mechanism is needed to make one. Nothing a room stands somebody on
   is ever left as void — the reserved tiles are restored after the cut, since a
   hole under the hero is a room nobody can be in.
-- **A hole gets NO TILE, and the drop is HARD.** *The user's call, twice: "it
-  should be a sharp drop not the fade".* What is under the ground layer is
-  black and the light MULTIPLIES, so an empty cell can never be lifted — the
-  edge is exactly where the ground stops. Drawn and faded instead, a hole reads
-  as an unlit patch of the same floor, which is what a soft rim always comes to
-  at this size. The earlier rule here said the opposite, on the finding that
-  skipping the tile made a black SQUARE; that was true when nothing else drew
-  the edge, and the lip pass is what changed it.
+- **A hole is a HARD edge, one ring of stone, then black.** *The user's call,
+  twice: "a sharp drop not the fade", and "walls that go down into the chasm
+  before completely black" — no floor at the bottom of one, ever.* `VOID_WALL`
+  is that ring, and the whole trick is WHERE it is drawn: over the lightmap,
+  not under it. Anything the light touches at a rim it interpolates across the
+  tile, and a drop interpolated is fog — which is exactly what the old
+  `VOID_FADE` came to, since `intoRock` seeds off every non-rock cell and a
+  hole is one, so every void tile scored the same depth and the only gradient
+  on screen was the light's. Under the ring is nothing at all: the ground
+  layer's own black, which multiplying cannot lift.
+- **Rings STEP, so there is one.** Two at 0.30 and 0.11 read as terraces going
+  down rather than as a wall — the value is flat per ring, so each boundary is
+  a visible shelf. It is a list so a deeper shaft is a table edit, but adding a
+  ring costs a step and has to earn it.
 - **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
   where all four cells round it are, so a finger of stone one cell thick holds
   no rock corner at all and comes out as cut faces with nothing between them —

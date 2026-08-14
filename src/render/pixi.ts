@@ -106,6 +106,9 @@ const ROCK_DARK = 0.06;
 const WALL_LIFT = 0.35;
 /** What a tile made entirely of cut face is worth against a lit one. */
 const WALL_FACE = 0.4;
+/** The shaft: how much stone is left, a ring at a time, going down a hole. */
+const VOID_WALL = [0.25];
+const VOID_DEEP = VOID_WALL.length;
 const grey = (of: number): number => {
   const v = Math.max(0, Math.min(255, Math.round(of * 255)));
   return (v << 16) | (v << 8) | v;
@@ -540,9 +543,7 @@ export async function createPixiRenderer(
       return sprite;
     };
 
-    // A HOLE gets no tile. What is under the lot is black and the light
-    // multiplies, so nothing lifts it: the drop is a HARD edge under the lip's
-    // rock wall rather than the ground dissolving into fog.
+    // A HOLE gets no tile HERE; its own shaft is drawn over the light below.
     for (let y = -EDGE; y < grid.height + EDGE; y++) {
       for (let x = -EDGE; x < grid.width + EDGE; x++) {
         if (grid.at(x, y) !== VOID) lay(x, y, wangCorners(at, x, y));
@@ -594,6 +595,20 @@ export async function createPixiRenderer(
     }
     const light = lightMap();
     if (light) groundLayer.addChild(light);
+    // THE WALL GOING DOWN: rings of stone inside the hole at FIXED values, and
+    // black past them. Over the light, because what the lightmap touches at a
+    // rim it interpolates across the tile, and a drop interpolated is fog.
+    if (holed) {
+      const into = spread((i) => grid.tiles[i] !== VOID, VOID_DEEP + 1);
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          const deep = into[y * grid.width + x];
+          if (grid.at(x, y) !== VOID || deep > VOID_DEEP) continue;
+          const sprite = lay(x, y, wangCorners(at, x, y));
+          if (sprite) sprite.tint = grey(VOID_WALL[Math.max(0, deep - 1)]);
+        }
+      }
+    }
     return true;
   }
 
