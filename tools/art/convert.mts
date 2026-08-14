@@ -15,7 +15,7 @@ export const INK_CHARS = ['#', 'M', 'm', 's', 'e'] as const;
 /** Below this an averaged block is floor rather than creature. */
 const SOLID = 0.5;
 
-function rgb(hex: string): [number, number, number] {
+export function rgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '').trim();
   const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
   const n = Number.parseInt(full, 16);
@@ -25,7 +25,7 @@ function rgb(hex: string): [number, number, number] {
 /** Redmean: how far apart two colours LOOK. Plain Euclidean RGB puts a dark
  *  blue nearer a dark red than the eye does, which on a five-ink palette is
  *  the difference between mass and shade. */
-function apart(a: [number, number, number], b: [number, number, number]): number {
+export function apart(a: [number, number, number], b: [number, number, number]): number {
   const r = (a[0] + b[0]) / 2;
   const dr = a[0] - b[0];
   const dg = a[1] - b[1];
@@ -170,6 +170,51 @@ export function fitted(rows: string[], margin: number): string[] {
       if (x < offX || x >= offX + wide || y < offY || y >= offY + tall) return '.';
       return rows[sy]?.[sx] ?? '.';
     }).join('')
+  );
+}
+
+/**
+ * Every frame of one animation, fitted ONCE, into a grid of your choosing.
+ * `fitted` measures the frame it is given, so run per frame a walk cycle is
+ * scaled and re-centred differently on every step and the body jitters against
+ * its own feet. The box is the union of all of them and the transform is the
+ * same for each — which is also what lets frames off two different canvases
+ * keep their sizes relative to one another.
+ */
+export function fittedTogether(frames: string[][], margin: number, out?: number): string[][] {
+  const grid = frames[0]?.length ?? 0;
+  const size = out ?? grid;
+  let top = grid;
+  let bottom = -1;
+  let left = grid;
+  let right = -1;
+  for (const rows of frames) {
+    rows.forEach((row, y) =>
+      [...row].forEach((c, x) => {
+        if (c === '.') return;
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+      })
+    );
+  }
+  if (bottom < 0) return frames;
+
+  const room = size - margin * 2;
+  const by = Math.min(room / (right - left + 1), room / (bottom - top + 1));
+  const wide = Math.round((right - left + 1) * by);
+  const tall = Math.round((bottom - top + 1) * by);
+  const offX = Math.round((size - wide) / 2);
+  const offY = size - margin - tall;
+
+  return frames.map((rows) =>
+    Array.from({ length: size }, (_, y) =>
+      Array.from({ length: size }, (_, x) => {
+        if (x < offX || x >= offX + wide || y < offY || y >= offY + tall) return '.';
+        return rows[top + Math.floor((y - offY) / by)]?.[left + Math.floor((x - offX) / by)] ?? '.';
+      }).join('')
+    )
   );
 }
 

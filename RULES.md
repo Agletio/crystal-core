@@ -637,6 +637,27 @@ REST spec also LIES: `/rotate` documents 16–200 and takes only 128, 64, 32 or
 16. Reach for the MCP tools first; `tools/art/*` still holds the CONVERSION,
 which is worth keeping whatever does the asking.
 
+**The MCP tools may not be in a session's tool list, and that is not a
+blocker.** The server answers plain JSON-RPC over ONE POST returning a single
+`data:` line, with no session to hold — `tools/art/mcp.mts` is that, and
+`callTool` reaches every tool the client would have. Storage REFUSES the key: a
+bearer token on a `backblaze.pixellab.ai` URL is a 401, and only
+`api.pixellab.ai` is told who is asking.
+
+**Generated art is QUANTISED to a palette of its own.** An export's colours are
+not a palette — three frames of one body arrive with more distinct RGB values
+than there are characters to name them — so the commonest are the key and
+everything else snaps by redmean. `Inks` in `tools/art/sandbox.mts` is two
+passes for that: `note` every pixel, `settle`, then `char`.
+
+**Frames of ONE body are fitted TOGETHER, never one at a time.** `fitted`
+measures the frame it is handed, so per frame a walk cycle is scaled and
+re-centred on every step and the body jitters against its own feet.
+`fittedTogether` takes one box over every frame and one transform for all of
+them — which is also what lets frames off two canvas sizes (a template
+animation comes back at the character's size, a v3 one larger) keep their
+sizes relative to one another.
+
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,
 converted, reviewed, accepted, and committed as TypeScript. Every standing rule
@@ -744,11 +765,13 @@ device ratio — so a full-screen canvas painted correctly shows its top-left
 quarter. `width: 100%; height: 100%` goes with the `inset`, and the same trap
 waits for any `<img>` or `<video>` positioned that way.
 
-**`CELL = 48`** is the offscreen cell every sprite is painted into, so the art
-grid has to divide it: 16 gives 3 device pixels per art pixel, 24 gives 2, 32
-gives 1.5 and the rect seams stop landing on pixel boundaries. **24 is the last
-integer step under the current cell.** Going to 32 means raising `CELL` to 96
-first, and is not wanted now.
+**`CELL = 256`** is the offscreen cell every sprite is painted into, and the
+art grid does NOT have to divide it: `drawPixels` samples per DESTINATION
+pixel, so a 24 grid and a 128 one land in the same cell with no seams either
+way. A cell is always bigger than the tile it draws into, which is why a body's
+texture samples `linear` — authoring above what the screen shows buys
+supersampling. A TILE is the exception and samples `nearest`: it is drawn at or
+above its own size, so what has to survive is the enlargement.
 
 **Everything is at 24.** All 22 entries in `src/render/bestiary.ts` carry
 `grid: 24` and two frames; 21 of them are monsters with an `attack` frame, and
@@ -1237,6 +1260,33 @@ of it.
 - **`src/sim` never decides that a scene happens.** `finish()` in
   `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
   every headless harness alone: they drive `RunSim` directly and never ask.
+
+**A SANDBOX is a scene with bodies in it, and `SceneDef.dummies` is the whole
+of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
+`SCENES` is what the schedule walks and the sandbox is not in it, only in
+`SCENE_BY_ID`, so no amount of playing arrives there.
+
+- **Nothing loses life while one is on the map.** One guard in `dealDamage`,
+  and it is what makes the room terminate-proof from the other end: nobody
+  dies, so the flood never runs dry, the hero never falls, and the run has no
+  end to reach. Everything else about a hit still happens — the flash, the
+  recoil, the number over the head — because watching a hit land is the point.
+- **The hero's committed target is DROPPED every tick in one.** Held until the
+  target dies is, where nothing dies, a hero facing one way forever.
+- **A dummy comes off `MONSTER_BASE` and the empty set**, never `MONSTERS` and
+  never `BEASTIARY`. Nothing about it may reach a balance table, or the demo's
+  measurements move under it.
+- **Abandon is the only way out**, and the only room where it is live outside a
+  descent. It banks nothing, because nothing happened.
+- **A generated tileset REPLACES the whole surface.** `GameMap.ground` names
+  one; when it is set the zone's floor fills, its `tileDecals`, its
+  `livingDecals` and its entrance rect all stand down. Masonry with the
+  Fissure's flagstones stamped over it is two floors at once. Pixi only —
+  `canvas2d` has no sprites and that stays correct.
+- **`wangCorners` is a pure function in `render/renderer.ts`**, like every
+  other per-tile answer, so both renderers could only ever agree. A corner is a
+  LATTICE point with four cells round it and is floor if ANY of them is, which
+  is what makes the two terrains interlock.
 
 **A bubble is CLAMPED to the window.** The transform hangs a card above its
 anchor point, so a TALL one over somebody standing near the top of the room is

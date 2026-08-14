@@ -156,6 +156,37 @@ export function syncViewportLock(): void {
 /** Which of the four states the Fissure is in. */
 export const runPhase = (): Phase => phase;
 
+/** The room you look at art in. Reached from the dev kit and from nowhere a
+ *  player goes, and the only room whose bodies fight back and never die. */
+const inSandbox = (): boolean =>
+  phase === 'scene' && !!SCENE_BY_ID[arrivedIn]?.dummies?.length;
+
+/** Straight into it, with no descent and no hole to climb out of: a sandbox is
+ *  not a reward and is never at the bottom of a run. */
+export function openSandbox(): void {
+  const def = SCENE_BY_ID.sandbox;
+  if (!def) return;
+  streak = 0;
+  leaving = false;
+  halt = 'once';
+  greeted = null;
+  greetedState = null;
+  greeting = null;
+  pending = null;
+  handover = 0;
+  seed = Math.floor(Math.random() * 1e9);
+  enterScene(def);
+  note(`${def.name} — generated art, and nothing in here can die.`);
+}
+
+/** Back to the Fissure. Nothing is banked, because nothing happened. */
+function leaveSandbox(): void {
+  sim = null;
+  setPhase('menu');
+  renderMenu();
+  setLeaveLabel();
+}
+
 /** The last beat is done, whichever panel it was. The descent it ended was
  *  cleared and banked long before anyone spoke, so this is the report landing
  *  rather than the run resuming. */
@@ -505,7 +536,9 @@ function enterScene(def: SceneDef): void {
   spoke = false;
   banked = null;
   sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
-  playing = false;
+  // A sandbox is live from the moment you land in it: nothing crosses the room
+  // to meet you, and everything in it is already fighting.
+  playing = !!def.dummies?.length;
   accumulator = 0;
   note(def.said, 'add');
   // A camera left pointed at a corner of the descent that just ended is a
@@ -906,7 +939,10 @@ function setLeaveLabel(): void {
   const btn = $('run-leave') as HTMLButtonElement;
   // Neither means anything outside a descent, and a room with a fight in it is
   // the one you may not walk out of — leaving would be a way to skip a boss.
-  ($('run-abandon') as HTMLButtonElement).disabled = phase !== 'running';
+  // A sandbox is the exception, and Abandon is the whole of the way out of it.
+  const abandon = $('run-abandon') as HTMLButtonElement;
+  abandon.disabled = phase !== 'running' && !inSandbox();
+  abandon.textContent = inSandbox() ? 'Leave the sandbox' : 'Abandon';
   const live = phase === 'running';
   btn.textContent = !live
     ? 'Last descent'
@@ -1024,6 +1060,7 @@ export function initRun(state: GameState): void {
   // banks nothing, exactly as dying in it would. Every clear before it already
   // banked as it happened, so it ends on the same card and the same haul.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
+    if (inSandbox()) return leaveSandbox();
     if (!sim || phase === 'scene') return;
     // Walking over to him: already banked, so nothing to walk out of.
     if (greeting) return;

@@ -128,6 +128,9 @@ export interface GameMap {
   vein: number;
   /** Which world this rock belongs to. Presentation only, same as the vein. */
   theme: MapTheme;
+  /** A generated tileset drawn instead of the theme's own rock. Presentation
+   *  only again, and only a scene ever names one. */
+  ground?: string;
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -369,7 +372,12 @@ export function generateMap(
  * hashed off the tile it lands on, so a room is the same room every time it is
  * entered by construction, which is stronger than seeding it.
  */
-export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
+export function sceneMap(
+  plan: ScenePlan,
+  theme: MapTheme,
+  vein = 1,
+  ground?: string
+): GameMap {
   const room = plan.room;
   const grid = new Grid(room.x + room.w + 1, room.y + room.h + 1);
   carveRoom(grid, room, CUT[theme] ?? 'dug');
@@ -379,5 +387,5 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
 
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
-  return { grid, rooms: [room], entrance, exit: entrance, props: plan.props, vein, theme };
+  return { grid, rooms: [room], entrance, exit: entrance, props: plan.props, vein, theme, ground };
 }

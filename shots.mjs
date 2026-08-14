@@ -174,6 +174,20 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('save-close')?.click());
   await page.waitForTimeout(200);
 
+  // The sandbox: generated bodies on a generated floor, and the one screen in
+  // the game whose whole point is being LOOKED at. Before the descent, because
+  // it leaves nothing behind — nothing in it dies and nothing is banked.
+  await page.evaluate(() => document.getElementById('dev-sandbox')?.click());
+  await page.waitForTimeout(2500);
+  for (let i = 0; i < 9; i++) await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(600);
+  if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'scene') {
+    problems.push(`${vp.name}: the sandbox button did not open a room`);
+  }
+  await shoot('sandbox');
+  await page.evaluate(() => document.getElementById('run-abandon')?.click());
+  await page.waitForTimeout(300);
+
   // And the run itself. A menu screenshot cannot show whether combat reads,
   // which is the half of the UI that actually moves.
   // The handover, caught in the middle: the hero climbing out of the entrance

@@ -37,6 +37,7 @@ import {
   initRun,
   sceneEnded,
   onRunFocused,
+  openSandbox,
   skipToGift,
   refreshRunPanels,
 } from './ui/run';
@@ -130,14 +131,16 @@ document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
-// The dev kit wipes what you are playing, and it sits in a row you click all
-// day. A new game is a SLOT's action now, on the Save & Load screen.
+// The dev kit wipes what you are playing, and sits in a row you click all day.
 const guard = (id: string, title: string, mode: StartMode) =>
   document.getElementById(id)!.addEventListener('click', async () => {
     if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
   });
 
 guard('dev-kit', 'Restart with the dev kit?', 'dev');
+
+// Wipes nothing and banks nothing, so unlike the kit beside it it asks nothing.
+document.getElementById('dev-sandbox')!.addEventListener('click', openSandbox);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {

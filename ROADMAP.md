@@ -4,14 +4,14 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Three phases. Phases 1 and 2 are buildable now; Phase 3 WAITS.** The arc
+**Two phases, and one QUESTION that has just become answerable.** The arc
 dictated in one go is finished — the game has rooms you arrive in and people
-standing in them, and all four people are built. Phase 1 is an art pipeline with
-a generator behind it, which the user redirected onto and which therefore goes
-first — it is now a SANDBOX to judge that art in, since the pipeline itself is
-built and the real tools turned out to be an MCP server. Phase 2 is the batch after the arc: the skills screen, and a second way
-to move. Phase 3 is teaching, and it does not start until the stripped opening
-has been played — see its own note.
+standing in them, and all four people are built. The art sandbox is BUILT and
+what it was for is now a thing to look at rather than a thing to build: what it
+showed is written up under **What the sandbox answered**, below, and the
+decision it asks for is open question 8. Phase 1 is the batch after the arc: the
+skills screen, and a second way to move. Phase 2 is teaching, and it does not
+start until the stripped opening has been played — see its own note.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -21,13 +21,8 @@ still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked; the thing most likely to be asked for after
 these is the **balance pass**, written up below.
 
-**Nothing is blocked on an open question.** Phase 1 was rewritten after a long
-session with the generator: the pipeline it asked for is BUILT, and what is left
-is a sandbox to look at the art in. **Read all of Phase 1 before touching it** —
-it holds what that session cost, including the fact that the generator is an
-MCP server and not the REST API everything was first written against. Then read
-**Before you touch the ladder**, below, which holds the parts belonging to no
-single phase.
+**Nothing is blocked on an open question.** Read **Before you touch the
+ladder**, below, which holds the parts belonging to no single phase.
 
 **What the last twelve phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
@@ -265,6 +260,88 @@ written as one.
 
 ---
 
+## What the sandbox answered
+
+**BUILT, and the reason it existed is now a set of findings rather than a
+task.** `#dev-sandbox` on the rail opens `SCENES`' one room that is not in
+`SCENES`: generated ground, six generated bodies, nothing dies and nothing ends
+it. `RULES.md` holds the rules it is bound by; `CLAUDE.md` describes it. What
+follows is what LOOKING at it settled, and it is written here rather than there
+because it is an input to a decision the user has not made — **open question 8**,
+which is now the only thing standing between this and a roster.
+
+**The generator itself is everything the last session said it was.** A rigged
+character at 128px with eight directions and template animations at one
+generation each; a Wang tileset whose corners match. Both are far beyond the
+REST API. `tools/art/mcp.mts` is the one module that knows the protocol and
+`tools/art/sandbox.mts` is what pulls a character and a tileset into the two
+tables the renderer reads. The MCP tools may not appear in a session's tool
+list — the server answers plain JSON-RPC over one POST, which is what that
+module does, so an absent client is not a blocker.
+
+**What it looks like on the map, which is the only view that counts.**
+
+- **A generated body reads WORSE in a descent than in its own model sheet.**
+  The skeleton is excellent at 128px and mush at the ~30 device pixels a body
+  actually occupies: the cloak, the ribs and the skull all resolve into one
+  pale smear. The hand-drawn 24-grid creatures read better at that size for
+  the obvious reason — they were drawn for it. Authoring above what the screen
+  shows buys supersampling, not legibility. **The fix is not more resolution;
+  it is SILHOUETTE**, which is the same finding the Osteomancer's portrait
+  produced from the other direction.
+- **A 16-tile Wang set has exactly ONE interior tile, and it is visible.** The
+  floor is that tile stamped five hundred times and it reads as wallpaper.
+  `tileDecals` hashes off the tile it lands on and never repeats, which is why
+  hand-drawn rock does not do this. A generated floor needs either several
+  interior variants (a second tileset chained off `base_tile_ids`, or the
+  `create_tiles_pro` route) or the decals kept on top of it — and the second
+  is two floors at once, which is why the sandbox turns them off.
+- **Generated art carries BAKED colour, and that is the real cost.** Every
+  other pixel in the game takes its ink from a CSS custom property at draw
+  time, which is what makes a zone recolour for free. A generated body and a
+  generated floor are fixed hexes, so the mine shaft's warm brown is warm brown
+  in every zone and the skeleton is lit by whatever the generator felt like.
+  This is the atlas trade arriving early: the roadmap said it would cost the
+  runtime palette past ~5 MB, and it turns out to cost it at the FIRST sprite.
+- **A template animation does not preserve a silhouette.** `cross-punch` came
+  back correct and without the cape the character is defined by. The v3 custom
+  route keeps more but draws on a larger canvas and, asked for a "raises both
+  hands", came back with a spell aura painted on — which `RULES.md` forbids,
+  since a rank is light applied at runtime.
+- **Mirroring holds at this camera.** `high top-down` is near enough to profile
+  that one east-facing set flipped for west reads fine, which is what the
+  renderer already does. Nothing here argues for more directions; the argument
+  for those is diagonal movement looking wrong, and it does not yet.
+
+**What was paid for in this session and is not guessable.**
+
+- **An export's colours are not a PALETTE.** Three frames of one body arrive
+  with 87–124 distinct RGB values, past the 88 characters a row can use. So a
+  generated body is QUANTISED to a palette of its own — the commonest 56, with
+  everything else snapped by redmean — rather than to the hand-drawn five.
+  `Inks` in `sandbox.mts` is two passes for exactly this.
+- **Frames of one body arrive at two canvas sizes.** A template animation comes
+  back on the character's own 128 and a v3 one on a 180, so they are centred in
+  the larger and then fitted TOGETHER: `fittedTogether` in `convert.mts` takes
+  one bounding box over every frame and one transform for all of them. Run per
+  frame, `fitted` scales each to fill its own box and the body jitters against
+  its own feet on every step.
+- **Storage REFUSES the key.** A bearer token on a `backblaze.pixellab.ai` URL
+  is a 401. Only `api.pixellab.ai` is told who is asking.
+- **Which terrain of a Wang set is the FLOOR is not in the metadata.** The mine
+  shaft's `lower_description` says "quarried stone walls" and its `lower` tile
+  is the dirt you walk on. The pictures say so and the words do not, so it is
+  an argument to `sandbox.mts` and what ships always means "set bit = floor".
+- **Three tools now write `src/render/generated-art.ts`** — `sandbox.mts`,
+  `import.mts` and `art.mts emit`. `sandbox.mts` is the one to use; the other
+  two predate it and will happily overwrite its quantised key with their own.
+
+**What is NOT true any more.** `RULES.md` said `CELL = 48`; it has been 256
+since generated art landed, and `drawPixels` samples per DESTINATION pixel, so
+the art grid does not have to divide the cell at all. Both are fixed there now.
+
+---
+
 ## Phases
 
 **Writing one.** The test is whether a session with no memory of this
@@ -383,106 +460,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A sandbox, and the real generator behind it
-
-**Read this whole section before touching anything.** Everything below was paid
-for in generations and in wrong turns, and almost none of it is guessable.
-
-**THE GENERATOR IS AN MCP SERVER, NOT THE REST API.** `https://api.pixellab.ai/mcp`,
-with its guide at `/mcp/docs`. `.mcp.json` is committed and expands
-`${PIXELLAB_API_KEY}`, so the tools appear as `mcp__pixellab__*` once a session
-connects. **Use those and not `tools/art/pixellab.mts`,** which speaks to the
-REST API — a fraction of what exists, and the reason a whole day went into
-fighting problems the real tools do not have. The REST spec is also WRONG in
-places: `/rotate` documents 16–200 and accepts only 128, 64, 32 or 16, and
-refuses a reference image that is not already that size.
-
-What the MCP has that REST does not:
-
-- **`create_character`** — `body_type`, `template` (bear, cat, dog, horse,
-  lion), `proportions`, `n_directions` 4 or 8. This is the rigged MANNEQUIN
-  the website uses, and it is the whole quality gap. It also answers the
-  quadrupeds and the amorphous creatures, which have no skeleton for the REST
-  animator to find. Characters are STORED and reusable.
-- **`animate_character`** — queued against a stored character, every direction
-  at once, non-blocking. REST's `animate-with-text` is locked to 64px and its
-  `animate-with-skeleton` needs hand-authored keypoints.
-- **`create_topdown_tileset`** — a WANG tileset: 16 tiles covering every corner
-  combination, 25 at full transition, chainable so one terrain blends into the
-  next. This is the seam problem solved, and it is why CHUNKS are not needed.
-- Creation is NON-BLOCKING: a job returns an id in moments and finishes in
-  2–5 minutes. Queue several, then collect. Downloads need no auth.
-
-**Sizes, measured.** Characters export at 128. Tiles cap at 64 (16/32 standard,
-64 in `mode: 'pro'`). Creatures are therefore about two tiles tall — normal for
-top-down, but LOOK at one before generating a set.
-
-**Do not put generated art in the game outside the sandbox.** The husk was
-swapped and is now reverted; `src/render/generated-art.ts` is left in place and
-nothing imports it.
-
-- [ ] **A dev button that opens a SANDBOX descent.** Its own `RunOptions`, its
-      own tileset and its own bodies, reachable from the dev kit and from
-      nowhere a player goes. It must not touch `MONSTERS`, `BEASTIARY` or any
-      balance table, or the demo's measurements move under it.
-- [ ] **Nothing dies in it and nothing ends it.** The point is to WATCH: walk
-      about, swing in every direction, and look at the art for as long as you
-      like. So the bodies do not take damage and the run has no clear
-      condition. `RunSim` already ticks a map with no exit — that is what a
-      scene is — so this is a scene with monsters in it rather than a new mode.
-- [ ] **One tileset, one enemy, one character**, all through the MCP tools and
-      all only in the sandbox.
-- [ ] **Then judge it, and only then decide** whether the roster follows.
-
-**What was learned about the art itself.** All of it still applies:
-
-- **The five inks were never a limit.** `PixelArt.key` is an arbitrary record;
-  `BeastArt.key` is optional and merges over the hand-drawn five. An export of
-  64 colours takes 64 characters and needs no quantising at all.
-- **`no_background` is not always obeyed**, and the flood that clears it works
-  from the EDGES — so the gap between a pair of legs stays filled. `debackground`
-  now also clears what the flood could not reach.
-- **A cast shadow is drawn even when asked away twice**, and it is found by
-  being wider than the WIDEST row of the body. Measured against the median it
-  ate the feet.
-- **Nothing may derive an outline.** The art carries its own edge; an added one
-  is a slab of black, and eleven rings inward eats a thin limb whole.
-- **A body must be FITTED to its frame**, or a cell drawn as one tile means two
-  different things depending on where the art came from.
-- **A rank is LIGHT, not a band.** `glowed` in `sprites.ts`, in the texture,
-  alpha falling off squared. A solid border is a low-resolution convention and
-  reads as a sticker at 128 and above.
-- **The prompt owns the POSE and the parameter owns the CAMERA.** Changing both
-  at once is what made `low top-down` look broken; kept apart it is right for
-  this map, and bodies stay in profile so the renderer can still mirror them.
-- **Wrongness is normalised away.** A panther asked for with no head came back
-  with a head. Exaggerate proportions; do not ask for impossible anatomy.
-- **`e.facing` is already a full angle** (`Math.atan2`), and only the renderer
-  throws it away, collapsing it to a left/right flip. So directional sprites are
-  a RENDERER change and nothing in the sim, the saves or the tables moves.
-- **Mirroring halves a direction set**: 8 ways needs 5 generated (E, NE, SE, N,
-  S) and 4 ways needs 3. Check the mirrors match before discarding — asymmetric
-  detail on a body flips with it.
-- **Every animation needs every direction you support**, or a creature pops
-  between styles as it turns. Decide the direction count BEFORE generating
-  states, because it multiplies everything after it.
-
-**What the bundle costs, since art ships as STRINGS in a committed
-`docs/app.js` that is 901 KB today.** One direction at 128 is about 1 MB across
-the roster; five directions about 5 MB; eight about 8 MB. Past that it stops
-being strings and needs an atlas, which costs the runtime palette — and the
-runtime palette is what makes a zone recolour for free. That is a decision
-about how the game SHIPS, not an art decision.
-
-**Tools, all committed.** `tools/art/art.mts` drives the REST pipeline
-(`balance`, `list`, `generate`, `convert`, `skeleton`, `animate`, `turn`,
-`sheet <out> [id...]`, `accept`, `emit`); `import.mts` reads a website export
-(`metadata.json` plus `rotations`) straight into grids; `selftest.mts` proves
-the conversion without spending anything. `convert` re-derives animation frames
-from cached PNGs, so refining the reduction costs no generations. Keep them:
-they hold the conversion, and only the ASKING moves to MCP.
-
-### Phase 2 — The skills screen, and a second way to move
+### Phase 1 — The skills screen, and a second way to move
 
 **Dictated in one go. Five asks, and the last two are most of the work.**
 
@@ -605,7 +583,7 @@ descent it is in still ends, and that nobody moves across an authored room; all
 four now have a second skill to hold to. `MAIN_SKILLS` is what every harness
 builds a character to fight with and Leap is not in it.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -745,18 +723,25 @@ Every one is parked deliberately. Ask before acting on any of them.
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
 
-8. **How many DIRECTIONS does a creature have?** This is the one that
-   multiplies everything after it, so it wants answering before a roster is
-   generated rather than during. One (today) keeps the renderer as it is and
-   costs about 1 MB across the roster; four costs three generated directions
-   per animation state and about 3 MB; eight costs five and about 8 MB, since
-   mirroring gives W, NW and SW free. Past roughly 5 MB the art stops being
-   strings in `docs/app.js` and needs an ATLAS, which costs the runtime palette
-   — and the runtime palette is what makes a zone recolour for free. So it is
-   really two questions and the second is the bigger one: how many directions,
-   and is the game still shipping its art as strings. The sandbox exists to
-   answer the first by LOOKING; the second is a decision about how the game
-   ships and belongs to the user.
+8. **Does generated art go in the game at all, and at what size?** **This is
+   the live one**, and the sandbox was built to make it answerable rather than
+   to answer it. What LOOKING settled is written up under **What the sandbox
+   answered** and the short version is that the trade is worse than the roadmap
+   assumed: a generated body reads worse at the ~30 device pixels it occupies
+   than the 24-grid drawings do, a 16-tile Wang floor repeats visibly, and both
+   carry BAKED colour where every other pixel takes its ink from a CSS property
+   at draw time. That last is the atlas trade — the one that costs a zone
+   recolouring for free — and it arrives at the first sprite rather than past
+   5 MB. So the question is no longer "how many directions": it is whether the
+   runtime palette is worth more than the drawing quality, and only the user can
+   answer that. Directions are the cheap half and nothing forces it — mirroring
+   holds at this camera, so one east-facing set is what ships until diagonal
+   movement starts reading wrong.
+   **Three ways forward if the answer is yes**, none of them started: keep the
+   palette by re-inking a generated body onto CSS properties (a quantised key is
+   already a small palette, so this is a mapping rather than a rewrite); keep
+   the drawing and give up the recolour; or use the generator as a REFERENCE
+   and draw the grid by hand at 24, which is what the whole bestiary is.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls

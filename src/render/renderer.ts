@@ -460,6 +460,26 @@ export function floorColour(floor: FloorPalette, tile: number, x: number, y: num
 }
 
 /**
+ * Which of a tile's four corners are floor, as NW/NE/SW/SE one bit each, high
+ * to low — the index into a generated Wang set.
+ *
+ * A corner is a LATTICE point with four cells round it, and it is floor if ANY
+ * of them is. That is what makes the two terrains interlock: the ground spills
+ * half a tile into the rock at every edge, which is the whole reason a corner
+ * set is drawn instead of a tile per cell.
+ */
+export function wangCorners(at: (x: number, y: number) => number, x: number, y: number): number {
+  const corner = (cx: number, cy: number): number =>
+    at(cx - 1, cy - 1) !== WALL || at(cx, cy - 1) !== WALL ||
+    at(cx - 1, cy) !== WALL || at(cx, cy) !== WALL
+      ? 1
+      : 0;
+  return (
+    (corner(x, y) << 3) | (corner(x + 1, y) << 2) | (corner(x, y + 1) << 1) | corner(x + 1, y + 1)
+  );
+}
+
+/**
  * Is this rock worth drawing? Only the band next to the floor: past it the
  * background is the same rock a shade darker, so drawing every wall tile is two
  * thousand tiles the colour of what is already behind them.

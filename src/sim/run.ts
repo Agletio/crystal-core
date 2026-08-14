@@ -57,7 +57,7 @@ import {
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
-import type { SceneAct } from '../scenes';
+import type { SceneAct, SceneDummy } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
@@ -356,6 +356,9 @@ export class RunSim {
    * Read once at spawn — nothing about a set changes mid-descent.
    */
   readonly set: RunSet;
+  /** A room with bodies in it to be looked at. Nothing loses life while this is
+   *  set, so nothing dies and the run has no end to reach. */
+  private readonly sandbox: boolean;
 
   constructor(
     crystals: Item[],
@@ -376,8 +379,9 @@ export class RunSim {
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
     // Sockets are the only thing that lengthens a descent. An empty Fissure is
     // index zero of the same table, not a special case beside it.
+    this.sandbox = !!def?.dummies?.length;
     const map = def
-      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)))
+      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)), def.ground)
       : generateMap(
           this.set.mods,
           rng,
@@ -418,8 +422,10 @@ export class RunSim {
     };
 
     // A scene has no packs at all, which is the whole of what makes it one —
-    // whatever it does hold is called up by name, later and on purpose.
-    const monsters = def ? [] : this.spawn(map);
+    // whatever it does hold is called up by name, later and on purpose. A
+    // sandbox names its bodies in the def and gets them at once, because
+    // looking at them is the only thing it is for.
+    const monsters = def ? (def.dummies ?? []).map((d) => this.dummy(d, hero)) : this.spawn(map);
     if (def) this.priceKills();
     this.byId = new Map(monsters.map((m) => [m.id, m]));
 
@@ -452,6 +458,54 @@ export class RunSim {
     };
 
     if (def) this.state.folk.push(this.stand(def.who, def.plan.stands));
+  }
+
+  /** A body for the sandbox: a monster in every way the sim reads, off
+   *  `MONSTER_BASE` and the empty set, so none of it comes out of a balance
+   *  table. What makes it a dummy is that nothing loses life. */
+  private dummy(spec: SceneDummy, hero: Entity): Entity {
+    const stats = monsterStats([], {
+      id: spec.sprite,
+      name: spec.sprite,
+      family: 'normal',
+      life: 1,
+      damage: 1,
+      moveSpeed: 1,
+      attacksPerSecond: 0.8,
+      attackRange: 1,
+      radius: 0.3,
+      sprite: spec.sprite,
+      scale: spec.scale,
+      weight: 0,
+    });
+    return {
+      id: this.nextId++,
+      kind: 'monster',
+      sprite: spec.sprite,
+      scale: spec.scale,
+      rank: 'common',
+      radius: 0.3,
+      skillId: null,
+      x: spec.at.x,
+      y: spec.at.y,
+      facing: Math.atan2(hero.y - spec.at.y, hero.x - spec.at.x),
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: 0,
+      life: stats.maxLife,
+      mana: 0,
+      effects: [],
+      stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      aggroed: true, // they are the point of the room
+      hitFlash: 0,
+      dead: false,
+    };
   }
 
   /** A person in a room: no stats worth anything, no bounty, and out of
@@ -1272,6 +1326,10 @@ export class RunSim {
   }
 
   private acquireTarget(hero: Entity): Entity | null {
+    // Held until the target dies is, where nothing dies, a hero facing one way
+    // forever. Dropped, the nearest is re-picked and shoving keeps changing who
+    // that is — which is the swing in every direction the sandbox is for.
+    if (this.sandbox) hero.targetId = null;
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
       if (held && !held.dead) return held;
@@ -1625,7 +1683,9 @@ export class RunSim {
     // range or the line of sight.
     this.wake(defender, true);
 
-    defender.life -= dmg;
+    // Everything else about the hit still happens — the flash, the recoil, the
+    // number over the head — because a sandbox is for watching a hit land.
+    if (!this.sandbox) defender.life -= dmg;
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
     defender.actionTimer = HURT_POSE;

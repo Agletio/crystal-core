@@ -46,9 +46,18 @@ import {
   tileSize,
   toHexNumber,
   vfxColour,
+  wangCorners,
   ZOOM_MIN,
 } from './renderer';
-import { ATTACK_FRAME, CELL, WALK_FRAMES, makeLookFrames, makeSheet, rankedKey } from './sprites';
+import {
+  ATTACK_FRAME,
+  CELL,
+  WALK_FRAMES,
+  makeLookFrames,
+  makeSheet,
+  makeTiles,
+  rankedKey,
+} from './sprites';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
@@ -119,6 +128,9 @@ export async function createPixiRenderer(
   app.ticker.stop();
 
   const world = new Container();
+  /** A generated tileset, when a map names one. Under everything, and empty on
+   *  every map that does not — which is every map a player ever runs. */
+  const groundLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
   // map that was built once.
@@ -129,7 +141,7 @@ export async function createPixiRenderer(
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
+  world.addChild(groundLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
@@ -242,18 +254,68 @@ export async function createPixiRenderer(
     world.position.set(offX, offY);
   }
 
+  const tilesets = new Map<string, Texture[] | null>();
+
+  /** A generated Wang set as textures, uploaded on first use like everything
+   *  else. Null once, null for good: a name nothing draws is not an error. */
+  function tilesFor(id: string): Texture[] | null {
+    const already = tilesets.get(id);
+    if (already !== undefined) return already;
+    const made =
+      makeTiles(id)?.map((canvas) => {
+        const texture = Texture.from(canvas);
+        // NEAREST, where a body is linear: a tile is drawn at or above its own
+        // size, so the sampling to protect is the enlargement rather than the
+        // reduction, and linear there is the blur pixel art exists to not be.
+        texture.source.scaleMode = 'nearest';
+        return texture;
+      }) ?? null;
+    tilesets.set(id, made);
+    return made;
+  }
+
+  /**
+   * The floor as generated art: one sprite per cell, indexed by which of its
+   * four corners are floor. It REPLACES the zone's own rock and its decals —
+   * a tileset is the whole surface, and masonry with the Fissure's flagstones
+   * stamped over it is two floors at once.
+   */
+  function buildGround(map: GameMap): boolean {
+    groundLayer.removeChildren().forEach((child) => child.destroy());
+    const textures = map.ground ? tilesFor(map.ground) : null;
+    if (!textures) return false;
+
+    const { grid } = map;
+    const at = (gx: number, gy: number) => grid.at(gx, gy);
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const sprite = new Sprite(textures[wangCorners(at, x, y)]);
+        sprite.x = x;
+        sprite.y = y;
+        // One texture across exactly one tile, and a hair over to close seams.
+        sprite.scale.set(1.01 / textures[0].width);
+        groundLayer.addChild(sprite);
+      }
+    }
+    return true;
+  }
+
   /** Built once per map, in tile units, then moved by the camera. */
   function buildMap(map: GameMap): void {
     const { grid } = map;
     mapLayer.clear();
 
+    // A tileset is the WHOLE surface, so the zone's own rock and its decals
+    // both stand down for one: masonry with the Fissure's flagstones stamped
+    // over it is two floors at once.
+    const generated = buildGround(map);
     const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Same grouping as the decals below: the floor's grain gives many tiles
     // the same colour, so one fill per tile is mostly wasted batches.
     const floors = new Map<string, number[][]>();
-    for (let y = 0; y < grid.height; y++) {
+    for (let y = 0; y < grid.height && !generated; y++) {
       for (let x = 0; x < grid.width; x++) {
         const tile = grid.at(x, y);
         // Rock gets drawn too now, but only the band you could see from a
@@ -281,7 +343,7 @@ export async function createPixiRenderer(
     // run; there are only a handful of distinct decal colours, so grouping
     // turns that into a handful of fills.
     const batches = new Map<string, { colour: number; alpha: number; rects: number[][] }>();
-    for (let y = 0; y < grid.height; y++) {
+    for (let y = 0; y < grid.height && !generated; y++) {
       for (let x = 0; x < grid.width; x++) {
         for (const d of tileDecals(floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
@@ -311,16 +373,20 @@ export async function createPixiRenderer(
 
     // The way in: a hole in the floor with a lit lip, not a coloured block.
     // seamLit is a panel violet, and on stone it read as a UI element someone
-    // had dropped on the map.
+    // had dropped on the map. Not over a generated floor, where the hole
+    // belongs to the tileset and this reads as a slab dropped on it.
     const e = map.entrance;
-    mapLayer
-      .rect(cx(e.x) - 0.32, cy(e.y) - 0.32, 0.64, 0.64)
-      .fill(toHexNumber(palette.rockDeep));
-    mapLayer
-      .rect(cx(e.x) - 0.38, cy(e.y) - 0.38, 0.76, 0.76)
-      .stroke({ width: 0.08, color: toHexNumber(floor.rockLit), alpha: 0.9 });
+    if (!generated) {
+      mapLayer
+        .rect(cx(e.x) - 0.32, cy(e.y) - 0.32, 0.64, 0.64)
+        .fill(toHexNumber(palette.rockDeep));
+      mapLayer
+        .rect(cx(e.x) - 0.38, cy(e.y) - 0.38, 0.76, 0.76)
+        .stroke({ width: 0.08, color: toHexNumber(floor.rockLit), alpha: 0.9 });
+    }
 
-    livingFloor = floor;
+    // What MOVES is the zone's too, so a generated floor has none of it.
+    livingFloor = generated ? null : floor;
     builtMap = map;
   }
 

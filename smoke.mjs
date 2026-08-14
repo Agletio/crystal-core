@@ -2429,6 +2429,23 @@ assert(
   );
 }
 
+// --- the sandbox ----------------------------------------------------------
+// AFTER the bench, because it swaps the phase out from under everything: a
+// room, and the one you leave rather than finish.
+{
+  const open = $('dev-sandbox');
+  assert(open !== null, 'the dev kit can open a room to look at art in');
+  open.click();
+  assert(document.body.dataset.runPhase === 'scene', 'and it is a room, not a descent');
+
+  const abandon = $('run-abandon');
+  assert(!abandon.disabled, 'Abandon is live in it, since there is no other way out');
+  assert(/sandbox/i.test(abandon.textContent), 'and says what it leaves', abandon.textContent);
+
+  abandon.click();
+  assert(document.body.dataset.runPhase === 'menu', 'leaving puts you back at the Fissure');
+}
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();

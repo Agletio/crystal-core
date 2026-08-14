@@ -10,6 +10,8 @@ import { mix, spriteColour } from './renderer';
 import { lookRows, roleChar } from './look';
 import { DOLL_GRID, FAMILY_ART } from './gear-art';
 import { BEASTIARY } from './bestiary';
+import { GENERATED } from './generated-art';
+import { TILESETS } from './generated-tiles';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
@@ -82,17 +84,17 @@ function inkBytes(colour: string): [number, number, number, number] {
  * appears. Sampling per DESTINATION pixel also means the grid need not divide
  * the cell evenly — no seams, whatever it is authored at.
  */
-function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
-  const image = ctx.createImageData(CELL, CELL);
+function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): void {
+  const image = ctx.createImageData(size, size);
   const data = image.data;
-  const step = art.grid / CELL;
-  for (let y = 0; y < CELL; y++) {
+  const step = art.grid / size;
+  for (let y = 0; y < size; y++) {
     const row = art.rows[Math.floor(y * step)] ?? '';
-    for (let x = 0; x < CELL; x++) {
+    for (let x = 0; x < size; x++) {
       const colour = art.key[row[Math.floor(x * step)]];
       if (!colour) continue;
       const [r, g, b, a] = inkBytes(colour);
-      const at = (y * CELL + x) * 4;
+      const at = (y * size + x) * 4;
       data[at] = r;
       data[at + 1] = g;
       data[at + 2] = b;
@@ -101,7 +103,7 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
   }
   if (art.glow) {
     const [r, g, b] = inkBytes(art.glow.colour);
-    glowed(data, [r, g, b], art.glow.reach, CELL);
+    glowed(data, [r, g, b], art.glow.reach, size);
   }
   ctx.putImageData(image, 0, 0);
 }
@@ -221,6 +223,21 @@ export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: 
   rare: { colour: (p) => p.citrine, reach: 26 },
 };
 
+/** A generated body: its own grid, key and frames, and the rank's light off
+ *  the same table a hand-drawn one gets. Beside `BEASTIARY` rather than in it,
+ *  and nothing in `MONSTERS` names one. */
+function generatedArt(palette: Palette, sprite: string, frame: number, rank: MonsterRank): PixelArt | null {
+  const art = GENERATED[sprite];
+  if (!art) return null;
+  const glow = GLOW[rank];
+  return {
+    grid: art.grid,
+    rows: art.frames[Math.min(frame, art.frames.length - 1)],
+    key: art.key,
+    glow: glow ? { colour: glow.colour(palette), reach: glow.reach } : undefined,
+  };
+}
+
 /** Its own inks, plus the rank: the accent brightens and the light comes off. */
 export function monsterArt(
   palette: Palette,
@@ -229,7 +246,7 @@ export function monsterArt(
   rank: MonsterRank
 ): PixelArt | null {
   const art = BEASTIARY[sprite];
-  if (!art) return null;
+  if (!art) return generatedArt(palette, sprite, frame, rank);
   const accent: Record<MonsterRank, string> = {
     common: mix(art.tone.shade(palette), art.tone.mass(palette), 0.5),
     magic: art.tone.eye(palette),
@@ -344,16 +361,33 @@ export const rankedKey = (sprite: string, rank: MonsterRank): string => `${sprit
 /** Frames for one creature at one rank, or null when nothing draws that sprite. */
 export type SpriteSheet = { frames(sprite: string, rank: MonsterRank): HTMLCanvasElement[] | null };
 
-export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY)] as const;
+export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY), ...Object.keys(GENERATED)] as const;
 
 const DRAWABLE = new Set<string>(SPRITE_KINDS);
 
-function cell(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
+function cell(size = CELL): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   const canvas = document.createElement('canvas');
-  canvas.width = CELL;
-  canvas.height = CELL;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext('2d');
   return ctx ? { canvas, ctx } : null;
+}
+
+/** A generated Wang set: sixteen canvases indexed by which of NW/NE/SW/SE are
+ *  floor, at the tileset's OWN grid — a tile covers one tile, and 16px blown
+ *  up to `CELL` is a megabyte of texture showing the same pixels. */
+export function makeTiles(id: string): HTMLCanvasElement[] | null {
+  const set = TILESETS[id];
+  if (!set) return null;
+  const out: HTMLCanvasElement[] = [];
+  for (let mask = 0; mask < 16; mask++) {
+    const made = cell(set.grid);
+    const rows = set.tiles[mask];
+    if (!made || !rows) return null;
+    drawPixels(made.ctx, { rows, key: set.key, grid: set.grid }, set.grid);
+    out.push(made.canvas);
+  }
+  return out;
 }
 
 function shade(ctx: CanvasRenderingContext2D, colour: string, dark: string): void {

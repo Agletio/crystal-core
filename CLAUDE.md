@@ -59,8 +59,18 @@ Build before `smoke`, `shots` or `drag` — they load the bundle, not the source
 **The generator is an MCP server** — `https://api.pixellab.ai/mcp`, guide at
 `/mcp/docs`, wired up in `.mcp.json`. Its tools (`create_character`,
 `animate_character`, `create_topdown_tileset`) are what the website uses and are
-far beyond the REST API; reach for them first. `tools/art/import.mts` takes a
-website export straight into grids.
+far beyond the REST API; reach for them first. `tools/art/mcp.mts` speaks to it
+over plain JSON-RPC, so a session with no client for it is not blocked, and
+`tools/art/sandbox.mts` pulls a character and a tileset into the two tables the
+renderer reads. `tools/art/import.mts` takes a website export straight into
+grids.
+
+**The sandbox** is where generated art is judged: `#dev-sandbox` on the rail,
+generated ground and generated bodies, nothing dies and nothing ends it. It is
+a scene with `dummies` rather than a mode — the room is `src/scenes/sandbox.ts`
+and is the one scene outside `SCENES`, so the schedule can never hand you it.
+Everything it showed is written up in `ROADMAP.md`; whether any of it goes in
+the game is the user's call and is open question 8.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
@@ -245,6 +255,13 @@ There is no rng: a plan is absolute tiles and a cut is hashed off the tile it
 lands on, so a place is the same place every time you come up in it. There is
 also no exit — `GameMap.exit` is the entrance, so nothing draws a second hole
 and there is nothing to walk to.
+
+`GameMap.ground` names a generated tileset and is set by a scene alone. When it
+is there the zone's own rock stands down entirely — floor, decals, the moving
+parts and the entrance — because a tileset is the whole surface. `wangCorners`
+in `render/renderer.ts` says which of a tile's four corners are floor, and Pixi
+draws one sprite per cell off that; `canvas2d` has no sprites and keeps its
+colours.
 
 `GameMap.props` is furniture, empty on every generated map, drawn by `PROPS` in
 `src/render/renderer.ts` beside `mouth()`: pure functions returning `Decal[]`, so
@@ -661,6 +678,7 @@ been walked to.
 ## Shape
 
 ```
+tools/art/mcp.mts  the generator, over JSON-RPC; sandbox.mts pulls art in
 tools/art/         the art pipeline: a row is generated, converted, accepted
 src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling

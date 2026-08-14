@@ -2,7 +2,7 @@
  * Scenes: the authored rooms you come up into at the end of a cleared descent.
  * A `RunSim` over a map nobody generated — one room, the props where somebody
  * put them, the people in it, and at most one thing to put down. What a later
- * room adds is a field here, and `src/scenes/*` is content.
+ * room adds is a field here; `src/scenes/*` is content.
  */
 import type { MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
@@ -10,15 +10,23 @@ import { WORKSHOP } from './scenes/workshop';
 import { READING_ROOM } from './scenes/reading-room';
 import { OSSUARY } from './scenes/ossuary';
 import { ORRERY } from './scenes/orrery';
+import { SANDBOX } from './scenes/sandbox';
 
 /** What somebody DOES between two lines, off the pose machinery that already
- *  exists. An act is a pose in Pixi and a moving circle in the fallback, so a
- *  beat may never lean on one for meaning. */
+ *  exists — a pose in Pixi and a moving circle in the fallback, so a beat may
+ *  never lean on one for meaning. */
 export type SceneAct = 'pace' | 'work' | 'face';
 
 export interface SceneBeat {
   said: string;
   act?: SceneAct; // what is done while the line is on screen
+}
+
+/** A body to be LOOKED at: nothing it deals or takes lands on anything. */
+export interface SceneDummy {
+  sprite: string;
+  at: Vec2;
+  scale: number;
 }
 
 /** The room and everything standing in it, in absolute tiles. */
@@ -39,6 +47,8 @@ export interface SceneDef {
   beats?: SceneBeat[]; // the room's own person, before the fight
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
+  dummies?: SceneDummy[]; // and their presence is what makes a room a SANDBOX
+  ground?: string; // a generated tileset, over the zone's own rock. Pixi only
 }
 
 // A person smaller than the things you kill reads as set dressing.
@@ -52,6 +62,8 @@ export const scaleFor = (sprite: string): number =>
 
 export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, OSSUARY, ORRERY];
 
+/** `SCENES` is what the SCHEDULE walks, so a room outside it — the sandbox —
+ *  is a room no amount of playing ever arrives in. */
 export const SCENE_BY_ID: Record<string, SceneDef> = Object.fromEntries(
-  SCENES.map((s) => [s.id, s])
+  [...SCENES, SANDBOX].map((s) => [s.id, s])
 );
