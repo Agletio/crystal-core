@@ -4,7 +4,7 @@
  * put them, the people in it, and at most one thing to put down. What a later
  * room adds is a field here; `src/scenes/*` is content.
  */
-import type { MapProp, Room, Vec2 } from './sim/grid';
+import type { Cut, MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
 import { WORKSHOP } from './scenes/workshop';
 import { READING_ROOM } from './scenes/reading-room';
@@ -13,8 +13,7 @@ import { ORRERY } from './scenes/orrery';
 import { SANDBOX } from './scenes/sandbox';
 
 /** What somebody DOES between two lines, off the pose machinery that already
- *  exists — a pose in Pixi and a moving circle in the fallback, so a beat may
- *  never lean on one for meaning. */
+ *  exists — so a beat may never lean on one for meaning. */
 export type SceneAct = 'pace' | 'work' | 'face';
 
 export interface SceneBeat {
@@ -28,13 +27,17 @@ export interface SceneDummy {
   at: Vec2;
   scale: number;
   ability?: string; // a `MONSTER_ABILITIES` id: the thrown ones are the cast
+  rooted?: boolean; // holds its post rather than chasing, so a layout survives
 }
 
 /** The room and everything standing in it, in absolute tiles. */
 export interface ScenePlan {
   room: Room;
+  also?: Room[]; // more chambers, cut the same way and OVERLAPPING: a cavern
+  cut?: Cut; // how the rock is cut, over whatever the zone's own answer is
   entrance: Vec2; // the only hole: `GameMap.exit` is this tile too
   stands: Vec2; // where the person is before the hero has crossed to them
+  patrol?: Vec2[]; // a circuit the SANDBOX hero walks, so every facing shows
   props: MapProp[];
 }
 

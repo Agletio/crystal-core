@@ -2994,7 +2994,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 6.5,
-    vfxKind: 'bolt',
+    vfxKind: 'shard',
   },
   {
     id: 'frost_bolt',

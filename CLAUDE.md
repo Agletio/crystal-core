@@ -68,8 +68,14 @@ grids.
 **The sandbox** is where generated art is judged: `#dev-sandbox` on the rail,
 nothing dies and nothing ends it. It is a scene with `dummies` rather than a
 mode — the room is `src/scenes/sandbox.ts` and is the one scene outside
-`SCENES`, so the schedule can never hand you it. **Nothing the game itself
-draws is in it**: the ground is a generated Wang set, the furniture is
+`SCENES`, so the schedule can never hand you it. It is a SHOWCASE and laid out
+as one: a cavern of overlapping lobes (`ScenePlan.also`, `cut`) rather than a
+hall, a `patrol` circuit the hero walks, and the casters `rooted` so a layout
+meant to be walked past survives. The hero swings at whatever came into reach
+and then walks on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or three bodies pin
+it where it stands and one facing of one animation is all it ever shows.
+
+**Nothing the game itself draws is in it**: the ground is a generated Wang set, the furniture is
 generated pictures, the bodies are generated and so is the HERO, over the doll
 it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
 — "a working somebody gave up on. Rotted props, webs, a candle still going."
@@ -93,6 +99,14 @@ An animation is JUDGED, never trusted: `from`/`to` are the fraction of a
 generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
+
+**A Wang set is ONE picture per corner combination**, so an open floor is that
+picture in every cell and reads as graph paper. Two things break it up and
+neither invents geometry: the two UNIFORM masks carry no direction, so they are
+turned and mirrored per cell, and `tileset.also` names more sets of the same
+terrain whose tiles are ALTERNATES. Chaining them off one base tile does not
+make them MATCH — `tone`/`retoned` move each onto the first's mean and spread,
+or mixing them per cell reads as a checkerboard.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

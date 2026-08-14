@@ -1461,6 +1461,78 @@ export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] 
  * already there. Each kink is hashed off the two ends, so a leap is the same
  * shape in both renderers and two leaps do not share a silhouette.
  */
+/**
+ * The ice shard: a faceted spike flying point-first, and a scatter of chips
+ * where it lands. Built along the direction of travel rather than stamped off
+ * a grid like `BALL`, because a shard has to POINT and a rotated grid does
+ * not — which is the whole of what tells it apart from a fireball at speed.
+ */
+export function frostShard(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const travel = Math.min(1, t * 1.9);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const span = Math.hypot(dx, dy) || 1;
+  const ux = dx / span;
+  const uy = dy / span;
+  const nx = -uy;
+  const ny = ux;
+  const hx = from.x + dx * travel;
+  const hy = from.y + dy * travel;
+  const salt = Math.round(from.x * 11 + from.y * 23 + to.x * 5);
+  const pixels: FirePixel[] = [];
+
+  // The spike. Half-width steps DOWN toward the tip so the silhouette is
+  // faceted rather than a smooth cone, and it is as big across as the fireball
+  // is — smaller, it reads as a smudge beside one rather than as a shard.
+  const wide = [0, 1, 2, 3, 3, 3, 2, 2, 1, 1];
+  for (let i = 0; i < wide.length; i++) {
+    const bx = hx - ux * i * FIRE_PX;
+    const by = hy - uy * i * FIRE_PX;
+    for (let j = -wide[i]; j <= wide[i]; j++) {
+      // Mostly the OUTER ink, with a thin core: the shared ramp runs toward
+      // white at shade 2, and a shard drawn in it stops reading as cold.
+      const edge = Math.abs(j) === wide[i];
+      pixels.push({
+        x: onGrid(bx + nx * j * FIRE_PX),
+        y: onGrid(by + ny * j * FIRE_PX),
+        size: FIRE_PX,
+        shade: i <= 1 ? 2 : edge ? 0 : j === 0 ? 2 : 1,
+        alpha: 1,
+      });
+    }
+  }
+
+  // Chips shed behind it, cooling and drifting off the line.
+  for (let i = 1; i <= 6; i++) {
+    const back = Math.max(0, travel - i * 0.045);
+    const noise = tileNoise(i, salt, 41) - 0.5;
+    pixels.push({
+      x: onGrid(from.x + dx * back + nx * noise * (0.06 + i * 0.03)),
+      y: onGrid(from.y + dy * back + ny * noise * (0.06 + i * 0.03)),
+      size: FIRE_PX * (i > 4 ? 1 : 2),
+      shade: i > 4 ? 0 : 1,
+      alpha: (1 - i / 7) * (1 - t * 0.6),
+    });
+  }
+
+  // And it SHATTERS rather than fading: the arrival is the readable part.
+  if (travel >= 1) {
+    const burst = Math.max(0, (t - 0.5) * 2);
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2 + tileNoise(i, salt, 59);
+      const r = burst * (0.18 + tileNoise(i, salt, 71) * 0.3);
+      pixels.push({
+        x: onGrid(to.x + Math.cos(angle) * r),
+        y: onGrid(to.y + Math.sin(angle) * r),
+        size: FIRE_PX * 2,
+        shade: i % 3 === 0 ? 2 : 1,
+        alpha: Math.max(0, 1 - burst * 1.4),
+      });
+    }
+  }
+  return pixels;
+}
+
 export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
   const pixels: FirePixel[] = [];
   const dx = to.x - from.x;
@@ -1508,6 +1580,30 @@ export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
       }
     }
   }
+  // A FORK off one joint, dying before it arrives. A single jagged line reads
+  // as a rope however much it kinks; a branch that goes nowhere is the thing
+  // that says lightning, and it is the only part not on the path to a target.
+  const split = 1 + (salt % (JOINTS - 1));
+  const root = at(split);
+  const away = tileNoise(split, salt, 83) > 0.5 ? 1 : -1;
+  const reach = Math.min(0.9, span * 0.42);
+  const tip = {
+    x: root.x + (dx / span) * reach * 0.6 + nx * away * reach,
+    y: root.y + (dy / span) * reach * 0.6 + ny * away * reach,
+  };
+  const legs = Math.max(1, Math.round(Math.hypot(tip.x - root.x, tip.y - root.y) / FIRE_PX));
+  for (let s = 0; s <= legs; s++) {
+    const along = s / legs;
+    const bend = Math.sin(along * Math.PI * 2) * FIRE_PX * 1.5;
+    pixels.push({
+      x: onGrid(root.x + (tip.x - root.x) * along + nx * bend),
+      y: onGrid(root.y + (tip.y - root.y) * along + ny * bend),
+      size: FIRE_PX,
+      shade: along > 0.6 ? 0 : 1,
+      alpha: (1 - t) * (1 - along) * 0.9,
+    });
+  }
+
   // The ends spit, which is what makes it read as landing on something.
   for (const spark of fireSparks(to, t)) pixels.push(spark);
   return pixels;

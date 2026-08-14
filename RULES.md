@@ -742,6 +742,11 @@ nicety; which part is usable is a fact about that generation and belongs beside
 its id. Ask in `mode: 'v3'` from a written pose — a template animation is a
 lurch — say "staying in strict side profile", and keep `frame_count` low.
 
+**A pip over a monster's head says it SHOOTS, and only where the body does
+not.** `castsVisibly` asks whether the body has an animation of its own for
+what it is throwing; a caster with its own silhouette does not need a label,
+and a hand-drawn pack that all look alike still gets one.
+
 **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
 `GENERATED`, so an id in both is a generated body that never draws, silently —
 it cost a whole session's judgement of generated art, which was made about the

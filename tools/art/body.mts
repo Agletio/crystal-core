@@ -65,6 +65,17 @@ const said = (out: string, keep: RegExp): string =>
 
 const wait = (ms: number): Promise<void> => new Promise((go) => setTimeout(go, ms));
 
+/** Which facings each animation GROUP already holds, off its header line. */
+async function facings(character: string): Promise<Map<string, Set<string>>> {
+  const text = await callTool('get_character', { character_id: character });
+  const out = new Map<string, Set<string>>();
+  for (const line of text.split('\n')) {
+    const m = /^ {2}\S.*? — \d+ dir \(([^)]*)\).*\[group: ([0-9a-f-]{36})\]/.exec(line);
+    if (m) out.set(m[2], new Set(m[1].split(',').map((d) => d.trim())));
+  }
+  return out;
+}
+
 async function pending(character: string): Promise<string[]> {
   const text = await callTool('get_character', { character_id: character });
   const at = text.indexOf('pending jobs');
@@ -98,26 +109,42 @@ if (command === 'ask') {
   // the judged facing already made, so a body's states stay one group each.
   const on = command === 'state' ? asks.dirs.slice(2, 3) : asks.dirs.filter((_, i) => i !== 2);
   const known = groups();
+  const held = command === 'fill' ? await facings(character) : new Map<string, Set<string>>();
   for (const [name, ask] of Object.entries(body!.states)) {
     const group = command === 'fill' ? known[name] : undefined;
     if (command === 'fill' && !group) {
       console.log(`${name}: not in sandbox.json yet — judge it first`);
       continue;
     }
+    // Only what is MISSING, so a fill is idempotent: the rate limit answers
+    // with a hint rather than an error, so a run routinely lands some of a
+    // body's facings and not others, and the fix is to run it again.
+    const want = on.filter((d) => !held.get(group ?? '')?.has(d));
+    if (want.length === 0) {
+      console.log(`${name}: all ${on.length} facings already`);
+      continue;
+    }
     // Only a handful of jobs may be in flight at once, and over the line the
     // server answers with a hint rather than an error — which reads as success
     // and silently leaves a facing missing.
     while ((await pending(character)).length > IN_FLIGHT) await wait(20_000);
-    const out = await callTool('animate_character', {
-      character_id: character,
-      action_description: ask.say,
-      animation_name: `${sprite}_${name}`,
-      mode: 'v3',
-      frame_count: ask.frames,
-      directions: on,
-      ...(group ? { animation_group_id: group } : {}),
-    });
-    console.log(`${name}: ${said(out, /group|cost|jobs|status/i)}`);
+    // The server dedupes on the DESCRIPTION and answers `already queued or
+    // complete` for a re-ask, whatever directions are actually stored — so a
+    // retry says the same thing in a way that hashes differently.
+    let out = '';
+    for (let go = 0; go < 3; go++) {
+      out = await callTool('animate_character', {
+        character_id: character,
+        action_description: ask.say + '.'.repeat(go),
+        animation_name: `${sprite}_${name}`,
+        mode: 'v3',
+        frame_count: ask.frames,
+        directions: want,
+        ...(group ? { animation_group_id: group } : {}),
+      });
+      if (!/nothing re-queued/.test(out)) break;
+    }
+    console.log(`${name}: ${want.join(', ')} — ${said(out, /group|cost|jobs|status/i)}`);
   }
 } else if (command === 'sheet') {
   // One row per animation, one column per frame, straight off the generator.

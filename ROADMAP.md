@@ -451,6 +451,16 @@ that worked, and these are what it cost:
 - **`delete_animation` keys on the TYPE, not the display name**, so a re-roll
   under the same name leaves two groups standing. `sandbox.json` therefore
   names a group by UUID; a name picks whichever the server listed first.
+- **A GARMENT is the first thing a tail loses.** The revenant's cape vanishes
+  entirely by the last frames of its walk and its fire bolt, leaving a bare
+  skeleton — so a body whose silhouette IS a piece of cloth wants a tighter
+  window than a bare one.
+- **`fill` is not idempotent unless it is made to be.** The rate limit answers
+  with a hint rather than an error, so a fan-out routinely lands some facings
+  and not others — and a re-run is refused, because the dedup is on the
+  DESCRIPTION and ignores which directions are actually stored. `body.mts fill`
+  now reads back which facings each group holds, asks only for the rest, and
+  re-asks with the description punctuated differently when it is refused.
 
 **What was paid for in this session and is not guessable.**
 
@@ -465,6 +475,20 @@ that worked, and these are what it cost:
   `GRID` is 96 for the same reason. Pixi scales by the texture's own width.
 - **The wire cost of facings is small and the SOURCE cost is not.** Ninety
   frames is 980KB of strings that gzip to 80KB. The repo carries the 980KB.
+- **A Wang set is ONE picture per corner combination**, so an open floor is
+  that picture in every cell and reads as graph paper. Two things fix it and
+  neither invents geometry: turning and mirroring the two UNIFORM masks, which
+  carry no direction (no other mask may — rotating one makes a tile for a
+  DIFFERENT mask), and ALTERNATES off more sets of the same terrain, chained
+  on `lower_base_tile_id`.
+- **Chaining does NOT make two sets match.** Off one base tile they still came
+  back 16 and 5 points apart in mean brightness, and mixed per cell that reads
+  as a checkerboard — worse than the repetition. `tone`/`retoned` in
+  `sandbox.mts` move each alternate onto the first set's mean AND spread per
+  channel, which is what makes three sets read as one floor.
+- **`create_topdown_tileset` does not take the same enum values `art.mts`
+  uses.** `outline` is `single color outline` (not `single color black
+  outline`) and `detail` is `highly detailed` (not `high detail`).
 
 - **An export's colours are not a PALETTE.** Three frames of one body arrive
   with 87–124 distinct RGB values, past the 88 characters a row can use. So a

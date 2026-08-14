@@ -291,6 +291,13 @@ export function generatedFrame(
   return row + walk[0];
 }
 
+/** Whether a body has an animation of its OWN for what it throws — in which
+ *  case the pip over its head is a label doing a silhouette's job. */
+export const castsVisibly = (sprite: string, skill: string | null): boolean => {
+  const states = GENERATED[sprite]?.states;
+  return !!states && !!((skill ? states[skill] : null) ?? states.cast);
+};
+
 /** Tiles per second of leg movement — how fast a walk cycle plays. */
 export const WALK_CYCLE = 7;
 /** And how fast a body standing still breathes, which is far slower: an idle
@@ -443,16 +450,22 @@ export function makeProp(id: string): HTMLCanvasElement | null {
   return made.canvas;
 }
 
-export function makeTiles(id: string): HTMLCanvasElement[] | null {
+/** By corner mask, a LIST each: a second set of the same terrain is alts. */
+export function makeTiles(id: string): HTMLCanvasElement[][] | null {
   const set = TILESETS[id];
   if (!set) return null;
-  const out: HTMLCanvasElement[] = [];
+  const out: HTMLCanvasElement[][] = [];
   for (let mask = 0; mask < 16; mask++) {
-    const made = cell(set.grid);
-    const rows = set.tiles[mask];
-    if (!made || !rows) return null;
-    drawPixels(made.ctx, { rows, key: set.key, grid: set.grid }, set.grid);
-    out.push(made.canvas);
+    const all = set.tiles[mask];
+    if (!all?.length) return null;
+    const drawn: HTMLCanvasElement[] = [];
+    for (const rows of all) {
+      const made = cell(set.grid);
+      if (!made) return null;
+      drawPixels(made.ctx, { rows, key: set.key, grid: set.grid }, set.grid);
+      drawn.push(made.canvas);
+    }
+    out.push(drawn);
   }
   return out;
 }

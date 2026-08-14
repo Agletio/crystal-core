@@ -85,6 +85,9 @@ const SEPARATION_PASSES = 2;
 const AGGRO_CHAIN_RADIUS = 4.5;
 
 /** How near the way out the last encounter comes up the hole behind you. */
+const SHOW_FIGHT = 4; // seconds a sandbox hero swings at what came into reach
+const SHOW_WALK = 6; // and then walks on regardless of what is still there
+
 const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
@@ -370,6 +373,8 @@ export class RunSim {
   /** A room with bodies in it to be looked at. Nothing loses life while this is
    *  set, so nothing dies and the run has no end to reach. */
   private readonly sandbox: boolean;
+  private readonly patrol: Vec2[];
+  private patrolAt = 0;
 
   constructor(
     crystals: Item[],
@@ -391,6 +396,7 @@ export class RunSim {
     // Sockets are the only thing that lengthens a descent. An empty Fissure is
     // index zero of the same table, not a special case beside it.
     this.sandbox = !!def?.dummies?.length;
+    this.patrol = this.sandbox ? (def?.plan.patrol ?? []) : [];
     const map = def
       ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)), def.ground)
       : generateMap(
@@ -490,7 +496,9 @@ export class RunSim {
       weight: 0,
     }, ability);
     const thrown = SKILL_BY_ID[ability?.skill ?? ''];
-    const reach = { ...stats, ...thrownReach(thrown) };
+    // A ROOTED body holds its post, or everything that chases ends up in one
+    // clump behind the hero. Speed 0, so nothing else has to know.
+    const reach = { ...stats, ...thrownReach(thrown), ...(spec.rooted ? { moveSpeed: 0 } : {}) };
     return {
       id: this.nextId++,
       kind: 'monster',
@@ -906,6 +914,14 @@ export class RunSim {
         hero.targetId = null;
         hero.path = [];
       }
+      return;
+    }
+
+    // A sandbox has nowhere to walk out to: round the circuit forever instead,
+    // meeting the same bodies from a different side on every lap.
+    if (this.patrol.length > 0) {
+      const mark = this.patrol[this.patrolAt % this.patrol.length];
+      if (dist(hero, mark) <= AT_EXIT || !this.advance(hero, mark, dt)) this.patrolAt++;
       return;
     }
 
@@ -1341,10 +1357,12 @@ export class RunSim {
   }
 
   private acquireTarget(hero: Entity): Entity | null {
-    // Held until the target dies is, where nothing dies, a hero facing one way
-    // forever. Dropped, the nearest is re-picked and shoving keeps changing who
-    // that is — which is the swing in every direction the sandbox is for.
-    if (this.sandbox) hero.targetId = null;
+    // Held until it dies is, where nothing dies, one facing forever — and it
+    // lets go on a CLOCK, or bodies in reach pin it and the circuit never runs.
+    if (this.sandbox) {
+      hero.targetId = null;
+      if (this.state.elapsed % (SHOW_FIGHT + SHOW_WALK) >= SHOW_FIGHT) return null;
+    }
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
       if (held && !held.dead) return held;
@@ -1369,6 +1387,8 @@ export class RunSim {
       hero.path = [];
       return best;
     }
+    // In reach or nothing: a sandbox hero walks its CIRCUIT instead.
+    if (this.sandbox) return null;
 
     const key = nearestByPath(grid, hero, (k) => occupancy.has(k));
     if (key === null) return null;

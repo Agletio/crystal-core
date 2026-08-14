@@ -20,6 +20,7 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
 import { WALL } from '../sim/grid';
+import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
@@ -29,6 +30,7 @@ import {
   burstRadius,
   clampOffset,
   fireBolt,
+  frostShard,
   lightningArc,
   sweepRing,
   fireBurst,
@@ -54,6 +56,7 @@ import {
   CELL,
   WALK_CYCLE,
   WALK_FRAMES,
+  castsVisibly,
   generatedFrame,
   makeLookFrames,
   makeProp,
@@ -260,7 +263,7 @@ export async function createPixiRenderer(
     world.position.set(offX, offY);
   }
 
-  const tilesets = new Map<string, Texture[] | null>();
+  const tilesets = new Map<string, Texture[][] | null>();
   const props = new Map<string, Texture | null>();
 
   /** A generated prop as a texture, uploaded on first use like everything else. */
@@ -276,18 +279,20 @@ export async function createPixiRenderer(
 
   /** A generated Wang set as textures, uploaded on first use like everything
    *  else. Null once, null for good: a name nothing draws is not an error. */
-  function tilesFor(id: string): Texture[] | null {
+  function tilesFor(id: string): Texture[][] | null {
     const already = tilesets.get(id);
     if (already !== undefined) return already;
     const made =
-      makeTiles(id)?.map((canvas) => {
-        const texture = Texture.from(canvas);
-        // NEAREST, where a body is linear: a tile is drawn at or above its own
-        // size, so the sampling to protect is the enlargement rather than the
-        // reduction, and linear there is the blur pixel art exists to not be.
-        texture.source.scaleMode = 'nearest';
-        return texture;
-      }) ?? null;
+      makeTiles(id)?.map((all) =>
+        all.map((canvas) => {
+          const texture = Texture.from(canvas);
+          // NEAREST, where a body is linear: a tile is drawn at or above its
+          // own size, so the sampling to protect is the enlargement rather
+          // than the reduction, and linear is the blur pixel art is not.
+          texture.source.scaleMode = 'nearest';
+          return texture;
+        })
+      ) ?? null;
     tilesets.set(id, made);
     return made;
   }
@@ -307,11 +312,23 @@ export async function createPixiRenderer(
     const at = (gx: number, gy: number) => grid.at(gx, gy);
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        const sprite = new Sprite(textures[wangCorners(at, x, y)]);
-        sprite.x = x;
-        sprite.y = y;
+        const mask = wangCorners(at, x, y);
+        // A Wang set has ONE picture per corner combination, so an open floor
+        // is that picture in every cell of it and reads as graph paper. Two
+        // things break it up, and neither invents geometry: an ALTERNATE off a
+        // second set of the same terrain, and — for the two UNIFORM masks,
+        // which carry no direction at all — turning and mirroring. No other
+        // mask may turn: rotating one makes a tile for a DIFFERENT mask.
+        const alt = textures[mask];
+        const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
         // One texture across exactly one tile, and a hair over to close seams.
-        sprite.scale.set(1.01 / textures[0].width);
+        const size = 1.01 / alt[0].width;
+        const spun = mask === 0 || mask === 15 ? Math.floor(tileNoise(x, y, 61) * 8) : 0;
+        sprite.anchor.set(0.5);
+        sprite.x = x + 0.5;
+        sprite.y = y + 0.5;
+        sprite.rotation = (spun % 4) * (Math.PI / 2);
+        sprite.scale.set(spun >= 4 ? -size : size, size);
         groundLayer.addChild(sprite);
       }
     }
@@ -538,10 +555,10 @@ export async function createPixiRenderer(
     for (const m of state.monsters) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite);
 
-    // Ranged monsters get a pip, so a pack that shoots is identifiable
-    // before it starts shooting.
+    // A pip for a body that shoots and does not LOOK like it — see
+    // `castsVisibly`, which is what a caster of its own is for.
     for (const m of state.monsters) {
-      if (m.dead || !m.skillId) continue;
+      if (m.dead || !m.skillId || castsVisibly(m.sprite, m.skillId)) continue;
       vfxLayer
         .circle(cx(m.x), cy(m.y) - 0.55, 0.11)
         .fill(toHexNumber(palette.amethyst));
@@ -627,16 +644,12 @@ export async function createPixiRenderer(
       }
 
       if (fx.kind === 'bolt') {
-        const travel = Math.min(1, t * 1.5);
-        const tail = Math.max(0, travel - 0.3);
-        const px = from.x + (to.x - from.x) * travel;
-        const py = from.y + (to.y - from.y) * travel;
+        blocks(fireBolt(from, to, t), fx.damageType, 1);
+        continue;
+      }
 
-        vfxLayer
-          .moveTo(cx(from.x + (to.x - from.x) * tail), cy(from.y + (to.y - from.y) * tail))
-          .lineTo(cx(px), cy(py))
-          .stroke({ width: Math.max(hair, 0.1), color: colour, alpha: alpha * 0.7 });
-        vfxLayer.circle(cx(px), cy(py), 0.16).fill({ color: colour, alpha });
+      if (fx.kind === 'shard') {
+        blocks(frostShard(from, to, t), fx.damageType, 1);
         continue;
       }
 

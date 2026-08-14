@@ -4,7 +4,11 @@
   "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
   "tileset": {
     "id": "7030baac-8411-4c96-b518-075c78da2835",
-    "floorIs": "lower"
+    "floorIs": "lower",
+    "also": [
+      "9438bd82-2b9e-4e67-897c-6a04184c676c",
+      "b7935198-98f1-42e3-b323-829c21840e94"
+    ]
   },
   "hero": {
     "sprite": "delver",
@@ -80,6 +84,50 @@
           "group": "88762bcd-c254-4278-b74c-e9aa3680b268",
           "frames": 3,
           "from": 0.3
+        }
+      }
+    },
+    {
+      "sprite": "revenant",
+      "character": "34dba097-261e-4118-9a31-31e273795920",
+      "dirs": [
+        "north",
+        "north-east",
+        "east",
+        "south-east",
+        "south"
+      ],
+      "states": {
+        "idle": {
+          "group": "545b1b68-b586-4523-b7fd-80a85b8339f6",
+          "frames": 2
+        },
+        "walk": {
+          "group": "dde2b2f0-9976-42f2-a3f8-c8ef19957765",
+          "frames": 4,
+          "from": 0.25,
+          "to": 0.72
+        },
+        "attack": {
+          "group": "89691fda-544e-40a3-b040-4ab8e9ae06ea",
+          "frames": 3,
+          "from": 0.4
+        },
+        "bolt": {
+          "group": "dd1c94ff-ecc6-4745-9ae4-00273e008780",
+          "frames": 3,
+          "from": 0.3,
+          "to": 0.72
+        },
+        "frost_bolt": {
+          "group": "943f6669-b6bc-4d5d-b11a-a60dfd7ba85d",
+          "frames": 3,
+          "from": 0.4
+        },
+        "arc": {
+          "group": "bbbef39c-65a5-4c78-8c3f-5fd2800e6631",
+          "frames": 3,
+          "from": 0.42
         }
       }
     }

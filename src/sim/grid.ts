@@ -88,10 +88,8 @@ export class Grid {
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
 
-/** Can a straight line between two points avoid a wall? Sampled along the
- *  segment, not Bresenham: entities sit at fractional positions and the line
- *  between their real centres is what matters. The step is well under a tile,
- *  so a one-tile wall can never be stepped over. */
+/** Sampled along the segment rather than Bresenham: entities sit at fractional
+ *  positions, and the step is well under a tile so nothing steps over a wall. */
 export function hasLineOfSight(grid: Grid, a: Vec2, b: Vec2): boolean {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -378,14 +376,21 @@ export function sceneMap(
   vein = 1,
   ground?: string
 ): GameMap {
-  const room = plan.room;
-  const grid = new Grid(room.x + room.w + 1, room.y + room.h + 1);
-  carveRoom(grid, room, CUT[theme] ?? 'dug');
+  // A cavern is LOBES that pinch, where one rectangle is a hall: `also` is
+  // more chambers cut the same way and left to overlap. The grid has to cover
+  // all of them, or a lobe past the first is silently clipped.
+  const rooms = [plan.room, ...(plan.also ?? [])];
+  const grid = new Grid(
+    Math.max(...rooms.map((r) => r.x + r.w)) + 2,
+    Math.max(...rooms.map((r) => r.y + r.h)) + 2
+  );
+  const cut = plan.cut ?? CUT[theme] ?? 'dug';
+  for (const r of rooms) carveRoom(grid, r, cut);
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
 
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
-  return { grid, rooms: [room], entrance, exit: entrance, props: plan.props, vein, theme, ground };
+  return { grid, rooms, entrance, exit: entrance, props: plan.props, vein, theme, ground };
 }

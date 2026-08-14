@@ -64,6 +64,38 @@
           "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
         }
       }
+    },
+    {
+      "sprite": "revenant",
+      "name": "Fissure Revenant",
+      "look": "an evil skeletal sorcerer: a tall gaunt skeleton in a long ragged black hooded cape that hangs to the ankles and is torn to strips at the hem, the hood pulled up and thrown back off a cracked elongated skull, two hot points of pale light burning deep in the eye sockets, a heavy black iron collar and chain-scraps at the shoulders, bare finger bones. Bone the colour of old rock, cape near-black charcoal with a cold grey edge where the light catches it. Menacing and predatory. No blood, no gore, no red, no fire and no magic aura around the body.",
+      "states": {
+        "idle": {
+          "frames": 4,
+          "say": "standing still and hunched forward, breathing, the long cape hanging and stirring at the hem, head barely moving"
+        },
+        "walk": {
+          "frames": 8,
+          "say": "stalking forward with long slow strides, shoulders hunched, the long cape trailing and swaying behind the legs"
+        },
+        "attack": {
+          "frames": 4,
+          "say": "staying in strict side profile, lunging forward onto the front foot and raking one clawed hand across at chest height, then pulling it back"
+        },
+        "bolt": {
+          "frames": 6,
+          "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
+        },
+        "frost_bolt": {
+          "frames": 4,
+          "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
+        },
+        "arc": {
+          "frames": 6,
+          "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
+        }
+      },
+      "character": "34dba097-261e-4118-9a31-31e273795920"
     }
   ]
 }

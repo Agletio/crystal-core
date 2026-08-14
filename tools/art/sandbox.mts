@@ -52,7 +52,11 @@ interface PropSpec {
 }
 
 interface Manifest {
-  tileset: { id: string; floorIs: string };
+  /** `also` names more tilesets of the SAME terrain, chained off this one's
+   *  lower base tile. Their tiles are ALTERNATES for the mask they carry: a
+   *  Wang set has one picture per corner combination, so an open floor is that
+   *  one picture in every cell of it and reads as graph paper. */
+  tileset: { id: string; floorIs: string; also?: string[] };
   hero: BodySpec;
   bodies: BodySpec[];
   props: PropSpec[];
@@ -65,7 +69,7 @@ type Art = {
   states: Record<string, number[]>;
   key: Record<string, string>;
 };
-type Ground = { grid: number; tiles: Record<number, string[]>; key: Record<string, string> };
+type Ground = { grid: number; tiles: Record<number, string[][]>; key: Record<string, string> };
 type Prop = { grid: number; tiles: number; rows: string[]; key: Record<string, string> };
 
 const manifest: Manifest = JSON.parse(
@@ -317,28 +321,79 @@ async function sheetOf(tilesetId: string): Promise<{ sheet: Decoded; tiles: Wang
   return { sheet, tiles: data.tileset_data?.tiles ?? [] };
 }
 
-async function ground(spec: { id: string; floorIs: string }): Promise<Ground> {
-  const { sheet, tiles: list } = await sheetOf(spec.id);
-  if (list.length !== 16) throw new Error(`${list.length} tiles is not a 16-tile Wang set`);
+type Tone = { mean: number[]; spread: number[] };
 
-  const boxes = list.map((t) => ({
-    mask: cornerMask(t, spec.floorIs),
-    box: {
-      x: t.bounding_box.x,
-      y: t.bounding_box.y,
-      w: t.bounding_box.width,
-      h: t.bounding_box.height,
-    },
-  }));
+/** Mean and spread per channel over the tiles of a sheet, opaque pixels only. */
+function tone(sheet: Decoded, boxes: Box[]): Tone {
+  const seen: number[][] = [[], [], []];
+  for (const box of boxes) {
+    for (let y = 0; y < box.h; y++) {
+      for (let x = 0; x < box.w; x++) {
+        const at = ((box.y + y) * sheet.width + (box.x + x)) * 4;
+        if (sheet.rgba[at + 3] < 128) continue;
+        for (let c = 0; c < 3; c++) seen[c].push(sheet.rgba[at + c]);
+      }
+    }
+  }
+  const mean = seen.map((v) => v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
+  const spread = seen.map((v, c) =>
+    Math.sqrt(v.reduce((a, b) => a + (b - mean[c]) ** 2, 0) / Math.max(1, v.length))
+  );
+  return { mean, spread };
+}
+
+/** Every pixel moved onto another sheet's mean AND spread. Two sets of the same
+ *  terrain come back at visibly different brightness and contrast even chained
+ *  off one base tile, and mixed per cell that reads as a CHECKERBOARD — which
+ *  is worse than the repetition the alternates exist to break up. */
+function retoned(sheet: Decoded, has: Tone, want: Tone): Decoded {
+  const rgba = new Uint8Array(sheet.rgba);
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] < 128) continue;
+    for (let c = 0; c < 3; c++) {
+      const scale = has.spread[c] > 1 ? want.spread[c] / has.spread[c] : 1;
+      const moved = (rgba[i + c] - has.mean[c]) * scale + want.mean[c];
+      rgba[i + c] = Math.max(0, Math.min(255, Math.round(moved)));
+    }
+  }
+  return { width: sheet.width, height: sheet.height, rgba };
+}
+
+async function ground(spec: { id: string; floorIs: string; also?: string[] }): Promise<Ground> {
+  const raw = await Promise.all([spec.id, ...(spec.also ?? [])].map(sheetOf));
+  const rect = (t: WangTile): Box => ({
+    x: t.bounding_box.x,
+    y: t.bounding_box.y,
+    w: t.bounding_box.width,
+    h: t.bounding_box.height,
+  });
+  const want = tone(raw[0].sheet, raw[0].tiles.map(rect));
+  const sets = raw.map(({ sheet, tiles: list }, i) => {
+    if (i === 0) return { sheet, tiles: list };
+    const has = tone(sheet, list.map(rect));
+    console.log(
+      `  set ${i}: mean ${has.mean.map((v) => v.toFixed(0)).join('/')} -> ` +
+        `${want.mean.map((v) => v.toFixed(0)).join('/')}`
+    );
+    return { sheet: retoned(sheet, has, want), tiles: list };
+  });
+  const boxes = sets.flatMap(({ sheet, tiles: list }) => {
+    if (list.length !== 16) throw new Error(`${list.length} tiles is not a 16-tile Wang set`);
+    return list.map((t) => ({ sheet, mask: cornerMask(t, spec.floorIs), box: rect(t) }));
+  });
+
   const inks = new Inks();
-  for (const { box } of boxes) noted(sheet, inks, box);
+  for (const { sheet, box } of boxes) noted(sheet, inks, box);
   inks.settle(GROUND_INKS);
 
-  const tiles: Record<number, string[]> = {};
-  for (const { mask, box } of boxes) tiles[mask] = rowsOf(sheet, inks, box);
-  if (Object.keys(tiles).length !== 16) throw new Error('two tiles claim the same corners');
+  const tiles: Record<number, string[][]> = {};
+  for (const { sheet, mask, box } of boxes) (tiles[mask] ??= []).push(rowsOf(sheet, inks, box));
+  if (Object.keys(tiles).length !== 16) throw new Error('a mask is missing from the set');
   const grid = boxes[0].box.w;
-  console.log(`ground: ${grid} grid, 16 tiles, ${inks.distinct} colours into ${inks.size}`);
+  console.log(
+    `ground: ${grid} grid, ${sets.length} set(s), ${boxes.length} tiles over 16 masks, ` +
+      `${inks.distinct} colours into ${inks.size}`
+  );
   return { grid, tiles, key: inks.key };
 }
 
@@ -450,12 +505,16 @@ if (manifest.tileset.id) {
         ` * without a seam. Keyed by NW/NE/SW/SE as one bit each, high to low, with a\n` +
         ` * set bit meaning floor — all sixteen, so no map can ask for one it lacks.`
     ) +
-      `export type GeneratedTiles = { grid: number; tiles: Record<number, string[]>; key: Record<string, string> };\n\n` +
+      `export type GeneratedTiles = {\n  grid: number;\n` +
+      `  /** Every tile that fits a corner combination. More than one is an\n` +
+      `   *  ALTERNATE off a second set of the same terrain — one picture per\n` +
+      `   *  mask reads as graph paper across an open floor. */\n` +
+      `  tiles: Record<number, string[][]>;\n  key: Record<string, string>;\n};\n\n` +
       `export const TILESETS: Record<string, GeneratedTiles> = {\n  mineshaft: {\n` +
       `    grid: ${floor.grid},\n    tiles: {\n` +
       Object.entries(floor.tiles)
         .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([mask, rows]) => `      ${mask}: ${rowSource(rows, '      ')},`)
+        .map(([mask, all]) => `      ${mask}: [${all.map((rows) => rowSource(rows, '      ')).join(', ')}],`)
         .join('\n') +
       `\n    },\n    key: ${JSON.stringify(floor.key)},\n  },\n};\n`
   );

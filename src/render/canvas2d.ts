@@ -19,6 +19,7 @@ import {
   burstRadius,
   clampOffset,
   fireBolt,
+  frostShard,
   lightningArc,
   sweepRing,
   fireBurst,
@@ -378,17 +379,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         // Second point carries the radius, same contract as the burst.
         blocks(v, sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
       } else if (fx.kind === 'bolt') {
-        const travel = Math.min(1, t * 1.5);
-        const tail = Math.max(0, travel - 0.3);
-        const px = from.x + (to.x - from.x) * travel;
-        const py = from.y + (to.y - from.y) * travel;
-        ctx.beginPath();
-        ctx.moveTo(cx(v, from.x + (to.x - from.x) * tail), cy(v, from.y + (to.y - from.y) * tail));
-        ctx.lineTo(cx(v, px), cy(v, py));
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx(v, px), cy(v, py), v.tile * 0.16, 0, Math.PI * 2);
-        ctx.fill();
+        blocks(v, fireBolt(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'shard') {
+        blocks(v, frostShard(from, to, t), fx.damageType, 1);
       } else if (fx.points.length >= 2) {
         ctx.beginPath();
         ctx.moveTo(cx(v, from.x), cy(v, from.y));

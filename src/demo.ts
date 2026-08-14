@@ -111,7 +111,7 @@ import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './rend
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
-import { generatedFrame } from './render/sprites';
+import { facingRow, generatedFrame } from './render/sprites';
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
@@ -2128,12 +2128,24 @@ rule('THE SANDBOX — does the room show what a body can DO?');
   const sim = new RunSim([], createGame('dev').character, new Rng(5), { scene: 'sandbox' });
   const kinds = new Set<string>();
   const frames = new Set<number>();
-  for (let i = 0; i < 4000 && sim.state.status === 'running'; i++) {
+  // What the room is FOR: every facing of every body, and the hero seen doing
+  // each of the things it does. A room where all of that is true of a still is
+  // a room somebody has to drive to review.
+  const facings = new Map<string, Set<number>>();
+  const doing = new Set<string>();
+  const start = { x: sim.state.hero.x, y: sim.state.hero.y };
+  let walked = 0;
+  for (let i = 0; i < 8000 && sim.state.status === 'running'; i++) {
     sim.step(TICK);
     for (const v of sim.state.vfx) kinds.add(v.kind);
-    for (const m of sim.state.monsters) {
-      if (m.action === 'attack') {
-        frames.add(generatedFrame(m.sprite, m.action, 0.5, sim.state.elapsed, m.skillId, m.facing));
+    walked = Math.max(walked, Math.hypot(sim.state.hero.x - start.x, sim.state.hero.y - start.y));
+    for (const e of [sim.state.hero, ...sim.state.monsters]) {
+      if (e.dead) continue;
+      if (!facings.has(e.sprite)) facings.set(e.sprite, new Set());
+      facings.get(e.sprite)!.add(facingRow(e.sprite, e.facing));
+      if (e.kind === 'hero') doing.add(e.action);
+      if (e.action === 'attack' && e.kind === 'monster') {
+        frames.add(generatedFrame(e.sprite, e.action, 0.5, sim.state.elapsed, e.skillId, e.facing));
       }
     }
   }
@@ -2155,6 +2167,23 @@ rule('THE SANDBOX — does the room show what a body can DO?');
     'nothing died in it, and it never ended',
     `${sim.state.status}, ${sim.state.monsters.filter((m) => m.dead).length} down`
   );
+
+  // And the three the SHOWCASE lives by. A hero that stops at the first body
+  // it meets shows one facing of one animation for the life of the room, which
+  // is what the circuit exists to stop.
+  check(walked > 12, 'the hero walks the room rather than standing in it', `${walked.toFixed(1)} tiles`);
+  check(
+    doing.has('move') && doing.has('attack'),
+    'and is seen walking AND swinging',
+    [...doing].join(', ')
+  );
+  const flat = [...facings].filter(([id, rows]) => (GENERATED[id]?.dirs.length ?? 1) > 1 && rows.size < 3);
+  check(
+    flat.length === 0,
+    `and every body is met from 3 or more of its facings`,
+    flat.map(([id, r]) => `${id}: ${r.size}`).join(', ')
+  );
+  line(`  facings seen: ${[...facings].map(([id, r]) => `${id} ${r.size}`).join(', ')}`);
 }
 
 // ===========================================================================
