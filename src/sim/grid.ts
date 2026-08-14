@@ -135,8 +135,10 @@ export interface GameMap {
   vein: number;
   /** Which world this rock belongs to. Presentation only, same as the vein. */
   theme: MapTheme;
-  /** Draw no ground at all: a room with nothing in it but its props. */
+  /** Draw no ground of the zone's own: a scene brings its own surface. */
   bare?: boolean;
+  /** Which generated tileset that surface is, when there is one. */
+  zone?: string;
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -552,7 +554,8 @@ export function sceneMap(
   plan: ScenePlan,
   theme: MapTheme,
   vein = 1,
-  bare = false
+  bare = false,
+  zone?: string
 ): GameMap {
   // `also` is more chambers, cut the same way. Where they do not touch they
   // are JOINED by the same wandering corridor a descent is joined by, so a
@@ -594,5 +597,5 @@ export function sceneMap(
     props.unshift(...coverFloor(grid, new Rng(4)));
   }
   block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare };
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare, zone };
 }

@@ -98,7 +98,8 @@ export const SANDBOX: SceneDef = {
   who: MELEE,
   name: 'Sandbox',
   theme: 'fissure', // what it is dressed as, once anything draws ground again
-  bare: true, // no ground at all: the props, the bodies and black
+  bare: true, // the zone's own rock stands down for the generated set
+  zone: 'round_enhanced',
   hero: { sprite: HERO, at: { x: 0, y: 0 }, scale: 1.5, speed: 0.5 },
   plan: {
     room: ROOMS[0],

@@ -58,7 +58,8 @@ export interface SceneDef {
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
   dummies?: SceneDummy[]; // and their presence is what makes a room a SANDBOX
-  bare?: boolean; // draw no ground at all: props on black. Pixi only
+  bare?: boolean; // the zone's own rock stands down. Pixi only
+  zone?: string; // a generated tileset for the whole surface
   hero?: SceneDummy; // a body the hero is drawn as, over the doll it is made of
 }
 

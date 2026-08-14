@@ -60,6 +60,7 @@ import {
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
+import { ZONES } from './generated-tiles';
 import {
   COVER_ALPHA,
   COVER_DARK,
@@ -74,6 +75,10 @@ import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
 import type { PoseId } from './pose';
+
+/** How far past the grid the rock is drawn, so a chamber near the boundary
+ *  does not end on a straight lit line with nothing past it. */
+const EDGE = 4;
 
 const FLOATER_LIFE = 1.1;
 
@@ -290,16 +295,128 @@ export async function createPixiRenderer(
     return made;
   }
 
+  /** Every sheet, sliced into one texture per tile. Decoding a data URI is
+   *  ASYNC, so it happens here where the renderer is already being awaited —
+   *  sliced on first use instead, the draw runs before the image has loaded
+   *  and the whole floor is silently missing. */
+  const zones = new Map<string, Texture[]>();
+  for (const [id, set] of Object.entries(ZONES)) {
+    const sheet = new Image();
+    sheet.src = set.png;
+    try {
+      await sheet.decode();
+    } catch {
+      continue;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = sheet.width;
+    canvas.height = sheet.height;
+    const ink = canvas.getContext('2d');
+    if (!ink) continue;
+    ink.drawImage(sheet, 0, 0);
+    zones.set(
+      id,
+      set.tiles.map(({ box }) => {
+        const one = document.createElement('canvas');
+        one.width = box[2];
+        one.height = box[3];
+        one.getContext('2d')?.drawImage(canvas, box[0], box[1], box[2], box[3], 0, 0, box[2], box[3]);
+        const texture = Texture.from(one);
+        // NEAREST: a tile is drawn at or above its own size, so what has to
+        // survive is the enlargement.
+        texture.source.scaleMode = 'nearest';
+        return texture;
+      })
+    );
+  }
+
   /**
-   * The generated PROPS, and nothing else. The room draws no ground of its own:
-   * what stood here was a Wang tileset and every rule for lighting, walling and
-   * dropping off it, and it is deleted. The art survives — `PROP_ART` is a
-   * picture per prop and `COVER_PROPS` is the loose stone under them — so
-   * whatever is built next has furniture to put in it on day one.
+   * A cell's four CORNERS in base three: 0 floor, 1 rock, 2 the cut face. A
+   * corner is rock only where all four cells round it are, and it is the FACE
+   * where the corner one row above is — which is what puts the cliff in the
+   * cell BELOW the boundary and makes a wall two rows tall.
+   */
+  function corners(grid: GameMap['grid'], x: number, y: number): number {
+    const rock = (cx: number, cy: number): boolean =>
+      grid.at(cx - 1, cy - 1) === WALL && grid.at(cx, cy - 1) === WALL &&
+      grid.at(cx - 1, cy) === WALL && grid.at(cx, cy) === WALL;
+    const one = (cx: number, cy: number): number => (rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0);
+    return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
+  }
+
+  /**
+   * The ground, and the props standing on it. A tileset is the WHOLE surface,
+   * so the zone's own rock and decals stand down for one.
    */
   function buildProps(map: GameMap): void {
     groundLayer.removeChildren().forEach((child) => child.destroy());
     if (!map.bare) return;
+
+    const set = map.zone ? ZONES[map.zone] : null;
+    const art = map.zone ? zones.get(map.zone) : null;
+    if (set && art) {
+      const { grid } = map;
+      // The four wall-CONTINUATION tiles share their corners with a twin and
+      // are told apart by what stands above or below them, so a tile is scored
+      // rather than looked up: corners first, then each row it agrees with.
+      // A set answers 21 of the 81 keys, so a cell whose corners it has no
+      // picture for takes the NEAREST it does — the cut face is BETWEEN floor
+      // and rock, so trading it for either is one step where trading floor for
+      // rock is three. Without this a key nothing draws is a black hole in the
+      // ground, which is what it was.
+      const PLACE = [27, 9, 3, 1];
+      const near = new Map<number, number>();
+      const nearest = (key: number): number => {
+        const found = near.get(key);
+        if (found !== undefined) return found;
+        const mine = PLACE.map((p) => Math.floor(key / p) % 3);
+        let best = 0;
+        let cost = Infinity;
+        for (const tile of set.tiles) {
+          let apart = 0;
+          for (let c = 0; c < 4; c++) {
+            const theirs = Math.floor(tile.key / PLACE[c]) % 3;
+            apart += mine[c] === theirs ? 0 : mine[c] === 2 || theirs === 2 ? 1 : 3;
+          }
+          if (apart < cost) {
+            cost = apart;
+            best = tile.key;
+          }
+        }
+        near.set(key, best);
+        return best;
+      };
+      const pick = (raw: number, over: number, under: number): Texture | null => {
+        const key = nearest(raw);
+        let best = -1;
+        let score = -Infinity;
+        set.tiles.forEach((tile, i) => {
+          if (tile.key !== key) return;
+          let mine = 0;
+          if (tile.over[1] !== 255) mine += tile.over[1] === over ? 2 : -3;
+          if (tile.under[1] !== 255) mine += tile.under[1] === under ? 2 : -3;
+          if (mine > score) {
+            score = mine;
+            best = i;
+          }
+        });
+        return best < 0 ? null : art[best];
+      };
+      const size = 1.002 / set.grid;
+      for (let y = -EDGE; y < grid.height + EDGE; y++) {
+        for (let x = -EDGE; x < grid.width + EDGE; x++) {
+          const over = grid.at(x, y - 1) === WALL ? 1 : 0;
+          const under = grid.at(x, y + 1) === WALL ? 1 : 0;
+          const texture = pick(corners(grid, x, y), over, under);
+          if (!texture) continue;
+          const sprite = new Sprite(texture);
+          sprite.x = x;
+          sprite.y = y;
+          sprite.scale.set(size);
+          groundLayer.addChild(sprite);
+        }
+      }
+    }
 
     // COVER first, so furniture stands ON the rubble, and nearest LAST within
     // the furniture, or a hanging body is drawn inside its own rock. Anchored

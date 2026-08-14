@@ -407,7 +407,7 @@ export class RunSim {
     this.sandbox = !!def?.dummies?.length;
     this.patrol = this.sandbox ? (def?.plan.patrol ?? []) : [];
     const map = def
-      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)), def.bare)
+      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)), def.bare, def.zone)
       : generateMap(
           this.set.mods,
           rng,
