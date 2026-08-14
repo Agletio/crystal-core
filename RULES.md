@@ -1501,11 +1501,14 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   no second mechanism is needed to make one. Nothing a room stands somebody on
   is ever left as void — the reserved tiles are restored after the cut, since a
   hole under the hero is a room nobody can be in.
-- **A hole is DRAWN, not skipped.** The tile over one carries the edge that
-  interlocks with its neighbours, so leaving it out makes the drop-off a black
-  square. It is drawn from the same set and faded by `VOID_FADE`, deepest in.
-  And it takes no part in the lightmap's blend: a corner it shared would fade
-  the floor's own edge out, where a drop-off is the ground STOPPING.
+- **A hole gets NO TILE, and the drop is HARD.** *The user's call, twice: "it
+  should be a sharp drop not the fade".* What is under the ground layer is
+  black and the light MULTIPLIES, so an empty cell can never be lifted — the
+  edge is exactly where the ground stops. Drawn and faded instead, a hole reads
+  as an unlit patch of the same floor, which is what a soft rim always comes to
+  at this size. The earlier rule here said the opposite, on the finding that
+  skipping the tile made a black SQUARE; that was true when nothing else drew
+  the edge, and the lip pass is what changed it.
 - **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
   where all four cells round it are, so a finger of stone one cell thick holds
   no rock corner at all and comes out as cut faces with nothing between them —

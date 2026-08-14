@@ -9,8 +9,8 @@
  * is the exception — it sits in screen space so it stays crisp.
  *
  * Construction is async (Pixi 8 initialises the GPU device asynchronously) and
- * can fail — no WebGL, headless, a hostile driver. It returns null in that
- * case and the caller falls back to canvas2d.
+ * can fail — no WebGL, headless, a hostile driver. It returns null then, and
+ * the caller falls back to canvas2d.
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
@@ -91,9 +91,9 @@ const ALL_ROCK = 40;
  * reads as chambers punched out of a paved field.
  *
  * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
- * tiles, leaving a lit rim and nothing past it. `GRAIN` answers the other half:
- * a set has ONE picture per corner combination, and a rise and fall over
- * `GRAIN_SPAN` tiles reads as damp, as dust, as where the roof came down.
+ * tiles, leaving a lit rim. `GRAIN` answers the other half: a set has ONE
+ * picture per corner combination, and a rise and fall over `GRAIN_SPAN` tiles
+ * reads as damp, as dust, as where the roof came down.
  *
  * None of it is a TINT. A tint is per tile, so every falloff it can express is
  * a staircase of flat rectangles. `lightMap` bakes the lot into one texel per
@@ -105,9 +105,6 @@ const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
 /** How far up the cut face what hangs on it sits. */
 const WALL_LIFT = 0.35;
-/** What is left of a tile over a hole, by how deep in. The RIM keeps enough to
- *  read as broken ground; flat black comes out a square. */
-const VOID_FADE = [0.42, 0.13, 0.04];
 /** What a tile made entirely of cut face is worth against a lit one. */
 const WALL_FACE = 0.4;
 const grey = (of: number): number => {
@@ -149,9 +146,9 @@ export async function createPixiRenderer(
       frames?.map((canvas) => {
         const texture = Texture.from(canvas);
         // Linear, because a cell is ALWAYS bigger than the tile it lands in —
-        // 256 into 87 device pixels at the default camera. Downscaling with
-        // nearest drops rows and shimmers as a body moves; linear supersamples,
-        // which is the whole reason to author above what the screen shows.
+        // 256 into 87 device pixels at the default camera. Nearest drops rows
+        // and shimmers as a body moves; linear supersamples, which is the whole
+        // reason to author above what the screen shows.
         texture.source.scaleMode = 'linear';
         return texture;
       }) ?? null;
@@ -536,21 +533,20 @@ export async function createPixiRenderer(
       sprite.x = x;
       sprite.y = y;
       sprite.scale.set(size);
-      // The CUT FACE stands down, by how much of the tile is face: it is a
-      // VERTICAL surface, and `intoRock` lights that very cell brightest.
+      // The CUT FACE stands down, by how much of the tile is face: it is
+      // VERTICAL, and `intoRock` lights that very cell brightest.
       const faces = wangFaces(key);
       if (faces > 0) sprite.tint = grey(1 - (1 - WALL_FACE) * (faces / 4));
       groundLayer.addChild(sprite);
       return sprite;
     };
 
+    // A HOLE gets no tile. What is under the lot is black and the light
+    // multiplies, so nothing lifts it: the drop is a HARD edge under the lip's
+    // rock wall rather than the ground dissolving into fog.
     for (let y = -EDGE; y < grid.height + EDGE; y++) {
       for (let x = -EDGE; x < grid.width + EDGE; x++) {
-        const sprite = lay(x, y, wangCorners(at, x, y));
-        if (sprite && grid.at(x, y) === VOID) {
-          const deep = Math.min(VOID_FADE.length, Math.max(1, intoRock[y * grid.width + x]));
-          sprite.tint = grey(VOID_FADE[deep - 1]);
-        }
+        if (grid.at(x, y) !== VOID) lay(x, y, wangCorners(at, x, y));
       }
     }
     // THE LIP. A drop is a wall seen from the other side, and the set draws

@@ -60,11 +60,16 @@ await page.waitForTimeout(2500);
 
 for (let i = 0; i < Number(zoom); i++) await page.mouse.wheel(0, 120);
 await page.waitForTimeout(400);
-if (Number(panX) || Number(panY)) {
+// Split across several drags: one is bounded by the window, so a pan across a
+// whole map cannot be a single gesture.
+const REACH = 400;
+const legs = Math.ceil(Math.max(Math.abs(panX), Math.abs(panY)) / REACH);
+for (let i = 0; i < legs; i++) {
   await page.mouse.move(640, 400);
   await page.mouse.down();
-  await page.mouse.move(640 - Number(panX), 400 - Number(panY), { steps: 12 });
+  await page.mouse.move(640 - Number(panX) / legs, 400 - Number(panY) / legs, { steps: 12 });
   await page.mouse.up();
+  await page.waitForTimeout(80);
 }
 await page.waitForTimeout(800);
 

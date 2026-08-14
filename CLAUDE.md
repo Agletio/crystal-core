@@ -132,8 +132,9 @@ below — so a hole keyed as stone comes out a raised BLOCK, its cliff on the
 wrong rim. So `buildGround` keys it again INVERTED, the hole as the low ground
 and everything else as the high, and lays that pass over the first wherever it
 holds a face. What it puts down is the LIP: the ground's own edge, lit, ending
-in a cut face over the black. The tile over the hole itself is drawn from the
-same set and faded by `VOID_FADE`, because that tile is what interlocks.
+in a cut face over the black. The hole itself gets NO tile — black is under the
+whole layer and the light multiplies, so nothing can lift it and the drop is a
+HARD edge. Faded instead, it reads as an unlit patch of the same floor.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
