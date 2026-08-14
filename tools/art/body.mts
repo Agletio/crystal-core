@@ -38,12 +38,13 @@ const here = (file: string): string => new URL(`./${file}`, import.meta.url).pat
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   dirs: string[];
   bodies: BodyAsk[];
-  props: { id: string; tiles: number; say: string }[];
+  props: { id: string; tiles: number; say: string; view?: string; size?: number }[];
 };
 type Made = { sprite: string; states: Record<string, { group: string }> };
 const shipped = JSON.parse(readFileSync(here('sandbox.json'), 'utf8')) as {
   hero: Made;
   bodies: Made[];
+  props: { id: string }[];
 };
 /** The hero is a body like any other here: it is drawn out of the same table,
  *  and only the room it stands in knows the difference. */
@@ -191,12 +192,16 @@ if (command === 'ask') {
   // ~15-30s each and about five may be in flight, so they go in twos with a
   // pause. Nothing here waits for one: the id is what is wanted, and
   // `sandbox.mts` reads whatever has finished by the time it runs.
-  for (const [i, ask] of asks.props.entries()) {
+  // Only what has no id yet, so a run after adding a row costs one generation.
+  // Naming one is how a bad roll is asked for AGAIN.
+  const done = new Set(shipped.props.map((p) => p.id));
+  const want = asks.props.filter((p) => (sprite ? p.id === sprite : !done.has(p.id)));
+  for (const [i, ask] of want.entries()) {
     const out = await callTool('create_map_object', {
       description: ask.say,
-      width: 96,
-      height: 96,
-      view: 'high top-down',
+      width: ask.size ?? 96,
+      height: ask.size ?? 96,
+      view: ask.view ?? 'high top-down',
       outline: 'single color outline',
       shading: 'medium shading',
       detail: 'high detail',

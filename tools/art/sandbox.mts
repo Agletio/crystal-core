@@ -61,7 +61,7 @@ interface Manifest {
    *  lower base tile. Their tiles are ALTERNATES for the mask they carry: a
    *  Wang set has one picture per corner combination, so an open floor is that
    *  one picture in every cell of it and reads as graph paper. */
-  tileset: { id: string; floorIs: string; also?: string[]; shade?: number };
+  tileset: { id: string; floorIs: string; also?: string[] };
   hero: BodySpec;
   bodies: BodySpec[];
   props: PropSpec[];
@@ -370,34 +370,7 @@ function retoned(sheet: Decoded, has: Tone, want: Tone, by = 1): Decoded {
   return { width: sheet.width, height: sheet.height, rgba };
 }
 
-/** The floor-side row of a cut face is SHADOW cast by the rock, and it comes
- *  back as a lit LEDGE about half the time — a light band along every wall,
- *  which reads as paving dropped on the floor. Darkened here rather than a
- *  whole set re-rolled for one class of tile, and on the SHEET before
- *  quantising, since one key serves every tile in it. */
-function darkened(sheet: Decoded, boxes: Box[], by: number): Decoded {
-  const rgba = new Uint8Array(sheet.rgba);
-  for (const box of boxes) {
-    for (let y = 0; y < box.h; y++) {
-      for (let x = 0; x < box.w; x++) {
-        const at = ((box.y + y) * sheet.width + (box.x + x)) * 4;
-        for (let c = 0; c < 3; c++) rgba[at + c] = Math.round(rgba[at + c] * (1 - by));
-      }
-    }
-  }
-  return { width: sheet.width, height: sheet.height, rgba };
-}
-
-/** NW and NE both the cut face: the cell BELOW a cliff, which is its shadow. */
-const isShadowRow = (key: number): boolean =>
-  Math.floor(key / 27) % 3 === 2 && Math.floor(key / 9) % 3 === 2;
-
-async function ground(spec: {
-  id: string;
-  floorIs: string;
-  also?: string[];
-  shade?: number;
-}): Promise<Ground> {
+async function ground(spec: { id: string; floorIs: string; also?: string[] }): Promise<Ground> {
   const raw = await Promise.all([spec.id, ...(spec.also ?? [])].map(sheetOf));
   const rect = (t: WangTile): Box => ({
     x: t.bounding_box.x,
@@ -415,14 +388,6 @@ async function ground(spec: {
     );
     return { sheet: retoned(sheet, has, want), tiles: list };
   });
-  // Darken the shadow row on each sheet before anything reads it.
-  if (spec.shade) {
-    for (const set of sets) {
-      const dim = set.tiles.filter((t) => isShadowRow(cornerKey(t, spec.floorIs))).map(rect);
-      if (dim.length > 0) set.sheet = darkened(set.sheet, dim, spec.shade);
-    }
-  }
-
   const boxes = sets.flatMap(({ sheet, tiles: list }) =>
     list.map((t) => ({ sheet, mask: cornerKey(t, spec.floorIs), box: rect(t) }))
   );

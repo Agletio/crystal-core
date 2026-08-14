@@ -769,6 +769,29 @@ tile is lit from one side, so a rotated one clashes with its neighbour and the
 floor reads as a checkerboard — worse than the repetition it was meant to fix.
 An edge tile carries the cut face and its neighbour has to continue it.
 
+**Repetition is answered with LIGHT, since it cannot be answered with tiles.**
+A Wang set has one picture per corner combination, so an open floor is that
+picture in every cell. `GRAIN` in `pixi.ts` rises and falls over about three
+tiles of smooth value noise and reads as damp, as dust, as where the roof came
+down — out of the same one tile. It is read BETWEEN the noise's own cells:
+sampled at them it is a chequerboard of its own.
+
+**Rock stands DOWN, and its own set will not do it.** A set is drawn to be
+looked at as terrain, so its stone is lit like the floor and is often lighter;
+laid flat across a map that reads as chambers punched out of a paved field.
+`ROCK_TOP` knocks every wall cell back and `ROCK_REACH` runs it to nothing over
+three tiles off the floor, which leaves a lit rim and dark past it.
+
+**A per-tile tint is a BAND, never a gradient.** Three tiles of falloff along a
+wall is a staircase of flat rectangles, and against an irregular room edge that
+is a chequerboard. The wall's own shadow is `FOOT_DARK` on the one row that
+touches stone and nothing beyond it.
+
+**A cut-face key with no ROCK at any corner is not drawn.** `wangShadow` names
+them: the cell BELOW a cliff, which a deep-walled set draws as its own flat
+rectangle of shadow, and a run of those along a wall reads as paving laid at
+the foot of it. It falls back to plain floor and the renderer shades that row.
+
 **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
 `GENERATED`, so an id in both is a generated body that never draws, silently —
 it cost a whole session's judgement of generated art, which was made about the
@@ -1418,6 +1441,25 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   `livingDecals` and its entrance rect all stand down. Masonry with the
   Fissure's flagstones stamped over it is two floors at once. Pixi only —
   `canvas2d` has no sprites and that stays correct.
+- **Furniture goes down a CLUSTER at a time, and the rock's leavings a tile at
+  a time.** `VIGNETTES` is authored arrangements and `dressRooms` places them;
+  `FRINGE_PROPS` / `LOOSE_PROPS` / `WALL_PROPS` are the debris and growth, and
+  `dressEdges` scatters those over the WHOLE grid so a corridor is dressed like
+  a chamber. What reads as a cavern is the FOOT of the rock: an open floor
+  stays nearly bare and the wall gets most of it.
+- **An arrangement is chosen for the SPOT, not given one.** A ragged room holds
+  a four-tile square in about one spot in fifteen, so picking the altar and
+  hunting for room leaves the chamber bare; picking a spot and taking the
+  biggest that fits there, biggest first, lands it. Weight is multiplied by
+  AREA, or the small ones take every space big enough for the large ones.
+- **A `WALL_PROPS` entry is the one thing placed INTO rock**, and only on a
+  cut face — rock with rock above it and floor below. It is drawn side-on,
+  which is what that surface is; anywhere else it is a picture inside a cliff.
+  The demo holds every other prop to standing on floor.
+- **A generated picture of a wide floor STAIN comes back as an object** —
+  round, centred, edged, a disc lying on the ground. Three small ones on
+  touching tiles make an outline nobody drew. The same defeat, four attempts
+  apart, killed the ritual circle twice.
 - **A generated PROP is a picture; a hand-drawn one is decals.** `PROP_ART`
   beside `PROPS`, anchored at the FOOT of its tile rather than the middle, or
   anything taller than a tile looks like it is sinking into the floor. `tiles`
@@ -1427,6 +1469,15 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
 - **A room may draw the HERO as a body.** `SceneDef.hero` replaces the doll and
   its `look` both. It carries its own scale for the reason below, and it is the
   last thing that made a sandbox use none of the game's own art.
+- **A room's swell may only ADD.** `carveRoom`'s headlands ride on top of the
+  ragging rather than replacing it, so every tile the old carve took is still
+  taken. A swell that can pull IN puts an authored room's furniture in the
+  rock — it did, in two of them, and the shape of a cave is not worth
+  re-placing a library every time anybody touches the carve.
+- **An island may not cover what a room was authored around.** `carveRoom`
+  takes the tiles a plan reserved and drops any island that would land on one:
+  a hand-placed prop is a fact about the room, an island is the carve being
+  interesting, and the carve loses.
 - **`wangCorners` is a pure function in `render/renderer.ts`**, like every
   other per-tile answer, so both renderers could only ever agree. A corner is a
   LATTICE point with four cells round it and is floor if ANY of them is, which

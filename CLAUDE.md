@@ -69,8 +69,12 @@ grids.
 nothing dies and nothing ends it. It is a scene with `dummies` rather than a
 mode — the room is `src/scenes/sandbox.ts` and is the one scene outside
 `SCENES`, so the schedule can never hand you it. It is a SHOWCASE and laid out
-like a DESCENT: chambers the size `generateMap` cuts (`ScenePlan.also`), joined
-in a ring by the same wandering corridor (`joins`, `cut`), a pack in each. The
+like a DESCENT: chambers the size `generateMap` cuts (`ScenePlan.also`), eight
+tiles of rock apart so what joins them is a TUNNEL, in a ring with two spurs
+through a chamber in the middle of it — a loop with nothing inside is a donut.
+A `grown` room swells into HEADLANDS and keeps ISLANDS of rock standing in it,
+which is what makes a chamber a cavern rather than a hall; the swell only ever
+adds, and an island never lands on furniture a room was authored around. The
 hero walks the `patrol` ring, swinging at what came into reach and then moving
 on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or bodies in reach pin it where it
 stands and one facing of one animation is all it ever shows. Casters are
@@ -107,19 +111,32 @@ cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary, so a wall spans two rows and is a real
 face rather than a kerb. `wangCorners` marks a floor vertex under a rock one,
 and `wangNear` is the fallback for a corner no set answers, since a key nothing
-draws is a hole in the floor. `tileset.shade` darkens the floor-side row: it is
-SHADOW, and it comes back as a lit ledge about half the time.
+draws is a hole in the floor. `wangShadow` is the one key class NOT drawn: a
+cut face at a corner with no rock at any of them is the cell below a cliff, and
+the set draws it as a flat dark rectangle that reads as paving at the foot of
+the wall. It falls back to plain floor.
 
-A set has ONE picture per corner combination, so an open floor is that picture
-in every cell. What cannot fix that is TURNING a tile or swapping in another
-set's — a floor tile is lit from one side, so a turned one clashes and the
-floor reads as a checkerboard, which is worse than the repetition; an edge tile
-is worse still, since its neighbour has to continue the cut face.
+**The LIGHT is the renderer's, not the set's.** A set is drawn to be looked at
+as terrain, so its stone is lit like the floor; flat across a map that reads as
+chambers punched out of a paved field. In `pixi.ts`, `ROCK_TOP` knocks the rock
+back and `ROCK_REACH` runs it to nothing three tiles in, leaving a lit rim;
+`FOOT_DARK` shades the one floor row touching stone, which is the wall's own
+shadow — one row, because a tint is per TILE and a falloff over three is a
+staircase of rectangles. And `GRAIN` is smooth value noise over about three
+tiles, which is the only thing that answers the repetition: a set has ONE
+picture per corner combination, and TURNING a tile or mixing in a second set's
+both read worse than repeating — a floor tile is lit from one side, and an edge
+tile's neighbour has to continue the cut face.
 
-**Furniture is placed a CLUSTER at a time.** `VIGNETTES` in `src/vignettes.ts`
-is small authored arrangements — a hauling run, an altar with its candles — and
-`dressRooms` drops them where the whole footprint is clear. A prop scattered one
-at a time reads as one scattered one at a time.
+**Furniture goes down a CLUSTER at a time, the rock's leavings a tile at a
+time.** `VIGNETTES` in `src/vignettes.ts` is authored arrangements — a hauling
+run, an altar with its candles, a butchery — and `dressRooms` picks a SPOT and
+then the biggest arrangement that fits it, since a ragged room holds a
+four-tile square in about one spot in fifteen. `FRINGE_PROPS`, `LOOSE_PROPS`
+and `WALL_PROPS` beside them are the debris, growth and leavings `dressEdges`
+scatters over the whole grid, corridors included. What reads as a cavern is the
+FOOT of the rock, so open floor stays nearly bare; a `WALL_PROPS` entry is
+drawn side-on and is the one thing placed INTO rock, on the cut face itself.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

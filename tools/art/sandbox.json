@@ -1,214 +1,283 @@
 {
-  "_": "What the sandbox is made of, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/sandbox.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
-  "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
-  "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
-  "tileset": {
-    "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
-    "floorIs": "lower",
-    "shade": 0.55
-  },
-  "hero": {
-    "sprite": "delver",
-    "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
-    "dirs": [
-      "north",
-      "north-east",
-      "east",
-      "south-east",
-      "south"
-    ],
-    "states": {
-      "idle": {
-        "group": "3b7626c8-7922-46a1-90c1-6f5a0e812533",
-        "frames": 2
-      },
-      "walk": {
-        "group": "f3be3bdb-cd5f-44c4-9591-8d8aa8b17cf7",
-        "frames": 4,
-        "from": 0.28,
-        "to": 0.8
-      },
-      "attack": {
-        "group": "11824eba-b5ff-4edc-bc3d-9ec1390c7e00",
-        "frames": 3,
-        "from": 0.4
-      },
-      "cast": {
-        "group": "295f772d-4f7a-4171-ba12-5eb5a8ca8063",
-        "frames": 3,
-        "from": 0.4
-      }
-    }
-  },
-  "bodies": [
-    {
-      "sprite": "skeleton",
-      "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
-      "dirs": [
-        "north",
-        "north-east",
-        "east",
-        "south-east",
-        "south"
-      ],
-      "states": {
-        "idle": {
-          "group": "12da04c1-2884-420b-8c5f-f85f159557bf",
-          "frames": 2
-        },
-        "walk": {
-          "group": "177d1115-4b90-47df-a398-0074b6e20ce6",
-          "frames": 4,
-          "from": 0.28,
-          "to": 0.75
-        },
-        "attack": {
-          "group": "da642afd-7d5f-4782-a58b-038965ee4935",
-          "frames": 3,
-          "from": 0.4
-        },
-        "bolt": {
-          "group": "1bbb4fa8-a4ea-4ad9-bc36-cb38113007c4",
-          "frames": 3,
-          "from": 0.45
-        },
-        "frost_bolt": {
-          "group": "e609a7df-4d37-47bf-a1c8-3a4207d9802b",
-          "frames": 3,
-          "from": 0.4
-        },
-        "arc": {
-          "group": "88762bcd-c254-4278-b74c-e9aa3680b268",
-          "frames": 3,
-          "from": 0.3
-        }
-      }
-    },
-    {
-      "sprite": "revenant",
-      "character": "34dba097-261e-4118-9a31-31e273795920",
-      "dirs": [
-        "north",
-        "north-east",
-        "east",
-        "south-east",
-        "south"
-      ],
-      "states": {
-        "idle": {
-          "group": "545b1b68-b586-4523-b7fd-80a85b8339f6",
-          "frames": 2
-        },
-        "walk": {
-          "group": "dde2b2f0-9976-42f2-a3f8-c8ef19957765",
-          "frames": 4,
-          "from": 0.25,
-          "to": 0.72
-        },
-        "attack": {
-          "group": "89691fda-544e-40a3-b040-4ab8e9ae06ea",
-          "frames": 3,
-          "from": 0.4
-        },
-        "bolt": {
-          "group": "dd1c94ff-ecc6-4745-9ae4-00273e008780",
-          "frames": 3,
-          "from": 0.3,
-          "to": 0.72
-        },
-        "frost_bolt": {
-          "group": "943f6669-b6bc-4d5d-b11a-a60dfd7ba85d",
-          "frames": 3,
-          "from": 0.4
-        },
-        "arc": {
-          "group": "bbbef39c-65a5-4c78-8c3f-5fd2800e6631",
-          "frames": 3,
-          "from": 0.42
-        }
-      }
-    }
+ "_": "What the sandbox is made of, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/sandbox.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
+ "tileset": {
+  "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
+  "floorIs": "lower"
+ },
+ "hero": {
+  "sprite": "delver",
+  "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
+  "dirs": [
+   "north",
+   "north-east",
+   "east",
+   "south-east",
+   "south"
   ],
-  "props": [
-    {
-      "id": "pitprop",
-      "object": "9667f5a0-70c1-4d49-9460-c68454fdc433",
-      "tiles": 0.8
+  "states": {
+   "idle": {
+    "group": "3b7626c8-7922-46a1-90c1-6f5a0e812533",
+    "frames": 2
+   },
+   "walk": {
+    "group": "f3be3bdb-cd5f-44c4-9591-8d8aa8b17cf7",
+    "frames": 4,
+    "from": 0.28,
+    "to": 0.8
+   },
+   "attack": {
+    "group": "11824eba-b5ff-4edc-bc3d-9ec1390c7e00",
+    "frames": 3,
+    "from": 0.4
+   },
+   "cast": {
+    "group": "295f772d-4f7a-4171-ba12-5eb5a8ca8063",
+    "frames": 3,
+    "from": 0.4
+   }
+  }
+ },
+ "bodies": [
+  {
+   "sprite": "skeleton",
+   "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
+   "dirs": [
+    "north",
+    "north-east",
+    "east",
+    "south-east",
+    "south"
+   ],
+   "states": {
+    "idle": {
+     "group": "12da04c1-2884-420b-8c5f-f85f159557bf",
+     "frames": 2
     },
-    {
-      "id": "plank",
-      "object": "a5d0015a-7817-4f91-a54a-0ce9fbb7ad0f",
-      "tiles": 1.0
+    "walk": {
+     "group": "177d1115-4b90-47df-a398-0074b6e20ce6",
+     "frames": 4,
+     "from": 0.28,
+     "to": 0.75
     },
-    {
-      "id": "spoil",
-      "object": "0c1a733c-a130-4f39-8148-9ac85bfbdc1c",
-      "tiles": 1.1
+    "attack": {
+     "group": "da642afd-7d5f-4782-a58b-038965ee4935",
+     "frames": 3,
+     "from": 0.4
     },
-    {
-      "id": "bucket",
-      "object": "9cf1fc02-6dfa-4c64-be34-18946912afd1",
-      "tiles": 0.6
+    "bolt": {
+     "group": "1bbb4fa8-a4ea-4ad9-bc36-cb38113007c4",
+     "frames": 3,
+     "from": 0.45
     },
-    {
-      "id": "candle",
-      "object": "eae3b1fd-576d-4a3c-bd2a-28da78ea0695",
-      "tiles": 0.5,
-      "tone": 0.1
+    "frost_bolt": {
+     "group": "e609a7df-4d37-47bf-a1c8-3a4207d9802b",
+     "frames": 3,
+     "from": 0.4
     },
-    {
-      "id": "web",
-      "object": "a63202e9-defa-4508-b628-dc73aa6d7889",
-      "tiles": 1.2,
-      "tone": 0.65
-    },
-    {
-      "id": "rail",
-      "object": "6069eca5-2bbb-43fc-b5b3-4ef88563a4c0",
-      "tiles": 1.9
-    },
-    {
-      "id": "cart",
-      "object": "f642af51-bedc-405b-b6df-162c42aa814b",
-      "tiles": 1.3
-    },
-    {
-      "id": "beam",
-      "object": "37c3c6f8-f86e-4a9e-a3ec-fe349a93c950",
-      "tiles": 1.4
-    },
-    {
-      "id": "bones",
-      "object": "cddecc09-5fc7-4564-9970-8268a391df02",
-      "tiles": 1.0
-    },
-    {
-      "id": "altar",
-      "object": "caa92648-e989-4ab5-b6bd-8c0504e8877d",
-      "tiles": 1.7,
-      "tone": 0.55
-    },
-    {
-      "id": "gore",
-      "object": "3ef19048-11c4-4ce1-a688-a53aee7f3024",
-      "tiles": 1.3,
-      "tone": 0.55
-    },
-    {
-      "id": "skulls",
-      "object": "6a400f6f-0af5-42d1-8c28-68a2272b79c7",
-      "tiles": 1.1
-    },
-    {
-      "id": "chains",
-      "object": "b8fc6b5f-85ae-46e2-9690-014978fcc1f1",
-      "tiles": 1.2
-    },
-    {
-      "id": "husk",
-      "object": "6bc59321-112f-49f7-9c93-d3c2269c9011",
-      "tiles": 1.3,
-      "tone": 0.55
+    "arc": {
+     "group": "88762bcd-c254-4278-b74c-e9aa3680b268",
+     "frames": 3,
+     "from": 0.3
     }
-  ]
+   }
+  },
+  {
+   "sprite": "revenant",
+   "character": "34dba097-261e-4118-9a31-31e273795920",
+   "dirs": [
+    "north",
+    "north-east",
+    "east",
+    "south-east",
+    "south"
+   ],
+   "states": {
+    "idle": {
+     "group": "545b1b68-b586-4523-b7fd-80a85b8339f6",
+     "frames": 2
+    },
+    "walk": {
+     "group": "dde2b2f0-9976-42f2-a3f8-c8ef19957765",
+     "frames": 4,
+     "from": 0.25,
+     "to": 0.72
+    },
+    "attack": {
+     "group": "89691fda-544e-40a3-b040-4ab8e9ae06ea",
+     "frames": 3,
+     "from": 0.4
+    },
+    "bolt": {
+     "group": "dd1c94ff-ecc6-4745-9ae4-00273e008780",
+     "frames": 3,
+     "from": 0.3,
+     "to": 0.72
+    },
+    "frost_bolt": {
+     "group": "943f6669-b6bc-4d5d-b11a-a60dfd7ba85d",
+     "frames": 3,
+     "from": 0.4
+    },
+    "arc": {
+     "group": "bbbef39c-65a5-4c78-8c3f-5fd2800e6631",
+     "frames": 3,
+     "from": 0.42
+    }
+   }
+  }
+ ],
+ "props": [
+  {
+   "id": "pitprop",
+   "object": "9667f5a0-70c1-4d49-9460-c68454fdc433",
+   "tiles": 0.8,
+   "tone": 0.55
+  },
+  {
+   "id": "plank",
+   "object": "a5d0015a-7817-4f91-a54a-0ce9fbb7ad0f",
+   "tiles": 1.0,
+   "tone": 0.65
+  },
+  {
+   "id": "spoil",
+   "object": "0c1a733c-a130-4f39-8148-9ac85bfbdc1c",
+   "tiles": 1.1
+  },
+  {
+   "id": "bucket",
+   "object": "9cf1fc02-6dfa-4c64-be34-18946912afd1",
+   "tiles": 0.6,
+   "tone": 0.55
+  },
+  {
+   "id": "candle",
+   "object": "eae3b1fd-576d-4a3c-bd2a-28da78ea0695",
+   "tiles": 0.5,
+   "tone": 0.1
+  },
+  {
+   "id": "web",
+   "object": "a63202e9-defa-4508-b628-dc73aa6d7889",
+   "tiles": 1.2,
+   "tone": 0.55
+  },
+  {
+   "id": "rail",
+   "object": "6069eca5-2bbb-43fc-b5b3-4ef88563a4c0",
+   "tiles": 1.9,
+   "tone": 0.55
+  },
+  {
+   "id": "cart",
+   "object": "f642af51-bedc-405b-b6df-162c42aa814b",
+   "tiles": 1.3,
+   "tone": 0.5
+  },
+  {
+   "id": "beam",
+   "object": "37c3c6f8-f86e-4a9e-a3ec-fe349a93c950",
+   "tiles": 1.4,
+   "tone": 0.6
+  },
+  {
+   "id": "bones",
+   "object": "cddecc09-5fc7-4564-9970-8268a391df02",
+   "tiles": 1.0
+  },
+  {
+   "id": "altar",
+   "object": "caa92648-e989-4ab5-b6bd-8c0504e8877d",
+   "tiles": 1.7,
+   "tone": 0.55
+  },
+  {
+   "id": "gore",
+   "object": "d9369bf2-61b7-4d1e-bdb3-7b499a4b0b58",
+   "tiles": 0.95,
+   "tone": 0.68
+  },
+  {
+   "id": "skulls",
+   "object": "6a400f6f-0af5-42d1-8c28-68a2272b79c7",
+   "tiles": 1.1
+  },
+  {
+   "id": "chains",
+   "object": "b8fc6b5f-85ae-46e2-9690-014978fcc1f1",
+   "tiles": 1.2
+  },
+  {
+   "id": "pillar",
+   "object": "f83ee095-44d1-4754-8d46-1fb3153ec25e",
+   "tiles": 1.7
+  },
+  {
+   "id": "brazier",
+   "object": "d0020129-27e0-4a8e-912f-17fa39de5142",
+   "tiles": 1.2
+  },
+  {
+   "id": "cocoon",
+   "object": "21772fbb-3e2e-4ec5-b0ee-b4dab6f8c68f",
+   "tiles": 1.5
+  },
+  {
+   "id": "cairn",
+   "object": "ee9e7496-a96f-467b-b3f2-95447dc26a57",
+   "tiles": 1.4
+  },
+  {
+   "id": "hung",
+   "object": "aa1494bb-b98c-40e7-8cf6-98532369aa5c",
+   "tiles": 1.3
+  },
+  {
+   "id": "torch",
+   "object": "b3f03f32-5890-4a44-b2fc-9b860df64900",
+   "tiles": 0.9
+  },
+  {
+   "id": "roots",
+   "object": "c86dc030-73e1-466e-b021-7e31ef92283e",
+   "tiles": 1.2
+  },
+  {
+   "id": "pebbles",
+   "object": "293e30e5-efb4-4c4a-a5ac-1506c128b960",
+   "tiles": 0.7,
+   "tone": 0.6
+  },
+  {
+   "id": "fungus",
+   "object": "790ccc89-e7b2-4713-a0d2-3dbadbadf51a",
+   "tiles": 0.6,
+   "tone": 0.55
+  },
+  {
+   "id": "ribs",
+   "object": "4e34002b-f813-4db0-999e-e85b359bd817",
+   "tiles": 0.9,
+   "tone": 0.5
+  },
+  {
+   "id": "splash",
+   "object": "147b15ce-1028-4bc9-af66-232b8f097093",
+   "tiles": 0.7,
+   "tone": 0.6
+  },
+  {
+   "id": "stub",
+   "object": "417e95e1-d5ad-4c07-894e-df7f8dc18907",
+   "tiles": 0.5,
+   "tone": 0.6
+  },
+  {
+   "id": "stake",
+   "object": "271d802c-ef28-4ffc-9e52-06560a2ba101",
+   "tiles": 0.9
+  }
+ ]
 }

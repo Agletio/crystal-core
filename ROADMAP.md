@@ -518,8 +518,36 @@ that worked, and these are what it cost:
 - **`transition_size` past 0.25 is a different tileset**, not a deeper one: 25
   tiles, a third corner value, and a cliff that spans two rows. Worth it — the
   face was a seventh of a tile and read as a kerb — but three sets each traded
-  the floor's quality for the wall's, and what settled it was darkening the
-  floor-side row in the importer rather than re-rolling for it.
+  the floor's quality for the wall's.
+- **The set's own shadow tile is a flat rectangle**, and a run of them along a
+  wall reads as paving laid at the foot of it. Darkening it in the importer
+  made it worse, not better: a blacker rectangle is still a rectangle. It is
+  not drawn at all now (`wangShadow`), and the wall's shadow is one row of
+  floor tint. Which killed `tileset.shade`, `darkened` and `isShadowRow`.
+- **Every remaining tileset problem was answered with LIGHT.** The stone came
+  lighter than the floor and read as masonry; the floor was one picture over
+  the whole map. `ROCK_TOP` / `ROCK_REACH` / `FOOT_DARK` / `GRAIN` in
+  `pixi.ts` — a lit rim over dark, a contact shadow, and smooth value noise
+  across the floor. Cheaper than any generation and it fixed what four sets
+  could not.
+- **A per-tile tint is a BAND, not a gradient.** Three tiles of falloff along
+  an irregular room edge is a chequerboard of flat rectangles — the exact
+  fault the alternates and the rotation were rejected for, arrived at from the
+  other direction.
+- **A wide floor STAIN cannot be generated.** `pool` and `circle` came back as
+  discs — round, centred, edged, an object lying on the ground — through every
+  wording tried, at two sizes. Three small stains on touching tiles make an
+  outline nobody drew, which is what `butchery` is.
+- **A body lying FLAT cannot be generated either.** Three passes at `husk`,
+  each one a figure standing up and facing the viewer, whatever "lying FLAT on
+  its front, seen from DIRECTLY ABOVE, the soles of both feet showing" says.
+  Dropped; `cocoon`, `ribs`, `bones` and `skulls` carry the dead.
+- **The small props are where the noun fights hardest.** At 96px a chip
+  scatter came back as one round pile, a rock stub as a teal crystal, a
+  ribcage as a magenta centipede, mould as red-and-white toadstools on grass.
+  A SMALLER canvas (64) plus exclusions naming the colour got three of the
+  four; the fourth took abandoning the noun entirely — "a crust clinging FLAT
+  to stone" rather than any kind of mushroom.
 - **Naming a thing gets you ONE of it.** "a scatter of bones" came back as a
   single large skull and "a sheet of cobweb" as a square of cloth. Saying what
   it is NOT, and saying "spread apart with gaps between them / the floor

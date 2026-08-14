@@ -499,6 +499,21 @@ export function wangNear(key: number): number[] {
   return [as(0), as(1), 0];
 }
 
+/** A key with the cut face at a corner and no ROCK at any of them: the cell
+ *  BELOW a cliff, which a deep-walled set draws as its own tile of shadow.
+ *  Drawn as plain floor instead and shaded by the renderer — the set's tile is
+ *  a flat dark rectangle, and a run of them along a wall reads as paving laid
+ *  at the foot of it rather than as a wall throwing a shadow. */
+export function wangShadow(key: number): boolean {
+  let cut = false;
+  for (let place = 1; place <= 27; place *= 3) {
+    const corner = Math.floor(key / place) % 3;
+    if (corner === 1) return false;
+    if (corner === 2) cut = true;
+  }
+  return cut;
+}
+
 /**
  * Is this rock worth drawing? Only the band next to the floor: past it the
  * background is the same rock a shade darker, so drawing every wall tile is two

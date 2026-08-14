@@ -8,7 +8,8 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
-import { VIGNETTES } from '../vignettes';
+import { FRINGE_PROPS, LOOSE_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
+import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
   x: number;
@@ -118,17 +119,15 @@ export interface GameMap {
   rooms: Room[];
   entrance: Vec2;
   exit: Vec2;
-  /** Empty on every generated map: a prop is a fact about a room somebody
-   *  built, where a decal is a texture hashed off the tile it lands on. */
+  /** A prop is a fact about a room somebody built; a decal is what the rock
+   *  does on its own, hashed off the tile it lands on. */
   props: MapProp[];
-  /** Which mineral runs through this rock. Presentation reads it, the sim
-   *  never does — but it is a fact about the MAP, so the two renderers cannot
-   *  invent different seams for the same crystal. */
+  /** Which mineral runs through this rock — a fact about the MAP, so the two
+   *  renderers cannot invent different seams for one crystal. */
   vein: number;
   /** Which world this rock belongs to. Presentation only, same as the vein. */
   theme: MapTheme;
-  /** A generated tileset drawn instead of the theme's own rock. Presentation
-   *  only again, and only a scene ever names one. */
+  /** A generated tileset drawn instead of the theme's own rock, by a scene. */
   ground?: string;
 }
 
@@ -153,19 +152,42 @@ const CUT: Record<MapTheme, Cut> = {
   seam: 'grown',
 };
 
-/** How far a passage wanders off the line between the rooms it joins. */
-const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 1 };
-
-/** How much of a dug room's outer ring the rock never gave up. */
+/** How far a passage wanders off the line between the rooms it joins, and how
+ *  much of a dug room's outer ring the rock never gave up. */
+const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 3 };
 const RAG = 0.22;
+
+const phaseOf = (r: Room, salt: number): number => tileNoise(r.x, r.y, salt) * Math.PI * 2;
+
+/** Rock the carve left STANDING inside a chamber: something to walk round is
+ *  what makes a room a cavern rather than a hall, and one tile of it reads as
+ *  a snag. Never near the middle, where everything off `roomCenter` goes. */
+function islandsIn(r: Room, spare: Vec2[]): { x: number; y: number; r: number }[] {
+  const cx = r.x + (r.w - 1) / 2;
+  const cy = r.y + (r.h - 1) / 2;
+  const out: { x: number; y: number; r: number }[] = [];
+  for (let i = 0; i < Math.min(2, Math.floor((r.w * r.h) / 30)); i++) {
+    const turn = tileNoise(r.x + i, r.y, 56) * Math.PI * 2;
+    const from = 0.46 + tileNoise(r.x, r.y + i, 57) * 0.16;
+    const at = {
+      x: cx + Math.cos(turn) * (r.w / 2) * from,
+      y: cy + Math.sin(turn) * (r.h / 2) * from,
+      r: 0.9 + tileNoise(r.x + i, r.y + i, 58) * 0.5,
+    };
+    // Never over what a room was authored around: a hand-placed prop is a fact
+    // about the room and an island is the carve being interesting.
+    if (spare.some((v) => (v.x - at.x) ** 2 + (v.y - at.y) ** 2 < (at.r + 0.5) ** 2)) continue;
+    out.push(at);
+  }
+  return out;
+}
 
 /** A room, cut the way its world cuts. The `Room` RECTANGLE never changes —
  *  every spawn, the entrance and the exit are placed off it. */
-function carveRoom(grid: Grid, r: Room, cut: Cut): void {
+function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = []): void {
   if (cut !== 'grown') {
-    // Both of these keep the rectangle's AREA. A fifth smaller with the same
-    // pack in it is a pack that arrives all at once, which turned the aura
-    // worlds into walls.
+    // Both keep the rectangle's AREA: a fifth smaller with the same pack in
+    // it is a pack that arrives all at once.
     const corner = cut === 'gullet' ? (Math.min(r.w, r.h) >= 6 ? 2 : 1) : 1;
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
@@ -182,11 +204,14 @@ function carveRoom(grid: Grid, r: Room, cut: Cut): void {
 
   const cx = r.x + (r.w - 1) / 2;
   const cy = r.y + (r.h - 1) / 2;
-  // INSCRIBED. An ellipse round the OUTSIDE of the rectangle is bigger than
-  // the room it replaces, and rooms are packed two tiles apart: they merge and
-  // the map loses its walls.
+  // INSCRIBED: rooms are packed two tiles apart, so an ellipse round the
+  // OUTSIDE of the rectangle merges with its neighbour and the map loses its
+  // walls.
   const rx = r.w / 2;
   const ry = r.h / 2;
+  const swellA = phaseOf(r, 54);
+  const swellB = phaseOf(r, 55);
+  const islands = islandsIn(r, spare);
 
   for (let y = r.y - 1; y < r.y + r.h + 1; y++) {
     for (let x = r.x - 1; x < r.x + r.w + 1; x++) {
@@ -194,19 +219,26 @@ function carveRoom(grid: Grid, r: Room, cut: Cut): void {
       const dx = (x - cx) / rx;
       const dy = (y - cy) / ry;
       const d = dx * dx + dy * dy;
-      if (d > 0.8 + tileNoise(x, y, 50) * 0.35) continue; // ragged by a tile
-      // A pillar, never near the edge and never more than one tile, so it is
-      // something to walk round rather than something to be caught on.
-      if (d < 0.4 && tileNoise(x, y, 51) < 0.08) continue;
+      // HEADLANDS, at a scale that reads across a whole room where `tileNoise`
+      // only roughens one tile. It only ever ADDS: a swell that can pull IN
+      // puts a room's authored furniture in the rock, and the bays are already
+      // the ragging's job.
+      const turn = Math.atan2(dy, dx);
+      const swell =
+        0.11 * (1 + Math.sin(turn * 3 + swellA)) + 0.07 * (1 + Math.sin(turn * 5 + swellB));
+      if (d > 0.8 + swell + tileNoise(x, y, 50) * 0.35) continue;
+      if (islands.some((i) => (x - i.x) ** 2 + (y - i.y) ** 2 < i.r * i.r)) continue;
       grid.set(x, y, FLOOR);
     }
   }
 }
 
+/** The footprint an arrangement has to beat to count as one worth the room. */
+const BIG = 12;
+
 /** Furniture, a CLUSTER at a time: a prop dropped one at a time reads as one,
- *  equally far from everything and there for no reason. A `Vignette` lands
- *  only where its whole footprint is floor and nothing has claimed it, and the
- *  rng is handed in — a scene's fixed seed makes the same place every time. */
+ *  equally far from everything and there for no reason. The rng is handed in,
+ *  so a scene's fixed seed makes the same place every time. */
 export function dressRooms(
   grid: Grid,
   rooms: Room[],
@@ -215,10 +247,9 @@ export function dressRooms(
   keep: Vec2[] = []
 ): MapProp[] {
   const out: MapProp[] = [];
-  // The hand-placed props, the hole and whoever stands in the room are all
-  // already there: dressing over one is furniture on top of furniture.
+  // Dressing over a hand-placed prop, the hole or the person standing in the
+  // room is furniture on top of furniture.
   const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
-  const total = VIGNETTES.reduce((n, v) => n + v.weight, 0);
 
   const clear = (x: number, y: number, w: number, h: number): boolean => {
     for (let dy = 0; dy < h; dy++) {
@@ -230,22 +261,74 @@ export function dressRooms(
     return true;
   };
 
+  /** A spot in the room, and then what fits IN it. Picking the arrangement
+   *  first and hunting for room leaves a chamber bare: a ragged ellipse holds
+   *  a four-tile square in about one spot in fifteen. */
+  const drop = (room: Room, least: number): boolean => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      // Tested against the FLOOR, a tile outside the rectangle each way: a
+      // grown room is neither where its rectangle is nor how big it is.
+      const x = room.x - 1 + rng.int(0, room.w);
+      const y = room.y - 1 + rng.int(0, room.h);
+      const fits = VIGNETTES.filter((v) => v.w * v.h >= least && clear(x, y, v.w, v.h));
+      if (fits.length === 0) continue;
+      const size = (v: Vignette) => v.weight * v.w * v.h;
+      let roll = rng.next() * fits.reduce((n, v) => n + size(v), 0);
+      const pick = fits.find((v) => (roll -= size(v)) < 0) ?? fits[0];
+      for (let dy = 0; dy < pick.h; dy++) {
+        for (let dx = 0; dx < pick.w; dx++) taken.add((y + dy) * grid.width + (x + dx));
+      }
+      for (const p of pick.props) out.push({ id: p.id, x: x + p.x, y: y + p.y });
+      return true;
+    }
+    return false;
+  };
+
+  // The biggest first. Taking the first spot where ANYTHING fits puts a small
+  // cluster in the one corner that could have held the altar.
   for (const room of rooms) {
     for (let n = 0; n < per; n++) {
-      let roll = rng.next() * total;
-      const pick = VIGNETTES.find((v) => (roll -= v.weight) < 0) ?? VIGNETTES[0];
-      // A handful of tries and then give up: a small room with one clear
-      // corner should not be searched exhaustively for a four-tile altar.
-      for (let attempt = 0; attempt < 12; attempt++) {
-        const x = room.x + rng.int(0, Math.max(0, room.w - pick.w));
-        const y = room.y + rng.int(0, Math.max(0, room.h - pick.h));
-        if (!clear(x, y, pick.w, pick.h)) continue;
-        for (let dy = 0; dy < pick.h; dy++) {
-          for (let dx = 0; dx < pick.w; dx++) taken.add((y + dy) * grid.width + (x + dx));
-        }
-        for (const p of pick.props) out.push({ id: p.id, x: x + p.x, y: y + p.y });
-        break;
-      }
+      if (n > 0 || !drop(room, BIG)) drop(room, 1);
+    }
+  }
+  return out;
+}
+
+/** How often a tile of each kind takes something. What reads as a cavern is
+ *  the FOOT of the rock, so open floor stays nearly bare. */
+const EDGE_RATE = { face: 0.17, fringe: 0.34, open: 0.07 };
+
+/**
+ * The rock's own leavings, a tile at a time — debris and growth against the
+ * wall, and what hangs on the face above it. Over the WHOLE grid rather than
+ * the rectangles, so a corridor is dressed like a chamber: a bare passage
+ * between two furnished rooms reads as the seam between them.
+ *
+ * A `WALL_PROPS` entry is the one thing placed into rock, deliberately: the
+ * cell above a floor tile with rock over IT is the cut face, and that is the
+ * only surface in the game seen from the side.
+ */
+export function dressEdges(grid: Grid, rng: Rng, keep: Vec2[] = []): MapProp[] {
+  const out: MapProp[] = [];
+  const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
+
+  for (let y = 2; y < grid.height - 1; y++) {
+    for (let x = 1; x < grid.width - 1; x++) {
+      if (grid.at(x, y) === WALL) continue;
+      const rock = (dx: number, dy: number) => grid.at(x + dx, y + dy) === WALL;
+      const face = rock(0, -1) && rock(0, -2) && !taken.has((y - 1) * grid.width + x);
+      const against = rock(-1, 0) || rock(1, 0) || rock(0, 1) || rock(0, -1);
+      const rate = face ? EDGE_RATE.face + EDGE_RATE.fringe : against ? EDGE_RATE.fringe : EDGE_RATE.open;
+      if (!rng.chance(rate)) continue;
+      // A face tile can take either, and mostly takes the fringe: a wall with
+      // something hanging on every reachable stretch of it is a gallery.
+      const onFace = face && rng.chance(EDGE_RATE.face / (EDGE_RATE.face + EDGE_RATE.fringe));
+      const table = onFace ? WALL_PROPS : against ? FRINGE_PROPS : LOOSE_PROPS;
+      const at = { x, y: onFace ? y - 1 : y };
+      const key = at.y * grid.width + at.x;
+      if (taken.has(key)) continue;
+      taken.add(key);
+      out.push({ id: weighted(table, rng.next()), ...at });
     }
   }
   return out;
@@ -258,7 +341,6 @@ function carve(grid: Grid, x: number, y: number): void {
   if (grid.at(x, y) === WALL) grid.set(x, y, TUNNEL);
 }
 
-/** Offsets that centre a band of the given width on a line. */
 function band(width: number): number[] {
   const lo = -Math.floor((width - 1) / 2);
   const out: number[] = [];
@@ -276,11 +358,17 @@ function drift(at: number, x: number, y: number, wobble: number): number {
   return clamp(at + step, -wobble, wobble);
 }
 
+/** A passage PINCHES along its run. Never below two, for the reason `drift`
+ *  steps by one — and because collision turns a one-tile hall into a queue. */
+function widthAt(base: number, x: number, y: number): number {
+  return Math.max(2, base - (tileNoise(x, y, 60) < 0.4 ? 1 : 0));
+}
+
 function hLine(grid: Grid, x0: number, x1: number, y: number, w: number, wobble = 0): void {
   let off = 0;
   for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {
     off = drift(off, x, y, wobble);
-    for (const d of band(w)) carve(grid, x, y + off + d);
+    for (const d of band(widthAt(w, x, y))) carve(grid, x, y + off + d);
   }
 }
 
@@ -288,14 +376,13 @@ function vLine(grid: Grid, y0: number, y1: number, x: number, w: number, wobble 
   let off = 0;
   for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) {
     off = drift(off, x, y, wobble);
-    for (const d of band(w)) carve(grid, x + off + d, y);
+    for (const d of band(widthAt(w, x, y))) carve(grid, x + off + d, y);
   }
 }
 
-/** L-shaped: both legs always carve, the seed picks their ORDER, and two to
- *  three tiles wide because at one, body collision turns a hallway into a
- *  queue. A wandering world drifts across the legs; it never drops them, since
- *  connectivity is the one thing a passage owes the run. */
+/** L-shaped: both legs always carve and the seed picks their ORDER. A wandering
+ *  world drifts across them; it never drops one, since connectivity is the one
+ *  thing a passage owes the run. */
 function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, wobble: number): void {
   const ax = Math.round(a.x);
   const ay = Math.round(a.y);
@@ -312,7 +399,6 @@ function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, wobble: number): 
   }
 }
 
-/** 4-way flood fill from a tile. Used to prove the exit is actually reachable. */
 function reachable(grid: Grid, from: Vec2): Set<number> {
   const seen = new Set<number>();
   const start = Math.round(from.y) * grid.width + Math.round(from.x);
@@ -360,8 +446,7 @@ export function generateMap(
   const target = clamp(Math.round(7 * layout), 4, 30);
   const rooms: Room[] = [];
 
-  // Attempts scale with the target: a fixed budget quietly returned a T6 with
-  // a T1's room count once the map was big enough to need more tries.
+  // Attempts scale with the target: a bigger map needs more tries to fill.
   for (let attempt = 0; attempt < 90 * target && rooms.length < target; attempt++) {
     const w = rng.int(5, 9);
     const h = rng.int(4, 7);
@@ -415,9 +500,8 @@ export function generateMap(
  * The map an authored room is: ONE chamber, cut the way its world cuts, with
  * the hole you came up out of and nothing else. Beside `generateMap` rather
  * than a flag on it, and sharing `carveRoom` — the part that makes a scene the
- * same rock as a descent. No rng: the plan is absolute tiles and the cut is
- * hashed off the tile it lands on, so a room is the same room every time it is
- * entered by construction, which is stronger than seeding it.
+ * same rock as a descent. The plan is absolute tiles and every roll is off a
+ * fixed seed, so a room is the same room every time it is entered.
  */
 export function sceneMap(
   plan: ScenePlan,
@@ -435,7 +519,8 @@ export function sceneMap(
     Math.max(...rooms.map((r) => r.y + r.h)) + 2
   );
   const cut = plan.cut ?? CUT[theme] ?? 'dug';
-  for (const r of rooms) carveRoom(grid, r, cut);
+  const spare = [...plan.props, plan.entrance, plan.stands, ...(plan.patrol ?? [])];
+  for (const r of rooms) carveRoom(grid, r, cut, spare);
   if (plan.joins) {
     const rng = new Rng(1);
     for (const [a, b] of plan.joins) {
@@ -450,13 +535,12 @@ export function sceneMap(
 
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
-  // Hand-placed props first, then whatever the plan asks to be DRESSED with:
-  // an authored room may still want one thing exactly where it put it.
-  const props = [
-    ...plan.props,
-    ...(plan.dress
-      ? dressRooms(grid, rooms, new Rng(2), plan.dress, [...plan.props, entrance, plan.stands])
-      : []),
-  ];
+  const props = [...plan.props];
+  if (plan.dress) {
+    const spare = [...plan.props, entrance, plan.stands];
+    props.push(...dressRooms(grid, rooms, new Rng(2), plan.dress, spare));
+    // After the arrangements, so nothing gathers where one of them stands.
+    props.push(...dressEdges(grid, new Rng(3), [...spare, ...props]));
+  }
   return { grid, rooms, entrance, exit: entrance, props, vein, theme, ground };
 }

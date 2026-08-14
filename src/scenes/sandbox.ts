@@ -1,32 +1,32 @@
 /**
  * The sandbox: a cavern made of NOTHING the game itself draws. Nothing dies and
  * nothing ends it, so all it does is let the art be looked at. Dressed as THE
- * FISSURE — "a working somebody gave up on. Rotted props, webs, a candle still
- * going."
+ * FISSURE — "a working somebody gave up on."
  *
- * Laid out like a DESCENT rather than like a room: chambers the size a
- * generated map cuts, joined in a ring by the same wandering corridor, a pack
- * in each. The hero walks the ring, so every body is met from a different side
- * on every lap and nothing has to be driven to be seen.
+ * Laid out like a DESCENT: chambers the size a generated map cuts, joined by
+ * the same wandering corridor, a pack in each. The hero walks a circuit, so
+ * every body is met from a different side on every lap.
  */
 import type { SceneDef, SceneDummy } from '../scenes';
 
-/** A caster is its OWN body: a pip over the head of a thing that shoots is a
- *  label where a silhouette does it. Both are in `GENERATED` and nowhere else. */
 const MELEE = 'skeleton';
 const CASTER = 'revenant';
 const HERO = 'delver';
 
-/** Chambers the size `generateMap` cuts — 5-9 by 4-7 — spread out and joined
- *  in a RING, so what is between two of them is a tunnel rather than a step. */
+/** Chambers the size `generateMap` cuts — 5-9 by 4-7 — with eight or more tiles
+ *  of rock between any two, so what joins them is a TUNNEL rather than a step
+ *  and the whole does not read as one cavern. */
 const ROOMS = [
-  { x: 4, y: 5, w: 8, h: 6 }, // 0, the entrance, left empty
-  { x: 17, y: 3, w: 8, h: 6 },
-  { x: 31, y: 6, w: 7, h: 5 },
-  { x: 33, y: 17, w: 8, h: 6 },
-  { x: 20, y: 21, w: 8, h: 6 },
-  { x: 6, y: 18, w: 7, h: 6 },
+  { x: 4, y: 7, w: 8, h: 6 }, // 0, the entrance, left empty
+  { x: 22, y: 4, w: 8, h: 6 },
+  { x: 41, y: 8, w: 7, h: 5 },
+  { x: 44, y: 23, w: 8, h: 6 },
+  { x: 25, y: 28, w: 8, h: 6 },
+  { x: 6, y: 24, w: 7, h: 6 },
+  { x: 30, y: 17, w: 8, h: 5 }, // 6, the middle, reached across the ring
 ];
+/** The ring, and two spurs through the middle: a loop with nothing inside it
+ *  is a donut. */
 const RING: [number, number][] = [
   [0, 1],
   [1, 2],
@@ -34,7 +34,12 @@ const RING: [number, number][] = [
   [3, 4],
   [4, 5],
   [5, 0],
+  [1, 6],
+  [4, 6],
 ];
+/** The circuit, by room: the walk out of the middle is the tunnel it came in
+ *  by, from the other end. */
+const PATROL = [0, 1, 2, 3, 4, 6, 5];
 
 /** Whole tiles, as `roomCenter` rounds: a fraction leaves the hero short. */
 const middle = (i: number) => ({
@@ -42,24 +47,25 @@ const middle = (i: number) => ({
   y: ROOMS[i].y + Math.floor((ROOMS[i].h - 1) / 2),
 });
 
-/** A PACK per chamber, off its middle. Melee follow and are seen walking the
- *  tunnels; a caster is `rooted`, so the layout survives first contact. */
+/** A PACK per chamber, off its middle. A caster is `rooted`, so the layout
+ *  survives first contact. */
 const PACKS: { room: number; at: [number, number]; ability: string; of?: string }[] = [
   { room: 1, at: [-1, 0], ability: 'claws' },
   { room: 1, at: [1, 1], ability: 'claws' },
   { room: 2, at: [0, -1], ability: 'fire_bolt', of: CASTER },
   { room: 2, at: [1, 1], ability: 'emberbite' },
   { room: 3, at: [0, 0], ability: 'frost_bolt', of: CASTER },
-  { room: 3, at: [2, 1], ability: 'claws' },
+  { room: 3, at: [-2, 1], ability: 'claws' },
   { room: 4, at: [0, -1], ability: 'lightning_arc', of: CASTER },
   { room: 4, at: [2, 1], ability: 'claws' },
   { room: 5, at: [0, 0], ability: 'rimebite' },
+  { room: 6, at: [-1, 0], ability: 'emberbite' },
+  { room: 6, at: [1, 1], ability: 'claws' },
 ];
 
-/** A couple of things put exactly here; everything else is a VIGNETTE. */
 const LEFT: { id: string; at: [number, number][] }[] = [
-  { id: 'candle', at: [[5, 7]] },
-  { id: 'web', at: [[17, 7]] },
+  { id: 'candle', at: [[5, 9]] },
+  { id: 'web', at: [[22, 7]] },
 ];
 
 export const SANDBOX: SceneDef = {
@@ -76,9 +82,9 @@ export const SANDBOX: SceneDef = {
     cut: 'grown',
     entrance: middle(0),
     stands: middle(2), // nobody stands in this room; a scene wants the field
-    patrol: ROOMS.map((_, i) => middle(i)),
+    patrol: PATROL.map(middle),
     props: LEFT.flatMap((kind) => kind.at.map(([x, y]) => ({ id: kind.id, x, y }))),
-    dress: 2, // and two arrangements scattered into each chamber besides
+    dress: 3, // and three arrangements scattered into each chamber besides
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,

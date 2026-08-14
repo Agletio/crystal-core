@@ -28,7 +28,7 @@ export const VIGNETTES: Vignette[] = [
     id: 'haulage',
     w: 4,
     h: 2,
-    weight: 100,
+    weight: 70,
     props: [
       { id: 'rail', x: 0, y: 0 },
       { id: 'rail', x: 1, y: 0 },
@@ -40,7 +40,7 @@ export const VIGNETTES: Vignette[] = [
     id: 'shoring',
     w: 3,
     h: 3,
-    weight: 100,
+    weight: 60,
     props: [
       { id: 'pitprop', x: 0, y: 0 },
       { id: 'pitprop', x: 0, y: 2 },
@@ -52,7 +52,7 @@ export const VIGNETTES: Vignette[] = [
     id: 'facespill',
     w: 3,
     h: 2,
-    weight: 90,
+    weight: 55,
     props: [
       { id: 'spoil', x: 0, y: 0 },
       { id: 'spoil', x: 1, y: 1 },
@@ -64,12 +64,24 @@ export const VIGNETTES: Vignette[] = [
     id: 'restpoint',
     w: 3,
     h: 2,
-    weight: 80,
+    weight: 50,
     props: [
       { id: 'candle', x: 1, y: 0 },
       { id: 'bucket', x: 0, y: 1 },
       { id: 'plank', x: 2, y: 1 },
       { id: 'bones', x: 2, y: 0 },
+    ],
+  },
+  {
+    id: 'pillars',
+    w: 3,
+    h: 3,
+    weight: 80,
+    props: [
+      { id: 'pillar', x: 0, y: 0 },
+      { id: 'pillar', x: 2, y: 2 },
+      { id: 'spoil', x: 1, y: 2 },
+      { id: 'pebbles', x: 2, y: 0 },
     ],
   },
 
@@ -78,23 +90,66 @@ export const VIGNETTES: Vignette[] = [
     id: 'rite',
     w: 4,
     h: 4,
-    weight: 55,
+    weight: 110,
     props: [
-      { id: 'altar', x: 1, y: 0 },
-      { id: 'candle', x: 0, y: 1 },
-      { id: 'candle', x: 3, y: 1 },
+      { id: 'altar', x: 1, y: 1 },
+      { id: 'candle', x: 0, y: 0 },
+      { id: 'candle', x: 3, y: 0 },
       { id: 'gore', x: 1, y: 2 },
-      { id: 'skulls', x: 3, y: 3 },
+      { id: 'splash', x: 2, y: 3 },
+      { id: 'skulls', x: 3, y: 2 },
+    ],
+  },
+  {
+    id: 'pyre',
+    w: 4,
+    h: 3,
+    weight: 95,
+    props: [
+      { id: 'brazier', x: 1, y: 1 },
+      { id: 'cairn', x: 3, y: 0 },
+      { id: 'gore', x: 0, y: 2 },
+      { id: 'bones', x: 2, y: 2 },
+      { id: 'stake', x: 3, y: 2 },
+    ],
+  },
+  {
+    // Three stains on touching tiles rather than one big one. A generated
+    // picture of a wide stain comes back as an OBJECT — round, centred, edged
+    // — where three overlapping small ones make an outline nobody drew.
+    id: 'butchery',
+    w: 4,
+    h: 3,
+    weight: 60,
+    props: [
+      { id: 'gore', x: 1, y: 1 },
+      { id: 'gore', x: 2, y: 2 },
+      { id: 'splash', x: 0, y: 0 },
+      { id: 'ribs', x: 3, y: 1 },
+      { id: 'cocoon', x: 0, y: 2 },
+      { id: 'splash', x: 3, y: 2 },
+    ],
+  },
+  {
+    id: 'shrine',
+    w: 3,
+    h: 3,
+    weight: 75,
+    props: [
+      { id: 'cairn', x: 1, y: 0 },
+      { id: 'candle', x: 0, y: 1 },
+      { id: 'candle', x: 2, y: 1 },
+      { id: 'skulls', x: 1, y: 2 },
     ],
   },
   {
     id: 'bindings',
     w: 3,
     h: 3,
-    weight: 60,
+    weight: 70,
     props: [
       { id: 'chains', x: 0, y: 1 },
-      { id: 'skulls', x: 2, y: 0 },
+      { id: 'stake', x: 2, y: 0 },
       { id: 'gore', x: 1, y: 2 },
       { id: 'bones', x: 2, y: 2 },
     ],
@@ -105,20 +160,32 @@ export const VIGNETTES: Vignette[] = [
     h: 2,
     weight: 70,
     props: [
-      { id: 'husk', x: 1, y: 0 },
+      { id: 'ribs', x: 1, y: 0 },
       { id: 'gore', x: 0, y: 1 },
       { id: 'web', x: 2, y: 1 },
+    ],
+  },
+  {
+    id: 'larder',
+    w: 3,
+    h: 3,
+    weight: 85,
+    props: [
+      { id: 'cocoon', x: 1, y: 0 },
+      { id: 'cocoon', x: 0, y: 2 },
+      { id: 'web', x: 2, y: 1 },
+      { id: 'bones', x: 1, y: 2 },
     ],
   },
   {
     id: 'webbed',
     w: 3,
     h: 2,
-    weight: 65,
+    weight: 55,
     props: [
       { id: 'web', x: 0, y: 0 },
       { id: 'web', x: 2, y: 1 },
-      { id: 'bones', x: 1, y: 1 },
+      { id: 'ribs', x: 1, y: 1 },
     ],
   },
 ];
@@ -126,3 +193,51 @@ export const VIGNETTES: Vignette[] = [
 export const VIGNETTE_BY_ID: Record<string, Vignette> = Object.fromEntries(
   VIGNETTES.map((v) => [v.id, v])
 );
+
+/**
+ * And what the rock gathers on its own. A vignette is somebody's ARRANGEMENT;
+ * these three tables are the debris, the growth and the leavings that collect
+ * where a floor meets stone — which in a cavern is most of what there is to
+ * look at. An open floor with a tidy cluster in the middle of it still reads as
+ * an empty room with a cluster in it.
+ *
+ * Which table a prop is in is a fact about the ART: `WALL_PROPS` are drawn
+ * side-on and go ON the cut face, so they are the one kind placed into rock.
+ */
+export interface Weighted {
+  id: string;
+  weight: number;
+}
+
+export const FRINGE_PROPS: Weighted[] = [
+  { id: 'pebbles', weight: 100 },
+  { id: 'stub', weight: 80 },
+  { id: 'fungus', weight: 70 },
+  { id: 'bones', weight: 40 },
+  { id: 'ribs', weight: 35 },
+  { id: 'spoil', weight: 35 },
+  { id: 'plank', weight: 12 },
+  { id: 'bucket', weight: 15 },
+  { id: 'web', weight: 14 },
+];
+
+export const LOOSE_PROPS: Weighted[] = [
+  { id: 'splash', weight: 100 },
+  { id: 'pebbles', weight: 60 },
+  { id: 'stub', weight: 40 },
+  { id: 'bones', weight: 35 },
+  { id: 'stake', weight: 25 },
+];
+
+export const WALL_PROPS: Weighted[] = [
+  { id: 'roots', weight: 100 },
+  { id: 'torch', weight: 45 },
+  { id: 'hung', weight: 30 },
+];
+
+/** One of a table, off a roll already taken — the caller owns the rng, so a
+ *  scene's fixed seed puts the same thing in the same place every time. */
+export function weighted(from: Weighted[], roll: number): string {
+  let left = roll * from.reduce((n, w) => n + w.weight, 0);
+  return (from.find((w) => (left -= w.weight) < 0) ?? from[0]).id;
+}

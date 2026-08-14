@@ -1,180 +1,260 @@
 {
-  "_": "What to ASK the generator for. `sandbox.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
-  "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
-  "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
-  ],
-  "bodies": [
-    {
-      "sprite": "delver",
-      "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
-      "name": "Delver",
-      "look": "a traveller who has been underground far too long: hooded and hunched, a heavy cloak gone to rags at the hem, a bedroll still strapped across the back, boots and wraps caked in rock dust. Grimy off-white and dull grey-brown cloth, nothing bright on him but one pale eye under the hood. No armour plate, no weapon drawn, no glow.",
-      "states": {
-        "idle": {
-          "frames": 4,
-          "say": "standing still, weight settling from one foot to the other, shoulders rising and falling, cloak hanging"
-        },
-        "walk": {
-          "frames": 8,
-          "say": "walking forward at a tired trudge, head down, cloak swaying behind the legs"
-        },
-        "attack": {
-          "frames": 4,
-          "say": "staying in strict side profile, stepping onto the front foot and swinging one arm down and across in front of the body, then drawing it back"
-        },
-        "cast": {
-          "frames": 4,
-          "say": "strict side profile, feet planted apart, one open hand driven forward from the chest and held out, the other fist pulled back to the hip"
-        }
-      }
+ "_": "What to ASK the generator for. `sandbox.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
+ "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
+ "dirs": [
+  "north",
+  "north-east",
+  "east",
+  "south-east",
+  "south"
+ ],
+ "bodies": [
+  {
+   "sprite": "delver",
+   "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
+   "name": "Delver",
+   "look": "a traveller who has been underground far too long: hooded and hunched, a heavy cloak gone to rags at the hem, a bedroll still strapped across the back, boots and wraps caked in rock dust. Grimy off-white and dull grey-brown cloth, nothing bright on him but one pale eye under the hood. No armour plate, no weapon drawn, no glow.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still, weight settling from one foot to the other, shoulders rising and falling, cloak hanging"
     },
-    {
-      "sprite": "skeleton",
-      "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
-      "name": "Fissure Skeleton",
-      "look": "a mine skeleton: dry grey-white bone gone the colour of the rock it was buried in, a cracked skull with two dim points of light in the eye sockets, ribs showing through the rotted remains of a canvas miner coat, one hand bare bone and the other still gripping a rusted iron pick. Cool bone white and desaturated grey-brown, dull rust on the iron. No blood, no gore, no red, no glow and no magic aura of any kind — one flat dead body.",
-      "states": {
-        "idle": {
-          "frames": 4,
-          "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
-        },
-        "walk": {
-          "frames": 8,
-          "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
-        },
-        "attack": {
-          "frames": 4,
-          "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
-        },
-        "bolt": {
-          "frames": 6,
-          "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
-        },
-        "frost_bolt": {
-          "frames": 4,
-          "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
-        },
-        "arc": {
-          "frames": 6,
-          "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
-        }
-      }
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a tired trudge, head down, cloak swaying behind the legs"
     },
-    {
-      "sprite": "revenant",
-      "name": "Fissure Revenant",
-      "look": "an evil skeletal sorcerer: a tall gaunt skeleton in a long ragged black hooded cape that hangs to the ankles and is torn to strips at the hem, the hood pulled up and thrown back off a cracked elongated skull, two hot points of pale light burning deep in the eye sockets, a heavy black iron collar and chain-scraps at the shoulders, bare finger bones. Bone the colour of old rock, cape near-black charcoal with a cold grey edge where the light catches it. Menacing and predatory. No blood, no gore, no red, no fire and no magic aura around the body.",
-      "states": {
-        "idle": {
-          "frames": 4,
-          "say": "standing still and hunched forward, breathing, the long cape hanging and stirring at the hem, head barely moving"
-        },
-        "walk": {
-          "frames": 8,
-          "say": "stalking forward with long slow strides, shoulders hunched, the long cape trailing and swaying behind the legs"
-        },
-        "attack": {
-          "frames": 4,
-          "say": "staying in strict side profile, lunging forward onto the front foot and raking one clawed hand across at chest height, then pulling it back"
-        },
-        "bolt": {
-          "frames": 6,
-          "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
-        },
-        "frost_bolt": {
-          "frames": 4,
-          "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
-        },
-        "arc": {
-          "frames": 6,
-          "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
-        }
-      },
-      "character": "34dba097-261e-4118-9a31-31e273795920"
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, stepping onto the front foot and swinging one arm down and across in front of the body, then drawing it back"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "strict side profile, feet planted apart, one open hand driven forward from the chest and held out, the other fist pulled back to the hip"
     }
-  ],
-  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it.",
-  "props": [
-    {
-      "id": "pitprop",
-      "tiles": 0.8,
-      "say": "a rotted timber pit prop standing upright on a stone floor, seen from HIGH ABOVE looking down so the round split top reads first, black with damp, splitting and furred with mould. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+   }
+  },
+  {
+   "sprite": "skeleton",
+   "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
+   "name": "Fissure Skeleton",
+   "look": "a mine skeleton: dry grey-white bone gone the colour of the rock it was buried in, a cracked skull with two dim points of light in the eye sockets, ribs showing through the rotted remains of a canvas miner coat, one hand bare bone and the other still gripping a rusted iron pick. Cool bone white and desaturated grey-brown, dull rust on the iron. No blood, no gore, no red, no glow and no magic aura of any kind — one flat dead body.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
     },
-    {
-      "id": "plank",
-      "tiles": 1.0,
-      "say": "two rotted broken planks lying FLAT on the ground, seen from DIRECTLY ABOVE looking straight down, black with damp, splintered and warped. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
     },
-    {
-      "id": "spoil",
-      "tiles": 1.1,
-      "say": "a low heap of broken rock and spoil on the ground, seen from HIGH ABOVE looking down, angular wet grey chips, dark between them. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
     },
-    {
-      "id": "bucket",
-      "tiles": 0.6,
-      "say": "a small wooden bucket tipped on its side, seen from HIGH ABOVE looking down, rotted staves and black rusted iron bands, something dark dried inside it. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    "bolt": {
+     "frames": 6,
+     "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
     },
-    {
-      "id": "candle",
-      "tiles": 0.5,
-      "tone": 0.1,
-      "say": "a guttering candle stub in a pool of run wax on the ground, seen from HIGH ABOVE looking down, one small dirty flame, everything around it swallowed by dark. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+    "frost_bolt": {
+     "frames": 4,
+     "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
     },
-    {
-      "id": "web",
-      "tiles": 1.2,
-      "say": "a torn ragged cobweb stretched flat across the ground, seen from DIRECTLY ABOVE looking straight down, thin filthy grey threads from an off-centre point with big gaps and broken strands, the floor visible THROUGH it. NOT a square, NOT a sheet. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "rail",
-      "tiles": 1.9,
-      "say": "a LONG straight run of narrow-gauge mine rail, two black rusted rails on rotten sleepers running the whole length of the picture from edge to edge, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "cart",
-      "tiles": 1.3,
-      "say": "a mine cart overturned and half wrecked, black rusted iron and broken spoked wheels, seen from HIGH ABOVE looking down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "beam",
-      "tiles": 1.4,
-      "say": "a fallen roof beam of black rotted timber lying across the ground with broken rock spilled over it, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "bones",
-      "tiles": 1.0,
-      "say": "a loose scatter of a few dry bones lying spread apart with gaps between them — a couple of ribs, one long bone, some finger bones — seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "altar",
-      "tiles": 1.7,
-      "say": "one long slab of rough unworked stone laid FLAT across two smaller boulders like a low bench, knee high, leaning and uneven, the top slab dished and dark with old dried stains that have run over the edge, seen from HIGH ABOVE looking down. NOT stacked, NOT stepped, NOT a pyramid, NOT a cube, NOT masonry, NOT carved, NOT decorated. Any stain is OLD and NEARLY BLACK, a dried near-black brown. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy. Cold desaturated grey and near-black, #33302B in shadow and #4A443C where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT bright, NOT clean."
-    },
-    {
-      "id": "gore",
-      "tiles": 1.3,
-      "say": "a wide FLAT stain of old blood soaked into bare stone, seen from DIRECTLY ABOVE looking straight down, an irregular ragged edge with thin runs and spatter thrown off it. It has NO thickness — it is a stain IN the floor. NOT a puddle, NOT a pool, NOT a blob, NOT raised, NOT domed. Every stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black and cold desaturated grey, #33302B in shadow and #4A443C where light reaches. Almost no light down here. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT clean, NOT cheerful."
-    },
-    {
-      "id": "skulls",
-      "tiles": 1.1,
-      "say": "a small heap of stacked skulls piled on the ground, seen from HIGH ABOVE looking down, cracked and stained the colour of the rock, jaws missing. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "chains",
-      "tiles": 1.2,
-      "say": "a length of heavy black rusted chain and an open shackle bolted into the stone floor, lying slack in a loose coil, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
-    },
-    {
-      "id": "husk",
-      "tiles": 1.3,
-      "say": "a dead body lying FLAT on its front on bare stone, arms flung out to the sides, seen from DIRECTLY ABOVE looking straight down at the back of it. Shrunken and dried, covered by rotted sacking and rags of coarse undyed cloth. NOT standing, NOT upright, NOT modern clothes, NOT denim, NOT a jacket, NOT boots, NOT a hat, NOT blue, NOT any colour but dust. Any stain is OLD and NEARLY BLACK, a dried near-black brown. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy. Cold desaturated grey and near-black, #33302B in shadow and #4A443C where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT bright, NOT clean."
+    "arc": {
+     "frames": 6,
+     "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
     }
-  ]
+   }
+  },
+  {
+   "sprite": "revenant",
+   "name": "Fissure Revenant",
+   "look": "an evil skeletal sorcerer: a tall gaunt skeleton in a long ragged black hooded cape that hangs to the ankles and is torn to strips at the hem, the hood pulled up and thrown back off a cracked elongated skull, two hot points of pale light burning deep in the eye sockets, a heavy black iron collar and chain-scraps at the shoulders, bare finger bones. Bone the colour of old rock, cape near-black charcoal with a cold grey edge where the light catches it. Menacing and predatory. No blood, no gore, no red, no fire and no magic aura around the body.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still and hunched forward, breathing, the long cape hanging and stirring at the hem, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "stalking forward with long slow strides, shoulders hunched, the long cape trailing and swaying behind the legs"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and raking one clawed hand across at chest height, then pulling it back"
+    },
+    "bolt": {
+     "frames": 6,
+     "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
+    },
+    "frost_bolt": {
+     "frames": 4,
+     "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
+    },
+    "arc": {
+     "frames": 6,
+     "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
+    }
+   },
+   "character": "34dba097-261e-4118-9a31-31e273795920"
+  }
+ ],
+ "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
+ "props": [
+  {
+   "id": "pitprop",
+   "tiles": 0.8,
+   "say": "a rotted timber pit prop standing upright on a stone floor, seen from HIGH ABOVE looking down so the round split top reads first, black with damp, splitting and furred with mould. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.55
+  },
+  {
+   "id": "plank",
+   "tiles": 1.0,
+   "say": "two rotted broken planks lying FLAT on the ground, seen from DIRECTLY ABOVE looking straight down, black with damp, splintered and warped. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.65
+  },
+  {
+   "id": "spoil",
+   "tiles": 1.1,
+   "say": "a low heap of broken rock and spoil on the ground, seen from HIGH ABOVE looking down, angular wet grey chips, dark between them. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "bucket",
+   "tiles": 0.6,
+   "say": "a small wooden bucket tipped on its side, seen from HIGH ABOVE looking down, rotted staves and black rusted iron bands, something dark dried inside it. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.55
+  },
+  {
+   "id": "candle",
+   "tiles": 0.5,
+   "tone": 0.1,
+   "say": "a guttering candle stub in a pool of run wax on the ground, seen from HIGH ABOVE looking down, one small dirty flame, everything around it swallowed by dark. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "web",
+   "tiles": 1.2,
+   "say": "a torn ragged cobweb stretched flat across the ground, seen from DIRECTLY ABOVE looking straight down, thin filthy grey threads from an off-centre point with big gaps and broken strands, the floor visible THROUGH it. NOT a square, NOT a sheet. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.55
+  },
+  {
+   "id": "rail",
+   "tiles": 1.9,
+   "say": "a LONG straight run of narrow-gauge mine rail, two black rusted rails on rotten sleepers running the whole length of the picture from edge to edge, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.55
+  },
+  {
+   "id": "cart",
+   "tiles": 1.3,
+   "say": "a mine cart overturned and half wrecked, black rusted iron and broken spoked wheels, seen from HIGH ABOVE looking down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.5
+  },
+  {
+   "id": "beam",
+   "tiles": 1.4,
+   "say": "a fallen roof beam of black rotted timber lying across the ground with broken rock spilled over it, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.6
+  },
+  {
+   "id": "bones",
+   "tiles": 1.0,
+   "say": "a loose scatter of a few dry bones lying spread apart with gaps between them — a couple of ribs, one long bone, some finger bones — seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "altar",
+   "tiles": 1.7,
+   "say": "one long slab of rough unworked stone laid FLAT across two smaller boulders like a low bench, knee high, leaning and uneven, the top slab dished and dark with old dried stains that have run over the edge, seen from HIGH ABOVE looking down. NOT stacked, NOT stepped, NOT a pyramid, NOT a cube, NOT masonry, NOT carved, NOT decorated. Any stain is OLD and NEARLY BLACK, a dried near-black brown. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy. Cold desaturated grey and near-black, #33302B in shadow and #4A443C where light reaches. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT bright, NOT clean."
+  },
+  {
+   "id": "gore",
+   "tiles": 0.95,
+   "say": "A large irregular patch of bare stone that something soaked into long ago and dried seen from DIRECTLY ABOVE looking straight down, far wider one way than the other, with a torn uneven edge, thin runs following the cracks and the plain rock showing through where it has flaked away. It has NO thickness — it is a stain IN the floor. NOT a puddle, NOT a pool, NOT a blob, NOT round, NOT an oval, NOT raised, NOT domed, NOT spatter dots. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.68
+  },
+  {
+   "id": "skulls",
+   "tiles": 1.1,
+   "say": "a small heap of stacked skulls piled on the ground, seen from HIGH ABOVE looking down, cracked and stained the colour of the rock, jaws missing. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "chains",
+   "tiles": 1.2,
+   "say": "a length of heavy black rusted chain and an open shackle bolted into the stone floor, lying slack in a loose coil, seen from DIRECTLY ABOVE looking straight down. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "pillar",
+   "tiles": 1.7,
+   "say": "a thick rough column of natural rock standing floor to ceiling, seen from HIGH ABOVE looking down so its wet uneven top reads first and its flank falls away below it, streaked with dark run-off and clotted at the base with broken chips. NOT masonry, NOT carved, NOT a pedestal, NOT stacked, NOT square. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "brazier",
+   "tiles": 1.2,
+   "say": "a shallow iron bowl on three bent legs, seen from HIGH ABOVE looking down, heaped with cold ash and a few dull red embers barely alive in it, the iron black and scaled with rust, spilled ash on the ground around the feet. NOT a fire, NOT flames, NOT bright, NOT glowing, NOT orange light. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "cocoon",
+   "tiles": 1.5,
+   "say": "a body-sized bundle wrapped tight in filthy grey webbing, lying on the ground, seen from DIRECTLY ABOVE looking straight down, the shape of shoulders and knees pushing through the wrapping, loose torn strands trailing off it onto the stone. Dried near-black seepage through the wrapping at one end. NOT white, NOT clean, NOT silk, NOT a sack, NOT standing. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "cairn",
+   "tiles": 1.4,
+   "say": "a rough heap of stacked flat stones about waist high with a single cracked skull set on top of it, seen from HIGH ABOVE looking down, the stones uneven and leaning as though piled in a hurry, dark stains run down the side of the stack. NOT mortared, NOT a wall, NOT tidy, NOT a monument, NOT carved. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "hung",
+   "tiles": 1.3,
+   "say": "a dead body hanging by its wrists from two heavy black rusted chains, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, head slumped forward onto the chest, arms stretched up and apart, legs hanging slack and slightly apart, wrapped in rotted colourless rags. Shrunken and dried. NOT modern clothes, NOT denim, NOT a jacket, NOT a hat, NOT blue, NOT standing, NOT alive. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "view": "side"
+  },
+  {
+   "id": "torch",
+   "tiles": 0.9,
+   "say": "a bent iron bracket bolted flat to stone holding a short burnt-down brand, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, one small dirty guttering flame at the top of it and soot streaked up the rock above, the iron black and scaled with rust. The flame is SMALL and dim. NOT bright, NOT a bonfire, NOT a lantern, NOT glass, NOT orange light spilling everywhere. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "view": "side"
+  },
+  {
+   "id": "roots",
+   "tiles": 1.2,
+   "say": "a hanging curtain of dead roots and fibrous strands coming down out of stone, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, thin and tangled with big gaps between the strands, some snapped off short, some reaching further down than others, furred with damp. NOT leaves, NOT green, NOT a plant, NOT a vine, NOT healthy, NOT a curtain of cloth. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "view": "side"
+  },
+  {
+   "id": "pebbles",
+   "tiles": 0.7,
+   "say": "Three or four loose chips of dull grey stone lying scattered on bare rock seen from DIRECTLY ABOVE looking straight down, each one well apart from the others with plain empty floor between them, one bigger than the rest and off to one side. NOT touching, NOT a pile, NOT a heap, NOT a mound, NOT a circle, NOT gravel, NOT a boulder. Most of the picture is EMPTY bare floor. NOT centred, NOT symmetrical, NOT arranged. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.6,
+   "size": 64
+  },
+  {
+   "id": "fungus",
+   "tiles": 0.6,
+   "say": "A spreading crust of pale sickly growth clinging FLAT to bare stone, seen from DIRECTLY ABOVE looking straight down — an irregular patch of fine fibrous strands and blotches with ragged thinning edges, lying flat like mould on a damp wall. Dirty bone-grey and greenish black. NOT a mushroom, NOT a toadstool, NOT a cap, NOT a stalk, NOT a stem, NOT standing up, NOT red, NOT white spots, NOT grass, NOT leaves, NOT a plant, NOT soil, NOT a rock it sits on. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.55,
+   "size": 64
+  },
+  {
+   "id": "ribs",
+   "tiles": 0.9,
+   "say": "A broken ribcage of DRY BONE lying on its side on bare stone seen from DIRECTLY ABOVE looking straight down, several curved ribs snapped off short with the spine still attached and curving away. Dry chalky BONE-WHITE going to grey and stained the colour of the rock. NOT pink, NOT magenta, NOT red, NOT flesh, NOT meat, NOT an insect, NOT a centipede, NOT a caterpillar, NOT legs, NOT antennae, NOT a creature. It is DEAD BONE and nothing else. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.5
+  },
+  {
+   "id": "splash",
+   "tiles": 0.7,
+   "say": "A thin ragged spatter flung across bare stone seen from DIRECTLY ABOVE looking straight down, one small heavier mark with a narrow fan of fine separate droplets thrown away from it in a line. Soaked in and long dried. It has NO thickness — it is a mark IN the floor. NOT a puddle, NOT a blob, NOT round, NOT a circle, NOT raised, NOT domed. Most of the picture is EMPTY bare floor. NOT centred, NOT symmetrical, NOT arranged. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.6,
+   "size": 64
+  },
+  {
+   "id": "stub",
+   "tiles": 0.5,
+   "say": "A stump of broken grey stone the size of a fist pushing up out of the floor, seen from HIGH ABOVE looking down, lumpy and rounded, snapped off at the top leaving a dull pale scar, wet at the base. Dull OPAQUE grey rock. NOT a crystal, NOT a gem, NOT faceted, NOT flat planes, NOT translucent, NOT glassy, NOT glowing, NOT green, NOT blue, NOT teal, NOT purple, NOT any colour at all. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "tone": 0.6,
+   "size": 64
+  },
+  {
+   "id": "stake",
+   "tiles": 0.9,
+   "say": "a rough wooden stake driven upright into the stone floor at a slight lean, seen from HIGH ABOVE looking down, splintered at the top, a loop of black rusted wire twisted round it and trailing off across the ground. NOT a post, NOT a fence, NOT planed timber, NOT clean, NOT new. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  }
+ ]
 }

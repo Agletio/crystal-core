@@ -95,7 +95,7 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
-import { VIGNETTES } from './vignettes';
+import { FRINGE_PROPS, LOOSE_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import type { RunState } from './sim/run';
 import {
@@ -109,6 +109,7 @@ import {
   slotUsed,
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
+import type { MapProp } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
@@ -219,6 +220,7 @@ import {
   sweepRing,
   paletteFrom,
   tileDecals,
+  wangShadow,
 } from './render/renderer';
 import {
   CARRY,
@@ -1519,6 +1521,46 @@ rule('SPRITES — is the pixel art well formed?');
   );
   check(bare.length === 0, 'and a room that asks to be dressed is', bare.map((s) => s?.id).join(', '));
 
+  // The three tables `dressEdges` scatters from, which no vignette references
+  // and so nothing else sweeps.
+  const noArt = [FRINGE_PROPS, LOOSE_PROPS, WALL_PROPS]
+    .flat()
+    .filter((w) => !PROP_ART[w.id])
+    .map((w) => w.id);
+  check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
+
+  // A room the ARRANGEMENTS alone dressed is a room with three tidy clusters
+  // in an empty field. What makes it a cavern is the foot of the rock, so the
+  // sandbox is held to a real spread of both kinds.
+  {
+    const box = SCENE_BY_ID.sandbox!;
+    const dressed = sceneMap(box.plan, box.theme, 1, box.ground);
+    const from = (t: typeof FRINGE_PROPS) =>
+      dressed.props.filter((p) => t.some((w) => w.id === p.id)).length;
+    const hung = from(WALL_PROPS);
+    const kinds = new Set(dressed.props.map((p) => p.id)).size;
+    line(`  ${dressed.props.length} props in the sandbox, ${kinds} kinds, ${hung} on the wall`);
+    check(
+      dressed.props.length >= 120 && kinds >= 15 && hung >= 3,
+      'and the sandbox is dressed at the foot of its rock and on the face of it',
+      `${dressed.props.length} props, ${kinds} kinds, ${hung} hung`
+    );
+  }
+
+  // A cut-face corner with no rock at any corner is the cell BELOW a cliff.
+  // The set draws it as a flat rectangle of shadow, which is why it is not
+  // drawn — and the rule has to hold for every key, since one wrong answer is
+  // either a hole in the floor or a wall with its base missing.
+  {
+    const wrong: string[] = [];
+    for (let key = 0; key < 81; key++) {
+      const at = [27, 9, 3, 1].map((place) => Math.floor(key / place) % 3);
+      const want = at.every((c) => c !== 1) && at.some((c) => c === 2);
+      if (wangShadow(key) !== want) wrong.push(`${key} ${at.join('')}`);
+    }
+    check(wrong.length === 0, 'and the 81 corner keys agree on which is pure shadow', wrong.join(', '));
+  }
+
   // Where a prop is PUT, which the id check cannot see. A room is authored by
   // hand in absolute tiles, so the three ways to get that wrong are outside the
   // walls, stacked on another prop, and standing on the hole or on the person.
@@ -1533,11 +1575,17 @@ rule('SPRITES — is the pixel art well formed?');
     const { grid, props } = sceneMap(s.plan, s.theme, 1, s.ground);
     const seen = new Set<string>();
     const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
+    // A WALL prop is drawn side-on and belongs ON the cut face, which is a
+    // rock tile with floor under it — the one thing that may be in the rock,
+    // and only THERE. Anywhere else it is a picture inside a cliff.
+    const hangs = new Set(WALL_PROPS.map((w) => w.id));
+    const face = (p: MapProp): boolean =>
+      rock(p) && grid.at(p.x, p.y - 1) === WALL && grid.at(p.x, p.y + 1) !== WALL;
     return [
       ...props.flatMap((p) => {
         const at = `${p.x},${p.y}`;
         const wrong: string[] = [];
-        if (rock(p)) wrong.push('in the rock');
+        if (hangs.has(p.id) ? !face(p) : rock(p)) wrong.push('in the rock');
         if (seen.has(at)) wrong.push('stacked');
         if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
         if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
@@ -6886,18 +6934,28 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     JSON.stringify(treeGrants(wearing.character))
   );
 
-  // And it does something: the same character, the same seed, with and without.
+  // And it does something: the same character, the same seeds, with and
+  // without. Over five of them, because a clear is mostly WALKING — one map
+  // where the exit lands further from the entrance swamps what a Bleed is
+  // worth, and the claim is about the ailment rather than about a map.
   const bare = createGame('fresh');
   bare.inventory.push(makeGear('skirmisher_body_t1', 20));
   equipItem(bare, bare.inventory[0], 'body');
-  const before = new RunSim([], bare.character, new Rng(21));
-  runToCompletion(before);
-  const after = new RunSim([], wearing.character, new Rng(21));
-  runToCompletion(after);
+  const clear = (who: typeof bare.character): number => {
+    let total = 0;
+    for (let seed = 21; seed < 26; seed++) {
+      const run = new RunSim([], who, new Rng(seed));
+      runToCompletion(run);
+      total += run.state.elapsed;
+    }
+    return total / 5;
+  };
+  const before = clear(bare.character);
+  const after = clear(wearing.character);
   check(
-    after.state.elapsed < before.state.elapsed,
-    `a Bleed on every hit clears the same seed faster: ${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`,
-    `${after.state.elapsed.toFixed(1)}s against ${before.state.elapsed.toFixed(1)}s`
+    after < before,
+    `a Bleed on every hit clears the same five seeds faster: ${after.toFixed(1)}s against ${before.toFixed(1)}s`,
+    `${after.toFixed(1)}s against ${before.toFixed(1)}s`
   );
 
   // --- jewellery, which has no implicit to replace ----------------------

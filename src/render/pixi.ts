@@ -51,6 +51,7 @@ import {
   vfxColour,
   wangCorners,
   wangNear,
+  wangShadow,
   ZOOM_MIN,
 } from './renderer';
 import {
@@ -77,6 +78,29 @@ import type { PoseId } from './pose';
 
 /** Every corner rock, in the base-three key `wangCorners` returns. */
 const ALL_ROCK = 40;
+
+/**
+ * The LIGHT, over a generated tileset. A Wang set is drawn to be looked at as
+ * terrain, so its stone is lit like the floor; laid flat over a whole map that
+ * reads as chambers punched out of a paved field.
+ *
+ * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
+ * tiles, leaving a lit rim and nothing past it. Floor takes `FOOT_DARK` on the
+ * one row TOUCHING stone, which is the shadow a wall throws at its own foot —
+ * one row and no gradient, since a tint is per TILE and a falloff over three of
+ * them is a chequerboard.
+ *
+ * `GRAIN` answers the other half. A set has ONE picture per corner combination,
+ * and turning the tile or mixing in a second set's both read worse than the
+ * repetition; light does not. A rise and fall over `GRAIN_SPAN` tiles reads as
+ * damp, as dust, as where the roof is lower, out of the same one tile.
+ */
+const ROCK_TOP = 0.9;
+const ROCK_REACH = 2.6;
+const ROCK_DARK = 0.06;
+const FOOT_DARK = 0.88;
+const GRAIN = 0.16;
+const GRAIN_SPAN = 3.5;
 
 const FLOATER_LIFE = 1.1;
 
@@ -332,11 +356,71 @@ export async function createPixiRenderer(
 
     const { grid } = map;
     const at = (gx: number, gy: number) => grid.at(gx, gy);
+
+    // Tiles from the nearest cell of a kind, as one 8-way flood out of all of
+    // them at once. Capped, so it costs the band it is allowed to reach.
+    const spread = (source: (i: number) => boolean, reach: number): Float32Array => {
+      const out = new Float32Array(grid.width * grid.height).fill(reach);
+      const queue: number[] = [];
+      for (let i = 0; i < out.length; i++) {
+        if (source(i)) {
+          out[i] = 0;
+          queue.push(i);
+        }
+      }
+      for (let head = 0; head < queue.length; head++) {
+        const node = queue[head];
+        if (out[node] >= reach) continue;
+        const x = node % grid.width;
+        const y = (node - x) / grid.width;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (!grid.inBounds(x + dx, y + dy)) continue;
+            const to = (y + dy) * grid.width + (x + dx);
+            if (out[to] <= out[node] + 1) continue;
+            out[to] = out[node] + 1;
+            queue.push(to);
+          }
+        }
+      }
+      return out;
+    };
+    const intoRock = spread((i) => grid.tiles[i] !== WALL, ROCK_REACH);
+    const offRock = spread((i) => grid.tiles[i] === WALL, 2);
+
+    // Value noise off `tileNoise`, read between its cells rather than at them:
+    // sampled per tile it is a chequerboard of its own.
+    const smooth = (x: number, y: number): number => {
+      const fx = x / GRAIN_SPAN;
+      const fy = y / GRAIN_SPAN;
+      const cx = Math.floor(fx);
+      const cy = Math.floor(fy);
+      const tx = fx - cx;
+      const ty = fy - cy;
+      const row = (iy: number) =>
+        tileNoise(cx, iy, 61) * (1 - tx) + tileNoise(cx + 1, iy, 61) * tx;
+      return row(cy) * (1 - ty) + row(cy + 1) * ty;
+    };
+
+    const litAt = (x: number, y: number): number => {
+      const k = y * grid.width + x;
+      const grain = 1 - GRAIN + GRAIN * smooth(x, y);
+      const lit =
+        grid.tiles[k] === WALL
+          ? ROCK_TOP * (1 - Math.min(1, intoRock[k] / ROCK_REACH) * (1 - ROCK_DARK))
+          : offRock[k] <= 1
+            ? FOOT_DARK
+            : 1;
+      const v = Math.round(Math.max(0, Math.min(1, lit * grain)) * 255);
+      return (v << 16) | (v << 8) | v;
+    };
+
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
         // A key nothing answers is a HOLE in the floor, so a cut-face corner
         // falls back to floor and then to rock.
-        const want = wangCorners(at, x, y);
+        const raw = wangCorners(at, x, y);
+        const want = wangShadow(raw) ? 0 : raw;
         const mask = textures[want] ? want : (wangNear(want).find((k) => textures[k]) ?? 0);
         // A Wang set has ONE picture per corner combination, so an open floor
         // is that picture in every cell of it. What CANNOT fix that is turning
@@ -355,13 +439,17 @@ export async function createPixiRenderer(
         sprite.x = x;
         sprite.y = y;
         sprite.scale.set(size);
+        sprite.tint = litAt(x, y);
         groundLayer.addChild(sprite);
       }
     }
     // Furniture, over the ground it stands on. Anchored at the FOOT of its
     // tile rather than at the middle: a prop taller than one tile has to grow
     // upward out of the floor, or it looks like it is sinking into it.
-    for (const prop of map.props) {
+    // Nearest LAST: a prop grows upward out of its own tile, so one in front
+    // has to cover what is behind it or a hanging body is drawn inside the
+    // rock it hangs on.
+    for (const prop of [...map.props].sort((a, b) => a.y - b.y)) {
       const art = PROP_ART[prop.id];
       const canvas = art ? propTextures(prop.id) : null;
       if (!art || !canvas) continue;
@@ -370,6 +458,7 @@ export async function createPixiRenderer(
       sprite.x = prop.x + 0.5;
       sprite.y = prop.y + 1;
       sprite.scale.set(art.tiles / canvas.width);
+      sprite.tint = litAt(prop.x, prop.y);
       groundLayer.addChild(sprite);
     }
     return true;
