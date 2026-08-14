@@ -1824,7 +1824,10 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1,
     radius: 0.32,
     sprite: 'husk',
-    scale: 1,
+    // Twice, to LOOK at the imported art. `radius` is what the sim collides
+    // and pathfinds on and is deliberately left alone, so this is presentation
+    // only — a body that draws bigger than it fights is a temporary lie.
+    scale: 2,
     weight: 800,
     tags: ['undead'],
   },
