@@ -99,7 +99,10 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
       data[at + 3] = a;
     }
   }
-  if (art.glow) glowed(data, art.glow.colour, art.glow.reach);
+  if (art.glow) {
+    const [r, g, b] = inkBytes(art.glow.colour);
+    glowed(data, [r, g, b], art.glow.reach, CELL);
+  }
   ctx.putImageData(image, 0, 0);
 }
 
@@ -108,11 +111,15 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
  * than the last. In the TEXTURE like the band it replaces, so it costs no
  * filter and cannot blur off the grid — what falls away is alpha, not focus.
  */
-function glowed(data: Uint8ClampedArray, colour: string, reach: number): void {
-  const [r, g, b] = inkBytes(colour);
+export function glowed(
+  data: Uint8ClampedArray,
+  [r, g, b]: [number, number, number],
+  reach: number,
+  size: number
+): void {
   const solid = (i: number): boolean => data[i * 4 + 3] > 0;
   let front: number[] = [];
-  for (let i = 0; i < CELL * CELL; i++) if (solid(i)) front.push(i);
+  for (let i = 0; i < size * size; i++) if (solid(i)) front.push(i);
 
   for (let ring = 1; ring <= reach; ring++) {
     // Squared, so it falls away quickly and reads as light rather than as a
@@ -120,16 +127,16 @@ function glowed(data: Uint8ClampedArray, colour: string, reach: number): void {
     const alpha = Math.round(190 * (1 - ring / (reach + 1)) ** 2);
     const next: number[] = [];
     for (const at of front) {
-      const x = at % CELL;
-      const y = (at - x) / CELL;
+      const x = at % size;
+      const y = (at - x) / size;
       for (const [nx, ny] of [
         [x - 1, y],
         [x + 1, y],
         [x, y - 1],
         [x, y + 1],
       ]) {
-        if (nx < 0 || ny < 0 || nx >= CELL || ny >= CELL) continue;
-        const to = ny * CELL + nx;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const to = ny * size + nx;
         if (solid(to)) continue;
         data[to * 4] = r;
         data[to * 4 + 1] = g;

@@ -12,7 +12,8 @@ const { lookRows } = await import('../src/render/look');
 const { POSE_IDS } = await import('../src/render/pose');
 const { DOLL_GRID, FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
 const { roleChar } = await import('../src/render/look');
-const { BEASTIARY, HALO, haloed } = await import('../src/render/bestiary');
+const { BEASTIARY } = await import('../src/render/bestiary');
+const { GLOW, glowed } = await import('../src/render/sprites');
 const { lookKeyColours } = await import('../src/render/sprites');
 
 
@@ -55,7 +56,7 @@ const inkRgb = (hex: string): [number, number, number] => {
  * and merely wasteful; at 256 it is 65,536, and the page never finished laying
  * out — the tool timed out on the first generated creature.
  */
-function cellHtml(rows, label, key = KEY) {
+function cellHtml(rows, label, key = KEY, glow = null) {
   const grid = rows.length;
   const rgba = new Uint8Array(grid * grid * 4);
   rows.forEach((row, y) => {
@@ -70,6 +71,9 @@ function cellHtml(rows, label, key = KEY) {
       rgba[at + 3] = 255;
     }
   });
+  // Through the game's own `glowed`, so the sheet cannot show a rank the game
+  // does not draw — which is exactly what it did while it still rang a band.
+  if (glow) glowed(rgba as never, inkRgb(glow.colour), Math.max(1, Math.round(glow.reach * grid / 256)), grid);
   const src = `data:image/png;base64,${encodePng(grid, grid, rgba).toString('base64')}`;
   return `<div class="cell"><img class="art" src="${src}"><span>${label}</span></div>`;
 }
@@ -157,7 +161,14 @@ const page4 = Object.entries(BEASTIARY)
       `<div class="row"><b>${id}</b><div class="poses">` +
       RANKS.map((r) =>
         [0, 1, 2]
-          .map((f) => cellHtml(haloed(f === 2 ? (art.attack ?? art.frames[0]) : art.frames[f], HALO[r]), `${r} ${f}`, beastKey(art, r)))
+          .map((f) =>
+            cellHtml(
+              f === 2 ? (art.attack ?? art.frames[0]) : art.frames[f],
+              `${r} ${f}`,
+              beastKey(art, r),
+              GLOW[r] ? { colour: GLOW[r].colour(PALETTE), reach: GLOW[r].reach } : null
+            )
+          )
           .join('')
       ).join('') +
       `</div></div>`
