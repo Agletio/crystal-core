@@ -2149,8 +2149,8 @@ export const MONSTERS_BY_FAMILY: Record<MonsterFamily, MonsterDef[]> = {
  */
 export const MONSTER_RANKS: MonsterRankDef[] = [
   { id: 'common', weight: 1000, life: 1, damage: 1, bounty: 1, scale: 1 },
-  { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.18 },
-  { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.36 },
+  { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.4 },
+  { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.7 },
 ];
 
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(

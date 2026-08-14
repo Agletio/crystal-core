@@ -1207,6 +1207,9 @@ export class RunSim {
           // Ranged packs go through the exact same skill path the hero uses.
           this.useSkill(m, hero, skill);
         } else {
+          // What `useSkill` sets, or a melee body swings from a standing pose.
+          m.action = 'attack';
+          m.actionTimer = ATTACK_POSE;
           this.dealDamage(m, hero, 1);
           m.cooldown = 1 / m.stats.attacksPerSecond;
         }

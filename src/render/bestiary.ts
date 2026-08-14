@@ -1603,18 +1603,30 @@ export const HALO: Record<MonsterRank, string | null> = {
  * follows its silhouette rather than boxing it. Grown outward only: a halo
  * that ate a pixel of the body would thin every leg it touched.
  */
-export function haloed(frame: string[], ink: string | null): string[] {
+export function haloed(frame: string[], ink: string | null, rings = 1): string[] {
   if (!ink) return frame;
-  const lit = (x: number, y: number) => (frame[y]?.[x] ?? '.') !== '.';
-  return frame.map((row, y) =>
-    row
-      .split('')
-      .map((ch, x) => {
-        if (ch !== '.') return ch;
-        const near =
-          lit(x - 1, y) || lit(x + 1, y) || lit(x, y - 1) || lit(x, y + 1);
-        return near ? ink : ch;
-      })
-      .join('')
-  );
+  let out = frame;
+  for (let ring = 0; ring < rings; ring++) {
+    const grown = out;
+    const lit = (x: number, y: number) => (grown[y]?.[x] ?? '.') !== '.';
+    out = grown.map((row, y) =>
+      row
+        .split('')
+        .map((ch, x) => {
+          if (ch !== '.') return ch;
+          const near =
+            lit(x - 1, y) || lit(x + 1, y) || lit(x, y - 1) || lit(x, y + 1);
+          return near ? ink : ch;
+        })
+        .join('')
+    );
+  }
+  return out;
 }
+
+/**
+ * How many rings make the ONE the 24 grid was drawn with. A ring is in art
+ * pixels, so a single one on a 256 grid is a third of a device pixel on screen:
+ * it aliases in and out along the silhouette and reads as a broken line.
+ */
+export const haloRings = (grid: number): number => Math.max(1, Math.round(grid / 24));
