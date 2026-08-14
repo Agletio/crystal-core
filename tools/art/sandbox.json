@@ -1,6 +1,7 @@
 {
-  "_": "What the sandbox is made of, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/sandbox.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
-  "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a template animation degrades across its run, so which window is usable is a fact about that generation. `cast` is what a body throwing something plays; leave it out and a thrower reuses its melee swing.",
+  "_": "What the sandbox is made of, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/sandbox.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+  "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+  "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
   "tileset": {
     "id": "7030baac-8411-4c96-b518-075c78da2835",
     "floorIs": "lower"
@@ -8,16 +9,33 @@
   "hero": {
     "sprite": "delver",
     "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
+    "dirs": [
+      "north",
+      "north-east",
+      "east",
+      "south-east",
+      "south"
+    ],
     "states": {
+      "idle": {
+        "group": "3b7626c8-7922-46a1-90c1-6f5a0e812533",
+        "frames": 2
+      },
       "walk": {
-        "group": "sandbox_walk",
-        "frames": 3,
-        "to": 0.75
+        "group": "f3be3bdb-cd5f-44c4-9591-8d8aa8b17cf7",
+        "frames": 4,
+        "from": 0.28,
+        "to": 0.8
       },
       "attack": {
-        "group": "sandbox_swing",
+        "group": "11824eba-b5ff-4edc-bc3d-9ec1390c7e00",
         "frames": 3,
-        "to": 0.5
+        "from": 0.4
+      },
+      "cast": {
+        "group": "295f772d-4f7a-4171-ba12-5eb5a8ca8063",
+        "frames": 3,
+        "from": 0.4
       }
     }
   },
@@ -25,22 +43,43 @@
     {
       "sprite": "skeleton",
       "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
+      "dirs": [
+        "north",
+        "north-east",
+        "east",
+        "south-east",
+        "south"
+      ],
       "states": {
+        "idle": {
+          "group": "12da04c1-2884-420b-8c5f-f85f159557bf",
+          "frames": 2
+        },
         "walk": {
-          "group": "skel_walk",
-          "frames": 3,
+          "group": "177d1115-4b90-47df-a398-0074b6e20ce6",
+          "frames": 4,
+          "from": 0.28,
           "to": 0.75
         },
         "attack": {
-          "group": "skel_swing",
+          "group": "da642afd-7d5f-4782-a58b-038965ee4935",
           "frames": 3,
-          "to": 0.5
+          "from": 0.4
         },
-        "cast": {
-          "group": "skel_cast",
-          "frames": 2,
-          "from": 0.34,
-          "to": 0.6
+        "bolt": {
+          "group": "1bbb4fa8-a4ea-4ad9-bc36-cb38113007c4",
+          "frames": 3,
+          "from": 0.45
+        },
+        "frost_bolt": {
+          "group": "e609a7df-4d37-47bf-a1c8-3a4207d9802b",
+          "frames": 3,
+          "from": 0.4
+        },
+        "arc": {
+          "group": "88762bcd-c254-4278-b74c-e9aa3680b268",
+          "frames": 3,
+          "from": 0.3
         }
       }
     }

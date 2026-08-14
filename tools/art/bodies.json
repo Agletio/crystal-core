@@ -1,0 +1,69 @@
+{
+  "_": "What to ASK the generator for. `sandbox.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
+  "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
+  "dirs": [
+    "north",
+    "north-east",
+    "east",
+    "south-east",
+    "south"
+  ],
+  "bodies": [
+    {
+      "sprite": "delver",
+      "character": "7b0084fb-0289-42d3-a4ed-c5e2e2d462fe",
+      "name": "Delver",
+      "look": "a traveller who has been underground far too long: hooded and hunched, a heavy cloak gone to rags at the hem, a bedroll still strapped across the back, boots and wraps caked in rock dust. Grimy off-white and dull grey-brown cloth, nothing bright on him but one pale eye under the hood. No armour plate, no weapon drawn, no glow.",
+      "states": {
+        "idle": {
+          "frames": 4,
+          "say": "standing still, weight settling from one foot to the other, shoulders rising and falling, cloak hanging"
+        },
+        "walk": {
+          "frames": 8,
+          "say": "walking forward at a tired trudge, head down, cloak swaying behind the legs"
+        },
+        "attack": {
+          "frames": 4,
+          "say": "staying in strict side profile, stepping onto the front foot and swinging one arm down and across in front of the body, then drawing it back"
+        },
+        "cast": {
+          "frames": 4,
+          "say": "strict side profile, feet planted apart, one open hand driven forward from the chest and held out, the other fist pulled back to the hip"
+        }
+      }
+    },
+    {
+      "sprite": "skeleton",
+      "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
+      "name": "Fissure Skeleton",
+      "look": "a mine skeleton: dry grey-white bone gone the colour of the rock it was buried in, a cracked skull with two dim points of light in the eye sockets, ribs showing through the rotted remains of a canvas miner coat, one hand bare bone and the other still gripping a rusted iron pick. Cool bone white and desaturated grey-brown, dull rust on the iron. No blood, no gore, no red, no glow and no magic aura of any kind — one flat dead body.",
+      "states": {
+        "idle": {
+          "frames": 4,
+          "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+        },
+        "walk": {
+          "frames": 8,
+          "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+        },
+        "attack": {
+          "frames": 4,
+          "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+        },
+        "bolt": {
+          "frames": 6,
+          "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
+        },
+        "frost_bolt": {
+          "frames": 4,
+          "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
+        },
+        "arc": {
+          "frames": 6,
+          "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
+        }
+      }
+    }
+  ]
+}

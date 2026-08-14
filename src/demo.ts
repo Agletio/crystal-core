@@ -107,7 +107,7 @@ import {
   slotUsed,
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap } from './sim/grid';
-import { GLOW, HERO_FRAMES, wellFormed } from './render/sprites';
+import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
@@ -1357,8 +1357,97 @@ rule('SPRITES — is the pixel art well formed?');
         }
       }
       if (!art.states.walk) bad.push(`${id} has no walk`);
+      // A facing is one STRIDE along the flat list, so the list has to divide
+      // by the facings and a state's runs have to sit inside the first one.
+      const stride = art.frames.length / art.dirs.length;
+      if (!Number.isInteger(stride)) {
+        bad.push(`${id}: ${art.frames.length} frames over ${art.dirs.length} facings`);
+      } else {
+        for (const [state, run] of Object.entries(art.states)) {
+          if (run.some((at) => at >= stride)) bad.push(`${id}/${state} runs past one facing`);
+        }
+      }
     }
     check(bad.length === 0, 'and every state of one names frames that exist', bad.join('; '));
+
+    // Nothing may ask for a frame nobody DREW. `makeSheet` builds one canvas
+    // per frame the art has, and every frame past that falls back to the first
+    // in silence — which is a body that lunges at you and never moves, and is
+    // exactly what the sandbox looked like for a session.
+    const past: string[] = [];
+    const reached = new Set<string>();
+    for (const [id, art] of Object.entries(GENERATED)) {
+      const skills = [null, ...Object.keys(art.states)];
+      for (const action of ['idle', 'move', 'attack', 'hurt']) {
+        for (const skill of skills) {
+          for (let turn = 0; turn < 16; turn++) {
+            for (const at of [0, 0.34, 0.67, 1]) {
+              const facing = (turn / 16) * Math.PI * 2 - Math.PI;
+              const frame = generatedFrame(id, action, at, at * 3, skill, facing);
+              if (frame >= art.frames.length || frame < 0) {
+                past.push(`${id} ${action}/${skill} -> ${frame} of ${art.frames.length}`);
+              }
+              reached.add(`${id}:${frame}`);
+            }
+          }
+        }
+      }
+    }
+    check(past.length === 0, 'and nothing ever asks for a frame past the ones drawn', past.slice(0, 3).join('; '));
+    // The other half of that, and the half no headless harness can see: how
+    // many canvases `makeSheet` builds. jsdom has no 2D context, so what is
+    // held here is the COUNT it loops to.
+    const short = Object.entries(GENERATED).filter(([id, art]) => framesOf(id) !== art.frames.length);
+    check(
+      short.length === 0 && framesOf('grub') === CREATURE_FRAMES,
+      'and the sheet is built to the count the art declares, not a constant',
+      short.map(([id]) => id).join(', ')
+    );
+
+    // Every frame that ships is one something can actually reach. A window
+    // that keeps a frame no state names is a generation nobody sees.
+    const stranded = Object.entries(GENERATED).flatMap(([id, art]) =>
+      art.frames.map((_, at) => `${id}:${at}`).filter((k) => !reached.has(k))
+    );
+    check(stranded.length === 0, 'and every frame that ships is one something reaches', stranded.join(', '));
+
+    // The three thrown abilities are three ANIMATIONS, or a body that spits
+    // fire, frost and lightning plays one pose for all three.
+    const throwers = MONSTER_ABILITIES.filter((a) => a.skill).map((a) => a.skill!);
+    for (const [id, art] of Object.entries(GENERATED)) {
+      const own = throwers.filter((s) => art.states[s]);
+      if (own.length < 2) continue;
+      const poses = new Set(own.map((s) => generatedFrame(id, 'attack', 0.5, 0, s)));
+      check(
+        poses.size === own.length,
+        `${id} plays a different animation for each of its ${own.length} thrown skills`,
+        `${poses.size} poses for ${own.join(', ')}`
+      );
+    }
+
+    // `cast` is for a SPELL. A body carrying one and swinging a sword must
+    // swing it — the hero holds both, and the fallback is what decides.
+    for (const [id, art] of Object.entries(GENERATED)) {
+      if (!art.states.cast || !art.states.attack) continue;
+      // Modulo the stride, since a run is written for the FIRST facing and
+      // facing 0 is east, which is the middle of five.
+      const stride = art.frames.length / art.dirs.length;
+      const swung = generatedFrame(id, 'attack', 0.5, 0, 'strike', 0, false) % stride;
+      const cast = generatedFrame(id, 'attack', 0.5, 0, 'fireball', 0, true) % stride;
+      check(
+        swung !== cast && art.states.attack.includes(swung) && art.states.cast.includes(cast),
+        `${id} swings with its swing and casts with its cast`,
+        `${swung} and ${cast}`
+      );
+    }
+
+    // A state named for a skill nothing throws is a generation spent on a
+    // pose that never plays.
+    const known = new Set(['idle', 'walk', 'attack', 'cast', ...throwers]);
+    const odd = Object.entries(GENERATED).flatMap(([id, art]) =>
+      Object.keys(art.states).filter((s) => !known.has(s)).map((s) => `${id}/${s}`)
+    );
+    check(odd.length === 0, 'and every state is an action or a skill something throws', odd.join(', '));
   }
 
   // A scene needs BOTH tables: one of them walks about the room and the other
@@ -2044,7 +2133,7 @@ rule('THE SANDBOX — does the room show what a body can DO?');
     for (const v of sim.state.vfx) kinds.add(v.kind);
     for (const m of sim.state.monsters) {
       if (m.action === 'attack') {
-        frames.add(generatedFrame(m.sprite, m.action, 0.5, sim.state.elapsed, !!m.skillId));
+        frames.add(generatedFrame(m.sprite, m.action, 0.5, sim.state.elapsed, m.skillId, m.facing));
       }
     }
   }

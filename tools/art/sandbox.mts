@@ -25,15 +25,21 @@ interface BodySpec {
   sprite: string;
   character: string;
   /**
-   * State name -> which animation group on the generator, and WHICH WINDOW of
-   * it to keep. The whole of what makes a body's states data: a fourth one is
-   * a row here and nothing else anywhere.
+   * Which facings to pull, north to south. Only the EAST half of the compass
+   * is worth generating: the renderer mirrors anything facing left, so the
+   * western three are reflections and paying for them buys nothing.
+   */
+  dirs?: string[];
+  /**
+   * State name -> which animation GROUP ID on the generator, and which window
+   * of it to keep. The whole of what makes a body's states data: a further one
+   * is a row here and nothing else anywhere.
    *
    * `from`/`to` are fractions of the animation, defaulting to the whole of it.
-   * They are not a nicety: a template animation DEGRADES across its run — the
-   * skeleton's `cross-punch` is clean for three frames and then grows a
-   * floating pick and turns to face the camera — so which part is usable is a
-   * fact about that generation and belongs beside its id.
+   * They are not a nicety: a generated animation DEGRADES across its run — a
+   * skeleton grows a weapon it does not hold, or turns to face the camera —
+   * so which part is usable is a fact about that generation, belongs beside
+   * its id, and is the one judgement no tool makes for you.
    */
   states: Record<string, { group: string; frames: number; from?: number; to?: number }>;
 }
@@ -54,6 +60,7 @@ interface Manifest {
 
 type Art = {
   grid: number;
+  dirs: string[];
   frames: string[][];
   states: Record<string, number[]>;
   key: Record<string, string>;
@@ -122,11 +129,12 @@ class Inks {
 
 /**
  * The grid a body ships at. A DECISION, not whatever the generator handed
- * back: the art is three frames of `grid × grid` strings in a committed
- * bundle, so the size is a cost rather than a fact. `drawPixels` samples per
- * destination pixel, so nothing here has to divide `CELL`.
+ * back: the art is `grid × grid` strings per frame in a committed bundle AND a
+ * canvas per frame at four bytes a pixel, and both are paid per FACING now.
+ * 96 because the camera lands a body in about 87 device pixels — past that the
+ * texture is downsampled before anybody sees it.
  */
-const GRID = 128;
+const GRID = 96;
 
 /** How many inks a body, a tileset and one prop each settle to. */
 const BODY_INKS = 56;
@@ -187,13 +195,14 @@ function rowsOf(image: Decoded, inks: Inks, box = whole(image)): string[] {
 // The creature
 // ---------------------------------------------------------------------------
 
-/** `get_character` prints a group header at two spaces and each direction's
- *  frames at four. Nothing else is indented that way. */
+/** A group header sits at two spaces and each direction's frames at four.
+ *  Keyed by group ID, never by name: a re-roll under the same name leaves TWO
+ *  groups standing, and a name then picks whichever was listed first. */
 function animationFrames(text: string, direction: string): Map<string, string[]> {
   const out = new Map<string, string[]>();
   let group = '';
   for (const line of text.split('\n')) {
-    const head = /^ {2}(\S.*?) — \d+ dir/.exec(line);
+    const head = /^ {2}\S.*? — \d+ dir.*\[group: ([0-9a-f-]{36})\]/.exec(line);
     if (head) {
       group = head[1];
       continue;
@@ -224,20 +233,25 @@ function spread(urls: string[], want: number, from = 0, to = 1): string[] {
 
 async function creature(spec: BodySpec): Promise<Art> {
   const text = await callTool('get_character', { character_id: spec.character });
-  const animations = animationFrames(text, 'east');
-  const idle = rotation(text, 'east');
+  const dirs = spec.dirs ?? ['east'];
 
-  // Every state's frames, in one flat list, with a run of indexes each. The
-  // rotation stands in for a group the character does not have, so a body with
-  // no walk still draws rather than throwing.
+  // One flat list, direction-MAJOR: every facing holds the same states in the
+  // same order, so the runs are the first facing's and a facing is one stride
+  // along the list. The rotation stands in for a group a character does not
+  // have, so a body with no walk still draws rather than throwing.
   const wanted: string[] = [];
   const states: Record<string, number[]> = {};
-  for (const [name, want] of Object.entries(spec.states)) {
-    const urls = animations.get(want.group) ?? [];
-    if (urls.length === 0) console.log(`  ${name}: no group named ${want.group} — using the rotation`);
-    const taken = urls.length > 0 ? spread(urls, want.frames, want.from, want.to) : [idle];
-    states[name] = taken.map((_, i) => wanted.length + i);
-    wanted.push(...taken);
+  for (const dir of dirs) {
+    const animations = animationFrames(text, dir);
+    const still = rotation(text, dir);
+    const from = wanted.length;
+    for (const [name, want] of Object.entries(spec.states)) {
+      const urls = animations.get(want.group) ?? [];
+      if (urls.length === 0) console.log(`  ${dir} ${name}: no group ${want.group} — standing still`);
+      const taken = urls.length > 0 ? spread(urls, want.frames, want.from, want.to) : [still];
+      if (from === 0) states[name] = taken.map((_, i) => wanted.length + i);
+      wanted.push(...taken);
+    }
   }
 
   const images = await Promise.all(
@@ -264,9 +278,10 @@ async function creature(spec: BodySpec): Promise<Art> {
   );
   console.log(
     `  ${widest}px into a ${GRID} grid, ${inks.distinct} colours into ${inks.size}, ` +
+      `${dirs.length} facings x ` +
       Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ')
   );
-  return { grid: GRID, frames, states, key: inks.key };
+  return { grid: GRID, dirs, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
@@ -399,16 +414,24 @@ write(
       ` * same list of strings every hand-drawn one is. Each carries its OWN key: the\n` +
       ` * five inks belong to \`BEASTIARY\`, not to the renderer.`
   ) +
-    `export type GeneratedArt = {\n  grid: number;\n  frames: string[][];\n` +
-    `  /** Which indexes of \`frames\` are which STATE. A body has a walk, a melee\n` +
-    `   *  swing and — if it throws anything — a cast, and adding a fourth is a\n` +
-    `   *  manifest row rather than a change to anything that draws. */\n` +
+    `export type GeneratedArt = {\n  grid: number;\n` +
+    `  /** Facings, north to south, and only the east half of the compass —\n` +
+    `   *  anything facing left is one of these mirrored. */\n` +
+    `  dirs: string[];\n` +
+    `  /** Direction-MAJOR: every facing holds the same states in the same\n` +
+    `   *  order, so a facing is one stride along this and everything that\n` +
+    `   *  draws a body stays flat. */\n` +
+    `  frames: string[][];\n` +
+    `  /** Which indexes of the FIRST facing are which STATE. A body walks,\n` +
+    `   *  stands, swings and casts one animation per skill it throws, and a\n` +
+    `   *  further one is a manifest row rather than a change to what draws. */\n` +
     `  states: Record<string, number[]>;\n  key: Record<string, string>;\n};\n\n` +
     `export const GENERATED: Record<string, GeneratedArt> = {\n` +
     Object.entries(bodies)
       .map(
         ([id, art]) =>
           `  ${id}: {\n    grid: ${art.grid},\n` +
+          `    dirs: ${JSON.stringify(art.dirs)},\n` +
           `    frames: [${art.frames.map((f) => rowSource(f, '    ')).join(', ')}],\n` +
           `    states: ${JSON.stringify(art.states)},\n` +
           `    key: ${JSON.stringify(art.key)},\n  },`

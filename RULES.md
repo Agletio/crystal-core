@@ -706,17 +706,41 @@ passes for that: `note` every pixel, `settle`, then `char`.
 
 **A generated body has named STATES; a hand-drawn one has walk-walk-swing.**
 `GeneratedArt.states` maps a name to a RUN of indexes in the one flat `frames`
-list, and `generatedFrame` picks among them off what the body is DOING — a
-melee swing and a cast are different animations, and which is showing is
-whether the body has a skill to throw. A fourth state is a row in
-`tools/art/sandbox.json` and a change to nothing that draws.
+list, and `generatedFrame` picks among them off what the body is DOING. A state
+is named for an ACTION — `idle`, `walk`, `attack` — or for the SKILL it uses,
+which is looked up FIRST, so fire, frost and lightning are three animations.
+`cast` is the fallback and only reached for a SPELL: the hero carries both a
+swing and a cast, and without that test it would cast while swinging a sword.
+A further state is a row in `tools/art/sandbox.json` and a change to nothing.
 
-**A state names WHICH WINDOW of its animation to keep.** A template animation
-degrades across its run: measured over three on one body, the first ~60% is
-on-model and the tail drifts — a walk grows a crook in its last frame, a
-`cross-punch` turns to face the camera and sprouts a floating pick. `from`/`to`
-are fractions and they are not a nicety; which part is usable is a fact about
-that generation and belongs beside its id.
+**Nothing may ask for a frame nobody DREW.** `makeSheet` builds one canvas per
+frame and `framesOf` is the count; it was the constant `CREATURE_FRAMES` = 3,
+so every index past the second fell through `frames[frame] ?? frames[0]` to the
+standing pose and a generated body's swing and cast NEVER drew — what looked
+like an attack was `drawEntity`'s lunge with nothing behind it. The demo sweeps
+every action, skill and facing and fails an index past the end, and it fails a
+frame that ships which nothing reaches.
+
+**A body's FACINGS are the east half of the compass and nothing more.**
+`GeneratedArt.dirs` runs north to south; the renderer mirrors anything facing
+left, so generating the western three is paying twice for the same pixels.
+`frames` is direction-MAJOR and the runs are the FIRST facing's, so a facing is
+one stride along the flat list and every reader stays flat. `facingRow` folds
+an angle into that half and buckets it.
+
+**A generated body is drawn at its OWN grid, never `CELL`.** The camera lands
+one in about 87 device pixels, so 256 was downsampled before anybody saw it —
+and at five facings a body is ninety canvases at four bytes a pixel. `GRID` in
+`sandbox.mts` is 96 for the same reason, Pixi scales by the texture's own
+width, and `GLOW.reach` is scaled by `grid / CELL` or the light swallows it.
+
+**A state names WHICH WINDOW of its animation to keep.** A generation degrades
+across its run and the tail is where it goes: a walk grows a crook, a swing
+turns to face the camera, an ask naming a weapon the rotation does not hold
+draws a different one per frame. `from`/`to` are fractions and they are not a
+nicety; which part is usable is a fact about that generation and belongs beside
+its id. Ask in `mode: 'v3'` from a written pose — a template animation is a
+lurch — say "staying in strict side profile", and keep `frame_count` low.
 
 **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
 `GENERATED`, so an id in both is a generated body that never draws, silently —

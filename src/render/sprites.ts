@@ -18,8 +18,7 @@ import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
 import type { Look } from '../types';
 
-/** Pixels per sprite cell, and the ceiling on how much of one can be seen.
- *  Pixi scales by 1/CELL: this costs texture, never size on screen. */
+/** Pixels per sprite cell: texture, never size on screen. */
 export const CELL = 256;
 /** A hand-drawn creature's cycle: two is enough for legs to alternate on
  *  something with none, and after it comes the swing. A GENERATED body has
@@ -39,11 +38,8 @@ type PixelArt = {
   glow?: { colour: string; reach: number };
 };
 
-/**
- * Every frame must be square and match the grid it declares. A short row
- * silently truncates and a long one silently draws outside the cell — both
- * read as "the art is a bit off" rather than as the typo they are.
- */
+/** Every frame must be square and match the grid it declares: a short row
+ *  truncates and a long one draws outside the cell, both silently. */
 export function wellFormed(frames: string[][], grid: number): string[] {
   const bad: string[] = [];
   frames.forEach((rows, f) => {
@@ -75,12 +71,8 @@ function inkBytes(colour: string): [number, number, number, number] {
   return bytes;
 }
 
-/**
- * Written as pixels rather than as rects. At grid 256 a cell is 65,536 of them,
- * and that many `fillRect` calls is a visible hitch the first time a creature
- * appears. Sampling per DESTINATION pixel also means the grid need not divide
- * the cell evenly — no seams, whatever it is authored at.
- */
+/** Pixels rather than rects: 65,536 `fillRect` calls is a visible hitch. And
+ *  sampling per DESTINATION pixel means the grid need not divide the cell. */
 function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): void {
   const image = ctx.createImageData(size, size);
   const data = image.data;
@@ -105,11 +97,8 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): 
   ctx.putImageData(image, 0, 0);
 }
 
-/**
- * Light off the body: rings of the rank's ink spreading outward, each fainter
- * than the last. In the TEXTURE like the band it replaces, so it costs no
- * filter and cannot blur off the grid — what falls away is alpha, not focus.
- */
+/** Light off the body: rings of the rank's ink, each fainter than the last, in
+ *  the TEXTURE — so it costs no filter and cannot blur off the grid. */
 export function glowed(
   data: Uint8ClampedArray,
   [r, g, b]: [number, number, number],
@@ -148,12 +137,9 @@ export function glowed(
   }
 }
 
-/**
- * The hero: a traveller who has been down here far too long. Hooded and hunched
- * over a walking staff, cloak gone to rags at the hem, a bedroll still strapped
- * on because he set out meaning to come home. The only bright thing on him is
- * the eye under the hood.
- */
+/** The hero: hooded, hunched over a walking staff, cloak gone to rags, a
+ *  bedroll still strapped on. The eye under the hood is the only bright
+ *  thing on him. */
 export const HERO_FRAMES: string[][] = [
   // Planted on the staff, trailing leg back.
   [
@@ -232,35 +218,84 @@ function generatedArt(palette: Palette, sprite: string, frame: number, rank: Mon
     grid: art.grid,
     rows: art.frames[Math.min(frame, art.frames.length - 1)],
     key: art.key,
-    glow: glow ? { colour: glow.colour(palette), reach: glow.reach } : undefined,
+    // Reach is in DESTINATION pixels and the numbers are `CELL`'s, so a body
+    // drawn at its own smaller grid needs it scaled or the light swallows it.
+    glow: glow
+      ? { colour: glow.colour(palette), reach: (glow.reach * art.grid) / CELL }
+      : undefined,
   };
 }
 
-/** Which frame of a generated body is showing. A state is a RUN of frames in
- *  the flat list `frames` is, so a body can have a melee swing AND a cast and a
- *  third is a manifest row. `through` is how far into its own action it is,
- *  never elapsed time: off the clock a fast swing and a slow one are one. */
+/**
+ * How many frames a sprite HAS. A generated body carries its own count, where
+ * a hand-drawn one is the walk and then the swing — and drawing the fixed
+ * three left every frame past the second falling back to the first, so a body
+ * with a swing and three casts lunged at you and never moved.
+ */
+export const framesOf = (sprite: string): number =>
+  GENERATED[sprite]?.frames.length ?? CREATURE_FRAMES;
+
+/**
+ * Which of a generated body's FACINGS is showing. The art is only the east
+ * half of the compass — the renderer already mirrors anything facing left, so
+ * a west-side facing is its east-side twin flipped and generating it twice
+ * would be paying for a reflection. `dirs` runs north to south, so the bucket
+ * is the angle folded into that half and divided by it.
+ */
+export function facingRow(sprite: string, facing: number): number {
+  const rows = GENERATED[sprite]?.dirs.length ?? 1;
+  if (rows < 2) return 0;
+  const east = Math.cos(facing) < 0 ? Math.PI - facing : facing;
+  const turn = Math.atan2(Math.sin(east), Math.cos(east));
+  const at = Math.round(((turn + Math.PI / 2) / Math.PI) * (rows - 1));
+  return Math.min(rows - 1, Math.max(0, at));
+}
+
+/**
+ * Which frame of a generated body is showing. A state is a RUN of frames in
+ * the flat list `frames` is, so a body can have a melee swing AND a cast per
+ * skill and a further one is a manifest row. `through` is how far into its own
+ * action it is, never elapsed time: off the clock a fast swing and a slow one
+ * are one. `skill` is what it is using and names its own state FIRST, so fire,
+ * frost and lightning are three animations rather than one cast; `cast` is the
+ * fallback for a spell with no animation of its own, and only for a spell — a
+ * hero holding one would otherwise play it while swinging a sword.
+ *
+ * The list is direction-MAJOR and the runs are the first facing's, so a facing
+ * is one stride along it and everything that draws a body stays flat.
+ */
 export function generatedFrame(
   sprite: string,
   action: string,
   through: number,
   elapsed: number,
-  ranged: boolean
+  skill: string | null,
+  facing = 0,
+  spell = false
 ): number {
-  const states = GENERATED[sprite]?.states;
-  if (!states) return action === 'attack' ? ATTACK_FRAME : 0;
+  const art = GENERATED[sprite];
+  if (!art) return action === 'attack' ? ATTACK_FRAME : 0;
+  const states = art.states;
+  const stride = art.frames.length / art.dirs.length;
+  const row = facingRow(sprite, facing) * stride;
 
   if (action === 'attack') {
-    const run = (ranged ? states.cast : null) ?? states.attack ?? states.walk;
-    return run[Math.min(run.length - 1, Math.floor(through * run.length))] ?? 0;
+    const own = (skill ? states[skill] : null) ?? (spell ? states.cast : null);
+    const run = own ?? states.attack ?? states.walk ?? [0];
+    return row + (run[Math.min(run.length - 1, Math.floor(through * run.length))] ?? 0);
   }
   const walk = states.walk ?? [0];
-  if (action !== 'move') return walk[0];
-  return walk[Math.floor(elapsed * WALK_CYCLE) % walk.length];
+  if (action === 'move') return row + walk[Math.floor(elapsed * WALK_CYCLE) % walk.length];
+  const idle = states.idle;
+  if (idle) return row + idle[Math.floor(elapsed * IDLE_CYCLE) % idle.length];
+  return row + walk[0];
 }
 
 /** Tiles per second of leg movement — how fast a walk cycle plays. */
 export const WALK_CYCLE = 7;
+/** And how fast a body standing still breathes, which is far slower: an idle
+ *  at the walk's rate reads as jogging on the spot. */
+export const IDLE_CYCLE = 2.5;
 
 /** Its own inks, plus the rank: the accent brightens and the light comes off. */
 export function monsterArt(
@@ -397,9 +432,6 @@ function cell(size = CELL): { canvas: HTMLCanvasElement; ctx: CanvasRenderingCon
   return ctx ? { canvas, ctx } : null;
 }
 
-/** A generated Wang set: sixteen canvases indexed by which of NW/NE/SW/SE are
- *  floor, at the tileset's OWN grid — a tile covers one tile, and 16px blown
- *  up to `CELL` is a megabyte of texture showing the same pixels. */
 /** One generated prop, painted at its own grid: a prop is a picture standing
  *  on a tile, so nothing about it belongs in `CELL`. */
 export function makeProp(id: string): HTMLCanvasElement | null {
@@ -438,10 +470,11 @@ function drawCreature(
   sprite: string,
   frame: number,
   palette: Palette,
-  rank: MonsterRank
+  rank: MonsterRank,
+  size = CELL
 ): void {
   const art = sprite === 'hero' ? heroArt(palette, frame) : monsterArt(palette, sprite, frame, rank);
-  if (art) drawPixels(ctx, art);
+  if (art) drawPixels(ctx, art, size);
 }
 
 /**
@@ -465,11 +498,15 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
       const already = drawn.get(key);
       if (already) return already;
 
+      // A generated body is drawn at its OWN grid rather than at `CELL`: a
+      // cell is already bigger than the tile it lands in, and one facing of a
+      // body with five states is a hundred canvases at four bytes a pixel.
+      const size = GENERATED[sprite]?.grid ?? CELL;
       const frames: HTMLCanvasElement[] = [];
-      for (let frame = 0; frame < CREATURE_FRAMES; frame++) {
-        const made = cell();
+      for (let frame = 0; frame < framesOf(sprite); frame++) {
+        const made = cell(size);
         if (!made) return null;
-        drawCreature(made.ctx, sprite, frame, palette, rank);
+        drawCreature(made.ctx, sprite, frame, palette, rank, size);
         frames.push(made.canvas);
       }
       drawn.set(key, frames);

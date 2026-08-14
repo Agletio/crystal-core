@@ -73,13 +73,26 @@ draws is in it**: the ground is a generated Wang set, the furniture is
 generated pictures, the bodies are generated and so is the HERO, over the doll
 it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
 — "a working somebody gave up on. Rotted props, webs, a candle still going."
-`tools/art/sandbox.json` is the source of truth, one row per thing, and
-`sandbox.mts` reads it and writes the three tables. A body declares its own
-STATES there — a walk, a melee swing, and a cast for anything that throws —
-and `MONSTER_ABILITIES` decides which a body plays, so the one skeleton in the
-room shows claws, an ember bite and all three thrown bolts. What looking at it
-showed — and the PROCESS for doing it again — is in `ROADMAP.md`; whether any of
-it goes in the game is the user's call and is open question 8.
+Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
+and `tools/art/sandbox.json` is what came BACK, one row per thing.
+`tools/art/body.mts` walks between them — `ask`, `state`, `sheet`, `fill`,
+`watch` — and `sandbox.mts` reads the second and writes the three tables.
+
+**A body declares its own STATES and its own FACINGS.** A state is named for an
+ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
+up first, so fire, frost and lightning are three animations rather than one
+cast; `cast` is the fallback and only for a SPELL, or a hero holding one would
+play it while swinging a sword. `MONSTER_ABILITIES` decides which a body plays,
+so the one skeleton in the room shows claws, an ember bite and all three thrown
+bolts, each with its own pose. `dirs` runs north to south and holds only the
+EAST half of the compass, because the renderer already mirrors anything facing
+left. Frames are direction-MAJOR and the runs are the first facing's, so a
+facing is one stride and everything that draws a body stays flat.
+
+An animation is JUDGED, never trusted: `from`/`to` are the fraction of a
+generation worth keeping, because it drifts off model across its run. What
+looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
+whether any of it goes in the game is the user's call and is open question 8.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
@@ -707,6 +720,7 @@ been walked to.
 
 ```
 tools/art/mcp.mts  the generator, over JSON-RPC; sandbox.mts pulls art in
+tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
 tools/art/         the art pipeline: a row is generated, converted, accepted
 src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling

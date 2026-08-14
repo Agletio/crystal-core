@@ -368,29 +368,40 @@ module does, so an absent client is not a blocker.
 twice — once for a zone, once for a body — and each step is a row in a file
 rather than a change to code.
 
-1. **Write the ask off the game's OWN documentation.** `MAP_THEMES` gives a
-   zone its line, `THEME_INK` gives the hexes, `CUT` says how it is carved,
-   `MONSTER_FAMILIES` says what lives there. A generic prompt gives generic
-   art; the Fissure's own sentence gives the Fissure.
-2. **Ask, then LOOK, then re-ask.** Nothing is right first time and a
-   generation is 2–5 minutes. Both the tileset and the body took two passes.
-3. **Add the id to `tools/art/sandbox.json`.** Nothing else. A body names its
-   character and its STATES; a prop names its object and how many tiles it
-   covers; the tileset names which of its two terrains is the floor.
-4. **`npx tsx tools/art/sandbox.mts`.** Reads the manifest, writes the three
-   tables in `src/render`, asks the generator for nothing. Re-running is free.
-5. **Look at the STATES**, then look at the room. The grid is what ships, so
-   the grid is what gets reviewed — never the PNG.
+**A body is now four commands**, and `tools/art/body.mts` is all of them.
+`bodies.json` beside it is what to SAY and `sandbox.json` is what came BACK, so
+a body can be re-asked without anybody reconstructing the words.
 
-**What a body costs**: one `create_character` (1 generation) and one
-`animate_character` per state (1 generation each, east only). A skeleton with a
-walk, a melee swing and a cast is four generations and about twelve minutes of
-waiting. **A roster of twenty is eighty generations**, which the subscription
-covers several times over — the cost is the LOOKING, not the asking.
+1. **Write the ask off the game's OWN documentation**, into `bodies.json`.
+   `MAP_THEMES` gives a zone its line, `THEME_INK` gives the hexes, `CUT` says
+   how it is carved, `MONSTER_FAMILIES` says what lives there. A generic prompt
+   gives generic art; the Fissure's own sentence gives the Fissure.
+2. **`body.mts ask <sprite>`** — one character, eight rotations. Put the id it
+   prints into both files.
+3. **`body.mts state <sprite>`** — every state, on ONE facing. Then
+   **`body.mts sheet <sprite> out.png`** and LOOK at it: re-roll what is wrong
+   and WINDOW what is nearly right, into `from`/`to` in `sandbox.json`.
+   Fanning out first spends five times as much on frames that face the camera.
+4. **`body.mts fill <sprite>`** — the same states on the other four facings,
+   appended to the group the judged one made. It paces itself: only about five
+   jobs may be in flight, and over the line the server answers with a HINT
+   rather than an error, which reads as success and silently drops a facing.
+5. **`npx tsx tools/art/sandbox.mts`**, then look at the room. Reads the
+   manifest, writes the three tables, asks the generator for nothing.
+
+**What a body costs**: one `create_character`, then per state 2–3 generations
+per facing. Six states over five facings is about 60 generations and half an
+hour of waiting; the same body on east alone is 13. **A roster of twenty is
+around 1,200 generations at five facings** — real money, and the reason
+`bodies.json` records the words rather than only the ids.
+
+**Five facings, not eight.** `GeneratedArt.dirs` runs north to south and the
+renderer already mirrors anything facing left, so the western three are
+reflections. Generating them would be paying twice for the same pixels.
 
 **What is still hand-work, and would have to be solved to scale past a dozen:**
-picking each animation's usable window (below), naming a prop's footprint in
-tiles, and judging. None of it is automatable today.
+picking each animation's usable window, naming a prop's footprint in tiles, and
+judging. None of it is automatable today.
 
 **What asking for a REAL zone taught, on the second pass.** The first tileset
 was a generic mine shaft; the second was written off the Fissure's own line in
@@ -419,7 +430,41 @@ that worked, and these are what it cost:
 - **Six objects at once is a rate limit.** ~15-30s each and roughly five in
   flight; the sixth came back `rate limit exceeded` with a hint to wait.
 
+**What asking for real ANIMATION taught, on the third pass.**
+
+- **A template animation is a lurch; `mode: 'v3'` with an `action_description`
+  is an animation.** The templates pose a rigged skeleton and drift: `walk`
+  grows a crook, `cross-punch` turns to face the camera, `fireball` flickers a
+  shield in and out. v3 from a written pose does none of that, costs 2–3
+  generations rather than 1, and is the only mode with `frame_count`.
+- **Naming a weapon the rotation does not HOLD invents a different one per
+  frame.** Asking a bare skeleton to "raise a pick overhead" drew a floating
+  crescent in two places at once. Describe the limbs, not the tool.
+- **"Staying in strict side profile" is worth saying out loud.** Every ask
+  without it turned the skull to face the camera by frame three, which reads as
+  the body rotating mid-swing. It is the single highest-value phrase found.
+- **Short animations drift less.** The degradation is at the TAIL, so
+  `frame_count: 4` lands usable where 6 needs a window.
+- **`animate_character` dedupes on the action description** and answers
+  `already queued or complete (nothing re-queued)` — which is not an error and
+  is easy to read as success. Re-word to force a fresh roll.
+- **`delete_animation` keys on the TYPE, not the display name**, so a re-roll
+  under the same name leaves two groups standing. `sandbox.json` therefore
+  names a group by UUID; a name picks whichever the server listed first.
+
 **What was paid for in this session and is not guessable.**
+
+- **`makeSheet` drew a fixed three frames per sprite.** Every index past the
+  second fell through `frames[frame] ?? frames[0]` to the standing pose, so a
+  generated body's swing and cast NEVER drew — what looked like an attack was
+  `drawEntity`'s lunge transform with nothing behind it. It is `framesOf` now,
+  and the demo holds that nothing asks for a frame past the ones drawn.
+- **A generated body is drawn at its OWN grid, not `CELL`.** The camera lands
+  one in about 87 device pixels, so 256 was already downsampled before anybody
+  saw it — and at five facings it is a canvas per frame at four bytes a pixel.
+  `GRID` is 96 for the same reason. Pixi scales by the texture's own width.
+- **The wire cost of facings is small and the SOURCE cost is not.** Ninety
+  frames is 980KB of strings that gzip to 80KB. The repo carries the 980KB.
 
 - **An export's colours are not a PALETTE.** Three frames of one body arrive
   with 87–124 distinct RGB values, past the 88 characters a row can use. So a

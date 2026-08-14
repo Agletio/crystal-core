@@ -183,11 +183,15 @@ export async function createPixiRenderer(
   const through = (e: Entity): number =>
     Math.max(0, Math.min(1, 1 - e.actionTimer / ATTACK_POSE));
 
-  /** What the figure is doing, as a pose. Casting is an attack with a spell. */
+  /** Casting is an attack with a SPELL, which both the doll and a generated
+   *  body read — one asks for a pose and the other for an animation. */
+  const casting = (e: Entity): boolean =>
+    e.skillId ? (SKILL_BY_ID[e.skillId]?.tags.includes('spell') ?? false) : false;
+
+  /** What the figure is doing, as a pose. */
   function poseOf(e: Entity, elapsed: number): PoseId {
     if (e.action === 'attack') {
-      const spell = e.skillId ? SKILL_BY_ID[e.skillId]?.tags.includes('spell') : false;
-      const swing = spell ? CAST_POSES : SWING_POSES;
+      const swing = casting(e) ? CAST_POSES : SWING_POSES;
       return swing[Math.min(swing.length - 1, Math.floor(through(e) * swing.length))];
     }
     if (e.action !== 'move') return 'walk0';
@@ -454,7 +458,7 @@ export async function createPixiRenderer(
       // one is showing is whether it has a skill to throw. A hand-drawn one
       // has the fixed walk-walk-swing it always had.
       const frame = GENERATED[e.sprite]
-        ? generatedFrame(e.sprite, e.action, through(e), elapsed, !!e.skillId)
+        ? generatedFrame(e.sprite, e.action, through(e), elapsed, e.skillId, e.facing, casting(e))
         : e.action === 'attack'
           ? ATTACK_FRAME
           : e.action === 'move'
@@ -463,8 +467,9 @@ export async function createPixiRenderer(
       s.texture = frames[frame] ?? frames[0];
     }
 
-    // One texture cell should cover roughly one tile of world.
-    const scale = (1 / CELL) * e.scale * (1 - fade * 0.5);
+    // One texture should cover roughly one tile of world, whatever grid it was
+    // drawn at — a generated body is its own, not `CELL`.
+    const scale = (1 / (s.texture.width || CELL)) * e.scale * (1 - fade * 0.5);
     s.scale.set(scale);
     s.alpha = (1 - fade) * (1 - sunk);
     s.rotation = fade * 1.2;
