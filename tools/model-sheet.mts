@@ -7,6 +7,7 @@
  */
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { encodePng } from './art/png.mts';
 const { lookRows } = await import('../src/render/look');
 const { POSE_IDS } = await import('../src/render/pose');
 const { DOLL_GRID, FAMILY_ART, WEAPON_ART } = await import('../src/render/gear-art');
@@ -37,19 +38,40 @@ const PALETTE = {
 } as never;
 const KEY: Record<string, string> = lookKeyColours(PALETTE);
 
-const SCALE = 12;
+/** How big a cell is drawn, whatever grid it was authored on — so a 24 and a
+ *  256 can be compared side by side. */
+const CELL_PX = 264;
 const GRID = DOLL_GRID;
 
+const inkRgb = (hex: string): [number, number, number] => {
+  const h = hex.replace('#', '').trim();
+  const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
+  const n = Number.parseInt(full, 16);
+  return Number.isNaN(n) ? [255, 0, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+/**
+ * One PNG per cell rather than one element per pixel. At 24 that was 576 divs
+ * and merely wasteful; at 256 it is 65,536, and the page never finished laying
+ * out — the tool timed out on the first generated creature.
+ */
 function cellHtml(rows, label, key = KEY) {
-  const px = [];
+  const grid = rows.length;
+  const rgba = new Uint8Array(grid * grid * 4);
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
-      const c = key[row[x]];
-      if (!c) continue;
-      px.push(`<i style="left:${x * SCALE}px;top:${y * SCALE}px;background:${c}"></i>`);
+      const colour = key[row[x]];
+      if (!colour) continue;
+      const [r, g, b] = inkRgb(colour);
+      const at = (y * grid + x) * 4;
+      rgba[at] = r;
+      rgba[at + 1] = g;
+      rgba[at + 2] = b;
+      rgba[at + 3] = 255;
     }
   });
-  return `<div class="cell"><div class="art" style="width:${(rows[0]?.length ?? GRID) * SCALE}px;height:${rows.length * SCALE}px">${px.join('')}</div><span>${label}</span></div>`;
+  const src = `data:image/png;base64,${encodePng(grid, grid, rgba).toString('base64')}`;
+  return `<div class="cell"><img class="art" src="${src}"><span>${label}</span></div>`;
 }
 
 const sets: Array<[string, any]> = [['bare', {}]];
@@ -102,9 +124,8 @@ const html = (body: string) => `<!doctype html><meta charset="utf-8"><style>
   .row > b { width:120px; color:#f0c46a; }
   .poses { display:flex; gap:10px; }
   .cell { text-align:center; }
-  .art { position:relative; width:${GRID * SCALE}px; height:${GRID * SCALE}px;
-         background:#191320; outline:1px solid #2a2233; }
-  .art i { position:absolute; width:${SCALE}px; height:${SCALE}px; }
+  .art { width:${CELL_PX}px; height:${CELL_PX}px; display:block;
+         image-rendering: pixelated; background:#191320; outline:1px solid #2a2233; }
   .cell span { display:block; font-size:9px; color:#6a5f78; margin-top:3px; }
 </style><div id="sheet">${body}</div>`;
 
