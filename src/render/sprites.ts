@@ -9,7 +9,7 @@ import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
 import { lookRows, roleChar } from './look';
 import { DOLL_GRID, FAMILY_ART } from './gear-art';
-import { BEASTIARY, HALO, HALO_RANK, haloRings, haloed } from './bestiary';
+import { BEASTIARY } from './bestiary';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
 import type { PoseId } from './pose';
@@ -30,7 +30,15 @@ export const ATTACK_FRAME = WALK_FRAMES;
 export const CREATURE_FRAMES = WALK_FRAMES + 1;
 
 /** Rows of characters keyed to colours, `.` transparent: the shape is visible. */
-type PixelArt = { rows: string[]; key: Record<string, string>; grid: number };
+type PixelArt = {
+  rows: string[];
+  key: Record<string, string>;
+  grid: number;
+  /** What a rank looks like now: light off the body, rather than a band round
+   *  it. A solid border is a low-resolution convention and reads as a sticker
+   *  once the art under it stops being chunky. */
+  glow?: { colour: string; reach: number };
+};
 
 /**
  * Every frame must be square and match the grid it declares. A short row
@@ -91,7 +99,47 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt): void {
       data[at + 3] = a;
     }
   }
+  if (art.glow) glowed(data, art.glow.colour, art.glow.reach);
   ctx.putImageData(image, 0, 0);
+}
+
+/**
+ * Light off the body: rings of the rank's ink spreading outward, each fainter
+ * than the last. In the TEXTURE like the band it replaces, so it costs no
+ * filter and cannot blur off the grid — what falls away is alpha, not focus.
+ */
+function glowed(data: Uint8ClampedArray, colour: string, reach: number): void {
+  const [r, g, b] = inkBytes(colour);
+  const solid = (i: number): boolean => data[i * 4 + 3] > 0;
+  let front: number[] = [];
+  for (let i = 0; i < CELL * CELL; i++) if (solid(i)) front.push(i);
+
+  for (let ring = 1; ring <= reach; ring++) {
+    // Squared, so it falls away quickly and reads as light rather than as a
+    // second outline in a lighter colour.
+    const alpha = Math.round(190 * (1 - ring / (reach + 1)) ** 2);
+    const next: number[] = [];
+    for (const at of front) {
+      const x = at % CELL;
+      const y = (at - x) / CELL;
+      for (const [nx, ny] of [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1],
+      ]) {
+        if (nx < 0 || ny < 0 || nx >= CELL || ny >= CELL) continue;
+        const to = ny * CELL + nx;
+        if (solid(to)) continue;
+        data[to * 4] = r;
+        data[to * 4 + 1] = g;
+        data[to * 4 + 2] = b;
+        data[to * 4 + 3] = alpha;
+        next.push(to);
+      }
+    }
+    front = next;
+  }
 }
 
 /**
@@ -159,7 +207,14 @@ export const HERO_FRAMES: string[][] = [
   ],
 ];
 
-/** Its own inks, plus the rank: the accent brightens and a halo goes round. */
+/** White off a magic one and gold off a rare, the rare reaching further. */
+const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: number } | null> = {
+  common: null,
+  magic: { colour: (p) => p.chalk, reach: 14 },
+  rare: { colour: (p) => p.citrine, reach: 26 },
+};
+
+/** Its own inks, plus the rank: the accent brightens and the light comes off. */
 export function monsterArt(
   palette: Palette,
   sprite: string,
@@ -179,7 +234,8 @@ export function monsterArt(
     frame >= ATTACK_FRAME ? (art.attack ?? art.frames[0]) : (art.frames[frame] ?? art.frames[0]);
   return {
     grid: art.grid,
-    rows: haloed(drawn, HALO[rank], haloRings(art.grid) * HALO_RANK[rank]),
+    rows: drawn,
+    glow: GLOW[rank] ? { colour: GLOW[rank]!.colour(palette), reach: GLOW[rank]!.reach } : undefined,
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),
       M: art.tone.lit(palette),
@@ -187,9 +243,6 @@ export function monsterArt(
       s: art.tone.shade(palette),
       e: art.tone.eye(palette),
       x: accent[rank],
-      // White for magic, gold for rare. The user's call over the usual blue.
-      b: palette.chalk,
-      o: palette.citrine,
     },
   };
 }
