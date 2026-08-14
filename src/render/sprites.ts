@@ -187,7 +187,7 @@ export function monsterArt(
       s: art.tone.shade(palette),
       e: art.tone.eye(palette),
       x: accent[rank],
-      // Gold for magic, white for rare. The user's call over the usual blue.
+      // White for magic, gold for rare. The user's call over the usual blue.
       b: palette.chalk,
       o: palette.citrine,
     },

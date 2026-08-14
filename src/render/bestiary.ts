@@ -1594,8 +1594,8 @@ export type MonsterRank = 'common' | 'magic' | 'rare';
 
 export const HALO: Record<MonsterRank, string | null> = {
   common: null,
-  magic: 'o',
-  rare: 'b',
+  magic: 'b',
+  rare: 'o',
 };
 
 /** Rings per rank, so the border itself says which is the rarer of the two. */
