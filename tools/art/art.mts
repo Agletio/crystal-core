@@ -149,6 +149,14 @@ async function main(): Promise<void> {
         continue;
       }
       s.rows = toGrid(debackground(decodePng(readFileSync(pngPath(hash)))), s.grid, inksFor(s.tone));
+      // The animation frames go through the same reduction, off the PNGs the
+      // animate step already paid for: a change here must not cost generations.
+      const frames = [0, 1, 2].map((i) => join(CACHE, `${hash}-f${i}.png`));
+      if (frames.every((f) => existsSync(f))) {
+        s.frames = frames.map((f) =>
+          toGrid(debackground(decodePng(readFileSync(f))), s.grid, inksFor(s.tone))
+        );
+      }
       s.hash = hash;
       write(m);
       const used = new Set(s.rows.join(''));
