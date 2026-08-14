@@ -116,17 +116,22 @@ cut face at a corner with no rock at any of them is the cell below a cliff, and
 the set draws it as a flat dark rectangle that reads as paving at the foot of
 the wall. It falls back to plain floor.
 
-**The LIGHT is the renderer's, not the set's.** A set is drawn to be looked at
-as terrain, so its stone is lit like the floor; flat across a map that reads as
-chambers punched out of a paved field. In `pixi.ts`, `ROCK_TOP` knocks the rock
-back and `ROCK_REACH` runs it to nothing three tiles in, leaving a lit rim;
-`FOOT_DARK` shades the one floor row touching stone, which is the wall's own
-shadow — one row, because a tint is per TILE and a falloff over three is a
-staircase of rectangles. And `GRAIN` is smooth value noise over about three
-tiles, which is the only thing that answers the repetition: a set has ONE
-picture per corner combination, and TURNING a tile or mixing in a second set's
-both read worse than repeating — a floor tile is lit from one side, and an edge
-tile's neighbour has to continue the cut face.
+**The LIGHT is a MAP, and it is the renderer's rather than the set's.** A set
+is drawn to be looked at as terrain, so its stone is lit like the floor; flat
+across a map that reads as chambers punched out of a paved field. In `pixi.ts`,
+`ROCK_TOP` knocks the rock back and `ROCK_REACH` runs it to nothing under three
+tiles in, leaving a lit rim; `GRAIN` is smooth value noise over about three
+tiles, which is the only thing that answers the repetition, since a set has ONE
+picture per corner combination and TURNING a tile or mixing in a second set's
+both read worse than repeating. `GLOW_PROPS` name what throws light — a candle,
+a wall torch, a bed of embers — and lift their own corner of the room toward
+`WARM`.
+
+None of it is a TINT. `lightMap` bakes the lot into one texel per lattice
+CORNER and lets the GPU interpolate: a tint is per TILE, so every falloff one
+can express is a staircase of flat rectangles, and a wall's own shadow drawn
+that way is a grey box. Interpolated, the shadow is just the rock's dark
+bleeding half a tile onto the floor at its foot.
 
 **Furniture goes down a CLUSTER at a time, the rock's leavings a tile at a
 time.** `VIGNETTES` in `src/vignettes.ts` is authored arrangements — a hauling
@@ -136,7 +141,21 @@ four-tile square in about one spot in fifteen. `FRINGE_PROPS`, `LOOSE_PROPS`
 and `WALL_PROPS` beside them are the debris, growth and leavings `dressEdges`
 scatters over the whole grid, corridors included. What reads as a cavern is the
 FOOT of the rock, so open floor stays nearly bare; a `WALL_PROPS` entry is
-drawn side-on and is the one thing placed INTO rock, on the cut face itself.
+drawn side-on and is the one thing placed INTO rock, on the cut face itself —
+a RUN of it, never a one-tile nub, or a torch hangs in mid air.
+
+**`SOLID_PROPS` is what you walk around.** `Grid.solid` is a second layer over
+the tiles, because the ground under an altar is still floor and every renderer
+keys its own surface off `tiles`. A tile is blocked one at a time and UNDONE
+the moment it cuts anything off, since a prop across a passage is a map the
+hero stands still in forever. `STAIN_PROPS` is the other half: a mark IN the
+floor, drawn back so the generator's own domed shading stops reading as a lump.
+
+**One chamber is laid out by HAND** — `SHRINE` in `src/scenes/sandbox.ts`, and
+`ScenePlan.plain` is what keeps the scatter out of it. It is the reference the
+scatter is measured against: a slab against the wall, light and a body hanging
+on the face over it, what ran off it on the floor, and the leavings at the
+edges.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

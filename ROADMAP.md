@@ -524,6 +524,19 @@ that worked, and these are what it cost:
   made it worse, not better: a blacker rectangle is still a rectangle. It is
   not drawn at all now (`wangShadow`), and the wall's shadow is one row of
   floor tint. Which killed `tileset.shade`, `darkened` and `isShadowRow`.
+- **The light had to stop being a TINT.** Every falloff a per-tile tint can
+  express is a staircase of flat rectangles, and against a ragged room edge
+  that is a field of grey boxes — which is exactly what it looked like.
+  `lightMap` writes one texel per lattice corner and lets the GPU interpolate;
+  the wall's shadow then costs nothing, being the rock's own dark bleeding half
+  a tile onto the floor. A texel is a colour, so `GLOW_PROPS` fell out of it
+  for free: a torch warms its corner of the room.
+- **The corner mismatches were a FALLBACK, not a missing tile.** A generated
+  set answers 21 of the 81 keys and the old fallback read the cut face as floor
+  and then as rock, which for two of them landed on plain ground — a bare
+  square between two cliffs. Scoring every key the set holds, with the cut face
+  one step from either terrain and floor three from rock, fixed it without a
+  generation.
 - **Every remaining tileset problem was answered with LIGHT.** The stone came
   lighter than the floor and read as masonry; the floor was one picture over
   the whole map. `ROCK_TOP` / `ROCK_REACH` / `FOOT_DARK` / `GRAIN` in

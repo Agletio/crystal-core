@@ -470,6 +470,8 @@ export function floorColour(floor: FloorPalette, tile: number, x: number, y: num
  * half a tile into the rock at every edge, which is the whole reason a corner
  * set is drawn instead of a tile per cell.
  */
+const CORNERS = [27, 9, 3, 1];
+
 export function wangCorners(at: (x: number, y: number) => number, x: number, y: number): number {
   const rock = (cx: number, cy: number): boolean =>
     at(cx - 1, cy - 1) === WALL && at(cx, cy - 1) === WALL &&
@@ -484,19 +486,31 @@ export function wangCorners(at: (x: number, y: number) => number, x: number, y: 
   );
 }
 
-/** The same corners with the cut face read as something else — floor first,
- *  then rock. A set may have no tile for a given cliff corner at all (and one
- *  with no cut face has none of them), and a key nothing answers is a HOLE in
- *  the floor, so every reader needs somewhere to fall back to. */
-export function wangNear(key: number): number[] {
-  const at = [
-    Math.floor(key / 27) % 3,
-    Math.floor(key / 9) % 3,
-    Math.floor(key / 3) % 3,
-    key % 3,
-  ];
-  const as = (v: number): number => at.reduce((n, c) => n * 3 + (c === 2 ? v : c), 0);
-  return [as(0), as(1), 0];
+/** The NEAREST key a set actually holds. A generated set answers 21 of the 81
+ *  and a key nothing draws is a hole in the floor, so a corner it has no tile
+ *  for takes the closest one it does — which is what makes two cliffs meet at
+ *  a corner rather than leaving a square of bare ground between them. */
+export function wangNear(key: number, has: (of: number) => boolean): number {
+  if (has(key)) return key;
+  const mine = CORNERS.map((place) => Math.floor(key / place) % 3);
+  let best = 0;
+  let cost = Infinity;
+  for (let other = 0; other < 81; other++) {
+    if (!has(other)) continue;
+    let apart = 0;
+    for (let c = 0; c < 4; c++) {
+      const theirs = Math.floor(other / CORNERS[c]) % 3;
+      // The cut face is BETWEEN floor and rock, so swapping it for either is
+      // one step where swapping floor for rock is three. A set with no tile
+      // for a cliff corner should give up the cliff, never the terrain.
+      apart += mine[c] === theirs ? 0 : mine[c] === 2 || theirs === 2 ? 1 : 3;
+    }
+    if (apart < cost) {
+      cost = apart;
+      best = other;
+    }
+  }
+  return best;
 }
 
 /** A key with the cut face at a corner and no ROCK at any of them: the cell

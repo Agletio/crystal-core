@@ -95,7 +95,7 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
-import { FRINGE_PROPS, LOOSE_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
+import { FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import type { RunState } from './sim/run';
 import {
@@ -1544,6 +1544,73 @@ rule('SPRITES — is the pixel art well formed?');
       dressed.props.length >= 120 && kinds >= 15 && hung >= 3,
       'and the sandbox is dressed at the foot of its rock and on the face of it',
       `${dressed.props.length} props, ${kinds} kinds, ${hung} hung`
+    );
+  }
+
+  // Furniture you cannot walk through, and the two ways that goes wrong: a
+  // solid tile in a passage, and a solid tile under somebody standing on it.
+  {
+    const box = SCENE_BY_ID.sandbox!;
+    const { grid, props } = sceneMap(box.plan, box.theme, 1, box.ground);
+    const solid: string[] = [];
+    let blocked = 0;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (!grid.solid[y * grid.width + x]) continue;
+        blocked++;
+        if (grid.at(x, y) !== FLOOR) solid.push(`${x},${y} is not chamber floor`);
+        if (!props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
+          solid.push(`${x},${y} blocks with nothing standing on it`);
+        }
+      }
+    }
+    for (const d of box.dummies ?? []) {
+      if (grid.solid[d.at.y * grid.width + d.at.x]) solid.push(`${d.sprite} stands in furniture`);
+    }
+    line(`  ${blocked} tiles of the sandbox are furniture you go around`);
+    check(blocked >= 8 && solid.length === 0, 'furniture blocks, and only where it may', solid.join(', '));
+
+    // And it never walls the map off. Everything the hero is sent to has to
+    // still be reachable from the hole, or a run stands still forever.
+    const seen = new Set<number>();
+    const queue = [box.plan.entrance.y * grid.width + box.plan.entrance.x];
+    seen.add(queue[0]);
+    for (let head = 0; head < queue.length; head++) {
+      const x = queue[head] % grid.width;
+      const y = (queue[head] - x) / grid.width;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if (!grid.walkable(x + dx, y + dy)) continue;
+        const to = (y + dy) * grid.width + (x + dx);
+        if (seen.has(to)) continue;
+        seen.add(to);
+        queue.push(to);
+      }
+    }
+    const cut = [
+      ...(box.plan.patrol ?? []).map((m) => ['patrol', m] as const),
+      ...(box.dummies ?? []).map((d) => [d.sprite, d.at] as const),
+    ]
+      .filter(([, at]) => !seen.has(at.y * grid.width + at.x))
+      .map(([who, at]) => `${who}@${at.x},${at.y}`);
+    check(cut.length === 0, 'and nothing it stands in front of is walled off', cut.join(', '));
+  }
+
+  // The one chamber laid out by hand, which is the reference the scatter is
+  // measured against. Nothing is scattered into it, and it carries the things
+  // only an author places: light on the wall, and a body hanging beside it.
+  {
+    const box = SCENE_BY_ID.sandbox!;
+    const plain = box.plan.plain ?? [];
+    const { props } = sceneMap(box.plan, box.theme, 1, box.ground);
+    const inside = (p: MapProp) =>
+      plain.some((r) => p.x >= r.x - 1 && p.y >= r.y - 1 && p.x < r.x + r.w + 1 && p.y < r.y + r.h + 1);
+    const authored = new Set(box.plan.props.map((p) => `${p.id}@${p.x},${p.y}`));
+    const strays = props.filter((p) => inside(p) && !authored.has(`${p.id}@${p.x},${p.y}`));
+    const hung = box.plan.props.filter((p) => WALL_PROPS.some((w) => w.id === p.id));
+    check(
+      plain.length > 0 && strays.length === 0 && hung.length >= 3,
+      `the ${box.plan.props.length}-prop shrine is laid out by hand and nothing scatters into it`,
+      `${strays.length} strays, ${hung.length} on the wall`
     );
   }
 

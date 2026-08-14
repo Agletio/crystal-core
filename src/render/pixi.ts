@@ -69,6 +69,7 @@ import {
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
+import { GLOW_PROPS, STAIN_ALPHA, STAIN_PROPS } from '../vignettes';
 import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
@@ -85,21 +86,23 @@ const ALL_ROCK = 40;
  * reads as chambers punched out of a paved field.
  *
  * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
- * tiles, leaving a lit rim and nothing past it. Floor takes `FOOT_DARK` on the
- * one row TOUCHING stone, which is the shadow a wall throws at its own foot —
- * one row and no gradient, since a tint is per TILE and a falloff over three of
- * them is a chequerboard.
+ * tiles, leaving a lit rim and nothing past it. `GRAIN` answers the other half:
+ * a set has ONE picture per corner combination, turning the tile or mixing in a
+ * second set's both read worse than repeating, and a rise and fall over
+ * `GRAIN_SPAN` tiles reads as damp, as dust, as where the roof came down.
  *
- * `GRAIN` answers the other half. A set has ONE picture per corner combination,
- * and turning the tile or mixing in a second set's both read worse than the
- * repetition; light does not. A rise and fall over `GRAIN_SPAN` tiles reads as
- * damp, as dust, as where the roof is lower, out of the same one tile.
+ * None of it is a TINT. A tint is per tile, so every falloff it can express is
+ * a staircase of flat rectangles, and a wall's shadow drawn that way is a grey
+ * box. `lightMap` bakes all of this into one texel per lattice corner and lets
+ * the GPU interpolate, so the whole thing is smooth and the wall's shadow is
+ * the rock's own dark bleeding half a tile onto the floor.
  */
 const ROCK_TOP = 0.9;
 const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
-const FOOT_DARK = 0.88;
-const GRAIN = 0.16;
+const GRAIN = 0.18;
+/** What a flame leaves a surface reading as, at the middle of its own pool. */
+const WARM = [1, 0.88, 0.66];
 const GRAIN_SPAN = 3.5;
 
 const FLOATER_LIFE = 1.1;
@@ -402,35 +405,80 @@ export async function createPixiRenderer(
       return row(cy) * (1 - ty) + row(cy + 1) * ty;
     };
 
+    /** How lit ONE cell is, before anything smooths it. */
     const litAt = (x: number, y: number): number => {
+      if (!grid.inBounds(x, y)) return ROCK_TOP * ROCK_DARK;
       const k = y * grid.width + x;
       const grain = 1 - GRAIN + GRAIN * smooth(x, y);
       const lit =
         grid.tiles[k] === WALL
           ? ROCK_TOP * (1 - Math.min(1, intoRock[k] / ROCK_REACH) * (1 - ROCK_DARK))
-          : offRock[k] <= 1
-            ? FOOT_DARK
-            : 1;
-      const v = Math.round(Math.max(0, Math.min(1, lit * grain)) * 255);
-      return (v << 16) | (v << 8) | v;
+          : 1;
+      return Math.max(0, Math.min(1, lit * grain));
     };
+
+    // Every candle, torch and bed of embers in the room, and how far it
+    // reaches. Read per corner, so a handful of them is a handful of terms.
+    const glows = map.props
+      .map((p) => ({ ...GLOW_PROPS[p.id], x: p.x + 0.5, y: p.y + 0.5 }))
+      .filter((g) => g.reach !== undefined);
+    const glowAt = (x: number, y: number): number => {
+      let lit = 0;
+      for (const g of glows) {
+        const d = Math.hypot(x - g.x, y - g.y) / g.reach;
+        if (d < 1) lit += g.lit * (1 - d) ** 2;
+      }
+      return Math.min(1, lit);
+    };
+
+    /** One texel per lattice CORNER, linear-filtered over the whole grid, so
+     *  every pixel between four corners is their blend. Multiplied over the
+     *  ground and its furniture both — and a texel is a COLOUR, so what a
+     *  flame does is warm its own corner of the room rather than just clear
+     *  the dark out of it. */
+    function lightMap(): Sprite | null {
+      const canvas = document.createElement('canvas');
+      canvas.width = grid.width + 1;
+      canvas.height = grid.height + 1;
+      const ink = canvas.getContext('2d');
+      if (!ink) return null;
+      const image = ink.createImageData(canvas.width, canvas.height);
+      for (let cy = 0; cy <= grid.height; cy++) {
+        for (let cx = 0; cx <= grid.width; cx++) {
+          const lit =
+            (litAt(cx - 1, cy - 1) + litAt(cx, cy - 1) + litAt(cx - 1, cy) + litAt(cx, cy)) / 4;
+          const glow = glowAt(cx - 0.5, cy - 0.5);
+          const at = (cy * canvas.width + cx) * 4;
+          for (let c = 0; c < 3; c++) {
+            image.data[at + c] = Math.round(
+              Math.max(0, Math.min(1, lit + glow * (WARM[c] - lit))) * 255
+            );
+          }
+          image.data[at + 3] = 255;
+        }
+      }
+      ink.putImageData(image, 0, 0);
+      const texture = Texture.from(canvas);
+      texture.source.scaleMode = 'linear';
+      const sprite = new Sprite(texture);
+      // Texel k is the corner at k - 0.5, which puts the sheet's own edge a
+      // tile outside the grid on the top and left.
+      sprite.x = -1;
+      sprite.y = -1;
+      sprite.width = canvas.width;
+      sprite.height = canvas.height;
+      sprite.blendMode = 'multiply';
+      return sprite;
+    }
 
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        // A key nothing answers is a HOLE in the floor, so a cut-face corner
-        // falls back to floor and then to rock.
         const raw = wangCorners(at, x, y);
         const want = wangShadow(raw) ? 0 : raw;
-        const mask = textures[want] ? want : (wangNear(want).find((k) => textures[k]) ?? 0);
-        // A Wang set has ONE picture per corner combination, so an open floor
-        // is that picture in every cell of it. What CANNOT fix that is turning
-        // the tile or swapping in another set's: a floor tile is lit from one
-        // side, so a turned one clashes with its neighbour and the floor reads
-        // as a checkerboard — which is worse than the repetition. An edge tile
-        // is worse still, since its neighbour has to continue the cut face.
-        //
-        // So alternates are for the two UNIFORM masks and come from a set that
-        // is genuinely the same picture drawn again, or from nothing.
+        const mask = wangNear(want, (k) => !!textures[k]);
+        // Alternates are for the two UNIFORM masks only: a floor tile is lit
+        // from one side and an edge tile's neighbour has to continue the cut
+        // face, so anywhere else a second picture clashes with its neighbour.
         const plain = mask === 0 || mask === ALL_ROCK;
         const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
         const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
@@ -439,7 +487,6 @@ export async function createPixiRenderer(
         sprite.x = x;
         sprite.y = y;
         sprite.scale.set(size);
-        sprite.tint = litAt(x, y);
         groundLayer.addChild(sprite);
       }
     }
@@ -458,9 +505,11 @@ export async function createPixiRenderer(
       sprite.x = prop.x + 0.5;
       sprite.y = prop.y + 1;
       sprite.scale.set(art.tiles / canvas.width);
-      sprite.tint = litAt(prop.x, prop.y);
+      if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
       groundLayer.addChild(sprite);
     }
+    const light = lightMap();
+    if (light) groundLayer.addChild(light);
     return true;
   }
 

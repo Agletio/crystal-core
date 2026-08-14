@@ -13,11 +13,10 @@ const MELEE = 'skeleton';
 const CASTER = 'revenant';
 const HERO = 'delver';
 
-/** Chambers the size `generateMap` cuts — 5-9 by 4-7 — with eight or more tiles
- *  of rock between any two, so what joins them is a TUNNEL rather than a step
- *  and the whole does not read as one cavern. */
+/** Chambers the size `generateMap` cuts, eight or more tiles of rock apart so
+ *  what joins them is a TUNNEL rather than a step. */
 const ROOMS = [
-  { x: 4, y: 7, w: 8, h: 6 }, // 0, the entrance, left empty
+  { x: 4, y: 7, w: 8, h: 6 }, // 0, the entrance, and the one laid out by hand
   { x: 22, y: 4, w: 8, h: 6 },
   { x: 41, y: 8, w: 7, h: 5 },
   { x: 44, y: 23, w: 8, h: 6 },
@@ -63,9 +62,34 @@ const PACKS: { room: number; at: [number, number]; ability: string; of?: string 
   { room: 6, at: [1, 1], ability: 'claws' },
 ];
 
-const LEFT: { id: string; at: [number, number][] }[] = [
-  { id: 'candle', at: [[5, 9]] },
-  { id: 'web', at: [[22, 7]] },
+/**
+ * THE SHRINE — the one chamber laid out tile by tile, and the reference for
+ * what the scatter is meant to come to. A composition rather than a spread: a
+ * slab against the north wall, light and a body hanging on the cut face over
+ * it, what ran off it on the floor in front, and the leavings pushed out to
+ * the edges where a room's leavings go. Nothing scatters in here (`plain`).
+ */
+const SHRINE: [string, number, number][] = [
+  ['torch', 5, 6],
+  ['hung', 7, 6],
+  ['torch', 9, 6],
+  ['candle', 5, 7],
+  ['altar', 7, 7],
+  ['candle', 9, 7],
+  ['splash', 5, 8],
+  ['skulls', 6, 8],
+  ['gore', 8, 8],
+  ['cairn', 10, 8],
+  ['chains', 4, 9],
+  ['splash', 9, 9],
+  ['ribs', 4, 10],
+  ['brazier', 11, 10],
+  ['bones', 5, 11],
+  ['cocoon', 10, 11],
+  ['stub', 4, 11],
+  ['pebbles', 6, 12],
+  ['fungus', 9, 12],
+  ['roots', 12, 8],
 ];
 
 export const SANDBOX: SceneDef = {
@@ -83,8 +107,13 @@ export const SANDBOX: SceneDef = {
     entrance: middle(0),
     stands: middle(2), // nobody stands in this room; a scene wants the field
     patrol: PATROL.map(middle),
-    props: LEFT.flatMap((kind) => kind.at.map(([x, y]) => ({ id: kind.id, x, y }))),
-    dress: 3, // and three arrangements scattered into each chamber besides
+    busy: PACKS.map((p) => ({
+      x: middle(p.room).x + p.at[0],
+      y: middle(p.room).y + p.at[1],
+    })),
+    props: SHRINE.map(([id, x, y]) => ({ id, x, y })),
+    plain: [ROOMS[0]],
+    dress: 3, // and three arrangements scattered into every OTHER chamber
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,

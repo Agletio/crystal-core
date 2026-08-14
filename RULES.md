@@ -784,8 +784,11 @@ three tiles off the floor, which leaves a lit rim and dark past it.
 
 **A per-tile tint is a BAND, never a gradient.** Three tiles of falloff along a
 wall is a staircase of flat rectangles, and against an irregular room edge that
-is a chequerboard. The wall's own shadow is `FOOT_DARK` on the one row that
-touches stone and nothing beyond it.
+is a chequerboard of grey boxes. So the light is not a tint: `lightMap` writes
+one texel per lattice CORNER and the GPU interpolates, which makes every
+falloff smooth and the wall's own shadow the rock's dark bleeding half a tile
+onto the floor. A texel is a COLOUR, so a flame WARMS its corner of the room
+rather than only clearing the dark out of it.
 
 **A cut-face key with no ROCK at any corner is not drawn.** `wangShadow` names
 them: the cell BELOW a cliff, which a deep-walled set draws as its own flat
@@ -1455,7 +1458,26 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
 - **A `WALL_PROPS` entry is the one thing placed INTO rock**, and only on a
   cut face — rock with rock above it and floor below. It is drawn side-on,
   which is what that surface is; anywhere else it is a picture inside a cliff.
-  The demo holds every other prop to standing on floor.
+  The demo holds every other prop to standing on floor. And only on a RUN of
+  wall: hung off a one-tile island it is a light fixture in mid air.
+- **A key a set does not hold takes the NEAREST one it does.** `wangNear`
+  scores every key it has, the cut face counting one step from floor or rock
+  and floor counting three from rock. A generated set answers 21 of the 81, so
+  falling back by rule rather than by distance left bare squares between two
+  cliffs — which is what "the corners do not meet" looks like.
+- **Furniture BLOCKS, and gives that up the moment it cuts anything off.**
+  `SOLID_PROPS` in `vignettes.ts`, `Grid.solid` beside `Grid.tiles`. A second
+  layer, because the ground under an altar is still floor and every renderer
+  keys off `tiles` — marking it rock cuts a hole in the floor to draw a table
+  in. Blocked one tile at a time, and undone if the flood from the hole stops
+  reaching anything the room stands somebody in front of.
+- **A generated STAIN is drawn back.** The generator shades one like an object
+  — domed, lit from one side — whatever the ask says, and at full strength
+  that reads as a lump on the floor. `STAIN_ALPHA` sinks it into the stone.
+- **Saturation is not brightness, and `tone` only moves brightness.** "Blood"
+  comes back magenta however the ask is worded; matching a mean and a spread
+  per channel leaves it magenta and merely darker. `dulled` pulls every pixel
+  toward its own luma first, and THEN it tones.
 - **A generated picture of a wide floor STAIN comes back as an object** —
   round, centred, edged, a disc lying on the ground. Three small ones on
   touching tiles make an outline nobody drew. The same defeat, four attempts

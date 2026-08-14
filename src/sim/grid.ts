@@ -8,7 +8,7 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
-import { FRINGE_PROPS, LOOSE_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
+import { FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
 import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
@@ -47,11 +47,16 @@ export class Grid {
   readonly width: number;
   readonly height: number;
   readonly tiles: Uint8Array;
+  /** Furniture standing on a walkable tile. A SECOND layer, because the tile
+   *  under an altar is still floor: every renderer keys its ground off `tiles`,
+   *  and marking it rock would cut a hole in the floor to draw a table in. */
+  readonly solid: Uint8Array;
 
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
     this.tiles = new Uint8Array(width * height); // all WALL
+    this.solid = new Uint8Array(width * height);
   }
 
   inBounds(x: number, y: number): boolean {
@@ -70,7 +75,10 @@ export class Grid {
   /** Walls block; everything else is walkable. Entities use float positions,
    *  so this is sampled at the rounded tile under them. */
   walkable(x: number, y: number): boolean {
-    return this.at(Math.round(x), Math.round(y)) !== WALL;
+    const tx = Math.round(x);
+    const ty = Math.round(y);
+    if (!this.inBounds(tx, ty)) return false;
+    return this.tiles[ty * this.width + tx] !== WALL && !this.solid[ty * this.width + tx];
   }
 
   /** Whether a BODY of this radius fits, rather than whether its centre does:
@@ -80,7 +88,7 @@ export class Grid {
     const r = Math.min(radius, BODY_MAX);
     for (let ty = Math.round(y - r); ty <= Math.round(y + r); ty++) {
       for (let tx = Math.round(x - r); tx <= Math.round(x + r); tx++) {
-        if (this.at(tx, ty) === WALL) return false;
+        if (!this.walkable(tx, ty)) return false;
       }
     }
     return true;
@@ -294,6 +302,22 @@ export function dressRooms(
   return out;
 }
 
+/** Furniture you go AROUND rather than over. Blocked one tile at a time and
+ *  UNDONE the moment it cuts anything off: a prop that walls a passage is a map
+ *  the hero stands still in forever, and no amount of an altar being solid is
+ *  worth that. Never in a passage to begin with, which is most of it. */
+function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
+  const spared = new Set(must.map((v) => v.y * grid.width + v.x));
+  for (const p of props) {
+    if (!SOLID_PROPS.has(p.id)) continue;
+    const key = p.y * grid.width + p.x;
+    if (grid.at(p.x, p.y) !== FLOOR || spared.has(key) || grid.solid[key]) continue;
+    grid.solid[key] = 1;
+    const seen = reachable(grid, must[0]);
+    if (must.some((v) => !seen.has(v.y * grid.width + v.x))) grid.solid[key] = 0;
+  }
+}
+
 /** How often a tile of each kind takes something. What reads as a cavern is
  *  the FOOT of the rock, so open floor stays nearly bare. */
 const EDGE_RATE = { face: 0.17, fringe: 0.34, open: 0.07 };
@@ -308,15 +332,28 @@ const EDGE_RATE = { face: 0.17, fringe: 0.34, open: 0.07 };
  * cell above a floor tile with rock over IT is the cut face, and that is the
  * only surface in the game seen from the side.
  */
-export function dressEdges(grid: Grid, rng: Rng, keep: Vec2[] = []): MapProp[] {
+export function dressEdges(
+  grid: Grid,
+  rng: Rng,
+  keep: Vec2[] = [],
+  plain: Room[] = []
+): MapProp[] {
   const out: MapProp[] = [];
   const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
+  const authored = (x: number, y: number): boolean =>
+    plain.some((r) => x >= r.x - 1 && y >= r.y - 1 && x < r.x + r.w + 1 && y < r.y + r.h + 1);
 
   for (let y = 2; y < grid.height - 1; y++) {
     for (let x = 1; x < grid.width - 1; x++) {
-      if (grid.at(x, y) === WALL) continue;
+      if (grid.at(x, y) === WALL || authored(x, y)) continue;
       const rock = (dx: number, dy: number) => grid.at(x + dx, y + dy) === WALL;
-      const face = rock(0, -1) && rock(0, -2) && !taken.has((y - 1) * grid.width + x);
+      // A RUN of wall, never a nub: something hanging off a one-tile island in
+      // the middle of a room reads as a light fixture floating in mid air.
+      const face =
+        rock(0, -1) &&
+        rock(0, -2) &&
+        (rock(-1, -1) || rock(1, -1)) &&
+        !taken.has((y - 1) * grid.width + x);
       const against = rock(-1, 0) || rock(1, 0) || rock(0, 1) || rock(0, -1);
       const rate = face ? EDGE_RATE.face + EDGE_RATE.fringe : against ? EDGE_RATE.fringe : EDGE_RATE.open;
       if (!rng.chance(rate)) continue;
@@ -417,7 +454,7 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
     ]) {
       const nx = x + dx;
       const ny = y + dy;
-      if (!grid.inBounds(nx, ny) || grid.at(nx, ny) === WALL) continue;
+      if (!grid.walkable(nx, ny)) continue;
       const nk = ny * grid.width + nx;
       if (seen.has(nk)) continue;
       seen.add(nk);
@@ -537,10 +574,13 @@ export function sceneMap(
   // walk to, and one tile carrying both means nothing draws a second hole.
   const props = [...plan.props];
   if (plan.dress) {
-    const spare = [...plan.props, entrance, plan.stands];
-    props.push(...dressRooms(grid, rooms, new Rng(2), plan.dress, spare));
+    const plain = plan.plain ?? [];
+    const spare = [...plan.props, entrance, plan.stands, ...(plan.busy ?? [])];
+    const loose = rooms.filter((r) => !plain.includes(r));
+    props.push(...dressRooms(grid, loose, new Rng(2), plan.dress, spare));
     // After the arrangements, so nothing gathers where one of them stands.
-    props.push(...dressEdges(grid, new Rng(3), [...spare, ...props]));
+    props.push(...dressEdges(grid, new Rng(3), [...spare, ...props], plain));
   }
+  block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
   return { grid, rooms, entrance, exit: entrance, props, vein, theme, ground };
 }

@@ -133,7 +133,8 @@
    "id": "web",
    "tiles": 1.2,
    "say": "a torn ragged cobweb stretched flat across the ground, seen from DIRECTLY ABOVE looking straight down, thin filthy grey threads from an off-centre point with big gaps and broken strands, the floor visible THROUGH it. NOT a square, NOT a sheet. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
-   "tone": 0.55
+   "tone": 0.55,
+   "dull": 0.3
   },
   {
    "id": "rail",
@@ -165,9 +166,11 @@
   },
   {
    "id": "gore",
-   "tiles": 0.95,
-   "say": "A large irregular patch of bare stone that something soaked into long ago and dried seen from DIRECTLY ABOVE looking straight down, far wider one way than the other, with a torn uneven edge, thin runs following the cracks and the plain rock showing through where it has flaked away. It has NO thickness — it is a stain IN the floor. NOT a puddle, NOT a pool, NOT a blob, NOT round, NOT an oval, NOT raised, NOT domed, NOT spatter dots. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
-   "tone": 0.68
+   "tiles": 1.1,
+   "say": "A dried stain soaked INTO bare stone, seen from DIRECTLY ABOVE looking straight down. It is COMPLETELY FLAT — no highlight, no shadow, no rim, no volume, no thickness at all, like a mark printed on the floor. Its edge is torn and uneven with thin runs following the cracks, and the plain grey rock shows through where it has flaked away. NOT domed, NOT rounded, NOT raised, NOT a puddle, NOT a pool, NOT a blob, NOT a lump, NOT a rock, NOT an object, NOT shaded, NOT glossy, NOT wet. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright. Near-black and cold desaturated grey, #33302B in shadow and #4A443C where light reaches. Almost no light down here.",
+   "tone": 0.55,
+   "size": 64,
+   "dull": 0.62
   },
   {
    "id": "skulls",
@@ -201,13 +204,13 @@
   },
   {
    "id": "hung",
-   "tiles": 1.3,
+   "tiles": 1.9,
    "say": "a dead body hanging by its wrists from two heavy black rusted chains, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, head slumped forward onto the chest, arms stretched up and apart, legs hanging slack and slightly apart, wrapped in rotted colourless rags. Shrunken and dried. NOT modern clothes, NOT denim, NOT a jacket, NOT a hat, NOT blue, NOT standing, NOT alive. Any stain is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT wet, NOT glossy, NOT fresh. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "view": "side"
   },
   {
    "id": "torch",
-   "tiles": 0.9,
+   "tiles": 0.8,
    "say": "a bent iron bracket bolted flat to stone holding a short burnt-down brand, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, one small dirty guttering flame at the top of it and soot streaked up the rock above, the iron black and scaled with rust. The flame is SMALL and dim. NOT bright, NOT a bonfire, NOT a lantern, NOT glass, NOT orange light spilling everywhere. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "view": "side"
   },
@@ -242,7 +245,8 @@
    "tiles": 0.7,
    "say": "A thin ragged spatter flung across bare stone seen from DIRECTLY ABOVE looking straight down, one small heavier mark with a narrow fan of fine separate droplets thrown away from it in a line. Soaked in and long dried. It has NO thickness — it is a mark IN the floor. NOT a puddle, NOT a blob, NOT round, NOT a circle, NOT raised, NOT domed. Most of the picture is EMPTY bare floor. NOT centred, NOT symmetrical, NOT arranged. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "tone": 0.6,
-   "size": 64
+   "size": 64,
+   "dull": 0.5
   },
   {
    "id": "stub",

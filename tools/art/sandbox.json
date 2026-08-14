@@ -162,7 +162,8 @@
    "id": "web",
    "object": "a63202e9-defa-4508-b628-dc73aa6d7889",
    "tiles": 1.2,
-   "tone": 0.55
+   "tone": 0.55,
+   "dull": 0.3
   },
   {
    "id": "rail",
@@ -195,9 +196,10 @@
   },
   {
    "id": "gore",
-   "object": "d9369bf2-61b7-4d1e-bdb3-7b499a4b0b58",
-   "tiles": 0.95,
-   "tone": 0.68
+   "object": "3487b8d6-43dc-48a0-9733-e9de23f22214",
+   "tiles": 1.1,
+   "tone": 0.55,
+   "dull": 0.62
   },
   {
    "id": "skulls",
@@ -232,12 +234,12 @@
   {
    "id": "hung",
    "object": "aa1494bb-b98c-40e7-8cf6-98532369aa5c",
-   "tiles": 1.3
+   "tiles": 1.9
   },
   {
    "id": "torch",
    "object": "b3f03f32-5890-4a44-b2fc-9b860df64900",
-   "tiles": 0.9
+   "tiles": 0.8
   },
   {
    "id": "roots",
@@ -266,7 +268,8 @@
    "id": "splash",
    "object": "147b15ce-1028-4bc9-af66-232b8f097093",
    "tiles": 0.7,
-   "tone": 0.6
+   "tone": 0.6,
+   "dull": 0.5
   },
   {
    "id": "stub",

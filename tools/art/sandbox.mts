@@ -44,6 +44,19 @@ interface BodySpec {
   states: Record<string, { group: string; frames: number; from?: number; to?: number }>;
 }
 
+/** Every pixel pulled toward its own brightness. "Blood" comes back MAGENTA
+ *  however the ask is worded, and `tone` cannot fix it: a mean and a spread per
+ *  channel move how bright a thing is, never how saturated. */
+function dulled(image: Decoded, by: number): Decoded {
+  const rgba = new Uint8Array(image.rgba);
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] < 128) continue;
+    const luma = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+    for (let c = 0; c < 3; c++) rgba[i + c] = Math.round(rgba[i + c] + (luma - rgba[i + c]) * by);
+  }
+  return { width: image.width, height: image.height, rgba };
+}
+
 /** `tiles` is how much of the FLOOR it covers, which the generator cannot know.
  *  `tone` is how far to pull it toward the GROUND's own mean and spread, 0 to
  *  1: an object comes back warmer and more saturated than the stone whatever
@@ -54,6 +67,7 @@ interface PropSpec {
   object: string;
   tiles: number;
   tone?: number;
+  dull?: number;
 }
 
 interface Manifest {
@@ -442,7 +456,8 @@ async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record
     const text = await callTool('get_map_object', { object_id: spec.object });
     const url = urlsIn(text).find((u) => /\.png/.test(u)) ?? urlsIn(text)[0];
     if (!url) throw new Error(`${spec.id}: no image — ${text.slice(0, 120)}`);
-    const raw = debackground(decodePng(await download(url)));
+    const got = debackground(decodePng(await download(url)));
+    const raw = spec.dull ? dulled(got, spec.dull) : got;
     const pull = spec.tone ?? PROP_TONE;
     const image =
       ground && pull > 0 ? retoned(raw, tone(raw, [whole(raw)]), ground, pull) : raw;
