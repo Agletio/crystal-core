@@ -21,7 +21,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate } from './pixellab.mts';
+import { HOUSE_STYLE, HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate } from './pixellab.mts';
 import type { Point } from './pixellab.mts';
 import { decodePng } from './png.mts';
 import { asSource, debackground, toGrid } from './convert.mts';
@@ -54,7 +54,7 @@ const write = (m: Manifest): void => writeFileSync(MANIFEST, `${JSON.stringify(m
 function hashOf(sprite: Sprite, style: number): string {
   // HOUSE_WORDS is part of the ask, so a change to the look has to invalidate
   // every row the way a changed prompt does.
-  const of = { prompt: sprite.prompt + HOUSE_WORDS, size: sprite.size, seed: sprite.seed, style };
+  const of = { prompt: sprite.prompt + HOUSE_WORDS, look: HOUSE_STYLE, size: sprite.size, seed: sprite.seed, style };
   return createHash('sha256').update(JSON.stringify(of)).digest('hex').slice(0, 16);
 }
 

@@ -69,6 +69,12 @@ export function debackground(image: Decoded): Decoded {
     out[at(x, y) + 3] = 0;
     stack.push([x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]);
   }
+
+  // Then what the flood could not REACH: the gap between a pair of legs is
+  // enclosed, so the ground stayed as the pale slab seen between them.
+  for (let i = 0; i < width * height; i++) {
+    if (out[i * 4 + 3] !== 0 && near(i * 4, seed)) out[i * 4 + 3] = 0;
+  }
   return { width, height, rgba: out };
 }
 

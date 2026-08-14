@@ -20,9 +20,8 @@ export type Ask = {
   inks?: string[];
 };
 
-/** Appended to every description, so a row carries only its SUBJECT and the
- *  look cannot drift. The limbs clause is for the ANIMATOR rather than the eye:
- *  `estimate-skeleton` cannot find joints on a body whose legs are one mass. */
+/** Appended to every description, so a row carries only its SUBJECT. The limbs
+ *  clause is for the ANIMATOR: `estimate-skeleton` must find joints. */
 export const HOUSE_WORDS =
   ', gothic horror creature, gaunt and menacing, filthy and weathered, caked in' +
   ' dirt and dried blood, grim adult tone, never cute, never chibi, no modern' +
@@ -30,12 +29,14 @@ export const HOUSE_WORDS =
   ' frame, limbs clearly separated and visible, dark outline, no background,' +
   ' no ground shadow, lit from above and from the front right';
 
-/** Flat and unlit: the rank accent and the halo are added at RUNTIME, and art
- *  arriving with a glow on it already makes every rank look the same. */
-const HOUSE_STYLE = {
+/** Flat and unlit: the rank's light is added at RUNTIME, and art arriving with
+ *  a glow on it makes every rank look the same. */
+export const HOUSE_STYLE = {
   outline: 'single color black outline',
   shading: 'flat shading',
   detail: 'low detail',
+  // SIDE, though the map is from above: `low top-down` turns a body front-on,
+  // which the renderer cannot mirror to show facing.
   view: 'side',
   // Sprites are authored facing +x and the renderer MIRRORS rather than rotates.
   direction: 'east',
