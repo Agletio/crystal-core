@@ -122,7 +122,53 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
     }
     rows.push(row);
   }
-  return outlined(deshadow(rows));
+  // Anything measured in ART pixels has to scale with the grid, or it vanishes:
+  // one pixel is 1/24 of a hand-drawn body and 1/256 of a generated one. Same
+  // number as `haloRings`, which is what the ring outside this one uses.
+  const rings = Math.max(1, Math.round(grid / 24));
+  return outlined(fitted(deshadow(rows), rings), rings);
+}
+
+/**
+ * The body, scaled to fill its grid and stood on a common baseline. A cell is
+ * drawn as one tile whatever it was authored at, so a generated body that fills
+ * 57% of its frame renders 40% smaller than a hand-drawn one at the same
+ * `scale` — which is a size table that means two different things. The margin
+ * is what the outline and the halo need to fit.
+ */
+export function fitted(rows: string[], margin: number): string[] {
+  const grid = rows.length;
+  let top = grid;
+  let bottom = -1;
+  let left = grid;
+  let right = -1;
+  rows.forEach((row, y) =>
+    [...row].forEach((c, x) => {
+      if (c === '.') return;
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+    })
+  );
+  if (bottom < 0) return rows;
+
+  const room = grid - margin * 2;
+  const by = Math.min(room / (right - left + 1), room / (bottom - top + 1));
+  const wide = Math.round((right - left + 1) * by);
+  const tall = Math.round((bottom - top + 1) * by);
+  const offX = Math.round((grid - wide) / 2);
+  // Stood on the baseline rather than centred, so nothing floats or sinks.
+  const offY = grid - margin - tall;
+
+  return Array.from({ length: grid }, (_, y) =>
+    Array.from({ length: grid }, (_, x) => {
+      const sx = left + Math.floor((x - offX) / by);
+      const sy = top + Math.floor((y - offY) / by);
+      if (x < offX || x >= offX + wide || y < offY || y >= offY + tall) return '.';
+      return rows[sy]?.[sx] ?? '.';
+    }).join('')
+  );
 }
 
 /** How much wider than the body a row has to be to be the ground and not feet.
@@ -155,17 +201,25 @@ export function deshadow(rows: string[]): string[] {
 /** The dark edge every creature carries, DERIVED rather than asked for: offered
  *  the ink the generator fills bodies with it, denied it there is no edge at
  *  all. Drawn INSIDE the silhouette, so a creature never grows by a pixel. */
-function outlined(rows: string[]): string[] {
-  const clear = (x: number, y: number): boolean => (rows[y]?.[x] ?? '.') === '.';
-  return rows.map((row, y) =>
-    [...row]
-      .map((c, x) =>
-        c !== '.' && (clear(x - 1, y) || clear(x + 1, y) || clear(x, y - 1) || clear(x, y + 1))
-          ? '#'
-          : c
-      )
-      .join('')
-  );
+function outlined(rows: string[], thickness: number): string[] {
+  const out = rows.map((row) => [...row]);
+  const spent = (x: number, y: number): boolean => {
+    const c = out[y]?.[x] ?? '.';
+    return c === '.' || c === '#';
+  };
+  for (let ring = 0; ring < thickness; ring++) {
+    const edge: Array<[number, number]> = [];
+    out.forEach((row, y) =>
+      row.forEach((c, x) => {
+        if (c === '.' || c === '#') return;
+        if (spent(x - 1, y) || spent(x + 1, y) || spent(x, y - 1) || spent(x, y + 1)) {
+          edge.push([x, y]);
+        }
+      })
+    );
+    for (const [x, y] of edge) out[y][x] = '#';
+  }
+  return out.map((row) => row.join(''));
 }
 
 /** The rows as a bestiary entry holds them, ready to paste into the table. */

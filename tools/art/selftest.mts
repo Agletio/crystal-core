@@ -49,10 +49,17 @@ check(same, 'every pixel survives encode and decode');
 const grid = toGrid(back, 24, inks);
 check(grid.length === 24 && grid.every((r) => r.length === 24), 'reduces to a square 24 grid');
 check(grid[0] === '.'.repeat(24), 'a transparent row becomes dots');
-const middle = grid[12];
-check(middle[1] === 'm' && middle[22] === 'M', 'each half snaps to its own ink');
+// Positions rather than indices: `fitted` scales the body to its grid and
+// stands it on the baseline, so nothing is where it was written.
+const middle = grid[12].replace(/^\.+|\.+$/g, '');
 check(
-  middle.startsWith('#') && middle.endsWith('#') && grid[1] === '#'.repeat(24),
+  middle.includes('m') && middle.includes('M') && middle.indexOf('m') < middle.lastIndexOf('M'),
+  'each half snaps to its own ink',
+);
+check(
+  middle.startsWith('#') &&
+    middle.endsWith('#') &&
+    grid.some((row) => /#/.test(row) && !/[Mms e]/.test(row)),
   'the silhouette carries a derived outline, inside its own edge',
 );
 check(
