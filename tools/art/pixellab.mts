@@ -13,6 +13,9 @@ const BASE = 'https://api.pixellab.ai/v1';
 /** What a row asks for, in the game's terms rather than the API's. */
 export type Ask = {
   description: string;
+  /** Overrides HOUSE_WORDS. A prop is not a creature: it has no facing, no
+   *  limbs to separate, and asking for a gaunt menacing one is nonsense. */
+  words?: string;
   /** Generated square, in pixels. The converter needs a multiple of the grid. */
   size: number;
   seed?: number;
@@ -22,6 +25,13 @@ export type Ask = {
 
 /** Appended to every description, so a row carries only its SUBJECT. The limbs
  *  clause is for the ANIMATOR: `estimate-skeleton` must find joints. */
+/** For things that are PLACED rather than things that walk. */
+export const PROP_WORDS =
+  ', a single object alone, gothic horror, filthy and weathered, caked in dirt' +
+  ' and dried blood, long abandoned, grim adult tone, never cute, no people,' +
+  ' no text, seen from slightly above, whole object in frame, dark outline,' +
+  ' no background, no ground shadow, lit from above';
+
 export const HOUSE_WORDS =
   ', gothic horror creature, gaunt and menacing, filthy and weathered, caked in' +
   ' dirt and dried blood, grim adult tone, never cute, never chibi, no modern' +
@@ -151,7 +161,7 @@ export async function rotateTo(from: Buffer, size: number, to: string): Promise<
 export async function generate(ask: Ask): Promise<Buffer> {
   const body: Record<string, unknown> = {
     ...HOUSE_STYLE,
-    description: ask.description + HOUSE_WORDS,
+    description: ask.description + (ask.words ?? HOUSE_WORDS),
     image_size: { width: ask.size, height: ask.size },
     ...(ask.seed === undefined ? {} : { seed: ask.seed }),
     ...(ask.inks?.length

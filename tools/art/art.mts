@@ -21,7 +21,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { COMPASS, HOUSE_STYLE, HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate, rotateTo } from './pixellab.mts';
+import { COMPASS, HOUSE_STYLE, HOUSE_WORDS, PROP_WORDS, animateSkeleton, balance, estimateSkeleton, generate, rotateTo } from './pixellab.mts';
 import type { Point } from './pixellab.mts';
 import { decodePng, encodePng } from './png.mts';
 import { asSource, debackground, toGrid } from './convert.mts';
@@ -34,6 +34,8 @@ type Sprite = {
   grid: number;
   size: number;
   seed: number;
+  /** Placed rather than walking: a different ask and no skeleton. */
+  prop?: boolean;
   accepted: boolean;
   rows: string[] | null;
   /** The three the game wants: two of the walk, then the swing. */
@@ -54,7 +56,7 @@ const write = (m: Manifest): void => writeFileSync(MANIFEST, `${JSON.stringify(m
 function hashOf(sprite: Sprite, style: number): string {
   // HOUSE_WORDS is part of the ask, so a change to the look has to invalidate
   // every row the way a changed prompt does.
-  const of = { prompt: sprite.prompt + HOUSE_WORDS, look: HOUSE_STYLE, size: sprite.size, seed: sprite.seed, style };
+  const of = { prompt: sprite.prompt + (sprite.prop ? PROP_WORDS : HOUSE_WORDS), look: HOUSE_STYLE, size: sprite.size, seed: sprite.seed, style };
   return createHash('sha256').update(JSON.stringify(of)).digest('hex').slice(0, 16);
 }
 
@@ -162,6 +164,7 @@ async function main(): Promise<void> {
         size: s.size,
         seed: s.seed,
         inks: paletteAsk(s.tone),
+        ...(s.prop ? { words: PROP_WORDS } : {}),
       });
       writeFileSync(pngPath(hash), png);
       s.hash = hash;
