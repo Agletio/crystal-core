@@ -102,12 +102,9 @@ export async function estimateSkeleton(png: Buffer): Promise<Point[]> {
   return res.keypoints as Point[];
 }
 
-/**
- * Three poses in, three frames out — the model is a 3-frame window and rejects
- * any other count, which happens to be exactly `CREATURE_FRAMES`: two of the
- * walk and the swing. Text-driven animation is locked to 64px, so this is the
- * only road to a moving 256 sprite.
- */
+/** Three poses in, three frames out — a 3-frame window, which is exactly
+ *  `CREATURE_FRAMES`. Text-driven animation is locked to 64px, so this is the
+ *  only road to a moving 256 sprite. */
 export async function animateSkeleton(
   reference: Buffer,
   size: number,
@@ -120,7 +117,11 @@ export async function animateSkeleton(
     direction: HOUSE_STYLE.direction,
     image_size: { width: size, height: size },
     reference_image: { type: 'base64', base64: reference.toString('base64') },
-    skeleton_keypoints: poses,
+    // `estimate-skeleton` hands back a fractional z_index and `animate` rejects
+    // one — the two ends of the same API disagree, so the round happens here.
+    skeleton_keypoints: poses.map((pose) =>
+      pose.map((k) => ({ ...k, z_index: Math.round(k.z_index ?? 0) }))
+    ),
     ...(inks?.length ? { color_image: { type: 'base64', base64: paletteImage(inks) } } : {}),
   });
   return (res.images as Array<{ base64: string }>).map((i) => Buffer.from(i.base64, 'base64'));
