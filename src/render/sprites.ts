@@ -250,6 +250,9 @@ export function monsterArt(
       s: art.tone.shade(palette),
       e: art.tone.eye(palette),
       x: accent[rank],
+      // A generated creature brings its OWN colours: the five below are the
+      // hand-drawn table's palette, not a limit of anything that draws.
+      ...(art.key ?? {}),
     },
   };
 }

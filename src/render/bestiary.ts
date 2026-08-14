@@ -23,6 +23,8 @@ export interface BeastArt {
    *  be redrawn a family at a time without the pipeline caring. */
   grid: number;
   frames: [string[], string[]];
+  /** Its own colours, when it came from a generator rather than a hand. */
+  key?: Record<string, string>;
   /** The swing. Absent means it has none yet and stands still to hit you. */
   attack?: string[];
 }
@@ -365,9 +367,10 @@ export const BEASTIARY: Record<string, BeastArt> = {
     },
     // The first creature off the generator: 256, and three frames of its own
     // rather than two and a reused pose.
-    grid: GENERATED.goth_a.grid,
-    frames: [GENERATED.goth_a.frames[0], GENERATED.goth_a.frames[1]],
-    attack: GENERATED.goth_a.frames[2],
+    grid: GENERATED.husk.grid,
+    frames: [GENERATED.husk.frames[0], GENERATED.husk.frames[1]],
+    attack: GENERATED.husk.frames[2],
+    key: GENERATED.husk.key,
   },
   stalker: {
     tone: {

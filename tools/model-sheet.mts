@@ -139,6 +139,9 @@ const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
 /** A creature's own inks, the way monsterArt builds them for the game. */
 const beastKey = (art: any, rank: string): Record<string, string> => ({
   ...KEY,
+  // Its own colours first, when it has them: an imported creature carries a
+  // key of its own and the five below are only the hand-drawn table's.
+  ...(art.key ?? {}),
   M: art.tone.lit(PALETTE),
   m: art.tone.mass(PALETTE),
   s: art.tone.shade(PALETTE),
