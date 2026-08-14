@@ -128,6 +128,25 @@ export async function animateSkeleton(
   return (res.images as Array<{ base64: string }>).map((i) => Buffer.from(i.base64, 'base64'));
 }
 
+export const COMPASS = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'] as const;
+
+/** The same body turned, rather than eight bodies that resemble each other —
+ *  which is why it goes through `rotate` from one reference. It takes 128 and
+ *  no more, whatever the spec says, so eight ways costs half the grid. */
+export async function rotateTo(from: Buffer, size: number, to: string): Promise<Buffer> {
+  const res = await call('/rotate', {
+    image_size: { width: size, height: size },
+    from_image: { type: 'base64', base64: from.toString('base64') },
+    from_view: HOUSE_STYLE.view,
+    to_view: HOUSE_STYLE.view,
+    from_direction: HOUSE_STYLE.direction,
+    to_direction: to,
+  });
+  const image = res.image as { base64?: string } | undefined;
+  if (!image?.base64) throw new Error('pixellab returned no rotation');
+  return Buffer.from(image.base64, 'base64');
+}
+
 /** One generation. Returns PNG bytes; nothing here decides what happens to them. */
 export async function generate(ask: Ask): Promise<Buffer> {
   const body: Record<string, unknown> = {

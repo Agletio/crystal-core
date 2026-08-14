@@ -21,9 +21,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { HOUSE_STYLE, HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate } from './pixellab.mts';
+import { COMPASS, HOUSE_STYLE, HOUSE_WORDS, animateSkeleton, balance, estimateSkeleton, generate, rotateTo } from './pixellab.mts';
 import type { Point } from './pixellab.mts';
-import { decodePng } from './png.mts';
+import { decodePng, encodePng } from './png.mts';
 import { asSource, debackground, toGrid } from './convert.mts';
 import { inksFor, paletteAsk } from './inks.mts';
 
@@ -85,6 +85,36 @@ function walkPoses(base: Point[]): Point[][] {
     'LEFT ELBOW': [-STRIDE, 0], 'LEFT ARM': [-STRIDE * 1.5, 0],
   });
   return [contact, pass, swing];
+}
+
+/** Down to what `rotate` will take as a reference, which is 128 and nothing
+ *  else — box filter, since this is a photograph of art rather than art. */
+function shrunk(png: Buffer, to: number): Buffer {
+  const image = decodePng(png);
+  const block = Math.max(1, Math.round(image.width / to));
+  const out = new Uint8Array(to * to * 4);
+  for (let y = 0; y < to; y++) {
+    for (let x = 0; x < to; x++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      for (let j = 0; j < block; j++) {
+        for (let i = 0; i < block; i++) {
+          const at = ((y * block + j) * image.width + (x * block + i)) * 4;
+          const w = image.rgba[at + 3] / 255;
+          r += image.rgba[at] * w;
+          g += image.rgba[at + 1] * w;
+          b += image.rgba[at + 2] * w;
+          a += image.rgba[at + 3];
+        }
+      }
+      const n = Math.max(1, a / 255);
+      const at = (y * to + x) * 4;
+      out[at] = r / n;
+      out[at + 1] = g / n;
+      out[at + 2] = b / n;
+      out[at + 3] = a / (block * block);
+    }
+  }
+  return encodePng(to, to, out);
 }
 
 function pick(m: Manifest, ids: string[]): Sprite[] {
@@ -186,6 +216,22 @@ async function main(): Promise<void> {
       });
       write(m);
       console.log(`  ${s.id}: ${s.frames.length} frames converted`);
+    }
+    return;
+  }
+
+  if (command === 'turn') {
+    const [s] = pick(m, rest);
+    const hash = hashOf(s, m.style);
+    const from = shrunk(readFileSync(pngPath(hash)), 128);
+    for (const to of COMPASS) {
+      const out = join(CACHE, `${hash}-${to}.png`);
+      if (existsSync(out)) continue;
+      // East is the reference itself. `rotate` takes 128 and no more — the spec
+      // says 200 and the server refuses it — so eight ways costs half the grid.
+      const png = to === HOUSE_STYLE.direction ? from : await rotateTo(from, 128, to);
+      writeFileSync(out, png);
+      console.log(`  ${s.id} ${to}: ${png.length} bytes`);
     }
     return;
   }
