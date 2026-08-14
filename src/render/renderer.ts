@@ -513,19 +513,13 @@ export function wangNear(key: number, has: (of: number) => boolean): number {
   return best;
 }
 
-/** A key with the cut face at a corner and no ROCK at any of them: the cell
- *  BELOW a cliff, which a deep-walled set draws as its own tile of shadow.
- *  Drawn as plain floor instead and shaded by the renderer — the set's tile is
- *  a flat dark rectangle, and a run of them along a wall reads as paving laid
- *  at the foot of it rather than as a wall throwing a shadow. */
+/** BOTH top corners the cut face and no ROCK anywhere: the cell squarely BELOW
+ *  a cliff, which a set draws as a flat dark rectangle — a run of those along a
+ *  wall is paving laid at the foot of it, so it is drawn as plain floor. ONE
+ *  cut corner is a cliff's corner and IS drawn, or the rock rounds off. */
 export function wangShadow(key: number): boolean {
-  let cut = false;
-  for (let place = 1; place <= 27; place *= 3) {
-    const corner = Math.floor(key / place) % 3;
-    if (corner === 1) return false;
-    if (corner === 2) cut = true;
-  }
-  return cut;
+  const at = CORNERS.map((place) => Math.floor(key / place) % 3);
+  return at.every((c) => c !== 1) && at[0] === 2 && at[1] === 2;
 }
 
 /**

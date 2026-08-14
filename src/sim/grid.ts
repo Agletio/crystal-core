@@ -241,6 +241,33 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = []): void {
   }
 }
 
+/** Rock a CORNER set cannot draw. A corner is rock only where all four cells
+ *  round it are, so a finger of stone one cell thick holds no rock corner at
+ *  all and comes out as cut faces with no stone between them — on screen, a
+ *  wall melting into the floor. Cut back to floor, twice, since cutting one
+ *  cell can leave its neighbour thin. Every cell of a two-thick wall is inside
+ *  a solid square, so nothing here eats a real one. */
+function thinRock(grid: Grid): void {
+  for (let pass = 0; pass < 2; pass++) {
+    const was = Uint8Array.from(grid.tiles);
+    const rock = (x: number, y: number) =>
+      !grid.inBounds(x, y) || was[y * grid.width + x] === WALL;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (was[y * grid.width + x] !== WALL) continue;
+        const square = (ox: number, oy: number) =>
+          rock(x + ox, y + oy) &&
+          rock(x + ox + 1, y + oy) &&
+          rock(x + ox, y + oy + 1) &&
+          rock(x + ox + 1, y + oy + 1);
+        if (!square(0, 0) && !square(-1, 0) && !square(0, -1) && !square(-1, -1)) {
+          grid.set(x, y, FLOOR);
+        }
+      }
+    }
+  }
+}
+
 /** The footprint an arrangement has to beat to count as one worth the room. */
 const BIG = 12;
 
@@ -503,6 +530,7 @@ export function generateMap(
     carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, WOBBLE[cut]);
   }
 
+  thinRock(grid);
   const entrance = roomCenter(rooms[0]);
 
   // Exit goes in whichever room is physically farthest from the entrance, so
@@ -566,6 +594,8 @@ export function sceneMap(
       }
     }
   }
+
+  thinRock(grid);
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);

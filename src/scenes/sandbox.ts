@@ -89,7 +89,7 @@ const SHRINE: [string, number, number][] = [
   ['stub', 4, 11],
   ['pebbles', 6, 12],
   ['fungus', 9, 12],
-  ['roots', 12, 8],
+  ['roots', 13, 7],
 ];
 
 export const SANDBOX: SceneDef = {

@@ -537,6 +537,11 @@ that worked, and these are what it cost:
   square between two cliffs. Scoring every key the set holds, with the cut face
   one step from either terrain and floor three from rock, fixed it without a
   generation.
+- **A corner Wang set cannot draw stone one cell thick.** A corner is rock only
+  where four cells round it are, so a one-cell finger has no rock corner in it
+  anywhere and comes out as cut faces with nothing between them — the wall
+  melting into the floor. It is a GEOMETRY fix, not a tile one: `thinRock` cuts
+  that rock back after every carve. Nothing in a set can answer it.
 - **A wall has to be TALLER than one tile.** A generated set draws its cut
   face one tile high; a body is rendered at one and a half, so the wall read as
   a kerb and every prop looked oversized against it. The fix is in the drawing

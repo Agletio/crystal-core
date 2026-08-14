@@ -87,6 +87,10 @@ const AGGRO_CHAIN_RADIUS = 4.5;
 /** How near the way out the last encounter comes up the hole behind you. */
 const SHOW_FIGHT = 4; // seconds a sandbox hero swings at what came into reach
 const SHOW_WALK = 6; // and then walks on regardless of what is still there
+/** How far a sandbox body wanders off where it was put, and how long it stands
+ *  about between wanders. */
+const PACE_REACH = 2.5;
+const PACE_REST: [number, number] = [0.8, 3];
 
 const FINALE_RANGE = 5;
 
@@ -209,6 +213,9 @@ export interface Entity {
   slowed?: number;
   /** Tiles this body has actually walked, for the walk cycle to read. */
   walked: number;
+  home?: Vec2; // where a SANDBOX body was put
+  roam?: Vec2; // and where it is pacing to
+  rest?: number; // seconds of standing still left before it picks somewhere
   dead: boolean;
 }
 
@@ -502,8 +509,8 @@ export class RunSim {
       weight: 0,
     }, ability);
     const thrown = SKILL_BY_ID[ability?.skill ?? ''];
-    // A ROOTED body holds its post, or everything that chases ends up in one
-    // clump. Speed 0, so nothing else has to know.
+    // A ROOTED body holds its post rather than joining the clump: speed 0, so
+    // neither the chase nor the pacing has to know about it.
     const reach = { ...stats, ...thrownReach(thrown), ...(spec.rooted ? { moveSpeed: 0 } : {}) };
     return {
       id: this.nextId++,
@@ -516,6 +523,7 @@ export class RunSim {
       skillId: ability?.skill ?? null,
       x: spec.at.x,
       y: spec.at.y,
+      home: { x: spec.at.x, y: spec.at.y },
       facing: Math.atan2(hero.y - spec.at.y, hero.x - spec.at.x),
       action: 'idle',
       actionTimer: 0,
@@ -1285,6 +1293,12 @@ export class RunSim {
     if (m.cooldown > 0) m.cooldown -= dt;
 
     const d = dist(m, hero);
+    // A sandbox body PACES while nothing is happening to it: standing still is
+    // one facing of one animation, and this room exists to show the others.
+    if (this.sandbox && !(m.aggroed && d <= ACTIVE_RANGE)) {
+      this.pace(m, dt);
+      return;
+    }
     if (d > ACTIVE_RANGE) return;
 
     // Woken by sight, and once woken they chase around corners. Waking one
@@ -1314,6 +1328,26 @@ export class RunSim {
       return;
     }
     this.advance(m, hero, dt);
+  }
+
+  /** A short walk near where it was put, a stand about, and another. A `rooted`
+   *  body has no speed, so a caster still holds the post the layout wants. */
+  private pace(m: Entity, dt: number): void {
+    if (m.actionTimer > 0) m.actionTimer -= dt;
+    if (!m.home || m.stats.moveSpeed <= 0) return;
+    if ((m.rest ?? 0) > 0) {
+      m.rest = (m.rest ?? 0) - dt;
+      this.settleAction(m, false);
+      return;
+    }
+    if (m.roam && dist(m, m.roam) > 0.35 && this.advance(m, m.roam, dt)) return;
+    // Off HOME: wandering from wherever it stopped walks a body across the room.
+    const turn = this.rng.float(0, Math.PI * 2);
+    const away = this.rng.float(0.8, PACE_REACH);
+    const to = { x: m.home.x + Math.cos(turn) * away, y: m.home.y + Math.sin(turn) * away };
+    m.roam = this.state.map.grid.fits(to.x, to.y, m.radius) ? to : { ...m.home };
+    m.rest = this.rng.float(PACE_REST[0], PACE_REST[1]);
+    m.path = [];
   }
 
   /**

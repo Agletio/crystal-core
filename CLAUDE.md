@@ -77,9 +77,10 @@ which is what makes a chamber a cavern rather than a hall; the swell only ever
 adds, and an island never lands on furniture a room was authored around. The
 hero walks the `patrol` ring, swinging at what came into reach and then moving
 on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or bodies in reach pin it where it
-stands and one facing of one animation is all it ever shows. Casters are
-`rooted` so the layout survives contact, and `hero.speed` walks it rather than
-sending it at a descent's sprint.
+stands and one facing of one animation is all it ever shows. A body PACES near
+where it was put while nothing is happening to it, for the same reason. Casters
+are `rooted` so the layout survives contact, and `hero.speed` walks the hero
+rather than sending it at a descent's sprint.
 
 **Nothing the game itself draws is in it**: the ground is a generated Wang set, the furniture is
 generated pictures, the bodies are generated and so is the HERO, over the doll
@@ -110,7 +111,9 @@ whether any of it goes in the game is the user's call and is open question 8.
 cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary. The renderer then draws that row
 `WALL_TALL` tiles tall, up over the rock behind it — a set draws a face one
-tile high, and under a body rendered at one and a half that is a kerb. `wangCorners` marks a floor vertex under a rock one,
+tile high, and under a body rendered at one and a half that is a kerb. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
+corner anywhere, so `thinRock` cuts it back to floor after every carve rather
+than leave a wall melting into the ground. `wangCorners` marks a floor vertex under a rock one,
 and `wangNear` is the fallback for a corner no set answers, since a key nothing
 draws is a hole in the floor. `wangShadow` is the one key class NOT drawn: a
 cut face at a corner with no rock at any of them is the cell below a cliff, and

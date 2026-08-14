@@ -1614,15 +1614,16 @@ rule('SPRITES — is the pixel art well formed?');
     );
   }
 
-  // A cut-face corner with no rock at any corner is the cell BELOW a cliff.
-  // The set draws it as a flat rectangle of shadow, which is why it is not
-  // drawn — and the rule has to hold for every key, since one wrong answer is
-  // either a hole in the floor or a wall with its base missing.
+  // BOTH top corners the cut face and no rock anywhere is the cell squarely
+  // below a cliff, which the set draws as a flat rectangle of shadow and which
+  // is therefore not drawn. One cut corner is a cliff's CORNER and IS drawn:
+  // the rule has to hold for every key, since a wrong answer either cuts a
+  // hole in the floor or rounds the rock off into it.
   {
     const wrong: string[] = [];
     for (let key = 0; key < 81; key++) {
       const at = [27, 9, 3, 1].map((place) => Math.floor(key / place) % 3);
-      const want = at.every((c) => c !== 1) && at.some((c) => c === 2);
+      const want = at.every((c) => c !== 1) && at[0] === 2 && at[1] === 2;
       if (wangShadow(key) !== want) wrong.push(`${key} ${at.join('')}`);
     }
     check(wrong.length === 0, 'and the 81 corner keys agree on which is pure shadow', wrong.join(', '));

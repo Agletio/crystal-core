@@ -1460,11 +1460,27 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   sandbox's are generated — so a map with `ground` set has to skip the
   hand-drawn pass entirely. It did not, and every bone pile in the sandbox
   carried a pale rectangle nobody could find in the art.
-- **The cut face is drawn `WALL_TALL` tiles tall.** A set draws it one, which
+- **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
+  where all four cells round it are, so a finger of stone one cell thick holds
+  no rock corner at all and comes out as cut faces with nothing between them —
+  which on screen is a wall melting into the ground. `thinRock` runs after every
+  carve, twice, since cutting one cell can leave its neighbour thin. It only
+  ever opens space, so nothing it does can strand anything.
+- **ONE cut corner is a cliff's corner and is drawn.** Only the cell squarely
+  below a cliff — both top corners the cut face, no rock anywhere — is the flat
+  dark rectangle worth skipping. Skipping the single-corner keys too rounded
+  every wall off into the floor.
+- **A sandbox body PACES.** Standing still is one facing of one animation, and
+  that room's whole job is showing the others. It walks near where it was put,
+  stands about, and goes again — off HOME rather than off wherever it stopped,
+  or a body walks across the room a wander at a time. A `rooted` one has no
+  speed, so a caster still holds the post the layout wants.
+- **The cut face is drawn `WALL_TALL` tiles tall, over SOLID rock only.** A set draws it one, which
   under a body rendered at one and a half reads as a kerb you could step over.
-  The bottom row of a wall run is stretched upward over the rock behind it,
-  which is a surface nobody ever stands on. What HANGS on it lifts by
-  `WALL_LIFT` to match, or a torch is a torch lying at the foot of a wall.
+  The bottom row of a wall run grows upward over as much SOLID rock as stands
+  behind it — a tile with a floor corner in it still draws floor, and painting
+  the face over one is the other way a wall melts into the ground. What HANGS
+  on it lifts by `WALL_LIFT`, or a torch lies at the foot of a wall.
 - **Open floor is nearly all GRIT.** A few specks read as a floor with
   something on it; a bucket in the middle of a room reads as a bucket somebody
   threw there. Anything with a shape belongs against a wall or inside a

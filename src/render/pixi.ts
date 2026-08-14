@@ -99,11 +99,10 @@ const ALL_ROCK = 40;
  * the GPU interpolate, so the whole thing is smooth and the wall's shadow is
  * the rock's own dark bleeding half a tile onto the floor.
  */
-const ROCK_TOP = 0.9;
+const ROCK_TOP = 0.8;
 const ROCK_REACH = 2.6;
 const ROCK_DARK = 0.06;
-/** How many tiles tall the cut face is drawn, and how far up it what
- *  hangs on it sits. */
+/** How tall the cut face is drawn, and how far up it what hangs on it sits. */
 const WALL_TALL = 2;
 const WALL_LIFT = 0.35;
 
@@ -492,13 +491,17 @@ export async function createPixiRenderer(
         // One texture across exactly one tile, and a hair over to close seams.
         const size = 1.01 / (alt[0]?.width ?? 32);
         // The bottom row of a wall run is the CUT FACE, and a set draws it one
-        // tile tall — under a body drawn at one and a half, that is a kerb.
-        // At `WALL_TALL` it eats the rock above it, which nobody stands on.
-        const face =
-          grid.at(x, y) === WALL && grid.at(x, y - 1) === WALL && grid.at(x, y + 1) !== WALL;
+        // tile tall — under a body drawn at one and a half, that is a kerb. So
+        // it grows UP, over as much SOLID rock as stands behind it: a tile with
+        // a floor corner in it still draws floor, and painting the face over
+        // one is where a wall melts into the ground.
+        let tall = 1;
+        if (grid.at(x, y) === WALL && grid.at(x, y + 1) !== WALL) {
+          while (tall < WALL_TALL && wangCorners(at, x, y - tall) === ALL_ROCK) tall++;
+        }
         sprite.x = x;
-        sprite.y = face ? y + 1 - WALL_TALL : y;
-        sprite.scale.set(size, size * (face ? WALL_TALL : 1));
+        sprite.y = y + 1 - tall;
+        sprite.scale.set(size, size * tall);
         groundLayer.addChild(sprite);
       }
     }
