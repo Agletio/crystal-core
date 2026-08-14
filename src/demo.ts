@@ -97,6 +97,7 @@ import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './ga
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
 import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
+import { ZONES } from './render/generated-tiles';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
@@ -1528,19 +1529,26 @@ rule('SPRITES — is the pixel art well formed?');
     .filter((id) => !PROP_ART[id]);
   check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
 
-  // The sandbox is BLANK: it draws no ground, so nothing may be scattered on
-  // one. Every prop in it is one somebody placed by hand.
+  // The sandbox draws a GENERATED zone, so the zone's own rock stands down and
+  // the surface is the set's. What is scattered on it is what the rock does —
+  // cover at the foot of the wall — and every prop STANDING on the floor is one
+  // somebody placed by hand.
   {
     const box = SCENE_BY_ID.sandbox!;
-    const dressed = sceneMap(box.plan, box.theme, 1, box.bare);
-    // By COUNT, not by kind: the shrine hangs its own torches, so what says
-    // nothing was scattered is that the map holds exactly what the plan does.
-    const loose = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
-    line(`  ${dressed.props.length} props in the sandbox, ${loose} of them cover`);
+    const dressed = sceneMap(box.plan, box.theme, 1, box.bare, box.zone);
+    const standing = (of: MapProp[]) =>
+      of.filter((p) => !COVER_SET.has(p.id) && !HUNG_PROPS.has(p.id)).length;
+    const cover = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
+    const put = standing(dressed.props);
+    line(`  ${put} props in the sandbox, ${cover} of cover under them`);
     check(
-      box.bare === true && loose === 0 && dressed.props.length === box.plan.props.length,
-      'and the blank sandbox carries the hand-placed shrine and nothing else',
-      `${dressed.props.length} against ${box.plan.props.length} authored, ${loose} scattered`
+      box.bare === true &&
+        !!box.zone &&
+        !!ZONES[box.zone] &&
+        put === standing(box.plan.props) &&
+        cover > put,
+      'and the sandbox draws a generated zone, the hand-placed shrine, and nothing scattered',
+      `zone ${box.zone}, ${put} standing against ${standing(box.plan.props)} authored, ${cover} cover`
     );
 
     // COVER is drawn as one pass UNDER the furniture, so an id in both a cover

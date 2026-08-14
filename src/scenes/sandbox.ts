@@ -99,7 +99,7 @@ export const SANDBOX: SceneDef = {
   name: 'Sandbox',
   theme: 'fissure', // what it is dressed as, once anything draws ground again
   bare: true, // the zone's own rock stands down for the generated set
-  zone: 'round_enhanced',
+  zone: 'lit_round',
   hero: { sprite: HERO, at: { x: 0, y: 0 }, scale: 1.5, speed: 0.5 },
   plan: {
     room: ROOMS[0],
@@ -115,6 +115,7 @@ export const SANDBOX: SceneDef = {
     })),
     props: SHRINE.map(([id, x, y]) => ({ id, x, y })),
     plain: [ROOMS[0]],
+    grown: true, // loose stone at the foot of the rock, and what grows on it
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,
