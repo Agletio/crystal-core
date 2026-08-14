@@ -220,7 +220,6 @@ import {
   sweepRing,
   paletteFrom,
   tileDecals,
-  wangShadow,
 } from './render/renderer';
 import {
   CARRY,
@@ -1498,8 +1497,8 @@ rule('SPRITES — is the pixel art well formed?');
   // is the whole surface, and the hand-drawn decals stand down with it.
   const noProp = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
     if (!s) return [];
-    const drawn = s.ground ? PROP_ART : PROPS;
-    return sceneMap(s.plan, s.theme, 1, s.ground)
+    const drawn = s.bare ? PROP_ART : PROPS;
+    return sceneMap(s.plan, s.theme, 1, s.bare)
       .props.filter((p) => !drawn[p.id])
       .map((p) => `${s.id}: ${p.id}`);
   });
@@ -1517,7 +1516,7 @@ rule('SPRITES — is the pixel art well formed?');
   // And the dressing actually happened. A scene asking for it and getting
   // nothing is a room that reads as empty for a reason nobody would look for.
   const bare = [...SCENES, SCENE_BY_ID.sandbox].filter(
-    (s) => s?.plan.dress && sceneMap(s.plan, s.theme, 1, s.ground).props.length < 6
+    (s) => s?.plan.dress && sceneMap(s.plan, s.theme, 1, s.bare).props.length < 6
   );
   check(bare.length === 0, 'and a room that asks to be dressed is', bare.map((s) => s?.id).join(', '));
 
@@ -1529,25 +1528,19 @@ rule('SPRITES — is the pixel art well formed?');
     .filter((id) => !PROP_ART[id]);
   check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
 
-  // A room the ARRANGEMENTS alone dressed is a room with three tidy clusters
-  // in an empty field. What makes it a cavern is the foot of the rock, so the
-  // sandbox is held to a real spread of both kinds.
+  // The sandbox is BLANK: it draws no ground, so nothing may be scattered on
+  // one. Every prop in it is one somebody placed by hand.
   {
     const box = SCENE_BY_ID.sandbox!;
-    const dressed = sceneMap(box.plan, box.theme, 1, box.ground);
-    const standing = (of: MapProp[]) =>
-      of.filter((p) => !COVER_SET.has(p.id) && !HUNG_PROPS.has(p.id)).length;
-    const hung = dressed.props.filter((p) => HUNG_PROPS.has(p.id)).length;
-    const cover = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
-    const put = standing(dressed.props);
-    line(`  ${put} props in the sandbox, ${hung} grown on the wall, ${cover} of cover under it`);
-    // The room is the SHRINE and what the rock does, and NOTHING else. Every
-    // prop standing on the floor is one somebody placed by hand: a room's
-    // worth of objects dropped one at a time reads as exactly that.
+    const dressed = sceneMap(box.plan, box.theme, 1, box.bare);
+    // By COUNT, not by kind: the shrine hangs its own torches, so what says
+    // nothing was scattered is that the map holds exactly what the plan does.
+    const loose = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
+    line(`  ${dressed.props.length} props in the sandbox, ${loose} of them cover`);
     check(
-      put === standing(box.plan.props) && cover > put && hung >= 3,
-      'and the sandbox carries the hand-placed shrine, the rock, and nothing scattered',
-      `${put} standing against ${standing(box.plan.props)} authored, ${cover} cover, ${hung} hung`
+      box.bare === true && loose === 0 && dressed.props.length === box.plan.props.length,
+      'and the blank sandbox carries the hand-placed shrine and nothing else',
+      `${dressed.props.length} against ${box.plan.props.length} authored, ${loose} scattered`
     );
 
     // COVER is drawn as one pass UNDER the furniture, so an id in both a cover
@@ -1569,7 +1562,7 @@ rule('SPRITES — is the pixel art well formed?');
   // solid tile in a passage, and a solid tile under somebody standing on it.
   {
     const box = SCENE_BY_ID.sandbox!;
-    const { grid, props } = sceneMap(box.plan, box.theme, 1, box.ground);
+    const { grid, props } = sceneMap(box.plan, box.theme, 1, box.bare);
     const solid: string[] = [];
     let blocked = 0;
     for (let y = 0; y < grid.height; y++) {
@@ -1619,7 +1612,7 @@ rule('SPRITES — is the pixel art well formed?');
   {
     const box = SCENE_BY_ID.sandbox!;
     const plain = box.plan.plain ?? [];
-    const { props } = sceneMap(box.plan, box.theme, 1, box.ground);
+    const { props } = sceneMap(box.plan, box.theme, 1, box.bare);
     const inside = (p: MapProp) =>
       plain.some((r) => p.x >= r.x - 1 && p.y >= r.y - 1 && p.x < r.x + r.w + 1 && p.y < r.y + r.h + 1);
     const authored = new Set(box.plan.props.map((p) => `${p.id}@${p.x},${p.y}`));
@@ -1634,21 +1627,6 @@ rule('SPRITES — is the pixel art well formed?');
     );
   }
 
-  // BOTH top corners the cut face and no rock anywhere is the cell squarely
-  // below a cliff, which the set draws as a flat rectangle of shadow and which
-  // is therefore not drawn. One cut corner is a cliff's CORNER and IS drawn:
-  // the rule has to hold for every key, since a wrong answer either cuts a
-  // hole in the floor or rounds the rock off into it.
-  {
-    const wrong: string[] = [];
-    for (let key = 0; key < 81; key++) {
-      const at = [27, 9, 3, 1].map((place) => Math.floor(key / place) % 3);
-      const want = at.every((c) => c !== 1) && at[0] === 2 && at[1] === 2;
-      if (wangShadow(key) !== want) wrong.push(`${key} ${at.join('')}`);
-    }
-    check(wrong.length === 0, 'and the 81 corner keys agree on which is pure shadow', wrong.join(', '));
-  }
-
   // Where a prop is PUT, which the id check cannot see. A room is authored by
   // hand in absolute tiles, so the three ways to get that wrong are outside the
   // walls, stacked on another prop, and standing on the hole or on the person.
@@ -1660,7 +1638,7 @@ rule('SPRITES — is the pixel art well formed?');
     // carve knows. Everything placed by hand has to stand on it.
     // The MAP's props, not the plan's: a plan may ask to be dressed, and what
     // that put down is exactly what has to be somewhere it can be.
-    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.ground);
+    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.bare);
     const seen = new Set<string>();
     const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
     // A WALL prop is drawn side-on and belongs ON the cut face, which is a

@@ -44,7 +44,6 @@ export interface ScenePlan {
   props: MapProp[]; // put exactly here, by hand
   plain?: Room[]; // chambers laid out by hand: nothing is scattered into one
   dress?: number; // and this many VIGNETTES scattered per chamber besides
-  chasms?: Room[]; // where the floor gave way; a passage over one is a BRIDGE
   grown?: boolean; // and what the rock does on its own: cover, and what grows
 }
 
@@ -59,7 +58,7 @@ export interface SceneDef {
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
   dummies?: SceneDummy[]; // and their presence is what makes a room a SANDBOX
-  ground?: string; // a generated tileset, over the zone's own rock. Pixi only
+  bare?: boolean; // draw no ground at all: props on black. Pixi only
   hero?: SceneDummy; // a body the hero is drawn as, over the doll it is made of
 }
 

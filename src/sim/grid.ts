@@ -23,9 +23,6 @@ export const EXIT = 3;
 /** Corridor floor. Walkable exactly like FLOOR — it exists so a renderer can
  *  tell a chamber from a passage without re-deriving it from the rectangles. */
 export const TUNNEL = 4;
-/** A hole where the floor gave way. Neither ground nor rock: nothing walks on
- *  it, and it is keyed as stone so the floor ends at a proper edge. */
-export const VOID = 5;
 
 export interface Room {
   x: number;
@@ -81,7 +78,7 @@ export class Grid {
     const ty = Math.round(y);
     if (!this.inBounds(tx, ty)) return false;
     const tile = this.tiles[ty * this.width + tx];
-    return tile !== WALL && tile !== VOID && !this.solid[ty * this.width + tx];
+    return tile !== WALL && !this.solid[ty * this.width + tx];
   }
 
   /** Whether a BODY of this radius fits, rather than whether its centre does:
@@ -138,8 +135,8 @@ export interface GameMap {
   vein: number;
   /** Which world this rock belongs to. Presentation only, same as the vein. */
   theme: MapTheme;
-  /** A generated tileset drawn instead of the theme's own rock, by a scene. */
-  ground?: string;
+  /** Draw no ground at all: a room with nothing in it but its props. */
+  bare?: boolean;
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -222,9 +219,7 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
   const ry = r.h / 2;
   const swellA = phaseOf(r, 54);
   const swellB = phaseOf(r, 55);
-  // Nothing stands up inside a HOLE: an island there is ground in mid air, and
-  // ragged round as well it leaves black scraps rather than a drop.
-  const islands = fill === FLOOR ? islandsIn(r, spare) : [];
+  const islands = islandsIn(r, spare);
 
   for (let y = r.y - 1; y < r.y + r.h + 1; y++) {
     for (let x = r.x - 1; x < r.x + r.w + 1; x++) {
@@ -241,31 +236,6 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
       if (d > 0.8 + swell + tileNoise(x, y, 50) * 0.35) continue;
       if (islands.some((i) => (x - i.x) ** 2 + (y - i.y) ** 2 < i.r * i.r)) continue;
       grid.set(x, y, fill);
-    }
-  }
-}
-
-/** Rock a CORNER set cannot draw. A corner is rock only where all four cells
- *  round it are, so stone one cell thick holds no rock corner at all and comes
- *  out as a wall melting into the floor. Cut back twice, since cutting one cell
- *  can leave its neighbour thin; a two-thick wall is inside a solid square. */
-function thinRock(grid: Grid): void {
-  for (let pass = 0; pass < 2; pass++) {
-    const was = Uint8Array.from(grid.tiles);
-    const rock = (x: number, y: number) =>
-      !grid.inBounds(x, y) || was[y * grid.width + x] === WALL || was[y * grid.width + x] === VOID;
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
-        if (was[y * grid.width + x] !== WALL) continue;
-        const square = (ox: number, oy: number) =>
-          rock(x + ox, y + oy) &&
-          rock(x + ox + 1, y + oy) &&
-          rock(x + ox, y + oy + 1) &&
-          rock(x + ox + 1, y + oy + 1);
-        if (!square(0, 0) && !square(-1, 0) && !square(0, -1) && !square(-1, -1)) {
-          grid.set(x, y, FLOOR);
-        }
-      }
     }
   }
 }
@@ -413,10 +383,7 @@ export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[
  *  rock, or a passage would relabel the middle of the chamber it joins. */
 function carve(grid: Grid, x: number, y: number): void {
   if (x < 1 || y < 1 || x >= grid.width - 1 || y >= grid.height - 1) return;
-  // Over a hole as well as through rock: a passage crossing a chasm is a
-  // BRIDGE, and cutting the chasm first is the whole of how one gets made.
-  const tile = grid.at(x, y);
-  if (tile === WALL || tile === VOID) grid.set(x, y, TUNNEL);
+  if (grid.at(x, y) === WALL) grid.set(x, y, TUNNEL);
 }
 
 function band(width: number): number[] {
@@ -544,7 +511,6 @@ export function generateMap(
     carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, WOBBLE[cut]);
   }
 
-  thinRock(grid);
   const entrance = roomCenter(rooms[0]);
 
   // Exit goes in whichever room is physically farthest from the entrance, so
@@ -586,7 +552,7 @@ export function sceneMap(
   plan: ScenePlan,
   theme: MapTheme,
   vein = 1,
-  ground?: string
+  bare = false
 ): GameMap {
   // `also` is more chambers, cut the same way. Where they do not touch they
   // are JOINED by the same wandering corridor a descent is joined by, so a
@@ -600,12 +566,6 @@ export function sceneMap(
   const cut = plan.cut ?? CUT[theme] ?? 'dug';
   const spare = [...plan.props, plan.entrance, plan.stands, ...(plan.patrol ?? [])];
   for (const r of rooms) carveRoom(grid, r, cut, spare);
-  // Holes BEFORE the passages, so whatever crosses one is a bridge — and never
-  // under anything the room stands somebody on.
-  for (const r of plan.chasms ?? []) carveRoom(grid, r, 'grown', [], VOID);
-  for (const v of [...spare, ...(plan.busy ?? [])]) {
-    if (grid.at(v.x, v.y) === VOID) grid.set(v.x, v.y, FLOOR);
-  }
   if (plan.joins) {
     const rng = new Rng(1);
     for (const [a, b] of plan.joins) {
@@ -615,7 +575,6 @@ export function sceneMap(
     }
   }
 
-  thinRock(grid);
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
@@ -635,5 +594,5 @@ export function sceneMap(
     props.unshift(...coverFloor(grid, new Rng(4)));
   }
   block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, ground };
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare };
 }

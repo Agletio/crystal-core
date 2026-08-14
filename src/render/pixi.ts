@@ -14,7 +14,7 @@
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
-import { FLOOR, VOID, WALL } from '../sim/grid';
+import { WALL } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
@@ -44,10 +44,6 @@ import {
   tileSize,
   toHexNumber,
   vfxColour,
-  wangCorners,
-  wangFaces,
-  wangNear,
-  wangShadow,
   ZOOM_MIN,
 } from './renderer';
 import {
@@ -61,7 +57,6 @@ import {
   makeLookFrames,
   makeProp,
   makeSheet,
-  makeTiles,
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
@@ -70,8 +65,6 @@ import {
   COVER_DARK,
   COVER_SET,
   COVER_TINT,
-  GLOW_PROPS,
-  HUNG_PROPS,
   STAIN_ALPHA,
   STAIN_PROPS,
 } from '../vignettes';
@@ -81,45 +74,6 @@ import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
 import { lookKey } from './look';
 import type { PoseId } from './pose';
-
-/** Every corner rock, in the base-three key `wangCorners` returns. */
-const ALL_ROCK = 40;
-
-/**
- * The LIGHT, over a generated tileset. A set is drawn to be looked at as
- * terrain, so its stone is lit like the floor: flat across a map, that reads as
- * chambers punched out of a paved field.
- * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
- * tiles, leaving a lit rim. `GRAIN` answers the other half: a set has ONE
- * picture per corner combination, and a rise and fall over `GRAIN_SPAN` tiles
- * reads as damp, as dust, as where the roof came down.
- *
- * None of it is a TINT: every falloff a per-tile one can express is a staircase
- * of flat rectangles. `lightMap` is a texel per lattice corner, interpolated.
- */
-const ROCK_TOP = 0.8;
-const ROCK_REACH = 2.6;
-const ROCK_DARK = 0.06;
-/** How far up the cut face what hangs on it sits. */
-const WALL_LIFT = 0.35;
-/** What a tile made entirely of cut face is worth against a lit one. */
-const WALL_FACE = 0.4;
-/** A straight run of cut face: rock at both top corners, face at both bottom. */
-const FACE = 44;
-const grey = (of: number): number => {
-  const v = Math.max(0, Math.min(255, Math.round(of * 255)));
-  return (v << 16) | (v << 8) | v;
-};
-
-/** How far past the grid the rock is drawn. Cut off at the boundary, a chamber
- *  near it ends on a straight lit line; out there every cell is further from a
- *  floor than `ROCK_REACH`, so the border IS the fade and black is past it. */
-const EDGE = 3;
-
-const GRAIN = 0.18;
-/** What a flame leaves a surface reading as, at the middle of its own pool. */
-const WARM = [1, 0.88, 0.66];
-const GRAIN_SPAN = 3.5;
 
 const FLOATER_LIFE = 1.1;
 
@@ -182,8 +136,8 @@ export async function createPixiRenderer(
   app.ticker.stop();
 
   const world = new Container();
-  /** A generated tileset, when a map names one. Under everything, and empty on
-   *  every map that does not — which is every map a player ever runs. */
+  /** The generated PROPS. Under everything, and empty on every map but a bare
+   *  one — which is every map a player ever runs. */
   const groundLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
@@ -323,7 +277,6 @@ export async function createPixiRenderer(
     world.position.set(offX, offY);
   }
 
-  const tilesets = new Map<string, Record<number, Texture[]> | null>();
   const props = new Map<string, Texture | null>();
 
   /** A generated prop as a texture, uploaded on first use like everything else. */
@@ -337,235 +290,21 @@ export async function createPixiRenderer(
     return made;
   }
 
-  /** A generated Wang set as textures, uploaded on first use like everything
-   *  else. Null once, null for good: a name nothing draws is not an error. */
-  function tilesFor(id: string): Record<number, Texture[]> | null {
-    const already = tilesets.get(id);
-    if (already !== undefined) return already;
-    const built = makeTiles(id);
-    const made = built
-      ? Object.fromEntries(
-          Object.entries(built).map(([key, all]) => [
-            Number(key),
-            all.map((canvas) => {
-              const texture = Texture.from(canvas);
-              // NEAREST, where a body is linear: a tile is drawn at or above
-              // its own size, so what has to survive is the enlargement, and
-              // linear there is the blur pixel art exists to not be.
-              texture.source.scaleMode = 'nearest';
-              return texture;
-            }),
-          ])
-        )
-      : null;
-    tilesets.set(id, made);
-    return made;
-  }
-
   /**
-   * The floor as generated art: one sprite per cell, indexed by which of its
-   * four corners are floor. It REPLACES the zone's own rock and its decals —
-   * a tileset is the whole surface, and masonry with the Fissure's flagstones
-   * stamped over it is two floors at once.
+   * The generated PROPS, and nothing else. The room draws no ground of its own:
+   * what stood here was a Wang tileset and every rule for lighting, walling and
+   * dropping off it, and it is deleted. The art survives — `PROP_ART` is a
+   * picture per prop and `COVER_PROPS` is the loose stone under them — so
+   * whatever is built next has furniture to put in it on day one.
    */
-  function buildGround(map: GameMap): boolean {
+  function buildProps(map: GameMap): void {
     groundLayer.removeChildren().forEach((child) => child.destroy());
-    const textures = map.ground ? tilesFor(map.ground) : null;
-    if (!textures) return false;
+    if (!map.bare) return;
 
-    const { grid } = map;
-    // A HOLE is keyed as stone, so the floor ends at a proper edge.
-    const at = (gx: number, gy: number) => (grid.at(gx, gy) === VOID ? WALL : grid.at(gx, gy));
-    // And INVERTED for the lip: the hole is the ground, the rest stands over it.
-    const drop = (gx: number, gy: number) => (grid.at(gx, gy) === VOID ? FLOOR : WALL);
-    const holed = grid.tiles.some((t) => t === VOID);
-
-    // Tiles from the nearest cell of a kind, as one 8-way flood out of all of
-    // them at once. Capped, so it costs the band it is allowed to reach.
-    const spread = (source: (i: number) => boolean, reach: number): Float32Array => {
-      const out = new Float32Array(grid.width * grid.height).fill(reach);
-      const queue: number[] = [];
-      for (let i = 0; i < out.length; i++) {
-        if (source(i)) {
-          out[i] = 0;
-          queue.push(i);
-        }
-      }
-      for (let head = 0; head < queue.length; head++) {
-        const node = queue[head];
-        if (out[node] >= reach) continue;
-        const x = node % grid.width;
-        const y = (node - x) / grid.width;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (!grid.inBounds(x + dx, y + dy)) continue;
-            const to = (y + dy) * grid.width + (x + dx);
-            if (out[to] <= out[node] + 1) continue;
-            out[to] = out[node] + 1;
-            queue.push(to);
-          }
-        }
-      }
-      return out;
-    };
-    const intoRock = spread((i) => grid.tiles[i] !== WALL, ROCK_REACH);
-    const offRock = spread((i) => grid.tiles[i] === WALL, 2);
-
-    // Value noise off `tileNoise`, read between its cells rather than at them:
-    // sampled per tile it is a chequerboard of its own.
-    const smooth = (x: number, y: number): number => {
-      const fx = x / GRAIN_SPAN;
-      const fy = y / GRAIN_SPAN;
-      const cx = Math.floor(fx);
-      const cy = Math.floor(fy);
-      const tx = fx - cx;
-      const ty = fy - cy;
-      const row = (iy: number) =>
-        tileNoise(cx, iy, 61) * (1 - tx) + tileNoise(cx + 1, iy, 61) * tx;
-      return row(cy) * (1 - ty) + row(cy + 1) * ty;
-    };
-
-    /** How lit ONE cell is, before anything smooths it. Null for a HOLE, which
-     *  takes no part in the blend — a corner it shared would fade the floor's
-     *  own edge out, where a drop-off is the ground STOPPING. */
-    const litAt = (x: number, y: number): number | null => {
-      if (!grid.inBounds(x, y)) {
-        // Deep rock, until the last ring of the drawn border: past that there
-        // is nothing, so the stone goes out rather than stopping on an edge.
-        const past = Math.max(-x, -y, x - grid.width + 1, y - grid.height + 1);
-        return past >= EDGE ? 0 : ROCK_TOP * ROCK_DARK;
-      }
-      const k = y * grid.width + x;
-      if (grid.tiles[k] === VOID) return null;
-      const grain = 1 - GRAIN + GRAIN * smooth(x, y);
-      const lit =
-        grid.tiles[k] === WALL
-          ? ROCK_TOP * (1 - Math.min(1, intoRock[k] / ROCK_REACH) * (1 - ROCK_DARK))
-          : 1;
-      return Math.max(0, Math.min(1, lit * grain));
-    };
-
-    // Every candle, torch and bed of embers in the room, and how far it
-    // reaches. Read per corner, so a handful of them is a handful of terms.
-    const glows = map.props
-      .map((p) => ({ ...GLOW_PROPS[p.id], x: p.x + 0.5, y: p.y + 0.5 }))
-      .filter((g) => g.reach !== undefined);
-    const glowAt = (x: number, y: number): number => {
-      let lit = 0;
-      for (const g of glows) {
-        const d = Math.hypot(x - g.x, y - g.y) / g.reach;
-        if (d < 1) lit += g.lit * (1 - d) ** 2;
-      }
-      return Math.min(1, lit);
-    };
-
-    /** One texel per lattice CORNER, linear-filtered over the whole grid, so
-     *  every pixel between four corners is their blend. Multiplied over the
-     *  ground and its furniture both — and a texel is a COLOUR, so what a
-     *  flame does is warm its own corner of the room rather than just clear
-     *  the dark out of it. */
-    function lightMap(): Sprite | null {
-      const canvas = document.createElement('canvas');
-      canvas.width = grid.width + 1 + EDGE * 2;
-      canvas.height = grid.height + 1 + EDGE * 2;
-      const ink = canvas.getContext('2d');
-      if (!ink) return null;
-      const image = ink.createImageData(canvas.width, canvas.height);
-      for (let ty = 0; ty < canvas.height; ty++) {
-        for (let tx = 0; tx < canvas.width; tx++) {
-          const cx = tx - EDGE;
-          const cy = ty - EDGE;
-          const round = [
-            litAt(cx - 1, cy - 1),
-            litAt(cx, cy - 1),
-            litAt(cx - 1, cy),
-            litAt(cx, cy),
-          ].filter((v): v is number => v !== null);
-          const lit = round.length > 0 ? round.reduce((a, b) => a + b, 0) / round.length : 0;
-          const glow = glowAt(cx - 0.5, cy - 0.5);
-          const at = (ty * canvas.width + tx) * 4;
-          for (let c = 0; c < 3; c++) {
-            image.data[at + c] = Math.round(
-              Math.max(0, Math.min(1, lit + glow * (WARM[c] - lit))) * 255
-            );
-          }
-          image.data[at + 3] = 255;
-        }
-      }
-      ink.putImageData(image, 0, 0);
-      const texture = Texture.from(canvas);
-      texture.source.scaleMode = 'linear';
-      const sprite = new Sprite(texture);
-      // Texel k is the corner at k - 0.5, which puts the sheet's own edge a
-      // tile outside the grid on the top and left.
-      sprite.x = -1 - EDGE;
-      sprite.y = -1 - EDGE;
-      sprite.width = canvas.width;
-      sprite.height = canvas.height;
-      sprite.blendMode = 'multiply';
-      return sprite;
-    }
-
-    // Black under the lot and out past the drawn border, so a HOLE is a hole
-    // and the fade arrives somewhere however far the camera pulls back.
-    groundLayer.addChild(
-      new Graphics()
-        .rect(-EDGE, -EDGE, grid.width + EDGE * 2, grid.height + EDGE * 2)
-        .fill(0x000000)
-    );
-
-    /** One cell of the set, keyed as asked. `lit` is for a sprite drawn OVER
-     *  the lightmap, which gets none of its own. */
-    const lay = (x: number, y: number, key: number, lit = 1): Sprite | null => {
-      const want = wangShadow(key) ? 0 : key;
-      const mask = wangNear(want, (k) => !!textures[k]);
-      // Alternates are for the two UNIFORM masks: elsewhere a second picture
-      // clashes with the neighbour whose cut face it has to continue.
-      const plain = mask === 0 || mask === ALL_ROCK;
-      const alt = plain ? textures[mask] : (textures[mask] ?? []).slice(0, 1);
-      if (!alt?.length) return null;
-      const sprite = new Sprite(alt[Math.floor(tileNoise(x, y, 59) * alt.length) % alt.length]);
-      // One texture across exactly one tile, and a hair over to close seams.
-      // Never stretched: the face is a run of rounded columns, and taller than
-      // the set drew it every column becomes a post.
-      const size = 1.01 / (alt[0]?.width ?? 32);
-      sprite.x = x;
-      sprite.y = y;
-      sprite.scale.set(size);
-      // The CUT FACE stands down, by how much of the tile is face: it is
-      // VERTICAL, and `intoRock` lights that very cell brightest.
-      const faces = wangFaces(key);
-      sprite.tint = grey(lit * (1 - (1 - WALL_FACE) * (faces / 4)));
-      groundLayer.addChild(sprite);
-      return sprite;
-    };
-
-    /** The same tile, turned. Anchored at the middle, or it swings off its own
-     *  cell. Only a wall inside a hole is ever turned — a FLOOR tile rotated
-     *  clashes with the neighbour it shares a light with. */
-    const turned = (x: number, y: number, mask: number, spin: number, lit: number): void => {
-      const art = textures[mask]?.[0];
-      if (!art) return;
-      const sprite = new Sprite(art);
-      sprite.anchor.set(0.5);
-      sprite.x = x + 0.5;
-      sprite.y = y + 0.5;
-      sprite.scale.set(1.01 / art.width);
-      sprite.rotation = spin;
-      sprite.tint = grey(lit * WALL_FACE);
-      groundLayer.addChild(sprite);
-    };
-
-    // A HOLE gets no tile HERE; its own shaft is drawn over the light below.
-    for (let y = -EDGE; y < grid.height + EDGE; y++) {
-      for (let x = -EDGE; x < grid.width + EDGE; x++) {
-        if (grid.at(x, y) !== VOID) lay(x, y, wangCorners(at, x, y));
-      }
-    }
-    // Furniture, anchored at the FOOT of its tile rather than the middle: a
-    // prop taller than a tile grows upward out of the floor rather than sinking
-    // into it. COVER first, so furniture stands ON the rubble, and nearest LAST
-    // within the furniture, or a hanging body is drawn inside its own rock.
+    // COVER first, so furniture stands ON the rubble, and nearest LAST within
+    // the furniture, or a hanging body is drawn inside its own rock. Anchored
+    // at the FOOT of its tile rather than the middle: a prop taller than a tile
+    // grows upward out of the floor rather than sinking into it.
     const cover = map.props.filter((p) => COVER_SET.has(p.id));
     const over = map.props.filter((p) => !COVER_SET.has(p.id)).sort((a, b) => a.y - b.y);
     for (const prop of [...cover, ...over]) {
@@ -575,9 +314,7 @@ export async function createPixiRenderer(
       const sprite = new Sprite(canvas);
       sprite.anchor.set(0.5, 1);
       sprite.x = prop.x + 0.5;
-      // Lifted onto the cut face, which is the lower part of its tile: anchored
-      // at the foot, a torch on a wall is a torch lying on the floor.
-      sprite.y = prop.y + 1 - (HUNG_PROPS.has(prop.id) ? WALL_LIFT : 0);
+      sprite.y = prop.y + 1;
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
       // Five pictures over a whole floor is five pictures over a whole floor,
@@ -593,59 +330,28 @@ export async function createPixiRenderer(
       }
       groundLayer.addChild(sprite);
     }
-    const light = lightMap();
-    if (light) groundLayer.addChild(light);
-    // THE WALL GOING DOWN. Keyed with the world INVERTED — the hole is the low
-    // ground, everything else stands over it — which puts a face wherever the
-    // ground's edge drops away. Then laid ONE ROW LOWER than it was keyed, so
-    // the wall is inside the hole and the floor above it stays floor: the same
-    // tile a wall is made of, placed to read as BELOW the floor. Drawn OVER the
-    // light — what the lightmap touches at a rim it smears across the tile, and
-    // a drop smeared is fog — so it takes the LEDGE's light instead, which is
-    // the same light read at one cell. Under it is black.
-    if (holed) {
-      const ledge = (x: number, y: number): number =>
-        Math.min(1, (litAt(x, y) ?? 0) + glowAt(x + 0.5, y + 0.5));
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
-          const key = wangCorners(drop, x, y);
-          if (wangFaces(key) > 0) lay(x, y + 1, key, ledge(x, y));
-        }
-      }
-      // And the FLANKS, which are the same picture turned a quarter. The set
-      // draws a face pointing at the camera, so a pit's east and west walls
-      // are that tile rotated — rock on the outside, face into the hole.
-      const side = wangNear(FACE, (k) => !!textures[k]);
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
-          if (grid.at(x, y) !== VOID) continue;
-          if (grid.at(x - 1, y) !== VOID) turned(x, y, side, -Math.PI / 2, ledge(x - 1, y));
-          if (grid.at(x + 1, y) !== VOID) turned(x, y, side, Math.PI / 2, ledge(x + 1, y));
-        }
-      }
-    }
-    return true;
   }
+
 
   /** Built once per map, in tile units, then moved by the camera. */
   function buildMap(map: GameMap): void {
     const { grid } = map;
     mapLayer.clear();
 
-    // A tileset is the WHOLE surface: the zone's own rock and decals stand down
-    // for one, and past its border that surface is the dark the rock fades
-    // into. The zone's own rock keeps `rockDeep` — it draws only the band you
-    // could see from a room, so black behind THAT is a chamber floating in
-    // nothing.
-    const generated = buildGround(map);
-    app.renderer.background.color = generated ? 0x000000 : toHexNumber(palette.rockDeep);
+    // A BARE map draws no ground at all — the room is black and holds only its
+    // props. The zone's own rock keeps `rockDeep` behind it, because it draws
+    // only the band you could see from a room and black behind THAT is a
+    // chamber floating in nothing.
+    const bare = !!map.bare;
+    buildProps(map);
+    app.renderer.background.color = bare ? 0x000000 : toHexNumber(palette.rockDeep);
     const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
     // Same grouping as the decals below: the floor's grain gives many tiles
     // the same colour, so one fill per tile is mostly wasted batches.
     const floors = new Map<string, number[][]>();
-    for (let y = 0; y < grid.height && !generated; y++) {
+    for (let y = 0; y < grid.height && !bare; y++) {
       for (let x = 0; x < grid.width; x++) {
         const tile = grid.at(x, y);
         // Rock gets drawn too now, but only the band you could see from a
@@ -673,7 +379,7 @@ export async function createPixiRenderer(
     // run; there are only a handful of distinct decal colours, so grouping
     // turns that into a handful of fills.
     const batches = new Map<string, { colour: number; alpha: number; rects: number[][] }>();
-    for (let y = 0; y < grid.height && !generated; y++) {
+    for (let y = 0; y < grid.height && !bare; y++) {
       for (let x = 0; x < grid.width; x++) {
         for (const d of tileDecals(floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
@@ -692,10 +398,10 @@ export async function createPixiRenderer(
     }
 
     // Authored furniture, over the grain of the tile it is standing on. Not
-    // grouped: there are a handful in a room, against ten thousand decals.
-    // Never over a generated one — a tileset brings its OWN furniture, and an
-    // id in both tables was drawing a hand-drawn rectangle over the picture.
-    for (const prop of generated ? [] : map.props) {
+    // grouped: there are a handful in a room, against ten thousand decals. A
+    // BARE map draws the generated pictures instead, and an id in both tables
+    // would put a hand-drawn rectangle over one.
+    for (const prop of bare ? [] : map.props) {
       for (const d of PROPS[prop.id]?.(floor, prop.x, prop.y) ?? []) {
         mapLayer
           .rect(prop.x + d.x, prop.y + d.y, d.w, d.h)
@@ -705,10 +411,9 @@ export async function createPixiRenderer(
 
     // The way in: a hole in the floor with a lit lip, not a coloured block.
     // seamLit is a panel violet, and on stone it read as a UI element someone
-    // had dropped on the map. Not over a generated floor, where the hole
-    // belongs to the tileset and this reads as a slab dropped on it.
+    // had dropped on the map. A bare map has no floor to cut it into.
     const e = map.entrance;
-    if (!generated) {
+    if (!bare) {
       mapLayer
         .rect(cx(e.x) - 0.32, cy(e.y) - 0.32, 0.64, 0.64)
         .fill(toHexNumber(palette.rockDeep));
@@ -717,8 +422,8 @@ export async function createPixiRenderer(
         .stroke({ width: 0.08, color: toHexNumber(floor.rockLit), alpha: 0.9 });
     }
 
-    // What MOVES is the zone's too, so a generated floor has none of it.
-    livingFloor = generated ? null : floor;
+    // What MOVES is the zone's too, so a bare map has none of it.
+    livingFloor = bare ? null : floor;
     builtMap = map;
   }
 

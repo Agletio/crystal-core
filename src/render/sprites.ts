@@ -11,7 +11,6 @@ import { lookRows, roleChar } from './look';
 import { DOLL_GRID, FAMILY_ART } from './gear-art';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
-import { TILESETS } from './generated-tiles';
 import { PROP_ART } from './generated-props';
 import type { MonsterRank } from './bestiary';
 import { POSE_IDS } from './pose';
@@ -459,24 +458,6 @@ export function makeProp(id: string): HTMLCanvasElement | null {
   return made.canvas;
 }
 
-/** By corner KEY, a list each: a second set of the same terrain is alts. Keys
- *  are sparse — base three over four corners — so this is never an array. */
-export function makeTiles(id: string): Record<number, HTMLCanvasElement[]> | null {
-  const set = TILESETS[id];
-  if (!set) return null;
-  const out: Record<number, HTMLCanvasElement[]> = {};
-  for (const [key, all] of Object.entries(set.tiles)) {
-    const drawn: HTMLCanvasElement[] = [];
-    for (const rows of all) {
-      const made = cell(set.grid);
-      if (!made) return null;
-      drawPixels(made.ctx, { rows, key: set.key, grid: set.grid }, set.grid);
-      drawn.push(made.canvas);
-    }
-    out[Number(key)] = drawn;
-  }
-  return Object.keys(out).length > 0 ? out : null;
-}
 
 function shade(ctx: CanvasRenderingContext2D, colour: string, dark: string): void {
   ctx.fillStyle = colour;

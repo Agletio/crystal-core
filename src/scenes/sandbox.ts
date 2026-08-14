@@ -1,11 +1,13 @@
 /**
- * The sandbox: a cavern made of NOTHING the game itself draws. Nothing dies and
- * nothing ends it, so all it does is let the art be looked at. Dressed as THE
- * FISSURE — "a working somebody gave up on."
+ * The sandbox: a BLANK room. Nothing dies and nothing ends it, so all it does
+ * is let the art be looked at — and it draws no ground at all, because what
+ * used to be here was a generated tileset and every rule for lighting, walling
+ * and dropping off it, and the whole of that is deleted.
  *
- * Laid out like a DESCENT: chambers the size a generated map cuts, joined by
- * the same wandering corridor, a pack in each. The hero walks a circuit, so
- * every body is met from a different side on every lap.
+ * The GEOMETRY survives, so there is a shape to build back into: chambers the
+ * size a generated map cuts, joined by the same wandering corridor, a pack in
+ * each, and the hero walking a circuit. So does every generated PROP. What is
+ * gone is anything that drew the floor, the rock, the light or a drop.
  */
 import type { SceneDef, SceneDummy } from '../scenes';
 
@@ -38,17 +40,6 @@ const RING: [number, number][] = [
 ];
 /** The circuit, by room: out of the middle by the tunnel it came in. */
 const PATROL = [0, 1, 2, 3, 4, 6, 5];
-
-/** Where the floor gave way, for VARIATION in what bounds a chamber: every edge
- *  being rock going UP is a hall. Each BITES a rim rather than sitting in the
- *  rock between two, and a join across one arrives as a walkway. None may reach
- *  a tile somebody stands on — restored tile by tile, a chasm is confetti. */
-const CHASMS = [
-  { x: 20, y: 10, w: 11, h: 5 }, // room 1's south rim, under the 1-6 spur
-  { x: 41, y: 18, w: 11, h: 5 }, // room 3's north rim, under the 2-3 run
-  { x: 4, y: 15, w: 9, h: 6 }, // a gulf the 5-0 run walks the LIP of, not across
-  { x: 35, y: 27, w: 8, h: 6 }, // and one the 3-4 run crosses
-];
 
 /** Whole tiles, as `roomCenter` rounds: a fraction leaves the hero short. */
 const middle = (i: number) => ({
@@ -106,8 +97,8 @@ export const SANDBOX: SceneDef = {
   id: 'sandbox',
   who: MELEE,
   name: 'Sandbox',
-  theme: 'fissure', // whatever the generated ground does not cover
-  ground: 'mineshaft',
+  theme: 'fissure', // what it is dressed as, once anything draws ground again
+  bare: true, // no ground at all: the props, the bodies and black
   hero: { sprite: HERO, at: { x: 0, y: 0 }, scale: 1.5, speed: 0.5 },
   plan: {
     room: ROOMS[0],
@@ -123,8 +114,6 @@ export const SANDBOX: SceneDef = {
     })),
     props: SHRINE.map(([id, x, y]) => ({ id, x, y })),
     plain: [ROOMS[0]],
-    chasms: CHASMS,
-    grown: true, // the rock's own cover and growth. Nothing else is scattered
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,
