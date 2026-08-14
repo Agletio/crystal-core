@@ -745,19 +745,18 @@ Every one is parked deliberately. Ask before acting on any of them.
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
 
-8. **Which creature is the first generated one?** The pipeline works and
-   `test_quadruped` is accepted in `tools/art/manifest.json` — a four-legged
-   body in profile, generated in `cinder_hound`'s inks. What is NOT decided is
-   what it should BE in the game. Three shapes, and it is the user's call:
-   a NEW creature, which needs a name, a world and a `MONSTERS` row to be worth
-   drawing; a REPLACEMENT for a hand-authored one, which `cinder_hound` is the
-   obvious candidate for since it is already a quadruped and lent its inks; or
-   neither, if the answer is that generated art is for the creatures that do not
-   exist yet. Nothing is blocked but the last checkbox of Phase 1: a placeholder
-   called `test_quadruped` was deliberately NOT put into the shipping bestiary,
-   because a table row is permanent and this one has no role. A creature also
-   needs TWO walk frames and an `attack`; the pair spent so far is one frame,
-   so whichever answer is taken costs two or three more generations.
+8. **How many DIRECTIONS does a creature have?** This is the one that
+   multiplies everything after it, so it wants answering before a roster is
+   generated rather than during. One (today) keeps the renderer as it is and
+   costs about 1 MB across the roster; four costs three generated directions
+   per animation state and about 3 MB; eight costs five and about 8 MB, since
+   mirroring gives W, NW and SW free. Past roughly 5 MB the art stops being
+   strings in `docs/app.js` and needs an ATLAS, which costs the runtime palette
+   — and the runtime palette is what makes a zone recolour for free. So it is
+   really two questions and the second is the bigger one: how many directions,
+   and is the game still shipping its art as strings. The sandbox exists to
+   answer the first by LOOKING; the second is a decision about how the game
+   ships and belongs to the user.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
