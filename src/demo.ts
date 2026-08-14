@@ -1646,15 +1646,15 @@ rule('SPRITES — is the pixel art well formed?');
     // carve knows. Everything placed by hand has to stand on it.
     // The MAP's props, not the plan's: a plan may ask to be dressed, and what
     // that put down is exactly what has to be somewhere it can be.
-    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.bare);
+    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.bare, s.zone);
     const seen = new Set<string>();
     const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
-    // A WALL prop is drawn side-on and belongs ON the cut face, which is a
-    // rock tile with floor under it — the one thing that may be in the rock,
-    // and only THERE. Anywhere else it is a picture inside a cliff.
+    // A WALL prop is drawn side-on and belongs ON the cut face — which the set
+    // fills the cell BELOW the boundary with, so it is a FLOOR tile with rock
+    // over it. Held to the rock tile instead, every root hangs a tile above
+    // the wall it is growing on.
     const hangs = HUNG_PROPS;
-    const face = (p: MapProp): boolean =>
-      rock(p) && grid.at(p.x, p.y - 1) === WALL && grid.at(p.x, p.y + 1) !== WALL;
+    const face = (p: MapProp): boolean => !rock(p) && grid.at(p.x, p.y - 1) === WALL;
     // COVER is under everything and claims nothing, so it is exempt from the
     // one-thing-per-tile rule the furniture is held to.
     return [

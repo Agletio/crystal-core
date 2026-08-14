@@ -336,11 +336,15 @@ export async function createPixiRenderer(
    * where the corner one row above is — which is what puts the cliff in the
    * cell BELOW the boundary and makes a wall two rows tall.
    */
+  function cornerAt(grid: GameMap['grid'], cx: number, cy: number): number {
+    const rock = (px: number, py: number): boolean =>
+      grid.at(px - 1, py - 1) === WALL && grid.at(px, py - 1) === WALL &&
+      grid.at(px - 1, py) === WALL && grid.at(px, py) === WALL;
+    return rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
+  }
+
   function corners(grid: GameMap['grid'], x: number, y: number): number {
-    const rock = (cx: number, cy: number): boolean =>
-      grid.at(cx - 1, cy - 1) === WALL && grid.at(cx, cy - 1) === WALL &&
-      grid.at(cx - 1, cy) === WALL && grid.at(cx, cy) === WALL;
-    const one = (cx: number, cy: number): number => (rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0);
+    const one = (cx: number, cy: number) => cornerAt(grid, cx, cy);
     return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
   }
 
@@ -386,15 +390,27 @@ export async function createPixiRenderer(
         near.set(key, best);
         return best;
       };
-      const pick = (raw: number, over: number, under: number): Texture | null => {
-        const key = nearest(raw);
+      // `over` and `under` are the pattern's rows above and below the tile's
+      // own two corner rows, and they are CORNER values — read as the cell's
+      // tile type instead, the twins are picked at random, and what that shows
+      // is the wall's lip tile repeating all the way down a face as a pale line
+      // running up it.
+      const pick = (x: number, y: number): Texture | null => {
+        const key = nearest(corners(grid, x, y));
+        const want = [
+          cornerAt(grid, x, y - 1),
+          cornerAt(grid, x + 1, y - 1),
+          cornerAt(grid, x, y + 2),
+          cornerAt(grid, x + 1, y + 2),
+        ];
         let best = -1;
         let score = -Infinity;
         set.tiles.forEach((tile, i) => {
           if (tile.key !== key) return;
           let mine = 0;
-          if (tile.over[1] !== 255) mine += tile.over[1] === over ? 2 : -3;
-          if (tile.under[1] !== 255) mine += tile.under[1] === under ? 2 : -3;
+          [tile.over[1], tile.over[2], tile.under[1], tile.under[2]].forEach((asked, k) => {
+            if (asked !== 255) mine += asked === want[k] ? 2 : -3;
+          });
           if (mine > score) {
             score = mine;
             best = i;
@@ -405,9 +421,7 @@ export async function createPixiRenderer(
       const size = 1.002 / set.grid;
       for (let y = -EDGE; y < grid.height + EDGE; y++) {
         for (let x = -EDGE; x < grid.width + EDGE; x++) {
-          const over = grid.at(x, y - 1) === WALL ? 1 : 0;
-          const under = grid.at(x, y + 1) === WALL ? 1 : 0;
-          const texture = pick(corners(grid, x, y), over, under);
+          const texture = pick(x, y);
           if (!texture) continue;
           const sprite = new Sprite(texture);
           sprite.x = x;

@@ -1,13 +1,10 @@
 /**
- * The sandbox: a BLANK room. Nothing dies and nothing ends it, so all it does
- * is let the art be looked at — and it draws no ground at all, because what
- * used to be here was a generated tileset and every rule for lighting, walling
- * and dropping off it, and the whole of that is deleted.
+ * The sandbox: a room made of NOTHING the game itself draws, so all it does is
+ * let the art be looked at. Nothing dies and nothing ends it.
  *
- * The GEOMETRY survives, so there is a shape to build back into: chambers the
- * size a generated map cuts, joined by the same wandering corridor, a pack in
- * each, and the hero walking a circuit. So does every generated PROP. What is
- * gone is anything that drew the floor, the rock, the light or a drop.
+ * Chambers the size a generated map cuts, joined by the same wandering
+ * corridor, a pack in each, and the hero walking a circuit — over a generated
+ * tileset, with generated props and generated bodies on it.
  */
 import type { SceneDef, SceneDummy } from '../scenes';
 
@@ -65,19 +62,18 @@ const PACKS: { room: number; at: [number, number]; ability: string; of?: string 
 
 /**
  * THE SHRINE — the one chamber laid out tile by tile, and the reference for
- * what the scatter is meant to come to. A composition rather than a spread: a
- * slab against the north wall, light and a body hanging on the cut face over
- * it, what ran off it on the floor in front, and the leavings pushed out to
- * the edges where a room's leavings go. Nothing scatters in here (`plain`).
+ * what the scatter is meant to come to: a slab against the north wall, light
+ * and a body hanging on the face over it, and the leavings pushed to the edges.
+ * Nothing scatters in here (`plain`), and the wall row is the room's FIRST
+ * FLOOR row, which is the cell the set fills with the cut face.
  */
 const SHRINE: [string, number, number][] = [
-  ['torch', 5, 6],
-  ['hung', 7, 6],
-  ['torch', 9, 6],
-  ['candle', 5, 7],
-  ['altar', 7, 7],
-  ['candle', 9, 7],
-  ['splash', 5, 8],
+  ['torch', 5, 7],
+  ['hung', 7, 7],
+  ['torch', 9, 7],
+  ['candle', 5, 9],
+  ['altar', 7, 8],
+  ['candle', 11, 8],
   ['skulls', 6, 8],
   ['gore', 8, 8],
   ['cairn', 10, 8],
@@ -90,7 +86,6 @@ const SHRINE: [string, number, number][] = [
   ['stub', 4, 11],
   ['spoil', 6, 12],
   ['fungus', 9, 12],
-  ['roots', 13, 7],
 ];
 
 export const SANDBOX: SceneDef = {
