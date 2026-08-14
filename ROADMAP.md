@@ -537,6 +537,18 @@ that worked, and these are what it cost:
   square between two cliffs. Scoring every key the set holds, with the cut face
   one step from either terrain and floor three from rock, fixed it without a
   generation.
+- **A tile set's repetition is answered UNDER it, not by it.** Light helps and
+  a second set does not, but what actually kills the pattern is a scatter of
+  loose stone over the whole floor, drawn as one pass beneath the furniture.
+  Each scrap shifted off its own colour and size, or the scatter is the graph
+  paper again at a different scale.
+- **A generated prop is POLISHED** — specular highlights, hard contrast — and
+  at half a tile that reads as plastic rather than as stone. `tone` toward the
+  ground's spread plus `dull` toward its own luma is what settles one.
+- **Asking for a random scatter gets a GRID.** "A dozen chips spread apart"
+  came back as a tidy 4x4 lattice. It took NOT a grid, NOT rows, NOT columns,
+  NOT evenly spaced, NOT a pattern — and saying the scatter is UNEVEN and MESSY
+  in as many words.
 - **A corner Wang set cannot draw stone one cell thick.** A corner is rock only
   where four cells round it are, so a one-cell finger has no rock corner in it
   anywhere and comes out as cut faces with nothing between them — the wall

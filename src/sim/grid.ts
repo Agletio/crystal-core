@@ -8,7 +8,16 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
-import { FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
+import {
+  COVER_PROPS,
+  COVER_RATE,
+  FRINGE_PROPS,
+  LOOSE_PROPS,
+  SOLID_PROPS,
+  VIGNETTES,
+  WALL_PROPS,
+  weighted,
+} from '../vignettes';
 import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
@@ -345,6 +354,20 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
   }
 }
 
+/** Rubble, dirt and dead growth over the WHOLE floor, under everything else.
+ *  It claims no tile and blocks nothing — furniture stands on top of it — so it
+ *  is laid before anything looks at what is taken, and never asks. */
+export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
+  const out: MapProp[] = [];
+  for (let y = 0; y < grid.height; y++) {
+    for (let x = 0; x < grid.width; x++) {
+      if (grid.at(x, y) === WALL || !rng.chance(COVER_RATE)) continue;
+      out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
+    }
+  }
+  return out;
+}
+
 /** How often a tile of each kind takes something. What reads as a cavern is
  *  the FOOT of the rock, so open floor stays nearly bare. */
 const EDGE_RATE = { face: 0.14, fringe: 0.22, open: 0.13 };
@@ -610,6 +633,8 @@ export function sceneMap(
     props.push(...dressRooms(grid, loose, new Rng(2), plan.dress, spare));
     // After the arrangements, so nothing gathers where one of them stands.
     props.push(...dressEdges(grid, new Rng(3), [...spare, ...props], plain));
+    // And the COVER goes under the lot, claiming nothing.
+    props.unshift(...coverFloor(grid, new Rng(4)));
   }
   block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
   return { grid, rooms, entrance, exit: entrance, props, vein, theme, ground };

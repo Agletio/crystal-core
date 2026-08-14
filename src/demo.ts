@@ -95,7 +95,7 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
-import { FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
+import { COVER_SET, FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import type { RunState } from './sim/run';
 import {
@@ -1538,12 +1538,28 @@ rule('SPRITES — is the pixel art well formed?');
     const from = (t: typeof FRINGE_PROPS) =>
       dressed.props.filter((p) => t.some((w) => w.id === p.id)).length;
     const hung = from(WALL_PROPS);
+    const cover = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
+    const put = dressed.props.length - cover;
     const kinds = new Set(dressed.props.map((p) => p.id)).size;
-    line(`  ${dressed.props.length} props in the sandbox, ${kinds} kinds, ${hung} on the wall`);
+    line(`  ${put} props in the sandbox over ${cover} of cover, ${kinds} kinds, ${hung} on the wall`);
     check(
-      dressed.props.length >= 120 && kinds >= 15 && hung >= 3,
-      'and the sandbox is dressed at the foot of its rock and on the face of it',
-      `${dressed.props.length} props, ${kinds} kinds, ${hung} hung`
+      put >= 80 && cover >= put && kinds >= 15 && hung >= 3,
+      'and the sandbox is dressed at the foot of its rock, on the face of it, and under all of it',
+      `${put} props, ${cover} cover, ${kinds} kinds, ${hung} hung`
+    );
+
+    // COVER is drawn as one pass UNDER the furniture, so an id in both a cover
+    // table and a furniture one is a prop that sometimes goes under whatever it
+    // is standing next to. The renderer splits on the id and cannot tell.
+    const both = [...FRINGE_PROPS, ...LOOSE_PROPS, ...WALL_PROPS]
+      .map((w) => w.id)
+      .concat(VIGNETTES.flatMap((v) => v.props.map((p) => p.id)))
+      .concat(box.plan.props.map((p) => p.id))
+      .filter((id) => COVER_SET.has(id));
+    check(
+      both.length === 0,
+      'and nothing that furnishes a room is also the cover under it',
+      [...new Set(both)].join(', ')
     );
   }
 
@@ -1605,7 +1621,9 @@ rule('SPRITES — is the pixel art well formed?');
     const inside = (p: MapProp) =>
       plain.some((r) => p.x >= r.x - 1 && p.y >= r.y - 1 && p.x < r.x + r.w + 1 && p.y < r.y + r.h + 1);
     const authored = new Set(box.plan.props.map((p) => `${p.id}@${p.x},${p.y}`));
-    const strays = props.filter((p) => inside(p) && !authored.has(`${p.id}@${p.x},${p.y}`));
+    const strays = props.filter(
+      (p) => inside(p) && !COVER_SET.has(p.id) && !authored.has(`${p.id}@${p.x},${p.y}`)
+    );
     const hung = box.plan.props.filter((p) => WALL_PROPS.some((w) => w.id === p.id));
     check(
       plain.length > 0 && strays.length === 0 && hung.length >= 3,
@@ -1649,8 +1667,10 @@ rule('SPRITES — is the pixel art well formed?');
     const hangs = new Set(WALL_PROPS.map((w) => w.id));
     const face = (p: MapProp): boolean =>
       rock(p) && grid.at(p.x, p.y - 1) === WALL && grid.at(p.x, p.y + 1) !== WALL;
+    // COVER is under everything and claims nothing, so it is exempt from the
+    // one-thing-per-tile rule the furniture is held to.
     return [
-      ...props.flatMap((p) => {
+      ...props.filter((p) => !COVER_SET.has(p.id)).flatMap((p) => {
         const at = `${p.x},${p.y}`;
         const wrong: string[] = [];
         if (hangs.has(p.id) ? !face(p) : rock(p)) wrong.push('in the rock');

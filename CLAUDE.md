@@ -148,6 +148,13 @@ FOOT of the rock, so open floor stays nearly bare; a `WALL_PROPS` entry is
 drawn side-on and is the one thing placed INTO rock, on the cut face itself —
 a RUN of it, never a one-tile nub, or a torch hangs in mid air.
 
+**The floor is broken up UNDER the furniture, not with it.** `COVER_PROPS` is
+rubble, dust and dead growth scattered over every walkable tile by
+`coverFloor`, drawn first so everything else stands on it. It claims no tile
+and blocks nothing, and each scrap is shifted off its own colour and size,
+since five pictures over a whole floor is the fault it exists to fix. No id is
+in both a cover table and a furniture one, or the layer stops being a layer.
+
 **`SOLID_PROPS` is what you walk around.** `Grid.solid` is a second layer over
 the tiles, because the ground under an altar is still floor and every renderer
 keys its own surface off `tiles`. A tile is blocked one at a time and UNDONE

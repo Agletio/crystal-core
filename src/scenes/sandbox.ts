@@ -87,7 +87,7 @@ const SHRINE: [string, number, number][] = [
   ['bones', 5, 11],
   ['cocoon', 10, 11],
   ['stub', 4, 11],
-  ['pebbles', 6, 12],
+  ['spoil', 6, 12],
   ['fungus', 9, 12],
   ['roots', 13, 7],
 ];

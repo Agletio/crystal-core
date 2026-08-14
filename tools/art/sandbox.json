@@ -133,24 +133,29 @@
    "id": "pitprop",
    "object": "9667f5a0-70c1-4d49-9460-c68454fdc433",
    "tiles": 0.8,
-   "tone": 0.55
+   "tone": 0.7,
+   "dull": 0.4
   },
   {
    "id": "plank",
    "object": "a5d0015a-7817-4f91-a54a-0ce9fbb7ad0f",
    "tiles": 1.0,
-   "tone": 0.65
+   "tone": 0.7,
+   "dull": 0.45
   },
   {
    "id": "spoil",
    "object": "0c1a733c-a130-4f39-8148-9ac85bfbdc1c",
-   "tiles": 1.1
+   "tiles": 1.1,
+   "tone": 0.72,
+   "dull": 0.3
   },
   {
    "id": "bucket",
    "object": "9cf1fc02-6dfa-4c64-be34-18946912afd1",
    "tiles": 0.6,
-   "tone": 0.55
+   "tone": 0.7,
+   "dull": 0.45
   },
   {
    "id": "candle",
@@ -169,19 +174,22 @@
    "id": "rail",
    "object": "6069eca5-2bbb-43fc-b5b3-4ef88563a4c0",
    "tiles": 1.9,
-   "tone": 0.55
+   "tone": 0.65,
+   "dull": 0.4
   },
   {
    "id": "cart",
    "object": "f642af51-bedc-405b-b6df-162c42aa814b",
    "tiles": 1.3,
-   "tone": 0.5
+   "tone": 0.65,
+   "dull": 0.4
   },
   {
    "id": "beam",
    "object": "37c3c6f8-f86e-4a9e-a3ec-fe349a93c950",
    "tiles": 1.4,
-   "tone": 0.6
+   "tone": 0.7,
+   "dull": 0.45
   },
   {
    "id": "bones",
@@ -252,13 +260,15 @@
    "id": "pebbles",
    "object": "293e30e5-efb4-4c4a-a5ac-1506c128b960",
    "tiles": 0.7,
-   "tone": 0.6
+   "tone": 0.7,
+   "dull": 0.35
   },
   {
    "id": "fungus",
    "object": "790ccc89-e7b2-4713-a0d2-3dbadbadf51a",
    "tiles": 0.6,
-   "tone": 0.55
+   "tone": 0.78,
+   "dull": 0.5
   },
   {
    "id": "ribs",
@@ -277,7 +287,8 @@
    "id": "stub",
    "object": "417e95e1-d5ad-4c07-894e-df7f8dc18907",
    "tiles": 0.5,
-   "tone": 0.6
+   "tone": 0.7,
+   "dull": 0.35
   },
   {
    "id": "stake",
@@ -288,7 +299,29 @@
    "id": "grit",
    "object": "b6d9a4de-f7b1-4551-8bf4-af72507fcddf",
    "tiles": 0.5,
-   "tone": 0.7
+   "tone": 0.75,
+   "dull": 0.35
+  },
+  {
+   "id": "rubble",
+   "object": "491ffeb4-b714-461f-a71c-6dddeb536d77",
+   "tiles": 1.1,
+   "tone": 0.72,
+   "dull": 0.35
+  },
+  {
+   "id": "dirt",
+   "object": "c2919363-1218-48ae-ae42-fa4ee119399f",
+   "tiles": 1.3,
+   "tone": 0.78,
+   "dull": 0.4
+  },
+  {
+   "id": "vines",
+   "object": "0423fdb0-4601-4d8d-bab1-0f68b26eab26",
+   "tiles": 1.2,
+   "tone": 0.7,
+   "dull": 0.5
   }
  ]
 }

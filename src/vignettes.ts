@@ -1,17 +1,13 @@
 /**
  * A VIGNETTE is a small authored arrangement of props — a hauling run, a place
- * somebody slept, an altar with its candles — placed as one thing.
+ * somebody slept, an altar with its candles — placed as one thing. Furniture
+ * dropped a prop at a time reads as exactly that: every piece equally far from
+ * every other, nothing anywhere for a reason. A cluster says somebody DID
+ * something here.
  *
- * Furniture scattered a prop at a time reads as furniture scattered a prop at a
- * time: every piece is equally far from every other and nothing is anywhere for
- * a reason. A cluster says somebody DID something here, and the same eight
- * clusters dropped in different rooms read as a place rather than as a list.
- *
- * Offsets are tiles from the vignette's own top-left, and `w`/`h` is the room
- * it needs — two are never placed overlapping, so a cart is never inside an
- * altar. Nothing here knows which room it lands in; `dressRooms` in
- * `sim/grid.ts` does the placing and is the same for a scene and, later, for a
- * generated map.
+ * Offsets are tiles from its own top-left and `w`/`h` is the room it needs, so
+ * two never overlap and a cart is never inside an altar. `dressRooms` in
+ * `sim/grid.ts` does the placing, for a scene and later for a generated map.
  */
 export interface Vignette {
   id: string;
@@ -81,7 +77,7 @@ export const VIGNETTES: Vignette[] = [
       { id: 'pillar', x: 0, y: 0 },
       { id: 'pillar', x: 2, y: 2 },
       { id: 'spoil', x: 1, y: 2 },
-      { id: 'pebbles', x: 2, y: 0 },
+      { id: 'spoil', x: 2, y: 0 },
     ],
   },
 
@@ -195,14 +191,10 @@ export const VIGNETTE_BY_ID: Record<string, Vignette> = Object.fromEntries(
 );
 
 /**
- * And what the rock gathers on its own. A vignette is somebody's ARRANGEMENT;
- * these three tables are the debris, the growth and the leavings that collect
- * where a floor meets stone — which in a cavern is most of what there is to
- * look at. An open floor with a tidy cluster in the middle of it still reads as
- * an empty room with a cluster in it.
- *
- * Which table a prop is in is a fact about the ART: `WALL_PROPS` are drawn
- * side-on and go ON the cut face, so they are the one kind placed into rock.
+ * And what the rock gathers on its own — the debris, growth and leavings that
+ * collect where a floor meets stone, which in a cavern is most of what there is
+ * to look at. Which table a prop is in is a fact about the ART: `WALL_PROPS`
+ * are drawn side-on and go ON the cut face, the one kind placed into rock.
  */
 export interface Weighted {
   id: string;
@@ -210,26 +202,45 @@ export interface Weighted {
 }
 
 export const FRINGE_PROPS: Weighted[] = [
-  { id: 'grit', weight: 130 },
-  { id: 'pebbles', weight: 90 },
-  { id: 'stub', weight: 60 },
+  { id: 'spoil', weight: 100 },
   { id: 'fungus', weight: 45 },
-  { id: 'spoil', weight: 25 },
   { id: 'bones', weight: 18 },
   { id: 'ribs', weight: 14 },
   { id: 'web', weight: 10 },
 ];
 
-/** Open floor is nearly all GRIT: a few specks read as a floor with something
- *  on it, where a bucket in the middle of a room reads as a bucket somebody
- *  threw there. Anything with a shape belongs against a wall or in a
- *  `Vignette`, which is somebody having had a reason. */
+/** Open floor takes almost nothing: anything with a SHAPE out in the middle of
+ *  a room reads as something somebody threw there. What breaks the floor up is
+ *  `COVER_PROPS` UNDER it, not furniture on it — and no id is in both, or the
+ *  cover stops being the layer everything else stands on. */
 export const LOOSE_PROPS: Weighted[] = [
-  { id: 'grit', weight: 200 },
-  { id: 'pebbles', weight: 30 },
-  { id: 'splash', weight: 14 },
-  { id: 'stub', weight: 10 },
+  { id: 'splash', weight: 100 },
+  { id: 'fungus', weight: 35 },
 ];
+
+/**
+ * GROUND COVER — rubble, dust and dead growth over the whole floor, under
+ * everything else. A Wang set has one picture per corner combination, so an
+ * open floor is that picture in every cell; a layer of loose stone over the top
+ * is what breaks the pattern without pretending to be furniture.
+ *
+ * It blocks nothing, claims no tile, and furniture stands on it. Each is drawn
+ * back and shifted off its own colour and size, since five pictures over a
+ * whole floor is the fault this exists to fix.
+ */
+export const COVER_PROPS: Weighted[] = [
+  { id: 'rubble', weight: 100 },
+  { id: 'grit', weight: 85 },
+  { id: 'pebbles', weight: 35 },
+  { id: 'dirt', weight: 45 },
+  { id: 'vines', weight: 16 },
+];
+export const COVER_RATE = 0.55;
+export const COVER_DARK = 0.86;
+export const COVER_TINT = 0.28;
+/** Drawn back, so it reads as part of the floor rather than as laid on it. */
+export const COVER_ALPHA = 0.88;
+export const COVER_SET = new Set(COVER_PROPS.map((w) => w.id));
 
 export const WALL_PROPS: Weighted[] = [
   { id: 'roots', weight: 100 },

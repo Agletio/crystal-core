@@ -69,7 +69,16 @@ import {
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
-import { GLOW_PROPS, STAIN_ALPHA, STAIN_PROPS, WALL_PROPS } from '../vignettes';
+import {
+  COVER_ALPHA,
+  COVER_DARK,
+  COVER_SET,
+  COVER_TINT,
+  GLOW_PROPS,
+  STAIN_ALPHA,
+  STAIN_PROPS,
+  WALL_PROPS,
+} from '../vignettes';
 
 const WALL_HUNG = new Set(WALL_PROPS.map((w) => w.id));
 import { GENERATED } from './generated-art';
@@ -508,10 +517,13 @@ export async function createPixiRenderer(
     // Furniture, over the ground it stands on. Anchored at the FOOT of its
     // tile rather than at the middle: a prop taller than one tile has to grow
     // upward out of the floor, or it looks like it is sinking into it.
-    // Nearest LAST: a prop grows upward out of its own tile, so one in front
-    // has to cover what is behind it or a hanging body is drawn inside the
-    // rock it hangs on.
-    for (const prop of [...map.props].sort((a, b) => a.y - b.y)) {
+    // COVER first and everything else after, so furniture stands ON the
+    // rubble. Nearest LAST within the furniture: a prop grows upward out of its
+    // own tile, so one in front has to cover what is behind it or a hanging
+    // body is drawn inside the rock it hangs on.
+    const cover = map.props.filter((p) => COVER_SET.has(p.id));
+    const over = map.props.filter((p) => !COVER_SET.has(p.id)).sort((a, b) => a.y - b.y);
+    for (const prop of [...cover, ...over]) {
       const art = PROP_ART[prop.id];
       const canvas = art ? propTextures(prop.id) : null;
       if (!art || !canvas) continue;
@@ -523,6 +535,17 @@ export async function createPixiRenderer(
       sprite.y = prop.y + 1 - (WALL_HUNG.has(prop.id) ? WALL_LIFT : 0);
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
+      // Five pictures over a whole floor is five pictures over a whole floor,
+      // so each is shifted off its own colour and its own size a little.
+      if (COVER_SET.has(prop.id)) {
+        const roll = tileNoise(prop.x, prop.y, 62);
+        const lit = COVER_DARK - COVER_TINT * roll;
+        const warm = Math.round(lit * 255);
+        const cool = Math.round(lit * (1 - 0.12 * tileNoise(prop.x, prop.y, 63)) * 255);
+        sprite.tint = (warm << 16) | (warm << 8) | cool;
+        sprite.scale.set(sprite.scale.x * (0.82 + roll * 0.36));
+        sprite.alpha = COVER_ALPHA;
+      }
       groundLayer.addChild(sprite);
     }
     const light = lightMap();

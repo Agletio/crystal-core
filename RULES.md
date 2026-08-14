@@ -1481,6 +1481,19 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   behind it — a tile with a floor corner in it still draws floor, and painting
   the face over one is the other way a wall melts into the ground. What HANGS
   on it lifts by `WALL_LIFT`, or a torch lies at the foot of a wall.
+- **The floor is broken up UNDER the furniture, never with it.** `coverFloor`
+  scatters rubble, dust and dead growth over every walkable tile; the renderer
+  draws that pass FIRST, so a slab stands on the rubble rather than beside it.
+  Cover claims no tile, blocks nothing and is exempt from the one-thing-per-tile
+  rule — and no id may be in both a cover table and a furniture one, or the
+  renderer's split silently puts a prop under whatever it is standing next to.
+- **The same five pictures over a whole floor is the fault, so each is SHIFTED.**
+  `COVER_TINT` and a scale jitter off `tileNoise`, both keyed on the tile. A
+  scatter that repeats exactly is the graph paper it was laid down to hide.
+- **A generated prop comes back POLISHED.** Specular highlights and hard
+  contrast, at half a tile, read as plastic. `tone` toward the ground's own
+  spread does most of it and `dull` the rest; the two together are what makes
+  loose stone look like stone.
 - **Open floor is nearly all GRIT.** A few specks read as a floor with
   something on it; a bucket in the middle of a room reads as a bucket somebody
   threw there. Anything with a shape belongs against a wall or inside a
