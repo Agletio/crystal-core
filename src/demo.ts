@@ -107,9 +107,9 @@ import {
   slotUsed,
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap } from './sim/grid';
-import { HERO_FRAMES, wellFormed } from './render/sprites';
+import { GLOW, HERO_FRAMES, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
-import { BEASTIARY, HALO, MONSTER_FRAMES, haloed } from './render/bestiary';
+import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
@@ -1382,24 +1382,17 @@ rule('SPRITES — is the pixel art well formed?');
   const leaked = BOSSES.filter((b) => MONSTERS.some((m) => m.sprite === b.sprite)).map((b) => b.id);
   check(leaked.length === 0, 'and no boss is also a monster', leaked.join(', '));
 
-  // A rank has to be visible before it reaches you: a halo that adds nothing,
-  // or one that eats the body it rings, is a rank you find out about by dying.
-  const rankProblems: string[] = [];
-  for (const [id, art] of Object.entries(BEASTIARY)) {
-    const bare = art.frames[0];
-    const body = bare.join('').split('').filter((c) => c !== '.').length;
-    for (const rank of ['magic', 'rare'] as const) {
-      const ring = haloed(bare, HALO[rank]);
-      if (wellFormed([ring], art.grid).length > 0) rankProblems.push(`${id} ${rank} is not square`);
-      const kept = ring.join('').split('').filter((c, i) => bare.join('')[i] !== '.').length;
-      if (kept !== body) rankProblems.push(`${id} ${rank} halo ate ${body - kept} of the body`);
-      if (ring.join('') === bare.join('')) rankProblems.push(`${id} ${rank} looks the same`);
-    }
-  }
+  // A rank has to be visible before it reaches you, and it is LIGHT now rather
+  // than a band: a solid border is a low-resolution convention that read as a
+  // sticker once the art stopped being chunky. The reach is what tells the two
+  // apart, so the pair must differ and the common must have none at all.
+  const ranks = ['common', 'magic', 'rare'] as const;
+  const reaches = ranks.map((r) => GLOW[r]?.reach ?? 0);
+  check(reaches[0] === 0, 'and a common one glows not at all', `${reaches[0]}`);
   check(
-    rankProblems.length === 0,
-    'and a magic or rare one is ringed without losing a pixel of itself',
-    rankProblems.slice(0, 3).join('; ')
+    reaches[1] > 0 && reaches[2] > reaches[1],
+    'and a rare one reaches further than a magic one',
+    reaches.join(' / ')
   );
 
   // One light, from above. A highlight sitting directly under a shadow is lit

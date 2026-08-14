@@ -122,13 +122,11 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
     }
     rows.push(row);
   }
-  // Anything measured in ART pixels has to scale with the grid, or it vanishes:
-  // one pixel is 1/24 of a hand-drawn body and 1/256 of a generated one. Same
-  // number as `haloRings`, which is what the ring outside this one uses.
+  // Air for the glow to fall off into, and NO derived edge: the generator draws
+  // its own thin outline and the snap lands those pixels on `#` already, so a
+  // second one on top was the slab of black.
   const rings = Math.max(1, Math.round(grid / 24));
-  // One ring of edge and three of air: the rank is a GLOW now, and a glow needs
-  // somewhere to fall off into.
-  return outlined(fitted(deshadow(rows), rings * 4), rings);
+  return fitted(deshadow(rows), rings * 4);
 }
 
 /** The body, scaled to fill its grid and stood on a common baseline. A cell is
@@ -196,24 +194,6 @@ export function deshadow(rows: string[]): string[] {
   return rows.map((row, y) => (y >= from ? '.'.repeat(row.length) : row));
 }
 
-/** The dark edge every creature carries, DERIVED rather than asked for: offered
- *  the ink the generator fills bodies with it, denied it there is no edge at
- *  all. Grown OUTWARD into the margin — inward it ate a thin limb whole, since
- *  eleven rings off each side of a thirty-pixel leg leaves almost nothing. */
-function outlined(rows: string[], thickness: number): string[] {
-  let out = rows.map((row) => [...row]);
-  for (let ring = 0; ring < thickness; ring++) {
-    const grown = out;
-    const body = (x: number, y: number): boolean => (grown[y]?.[x] ?? '.') !== '.';
-    out = grown.map((row, y) =>
-      row.map((c, x) => {
-        if (c !== '.') return c;
-        return body(x - 1, y) || body(x + 1, y) || body(x, y - 1) || body(x, y + 1) ? '#' : c;
-      })
-    );
-  }
-  return out.map((row) => row.join(''));
-}
 
 /** The rows as a bestiary entry holds them, ready to paste into the table. */
 export function asSource(rows: string[]): string {

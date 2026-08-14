@@ -57,10 +57,8 @@ check(
   'each half snaps to its own ink',
 );
 check(
-  middle.startsWith('#') &&
-    middle.endsWith('#') &&
-    grid.some((row) => /#/.test(row) && !/[Mms e]/.test(row)),
-  'the silhouette carries a derived outline, inside its own edge',
+  !middle.includes('#'),
+  'and nothing derives an edge: the generator draws its own, and a second was a slab',
 );
 check(
   !grid.join('').includes('x') && !grid.join('').includes('b') && !grid.join('').includes('o'),

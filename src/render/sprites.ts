@@ -208,7 +208,7 @@ export const HERO_FRAMES: string[][] = [
 ];
 
 /** White off a magic one and gold off a rare, the rare reaching further. */
-const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: number } | null> = {
+export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: number } | null> = {
   common: null,
   magic: { colour: (p) => p.chalk, reach: 14 },
   rare: { colour: (p) => p.citrine, reach: 26 },
