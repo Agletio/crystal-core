@@ -747,6 +747,17 @@ not.** `castsVisibly` asks whether the body has an animation of its own for
 what it is throwing; a caster with its own silhouette does not need a label,
 and a hand-drawn pack that all look alike still gets one.
 
+**A walk cycle is measured in GROUND COVERED, never in seconds.** `STRIDE` is
+tiles per frame and `Entity.walked` is what a body has actually walked, so a
+run is a run and a walk is a walk out of one number — off the clock the feet
+cover two tiles a stride, and what that reads as is moving too fast.
+
+**A transform may not stand in for a frame that exists.** The lunge toward a
+target and the bob under a walk were the only motion a hand-drawn body had;
+over a real swing they are a second motion fighting the first, which is the
+shove-the-model-forward look. `animates` asks whether there are frames for what
+the body is doing, and the demo fails one that is still being moved.
+
 **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
 `GENERATED`, so an id in both is a generated body that never draws, silently —
 it cost a whole session's judgement of generated art, which was made about the

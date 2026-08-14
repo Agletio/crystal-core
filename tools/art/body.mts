@@ -6,6 +6,7 @@
  *   npx tsx tools/art/body.mts state skeleton      every state, on ONE facing
  *   npx tsx tools/art/body.mts sheet skeleton f.png  every frame, to look at
  *   npx tsx tools/art/body.mts fill  skeleton      the same states, elsewhere
+ *   npx tsx tools/art/body.mts props               every prop, from scratch
  *   npx tsx tools/art/body.mts watch               until nothing is pending
  *
  * The order is the point and it is NOT a pipeline. `state` is deliberately one
@@ -37,6 +38,7 @@ const here = (file: string): string => new URL(`./${file}`, import.meta.url).pat
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   dirs: string[];
   bodies: BodyAsk[];
+  props: { id: string; tiles: number; say: string }[];
 };
 type Made = { sprite: string; states: Record<string, { group: string }> };
 const shipped = JSON.parse(readFileSync(here('sandbox.json'), 'utf8')) as {
@@ -49,7 +51,7 @@ const made = [...shipped.bodies, shipped.hero];
 
 const [command, sprite] = process.argv.slice(2);
 const body = asks.bodies.find((b) => b.sprite === sprite);
-if (command !== 'watch' && !body) throw new Error(`${sprite ?? '(nothing)'} is not in bodies.json`);
+if (!['watch', 'props'].includes(command) && !body) throw new Error(`${sprite ?? '(nothing)'} is not in bodies.json`);
 
 /** The animation groups already imported for this body, by state name. */
 const groups = (): Record<string, string> =>
@@ -185,6 +187,23 @@ if (command === 'ask') {
   );
   writeFileSync(process.argv[4] ?? `${sprite}.png`, encodePng(across, down, out));
   console.log(rows.map((r, i) => `row ${i}: ${r.name} (${r.urls.length}f)`).join('\n'));
+} else if (command === 'props') {
+  // ~15-30s each and about five may be in flight, so they go in twos with a
+  // pause. Nothing here waits for one: the id is what is wanted, and
+  // `sandbox.mts` reads whatever has finished by the time it runs.
+  for (const [i, ask] of asks.props.entries()) {
+    const out = await callTool('create_map_object', {
+      description: ask.say,
+      width: 96,
+      height: 96,
+      view: 'high top-down',
+      outline: 'single color outline',
+      shading: 'medium shading',
+      detail: 'high detail',
+    });
+    console.log(`${ask.id}: ${said(out, /^id|status/i)}`);
+    if (i % 2 === 1) await wait(20_000);
+  }
 } else if (command === 'watch') {
   for (const b of asks.bodies) {
     if (!b.character) continue;
@@ -193,5 +212,5 @@ if (command === 'ask') {
     for (const job of jobs) console.log(`  ${job}`);
   }
 } else {
-  console.log('ask | state | sheet | fill <sprite>, or watch');
+  console.log('ask | state | sheet | fill <sprite>, or props, or watch');
 }

@@ -376,9 +376,10 @@ export function sceneMap(
   vein = 1,
   ground?: string
 ): GameMap {
-  // A cavern is LOBES that pinch, where one rectangle is a hall: `also` is
-  // more chambers cut the same way and left to overlap. The grid has to cover
-  // all of them, or a lobe past the first is silently clipped.
+  // `also` is more chambers, cut the same way. Where they do not touch they
+  // are JOINED by the same wandering corridor a descent is joined by, so a
+  // scene can be a winding cavern rather than one hall — the rng is fixed,
+  // because a place you come up in is the same place every time.
   const rooms = [plan.room, ...(plan.also ?? [])];
   const grid = new Grid(
     Math.max(...rooms.map((r) => r.x + r.w)) + 2,
@@ -386,6 +387,14 @@ export function sceneMap(
   );
   const cut = plan.cut ?? CUT[theme] ?? 'dug';
   for (const r of rooms) carveRoom(grid, r, cut);
+  if (plan.joins) {
+    const rng = new Rng(1);
+    for (const [a, b] of plan.joins) {
+      if (rooms[a] && rooms[b]) {
+        carveCorridor(grid, roomCenter(rooms[a]), roomCenter(rooms[b]), rng, WOBBLE[cut]);
+      }
+    }
+  }
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);

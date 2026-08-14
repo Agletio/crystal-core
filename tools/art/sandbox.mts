@@ -44,11 +44,16 @@ interface BodySpec {
   states: Record<string, { group: string; frames: number; from?: number; to?: number }>;
 }
 
-/** `tiles` is how much of the FLOOR it covers, which the generator cannot know. */
+/** `tiles` is how much of the FLOOR it covers, which the generator cannot know.
+ *  `tone` is how far to pull it toward the GROUND's own mean and spread, 0 to
+ *  1: an object comes back warmer and more saturated than the stone whatever
+ *  the ask says, and a prop that does not sit in the scene reads as a sticker
+ *  on it. Knocked all the way back it stops being wood, so it is a fraction. */
 interface PropSpec {
   id: string;
   object: string;
   tiles: number;
+  tone?: number;
 }
 
 interface Manifest {
@@ -69,7 +74,7 @@ type Art = {
   states: Record<string, number[]>;
   key: Record<string, string>;
 };
-type Ground = { grid: number; tiles: Record<number, string[][]>; key: Record<string, string> };
+type Ground = { grid: number; tiles: Record<number, string[][]>; key: Record<string, string>; tone: Tone };
 type Prop = { grid: number; tiles: number; rows: string[]; key: Record<string, string> };
 
 const manifest: Manifest = JSON.parse(
@@ -144,6 +149,9 @@ const GRID = 96;
 const BODY_INKS = 56;
 const GROUND_INKS = 48;
 const PROP_INKS = 32;
+
+/** How far a prop is pulled toward the ground it stands on, unless it says. */
+const PROP_TONE = 0.4;
 
 /** The same image on a bigger square, centred and transparent around it. */
 function centred(image: Decoded, size: number): Decoded {
@@ -346,14 +354,14 @@ function tone(sheet: Decoded, boxes: Box[]): Tone {
  *  terrain come back at visibly different brightness and contrast even chained
  *  off one base tile, and mixed per cell that reads as a CHECKERBOARD — which
  *  is worse than the repetition the alternates exist to break up. */
-function retoned(sheet: Decoded, has: Tone, want: Tone): Decoded {
+function retoned(sheet: Decoded, has: Tone, want: Tone, by = 1): Decoded {
   const rgba = new Uint8Array(sheet.rgba);
   for (let i = 0; i < rgba.length; i += 4) {
     if (rgba[i + 3] < 128) continue;
     for (let c = 0; c < 3; c++) {
       const scale = has.spread[c] > 1 ? want.spread[c] / has.spread[c] : 1;
       const moved = (rgba[i + c] - has.mean[c]) * scale + want.mean[c];
-      rgba[i + c] = Math.max(0, Math.min(255, Math.round(moved)));
+      rgba[i + c] = Math.max(0, Math.min(255, Math.round(rgba[i + c] + (moved - rgba[i + c]) * by)));
     }
   }
   return { width: sheet.width, height: sheet.height, rgba };
@@ -394,7 +402,7 @@ async function ground(spec: { id: string; floorIs: string; also?: string[] }): P
     `ground: ${grid} grid, ${sets.length} set(s), ${boxes.length} tiles over 16 masks, ` +
       `${inks.distinct} colours into ${inks.size}`
   );
-  return { grid, tiles, key: inks.key };
+  return { grid, tiles, key: inks.key, tone: want };
 }
 
 // ---------------------------------------------------------------------------
@@ -427,13 +435,16 @@ function cropped(rows: string[]): string[] {
   );
 }
 
-async function furniture(specs: PropSpec[]): Promise<Record<string, Prop>> {
+async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record<string, Prop>> {
   const out: Record<string, Prop> = {};
   for (const spec of specs) {
     const text = await callTool('get_map_object', { object_id: spec.object });
     const url = urlsIn(text).find((u) => /\.png/.test(u)) ?? urlsIn(text)[0];
     if (!url) throw new Error(`${spec.id}: no image — ${text.slice(0, 120)}`);
-    const image = debackground(decodePng(await download(url)));
+    const raw = debackground(decodePng(await download(url)));
+    const pull = spec.tone ?? PROP_TONE;
+    const image =
+      ground && pull > 0 ? retoned(raw, tone(raw, [whole(raw)]), ground, pull) : raw;
     const inks = new Inks();
     noted(image, inks);
     inks.settle(PROP_INKS);
@@ -496,8 +507,12 @@ write(
 );
 
 // --- the ground ------------------------------------------------------------
+// Before the furniture, which is toned to it: a prop sits in the scene or it
+// reads as a sticker on it.
+let floorTone: Tone | null = null;
 if (manifest.tileset.id) {
   const floor = await ground(manifest.tileset);
+  floorTone = floor.tone;
   write(
     'generated-tiles.ts',
     header(
@@ -523,7 +538,7 @@ if (manifest.tileset.id) {
 // --- the furniture ---------------------------------------------------------
 if (manifest.props.length > 0) {
   console.log('props:');
-  const props = await furniture(manifest.props);
+  const props = await furniture(manifest.props, floorTone);
   write(
     'generated-props.ts',
     header(

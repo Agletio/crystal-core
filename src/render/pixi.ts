@@ -25,6 +25,7 @@ import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
+import type { Cel } from './sprites';
 import {
   auraLook,
   burstRadius,
@@ -56,6 +57,7 @@ import {
   CELL,
   WALK_CYCLE,
   WALK_FRAMES,
+  animates,
   castsVisibly,
   generatedFrame,
   makeLookFrames,
@@ -200,6 +202,17 @@ export async function createPixiRenderer(
     if (e.action !== 'move') return 'walk0';
     return WALK_POSES[Math.floor(elapsed * WALK_CYCLE) % WALK_POSES.length];
   }
+
+  /** Everything a generated body needs to pick a frame, in one place. */
+  const cel = (e: Entity, elapsed: number): Cel => ({
+    action: e.action,
+    through: through(e),
+    elapsed,
+    walked: e.walked,
+    skill: e.skillId,
+    facing: e.facing,
+    spell: casting(e),
+  });
 
   /** A creature's frames at its rank, falling back to the common ones. */
   function framesFor(e: Entity): Texture[] {
@@ -475,7 +488,7 @@ export async function createPixiRenderer(
       // one is showing is whether it has a skill to throw. A hand-drawn one
       // has the fixed walk-walk-swing it always had.
       const frame = GENERATED[e.sprite]
-        ? generatedFrame(e.sprite, e.action, through(e), elapsed, e.skillId, e.facing, casting(e))
+        ? generatedFrame(e.sprite, cel(e, elapsed))
         : e.action === 'attack'
           ? ATTACK_FRAME
           : e.action === 'move'
@@ -491,9 +504,13 @@ export async function createPixiRenderer(
     s.alpha = (1 - fade) * (1 - sunk);
     s.rotation = fade * 1.2;
 
-    // Lunge toward whatever it's hitting; recoil when hit.
+    // Lunge toward whatever it's hitting; recoil when hit. Only where there
+    // are no FRAMES for it: over a real swing the transform is a second motion
+    // fighting the first, and what it reads as is the model being shoved.
     let lunge = 0;
-    if (e.action === 'attack') lunge = 0.22 * (1 - through(e));
+    if (e.action === 'attack' && !animates(e.sprite, cel(e, elapsed))) {
+      lunge = 0.22 * (1 - through(e));
+    }
     if (e.action === 'hurt') lunge = -0.12;
 
     s.x = cx(e.x) + Math.cos(e.facing) * lunge;
@@ -504,7 +521,7 @@ export async function createPixiRenderer(
     // A bob under the frames. The doll rises on its two PASS frames, so its
     // bob runs at half the frame rate or the two fight each other; a creature
     // has a frame per step and bobs on every one.
-    if (e.action === 'move') {
+    if (e.action === 'move' && !animates(e.sprite, cel(e, elapsed))) {
       const beat = worn ? 0.5 : 1;
       s.y -= Math.abs(Math.sin((elapsed * WALK_CYCLE - 0.5) * beat * Math.PI)) * 0.05;
     }

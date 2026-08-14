@@ -4,8 +4,10 @@
  * FISSURE — "a working somebody gave up on. Rotted props, webs, a candle still
  * going."
  *
- * It is a SHOWCASE and laid out as one: the hero walks a CIRCUIT and the bodies
- * are posted around it, so both are met from every side.
+ * Laid out like a DESCENT rather than like a room: chambers the size a
+ * generated map cuts, joined in a ring by the same wandering corridor, a pack
+ * in each. The hero walks the ring, so every body is met from a different side
+ * on every lap and nothing has to be driven to be seen.
  */
 import type { SceneDef, SceneDummy } from '../scenes';
 
@@ -15,42 +17,58 @@ const MELEE = 'skeleton';
 const CASTER = 'revenant';
 const HERO = 'delver';
 
-/** One of each thing a body DOES; a caster holds its ground, melee follows. */
-const STANDING: (SceneDummy & { of: string })[] = [
-  { of: MELEE, sprite: MELEE, at: { x: 12, y: 7 }, scale: 1.45, ability: 'claws' },
-  { of: MELEE, sprite: MELEE, at: { x: 20, y: 16 }, scale: 1.45, ability: 'claws' },
-  { of: MELEE, sprite: MELEE, at: { x: 9, y: 15 }, scale: 1.45, ability: 'emberbite' },
-  { of: CASTER, sprite: CASTER, at: { x: 26, y: 6 }, scale: 1.5, rooted: true, ability: 'fire_bolt' },
-  { of: CASTER, sprite: CASTER, at: { x: 26, y: 14 }, scale: 1.5, rooted: true, ability: 'frost_bolt' },
-  { of: CASTER, sprite: CASTER, at: { x: 15, y: 20 }, scale: 1.5, rooted: true, ability: 'lightning_arc' },
+/** Chambers the size `generateMap` cuts — 5-9 by 4-7 — spread out and joined
+ *  in a RING, so what is between two of them is a tunnel rather than a step. */
+const ROOMS = [
+  { x: 4, y: 5, w: 8, h: 6 }, // 0, the entrance, left empty
+  { x: 17, y: 3, w: 8, h: 6 },
+  { x: 31, y: 6, w: 7, h: 5 },
+  { x: 33, y: 17, w: 8, h: 6 },
+  { x: 20, y: 21, w: 8, h: 6 },
+  { x: 6, y: 18, w: 7, h: 6 },
+];
+const RING: [number, number][] = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [4, 5],
+  [5, 0],
 ];
 
-/** Four overlapping lobes, so what is between them is a pinch, not a door. */
-const CAVERN = { x: 3, y: 4, w: 17, h: 13 };
-const LOBES = [
-  { x: 15, y: 2, w: 14, h: 11 },
-  { x: 17, y: 11, w: 13, h: 12 },
-  { x: 6, y: 13, w: 13, h: 11 },
+/** Whole tiles, as `roomCenter` rounds: a fraction leaves the hero short. */
+const middle = (i: number) => ({
+  x: ROOMS[i].x + Math.floor((ROOMS[i].w - 1) / 2),
+  y: ROOMS[i].y + Math.floor((ROOMS[i].h - 1) / 2),
+});
+
+/** A PACK per chamber, off its middle. Melee follow and are seen walking the
+ *  tunnels; a caster is `rooted`, so the layout survives first contact. */
+const PACKS: { room: number; at: [number, number]; ability: string; of?: string }[] = [
+  { room: 1, at: [-1, 0], ability: 'claws' },
+  { room: 1, at: [1, 1], ability: 'claws' },
+  { room: 2, at: [0, -1], ability: 'fire_bolt', of: CASTER },
+  { room: 2, at: [1, 1], ability: 'emberbite' },
+  { room: 3, at: [0, 0], ability: 'frost_bolt', of: CASTER },
+  { room: 3, at: [2, 1], ability: 'claws' },
+  { room: 4, at: [0, -1], ability: 'lightning_arc', of: CASTER },
+  { room: 4, at: [2, 1], ability: 'claws' },
+  { room: 5, at: [0, 0], ability: 'rimebite' },
 ];
 
-/** In order and round again, through the pinches: a lap passes every body. */
-const CIRCUIT = [
-  { x: 7, y: 8 },
-  { x: 16, y: 6 },
-  { x: 25, y: 9 },
-  { x: 23, y: 18 },
-  { x: 13, y: 19 },
-  { x: 8, y: 14 },
-];
-
-// What the working left, GROUPED: a prop every third tile is a warehouse.
-const LEFT = [
-  { id: 'pitprop', at: [{ x: 5, y: 7 }, { x: 19, y: 4 }, { x: 11, y: 12 }, { x: 26, y: 11 }] },
-  { id: 'plank', at: [{ x: 8, y: 6 }, { x: 21, y: 21 }, { x: 24, y: 16 }] },
-  { id: 'spoil', at: [{ x: 6, y: 9 }, { x: 18, y: 8 }, { x: 19, y: 8 }, { x: 12, y: 21 }] },
-  { id: 'bucket', at: [{ x: 10, y: 17 }, { x: 22, y: 8 }] },
-  { id: 'candle', at: [{ x: 5, y: 11 }, { x: 17, y: 15 }, { x: 25, y: 20 }] },
-  { id: 'web', at: [{ x: 8, y: 20 }, { x: 27, y: 4 }, { x: 14, y: 3 }] },
+/** What the working left, in the chambers and along the tunnels rather than
+ *  spread over open floor — a prop every third tile is a warehouse. */
+const LEFT: { id: string; at: [number, number][] }[] = [
+  { id: 'pitprop', at: [[6, 6], [19, 4], [35, 8], [22, 22]] },
+  { id: 'beam', at: [[9, 9], [36, 20]] },
+  { id: 'rail', at: [[13, 7], [14, 7], [26, 6], [27, 6]] },
+  { id: 'cart', at: [[38, 19], [8, 20]] },
+  { id: 'plank', at: [[20, 6], [24, 23]] },
+  { id: 'spoil', at: [[7, 8], [33, 9], [21, 24], [10, 21]] },
+  { id: 'bucket', at: [[18, 5], [37, 18]] },
+  { id: 'bones', at: [[23, 22], [11, 19], [34, 21]] },
+  { id: 'candle', at: [[5, 7], [21, 4], [9, 22]] },
+  { id: 'web', at: [[17, 7], [38, 22], [7, 19]] },
 ];
 
 export const SANDBOX: SceneDef = {
@@ -59,17 +77,26 @@ export const SANDBOX: SceneDef = {
   name: 'Sandbox',
   theme: 'fissure', // whatever the generated ground does not cover
   ground: 'mineshaft',
-  hero: { sprite: HERO, at: { x: 0, y: 0 }, scale: 1.5 },
+  hero: { sprite: HERO, at: { x: 0, y: 0 }, scale: 1.5, speed: 0.5 },
   plan: {
-    room: CAVERN,
-    also: LOBES,
+    room: ROOMS[0],
+    also: ROOMS.slice(1),
+    joins: RING,
     cut: 'grown',
-    entrance: { x: 7, y: 9 },
-    stands: { x: 26, y: 5 }, // the only view of a body that is not mid-stride
-    patrol: CIRCUIT,
-    props: LEFT.flatMap((kind) => kind.at.map((p) => ({ id: kind.id, x: p.x, y: p.y }))),
+    entrance: middle(0),
+    stands: middle(2), // nobody stands in this room; a scene wants the field
+    patrol: ROOMS.map((_, i) => middle(i)),
+    props: LEFT.flatMap((kind) => kind.at.map(([x, y]) => ({ id: kind.id, x, y }))),
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,
-  dummies: STANDING.map(({ of: _of, ...d }) => d),
+  dummies: PACKS.map(
+    (p): SceneDummy => ({
+      sprite: p.of ?? MELEE,
+      at: { x: middle(p.room).x + p.at[0], y: middle(p.room).y + p.at[1] },
+      scale: p.of ? 1.5 : 1.45,
+      rooted: !!p.of,
+      ability: p.ability,
+    })
+  ),
 };

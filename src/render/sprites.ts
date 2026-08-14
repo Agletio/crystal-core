@@ -226,22 +226,14 @@ function generatedArt(palette: Palette, sprite: string, frame: number, rank: Mon
   };
 }
 
-/**
- * How many frames a sprite HAS. A generated body carries its own count, where
- * a hand-drawn one is the walk and then the swing — and drawing the fixed
- * three left every frame past the second falling back to the first, so a body
- * with a swing and three casts lunged at you and never moved.
- */
+/** How many frames a sprite HAS. Drawing a fixed three left everything past
+ *  the second falling back to the first — a body that lunged and never moved. */
 export const framesOf = (sprite: string): number =>
   GENERATED[sprite]?.frames.length ?? CREATURE_FRAMES;
 
-/**
- * Which of a generated body's FACINGS is showing. The art is only the east
- * half of the compass — the renderer already mirrors anything facing left, so
- * a west-side facing is its east-side twin flipped and generating it twice
- * would be paying for a reflection. `dirs` runs north to south, so the bucket
- * is the angle folded into that half and divided by it.
- */
+/** Which FACING is showing. The art is only the east half of the compass —
+ *  anything facing left is a twin flipped — and `dirs` runs north to south,
+ *  so the bucket is the angle folded into that half and divided by it. */
 export function facingRow(sprite: string, facing: number): number {
   const rows = GENERATED[sprite]?.dirs.length ?? 1;
   if (rows < 2) return 0;
@@ -264,41 +256,58 @@ export function facingRow(sprite: string, facing: number): number {
  * The list is direction-MAJOR and the runs are the first facing's, so a facing
  * is one stride along it and everything that draws a body stays flat.
  */
-export function generatedFrame(
-  sprite: string,
-  action: string,
-  through: number,
-  elapsed: number,
-  skill: string | null,
-  facing = 0,
-  spell = false
-): number {
+export interface Cel {
+  action: string;
+  through: number; // how far into its own swing, 0 to 1
+  elapsed: number;
+  walked: number; // tiles covered; the WALK reads this, never the clock
+  skill: string | null;
+  facing: number;
+  spell: boolean;
+}
+
+export function generatedFrame(sprite: string, e: Cel): number {
   const art = GENERATED[sprite];
-  if (!art) return action === 'attack' ? ATTACK_FRAME : 0;
+  if (!art) return e.action === 'attack' ? ATTACK_FRAME : 0;
   const states = art.states;
   const stride = art.frames.length / art.dirs.length;
-  const row = facingRow(sprite, facing) * stride;
+  const row = facingRow(sprite, e.facing) * stride;
 
-  if (action === 'attack') {
-    const own = (skill ? states[skill] : null) ?? (spell ? states.cast : null);
+  if (e.action === 'attack') {
+    const own = (e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null);
     const run = own ?? states.attack ?? states.walk ?? [0];
-    return row + (run[Math.min(run.length - 1, Math.floor(through * run.length))] ?? 0);
+    return row + (run[Math.min(run.length - 1, Math.floor(e.through * run.length))] ?? 0);
   }
   const walk = states.walk ?? [0];
-  if (action === 'move') return row + walk[Math.floor(elapsed * WALK_CYCLE) % walk.length];
+  if (e.action === 'move') return row + walk[Math.floor(e.walked / STRIDE) % walk.length];
   const idle = states.idle;
-  if (idle) return row + idle[Math.floor(elapsed * IDLE_CYCLE) % idle.length];
+  if (idle) return row + idle[Math.floor(e.elapsed * IDLE_CYCLE) % idle.length];
   return row + walk[0];
 }
 
-/** Whether a body has an animation of its OWN for what it throws — in which
- *  case the pip over its head is a label doing a silhouette's job. */
+/** Whether the body has an animation of its OWN for what it is doing. The
+ *  lunge and the bob are TRANSFORMS standing in for frames nobody had drawn;
+ *  over frames that exist they are a second motion fighting the first, which
+ *  is the shove-the-model-forward look. */
+export function animates(sprite: string, e: Pick<Cel, 'action' | 'skill' | 'spell'>): boolean {
+  const states = GENERATED[sprite]?.states;
+  if (!states) return false;
+  if (e.action === 'move') return !!states.walk;
+  if (e.action !== 'attack') return false;
+  return !!((e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null) ?? states.attack);
+}
+
+/** An animation of its own for what it THROWS: the pip is then a label doing
+ *  a silhouette's job. */
 export const castsVisibly = (sprite: string, skill: string | null): boolean => {
   const states = GENERATED[sprite]?.states;
   return !!states && !!((skill ? states[skill] : null) ?? states.cast);
 };
 
-/** Tiles per second of leg movement — how fast a walk cycle plays. */
+/** Tiles per frame of a walk. A stride is a DISTANCE, and reading it off the
+ *  clock instead is what makes a body skate over the ground. */
+export const STRIDE = 0.42;
+/** A hand-drawn creature has no stride, so its two frames run off the clock. */
 export const WALK_CYCLE = 7;
 /** And how fast a body standing still breathes, which is far slower: an idle
  *  at the walk's rate reads as jogging on the spot. */

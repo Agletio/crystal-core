@@ -207,6 +207,8 @@ export interface Entity {
   hitFlash: number;
   /** Share off this one's swing rate while a Slow is running. Absent is none. */
   slowed?: number;
+  /** Tiles this body has actually walked, for the walk cycle to read. */
+  walked: number;
   dead: boolean;
 }
 
@@ -430,11 +432,15 @@ export class RunSim {
       life: stats.maxLife,
       mana: stats.maxMana,
       effects: [],
-      stats,
+      // `HERO_BASE.moveSpeed` is a descent's sprint; a room to be watched is not.
+      stats: def?.hero?.speed
+        ? { ...stats, moveSpeed: stats.moveSpeed * def.hero.speed }
+        : stats,
       cooldown: 0,
       path: [],
       pathTimer: 0,
       targetId: null,
+      walked: 0,
       aggroed: false,
       hitFlash: 0,
       dead: false,
@@ -497,7 +503,7 @@ export class RunSim {
     }, ability);
     const thrown = SKILL_BY_ID[ability?.skill ?? ''];
     // A ROOTED body holds its post, or everything that chases ends up in one
-    // clump behind the hero. Speed 0, so nothing else has to know.
+    // clump. Speed 0, so nothing else has to know.
     const reach = { ...stats, ...thrownReach(thrown), ...(spec.rooted ? { moveSpeed: 0 } : {}) };
     return {
       id: this.nextId++,
@@ -524,6 +530,7 @@ export class RunSim {
       path: [],
       pathTimer: 0,
       targetId: null,
+      walked: 0,
       aggroed: true, // they are the point of the room
       hitFlash: 0,
       dead: false,
@@ -558,6 +565,7 @@ export class RunSim {
       path: [],
       pathTimer: 0,
       targetId: null,
+      walked: 0,
       aggroed: false,
       hitFlash: 0,
       dead: false,
@@ -692,6 +700,7 @@ export class RunSim {
           path: [],
           pathTimer: 0,
           targetId: null,
+          walked: 0,
           aggroed: false,
           hitFlash: 0,
           dead: false,
@@ -1109,6 +1118,7 @@ export class RunSim {
       path: [],
       pathTimer: 0,
       targetId: null,
+      walked: 0,
       aggroed: true,
       hitFlash: 0,
       dead: false,
@@ -1163,6 +1173,7 @@ export class RunSim {
         path: [],
         pathTimer: 0,
         targetId: null,
+        walked: 0,
         aggroed: true,
         hitFlash: 0,
         dead: false,
@@ -1241,6 +1252,7 @@ export class RunSim {
         path: [],
         pathTimer: 0,
         targetId: null,
+        walked: 0,
         // Awake from the moment they exist; they're the point of the room.
         aggroed: true,
         hitFlash: 0,
@@ -1387,7 +1399,6 @@ export class RunSim {
       hero.path = [];
       return best;
     }
-    // In reach or nothing: a sandbox hero walks its CIRCUIT instead.
     if (this.sandbox) return null;
 
     const key = nearestByPath(grid, hero, (k) => occupancy.has(k));
@@ -1440,6 +1451,8 @@ export class RunSim {
     }
 
     const moved = Math.abs(e.x - startX) > 1e-6 || Math.abs(e.y - startY) > 1e-6;
+    // Ground covered, which is what a walk cycle is measured in.
+    e.walked += Math.hypot(e.x - startX, e.y - startY);
     if (moved) this.face(e, e.x + (e.x - startX), e.y + (e.y - startY));
     this.settleAction(e, moved);
     return true;

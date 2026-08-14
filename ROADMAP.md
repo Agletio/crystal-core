@@ -473,6 +473,16 @@ that worked, and these are what it cost:
   one in about 87 device pixels, so 256 was already downsampled before anybody
   saw it — and at five facings it is a canvas per frame at four bytes a pixel.
   `GRID` is 96 for the same reason. Pixi scales by the texture's own width.
+- **The walk cycle was read off the CLOCK, so the feet skated.** At a fixed
+  frame rate a body covers two tiles a stride, and what that reads as is
+  moving too fast — the speed itself was fine. `Entity.walked` is ground
+  covered and `STRIDE` is tiles per frame, so a run is a run and a walk is a
+  walk out of one number.
+- **The lunge and the bob are TRANSFORMS standing in for frames.** Over a body
+  that has its own swing they are a second motion fighting the first, which is
+  exactly the shove-the-model-forward look. `animates` asks whether there are
+  frames for what the body is doing, and the demo fails a generated body that
+  is still being moved by one.
 - **The wire cost of facings is small and the SOURCE cost is not.** Ninety
   frames is 980KB of strings that gzip to 80KB. The repo carries the 980KB.
 - **A Wang set is ONE picture per corner combination**, so an open floor is
@@ -489,6 +499,19 @@ that worked, and these are what it cost:
 - **`create_topdown_tileset` does not take the same enum values `art.mts`
   uses.** `outline` is `single color outline` (not `single color black
   outline`) and `detail` is `highly detailed` (not `high detail`).
+- **`view: 'high top-down'` does not get you top-down.** It is the DEFAULT for
+  `create_map_object` and every prop still came back 3/4-projected, reading as
+  furniture from a different game standing on the floor. Saying "seen from
+  DIRECTLY ABOVE looking straight down" in the description is what moved it,
+  and it is worth saying in capitals.
+- **A prop lands warmer and more saturated than the stone whatever the ask
+  says.** `PropSpec.tone` pulls it toward the ground's own mean and spread —
+  0.4 by default, which settles it into the scene, and 0.1 for the candle,
+  because a flame pulled to grey stops being one.
+- **Naming a thing gets you ONE of it.** "a scatter of bones" came back as a
+  single large skull and "a sheet of cobweb" as a square of cloth. Saying what
+  it is NOT, and saying "spread apart with gaps between them / the floor
+  visible THROUGH it", is what produced a scatter and a web.
 
 - **An export's colours are not a PALETTE.** Three frames of one body arrive
   with 87–124 distinct RGB values, past the 88 characters a row can use. So a

@@ -28,12 +28,14 @@ export interface SceneDummy {
   scale: number;
   ability?: string; // a `MONSTER_ABILITIES` id: the thrown ones are the cast
   rooted?: boolean; // holds its post rather than chasing, so a layout survives
+  speed?: number; // a multiplier on move speed, for a room meant to be watched
 }
 
 /** The room and everything standing in it, in absolute tiles. */
 export interface ScenePlan {
   room: Room;
-  also?: Room[]; // more chambers, cut the same way and OVERLAPPING: a cavern
+  also?: Room[]; // more chambers, cut the same way
+  joins?: [number, number][]; // which of them a corridor connects, by index
   cut?: Cut; // how the rock is cut, over whatever the zone's own answer is
   entrance: Vec2; // the only hole: `GameMap.exit` is this tile too
   stands: Vec2; // where the person is before the hero has crossed to them

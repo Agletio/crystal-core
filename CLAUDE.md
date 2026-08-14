@@ -69,11 +69,13 @@ grids.
 nothing dies and nothing ends it. It is a scene with `dummies` rather than a
 mode — the room is `src/scenes/sandbox.ts` and is the one scene outside
 `SCENES`, so the schedule can never hand you it. It is a SHOWCASE and laid out
-as one: a cavern of overlapping lobes (`ScenePlan.also`, `cut`) rather than a
-hall, a `patrol` circuit the hero walks, and the casters `rooted` so a layout
-meant to be walked past survives. The hero swings at whatever came into reach
-and then walks on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or three bodies pin
-it where it stands and one facing of one animation is all it ever shows.
+like a DESCENT: chambers the size `generateMap` cuts (`ScenePlan.also`), joined
+in a ring by the same wandering corridor (`joins`, `cut`), a pack in each. The
+hero walks the `patrol` ring, swinging at what came into reach and then moving
+on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or bodies in reach pin it where it
+stands and one facing of one animation is all it ever shows. Casters are
+`rooted` so the layout survives contact, and `hero.speed` walks it rather than
+sending it at a descent's sprint.
 
 **Nothing the game itself draws is in it**: the ground is a generated Wang set, the furniture is
 generated pictures, the bodies are generated and so is the HERO, over the doll

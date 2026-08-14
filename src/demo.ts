@@ -106,12 +106,20 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
-import { facingRow, generatedFrame } from './render/sprites';
+import { animates, facingRow, generatedFrame } from './render/sprites';
+import type { Cel } from './render/sprites';
+
+/** A frame request with everything defaulted, so a check names only what it
+ *  is actually asking about. */
+const cel = (of: Partial<Cel>): Cel => ({
+  action: 'idle', through: 0, elapsed: 0, walked: 0,
+  skill: null, facing: 0, spell: false, ...of,
+});
 import { BODY } from './render/body';
 import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
 import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
@@ -1383,7 +1391,10 @@ rule('SPRITES — is the pixel art well formed?');
           for (let turn = 0; turn < 16; turn++) {
             for (const at of [0, 0.34, 0.67, 1]) {
               const facing = (turn / 16) * Math.PI * 2 - Math.PI;
-              const frame = generatedFrame(id, action, at, at * 3, skill, facing);
+              const frame = generatedFrame(id, {
+                action, through: at, elapsed: at * 3, walked: at * 3,
+                skill, facing, spell: false,
+              });
               if (frame >= art.frames.length || frame < 0) {
                 past.push(`${id} ${action}/${skill} -> ${frame} of ${art.frames.length}`);
               }
@@ -1417,7 +1428,9 @@ rule('SPRITES — is the pixel art well formed?');
     for (const [id, art] of Object.entries(GENERATED)) {
       const own = throwers.filter((s) => art.states[s]);
       if (own.length < 2) continue;
-      const poses = new Set(own.map((s) => generatedFrame(id, 'attack', 0.5, 0, s)));
+      const poses = new Set(
+        own.map((s) => generatedFrame(id, cel({ action: 'attack', through: 0.5, skill: s })))
+      );
       check(
         poses.size === own.length,
         `${id} plays a different animation for each of its ${own.length} thrown skills`,
@@ -1432,14 +1445,31 @@ rule('SPRITES — is the pixel art well formed?');
       // Modulo the stride, since a run is written for the FIRST facing and
       // facing 0 is east, which is the middle of five.
       const stride = art.frames.length / art.dirs.length;
-      const swung = generatedFrame(id, 'attack', 0.5, 0, 'strike', 0, false) % stride;
-      const cast = generatedFrame(id, 'attack', 0.5, 0, 'fireball', 0, true) % stride;
+      const swung = generatedFrame(id, cel({ action: 'attack', through: 0.5, skill: 'strike' })) % stride;
+      const cast =
+        generatedFrame(id, cel({ action: 'attack', through: 0.5, skill: 'fireball', spell: true })) %
+        stride;
       check(
         swung !== cast && art.states.attack.includes(swung) && art.states.cast.includes(cast),
         `${id} swings with its swing and casts with its cast`,
         `${swung} and ${cast}`
       );
     }
+
+    // The lunge and the bob are TRANSFORMS standing in for frames. Over a body
+    // that has them they are a second motion fighting the first, which reads
+    // as the model being shoved forward — so both are off for every state a
+    // generated body actually draws.
+    const shoved = Object.entries(GENERATED).flatMap(([id, art]) =>
+      ['move', 'attack']
+        .filter((action) => !animates(id, { action, skill: null, spell: false }))
+        .map((action) => `${id} ${action}`)
+    );
+    check(
+      shoved.length === 0,
+      'and no generated body is moved by a transform it has frames for',
+      shoved.join(', ')
+    );
 
     // A state named for a skill nothing throws is a generation spent on a
     // pose that never plays.
@@ -1468,21 +1498,34 @@ rule('SPRITES — is the pixel art well formed?');
   // Where a prop is PUT, which the id check cannot see. A room is authored by
   // hand in absolute tiles, so the three ways to get that wrong are outside the
   // walls, stacked on another prop, and standing on the hole or on the person.
-  const misplaced = SCENES.flatMap((s) => {
-    const { room, entrance, stands, props } = s.plan;
+  const misplaced = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
+    if (!s) return [];
+    const { entrance, stands, props, patrol } = s.plan;
+    // The GRID, not the rectangle: a plan may carve more chambers and join
+    // them with corridors, so where the floor actually is is a thing only the
+    // carve knows. Everything placed by hand has to stand on it.
+    const { grid } = sceneMap(s.plan, s.theme, 1, s.ground);
     const seen = new Set<string>();
-    return props.flatMap((p) => {
-      const at = `${p.x},${p.y}`;
-      const wrong: string[] = [];
-      const inside =
-        p.x >= room.x && p.y >= room.y && p.x < room.x + room.w && p.y < room.y + room.h;
-      if (!inside) wrong.push('outside the room');
-      if (seen.has(at)) wrong.push('stacked');
-      if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
-      if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
-      seen.add(at);
-      return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
-    });
+    const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
+    return [
+      ...props.flatMap((p) => {
+        const at = `${p.x},${p.y}`;
+        const wrong: string[] = [];
+        if (rock(p)) wrong.push('in the rock');
+        if (seen.has(at)) wrong.push('stacked');
+        if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
+        if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
+        seen.add(at);
+        return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
+      }),
+      ...(s.dummies ?? [])
+        .filter((d) => rock(d.at))
+        .map((d) => `${s.id} ${d.sprite}@${d.at.x},${d.at.y} in the rock`),
+      ...(patrol ?? [])
+        .filter(rock)
+        .map((m) => `${s.id} patrol@${m.x},${m.y} in the rock`),
+      ...(rock(entrance) ? [`${s.id} entrance in the rock`] : []),
+    ];
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
 
@@ -2145,7 +2188,12 @@ rule('THE SANDBOX — does the room show what a body can DO?');
       facings.get(e.sprite)!.add(facingRow(e.sprite, e.facing));
       if (e.kind === 'hero') doing.add(e.action);
       if (e.action === 'attack' && e.kind === 'monster') {
-        frames.add(generatedFrame(e.sprite, e.action, 0.5, sim.state.elapsed, e.skillId, e.facing));
+        frames.add(
+          generatedFrame(e.sprite, {
+            action: e.action, through: 0.5, elapsed: sim.state.elapsed, walked: e.walked,
+            skill: e.skillId, facing: e.facing, spell: false,
+          })
+        );
       }
     }
   }
