@@ -213,6 +213,17 @@ export const KEYWORDS: KeywordDef[] = [
       `never a wall.`,
     grants: ['starvedDamage'],
   },
+  // --- what a movement skill does -----------------------------------------
+  {
+    id: 'slow',
+    name: 'Slow',
+    says: ['Slow', 'Slows', 'Slowed'],
+    means:
+      'An enemy swings and casts more slowly for a duration. It is NOT a ' +
+      'Splash — a Splash is damage in a circle and a Slow deals none, because ' +
+      'every damage number in the game belongs to the skill in your main slot.',
+    grants: ['landingSlow'],
+  },
   {
     id: 'charge',
     name: 'Charge',
@@ -247,9 +258,12 @@ export const BANNED: Record<string, string> = {
   chain: 'Arc',
   chains: 'Arc',
   chaining: 'Arc',
-  leap: 'Arc',
-  leaps: 'Arc',
+  // The PHRASE, never the bare word: a movement skill called Leap cannot be
+  // forbidden from saying its own name, and Arc's own `means` line says
+  // "leaps from what it hits" — which is the sentence that owns the idea.
   'leaps to': 'Arc',
+  'leaping to': 'Arc',
+  'leaps from one': 'Arc',
   'passes through': 'Pierce',
   'pass through': 'Pierce',
   'passing through': 'Pierce',

@@ -419,16 +419,33 @@ and `dealDamage` arms a `TimedEffect` on the hero from the crit that lands.
 The buff refreshes rather than stacking, and the crit that grants it never hits
 harder for doing so.
 
-**Blink**, the movement skill, fires ITSELF — automation is universal, so the
-shipped policy is what `runToCompletion` runs. `RunSim.maybeBlink` steps to the
-furthest waypoint of the path already found within `distance` tiles that is
-walkable and has a clear line to it, once every `cooldown` seconds, so it never
-lands a body in rock and never cuts a corner the walk could not.
-`RunState.blinks` counts them.
+**Two ways to move, and both fire THEMSELVES** — automation is universal, so
+the shipped policy is what `runToCompletion` runs. `RunSim.maybeMove` goes to
+the furthest waypoint of the path already found within `distance` tiles that is
+walkable, once every `cooldown` seconds, so neither ever lands a body in rock
+nor reaches anywhere the walk could not. **Blink** is a step THROUGH and wants
+a clear line; **Leap** is a jump OVER and wants none — and unlike a step it
+LANDS, which is the one thing either web can hang something off that the other
+cannot. A landing deals no damage and never will: every damage number in the
+game belongs to the skill in the main slot. What it does instead is **Slow**,
+which is a keyword.
 
-Neither has a tree, and neither needs one: `BUILT_TREES` is per skill and a
-skill with no web renders "no web yet". `MAIN_SKILLS` is what the main slot
-takes and is what every harness that builds a character to fight with reads.
+**A movement web is three arms of three over SIX points** — `src/moves/` beside
+`src/trees/` and `src/trades/`, sharing `webgraph.ts` and `webart.ts` like they
+do. Nine nodes and six points, so two whole arms fit and a third never does:
+which two is the decision, and no level ever takes it back. `treePointsFor`
+takes a skillId now, because the cap belongs to the WEB — a nine-node web under
+the global 30 would be owned outright by level 9.
+
+**Every EQUIPPED skill takes the run's XP**, over `SKILL_SLOTS`, or a mover's
+web sits at level 1 holding one point forever. And `treeGrants` merges each
+non-main slot's own web beside its static `SkillDef.grants`, or every node of
+one does nothing at all, silently.
+
+The passive is the one skill with no web, and it does not pretend to have one:
+clicking it on the Skills screen EQUIPS it, asking first if the slot is full.
+`MAIN_SKILLS` is what the main slot takes and is what every harness that builds
+a character to fight with reads; neither mover is in it.
 
 ## What a level buys
 
@@ -687,7 +704,7 @@ src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/scenes.ts      the authored rooms; src/scenes/* are their content
 src/game/scenes.ts what happens at the end of THIS clear, at most one thing
 src/ui/speech.ts   a line over the head of whoever is saying it
-src/skills-tree.ts per-skill webs; src/trees/* are their content
+src/skills-tree.ts per-skill webs; src/trees/* and src/moves/* are the content
 src/trades.ts      the character's own web; src/trades/* are the two trades
 src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
 src/sim/grants.ts  every switch a tree may hand the sim, and who reads it

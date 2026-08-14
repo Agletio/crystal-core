@@ -64,6 +64,9 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
 
 const SHARED = ['projectile', 'cleave', 'ailment_burst'];
 const HITTERS = ['projectile', 'cleave'];
+/** The two movers. Their own behaviour names, so `reads` can tell a jump's
+ *  landing from a step that never lands anywhere. */
+const MOVERS = ['step', 'leap'];
 
 export const GRANTS: GrantDef[] = [
   { id: 'convertTree', what: 'the skill deals another damage type', reads: [STATS], changes: 'type' },
@@ -227,6 +230,57 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `${pct(n)} of your maximum life is added to your mana pool`;
+    },
+  },
+
+  // --- what a MOVEMENT web hands over --------------------------------------
+  //
+  // No `changes` class on any of them: `INTERACTIONS` is the audit of what two
+  // DELIVERY switches come to, and a mover has no delivery — it never casts and
+  // never deals damage, because every damage number in the game is the main
+  // skill's. So a movement notable is only ever about the move.
+  {
+    id: 'moveCooldown',
+    what: 'your movement skill recharges sooner',
+    reads: MOVERS,
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(1 - n)} reduced movement skill cooldown`;
+    },
+  },
+  {
+    id: 'moveDistance',
+    what: 'your movement skill carries you further',
+    reads: MOVERS,
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Your movement skill carries you ${more(n)} more tiles`;
+    },
+  },
+  {
+    id: 'moveMana',
+    what: 'moving restores mana',
+    reads: ['step'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Each Blink restores ${pct(n)} of your mana pool`;
+    },
+  },
+  {
+    id: 'landingSlow',
+    // A jump LANDS and a step does not, which is the one thing that could ever
+    // tell the two webs apart. A landing deals no damage and never will.
+    what: 'landing Slows what is near you',
+    reads: ['leap'],
+    say: (v) => {
+      const o = v as Record<string, unknown> | null;
+      if (!o || typeof o.radius !== 'number' || typeof o.slow !== 'number' || typeof o.seconds !== 'number') {
+        return null;
+      }
+      return `Landing Slows enemies within ${o.radius} tiles by ${pct(o.slow)} for ${o.seconds}s`;
     },
   },
 
@@ -546,6 +600,17 @@ export function critBuff(grants: Record<string, unknown>): { more: number; secon
 export function starvedMultiplier(grants: Record<string, unknown>): number {
   const own = typeof grants.starvedDamage === 'number' ? grants.starvedDamage : 1;
   return Math.max(0, Math.min(1, MANA.starvedDamage * own));
+}
+
+/** What a landing does to whatever is standing near it, or null. */
+export function landingOf(
+  grants: Record<string, unknown>
+): { radius: number; slow: number; seconds: number } | null {
+  const v = grants.landingSlow as Record<string, unknown> | undefined;
+  if (typeof v?.radius !== 'number' || typeof v?.slow !== 'number' || typeof v?.seconds !== 'number') {
+    return null;
+  }
+  return { radius: v.radius, slow: v.slow, seconds: v.seconds };
 }
 
 /** What a grafted line leaves on every hit, or null. */

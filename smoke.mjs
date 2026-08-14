@@ -1429,18 +1429,38 @@ $('sheet-close').click();
 // and the button says which one it is talking about.
 {
   $('open-skills').click();
+  // The three slots are the top of the screen now: what you are holding, over
+  // the shelves it came off.
+  const slots = all('#skills-slots .slotcard');
+  assert(slots.length === 3, 'the top row is the three slots', String(slots.length));
+  assert(
+    slots.filter((c) => c.classList.contains('slotcard--empty')).length === 2,
+    'two of them empty on a fresh character'
+  );
+
   all('#skills-cats .catcard').find((c) => /Passive/.test(c.textContent ?? '')).click();
   const row = all('#skills-list .skillrow')[0];
   assert(!!row, 'the passive shelf has something on it');
+  assert(
+    /click to equip/i.test(row.textContent ?? ''),
+    'and it says clicking equips rather than promising a web',
+    row.textContent
+  );
   row.click();
-  const equip = $('skills-equip');
-  assert(/passive/i.test(equip.textContent ?? ''), 'and the button names its slot', equip.textContent);
-  equip.click();
-  assert(/equipped/i.test(equip.textContent ?? ''), 'equipping it takes', equip.textContent);
-  // Back to the top before leaving: the screen remembers where it was, and
-  // every check below this one opens it expecting the categories.
+  assert(
+    $('skills-detail').hidden === true,
+    'a passive never opens a tree — there is not going to be one'
+  );
+  assert(
+    /equipped/i.test(all('#skills-list .skillrow')[0].textContent ?? ''),
+    'clicking it equipped it instead',
+    all('#skills-list .skillrow')[0].textContent
+  );
   $('skills-back').click();
-  $('skills-back').click();
+  assert(
+    all('#skills-slots .slotcard').filter((c) => c.classList.contains('slotcard--empty')).length === 1,
+    'and the slot row says so at the top'
+  );
   $('skills-close').click();
   $('open-character').click();
   assert(
@@ -1467,6 +1487,40 @@ assert($('skills-list').hidden === true, 'not on a skill list');
 assert($('skills-detail').hidden === true, 'and not on a web');
 assert(all('#skills-cats .catcard').length === 4, 'four categories offered');
 assert($('skills-back').hidden === true, 'nothing to go back to from the top');
+
+// A second way to move, and both of them have a web to spend points in — the
+// movement slot is a build decision now rather than a fixed convenience.
+{
+  const movement = all('#skills-cats .catcard').find((c) => /Movement/.test(c.textContent ?? ''));
+  movement.click();
+  const rows = all('#skills-list .skillrow');
+  assert(rows.length === 2, 'the movement shelf holds Blink and Leap', String(rows.length));
+  assert(
+    rows.every((r) => /spent/.test(r.textContent ?? '')),
+    'and each has a web to spend in, rather than "no web yet"',
+    rows.map((r) => r.textContent).join(' | ')
+  );
+  rows.find((r) => /Leap/.test(r.textContent ?? '')).click();
+  assert($('skills-detail').hidden === false, 'Leap opens its own web');
+  assert(all('#skills-web .web__node').length === 9, 'nine nodes in it',
+    String(all('#skills-web .web__node').length));
+  assert(
+    all('#skills-web .web__node--notable').length === 3,
+    'three of them notable, one at the tip of each arm',
+    String(all('#skills-web .web__node--notable').length)
+  );
+  assert(
+    /6 at level 6/.test(text('skills-sub')),
+    'and six points to spend at most, not thirty',
+    text('skills-sub')
+  );
+  $('skills-close').click();
+}
+
+// It opens at the TOP, whatever it was showing when you shut it.
+$('open-skills').click();
+assert($('skills-cats').hidden === false, 'reopening lands on the categories again');
+assert($('skills-detail').hidden === true, 'never three deep where you left it');
 
 // All four shelves have something on them now: a character holds three skills
 // at once, one out of each of three slots.

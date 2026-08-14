@@ -1178,6 +1178,14 @@
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
 
+  .slotrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .slotcard { text-align: left; padding: 12px; display: flex; align-items: center; gap: 10px; }
+  .slotcard:hover { background: var(--seam); border-color: var(--rust); }
+  .slotcard--empty { border-style: dashed; }
+  .slotcard__what { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .slotcard__slot { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .slotcard__name { font-family: var(--display); font-size: 12px; }
+  .slotcard--empty .slotcard__name { color: var(--dust); }
   .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .catcard { text-align: left; padding: 14px; display: flex; flex-direction: column; gap: 5px; }
   .catcard:hover:not(:disabled) { background: var(--seam); border-color: var(--rust); }
@@ -1785,6 +1793,10 @@
       <!-- Three depths, one at a time: what kind of skill, which skill, its
            web. Showing all three at once is what made the old screen a wall;
            you are only ever answering one of those questions. -->
+      <!-- What you are actually holding, over the shelves it came off. The
+           three slots are the answer to "which of these am I using", and the
+           shelves are the answer to "what else is there". -->
+      <div id="skills-slots" class="slotrow"></div>
       <div id="skills-cats" class="catgrid"></div>
 
       <div id="skills-list" class="skilllist" hidden></div>

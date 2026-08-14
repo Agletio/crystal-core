@@ -153,13 +153,13 @@ export function skillProgress(character: Character, skillId: string): SkillProgr
 export const pointsSpent = (p: SkillProgress): number => p.allocated.length;
 
 /** Capped by the tree, not your level: a tree you can fill in is not a decision. */
-export const pointsAvailable = (p: SkillProgress): number =>
-  treePointsFor(p.level) - p.allocated.length;
+export const pointsAvailable = (skillId: string, p: SkillProgress): number =>
+  treePointsFor(skillId, p.level) - p.allocated.length;
 
 /** A skill's spare points WITHOUT minting a record for one never opened —
  *  drawing a badge is a read, and a read may not write to the save. */
 export const spareTreePoints = (character: Character, skillId: string): number =>
-  pointsAvailable(character.skills[skillId] ?? { level: 1, xp: 0, allocated: [] });
+  pointsAvailable(skillId, character.skills[skillId] ?? { level: 1, xp: 0, allocated: [] });
 
 /** Skills use the same curve as the character, so the numbers stay legible. */
 export function addSkillXp(character: Character, skillId: string, amount: number): number {

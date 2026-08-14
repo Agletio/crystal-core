@@ -4,14 +4,16 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**Two phases, and one QUESTION that has just become answerable.** The arc
-dictated in one go is finished — the game has rooms you arrive in and people
-standing in them, and all four people are built. The art sandbox is BUILT and
-what it was for is now a thing to look at rather than a thing to build: what it
-showed is written up under **What the sandbox answered**, below, and the
-decision it asks for is open question 8. Phase 1 is the batch after the arc: the
-skills screen, and a second way to move. Phase 2 is teaching, and it does not
-start until the stripped opening has been played — see its own note.
+**ONE phase, and it WAITS. Two questions are the live work.** The arc dictated
+in one go is finished, the batch after it is finished, and the art sandbox is
+built: what looking at it settled is under **What the sandbox answered**, below,
+and the decision it asks for is open question 8. Phase 1 is teaching, and it
+does not start until the stripped opening has been played — see its own note.
+
+So the next session most likely has nothing to take. **Say so and list the
+questions**; do not invent work and do not promote a backlog item without being
+asked. The two things most likely to be asked for are **open question 8** —
+whether generated art ships at all — and the **balance pass**, written up below.
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
@@ -24,8 +26,35 @@ these is the **balance pass**, written up below.
 **Nothing is blocked on an open question.** Read **Before you touch the
 ladder**, below, which holds the parts belonging to no single phase.
 
-**What the last twelve phases turned out to know that their writing did not.**
+**What the last thirteen phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **A phase's seven measured traps were all real, and all cheap.** The skills
+  phase named seven things a fresh session would get wrong, every one of them
+  measured rather than guessed, and each cost one edit: XP over `SKILL_SLOTS`,
+  `treeGrants` over `SKILL_SLOTS`, `treePointsFor(skillId, level)`, `BANNED`
+  narrowed to a phrase, the demo's sweeps given the third web family by hand,
+  one `swingCooldown` helper, and a behaviour name per mover. **Nothing in the
+  phase cost more than its traps did.** That is what a phase written to the six
+  rules buys, and it is worth saying out loud.
+- **The class audit's exemption is DERIVED, not a second list.** A mover's
+  switches read a behaviour and declare no `changes`, which the "every switch a
+  delivery reads declares what it changes" check failed at once. The fix is not
+  an exemption list: it is asking `SKILL_BEHAVIOURS` whether anything that
+  actually CASTS reads the switch. A mover has no cast, so it is exempt by
+  construction and a third one will be too. The symmetric check — "nothing that
+  changes no delivery claims a class" — was written and DELETED: `convertTree`
+  reads the stat layer and is legitimately classed, so that half is just wrong.
+- **A small web needed its own "every notable does something".** The tree's
+  version fires `SKILL_BEHAVIOURS[skill.behaviour]` at dummies and counts who
+  got hit, which for a skill with no behaviour is a crash rather than a check.
+  The movement version reads the same expressions the sim reads — reach,
+  cooldown, mana back, `landingOf` — so a grant renamed in one place and not
+  the other fails rather than going quiet.
+- **`fitted` per frame makes a walk cycle jitter.** Not this phase's, but the
+  same shape: a function that measures what it is handed, run over things that
+  are meant to be measured TOGETHER. `fittedTogether` was the answer there;
+  `swingCooldown` is the answer to the same shape in the sim.
 
 - **A table keyed only by SLOT made both men offer everything.** The phase said
   "`FORGED_MODS` for `ring` and `amulet` only", which is true of the lines and
@@ -201,11 +230,14 @@ asked for directly after them. All of them are built. The bracketed numbers in
 the git log — [user 8], [user 10] — are the user's own numbering within a
 batch, kept so a commit can be matched back to the ask.
 
-**The vocabulary is a place new work lands.** `KEYWORDS` covers the three trees
-and the two trades as they stand. A new skill, a new trade or a new modifier
-either uses a word that is already in the table or adds one — and the demo's
-`ONE WORD PER MECHANISM` sweep is what makes that not optional. A bow skill
-saying "+5 Arc" is the case the whole thing was built for.
+**The vocabulary is a place new work lands, and it has landed once.** `KEYWORDS`
+covers the three trees, the two movement webs and the two trades. A new skill, a
+new trade or a new modifier either uses a word that is already in the table or
+adds one — and the demo's `ONE WORD PER MECHANISM` sweep is what makes that not
+optional. **Slow** is the worked example: nothing in the game slowed an enemy,
+so the landing shockwave added a word rather than borrowing Splash, which is
+defined as damage in a circle and would have been a lie. A bow skill saying
+"+5 Arc" is the other half of the same case.
 
 ---
 
@@ -460,130 +492,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The skills screen, and a second way to move
-
-**Dictated in one go. Five asks, and the last two are most of the work.**
-
-**What is true today.** `src/ui/skills.ts` is three deep — category, then skill,
-then its web — and it holds `category` and `viewing` as MODULE state, so
-reopening the screen puts you back where you left rather than at the top. Every
-skill with a web gets one from `BUILT_TREES`; a skill with none renders "no web
-yet", which is what both passives and Blink do today. `movement` has exactly one
-entry, `blink`.
-
-- [ ] **The scene guard is for the SLOT, not for Blink.** Already true and worth
-      keeping true: `maybeMove` reads `this.mover`, which is
-      `equippedSkill(character, 'movement')`, so `if (this.options.scene) return`
-      suppresses whatever fills the slot. What is still Blink-shaped is the
-      BEHAVIOUR — the method teleports along the path — and the `'blink'` event
-      both renderers draw. Leap needs its own of each.
-- [ ] **Skills always opens at the top.** `openSkills` clears `category` and
-      `viewing`. Escape still steps back a level, which is `skillsEscape` and
-      stays.
-- [ ] **A top row of the three equipped slots**, on the home page. Each shows
-      the equipped skill or an empty slot, off `SKILL_SLOTS` and
-      `Character.equipped`. Clicking a filled one goes straight to that skill's
-      web; clicking an empty one goes to the list of skills that slot ACCEPTS —
-      `SkillSlotDef.accepts` already says which shelves those are.
-- [ ] **A passive has no web and must not pretend to.** Clicking one equips it,
-      or asks first when the slot is filled. It never opens a tree — "no web
-      yet" is a promise the game is not going to keep for a passive.
-- [ ] **Leap**, the second movement skill: a jump rather than a step through.
-      Same slot, same automation — `runToCompletion` is the shipped policy and
-      no build's power may depend on somebody watching — but it LANDS, and
-      landing is what its tree hangs off.
-- [ ] **A web for Blink and one for Leap**, smaller than a skill tree. Simple
-      things: cooldown off the `cooldown` param, and effects that fire on the
-      MOVE. The examples asked for are mana regeneration after a blink, and a
-      shockwave on landing a leap that slows attack speed nearby.
-- [ ] **`buildTree` will refuse both.** It throws unless a spec has exactly six
-      branches and six trunk notables (`BRANCH_COUNT` in `src/trees/layout.ts`).
-      A smaller web needs its own layout the way the trade tree got
-      `src/trades/layout.ts` — and what the two already share is
-      `src/webgraph.ts` for reach, refund and replay, and `src/ui/webart.ts` for
-      the studs. Do not bend `buildTree`; give the movement webs a sibling.
-- [ ] Every grant a node hands over is declared in `sim/grants.ts` and READ by
-      something, with a `merge` if two nodes can both grant it, and the demo
-      holds that line. A move that grants regeneration and a move that grants a
-      shockwave are two new readers, not two new concepts.
-- [ ] The vocabulary. `KEYWORDS` is the only way these may be said, and the
-      demo's `ONE WORD PER MECHANISM` sweep fails an invented synonym. A
-      shockwave that slows is a **Splash** that does something; check the table
-      before naming anything.
-
-**Traps, all seven MEASURED rather than guessed.** Read every one before
-starting: the first three are why the last two checkboxes are not an afternoon,
-and none of them is visible from the files a fresh session would open.
-
-- **Only the MAIN skill takes a run's XP.** `report.ts:97` is
-  `addSkillXp(game.character, mainSkillId(character), xp)`. A skill web is
-  funded by that SKILL's level, and a mover never gains one — so a movement web
-  would sit at level 1 holding a single point, forever, and every node past the
-  first would be unreachable in a played game. The fix is to bank the run's XP
-  for every EQUIPPED skill, as a loop over `SKILL_SLOTS`, which costs one change
-  and is generic over a fourth slot. The rule it seems to bend is not bent:
-  "committing to one skill advances its tree" is about the MAIN slot, and you
-  only ever hold one mover.
-- **`treeGrants` merges the MAIN skill's tree and nothing else.**
-  `src/sim/stats.ts` — the other two slots contribute their static
-  `SkillDef.grants` only, so a mover's ALLOCATIONS never reach the sim and every
-  node of both new webs would do nothing at all. Extend that same loop to merge
-  each non-main slot's own web, so a web reaches the sim by the one path a tree
-  node, a trade node and a unique already use.
-- **`treePointsFor(level)` is `Math.min(level, MAX_TREE_POINTS)` — 30, globally.**
-  A nine-node web is therefore OWNED by level 9, and `MAX_TREE_POINTS`' own
-  comment is "a tree you can fill in is not a decision". A small web has to
-  declare its own budget, which means `treePointsFor` takes a skillId. Every
-  call site has one in scope: `ui/skills.ts` ×3, `game/save.ts:225`,
-  `sim/loadout.ts:69`, and `sim/character.ts` — where `pointsAvailable(progress)`
-  has to grow one too, and its callers are `game/crystals.ts:54` and `:80`.
-- **`BANNED` maps the bare word `leap` to Arc**, and the demo sweeps every
-  skill's own description — so the skill cannot say its own name. Narrow it to
-  the PHRASE that actually means Arc (`leaps to`, `leaping to`) and Arc keeps
-  its word, since its `means` line already says "leaps from what it hits". This
-  is a DECISION taken on the user's behalf: the ask names the skill Leap, and
-  the alternative is renaming the thing they asked for.
-- **The demo's sweeps name `BUILT_TREES` and `TRADES` one at a time.** A third
-  web family is invisible to all of them until it is added by hand to each: the
-  every-line-says-its-number sweep (~3429), the two vocabulary sweeps (~3491,
-  ~3541), and the per-tree reachability and grant checks (~1707). Adding the
-  family is adding a row to each of those, not adding a file.
-- **A monster's swing rate is set in TWO places** — `run.ts:1211` for a melee
-  body and `run.ts:1541` for anything with a skill — and `Entity.effects` is
-  ticked for the HERO alone. A Slow on landing therefore needs one rate helper
-  that both call, plus a tick for monster effects; put it in either place only
-  and ranged packs, or melee ones, ignore it silently.
-- **`SKILL_BEHAVIOURS` has no `no_cast` entry and does not need one** —
-  `run.ts:1499` falls back. So giving the two movers their own behaviour names
-  costs nothing and is what lets `GrantDef.reads` tell a jump's shockwave from a
-  step: a landing switch on the web of a skill that does not land is exactly the
-  point spent on nothing the demo already fails a tree for.
-
-**Decisions taken, each cheap to overrule while this is still a phase.**
-
-- **What makes Leap a jump rather than a second Blink**: a step needs a clear
-  line and goes THROUGH, a jump does not and goes OVER. Both still land on
-  walkable ground and both stay on the path already found, so a leap can never
-  put you somewhere the walk could not reach — it cuts the corner instead.
-- **A movement web is three arms of three**, minor-minor-notable, with a budget
-  smaller than the web: what is decided is which arms you walk, and the arm is
-  the price, exactly as a trade spoke is. Its own layout beside
-  `src/trades/layout.ts`, sharing `webgraph.ts` and `webart.ts`.
-- **Slow becomes a KEYWORD.** Nothing in the game slows an enemy today, so the
-  shockwave is a new mechanism, and `RULES.md` says a new mechanism either uses
-  a word in the table or adds one. It is not a Splash: that word is defined as a
-  swing dealing a share of its damage in a circle, and the landing deals none.
-
-**What must not break.** `equipSkill` refuses a skill whose category the slot
-does not accept, and the demo checks it — equipping a mover must never be what
-stops you swinging. `heal()` empties a slot naming a skill that is gone, so
-adding one costs nothing but removing one does. `npm run demo` measures that the
-mover fires itself with nobody watching and never lands in rock, that every
-descent it is in still ends, and that nobody moves across an authored room; all
-four now have a second skill to hold to. `MAIN_SKILLS` is what every harness
-builds a character to fight with and Leap is not in it.
-
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

@@ -66,7 +66,7 @@ export function ladderCharacter(band: number, rng: Rng, skillId = 'strike'): Cha
 
   const progress = skillProgress(character, skillId);
   const tree = treeFor(skillId);
-  while (progress.allocated.length < treePointsFor(character.level)) {
+  while (progress.allocated.length < treePointsFor(skillId, character.level)) {
     const open = tree.filter((n) => canAllocate(skillId, n.id, progress.allocated));
     if (open.length === 0) break;
     const node = rng.pick(open)!;

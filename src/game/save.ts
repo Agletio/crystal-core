@@ -222,7 +222,7 @@ function replayTree(character: Character, skillId: string): number {
   const progress = character.skills[skillId];
   if (!progress) return 0;
 
-  const kept = replayTreeNodes(skillId, progress.allocated, treePointsFor(progress.level));
+  const kept = replayTreeNodes(skillId, progress.allocated, treePointsFor(skillId, progress.level));
   const lost = progress.allocated.length - kept.length;
   progress.allocated = kept;
 

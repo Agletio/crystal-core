@@ -8,8 +8,8 @@ import type { GameState } from './state';
 import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
-import { DAMAGE_TYPE_BY_ID } from '../data';
-import { addXp, addSkillXp, mainSkillId } from '../sim/character';
+import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, SKILL_SLOTS } from '../data';
+import { addXp, addSkillXp, equippedSkill, mainSkillId } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
 
@@ -92,9 +92,17 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   const xp = Math.round(run.xpGained);
   const levelsGained = addXp(game.character, xp);
 
-  // The active skill shares the same XP. That's what makes committing to one
-  // skill the thing that advances its tree.
-  const skillLevels = addSkillXp(game.character, mainSkillId(game.character), xp);
+  // EVERY equipped skill shares the same XP, over the slot table. Paid to the
+  // main one alone, a mover's web sits at level 1 holding one point forever.
+  // "Committing to one skill advances its tree" is about the MAIN slot, and
+  // you only ever hold one mover and one passive.
+  let skillLevels = 0;
+  for (const slot of SKILL_SLOTS) {
+    const held = equippedSkill(game.character, slot.id);
+    if (!held) continue;
+    const gained = addSkillXp(game.character, held, xp);
+    if (slot.id === MAIN_SLOT) skillLevels = gained;
+  }
 
   const rows: ReportRow[] = [
     { label: 'time', value: `${run.elapsed.toFixed(1)}s` },

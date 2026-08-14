@@ -51,7 +51,7 @@ export function crystalEarned(game: GameState): boolean {
   const skillId = mainSkillId(game.character);
   const progress = game.character.skills?.[skillId];
   if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
-  return pointsAvailable(progress) === 0;
+  return pointsAvailable(skillId, progress) === 0;
 }
 
 export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
@@ -77,7 +77,7 @@ export function giftSchedule(game: GameState): string {
     const skillId = mainSkillId(game.character);
     const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
     const progress = game.character.skills?.[skillId];
-    const spare = progress ? pointsAvailable(progress) : 1;
+    const spare = progress ? pointsAvailable(skillId, progress) : 1;
     return (
       `${who} brings your first crystal to the mouth of a cleared descent once ` +
       `${name} is level ${INTRO.crystalSkillLevel} with every one of its points spent. ` +

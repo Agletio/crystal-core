@@ -271,6 +271,33 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('skill-web');
 
+  // A MOVEMENT web, walked to its budget. Nine nodes against a hundred and
+  // twelve is the case a layout written for the big one gets wrong: a web that
+  // fits on screen at the home zoom, with two of its three arms bought.
+  await page.evaluate(() => {
+    document.getElementById('skills-back')?.click();
+    document.getElementById('skills-back')?.click();
+    const cats = [...document.querySelectorAll('#skills-cats .catcard')];
+    cats.find((c) => /Movement/.test(c.textContent ?? ''))?.click();
+  });
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#skills-list .skillrow')];
+    (rows.find((r) => /Leap/.test(r.textContent ?? '')) ?? rows[0])?.click();
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    for (let i = 0; i < 8; i++) document.getElementById('skills-devlevel')?.click();
+    for (let i = 0; i < 8; i++) {
+      const open = document.querySelector('#skills-web .web__node--open');
+      if (!open) break;
+      open.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+    document.getElementById('skills-fit')?.click();
+  });
+  await page.waitForTimeout(300);
+  await shoot('move-web');
+
   // The trade, walked. Two picker cards over a web drawn to fit is a tall
   // stack, and the web is the part with nothing to scroll it.
   await page.evaluate(() => document.getElementById('skills-close')?.click());

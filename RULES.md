@@ -310,14 +310,21 @@ could act differently knowing the figure — if yes, the figure goes in.
 **One word per mechanism, and it is the ONLY word.** `KEYWORDS` in
 `src/keywords.ts` is the vocabulary — Projectile, Pierce, Arc, Spread, Repeat,
 Burst, Splash, Cloud, Ailment and its three kinds, Area of Effect, increased,
-more, Critical, Resistance, Armour, Starved, Charge. A keyword is worth
+more, Critical, Resistance, Armour, Slow, Starved, Charge. A keyword is worth
 something only because learning it once pays off everywhere: the day one talent
 says "+1 Arc" and another says "leaps to one more enemy", the player has learnt
 one of two vocabularies and the whole idea is gone. `BANNED` is every phrasing
 that has been retired and the keyword that replaced it, and the demo sweeps
-every tree node, trade node, skill, currency, quest, modifier line and
-`GrantDef.what` for one. It also holds a node handing over a keyword's SWITCH
-to naming that keyword — "+1 Pierce" is compulsory, not a style.
+every tree node, movement node, trade node, skill, currency, quest, modifier
+line and `GrantDef.what` for one. It also holds a node handing over a keyword's
+SWITCH to naming that keyword — "+1 Pierce" is compulsory, not a style.
+
+**A banned entry is a PHRASE, never a bare word that has an innocent use.**
+`leap` mapped to Arc, which forbade a movement skill called Leap from saying
+its own name; it is `leaps to` and `leaping to` now, which is the sentence that
+actually means Arc — and Arc's own `means` line still says "leaps from what it
+hits", which is where the idea lives. Banning a word people have to work around
+makes the check something people work around.
 
 **A definition carries its own numbers, out of the table the sim reads.**
 `KeywordDef.means` interpolates `PROJECTILE`, `DEFENCE`, `MANA` and `POTIONS`
@@ -410,6 +417,53 @@ is merged by `treeGrants` for every equipped slot but the main one, out of the
 same table a tree node and a unique use. A passive with a switch nobody reads
 is a slot spent on nothing, and the demo holds it to being declared and to
 saying its own numbers.
+
+**A MOVER reaches the sim through its own web, and the XP that funds it comes
+off every equipped slot.** Two changes, and each was a silence rather than a
+bug: `treeGrants` merged the MAIN skill's tree alone, so a mover's allocations
+never arrived; and only the main skill took a run's XP, so a mover's web sat at
+level 1 holding one point forever. Both are loops over `SKILL_SLOTS` now, and
+both are generic over a fourth slot. "Committing to one skill advances its
+tree" is about the MAIN slot and is not bent by this — you hold one mover.
+
+**A movement web is THREE ARMS OF THREE over six points.** Its own layout in
+`src/moves/layout.ts`, beside the trade's and the tree's, sharing
+`webgraph.ts` and `webart.ts` with both. Nine nodes and six points, so two
+whole arms fit and the third never does: which two is the decision, and no
+level ever takes it back. `buildTree` is not bent to fit — it wants six
+branches and six trunk notables and throws rather than dropping the extras.
+
+**The point cap belongs to the WEB, not to the game.** `treePointsFor` takes a
+skillId. `MAX_TREE_POINTS`' own comment is that a tree you can fill in is not a
+decision, and a nine-node web under a global 30 is owned outright by level 9.
+
+**A MOVER deals no damage, and a landing never will.** Every damage number in
+the game is the main skill's, so what a landing does is Slow — a keyword, and
+explicitly NOT a Splash, which is defined as damage in a circle. A mover has no
+`changes` class on any of its switches either: `INTERACTIONS` is the audit of
+what two DELIVERY switches on one CAST come to, and a mover has no cast. The
+demo derives that exemption from `SKILL_BEHAVIOURS` rather than from a second
+list, so a skill that never casts is exempt by construction.
+
+**A skill with no web EQUIPS rather than descending.** "No web yet" is a promise
+the game is not going to keep for a passive, and a dead end is worse than a
+verb. Displacing what is in the slot asks first, because swapping the skill you
+are holding is not what a click on a list means.
+
+**The Skills screen opens at the TOP.** Where you were last time is not where
+you are going, and a screen that reopens three deep hides the two questions
+above it. Escape still steps back a level, which is `skillsEscape`.
+
+**A SLOW is set in one place.** `swingCooldown(e)` is the only answer for a
+body with a skill and a body without — the rate was written at two call sites,
+and anything touching one of them reached melee packs or ranged ones but never
+both. `Entity.effects` is ticked for monsters too now; it was the hero's alone
+until something could put a `TimedEffect` on anything else.
+
+**The scene guard is for the SLOT.** `maybeMove` reads whatever fills the
+movement slot, so `if (this.options.scene) return` suppresses every mover there
+will ever be. The demo holds each of them to it: a mover firing
+mid-conversation reads as a bug rather than as a build.
 
 **A passive is a TRADE.** That is what makes it worth a slot rather than a free
 percentage. Killing Surge gives up crit damage entirely for a window of more

@@ -3088,9 +3088,12 @@ export const SKILLS: SkillDef[] = [
     name: 'Blink',
     category: 'movement',
     description:
-      'Step up to 5 tiles along the way you are already walking, once every 3 seconds.',
+      'Step up to 5 tiles along the way you are already walking, once every 3 ' +
+      'seconds. A step needs a clear line and takes you through what is in it.',
     tags: ['movement'],
-    behaviour: 'no_cast',
+    // Its OWN behaviour rather than the shared `no_cast`, so `GrantDef.reads`
+    // can tell a jump's landing from a step that never lands anywhere.
+    behaviour: 'step',
     damageTypes: [],
     baseDamage: 0,
     addedEffectiveness: 0,
@@ -3099,6 +3102,24 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     vfxKind: 'blink',
     params: { distance: 5, cooldown: 3 },
+  },
+  {
+    id: 'leap',
+    name: 'Leap',
+    category: 'movement',
+    description:
+      'Jump up to 6 tiles along the way you are already walking, once every 4 ' +
+      'seconds. A jump needs no clear line — it goes over — and it LANDS.',
+    tags: ['movement'],
+    behaviour: 'leap',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    vfxKind: 'leap',
+    params: { distance: 6, cooldown: 4 },
   },
 ];
 

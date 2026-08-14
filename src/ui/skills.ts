@@ -16,12 +16,19 @@
  * meant to — you scroll to zoom and drag to move, the same as any other map,
  * because a hundred nodes shrunk to fit are a hundred dots you cannot read.
  */
-import { SKILL_BY_ID, SKILL_CATEGORIES, SKILL_SLOT_BY_ID, skillsInCategory } from '../data';
+import {
+  SKILL_BY_ID,
+  SKILL_CATEGORIES,
+  SKILL_SLOTS,
+  SKILL_SLOT_BY_ID,
+  skillsInCategory,
+} from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
   MAX_TREE_POINTS,
   blockedBy,
+  pointCapFor,
   canAllocate,
   canDeallocate,
   neighboursOf,
@@ -31,6 +38,7 @@ import {
 import { categoryIcon, skillIcon } from './icons';
 import { disc, gem, stud, svgEl } from './webart';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { ask } from './confirm';
 import { nodeCard } from './glossary';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
@@ -45,6 +53,7 @@ const $ = (id: string) => document.getElementById(id)!;
 export const skillCatId = (categoryId: string): string => `skillcat-${categoryId}`;
 export const skillRowId = (skillId: string): string => `skillrow-${skillId}`;
 export const skillNodeId = (nodeId: string): string => `skillnode-${nodeId}`;
+export const skillSlotCardId = (slotId: string): string => `skillslot-${slotId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -189,6 +198,77 @@ function skillSummary(skill: SkillDef): string[] {
 // Level 1 — categories
 // ---------------------------------------------------------------------------
 
+/**
+ * What clicking a skill anywhere on this screen MEANS.
+ *
+ * One with a web opens it, since that is the decision the screen exists for.
+ * One without — a passive — is EQUIPPED instead: "no web yet" is a promise
+ * the game is not going to keep for a skill that will never have one, and a
+ * dead end is worse than a verb. Displacing something asks first, because
+ * swapping the skill you are holding is not what a click on a list means.
+ */
+async function open(skillId: string): Promise<void> {
+  if (treeFor(skillId).length > 0) {
+    category = SKILL_BY_ID[skillId]?.category ?? category;
+    viewing = skillId;
+    home();
+    render();
+    renderWeb();
+    return;
+  }
+
+  const slot = slotForSkill(skillId);
+  if (!slot) return;
+  const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
+  if (held?.id === skillId) return;
+  if (
+    held &&
+    !(await ask({
+      title: `Equip ${SKILL_BY_ID[skillId]?.name ?? skillId}?`,
+      text: `${held.name} comes out of your ${SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() ?? slot} slot.`,
+      confirm: 'Equip',
+    }))
+  ) {
+    return;
+  }
+  equipSkill(game.character, skillId);
+  render();
+}
+
+/**
+ * What you are HOLDING, over the shelves it came off. A filled slot goes
+ * straight to that skill's web, which is the thing you opened this screen to
+ * look at; an empty one goes to the shelf it accepts, which is the only place
+ * something that fits it can be.
+ */
+function renderSlots(): void {
+  const host = $('skills-slots');
+  host.replaceChildren();
+
+  for (const slot of SKILL_SLOTS) {
+    const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
+    const card = el('button', `slotcard${held ? '' : ' slotcard--empty'}`) as HTMLButtonElement;
+    card.id = skillSlotCardId(slot.id);
+    card.append(held ? skillIcon(held.id, 26) : categoryIcon(slot.accepts[0], 26));
+
+    const what = el('span', 'slotcard__what');
+    what.append(el('span', 'slotcard__slot', slot.name));
+    what.append(el('span', 'slotcard__name', held?.name ?? 'empty'));
+    card.append(what);
+    card.title = held ? held.description : slot.blurb;
+
+    // A filled one goes to its web; an empty one, and anything with no web to
+    // go to, goes to the shelf this slot ACCEPTS.
+    card.onclick = () => {
+      if (held && treeFor(held.id).length > 0) return void open(held.id);
+      category = (held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0] ?? null;
+      viewing = null;
+      render();
+    };
+    host.append(card);
+  }
+}
+
 function renderCategories(): void {
   const host = $('skills-cats');
   host.replaceChildren();
@@ -232,7 +312,7 @@ function renderSkillList(): void {
 
   for (const skill of skillsInCategory(category)) {
     const progress = skillProgress(game.character, skill.id);
-    const spare = treePointsFor(progress.level) - progress.allocated.length;
+    const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
 
     const btn = el('button', 'skillrow') as HTMLButtonElement;
     btn.id = skillRowId(skill.id);
@@ -244,23 +324,19 @@ function renderSkillList(): void {
     btn.append(head);
 
     const web = treeFor(skill.id).length;
+    const cap = pointCapFor(skill.id);
     btn.append(
       el(
         'span',
         'skillrow__meta',
         web === 0
-          ? `level ${progress.level} · no web yet`
-          : `level ${progress.level} · ${progress.allocated.length}/${MAX_TREE_POINTS} spent · ` +
+          ? `level ${progress.level} · no web — click to equip`
+          : `level ${progress.level} · ${progress.allocated.length}/${cap} spent · ` +
             `${spare} unspent`
       )
     );
 
-    btn.onclick = () => {
-      viewing = skill.id;
-      home();
-      render();
-      renderWeb();
-    };
+    btn.onclick = () => void open(skill.id);
     host.append(btn);
   }
 }
@@ -275,12 +351,14 @@ function renderHeader(): void {
 
   const skill = SKILL_BY_ID[skillId];
   const progress = skillProgress(game.character, skillId);
-  const cap = treePointsFor(progress.level);
+  const cap = treePointsFor(skillId, progress.level);
 
   $('skills-title').textContent = skill.name;
+  // The cap is the WEB's, so a nine-node movement web says 6 rather than 30.
+  const most = pointCapFor(skillId);
   $('skills-sub').textContent =
     `level ${progress.level} · ${progress.allocated.length}/${cap} points spent` +
-    (cap < MAX_TREE_POINTS ? ` · ${MAX_TREE_POINTS} at level ${MAX_TREE_POINTS}` : '') +
+    (cap < most ? ` · ${most} at level ${most}` : '') +
     ` · ${progress.xp}/${xpToNext(progress.level)} xp`;
 
   const equip = $('skills-equip') as HTMLButtonElement;
@@ -332,7 +410,7 @@ function renderWeb(): void {
   const skill = SKILL_BY_ID[skillId];
   const progress = skillProgress(game.character, skillId);
   const nodes = treeFor(skillId);
-  const spare = treePointsFor(progress.level) - progress.allocated.length;
+  const spare = treePointsFor(skillId, progress.level) - progress.allocated.length;
   const taken = new Set(progress.allocated);
 
   const at = (n: SkillNodeDef) => project(n.x, n.y, box);
@@ -574,7 +652,12 @@ function render(): void {
         ? SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? 'Skills'
         : SKILL_BY_ID[viewing!]?.name ?? 'Skills';
 
-  if (depth === 1) renderCategories();
+  $('skills-slots').hidden = depth !== 1;
+
+  if (depth === 1) {
+    renderSlots();
+    renderCategories();
+  }
   if (depth === 2) renderSkillList();
   if (depth === 3) renderHeader();
 
@@ -587,12 +670,13 @@ function back(): void {
   render();
 }
 
+/** Always at the TOP. Where you were last time is not where you are going, and
+ *  a screen that reopens three deep hides the two questions above it. */
 export function openSkills(): void {
   $('skills').hidden = false;
+  category = null;
+  viewing = null;
   render();
-  // Measuring needs the element on screen, so the fit happens after the
-  // unhide rather than before it.
-  if (viewing) renderWeb();
 }
 
 export function closeSkills(): void {

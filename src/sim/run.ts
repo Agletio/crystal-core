@@ -21,7 +21,7 @@ import {
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
-import { bleedOf, critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
+import { bleedOf, critBuff, landingOf, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { equippedSkill, mainSkillId, monsterXp } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
@@ -91,6 +91,9 @@ const LURK_RANGE = 4;
 
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
+
+/** A Slow, on a MONSTER — the first `TimedEffect` on anything but the hero. */
+const SLOWED = 'slowed';
 
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
@@ -193,6 +196,8 @@ export interface Entity {
   boost?: Boost;
   /** Seconds of "just got hit" left, for the renderer to flash. */
   hitFlash: number;
+  /** Share off this one's swing rate while a Slow is running. Absent is none. */
+  slowed?: number;
   dead: boolean;
 }
 
@@ -732,6 +737,9 @@ export class RunSim {
     // own without first getting a free swing.
     this.stepAilments(s.hero, dt);
     for (const m of s.monsters) if (!m.dead) this.stepAilments(m, dt);
+    // And whatever is true of one for a while: a monster's are only ever a
+    // Slow, and were ticked nowhere at all until one could carry one.
+    for (const m of s.monsters) if (!m.dead && m.effects.length > 0) this.stepEffects(m, dt);
 
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -1265,7 +1273,7 @@ export class RunSim {
           m.action = 'attack';
           m.actionTimer = ATTACK_POSE;
           this.dealDamage(m, hero, 1);
-          m.cooldown = 1 / m.stats.attacksPerSecond;
+          m.cooldown = this.swingCooldown(m);
         }
       }
       return;
@@ -1411,34 +1419,61 @@ export class RunSim {
   }
 
   /** The movement skill, firing ITSELF, along the path already found: the
-   *  furthest waypoint in reach with a clear line to it, so it never lands a
-   *  body in rock and never cuts a corner the walk could not. */
+   *  furthest walkable waypoint in reach, so it never lands a body in rock. A
+   *  STEP also wants a clear line and goes through; a JUMP wants none and goes
+   *  over. Neither reaches anywhere the walk could not. */
   private maybeMove(hero: Entity): void {
     const skill = this.mover;
     if (!skill || this.moveIn > 0 || hero.path.length === 0) return;
-    // Never in an authored room, and this is the guard for EVERY movement
-    // skill rather than for the one that exists: `mover` is whatever fills the
-    // movement slot. Crossing a room is somebody walking over to say something,
-    // and skipping the last of it reads as a bug rather than as a build.
+    // Never in an authored room, and the guard is for the SLOT rather than for
+    // one skill: skipping the last of a walk across a room reads as a bug.
     if (this.options.scene) return;
 
-    const reach = (skill.params?.distance as number) ?? 0;
+    const further = (this.grants.moveDistance as number) ?? 1;
+    const reach = ((skill.params?.distance as number) ?? 0) * further;
+    const jumps = skill.behaviour === 'leap';
     const grid = this.state.map.grid;
     let landing: Vec2 | null = null;
     let steps = 0;
     for (const wp of hero.path) {
       if (dist(hero, wp) > reach) break;
       steps++;
-      if (grid.walkable(wp.x, wp.y) && hasLineOfSight(grid, hero, wp)) landing = wp;
+      if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) landing = wp;
     }
     if (!landing || steps === 0) return;
 
-    this.emit('blink', [{ x: hero.x, y: hero.y }, { x: landing.x, y: landing.y }], 'physical', 0.25);
+    this.emit(
+      skill.vfxKind ?? 'blink',
+      [{ x: hero.x, y: hero.y }, { x: landing.x, y: landing.y }],
+      'physical',
+      0.25
+    );
     hero.x = landing.x;
     hero.y = landing.y;
     hero.path = hero.path.slice(steps);
     this.state.blinks++;
-    this.moveIn = (skill.params?.cooldown as number) ?? 1;
+    const sooner = (this.grants.moveCooldown as number) ?? 1;
+    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner;
+
+    if (jumps) this.land(hero); // a step arrives; only a jump LANDS
+    const back = (this.grants.moveMana as number) ?? 0;
+    if (back > 0) hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+  }
+
+  /** What coming down does to what is near it. Never damage: every damage
+   *  number in the game belongs to the skill in the main slot. */
+  private land(hero: Entity): void {
+    const shock = landingOf(this.grants);
+    if (!shock) return;
+    this.emit('sweep', [{ x: hero.x, y: hero.y }, { x: hero.x + shock.radius, y: hero.y }], 'physical', 0.35);
+    for (const m of this.state.monsters) {
+      if (m.dead || dist(m, hero) > shock.radius) continue;
+      const live = m.effects.find((e) => e.id === SLOWED);
+      // Refreshed rather than stacked, exactly as the crit buff is.
+      if (live) live.remaining = Math.max(live.remaining, shock.seconds);
+      else m.effects.push({ id: SLOWED, remaining: shock.seconds });
+      m.slowed = shock.slow;
+    }
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
@@ -1494,6 +1529,14 @@ export class RunSim {
       else hero.mana = Math.min(max, hero.mana + gain);
     }
     hero.effects = hero.effects.filter((e) => e.remaining > 0);
+  }
+
+  /** A monster's own clock: it runs down and what it was doing stops. The
+   *  hero's also POUR, which is why the potions keep their own. */
+  private stepEffects(e: Entity, dt: number): void {
+    for (const effect of e.effects) effect.remaining -= dt;
+    e.effects = e.effects.filter((x) => x.remaining > 0);
+    if (!e.effects.some((x) => x.id === SLOWED)) delete e.slowed;
   }
 
   /** A charge as a cooldown rather than a budget: banked fractionally per flask
@@ -1599,7 +1642,7 @@ export class RunSim {
     });
 
     this.useCrit = null;
-    user.cooldown = 1 / (user.stats.attacksPerSecond * this.hasteOf(user));
+    user.cooldown = this.swingCooldown(user);
   }
 
   /** Critical chance, plus whatever a running flask is adding to the hero's. */
@@ -1608,10 +1651,17 @@ export class RunSim {
     return e.stats.critChance + flask;
   }
 
-  /** Rate multiplier from a running flask. One for everyone else, always. */
+  /** What a swing rate is multiplied by: a flask, and a Slow. */
   private hasteOf(e: Entity): number {
-    if (e.kind !== 'hero' || !this.flasked()) return 1;
-    return 1 + ((this.grants.potionHaste as number) ?? 0) / 100;
+    const slow = 1 - (e.slowed ?? 0);
+    if (e.kind !== 'hero' || !this.flasked()) return slow;
+    return slow * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
+  }
+
+  /** ONE answer, for a body with a skill and a body without. In two places a
+   *  Slow reached melee packs or ranged ones, never both. */
+  private swingCooldown(e: Entity): number {
+    return 1 / Math.max(0.01, e.stats.attacksPerSecond * this.hasteOf(e));
   }
 
   private dealDamage(

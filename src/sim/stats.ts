@@ -365,18 +365,22 @@ export function attributeMod(character: Character): RolledMod | null {
   };
 }
 
-/** Every switch the sim is holding: the skill's tree, the TRADE, then what is
- *  WORN — gear merges last, so a unique bought with a downside wins a tie. */
-export function treeGrants(character: Character): Record<string, unknown> {
+/** What ONE skill's own web has been walked to, whichever slot it is in. */
+function walked(character: Character, skillId: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  const progress = character.skills[mainSkillId(character)];
-
+  const progress = character.skills?.[skillId];
   for (const id of progress?.allocated ?? []) {
-    const node = nodeById(mainSkillId(character), id);
-    // A choice node gives the option you picked, and nothing until you pick.
+    const node = nodeById(skillId, id);
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
     mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
   }
+  return out;
+}
+
+/** Every switch the sim is holding: the skill's tree, the TRADE, then what is
+ *  WORN — gear merges last, so a unique bought with a downside wins a tie. */
+export function treeGrants(character: Character): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...walked(character, mainSkillId(character)) };
   // A third SOURCE, not a third concept: a trade node is declared in the same
   // table and merged by the same rules as a tree node and a unique.
   mergeGrants(out, tradeGrants(character.trade, character.tradeAllocated ?? []));
@@ -390,12 +394,15 @@ export function treeGrants(character: Character): Record<string, unknown> {
       if (mod) mergeGrants(out, mod);
     }
   }
-  // The other two slots. A passive never casts and has no delivery of its own:
-  // its `grants` ARE the skill, and they land on the one that swings.
+  // The other two slots, BOTH halves each: the skill's own static `grants` —
+  // a passive never casts, so those ARE the skill — and its own web. Without
+  // the second, every node of a mover's web does nothing at all, silently.
   for (const slot of SKILL_SLOTS) {
     if (slot.id === MAIN_SLOT) continue;
-    const held = SKILL_BY_ID[equippedSkill(character, slot.id) ?? ''];
+    const id = equippedSkill(character, slot.id);
+    const held = SKILL_BY_ID[id ?? ''];
     if (held?.grants) mergeGrants(out, held.grants);
+    if (id) mergeGrants(out, walked(character, id));
   }
   return out;
 }
