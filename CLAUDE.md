@@ -127,15 +127,17 @@ black scraps rather than a drop. The sandbox has four, each biting a chamber's
 rim: every edge being rock going UP is a room in a hall, and the point of a
 chasm is the variation.
 
-**A DROP is drawn TWICE.** The set knows one relationship — rock above, face
-below — so a hole keyed as stone comes out a raised BLOCK, its cliff on the
-wrong rim. So `buildGround` keys it again INVERTED, the hole as the low ground
-and everything else as the high, and lays that pass over the first wherever it
-holds a face. What it puts down is the LIP: the ground's own edge, lit, ending
-in a cut face over the black. Inside the hole is `VOID_WALL` — ONE ring of
-stone, drawn OVER the lightmap so nothing interpolates it, and hard black past
-that. There is never a floor down there. Anything the light touches at a rim it
-smears across the tile, and a drop smeared is fog rather than a drop.
+**A hole is WALLED with the wall tile.** Nothing is recoloured or faded into a
+drop: the picture that reads as a wall standing UP under rock reads as a wall
+going DOWN under ground, and all that differs is which cell it lands in. The FAR
+wall is keyed with the world INVERTED — the hole as the low ground — and then
+laid ONE ROW LOWER than it was keyed, so it hangs inside the hole and the floor
+above it stays floor. The FLANKS are the same tile TURNED a quarter, rock
+outward and face into the hole, since a set only draws a face pointing at the
+camera. There is no NEAR wall: you look over the lip. Both are drawn OVER the
+lightmap and take the light of the LEDGE they hang from — what the map touches
+at a rim it smears across the tile, and a drop smeared is fog. Under them is
+black, and there is never a floor down there.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the

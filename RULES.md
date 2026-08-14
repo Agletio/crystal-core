@@ -767,7 +767,9 @@ no tile for a given cliff corner and a missing one is a gap in the ground.
 **A tile may not be TURNED and two sets may not be mixed on an edge.** A floor
 tile is lit from one side, so a rotated one clashes with its neighbour and the
 floor reads as a checkerboard — worse than the repetition it was meant to fix.
-An edge tile carries the cut face and its neighbour has to continue it.
+An edge tile carries the cut face and its neighbour has to continue it. **The
+one exception is the FLANK of a hole**, and it is narrow for exactly the reason
+the rule exists: a wall hanging inside a hole has no neighbour to agree with.
 
 **Repetition is answered with LIGHT, since it cannot be answered with tiles.**
 A Wang set has one picture per corner combination, so an open floor is that
@@ -1501,20 +1503,36 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   no second mechanism is needed to make one. Nothing a room stands somebody on
   is ever left as void — the reserved tiles are restored after the cut, since a
   hole under the hero is a room nobody can be in.
-- **A hole is a HARD edge, one ring of stone, then black.** *The user's call,
-  twice: "a sharp drop not the fade", and "walls that go down into the chasm
-  before completely black" — no floor at the bottom of one, ever.* `VOID_WALL`
-  is that ring, and the whole trick is WHERE it is drawn: over the lightmap,
-  not under it. Anything the light touches at a rim it interpolates across the
-  tile, and a drop interpolated is fog — which is exactly what the old
-  `VOID_FADE` came to, since `intoRock` seeds off every non-rock cell and a
-  hole is one, so every void tile scored the same depth and the only gradient
-  on screen was the light's. Under the ring is nothing at all: the ground
-  layer's own black, which multiplying cannot lift.
-- **Rings STEP, so there is one.** Two at 0.30 and 0.11 read as terraces going
-  down rather than as a wall — the value is flat per ring, so each boundary is
-  a visible shelf. It is a list so a deeper shaft is a table edit, but adding a
-  ring costs a step and has to earn it.
+- **A hole is walled with the WALL TILE, placed to read as below the floor.**
+  *The user's, with an assembled reference: "the exact tiles we use for walls
+  right now, just place them in a way that makes them look like they are lower
+  than the floor."* Nothing is recoloured to fake a drop and nothing is faded
+  into one — the picture that reads as a wall standing UP when it sits under
+  rock reads as a wall going DOWN when it hangs under ground, and the only
+  difference is which cell it lands in.
+  - The FAR wall: keyed with the world inverted, then laid ONE ROW LOWER than
+    it was keyed. Keyed-and-laid together it paints the last walkable row as
+    cliff; a row down it is inside the hole with the floor still floor.
+  - The FLANKS: the same tile TURNED a quarter, `turned` in `buildGround`. A
+    set draws a face pointing at the camera, so a pit's east and west walls are
+    that picture rotated, rock outward and face into the hole. This is the ONE
+    exception to never turning a tile, and it is narrow: a floor tile rotated
+    clashes with the neighbour it shares a light with, where a wall inside a
+    hole has no neighbour to agree with.
+  - The NEAR wall does not exist. You look over the lip; there is nothing to
+    see, and drawing one would be a wall standing in front of its own floor.
+- **A hole's wall takes the LEDGE's light and is drawn over the lightmap.**
+  What the map touches at a rim it smears across the whole tile, and a drop
+  smeared is fog — that is what the old `VOID_FADE` came to, and it was doing
+  nothing besides, since `intoRock` seeds off every non-rock cell and a hole is
+  one, so every void tile scored the same depth. So the wall is drawn after the
+  light and tinted by `litAt` at the cell it hangs from: the same light,
+  sampled at one cell instead of blended across four. `WALL_FACE` still applies
+  — it is a cut face like any other, and skipping it made the pit walls the
+  brightest thing on the map.
+- **Nothing else about a hole is drawn at all.** No tile, no ring, no fade.
+  Under the wall is the ground layer's own black, which multiplying cannot
+  lift, so the edge is exactly where the ground stops.
 - **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
   where all four cells round it are, so a finger of stone one cell thick holds
   no rock corner at all and comes out as cut faces with nothing between them —

@@ -89,7 +89,6 @@ const ALL_ROCK = 40;
  * The LIGHT, over a generated tileset. A set is drawn to be looked at as
  * terrain, so its stone is lit like the floor: flat across a map, that reads as
  * chambers punched out of a paved field.
- *
  * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
  * tiles, leaving a lit rim. `GRAIN` answers the other half: a set has ONE
  * picture per corner combination, and a rise and fall over `GRAIN_SPAN` tiles
@@ -105,9 +104,8 @@ const ROCK_DARK = 0.06;
 const WALL_LIFT = 0.35;
 /** What a tile made entirely of cut face is worth against a lit one. */
 const WALL_FACE = 0.4;
-/** What the wall inside a hole is worth. It gets no light of its own: the map
- *  would smear a rim across the whole tile. */
-const VOID_WALL = 0.35;
+/** A straight run of cut face: rock at both top corners, face at both bottom. */
+const FACE = 44;
 const grey = (of: number): number => {
   const v = Math.max(0, Math.min(255, Math.round(of * 255)));
   return (v << 16) | (v << 8) | v;
@@ -516,8 +514,9 @@ export async function createPixiRenderer(
         .fill(0x000000)
     );
 
-    /** One cell of the set, keyed however it is asked to be. */
-    const lay = (x: number, y: number, key: number): Sprite | null => {
+    /** One cell of the set, keyed as asked. `lit` is for a sprite drawn OVER
+     *  the lightmap, which gets none of its own. */
+    const lay = (x: number, y: number, key: number, lit = 1): Sprite | null => {
       const want = wangShadow(key) ? 0 : key;
       const mask = wangNear(want, (k) => !!textures[k]);
       // Alternates are for the two UNIFORM masks: elsewhere a second picture
@@ -536,9 +535,25 @@ export async function createPixiRenderer(
       // The CUT FACE stands down, by how much of the tile is face: it is
       // VERTICAL, and `intoRock` lights that very cell brightest.
       const faces = wangFaces(key);
-      if (faces > 0) sprite.tint = grey(1 - (1 - WALL_FACE) * (faces / 4));
+      sprite.tint = grey(lit * (1 - (1 - WALL_FACE) * (faces / 4)));
       groundLayer.addChild(sprite);
       return sprite;
+    };
+
+    /** The same tile, turned. Anchored at the middle, or it swings off its own
+     *  cell. Only a wall inside a hole is ever turned — a FLOOR tile rotated
+     *  clashes with the neighbour it shares a light with. */
+    const turned = (x: number, y: number, mask: number, spin: number, lit: number): void => {
+      const art = textures[mask]?.[0];
+      if (!art) return;
+      const sprite = new Sprite(art);
+      sprite.anchor.set(0.5);
+      sprite.x = x + 0.5;
+      sprite.y = y + 0.5;
+      sprite.scale.set(1.01 / art.width);
+      sprite.rotation = spin;
+      sprite.tint = grey(lit * WALL_FACE);
+      groundLayer.addChild(sprite);
     };
 
     // A HOLE gets no tile HERE; its own shaft is drawn over the light below.
@@ -584,16 +599,28 @@ export async function createPixiRenderer(
     // ground, everything else stands over it — which puts a face wherever the
     // ground's edge drops away. Then laid ONE ROW LOWER than it was keyed, so
     // the wall is inside the hole and the floor above it stays floor: the same
-    // tile a wall is made of, placed to read as BELOW the floor. Over the light
-    // at a fixed value, or the map smears the rim across the tile and a drop
-    // smeared is fog. Under it is the ground layer's own black.
+    // tile a wall is made of, placed to read as BELOW the floor. Drawn OVER the
+    // light — what the lightmap touches at a rim it smears across the tile, and
+    // a drop smeared is fog — so it takes the LEDGE's light instead, which is
+    // the same light read at one cell. Under it is black.
     if (holed) {
+      const ledge = (x: number, y: number): number =>
+        Math.min(1, (litAt(x, y) ?? 0) + glowAt(x + 0.5, y + 0.5));
       for (let y = 0; y < grid.height; y++) {
         for (let x = 0; x < grid.width; x++) {
           const key = wangCorners(drop, x, y);
-          if (wangFaces(key) === 0) continue;
-          const sprite = lay(x, y + 1, key);
-          if (sprite) sprite.tint = grey(VOID_WALL);
+          if (wangFaces(key) > 0) lay(x, y + 1, key, ledge(x, y));
+        }
+      }
+      // And the FLANKS, which are the same picture turned a quarter. The set
+      // draws a face pointing at the camera, so a pit's east and west walls
+      // are that tile rotated — rock on the outside, face into the hole.
+      const side = wangNear(FACE, (k) => !!textures[k]);
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          if (grid.at(x, y) !== VOID) continue;
+          if (grid.at(x - 1, y) !== VOID) turned(x, y, side, -Math.PI / 2, ledge(x - 1, y));
+          if (grid.at(x + 1, y) !== VOID) turned(x, y, side, Math.PI / 2, ledge(x + 1, y));
         }
       }
     }
