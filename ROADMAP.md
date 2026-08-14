@@ -362,6 +362,30 @@ module does, so an absent client is not a blocker.
   renderer already does. Nothing here argues for more directions; the argument
   for those is diagonal movement looking wrong, and it does not yet.
 
+### Where the room stands, and what is next for it
+
+**The look is settled and the ROOM is not.** What the cavern is made of has
+stopped moving: two-tile walls out of a deep-walled set, light as a map rather
+than a tint, cover drifted at the foot of the rock, chasms with the passages
+bridging them, and one chamber — `SHRINE` in `src/scenes/sandbox.ts` — laid out
+tile by tile. Nothing is scattered but what the rock does.
+
+**What is LEFT is authoring, not code.** The user's call, in their words: *"we
+just manually make like 10-20 different preset layouts of props/rooms that we
+spawn in very sparsely and randomly."* The machinery is already there and idle:
+`VIGNETTES` is that list, `dressRooms` picks a spot and drops the biggest
+arrangement that fits it, and `ScenePlan.dress` is the rate — set to nothing on
+the sandbox today. So the work is writing ten to twenty arrangements worth
+looking at, at the size of the shrine rather than of a three-prop cluster, and
+turning `dress` up a little. Every prop the old scatter used is still in
+`PROP_ART` and still generated; none of it was deleted.
+
+**The one thing that would need new code** is an arrangement bigger than a
+`Vignette` — a whole chamber's worth, placed as one. `dressRooms` already
+weights by area, so it may just be a matter of authoring 6x6 entries and giving
+the room a spot big enough; that is worth trying before adding a second
+mechanism.
+
 ### The process, as it now stands
 
 **This is the part to duplicate.** Everything below has been run end to end
@@ -580,10 +604,9 @@ that worked, and these are what it cost:
   not in the art.
 - **Every remaining tileset problem was answered with LIGHT.** The stone came
   lighter than the floor and read as masonry; the floor was one picture over
-  the whole map. `ROCK_TOP` / `ROCK_REACH` / `FOOT_DARK` / `GRAIN` in
-  `pixi.ts` — a lit rim over dark, a contact shadow, and smooth value noise
-  across the floor. Cheaper than any generation and it fixed what four sets
-  could not.
+  the whole map. `ROCK_TOP` / `ROCK_REACH` / `GRAIN` in `pixi.ts` — a lit rim
+  over dark and smooth value noise across the floor. Cheaper than any
+  generation, and it fixed what four sets could not.
 - **A per-tile tint is a BAND, not a gradient.** Three tiles of falloff along
   an irregular room edge is a chequerboard of flat rectangles — the exact
   fault the alternates and the rotation were rejected for, arrived at from the

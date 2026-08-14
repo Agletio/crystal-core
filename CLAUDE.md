@@ -78,9 +78,10 @@ adds, and an island never lands on furniture a room was authored around. The
 hero walks the `patrol` ring, swinging at what came into reach and then moving
 on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or bodies in reach pin it where it
 stands and one facing of one animation is all it ever shows. A body PACES near
-where it was put while nothing is happening to it, for the same reason. Casters
-are `rooted` so the layout survives contact, and `hero.speed` walks the hero
-rather than sending it at a descent's sprint.
+where it was put while nothing is happening to it, for the same reason —
+`ScenePlan.busy` is where they stand, and neither furniture nor a chasm may
+land on one. Casters are `rooted` so the layout survives contact, and
+`hero.speed` walks the hero rather than sending it at a descent's sprint.
 
 **Nothing the game itself draws is in it**: the ground is a generated Wang set, the furniture is
 generated pictures, the bodies are generated and so is the HERO, over the doll
@@ -89,7 +90,12 @@ it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
 and `tools/art/sandbox.json` is what came BACK, one row per thing.
 `tools/art/body.mts` walks between them — `ask`, `state`, `sheet`, `fill`,
-`watch` — and `sandbox.mts` reads the second and writes the three tables.
+`props`, `watch` — and `sandbox.mts` reads the second and writes the three
+tables. A prop row carries `tiles`, `view`, `size`, and the two knobs that
+settle a generated picture into the stone: `tone` toward the ground's mean and
+spread, and `dull` toward its own luma, because a mean per channel moves how
+BRIGHT a thing is and never how saturated. Naming one to `props` asks for it
+again; naming nothing asks only for the rows with no id yet.
 
 **A body declares its own STATES and its own FACINGS.** A state is named for an
 ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
@@ -816,6 +822,7 @@ src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/scenes.ts      the authored rooms; src/scenes/* are their content
+src/vignettes.ts   arrangements, and what the rock does: cover, growth, solidity
 src/game/scenes.ts what happens at the end of THIS clear, at most one thing
 src/ui/speech.ts   a line over the head of whoever is saying it
 src/skills-tree.ts per-skill webs; src/trees/* and src/moves/* are the content

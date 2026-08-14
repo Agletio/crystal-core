@@ -1444,12 +1444,11 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   `livingDecals` and its entrance rect all stand down. Masonry with the
   Fissure's flagstones stamped over it is two floors at once. Pixi only —
   `canvas2d` has no sprites and that stays correct.
-- **Furniture goes down a CLUSTER at a time, and the rock's leavings a tile at
-  a time.** `VIGNETTES` is authored arrangements and `dressRooms` places them;
-  `FRINGE_PROPS` / `LOOSE_PROPS` / `WALL_PROPS` are the debris and growth, and
-  `dressEdges` scatters those over the WHOLE grid so a corridor is dressed like
-  a chamber. What reads as a cavern is the FOOT of the rock: an open floor
-  stays nearly bare and the wall gets most of it.
+- **Furniture goes down a CLUSTER at a time.** `VIGNETTES` is authored
+  arrangements and `dressRooms` places them, gated by `ScenePlan.dress`. What
+  the ROCK does is a separate switch, `ScenePlan.grown`: `coverFloor` on the
+  floor and `dressWalls` on the cut face, over the WHOLE grid so a corridor is
+  dressed like a chamber.
 - **An arrangement is chosen for the SPOT, not given one.** A ragged room holds
   a four-tile square in about one spot in fifteen, so picking the altar and
   hunting for room leaves the chamber bare; picking a spot and taking the
@@ -1485,8 +1484,8 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   stands about, and goes again — off HOME rather than off wherever it stopped,
   or a body walks across the room a wander at a time. A `rooted` one has no
   speed, so a caster still holds the post the layout wants.
-- **The cut face is drawn `WALL_TALL` tiles tall, over SOLID rock only.** A set draws it one, which
-  under a body rendered at one and a half reads as a kerb you could step over.
+- **The cut face is drawn `WALL_TALL` tiles tall, over SOLID rock only.** A set
+  draws it one, which under a body rendered at one and a half is a kerb.
   The bottom row of a wall run grows upward over as much SOLID rock as stands
   behind it — a tile with a floor corner in it still draws floor, and painting
   the face over one is the other way a wall melts into the ground. What HANGS
@@ -1514,11 +1513,12 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   contrast, at half a tile, read as plastic. `tone` toward the ground's own
   spread does most of it and `dull` the rest; the two together are what makes
   loose stone look like stone.
-- **A `WALL_PROPS` entry is the one thing placed INTO rock**, and only on a
-  cut face — rock with rock above it and floor below. It is drawn side-on,
-  which is what that surface is; anywhere else it is a picture inside a cliff.
-  The demo holds every other prop to standing on floor. And only on a RUN of
-  wall: hung off a one-tile island it is a light fixture in mid air.
+- **What hangs on the face is the one thing placed INTO rock**, and only on a
+  cut face — rock with rock above it and floor below, and a RUN of wall rather
+  than a one-tile nub, or it is a light fixture in mid air. `HUNG_PROPS` is
+  everything drawn side-on there and is what the renderer and the demo read;
+  `WALL_PROPS` is the smaller list `dressWalls` may SCATTER, and it is roots
+  only. A torch is somebody's, so a torch is placed by hand.
 - **A key a set does not hold takes the NEAREST one it does.** `wangNear`
   scores every key it has, the cut face counting one step from floor or rock
   and floor counting three from rock. A generated set answers 21 of the 81, so
