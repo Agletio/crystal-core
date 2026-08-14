@@ -113,7 +113,7 @@ export const SANDBOX: SceneDef = {
     })),
     props: SHRINE.map(([id, x, y]) => ({ id, x, y })),
     plain: [ROOMS[0]],
-    dress: 3, // and three arrangements scattered into every OTHER chamber
+    grown: true, // the rock's own cover and growth. Nothing else is scattered
   },
   said: 'A room with nothing in it but the art.',
   encounter: null,

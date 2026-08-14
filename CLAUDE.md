@@ -137,23 +137,26 @@ can express is a staircase of flat rectangles, and a wall's own shadow drawn
 that way is a grey box. Interpolated, the shadow is just the rock's dark
 bleeding half a tile onto the floor at its foot.
 
-**Furniture goes down a CLUSTER at a time, the rock's leavings a tile at a
-time.** `VIGNETTES` in `src/vignettes.ts` is authored arrangements — a hauling
-run, an altar with its candles, a butchery — and `dressRooms` picks a SPOT and
-then the biggest arrangement that fits it, since a ragged room holds a
-four-tile square in about one spot in fifteen. `FRINGE_PROPS`, `LOOSE_PROPS`
-and `WALL_PROPS` beside them are the debris, growth and leavings `dressEdges`
-scatters over the whole grid, corridors included. What reads as a cavern is the
-FOOT of the rock, so open floor stays nearly bare; a `WALL_PROPS` entry is
-drawn side-on and is the one thing placed INTO rock, on the cut face itself —
-a RUN of it, never a one-tile nub, or a torch hangs in mid air.
+**The only thing SCATTERED is what the rock does on its own.** A room's worth
+of objects dropped one tile at a time reads as exactly that, however carefully
+the rates are picked — a whole pass of fringe and open-floor scatter was tried
+and is gone. What a PERSON left is either a `Vignette` (`VIGNETTES` in
+`src/vignettes.ts`, placed by `dressRooms`, which picks a SPOT and then the
+biggest arrangement that fits it) or is placed by hand.
 
-**The floor is broken up UNDER the furniture, not with it.** `COVER_PROPS` is
-rubble, dust and dead growth scattered over every walkable tile by
-`coverFloor`, drawn first so everything else stands on it. It claims no tile
-and blocks nothing, and each scrap is shifted off its own colour and size,
-since five pictures over a whole floor is the fault it exists to fix. No id is
-in both a cover table and a furniture one, or the layer stops being a layer.
+**The floor is broken up UNDER everything, and by DENSITY.** `COVER_PROPS` is
+loose stone and dust laid by `coverFloor` and drawn first, so furniture stands
+on it. `COVER_RATE` is indexed by how far a tile is from the ROCK, and that is
+the whole of what makes it ground rather than confetti: debris DRIFTS at the
+foot of a wall and thins to almost nothing in the open. One rate everywhere is
+uniform noise, which is not texture. It claims no tile, blocks nothing, and
+each scrap is shifted off its own colour and size.
+
+**`WALL_PROPS` is what GROWS on the cut face** — roots, and only roots. It is
+the one thing placed INTO rock, on a RUN of it rather than a one-tile nub, and
+drawn side-on because that is the one surface seen from the side. A torch or a
+body hanging there is `HUNG_PROPS`: placed by hand, never scattered, since a
+lit torch on a wall nobody stands near is a bucket in the middle of a room.
 
 **`SOLID_PROPS` is what you walk around.** `Grid.solid` is a second layer over
 the tiles, because the ground under an altar is still floor and every renderer

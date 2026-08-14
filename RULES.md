@@ -1482,11 +1482,21 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   the face over one is the other way a wall melts into the ground. What HANGS
   on it lifts by `WALL_LIFT`, or a torch lies at the foot of a wall.
 - **The floor is broken up UNDER the furniture, never with it.** `coverFloor`
-  scatters rubble, dust and dead growth over every walkable tile; the renderer
-  draws that pass FIRST, so a slab stands on the rubble rather than beside it.
-  Cover claims no tile, blocks nothing and is exempt from the one-thing-per-tile
-  rule — and no id may be in both a cover table and a furniture one, or the
-  renderer's split silently puts a prop under whatever it is standing next to.
+  lays loose stone and dust; the renderer draws that pass FIRST, so a slab
+  stands on the rubble rather than beside it. Cover claims no tile, blocks
+  nothing and is exempt from the one-thing-per-tile rule — and no id may be in
+  both a cover table and a furniture one, or the renderer's split silently puts
+  a prop under whatever it is standing next to.
+- **Uniform density is NOISE. Texture is density that varies.** One rate over
+  every tile is confetti, which is the same fault as one picture in every cell
+  arrived at from the other side. `COVER_RATE` is indexed by distance from the
+  rock, so debris drifts at the foot of a wall and thins to nothing in the
+  open — and the open floor is what lets the eye rest on anything else.
+- **Nothing a PERSON left is scattered.** A whole pass of fringe and open-floor
+  props was written, tuned twice and deleted: a room's worth of objects dropped
+  one tile at a time reads as exactly that whatever the rates are. What is
+  scattered is what the rock does — cover on the floor, growth on the face.
+  Furniture is a `Vignette` or is placed by hand.
 - **The same five pictures over a whole floor is the fault, so each is SHIFTED.**
   `COVER_TINT` and a scale jitter off `tileNoise`, both keyed on the tile. A
   scatter that repeats exactly is the graph paper it was laid down to hide.
@@ -1494,10 +1504,6 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   contrast, at half a tile, read as plastic. `tone` toward the ground's own
   spread does most of it and `dull` the rest; the two together are what makes
   loose stone look like stone.
-- **Open floor is nearly all GRIT.** A few specks read as a floor with
-  something on it; a bucket in the middle of a room reads as a bucket somebody
-  threw there. Anything with a shape belongs against a wall or inside a
-  `Vignette`, which is somebody having had a reason.
 - **A `WALL_PROPS` entry is the one thing placed INTO rock**, and only on a
   cut face — rock with rock above it and floor below. It is drawn side-on,
   which is what that surface is; anywhere else it is a picture inside a cliff.

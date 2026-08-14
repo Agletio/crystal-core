@@ -95,7 +95,7 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
-import { COVER_SET, FRINGE_PROPS, LOOSE_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
+import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import type { RunState } from './sim/run';
 import {
@@ -1521,12 +1521,12 @@ rule('SPRITES — is the pixel art well formed?');
   );
   check(bare.length === 0, 'and a room that asks to be dressed is', bare.map((s) => s?.id).join(', '));
 
-  // The three tables `dressEdges` scatters from, which no vignette references
-  // and so nothing else sweeps.
-  const noArt = [FRINGE_PROPS, LOOSE_PROPS, WALL_PROPS]
-    .flat()
-    .filter((w) => !PROP_ART[w.id])
-    .map((w) => w.id);
+  // The two tables the ROCK is dressed from, which no vignette references and
+  // so nothing else sweeps.
+  const noArt = [...COVER_PROPS, ...WALL_PROPS]
+    .map((w) => w.id)
+    .concat([...HUNG_PROPS])
+    .filter((id) => !PROP_ART[id]);
   check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
 
   // A room the ARRANGEMENTS alone dressed is a room with three tidy clusters
@@ -1535,23 +1535,25 @@ rule('SPRITES — is the pixel art well formed?');
   {
     const box = SCENE_BY_ID.sandbox!;
     const dressed = sceneMap(box.plan, box.theme, 1, box.ground);
-    const from = (t: typeof FRINGE_PROPS) =>
-      dressed.props.filter((p) => t.some((w) => w.id === p.id)).length;
-    const hung = from(WALL_PROPS);
+    const standing = (of: MapProp[]) =>
+      of.filter((p) => !COVER_SET.has(p.id) && !HUNG_PROPS.has(p.id)).length;
+    const hung = dressed.props.filter((p) => HUNG_PROPS.has(p.id)).length;
     const cover = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
-    const put = dressed.props.length - cover;
-    const kinds = new Set(dressed.props.map((p) => p.id)).size;
-    line(`  ${put} props in the sandbox over ${cover} of cover, ${kinds} kinds, ${hung} on the wall`);
+    const put = standing(dressed.props);
+    line(`  ${put} props in the sandbox, ${hung} grown on the wall, ${cover} of cover under it`);
+    // The room is the SHRINE and what the rock does, and NOTHING else. Every
+    // prop standing on the floor is one somebody placed by hand: a room's
+    // worth of objects dropped one at a time reads as exactly that.
     check(
-      put >= 80 && cover >= put && kinds >= 15 && hung >= 3,
-      'and the sandbox is dressed at the foot of its rock, on the face of it, and under all of it',
-      `${put} props, ${cover} cover, ${kinds} kinds, ${hung} hung`
+      put === standing(box.plan.props) && cover > put && hung >= 3,
+      'and the sandbox carries the hand-placed shrine, the rock, and nothing scattered',
+      `${put} standing against ${standing(box.plan.props)} authored, ${cover} cover, ${hung} hung`
     );
 
     // COVER is drawn as one pass UNDER the furniture, so an id in both a cover
     // table and a furniture one is a prop that sometimes goes under whatever it
     // is standing next to. The renderer splits on the id and cannot tell.
-    const both = [...FRINGE_PROPS, ...LOOSE_PROPS, ...WALL_PROPS]
+    const both = [...WALL_PROPS]
       .map((w) => w.id)
       .concat(VIGNETTES.flatMap((v) => v.props.map((p) => p.id)))
       .concat(box.plan.props.map((p) => p.id))
@@ -1584,7 +1586,7 @@ rule('SPRITES — is the pixel art well formed?');
       if (grid.solid[d.at.y * grid.width + d.at.x]) solid.push(`${d.sprite} stands in furniture`);
     }
     line(`  ${blocked} tiles of the sandbox are furniture you go around`);
-    check(blocked >= 8 && solid.length === 0, 'furniture blocks, and only where it may', solid.join(', '));
+    check(blocked >= 4 && solid.length === 0, 'furniture blocks, and only where it may', solid.join(', '));
 
     // And it never walls the map off. Everything the hero is sent to has to
     // still be reachable from the hole, or a run stands still forever.
@@ -1624,7 +1626,7 @@ rule('SPRITES — is the pixel art well formed?');
     const strays = props.filter(
       (p) => inside(p) && !COVER_SET.has(p.id) && !authored.has(`${p.id}@${p.x},${p.y}`)
     );
-    const hung = box.plan.props.filter((p) => WALL_PROPS.some((w) => w.id === p.id));
+    const hung = box.plan.props.filter((p) => HUNG_PROPS.has(p.id));
     check(
       plain.length > 0 && strays.length === 0 && hung.length >= 3,
       `the ${box.plan.props.length}-prop shrine is laid out by hand and nothing scatters into it`,
@@ -1664,7 +1666,7 @@ rule('SPRITES — is the pixel art well formed?');
     // A WALL prop is drawn side-on and belongs ON the cut face, which is a
     // rock tile with floor under it — the one thing that may be in the rock,
     // and only THERE. Anywhere else it is a picture inside a cliff.
-    const hangs = new Set(WALL_PROPS.map((w) => w.id));
+    const hangs = HUNG_PROPS;
     const face = (p: MapProp): boolean =>
       rock(p) && grid.at(p.x, p.y - 1) === WALL && grid.at(p.x, p.y + 1) !== WALL;
     // COVER is under everything and claims nothing, so it is exempt from the

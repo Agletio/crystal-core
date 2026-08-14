@@ -44,6 +44,7 @@ export interface ScenePlan {
   props: MapProp[]; // put exactly here, by hand
   plain?: Room[]; // chambers laid out by hand: nothing is scattered into one
   dress?: number; // and this many VIGNETTES scattered per chamber besides
+  grown?: boolean; // and what the rock does on its own: cover, and what grows
 }
 
 export interface SceneDef {

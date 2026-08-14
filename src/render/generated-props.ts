@@ -2202,7 +2202,7 @@ export const PROP_ART: Record<string, GeneratedProp> = {
   },
   rubble: {
     grid: 26,
-    tiles: 1.1,
+    tiles: 0.75,
     rows: [
       '..........EGEEE...........',
       '........GEEGAACI..........',
@@ -2235,7 +2235,7 @@ export const PROP_ART: Record<string, GeneratedProp> = {
   },
   dirt: {
     grid: 44,
-    tiles: 1.3,
+    tiles: 1,
     rows: [
       '....................DN......................',
       '...................D.NC.....................',
@@ -2286,7 +2286,7 @@ export const PROP_ART: Record<string, GeneratedProp> = {
   },
   vines: {
     grid: 31,
-    tiles: 1.2,
+    tiles: 0.9,
     rows: [
       '...................B...........',
       '.................C..I..........',

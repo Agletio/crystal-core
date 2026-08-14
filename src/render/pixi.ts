@@ -75,12 +75,10 @@ import {
   COVER_SET,
   COVER_TINT,
   GLOW_PROPS,
+  HUNG_PROPS,
   STAIN_ALPHA,
   STAIN_PROPS,
-  WALL_PROPS,
 } from '../vignettes';
-
-const WALL_HUNG = new Set(WALL_PROPS.map((w) => w.id));
 import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
 import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
@@ -532,7 +530,7 @@ export async function createPixiRenderer(
       sprite.x = prop.x + 0.5;
       // Lifted, because the FACE is `WALL_TALL` tiles rather than the one its
       // tile covers: a torch at the foot of a wall is a torch on the floor.
-      sprite.y = prop.y + 1 - (WALL_HUNG.has(prop.id) ? WALL_LIFT : 0);
+      sprite.y = prop.y + 1 - (HUNG_PROPS.has(prop.id) ? WALL_LIFT : 0);
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
       // Five pictures over a whole floor is five pictures over a whole floor,

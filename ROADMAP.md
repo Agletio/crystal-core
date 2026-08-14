@@ -537,6 +537,15 @@ that worked, and these are what it cost:
   square between two cliffs. Scoring every key the set holds, with the cut face
   one step from either terrain and floor three from rock, fixed it without a
   generation.
+- **Uniform density is NOISE, and it took three rounds to see it.** Cover at
+  one rate over every tile is confetti; the fix is the SAME fix as the tile
+  repetition, arrived at from the other side — the density has to vary. Indexed
+  by distance from the rock it drifts at a wall's foot and leaves the open
+  floor nearly bare, and that bare floor is what lets anything else read.
+- **A room's worth of objects dropped one tile at a time reads as exactly
+  that.** Two rounds of tuning a fringe-and-open-floor scatter, and it was
+  never going to work at any rate. It is deleted. Scattering is for what the
+  ROCK does; what a person left is an arrangement or is placed by hand.
 - **A tile set's repetition is answered UNDER it, not by it.** Light helps and
   a second set does not, but what actually kills the pattern is a scatter of
   loose stone over the whole floor, drawn as one pass beneath the furniture.

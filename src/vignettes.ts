@@ -191,62 +191,44 @@ export const VIGNETTE_BY_ID: Record<string, Vignette> = Object.fromEntries(
 );
 
 /**
- * And what the rock gathers on its own — the debris, growth and leavings that
- * collect where a floor meets stone, which in a cavern is most of what there is
- * to look at. Which table a prop is in is a fact about the ART: `WALL_PROPS`
- * are drawn side-on and go ON the cut face, the one kind placed into rock.
+ * And what the rock does on its own, which is the only thing SCATTERED at all.
+ * Everything a person left is a `Vignette` or is placed by hand: a room's worth
+ * of objects dropped one tile at a time reads as exactly that, which is what a
+ * whole pass of fringe and open-floor scatter turned out to be.
  */
 export interface Weighted {
   id: string;
   weight: number;
 }
 
-export const FRINGE_PROPS: Weighted[] = [
-  { id: 'spoil', weight: 100 },
-  { id: 'fungus', weight: 45 },
-  { id: 'bones', weight: 18 },
-  { id: 'ribs', weight: 14 },
-  { id: 'web', weight: 10 },
-];
+export const WALL_PROPS: Weighted[] = [{ id: 'roots', weight: 100 }];
 
-/** Open floor takes almost nothing: anything with a SHAPE out in the middle of
- *  a room reads as something somebody threw there. What breaks the floor up is
- *  `COVER_PROPS` UNDER it, not furniture on it — and no id is in both, or the
- *  cover stops being the layer everything else stands on. */
-export const LOOSE_PROPS: Weighted[] = [
-  { id: 'splash', weight: 100 },
-  { id: 'fungus', weight: 35 },
-];
+/** And what a PERSON hung on one, placed by hand and never scattered: a lit
+ *  torch on a wall nobody stands near is a bucket in the middle of a room. */
+export const HUNG_PROPS = new Set(['roots', 'torch', 'hung']);
 
 /**
- * GROUND COVER — rubble, dust and dead growth over the whole floor, under
- * everything else. A Wang set has one picture per corner combination, so an
- * open floor is that picture in every cell; a layer of loose stone over the top
- * is what breaks the pattern without pretending to be furniture.
+ * GROUND COVER — loose stone and dust under everything else, which is what
+ * breaks up a set's one picture per corner combination.
  *
- * It blocks nothing, claims no tile, and furniture stands on it. Each is drawn
- * back and shifted off its own colour and size, since five pictures over a
- * whole floor is the fault this exists to fix.
+ * `COVER_RATE` is by how far the tile is from the ROCK, and that is the whole
+ * of what makes it ground rather than confetti: debris DRIFTS at the foot of a
+ * wall and thins to nothing in the open. One rate everywhere is uniform noise,
+ * which is not texture — the same fault as one picture everywhere, from the
+ * other side. It blocks nothing and furniture stands on it.
  */
 export const COVER_PROPS: Weighted[] = [
   { id: 'rubble', weight: 100 },
-  { id: 'grit', weight: 85 },
-  { id: 'pebbles', weight: 35 },
-  { id: 'dirt', weight: 45 },
-  { id: 'vines', weight: 16 },
+  { id: 'grit', weight: 90 },
+  { id: 'pebbles', weight: 30 },
+  { id: 'dirt', weight: 35 },
+  { id: 'vines', weight: 10 },
 ];
-export const COVER_RATE = 0.55;
+export const COVER_RATE = [0.46, 0.2, 0.07, 0.025];
 export const COVER_DARK = 0.86;
 export const COVER_TINT = 0.28;
-/** Drawn back, so it reads as part of the floor rather than as laid on it. */
 export const COVER_ALPHA = 0.88;
 export const COVER_SET = new Set(COVER_PROPS.map((w) => w.id));
-
-export const WALL_PROPS: Weighted[] = [
-  { id: 'roots', weight: 100 },
-  { id: 'torch', weight: 45 },
-  { id: 'hung', weight: 30 },
-];
 
 /**
  * What you cannot walk through. A slab of stone, a pit prop, a wrapped body and

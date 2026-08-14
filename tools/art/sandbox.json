@@ -305,21 +305,21 @@
   {
    "id": "rubble",
    "object": "491ffeb4-b714-461f-a71c-6dddeb536d77",
-   "tiles": 1.1,
+   "tiles": 0.75,
    "tone": 0.72,
    "dull": 0.35
   },
   {
    "id": "dirt",
    "object": "c2919363-1218-48ae-ae42-fa4ee119399f",
-   "tiles": 1.3,
+   "tiles": 1.0,
    "tone": 0.78,
    "dull": 0.4
   },
   {
    "id": "vines",
    "object": "0423fdb0-4601-4d8d-bab1-0f68b26eab26",
-   "tiles": 1.2,
+   "tiles": 0.9,
    "tone": 0.7,
    "dull": 0.5
   }

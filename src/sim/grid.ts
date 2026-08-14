@@ -8,16 +8,7 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
-import {
-  COVER_PROPS,
-  COVER_RATE,
-  FRINGE_PROPS,
-  LOOSE_PROPS,
-  SOLID_PROPS,
-  VIGNETTES,
-  WALL_PROPS,
-  weighted,
-} from '../vignettes';
+import { COVER_PROPS, COVER_RATE, SOLID_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
 import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
@@ -354,40 +345,47 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
   }
 }
 
-/** Rubble, dirt and dead growth over the WHOLE floor, under everything else.
- *  It claims no tile and blocks nothing — furniture stands on top of it — so it
- *  is laid before anything looks at what is taken, and never asks. */
+/** Tiles to the nearest rock, capped at the length of `COVER_RATE`. */
+function offRock(grid: Grid, x: number, y: number): number {
+  for (let r = 1; r < COVER_RATE.length; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === r && grid.at(x + dx, y + dy) === WALL) return r;
+      }
+    }
+  }
+  return COVER_RATE.length;
+}
+
+/** Loose stone and dust, DRIFTED at the foot of the rock and thinning to almost
+ *  nothing in the open. It claims no tile and blocks nothing — furniture stands
+ *  on top of it — so it is laid without asking what is taken. */
 export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   const out: MapProp[] = [];
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
-      if (grid.at(x, y) === WALL || !rng.chance(COVER_RATE)) continue;
+      if (grid.at(x, y) === WALL) continue;
+      if (!rng.chance(COVER_RATE[offRock(grid, x, y) - 1])) continue;
       out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
     }
   }
   return out;
 }
 
-/** How often a tile of each kind takes something. What reads as a cavern is
- *  the FOOT of the rock, so open floor stays nearly bare. */
-const EDGE_RATE = { face: 0.14, fringe: 0.22, open: 0.13 };
+/** How often a stretch of cut face has something growing on it. */
+const FACE_RATE = 0.16;
 
 /**
- * The rock's own leavings, a tile at a time — debris and growth against the
- * wall, and what hangs on the face above it. Over the WHOLE grid rather than
- * the rectangles, so a corridor is dressed like a chamber: a bare passage
- * between two furnished rooms reads as the seam between them.
+ * What GROWS on the cut face, and the only thing scattered anywhere. It is the
+ * one kind of prop placed INTO rock: the cell above a floor tile with rock over
+ * IT is the face, which is the only surface in the game seen from the side, and
+ * `WALL_PROPS` are drawn side-on for it.
  *
- * A `WALL_PROPS` entry is the one thing placed into rock, deliberately: the
- * cell above a floor tile with rock over IT is the cut face, and that is the
- * only surface in the game seen from the side.
+ * There is no floor pass beside this one any more. A room's worth of objects
+ * dropped one tile at a time reads as exactly that however carefully the rates
+ * are picked; what a person left is a `Vignette` or is placed by hand.
  */
-export function dressEdges(
-  grid: Grid,
-  rng: Rng,
-  keep: Vec2[] = [],
-  plain: Room[] = []
-): MapProp[] {
+export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[] = []): MapProp[] {
   const out: MapProp[] = [];
   const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
   const authored = (x: number, y: number): boolean =>
@@ -399,23 +397,11 @@ export function dressEdges(
       const rock = (dx: number, dy: number) => grid.at(x + dx, y + dy) === WALL;
       // A RUN of wall, never a nub: something hanging off a one-tile island in
       // the middle of a room reads as a light fixture floating in mid air.
-      const face =
-        rock(0, -1) &&
-        rock(0, -2) &&
-        (rock(-1, -1) || rock(1, -1)) &&
-        !taken.has((y - 1) * grid.width + x);
-      const against = rock(-1, 0) || rock(1, 0) || rock(0, 1) || rock(0, -1);
-      const rate = face ? EDGE_RATE.face + EDGE_RATE.fringe : against ? EDGE_RATE.fringe : EDGE_RATE.open;
-      if (!rng.chance(rate)) continue;
-      // A face tile can take either, and mostly takes the fringe: a wall with
-      // something hanging on every reachable stretch of it is a gallery.
-      const onFace = face && rng.chance(EDGE_RATE.face / (EDGE_RATE.face + EDGE_RATE.fringe));
-      const table = onFace ? WALL_PROPS : against ? FRINGE_PROPS : LOOSE_PROPS;
-      const at = { x, y: onFace ? y - 1 : y };
-      const key = at.y * grid.width + at.x;
-      if (taken.has(key)) continue;
+      if (!rock(0, -1) || !rock(0, -2) || (!rock(-1, -1) && !rock(1, -1))) continue;
+      const key = (y - 1) * grid.width + x;
+      if (taken.has(key) || !rng.chance(FACE_RATE)) continue;
       taken.add(key);
-      out.push({ id: weighted(table, rng.next()), ...at });
+      out.push({ id: weighted(WALL_PROPS, rng.next()), x, y: y - 1 });
     }
   }
   return out;
@@ -626,14 +612,15 @@ export function sceneMap(
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
   const props = [...plan.props];
+  const plain = plan.plain ?? [];
+  const busy = [...spare, ...(plan.busy ?? [])];
   if (plan.dress) {
-    const plain = plan.plain ?? [];
-    const spare = [...plan.props, entrance, plan.stands, ...(plan.busy ?? [])];
     const loose = rooms.filter((r) => !plain.includes(r));
-    props.push(...dressRooms(grid, loose, new Rng(2), plan.dress, spare));
-    // After the arrangements, so nothing gathers where one of them stands.
-    props.push(...dressEdges(grid, new Rng(3), [...spare, ...props], plain));
-    // And the COVER goes under the lot, claiming nothing.
+    props.push(...dressRooms(grid, loose, new Rng(2), plan.dress, busy));
+  }
+  // What the ROCK does is its own decision, and is most of what a room needs.
+  if (plan.grown) {
+    props.push(...dressWalls(grid, new Rng(3), [...busy, ...props], plain));
     props.unshift(...coverFloor(grid, new Rng(4)));
   }
   block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
