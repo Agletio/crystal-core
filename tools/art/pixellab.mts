@@ -25,7 +25,7 @@ export type Ask = {
 export const HOUSE_WORDS =
   ', gothic horror creature, gaunt and menacing, filthy and weathered, caked in' +
   ' dirt and dried blood, grim adult tone, never cute, never chibi, no modern' +
-  ' clothing, no tools, no props, no text, side view facing right, full body in' +
+  ' clothing, no tools, no props, no text, in profile facing right, full body in' +
   ' frame, limbs clearly separated and visible, dark outline, no background,' +
   ' no ground shadow, lit from above and from the front right';
 
@@ -35,9 +35,9 @@ export const HOUSE_STYLE = {
   outline: 'single color black outline',
   shading: 'flat shading',
   detail: 'low detail',
-  // SIDE, though the map is from above: `low top-down` turns a body front-on,
-  // which the renderer cannot mirror to show facing.
-  view: 'side',
+  // The map is drawn from above. The PROMPT owns the pose and keeps a body in
+  // profile so the renderer can still mirror it; this owns only the camera.
+  view: 'low top-down',
   // Sprites are authored facing +x and the renderer MIRRORS rather than rotates.
   direction: 'east',
   no_background: true,
