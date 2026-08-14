@@ -86,19 +86,18 @@ import type { PoseId } from './pose';
 const ALL_ROCK = 40;
 
 /**
- * The LIGHT, over a generated tileset. A Wang set is drawn to be looked at as
- * terrain, so its stone is lit like the floor; laid flat over a whole map that
- * reads as chambers punched out of a paved field.
+ * The LIGHT, over a generated tileset. A set is drawn to be looked at as
+ * terrain, so its stone is lit like the floor: flat across a map, that reads as
+ * chambers punched out of a paved field.
  *
  * Rock stands down by `ROCK_TOP` and falls off to `ROCK_DARK` over `ROCK_REACH`
  * tiles, leaving a lit rim. `GRAIN` answers the other half: a set has ONE
  * picture per corner combination, and a rise and fall over `GRAIN_SPAN` tiles
  * reads as damp, as dust, as where the roof came down.
  *
- * None of it is a TINT. A tint is per tile, so every falloff it can express is
- * a staircase of flat rectangles. `lightMap` bakes the lot into one texel per
- * lattice corner and lets the GPU interpolate, so a wall's shadow is the rock's
- * own dark bleeding half a tile onto the floor.
+ * None of it is a TINT: every falloff a per-tile one can express is a staircase
+ * of flat rectangles. `lightMap` bakes the lot into one texel per lattice
+ * corner and lets the GPU interpolate.
  */
 const ROCK_TOP = 0.8;
 const ROCK_REACH = 2.6;
