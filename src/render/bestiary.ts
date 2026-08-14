@@ -1598,8 +1598,9 @@ export const HALO: Record<MonsterRank, string | null> = {
   rare: 'o',
 };
 
-/** Rings per rank, so the border itself says which is the rarer of the two. */
-export const HALO_RANK: Record<MonsterRank, number> = { common: 0, magic: 1, rare: 2 };
+/** EXTRA rings outward per rank. Both recolour the whole edge; only the rare
+ *  grows past it, which is what says which of the two is the rarer. */
+export const HALO_RANK: Record<MonsterRank, number> = { common: 0, magic: 0, rare: 1 };
 
 /**
  * The creature's own dark edge, RECOLOURED from the outside in. Grown outward
@@ -1608,15 +1609,17 @@ export const HALO_RANK: Record<MonsterRank, number> = { common: 0, magic: 1, rar
  * a `#` used for detail INSIDE a creature stays dark. Grown outward: a halo
  * that ate a pixel of the body would thin every leg it touched.
  */
-export function haloed(frame: string[], ink: string | null, rings = 1): string[] {
-  if (!ink || rings <= 0) return frame;
+export function haloed(frame: string[], ink: string | null, extra = 0): string[] {
+  if (!ink) return frame;
   const out = frame.map((row) => [...row]);
-  const open = (x: number, y: number): boolean => {
-    const c = out[y]?.[x] ?? '.';
-    return c === '.' || c === ink;
-  };
-  for (let ring = 0; ring < rings; ring++) {
+  const at = (x: number, y: number): string => out[y]?.[x] ?? '.';
+
+  // The WHOLE edge, not a share of it: recolouring half left a black band still
+  // sitting against the body, which is what it reads as at any size on screen.
+  // It floods through `#` from the outside, so detail inside a creature stays.
+  for (;;) {
     const edge: Array<[number, number]> = [];
+    const open = (x: number, y: number): boolean => at(x, y) === '.' || at(x, y) === ink;
     out.forEach((row, y) =>
       row.forEach((c, x) => {
         if (c !== '#') return;
@@ -1625,6 +1628,20 @@ export function haloed(frame: string[], ink: string | null, rings = 1): string[]
     );
     if (!edge.length) break;
     for (const [x, y] of edge) out[y][x] = ink;
+  }
+
+  // Then outward, which is the whole of what makes one rank's band the wider.
+  for (let ring = 0; ring < extra; ring++) {
+    const grown: Array<[number, number]> = [];
+    out.forEach((row, y) =>
+      row.forEach((c, x) => {
+        if (c !== '.') return;
+        if (at(x - 1, y) !== '.' || at(x + 1, y) !== '.' || at(x, y - 1) !== '.' || at(x, y + 1) !== '.') {
+          grown.push([x, y]);
+        }
+      })
+    );
+    for (const [x, y] of grown) out[y][x] = ink;
   }
   return out.map((row) => row.join(''));
 }
