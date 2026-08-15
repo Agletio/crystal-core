@@ -68,6 +68,13 @@ over plain JSON-RPC, so a session with no client for it is not blocked, and
 tables the renderer reads. `tools/art/import.mts` takes a website export straight into
 grids.
 
+**Generating art is a RUNBOOK, and it is in `ROADMAP.md`.** "The process, as it
+now stands" is the eight steps — design, approve, rotate, animate, judge,
+import, wire — and "Doing this a thousand times" is every pitfall that has
+already cost time. Read both before spending a generation; two sessions running
+have lost time to parameters sitting in plain sight in the generator's own docs
+at `https://api.pixellab.ai/mcp/docs`.
+
 **Generated art is judged in a DESCENT.** *The user's call: "We are going to
 just delete the sandbox and start updating graphics in the actual game. I think
 it either works or it doesn't."* There is no room for looking at art in; a

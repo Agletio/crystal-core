@@ -2,21 +2,26 @@
  * Asking the generator for a body, one step at a time. `bodies.json` is what
  * to say and `generated.json` is what came back — this walks between them.
  *
- *   npx tsx tools/art/body.mts ask   skeleton      one character, 8 rotations
- *   npx tsx tools/art/body.mts state skeleton      every state, on ONE facing
- *   npx tsx tools/art/body.mts sheet skeleton f.png  every frame, to look at
- *   npx tsx tools/art/body.mts fill  skeleton      the same states, elsewhere
- *   npx tsx tools/art/body.mts props               every prop, from scratch
- *   npx tsx tools/art/body.mts watch               until nothing is pending
+ *   body.mts design gaunt [n]     n design images, ONE generation each
+ *   body.mts rotate gaunt f.png   the approved design into 8 facings, for 2
+ *   body.mts state  gaunt         every state, on ONE facing
+ *   body.mts sheet  gaunt f.png   every frame, to look at
+ *   body.mts fill   gaunt         the same states on the other facings
+ *   body.mts props                every prop, from scratch
+ *   body.mts watch                until nothing is pending
  *
- * The order is the point and it is NOT a pipeline. `state` is deliberately one
- * facing, because a generated animation is judged rather than trusted: look at
- * it, re-roll what is wrong, WINDOW what is nearly right, and only then pay
- * for the other four. Fanning out first spends five times as much on frames
- * that turn out to face the camera.
+ * The ORDER is the whole trick. A design is one generation and a body is
+ * thirty, so a body nobody likes dies at `design`. Three things settle there
+ * and nowhere else: the silhouette, the proportions and the TONE.
+ *
+ * `state` is then deliberately one facing, because a generated animation is
+ * judged rather than trusted: look at it, re-roll what is wrong, WINDOW what is
+ * nearly right, and only then pay for the other four.
+ *
+ * `ROADMAP.md` holds the runbook and the pitfalls. Read them.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { callTool, download, urlsIn } from './mcp.mts';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { callTool, download, fields, urlsIn } from './mcp.mts';
 import { decodePng, encodePng } from './png.mts';
 
 interface StateAsk {
@@ -47,6 +52,7 @@ const SLOTS = 10;
 const here = (file: string): string => new URL(`./${file}`, import.meta.url).pathname;
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   dirs: string[];
+  inks: string[];
   bodies: BodyAsk[];
   props: { id: string; tiles: number; say: string; view?: string; size?: number }[];
 };
@@ -133,7 +139,81 @@ async function pending(character: string): Promise<string[]> {
     .map((l) => l.trim());
 }
 
-if (command === 'ask') {
+/** The inks a design is FORCED onto, as an image. Words alone will not make a
+ *  body dark — v3 ignores `text_guidance_scale` and returned ivory twice — and
+ *  every zone floor is pale by decision, so a body that is not dark separates
+ *  from none of them. */
+function palette(): string {
+  const S = 8;
+  const w = asks.inks.length * S;
+  const px = new Uint8Array(w * S * 4);
+  asks.inks.forEach((hex, i) => {
+    const [r, g, b] = [1, 3, 5].map((o) => parseInt(hex.slice(o, o + 2), 16));
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const d = (y * w + i * S + x) * 4;
+        px[d] = r; px[d + 1] = g; px[d + 2] = b; px[d + 3] = 255;
+      }
+    }
+  });
+  return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
+}
+
+if (command === 'design') {
+  // ONE image, one generation, ~30 seconds. Everything after this costs thirty,
+  // so a body nobody likes is meant to die here.
+  const many = Number(process.argv[4] ?? 3);
+  const dir = here('cache/designs');
+  mkdirSync(dir, { recursive: true });
+  const jobs: string[] = [];
+  for (let n = 0; n < many; n++) {
+    const out = await callTool('create_image_pixflux', {
+      description: body!.look,
+      width: 128,
+      height: 128,
+      no_background: true,
+      view: 'high top-down',
+      direction: 'south',
+      outline: 'single color black outline',
+      shading: 'detailed shading',
+      detail: 'highly detailed',
+      text_guidance_scale: 12,
+      color_image_url: palette(),
+    });
+    const job = fields(out).job_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
+    if (job) jobs.push(job);
+    else console.log(`${n}: refused — ${said(out, /error|hint/i)}`);
+  }
+  for (const [n, job] of jobs.entries()) {
+    let url = '';
+    for (let go = 0; go < 30 && !url; go++) {
+      if (go > 0) await wait(10_000);
+      const f = fields(await callTool('get_image', { job_id: job }));
+      url = (f.image_url ?? f.download ?? '').split(/\s+/)[0];
+      if (!url.startsWith('http')) url = '';
+    }
+    if (!url) { console.log(`${sprite}-${n}: never arrived`); continue; }
+    writeFileSync(`${dir}/${sprite}-${n}.png`, await download(url));
+    console.log(`${dir}/${sprite}-${n}.png`);
+  }
+  console.log('LOOK at them on the four zone floors, then `rotate` the one that is approved');
+} else if (command === 'rotate') {
+  // The approved design, turned into eight facings. `size` is 96 and not the
+  // design's 128: 96 is the grid a body ships at, and at 128 every animation
+  // costs two generations per direction instead of one.
+  const png = readFileSync(process.argv[4]).toString('base64');
+  const out = await callTool('create_character', {
+    name: body!.name,
+    description: body!.look,
+    body_type: 'humanoid',
+    mode: 'v3',
+    reference_image_base64: png,
+    size: body!.size ?? 96,
+    view: 'high top-down',
+  });
+  console.log(said(out, /id|status/i));
+  console.log('put that id in bodies.json AND generated.json before going on');
+} else if (command === 'ask') {
   const out = await callTool('create_character', {
     name: body!.name,
     description: body!.look,

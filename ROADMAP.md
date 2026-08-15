@@ -6,15 +6,23 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**A player fights a GENERATED BODY.** The Husk's sprite is `skeleton` — its own
-swing, its own animation per thrown bolt, five facings — so generated art is now
-in the game at both ends, the ground and the things standing on it. Phase 1 is
-blocked on what a generated body costs in PALETTE, which is open question 8.
+**A player fights THREE GENERATED BODIES** — the Husk, the Gaunt and the
+Bonecaller, all Normal undead, six states apiece over five facings. So generated
+art is in the game at both ends now, the ground and the things standing on it.
+Open question 8 is closed at both ends with it: a body asked DARK separates from
+all four zone floors, so nothing is re-inked and nothing is generated per zone.
 
-**ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** The
-decision open question 8 was parked on has been taken by the user in the doing:
-generated art ships, and the runtime palette is what it cost. Four sets, one
-per zone, each asked off that zone's own line in `MAP_THEMES`.
+**Before generating anything else, read "The process, as it now stands" and
+"Doing this a thousand times" below.** The first is the runbook and the second
+is every pitfall that has already cost time — the ten-job account-wide limit, a
+refusal that arrives as text rather than an error, a dedup keyed on the first
+thirty characters of a description, characters that vanish from the server, and
+the source size, which is the real ceiling rather than the generation budget.
+
+**ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** Four
+sets, one per zone, each asked off that zone's own line in `MAP_THEMES`. The
+runtime palette is what a generated surface cost, and that was the user's call
+taken in the doing.
 
 **The SANDBOX IS DELETED and the work has moved into the game.** *The user's
 call, in their words: "We are going to just delete the sandbox and start
@@ -505,52 +513,182 @@ the user's instruction (`83b8488`). These outlived them:
 
 ### The process, as it now stands
 
-**This is the part to duplicate.** Everything below has been run end to end
-twice — once for a zone, once for a body — and each step is a row in a file
+**This is the part to duplicate, and it is written to be executed by a session
+that remembers none of this.** Run end to end three times now — a zone, a
+throwaway body, and the three skeletons that ship. Every step is a row in a file
 rather than a change to code.
 
-**A DESIGN is approved before a rotation is paid for.** `create_image_pixflux`
-draws one sprite from text for ONE generation in ~30s; `create_character` in
-`mode: 'v3'` with `reference_image_base64` then rotates that exact sprite into
-eight directions for two more. So a body nobody likes costs one generation.
-Three things settle at the design step and nowhere else — the silhouette, the
-proportions and the TONE, the last through `color_image_url`, which takes a
-palette as an image and is the only thing that made a body dark.
+**The order is DESIGN → APPROVE → ROTATE → ANIMATE → JUDGE → IMPORT → WIRE, and
+the order is the whole trick.** A design is one generation and thirty seconds; a
+rotation is two; a full body is thirty. Judging AFTER the rotation — which is
+how the first four bodies were made — means a body nobody likes costs thirty
+instead of one. Three things settle at the design step and NOWHERE else: the
+silhouette, the proportions, and the tone.
 
-**A body is now four commands**, and `tools/art/body.mts` is all of them.
-`bodies.json` beside it is what to SAY and `generated.json` is what came BACK, so
-a body can be re-asked without anybody reconstructing the words.
+**Two files hold a body and neither is code.** `tools/art/bodies.json` is what
+to SAY — `look` is the design ask, `states[].say` is one animation ask each —
+and `tools/art/generated.json` is what came BACK, one row per body naming its
+character and a group per state. `tools/art/body.mts` walks between them.
 
-1. **Write the ask off the game's OWN documentation**, into `bodies.json`.
-   `MAP_THEMES` gives a zone its line, `THEME_INK` gives the hexes, `CUT` says
-   how it is carved, `MONSTER_FAMILIES` says what lives there. A generic prompt
-   gives generic art; the Fissure's own sentence gives the Fissure.
-2. **`body.mts ask <sprite>`** — one character, eight rotations. Put the id it
-   prints into both files.
-3. **`body.mts state <sprite>`** — every state, on ONE facing. Then
-   **`body.mts sheet <sprite> out.png`** and LOOK at it: re-roll what is wrong
-   and WINDOW what is nearly right, into `from`/`to` in `sandbox.json`.
-   Fanning out first spends five times as much on frames that face the camera.
-4. **`body.mts fill <sprite>`** — the same states on the other four facings,
-   appended to the group the judged one made. It paces itself: only about five
-   jobs may be in flight, and over the line the server answers with a HINT
-   rather than an error, which reads as success and silently drops a facing.
-5. **`npx tsx tools/art/sandbox.mts`**, then look at the room. Reads the
-   manifest, writes the three tables, asks the generator for nothing.
+#### 0. Before anything
 
-**What a body costs, measured end to end**: 1 design + 2 to rotate + 5 per
-animation over the five east facings. A five-state body is **about 30
-generations**; a roster of twenty is around 600. The earlier figure of 60 a body
-came from asking for a whole character and judging it afterwards, which is the
-order this pipeline replaces.
+`PIXELLAB_API_KEY` must be set; `.mcp.json` expands it and `tools/art/mcp.mts`
+speaks plain JSON-RPC to `https://api.pixellab.ai/mcp`, so a session with no MCP
+client for it is not blocked. **Read `https://api.pixellab.ai/mcp/docs` first.**
+Two sessions in a row have failed by not reading it, and both failures were
+parameters sitting in plain sight. `get_balance` prints what is left.
 
-**Five facings, not eight.** `GeneratedArt.dirs` runs north to south and the
-renderer already mirrors anything facing left, so the western three are
-reflections. Generating them would be paying twice for the same pixels.
+#### 1. Write the ask into `bodies.json`
 
-**What is still hand-work, and would have to be solved to scale past a dozen:**
-picking each animation's usable window, naming a prop's footprint in tiles, and
-judging. None of it is automatable today.
+Off the game's OWN documentation: `MAP_THEMES` gives a zone its line, `THEME_INK`
+its hexes, `CUT` how it is carved, `MONSTER_FAMILIES` what lives there. A generic
+prompt gives generic art; the Fissure's own sentence gives the Fissure.
+
+- **Name a colour by EXCLUSION as well as by name**, and exclude the whole
+  family: "dark bone" got ivory until `NOT tan, NOT beige, NOT sand, NOT gold,
+  NOT amber, NOT bronze, NOT warm` went in. But exclude only what you mean —
+  `NOT red` killed the blood entirely, where `NOT bright red, NOT pink, NOT
+  crimson, NOT magenta` left the dried rust-brown that was wanted.
+- **Forbid the GROUND and any second object by name.** Bodies drew themselves a
+  dirt patch, a blood pool and a spare skull. Say: no ground, no floor, no
+  shadow cast on the ground, no base, no platform, no other objects.
+- **Say the proportions.** "SMALL skull on a long thin neck, the proportions of
+  a tall adult man, NOT a big head, NOT chibi, NOT a bobblehead."
+- **No two of a body's `say` strings may share their first 30 characters** — see
+  the pitfalls below. `body.mts` refuses the file if any do.
+
+#### 2. DESIGN — one image, one generation, ~30 seconds
+
+`create_image_pixflux` with `no_background: true`, `view: 'high top-down'`,
+`direction: 'south'`, `width`/`height` 128, `text_guidance_scale: 12`. Ask for
+several concepts at once and several variants of each; they are a generation
+apiece.
+
+**`color_image_url` takes a forced palette as an image and a `data:` URI is
+accepted.** It is the ONLY thing that made a body dark — words alone returned
+ivory twice, and v3 ignores `text_guidance_scale` so there is no harder push.
+Build a strip of the inks you want and pass it. Every zone floor is pale by
+decision, so a body that is not dark separates from none of them.
+
+The palette buys tone and costs some drama: the same ask on words alone had a
+better pose and the wrong colour. Judge both.
+
+#### 3. APPROVE
+
+Put the candidates on the four real zone floors, magnified. `npm run peek` is
+for a map; for a sprite, lift a floor tile out of
+`src/render/generated-tiles.ts` (the tile whose `key` is 0 is pure floor) and
+put the sprite on it. **Nothing below this line is cheap, so nothing below it
+starts until a human has said yes.**
+
+#### 4. ROTATE — two generations, ~5 minutes
+
+`create_character` with `mode: 'v3'` and the approved PNG as
+`reference_image_base64`, `size: 96`, `view: 'high top-down'`.
+
+- **`mode` decides the body.** `standard` is the default and is template-based:
+  ONE rigged skeleton posed over and over, so every body it draws shares a
+  silhouette whatever the words say. That is why three asks came back as one
+  skeleton in three colours.
+- **`size: 96` and not the design's 128.** 96 is the grid a body ships at and
+  the camera lands one in ~87 device pixels; at 128 every animation costs TWO
+  generations per direction instead of one, for detail nothing draws.
+- Look at the five facings before going on. Height and identity survived the
+  rotation here, but that is not a promise.
+
+#### 5. ANIMATE — five generations a state, ~3 minutes each
+
+`npx tsx tools/art/body.mts fill <sprite>` once `generated.json` names the
+character. It asks ONE facing at a time into the same animation group, paced off
+`list_jobs`, and retries a refusal.
+
+- **`mode: 'v3'` from a written pose, never a template animation.** Templates
+  pose a rigged skeleton and drift: `walk` grows a crook, `cross-punch` turns to
+  face the camera. v3 is the only mode with `frame_count`.
+- **"in strict side profile" is the highest-value phrase there is** — without it
+  the skull turns to face the camera by frame three. It may NOT open the
+  sentence; see the pitfalls.
+- **Describe the LIMBS, not the tool.** Naming a weapon the rotation does not
+  hold draws a different one every frame.
+- **Short animations drift less.** `frame_count: 4` lands usable where 6 needs a
+  window.
+- **Five facings, not eight.** `GeneratedArt.dirs` runs north to south and the
+  renderer mirrors anything facing left. Generating the western three is paying
+  twice for the same pixels.
+
+#### 6. JUDGE — free
+
+`body.mts sheet <sprite> out.png` draws every animation, one row each, and LOOK
+at it. A generation degrades across its run and the tail is where it goes, so
+each state names `from`/`to` — the fraction worth keeping — in
+`generated.json`. This is hand-work and there is no way round it.
+
+#### 7. IMPORT — free
+
+`npx tsx tools/art/tables.mts bodies` reads `generated.json`, fetches the
+frames, quantises each body to its own 56-ink palette and writes
+`src/render/generated-art.ts`. It asks the generator for no generations.
+
+**Name the table.** `tables.mts` with no argument writes all three, and one dead
+row then stops the other two being written at all.
+
+#### 8. WIRE — free
+
+A row in `MONSTERS` in `src/data.ts` naming the sprite, at `scale` 1.45–1.6
+rather than the doll's 1 — a generated body spans about 69% of its grid where
+the doll spans nearly all of 24. Then `npm run demo`, which holds that every
+monster resolves in exactly one art table, that no frame ships unreached, and
+that a swing and a cast draw different runs. Then `npm run build` and
+`npm run peek` and look at it in a descent.
+
+### Doing this a thousand times
+
+**The pitfalls that cost real time here, in the order they will bite.**
+
+- **THE SOURCE SIZE IS THE WALL, not the generation budget.** Three bodies are
+  **2.63 MB** of `generated-art.ts` — 270 frames at grid 96, about **0.9 MB per
+  body**. It gzips 19:1 so the wire is fine, but the REPO carries the raw
+  megabytes and `docs/app.js` is committed because Cloudflare runs no build. At
+  4,000 generations remaining the budget buys ~130 bodies; at 0.9 MB each that
+  is 120 MB of TypeScript, which is not shippable. **Twelve more bodies — the
+  Demonic and Prismatic pools — is about 10 MB and is probably the practical
+  ceiling for the format as it stands.** Past that it is a decision: fewer
+  states, fewer frames per state, a smaller grid, or giving up "no binary
+  assets", which is a `RULES.md` change and the user's call. Do not walk into
+  it by accident.
+- **The job limit is TEN, per ACCOUNT, and a call needs one slot per DIRECTION
+  all at once.** A five-facing ask needs five free slots and is refused whole.
+  Pacing off one character's pending count works until a second body is in
+  flight and then fails constantly. `list_jobs` is the only authoritative
+  count. Ask one facing at a time.
+- **A refusal is TEXT, not an error.** `error: need 5 job slots but only 1
+  available (9/10 used)` and `already queued or complete (nothing re-queued)`
+  both come back as a normal tool result. Anything that does not check the
+  response for a group id is recording a lie — nine animations vanished that
+  way in one run and were only found by counting groups afterwards.
+- **`animate_character` dedupes on the FIRST ~30 CHARACTERS of the action
+  description.** The group carries `[type=custom-<the first 30 chars>]`. Every
+  attack, cast and death opened with "staying in strict side profile" and
+  collapsed into one. Keep the phrase, put it after a clause of the animation's
+  own, and assert the prefixes are distinct before firing.
+- **A generated CHARACTER is not permanent.** The docs say characters are stored
+  permanently. The skeleton, the revenant, the delver and every generated PROP
+  this repo shipped all came back `not found`. What ships is the converted grid,
+  so no art was lost — that is the argument for the conversion step — but
+  nothing on the server can be re-converted or extended, and a body you may want
+  to add a state to later must be finished while it still exists.
+- **The wall clock is the budget, not the generations.** A body is ~30
+  generations and most of an hour: animations are 2-4 minutes each and pace
+  against the job limit. Twelve bodies is a day of waiting, not an afternoon.
+  Queue in the background, hold the ledger on disk, and make every step
+  idempotent — a run WILL be interrupted.
+- **Keep a ledger of every id, on disk, as you go.** Character ids, group ids,
+  job ids. A body whose character id is lost is a body that has to be paid for
+  again.
+- **The demo is the backstop and it is not optional.** It fails a frame that
+  ships unreached, a sprite id in both art tables, a state named for a skill
+  nothing throws, and a body still being moved by a transform it has frames
+  for. Every one of those is a silent fault in the renderer otherwise.
 
 **What asking for a REAL zone taught, on the second pass.** The first tileset
 was a generic mine shaft; the second was written off the Fissure's own line in
@@ -918,39 +1056,34 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The bodies, in the game
+### Phase 1 — The rest of the roster
 
-**BLOCKED on open question 8's second half**, which is the palette, and it is
-the user's. The first body is IN and reads; what stops the phase going further
-is that nobody has decided what a generated body costs. Do not guess at it.
+**The palette question is ANSWERED and the phase is unblocked.** It was never
+code: a body that is asked DARK, through a forced palette at the design step,
+separates from all four zone floors — which are all pale by decision — so
+nothing needs re-inking onto CSS properties and nothing needs generating per
+zone. The three skeletons are the proof. Open question 8 is closed.
 
-**What is true today.** The Husk's sprite is `skeleton`, so a player fights a
-generated body in a real descent — its own swing, its own animation per thrown
-bolt, five facings, at `scale` 1.45. `GENERATED` also holds the revenant and the
-delver hero, drawn nowhere. `BEASTIARY` is 21 hand-drawn creatures at grid 24.
-The demo holds both halves: every monster resolves in exactly one table, and at
-least one of them is generated at a generated body's scale.
+**What is true today.** `GENERATED` holds three bodies and a player fights all
+of them: the **Husk** is `hewer`, the **Gaunt** is `gaunt`, the **Bonecaller**
+is `shroud` — Normal family, `undead`, six states apiece (idle, walk, attack,
+hurt, death, and a cast; three NAMED casts for the Bonecaller). `BEASTIARY` is
+21 hand-drawn creatures at grid 24, and the Demonic and Prismatic pools are six
+apiece, all hand-drawn, standing on generated ground.
 
-**What LOOKING at it showed, and it is the question.** Four skeletons against
-the Fissure's pale floor wash out — bone white on light sand, where the
-hand-drawn bodies beside them separate cleanly. A generated body is BAKED HEX,
-so it cannot take its ink from the zone the way every hand-drawn sprite does,
-and the same body will be too pale in the Fissure and the Cavern and too light
-in the Rot. Nothing in the renderer can fix that: `glowed` is the rank and is
-off for a common, and RULES refuses a derived outline — one added on top is a
-slab and grown inward it eats a thin limb.
+**Read "The process, as it now stands" and "Doing this a thousand times" above
+before spending anything.** Both are written for a session with no memory of
+this one, and the second one is the list of things that have already cost time.
 
-- [ ] **Decide the palette question out loud.** Either re-ink a generated body
-      onto CSS properties — a quantised key is already a small palette, so it is
-      a mapping rather than a rewrite — or give up the recolour for bodies and
-      accept that every one is generated per zone it fights in. The second is
-      generations; the first is code. Ranks are still light applied at runtime,
-      and that has to keep working either way.
-- [ ] **Then the roster.** MEASURED at about **30 generations a body**, not the
-      60 this file used to quote: one design, two to rotate, and five per
-      animation over five facings. Twenty bodies is around 600. The waiting is
-      the real cost — an animation is 2-4 minutes and they pace against a
-      ten-job rate limit, so a body is most of an hour whatever it bills.
+- [ ] **The Demonic and Prismatic pools, twelve bodies.** They are the two zones
+      whose ground is generated and whose bodies are not, which is the mismatch
+      the Fissure just stopped having. About 360 generations and a day of
+      waiting — the wall clock is the budget, not the generations.
+- [ ] **Watch the SOURCE SIZE, which is the real ceiling.** Three bodies are
+      2.63 MB; twelve more is about 10 MB of `generated-art.ts` and a committed
+      `docs/app.js` to match. That is probably the practical limit for "every
+      sprite is a list of strings", and going past it is a `RULES.md` decision
+      rather than a phase. Measure it as you go and say so before it bites.
 - [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
       `GENERATED`, so an id in both is a generated body that never draws,
       silently — it cost a whole session's judgement once. The demo fails a
@@ -958,19 +1091,25 @@ slab and grown inward it eats a thin limb.
 
 **Traps.**
 
-- **The demo's `THE SANDBOX` section is gone and this phase owes what it was
-  for.** What survived is table-level and needs no room: every frame that ships
-  is reached, a swing and a cast draw different runs, each thrown skill has its
-  own animation, no transform stands in for a frame. What went with the room is
-  the only check that DROVE a body — that every facing is seen, that a caster
-  actually casts in a live sim. A generated body in a descent is where that
-  comes back, and it is this phase's to write.
-- **A generated body wants `scale` around 1.45, not the doll's 1.** It spans
-  about 69% of its grid where the doll spans nearly all of 24, so left at 1 it
-  renders a third smaller than the pack around it. The demo holds it.
+- **The demo's `THE SANDBOX` section is gone and this phase still owes what it
+  was for.** What survived is table-level: every frame that ships is reached, a
+  swing and a cast draw different runs, each thrown skill has its own animation,
+  no transform stands in for a frame. What went with the room is the only check
+  that DROVE a body — that every facing is SEEN in a live sim, that a caster
+  actually casts. A generated body in a descent is where that comes back.
+- **A generated body wants `scale` 1.45–1.6, not the doll's 1.** It spans about
+  69% of its grid where the doll spans nearly all of 24. The demo holds it.
+- **Hand-drawn and generated bodies in ONE pack pool read as two art eras.**
+  Normal is 11 monsters and 3 of them are generated. That is the thing to look
+  at in a descent before deciding whether a pool gets finished or left alone.
 
-**Done when.** A player fights generated bodies in a real descent, they read
-against the floor they stand on, and the palette decision is written down.
+**Done when.** Every monster a player meets in a zone with a generated floor is
+a generated body, or the ones that are not are named here with a reason.
+
+**What is NOT in this phase.** A true GIANT. The Gaunt is tall but built on the
+same 96 grid as the others, so height is all it has; something genuinely
+imposing is a fourth body plus its own `scale` and `radius`, and it is worth
+judging the Gaunt in a descent first. The user has been told.
 
 ### Phase 2 — A quest log instead of a pointing finger
 
@@ -1112,24 +1251,18 @@ Every one is parked deliberately. Ask before acting on any of them.
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
 
-8. **HALF ANSWERED, and the other half is now live.** *"Just use the pixellab pipeline to
-   generate a zone that looks good... I literally don't care what it looks like
-   as long as it looks good", then "put this map into the main game to replace
-   the base fissure".* Generated art ships. The Fissure is a generated tileset
-   in a live descent, and the runtime palette is what it cost — a painted set is
-   baked hex, so four zones will be four generated sets rather than one set with
-   four palettes. Ranks are still light applied at runtime, which is the part
-   that has to keep working when BODIES follow in Phase 1.
-   What is NOT settled: whether to re-ink a generated body onto CSS properties
-   to buy the palette back (a quantised key is already a small palette, so it is
-   a mapping rather than a rewrite), or give up the recolour there too. **The
-   bodies have landed, so this is no longer hypothetical** — the Husk is drawn
-   from `GENERATED.skeleton` and four of them against the Fissure's pale floor
-   wash out where the hand-drawn bodies beside them separate cleanly. Baked hex
-   means the same body is too pale in the Fissure and the Cavern and too light
-   in the Rot, and nothing in the renderer can answer it: `glowed` is the rank
-   and is off for a common, and a derived outline is refused by `RULES.md`.
-   Phase 1 is blocked on this and nothing else.
+8. **ANSWERED at both ends.** *The user's call, in their words: "Just use the
+   pixellab pipeline to generate a zone that looks good... I literally don't
+   care what it looks like as long as it looks good", then "put this map into
+   the main game to replace the base fissure".* Generated art ships: all four
+   zones are generated tilesets and three monsters are generated bodies.
+   The second half — whether to re-ink a generated body onto CSS properties to
+   buy the runtime palette back — is answered NO, and by the art rather than by
+   code. A body asked DARK through a forced palette separates from all four zone
+   floors, because every one of them is pale by decision. So a generated body
+   stays baked hex, is generated once rather than once per zone, and the runtime
+   recolour is given up for bodies alone. Ranks are still light applied at
+   runtime and still work.
 
 9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, the
    walls hanging into a hole, bridges — was built, judged and deleted at the
