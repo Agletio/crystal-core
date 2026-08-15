@@ -65,6 +65,17 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **A monster at weight 300 cannot be judged by taking screenshots and hoping.**
+  The Gaunt is one row in eleven and three peeks in a row caught none. What
+  works is bumping its `weight` to something absurd, building, shooting it, and
+  putting the weight back — a minute, and it is the only way to see a body
+  against the hero and the pack at once. `npm run peek` takes a zoom, a pan and
+  a `x,y,w,h,scale` crop, which is what makes the shot judgeable.
+- **`radius` is capped for WALKING and uncapped for SHOVING.** `Grid.fits`
+  clamps to `BODY_MAX` (0.45), so no radius can wall a body out of a passage;
+  separation in `src/sim/run.ts` reads `a.radius + b.radius` raw. That is what
+  makes doubling a big body's radius safe — it pushes the pack out of its legs
+  and cannot strand it.
 - **Stripping the arrangements left `Grid.solid` with NO live producer, and the
   check that guarded it went vacuous rather than red.** Every solid prop in the
   game — altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls —
@@ -1078,66 +1089,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The Gaunt at twice the height
-
-**Asked for directly.** *"Double the base height of the tall lanky skeleton."*
-
-**The name is CONFIRMED: it is the Gaunt.** `MONSTERS` in `src/data.ts` holds
-`{ id: 'gaunt', name: 'Gaunt', sprite: 'gaunt' }` — the towering one, carrying
-most of its height in the legs. The other two generated bodies are the **Husk**
-(`hewer`, the mine skeleton with the tool) and the **Bonecaller** (`shroud`,
-robed, the one that throws), and neither is lanky.
-
-**What is true today.** `gaunt` is `scale: 1.6`, `radius: 0.36`, life 1.45,
-damage 1.15, `weight: 300` in the Normal pool. The renderer applies that scale
-UNIFORMLY — `pixi.ts` does `(1 / texture.width) * e.scale`, one number — and
-nothing in `MonsterDef`, either renderer or `src/sim` has a per-axis size.
-`radius` is the SIM's body, used by separation, `fits` and `placeIn`, and it is
-independent of the drawn size.
-
-**Why the phase exists rather than the ask being one number.** Phase 3 below
-already says a true GIANT is not the roster's phase, and this is that decision
-arriving from the other direction: the Gaunt has been judged in a descent and
-the answer is that height alone is not enough.
-
-- [ ] **`scale` 1.6 → 3.2.** Uniform, and say so: a Y-only stretch would be a
-      new field on `MonsterDef`, both renderers reading it, and a non-integer
-      vertical resample — which is the blur pixel art exists not to be. The
-      body's own silhouette is what makes it lanky; twice as big is twice as
-      big in both directions.
-- [ ] **Decide `radius` in the same breath**, and it is a decision, not a
-      tidy-up. Drawn twice the size over an unchanged 0.36 body, the pack walks
-      through its legs. `BODY_MAX` is 0.45 in `src/sim/grid.ts` with its own
-      comment — under half a tile so a rank-scaled body still walks a one-tile
-      gap — so a radius that reads right may be one the map cannot hold. Pick a
-      number, name what it costs, and check a rank-scaled Gaunt still reaches
-      the exit.
-- [ ] **Look at it in a descent before believing any of it.** `npm run build`
-      then `npm run peek`, at the zoom and the magnified crop. A body drawn at
-      3.2 is over three tiles tall on screen; whether that reads as imposing or
-      as a sprite somebody scaled up is the only question that matters, and it
-      cannot be answered from a number.
-
-**Traps.**
-
-- **The demo asserts a generated body's scale from BELOW only** —
-  `src/demo.ts` fails a fought generated monster under 1.3. Going up does not
-  trip it; do not add an upper bound without deciding what it is for.
-- **The fit margin is the rank glow's room** (`rings * 2`) and `GLOW.reach` is
-  scaled by `grid / CELL`. A much bigger body is a much bigger glow, and the
-  rank light is the one thing over a monster that is not its own art.
-- **Life and damage are NOT part of the ask.** Twice as tall is a look. If it
-  turns out to want its own weight in the pool or its own numbers, that is a
-  balance change and balance is not tuned — measure it, print it, carry on.
-
-**Done when.** The Gaunt stands about twice the height it did in a live descent,
-its body is a number somebody chose rather than the one it inherited, and the
-suite is green.
-
-**What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
-`peek`, `smoke`.
-
-### Phase 2 — An older, dimmer floor under the Fissure
+### Phase 1 — An older, dimmer floor under the Fissure
 
 **Asked for directly.** *"Go ahead and recolor the floor, try and make it a
 little less bright, make it a little more like ancient cavern vibes."*
@@ -1202,7 +1154,7 @@ edited data URI.
 **What must not break, in order.** `comments`, `typecheck`, `build`, `peek`,
 `shots`.
 
-### Phase 3 — Six Normal monsters, all of them the skeletons' kind
+### Phase 2 — Six Normal monsters, all of them the skeletons' kind
 
 **The ask CHANGED, and it got much smaller.** *The user's words: "Have it just
 be the normal mobs, but cut some of the medium sized ones out so there's only 6
@@ -1291,11 +1243,11 @@ body in the skeletons' register, and a Fissure descent reads as one art era.
 
 **What is NOT in this phase.** The Demonic and Prismatic pools, which are
 twelve hand-drawn bodies and are now nobody's phase — they are the backlog until
-asked for. And a true GIANT: the Gaunt is tall on the same 96 grid as the
-others, **Phase 1 doubles it**, and a body GENERATED to be imposing is still not
-written down anywhere.
+asked for. And a body GENERATED to be imposing: the Gaunt is drawn at 3.2 and
+towers, but it is still the same 96-grid body scaled up, so what a purpose-built
+giant would buy is detail rather than height.
 
-### Phase 4 — A quest log instead of a pointing finger
+### Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

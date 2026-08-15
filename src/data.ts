@@ -1843,9 +1843,15 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.92,
     attacksPerSecond: 0.75,
     attackRange: 1.2,
-    radius: 0.36,
+    // Twice the height the rest of the pool stands at, which is twice the WIDTH
+    // too: `scale` is one number and both renderers apply it uniformly, so a
+    // Y-only stretch would be a resample rather than a bigger body. The radius
+    // follows it, because separation is what stops a pack walking through its
+    // legs — `fits` clamps at `BODY_MAX` for walking, so a body this wide still
+    // takes a one-tile gap.
+    radius: 0.7,
     sprite: 'gaunt',
-    scale: 1.6,
+    scale: 3.2,
     weight: 300,
     tags: ['undead'],
   },

@@ -98,9 +98,14 @@ it was holding; the **Gaunt** is `gaunt`, towering on legs that carry most of
 its height; the **Bonecaller** is `shroud`, robed and the one that throws. All
 three are Normal family and `undead`, all three are near-black bone with dried
 gore, because every zone floor is pale by decision and only a dark body
-separates from all four. They are drawn at `scale` 1.45–1.6 rather than the
-doll's 1, since a generated body spans about 69% of its grid where the
-hand-drawn doll spans nearly all of 24. Everything else in `BEASTIARY` is still
+separates from all four. Two are drawn at `scale` 1.45 rather than the doll's 1,
+since a generated body spans about 69% of its grid where the hand-drawn doll
+spans nearly all of 24. **The Gaunt is at 3.2 and is a GIANT** — the user's
+call, after judging it in a descent: twice the height it stood at, which is
+twice the width too, because `scale` is one number and both renderers apply it
+uniformly. Its `radius` doubled with it, since separation is what stops a pack
+walking through its legs; `fits` clamps at `BODY_MAX` for walking, so it still
+takes a one-tile gap. Everything else in `BEASTIARY` is still
 hand-drawn, and `monsterArt` asks that table FIRST — so a sprite id in both is a
 generated body that never draws, which the demo fails on.
 
