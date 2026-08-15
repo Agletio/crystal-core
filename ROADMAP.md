@@ -53,10 +53,16 @@ have needed — the split is now possible and still not built.
 He is a hand-drawn doll at grid 24 with `gear-art.ts` layering 12 armour
 families over him, and **he has to keep showing a helm, a body and boots
 changing** — the user's requirement, which is what makes a generated
-replacement hard. 44 generations are already spent proving that `edit_image`
-dresses the same man and that a whole-body edit REPAINTS everything, so a naive
-diff is not a layer. **Phase 1 is a plan with three cheap experiments at the
-front of it, and nothing else in the phase runs until E1 has answered.**
+replacement hard.
+
+**Phase 1's experiments are DONE and the route is D3: a slot is a BAND and a
+piece is a CROP.** A diff of a dressed frame is not a layer — the edit repaints
+the whole man, measured — but the band the piece lives in is, because throwing
+everything outside it away throws the repaint away too. Proved on a still, then
+across all five facings of the rotated wanderer, then across a shipped body's
+animation by re-stamping. **166 generations spent in total and the man is
+rotated and helmed; what remains is animating him, and it needs the user's go
+-ahead.**
 
 ### If it does not work, revert to one of these
 
@@ -797,23 +803,36 @@ that a swing and a cast draw different runs. Then `npm run build` and
 
 #### 9. DRESS — only for a body that wears things
 
-`npx tsx tools/art/dress.mts <design> [outfit ...]`. `edit_image` applies ONE
-edit to a LIST of images consistently and bills by the whole frame grid, so a
-finished animation can be re-clothed for one 20-40 charge rather than animated
-again. `OUTFITS` in that file is the table of what to say, and `KEEP` is the
-clause that makes it dress the man rather than replace him — measured at 97.4%
-silhouette overlap with the base, holding stance, belt, pouch and feet.
+**Only the HERO wears anything**, so this is not part of a monster's run. Three
+commands, and the order matters:
 
-**Only the HERO wears anything**, so this is not part of a monster's run.
-`tools/art/layer.mts` is the other half: it diffs a dressed image against its
-base, prints how much of the change landed in each SLOT's band, and writes the
-changed pixels out as a layer. Whether that layer is usable is Phase 1's first
-experiment — measured on a whole outfit the edit repaints everything, and a
-single piece is the open question.
+```
+npx tsx tools/art/body.mts  grab   <sprite>                 the BASE rotations
+npx tsx tools/art/dress.mts <slot> --state <character-id>   the DRESSED ones
+npx tsx tools/art/layer.mts <base> <slot>:<dressed>         the piece, and a fitting
+```
 
-What is also unmeasured is how many frames one `edit_image` call takes at once:
-the docs cap a frame at 512x512 and name no count, and that number is what a
-piece really costs.
+`create_character_state` applies ONE edit across every rotation of a character
+for one 20-40 charge, keeps identity, and hands back a character that inherits
+the skeleton for animations. That is the only tool that dresses a whole body
+consistently — see the pitfalls for why `edit_image`'s frame list cannot.
+
+**A piece is a CROP, never a diff.** The edit repaints every pixel of the frame
+it dresses, so subtracting the base leaves the whole man rather than the helm.
+`layer.mts` keeps the slot's BAND of the body's own extent and throws the rest
+away, which discards the repaint with it; registration is free because the crop
+came off that exact frame. `SLOTS` in that file is the four bands, and the head
+cut sits at 0.24 — the base of the neck, judged over 0.18 to 0.28.
+
+`OUTFITS` in `dress.mts` is what to SAY for each piece, and `KEEP` is the clause
+that dresses the man rather than replacing him — 97.4% silhouette overlap with
+the base, holding stance, belt, pouch and feet.
+
+A body has more frames than any edit can dress at once, so a piece is cut off
+ONE frame per facing and re-stamped on the rest at each frame's own band anchor.
+`tools/art/anchor.mts` is what says whether that survives: it prints how far the
+cut drifts off the neck across every frame a body ships, and draws the original
+run over the same run re-headed, which is the half that has to be LOOKED at.
 
 ### Doing this a thousand times
 
@@ -826,6 +845,29 @@ piece really costs.
   are all in `https://api.pixellab.ai/mcp/docs` and none was used for the
   monsters. **Re-read that page before designing a pipeline**, not just before
   spending — this is the third time it has held the answer.
+- **`edit_image` IS CONSISTENT WITHIN A CALL AND NOT ACROSS ONE.** Five facings
+  of one man asked for one helm, same description, same seed, split 4 + 1
+  because that is all a call takes: the four came back wearing one brimmed helm
+  and the fifth came back visored. So the "one edit across a LIST of frames"
+  promise is real but it stops at the call boundary — **anything that must match
+  has to be in the same call, and a body's frames never fit.**
+  `create_character_state` is the way round it and the reason it exists.
+- **HOW MANY FRAMES A CALL TAKES IS A STEP OF THEIR SIZE**, measured by asking
+  for 64 of them at each size and reading the refusal: **16 at 64 and under, 4
+  up to 128, 1 above it.** The grid is 512x512 laid out 4x4, 2x2 or 1x1. The
+  server refuses an over-long list BEFORE billing and names the number, so
+  probing this costs nothing at all — and the billing follows the grid rather
+  than the count, measured at 20 generations for one frame and 40 for four.
+- **A MULTI-FRAME RESULT IS ONE INDEXED DOWNLOAD.** `get_image` answers
+  `frames: 4` and a single `download:` url, and frames 1..n are reached by
+  appending `?index=N`; a single-frame job carries no index at all. Looking for
+  a url per frame finds none and reads as "never arrived" on a job that
+  completed and billed. Both forms are one regex and both must be handled.
+- **A ROTATION'S SIZE COMES FROM THE REFERENCE IMAGE, not from `size`.** The
+  wanderer was rotated with `size: 96` off a 128 design and came back 128x128.
+  That matters twice over: at 128 a v3 animation costs TWO generations per
+  direction rather than one, and an edit still only takes 4 frames. Rotating
+  from a design already reduced to 96 is 2 generations and buys both back.
 - **THE SOURCE SIZE IS THE WALL, not the generation budget.** SIX bodies are
   **4.67 MB** of `generated-art.ts` — about **0.8 MB per body** at grid 96. It
   gzips ~19:1 so the wire is fine, but the REPO carries the raw megabytes and
@@ -1272,92 +1314,86 @@ screen without 108 drawings. **The doll already does everything the user just
 asked for.** A generated hero that cannot is a downgrade, so `RULES.md` says
 the doll stays until a replacement matches it.
 
-#### What has been PROVED already, at a cost of 44 generations
+#### The experiments are DONE. 122 generations, and the route is D3
 
-- **The base man exists and is approved in principle.** The ask is the
-  `wanderer` row in `tools/art/bodies.json`; `wanderer-0` is the pick.
-- **`edit_image` dresses the SAME man.** Base and two outfits came back with
-  the same stance, face, belt, hip pouch and feet — **97.4% and 96.9%
-  silhouette overlap**. `npx tsx tools/art/dress.mts wanderer-0` reproduces it.
-- **AND THAT IS NOT ENOUGH, because the edit REPAINTS THE WHOLE SPRITE.**
-  Measured by diffing base against dressed: for the mail outfit, the changed
-  pixels land **26% in the head band, 51% in the torso, 13% in the legs and
-  12% in the boots band** — for an edit that never mentioned boots. A naive
-  diff of a whole-body edit is therefore NOT a per-slot layer.
-- **At ship size the difference is subtle.** Magnified, three outfits are
-  obviously different; at the ~87 device pixels the camera lands a body in, the
-  mail reads as texture and the plate as darker shoulders. Whatever ships has
-  to be readable at that size or it is not worth generating.
+**E1 — LOCALITY. FAILED, and it kills Route D1.** `wanderer-0` was asked for a
+helm ALONE, forbidden to touch anything below the neck. The helm went on and the
+man stayed the same man — and **24% of the changed pixels landed in the head
+band and 18% in the boots**. Raising the difference threshold does not
+concentrate it: at a difference over 200 it is still 29% head and 19% boots, so
+it is a re-render rather than dither, and the "layer" the subtraction writes is
+a scatter over the whole body. Pass wanted ≥85%. **No prompt fixes this** — and
+the whole-outfit mail edit is actually MORE local at the feet than the
+helm-alone edit was, which is the tell.
 
-#### What the DOCS hold, and what they do not
+**E3 — FRAME COUNT. ANSWERED, and it cost nothing.** A call takes **16 frames at
+64 and under, 4 up to 128, 1 above it**; the grid is 512x512 in a 4x4, 2x2 or
+1x1 layout. The server refuses an over-long list BEFORE billing and names the
+number, so it was measured by asking for 64 frames at six sizes and reading the
+refusals. Billing follows the grid, not the count: 20 generations for one frame,
+40 for four.
 
-Read `https://api.pixellab.ai/mcp/docs` before touching this. **There is no
-equipment primitive** — no attachment points, no bones, no slots, nothing that
-wears anything. The whole tool list was swept for it. What there is:
+**And the thing E3 was not looking for: an edit is consistent WITHIN a call and
+not across one.** Five facings split 4 + 1 came back as one brimmed helm and one
+visored helm, same description, same seed. So `edit_image`'s frame list cannot
+dress a body at all, and the tool that can is `create_character_state` — one
+edit across every rotation, one charge, identity kept, 40 generations measured.
 
-| tool | cost | what it gives |
-|---|---|---|
-| `edit_image` | **20-40 for the WHOLE frame grid** | one edit applied consistently across a LIST of frames, "useful for animation frames or a character's directions", pose kept. 512×512 per frame, **no stated count cap** |
-| `inpaint_image` | 20-40 **per image** | one masked region regenerated, "keeping everything else pixel-identical". WHITE regenerates, BLACK is frozen |
-| `create_image_pixflux` + `init_image` | **1** | img2img. `init_image_strength` 500 "barely changes it", 300 subtle, 150 a real edit |
-| `create_8_direction_object` | 20-40 | an OBJECT in 8 rotations. "Works well for props" — a helmet is a prop |
-| `create_character_state` | 20-40 | an edit across every rotation of a character, identity kept — but carries NO animations |
+**E2 — ANCHORS. Answered as part of D3 rather than as D2's decider**, since D3
+needs the same stamp. See below.
 
-Two of those settle the economics. **`edit_image` is the only consistent-across
--frames tool and it is billed by the grid, so re-clothing a finished animation
-costs one charge rather than an animation.** And **`inpaint_image` is the only
-one that PROMISES the untouched region is pixel-identical**, which is exactly
-what a clean layer needs — but it takes one image, so over ~85 frames it is
-1,700-3,400 generations per piece and is not a route on its own.
+#### Route D3 — the slot is a BAND, and a piece is a CROP
 
-#### The two routes that can actually show a helm swap
+The subtraction fails because the edit repaints everywhere. **So do not
+subtract: keep the band and throw the rest away.** The repaint outside the slot
+goes in the bin with everything else outside the slot, and what is left is a
+piece registered to that exact frame by construction.
 
-**Route D1 — DIFF LAYERS.** For each piece, run `edit_image` over the base's
-whole finished frame set asking for that ONE piece and nothing else. Diff each
-returned frame against its base frame; the changed pixels are the piece. Keep
-them, quantise, ship as a grid like everything else, and composite at runtime.
+Proved, with pictures, at three levels:
 
-- Registration is free BY CONSTRUCTION — the layer came from those exact frames.
-- Cost is **20-40 generations per piece**, whatever the frame count. Sixteen
-  pieces (4 slots × 4 looks) is 320-640, which the budget carries easily.
-- Source cost is small: a layer is mostly transparent.
-- **It lives or dies on LOCALITY**, which is measured as false for a whole
-  outfit and UNKNOWN for a single piece. That is the first experiment.
+- **On a still.** A helm crop from one edit, a hauberk crop from a second and
+  greaves from a third composite onto one base man with no seam at 4x. Each
+  slot changes independently — that is the helm swap the user asked for.
+- **Across facings.** `create_character_state` dressed all five east-half
+  rotations of the rotated wanderer in one call, one helm on every one, and each
+  facing's crop drops onto its own base rotation cleanly.
+- **Across an animation, on a shipped body.** A body has far more frames than
+  any call can dress, so a piece is cut off ONE frame per facing and re-stamped
+  on the rest at each frame's own band anchor. `anchor.mts` draws `dragger`'s
+  east run against the same run re-headed from its own first frame and they are
+  indistinguishable — on a floor-crawler, which is the hard case.
 
-**Route D2 — ATTACHMENT POINTS.** Generate each piece as its own object
-(`create_8_direction_object`, which is made for props), then anchor it per frame
-to a point computed from the body: the head's ink centroid for a helm, the
-lowest ink per side for boots, the outermost ink for hands.
+**What it costs.** 40 generations a piece, whatever the frame count, because a
+state is one call. Twelve pieces — three slots × four looks — is **480**, plus
+~68 to animate the base man once. Under 600 for the whole hero, against 3,625
+remaining.
 
-- Registration is CODE rather than generation, so it is free to iterate and
-  costs nothing to get wrong.
-- Cost is 20-40 per piece for all 8 rotations.
-- **It lives or dies on ANCHOR STABILITY** — a head that bobs is fine, a head
-  that turns within a facing is not.
+#### What is standing, and what it cost
 
-**Neither is obviously right, so the phase's first job is to find out cheaply.**
+| | |
+|---|---|
+| `wanderer-0` | the approved design, 128x128 |
+| `c169b1f2-813a-400b-bc6b-17ec3baf9226` | the man ROTATED, 8 facings — 2 generations |
+| `740d001f-df7d-4d19-8225-77daf4421722` | the same man in a helm, every rotation — 40 |
+| `tools/art/bodies.json` | both ids are on the `wanderer` row, under `character` and `wears` |
 
-#### The experiments, cheapest-first, and each one decides something
+`body.mts grab wanderer` and `dress.mts helm --state <id>` reproduce the pair
+without spending anything twice.
 
-- [ ] **E1 — LOCALITY, one `edit_image` call, 20-40 generations.** Take
-      `wanderer-0`, ask for a helm ALONE — "add a battered open-faced iron helm,
-      change nothing else" — then
-      `npx tsx tools/art/layer.mts wanderer-0 wanderer-0-helm`, which prints the
-      band split and writes the layer. Add the outfit to `OUTFITS` in
-      `tools/art/dress.mts`; both numbers above came out of exactly that pair.
-      **Decides D1.** Pass is roughly ≥85% of changed pixels inside the head
-      band and no visible change at the feet. If it passes, D1 is the route and
-      it is cheap. If it fails, D1 is dead and no amount of prompt-writing will
-      save it — the model re-renders, it does not paste.
-- [ ] **E2 — only if E1 fails. ANCHORS, and it costs NOTHING.** The base body
-      does not exist yet, but the six shipped monsters do: compute a head
-      centroid and a foot point for every frame of `hewer` across its facings
-      and plot the drift. If an anchor wanders inside a walk cycle, D2 is dead
-      too and the answer is to keep the doll.
-- [ ] **E3 — FRAME COUNT, one call.** How many frames will one `edit_image`
-      take at once? The docs cap a frame at 512×512 and name no count. A body
-      is 5 facings × ~17 frames = ~85. If one call cannot take 85, a piece
-      costs several charges and D1's economics change.
+#### What is still UNKNOWN, and none of it is free
+
+- **The stamp on the WANDERER's own animation.** It is proved on `dragger`. He
+  is not animated yet, so it is proved on a monster and not on him.
+- **A body lying FLAT has no band.** The horizontal cut is meaningless on the
+  last frames of a death, and `anchor.mts` measures exactly that — every state
+  holds to a 2-4px spread and `death` opens to 8. Either the cut runs along the
+  body's LONG axis on those frames or a dying hero is unarmoured for the second
+  it takes to fade.
+- **The layers' source size.** A body is ~0.8 MB at grid 96. A band is a
+  fraction of one, but twelve of them is unmeasured — MEASURE THE FIRST.
+- **He was rotated at 128, not the 96 a body ships at**, because the reference
+  image's size wins over `size`. At 128 a v3 animation costs two generations per
+  direction. Re-rotating off a 96 design is 2 generations and buys it back.
 
 #### Then, and only with the user's answer in hand
 
@@ -1392,15 +1428,21 @@ lowest ink per side for boots, the outermost ink for hands.
   layers are mostly transparent and should be far less, but MEASURE the first
   one before generating sixteen.
 - **A layer is drawn in the body's own key or it will not match.** A generated
-  body is quantised to its own 56 inks; a piece diffed out of an edit of that
-  body already shares them, but a piece generated SEPARATELY (D2) does not.
+  body is quantised to its own 56 inks; a crop out of an edit of that body
+  already shares them, but a piece generated separately would not — which is one
+  more reason the crop beats an object with attachment points.
+- **A piece must be cut and stamped in the same PASS.** The crop comes off one
+  frame per facing and lands on the rest; cutting from one facing and stamping
+  onto another is a helm from behind on a man facing you.
+- **Anything that must MATCH goes in one call.** Two `create_character_state`
+  calls for one look — say a helm and its own gorget — are two different helms.
 
 #### Done when
 
 A player can equip a different helm, a different body and a different pair of
-boots and SEE each change on a generated hero — or E1 and E2 have both failed,
-in which case this phase ends by saying the doll stays and why, which is worth
-knowing for the price of two experiments.
+boots and SEE each change on a generated hero. E1 has failed and D1 with it, but
+D3 replaces it and is proved as far as a still and a facing can prove anything —
+what is left is the animation, and that is generations rather than a question.
 
 #### What must not break
 

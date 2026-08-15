@@ -304,6 +304,8 @@
   {
    "sprite": "wanderer",
    "name": "The Wanderer",
+   "character": "c169b1f2-813a-400b-bc6b-17ec3baf9226",
+   "wears": { "helm": "740d001f-df7d-4d19-8225-77daf4421722" },
    "look": "a living man, gaunt and underfed but ALIVE, standing upright, in TATTERED clothes: a worn hooded tunic torn to strips at the hem, sleeves frayed, trousers patched and bound at the shin with rag wrappings, boots worn through, a rope belt. Empty-handed, no weapon, no armour, no pack. Grimy off-white and dull grey-brown cloth, warm skin at the face and hands so he reads as a LIVING person rather than as one of the dead. NOT a skeleton, NOT undead, NOT a corpse, NOT bone, NOT black, NOT armoured, NOT a knight, NOT a robe, NOT a wizard, NOT bright, NOT clean, NOT colourful. The proportions of an adult man, NOT a big head, NOT chibi, NOT a bobblehead. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {
     "idle": {

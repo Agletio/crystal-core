@@ -767,6 +767,49 @@ and five generations per animation over five directions — about **30
 generations for a finished body** with five states. A roster of twenty is
 around 600, not the 1,200 written down before any of it had been run.
 
+**A rotation's SIZE comes from the reference image, not from `size`.** The
+wanderer was asked for at `size: 96` off a 128 design and came back 128x128.
+`size` is what a body ships at and a design is drawn at 128, so the two disagree
+and the design wins — reduce the design to the grid before rotating, or pay two
+generations a direction for every animation after it.
+
+**AN EDIT IS CONSISTENT WITHIN A CALL AND NOT ACROSS ONE.** `edit_image` applies
+one edit to a LIST of frames and the docs sell it for "a character's
+directions", which is true and stops at the call boundary: five facings split
+4 + 1 — because 4 is all a call takes at that size — came back as one brimmed
+helm and one visored helm, on the same description and the same seed. **Anything
+that has to MATCH goes in one call**, and a body's frames never fit in one. So a
+frame list cannot dress a body, and `create_character_state` is what does: one
+edit across every rotation, one charge, identity kept.
+
+**How many frames a call takes is a STEP of their size** — 16 at 64 and under, 4
+up to 128, 1 above — because the grid is 512x512 laid out 4x4, 2x2 or 1x1.
+Billing follows the grid rather than the count: 20 generations for one frame and
+40 for four. **An over-long list is refused BEFORE billing and the refusal names
+the number**, so this is measured rather than guessed, for nothing.
+
+**A multi-frame result is ONE INDEXED DOWNLOAD.** `get_image` answers `frames: N`
+and a single `download:` url, and the frames past the first are reached by
+appending `?index=N`; a one-frame job carries no index at all. Looking for a url
+per frame finds none, which reads as "never arrived" on a job that completed and
+billed. Handle both forms or pay twice.
+
+**A PIECE OF ARMOUR IS A CROP, NEVER A DIFF.** An edit that dresses a man
+repaints every pixel of him doing it — asked for a helm alone and forbidden to
+touch anything lower, 24% of the change landed on the head and 18% on the boots,
+and a higher threshold does not concentrate it. So subtracting the base leaves
+the whole man. `SLOTS` in `tools/art/layer.mts` is four BANDS of the body's own
+extent; a piece is the dressed frame inside its band and nothing outside it,
+which discards the repaint along with everything else, and registration is free
+because the crop came off that exact frame. Two edits then compose: a helm from
+one and a hauberk from another land on one man.
+
+**A band is cut off ONE frame per facing and re-stamped on the rest**, since no
+call can dress a whole animation. `tools/art/anchor.mts` is what holds that
+honest — the cut sits within 2-4px of the neck across every standing state of a
+shipped body, and `death` opens to 8 because a body lying FLAT has no vertical
+order for a horizontal band to mean anything by.
+
 **Two animations of one body may not START with the same words.**
 `animate_character` dedupes on a `type` it derives from the FIRST ~30
 CHARACTERS of `action_description` — `[type=custom-staying in strict side

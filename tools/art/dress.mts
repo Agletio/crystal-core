@@ -1,13 +1,20 @@
 /**
- * Armour onto a body that already exists.  `dress.mts <outfit> <image> [image ...]`
+ * Armour onto a body that already exists.
+ *   `dress.mts <outfit> <image> [image ...]`      one edit over a list of frames
+ *   `dress.mts <outfit> --state <character-id>`   every rotation of a character
  *
- * `edit_image` applies the SAME edit to a LIST of PNGs — the docs say "useful
- * for animation frames or a character's directions" — and bills by the whole
- * frame grid. Measured on one design, the man came back the same man at 97.4%
- * and 96.9% silhouette overlap, holding his stance, belt, pouch and feet.
+ * `edit_image` applies the SAME edit to a LIST of PNGs and bills by the whole
+ * frame grid, and the man comes back the same man at 97% silhouette overlap. But
+ * a piece is only consistent WITHIN one call, and a call takes 4 frames at 96 —
+ * four facings dressed together got one brimmed helm and the fifth, sent alone,
+ * came back visored. So the list form cannot dress a body.
  *
- * The edit REPAINTS the whole frame doing it, so what comes back is not a piece.
- * `layer.mts` is the other half: it cuts the slot's band out.
+ * `--state` is what does. `create_character_state` applies one edit across every
+ * rotation at once for one charge, keeping identity, and the result is a
+ * character in its own right that inherits the skeleton for animations.
+ *
+ * Either way the edit REPAINTS the whole frame, so what comes back is not a
+ * piece. `layer.mts` is the other half: it cuts the slot's band out.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { callTool, download, fields, urlsIn } from './mcp.mts';
@@ -51,6 +58,38 @@ function path(f: string): string {
   if (!existsSync(found)) throw new Error(`${found} is not there`);
   return found;
 }
+
+/** The east half of the compass, which is every facing the renderer needs. */
+const DIRS = ['north', 'north-east', 'east', 'south-east', 'south'];
+
+if (frames[0] === '--state') {
+  const source = frames[1];
+  if (!source) throw new Error('--state wants a character id');
+  const made = await callTool('create_character_state', {
+    character_id: source,
+    state_name: name,
+    edit_description: description,
+    seed: 7,
+  });
+  const id = fields(made).id;
+  if (!id) throw new Error(`${name}: refused — ${made.slice(0, 300)}`);
+  console.log(`${name}: state ${id} of ${source}`);
+
+  let said = '';
+  for (let go = 0; go < 60; go++) {
+    said = await callTool('get_character', { character_id: id });
+    if (!/status: (creating|processing)/.test(said)) break;
+    await wait(20_000);
+  }
+  for (const dir of DIRS) {
+    const url = new RegExp(`^ {2}${dir}: (https\\S+)$`, 'm').exec(said);
+    if (!url) throw new Error(`${name}: no ${dir} rotation`);
+    writeFileSync(`${CACHE}${name}-${dir}.png`, await download(url[1]));
+    console.log(`  ${CACHE}${name}-${dir}.png`);
+  }
+  process.exit(0);
+}
+
 const images = frames.map((f) => readFileSync(path(f)).toString('base64'));
 
 // How many frames one charge covers is a step of the frame's own SIZE — the

@@ -197,6 +197,17 @@ if (command === 'design') {
     console.log(`${dir}/${sprite}-${n}.png`);
   }
   console.log('LOOK at them on the four zone floors, then `rotate` the one that is approved');
+} else if (command === 'grab') {
+  // The base frames a layer is cut AGAINST. `dress.mts --state` writes the
+  // dressed half of the same pair.
+  const text = await callTool('get_character', { character_id: body!.character! });
+  const dir = here('cache/designs');
+  for (const facing of asks.dirs) {
+    const url = new RegExp(`^ {2}${facing}: (https\\S+)$`, 'm').exec(text);
+    if (!url) { console.log(`${facing}: no rotation`); continue; }
+    writeFileSync(`${dir}/${sprite}-${facing}.png`, await download(url[1]));
+    console.log(`${dir}/${sprite}-${facing}.png`);
+  }
 } else if (command === 'rotate') {
   // The approved design, turned into eight facings. `size` is 96 and not the
   // design's 128: 96 is the grid a body ships at, and at 128 every animation
