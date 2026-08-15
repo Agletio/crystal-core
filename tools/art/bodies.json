@@ -1,6 +1,6 @@
 {
  "_": "What to ASK the generator for. `generated.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
- "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
+ "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here \u2014 naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
  "dirs": [
   "north",
   "north-east",
@@ -51,7 +51,7 @@
    "sprite": "skeleton",
    "character": "56fb2b7a-7dea-4ecc-84a9-daefeb5ab448",
    "name": "Fissure Skeleton",
-   "look": "a mine skeleton: dry grey-white bone gone the colour of the rock it was buried in, a cracked skull with two dim points of light in the eye sockets, ribs showing through the rotted remains of a canvas miner coat, one hand bare bone and the other still gripping a rusted iron pick. Cool bone white and desaturated grey-brown, dull rust on the iron. No blood, no gore, no red, no glow and no magic aura of any kind — one flat dead body.",
+   "look": "a mine skeleton: dry grey-white bone gone the colour of the rock it was buried in, a cracked skull with two dim points of light in the eye sockets, ribs showing through the rotted remains of a canvas miner coat, one hand bare bone and the other still gripping a rusted iron pick. Cool bone white and desaturated grey-brown, dull rust on the iron. No blood, no gore, no red, no glow and no magic aura of any kind \u2014 one flat dead body.",
    "states": {
     "idle": {
      "frames": 4,
@@ -216,9 +216,90 @@
      "say": "lifting one arm high with the fingers splayed wide and arching the spine back, then whipping the arm down and forward across the body"
     }
    }
+  },
+  {
+   "sprite": "dragger",
+   "name": "Fissure Dragger",
+   "look": "the TOP HALF of a starved undead skeleton and nothing below the ribs, hauling itself along flat on both hands, spine and a few loose ribs trailing behind it, skull low and forward between the shoulders, arms braced wide. SMALL and LOW to the ground, the proportions of half a man. NOT standing, NOT upright, NOT a full body, NOT legs. Very dark almost-black bone, old blood dried to a rust-brown and black crust. NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm, NOT ivory, NOT white. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "braced flat on both hands, shoulders rising and settling, skull swaying slowly side to side"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "hauling itself forward hand over hand, shoulders heaving, trailing spine dragging behind"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "rearing up off one hand in strict side profile, the free arm swiping forward and down, then dropping back"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "slammed backwards, skull snapping back and one arm folding, in strict side profile"
+    },
+    "death": {
+     "frames": 6,
+     "say": "collapsing flat, arms giving out under the shoulders and the skull settling on the ground"
+    }
+   }
+  },
+  {
+   "sprite": "courser",
+   "name": "Fissure Courser",
+   "look": "a starved undead skeleton of a LARGE DOG, running on four legs, long thin leg bones, a narrow cracked animal skull carried low and forward on a long neck, bare ribs and a whip-thin tail of loose vertebrae. FOUR LEGS and low to the ground, the proportions of a big hunting hound. NOT a man, NOT human, NOT standing on two legs, NOT upright. Very dark almost-black bone, old blood dried to a rust-brown and black crust. NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm, NOT ivory, NOT white. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing on all four legs, head low, ribs and shoulders rising and settling"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "running forward on four legs at a fast lope, legs reaching and gathering under the body"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "lunging in strict side profile, front legs leaving the ground and the jaws snapping forward, then landing"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "knocked sideways off its front legs, skull twisting away, staying in strict side profile"
+    },
+    "death": {
+     "frames": 6,
+     "say": "legs buckling and the body folding down onto its side, skull rolling forward"
+    }
+   }
+  },
+  {
+   "sprite": "heap",
+   "name": "Fissure Heap",
+   "look": "a HUGE BROAD undead thing built out of many skeletons fused together, a squat wide mass of stacked and knitted bone, enormous heavy shoulders far wider than its height, two thick short legs, long heavy arms hanging past the knees, several cracked skulls sunk into the shoulders and chest. WIDE and SQUAT and MASSIVE, NOT tall, NOT thin, NOT lanky, NOT a single skeleton. Very dark almost-black bone, old blood dried to a rust-brown and black crust. NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm, NOT ivory, NOT white. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "planted on both legs, huge shoulders rolling slowly, arms hanging"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "lumbering forward, weight swinging heavily from one short leg to the other"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "hauling both arms up over the shoulders in strict side profile and smashing them down in front, then dragging them back"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "rocked back a half step, shoulders twisting away, in strict side profile"
+    },
+    "death": {
+     "frames": 6,
+     "say": "coming apart at the shoulders and falling forward onto the knees, the mass sagging"
+    }
+   }
   }
  ],
- "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
+ "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
  "props": [
   {
    "id": "pitprop",
@@ -285,7 +366,7 @@
   {
    "id": "bones",
    "tiles": 1.0,
-   "say": "a loose scatter of a few dry bones lying spread apart with gaps between them — a couple of ribs, one long bone, some finger bones — seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+   "say": "a loose scatter of a few dry bones lying spread apart with gaps between them \u2014 a couple of ribs, one long bone, some finger bones \u2014 seen from DIRECTLY ABOVE looking straight down. NO skull, nothing whole. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
   },
   {
    "id": "altar",
@@ -295,7 +376,7 @@
   {
    "id": "gore",
    "tiles": 1.1,
-   "say": "A dried stain soaked INTO bare stone, seen from DIRECTLY ABOVE looking straight down. It is COMPLETELY FLAT — no highlight, no shadow, no rim, no volume, no thickness at all, like a mark printed on the floor. Its edge is torn and uneven with thin runs following the cracks, and the plain grey rock shows through where it has flaked away. NOT domed, NOT rounded, NOT raised, NOT a puddle, NOT a pool, NOT a blob, NOT a lump, NOT a rock, NOT an object, NOT shaded, NOT glossy, NOT wet. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright. Near-black and cold desaturated grey, #33302B in shadow and #4A443C where light reaches. Almost no light down here.",
+   "say": "A dried stain soaked INTO bare stone, seen from DIRECTLY ABOVE looking straight down. It is COMPLETELY FLAT \u2014 no highlight, no shadow, no rim, no volume, no thickness at all, like a mark printed on the floor. Its edge is torn and uneven with thin runs following the cracks, and the plain grey rock shows through where it has flaked away. NOT domed, NOT rounded, NOT raised, NOT a puddle, NOT a pool, NOT a blob, NOT a lump, NOT a rock, NOT an object, NOT shaded, NOT glossy, NOT wet. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright. Near-black and cold desaturated grey, #33302B in shadow and #4A443C where light reaches. Almost no light down here.",
    "tone": 0.55,
    "size": 64,
    "dull": 0.62
@@ -361,7 +442,7 @@
   {
    "id": "fungus",
    "tiles": 0.6,
-   "say": "A spreading crust of pale sickly growth clinging FLAT to bare stone, seen from DIRECTLY ABOVE looking straight down — an irregular patch of fine fibrous strands and blotches with ragged thinning edges, lying flat like mould on a damp wall. Dirty bone-grey and greenish black. NOT a mushroom, NOT a toadstool, NOT a cap, NOT a stalk, NOT a stem, NOT standing up, NOT red, NOT white spots, NOT grass, NOT leaves, NOT a plant, NOT soil, NOT a rock it sits on. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "say": "A spreading crust of pale sickly growth clinging FLAT to bare stone, seen from DIRECTLY ABOVE looking straight down \u2014 an irregular patch of fine fibrous strands and blotches with ragged thinning edges, lying flat like mould on a damp wall. Dirty bone-grey and greenish black. NOT a mushroom, NOT a toadstool, NOT a cap, NOT a stalk, NOT a stem, NOT standing up, NOT red, NOT white spots, NOT grass, NOT leaves, NOT a plant, NOT soil, NOT a rock it sits on. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "tone": 0.78,
    "size": 64,
    "dull": 0.5
@@ -375,7 +456,7 @@
   {
    "id": "splash",
    "tiles": 0.7,
-   "say": "A thin ragged spatter flung across bare stone seen from DIRECTLY ABOVE looking straight down, one small heavier mark with a narrow fan of fine separate droplets thrown away from it in a line. Soaked in and long dried. It has NO thickness — it is a mark IN the floor. NOT a puddle, NOT a blob, NOT round, NOT a circle, NOT raised, NOT domed. Most of the picture is EMPTY bare floor. NOT centred, NOT symmetrical, NOT arranged. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
+   "say": "A thin ragged spatter flung across bare stone seen from DIRECTLY ABOVE looking straight down, one small heavier mark with a narrow fan of fine separate droplets thrown away from it in a line. Soaked in and long dried. It has NO thickness \u2014 it is a mark IN the floor. NOT a puddle, NOT a blob, NOT round, NOT a circle, NOT raised, NOT domed. Most of the picture is EMPTY bare floor. NOT centred, NOT symmetrical, NOT arranged. Every mark is OLD and NEARLY BLACK, a dried near-black brown that only hints at red in the thickest part. NOT red, NOT pink, NOT crimson, NOT magenta, NOT purple, NOT scarlet, NOT wet, NOT glossy, NOT fresh, NOT bright. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here.",
    "tone": 0.6,
    "size": 64,
    "dull": 0.5
@@ -407,7 +488,7 @@
    "tone": 0.72,
    "dull": 0.35,
    "size": 64,
-   "say": "Broken chips of stone lying FLAT and SCATTERED AT RANDOM across bare rock, seen from DIRECTLY ABOVE looking straight down — some almost touching, some far apart, some alone, every one a different size and turned a different way, with wide patches of bare floor between them. The scatter is UNEVEN and MESSY. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT tiled, NOT repeated, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "Broken chips of stone lying FLAT and SCATTERED AT RANDOM across bare rock, seen from DIRECTLY ABOVE looking straight down \u2014 some almost touching, some far apart, some alone, every one a different size and turned a different way, with wide patches of bare floor between them. The scatter is UNEVEN and MESSY. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT tiled, NOT repeated, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   },
   {
    "id": "dirt",
@@ -415,7 +496,7 @@
    "tone": 0.78,
    "dull": 0.4,
    "size": 64,
-   "say": "A thin wash of loose dry dust and grit lying over bare rock, seen from DIRECTLY ABOVE looking straight down. It is FAINT and PATCHY — the plain stone shows through it nearly everywhere, thickest in a few places and thinning away to nothing at the edges, with a torn ragged outline. It is barely there. NOT solid, NOT opaque, NOT a disc, NOT round, NOT a circle, NOT a blob, NOT a hole, NOT dark, NOT a mound, NOT raised, NOT mud. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "A thin wash of loose dry dust and grit lying over bare rock, seen from DIRECTLY ABOVE looking straight down. It is FAINT and PATCHY \u2014 the plain stone shows through it nearly everywhere, thickest in a few places and thinning away to nothing at the edges, with a torn ragged outline. It is barely there. NOT solid, NOT opaque, NOT a disc, NOT round, NOT a circle, NOT a blob, NOT a hole, NOT dark, NOT a mound, NOT raised, NOT mud. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   },
   {
    "id": "vines",
@@ -423,7 +504,7 @@
    "tone": 0.7,
    "dull": 0.5,
    "size": 64,
-   "say": "A few thin dead creeping stems trailing FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another with bare stone showing between them, dry and shrivelled and colourless. They lie ON the ground. NOT green, NOT leaves, NOT a plant, NOT a bush, NOT healthy, NOT growing, NOT standing up, NOT a rope, NOT a chain. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "A few thin dead creeping stems trailing FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another with bare stone showing between them, dry and shrivelled and colourless. They lie ON the ground. NOT green, NOT leaves, NOT a plant, NOT a bush, NOT healthy, NOT growing, NOT standing up, NOT a rope, NOT a chain. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   },
   {
    "id": "chips",
@@ -431,7 +512,7 @@
    "tone": 0.72,
    "dull": 0.35,
    "size": 64,
-   "say": "Sharp angular shards of split stone lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, each with straight broken edges and a pale sheared face, every one a different size and turned a different way. The scatter is UNEVEN and MESSY — some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "Sharp angular shards of split stone lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, each with straight broken edges and a pale sheared face, every one a different size and turned a different way. The scatter is UNEVEN and MESSY \u2014 some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   },
   {
    "id": "cobbles",
@@ -439,7 +520,7 @@
    "tone": 0.74,
    "dull": 0.35,
    "size": 64,
-   "say": "Rounded worn stones of different sizes lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, smooth and dulled with dust, one bigger than the others and off to one side. The scatter is UNEVEN and MESSY — some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "Rounded worn stones of different sizes lying FLAT and scattered at random on bare rock, seen from DIRECTLY ABOVE looking straight down, smooth and dulled with dust, one bigger than the others and off to one side. The scatter is UNEVEN and MESSY \u2014 some almost touching, some far apart, some alone, with wide patches of bare floor between them. NOT a grid, NOT rows, NOT columns, NOT evenly spaced, NOT a pattern, NOT a pile, NOT a heap, NOT a mound. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   },
   {
    "id": "tendrils",
@@ -447,8 +528,8 @@
    "tone": 0.7,
    "dull": 0.5,
    "size": 64,
-   "say": "A few thin dead roots creeping FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another and forking, with bare stone showing between them. They lie ON the ground and are dry and colourless. NOT green, NOT leaves, NOT a plant, NOT healthy, NOT standing up, NOT a rope. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+   "say": "A few thin dead roots creeping FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another and forking, with bare stone showing between them. They lie ON the ground and are dry and colourless. NOT green, NOT leaves, NOT a plant, NOT healthy, NOT standing up, NOT a rope. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   }
  ],
- "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask — and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."
+ "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask \u2014 and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."
 }
