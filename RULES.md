@@ -1511,6 +1511,15 @@ one, and that is where art is judged.
   is a working. `VIGNETTES` and `dressRooms` are kept and nothing calls the
   placer; per-zone furniture is a backlog item and this is the pass it would
   come back through.
+- **A set is RECOLOURED at EMIT, never by editing the file it ships in.**
+  `RETONE` in `tools/art/zoneset.mts` — chroma kept and a per-channel gain,
+  applied to the whole sheet before it is base64ed. `src/render/generated-tiles.ts`
+  says "do not edit by hand" and means it: a colour reached any other way is a
+  colour the next re-emit throws away. Whole sheet, never per tile — tiles
+  interlock at their edges and two of them toned differently is a checkerboard,
+  which is the fault every mixing experiment here has failed on. It is what
+  stands in for the runtime palette a painted tileset gave up, and it costs no
+  generation.
 - **A generated set is asked LIGHT-FLOOR and DARK-ROCK whatever the zone's own
   ink says**, at both ends and by exclusion. Measured twice now: `cavern_lit`
   was asked the Cavern's own way round — pale crystal rock over a dark floor —

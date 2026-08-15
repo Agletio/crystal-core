@@ -65,6 +65,19 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **A generated sheet CAN be recoloured, for free, and `RETONE` is where.** The
+  runtime palette a painted tileset gave up is bought back at emit rather than
+  at draw: chroma kept plus a per-channel gain over the whole sheet in
+  `tools/art/zoneset.mts`, no generation, re-runnable, and the `.png` in
+  `tools/art/cache/zones/` is the input. **That cache is gitignored and a
+  container is reclaimed**, so if it is gone the durable copy is the data URI
+  already in `src/render/generated-tiles.ts` — decode it back out rather than
+  re-asking the generator.
+- **A whole-sheet tone move costs nothing at the dark end when the rock is
+  already black.** The Fissure's rock measures rgb(0,0,0), so two thirds gain
+  took the floor from luma 193 to 126 and left the rock exactly where it was.
+  A set whose rock is NOT black — the Cavern, the Seam — would lose separation
+  the same pass, which is the thing to measure before toning one of those.
 - **A monster at weight 300 cannot be judged by taking screenshots and hoping.**
   The Gaunt is one row in eleven and three peeks in a row caught none. What
   works is bumping its `weight` to something absurd, building, shooting it, and
@@ -1089,72 +1102,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — An older, dimmer floor under the Fissure
-
-**Asked for directly.** *"Go ahead and recolor the floor, try and make it a
-little less bright, make it a little more like ancient cavern vibes."*
-
-**What is true today.** The Fissure draws `lit_round`, a 25-tile generated Wang
-set shipped whole as a data URI in `src/render/generated-tiles.ts` and written
-by `tools/art/zoneset.mts emit`. It is BAKED HEX — every other pixel in the game
-takes its ink from a CSS property at draw time, and a generated surface is what
-gave that up. Its ask is `CAVE` in `zoneset.mts`, a pale rock-dust floor under
-near-black broken stone.
-
-**Why it is wrong.** The floor is bright enough to read as sand rather than as
-stone somebody stopped working, and the Fissure's own line in `MAP_THEMES` is a
-working somebody gave up on.
-
-- [ ] **Do it as a colour pass at EMIT, not as a generation.** `zoneset.mts
-      emit` already reads `tools/art/cache/zones/<name>.png` and base64s it; the
-      change is a pass over those pixels before the encode, so re-colouring is
-      free and repeatable and nothing is asked of the generator. **The cached
-      PNG may not survive the container** — the durable copy of that sheet is
-      the data URI already in `generated-tiles.ts`, so read it back out of there
-      if the cache is gone.
-- [ ] **Shift the sheet GLOBALLY, never per tile.** Floor and rock are one
-      image and tiles interlock at their edges; two tiles shifted differently is
-      the checkerboard that every mixing experiment in this file already failed
-      on. Darkening plus a pull off saturation toward the zone's own
-      grey-brown is the shape of it — an old cavern is dim and desaturated, not
-      a hue swap.
-- [ ] **The TONE RULE outranks the ask.** A LIGHT floor under near-black rock,
-      said at both ends. `cavern_lit` is the measured counter-example sitting
-      beside the shipping set: asked pale-rock-over-dark-floor, it reads INSIDE
-      OUT, the pale expanse taking the eye as ground and the room reading as a
-      hole punched in it. So the floor may get dimmer and older; it may not
-      approach the rock, and if the pass takes it there the pass has gone too
-      far.
-- [ ] **The bodies are the other end of it.** All three skeletons are asked
-      near-black because every zone floor is pale by decision. A floor taken
-      far enough down costs them their silhouette, so judge the floor with
-      monsters standing on it — which is what `npm run peek` is.
-- [ ] **Only the Fissure.** The other three sets are not in the ask and each
-      was toned off its own zone's line.
-
-**Traps.**
-
-- **`docs/app.js` is committed and carries the sheet.** A re-emit changes a
-  data URI inside the bundle, so `npm run build` is not optional and the diff
-  will be large and unreadable. That is expected.
-- **`generated-tiles.ts` says "Do not edit by hand" and means it.** The pass
-  belongs in `zoneset.mts` so the next re-emit does not undo it.
-- **Props are toned to the ground they stand on.** `PropSpec.tone` pulls a
-  generated prop toward the ground's mean and spread, and those were computed
-  against the CURRENT floor. Moving the floor moves what the cover reads as, so
-  look at the loose stone after the shift, not just the tiles.
-- **`canvas2d` is untouched** — it has no sprites and keeps its drawn rock. It
-  is the fallback and has always looked different.
-
-**Done when.** The Fissure floor reads dimmer and older in a live descent, the
-rock is still unmistakably darker than it, the three skeletons still separate
-from it, and the pass that did it is a function in `zoneset.mts` rather than an
-edited data URI.
-
-**What must not break, in order.** `comments`, `typecheck`, `build`, `peek`,
-`shots`.
-
-### Phase 2 — Six Normal monsters, all of them the skeletons' kind
+### Phase 1 — Six Normal monsters, all of them the skeletons' kind
 
 **The ask CHANGED, and it got much smaller.** *The user's words: "Have it just
 be the normal mobs, but cut some of the medium sized ones out so there's only 6
@@ -1247,7 +1195,7 @@ asked for. And a body GENERATED to be imposing: the Gaunt is drawn at 3.2 and
 towers, but it is still the same 96-grid body scaled up, so what a purpose-built
 giant would buy is detail rather than height.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

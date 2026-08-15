@@ -150,6 +150,18 @@ throughout. `cavern_lit` was asked the zone's own way round on purpose and it
 reads INSIDE OUT, the pale expanse taking the eye as ground and the room reading
 as a hole in it. It is in `zoneset.mts` beside the one that ships.
 
+**A set is RETONED at emit, which is what stands in for the runtime palette.**
+`RETONE` in `tools/art/zoneset.mts` is a colour pass over the finished sheet —
+`sat` is how much of the original chroma survives and `mul` is a per-channel
+gain — costing no generation and re-runnable, so a floor moves without asking
+for a set again. It runs over the WHOLE sheet and never per tile, because
+tiles interlock at their edges and two toned differently is a checkerboard.
+The Fissure is the one that has one: *the user's call, "make it a little less
+bright, a little more like ancient cavern vibes"*, which took its floor from
+rgb(206,193,158) at luma 193 — beach sand — to rgb(132,126,111) at 126, a dim
+warm grey. Its rock was already pure black, so nothing was lost at that end and
+the tone rule still holds by a mile.
+
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary, which is what makes the face two thirds

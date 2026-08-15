@@ -13,13 +13,56 @@
  * The sheet ships WHOLE, as a data URI. Every other sprite in the game is a
  * list of characters mapping to a palette property, which is what lets a zone
  * recolour for free — a painted tileset has baked hex and cannot, so there is
- * nothing to buy by quantising one and a lot of quality to lose.
+ * nothing to buy by quantising one and a lot of quality to lose. `RETONE` is
+ * what stands in for that palette: a colour pass at emit, costing no
+ * generation, so a floor can be moved without asking for a set again.
  */
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { callTool, download, fields } from './mcp.mts';
+import { decodePng, encodePng } from './png.mts';
 
 const OUT = 'tools/art/cache/zones';
 const LEDGER = `${OUT}/asked.json`;
+
+/**
+ * A colour pass over a finished sheet, per set. `sat` is how much of the
+ * original chroma survives and `mul` is a per-channel gain — so a hue moves by
+ * what is knocked back rather than by a rotation, which is the only kind of
+ * shift that cannot invent a colour the shading did not have.
+ *
+ * It runs over the WHOLE sheet, never per tile: floor and rock are one image
+ * and its tiles interlock at their edges, so two of them toned differently is
+ * a checkerboard — the fault every mixing experiment here has already failed
+ * on. What it may not do is take the floor toward the rock: a LIGHT floor
+ * under near-black stone is the tone rule, and `cavern_lit` sits in this file
+ * as the measured proof that the other way round reads inside out.
+ */
+interface Retone {
+  sat: number;
+  mul: [number, number, number];
+}
+
+const RETONE: Record<string, Retone> = {
+  // The Fissure asked older and dimmer. It came back as bright sand — a floor
+  // mean of rgb(206,193,158) at luma 193, which reads as a beach rather than as
+  // stone somebody stopped working. Half the chroma and about two thirds the
+  // light puts it at a dim warm grey, and the rock is already pure black, so
+  // nothing is lost at the dark end.
+  lit_round: { sat: 0.5, mul: [0.66, 0.65, 0.63] },
+};
+
+function retone(png: Buffer, how: Retone): Buffer {
+  const { width, height, rgba } = decodePng(png);
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] === 0) continue;
+    const l = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+    for (let c = 0; c < 3; c++) {
+      const away = l + (rgba[i + c] - l) * how.sat;
+      rgba[i + c] = Math.max(0, Math.min(255, Math.round(away * how.mul[c])));
+    }
+  }
+  return encodePng(width, height, rgba);
+}
 
 /** Said the way the generator answers to: name the colour, then say what it is
  *  NOT, because naming a hex alone comes back olive every time. */
@@ -294,7 +337,10 @@ if (process.argv[2] === 'ask') {
   const want = process.argv.slice(3);
   const body = want.map((name) => {
   const meta = JSON.parse(readFileSync(`${OUT}/${name}.json`, 'utf8'));
-  const png = readFileSync(`${OUT}/${name}.png`).toString('base64');
+  const raw = readFileSync(`${OUT}/${name}.png`);
+  const how = RETONE[name];
+  const png = (how ? retone(raw, how) : raw).toString('base64');
+  if (how) console.log(`  ${name}: retoned, sat ${how.sat}, mul ${how.mul.join('/')}`);
   // A corner in base three, high to low, exactly as the renderer keys a cell.
   const tiles = meta.tileset_data.tiles.map((t: any) => ({
     key:
