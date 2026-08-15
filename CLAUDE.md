@@ -85,14 +85,24 @@ spread, and `dull` toward its own luma, because a mean per channel moves how
 BRIGHT a thing is and never how saturated. Naming one to `props` asks for it
 again; naming nothing asks only for the rows with no id yet.
 
-**One monster in the game is a GENERATED body.** The Husk's sprite is
-`skeleton` — its own frames for a swing and for each of the three thrown bolts,
-over five facings — so a Normal pack in any zone can arrive as generated art
-that fights back. It is drawn at `scale` 1.45 rather than the doll's 1, because
-a generated body spans about 69% of its grid where the hand-drawn doll spans
-nearly all of 24. Everything else in `BEASTIARY` is still hand-drawn, and
-`monsterArt` asks that table FIRST — so a sprite id in both is a generated body
-that never draws, which the demo fails on.
+**THREE monsters are GENERATED bodies, and they are the same dead told apart by
+SILHOUETTE.** The **Husk** is `hewer`, a mine skeleton still gripping the tool
+it was holding; the **Gaunt** is `gaunt`, towering on legs that carry most of
+its height; the **Bonecaller** is `shroud`, robed and the one that throws. All
+three are Normal family and `undead`, all three are near-black bone with dried
+gore, because every zone floor is pale by decision and only a dark body
+separates from all four. They are drawn at `scale` 1.45–1.6 rather than the
+doll's 1, since a generated body spans about 69% of its grid where the
+hand-drawn doll spans nearly all of 24. Everything else in `BEASTIARY` is still
+hand-drawn, and `monsterArt` asks that table FIRST — so a sprite id in both is a
+generated body that never draws, which the demo fails on.
+
+**A body has six states and two of them are new.** `idle`, `walk`, `attack`,
+`hurt`, `death`, and a cast — one `cast` for the Gaunt and the three NAMED ones
+(`bolt`, `frost_bolt`, `arc`) for the Bonecaller, since a state is looked up by
+the SKILL's id first. `hurt` and `death` play once and hold on the last frame.
+There is no `run`: the sim has one movement action and a monster only moves once
+it has seen you, so its walk IS the chase.
 
 **A body declares its own STATES and its own FACINGS.** A state is named for an
 ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked

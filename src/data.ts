@@ -1823,13 +1823,45 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.9,
     attackRange: 1,
     radius: 0.32,
-    // The one GENERATED body a player meets: its own states for a swing and
-    // for each of the three bolts, and five facings. A generated body spans
-    // about 69% of its grid where the doll spans nearly all of 24, so it wants
-    // a bigger scale to stand the same height as everything around it.
-    sprite: 'skeleton',
+    // The Fissure's own dead: a mine skeleton still gripping the tool it was
+    // holding. A generated body spans about 69% of its grid where the doll
+    // spans nearly all of 24, so it wants a bigger scale to stand the same
+    // height as the pack around it.
+    sprite: 'hewer',
     scale: 1.45,
     weight: 800,
+    tags: ['undead'],
+  },
+  // Two more of the same dead, told apart by SILHOUETTE rather than by a name
+  // that reads like a spec sheet: the tall one and the robed one.
+  {
+    id: 'gaunt',
+    name: 'Gaunt',
+    family: 'normal',
+    life: 1.45,
+    damage: 1.15,
+    moveSpeed: 0.92,
+    attacksPerSecond: 0.75,
+    attackRange: 1.2,
+    radius: 0.36,
+    sprite: 'gaunt',
+    scale: 1.6,
+    weight: 300,
+    tags: ['undead'],
+  },
+  {
+    id: 'bonecaller',
+    name: 'Bonecaller',
+    family: 'normal',
+    life: 0.85,
+    damage: 0.95,
+    moveSpeed: 1,
+    attacksPerSecond: 0.85,
+    attackRange: 1,
+    radius: 0.3,
+    sprite: 'shroud',
+    scale: 1.45,
+    weight: 300,
     tags: ['undead'],
   },
   {

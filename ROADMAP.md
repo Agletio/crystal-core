@@ -594,6 +594,19 @@ that worked, and these are what it cost:
   the body rotating mid-swing. It is the single highest-value phrase found.
 - **Short animations drift less.** The degradation is at the TAIL, so
   `frame_count: 4` lands usable where 6 needs a window.
+- **The ten-job limit is per ACCOUNT, not per character, and a call needs one
+  slot PER DIRECTION all at once.** Pacing off one body's pending count fires
+  straight into it the moment a second body is in flight — which is what
+  refused five animations here, in text rather than as an error. `list_jobs` is
+  the authoritative count, and `body.mts fill` asks for ONE facing at a time
+  into the same group: the pipe stays full and a refusal costs one facing
+  instead of five.
+- **A generated CHARACTER is NOT permanent.** The docs say characters are
+  stored permanently; the skeleton, revenant and delver this repo shipped all
+  came back `not found`, along with every generated PROP. The converted grid is
+  what ships so no art was lost — but nothing on the server can be re-converted
+  or extended, which is the argument for the conversion step rather than an
+  argument against it. `tables.mts` writes one table at a time now.
 - **`animate_character` dedupes on the first ~30 CHARACTERS of the action
   description**, not on the whole of it: the group carries `[type=custom-<the
   first 30 chars>]` and a second ask matching that prefix is refused with a hint

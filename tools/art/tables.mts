@@ -259,6 +259,9 @@ function spread(urls: string[], want: number, from = 0, to = 1): string[] {
 
 async function creature(spec: BodySpec): Promise<Art> {
   const text = await callTool('get_character', { character_id: spec.character });
+  if (/not found/.test(text)) {
+    throw new Error(`${spec.sprite}: character ${spec.character} is gone from the server`);
+  }
   const dirs = spec.dirs ?? ['east'];
 
   // One flat list, direction-MAJOR: every facing holds the same states in the
@@ -483,13 +486,20 @@ const header = (what: string): string =>
 const write = (name: string, text: string): void =>
   writeFileSync(new URL(`../../src/render/${name}`, import.meta.url).pathname, text);
 
+/** Which tables to write — `bodies`, `tiles`, `props`, or all. A generated
+ *  character is NOT permanent: several came back `not found`, so insisting on
+ *  all three writes none. The grid ships, so nothing is lost. */
+const want = process.argv.slice(2);
+const doing = (which: string): boolean => want.length === 0 || want.includes(which);
+
 // --- the bodies, and the one the hero is drawn as --------------------------
 const bodies: Record<string, Art> = {};
+if (doing('bodies'))
 for (const spec of [...manifest.bodies, ...(manifest.hero.character ? [manifest.hero] : [])]) {
   console.log(`${spec.sprite}:`);
   bodies[spec.sprite] = await creature(spec);
 }
-write(
+if (doing('bodies')) write(
   'generated-art.ts',
   header(
     `The generated bodies, off the MCP server and reduced to the\n` +
@@ -526,6 +536,7 @@ write(
 // Before the furniture, which is toned to it: a prop sits in the scene or it
 // reads as a sticker on it.
 let floorTone: Tone | null = null;
+if (doing('tiles') || doing('props'))
 if (manifest.tileset.id) {
   const floor = await ground(manifest.tileset);
   floorTone = floor.tone;
@@ -553,7 +564,7 @@ if (manifest.tileset.id) {
 }
 
 // --- the furniture ---------------------------------------------------------
-if (manifest.props.length > 0) {
+if (doing('props') && manifest.props.length > 0) {
   console.log('props:');
   const props = await furniture(manifest.props, floorTone);
   write(

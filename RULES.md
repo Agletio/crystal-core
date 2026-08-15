@@ -860,10 +860,17 @@ it cost a whole session's judgement of generated art, which was made about the
 hand-drawn `husk` throughout. The demo fails a shared id.
 
 **A monster is drawn out of EITHER table, and at least one is generated.** The
-Husk's sprite is `skeleton` and a player fights it. The demo holds both halves:
-every monster and boss resolves in one table or the other, and at least one of
-them is generated at a generated body's `scale` — a body left at the doll's 1
-renders a third smaller than the pack it stands in.
+demo holds both halves: every monster and boss resolves in one table or the
+other, and at least one is generated at a generated body's `scale` — a body left
+at the doll's 1 renders a third smaller than the pack it stands in.
+
+**A generated CHARACTER is not permanent, and the grid is what ships.** Several
+this repo generated came back `not found` from the server, taking with them any
+chance of re-converting or extending those bodies. Nothing was lost, because
+what ships is the converted grid in `src/render/generated-art.ts` — which is the
+whole reason the pipeline converts rather than fetching. `tables.mts` takes
+`bodies`, `tiles` or `props` so one dead row cannot stop the other two tables
+being written, and it names the body rather than failing on a missing rotation.
 
 **How far a thrower stands off is ONE answer.** `thrownReach(skill)` — the
 skill's own range, plus two for noticing you. It was written by hand at three

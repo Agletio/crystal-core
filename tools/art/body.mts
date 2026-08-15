@@ -37,8 +37,12 @@ interface BodyAsk {
   states: Record<string, StateAsk>;
 }
 
-/** How many of a body's jobs may be queued before the next call is refused. */
-const IN_FLIGHT = 4;
+/** The account may hold TEN jobs at once, and the ceiling is GLOBAL rather than
+ *  per character — pacing off one body's pending count fires straight into the
+ *  limit the moment a second body is in flight. `list_jobs` is the only
+ *  authoritative answer. A call asks for one job PER DIRECTION and needs them
+ *  all at once, so a five-facing ask needs five free slots. */
+const SLOTS = 10;
 
 const here = (file: string): string => new URL(`./${file}`, import.meta.url).pathname;
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
@@ -55,6 +59,18 @@ const shipped = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
 /** The hero is a body like any other here: it is drawn out of the same table,
  *  and only the room it stands in knows the difference. */
 const made = [...shipped.bodies, shipped.hero];
+
+/** No two of a body's says may share their first thirty characters: the server
+ *  keys an animation's TYPE off that prefix and refuses the second silently. */
+for (const b of asks.bodies) {
+  const seen = new Map<string, string>();
+  for (const [name, ask] of Object.entries(b.states)) {
+    const head = ask.say.slice(0, 30);
+    const clash = seen.get(head);
+    if (clash) throw new Error(`${b.sprite}: "${name}" and "${clash}" open with the same thirty characters`);
+    seen.set(head, name);
+  }
+}
 
 const [command, sprite] = process.argv.slice(2);
 const body = asks.bodies.find((b) => b.sprite === sprite);
@@ -83,6 +99,26 @@ async function facings(character: string): Promise<Map<string, Set<string>>> {
     if (m) out.set(m[2], new Set(m[1].split(',').map((d) => d.trim())));
   }
   return out;
+}
+
+/** Jobs in flight ACROSS the account. A refusal reads `need 5 job slots but
+ *  only 1 available (9/10 used)`, and it comes back as TEXT rather than as an
+ *  error — so anything that does not check is recording a lie. */
+async function inFlight(): Promise<number> {
+  const text = await callTool('list_jobs', {});
+  if (/no active jobs/i.test(text)) return 0;
+  const said = /(\d+)\s*\/\s*10/.exec(text);
+  if (said) return Number(said[1]);
+  return text.split('\n').filter((l) => /^\s*\S/.test(l) && /[0-9a-f-]{36}/.test(l)).length;
+}
+
+/** Wait until `want` slots are free, so a call is made when it can succeed
+ *  rather than made and refused. */
+async function room(want: number): Promise<void> {
+  for (let tries = 0; tries < 120; tries++) {
+    if (SLOTS - (await inFlight()) >= want) return;
+    await wait(20_000);
+  }
 }
 
 async function pending(character: string): Promise<string[]> {
@@ -135,27 +171,37 @@ if (command === 'ask') {
       console.log(`${name}: all ${on.length} facings already`);
       continue;
     }
-    // Only a handful of jobs may be in flight at once, and over the line the
-    // server answers with a hint rather than an error — which reads as success
-    // and silently leaves a facing missing.
-    while ((await pending(character)).length > IN_FLIGHT) await wait(20_000);
-    // The server dedupes on the DESCRIPTION and answers `already queued or
-    // complete` for a re-ask, whatever directions are actually stored — so a
-    // retry says the same thing in a way that hashes differently.
-    let out = '';
-    for (let go = 0; go < 3; go++) {
-      out = await callTool('animate_character', {
-        character_id: character,
-        action_description: ask.say + '.'.repeat(go),
-        animation_name: `${sprite}_${name}`,
-        mode: 'v3',
-        frame_count: ask.frames,
-        directions: want,
-        ...(group ? { animation_group_id: group } : {}),
-      });
-      if (!/nothing re-queued/.test(out)) break;
+    // ONE facing per call, appended to the same group. A five-facing call needs
+    // five slots at once and is refused whole; one at a time keeps the pipe
+    // full instead, and a refusal costs one facing rather than five.
+    let into = group;
+    for (const facing of want) {
+      await room(1);
+      // The server dedupes on the DESCRIPTION and answers `already queued or
+      // complete` for a re-ask, whatever directions are actually stored — so a
+      // retry says the same thing in a way that hashes differently.
+      let out = '';
+      let got = '';
+      for (let go = 0; go < 4 && !got; go++) {
+        if (go > 0) await wait(20_000);
+        out = await callTool('animate_character', {
+          character_id: character,
+          action_description: ask.say + '.'.repeat(go),
+          animation_name: `${sprite}_${name}`,
+          mode: 'v3',
+          frame_count: ask.frames,
+          directions: [facing],
+          ...(into ? { animation_group_id: into } : {}),
+        });
+        got = /group[:= ]+([0-9a-f-]{36})/.exec(out)?.[1] ?? '';
+      }
+      if (!got) {
+        console.log(`${name}/${facing}: GAVE UP — ${said(out, /error|hint|slots/i)}`);
+        continue;
+      }
+      into ??= got;
+      console.log(`${name}/${facing}: ${got}`);
     }
-    console.log(`${name}: ${want.join(', ')} — ${said(out, /group|cost|jobs|status/i)}`);
   }
 } else if (command === 'sheet') {
   // One row per animation, one column per frame, straight off the generator.
