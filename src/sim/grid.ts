@@ -171,6 +171,13 @@ const CUT: Record<MapTheme, Cut> = {
   seam: 'grown',
 };
 
+/** Which generated tileset a zone's whole surface is. A theme with one draws
+ *  no rock of its own: a tileset IS the surface, and the zone's flagstones
+ *  stamped over it is two floors at once. */
+export const ZONE: Partial<Record<MapTheme, string>> = {
+  fissure: 'lit_round',
+};
+
 /** How far a passage wanders off the line between the rooms it joins, and how
  *  much of a dug room's outer ring the rock never gave up. */
 const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 3 };
@@ -607,10 +614,15 @@ export function generateMap(
     carveCorridor(grid, entrance, exit, rng, 0); // straight, whatever the world
   }
 
+  const zone = ZONE[theme];
+  // Fitted BEFORE the landmarks are stamped, or opening a cell beside one
+  // reads its ENTRANCE tile as floor and the hole moves.
+  if (zone) fitCorners(grid, zone);
+
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit, props: [], vein, theme };
+  return { grid, rooms, entrance, exit, props: [], vein, theme, bare: !!zone, zone };
 }
 
 /**

@@ -7011,26 +7011,30 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
   );
 
   // And it does something: the same character, the same seeds, with and
-  // without. Over five of them, because a clear is mostly WALKING — one map
-  // where the exit lands further from the entrance swamps what a Bleed is
-  // worth, and the claim is about the ailment rather than about a map.
+  // without. A clear is mostly WALKING, so one map where the exit lands
+  // further from the entrance swamps what a Bleed is worth — and the ailment
+  // is worth about 1%, measured. Five seeds cannot see that: at five it reads
+  // 0.3% the WRONG way, at twelve 0.5% the right way, at twenty-four 1.0%. The
+  // claim is about the ailment rather than about a map, so it takes the sample
+  // that measures one.
+  const BLEED_SEEDS = 24;
   const bare = createGame('fresh');
   bare.inventory.push(makeGear('skirmisher_body_t1', 20));
   equipItem(bare, bare.inventory[0], 'body');
   const clear = (who: typeof bare.character): number => {
     let total = 0;
-    for (let seed = 21; seed < 26; seed++) {
+    for (let seed = 21; seed < 21 + BLEED_SEEDS; seed++) {
       const run = new RunSim([], who, new Rng(seed));
       runToCompletion(run);
       total += run.state.elapsed;
     }
-    return total / 5;
+    return total / BLEED_SEEDS;
   };
   const before = clear(bare.character);
   const after = clear(wearing.character);
   check(
     after < before,
-    `a Bleed on every hit clears the same five seeds faster: ${after.toFixed(1)}s against ${before.toFixed(1)}s`,
+    `a Bleed on every hit clears the same ${BLEED_SEEDS} seeds faster: ${after.toFixed(1)}s against ${before.toFixed(1)}s`,
     `${after.toFixed(1)}s against ${before.toFixed(1)}s`
   );
 

@@ -139,6 +139,15 @@ lightmap and take the light of the LEDGE they hang from — what the map touches
 at a rim it smears across the tile, and a drop smeared is fog. Under them is
 black, and there is never a floor down there.
 
+**THE FISSURE is drawn by a generated tileset, and the other three zones are
+not.** `ZONE` in `src/sim/grid.ts` maps a theme to a set; a theme with one is
+`bare`, so its own floor, decals and living motion all stand down — a tileset is
+the WHOLE surface. Only the two LANDMARKS survive that, because the way on and
+the way out have to be findable, and `mouth` takes darker inks there: a hole
+reads by contrast, and the rim that stood out on stone is a white box on sand.
+Only Pixi draws a tileset, so `canvas2d` keeps the drawn rock and is still the
+fallback it always was.
+
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary, which is what makes the face two thirds

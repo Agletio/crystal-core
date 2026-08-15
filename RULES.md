@@ -1503,6 +1503,22 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   no second mechanism is needed to make one. Nothing a room stands somebody on
   is ever left as void — the reserved tiles are restored after the cut, since a
   hole under the hero is a room nobody can be in.
+- **What a SET cannot draw, the CARVE must not make.** `fitCorners` in
+  `src/sim/grid.ts` opens rock until every cell is a key the set holds, and
+  `wangKey` lives beside it because the key is a fact about the GRID first. A
+  generated set answers 21 of the 81 corner keys, and what it lacks is not
+  missing art — the MCP docs say the plain 16 cover ALL corner combinations, so
+  the gaps are shapes its own terrain model never emits. A diagonal step in a
+  wall is the one this carve makes and that one does not. Two answers were
+  measured and both are worse: drawn as the nearest key, such a cell puts a cut
+  face where solid rock belongs; built from QUADRANTS of other tiles it puts a
+  sliver of floor inside the stone, because a quadrant's picture is not decided
+  by its own corner. It is geometry, exactly as `thinRock` was, and safe for the
+  same reason — opening only ever adds space.
+  - Only a cell TOUCHING floor is opened. Allowed anywhere it punched 50
+    unreachable pockets into the middle of the stone; restricted, none.
+  - Rock a hand-placed prop HANGS on is held, or the repair opens the wall
+    under a torch and leaves it on air.
 - **A hole is walled with the WALL TILE, placed to read as below the floor.**
   *The user's, with an assembled reference: "the exact tiles we use for walls
   right now, just place them in a way that makes them look like they are lower

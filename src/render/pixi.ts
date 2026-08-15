@@ -14,7 +14,7 @@
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AURA, AURA_BY_ID } from '../data';
-import { WALL } from '../sim/grid';
+import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
@@ -349,11 +349,6 @@ export async function createPixiRenderer(
     return rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
   }
 
-  function corners(grid: GameMap['grid'], x: number, y: number): number {
-    const one = (cx: number, cy: number) => cornerAt(grid, cx, cy);
-    return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
-  }
-
   /**
    * The ground, and the props standing on it. A tileset is the WHOLE surface,
    * so the zone's own rock and decals stand down for one.
@@ -407,7 +402,7 @@ export async function createPixiRenderer(
       // is the wall's lip tile repeating all the way down a face as a pale line
       // running up it.
       const pick = (x: number, y: number): Texture | null => {
-        const key = nearest(corners(grid, x, y));
+        const key = nearest(wangKey(grid, x, y));
         const want = [
           cornerAt(grid, x, y - 1),
           cornerAt(grid, x + 1, y - 1),
@@ -486,6 +481,16 @@ export async function createPixiRenderer(
     // chamber floating in nothing.
     const bare = !!map.bare;
     buildProps(map);
+    // A hole reads by CONTRAST, and a generated ground is PALE where every
+    // hand-drawn zone is dark — so the rim that stood out on stone is a white
+    // box on sand. `mouth` keeps its shape and takes darker inks instead: the
+    // three rings run mid, deep, then the void itself.
+    const hole = {
+      ...floorPalette(palette, map.vein, map.theme),
+      glint: palette.rock,
+      rockShade: palette.rockDeep,
+      shade: palette.void,
+    };
     app.renderer.background.color = bare ? 0x000000 : toHexNumber(palette.rockDeep);
     const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
@@ -521,9 +526,13 @@ export async function createPixiRenderer(
     // run; there are only a handful of distinct decal colours, so grouping
     // turns that into a handful of fills.
     const batches = new Map<string, { colour: number; alpha: number; rects: number[][] }>();
-    for (let y = 0; y < grid.height && !bare; y++) {
+    for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
-        for (const d of tileDecals(floor, at, x, y)) {
+        // A bare map draws none of the zone's decals — except the two
+        // LANDMARKS, which are how you find the way on and the way out.
+        const tile = grid.at(x, y);
+        if (bare && tile !== ENTRANCE && tile !== EXIT) continue;
+        for (const d of tileDecals(bare ? hole : floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
           let batch = batches.get(key);
           if (!batch) {
