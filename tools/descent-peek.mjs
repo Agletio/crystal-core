@@ -98,7 +98,7 @@ for (const want of SOCKETS[zone] ?? []) {
 }
 
 await page.evaluate(() => document.getElementById('run-launch')?.click());
-await page.waitForTimeout(3000);
+await page.waitForTimeout(8000);
 // The kit leaves a screen open and the point is the floor. Escape shuts
 // whatever is on top, and space puts the camera back on the hero.
 for (let i = 0; i < 3; i++) {

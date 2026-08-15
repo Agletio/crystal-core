@@ -1689,16 +1689,32 @@ rule('SPRITES — is the pixel art well formed?');
   check(thin.length === 0, 'and no room is furnished out of one or two shapes', thin.join(', '));
 
   // Every monster the tables can spawn has to have a drawing, or a pack of
-  // them arrives as whatever the fallback happens to be. A boss is not in
-  // `MONSTERS` — that is the pack pool — so its own table is swept too.
+  // them arrives as whatever the fallback happens to be. Either table draws
+  // it: `monsterArt` asks the hand-drawn one first and falls through to the
+  // generated one, which is how a body a player fights got there. A boss is
+  // not in `MONSTERS` — that is the pack pool — so its own table is swept too.
+  const drawn = (sprite: string) => !!MONSTER_FRAMES[sprite] || !!GENERATED[sprite];
   const undrawn = [
-    ...MONSTERS.filter((m) => !MONSTER_FRAMES[m.sprite]).map((m) => m.id),
-    ...BOSSES.filter((b) => !MONSTER_FRAMES[b.sprite]).map((b) => b.id),
+    ...MONSTERS.filter((m) => !drawn(m.sprite)).map((m) => m.id),
+    ...BOSSES.filter((b) => !drawn(b.sprite)).map((b) => b.id),
   ];
   check(
     undrawn.length === 0,
     `all ${MONSTERS.length} monsters and ${BOSSES.length} bosses are drawn`,
     undrawn.join(', ')
+  );
+
+  // And at least one of them is a GENERATED body, or the whole pipeline is art
+  // a player never meets. A generated body spans about 69% of its grid where
+  // the doll spans nearly all of 24, so it needs a bigger `scale` to stand the
+  // same height as the pack around it.
+  const fought = MONSTERS.filter((m) => GENERATED[m.sprite]);
+  const shrunk = fought.filter((m) => m.scale < 1.3).map((m) => `${m.id} at ${m.scale}`);
+  line(`  ${fought.length} of ${MONSTERS.length} monsters are generated: ${fought.map((m) => m.id).join(', ')}`);
+  check(
+    fought.length > 0 && shrunk.length === 0,
+    "and a player meets a generated body, drawn at a generated body's scale",
+    shrunk.join(', ') || 'none are generated'
   );
   // And nothing in the boss table may leak into the pack pool: a slab of the
   // rock arriving four at a time in a corridor is not a boss.

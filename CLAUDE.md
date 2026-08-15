@@ -85,6 +85,15 @@ spread, and `dull` toward its own luma, because a mean per channel moves how
 BRIGHT a thing is and never how saturated. Naming one to `props` asks for it
 again; naming nothing asks only for the rows with no id yet.
 
+**One monster in the game is a GENERATED body.** The Husk's sprite is
+`skeleton` — its own frames for a swing and for each of the three thrown bolts,
+over five facings — so a Normal pack in any zone can arrive as generated art
+that fights back. It is drawn at `scale` 1.45 rather than the doll's 1, because
+a generated body spans about 69% of its grid where the hand-drawn doll spans
+nearly all of 24. Everything else in `BEASTIARY` is still hand-drawn, and
+`monsterArt` asks that table FIRST — so a sprite id in both is a generated body
+that never draws, which the demo fails on.
+
 **A body declares its own STATES and its own FACINGS.** A state is named for an
 ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
 up first, so fire, frost and lightning are three animations rather than one

@@ -1823,8 +1823,12 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.9,
     attackRange: 1,
     radius: 0.32,
-    sprite: 'husk',
-    scale: 1,
+    // The one GENERATED body a player meets: its own states for a swing and
+    // for each of the three bolts, and five facings. A generated body spans
+    // about 69% of its grid where the doll spans nearly all of 24, so it wants
+    // a bigger scale to stand the same height as everything around it.
+    sprite: 'skeleton',
+    scale: 1.45,
     weight: 800,
     tags: ['undead'],
   },

@@ -6,6 +6,11 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**A player fights a GENERATED BODY.** The Husk's sprite is `skeleton` — its own
+swing, its own animation per thrown bolt, five facings — so generated art is now
+in the game at both ends, the ground and the things standing on it. Phase 1 is
+blocked on what a generated body costs in PALETTE, which is open question 8.
+
 **ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** The
 decision open question 8 was parked on has been taken by the user in the doing:
 generated art ships, and the runtime palette is what it cost. Four sets, one
@@ -889,25 +894,41 @@ which `smoke` asserts about and every screenshot is taken against.
 
 ### Phase 1 — The bodies, in the game
 
-**What is true today.** `GENERATED` in `src/render/generated-art.ts` holds the
-skeleton, the revenant and the delver hero, generated for the sandbox and drawn
-nowhere a player goes. `BEASTIARY` is 22 hand-drawn creatures at grid 24.
+**BLOCKED on open question 8's second half**, which is the palette, and it is
+the user's. The first body is IN and reads; what stops the phase going further
+is that nobody has decided what a generated body costs. Do not guess at it.
 
-**The process is written up under "The process, as it now stands"** below and
-has been run end to end twice. What it costs is the thing to read first: about
-60 generations per body at five facings, ~$ and half an hour of waiting, so a
-roster of twenty is around 1,200.
+**What is true today.** The Husk's sprite is `skeleton`, so a player fights a
+generated body in a real descent — its own swing, its own animation per thrown
+bolt, five facings, at `scale` 1.45. `GENERATED` also holds the revenant and the
+delver hero, drawn nowhere. `BEASTIARY` is 21 hand-drawn creatures at grid 24.
+The demo holds both halves: every monster resolves in exactly one table, and at
+least one of them is generated at a generated body's scale.
 
-- [ ] **One body first, in a descent, at the size a body actually occupies.**
-      Not a model sheet. The whole reason the sandbox went is that a room is
-      not where this is judged; `npm run peek` shoots a descent.
+**What LOOKING at it showed, and it is the question.** Four skeletons against
+the Fissure's pale floor wash out — bone white on light sand, where the
+hand-drawn bodies beside them separate cleanly. A generated body is BAKED HEX,
+so it cannot take its ink from the zone the way every hand-drawn sprite does,
+and the same body will be too pale in the Fissure and the Cavern and too light
+in the Rot. Nothing in the renderer can fix that: `glowed` is the rank and is
+off for a common, and RULES refuses a derived outline — one added on top is a
+slab and grown inward it eats a thin limb.
+
+- [ ] **Decide the palette question out loud.** Either re-ink a generated body
+      onto CSS properties — a quantised key is already a small palette, so it is
+      a mapping rather than a rewrite — or give up the recolour for bodies and
+      accept that every one is generated per zone it fights in. The second is
+      generations; the first is code. Ranks are still light applied at runtime,
+      and that has to keep working either way.
+- [ ] **Then the roster.** ~60 generations per body at five facings, half an
+      hour of waiting apiece, so twenty is around 1,200 — real money, and the
+      reason `bodies.json` records the words rather than only the ids. The
+      process is written up under "The process, as it now stands" below and has
+      been run end to end twice.
 - [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
       `GENERATED`, so an id in both is a generated body that never draws,
       silently — it cost a whole session's judgement once. The demo fails a
       shared id; keep that check.
-- [ ] **Decide the palette question out loud.** A generated body is baked hex,
-      like the tileset. Ranks are still applied at runtime as LIGHT, which is
-      the part that must keep working.
 
 **Traps.**
 
@@ -918,8 +939,12 @@ roster of twenty is around 1,200.
   the only check that DROVE a body — that every facing is seen, that a caster
   actually casts in a live sim. A generated body in a descent is where that
   comes back, and it is this phase's to write.
+- **A generated body wants `scale` around 1.45, not the doll's 1.** It spans
+  about 69% of its grid where the doll spans nearly all of 24, so left at 1 it
+  renders a third smaller than the pack around it. The demo holds it.
 
-**Done when.** A player fights a generated body in a real descent and it reads.
+**Done when.** A player fights generated bodies in a real descent, they read
+against the floor they stand on, and the palette decision is written down.
 
 ### Phase 2 — A quest log instead of a pointing finger
 
@@ -1061,7 +1086,7 @@ Every one is parked deliberately. Ask before acting on any of them.
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
 
-8. **ANSWERED, by the user doing it.** *"Just use the pixellab pipeline to
+8. **HALF ANSWERED, and the other half is now live.** *"Just use the pixellab pipeline to
    generate a zone that looks good... I literally don't care what it looks like
    as long as it looks good", then "put this map into the main game to replace
    the base fissure".* Generated art ships. The Fissure is a generated tileset
@@ -1069,10 +1094,16 @@ Every one is parked deliberately. Ask before acting on any of them.
    baked hex, so four zones will be four generated sets rather than one set with
    four palettes. Ranks are still light applied at runtime, which is the part
    that has to keep working when BODIES follow in Phase 1.
-   What is NOT settled, and is a real question when the bodies land: whether to
-   re-ink a generated body onto CSS properties to buy the palette back (a
-   quantised key is already a small palette, so it is a mapping rather than a
-   rewrite), or give up the recolour there too.
+   What is NOT settled: whether to re-ink a generated body onto CSS properties
+   to buy the palette back (a quantised key is already a small palette, so it is
+   a mapping rather than a rewrite), or give up the recolour there too. **The
+   bodies have landed, so this is no longer hypothetical** — the Husk is drawn
+   from `GENERATED.skeleton` and four of them against the Fissure's pale floor
+   wash out where the hand-drawn bodies beside them separate cleanly. Baked hex
+   means the same body is too pale in the Fissure and the Cavern and too light
+   in the Rot, and nothing in the renderer can answer it: `glowed` is the rank
+   and is off for a common, and a derived outline is refused by `RULES.md`.
+   Phase 1 is blocked on this and nothing else.
 
 9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, the
    walls hanging into a hole, bridges — was built, judged and deleted at the
