@@ -117,6 +117,7 @@ import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
 import { animates, facingRow, generatedFrame } from './render/sprites';
+import { heroScale } from './sim/appearance';
 import type { Cel } from './render/sprites';
 
 /** A frame request with everything defaulted, so a check names only what it
@@ -1518,9 +1519,38 @@ rule('SPRITES — is the pixel art well formed?');
         }
         return least;
       });
+      // And how far the legs SAY they carry him: the feet at their widest is
+      // one step, two of those is a cycle, and `stride` has to match it or the
+      // body slides — over-travelling it skates forward, under-travelling it
+      // skids back. The global per-frame constant matched no body at all.
+      const drawn = MONSTERS.find((m) => m.sprite === id)?.scale ?? heroScale(id);
+      let apart = 0;
+      const side = Math.max(0, art.dirs.indexOf('east'));
+      for (const f of run) {
+        const rows = art.frames[side * stride + f];
+        let top = rows.length;
+        let bottom = -1;
+        for (let y = 0; y < rows.length; y++)
+          if ([...rows[y]].some((c) => c !== '.')) {
+            if (y < top) top = y;
+            bottom = y;
+          }
+        let lo = Infinity;
+        let hi = -1;
+        for (let y = bottom - Math.round(0.14 * (bottom - top)); y <= bottom; y++)
+          for (let x = 0; x < rows[y].length; x++)
+            if (rows[y][x] !== '.') {
+              lo = Math.min(lo, x);
+              hi = Math.max(hi, x);
+            }
+        if (hi >= 0) apart = Math.max(apart, hi - lo);
+      }
+      const depicts = (2 * apart * drawn) / art.grid;
+      const shipping = art.stride ?? STRIDE_CYCLE;
       gauge(
-        `${id} walks by ${moved.map((m) => `${Math.round(m * 100)}%`).join(' ')} ` +
-          `of itself per frame, over ${art.dirs.join(' ')}`
+        `${id.padEnd(9)} moves ${moved.map((m) => `${Math.round(m * 100)}%`.padStart(4)).join('')} per frame; ` +
+          `its legs depict ${depicts.toFixed(2)} tiles a cycle and it travels ${shipping.toFixed(2)} ` +
+          `(${depicts ? `${Math.round((100 * (shipping - depicts)) / depicts)}%` : '—'} off)`
       );
     }
 

@@ -628,6 +628,16 @@ export async function createPixiRenderer(
     // drawn at — a generated body is its own, not `CELL`.
     const scale = (1 / (s.texture.width || CELL)) * e.scale * (1 - fade * 0.5);
     s.scale.set(scale);
+
+    // Crisp when MAGNIFIED, smooth when minified. Linear supersamples a body
+    // drawn smaller than its own grid, which is nearly all of them; over one
+    // drawn BIGGER it smears — the Gaunt is 3.2 tiles off a 96 sprite, so at
+    // the default camera it lands at 2 screen pixels per art pixel and reads
+    // as mush. Zooming in magnifies everything, and pixel art magnified wants
+    // its pixels. The margin keeps it from flapping at exactly 1:1.
+    const per = (e.scale * world.scale.x) / (s.texture.width || CELL);
+    const want = per > 1.05 ? 'nearest' : 'linear';
+    if (s.texture.source.scaleMode !== want) s.texture.source.scaleMode = want;
     s.alpha = (1 - fade) * (1 - sunk);
     s.rotation = fade * 1.2;
 

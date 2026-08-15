@@ -1558,7 +1558,7 @@ export const HERO_BASE = {
   critChance: 5,
   /** Extra percent on a crit, on top of the base doubling. */
   critMultiplier: 0,
-  moveSpeed: 3.4,
+  moveSpeed: 2.9,
   armour: 0,
   attackRange: 1.7,
   /** Body radius in tiles. */

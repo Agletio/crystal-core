@@ -27,6 +27,7 @@ export type GeneratedArt = {
 export const GENERATED: Record<string, GeneratedArt> = {
   gaunt: {
     grid: 96,
+    stride: 2.33,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',
@@ -8279,6 +8280,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   hewer: {
     grid: 96,
+    stride: 0.97,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',
@@ -26238,6 +26240,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   dragger: {
     grid: 96,
+    stride: 1.63,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',
@@ -33035,6 +33038,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   courser: {
     grid: 96,
+    stride: 0.94,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',
@@ -39832,6 +39836,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   heap: {
     grid: 96,
+    stride: 1.62,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',
@@ -46629,7 +46634,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   wanderer: {
     grid: 96,
-    stride: 2.52,
+    stride: 1.47,
     dirs: ["north","north-east","east","south-east","south"],
     frames: [[
       '................................................................................................',

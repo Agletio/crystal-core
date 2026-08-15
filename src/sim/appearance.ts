@@ -15,6 +15,10 @@ import type { Look, WornPiece } from '../types';
 export const HERO_SPRITE = 'wanderer'; // no trade: the base man
 export const HERO_DOLL = 'hero'; // the doll, and the only art carrying GEAR
 
+// Tiles on screen; the gait gauge measures a stride against this too.
+export const HERO_TILES: Record<string, number> = { [HERO_DOLL]: 1.15 };
+export const heroScale = (sprite: string): number => HERO_TILES[sprite] ?? 1.5;
+
 /** Falls through to the doll, so a look nobody has generated yet is a
  *  hand-drawn hero rather than an empty tile. */
 export function heroSpriteFor(character: Character): string {

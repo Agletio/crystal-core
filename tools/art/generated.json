@@ -16,7 +16,7 @@
    "south-east",
    "south"
   ],
-  "stride": 2.52,
+  "stride": 1.47,
   "states": {
    "idle": {
     "group": "edcac618-4cee-423a-ab8f-2be883ce6f54",
@@ -52,6 +52,7 @@
   {
    "sprite": "gaunt",
    "character": "b46c8d3f-b2b5-485a-a643-25b6402e9105",
+   "stride": 2.33,
    "dirs": [
     "north",
     "north-east",
@@ -89,6 +90,7 @@
   {
    "sprite": "hewer",
    "character": "329870bc-efe7-44de-8bcb-4609b862b632",
+   "stride": 0.97,
    "dirs": [
     "north",
     "north-east",
@@ -167,6 +169,7 @@
   {
    "sprite": "dragger",
    "character": "c4741665-027f-4af2-a9ed-e98b2f377f59",
+   "stride": 1.63,
    "dirs": [
     "north",
     "north-east",
@@ -201,6 +204,7 @@
   {
    "sprite": "courser",
    "character": "1420dae7-949d-448c-b421-04c14c85686f",
+   "stride": 0.94,
    "dirs": [
     "north",
     "north-east",
@@ -235,6 +239,7 @@
   {
    "sprite": "heap",
    "character": "6b0088d1-bc59-4261-9df0-cfe66aead6c1",
+   "stride": 1.62,
    "dirs": [
     "north",
     "north-east",
