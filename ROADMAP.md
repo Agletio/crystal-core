@@ -810,7 +810,13 @@ character. It asks ONE facing at a time into the same animation group, paced off
   the skull turns to face the camera by frame three. It may NOT open the
   sentence; see the pitfalls.
 - **Describe the LIMBS, not the tool.** Naming a weapon the rotation does not
-  hold draws a different one every frame.
+  hold draws a different one every frame. **And an ask that names no limb only
+  works in SIDE PROFILE**: the hero's walk said "a tired trudge, head down, rags
+  swaying at the hem" and came back a real stride on east and a standing pose on
+  the other four, so he slid everywhere but east and west. Name the leg swinging
+  past the other, the knee lifting clear, the opposite arm swinging with it.
+  `npm run demo` prints how far each walk moves per facing and is the only way
+  to see it — the frames are all there, all distinct and all reached.
 - **Short animations drift less.** `frame_count: 4` lands usable where 6 needs a
   window.
 - **Five facings, not eight.** `GeneratedArt.dirs` runs north to south and the

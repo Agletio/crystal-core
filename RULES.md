@@ -980,6 +980,19 @@ were the per-slot route and it is gone. **No trade is the base man himself**,
 ragged and empty-handed, so you start as nobody and taking up a trade is what
 dresses you.
 
+**AN ASK THAT NAMES NO LIMB ONLY WORKS IN SIDE PROFILE.** The hero's walk was
+"walking forward at a tired trudge, head down, rags swaying at the hem", which
+came back a real stride on the EAST facing and a standing pose on the other
+four — he slid. A side profile makes a stride obvious and a front or a back view
+does not, so a facing where the motion is hard to see needs it spelled out: one
+leg swinging past the other, the knee lifting clear of the ground, the opposite
+arm swinging with it, shoulders dipping. **This is invisible to every other
+check** — the frames are all there, all distinct and all reached. `npm run demo`
+PRINTS how far each body's walk moves per facing as a share of its own ink; the
+roster runs 27-66% and the broken one ran 1-7%. What to read is one facing far
+below the same body's own best. It prints rather than fails because the Heap is
+a fused mass whose 1% is honest.
+
 **An animation is JUDGED on ONE facing before the other four are paid for, and
 the judgement is the point.** Of the hero's six states, three came back wrong
 from a first ask: the death never left its feet, which is the "a body will not
