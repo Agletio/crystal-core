@@ -46,13 +46,8 @@
   {
    "sprite": "gaunt",
    "character": "b46c8d3f-b2b5-485a-a643-25b6402e9105",
-   "stride": 2.33,
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -79,18 +74,16 @@
      "group": "4d47950b-df25-4784-beb1-7175325f28a5",
      "frames": 3
     }
-   }
+   },
+   "grid": 48,
+   "inks": 24,
+   "stride": 2.67
   },
   {
    "sprite": "hewer",
    "character": "329870bc-efe7-44de-8bcb-4609b862b632",
-   "stride": 0.97,
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -113,17 +106,16 @@
      "group": "0de387b7-cd9f-477f-ad2a-589953416623",
      "frames": 3
     }
-   }
+   },
+   "grid": 48,
+   "inks": 24,
+   "stride": 0.85
   },
   {
    "sprite": "shroud",
    "character": "f55a5ea6-2a2c-4fe7-bdcd-3a24dc3bbe69",
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -158,18 +150,15 @@
      "group": "e43e1619-e431-4d4e-88f6-75844b3c1ded",
      "frames": 3
     }
-   }
+   },
+   "grid": 48,
+   "inks": 24
   },
   {
    "sprite": "dragger",
    "character": "c4741665-027f-4af2-a9ed-e98b2f377f59",
-   "stride": 1.63,
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -193,18 +182,16 @@
      "frames": 3
     }
    },
-   "luma": 32
+   "luma": 32,
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.29
   },
   {
    "sprite": "courser",
    "character": "1420dae7-949d-448c-b421-04c14c85686f",
-   "stride": 0.94,
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -228,18 +215,16 @@
      "frames": 3
     }
    },
-   "luma": 32
+   "luma": 32,
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15
   },
   {
    "sprite": "heap",
    "character": "6b0088d1-bc59-4261-9df0-cfe66aead6c1",
-   "stride": 1.62,
    "dirs": [
-    "north",
-    "north-east",
-    "east",
-    "south-east",
-    "south"
+    "south-east"
    ],
    "states": {
     "idle": {
@@ -264,7 +249,10 @@
      "frames": 3
     }
    },
-   "luma": 32
+   "luma": 32,
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.74
   }
  ],
  "props": [
