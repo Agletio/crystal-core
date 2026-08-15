@@ -185,6 +185,50 @@ function resample({ width, height, rgba }: Decoded, size: number): string {
   return encodePng(size, size, out).toString('base64');
 }
 
+/** Everything not JOINED to the body, gone. A design is asked for with no
+ *  ground, no base and no other objects, and it draws them anyway — a pebble
+ *  field under the feet, a blood pool, a spare skull. Detached is the whole
+ *  test, so this is a rule rather than a thing to ask for and hope, the way
+ *  the outline and the background flood already are. It reports what it took,
+ *  because a genuinely detached scrap of cloth would go the same way. */
+function loose({ width: W, height: H, rgba }: Decoded): [Buffer, number] {
+  const mine = new Int32Array(W * H).fill(-1);
+  const sizes: number[] = [];
+  for (let seed = 0; seed < W * H; seed++) {
+    if (rgba[seed * 4 + 3] < 40 || mine[seed] >= 0) continue;
+    const id = sizes.length;
+    let n = 0;
+    const stack = [seed];
+    mine[seed] = id;
+    while (stack.length) {
+      const at = stack.pop()!;
+      n++;
+      const x = at % W;
+      const y = (at / W) | 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const j = ny * W + nx;
+          if (rgba[j * 4 + 3] < 40 || mine[j] >= 0) continue;
+          mine[j] = id;
+          stack.push(j);
+        }
+    }
+    sizes.push(n);
+  }
+  const body = sizes.indexOf(Math.max(...sizes, 0));
+  const out = new Uint8Array(rgba);
+  let dropped = 0;
+  for (let i = 0; i < W * H; i++)
+    if (mine[i] >= 0 && mine[i] !== body) {
+      out.set([0, 0, 0, 0], i * 4);
+      dropped++;
+    }
+  return [encodePng(W, H, out), dropped];
+}
+
 if (command === 'design') {
   // ONE image, one generation, ~30 seconds. Everything after this costs thirty,
   // so a body nobody likes is meant to die here.
@@ -219,8 +263,9 @@ if (command === 'design') {
       if (!url.startsWith('http')) url = '';
     }
     if (!url) { console.log(`${sprite}-${n}: never arrived`); continue; }
-    writeFileSync(`${dir}/${sprite}-${n}.png`, await download(url));
-    console.log(`${dir}/${sprite}-${n}.png`);
+    const [png, dropped] = loose(decodePng(await download(url)));
+    writeFileSync(`${dir}/${sprite}-${n}.png`, png);
+    console.log(`${dir}/${sprite}-${n}.png${dropped ? `  (dropped ${dropped} loose px)` : ''}`);
   }
   console.log('LOOK at them on the four zone floors, then `rotate` the one that is approved');
 } else if (command === 'grab') {
