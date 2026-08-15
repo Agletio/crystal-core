@@ -4221,6 +4221,45 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     check(ends, `and every descent ${mover} is in still ends`, `a ${mover} run never finished`);
   }
 
+  // A body that has not seen you PACES, and stays where it was put. Both halves
+  // matter: standing perfectly still reads as a prop, and a pack that walks
+  // somewhere has left the room it guards — and neither may put a body in rock,
+  // which `nudge` is the mover for.
+  {
+    const idler = makeCharacter(starterLoadout(new Rng(7)), 'strike');
+    let stirred = 0;
+    let furthest = 0;
+    let inRock = 0;
+    for (const seed of [11, 42, 77]) {
+      // Per SEED: ids start again with each sim, so one map across all three
+      // measures a body in this descent against where a different one stood in
+      // the last, and reads 27 tiles of drift that nothing walked.
+      const home = new Map<number, { x: number; y: number }>();
+      const sim = new RunSim([], idler, new Rng(seed));
+      for (let k = 0; k < 900 && sim.state.status === 'running'; k++) {
+        for (const m of sim.state.monsters) {
+          if (!m.dead && !m.aggroed && !home.has(m.id)) home.set(m.id, { x: m.x, y: m.y });
+        }
+        sim.step(TICK);
+        for (const m of sim.state.monsters) {
+          if (m.dead) continue;
+          if (!sim.state.map.grid.walkable(m.x, m.y)) inRock++;
+          const was = m.aggroed ? undefined : home.get(m.id);
+          if (!was) continue;
+          const gone = Math.hypot(m.x - was.x, m.y - was.y);
+          furthest = Math.max(furthest, gone);
+          if (gone > 0.05) stirred++;
+        }
+      }
+    }
+    line(`  ${stirred} unaggroed ticks with movement in them, furthest from home ${furthest.toFixed(2)} tiles`);
+    check(
+      stirred > 0 && furthest > 0.2 && furthest < 2.5 && inRock === 0,
+      'a body that has not seen you paces, stays where it was put, and never in rock',
+      `${stirred} stirred, ${furthest.toFixed(2)} tiles, ${inRock} ticks in rock`
+    );
+  }
+
   // Every movement notable changes what the MOVE does. `FIREBALL` above asks
   // this of a cast by firing the behaviour; a mover has no behaviour to fire,
   // so what is measured is the move itself: how often, how far, and what is
@@ -4261,20 +4300,33 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     check(!!shock && shock.slow > 0, 'walking to Tremor reaches the sim through the web',
       JSON.stringify(shock));
 
-    const sim = new RunSim([], jumper, new Rng(77));
+    // Over SEEDS, because whether a leap lands on top of anything is a fact
+    // about one map: measured, a Slow lands on six maps in eight and two of the
+    // eight see none at all. One seed here is a check that passes until the rng
+    // shifts under it, which is what it did.
+    const seeds = [77, 78, 79, 80, 81, 90, 101, 202];
     let slowed = 0;
     let slower = 0;
-    for (let k = 0; k < 6000 && sim.state.status === 'running'; k++) {
-      sim.step(TICK);
-      for (const m of sim.state.monsters) {
-        if (m.dead || !m.slowed) continue;
-        slowed++;
-        // What a Slow IS: the cooldown between its swings, longer.
-        if (m.cooldown > 1 / m.stats.attacksPerSecond + 1e-9) slower++;
+    let maps = 0;
+    for (const seed of seeds) {
+      const sim = new RunSim([], jumper, new Rng(seed));
+      const was = slowed;
+      for (let k = 0; k < 6000 && sim.state.status === 'running'; k++) {
+        sim.step(TICK);
+        for (const m of sim.state.monsters) {
+          if (m.dead || !m.slowed) continue;
+          slowed++;
+          // What a Slow IS: the cooldown between its swings, longer.
+          if (m.cooldown > 1 / m.stats.attacksPerSecond + 1e-9) slower++;
+        }
       }
+      if (slowed > was) maps++;
     }
-    line(`  ${slowed} slowed monster-ticks, ${slower} of them mid-swing and slower for it`);
-    check(slowed > 0, 'a landing Slows what is standing in it', `${slowed} ticks`);
+    line(
+      `  ${slowed} slowed monster-ticks over ${seeds.length} maps, ${maps} of them saw one, ` +
+        `${slower} mid-swing and slower for it`
+    );
+    check(maps >= seeds.length / 2, 'a landing Slows what is standing in it', `${maps}/${seeds.length} maps`);
     check(
       slowed === 0 || slower > 0,
       'and a Slowed body genuinely swings less often',
@@ -5111,11 +5163,28 @@ rule('POTIONS — a budget you spend, and one rule that spends it');
     const a = play([40, 400]);
     const b = play([40, 400]);
     check(a === b, 'the same seed and the same presses replay identically', `${a} then ${b}`);
-    check(
-      play([]) !== a,
-      'and a press actually changes the run it lands in',
-      'pressing a flask made no difference to anything'
-    );
+
+    // That a press DOES something is asked of the press, not of the end of the
+    // run: a flask poured into a character who is barely hurt heals a few life
+    // that regenerate anyway, so two fingerprints taken eighty seconds later
+    // are equal for a reason that has nothing to do with the flask. It waits
+    // for a hero who can actually drink, then reads the charge and the effect.
+    {
+      const sim = new RunSim([], hero, new Rng(9090));
+      const flask = POTIONS[0].id;
+      for (let tick = 0; tick < 40 && sim.state.status === 'running'; tick++) sim.step(TICK);
+      const had = sim.state.charges[flask] ?? 0;
+      const before = sim.state.hero.effects.length;
+      sim.usePotion(flask);
+      sim.step(TICK);
+      check(
+        had > 0 &&
+          (sim.state.charges[flask] ?? 0) === had - 1 &&
+          sim.state.hero.effects.length > before,
+        'and a press spends a charge and puts the flask on the hero',
+        `${had} charges to ${sim.state.charges[flask]}, ${before} effects to ${sim.state.hero.effects.length}`
+      );
+    }
   }
 
   // Every potion is on a key, and the key is a table entry rather than a

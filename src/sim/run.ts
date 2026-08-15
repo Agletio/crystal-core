@@ -75,6 +75,14 @@ export const TICK = 1 / 30;
 /** Monsters beyond this range of the hero don't think at all. */
 const ACTIVE_RANGE = 16;
 
+/** How a body that has not seen you paces: never further than `WANDER_REACH`
+ *  from where it was put, at a fraction of its chase speed, resting between
+ *  steps. Shifting weight rather than patrolling — a pack that walks somewhere
+ *  is a pack that has left the room it guards. */
+const WANDER_REACH = 1.15;
+const WANDER_PACE = 0.32;
+const WANDER_REST: [number, number] = [0.7, 2.8];
+
 /** How far a body with something to THROW stands off, and notices you from:
  *  the skill's own reach, in the four places that used to say it by hand. */
 const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
@@ -208,6 +216,10 @@ export interface Entity {
   slowed?: number;
   /** Tiles this body has actually walked, for the walk cycle to read. */
   walked: number;
+  /** Where a body that has not seen you paces about: where it was PUT, the spot
+   *  it is ambling to, and the pause before the next one. Anchored, so a pack
+   *  cannot drift out of the room it stands in. */
+  wander?: { home: Vec2; to: Vec2; wait: number };
   dead: boolean;
 }
 
@@ -1230,9 +1242,13 @@ export class RunSim {
     // Woken by sight, and once woken they chase around corners. Waking one
     // wakes whoever is beside it, so a pack turns together.
     if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) this.wake(m, true);
-    if (!m.aggroed) return;
 
-    if (m.actionTimer > 0) m.actionTimer -= dt;
+    // Above the aggro gate: a pose an unwoken body was knocked into would hold
+    if (m.actionTimer > 0) m.actionTimer -= dt; // for the rest of the descent
+    if (!m.aggroed) {
+      this.pace(m, dt);
+      return;
+    }
 
     if (d <= m.stats.attackRange && this.canSee(m, hero)) {
       m.path = [];
@@ -1349,6 +1365,53 @@ export class RunSim {
    * Walk a cached path, repathing on a stagger so a pack never recomputes on one
    * tick. False means no route, which callers treat as "pick something else".
    */
+  /** Shifting about on the spot, for a body that has not seen you. By `nudge`
+   *  rather than by a path — a wander is a step and a half, and `nudge` is the
+   *  mover that tests the whole BODY against the rock rather than its centre.
+   *  A step it cannot take ends there rather than pushing forever: what is in
+   *  the way is usually another monster, which `separate` already resolves. */
+  private pace(e: Entity, dt: number): void {
+    const w =
+      e.wander ??
+      (e.wander = {
+        home: { x: e.x, y: e.y },
+        to: { x: e.x, y: e.y },
+        wait: this.rng.float(0, WANDER_REST[1]),
+      });
+
+    if (w.wait > 0) {
+      w.wait -= dt;
+      this.settleAction(e, false);
+      return;
+    }
+
+    const dx = w.to.x - e.x;
+    const dy = w.to.y - e.y;
+    const d = Math.hypot(dx, dy);
+    const rest = (): void => {
+      const turn = this.rng.float(0, Math.PI * 2);
+      const out = this.rng.float(0.25, WANDER_REACH);
+      w.to = { x: w.home.x + Math.cos(turn) * out, y: w.home.y + Math.sin(turn) * out };
+      w.wait = this.rng.float(WANDER_REST[0], WANDER_REST[1]);
+    };
+    if (d <= 0.05) {
+      rest();
+      this.settleAction(e, false);
+      return;
+    }
+
+    const step = Math.min(d, e.stats.moveSpeed * WANDER_PACE * dt);
+    const wasX = e.x;
+    const wasY = e.y;
+    this.nudge(e, (dx / d) * step, (dy / d) * step);
+
+    const went = Math.hypot(e.x - wasX, e.y - wasY);
+    e.walked += went;
+    if (went > 1e-6) this.face(e, e.x + (e.x - wasX), e.y + (e.y - wasY));
+    else rest();
+    this.settleAction(e, went > 1e-6);
+  }
+
   private advance(e: Entity, goal: Vec2, dt: number): boolean {
     e.pathTimer -= dt;
     if (e.path.length === 0 || e.pathTimer <= 0) {
