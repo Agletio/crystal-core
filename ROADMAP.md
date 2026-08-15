@@ -71,6 +71,36 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **`tables.mts props` CLOBBERED the zone tilesets, silently.** It wrote a
+  `TILESETS` table into `src/render/generated-tiles.ts` — the file
+  `zoneset.mts emit` owns — and nothing has read `TILESETS` since generated
+  zones landed, so the only symptom was `ZONES` vanishing and the whole game
+  failing to typecheck. It was reached because the ground was fetched to TONE
+  the furniture by, and writing came along with the fetch. It reads the
+  shipping floor for that now and writes nothing. **Two tools writing one
+  generated file is a fault this repo has now had twice** — the first was three
+  tools writing `generated-art.ts` — so before adding a writer, grep for who
+  else writes that path.
+- **`tools/*.mts` IS NOT TYPECHECKED.** `npm run typecheck` covers `src` only,
+  so two missing imports in `tables.mts` passed clean and failed at runtime. A
+  change to the art tools is proven by RUNNING them and nothing else.
+- **Every generated PROP is now gone from the server**, not just some — the
+  whole table came back `not found`. `furniture` keeps the grid a row already
+  ships when that happens, which is the only reason a new prop can be added at
+  all: throwing on the first dead row meant no new prop could ever be written
+  again.
+- **A prop is toned to the floor that SHIPS, and the floor moved.** `RETONE`
+  darkened the Fissure after every existing prop had been toned to the old
+  bright sand, so anything imported now is toned to the new stone and the old
+  grids are not. Nothing looks wrong today because the survivors kept their
+  grids, but a re-generated prop will sit differently from its neighbours.
+- **The NOUN beat "roots" twice, and it was dropped the second time.** Three
+  variants asked as "a few long single roots", "a knotted mass" and "a thin
+  straggle" came back a single scratch, a tree trunk and green leaves. Re-asked
+  as minimal variations on the WORDING THAT ALREADY WORKED — same opening
+  clause, same exclusions, one adjective moved — two of three landed and the
+  knot came back a tree again. **Vary the proven sentence, do not write a new
+  one**, and drop a noun that has fought twice, exactly as the sigil was.
 - **THREE BODIES COST 203 GENERATIONS AND MOST OF A DAY**, against the ~30 each
   this file estimated. The breakdown: 9 designs, 6 to rotate, 15 to animate one
   facing per state, and 60 to fill the other four — which is 90 CALLS but 203
@@ -98,13 +128,17 @@ Kept here because the next thing built on top of them will want it.
   budget is 20% of the file, so deleting 67 lines of table lowered the ceiling
   and put `data.ts` over by 14 without a word being added. Expect to pay for a
   deletion in prose.
-- **The balance gauges MOVED, and one of them a long way.** The Seam went from
-  -0.1% to **-21.1%** against the hardest single world, and one blank crystal
-  after the first clear went from 18/24 to 24/24. Nothing is tuned and nothing
-  blocks: they are `gauge()` lines and the suite is green. But open question 3
-  asks whether the Seam is the hardest room in the game, and the answer just
-  got further from yes — so whoever picks up the balance pass should know the
-  Normal pool's stats moved under it.
+- **The balance gauges MOVED with the roster.** One blank crystal after the
+  first clear went from 18/24 to 24/24. The Seam went -0.1% to -21.1% and then
+  back to **-12.6%** once every family got a thrower, which is inside its own
+  wanted band again.
+- **RANGED PACKS WERE CARRYING THE AURA WORLDS, and nobody knew.** Measured by
+  isolating the change: taking ranged away from every pool dropped damage taken
+  from 9.9 to 5.1 a second in the Rot and 7.5 to 3.0 in the Cavern, against 4.3
+  to 3.4 in the Fissure. So a world with no thrower is HALF a world, and the
+  "Normal is the shallow end" check — which is a `check()`, not a gauge — broke
+  outright. **A family without a thrower is a mechanism failure, not a balance
+  drift.** The fix was one `throws: true` per family, not a number anywhere.
 - **A generated sheet CAN be recoloured, for free, and `RETONE` is where.** The
   runtime palette a painted tileset gave up is bought back at emit rather than
   at draw: chroma kept plus a per-channel gain over the whole sheet in
@@ -453,25 +487,25 @@ figure it got. They are the before. Taken with 530 checks passing, after the
 Normal pool became six generated bodies:
 
 ```
-the Seam is -21.1% over the hardest single world    — wanted: same class within 15%
-a trade moves the deep-end kill rate 4.03–7.34/s    — no pairing should be the only one
-0% to 30% of swings go unpaid                       — wanted: 5%–50%
+the Seam is -12.6% over the hardest single world    — wanted: same class within 15%
+a trade moves the deep-end kill rate 3.85–7.44/s    — no pairing should be the only one
+2% to 22% of swings go unpaid                       — wanted: 5%–50%
 a starved cast lands for 50% of your damage
-a naked character walks out on 53% life             — wanted: under 70%
+a naked character walks out on 66% life             — wanted: under 70%
 one blank crystal after the first clear: 24/24      — wanted: above 60%
 every band is clearable in gear the band below drops
-the deep end: 1253 danger, 4/12 through             — wall under 4/12, ceiling at 0
+the deep end: 1253 danger, 8/12 through             — wall under 4/12, ceiling at 0
 ```
 
-**Two of these moved when the roster did, and the roster is the reason.** The
-Seam was -0.1% and the blank-crystal rung was 18/24; six generated bodies with
-their own stats replaced eleven, and both figures went with them. So the Seam is
-now the one sitting well outside its own wanted band — see open question 3,
-which asks whether the Seam is what it claims to be at all — and the opening got
-easier rather than harder.
+**Several of these moved when the ROSTER did, and that is the reason.** Six
+generated bodies with their own stats replaced eleven, and one thrower per
+family replaced a quarter of all packs shooting. The blank-crystal rung went
+18/24 → 24/24 and the deep end 4/12 → 8/12, so the game got EASIER at both ends
+— which is the direction `RULES.md` says to lean, but it is a bigger step than
+anything before it and the balance pass should read it as one change rather
+than as drift.
 
-The deep end at 4/12 still sits exactly on its own wall line, and the
-unpaid-swing spread reaching 30% is the widest of the rest. Neither is a bug.
+The naked character at 66% is the closest of these to its own line.
 
 **What must not break.** Everything in `RULES.md` under "Balance is NOT TUNED"
 inverts when this starts, and that section has to be rewritten in the same
