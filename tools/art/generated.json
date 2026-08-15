@@ -257,6 +257,16 @@
    "grid": 48,
    "inks": 24,
    "stride": 1.13
+  },
+  {
+   "sprite": "alchemist",
+   "character": "dba5147a-a76c-405c-b2a6-b7236ff7307c",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {},
+   "grid": 48,
+   "inks": 24
   }
  ],
  "props": [

@@ -325,6 +325,35 @@
     }
    },
    "character": "b1e5bb78-feb7-4e75-af33-38c0122e3cc2"
+  },
+  {
+   "sprite": "alchemist",
+   "name": "The Alchemist",
+   "size": 96,
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "lunging onto the front foot at a three-quarter angle and driving one gauntleted fist forward at chest height, then pulling it back"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "planted with both feet apart at a three-quarter angle, one hand thrust forward from the chest holding a flask out at arm length, the other fist at the hip"
+    },
+    "death": {
+     "frames": 6,
+     "say": "his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there"
+    }
+   },
+   "character": "dba5147a-a76c-405c-b2a6-b7236ff7307c"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
