@@ -767,6 +767,16 @@ and five generations per animation over five directions — about **30
 generations for a finished body** with five states. A roster of twenty is
 around 600, not the 1,200 written down before any of it had been run.
 
+**Two animations of one body may not START with the same words.**
+`animate_character` dedupes on a `type` it derives from the FIRST ~30
+CHARACTERS of `action_description` — `[type=custom-staying in strict side
+profile]` — and a second ask matching that prefix is refused with a hint rather
+than an error, which reads as success. Nine of nineteen animations vanished
+that way in one run, because "staying in strict side profile" is the single
+highest-value phrase and every attack, cast and death opened with it. It still
+belongs in the description; it belongs after a clause that is the animation's
+own. The queue asserts the prefixes are distinct before it fires.
+
 **A state names WHICH WINDOW of its animation to keep.** A generation degrades
 across its run and the tail is where it goes: a walk grows a crook, a swing
 turns to face the camera, an ask naming a weapon the rotation does not hold

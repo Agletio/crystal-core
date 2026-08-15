@@ -594,9 +594,14 @@ that worked, and these are what it cost:
   the body rotating mid-swing. It is the single highest-value phrase found.
 - **Short animations drift less.** The degradation is at the TAIL, so
   `frame_count: 4` lands usable where 6 needs a window.
-- **`animate_character` dedupes on the action description** and answers
-  `already queued or complete (nothing re-queued)` — which is not an error and
-  is easy to read as success. Re-word to force a fresh roll.
+- **`animate_character` dedupes on the first ~30 CHARACTERS of the action
+  description**, not on the whole of it: the group carries `[type=custom-<the
+  first 30 chars>]` and a second ask matching that prefix is refused with a hint
+  rather than an error, which reads as success. Nine of nineteen animations
+  vanished in one run because every attack, cast and death opened with "staying
+  in strict side profile" — the highest-value phrase there is. Keep it, put it
+  AFTER a clause of the animation's own, and assert the prefixes are distinct
+  before firing.
 - **`delete_animation` keys on the TYPE, not the display name**, so a re-roll
   under the same name leaves two groups standing. `sandbox.json` therefore
   names a group by UUID; a name picks whichever the server listed first.
