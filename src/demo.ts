@@ -1488,6 +1488,42 @@ rule('SPRITES — is the pixel art well formed?');
       shoved.join(', ')
     );
 
+    // How much a run actually MOVES, as a share of the body's own ink. A walk
+    // generated per facing can come back as a standing pose for the facings
+    // where a stride is hard to see, and nothing else here can tell: the frames
+    // differ, they are all reached, and the body slides. The hero shipped that
+    // way — 26% on east and 1-7% on the other four — until the ask named the
+    // legs. It PRINTS rather than fails because the Heap is a fused mass with
+    // barely a gait and 1% is honest for it; what to read is one facing far
+    // below the same body's best.
+    for (const [id, art] of Object.entries(GENERATED)) {
+      const run = art.states.walk;
+      if (!run || run.length < 2) continue;
+      const stride = art.frames.length / art.dirs.length;
+      const moved = art.dirs.map((_, d) => {
+        let least = 1;
+        for (let i = 1; i < run.length; i++) {
+          const a = art.frames[d * stride + run[i - 1]];
+          const b = art.frames[d * stride + run[i]];
+          let differ = 0;
+          let ink = 0;
+          for (let y = 0; y < a.length; y++)
+            for (let x = 0; x < a[y].length; x++) {
+              const p = a[y][x] !== '.';
+              const q = b[y][x] !== '.';
+              if (p || q) ink++;
+              if (p !== q) differ++;
+            }
+          least = Math.min(least, ink ? differ / ink : 0);
+        }
+        return least;
+      });
+      gauge(
+        `${id} walks by ${moved.map((m) => `${Math.round(m * 100)}%`).join(' ')} ` +
+          `of itself per frame, over ${art.dirs.join(' ')}`
+      );
+    }
+
     // A state named for a skill nothing throws is a generation spent on a
     // pose that never plays.
     const known = new Set(['idle', 'walk', 'attack', 'cast', 'hurt', 'death', ...throwers]);

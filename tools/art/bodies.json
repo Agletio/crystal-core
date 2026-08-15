@@ -314,7 +314,7 @@
     },
     "walk": {
      "frames": 8,
-     "say": "walking forward at a tired trudge, head down, rags swaying at the hem"
+     "say": "trudging forward at a tired pace, one leg swinging past the other and the knee lifting clear of the ground, the opposite arm swinging forward with it, shoulders dipping on each step, head down"
     },
     "attack": {
      "frames": 4,
