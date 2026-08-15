@@ -7,9 +7,7 @@
  *   npx tsx tools/art/tables.mts
  *
  * `generated.json` beside this file is the SOURCE of truth and names every id;
- * nothing here asks the generator for anything new. A character wants a walk
- * animation and a swing — without them the rotation stands in for both and the
- * body does not move.
+ * nothing here asks the generator for anything new.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
@@ -49,8 +47,8 @@ interface BodySpec {
 }
 
 /** Every pixel pulled toward its own brightness. "Blood" comes back MAGENTA
- *  however the ask is worded, and `tone` cannot fix it: a mean and a spread per
- *  channel move how bright a thing is, never how saturated. */
+ *  however the ask is worded, and `tone` cannot fix it: a mean and a spread
+ *  per channel move how BRIGHT a thing is, never how saturated. */
 function dulled(image: Decoded, by: number): Decoded {
   const rgba = new Uint8Array(image.rgba);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -104,9 +102,9 @@ interface PropSpec {
 
 interface Manifest {
   /** `also` names more tilesets of the SAME terrain, chained off this one's
-   *  lower base tile. Their tiles are ALTERNATES for the mask they carry: a
+   *  lower base tile, whose tiles are ALTERNATES for the mask they carry — a
    *  Wang set has one picture per corner combination, so an open floor is that
-   *  one picture in every cell of it and reads as graph paper. */
+   *  picture in every cell and reads as graph paper. */
   tileset: { id: string; floorIs: string; also?: string[] };
   hero: BodySpec;
   bodies: BodySpec[];
