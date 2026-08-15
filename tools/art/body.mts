@@ -320,7 +320,12 @@ if (command === 'design') {
   const on = command === 'state' ? asks.dirs.slice(2, 3) : asks.dirs.filter((_, i) => i !== 2);
   const known = groups();
   const held = command === 'fill' ? await facings(character) : new Map<string, Set<string>>();
+  // Naming states asks for THOSE, which is what a re-roll wants: a judged state
+  // that failed is deleted and asked again, and the five that passed are not
+  // paid for a second time.
+  const only = new Set(process.argv.slice(4));
   for (const [name, ask] of Object.entries(body!.states)) {
+    if (only.size && !only.has(name)) continue;
     const group = command === 'fill' ? known[name] : undefined;
     if (command === 'fill' && !group) {
       console.log(`${name}: not in generated.json yet — judge it first`);

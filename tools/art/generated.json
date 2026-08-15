@@ -1,15 +1,50 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
  },
  "hero": {
-  "sprite": "delver",
-  "character": "",
-  "states": {}
+  "sprite": "wanderer",
+  "character": "03409711-a63b-49c6-a548-ac74aacef259",
+  "dirs": [
+   "north",
+   "north-east",
+   "east",
+   "south-east",
+   "south"
+  ],
+  "states": {
+   "idle": {
+    "group": "edcac618-4cee-423a-ab8f-2be883ce6f54",
+    "frames": 5
+   },
+   "walk": {
+    "group": "2ce147cf-a030-4515-ad99-5d03f543c4c9",
+    "frames": 9
+   },
+   "attack": {
+    "group": "d6ba0ec4-1e37-42ce-b7b9-966365eb4c00",
+    "frames": 5,
+    "from": 0.2
+   },
+   "cast": {
+    "group": "2e6b3d09-b02f-452b-80aa-f4da7c07cb66",
+    "frames": 5,
+    "from": 0.2
+   },
+   "hurt": {
+    "group": "3e0fef19-bace-46e0-93b9-2fe6e46df558",
+    "frames": 5
+   },
+   "death": {
+    "group": "e7c6d8ea-3d0a-4f84-a37f-fcb204624584",
+    "frames": 7,
+    "from": 0.14
+   }
+  }
  },
  "bodies": [
   {

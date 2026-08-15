@@ -318,7 +318,7 @@
     },
     "attack": {
      "frames": 4,
-     "say": "staying in strict side profile, stepping onto the front foot and swinging one arm down and across, then drawing it back"
+     "say": "lunging forward onto the front foot in strict side profile and driving one open fist straight ahead at chest height, then pulling it back"
     },
     "cast": {
      "frames": 4,
@@ -326,11 +326,11 @@
     },
     "hurt": {
      "frames": 4,
-     "say": "rocked backwards, head snapping back and one arm folding across the ribs, in strict side profile"
+     "say": "recoiling hard as he is struck, head snapping back and the shoulders folding, staggering half a step in strict side profile, then straightening"
     },
     "death": {
      "frames": 6,
-     "say": "folding at the knees and going down face first, arms giving out under him"
+     "say": "his legs buckling under him and the body pitching forward in strict side profile, folding down onto the ground and coming to rest face down, and staying there"
     }
    }
   }
