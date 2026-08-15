@@ -49,21 +49,20 @@ so that is a mechanism rule and not a balance one.
 is why a pack no longer reads as props, and it is what a walk/run split would
 have needed — the split is now possible and still not built.
 
-**THE HERO IS THE ONE BODY THAT IS NOT GENERATED, and Phase 1 is about that.**
-He is a hand-drawn doll at grid 24 with `gear-art.ts` layering 12 armour
-families over him, and **he has to keep showing a helm, a body and boots
-changing** — the user's requirement, which is what makes a generated
-replacement hard.
+**THE HERO IS GENERATED AND HE IS IN A DESCENT.** `wanderer` — a starved man
+bare-headed with his clothes gone, six states over five facings — is what a
+character with no trade is drawn as, and `heroSpriteFor` in
+`src/sim/appearance.ts` is the whole seam. The doll is untouched underneath and
+stays the fallback until every trade has a look. **What is left of Phase 1 is
+the two trade looks, and they are blocked on open question 10.**
 
 **APPEARANCE IS PER TRADE, and that deleted the hard part.** *The user's call:
 "Ok maybe let's just scratch the per equip and make it per trade? Like custom
 appearance for each trade? I want to have like 10 trades eventually but we only
 have two now."* Equipped gear no longer changes the sprite. A trade look is a
-WHOLE BODY — which is the monster pipeline, paid for six times already — so the
-per-slot layers, crops, bands and anchors are all gone with the requirement that
-needed them. **The base man is rotated and the seam is two lines in
-`src/sim/run.ts`; what is left is generations and one open question about what
-the two trades should look like.**
+WHOLE BODY — the monster pipeline, paid for six times already — so the per-slot
+layers, crops, bands and anchors are all gone with the requirement that needed
+them.
 
 **What the abandoned route measured is kept anyway**, because it is about the
 GENERATOR rather than about the hero, and the next thing to use `edit_image`
@@ -1339,11 +1338,18 @@ being made, and `RULES.md` already argues the same way about a trade — it is
 funded by character level, it survives every skill you ever swap to, and it is
 the part of a character that is not the skill.
 
+#### The base man is DONE and he is in the game
+
+Bare-headed, wrecked clothes, no pack, six states over five facings, walking a
+real Fissure. `wanderer` in `GENERATED`, `heroSpriteFor` wired, whole suite
+green. **What is left of this phase is the two trade looks, and they are blocked
+on open question 10** — what an Alchemist and an Aethermancer should look like.
+
 #### What is true today
 
 | | |
 |---|---|
-| `src/sim/run.ts:420-421` | the hero spawns as `sprite: 'hero'` with `look: lookOf(character)` — **the entire seam is these two lines** |
+| `heroSpriteFor` in `src/sim/appearance.ts` | trade's sprite → base man → doll; `run.ts` sets `look` only for the doll |
 | `heroArt` in `src/render/sprites.ts` | draws `'hero'` from `HERO_FRAMES` at `DOLL_GRID` 24 |
 | `src/render/gear-art.ts` | **1,409 lines** of armour and weapons layered over him |
 | `src/render/look.ts`, `lookOf` in `src/sim/appearance.ts` | equipped → `Look`, and `Look` → rows |
@@ -1377,43 +1383,47 @@ can drift into being a different person.
 
 | | generations | source |
 |---|---|---|
-| the base man, rotated at 96 | **2, spent** — `b1eb6625-be3c-4f5d-9a1d-2bf19dd5928c` | |
-| animate the base man, six states | ~68 | ~0.8 MB |
-| each trade: one state + its animations | 40 + ~68 = **~108** | ~0.8 MB |
-| **two trades now** | **~216** | ~1.6 MB |
-| ten trades eventually | ~1,080 | **~8 MB** |
+| the base man: 4 designs, rotated at 96 | **6, spent** — `03409711-a63b-49c6-a548-ac74aacef259` | |
+| his six states, three of them re-rolled | **~110, spent** | **1.3 MB, measured** |
+| each trade: one state + its animations | 40 + ~110 = **~150** | ~1.3 MB |
+| ten trades eventually | ~1,500 | **~13 MB** |
 
-**The generation budget is not the problem and the SOURCE SIZE is.** Six bodies
-are already 4.67 MB. Eleven hero bodies would add about 8 MB on top, and this
-file already says twelve more monsters at ~14 MB is past what the format should
-carry. **Two trades is comfortable, ten is not**, and the answer is a decision
-rather than a technique — fewer states for a hero look, fewer frames per state,
-a smaller grid for looks than for bodies, or giving up "no binary assets", which
-is a `RULES.md` change and the user's call. **Deleting the doll buys ~1,700
-lines back, which is real but is not megabytes.** Do not walk into this at trade
-five; measure the first trade look and put the number here.
+**The generation budget is not the problem and the SOURCE SIZE is.** Six
+monsters are 4.67 MB and the hero added 1.3 — he ships 21 frames a facing where
+they ship 14, and he has six states where they have five. Ten trade looks on top
+of that is about 13 MB, and this file already calls ~14 MB past what the format
+should carry. **Two looks is comfortable, ten is not**, and the answer is a
+decision rather than a technique — fewer frames per state, a smaller grid for
+looks than for bodies, or giving up "no binary assets", which is a `RULES.md`
+change and the user's call. **Deleting the doll buys ~1,700 lines back, which is
+real but is not megabytes.** The lever is `BodySpec.frames`: it is the count
+KEPT rather than the count generated, so trimming a body costs nothing and the
+hero went 36 frames a facing to 21 for free.
 
 #### Decisions
 
-- [ ] **Animate the base man** — the runbook above, six states over five
-      facings: `idle`, `walk`, `attack`, `cast`, `hurt`, `death`. He carries a
-      swing AND a cast where a monster carries one.
-- [ ] **`heroSpriteFor(character)` in `src/sim/appearance.ts`**, replacing
-      `lookOf` — the same file, so the seam does not move. `run.ts` sets
-      `sprite` and drops `look`.
-- [ ] **A trade names its own sprite.** `TradeDef.sprite`, beside `id` and
-      `name`, so a look is a table entry and `src/trades/*.ts` stays content.
-      Never a `Record<tradeId, sprite>` somewhere else — that is a second table
-      to forget to update when trade eleven lands.
+- [x] **Animate the base man** — done: six states over five facings, judged on
+      one facing first, three of them re-rolled. He is in a descent.
+- [x] **`heroSpriteFor(character)` in `src/sim/appearance.ts`** — done, and
+      `run.ts` sets `look` only for the doll.
+- [x] **A trade names its own sprite** — `TradeSpec.sprite`, done. Neither trade
+      carries one, so everyone is the base man.
+- [x] **Measure the first body's source cost** — 1.3 MB at 21 frames a facing.
 - [ ] **The Alchemist and the Aethermancer get a look each**, written as an
-      `OUTFITS` entry apiece in `dress.mts` and generated off the base man. What
-      they should LOOK like is open question 9.
-- [ ] **Measure the first look's source cost** and write it into the table above
-      before generating the second.
+      `OUTFITS` entry apiece in `dress.mts` and generated off the base man
+      (`03409711-a63b-49c6-a548-ac74aacef259`) with `dress.mts <look> --state`.
+      **What they should LOOK like is open question 10 and this is blocked on
+      it.** Each is then animated exactly as the base man was.
+- [ ] **Answer the source-size question before the third look.** Two looks is
+      2.6 MB and fine; ten is about 13 MB and is not. Fewer frames, a smaller
+      grid for looks, or the no-binary-assets rule — the user's call, and it
+      wants the number from look one and look two in hand.
 - [ ] **Delete the doll** — `gear-art.ts`, `look.ts`, `lookOf`, `Look`,
       `WornPiece`, `HERO_FRAMES`, `POSES`, `SWING_POSES`, `src/render/body.ts`
       and `src/render/pose.ts`, and the demo sweeps that read them. **Last, and
-      only once a generated hero is on screen in a descent.**
+      only once EVERY trade has a look** — until then a trade with no sprite
+      falls back to the base man, and that fallback is the doll's replacement
+      rather than the doll itself.
 
 #### Traps
 
@@ -1614,25 +1624,19 @@ Every one is parked deliberately. Ask before acting on any of them.
    a quarter, no near wall. Nothing is blocked on it and it was never asked for
    twice; it is here so nobody rediscovers the geometry.
 
-10. **What does an Alchemist LOOK like, and an Aethermancer?** Phase 1 is
-    blocked on nothing else: the pipeline is proved, the base man is rotated,
-    and each look is one `OUTFITS` entry and 108 generations. But a look is the
-    whole of a trade's identity on screen and it should not be guessed — and it
-    has to READ at the ~87 device pixels the camera lands a body in, where two
-    near-neighbours are the same picture. The two in the game pull opposite ways
-    on paper: the Alchemist is flasks, charges and uptime, the Aethermancer is
-    mana as a second health bar. **Ten eventually**, so whatever separates the
-    first two has to keep separating the tenth — which argues for one loud
-    SILHOUETTE decision each rather than a palette each, the same rule the
-    monster roster settled on.
-
-11. **Does the base man keep his backpack?** The rotation gave the wanderer a
-    pack the design forbade in as many words — "no weapon, no armour, no pack" —
-    and it survived the re-rotation at 96 on all five facings. He is now the
-    no-trade look AND the ancestor of every trade state, so it is on all eleven
-    bodies for good, and it is the loudest thing in his silhouette from behind
-    — which is the half a trade look has to compete with. Three generations
-    re-designs him and two re-rotate. Nothing else is blocked on it.
+10. **What does an Alchemist LOOK like, and an Aethermancer?** **Phase 1 is
+    blocked on this and on nothing else.** The base man is finished and in the
+    game, and each look is one `OUTFITS` entry plus ~150 generations off
+    `dress.mts <look> --state 03409711-a63b-49c6-a548-ac74aacef259`. But a look
+    is the whole of a trade's identity on screen and it should not be guessed —
+    and it has to READ at the ~87 device pixels the camera lands a body in,
+    where two near-neighbours are the same picture. The two in the game pull
+    opposite ways on paper: the Alchemist is flasks, charges and uptime, the
+    Aethermancer is mana as a second health bar. **Ten eventually**, so whatever
+    separates the first two has to keep separating the tenth — which argues for
+    one loud SILHOUETTE decision each rather than a palette each, the same rule
+    the monster roster settled on. The base man is bare-armed and narrow, so
+    there is room both ways: bulk him out or draw him longer.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
