@@ -71,10 +71,12 @@ Kept here because the next thing built on top of them will want it.
   `STAIN_PROPS`, `SOLID_PROPS` and every entry in `PROP_ART` were reachable
   ONLY through the sandbox — `generateMap` returned `props: []` and the four
   authored rooms are not `bare` — so deleting the room would have retired every
-  generated prop in the repo one phase before Phase 2 generates more. So
-  `generateMap` dresses, gated on `ZONE[theme]`: cover, growth on the face and
-  `DRESS_PER_ROOM` arrangements per chamber. The other three zones get it free
-  the moment they get a set.
+  generated prop in the repo one phase before the roster phase generates more.
+  So `generateMap` dresses, gated on `ZONE[theme]`: cover, growth on the face
+  and `DRESS_PER_ROOM` arrangements per chamber. The other three zones get it
+  free the moment they get a set. **The props phase now retires the
+  arrangements deliberately** — that is a look decision taken with the room on
+  screen, not this trap coming back, and the tables stay in the file.
 - **`Grid.solid` was a layer the PATHFINDER did not know about.** `findPath`
   and `nearestByPath` tested `grid.at(...) === WALL` where everything else asks
   `grid.walkable`, so the first descent with furniture in it walked the hero
@@ -104,7 +106,7 @@ Kept here because the next thing built on top of them will want it.
   `dressWalls` scatters it. The first authored room built on a generated set is
   what they are waiting for.
 - **Three more zones cost nine generations and no code worth the name.** The
-  whole of Phase 1's zone work was: write the asks off each zone's own line,
+  whole of that phase's zone work was: write the asks off each zone's own line,
   `ask`, `get`, `emit`, and four lines in `ZONE`. Everything the first set had
   to learn about the renderer — the twins, the nearest-key fallback, the
   bounding boxes, `fitCorners` — held for all three without a change. **The
@@ -1056,7 +1058,141 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The rest of the roster
+### Phase 1 — The Fissure keeps only what the ROCK did
+
+**Asked for directly, and it is about what is on screen right now.** *The user's
+words: "Get rid of all the props in the fissure zone EXCEPT for the scattered
+stones. Like the flat looking ones that are around and the vines on the walls.
+Everything else needs to go."*
+
+**What is true today.** `generateMap` in `src/sim/grid.ts` dresses any zone with
+a set, in three passes and in this order:
+
+| pass | table | what it puts down |
+|---|---|---|
+| `dressRooms` | `VIGNETTES` (`src/vignettes.ts`) | the ARRANGEMENTS — rails, carts, pit props, a hauling run. `DRESS_PER_ROOM` = 1 per chamber, gated to `WORKED`, which is the Fissure ALONE |
+| `dressWalls` | `WALL_PROPS` — one row, `roots` | what grows on the cut face, at `FACE_RATE` 0.16 over a RUN of wall |
+| `coverFloor` | `COVER_PROPS` — grit, rubble, chips, cobbles, pebbles, tendrils, vines | the scattered stone, at `COVER_RATE` indexed by distance from the rock |
+
+Two more sets cut across those: `SOLID_PROPS` is which of them block a tile
+(altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls) and
+`STAIN_PROPS` is which are marks IN the floor (gore, splash, web), drawn back at
+`STAIN_ALPHA`. Both are furniture's, and both arrive only through `VIGNETTES`.
+
+**Why it is wrong.** The arrangements are a mine's furniture standing on a
+generated floor, and a room of them reads as objects dropped on the ground
+rather than as a place. The cover is the pass that is doing the work — it is
+what breaks up one picture per corner combination, and it is the only thing that
+was ever meant to be scattered.
+
+- [ ] **`WORKED` stops holding the Fissure**, which is the whole of the
+      arrangement pass. It is one `Set` in `src/sim/grid.ts` and emptying it
+      turns `dressRooms` off for every zone — no zone has furniture then, which
+      is what the three other zones already are.
+- [ ] **THE ONE THING TO CONFIRM BEFORE STARTING: do the wall roots stay?**
+      Two readings of the ask, and they differ by one line. **(A)** keep the
+      ground cover ONLY — `dressWalls` goes too, and "the flat looking ones and
+      the vines on the walls" is a list of what to remove. **(B)** keep the
+      ground cover AND the wall roots — that sentence is the exception list, the
+      "flat looking ones" being the stones themselves. Written as **(B)**
+      because the sentence sits next to the exception; ask, and if it is (A),
+      delete the `dressWalls` call and `WALL_PROPS` with it.
+- [ ] **Nothing else moves.** `coverFloor` keeps its table, its rates and its
+      order. `VIGNETTES`, `PROP_ART` and the two furniture sets STAY IN THE
+      FILE: a scene places props by hand, the backlog's per-zone furniture comes
+      back through them, and the sandbox's deletion already left `torch` and
+      `hung` as art nothing scatters. This retires more of that art; it does
+      not delete any.
+
+**Traps.**
+
+- **Two demo checks assert the furniture and will fail flat.** `src/demo.ts`
+  holds `standing.length >= 8` on a Fissure descent, and
+  `worked.join() === 'fissure'` — that only the working has furniture. Both are
+  correct statements of the OLD rule. Rewrite them to assert the new one
+  (a Fissure descent is cover, and no zone carries a vignette prop); deleting
+  them is the wrong repair.
+- **The dressing has its OWN rng** (`dress`, seeded off the run's) and that is
+  why removing a pass cannot move a monster or a drop. It DOES move the cover,
+  because `coverFloor` draws after the passes in front of it — so every dressed
+  map looks different and no seed-dependent count survives.
+- **`block()` and `Grid.solid` go quiet, not away.** With no solid prop placed,
+  `grid.solid` is all zeros and the demo's "a solid tile with nothing standing
+  on it" check passes vacuously. Say so rather than removing it: a scene still
+  places solids, and `findPath` asking `walkable` is the invariant it protects.
+- **`npm run shots` has a known-fragile Lampwright shot** — see "How to work"
+  above. Moving the cover moves that rng, so if `desktop: the first descent
+  never met the Lampwright` comes back it is the old undiagnosed fault, not
+  this phase.
+
+**Done when.** A Fissure descent draws loose stone under an otherwise empty
+floor — plus roots on the cut face if the answer is (B) — with nothing standing
+on it anywhere, `npm run peek` shows it, and the demo asserts that rule instead
+of the old one.
+
+**What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
+`peek`, `shots`.
+
+### Phase 2 — The Gaunt at twice the height
+
+**Asked for directly.** *"Double the base height of the tall lanky skeleton."*
+
+**The name is CONFIRMED: it is the Gaunt.** `MONSTERS` in `src/data.ts` holds
+`{ id: 'gaunt', name: 'Gaunt', sprite: 'gaunt' }` — the towering one, carrying
+most of its height in the legs. The other two generated bodies are the **Husk**
+(`hewer`, the mine skeleton with the tool) and the **Bonecaller** (`shroud`,
+robed, the one that throws), and neither is lanky.
+
+**What is true today.** `gaunt` is `scale: 1.6`, `radius: 0.36`, life 1.45,
+damage 1.15, `weight: 300` in the Normal pool. The renderer applies that scale
+UNIFORMLY — `pixi.ts` does `(1 / texture.width) * e.scale`, one number — and
+nothing in `MonsterDef`, either renderer or `src/sim` has a per-axis size.
+`radius` is the SIM's body, used by separation, `fits` and `placeIn`, and it is
+independent of the drawn size.
+
+**Why the phase exists rather than the ask being one number.** Phase 3 below
+already says a true GIANT is not the roster's phase, and this is that decision
+arriving from the other direction: the Gaunt has been judged in a descent and
+the answer is that height alone is not enough.
+
+- [ ] **`scale` 1.6 → 3.2.** Uniform, and say so: a Y-only stretch would be a
+      new field on `MonsterDef`, both renderers reading it, and a non-integer
+      vertical resample — which is the blur pixel art exists not to be. The
+      body's own silhouette is what makes it lanky; twice as big is twice as
+      big in both directions.
+- [ ] **Decide `radius` in the same breath**, and it is a decision, not a
+      tidy-up. Drawn twice the size over an unchanged 0.36 body, the pack walks
+      through its legs. `BODY_MAX` is 0.45 in `src/sim/grid.ts` with its own
+      comment — under half a tile so a rank-scaled body still walks a one-tile
+      gap — so a radius that reads right may be one the map cannot hold. Pick a
+      number, name what it costs, and check a rank-scaled Gaunt still reaches
+      the exit.
+- [ ] **Look at it in a descent before believing any of it.** `npm run build`
+      then `npm run peek`, at the zoom and the magnified crop. A body drawn at
+      3.2 is over three tiles tall on screen; whether that reads as imposing or
+      as a sprite somebody scaled up is the only question that matters, and it
+      cannot be answered from a number.
+
+**Traps.**
+
+- **The demo asserts a generated body's scale from BELOW only** —
+  `src/demo.ts` fails a fought generated monster under 1.3. Going up does not
+  trip it; do not add an upper bound without deciding what it is for.
+- **The fit margin is the rank glow's room** (`rings * 2`) and `GLOW.reach` is
+  scaled by `grid / CELL`. A much bigger body is a much bigger glow, and the
+  rank light is the one thing over a monster that is not its own art.
+- **Life and damage are NOT part of the ask.** Twice as tall is a look. If it
+  turns out to want its own weight in the pool or its own numbers, that is a
+  balance change and balance is not tuned — measure it, print it, carry on.
+
+**Done when.** The Gaunt stands about twice the height it did in a live descent,
+its body is a number somebody chose rather than the one it inherited, and the
+suite is green.
+
+**What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
+`peek`, `smoke`.
+
+### Phase 3 — The rest of the roster
 
 **The palette question is ANSWERED and the phase is unblocked.** It was never
 code: a body that is asked DARK, through a forced palette at the design step,
@@ -1107,11 +1243,12 @@ this one, and the second one is the list of things that have already cost time.
 a generated body, or the ones that are not are named here with a reason.
 
 **What is NOT in this phase.** A true GIANT. The Gaunt is tall but built on the
-same 96 grid as the others, so height is all it has; something genuinely
-imposing is a fourth body plus its own `scale` and `radius`, and it is worth
-judging the Gaunt in a descent first. The user has been told.
+same 96 grid as the others, so height is all it has. It has now been judged in a
+descent and the answer came back — **Phase 2 doubles it** — so what is still not
+here is a body GENERATED to be imposing rather than an existing one drawn
+bigger.
 
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 4 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1271,6 +1408,51 @@ Every one is parked deliberately. Ask before acting on any of them.
    `56d599a`: the wall tile placed one row lower than it is keyed, flanks turned
    a quarter, no near wall. Nothing is blocked on it and it was never asked for
    twice; it is here so nobody rediscovers the geometry.
+
+10. **Can the Fissure floor be RECOLOURED, and should it be?** *Asked by the
+    user: "Can we recolor the floor easily in the fissure zone?"* The first half
+    is answered here so the second half is one sentence.
+
+    **Not the way a hand-drawn zone is.** Every other pixel in the game takes
+    its ink from a CSS property at draw time, which is what makes a zone
+    recolour for free; a generated tileset is BAKED HEX, shipped whole as a
+    data URI in `src/render/generated-tiles.ts`, and giving that up was what the
+    generated surface cost. There is no palette to move.
+
+    **Three ways it can still be done, cheapest first, none of them a
+    generation.**
+
+    - **A colour pass at EMIT.** `tools/art/zoneset.mts emit` reads
+      `tools/art/cache/zones/<name>.png` and base64s it; a hue/tone pass over
+      those pixels before the encode is the whole change, and re-emitting is
+      free and repeatable. It is the same shape as the deleted sandbox's
+      `tone`/`retoned`, which moved an alternate set onto the first set's mean
+      and spread per channel. Shift the sheet GLOBALLY rather than per tile: the
+      floor and the rock are one image, tiles interlock at their edges, and two
+      tiles shifted differently is the checkerboard every mixing experiment
+      already failed on.
+    - **A tint at DECODE.** `pixi.ts` slices the sheet into one canvas per tile
+      inside the renderer's own await. A pass over those canvases — or
+      `sprite.tint` on the floor sprites — is per-zone colour at runtime, which
+      is the nearest thing to the palette that was given up. A tint MULTIPLIES,
+      so it can only darken or colourise, never lighten. `canvas2d` is
+      unaffected either way; it has no sprites and keeps its drawn rock.
+    - **Ask for the set again.** `zoneset.mts ask/get/emit` off a new colour
+      line, which is a few generations and a round of judging. The only route
+      that changes the stone's DETAIL rather than its hue.
+
+    **What constrains all three is the TONE RULE, and it is not negotiable.** A
+    LIGHT floor under near-black rock, said at both ends. `cavern_lit` is in
+    `zoneset.mts` as the measured counter-example: asked the zone's own way
+    round, pale rock over a dark floor, it reads INSIDE OUT — the pale expanse
+    takes the eye as ground and the room reads as a hole punched in it. A hue
+    the floor is allowed to be is a wide choice; a floor darker than its rock is
+    not one of them. The bodies are the other end of it: all three are asked
+    near-black because every zone floor is pale, so a floor that goes dark
+    costs the monsters their silhouette.
+
+    **What is NOT answered: whether to, and to what.** Nothing is blocked on it
+    and no phase assumes it. Name a colour and it is the emit pass.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
