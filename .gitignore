@@ -18,6 +18,8 @@ Thumbs.db
 
 # Screenshot output from `npm run shots` — regenerated, never reviewed.
 shots/
+# And from `npm run peek`, which writes here by default.
+descent.png
 
 # Generated PNGs. The accepted GRID in tools/art/manifest.json is the artifact;
 # the image it came from is disposable and a cloud VM is reclaimed anyway.
