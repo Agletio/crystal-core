@@ -1502,12 +1502,15 @@ nobody-dies guard and `#dev-sandbox` are all gone. A descent IS the room the
 sandbox was, with monsters that fight back — so `npm run peek` is pointed at
 one, and that is where art is judged.
 
-- **Only a zone with a SET is dressed, and WHAT dresses it depends on who left
-  it.** The cover and the growth are what the ROCK does and belong to every set,
-  because an open floor without them is one picture repeated in every cell. The
-  ARRANGEMENTS are a person's — `VIGNETTES` is rails, carts, pit props and a
-  hauling run — so `WORKED` gates them to the one zone that was ever a working.
-  A mine cart standing on membrane is somebody else's zone.
+- **Only a zone with a SET is dressed, and it is dressed with what the ROCK did
+  and nothing else.** The cover and the growth belong to every set, because an
+  open floor without them is one picture repeated in every cell. Nothing stands
+  ON that floor: *the user's call — "get rid of all the props in the fissure
+  zone except for the scattered stones... it's just delete everything placed in
+  the dressRooms pass, keeping scattered stones and vines and stuff."* No zone
+  is a working. `VIGNETTES` and `dressRooms` are kept and nothing calls the
+  placer; per-zone furniture is a backlog item and this is the pass it would
+  come back through.
 - **A generated set is asked LIGHT-FLOOR and DARK-ROCK whatever the zone's own
   ink says**, at both ends and by exclusion. Measured twice now: `cavern_lit`
   was asked the Cavern's own way round — pale crystal rock over a dark floor —
@@ -1534,8 +1537,13 @@ one, and that is where art is judged.
   layer, because the ground under an altar is still floor and every renderer
   keys off `tiles` — marking it rock cuts a hole in the floor to draw a table
   in. Blocked one tile at a time, and undone if the flood from the hole stops
-  reaching the way out or any room's MIDDLE, which is where `placeIn` drops a
-  pack that could not find room.
+  reaching what the map has to reach. **Nothing in the shipped game puts a solid
+  prop down** — they were all arrangements', and the authored rooms furnish
+  themselves with things you walk over — so the demo drives `block` by hand,
+  ringing a scene's person with solids and holding it to refusing the one that
+  closes the ring. A layer with no live producer is the one worth holding, not
+  the one to delete: `findPath` asks `walkable`, and the day furniture comes
+  back is the day this stops being theory.
 - **A generated tileset REPLACES the whole surface.** `GameMap.bare` with
   `GameMap.zone` naming the set; when it is set the zone's floor fill, its
   `tileDecals`, its `livingDecals` and its hand-drawn props all stand down.
@@ -1546,8 +1554,9 @@ one, and that is where art is judged.
   descent's are generated — so a `bare` map skips the hand-drawn pass entirely.
   It did not once, and every bone pile carried a pale rectangle nobody could
   find in the art.
-- **Furniture goes down a CLUSTER at a time.** `VIGNETTES` is authored
-  arrangements and `dressRooms` places them, `DRESS_PER_ROOM` per chamber.
+- **Furniture goes down a CLUSTER at a time, wherever it goes down at all.**
+  Dropped one at a time a prop reads as one, equally far from everything and
+  there for no reason.
 - **An arrangement is chosen for the SPOT, not given one.** A ragged room holds
   a four-tile square in about one spot in fifteen, so picking the altar and
   hunting for room leaves the chamber bare; picking a spot and taking the

@@ -1520,34 +1520,36 @@ rule('SPRITES — is the pixel art well formed?');
     .filter((id) => !PROP_ART[id]);
   check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
 
-  // A DESCENT over a generated set is what is dressed, and it is the only thing
-  // that is: the furniture is generated pictures, so a zone still drawing its
-  // own rock has none of it. What stands on the floor is an ARRANGEMENT and
-  // what drifts under it is cover, which is the whole of the difference between
-  // texture and confetti.
+  // A DESCENT over a generated set is dressed with what the ROCK did and with
+  // nothing else: loose stone drifted at the wall's foot, and growth on the cut
+  // face. Everything a PERSON left is placed by hand in a scene, so a descent
+  // has no furniture standing on its floor at all.
+  const WALL_SET = new Set(WALL_PROPS.map((w) => w.id));
   const dressedMap = (seed: number, theme: MapTheme = 'fissure') =>
     generateMap([], new Rng(seed), 1, 1, theme);
   {
     const map = dressedMap(11);
-    const standing = map.props.filter((p) => !COVER_SET.has(p.id));
+    const growth = map.props.filter((p) => WALL_SET.has(p.id));
     const cover = map.props.filter((p) => COVER_SET.has(p.id));
+    const loose = map.props.filter((p) => !COVER_SET.has(p.id) && !WALL_SET.has(p.id));
     const undrawn = [...new Set(map.props.filter((p) => !PROP_ART[p.id]).map((p) => p.id))];
-    line(`  ${standing.length} props over a Fissure descent, ${cover.length} of cover under them`);
+    line(`  a Fissure descent: ${cover.length} of cover, ${growth.length} on the face, ${loose.length} standing`);
     check(
       map.bare === true &&
         !!map.zone &&
         !!ZONES[map.zone] &&
-        standing.length >= 8 &&
-        cover.length > standing.length &&
+        cover.length > 0 &&
+        growth.length > 0 &&
+        loose.length === 0 &&
         undrawn.length === 0,
-      'a Fissure descent draws a generated zone and is dressed out of the generated table',
-      `zone ${map.zone}, ${standing.length} standing, ${cover.length} cover, undrawn ${undrawn.join(', ')}`
+      'a Fissure descent draws a generated zone, dressed with what the rock did and nothing else',
+      `zone ${map.zone}, ${cover.length} cover, ${growth.length} growth, standing ${loose.map((p) => p.id).join(', ')}, undrawn ${undrawn.join(', ')}`
     );
 
     // What the ROCK does belongs to every zone with a set — without it an open
-    // floor is one picture repeated. What a PERSON left is a working's, and
-    // only one zone was ever a working, so a vignette anywhere else is a mine
-    // cart standing on membrane.
+    // floor is one picture repeated. NO zone gets an arrangement: a room's worth
+    // of objects dropped a tile at a time reads as exactly that, and a mine cart
+    // is something somebody pushed there rather than something the stone grew.
     const worked = MAP_THEMES.filter((t) => {
       const it = dressedMap(12, t.id);
       return it.props.some((p) => VIGNETTE_PROPS.has(p.id));
@@ -1558,8 +1560,8 @@ rule('SPRITES — is the pixel art well formed?');
       return !!it.zone && it.props.length === 0;
     }).map((t) => t.id);
     check(
-      worked.join() === 'fissure' && undressed.length === 0 && setless.length === 0,
-      'every zone draws a set and the rock dresses it, and only the working has furniture',
+      worked.length === 0 && undressed.length === 0 && setless.length === 0,
+      'every zone draws a set and the rock dresses it, and nothing scatters furniture',
       `worked: ${worked.join(', ') || 'none'}; no set: ${setless.join(', ') || 'none'}; bare: ${undressed.join(', ') || 'none'}`
     );
 
@@ -1579,68 +1581,80 @@ rule('SPRITES — is the pixel art well formed?');
 
   // Furniture you cannot walk through, and the two ways that goes wrong: a
   // solid tile that is not floor, and a solid tile nothing is standing on.
-  // Then that it never walls the map off — everything the hero is sent to has
-  // to still be reachable from the hole, or a run stands still forever.
+  // Then that it never walls the map off — whatever the hero is sent to has to
+  // still be reachable, or a run stands still forever.
+  //
+  // Nothing SCATTERS a solid prop: a descent is what the rock did and the four
+  // authored rooms furnish themselves with things you walk over, so `block` is
+  // driven here with solids put on a real room by hand. A layer with no live
+  // producer is exactly the one worth holding, since `findPath` asks
+  // `walkable` and anything reading `tiles` alone parks the hero on a tile it
+  // can never step off.
   {
+    const room = SCENES[0];
+    const plain = sceneMap(room.plan, room.theme, 1);
+    const open = (at: { x: number; y: number }): boolean => plain.grid.at(at.x, at.y) === FLOOR;
+    const stands = { x: Math.round(room.plan.stands.x), y: Math.round(room.plan.stands.y) };
+    const key = (at: { x: number; y: number }) =>
+      Math.round(at.y) * plain.grid.width + Math.round(at.x);
+
+    // Beside the person, which is the hardest place to put one: a ring of them
+    // is a meeting that can never happen, and `block` has to refuse the tile
+    // that closes it.
+    const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
+      .map(([dx, dy]) => ({ x: stands.x + dx, y: stands.y + dy }))
+      .filter(open);
+    const walled = sceneMap(
+      { ...room.plan, props: [...room.plan.props, ...ring.map((at) => ({ id: 'cairn', ...at }))] },
+      room.theme,
+      1
+    );
+
     const solid: string[] = [];
     let blocked = 0;
-    let cut = 0;
-    for (const seed of [3, 17, 41, 88]) {
-      const { grid, props, entrance, exit, rooms } = dressedMap(seed);
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
-          if (!grid.solid[y * grid.width + x]) continue;
-          blocked++;
-          if (grid.at(x, y) !== FLOOR && grid.at(x, y) !== TUNNEL) {
-            solid.push(`${seed}: ${x},${y} is not floor`);
-          }
-          if (!props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
-            solid.push(`${seed}: ${x},${y} blocks with nothing standing on it`);
-          }
+    for (let y = 0; y < walled.grid.height; y++) {
+      for (let x = 0; x < walled.grid.width; x++) {
+        if (!walled.grid.solid[y * walled.grid.width + x]) continue;
+        blocked++;
+        if (walled.grid.at(x, y) !== FLOOR && walled.grid.at(x, y) !== TUNNEL) {
+          solid.push(`${x},${y} is not floor`);
         }
-      }
-      const seen = new Set<number>();
-      const queue = [Math.round(entrance.y) * grid.width + Math.round(entrance.x)];
-      seen.add(queue[0]);
-      for (let head = 0; head < queue.length; head++) {
-        const x = queue[head] % grid.width;
-        const y = (queue[head] - x) / grid.width;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          if (!grid.walkable(x + dx, y + dy)) continue;
-          const to = (y + dy) * grid.width + (x + dx);
-          if (seen.has(to)) continue;
-          seen.add(to);
-          queue.push(to);
+        if (!walled.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
+          solid.push(`${x},${y} blocks with nothing standing on it`);
         }
-      }
-      // The way out, and every room's middle: `placeIn` drops a pack that could
-      // not find room on the middle, so furniture standing on one is a pack in
-      // the rock that nothing can ever reach.
-      for (const at of [exit, ...rooms.map(roomCenter)]) {
-        const key = Math.round(at.y) * grid.width + Math.round(at.x);
-        if (!seen.has(key)) cut++;
       }
     }
-    line(`  ${blocked} tiles of furniture to go around over four descents`);
+
+    const seen = new Set<number>();
+    const queue = [key(walled.entrance)];
+    seen.add(queue[0]);
+    for (let head = 0; head < queue.length; head++) {
+      const x = queue[head] % walled.grid.width;
+      const y = (queue[head] - x) / walled.grid.width;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if (!walled.grid.walkable(x + dx, y + dy)) continue;
+        const to = (y + dy) * walled.grid.width + (x + dx);
+        if (seen.has(to)) continue;
+        seen.add(to);
+        queue.push(to);
+      }
+    }
+    const spared = ring.length - blocked;
+    line(`  ${ring.length} solids put round the person, ${blocked} of them block, ${spared} refused`);
     check(
-      blocked >= 4 && solid.length === 0 && cut === 0,
+      blocked >= 4 && spared >= 1 && solid.length === 0 && seen.has(key(stands)),
       'furniture blocks, only where it may, and never walls anything off',
-      `${solid.slice(0, 4).join(', ')}${cut > 0 ? ` — ${cut} landmarks cut off` : ''}`
+      `${solid.slice(0, 4).join(', ')}${seen.has(key(stands)) ? '' : ' — the person is cut off'}`
     );
 
     // And a ROUTE goes around it. `Grid.solid` is a second layer, so anything
-    // reading `tiles` alone paths straight through the altar and parks the hero
-    // on a tile it can never step off — a descent that never ends.
-    const through: string[] = [];
-    for (const seed of [3, 17, 41, 88]) {
-      const { grid, entrance, exit } = dressedMap(seed);
-      for (const wp of findPath(grid, entrance, exit)) {
-        if (grid.solid[wp.y * grid.width + wp.x]) through.push(`${seed}: ${wp.x},${wp.y}`);
-      }
-    }
+    // reading `tiles` alone paths straight through the altar.
+    const through = findPath(walled.grid, walled.entrance, stands)
+      .filter((wp) => walled.grid.solid[wp.y * walled.grid.width + wp.x])
+      .map((wp) => `${wp.x},${wp.y}`);
     check(
       through.length === 0,
-      'and a route from the hole to the way out goes around it rather than through',
+      'and a route from the hole to whoever is waiting goes around it rather than through',
       through.slice(0, 4).join(', ')
     );
   }

@@ -65,6 +65,26 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **Stripping the arrangements left `Grid.solid` with NO live producer, and the
+  check that guarded it went vacuous rather than red.** Every solid prop in the
+  game — altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls —
+  only ever arrived through a `VIGNETTES` arrangement, and the four authored
+  rooms furnish themselves with benches, shelves and lanterns, none of which
+  block. So `block` ran over four descents and marked nothing, and a check
+  reading "furniture blocks, only where it may" would have passed forever while
+  proving nothing. It DRIVES the layer now: it rings a scene's person with
+  solids and holds `block` to refusing the one that closes the ring — which is
+  the undo rule, and the old check never tested it at all. **A check whose
+  subject a phase deletes does not fail; it stops meaning anything. Look for
+  the vacuous ones, not just the red ones.**
+- **The Fissure was the only zone `WORKED` held, so emptying that gate was the
+  whole phase.** One call site, one `Set`, one constant. Everything else was
+  the two demo checks written against the old rule.
+- **A descent's dressing has its OWN rng**, so removing a pass moves the cover
+  and cannot move a monster, a drop or a seed anything else reads. Measured: 141
+  of cover and 9 roots on seed 11, and every balance number in the demo
+  unchanged.
+
 - **The sandbox's deletion had to answer its own trap, and it answered it the
   expensive way.** The phase said either keep a descent that dresses or delete
   the prop tables and say so. `VIGNETTES`, `COVER_PROPS`, `WALL_PROPS`,
@@ -1058,77 +1078,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The Fissure keeps only what the ROCK did
-
-**Asked for directly, and it is about what is on screen right now.** *The user's
-words: "Get rid of all the props in the fissure zone EXCEPT for the scattered
-stones. Like the flat looking ones that are around and the vines on the walls.
-Everything else needs to go."*
-
-**What is true today.** `generateMap` in `src/sim/grid.ts` dresses any zone with
-a set, in three passes and in this order:
-
-| pass | table | what it puts down |
-|---|---|---|
-| `dressRooms` | `VIGNETTES` (`src/vignettes.ts`) | the ARRANGEMENTS — rails, carts, pit props, a hauling run. `DRESS_PER_ROOM` = 1 per chamber, gated to `WORKED`, which is the Fissure ALONE |
-| `dressWalls` | `WALL_PROPS` — one row, `roots` | what grows on the cut face, at `FACE_RATE` 0.16 over a RUN of wall |
-| `coverFloor` | `COVER_PROPS` — grit, rubble, chips, cobbles, pebbles, tendrils, vines | the scattered stone, at `COVER_RATE` indexed by distance from the rock |
-
-Two more sets cut across those: `SOLID_PROPS` is which of them block a tile
-(altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls) and
-`STAIN_PROPS` is which are marks IN the floor (gore, splash, web), drawn back at
-`STAIN_ALPHA`. Both are furniture's, and both arrive only through `VIGNETTES`.
-
-**Why it is wrong.** The arrangements are a mine's furniture standing on a
-generated floor, and a room of them reads as objects dropped on the ground
-rather than as a place. The cover is the pass that is doing the work — it is
-what breaks up one picture per corner combination, and it is the only thing that
-was ever meant to be scattered.
-
-- [ ] **`WORKED` stops holding the Fissure**, which is the whole of the
-      arrangement pass. It is one `Set` in `src/sim/grid.ts` and emptying it
-      turns `dressRooms` off for every zone — no zone has furniture then, which
-      is what the three other zones already are.
-- [ ] **The wall roots STAY. Asked and answered:** *"its just delete everything
-      placed in the dressRooms pass? Keeping scattered stones and vines and
-      stuff."* So `dressWalls` and `coverFloor` are untouched and the
-      arrangement pass is the whole of what goes.
-- [ ] **Nothing else moves.** `coverFloor` keeps its table, its rates and its
-      order. `VIGNETTES`, `PROP_ART` and the two furniture sets STAY IN THE
-      FILE: a scene places props by hand, the backlog's per-zone furniture comes
-      back through them, and the sandbox's deletion already left `torch` and
-      `hung` as art nothing scatters. This retires more of that art; it does
-      not delete any.
-
-**Traps.**
-
-- **Two demo checks assert the furniture and will fail flat.** `src/demo.ts`
-  holds `standing.length >= 8` on a Fissure descent, and
-  `worked.join() === 'fissure'` — that only the working has furniture. Both are
-  correct statements of the OLD rule. Rewrite them to assert the new one
-  (a Fissure descent is cover, and no zone carries a vignette prop); deleting
-  them is the wrong repair.
-- **The dressing has its OWN rng** (`dress`, seeded off the run's) and that is
-  why removing a pass cannot move a monster or a drop. It DOES move the cover,
-  because `coverFloor` draws after the passes in front of it — so every dressed
-  map looks different and no seed-dependent count survives.
-- **`block()` and `Grid.solid` go quiet, not away.** With no solid prop placed,
-  `grid.solid` is all zeros and the demo's "a solid tile with nothing standing
-  on it" check passes vacuously. Say so rather than removing it: a scene still
-  places solids, and `findPath` asking `walkable` is the invariant it protects.
-- **`npm run shots` has a known-fragile Lampwright shot** — see "How to work"
-  above. Moving the cover moves that rng, so if `desktop: the first descent
-  never met the Lampwright` comes back it is the old undiagnosed fault, not
-  this phase.
-
-**Done when.** A Fissure descent draws loose stone under an otherwise empty
-floor, with roots on the cut face and nothing standing on the ground anywhere,
-`npm run peek` shows it, and the demo asserts that rule instead of the old one.
-
-**What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
-`peek`, `shots`.
-
-### Phase 2 — The Gaunt at twice the height
+### Phase 1 — The Gaunt at twice the height
 
 **Asked for directly.** *"Double the base height of the tall lanky skeleton."*
 
@@ -1187,7 +1137,7 @@ suite is green.
 **What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
 `peek`, `smoke`.
 
-### Phase 3 — An older, dimmer floor under the Fissure
+### Phase 2 — An older, dimmer floor under the Fissure
 
 **Asked for directly.** *"Go ahead and recolor the floor, try and make it a
 little less bright, make it a little more like ancient cavern vibes."*
@@ -1252,7 +1202,7 @@ edited data URI.
 **What must not break, in order.** `comments`, `typecheck`, `build`, `peek`,
 `shots`.
 
-### Phase 4 — Six Normal monsters, all of them the skeletons' kind
+### Phase 3 — Six Normal monsters, all of them the skeletons' kind
 
 **The ask CHANGED, and it got much smaller.** *The user's words: "Have it just
 be the normal mobs, but cut some of the medium sized ones out so there's only 6
@@ -1342,10 +1292,10 @@ body in the skeletons' register, and a Fissure descent reads as one art era.
 **What is NOT in this phase.** The Demonic and Prismatic pools, which are
 twelve hand-drawn bodies and are now nobody's phase — they are the backlog until
 asked for. And a true GIANT: the Gaunt is tall on the same 96 grid as the
-others, **Phase 2 doubles it**, and a body GENERATED to be imposing is still not
+others, **Phase 1 doubles it**, and a body GENERATED to be imposing is still not
 written down anywhere.
 
-### Phase 5 — A quest log instead of a pointing finger
+### Phase 4 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1549,16 +1499,17 @@ editing two places.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
-- **Three zones have no FURNITURE of their own.** Every zone now draws a
-  generated set and the rock dresses all four — cover at the wall's foot, roots
-  on the cut face — but `VIGNETTES` is a mine's and is gated to the Fissure by
-  `WORKED` in `src/sim/grid.ts`. So the Rot, the Cavern and the Seam have
-  nothing a PERSON left in them, which is defensible for now (nobody worked
-  them) and thin. What it would cost is roughly fifteen `create_map_object`
-  generations a zone plus the judging, and a `tone` pass per zone, because a
-  prop is toned toward the ground it stands on and these are toned to pale
-  sand. The tables are already keyed by nothing, so per-zone versions are a
-  lookup rather than a rewrite.
+- **NO zone has furniture of its own, and that is now a decision rather than a
+  gap.** Every zone draws a generated set and the rock dresses all four — cover
+  at the wall's foot, roots on the cut face — and nothing stands on any of those
+  floors, because the arrangements were cut at the user's word. `VIGNETTES` and
+  `dressRooms` are still in the repo and nothing calls the placer, so bringing
+  furniture back to any zone is one call and a table. What per-zone furniture
+  would cost on top of that is roughly fifteen `create_map_object` generations a
+  zone plus the judging, and a `tone` pass per zone, because a prop is toned
+  toward the ground it stands on and these are toned to pale sand. **Do not
+  promote this without being asked** — a descent with nothing standing on it is
+  what was asked for, and it looked better.
 - **`livingDecals` went quiet in three zones, and two of them were made of it.**
   A `bare` map stands the zone's own floor, decals and MOTION down, which cost
   the Fissure nothing (its `motion` is 0.5 and its `density` 0) and costs the

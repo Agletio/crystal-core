@@ -180,12 +180,6 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   seam: 'seam_pro',
 };
 
-/** Which zones somebody WORKED. `VIGNETTES` is rails, carts and pit props —
- *  what a person left, and one zone was ever a working. Cover and growth are
- *  what the ROCK does and belong to every set: without them an open floor is
- *  one picture repeated. */
-const WORKED = new Set<MapTheme>(['fissure']);
-
 /** How far a passage wanders off the line between the rooms it joins, and how
  *  much of a dug room's outer ring the rock never gave up. */
 const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 3 };
@@ -330,7 +324,9 @@ function fitCorners(grid: Grid, zone: string): void {
 const BIG = 12;
 
 /** Furniture, a CLUSTER at a time: dropped one at a time a prop reads as one,
- *  equally far from everything and there for no reason. */
+ *  equally far from everything and there for no reason. NOTHING CALLS IT: a
+ *  descent is what the rock did, and what a person left is placed by hand in a
+ *  scene. It is the only thing that knows how to fit one into a grown room. */
 export function dressRooms(
   grid: Grid,
   rooms: Room[],
@@ -556,9 +552,6 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
 /** Rooms joined by corridors. `layoutComplexity` off the crystal and the
  *  tier's own `sizeScale` both drive the map's size and its room count, so "of
  *  Winding Ways" and a deeper tier each produce a genuinely longer walk. */
-/** Arrangements per chamber, over the 30 a descent can hold. */
-const DRESS_PER_ROOM = 1;
-
 export function generateMap(
   mods: RolledMod[],
   rng: Rng,
@@ -625,8 +618,9 @@ export function generateMap(
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  // A generated surface is DRESSED and one drawing its own rock is not: the
-  // cover, the growth and the furniture are all generated pictures.
+  // A generated surface is DRESSED and one drawing its own rock is not. Cover
+  // and growth are the WHOLE of it: a descent is what the rock did, and nothing
+  // stands on its floor.
   const props: MapProp[] = [];
   if (zone) {
     // Its own stream, or dressing a map moves which monsters spawn in it.
@@ -637,7 +631,6 @@ export function generateMap(
       x: Math.round(v.x),
       y: Math.round(v.y),
     }));
-    if (WORKED.has(theme)) props.push(...dressRooms(grid, rooms, dress, DRESS_PER_ROOM, keep));
     props.push(...dressWalls(grid, dress, [...keep, ...props]));
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);

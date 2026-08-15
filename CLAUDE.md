@@ -167,12 +167,17 @@ where it stops: a chamber sitting two tiles from the boundary would end on a
 straight lit line with flat background past it. So the rock is drawn `EDGE`
 tiles beyond the grid on every side.
 
-**The only thing SCATTERED is what the rock does on its own.** A room's worth
-of objects dropped one tile at a time reads as exactly that, however carefully
-the rates are picked — a whole pass of fringe and open-floor scatter was tried
-and is gone. What a PERSON left is either a `Vignette` (`VIGNETTES` in
-`src/vignettes.ts`, placed by `dressRooms`, which picks a SPOT and then the
-biggest arrangement that fits it) or is placed by hand.
+**The only thing SCATTERED is what the rock does on its own, and it is now the
+only thing PLACED.** A room's worth of objects dropped one tile at a time reads
+as exactly that, however carefully the rates are picked — a whole pass of fringe
+and open-floor scatter was tried and is gone, and the ARRANGEMENTS followed it.
+*The user's call: "Get rid of all the props in the fissure zone except for the
+scattered stones... it's just delete everything placed in the dressRooms pass,
+keeping scattered stones and vines and stuff."* So a descent is cover and growth
+and nothing else, and what a PERSON left is placed by hand in a scene.
+`VIGNETTES` and `dressRooms` are still in `src/vignettes.ts` and
+`src/sim/grid.ts` — nothing calls the placer, and it is the only thing that
+knows how to fit an arrangement into a grown room.
 
 **The floor is broken up UNDER everything, and by DENSITY.** `COVER_PROPS` is
 loose stone and dust laid by `coverFloor` and drawn first, so furniture stands
@@ -192,20 +197,21 @@ lit torch on a wall nobody stands near is a bucket in the middle of a room.
 the tiles, because the ground under an altar is still floor and every renderer
 keys its own surface off `tiles`. A tile is blocked one at a time and UNDONE
 the moment it cuts anything off, since a prop across a passage is a map the
-hero stands still in forever. `STAIN_PROPS` is the other half: a mark IN the
-floor, drawn back so the generator's own domed shading stops reading as a lump.
-Open floor is nearly all `grit` — a few specks read as a floor with something
-on it, where anything with a SHAPE out in the middle of a room reads as
-something somebody threw there.
+hero stands still in forever. Nothing in the shipped game puts one down — every
+solid prop was an arrangement's, and the four authored rooms furnish themselves
+with things you walk over — so `sceneMap` still calls `block` and the demo
+drives it by hand, ringing a scene's person with solids and holding it to
+refusing the one that would close the ring. `STAIN_PROPS` is the same story: a
+mark IN the floor, drawn back so the generator's own domed shading stops reading
+as a lump, and nothing places one either.
 
-**A DESCENT over a generated set is what gets dressed, and what dresses it
-depends on who left it.** `generateMap` lays the cover and the growth on every
-zone that has a set, because that is what the ROCK does and an open floor with
-none of it is one picture repeated. The ARRANGEMENTS are a person's — `VIGNETTES`
-is rails, carts, pit props and a hauling run — so they go only where somebody
-worked, which is `WORKED` and is the Fissure alone. A mine cart standing on
-membrane is somebody else's zone. A SCENE is the other half of the rule: one
-chamber and props placed by hand, with nothing scattered into it at all.
+**A DESCENT over a generated set is dressed with what the ROCK did, and with
+nothing else.** `generateMap` lays the cover and the growth on every zone that
+has a set, because an open floor with none of it is one picture repeated. It
+lays nothing on top: no zone is a working, and a floor with objects standing
+about on it reads as objects standing about on a floor. A SCENE is the other
+half of the rule and always was — one chamber, props placed by hand, and
+nothing scattered into it at all.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
@@ -401,8 +407,8 @@ the foot of its tile, where `PROPS` is decals, and `tiles` says how much of the
 floor it covers — a fact about the art, not about the room.
 
 `GameMap.props` is furniture: on a scene it is what somebody put there by hand,
-on a generated map it is what the rock did plus the arrangements `dressRooms`
-placed. A hand-drawn prop is drawn by `PROPS` in `src/render/renderer.ts` beside
+on a generated map it is what the rock did and only that.
+A hand-drawn prop is drawn by `PROPS` in `src/render/renderer.ts` beside
 `mouth()`: pure functions returning `Decal[]`, so a prop is decals rather than a
 sprite and never appears in `BEASTIARY`.
 `RunState.folk` is who is in the room, a LIST and deliberately out of `monsters`,
