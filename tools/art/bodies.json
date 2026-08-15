@@ -217,6 +217,7 @@
    "name": "Fissure Hound",
    "character": "423aeb1d-0312-417a-9046-7b56ddd86a28",
    "mode": "v3",
+   "face": "east",
    "size": 48,
    "look": "an undead skeletal HOUND on four legs, lean and starved, long skull low and forward, ribs and spine bare, tail a bare whip of bone. On ALL FOURS, NOT upright, NOT bipedal, NOT human. Very dark almost-black bone, old blood dried to a rust-brown and black crust. NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm, NOT ivory, NOT white. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the skull and the chest first, but the far shoulder and the far leg are still visible behind the near ones. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {

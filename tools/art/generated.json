@@ -167,29 +167,29 @@
    "sprite": "courser",
    "character": "423aeb1d-0312-417a-9046-7b56ddd86a28",
    "dirs": [
-    "south-east"
+    "east"
    ],
    "states": {
     "idle": {
-     "group": "c67911d1-f867-465b-9fba-cbe3a758a8ef",
+     "group": "e79eda14-a59d-41bb-90ee-2dee89c42468",
      "frames": 2
     },
     "walk": {
-     "group": "604d703d-31e9-42db-b2c8-c062abeb42b7",
+     "group": "6b5a9c50-c8cf-40c5-9d44-f52729d290ce",
      "frames": 4
     },
     "attack": {
-     "group": "a0b07cc0-4c05-4614-8c3f-437d804693e0",
+     "group": "3f7c9617-722e-4f64-afe2-4674265d9129",
      "frames": 3
     },
     "death": {
-     "group": "fb2f2dc2-ca65-48e5-a3ac-ded89c69ffec",
+     "group": "c30758de-60c4-4024-9f84-9473460d4177",
      "frames": 3
     }
    },
    "grid": 48,
    "inks": 24,
-   "stride": 0.72,
+   "stride": 0.79,
    "luma": 32
   },
   {

@@ -35,6 +35,9 @@ interface BodyAsk {
   /** `standard` poses ONE rigged template, so every body shares a silhouette
    *  whatever the words say; `v3` is free of it at 2-9 generations. */
   mode?: 'standard' | 'pro' | 'v3';
+  /** The one facing THIS body is generated at, when the roster's own does not
+   *  suit it. A quadruped reads side-on where a biped reads at an angle. */
+  face?: string;
   /** `standard` only, and its default preset is the bobblehead. */
   proportions?: string;
   size?: number;
@@ -222,7 +225,7 @@ if (command === 'design') {
       height: 128,
       no_background: true,
       view: 'high top-down',
-      direction: asks.face,
+      direction: body!.face ?? asks.face,
       outline: 'single color black outline',
       shading: 'detailed shading',
       detail: 'highly detailed',
@@ -252,7 +255,7 @@ if (command === 'design') {
   // dressed half of the same pair.
   const text = await callTool('get_character', { character_id: body!.character! });
   const dir = here('cache/designs');
-  for (const facing of [asks.face]) {
+  for (const facing of [body!.face ?? asks.face]) {
     const url = new RegExp(`^ {2}${facing}: (https\\S+)$`, 'm').exec(text);
     if (!url) { console.log(`${facing}: no rotation`); continue; }
     writeFileSync(`${dir}/${sprite}-${facing}.png`, await download(url[1]));
@@ -294,7 +297,7 @@ if (command === 'design') {
 } else if (command === 'state') {
   const character = body!.character;
   if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
-  const on = [asks.face];
+  const on = [body!.face ?? asks.face];
   // Naming states asks for THOSE, which is what a re-roll wants: a judged state
   // that failed is deleted and asked again, and the rest are not paid for twice.
   const only = new Set(process.argv.slice(4));

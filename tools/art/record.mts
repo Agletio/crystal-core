@@ -18,7 +18,7 @@ type Row = { sprite: string; character?: string; states: Record<string, State> }
 
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   face: string;
-  bodies: { sprite: string; character?: string; states: Record<string, unknown> }[];
+  bodies: { sprite: string; character?: string; face?: string; states: Record<string, unknown> }[];
 };
 const made = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
   hero: Row;
@@ -36,13 +36,17 @@ for (const ask of asks.bodies) {
     console.log(`${ask.sprite}: no row in generated.json — add one first`);
     continue;
   }
+  const face = ask.face ?? asks.face;
   const text = await callTool('get_character', { character_id: ask.character });
   const found = new Map<string, State>();
   for (const line of text.split('\n')) {
-    const m = /^ {2}(\S+) — \d+ dir \([^)]*\), (\d+)f .*\[group: ([0-9a-f-]{36})\]/.exec(line);
+    const m = /^ {2}(\S+) — \d+ dir \(([^)]*)\), (\d+)f .*\[group: ([0-9a-f-]{36})\]/.exec(line);
     if (!m) continue;
+    // A body re-asked at another facing leaves the old groups standing, under
+    // the same name: the one to take is the one facing the way the row does.
+    if (!m[2].split(', ').includes(face)) continue;
     const state = m[1].startsWith(`${ask.sprite}_`) ? m[1].slice(ask.sprite.length + 1) : m[1];
-    if (state in ask.states) found.set(state, { group: m[3], frames: Number(m[2]) });
+    if (state in ask.states) found.set(state, { group: m[4], frames: Number(m[3]) });
   }
 
   const states: Record<string, State> = {};
@@ -61,7 +65,7 @@ for (const ask of asks.bodies) {
     };
   }
   row.character = ask.character;
-  row.dirs = [asks.face];
+  row.dirs = [ask.face ?? asks.face];
   row.states = states;
   console.log(
     `${ask.sprite}: ${Object.keys(states).length}/${Object.keys(ask.states).length} states` +
