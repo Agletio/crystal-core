@@ -24,7 +24,7 @@ import { describeStatLine, tagWord } from './mod-text';
 import { treeFor } from './skills-tree';
 import { graft } from './game/graft';
 import { Rng } from './rng';
-import { DAMAGE_TYPES, MONSTER_BY_ID } from './data';
+import { DAMAGE_TYPES, MONSTERS } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
 
 let failures = 0;
@@ -166,7 +166,7 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
   // Crystal mods land on monsters and on the map generator instead.
   const crystalFingerprint = (mods: RolledMod[]): string => {
     const d = mapDensity(mods);
-    const m = monsterStats(mods, MONSTER_BY_ID.grub);
+    const m = monsterStats(mods, MONSTERS.find((x) => x.family === 'normal')!);
     return [
       d.packCount, d.packSize,
       m.maxLife, m.damage, m.critChance, m.moveSpeed, m.armour, m.armourReduction,

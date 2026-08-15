@@ -1685,7 +1685,7 @@ export const MONSTER_FAMILIES: MonsterFamilyDef[] = [
     id: 'normal',
     name: 'Normal',
     word: '',
-    blurb: 'What the rock already holds. Beasts, husks and the things that eat them.',
+    blurb: 'What the rock already holds. Its own dead, and what they were carrying.',
   },
   {
     id: 'demonic',
@@ -1795,23 +1795,25 @@ export const AURA_BY_ID: Record<string, AuraDef> = Object.fromEntries(
 //
 // Multipliers on MONSTER_BASE, so identity and difficulty stay independent. A
 // pack rolls ONE kind and spawns all of it: mixed packs read as noise, uniform
-// packs read as "that's a Brute pack, careful".
+// packs read as "that's a Heap pack, careful".
 
 export const MONSTERS: MonsterDef[] = [
+  // One dead told apart by SILHOUETTE. Six rather than eleven, because half a
+  // pool at grid 24 and half at 96 is two art eras standing in one pack.
   {
-    id: 'grub',
-    name: 'Grub',
+    id: 'crawler',
+    name: 'Crawler',
     family: 'normal',
     life: 0.8,
     damage: 0.85,
-    moveSpeed: 0.85,
+    moveSpeed: 0.9,
     attacksPerSecond: 1,
     attackRange: 1,
-    radius: 0.3,
-    sprite: 'grub',
-    scale: 0.95,
+    radius: 0.28,
+    sprite: 'dragger',
+    scale: 1.35,
     weight: 1000,
-    tags: ['beast'],
+    tags: ['undead'],
   },
   {
     id: 'husk',
@@ -1823,17 +1825,41 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.9,
     attackRange: 1,
     radius: 0.32,
-    // The Fissure's own dead: a mine skeleton still gripping the tool it was
-    // holding. A generated body spans about 69% of its grid where the doll
-    // spans nearly all of 24, so it wants a bigger scale to stand the same
-    // height as the pack around it.
     sprite: 'hewer',
     scale: 1.45,
     weight: 800,
     tags: ['undead'],
   },
-  // Two more of the same dead, told apart by SILHOUETTE rather than by a name
-  // that reads like a spec sheet: the tall one and the robed one.
+  {
+    id: 'hound',
+    name: 'Hound',
+    family: 'normal',
+    life: 0.6,
+    damage: 1,
+    moveSpeed: 1.45,
+    attacksPerSecond: 1.25,
+    attackRange: 1,
+    radius: 0.26,
+    sprite: 'courser',
+    scale: 1.45,
+    weight: 600,
+    tags: ['undead'],
+  },
+  {
+    id: 'heap',
+    name: 'Heap',
+    family: 'normal',
+    life: 2.2,
+    damage: 1.15,
+    moveSpeed: 0.8,
+    attacksPerSecond: 0.7,
+    attackRange: 1.15,
+    radius: 0.45,
+    sprite: 'heap',
+    scale: 1.9,
+    weight: 320,
+    tags: ['undead'],
+  },
   {
     id: 'gaunt',
     name: 'Gaunt',
@@ -1843,12 +1869,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.92,
     attacksPerSecond: 0.75,
     attackRange: 1.2,
-    // Twice the height the rest of the pool stands at, which is twice the WIDTH
-    // too: `scale` is one number and both renderers apply it uniformly, so a
-    // Y-only stretch would be a resample rather than a bigger body. The radius
-    // follows it, because separation is what stops a pack walking through its
-    // legs — `fits` clamps at `BODY_MAX` for walking, so a body this wide still
-    // takes a one-tile gap.
+    // Twice the height of the rest, and twice the WIDTH with it: `scale` is one
+    // number applied uniformly. The radius follows, or a pack walks through its
+    // legs; `fits` clamps at `BODY_MAX`, so it still takes a one-tile gap.
     radius: 0.7,
     sprite: 'gaunt',
     scale: 3.2,
@@ -1870,117 +1893,10 @@ export const MONSTERS: MonsterDef[] = [
     weight: 300,
     tags: ['undead'],
   },
-  {
-    id: 'stalker',
-    name: 'Stalker',
-    family: 'normal',
-    life: 0.6,
-    damage: 1,
-    moveSpeed: 1.45,
-    attacksPerSecond: 1.25,
-    attackRange: 1,
-    radius: 0.26,
-    sprite: 'stalker',
-    scale: 0.85,
-    weight: 600,
-    tags: ['beast'],
-  },
-  {
-    id: 'brute',
-    name: 'Brute',
-    family: 'normal',
-    life: 2.2,
-    damage: 1.6,
-    moveSpeed: 0.7,
-    attacksPerSecond: 0.7,
-    attackRange: 1.15,
-    radius: 0.44,
-    sprite: 'brute',
-    scale: 1.25,
-    weight: 260,
-    tags: ['humanoid'],
-  },
-  {
-    id: 'cinder_hound',
-    name: 'Cinder Hound',
-    family: 'normal',
-    life: 0.9,
-    damage: 1.15,
-    moveSpeed: 1.3,
-    attacksPerSecond: 1.1,
-    attackRange: 1,
-    radius: 0.3,
-    sprite: 'cinder_hound',
-    scale: 1,
-    weight: 520,
-    tags: ['beast'],
-  },
-  {
-    id: 'shale_crawler',
-    name: 'Shale Crawler',
-    family: 'normal',
-    life: 1.6,
-    damage: 0.9,
-    moveSpeed: 0.75,
-    attacksPerSecond: 0.85,
-    attackRange: 1,
-    radius: 0.36,
-    sprite: 'shale_crawler',
-    scale: 1.05,
-    weight: 480,
-    tags: ['beast'],
-  },
-  {
-    id: 'gale_wisp',
-    name: 'Gale Wisp',
-    family: 'normal',
-    life: 0.5,
-    damage: 0.95,
-    moveSpeed: 1.6,
-    attacksPerSecond: 1.4,
-    attackRange: 1,
-    radius: 0.24,
-    sprite: 'gale_wisp',
-    scale: 0.9,
-    weight: 420,
-    tags: ['elemental'],
-  },
-  {
-    id: 'rime_crab',
-    name: 'Rime Crab',
-    family: 'normal',
-    life: 1.9,
-    damage: 1.25,
-    moveSpeed: 0.65,
-    attacksPerSecond: 0.75,
-    attackRange: 1.1,
-    radius: 0.38,
-    sprite: 'rime_crab',
-    scale: 1.1,
-    weight: 340,
-    tags: ['beast'],
-  },
-  {
-    id: 'sparkmite',
-    name: 'Sparkmite',
-    family: 'normal',
-    life: 0.45,
-    damage: 0.8,
-    moveSpeed: 1.7,
-    attacksPerSecond: 1.5,
-    attackRange: 1,
-    radius: 0.22,
-    sprite: 'sparkmite',
-    scale: 0.8,
-    weight: 700,
-    tags: ['elemental'],
-  },
-
   // --- demonic: slower, and every swing is a real one ------------------
   //
-  // More life and more damage per hit, paid for in attack speed. The pool
-  // weighs out to the same threat as the Normal one; what changes is that a
-  // demonic room punishes standing still rather than out-numbering you.
+  // More life and more damage per hit, paid for in attack speed: the pool weighs
+  // out to the same threat as the Normal one, and punishes standing still.
   {
     id: 'imp',
     name: 'Imp',

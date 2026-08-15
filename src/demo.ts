@@ -292,6 +292,10 @@ import type {
   Wallet,
 } from './types';
 
+/** A monster to MEASURE, off the pool rather than by name: every measurement
+ *  here wants an ordinary body and none wants a particular one, so naming a
+ *  row is a measurement that breaks the day the roster is cut. */
+const PLAIN = MONSTERS.find((m) => m.family === 'normal')!;
 const pool = new ModPool(ALL_MODS);
 const rng = new Rng(20260804);
 
@@ -5506,7 +5510,7 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
   // no crystal is saying anything, so every point of this is the monster's.
   const bare: string[] = [];
   for (const ability of MONSTER_ABILITIES) {
-    const m = monsterStats([], MONSTER_BY_ID.grub, ability);
+    const m = monsterStats([], PLAIN, ability);
     const types = Object.keys(m.damageByType);
     if (types.length !== 1 || types[0] !== ability.damageType) {
       bare.push(`${ability.id} deals ${types.join('+')}`);
@@ -5528,12 +5532,12 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
     ];
     const claws = MONSTER_ABILITY_BY_ID.claws;
     const frost = MONSTER_ABILITY_BY_ID.frost_bolt;
-    const plain = monsterStats([], MONSTER_BY_ID.grub, claws);
-    const burned = monsterStats(cinders, MONSTER_BY_ID.grub, claws);
-    const chilled = monsterStats(cinders, MONSTER_BY_ID.grub, frost);
+    const plain = monsterStats([], PLAIN, claws);
+    const burned = monsterStats(cinders, PLAIN, claws);
+    const chilled = monsterStats(cinders, PLAIN, frost);
 
     line(
-      `  a clawing grub under +${share}% Cinders: ${plain.damage.toFixed(1)} → ` +
+      `  a clawing ${PLAIN.name} under +${share}% Cinders: ${plain.damage.toFixed(1)} → ` +
         `${burned.damage.toFixed(1)}, as ` +
         Object.entries(burned.damageByType).map(([t, v]) => `${v.toFixed(1)} ${t}`).join(' + ')
     );
@@ -5687,7 +5691,7 @@ rule('MITIGATION — is every reachable set answerable?');
   for (let band = 0; band < DROP_BANDS.length; band++) {
     const set = ladderSet(band, new Rng(6600 + band), pool);
     const mods = set.flatMap((c) => c.mods);
-    const m = monsterStats(mods, MONSTER_BY_ID.grub);
+    const m = monsterStats(mods, PLAIN);
     // The hardest type, not an arbitrary one: a set is answerable if the type
     // it turns aside HARDEST still gets through.
     const resist = Math.max(...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0));
@@ -5709,7 +5713,7 @@ rule('MITIGATION — is every reachable set answerable?');
   // An empty Fissure is the floor of the game, so it has to be the floor of
   // this too: every point of resistance and armour is now something you chose
   // to socket, which is what makes a hard map answerable rather than a wall.
-  const bare = monsterStats([], MONSTER_BY_ID.grub);
+  const bare = monsterStats([], PLAIN);
   check(
     bare.resistances.physical === 0 && bare.armour === 0,
     'nothing resists anything until a crystal says so',
@@ -5721,7 +5725,7 @@ rule('MITIGATION — is every reachable set answerable?');
     entryId: 'ward', defId: 'ward', group: 'ward', slot: 'mod', name: 'Ward', tier: 1,
     tags: ['danger'], stats: [{ stat: monsterResStat('fire'), form: 'inc', value, tags: [] }],
   });
-  const doubled = monsterStats([ward(50), ward(50)], MONSTER_BY_ID.grub);
+  const doubled = monsterStats([ward(50), ward(50)], PLAIN);
   check(
     doubled.resistances.fire === DEFENCE.resistanceCap,
     'and two crystals warding one type reach the cap, never past it',
