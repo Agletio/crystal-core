@@ -45,33 +45,25 @@
  "bodies": [
   {
    "sprite": "gaunt",
-   "character": "b46c8d3f-b2b5-485a-a643-25b6402e9105",
+   "character": "d18f6cde-33f2-4069-859e-da3afabdfa2c",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "977cac8f-b552-429a-b0ce-8b1257d6ecd0",
+     "group": "f981e178-330a-4ffc-97c2-b933220a9b41",
      "frames": 2
     },
     "walk": {
-     "group": "4003f3a5-4a21-4cb8-b0c0-02a57e8f0967",
+     "group": "7d6cc62c-501e-423c-b0f2-ea5405bafe0f",
      "frames": 4
     },
-    "hurt": {
-     "group": "7f417894-5b24-463f-a53c-a48737f95900",
-     "frames": 2
+    "attack": {
+     "group": "b587363b-8786-4dcb-b75b-a73044a4f2d0",
+     "frames": 3
     },
     "death": {
-     "group": "17f8dfdf-65a5-446d-b561-9600f4a0f2fb",
-     "frames": 3
-    },
-    "attack": {
-     "group": "f07eef27-7f1b-4083-a346-5e2a191122ba",
-     "frames": 3
-    },
-    "cast": {
-     "group": "4d47950b-df25-4784-beb1-7175325f28a5",
+     "group": "cb8827ab-18ec-45c7-ab5e-6497446cf993",
      "frames": 3
     }
    },
