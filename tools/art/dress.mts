@@ -21,6 +21,11 @@ const KEEP =
 /** A LOOK, not a slot. Few and strongly separated: at the ~87 device pixels the
  *  camera lands a body in, two near-neighbours are the same picture. */
 export const OUTFITS: Record<string, string> = {
+  helm:
+    'Put a battered open-faced iron helm on his head, over or instead of the hood. Change NOTHING ' +
+    'below the neck: the same tattered tunic, the same rope belt, the same hip pouch, the same ' +
+    'rag-bound shins, the same worn-through boots, every one of them exactly as they are. The helm ' +
+    'is dull pitted grey-brown iron, NOT shiny, NOT silver, NOT gold. ' + KEEP,
   mail:
     'Put a rusted iron mail hauberk on him over the tattered clothes, a battered open-faced ' +
     'iron helm, and worn leather bracers at the forearms. The mail is dull pitted grey-brown ' +

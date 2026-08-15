@@ -1,65 +1,100 @@
 /**
- * Is an edit LOCAL enough to be a per-slot layer?   `layer.mts <base> <dressed>`
+ * A piece of armour cut OUT of a dressed frame.  `layer.mts <base> <slot>:<worn> ...`
  *
- * Route D1 rests on this: if what `edit_image` changed IS the piece asked for,
- * the piece falls out of the subtraction already registered to its frame. On a
- * whole OUTFIT it is not — a mail-and-helm edit put 12% of its change in the
- * boots band, having never mentioned boots. A single piece is the unknown.
- * Costs no generations; bands are fractions of the BODY's extent, not the
- * canvas, so a sprite sitting high in its frame is not scored against air.
+ * `edit_image` dresses the same man — 97% silhouette overlap — but it REPAINTS
+ * every pixel doing it. Asked for a helm and forbidden to touch anything below
+ * the neck, 24% of what changed landed on the head and 18% on the boots, and a
+ * higher threshold does not concentrate it. So a DIFF is not a piece.
+ *
+ * What survives that is the CROP. A slot is a BAND of the body's own extent, the
+ * dressed frame is kept inside its band and discarded everywhere else, and the
+ * repaint goes with it. Registration is free by construction, and two edits
+ * compose: a helm out of one and a hauberk out of another land on one man.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { decodePng, encodePng } from './png.mts';
+import { decodePng, encodePng, type Decoded } from './png.mts';
 
 const CACHE = new URL('./cache/designs/', import.meta.url).pathname;
 
-/** Disjoint, so two layers can never claim one pixel. */
-export const BANDS: [string, number, number][] = [
-  ['helm', 0, 0.28],
-  ['body', 0.28, 0.62],
-  ['legs', 0.62, 0.78],
-  ['boots', 0.78, 1],
-];
+/** Disjoint and covering, as fractions of the BODY's extent rather than of the
+ *  canvas: a sprite sitting high in its frame is not measured against air. The
+ *  head cut is the base of the neck — judged over 0.18 to 0.28, and above it the
+ *  helm loses its collar while below it the crop starts eating shoulder. */
+export const SLOTS: Record<string, [number, number]> = {
+  helm: [0, 0.24],
+  body: [0.24, 0.62],
+  legs: [0.62, 0.78],
+  boots: [0.78, 1],
+};
 
-const at = (name: string) => decodePng(readFileSync(`${CACHE}${name}.png`));
+const at = (name: string) => decodePng(readFileSync(name.includes('/') ? name : `${CACHE}${name}.png`));
+
+function extent(img: Decoded): [number, number] {
+  let top = img.height;
+  let bottom = -1;
+  for (let y = 0; y < img.height; y++)
+    for (let x = 0; x < img.width; x++)
+      if (img.rgba[(y * img.width + x) * 4 + 3] > 128) {
+        if (y < top) top = y;
+        bottom = y;
+      }
+  return [top, bottom];
+}
+
+// Exporting SLOTS means this file is also IMPORTED, so the CLI is guarded.
+if (import.meta.filename === process.argv[1]) main();
+
+function main(): void {
 const base = at(process.argv[2]);
-const worn = at(process.argv[3]);
 const W = base.width;
 const H = base.height;
-if (worn.width !== W || worn.height !== H) throw new Error('the two are different sizes');
-
-let top = H;
-let bottom = 0;
-for (let y = 0; y < H; y++)
-  for (let x = 0; x < W; x++)
-    if (base.rgba[(y * W + x) * 4 + 3] > 128) {
-      top = Math.min(top, y);
-      bottom = Math.max(bottom, y);
-    }
+const [top, bottom] = extent(base);
 const span = bottom - top + 1;
+const row = (f: number) => top + Math.round(f * span);
 
-// Visibly different AND drawn in the dressed frame: a pixel the edit merely
-// cleared is the body being repainted, not a piece being added.
-const changed = new Uint8Array(W * H);
-const layer = new Uint8Array(W * H * 4);
-let count = 0;
-for (let i = 0; i < W * H; i++) {
-  const a = base.rgba.subarray(i * 4, i * 4 + 4);
-  const b = worn.rgba.subarray(i * 4, i * 4 + 4);
-  const same =
-    Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) < 24 &&
-    Math.abs(a[3] - b[3]) < 40;
-  if (same || b[3] < 128) continue;
-  changed[i] = 1;
-  count++;
-  layer.set([b[0], b[1], b[2], 255], i * 4);
+const worn = new Uint8Array(base.rgba);
+for (const arg of process.argv.slice(3)) {
+  const [slot, name] = arg.split(':');
+  const band = SLOTS[slot];
+  if (!band || !name) throw new Error(`${arg}: want <slot>:<image>, slot one of ${Object.keys(SLOTS)}`);
+  const dressed = at(name);
+  if (dressed.width !== W || dressed.height !== H) throw new Error(`${name} is a different size`);
+
+  // What the edit ACTUALLY moved, banded — the measurement that killed the diff.
+  const changed = new Uint8Array(W * H);
+  let count = 0;
+  for (let i = 0; i < W * H; i++) {
+    const a = base.rgba.subarray(i * 4, i * 4 + 4);
+    const b = dressed.rgba.subarray(i * 4, i * 4 + 4);
+    const moved =
+      Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) >= 24 ||
+      Math.abs(a[3] - b[3]) >= 40;
+    if (!moved || b[3] < 128) continue;
+    changed[i] = 1;
+    count++;
+  }
+  const split = Object.entries(SLOTS).map(([other, [from, to]]) => {
+    let n = 0;
+    for (let y = row(from); y < (to === 1 ? H : row(to)); y++)
+      for (let x = 0; x < W; x++) if (changed[y * W + x]) n++;
+    return `${other} ${((100 * n) / count).toFixed(0).padStart(2)}%`;
+  });
+  const [dtop, dbottom] = extent(dressed);
+  console.log(`${slot.padEnd(5)} <- ${name}`);
+  console.log(`  the edit moved: ${split.join('  ')}  (${count} px)`);
+  console.log(`  extent ${dtop}-${dbottom} against the base's ${top}-${bottom}`);
+
+  const layer = new Uint8Array(W * H * 4);
+  for (let y = row(band[0]); y < (band[1] === 1 ? H : row(band[1])); y++)
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      layer.set(dressed.rgba.subarray(i, i + 4), i);
+      worn.set(dressed.rgba.subarray(i, i + 4), i);
+    }
+  writeFileSync(`${CACHE}${name}-${slot}.png`, encodePng(W, H, layer));
+  console.log(`  ${CACHE}${name}-${slot}.png`);
 }
 
-for (const [name, from, to] of BANDS) {
-  let n = 0;
-  for (let y = top + Math.floor(from * span); y < top + Math.ceil(to * span); y++)
-    for (let x = 0; x < W; x++) if (changed[y * W + x]) n++;
-  console.log(`  ${name.padEnd(6)} ${((100 * n) / count).toFixed(1).padStart(5)}% of the edit  (${n} px)`);
+writeFileSync(`${CACHE}${process.argv[2]}-worn.png`, encodePng(W, H, worn));
+console.log(`${CACHE}${process.argv[2]}-worn.png`);
 }
-console.log(`  ${count} pixels changed, body spans rows ${top}-${bottom} of ${H}`);
-writeFileSync(process.argv[4] ?? `${CACHE}${process.argv[3]}-layer.png`, encodePng(W, H, layer));
