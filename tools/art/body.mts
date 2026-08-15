@@ -81,30 +81,10 @@ const [command, sprite] = process.argv.slice(2);
 const body = asks.bodies.find((b) => b.sprite === sprite);
 if (!['watch', 'props'].includes(command) && !body) throw new Error(`${sprite ?? '(nothing)'} is not in bodies.json`);
 
-/** The animation groups already imported for this body, by state name. */
-const groups = (): Record<string, string> =>
-  Object.fromEntries(
-    Object.entries(made.find((b) => b.sprite === sprite)?.states ?? {}).map(([n, s]) => [
-      n,
-      s.group,
-    ])
-  );
-
 const said = (out: string, keep: RegExp): string =>
   out.split('\n').filter((l) => keep.test(l)).join(' | ').slice(0, 160);
 
 const wait = (ms: number): Promise<void> => new Promise((go) => setTimeout(go, ms));
-
-/** Which facings each animation GROUP already holds, off its header line. */
-async function facings(character: string): Promise<Map<string, Set<string>>> {
-  const text = await callTool('get_character', { character_id: character });
-  const out = new Map<string, Set<string>>();
-  for (const line of text.split('\n')) {
-    const m = /^ {2}\S.*? — \d+ dir \(([^)]*)\).*\[group: ([0-9a-f-]{36})\]/.exec(line);
-    if (m) out.set(m[2], new Set(m[1].split(',').map((d) => d.trim())));
-  }
-  return out;
-}
 
 /** Jobs in flight ACROSS the account. A refusal reads `need 5 job slots but
  *  only 1 available (9/10 used)`, and it comes back as TEXT rather than as an
@@ -314,30 +294,18 @@ if (command === 'design') {
 } else if (command === 'state') {
   const character = body!.character;
   if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
-  // One facing to judge, or the rest to fill in. `fill` appends to the group
-  // the judged facing already made, so a body's states stay one group each.
   const on = [asks.face];
-  const held = await facings(character);
   // Naming states asks for THOSE, which is what a re-roll wants: a judged state
-  // that failed is deleted and asked again, and the five that passed are not
-  // paid for a second time.
+  // that failed is deleted and asked again, and the rest are not paid for twice.
   const only = new Set(process.argv.slice(4));
   for (const [name, ask] of Object.entries(body!.states)) {
     if (only.size && !only.has(name)) continue;
-    const group = groups()[name];
-    // Only what is MISSING, so a fill is idempotent: the rate limit answers
-    // with a hint rather than an error, so a run routinely lands some of a
-    // body's facings and not others, and the fix is to run it again.
-    const want = on.filter((d) => !held.get(group ?? '')?.has(d));
-    if (want.length === 0) {
-      console.log(`${name}: all ${on.length} facings already`);
-      continue;
-    }
-    // ONE facing per call, appended to the same group. A five-facing call needs
-    // five slots at once and is refused whole; one at a time keeps the pipe
-    // full instead, and a refusal costs one facing rather than five.
-    let into = group;
-    for (const facing of want) {
+    // A FRESH group every time. `generated.json` holds the groups of whatever
+    // was imported LAST, which after a re-design belongs to a different
+    // character — and a group id from another character is a call the server
+    // refuses, silently enough that a whole roster animates into nothing.
+    let into: string | undefined;
+    for (const facing of on) {
       await room(1);
       // The server dedupes on the DESCRIPTION and answers `already queued or
       // complete` for a re-ask, whatever directions are actually stored — so a
