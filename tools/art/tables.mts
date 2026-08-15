@@ -34,6 +34,9 @@ interface BodySpec {
   /** Tiles one whole GAIT CYCLE covers — how far the stride the animation
    *  DEPICTS actually carries the body. Omitted, it takes `STRIDE_CYCLE`. */
   stride?: number;
+  /** The grid it ships at; the GENERATION must be an integer multiple of it. */
+  grid?: number;
+  inks?: number; // how many it settles to; 56 is a 96 grid's number, not a 24's
   /**
    * State name -> which animation GROUP ID on the generator, and which window
    * of it to keep. The whole of what makes a body's states data: a further one
@@ -183,10 +186,10 @@ class Inks {
   }
 }
 
-/** The grid a body ships at. A DECISION: the art is `grid × grid` strings per
- *  frame in a committed bundle AND a canvas per frame at four bytes a pixel,
- *  both paid per FACING. 96 because the camera lands a body in ~87 device
- *  pixels — past that it is downsampled before anybody sees it. */
+/** The grid a body ships at, unless its row says otherwise. The art is
+ *  `grid × grid` strings per frame in a committed bundle AND a canvas per frame
+ *  at four bytes a pixel, both paid per FACING — so the grid and the facing
+ *  count are the two numbers a body's whole cost is made of. */
 const GRID = 96;
 
 const SHIPPING_FLOOR = 'lit_round'; // the floor a prop is toned to sit on
@@ -325,24 +328,25 @@ async function creature(spec: BodySpec): Promise<Art> {
   const widest = Math.max(...images.map((i) => i.width));
   const square = images.map((i) => centred(i, widest));
 
+  const grid = spec.grid ?? GRID;
   const inks = new Inks();
   for (const image of square) noted(image, inks);
-  inks.settle(BODY_INKS);
+  inks.settle(spec.inks ?? BODY_INKS);
   // The margin is the RANK GLOW's room and nothing else. At `rings * 4` a body
   // spans 69% of its grid where the hand-drawn doll spans nearly all of its 24,
   // so a generated one rendered a third smaller at the same `scale` — which is
   // invisible until something correctly sized stands next to it.
   const frames = fittedTogether(
     square.map((image) => deshadow(rowsOf(image, inks))),
-    Math.max(1, Math.round(GRID / 24)) * 2,
-    GRID
+    Math.max(1, Math.round(grid / 24)) * 2,
+    grid
   );
   console.log(
-    `  ${widest}px into a ${GRID} grid, ${inks.distinct} colours into ${inks.size}, ` +
+    `  ${widest}px into a ${grid} grid, ${inks.distinct} colours into ${inks.size}, ` +
       `${dirs.length} facings x ` +
       Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ')
   );
-  return { grid: GRID, stride: spec.stride, dirs, frames, states, key: inks.key };
+  return { grid, stride: spec.stride, dirs, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
