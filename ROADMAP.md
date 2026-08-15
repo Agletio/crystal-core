@@ -4,27 +4,51 @@
 `RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
 or something you need in order to do one, it is in the wrong file.
 
-**ONE phase, and it WAITS. Two questions are the live work.** The arc dictated
-in one go is finished, the batch after it is finished, and the art sandbox is
-built: what looking at it settled is under **What the sandbox answered**, below,
-and the decision it asks for is open question 8. Phase 1 is teaching, and it
-does not start until the stripped opening has been played — see its own note.
+## Where this stands
 
-So the next session most likely has nothing to take. **Say so and list the
-questions**; do not invent work and do not promote a backlog item without being
-asked. The two things most likely to be asked for are **open question 8** —
-whether generated art ships at all — and the **balance pass**, written up below.
+**The Fissure is drawn by a GENERATED TILESET, in the real game.** Not the
+sandbox — a live descent. The other three zones still draw their own rock. The
+decision open question 8 was parked on has been taken by the user in the doing:
+generated art ships, and the runtime palette is what it cost.
+
+**The SANDBOX is being deleted and the work moves into the game.** *The user's
+call, in their words: "We are going to just delete the sandbox and start
+updating graphics in the actual game. I think it either works or it doesn't."*
+That is Phase 1 below. Judging art in a room nobody plays turned out to cost a
+round trip on every question — the room is dressed as the Fissure, so anything
+learnt there had to be re-checked in a descent anyway.
+
+### If it does not work, revert to one of these
+
+Two clean points, both pushed. **Tags could not be pushed — the remote answers
+403 on `refs/tags` — so these are SHAs and this file is where they live.**
+
+| commit | what it is |
+|---|---|
+| `3f31b6a` | the last commit with the Fissure still HAND-DRAWN. The generated tileset exists but only the sandbox uses it. Reverting here undoes the zone in the game and keeps everything else. |
+| `83b8488` | the BLANK room: every generated tileset deleted, props and bodies kept. Reverting here drops generated terrain entirely. |
+| `9c85286` | before this session. The old two-tile wall, the chasms, the lightmap. |
+
+`452887c` is the commit that put the tileset into the Fissure, and it is the
+only one that touches what a player runs. Everything before it is the sandbox.
+
+## How to work
 
 Do the lowest-numbered phase that is not blocked on an open question, all of it,
 then delete it and renumber. Numbers in a phase are intent, not tuning — a
 measurement beats them. A landed phase is DELETED from here, so before starting
 one, `git fetch` and check you are on the tip of the branch: a phase you can
 still see in a stale clone may already be built. Do not promote a backlog item
-into a phase without being asked; the thing most likely to be asked for after
-these is the **balance pass**, written up below.
+into a phase without being asked.
 
-**Nothing is blocked on an open question.** Read **Before you touch the
-ladder**, below, which holds the parts belonging to no single phase.
+**`npm run shots` is RED and it predates all of this.** `desktop: the first
+descent never met the Lampwright` — it reaches the room and the first bubble,
+then never advances to `#met`. Verified by stashing: it fails identically at
+`9c85286` with nothing modified. Not diagnosed. Do not read it as a regression
+and do not spend a phase on it without being asked.
+
+**What the last thirteen phases turned out to know that their writing did not.**
+Kept here because the next thing built on top of them will want it.
 
 **What the last thirteen phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
@@ -292,138 +316,116 @@ written as one.
 
 ---
 
-## What the sandbox answered
+## What the generated zone cost, and what it taught
 
-**BUILT, and the reason it existed is now a set of findings rather than a
-task.** `#dev-sandbox` on the rail opens `SCENES`' one room that is not in
-`SCENES`, and **nothing the game itself draws is in it**: a generated Wang
-floor, six generated props, generated bodies and a generated HERO over the doll.
-It is dressed as THE FISSURE, off that zone's own line. `RULES.md` holds the
-rules it is bound by; `CLAUDE.md` describes it; `tools/art/sandbox.json` is the
-list of ids it is made of. What follows is what LOOKING at it settled, and it is
-written here rather than there because it is an input to a decision the user has
-not made — **open question 8**, which is the only thing standing between this
-and a roster.
+**This is the part to duplicate, and the part not to repeat.** The Fissure now
+draws from a 25-tile generated Wang set shipped whole as a data URI. Six
+generations over two rounds got there; most of the session went on the renderer
+rather than on the art.
 
-**The generator itself is everything the last session said it was.** A rigged
-character at 128px with eight directions and template animations at one
-generation each; a Wang tileset whose corners match. Both are far beyond the
-REST API. `tools/art/mcp.mts` is the one module that knows the protocol and
-`tools/art/sandbox.mts` is what pulls a character and a tileset into the two
-tables the renderer reads. The MCP tools may not appear in a session's tool
-list — the server answers plain JSON-RPC over one POST, which is what that
-module does, so an absent client is not a blocker.
+### The generator, as it actually is
 
-**What it looks like on the map, which is the only view that counts.**
+- **`create_topdown_tileset` tops out at 21 distinct corner combinations.** 16
+  tiles at transition 0/0.25/0.5, 25 at 1.0 — and the 25 are 21 keys plus four
+  wall CONTINUATIONS that share their corners with a twin. No prompt, mode or
+  shape style changes that. A regen buys a different-looking set with identical
+  gaps, so **do not spend a generation trying to fill a missing key.**
+- **`transition_size: 1` is what makes a wall a WALL.** The cliff fills the map
+  cell BELOW the boundary, so a wall is two rows tall as DRAWN. The old set's
+  face was a fraction of a tile and every attempt to stretch it turned its
+  rounded columns into fence posts.
+- **`shape_style: 'round'` is the one that reads.** The rock reduces to a thin
+  dark cliff band and then pure black, so there is barely any rock surface left
+  to repeat — which answers the wallpaper problem by REMOVING the surface rather
+  than by lighting it. A whole previous session was spent failing to light it.
+- **Tone has to be said at BOTH ends.** Four asks came back with the rock PALER
+  than the floor, which reads inside out — the eye takes the bright expanse for
+  ground and the rooms for holes. A LIGHT floor that is NOT dark and a near-black
+  rock that is NOT pale, each excluding the other's colour, is what fixed it.
+  `lit_round` ships; `lit_floor` is the same tone with more rock texture and is
+  in the file beside it, one word to switch.
+- **`standard` mode drew an orange brick dungeon** off a cave prompt. Pro and
+  shape_style both stayed in the cave. 
+- **The sheet ships WHOLE, as a data URI.** Quantising to a character grid
+  bought the runtime palette, and a painted tileset has baked hex and cannot
+  have that anyway — so the conversion was all cost. `tools/art/zoneset.mts`
+  is `ask` / `get` / `emit`, and `emit` writes `src/render/generated-tiles.ts`.
+- **The docs at `https://api.pixellab.ai/mcp/docs` are worth reading and I did
+  not until told to.** They say the plain 16 cover ALL corner combinations,
+  which is what settled that the gaps are shapes the generator's terrain model
+  never emits rather than missing art. That one sentence would have saved two
+  wrong fixes.
 
-- **~~A generated body reads WORSE in a descent than in its own model sheet.~~
-  WRONG, and the way it was wrong is the finding.** The sandbox's body was
-  called `husk`, which is also a `BEASTIARY` id — and `monsterArt` asks
-  `BEASTIARY` first. So every judgement made about "generated bodies in game"
-  was made about the HAND-DRAWN husk, in silence, for a whole session. A
-  generated body at a correct scale reads FINE at the size a body occupies.
-  The demo fails a shared id now. **An id in two tables is one of them never
-  drawing, and nothing about that is visible on screen** — it is the shape to
-  watch every time a second table shadows a first.
-- **A generated body wants a bigger `scale` than the doll.** `fitted` leaves
-  room for the rank glow, so at `rings * 4` a body spans 69% of its grid where
-  the doll spans nearly all of its 24 — a third smaller at the same number.
-  That, not resolution, was most of "it reads worse".
-- **A 16-tile Wang set has exactly ONE interior tile, and it is visible.** The
-  floor is that tile stamped five hundred times and it reads as wallpaper —
-  its own grain forms a regular lattice you can pick out across the room.
-  `tileDecals` hashes off the tile it lands on and never repeats, which is why
-  hand-drawn rock does not do this. A generated floor needs either several
-  interior variants (a second tileset chained off `base_tile_ids`, or the
-  `create_tiles_pro` route) or the decals kept on top of it — and the second
-  is two floors at once, which is why the sandbox turns them off. **PROPS are
-  the cheap half of the answer and they work**: six generated pictures grouped
-  the way the zone's own `leavings` are, and the room stops reading as a field.
-- **Generated art carries BAKED colour, and that is the real cost.** Every
-  other pixel in the game takes its ink from a CSS custom property at draw
-  time, which is what makes a zone recolour for free. A generated body and a
-  generated floor are fixed hexes, so the mine shaft's warm brown is warm brown
-  in every zone and the skeleton is lit by whatever the generator felt like.
-  This is the atlas trade arriving early: the roadmap said it would cost the
-  runtime palette past ~5 MB, and it turns out to cost it at the FIRST sprite.
-- **A template animation DEGRADES across its run, and that is the important
-  one.** Measured over three of them on one body: the first ~60% of the frames
-  are on-model and the tail drifts — a walking skeleton grows a crook in its
-  last frame, a `cross-punch` turns to face the camera and sprouts a floating
-  pick, a `fireball` flickers a shield in and out. So a state names WHICH
-  WINDOW of its animation to keep (`from`/`to` in `sandbox.json`), and picking
-  the window is a per-generation judgement nothing can guess. It also does not
-  preserve a silhouette: `cross-punch` dropped the cape a character was defined
-  by. The v3 custom route keeps more but draws on a larger canvas and, asked
-  for a "raises both hands", painted a spell aura on — which `RULES.md`
-  forbids, since a rank is light applied at runtime.
-- **Mirroring holds at this camera.** `high top-down` is near enough to profile
-  that one east-facing set flipped for west reads fine, which is what the
-  renderer already does. Nothing here argues for more directions; the argument
-  for those is diagonal movement looking wrong, and it does not yet.
+### Three fixes tried, and only the third was right
 
-### What LOOKING at the room caught next, and it was three things
+Worth writing out because the wrong two are attractive.
 
-**The user's own list, off a screenshot with the faults circled on it.** All
-three are fixed; each is now a rule in `RULES.md`, and each is the same shape —
-something correct in the small that reads as a different object at the size a
-cell actually draws.
+1. **Nearest key.** A cell whose corners the set has no picture for takes the
+   closest it does. Cheap, and it is still there as the renderer's backstop —
+   but it puts a cut face where solid rock belongs.
+2. **Quadrant synthesis. WRONG, and it looked right on paper.** A corner tile IS
+   its four corners, so build the missing key from quarters of the ones you
+   have. Measured on one view with it on and off: it puts thin slivers of FLOOR
+   inside solid rock. A quadrant's picture is not decided by its own corner —
+   the boundary inside a quarter depends on the corners either side, which a
+   corner key cannot say. **Render composited tiles and LOOK at them before
+   shipping any scheme like this.**
+3. **Fit the CARVE.** `fitCorners` opens rock until every cell is a key the set
+   holds. Zero cells drawn off their corners, against 26. Same move `thinRock`
+   made, safe for the same reason — opening only ever adds space.
 
-- **Black scraps in the open floor were the CHASMS.** A `grown` cut shreds a
-  hole: the three the sandbox had came out as a diagonal band of two- and
-  three-tile pieces with rock and tunnel woven through them, plus single tiles
-  stranded on the far side of a bridge. At a tile across, that is not a drop —
-  it is a black square nobody put there. The user's rule out of it is that
-  black belongs to the ROCK, where it is what answers the repeating stone. The
-  chasms are gone from `src/scenes/sandbox.ts`; `ScenePlan.chasms`, `VOID` and
-  `VOID_FADE` are all intact and one line puts them back.
-- **`WALL_TALL` was a fix applied twice.** "A set draws its face one tile high
-  and that is a kerb" was measured against a SHALLOW set, and raising
-  `transition_size` had already answered it — the face is two thirds of a tile
-  now. The 2x stretch on top turned each of the face's rounded columns into a
-  post, so every wall in the room was a row of grey uprights and every two-cell
-  rock stub was a crate standing on the floor. Shot at 1, 1.5 and 2: 1.5 is
-  still a palisade. **When a fault is fixed twice from both ends, check whether
-  the first fix is still needed before keeping both.**
-- **The map's own edge was a straight lit line.** The grid is the rooms plus
-  two tiles, so a chamber near the boundary never got the `ROCK_REACH` of rock
-  it needed to go dark, and past it was flat background. The rock is drawn
-  `EDGE` tiles past the grid now and the last ring fades to true black, which
-  is also the background under a generated map. Two half-fixes each looked
-  done on their own: extending the rock left a faint step where the border
-  stopped, and blacking the background alone left the lit line.
+### What the renderer needed, none of it guessable
 
-**`npm run shots` is RED, and it predates all of this.** `desktop: the first
-descent never met the Lampwright` — it reaches the room and the first bubble
-(both shots are written) and then never advances to `#met`. Verified by
-stashing: it fails identically at `9c85286` with nothing modified. Not
-diagnosed, and not this work's — written down so the next session does not
-spend the two minutes discovering it, and so nobody mistakes it for a
-regression.
+- **Decode the sheet where the renderer is already awaited.** Sliced on first
+  use, the draw runs before the image has loaded and the entire floor is
+  silently missing.
+- **The four twins are told apart by `pattern_4x4`, and those rows are CORNER
+  values one row out** — not the cell's tile type. Read wrong, the wall's lip
+  tile lands anywhere, and a lip repeating down a face is a pale line running
+  up it.
+- **The cut face moved.** The old set drew it in the rock cell; this one fills
+  the cell below the boundary, so the face is the FLOOR tile with rock over it.
+  Anything hanging on the face moved a row with it — `dressWalls`, the demo's
+  `face` predicate and the shrine's own wall row.
+- **The two LANDMARKS survive `bare`.** Every other decal stands down, but the
+  entrance and exit have to be findable. And `mouth` takes darker inks there: a
+  hole reads by CONTRAST, and the rim that stood out on dark stone is a white
+  box on pale sand.
+- **`fitCorners` must hold the rock a hand-placed prop hangs on**, or it opens
+  the wall under a torch and leaves it on air. And it may only open a cell
+  TOUCHING floor — allowed anywhere it punched 50 unreachable pockets into the
+  middle of the stone.
 
-### Where the room stands, and what is next for it
+### What it cost that is not code
 
-**The look is settled and the ROOM is not.** What the cavern is made of has
-stopped moving: two-tile walls out of a deep-walled set, light as a map rather
-than a tint, cover drifted at the foot of the rock, chasms with the passages
-bridging them, and one chamber — `SHRINE` in `src/scenes/sandbox.ts` — laid out
-tile by tile. Nothing is scattered but what the rock does.
+- **The runtime palette, for this zone.** Every other pixel takes its ink from a
+  CSS property at draw time, which is what makes a zone recolour for free. A
+  painted tileset is baked hex. Four zones will be four generated sets, not one
+  set with four palettes.
+- **A little rock.** `fitCorners` opens about 40 cells in 2700, so Fissure maps
+  are marginally more open than they were. It only ever opens, so nothing can be
+  walled off.
+- **One demo check, which was underpowered rather than wrong.** A Bleed on every
+  hit is worth about 1% of a clear and the check sampled five seeds: at five it
+  reads 0.3% the WRONG way, at twelve 0.5% right, at twenty-four 1.0%. Moving
+  the carve reshuffled which five maps those were. It measures 24 now.
 
-**What is LEFT is authoring, not code.** The user's call, in their words: *"we
-just manually make like 10-20 different preset layouts of props/rooms that we
-spawn in very sparsely and randomly."* The machinery is already there and idle:
-`VIGNETTES` is that list, `dressRooms` picks a spot and drops the biggest
-arrangement that fits it, and `ScenePlan.dress` is the rate — set to nothing on
-the sandbox today. So the work is writing ten to twenty arrangements worth
-looking at, at the size of the shrine rather than of a three-prop cluster, and
-turning `dress` up a little. Every prop the old scatter used is still in
-`PROP_ART` and still generated; none of it was deleted.
+### What the deleted work found, kept because it is about the LOOK
 
-**The one thing that would need new code** is an arrangement bigger than a
-`Vignette` — a whole chamber's worth, placed as one. `dressRooms` already
-weights by area, so it may just be a matter of authoring 6x6 entries and giving
-the room a spot big enough; that is worth trying before adding a second
-mechanism.
+The two-tile wall, the lightmap, the chasms and every drop rule were deleted at
+the user's instruction (`83b8488`). These outlived them:
+
+- **A per-tile tint is a BAND, never a gradient**, and every falloff one can
+  express is a staircase of flat rectangles.
+- **A drop needs the wall tile placed ONE ROW LOWER than it is keyed** — the
+  same picture that reads as a wall standing up under rock reads as a wall going
+  down under ground, and a pit's flanks are that tile turned a quarter. If
+  chasms come back, that is how, and it is written up at `56d599a`.
+- **Uniform density is NOISE; texture is density that VARIES.** `COVER_RATE` is
+  indexed by distance from the rock, which is what makes debris drift at a
+  wall's foot rather than read as confetti.
+- **Nothing a PERSON left is scattered.** A room's worth of objects dropped one
+  tile at a time reads as exactly that at any rate.
 
 ### The process, as it now stands
 
@@ -814,7 +816,99 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — Delete the sandbox; judge in the game
+
+**The user's call, in their words:** *"We are going to just delete the sandbox
+and start updating graphics in the actual game. I think it either works or it
+doesn't."* Take it before anything else, because every phase after it is
+graphics work and this is what decides where that work is looked at.
+
+**What is true today.** `#dev-sandbox` on the rail opens `SANDBOX` in
+`src/scenes/sandbox.ts` — a scene outside `SCENES`, reached only through
+`SCENE_BY_ID`. It carries seven chambers, a ring of corridors, a hand-laid
+shrine of twenty props, eleven dummies and a patrol. `RULES.md` has a long
+section of rules that exist only for it (`SceneDef.dummies`, nothing loses life,
+Abandon as the only way out, a body PACES).
+
+**Why it goes.** It is dressed as the Fissure, so anything learnt in it had to
+be re-checked in a descent anyway — every question this session asked cost that
+round trip. The Fissure now draws the same tileset, so a descent IS the sandbox,
+with monsters that fight back.
+
+- [ ] **Delete `src/scenes/sandbox.ts` and the `#dev-sandbox` rail button.**
+      `SCENE_BY_ID` loses its one entry that is not in `SCENES`.
+- [ ] **Delete `SceneDef.dummies` and everything downstream** — the
+      no-one-dies guard in `dealDamage`, the dropped-target-every-tick rule,
+      `rooted`, `SHOW_FIGHT`/`SHOW_WALK`, the PACE walk, `ScenePlan.busy` and
+      `patrol`. Check each against a real `SceneDef` first: the Lampwright's
+      workshop and the boss rooms use the same machinery and must not lose it.
+- [ ] **`GameMap.bare` STAYS.** It is what the Fissure runs on now. What goes is
+      the room, not the mechanism.
+- [ ] **Keep `npm run peek`, pointed at a DESCENT.** It is the only tool that
+      magnifies a crop, and every fault this session was invisible at ship size
+      and obvious at 4x. `descent.tmp.mjs` in the scratchpad is the shape:
+      launch, wait, shoot. Fold it into `tools/sandbox-peek.mjs` and rename.
+- [ ] **The demo's sandbox checks go with it.** They are in the section that
+      also checks the shrine, the cover split and `HUNG_PROPS`; the prop rules
+      are about the GAME and have to survive, the room's do not.
+- [ ] **`RULES.md` loses its sandbox section, `CLAUDE.md` its description.**
+
+**Traps.** The dev kit and `smoke.mjs` both name `dev-sandbox`. And the shrine
+is the only place `HUNG_PROPS`, `STAIN_PROPS` and the hand-laid vignette rules
+are exercised — deleting it silently retires those, so either keep a descent
+that dresses, or delete the tables too and say so.
+
+**Done when.** Nothing in the repo mentions the sandbox, the suite is green, and
+a descent is what you look at to judge art.
+
+### Phase 2 — The other three zones
+
+**What is true today.** `ZONE` in `src/sim/grid.ts` has one entry, `fissure`.
+The Rot, the Cavern and the Seam draw their own rock, decals and living motion
+out of `THEME_INK` — so the game is now half generated and half drawn, which is
+the one state it should not stay in.
+
+- [ ] **A set per zone, off that zone's OWN line in `MAP_THEMES`.** The Fissure's
+      set came from its sentence plus its `THEME_INK` hexes; a generic prompt
+      gives generic art. Ask several ways at once — `zoneset.mts ask` is built
+      for it and a tileset is ~100s.
+- [ ] **Say the tone at both ends** — see the findings above. This is the thing
+      that took four generations to learn.
+- [ ] **The Seam is `seam` surface**, one terrain or the other tile by tile.
+      Decide whether it is its own generated set or a mix of two, and say why.
+- [ ] **What is LOST when a zone goes bare**: its `livingDecals` — the webs,
+      the tendrils, the light travelling a facet. Every zone has some by
+      decision. Decide whether they come back as generated props or the zone
+      keeps its own motion over a generated floor.
+
+**Done when.** Every zone draws a generated set, or the ones that do not are
+named here with a reason.
+
+### Phase 3 — The bodies, in the game
+
+**What is true today.** `GENERATED` in `src/render/generated-art.ts` holds the
+skeleton, the revenant and the delver hero, generated for the sandbox and drawn
+nowhere a player goes. `BEASTIARY` is 22 hand-drawn creatures at grid 24.
+
+**The process is written up under "The process, as it now stands"** below and
+has been run end to end twice. What it costs is the thing to read first: about
+60 generations per body at five facings, ~$ and half an hour of waiting, so a
+roster of twenty is around 1,200.
+
+- [ ] **One body first, in a descent, at the size a body actually occupies.**
+      Not a model sheet. The whole reason the sandbox is going is that a room
+      is not where this is judged.
+- [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
+      `GENERATED`, so an id in both is a generated body that never draws,
+      silently — it cost a whole session's judgement once. The demo fails a
+      shared id; keep that check.
+- [ ] **Decide the palette question out loud.** A generated body is baked hex,
+      like the tileset. Ranks are still applied at runtime as LIGHT, which is
+      the part that must keep working.
+
+**Done when.** A player fights a generated body in a real descent and it reads.
+
+### Phase 4 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -954,25 +1048,26 @@ Every one is parked deliberately. Ask before acting on any of them.
    still the user's; what has changed is that answering it is content under
    `src/scenes/` rather than a system.
 
-8. **Does generated art go in the game at all, and at what size?** **This is
-   the live one**, and the sandbox was built to make it answerable rather than
-   to answer it. What LOOKING settled is written up under **What the sandbox
-   answered** and the short version is that the trade is worse than the roadmap
-   assumed: a generated body reads worse at the ~30 device pixels it occupies
-   than the 24-grid drawings do, a 16-tile Wang floor repeats visibly, and both
-   carry BAKED colour where every other pixel takes its ink from a CSS property
-   at draw time. That last is the atlas trade — the one that costs a zone
-   recolouring for free — and it arrives at the first sprite rather than past
-   5 MB. So the question is no longer "how many directions": it is whether the
-   runtime palette is worth more than the drawing quality, and only the user can
-   answer that. Directions are the cheap half and nothing forces it — mirroring
-   holds at this camera, so one east-facing set is what ships until diagonal
-   movement starts reading wrong.
-   **Three ways forward if the answer is yes**, none of them started: keep the
-   palette by re-inking a generated body onto CSS properties (a quantised key is
-   already a small palette, so this is a mapping rather than a rewrite); keep
-   the drawing and give up the recolour; or use the generator as a REFERENCE
-   and draw the grid by hand at 24, which is what the whole bestiary is.
+8. **ANSWERED, by the user doing it.** *"Just use the pixellab pipeline to
+   generate a zone that looks good... I literally don't care what it looks like
+   as long as it looks good", then "put this map into the main game to replace
+   the base fissure".* Generated art ships. The Fissure is a generated tileset
+   in a live descent, and the runtime palette is what it cost — a painted set is
+   baked hex, so four zones will be four generated sets rather than one set with
+   four palettes. Ranks are still light applied at runtime, which is the part
+   that has to keep working when BODIES follow in Phase 3.
+   What is NOT settled, and is a real question when the bodies land: whether to
+   re-ink a generated body onto CSS properties to buy the palette back (a
+   quantised key is already a small palette, so it is a mapping rather than a
+   rewrite), or give up the recolour there too.
+
+9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, the
+   walls hanging into a hole, bridges — was built, judged and deleted at the
+   user's instruction along with everything else in `83b8488`. How to draw one
+   is written up under "What the deleted work found" and the code is at
+   `56d599a`: the wall tile placed one row lower than it is keyed, flanks turned
+   a quarter, no near wall. Nothing is blocked on it and it was never asked for
+   twice; it is here so nobody rediscovers the geometry.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
