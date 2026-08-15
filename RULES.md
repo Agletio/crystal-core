@@ -871,14 +871,25 @@ body half again as far per footfall as four, for no reason but how many pictures
 were kept. `GeneratedArt.stride` is the per-body override and `strideOf` divides
 it down.
 
-**And the ANIMATION has to depict the distance the body actually covers.** A
-monster covers 0.84 tiles a footfall at `moveSpeed` 2.3; the hero covers 1.26 at
-3.4. A 1.26-tile step is a RUN — 2.7 footfalls a second, which is what legs do
-at that speed — so drawn as a tired trudge it read as skating, and that is the
-whole of why the hero looked wrong. **Check the arithmetic before re-rolling
-art**: tiles per cycle is `stride`, footfalls a second is `moveSpeed / stride *
-2`, and if the pose does not match those numbers no amount of re-generating
-fixes it.
+**A body's stride is MEASURED off its own art, never assumed.** The feet at
+their widest is one step and two of those is a cycle, which is the distance the
+animation depicts; `stride` is what the body actually travels, and the two have
+to agree or it slides — over-travelling it skates forward, under-travelling it
+skids back. **The single per-frame constant matched no body in the game**: five
+over-travelled by 72-93% and the Gaunt under-travelled by 28%, which is why
+everything had always looked slightly wrong and nothing could say why. `npm run
+demo` prints depicted against travelled for every body and every one reads 0%
+off. A ROBE defeats the measurement — the Shroud reads 0.66 because its hem
+hides its feet — so a body whose legs you cannot see keeps the default and says
+so.
+
+**And the ANIMATION has to depict the kind of motion the speed implies.** At
+`moveSpeed` 3.4 the hero covered over a tile a footfall, which is a RUN; drawn
+as a tired trudge it read as skating however well the stride matched. Gait is
+two numbers and they are independent: how far a step carries you, and how often
+you take one. **Check both arithmetically before re-rolling art** — footfalls a
+second is `moveSpeed / stride * 2` — because no amount of re-generating fixes a
+number.
 
 **A transform may not stand in for a frame that exists.** The lunge toward a
 target and the bob under a walk were the only motion a hand-drawn body had;
@@ -1156,10 +1167,18 @@ waits for any `<img>` or `<video>` positioned that way.
 **`CELL = 256`** is the offscreen cell every sprite is painted into, and the
 art grid does NOT have to divide it: `drawPixels` samples per DESTINATION
 pixel, so a 24 grid and a 128 one land in the same cell with no seams either
-way. A cell is always bigger than the tile it draws into, which is why a body's
-texture samples `linear` — authoring above what the screen shows buys
-supersampling. A TILE is the exception and samples `nearest`: it is drawn at or
-above its own size, so what has to survive is the enlargement.
+way. **A GENERATED body is painted at its own grid instead**, because a cell is
+already bigger than the tile it lands in and one body at five facings would be
+a hundred canvases at four bytes a pixel.
+
+**A body samples NEAREST when magnified and LINEAR when minified**, decided per
+draw off `e.scale * tile / texture.width`. Nearly every body is minified — a 96
+sprite into ~87 device pixels — and linear supersamples it, which is the whole
+reason to author above what the screen shows. The Gaunt is the exception at
+`scale` 3.2: two screen pixels per art pixel, where linear smeared it to mush
+and was the whole of why it looked bad big. Zooming in magnifies everything, and
+pixel art magnified wants its pixels. A TILE always samples `nearest`: it is
+drawn at or above its own size, so what has to survive is the enlargement.
 
 **Everything is at 24.** All 22 entries in `src/render/bestiary.ts` carry
 `grid: 24` and two frames; 21 of them are monsters with an `attack` frame, and
