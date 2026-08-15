@@ -205,7 +205,6 @@ export interface Weighted {
  *  single picture repeats within sight of itself. */
 export const WALL_PROPS: Weighted[] = [
   { id: 'roots', weight: 100 },
-  { id: 'roots_long', weight: 80 },
   { id: 'roots_thin', weight: 70 },
 ];
 

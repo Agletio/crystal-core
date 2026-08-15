@@ -52,6 +52,7 @@ import {
   WALK_CYCLE,
   WALK_FRAMES,
   animates,
+  bodyTop,
   generatedFrame,
   makeLookFrames,
   makeProp,
@@ -695,7 +696,12 @@ export async function createPixiRenderer(
       const hurt = frac < 1;
       const h = Math.max(2 / tile, 0.11);
       const bx = cx(e.x) - width / 2;
-      const by = cy(e.y) - 0.75;
+      // Above the BODY's own head. The 0.75 this was written as is exactly
+      // half the hero's 1.5 scale, so it held only while every body was one
+      // size and the Gaunt at 3.2 grew straight through it. A sprite is
+      // centred and spans `scale` tiles; `bodyTop` is how far into that the
+      // drawing actually starts, without which the bar floats instead.
+      const by = cy(e.y) - e.scale * (0.5 - bodyTop(e.sprite)) - h - 0.06;
 
       vfxLayer.rect(bx, by, width, h).fill({
         color: toHexNumber(palette.void),

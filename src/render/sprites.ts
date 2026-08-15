@@ -320,6 +320,26 @@ export function animates(
  *  as far per footfall as four. `GeneratedArt.stride` overrides it per body. */
 export const STRIDE_CYCLE = 1.68;
 
+/** How far down its own grid a body's ink STARTS, as a fraction. A sprite
+ *  spans `scale` tiles but the drawing does not fill it — every frame is sized
+ *  to the widest — so anything hung ABOVE a body wants this or it floats. */
+const tops = new Map<string, number>();
+export function bodyTop(sprite: string): number {
+  const held = tops.get(sprite);
+  if (held !== undefined) return held;
+  const art = GENERATED[sprite] ?? BEASTIARY[sprite];
+  let top = Infinity;
+  for (const frame of art?.frames ?? [])
+    for (let y = 0; y < frame.length && y < top; y++)
+      if (/[^.]/.test(frame[y])) {
+        top = y;
+        break;
+      }
+  const found = art && Number.isFinite(top) ? top / art.grid : 0;
+  tops.set(sprite, found);
+  return found;
+}
+
 export const strideOf = (sprite: string, frames: number): number =>
   (GENERATED[sprite]?.stride ?? STRIDE_CYCLE) / Math.max(1, frames);
 /** A hand-drawn creature has no stride, so its two frames run off the clock. */
