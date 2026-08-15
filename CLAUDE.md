@@ -147,6 +147,14 @@ at 0.84. It is both its chase and the PACING it does before it has seen you — 
 about the spot it was placed, because a pack standing perfectly still reads as
 props rather than as things waiting.
 
+**A body is ONE FACING and the renderer mirrors it.** `face` in `bodies.json`
+is `south-east`, an angled side profile — front on enough to read a face, turned
+well round toward side-on. Two directions for the price of one, and it is the
+angle the generator holds: every quality failure the five-facing era had was
+some other facing. A body's GRID follows how big it is DRAWN, about 32 art
+pixels to the tile, so the Gaunt at `scale` 3.2 is grid 96 where a `scale` 1.45
+body is 48 and one art pixel is one size across the roster.
+
 **A body declares its own STATES and its own FACINGS.** A state is named for an
 ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
 up first, so fire, frost and lightning are three animations rather than one

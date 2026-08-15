@@ -731,6 +731,23 @@ like an attack was `drawEntity`'s lunge with nothing behind it. The demo sweeps
 every action, skill and facing and fails an index past the end, and it fails a
 frame that ships which nothing reaches.
 
+**A BODY IS ONE FACING, and the renderer mirrors it.** `face` in `bodies.json`
+is `south-east` — an angled side profile, front on enough to read a face but
+turned well round toward side-on — and `facingRow` answers row 0 for a
+single-direction body while the renderer flips anything facing left. Two
+directions for the price of one. **Every quality failure the five-facing era
+had was a facing other than this**: a walk that came back a standing pose on
+four facings of five, a south run that kicked one leg. It is also 5x off both
+the generation cost and the source. *The user's call, and the reason to hold
+it: "more side profile than that but not all the way".*
+
+**A body's GRID follows how big it is DRAWN, so one art pixel is one size
+everywhere.** About 32 art pixels to the tile: a `scale` 1.45 body is grid 48,
+the Heap at 1.9 is 64, the Gaunt at 3.2 is 96. Left at a common grid the Gaunt
+was drawn at two screen pixels per art pixel where everything else was at one,
+and no sampling rule can hide that — it is simply half the resolution. The
+generation size is the grid, so the conversion is 1:1 and exact.
+
 **A body's FACINGS are the east half of the compass and nothing more.**
 `GeneratedArt.dirs` runs north to south; the renderer mirrors anything facing
 left, so generating the western three is paying twice for the same pixels.
