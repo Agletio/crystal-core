@@ -82,26 +82,6 @@ const EDGE = 4;
 
 /** A corner's place in the base-three key, high to low. */
 const PLACE = [27, 9, 3, 1];
-const WILD = [255, 255, 255, 255];
-
-/** Every key a legal cell can want that the set has no picture for. Derived
- *  rather than listed: a corner is the face only where the one above it is
- *  rock, so most of the 81 can never arise. */
-function missingKeys(set: { tiles: { key: number }[] }): number[] {
-  const have = new Set(set.tiles.map((t) => t.key));
-  const out: number[] = [];
-  for (let key = 0; key < 81; key++) {
-    if (have.has(key)) continue;
-    const at = PLACE.map((p) => Math.floor(key / p) % 3);
-    // A face at the top of a tile needs rock over it, which no cell of this
-    // tile can say; a face at the BOTTOM needs rock at the corner above it,
-    // which is this tile's own top corner.
-    if ((at[2] === 2 && at[0] !== 1) || (at[3] === 2 && at[1] !== 1)) continue;
-    out.push(key);
-  }
-  return out;
-}
-
 const FLOATER_LIFE = 1.1;
 
 export async function createPixiRenderer(
@@ -343,48 +323,7 @@ export async function createPixiRenderer(
       one.getContext('2d')?.drawImage(canvas, box[0], box[1], box[2], box[3], 0, 0, box[2], box[3]);
       return one;
     };
-    const drawn = set.tiles.map(({ box }) => cut(box));
-    // A corner set is DEFINED by its corners, so a key it has no picture for
-    // can be built out of QUADRANTS of the ones it has: take each quarter from
-    // a tile that carries the right value at that position, preferring the one
-    // agreeing on the most other corners so the seams land where the pictures
-    // already match. The generator tops out at 21 of the 81 combinations
-    // whatever it is asked for, and the two this room actually hits are a
-    // wall's diagonal corners — drawn as the nearest key instead, they put
-    // solid rock where the face should begin.
-    const made = [...drawn];
-    // The SOURCES are the drawn tiles alone. Grown as they are built, a later
-    // composite indexes past the pictures and the whole floor is lost.
-    const keys = set.tiles.map((t) => t.key);
-    const quads = (key: number) => PLACE.map((p) => Math.floor(key / p) % 3);
-    for (const want of missingKeys(set)) {
-      const mine = quads(want);
-      const one = document.createElement('canvas');
-      one.width = set.grid;
-      one.height = set.grid;
-      const paint = one.getContext('2d');
-      if (!paint) continue;
-      const half = set.grid / 2;
-      mine.forEach((value, q) => {
-        let from = -1;
-        let agree = -1;
-        keys.forEach((key, i) => {
-          const theirs = quads(key);
-          if (theirs[q] !== value) return;
-          const same = theirs.filter((v, k) => v === mine[k]).length;
-          if (same > agree) {
-            agree = same;
-            from = i;
-          }
-        });
-        if (from < 0) return;
-        const ox = (q % 2) * half;
-        const oy = Math.floor(q / 2) * half;
-        paint.drawImage(drawn[from], ox, oy, half, half, ox, oy, half, half);
-      });
-      made.push(one);
-      set.tiles.push({ key: want, over: WILD, under: WILD, box: [0, 0, set.grid, set.grid] });
-    }
+    const made = set.tiles.map(({ box }) => cut(box));
     zones.set(
       id,
       made.map((one) => {
@@ -433,8 +372,14 @@ export async function createPixiRenderer(
       // A set answers 21 of the 81 keys, so a cell whose corners it has no
       // picture for takes the NEAREST it does — the cut face is BETWEEN floor
       // and rock, so trading it for either is one step where trading floor for
-      // rock is three. Without this a key nothing draws is a black hole in the
-      // ground, which is what it was.
+      // rock is three. Without this a key nothing draws is a black hole.
+      //
+      // Building the missing keys out of QUADRANTS of the present ones was
+      // tried and is REVERTED: a quadrant's picture is not decided by its own
+      // corner, so a quarter taken for its corner value brings whatever else
+      // was in that quarter with it — which put pale slivers of floor inside
+      // solid rock. Measured against this fallback on the same view, the
+      // composites are the worse of the two.
       const near = new Map<number, number>();
       const nearest = (key: number): number => {
         const found = near.get(key);
