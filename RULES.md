@@ -917,6 +917,18 @@ them — which is also what lets frames off two canvas sizes (a template
 animation comes back at the character's size, a v3 one larger) keep their
 sizes relative to one another.
 
+**THE HERO IS A DOLL, and the doll is what carries GEAR.** `heroArt` builds him
+from `BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`, with
+`gear-art.ts` — 1,409 lines — drawing armour and weapons as LAYERS over him at
+`DOLL_GRID` 24, and `lookOf` turning what is equipped into a `Look`. It works
+because every piece is authored against ONE pose with the grip at (17, 14), so
+12 armour families × 3 tiers × 3 slots reach the screen without 108 drawings.
+**Nothing may delete that until a generated hero can show gear at least as
+well** — a generated body has no registration to hang a layer on, so the
+replacement is whole-body LOOKS and a look is not a slot. The plan, the routes
+and the measured sample are Phase 1 of `ROADMAP.md`; the trade is the user's to
+take and it has not been taken.
+
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,
 converted, reviewed, accepted, and committed as TypeScript. Every standing rule

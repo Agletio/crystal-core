@@ -34,9 +34,26 @@ updating graphics in the actual game. I think it either works or it doesn't."*
 A descent is where art is judged, and `npm run peek` is pointed at one.
 
 **A descent is what the ROCK did and nothing else** — loose stone drifted at the
-wall's foot and roots on the cut face, with nothing standing on the floor, at
-the user's word. And the Fissure floor is RETONED at emit: rgb(206,193,158) at
-luma 193 was beach sand, and it is a dim warm grey at 126 now.
+wall's foot and three shapes of root on the cut face, with nothing standing on
+the floor, at the user's word. And the Fissure floor is RETONED at emit:
+rgb(206,193,158) at luma 193 was beach sand, and it is a dim warm grey at 126
+now.
+
+**ONE BODY PER FAMILY THROWS and nothing is labelled.** `MonsterDef.throws`
+splits `MONSTER_ABILITIES` — the Bonecaller, the Chanter and the Prism throw,
+everything else bites — and the pip over a shooter's head is gone with
+`castsVisibly`. A family with no thrower deals about HALF what it did, measured,
+so that is a mechanism rule and not a balance one.
+
+**A body that has not seen you PACES**, an anchored wander about a tile wide. It
+is why a pack no longer reads as props, and it is what a walk/run split would
+have needed — the split is now possible and still not built.
+
+**THE HERO IS THE ONE BODY THAT IS NOT GENERATED, and Phase 1 is about that.**
+He is a hand-drawn doll at grid 24 with `gear-art.ts` layering 12 armour
+families over him. The plan, the three routes and the sample that proved the
+route are all in the phase; **the sample is done and it is waiting on the
+user's answer about the look ladder.**
 
 ### If it does not work, revert to one of these
 
@@ -775,10 +792,31 @@ monster resolves in exactly one art table, that no frame ships unreached, and
 that a swing and a cast draw different runs. Then `npm run build` and
 `npm run peek` and look at it in a descent.
 
+#### 9. DRESS — only for a body that wears things
+
+`npx tsx tools/art/dress.mts <design> [outfit ...]`. `edit_image` applies ONE
+edit to a LIST of images consistently and bills by the whole frame grid, so a
+finished animation can be re-clothed for one 20-40 charge rather than animated
+again. `OUTFITS` in that file is the table of what to say, and `KEEP` is the
+clause that makes it dress the man rather than replace him — measured at 97.4%
+silhouette overlap with the base, holding stance, belt, pouch and feet.
+
+**Only the HERO wears anything**, so this is not part of a monster's run. What
+is not yet measured is how many frames one call will take at once: the docs cap
+a frame at 512x512 and name no count, and that number is what a look really
+costs.
+
 ### Doing this a thousand times
 
 **The pitfalls that cost real time here, in the order they will bite.**
 
+- **THE DOCS HOLD TOOLS NOBODY HERE KNEW ABOUT, and they change the plan.**
+  `create_character_state` (an edit applied across every rotation, keeping
+  identity), `edit_image` (one edit across a LIST of frames, billed by the
+  grid) and `inpaint_image` (everything outside a mask stays pixel-identical)
+  are all in `https://api.pixellab.ai/mcp/docs` and none was used for the
+  monsters. **Re-read that page before designing a pipeline**, not just before
+  spending — this is the third time it has held the answer.
 - **THE SOURCE SIZE IS THE WALL, not the generation budget.** SIX bodies are
   **4.67 MB** of `generated-art.ts` — about **0.8 MB per body** at grid 96. It
   gzips ~19:1 so the wire is fine, but the REPO carries the raw megabytes and
@@ -1275,21 +1313,30 @@ armour rating, the base tier, or the best piece worn.
 
 #### The steps, in order, and the stop
 
-- [ ] **Design the base man.** `create_image_pixflux`, ONE generation each, ask
-      for several: a basic man in tattered clothes, `no_background`,
-      `view: 'high top-down'`, `direction: 'south'`, 128×128, forced palette via
-      `color_image_url`. He is a person, not a skeleton, so the near-black ink
-      the monsters use is wrong — he needs to read as ALIVE against a dim floor
-      and against six near-black bodies.
-- [ ] **Prove the MECHANISM on the design, before any body is paid for.** Run
-      `edit_image` over the single approved design with two outfits — say a
-      rusted mail hauberk and a heavier plate — and put base and both side by
-      side. **This is the whole question of the phase**: is it recognisably the
-      same man with armour on, or a different man? One image, 20-40
-      generations, against ~68 for a body plus 20-40 a look.
-- [ ] **STOP and show the user.** Base and two dressed versions, at ship size
-      and magnified, on the retoned Fissure floor. Nothing below this line is
-      cheap.
+- [x] **Design the base man.** DONE, 4 generations. The ask is the `wanderer`
+      row in `tools/art/bodies.json`; `wanderer-0` is the pick — upright, face
+      clear, arms free, no baked ground shadow. `wanderer-2` drew itself a cast
+      shadow and a skull-ish face and is the one to avoid re-rolling toward.
+      He is a person, not a skeleton, so the near-black ink the monsters use is
+      wrong: he is asked in grimy off-white and grey-brown with WARM skin, so he
+      reads as alive against six near-black bodies.
+- [x] **THE MECHANISM WORKS, and it is the phase's whole answer.** `edit_image`
+      over `wanderer-0` with two outfits (`tools/art/cache/designs/
+      wanderer-0-mail.png`, `-plate.png`, both written by
+      `npx tsx tools/art/dress.mts wanderer-0`) came back as the SAME MAN in
+      armour: same stance,
+      same face, same belt, same hip pouch, same feet. **Measured: 97.4% and
+      96.9% silhouette overlap with the base.** That is what makes a look
+      ladder possible at all — the frames stay registered, so swapping kit
+      reads as one character changing clothes rather than as a different
+      sprite.
+- [ ] **STOP and show the user.** DONE for the sample; awaiting the answer on
+      the look ladder. What the sample also showed, and what to weigh: **at
+      SHIP SIZE the difference is subtle.** Magnified the three are obviously
+      different; at the ~87 device pixels the camera lands a body in, the mail
+      reads as texture and the plate as darker shoulders. A look ladder of four
+      near-neighbours would be invisible in play — so few, strongly separated
+      looks beat many similar ones.
 - [ ] **Only then**: rotate, animate, and `edit_image` the finished frame set
       per look. Measure how many frames one `edit_image` call will take at once
       — the docs give a size cap per frame and no count cap, and that number is

@@ -300,6 +300,37 @@
     }
    },
    "character": "6b0088d1-bc59-4261-9df0-cfe66aead6c1"
+  },
+  {
+   "sprite": "wanderer",
+   "name": "The Wanderer",
+   "look": "a living man, gaunt and underfed but ALIVE, standing upright, in TATTERED clothes: a worn hooded tunic torn to strips at the hem, sleeves frayed, trousers patched and bound at the shin with rag wrappings, boots worn through, a rope belt. Empty-handed, no weapon, no armour, no pack. Grimy off-white and dull grey-brown cloth, warm skin at the face and hands so he reads as a LIVING person rather than as one of the dead. NOT a skeleton, NOT undead, NOT a corpse, NOT bone, NOT black, NOT armoured, NOT a knight, NOT a robe, NOT a wizard, NOT bright, NOT clean, NOT colourful. The proportions of an adult man, NOT a big head, NOT chibi, NOT a bobblehead. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still, weight settling from one foot to the other, shoulders rising and falling"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a tired trudge, head down, rags swaying at the hem"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, stepping onto the front foot and swinging one arm down and across, then drawing it back"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "planted with both feet apart, one open hand driven forward from the chest and held out, the other fist pulled back to the hip"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "rocked backwards, head snapping back and one arm folding across the ribs, in strict side profile"
+    },
+    "death": {
+     "frames": 6,
+     "say": "folding at the knees and going down face first, arms giving out under him"
+    }
+   }
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
