@@ -151,9 +151,14 @@ props rather than as things waiting.
 is `south-east`, an angled side profile — front on enough to read a face, turned
 well round toward side-on. Two directions for the price of one, and it is the
 angle the generator holds: every quality failure the five-facing era had was
-some other facing. A body's GRID follows how big it is DRAWN, about 32 art
-pixels to the tile, so the Gaunt at `scale` 3.2 is grid 96 where a `scale` 1.45
-body is 48 and one art pixel is one size across the roster.
+some other facing. A body may OVERRIDE it — the Hound is `east`, a strict side
+profile, because a quadruped at three-quarters is a tangle of eight legs where a
+biped reads fine. That is a thing the DESIGN decides and a rotation cannot:
+turning a three-quarter body east gives a three-quarter east, so an override
+means designing it again, not animating the one that exists. A body's GRID
+follows how big it is DRAWN, about 32 art pixels to the tile, so the Gaunt at
+`scale` 3.2 is grid 96 where a `scale` 1.45 body is 48 and one art pixel is one
+size across the roster.
 
 **A body declares its own STATES and its own FACINGS.** A state is named for an
 ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
