@@ -859,6 +859,20 @@ the foot of it. It falls back to plain floor and the renderer shades that row.
 it cost a whole session's judgement of generated art, which was made about the
 hand-drawn `husk` throughout. The demo fails a shared id.
 
+**A body is LEVELLED onto the roster's own brightness at import.**
+`BodySpec.luma` in `tools/art/generated.json`, applied by `tables.mts` over
+every frame of one body AT ONCE — a gain computed per frame makes a walk
+flicker as the arms swing, which is `fittedTogether`'s fault in another
+currency. Bodies asked in the same words land different distances from black:
+the first three skeletons measure luma 30-35 and three later ones arrived at
+43-56, which is one family in two exposures. It is a TARGET rather than a gain,
+so a body re-generated brighter still lands with the roster.
+
+**A measurement names the POOL, never a row in it.** `PLAIN` in `src/demo.ts`
+is the first Normal monster rather than `MONSTER_BY_ID.grub`, and `mods-check`
+asks the same way. Every measurement that wanted "an ordinary monster" named
+one, and cutting the roster to six broke all six of them at once.
+
 **A monster is drawn out of EITHER table, and at least one is generated.** The
 demo holds both halves: every monster and boss resolves in one table or the
 other, and at least one is generated at a generated body's `scale` — a body left

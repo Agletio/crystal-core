@@ -6,11 +6,15 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**A player fights THREE GENERATED BODIES** — the Husk, the Gaunt and the
-Bonecaller, all Normal undead, six states apiece over five facings. So generated
-art is in the game at both ends now, the ground and the things standing on it.
-Open question 8 is closed at both ends with it: a body asked DARK separates from
-all four zone floors, so nothing is re-inked and nothing is generated per zone.
+**THE WHOLE NORMAL POOL IS GENERATED** — the Crawler, the Husk, the Hound, the
+Heap, the Gaunt and the Bonecaller, six rows where there were eleven, all undead
+and all levelled onto one brightness. So a Fissure descent is generated at both
+ends, the ground and everything standing on it, and it reads as one art era.
+Open question 8 is closed with it: a body asked DARK separates from all four
+zone floors, so nothing is re-inked and nothing is generated per zone. **The
+Demonic and Prismatic pools are still hand-drawn** and are in the backlog, not
+in a phase — twelve more bodies is about 14 MB of source, which is a `RULES.md`
+decision rather than a job.
 
 **Before generating anything else, read "The process, as it now stands" and
 "Doing this a thousand times" below.** The first is the runbook and the second
@@ -27,10 +31,12 @@ taken in the doing.
 **The SANDBOX IS DELETED and the work has moved into the game.** *The user's
 call, in their words: "We are going to just delete the sandbox and start
 updating graphics in the actual game. I think it either works or it doesn't."*
-A Fissure descent is now the dressed room the sandbox was — cover at the wall
-feet, roots on the cut face, arrangements you can read — and `npm run peek` is
-pointed at one. Judging art in a room nobody plays cost a round trip on every
-question, and there is nothing left to round-trip through.
+A descent is where art is judged, and `npm run peek` is pointed at one.
+
+**A descent is what the ROCK did and nothing else** — loose stone drifted at the
+wall's foot and roots on the cut face, with nothing standing on the floor, at
+the user's word. And the Fissure floor is RETONED at emit: rgb(206,193,158) at
+luma 193 was beach sand, and it is a dim warm grey at 126 now.
 
 ### If it does not work, revert to one of these
 
@@ -65,6 +71,40 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **THREE BODIES COST 203 GENERATIONS AND MOST OF A DAY**, against the ~30 each
+  this file estimated. The breakdown: 9 designs, 6 to rotate, 15 to animate one
+  facing per state, and 60 to fill the other four — which is 90 CALLS but 203
+  generations, because a v3 animation is more than one apiece. Budget by calls
+  and you will be out by a factor of two.
+- **The approval gate paid for itself.** Nine designs at one generation each
+  answered three questions no amount of prose could: the crawler's "top half
+  only" was refused by the model twice out of three (a legless body is the same
+  trap as the body lying FLAT already written up here), the hound came back
+  perfect first time, and two of nine baked in a cast shadow or a blood pool
+  the ask had forbidden. Judging after the rotation would have cost thirty.
+- **The gap between a new body and the roster was BRIGHTNESS, not colour.**
+  Measured rather than eyeballed: the shipped three sit at luma 30-35 and sat
+  25-27%, and the three new ones arrived at luma 43-56 and sat 24-31%. So
+  saturation already matched and one gain per body closed it — which is
+  `BodySpec.luma`, a target rather than a multiplier, applied over every frame
+  at once. **Measure both before reaching for a colour pass**; the obvious
+  reading of that comparison was "they are warmer", and it was wrong.
+- **Every measurement that wanted "an ordinary monster" NAMED one.** Six call
+  sites across `demo.ts` and `mods-check.ts` held `MONSTER_BY_ID.grub`, and
+  cutting the roster broke all six at once — as a crash inside `monsterStats`,
+  not as a failed check. They read the pool now. Anything that wants a typical
+  ROW of a table should ask the table.
+- **Cutting eleven rows to six cut the file's comment ALLOWANCE with it.** The
+  budget is 20% of the file, so deleting 67 lines of table lowered the ceiling
+  and put `data.ts` over by 14 without a word being added. Expect to pay for a
+  deletion in prose.
+- **The balance gauges MOVED, and one of them a long way.** The Seam went from
+  -0.1% to **-21.1%** against the hardest single world, and one blank crystal
+  after the first clear went from 18/24 to 24/24. Nothing is tuned and nothing
+  blocks: they are `gauge()` lines and the suite is green. But open question 3
+  asks whether the Seam is the hardest room in the game, and the answer just
+  got further from yes — so whoever picks up the balance pass should know the
+  Normal pool's stats moved under it.
 - **A generated sheet CAN be recoloured, for free, and `RETONE` is where.** The
   runtime palette a painted tileset gave up is bought back at emit rather than
   at draw: chroma kept plus a per-channel gain over the whole sheet in
@@ -409,28 +449,29 @@ the game is deliberately soft everywhere.
 
 **What it would read.** Eight `gauge()` lines in `npm run demo` — measured,
 printed, never asserted, and each carrying the figure that was wanted beside the
-figure it got. They are the before. Taken after the vocabulary pass, with 420
-checks passing:
+figure it got. They are the before. Taken with 530 checks passing, after the
+Normal pool became six generated bodies:
 
 ```
-the Seam is -0.1% over the hardest single world     — wanted: same class within 15%
-a trade moves the deep-end kill rate 3.90–7.50/s    — no pairing should be the only one
-1% to 33% of swings go unpaid                       — wanted: 5%–50%
+the Seam is -21.1% over the hardest single world    — wanted: same class within 15%
+a trade moves the deep-end kill rate 4.03–7.34/s    — no pairing should be the only one
+0% to 30% of swings go unpaid                       — wanted: 5%–50%
 a starved cast lands for 50% of your damage
 a naked character walks out on 53% life             — wanted: under 70%
-one blank crystal after the first clear: 18/24      — wanted: above 60%
+one blank crystal after the first clear: 24/24      — wanted: above 60%
 every band is clearable in gear the band below drops
 the deep end: 1253 danger, 4/12 through             — wall under 4/12, ceiling at 0
 ```
 
-Every one of them is where it was at `e811da6` except the trade's top kill rate,
-7.86 → 7.50, which is the Splintered Eye losing `extraTargetDamage` — its two
-Projectiles were already at full damage through that grant and now are through
-the rule. Nothing about the tree changes these: `ladderCharacter` spends no
-tree points.
+**Two of these moved when the roster did, and the roster is the reason.** The
+Seam was -0.1% and the blank-crystal rung was 18/24; six generated bodies with
+their own stats replaced eleven, and both figures went with them. So the Seam is
+now the one sitting well outside its own wanted band — see open question 3,
+which asks whether the Seam is what it claims to be at all — and the opening got
+easier rather than harder.
 
-The deep end at 4/12 is the one sitting exactly on its own wall line, and the
-unpaid-swing spread reaching 33% is the widest of these. Neither is a bug.
+The deep end at 4/12 still sits exactly on its own wall line, and the
+unpaid-swing spread reaching 30% is the widest of the rest. Neither is a bug.
 
 **What must not break.** Everything in `RULES.md` under "Balance is NOT TUNED"
 inverts when this starts, and that section has to be rewritten in the same
@@ -691,17 +732,19 @@ that a swing and a cast draw different runs. Then `npm run build` and
 
 **The pitfalls that cost real time here, in the order they will bite.**
 
-- **THE SOURCE SIZE IS THE WALL, not the generation budget.** Three bodies are
-  **2.63 MB** of `generated-art.ts` — 270 frames at grid 96, about **0.9 MB per
-  body**. It gzips 19:1 so the wire is fine, but the REPO carries the raw
-  megabytes and `docs/app.js` is committed because Cloudflare runs no build. At
-  4,000 generations remaining the budget buys ~130 bodies; at 0.9 MB each that
-  is 120 MB of TypeScript, which is not shippable. **Twelve more bodies — the
-  Demonic and Prismatic pools — is about 10 MB and is probably the practical
-  ceiling for the format as it stands.** Past that it is a decision: fewer
-  states, fewer frames per state, a smaller grid, or giving up "no binary
-  assets", which is a `RULES.md` change and the user's call. Do not walk into
-  it by accident.
+- **THE SOURCE SIZE IS THE WALL, not the generation budget.** SIX bodies are
+  **4.67 MB** of `generated-art.ts` — about **0.8 MB per body** at grid 96. It
+  gzips ~19:1 so the wire is fine, but the REPO carries the raw megabytes and
+  `docs/app.js` is committed because Cloudflare runs no build. **Twelve more —
+  the Demonic and Prismatic pools — would be about 14 MB, which is past what
+  this format should carry.** At that point it is a decision: fewer states,
+  fewer frames per state, a smaller grid, or giving up "no binary assets",
+  which is a `RULES.md` change and the user's call. Do not walk into it by
+  accident.
+- **A body costs ~68 GENERATIONS, not the ~30 this file used to say.** Measured
+  over three: 203 generations for 9 designs, 6 rotations, 15 single-facing
+  animations and 60 fills — 90 calls, because a v3 animation is more than one
+  generation apiece. Budget by CALLS and you are out by a factor of two.
 - **The job limit is TEN, per ACCOUNT, and a call needs one slot per DIRECTION
   all at once.** A five-facing ask needs five free slots and is refused whole.
   Pacing off one character's pending count works until a second body is in
@@ -1102,100 +1145,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — Six Normal monsters, all of them the skeletons' kind
-
-**The ask CHANGED, and it got much smaller.** *The user's words: "Have it just
-be the normal mobs, but cut some of the medium sized ones out so there's only 6
-mobs total (keeping the three skeletons we just made with good art obviously),
-and then make sure they are all based around the art created with the skeletons.
-That sort of vibe."* So the Demonic and Prismatic pools are OUT of this phase
-entirely — twelve bodies and a day of wall clock became three bodies and a cut.
-
-**What is true today.** The Normal pool is **11** rows in `MONSTERS`, three of
-them generated:
-
-| id | sprite | art | weight | what it is |
-|---|---|---|---|---|
-| `grub` | `grub` | drawn | 1000 | the commonest thing in the pool |
-| `husk` | `hewer` | **generated** | 800 | the mine skeleton with the tool |
-| `sparkmite` | `sparkmite` | drawn | 700 | tiny, elemental |
-| `stalker` | `stalker` | drawn | 600 | fast, weak, beast |
-| `cinder_hound` | `cinder_hound` | drawn | 520 | beast |
-| `shale_crawler` | `shale_crawler` | drawn | 480 | beast, tough |
-| `gale_wisp` | `gale_wisp` | drawn | 420 | elemental |
-| `rime_crab` | `rime_crab` | drawn | 340 | beast, tough |
-| `gaunt` | `gaunt` | **generated** | 300 | the tall one |
-| `bonecaller` | `shroud` | **generated** | 300 | robed, throws |
-| `brute` | `brute` | drawn | 260 | humanoid, the heavy |
-
-**Why it is wrong.** Eight hand-drawn creatures at grid 24 standing beside three
-generated bodies at grid 96 is two art eras in one pack, and it is the mismatch
-the ground stopped having when every zone got a set.
-
-**Read "The process, as it now stands" and "Doing this a thousand times" above
-before spending anything.** Both are written for a session with no memory of
-this one, and the second is the list of what has already cost time.
-
-- [ ] **Six rows in the Normal pool, and the three skeletons are three of
-      them.** The other eight are cut from `MONSTERS`.
-- [ ] **Three new GENERATED bodies, in the skeletons' register** — near-black
-      bone, dried gore, `undead`, told apart by SILHOUETTE the way the first
-      three are. That is what "that sort of vibe" is, and the asks already in
-      `tools/art/bodies.json` are the reference for how to say it.
-- [ ] **Choose the three by ROLE, not by which drawn monster is liked.** The
-      skeletons cover a common melee (Husk), reach (Gaunt) and a thrower
-      (Bonecaller). What the pool loses with the eight is a SWARM — `grub` at
-      weight 1000 is the commonest thing a player meets — something FAST
-      (`stalker`), and a HEAVY (`brute`, `rime_crab`). Those are the three
-      silhouettes to design: small and many, quick, and big and slow.
-- [ ] **Redistribute the weights so the pool still has a common one.** Six rows
-      sharing 11 rows' worth of weight is not a rescale — decide what a player
-      meets most and say so.
-- [ ] **The hand-drawn grids STAY in `BEASTIARY`.** A cut monster is a row
-      removed from `MONSTERS`, not art deleted: `SPRITE_KINDS` sweeps that
-      table, the renderers name `grub`, `stalker` and `brute` directly
-      (`canvas2d`'s fallback radius, `renderer.ts`'s colour cases, pixi's
-      warm-up texture) and the demo asks `framesOf('grub')`. Deleting the art
-      is a second phase and nobody asked for one.
-- [ ] **Watch the SOURCE SIZE.** Three bodies are 2.63 MB of
-      `generated-art.ts`; three more is about 5.3 MB, plus a committed
-      `docs/app.js` carrying the same. Measure it and say the number — the
-      practical ceiling for "every sprite is a list of strings" is somewhere
-      near 10 MB and going past it is a `RULES.md` decision, not a phase.
-
-**Traps.**
-
-- **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
-  `GENERATED`, so an id in both is a generated body that never draws, silently
-  — it cost a whole session's judgement once. Do not name a new body `grub`.
-- **A generated body wants `scale` 1.45–1.6, not the doll's 1**, and the demo
-  fails a fought generated monster under 1.3. A SWARM body is the awkward one:
-  it has to read small, and the way to do that is its own `scale` and `radius`
-  rather than leaving it at the doll's.
-- **The boss reinforces `from: 'husk'`** (`BOSSES` in `src/data.ts`). That
-  survives this phase, but anything cut is worth grepping for the same shape.
-- **`MONSTER_ABILITIES` is rolled per PACK off the run's rng and is not keyed
-  by monster**, so cutting rows does not touch what a pack throws. The demo's
-  danger and ladder measurements DO move, because the pool's composition
-  changes what a band fights — measure it, print it, carry on. Balance is not
-  tuned.
-- **The demo's `THE SANDBOX` section is gone and this phase still owes what it
-  was for.** What survived is table-level: every frame that ships is reached, a
-  swing and a cast draw different runs, each thrown skill has its own
-  animation, no transform stands in for a frame. What went with the room is the
-  check that DROVE a body — every facing SEEN in a live sim, a caster actually
-  casting. A generated body in a descent is where that comes back.
-
-**Done when.** `MONSTERS` holds six Normal rows, every one of them a generated
-body in the skeletons' register, and a Fissure descent reads as one art era.
-
-**What is NOT in this phase.** The Demonic and Prismatic pools, which are
-twelve hand-drawn bodies and are now nobody's phase — they are the backlog until
-asked for. And a body GENERATED to be imposing: the Gaunt is drawn at 3.2 and
-towers, but it is still the same 96-grid body scaled up, so what a purpose-built
-giant would buy is detail rather than height.
-
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1288,10 +1238,13 @@ Every one is parked deliberately. Ask before acting on any of them.
    assume it.
 
 3. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
-   was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
+   was, off a check reading 6 seeds. Measured over 24, the Seam sat **0.7%
    BELOW** four Demonic crystals on damage taken per second, and with mana
-   removed entirely it is only 2.0% above — so the ordering was always inside
-   the noise rather than a thing the game does. The cause is structural: the
+   removed entirely only 2.0% above — so the ordering was always inside the
+   noise rather than a thing the game does. **It is -21.1% now**, after the
+   Normal pool became six generated bodies with different stats: still not a
+   failure and still nobody's blocker, but the gap is well outside noise and
+   the answer has moved further from yes. The cause is structural: the
    Seam takes exactly two crystals of each world, so only half its packs carry
    a Demonic aura and half a Prismatic one, where four Demonic crystals put an
    aura in every pack. Making it genuinely worst means changing what the
@@ -1399,6 +1352,15 @@ editing two places.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
+- **The Demonic and Prismatic pools are still hand-drawn, six bodies each.**
+  The Normal pool is six generated bodies now, so those two are the mismatch
+  the Fissure stopped having — a Rot descent is a generated floor with hand-drawn
+  bodies on it. Twelve more bodies is roughly 800 generations and, more to the
+  point, about 14 MB of `generated-art.ts`, which is past what "every sprite is
+  a list of strings" should carry: see the source-size pitfall above, because
+  going there is a `RULES.md` decision rather than a phase. **Not asked for.**
+  The cheaper shape, if it is ever wanted, is to cut those pools to six
+  silhouettes each the way Normal was cut, and generate only what survives.
 - **NO zone has furniture of its own, and that is now a decision rather than a
   gap.** Every zone draws a generated set and the rock dresses all four — cover
   at the wall's foot, roots on the cut face — and nothing stands on any of those
