@@ -1192,7 +1192,152 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — A generated hero, and gear he can put on and take off
+
+**Asked for directly.** *"We need to generate a new character model. It's going
+to be quite hard because I need this guy to be able to equip gear. Base model
+should just be a basic man in tattered clothes. Obviously we don't have any
+actually good generated armour pieces but maybe do a couple to see how it would
+look taking it on and off. First step should be come up with a plan."*
+
+**This phase is a PLAN and a SAMPLE, and it stops for approval.** Nothing about
+the shipped hero changes until somebody has looked at the sample and said yes.
+
+#### What is true today
+
+The hero is the one body in the game that is not generated, and it is the only
+one that WEARS anything.
+
+| | |
+|---|---|
+| `heroArt` in `src/render/sprites.ts` | builds him from `HERO_FRAMES` at `DOLL_GRID` 24, colours out of the runtime palette |
+| `src/render/body.ts` | the figure itself — a man in a shirt and trousers, one grid per pose |
+| `src/render/pose.ts` | `POSES` and `SWING_POSES`: which pose a frame is, and where the hand is |
+| `src/render/gear-art.ts` | **1,409 lines** of armour and weapons drawn as LAYERS over him |
+| `lookOf` in `src/sim/appearance.ts` | what is equipped → `Look` of `{ helmet, body, boots, weapon }` |
+
+**Layering works because everything is authored against ONE pose.** The grip is
+at (17, 14) and `POSES[].hand` moves it, so every weapon is drawn against a
+single point; a family is four pieces and its tiers are a rule rather than more
+art. That is how **12 armour families × 3 tiers × 3 slots** reach the screen
+without 108 drawings.
+
+#### Why it is hard, named
+
+1. **Combinatorics.** Helmet, body and boots over 12 families and 3 tiers is
+   thousands of combinations. Nothing can be generated per combination.
+2. **Registration.** A layer has to sit on the body in EVERY frame of EVERY
+   facing. The hand-drawn doll gets that from one authored pose; a generated
+   body is 5 facings × ~17 frames of art nobody registered, and the generator
+   offers no way to author a piece against a pose.
+
+#### What the DOCS say, which is what decides the route
+
+Read `https://api.pixellab.ai/mcp/docs` before touching this. Three tools
+matter and none of them was known when the monsters were made:
+
+- **`create_character_state`** — 20-40 generations. "The new character keeps
+  the source's identity, body type, and proportions, with the edit applied
+  consistently across all 4 or 8 rotations." `edit_description` takes
+  *'wearing red armor'* in as many words, and `use_color_palette_from_reference`
+  snaps it back to the source's palette. **It does NOT carry the animations
+  over** — a state is a character, and a character starts with none.
+- **`edit_image`** — 20-40 generations, **billed by the whole frame grid rather
+  than per frame**. Takes a LIST of images and "several frames get the SAME edit
+  applied consistently (useful for animation frames or a character's
+  directions)". `reference_image_url` copies an outfit's appearance onto them
+  "keeping their pose". Max 512×512 per frame.
+- **`inpaint_image`** — regenerates one masked region "keeping everything else
+  pixel-identical". WHITE regenerates, BLACK is frozen.
+
+#### Three routes, costed
+
+| route | how | cost per look | keeps per-slot? |
+|---|---|---|---|
+| **A — LOOKS** | animate the base body once, then `edit_image` the whole finished frame set into armour | **20-40** | no |
+| **B — STATES** | `create_character_state` per look, then animate it | 20-40 **+ ~68** | no |
+| **C — LAYERS** | `inpaint_image` a piece onto one frame, then DIFF against the base to recover the piece alone | 20-40 per piece per frame | yes, in theory |
+
+**Take A.** It is the only one that pays for the animation once, and it is the
+only one the docs actually promise consistency for. B buys nothing A does not
+and costs an animation each time. **C is the one that would preserve what the
+game has today and it is written down because it is tempting** — but it is a
+diff against a generation, so it is at the mercy of the model touching one pixel
+of the body; it costs per piece PER FRAME, which is the combinatorics again; and
+nothing in the docs says an inpaint leaves the unmasked region byte-identical
+across a whole frame set. Do not start it without proving it on two frames.
+
+**The cost of A is that a LOOK is not a SLOT.** You stop seeing the individual
+helmet you found. What replaces it is a ladder of whole-body looks, and deciding
+that ladder is a design decision this phase must put in front of the user rather
+than take: how many looks, and what picks one — the body slot's family, the
+armour rating, the base tier, or the best piece worn.
+
+#### The steps, in order, and the stop
+
+- [ ] **Design the base man.** `create_image_pixflux`, ONE generation each, ask
+      for several: a basic man in tattered clothes, `no_background`,
+      `view: 'high top-down'`, `direction: 'south'`, 128×128, forced palette via
+      `color_image_url`. He is a person, not a skeleton, so the near-black ink
+      the monsters use is wrong — he needs to read as ALIVE against a dim floor
+      and against six near-black bodies.
+- [ ] **Prove the MECHANISM on the design, before any body is paid for.** Run
+      `edit_image` over the single approved design with two outfits — say a
+      rusted mail hauberk and a heavier plate — and put base and both side by
+      side. **This is the whole question of the phase**: is it recognisably the
+      same man with armour on, or a different man? One image, 20-40
+      generations, against ~68 for a body plus 20-40 a look.
+- [ ] **STOP and show the user.** Base and two dressed versions, at ship size
+      and magnified, on the retoned Fissure floor. Nothing below this line is
+      cheap.
+- [ ] **Only then**: rotate, animate, and `edit_image` the finished frame set
+      per look. Measure how many frames one `edit_image` call will take at once
+      — the docs give a size cap per frame and no count cap, and that number is
+      what a look actually costs.
+- [ ] **Decide the look ladder WITH the user**, and write it down here before
+      building it.
+
+#### Traps
+
+- **The doll is not deletable yet, and this phase must not touch it.**
+  `gear-art.ts` is 1,409 lines and `lookOf`, `WornPiece`, `POSES` and
+  `SWING_POSES` all serve it. A generated hero that cannot show gear is a
+  DOWNGRADE from what ships, so the doll stays until a look ladder is agreed
+  and built.
+- **The hero would lose the runtime palette**, exactly as the monsters did.
+  `heroArt` mixes every ink from CSS properties at draw time; a generated body
+  is baked hex. That was answered NO-for-bodies in open question 8, and the
+  hero is a body — but he is also the one sprite that is on screen in every
+  zone, so say it out loud rather than discovering it.
+- **A generated body wants `scale` 1.35–1.9 and its own `radius`.** The hero's
+  are `HERO_BASE`, not a `MonsterDef`. Nothing about the demo's
+  generated-monster checks reaches him.
+- **`animates()` must return true for a generated hero**, or `drawEntity`'s
+  lunge transform runs on top of a real swing — the shove-the-model-forward
+  look the monsters already had fixed. The demo fails a generated body still
+  being moved by a transform.
+- **Source size is the ceiling, again.** Six bodies are 4.67 MB. A hero plus
+  four looks is five more bodies — about 4 MB — and `docs/app.js` carries a
+  copy. Read the source-size pitfall below before committing to a look count.
+- **The hero has states the monsters do not.** `poseOf` indexes `SWING_POSES`
+  by how far through a swing he is, and he carries both a swing and a cast —
+  `castsVisibly`'s old fallback rule existed for exactly that. Whatever is
+  generated needs `idle`, `walk`, `attack`, `cast`, `hurt`, `death` at minimum.
+
+#### Done when
+
+The user has seen a base man and at least two dressed versions of the SAME man,
+and has said which way the look ladder goes — or has said the whole approach is
+wrong, which is worth finding out for 40 generations rather than 400.
+
+#### What must not break
+
+`comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. Nothing in the
+sample step touches `src/`, so the suite should not move at all until the
+wiring step — and if it does, something was changed that this phase did not
+mean to change.
+
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
