@@ -923,11 +923,13 @@ from `BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`, with
 `DOLL_GRID` 24, and `lookOf` turning what is equipped into a `Look`. It works
 because every piece is authored against ONE pose with the grip at (17, 14), so
 12 armour families × 3 tiers × 3 slots reach the screen without 108 drawings.
-**Nothing may delete that until a generated hero can show gear at least as
-well** — a generated body has no registration to hang a layer on, so the
-replacement is whole-body LOOKS and a look is not a slot. The plan, the routes
-and the measured sample are Phase 1 of `ROADMAP.md`; the trade is the user's to
-take and it has not been taken.
+**Nothing may delete that until a generated hero can show a different helm, a
+different body and a different pair of boots** — *the user's requirement, in as
+many words, and it is what makes this hard*. A generated body has no
+registration to hang a layer on, and a whole-body LOOK cannot show a helm swap,
+so the replacement has to be per-slot layers over generated frames. The two
+routes that could give that, the experiments that decide between them and the
+44 generations already spent are Phase 1 of `ROADMAP.md`.
 
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,
