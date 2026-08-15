@@ -8,7 +8,16 @@ import { computeStat } from '../mods';
 import { tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
-import { COVER_PROPS, COVER_RATE, SOLID_PROPS, VIGNETTES, WALL_PROPS, weighted } from '../vignettes';
+import {
+  COVER_PROPS,
+  COVER_RATE,
+  HUNG_PROPS,
+  SOLID_PROPS,
+  VIGNETTES,
+  WALL_PROPS,
+  weighted,
+} from '../vignettes';
+import { ZONES } from '../render/generated-tiles';
 import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
@@ -242,12 +251,75 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
   }
 }
 
+/** A cell's four CORNERS in base three — 0 floor, 1 rock, 2 the cut face — the
+ *  key a generated tileset is indexed by. Here rather than in a renderer
+ *  because the GRID answers it too: what a set cannot draw it must not make. */
+export function wangKey(grid: Grid, x: number, y: number): number {
+  const solid = (cx: number, cy: number): boolean =>
+    grid.at(cx - 1, cy - 1) === WALL && grid.at(cx, cy - 1) === WALL &&
+    grid.at(cx - 1, cy) === WALL && grid.at(cx, cy) === WALL;
+  const one = (cx: number, cy: number): number => (solid(cx, cy) ? 1 : solid(cx, cy - 1) ? 2 : 0);
+  return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
+}
+
+/**
+ * Rock a generated SET cannot draw, opened until none is left. A set answers 21
+ * of the 81 corner keys, and what it lacks is not a gap in the art but shapes
+ * its terrain model never makes — a diagonal step in a wall is the one this
+ * carve makes and that one does not. Drawn as the nearest key it holds, such a
+ * cell puts a cut face where solid rock belongs; built from quadrants of other
+ * tiles it puts a sliver of floor inside the stone, which measured worse. So it
+ * is GEOMETRY, exactly as `thinRock` was: only ever OPEN rock, so nothing can
+ * be stranded, run to a fixed point since one cell moves its neighbours.
+ */
+function fitCorners(grid: Grid, zone: string, keep: Vec2[] = []): void {
+  const set = ZONES[zone];
+  if (!set) return;
+  const known = new Set(set.tiles.map((t) => t.key));
+  // Rock something is HUNG on stays rock: opening it leaves a torch on air.
+  const held = new Set(keep.map((v) => v.y * grid.width + v.x));
+  for (let pass = 0; pass < 12; pass++) {
+    let opened = 0;
+    for (let y = -1; y <= grid.height; y++) {
+      for (let x = -1; x <= grid.width; x++) {
+        if (known.has(wangKey(grid, x, y))) continue;
+        // Only a cell TOUCHING floor is opened, so the hole widens a room
+        // rather than appearing in the middle of the stone; measured, nothing
+        // needs the other kind. Never the border ring, which is the one wall
+        // holding the hero in.
+        let done = false;
+        for (let dy = -1; dy <= 1 && !done; dy++) {
+          for (let dx = -1; dx <= 1 && !done; dx++) {
+            const cx = x + dx;
+            const cy = y + dy;
+            if (cx < 1 || cy < 1 || cx >= grid.width - 1 || cy >= grid.height - 1) continue;
+            if (grid.at(cx, cy) !== WALL || held.has(cy * grid.width + cx)) continue;
+            if (
+              grid.at(cx - 1, cy) === WALL && grid.at(cx + 1, cy) === WALL &&
+              grid.at(cx, cy - 1) === WALL && grid.at(cx, cy + 1) === WALL
+            ) {
+              continue;
+            }
+            grid.set(cx, cy, FLOOR);
+            if (known.has(wangKey(grid, x, y))) {
+              opened++;
+              done = true;
+            } else {
+              grid.set(cx, cy, WALL);
+            }
+          }
+        }
+      }
+    }
+    if (opened === 0) return;
+  }
+}
+
 /** The footprint an arrangement has to beat to count as one worth the room. */
 const BIG = 12;
 
-/** Furniture, a CLUSTER at a time: a prop dropped one at a time reads as one,
- *  equally far from everything and there for no reason. The rng is handed in,
- *  so a scene's fixed seed makes the same place every time. */
+/** Furniture, a CLUSTER at a time: dropped one at a time a prop reads as one,
+ *  equally far from everything and there for no reason. */
 export function dressRooms(
   grid: Grid,
   rooms: Room[],
@@ -332,8 +404,7 @@ function offRock(grid: Grid, x: number, y: number): number {
 }
 
 /** Loose stone and dust, DRIFTED at the foot of the rock and thinning to almost
- *  nothing in the open. It claims no tile and blocks nothing, so it is laid
- *  without asking what is taken. */
+ *  nothing in the open. It claims no tile, so nothing is asked. */
 export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   const out: MapProp[] = [];
   for (let y = 0; y < grid.height; y++) {
@@ -350,14 +421,10 @@ export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
 const FACE_RATE = 0.16;
 
 /**
- * What GROWS on the cut face, and the only thing scattered anywhere. It is the
- * one kind of prop placed INTO rock: the cell above a floor tile with rock over
- * IT is the face, which is the only surface in the game seen from the side, and
- * `WALL_PROPS` are drawn side-on for it.
- *
- * There is no floor pass beside this one any more. A room's worth of objects
- * dropped one tile at a time reads as exactly that however carefully the rates
- * are picked; what a person left is a `Vignette` or is placed by hand.
+ * What GROWS on the cut face, and the only thing scattered anywhere. There is
+ * no floor pass beside it: a room's worth of objects dropped one tile at a time
+ * reads as exactly that however the rates are picked, so what a person left is
+ * a `Vignette` or is placed by hand.
  */
 export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[] = []): MapProp[] {
   const out: MapProp[] = [];
@@ -580,7 +647,13 @@ export function sceneMap(
       }
     }
   }
-
+  if (zone) {
+    fitCorners(
+      grid,
+      zone,
+      plan.props.filter((p) => HUNG_PROPS.has(p.id)).map((p) => ({ x: p.x, y: p.y - 1 }))
+    );
+  }
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
