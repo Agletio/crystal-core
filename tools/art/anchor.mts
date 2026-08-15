@@ -10,7 +10,8 @@
  * range that MOVES is drift. A body holding a raised tool defeats the estimator
  * outright, so a wide spread wants the cut drawn on the frames and LOOKED at.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { encodePng } from './png.mts';
 import { SLOTS } from './layer.mts';
 
 const SRC = new URL('../../src/render/generated-art.ts', import.meta.url).pathname;
@@ -78,4 +79,54 @@ for (const name of process.argv.length > 2 ? process.argv.slice(2) : ['hewer']) 
         `(body ${Math.min(...tall)}-${Math.max(...tall)} px tall)`,
     );
   }
+  stamp(name, body);
+}
+
+/** A generated body's frames outrun what one edit can dress consistently, so a
+ *  piece has to come off ONE frame and be re-stamped on the rest. Whether that
+ *  is watchable is not a number: this draws the original row over the stamped
+ *  row for a facing, and the answer is in looking at it. */
+function stamp(name: string, { grid, dirs, frames, states }: Body): void {
+  const per = Object.values(states).flat().length;
+  const d = Math.min(2, dirs.length - 1);
+  const run = Object.values(states).flat();
+  const head = (rows: string[]) => {
+    const { top, bottom, wide } = profile(rows, grid);
+    const cut = top + Math.round(SLOTS.helm[1] * (bottom - top + 1));
+    let sx = 0;
+    let n = 0;
+    for (let y = top; y < cut; y++) for (let x = 0; x < grid; x++) if (ink(rows, x, y)) { sx += x; n++; }
+    return { top, cut, mid: n ? Math.round(sx / n) : Math.round(grid / 2), wide };
+  };
+
+  const source = frames[d * per + run[0]];
+  const src = head(source);
+  const S = 3;
+  const OW = run.length * grid * S;
+  const OH = 2 * grid * S;
+  const out = new Uint8Array(OW * OH * 4);
+  for (let i = 0; i < OW * OH; i++) out.set([26, 24, 30, 255], i * 4);
+  const put = (row: number, col: number, x: number, y: number, lit: boolean) => {
+    for (let sy = 0; sy < S; sy++)
+      for (let sx = 0; sx < S; sx++) {
+        const at = ((row * grid * S + y * S + sy) * OW + col * grid * S + x * S + sx) * 4;
+        out.set(lit ? [200, 198, 192, 255] : [26, 24, 30, 255], at);
+      }
+  };
+  run.forEach((f, col) => {
+    const rows = frames[d * per + f];
+    const to = head(rows);
+    for (let y = 0; y < grid; y++) for (let x = 0; x < grid; x++) put(0, col, x, y, ink(rows, x, y));
+    for (let y = to.cut; y < grid; y++) for (let x = 0; x < grid; x++) put(1, col, x, y, ink(rows, x, y));
+    // Bottom of the cut band onto the neck, centred on this frame's own head.
+    for (let y = src.top; y < src.cut; y++)
+      for (let x = 0; x < grid; x++)
+        if (ink(source, x, y)) {
+          const tx = x - src.mid + to.mid;
+          const ty = y - src.cut + to.cut;
+          if (tx >= 0 && tx < grid && ty >= 0 && ty < grid) put(1, col, tx, ty, true);
+        }
+  });
+  writeFileSync(`${name}-stamp.png`, encodePng(OW, OH, out));
+  console.log(`  ${name}-stamp.png — ${dirs[d]}, drawn over the same frames re-headed`);
 }

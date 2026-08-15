@@ -1,15 +1,17 @@
 /**
- * Armour onto a body that already exists.  `dress.mts <design> [outfit ...]`
+ * Armour onto a body that already exists.  `dress.mts <outfit> <image> [image ...]`
  *
- * `edit_image` applies the SAME edit to a LIST of PNGs consistently — the docs
- * say "useful for animation frames or a character's directions" — and bills by
- * the whole frame grid, so a LOOK costs one charge over a finished animation
- * where a second body would cost the animation again. Measured on one design,
- * the man came back the same man at 97.4% and 96.9% silhouette overlap, holding
- * his stance, belt, pouch and feet. Frames cap at 512x512 each.
+ * `edit_image` applies the SAME edit to a LIST of PNGs — the docs say "useful
+ * for animation frames or a character's directions" — and bills by the whole
+ * frame grid. Measured on one design, the man came back the same man at 97.4%
+ * and 96.9% silhouette overlap, holding his stance, belt, pouch and feet.
+ *
+ * The edit REPAINTS the whole frame doing it, so what comes back is not a piece.
+ * `layer.mts` is the other half: it cuts the slot's band out.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { callTool, download, fields, urlsIn } from './mcp.mts';
+import { decodePng } from './png.mts';
 
 const CACHE = new URL('./cache/designs/', import.meta.url).pathname;
 
@@ -18,8 +20,8 @@ const KEEP =
   'Keep the SAME man, the same face, the same pose, the same proportions and the same ' +
   'grimy palette. Do not replace him. No ground, no floor, no shadow, no base.';
 
-/** A LOOK, not a slot. Few and strongly separated: at the ~87 device pixels the
- *  camera lands a body in, two near-neighbours are the same picture. */
+/** One outfit is one SLOT's worth: only the band `layer.mts` cuts is kept, so
+ *  what an outfit says about the rest of the body is thrown away anyway. */
 export const OUTFITS: Record<string, string> = {
   helm:
     'Put a battered open-faced iron helm on his head, over or instead of the hood. Change NOTHING ' +
@@ -38,38 +40,56 @@ export const OUTFITS: Record<string, string> = {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const design = process.argv[2];
-if (!design) throw new Error('name a design in tools/art/cache/designs');
-const want = process.argv.length > 3 ? process.argv.slice(3) : Object.keys(OUTFITS);
+const name = process.argv[2];
+const description = OUTFITS[name];
+if (!description) throw new Error(`name an outfit: ${Object.keys(OUTFITS).join(', ')}`);
+const frames = process.argv.slice(3);
+if (!frames.length) throw new Error('name at least one image in tools/art/cache/designs');
 
-const source = `${CACHE}${design}.png`;
-if (!existsSync(source)) throw new Error(`${source} is not there — run \`body.mts design\` first`);
-const base = readFileSync(source).toString('base64');
+function path(f: string): string {
+  const found = f.includes('/') ? f : `${CACHE}${f}.png`;
+  if (!existsSync(found)) throw new Error(`${found} is not there`);
+  return found;
+}
+const images = frames.map((f) => readFileSync(path(f)).toString('base64'));
 
-for (const name of want) {
-  const description = OUTFITS[name];
-  if (!description) {
-    console.log(`${name}: no such outfit`);
-    continue;
-  }
-  const out = await callTool('edit_image', { images_base64: [base], description, seed: 7 });
+// How many frames one charge covers is a step of the frame's own SIZE — the
+// grid is 512x512 laid out 4x4, 2x2 or 1x1 — and that is what a piece really
+// costs. The server refuses the 5th at 96 before billing rather than truncating.
+const PER_CALL = (size: number) => (size <= 64 ? 16 : size <= 128 ? 4 : 1);
+
+const first = decodePng(readFileSync(path(frames[0])));
+const chunk = PER_CALL(Math.max(first.width, first.height));
+console.log(`${name}: ${frames.length} frame(s) at ${first.width}x${first.height}, ${chunk} a call`);
+
+for (let from = 0; from < frames.length; from += chunk) {
+  const batch = frames.slice(from, from + chunk);
+  const out = await callTool('edit_image', {
+    images_base64: images.slice(from, from + chunk),
+    description,
+    seed: 7,
+  });
   const job = fields(out).job_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
-  if (!job) {
-    console.log(`${name}: refused — ${out.slice(0, 200)}`);
-    continue;
-  }
-  console.log(`${name}: job ${job}`);
-  let url = '';
-  for (let go = 0; go < 40 && !url; go++) {
+  if (!job) throw new Error(`${name}: refused — ${out.slice(0, 300)}`);
+  console.log(`  job ${job} over ${batch.length}`);
+
+  // A multi-frame result is ONE indexed download rather than a url per frame,
+  // and the index form is the only way to reach frames 1..n.
+  let urls: string[] = [];
+  for (let go = 0; go < 60 && !urls.length; go++) {
     await wait(8000);
     const said = await callTool('get_image', { job_id: job });
-    url = urlsIn(said).find((u) => /\.png/.test(u)) ?? urlsIn(said)[0] ?? '';
-    if (!url.startsWith('http')) url = '';
+    const got = /^download: (https\S+?)(\?index=0)?(?:\s|$)/m.exec(said);
+    const count = Number(fields(said).frames ?? 0);
+    if (got && count) urls = Array.from({ length: count }, (_, i) => (count > 1 ? `${got[1]}?index=${i}` : got[1]));
+    else urls = urlsIn(said).filter((u) => /\.png/.test(u) && u.startsWith('http'));
   }
-  if (!url) {
-    console.log(`${name}: never arrived`);
-    continue;
+  if (!urls.length) throw new Error(`${name}: batch at ${from} never arrived`);
+  if (urls.length !== batch.length) console.log(`  ASKED ${batch.length}, GOT ${urls.length}`);
+
+  for (const [n, url] of urls.entries()) {
+    const stem = (batch[n] ?? `frame${from + n}`).split('/').pop()!.replace(/\.png$/, '');
+    writeFileSync(`${CACHE}${stem}-${name}.png`, await download(url));
+    console.log(`  ${CACHE}${stem}-${name}.png`);
   }
-  writeFileSync(`${CACHE}${design}-${name}.png`, await download(url));
-  console.log(`  ${CACHE}${design}-${name}.png`);
 }
