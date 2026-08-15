@@ -112,7 +112,7 @@ import {
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
 import type { MapProp } from './sim/grid';
-import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './render/sprites';
+import { CREATURE_FRAMES, GLOW, HERO_FRAMES, IDLE_CYCLE, STRIDE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
@@ -1394,14 +1394,21 @@ rule('SPRITES — is the pixel art well formed?');
       const skills = [null, ...Object.keys(art.states)];
       // Dying is not an `EntityAction`, so it is swept as its own axis: a
       // corpse plays its own run over `DEATH_FADE` whatever it was doing.
+      // A walk is indexed by GROUND COVERED and the others by how far through
+      // they are, so the sweep has to cover a whole stride cycle at a step
+      // finer than the longest run — four samples cannot reach every frame of
+      // a six-frame walk, and the frame they miss is not one the game misses.
+      const steps = Math.max(16, art.frames.length);
       for (const action of ['idle', 'move', 'attack', 'hurt']) {
         for (const skill of skills) {
           for (let turn = 0; turn < 16; turn++) {
-            for (const at of [0, 0.34, 0.67, 1]) {
+            for (let step = 0; step <= steps; step++) {
+              const at = step / steps;
               for (const dead of [false, true]) {
               const facing = (turn / 16) * Math.PI * 2 - Math.PI;
               const frame = generatedFrame(id, {
-                action, through: at, elapsed: at * 3, walked: at * 3,
+                action, through: at, elapsed: at * steps / IDLE_CYCLE,
+                walked: at * STRIDE * steps,
                 skill, facing, spell: false, dead, dying: at,
               });
               if (frame >= art.frames.length || frame < 0) {

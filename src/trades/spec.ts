@@ -23,6 +23,7 @@ export interface TradeSpec {
   name: string;
   blurb: string; // the rule it changes, in one line: what the picker shows
   prefix: string; // node ids start `${prefix}_`, and a save points at them
+  sprite?: string; // the generated body he is DRAWN as; omitted, the base man
   spokes: Spoke[]; // five; buildTrade refuses anything else
   needs: Record<string, string>; // grant -> the node it is useless without
 }

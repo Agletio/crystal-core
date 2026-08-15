@@ -1,14 +1,27 @@
 /**
- * What a character looks like, from what they are wearing.
+ * What a character looks like. The renderer is handed art keys and nothing else.
  *
- * The renderer is handed art keys and nothing else, the same way it is handed
- * `sprite: 'hero'` — it never learns what a base or a tier is.
+ * A generated hero is drawn as his TRADE and gear does not change him; the doll
+ * underneath layers what is worn and is the fallback. `heroSpriteFor` chooses.
  */
 import { GEAR_BASE_BY_ID } from '../data';
+import { GENERATED } from '../render/generated-art';
 import { hasFamilyArt, hasWeaponArt } from '../render/look';
+import { TRADE_BY_ID } from '../trades';
 import { equippedItems } from './character';
 import type { Character } from './character';
 import type { Look, WornPiece } from '../types';
+
+export const HERO_SPRITE = 'wanderer'; // no trade: the base man
+export const HERO_DOLL = 'hero'; // the doll, and the only art carrying GEAR
+
+/** Falls through to the doll, so a look nobody has generated yet is a
+ *  hand-drawn hero rather than an empty tile. */
+export function heroSpriteFor(character: Character): string {
+  const worn = character.trade ? TRADE_BY_ID[character.trade]?.spec.sprite : undefined;
+  for (const sprite of [worn, HERO_SPRITE]) if (sprite && GENERATED[sprite]) return sprite;
+  return HERO_DOLL;
+}
 
 /** Rung off the base id: `bulwark_helmet_t2` is the second. */
 function tierOf(baseId: string): number {
@@ -23,13 +36,11 @@ export function lookOf(character: Character): Look {
     const base = GEAR_BASE_BY_ID[item.base];
     if (!base?.family) continue;
 
-    // The base, not the family: an Ember Maul is not a Cudgel with a tint.
-    if (base.kind === 'weapon') {
+    if (base.kind === 'weapon') { // the BASE: an Ember Maul is not a tinted Cudgel
       if (hasWeaponArt(item.base)) look.weapon = { kind: item.base };
       continue;
     }
-    // A family with no art yet leaves the slot bare rather than drawing
-    // something that belongs to a different set.
+    // A family with no art leaves the slot bare rather than borrowing a set.
     if (!hasFamilyArt(base.family)) continue;
     const worn: WornPiece = { family: base.family, tier: tierOf(item.base) };
     if (base.kind === 'helmet') look.helmet = worn;

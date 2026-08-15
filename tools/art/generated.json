@@ -19,29 +19,29 @@
   "states": {
    "idle": {
     "group": "edcac618-4cee-423a-ab8f-2be883ce6f54",
-    "frames": 5
+    "frames": 2
    },
    "walk": {
     "group": "2ce147cf-a030-4515-ad99-5d03f543c4c9",
-    "frames": 9
+    "frames": 6
    },
    "attack": {
     "group": "d6ba0ec4-1e37-42ce-b7b9-966365eb4c00",
-    "frames": 5,
+    "frames": 4,
     "from": 0.2
    },
    "cast": {
     "group": "2e6b3d09-b02f-452b-80aa-f4da7c07cb66",
-    "frames": 5,
+    "frames": 3,
     "from": 0.2
    },
    "hurt": {
     "group": "3e0fef19-bace-46e0-93b9-2fe6e46df558",
-    "frames": 5
+    "frames": 2
    },
    "death": {
     "group": "e7c6d8ea-3d0a-4f84-a37f-fcb204624584",
-    "frames": 7,
+    "frames": 4,
     "from": 0.14
    }
   }

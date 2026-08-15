@@ -9,7 +9,7 @@ import { WALL, generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from '.
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
-import { lookOf } from './appearance';
+import { HERO_DOLL, heroSpriteFor, lookOf } from './appearance';
 import {
   armourReduction,
   characterStats,
@@ -414,12 +414,13 @@ export class RunSim {
         );
     const stats = characterStats(character);
 
+    const worn = heroSpriteFor(character); // `look` is the DOLL's: an empty one still draws
     const hero: Entity = {
       id: 0,
       kind: 'hero',
-      sprite: 'hero',
-      look: lookOf(character),
-      scale: 1.15,
+      sprite: worn,
+      ...(worn === HERO_DOLL ? { look: lookOf(character) } : {}),
+      scale: worn === HERO_DOLL ? 1.15 : 1.5, // a generated body spans ~69% of its grid
       rank: 'common',
       x: map.entrance.x,
       y: map.entrance.y,
