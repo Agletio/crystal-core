@@ -290,7 +290,8 @@ export function generatedFrame(sprite: string, e: Cel): number {
     return row + once(run, e.through);
   }
   const walk = states.walk ?? [0];
-  if (e.action === 'move') return row + walk[Math.floor(e.walked / STRIDE) % walk.length];
+  if (e.action === 'move')
+    return row + walk[Math.floor(e.walked / strideOf(sprite, walk.length)) % walk.length];
   const idle = states.idle;
   if (idle) return row + idle[Math.floor(e.elapsed * IDLE_CYCLE) % idle.length];
   return row + walk[0];
@@ -313,9 +314,14 @@ export function animates(
   return !!((e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null) ?? states.attack);
 }
 
-/** Tiles per frame of a walk. A stride is a DISTANCE, and reading it off the
- *  clock instead is what makes a body skate over the ground. */
-export const STRIDE = 0.42;
+/** Tiles one whole GAIT CYCLE covers. Read off the clock a body skates; read
+ *  per FRAME the frame COUNT decides the gait, which is the same fault in
+ *  another currency — six frames at a per-frame stride carry a body half again
+ *  as far per footfall as four. `GeneratedArt.stride` overrides it per body. */
+export const STRIDE_CYCLE = 1.68;
+
+export const strideOf = (sprite: string, frames: number): number =>
+  (GENERATED[sprite]?.stride ?? STRIDE_CYCLE) / Math.max(1, frames);
 /** A hand-drawn creature has no stride, so its two frames run off the clock. */
 export const WALK_CYCLE = 7;
 /** And how fast a body standing still breathes, which is far slower: an idle

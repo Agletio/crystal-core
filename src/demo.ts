@@ -112,7 +112,7 @@ import {
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
 import type { MapProp } from './sim/grid';
-import { CREATURE_FRAMES, GLOW, HERO_FRAMES, IDLE_CYCLE, STRIDE, framesOf, wellFormed } from './render/sprites';
+import { CREATURE_FRAMES, GLOW, HERO_FRAMES, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
@@ -1408,7 +1408,7 @@ rule('SPRITES — is the pixel art well formed?');
               const facing = (turn / 16) * Math.PI * 2 - Math.PI;
               const frame = generatedFrame(id, {
                 action, through: at, elapsed: at * steps / IDLE_CYCLE,
-                walked: at * STRIDE * steps,
+                walked: at * STRIDE_CYCLE * steps,
                 skill, facing, spell: false, dead, dying: at,
               });
               if (frame >= art.frames.length || frame < 0) {

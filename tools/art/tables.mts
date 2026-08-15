@@ -31,6 +31,9 @@ interface BodySpec {
    *  TARGET rather than a gain, so one re-generated brighter still lands with
    *  the roster. Omitted, it ships as the generator drew it. */
   luma?: number;
+  /** Tiles one whole GAIT CYCLE covers — how far the stride the animation
+   *  DEPICTS actually carries the body. Omitted, it takes `STRIDE_CYCLE`. */
+  stride?: number;
   /**
    * State name -> which animation GROUP ID on the generator, and which window
    * of it to keep. The whole of what makes a body's states data: a further one
@@ -112,6 +115,7 @@ interface Manifest {
 
 type Art = {
   grid: number;
+  stride?: number;
   dirs: string[];
   frames: string[][];
   states: Record<string, number[]>;
@@ -338,7 +342,7 @@ async function creature(spec: BodySpec): Promise<Art> {
       `${dirs.length} facings x ` +
       Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ')
   );
-  return { grid: GRID, dirs, frames, states, key: inks.key };
+  return { grid: GRID, stride: spec.stride, dirs, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
@@ -543,6 +547,9 @@ if (doing('bodies')) write(
       ` * five inks belong to \`BEASTIARY\`, not to the renderer.`
   ) +
     `export type GeneratedArt = {\n  grid: number;\n` +
+    `  /** Tiles one whole GAIT CYCLE covers. A per-frame stride would let the\n` +
+    `   *  frame COUNT decide how far a body travels per footfall. */\n` +
+    `  stride?: number;\n` +
     `  /** Facings, north to south, and only the east half of the compass —\n` +
     `   *  anything facing left is one of these mirrored. */\n` +
     `  dirs: string[];\n` +
@@ -559,6 +566,7 @@ if (doing('bodies')) write(
       .map(
         ([id, art]) =>
           `  ${id}: {\n    grid: ${art.grid},\n` +
+          (art.stride === undefined ? '' : `    stride: ${art.stride},\n`) +
           `    dirs: ${JSON.stringify(art.dirs)},\n` +
           `    frames: [${art.frames.map((f) => rowSource(f, '    ')).join(', ')}],\n` +
           `    states: ${JSON.stringify(art.states)},\n` +

@@ -16,14 +16,16 @@
    "south-east",
    "south"
   ],
+  "stride": 2.52,
   "states": {
    "idle": {
     "group": "edcac618-4cee-423a-ab8f-2be883ce6f54",
     "frames": 2
    },
    "walk": {
-    "group": "8b5f6e40-b77e-4880-8283-6f794cc5debe",
-    "frames": 6
+    "group": "028b097d-9d9e-43f6-bb39-8cb91561018f",
+    "frames": 6,
+    "from": 0.25
    },
    "attack": {
     "group": "d6ba0ec4-1e37-42ce-b7b9-966365eb4c00",
