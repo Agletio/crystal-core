@@ -166,6 +166,73 @@
      "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
     }
    }
+  },
+  {
+   "sprite": "gaunt_v3",
+   "character": "617dbef1-9ea0-4fbb-be68-2d3a4bcc10db",
+   "name": "Gaunt v3",
+   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is a cold dark grey-brown, the colour of wet stone, filthy and stained — NOT white, NOT bone white, NOT cream, NOT ivory, NOT pink, NOT mauve, NOT purple, NOT lilac. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "mode": "v3",
+   "size": 96,
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    }
+   }
+  },
+  {
+   "sprite": "gaunt_real",
+   "character": "79ad7d66-ac50-4ea6-a4ce-18a4b26769f1",
+   "name": "Gaunt Real",
+   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is a cold dark grey-brown, the colour of wet stone, filthy and stained — NOT white, NOT bone white, NOT cream, NOT ivory, NOT pink, NOT mauve, NOT purple, NOT lilac. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "mode": "standard",
+   "proportions": "{\"type\": \"preset\", \"name\": \"realistic_male\"}",
+   "size": 96,
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    }
+   }
+  },
+  {
+   "sprite": "gaunt_dark",
+   "character": "34b63d50-79ba-41bc-8902-d62a10df27be",
+   "name": "Gaunt Dark",
+   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is VERY DARK, almost black — a cold charcoal grey-brown the colour of wet slate, soaked and filthy, far darker than any bone should be, closer to burnt wood than to bone. NOT white, NOT off-white, NOT bone white, NOT cream, NOT ivory, NOT tan, NOT beige, NOT sand, NOT gold, NOT yellow, NOT amber, NOT bronze, NOT warm, NOT pale, NOT light. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "mode": "v3",
+   "size": 96,
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    }
+   }
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",

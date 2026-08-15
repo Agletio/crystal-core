@@ -28,6 +28,12 @@ interface BodyAsk {
   character?: string;
   name: string;
   look: string;
+  /** `standard` poses ONE rigged template, so every body shares a silhouette
+   *  whatever the words say; `v3` is free of it at 2-9 generations. */
+  mode?: 'standard' | 'pro' | 'v3';
+  /** `standard` only, and its default preset is the bobblehead. */
+  proportions?: string;
+  size?: number;
   states: Record<string, StateAsk>;
 }
 
@@ -97,11 +103,13 @@ if (command === 'ask') {
     description: body!.look,
     body_type: 'humanoid',
     n_directions: 8,
-    size: 96,
+    size: body!.size ?? 96,
     view: 'high top-down',
     outline: 'single color black outline',
     shading: 'medium shading',
     detail: 'medium detail',
+    ...(body!.mode ? { mode: body!.mode } : {}),
+    ...(body!.proportions ? { proportions: body!.proportions } : {}),
   });
   console.log(said(out, /id|status/i));
   console.log('put that id in bodies.json AND generated.json before going on');
