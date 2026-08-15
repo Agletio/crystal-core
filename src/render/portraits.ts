@@ -9,7 +9,7 @@
  * Same machinery as the bestiary: the art is characters and what a character
  * means is a palette lookup, resolved at CALL time off the live document.
  */
-import { gridRows, mix } from './gear-art';
+import { gridRows, mix } from './renderer';
 import type { Palette } from './renderer';
 
 export interface PortraitArt {

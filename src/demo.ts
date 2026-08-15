@@ -112,12 +112,12 @@ import {
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
 import type { MapProp } from './sim/grid';
-import { CREATURE_FRAMES, GLOW, HERO_FRAMES, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
+import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
 import { animates, facingRow, generatedFrame } from './render/sprites';
-import { heroScale } from './sim/appearance';
+import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
 
 /** A frame request with everything defaulted, so a check names only what it
@@ -126,11 +126,6 @@ const cel = (of: Partial<Cel>): Cel => ({
   action: 'idle', through: 0, elapsed: 0, walked: 0,
   skill: null, facing: 0, spell: false, ...of,
 });
-import { BODY } from './render/body';
-import { DOLL_GRID, FAMILY_ART, TRIM, TRIM_LIT, WEAPON_ART } from './render/gear-art';
-import { hasFamilyArt, hasWeaponArt, lookRows, roleChar } from './render/look';
-import { POSE_IDS, WALK_POSES } from './render/pose';
-import type { PoseId } from './render/pose';
 import {
   characterStats,
   convertedType,
@@ -1308,7 +1303,6 @@ rule('SPRITES — is the pixel art well formed?');
 // here because building the sheet needs a canvas and this does not.
 {
   const problems = [
-    ...wellFormed(HERO_FRAMES, DOLL_GRID).map((b) => `hero ${b}`),
     ...Object.entries(BEASTIARY).flatMap(([name, art]) =>
       wellFormed([...art.frames, ...(art.attack ? [art.attack] : [])], art.grid).map(
         (b) => `${name} ${b}`
@@ -1523,7 +1517,7 @@ rule('SPRITES — is the pixel art well formed?');
       // one step, two of those is a cycle, and `stride` has to match it or the
       // body slides — over-travelling it skates forward, under-travelling it
       // skids back. The global per-frame constant matched no body at all.
-      const drawn = MONSTERS.find((m) => m.sprite === id)?.scale ?? heroScale(id);
+      const drawn = MONSTERS.find((m) => m.sprite === id)?.scale ?? HERO_SCALE;
       let apart = 0;
       const side = Math.max(0, art.dirs.indexOf('east'));
       for (const f of run) {
@@ -1867,10 +1861,9 @@ rule('SPRITES — is the pixel art well formed?');
 
   // Two frames that are identical are not a walk cycle. Cheap to write, and
   // exactly the thing you would not notice from a still.
-  const same = [
-    ['hero', HERO_FRAMES] as const,
-    ...Object.entries(MONSTER_FRAMES).map((e) => e as readonly [string, string[][]]),
-  ].filter(([, frames]) => frames[0].join('') === frames[1].join(''));
+  const same = Object.entries(MONSTER_FRAMES).filter(
+    ([, frames]) => frames[0].join('') === frames[1].join('')
+  );
   check(
     same.length === 0,
     'and every one actually animates',
@@ -1887,127 +1880,6 @@ rule('SPRITES — is the pixel art well formed?');
     'and every creature that swings is visibly doing something else while it does',
     stiff.map(([n]) => n).join(', ')
   );
-}
-
-// ===========================================================================
-rule('THE MODEL — does the figure hold together in every pose?');
-
-// The figure is layers: a body, four pieces of armour and a weapon, each a
-// grid authored against the neutral pose. Nothing here needs a canvas, so
-// every combination can be checked rather than eyeballed.
-{
-  const problems: string[] = [];
-  for (const pose of POSE_IDS) {
-    problems.push(...wellFormed([BODY[pose]], DOLL_GRID).map((b) => `body ${pose} ${b}`));
-  }
-  for (const [family, art] of Object.entries(FAMILY_ART)) {
-    problems.push(
-      ...wellFormed([art.helmet, art.body, art.gloves, ...art.boots], DOLL_GRID).map(
-        (b) => `${family} ${b}`
-      )
-    );
-  }
-  for (const [kind, art] of Object.entries(WEAPON_ART)) {
-    problems.push(...wellFormed([art.rest, art.strike], DOLL_GRID).map((b) => `${kind} ${b}`));
-  }
-  check(
-    problems.length === 0,
-    `every grid is ${DOLL_GRID}x${DOLL_GRID}`,
-    problems.slice(0, 4).join('; ')
-  );
-
-  // Composition must not push anything off the cell: a shift that runs a row
-  // long silently draws outside the sprite, which reads as art bleeding into
-  // the tile beside it.
-  const full = {
-    helmet: { family: 'bulwark', tier: 3 },
-    body: { family: 'bulwark', tier: 3 },
-    gloves: { family: 'bulwark', tier: 3 },
-    boots: { family: 'bulwark', tier: 3 },
-    weapon: { kind: 'mace' },
-  };
-  const composed = POSE_IDS.map((p) => lookRows(full, p));
-  check(
-    wellFormed(composed, DOLL_GRID).length === 0,
-    `and a fully armed figure still composes to ${DOLL_GRID}x${DOLL_GRID} in every pose`,
-    wellFormed(composed, DOLL_GRID).join('; ')
-  );
-
-  // Four poses that look the same are one pose drawn four times.
-  const seen = new Map<string, string[]>();
-  for (const pose of POSE_IDS) {
-    const key = lookRows(full, pose).join('');
-    seen.set(key, [...(seen.get(key) ?? []), pose]);
-  }
-  const twins = [...seen.values()].filter((p) => p.length > 1);
-  check(
-    twins.length === 0,
-    `all ${POSE_IDS.length} poses draw something different`,
-    twins.map((p) => p.join('=')).join(', ')
-  );
-
-  // A walk is contact, pass, contact, pass, and a pass is the frame where the
-  // figure is on ONE foot. Two planted frames alternating is the splits.
-  const soles = (pose: PoseId): number => {
-    const rows = lookRows(full, pose).filter((r) => r.trim() !== '.'.repeat(DOLL_GRID));
-    return (rows[rows.length - 1].match(/[^.]+/g) ?? []).length;
-  };
-  const standing = WALK_POSES.map(soles);
-  check(
-    standing.join() === '2,1,2,1',
-    'and the walk puts the figure on one foot every other frame',
-    WALK_POSES.map((p, i) => `${p} on ${standing[i]}`).join(', ')
-  );
-
-  // The rung is a rule, so it has to actually do something at each step, and
-  // tier 1 must carry no trim at all.
-  const ladder = ARMOUR_FAMILIES.filter((f) => hasFamilyArt(f.id)).flatMap((f) => {
-    const at = (tier: number) =>
-      lookRows({ body: { family: f.id, tier }, helmet: { family: f.id, tier } }, 'walk0').join('');
-    const bad: string[] = [];
-    if (at(1) === at(2)) bad.push(`${f.id}: tier 1 and 2 are identical`);
-    if (at(2) === at(3)) bad.push(`${f.id}: tier 2 and 3 are identical`);
-    // Against the family's OWN ink: composition rewrites the generic trim
-    // character, so looking for a literal 'x' finds nothing whatever the art
-    // does. That is a check that cannot fail.
-    if (at(1).includes(roleChar(f.id, TRIM)) || at(1).includes(roleChar(f.id, TRIM_LIT))) {
-      bad.push(`${f.id}: tier 1 has trim`);
-    }
-    // Trim is decoration ON a finished shape. Structural trim leaves tier 1
-    // with holes in it, which reads as a broken sprite rather than a plain one.
-    const holes = at(1).length - at(1).split('.').length;
-    const solid = at(3).length - at(3).split('.').length;
-    if (holes < solid - 40) bad.push(`${f.id}: tier 1 loses ${solid - holes} pixels of shape`);
-    return bad;
-  });
-  check(ladder.length === 0, 'and every rung of a family differs from the one below', ladder.join('; '));
-
-  // A weapon with no drawing is a hand holding nothing.
-  const undrawn = WEAPON_BASES.filter((b) => !hasWeaponArt(b.id)).map((b) => b.id);
-  check(
-    undrawn.length === 0,
-    `all ${WEAPON_BASES.length} weapons are drawn, one shape each`,
-    undrawn.join(', ')
-  );
-
-  // Two weapons that draw the same are one weapon with two names.
-  const byShape = new Map<string, string[]>();
-  for (const base of WEAPON_BASES) {
-    const key = lookRows({ weapon: { kind: base.id } }, 'walk0').join('');
-    byShape.set(key, [...(byShape.get(key) ?? []), base.id]);
-  }
-  const shared = [...byShape.values()].filter((ids) => ids.length > 1);
-  check(
-    shared.length === 0,
-    'and no two of them draw the same silhouette',
-    shared.map((ids) => ids.join('=')).join(', ')
-  );
-
-  // Not a failure: the families still to draw, named rather than left silent.
-  const pending = ARMOUR_FAMILIES.filter((f) => !hasFamilyArt(f.id)).map((f) => f.id);
-  if (pending.length) {
-    line(`  note ${pending.length} armour families still to draw: ${pending.join(', ')}`);
-  }
 }
 
 // ===========================================================================

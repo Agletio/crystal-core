@@ -1,27 +1,19 @@
 /**
  * Sprite sheets drawn at runtime onto offscreen canvases, so the repo carries
- * no binary assets and a palette change redraws everything.
- *
- * Death and recoil are transforms, because transforms are free and frames are
- * not.
+ * no binary assets and a palette change redraws everything. Death and recoil
+ * are transforms, because transforms are free and frames are not.
  */
 import type { Palette } from './renderer';
 import { mix, spriteColour } from './renderer';
-import { lookRows, roleChar } from './look';
-import { DOLL_GRID, FAMILY_ART } from './gear-art';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
 import { PROP_ART } from './generated-props';
 import type { MonsterRank } from './bestiary';
-import { POSE_IDS } from './pose';
-import type { PoseId } from './pose';
-import type { Look } from '../types';
 
 /** Pixels per sprite cell: texture, never size on screen. */
 export const CELL = 256;
-/** A hand-drawn creature's cycle: two is enough for legs to alternate on
- *  something with none, and after it comes the swing. A GENERATED body has
- *  named states instead — see `generatedFrame`. */
+/** A hand-drawn creature's cycle; after it comes the swing. A GENERATED body
+ *  has named states instead — see `generatedFrame`. */
 export const WALK_FRAMES = 2;
 export const ATTACK_FRAME = WALK_FRAMES;
 export const CREATURE_FRAMES = WALK_FRAMES + 1;
@@ -70,7 +62,7 @@ function inkBytes(colour: string): [number, number, number, number] {
   return bytes;
 }
 
-/** Pixels rather than rects: 65,536 `fillRect` calls is a visible hitch. And
+/** Pixels rather than rects: 65,536 `fillRect` calls is a visible hitch, and
  *  sampling per DESTINATION pixel means the grid need not divide the cell. */
 function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): void {
   const image = ctx.createImageData(size, size);
@@ -96,8 +88,8 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): 
   ctx.putImageData(image, 0, 0);
 }
 
-/** Light off the body: rings of the rank's ink, each fainter than the last, in
- *  the TEXTURE — so it costs no filter and cannot blur off the grid. */
+/** Light off the body: rings of the rank's ink in the TEXTURE, so it costs no
+ *  filter and cannot blur off the grid. */
 export function glowed(
   data: Uint8ClampedArray,
   [r, g, b]: [number, number, number],
@@ -136,67 +128,6 @@ export function glowed(
   }
 }
 
-/** The hero: hooded, hunched over a walking staff, cloak gone to rags, a
- *  bedroll still strapped on. The eye under the hood is the only bright
- *  thing on him. */
-export const HERO_FRAMES: string[][] = [
-  // Planted on the staff, trailing leg back.
-  [
-    '........................',
-    '........######..........',
-    '.......#DDDDLL#.........',
-    '......#DDDDCLLL#..##....',
-    '......#DDDDLLLL#..WW....',
-    '......#DD######...WW....',
-    '......#DFFEEF#....WW....',
-    '......#DFFFFF#....WW....',
-    '......#DFFFFF#....WW....',
-    '.....#PPDCCCC#....WW....',
-    '....#PPPPCCCCC#...WW....',
-    '....#PPPPCCCC#LLLLWW....',
-    '....#PPPP#CCCC#...WW....',
-    '....#PPP#CCCCC#...WW....',
-    '....#PPP#CCCCC#...WW....',
-    '.....###DCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DCC##CC#...WW....',
-    '......#DCC##CC#...WW....',
-    '......#CC#..#C#...WW....',
-    '......#CC#..#C#...WW....',
-    '......###...###...##....',
-  ],
-  // A pixel lower and the legs swapped. The staff does NOT move — it is
-  // planted, and the figure sinks onto it. That is what turns a walk cycle
-  // into a limp, which is the only thing two frames can say about him.
-  [
-    '........................',
-    '........................',
-    '........................',
-    '........######....##....',
-    '.......#DDDDLL#...WW....',
-    '......#DDDDCLLL#..WW....',
-    '......#DD######...WW....',
-    '......#DFFEEF#....WW....',
-    '......#DFFFFF#....WW....',
-    '......#DFFFFF#....WW....',
-    '.....#PPDCCCC#....WW....',
-    '....#PPPPCCCC#LLLLWW....',
-    '....#PPPPCCCCC#...WW....',
-    '....#PPPP#CCCC#...WW....',
-    '....#PPP#CCCCC#...WW....',
-    '....#PPP#CCCCC#...WW....',
-    '.....###DCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DCCCCCC#...WW....',
-    '......#DC##CCC#...WW....',
-    '......#DC##CCC#...WW....',
-    '......#CC#.#CC#...WW....',
-    '......###...###...##....',
-  ],
-];
 
 /** White off a magic one and gold off a rare, the rare reaching further. */
 export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: number } | null> = {
@@ -205,10 +136,9 @@ export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: 
   rare: { colour: (p) => p.citrine, reach: 26 },
 };
 
-/** A generated body: its own grid, key and frames, and the rank's light off the
- *  same table a hand-drawn one gets. `BEASTIARY` is asked FIRST, so an id in
- *  both tables is a generated body that never draws — silent, and it cost a
- *  session's judgement of generated art once. The demo fails a shared id. */
+/** A generated body: its own grid, key and frames. `BEASTIARY` is asked FIRST,
+ *  so an id in both tables is a generated body that never draws — silent, and
+ *  the demo fails a shared id for it. */
 function generatedArt(palette: Palette, sprite: string, frame: number, rank: MonsterRank): PixelArt | null {
   const art = GENERATED[sprite];
   if (!art) return null;
@@ -243,17 +173,12 @@ export function facingRow(sprite: string, facing: number): number {
 }
 
 /**
- * Which frame of a generated body is showing. A state is a RUN of frames in
- * the flat list `frames` is, so a body can have a melee swing AND a cast per
- * skill and a further one is a manifest row. `through` is how far into its own
+ * Which frame of a generated body is showing. `through` is how far into its own
  * action it is, never elapsed time: off the clock a fast swing and a slow one
- * are one. `skill` is what it is using and names its own state FIRST, so fire,
- * frost and lightning are three animations rather than one cast; `cast` is the
- * fallback for a spell with no animation of its own, and only for a spell — a
- * hero holding one would otherwise play it while swinging a sword.
- *
- * The list is direction-MAJOR and the runs are the first facing's, so a facing
- * is one stride along it and everything that draws a body stays flat.
+ * are one. `skill` names its own state FIRST, so fire, frost and lightning are
+ * three animations rather than one cast; `cast` is the fallback, and only for a
+ * spell — a hero holding one would play it while swinging a sword otherwise.
+ * The list is direction-MAJOR, so a facing is one stride along it.
  */
 export interface Cel {
   action: string;
@@ -384,85 +309,6 @@ export function monsterArt(
   };
 }
 
-function heroArt(palette: Palette, frame: number): PixelArt {
-  const key: Record<string, string> = {
-    // Ink, not background. rockDeep is what the map is drawn ON; using it as
-    // an outline left every figure a shade away from the floor it stood on.
-    '#': mix(palette.rockDeep, palette.void, 0.6),
-    // Cloth in three tones off one hue, grimy rather than coloured: the eye
-    // should be the brightest thing on him. Pulled toward rockDeep rather than
-    // void, so he reads as filthy against the stone rather than as blue.
-    D: mix(palette.dust, palette.rockDeep, 0.72),
-    C: mix(palette.dust, palette.rockDeep, 0.5),
-    L: mix(palette.dust, palette.chalk, 0.1),
-    // Under the hood. Not empty — darker than the outline, so the face reads
-    // as a hollow rather than a hole punched in the sprite.
-    F: mix(palette.rockDeep, palette.matrix, 0.3),
-    E: palette.citrine,
-    // Warm dark wood. One pixel wide: at three it read as a ladder, because
-    // an outline down both sides of a 16-grid sprite is most of the staff.
-    W: mix(palette.ember, palette.rockDeep, 0.6),
-    // The bedroll still strapped to his back. He set out meaning to return.
-    P: mix(palette.seam, palette.rockDeep, 0.2),
-  };
-
-  return { rows: HERO_FRAMES[frame] ?? HERO_FRAMES[0], key, grid: DOLL_GRID };
-}
-
-/** One table, so a gauntlet and the hand inside it are lit by the same light. */
-export function lookKeyColours(palette: Palette): Record<string, string> {
-  const ink = mix(palette.rockDeep, palette.void, 0.6);
-  const out: Record<string, string> = {
-    '#': ink,
-    s: mix(palette.dust, palette.ember, 0.35),
-    e: palette.citrine,
-    h: mix(palette.rockDeep, palette.ember, 0.2),
-    t: mix(palette.dust, palette.rockDeep, 0.5),
-    T: mix(palette.dust, palette.rockDeep, 0.72),
-    l: mix(palette.seam, palette.rockDeep, 0.25),
-    L: mix(palette.seam, palette.rockDeep, 0.5),
-    b: mix(palette.ember, palette.rockDeep, 0.55),
-    w: mix(palette.ember, palette.rockDeep, 0.55),
-    m: mix(palette.chalk, palette.rockDeep, 0.45),
-    M: palette.chalk,
-    g: palette.amethyst,
-    f: mix(palette.ember, palette.flame, 0.5),
-  };
-
-  // One entry per family and ink. Two sets never share a colour, which is the
-  // whole reason a family's art is rewritten into its own characters.
-  for (const [family, art] of Object.entries(FAMILY_ART)) {
-    const t = art.tone;
-    out[roleChar(family, 'p')] = t.mass(palette);
-    out[roleChar(family, 'P')] = t.lit(palette);
-    out[roleChar(family, 'd')] = t.dark(palette);
-    out[roleChar(family, 'x')] = t.trim(palette);
-    out[roleChar(family, 'X')] = t.trimLit(palette);
-  }
-  return out;
-}
-
-/** One pose of one loadout, painted. */
-export function drawLook(
-  ctx: CanvasRenderingContext2D,
-  palette: Palette,
-  look: Look,
-  pose: PoseId
-): void {
-  drawPixels(ctx, { rows: lookRows(look, pose), key: lookKeyColours(palette), grid: DOLL_GRID });
-}
-
-export function makeLookFrames(palette: Palette, look: Look): HTMLCanvasElement[] | null {
-  const frames: HTMLCanvasElement[] = [];
-  for (const pose of POSE_IDS) {
-    const made = cell();
-    if (!made) return null;
-    drawLook(made.ctx, palette, look, pose);
-    frames.push(made.canvas);
-  }
-  return frames;
-}
-
 export const RANKS: MonsterRank[] = ['common', 'magic', 'rare'];
 
 /** How a creature and its rank name one set of frames. */
@@ -511,7 +357,7 @@ function drawCreature(
   rank: MonsterRank,
   size = CELL
 ): void {
-  const art = sprite === 'hero' ? heroArt(palette, frame) : monsterArt(palette, sprite, frame, rank);
+  const art = monsterArt(palette, sprite, frame, rank);
   if (art) drawPixels(ctx, art, size);
 }
 

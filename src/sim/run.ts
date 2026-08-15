@@ -9,7 +9,7 @@ import { WALL, generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from '.
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
-import { HERO_DOLL, heroScale, heroSpriteFor, lookOf } from './appearance';
+import { HERO_SCALE, heroSpriteFor } from './appearance';
 import {
   armourReduction,
   characterStats,
@@ -63,7 +63,7 @@ import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
-import type { Boost, Item, Look, SkillDef } from '../types';
+import type { Boost, Item, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
 /** Built once at load: derived from authored data and never mutated. */
@@ -170,10 +170,8 @@ const HURT_POSE = 0.16;
 export interface Entity {
   id: number;
   kind: EntityKind;
-  /** Which monster kind this is; 'hero' for the hero. Renderer art key. */
+  /** Which body draws it: a monster's id, or the hero's TRADE. */
   sprite: string;
-  /** Worn art keys, for anything the renderer draws in layers. */
-  look?: Look;
   /** How much of a tile the art covers. */
   scale: number;
   /** Common, magic or rare. Drives size, halo and what it is worth. */
@@ -414,13 +412,12 @@ export class RunSim {
         );
     const stats = characterStats(character);
 
-    const worn = heroSpriteFor(character); // `look` is the DOLL's: an empty one still draws
+    const worn = heroSpriteFor(character);
     const hero: Entity = {
       id: 0,
       kind: 'hero',
       sprite: worn,
-      ...(worn === HERO_DOLL ? { look: lookOf(character) } : {}),
-      scale: heroScale(worn),
+      scale: HERO_SCALE,
       rank: 'common',
       x: map.entrance.x,
       y: map.entrance.y,

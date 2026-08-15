@@ -6,7 +6,7 @@
  * `x` is the RANK accent — dull on a common one, lit on a magic, blazing on a
  * rare. The rank also grows the body and puts a halo round it; see `haloed`.
  */
-import { gridRows, mix } from './gear-art';
+import { gridRows, mix } from './renderer';
 import type { Palette } from './renderer';
 
 export interface BeastTone {

@@ -54,7 +54,6 @@ import {
   animates,
   bodyTop,
   generatedFrame,
-  makeLookFrames,
   makeProp,
   makeSheet,
   rankedKey,
@@ -71,10 +70,7 @@ import {
 } from '../vignettes';
 import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
-import { CAST_POSES, POSE_IDS, SWING_POSES, WALK_POSES } from './pose';
 import { SKILL_BY_ID } from '../data';
-import { lookKey } from './look';
-import type { PoseId } from './pose';
 
 /** How far past the grid the rock is drawn, so a chamber near the boundary
  *  does not end on a straight lit line with nothing past it. */
@@ -170,28 +166,6 @@ export async function createPixiRenderer(
   let offX = 0;
   let offY = 0;
 
-  /**
-   * Hero textures per loadout. Built on demand and kept: gear changes rarely,
-   * and rebuilding four 48px canvases is cheaper than carrying every
-   * combination of twelve families and four slots up front.
-   */
-  const looks = new Map<string, Texture[]>();
-  function looked(e: Entity): Texture[] | null {
-    if (!e.look) return null;
-    const key = lookKey(e.look);
-    const held = looks.get(key);
-    if (held) return held;
-    const frames = makeLookFrames(palette, e.look);
-    if (!frames) return null;
-    const made = frames.map((canvas) => {
-      const texture = Texture.from(canvas);
-      texture.source.scaleMode = 'linear';
-      return texture;
-    });
-    looks.set(key, made);
-    return made;
-  }
-
   /** How far through its own swing, 0 to 1. */
   const through = (e: Entity): number =>
     Math.max(0, Math.min(1, 1 - e.actionTimer / ATTACK_POSE));
@@ -200,16 +174,6 @@ export async function createPixiRenderer(
    *  body read — one asks for a pose and the other for an animation. */
   const casting = (e: Entity): boolean =>
     e.skillId ? (SKILL_BY_ID[e.skillId]?.tags.includes('spell') ?? false) : false;
-
-  /** What the figure is doing, as a pose. */
-  function poseOf(e: Entity, elapsed: number): PoseId {
-    if (e.action === 'attack') {
-      const swing = casting(e) ? CAST_POSES : SWING_POSES;
-      return swing[Math.min(swing.length - 1, Math.floor(through(e) * swing.length))];
-    }
-    if (e.action !== 'move') return 'walk0';
-    return WALK_POSES[Math.floor(elapsed * WALK_CYCLE) % WALK_POSES.length];
-  }
 
   /** Everything a generated body needs to pick a frame, in one place. */
   const cel = (e: Entity, elapsed: number): Cel => ({
@@ -604,12 +568,7 @@ export async function createPixiRenderer(
     }
 
     const s = spriteFor(e);
-    // A layered figure has a frame per POSE; everything else has a walk cycle
-    // that only advances while it is actually moving.
-    const worn = looked(e);
-    if (worn) {
-      s.texture = worn[POSE_IDS.indexOf(poseOf(e, elapsed))] ?? worn[0];
-    } else {
+    {
       const frames = framesFor(e);
       // A generated body has named STATES and picks among them off what it is
       // DOING — a melee swing and a cast are different animations, and which
@@ -656,12 +615,10 @@ export async function createPixiRenderer(
     // as a bug rather than as a climb.
     s.y = cy(e.y) + Math.sin(e.facing) * lunge + sunk * 0.8;
 
-    // A bob under the frames. The doll rises on its two PASS frames, so its
-    // bob runs at half the frame rate or the two fight each other; a creature
+    // A bob under the frames, for a body with no walk of its own: a creature
     // has a frame per step and bobs on every one.
     if (e.action === 'move' && !animates(e.sprite, cel(e, elapsed))) {
-      const beat = worn ? 0.5 : 1;
-      s.y -= Math.abs(Math.sin((elapsed * WALK_CYCLE - 0.5) * beat * Math.PI)) * 0.05;
+      s.y -= Math.abs(Math.sin((elapsed * WALK_CYCLE - 0.5) * Math.PI)) * 0.05;
     }
 
     // Sprites are authored facing right; flip rather than rotate so they

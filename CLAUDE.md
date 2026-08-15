@@ -83,15 +83,17 @@ peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
 magnified crop, because every fault worth finding is invisible at ship size.
 
 **THE HERO IS GENERATED, and he IS his TRADE.** `heroSpriteFor` in
-`src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, then
-`wanderer`, then the hand-drawn doll. BOTH trades have a body now, so the
-wanderer — a starved man bare-headed and in wrecked clothes — is the FALLBACK
-rather than who you start as, and there is no nobody to start as: the trade is
-chosen when the character is made. Equipped gear does not change the sprite.
+`src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, and
+`wanderer` only for a trade with no look of its own. There is no nobody to
+start as: the trade is chosen when the character is made.
 
-A look is a WHOLE BODY, generated as one and animated like any monster. **Every
-trade has one, so `gear-art.ts`, `look.ts`, `POSES` and `Look` — the hand-drawn
-doll and the per-slot layers it was dressed in — can go in one piece.**
+**Equipped gear does not change the sprite, and there is no longer any art that
+could.** The paper doll is GONE — `body.ts`, `gear-art.ts`, `look.ts`, `pose.ts`,
+the `Look` type, `lookOf`, the per-loadout texture cache and the two model
+viewers, about 1,900 lines. A hero was a figure with four slots of armour and a
+weapon layered over it, each authored against a neutral pose and shifted per
+pose; a hero is now one generated body that wears nothing. What a character
+wears is on the sheet, not on the sprite.
 
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
 and `tools/art/generated.json` is what came BACK, one row per thing.
@@ -118,9 +120,8 @@ is LEVELLED onto the roster's own brightness at import** (`BodySpec.luma`,
 `tables.mts`): bodies asked in the same words land different distances from
 black, and three that arrived at luma 43–56 now measure 30–35 with the rest.
 
-They are drawn at `scale` 1.35–1.9 rather than the doll's 1, since a generated
-body spans about 69% of its grid where the hand-drawn doll spans nearly all of
-24. **The Gaunt is at 3.2 and is a GIANT** — the user's call, after judging it
+They are drawn at `scale` 1.35–1.9, since a generated body spans about 69% of
+its grid where a hand-drawn one spans nearly all of 24. **The Gaunt is at 3.2 and is a GIANT** — the user's call, after judging it
 in a descent: twice the height it stood at, which is twice the width too,
 because `scale` is one number and both renderers apply it uniformly. Its
 `radius` doubled with it, since separation is what stops a pack walking through

@@ -244,6 +244,14 @@ export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alp
   return { colour, alpha: aura.incDamage || aura.incArmour ? 0.07 : 0.09 };
 }
 
+/** Sparse art as full rows: a table keyed by row number, padded to the grid.
+ *  Every hand-drawn table is written that way — only the rows with ink in
+ *  them are typed out. */
+export const gridRows =
+  (grid: number) =>
+  (from: Record<number, string>): string[] =>
+    Array.from({ length: grid }, (_, y) => from[y] ?? '.'.repeat(grid));
+
 /** Parse `#rgb` / `#rrggbb` into components. */
 function rgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '').trim();
