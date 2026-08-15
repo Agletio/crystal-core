@@ -509,8 +509,16 @@ the user's instruction (`83b8488`). These outlived them:
 twice — once for a zone, once for a body — and each step is a row in a file
 rather than a change to code.
 
+**A DESIGN is approved before a rotation is paid for.** `create_image_pixflux`
+draws one sprite from text for ONE generation in ~30s; `create_character` in
+`mode: 'v3'` with `reference_image_base64` then rotates that exact sprite into
+eight directions for two more. So a body nobody likes costs one generation.
+Three things settle at the design step and nowhere else — the silhouette, the
+proportions and the TONE, the last through `color_image_url`, which takes a
+palette as an image and is the only thing that made a body dark.
+
 **A body is now four commands**, and `tools/art/body.mts` is all of them.
-`bodies.json` beside it is what to SAY and `sandbox.json` is what came BACK, so
+`bodies.json` beside it is what to SAY and `generated.json` is what came BACK, so
 a body can be re-asked without anybody reconstructing the words.
 
 1. **Write the ask off the game's OWN documentation**, into `bodies.json`.
@@ -530,11 +538,11 @@ a body can be re-asked without anybody reconstructing the words.
 5. **`npx tsx tools/art/sandbox.mts`**, then look at the room. Reads the
    manifest, writes the three tables, asks the generator for nothing.
 
-**What a body costs**: one `create_character`, then per state 2–3 generations
-per facing. Six states over five facings is about 60 generations and half an
-hour of waiting; the same body on east alone is 13. **A roster of twenty is
-around 1,200 generations at five facings** — real money, and the reason
-`bodies.json` records the words rather than only the ids.
+**What a body costs, measured end to end**: 1 design + 2 to rotate + 5 per
+animation over the five east facings. A five-state body is **about 30
+generations**; a roster of twenty is around 600. The earlier figure of 60 a body
+came from asking for a whole character and judging it afterwards, which is the
+order this pipeline replaces.
 
 **Five facings, not eight.** `GeneratedArt.dirs` runs north to south and the
 renderer already mirrors anything facing left, so the western three are
@@ -920,11 +928,11 @@ slab and grown inward it eats a thin limb.
       accept that every one is generated per zone it fights in. The second is
       generations; the first is code. Ranks are still light applied at runtime,
       and that has to keep working either way.
-- [ ] **Then the roster.** ~60 generations per body at five facings, half an
-      hour of waiting apiece, so twenty is around 1,200 — real money, and the
-      reason `bodies.json` records the words rather than only the ids. The
-      process is written up under "The process, as it now stands" below and has
-      been run end to end twice.
+- [ ] **Then the roster.** MEASURED at about **30 generations a body**, not the
+      60 this file used to quote: one design, two to rotate, and five per
+      animation over five facings. Twenty bodies is around 600. The waiting is
+      the real cost — an animation is 2-4 minutes and they pace against a
+      ten-job rate limit, so a body is most of an hour whatever it bills.
 - [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
       `GENERATED`, so an id in both is a generated body that never draws,
       silently — it cost a whole session's judgement once. The demo fails a

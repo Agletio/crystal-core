@@ -734,6 +734,39 @@ and at five facings a body is ninety canvases at four bytes a pixel. `GRID` in
 `tables.mts` is 96 for the same reason, Pixi scales by the texture's own
 width, and `GLOW.reach` is scaled by `grid / CELL` or the light swallows it.
 
+**A design is APPROVED before a rotation is paid for.** `create_image_pixflux`
+draws one sprite from text for ONE generation in about thirty seconds;
+`create_character(mode='v3', reference_image_url=…)` then rotates that exact
+sprite into eight directions for two more. So the order is design, approve,
+rotate, animate — and a body nobody likes costs one generation rather than
+thirty. Judging a full character and then throwing it away is what this
+replaces.
+
+**`mode` decides the BODY and `proportions` decides the HEAD.** `standard` is
+the default and is template-based: one rigged skeleton posed over and over, so
+every body it draws shares a silhouette whatever the description says. `v3` is
+free of the template. `proportions` defaults to a preset whose skull is about a
+third of body height, and only `standard` reads it — `v3` and `pro` ignore it,
+along with `text_guidance_scale`, so with v3 the words are the only lever.
+
+**A generated body will not go DARK on words alone, and a forced palette is the
+lever that works.** Asked twice with the whole warm family excluded by name, v3
+returned ivory both times. `color_image_url` takes a palette as an image — a
+data: URI is accepted — and every body forced onto one came back dark and
+stayed dark. Every zone floor is pale by decision, so a body that is not dark
+does not separate from any of them.
+
+**Only the EAST half is animated.** `directions` on `animate_character` takes a
+list, the renderer mirrors anything facing left, and the western three are the
+same pixels paid for twice — 37.5% off every animation. And a body is rotated
+at 96, which is the grid it ships at: at 128 an animation costs two generations
+per direction instead of one, for detail the camera never shows.
+
+**What a body COSTS, measured rather than quoted.** One design, two to rotate,
+and five generations per animation over five directions — about **30
+generations for a finished body** with five states. A roster of twenty is
+around 600, not the 1,200 written down before any of it had been run.
+
 **A state names WHICH WINDOW of its animation to keep.** A generation degrades
 across its run and the tail is where it goes: a walk grows a crook, a swing
 turns to face the camera, an ask naming a weapon the rotation does not hold
@@ -741,6 +774,20 @@ draws a different one per frame. `from`/`to` are fractions and they are not a
 nicety; which part is usable is a fact about that generation and belongs beside
 its id. Ask in `mode: 'v3'` from a written pose — a template animation is a
 lurch — say "staying in strict side profile", and keep `frame_count` low.
+
+**A body can DIE and can FLINCH, and neither was reachable until it was
+wired.** Death is not an `EntityAction` — it is a state of a body, so it rides
+on `Cel` as `dead`/`dying` and plays over `DEATH_FADE`. `hurt` IS an
+`EntityAction` and the sim has always set it on every hit; nothing read it.
+Both play their run ONCE and hold on the last frame, through `once()`, which
+the swing shares: a fall that loops is a body getting up again.
+
+**There is no RUN, and a body may not be given one.** `EntityAction` has a
+single movement action, and `stepMonster` returns before moving until a monster
+has aggroed — so a monster's movement is ALWAYS a chase and one of walk and run
+could never draw, which the "every frame that ships is reached" check fails. The
+one movement animation is asked for as a hungry stride. A real split needs
+unaggroed monsters to wander, which is a change to the SIM.
 
 **A pip over a monster's head says it SHOOTS, and only where the body does
 not.** `castsVisibly` asks whether the body has an animation of its own for
