@@ -848,14 +848,14 @@ it guards, so `home` is the anchor and the reach is about a tile. It moves by
 `glide` tests a centre — and the demo holds all three halves: that it stirs,
 that it stays, and that it is never in rock.
 
-**There is STILL no run, and a body may not be given one.** `EntityAction` has
-a single movement action and both a wander and a chase draw it, so one of walk
-and run would never draw and the "every frame that ships is reached" check
-fails. The one movement animation is asked for as a hungry stride. What the
-pace changed is that a SPLIT is now possible — an unwoken body has a movement
-of its own to animate — but nothing has been generated for it and adding a
-second movement action is still a change to the sim, the manifest and every
-body's ask.
+**There is ONE movement state and a body may not be given a second.**
+`EntityAction` has a single movement action and both a wander and a chase draw
+it, so one of a walk and a run would never draw and the "every frame that ships
+is reached" check fails. The state is named `walk` for the ACTION, not for the
+gait — **the hero's is a RUN**, because his `moveSpeed` says he is running, and
+the monsters' are hungry strides because theirs say they are not. What the pace
+changed is that a SPLIT is now possible; adding a second movement action is
+still a change to the sim, the manifest and every body's ask.
 
 **NOTHING is labelled as a shooter, because the body says it.** The pip over a
 thrower's head is gone and so is `castsVisibly`: only a body marked `throws`
@@ -863,10 +863,22 @@ can throw, there is one per family, and each has its own animation for every
 bolt it carries. A label doing a silhouette's job is a label to delete the
 moment the silhouette can do it.
 
-**A walk cycle is measured in GROUND COVERED, never in seconds.** `STRIDE` is
-tiles per frame and `Entity.walked` is what a body has actually walked, so a
-run is a run and a walk is a walk out of one number — off the clock the feet
-cover two tiles a stride, and what that reads as is moving too fast.
+**A gait is measured in GROUND COVERED, never in seconds, and the unit is the
+CYCLE.** `STRIDE_CYCLE` is tiles per whole gait cycle and `Entity.walked` is
+what a body has actually covered. Off the CLOCK a body skates. Per FRAME — which
+is how it was written — the frame COUNT decides the gait: six frames carry a
+body half again as far per footfall as four, for no reason but how many pictures
+were kept. `GeneratedArt.stride` is the per-body override and `strideOf` divides
+it down.
+
+**And the ANIMATION has to depict the distance the body actually covers.** A
+monster covers 0.84 tiles a footfall at `moveSpeed` 2.3; the hero covers 1.26 at
+3.4. A 1.26-tile step is a RUN — 2.7 footfalls a second, which is what legs do
+at that speed — so drawn as a tired trudge it read as skating, and that is the
+whole of why the hero looked wrong. **Check the arithmetic before re-rolling
+art**: tiles per cycle is `stride`, footfalls a second is `moveSpeed / stride *
+2`, and if the pose does not match those numbers no amount of re-generating
+fixes it.
 
 **A transform may not stand in for a frame that exists.** The lunge toward a
 target and the bob under a walk were the only motion a hand-drawn body had;

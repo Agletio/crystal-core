@@ -140,8 +140,10 @@ id in both is a generated body that never draws, which the demo fails on.
 `hurt`, `death`, and a cast — one `cast` for the Gaunt and the three NAMED ones
 (`bolt`, `frost_bolt`, `arc`) for the Bonecaller, since a state is looked up by
 the SKILL's id first. `hurt` and `death` play once and hold on the last frame.
-There is no `run`: the sim has one movement action, so a body's walk is both its
-chase and the PACING it does before it has seen you — a small anchored wander
+There is one movement state and it is named for the ACTION rather than the gait
+— the HERO's is a run, because at `moveSpeed` 3.4 he covers 1.26 tiles a
+footfall and that is what legs do at that speed; a monster's is a hungry stride
+at 0.84. It is both its chase and the PACING it does before it has seen you — a small anchored wander
 about the spot it was placed, because a pack standing perfectly still reads as
 props rather than as things waiting.
 
