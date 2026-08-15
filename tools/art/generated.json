@@ -165,7 +165,23 @@
     "south-east",
     "south"
    ],
-   "states": {}
+   "states": {
+    "idle": {
+     "group": "b0a98186-91c2-4624-9e3f-7f8f2223047f"
+    },
+    "walk": {
+     "group": "df8068f7-2080-4e25-92ec-40a0ab31ce66"
+    },
+    "attack": {
+     "group": "7ffa32e1-6cb7-4582-a79d-aa176557f82e"
+    },
+    "hurt": {
+     "group": "eb116607-5fb6-4e17-a9f7-1b311b6c5fd4"
+    },
+    "death": {
+     "group": "b31b6cda-22bb-48f2-b402-3ed8458edeb8"
+    }
+   }
   },
   {
    "sprite": "heap",
@@ -177,7 +193,23 @@
     "south-east",
     "south"
    ],
-   "states": {}
+   "states": {
+    "idle": {
+     "group": "6ca95716-858d-4ec0-a15b-eeb1f0c06bd7"
+    },
+    "walk": {
+     "group": "8dc1e3c6-1186-4b8b-8d81-11dcd2916d98"
+    },
+    "attack": {
+     "group": "5578df15-2a0f-4590-abb7-44b47c88f2b5"
+    },
+    "hurt": {
+     "group": "29576237-da4c-45a4-8218-69c670562dd9"
+    },
+    "death": {
+     "group": "5fda2264-c5a7-4d35-aaae-306907f8326c"
+    }
+   }
   }
  ],
  "props": [
