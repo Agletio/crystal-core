@@ -1089,14 +1089,10 @@ was ever meant to be scattered.
       arrangement pass. It is one `Set` in `src/sim/grid.ts` and emptying it
       turns `dressRooms` off for every zone — no zone has furniture then, which
       is what the three other zones already are.
-- [ ] **THE ONE THING TO CONFIRM BEFORE STARTING: do the wall roots stay?**
-      Two readings of the ask, and they differ by one line. **(A)** keep the
-      ground cover ONLY — `dressWalls` goes too, and "the flat looking ones and
-      the vines on the walls" is a list of what to remove. **(B)** keep the
-      ground cover AND the wall roots — that sentence is the exception list, the
-      "flat looking ones" being the stones themselves. Written as **(B)**
-      because the sentence sits next to the exception; ask, and if it is (A),
-      delete the `dressWalls` call and `WALL_PROPS` with it.
+- [ ] **The wall roots STAY. Asked and answered:** *"its just delete everything
+      placed in the dressRooms pass? Keeping scattered stones and vines and
+      stuff."* So `dressWalls` and `coverFloor` are untouched and the
+      arrangement pass is the whole of what goes.
 - [ ] **Nothing else moves.** `coverFloor` keeps its table, its rates and its
       order. `VIGNETTES`, `PROP_ART` and the two furniture sets STAY IN THE
       FILE: a scene places props by hand, the backlog's per-zone furniture comes
@@ -1126,9 +1122,8 @@ was ever meant to be scattered.
   this phase.
 
 **Done when.** A Fissure descent draws loose stone under an otherwise empty
-floor — plus roots on the cut face if the answer is (B) — with nothing standing
-on it anywhere, `npm run peek` shows it, and the demo asserts that rule instead
-of the old one.
+floor, with roots on the cut face and nothing standing on the ground anywhere,
+`npm run peek` shows it, and the demo asserts that rule instead of the old one.
 
 **What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
 `peek`, `shots`.
@@ -1192,63 +1187,165 @@ suite is green.
 **What must not break, in order.** `comments`, `typecheck`, `demo`, `build`,
 `peek`, `smoke`.
 
-### Phase 3 — The rest of the roster
+### Phase 3 — An older, dimmer floor under the Fissure
 
-**The palette question is ANSWERED and the phase is unblocked.** It was never
-code: a body that is asked DARK, through a forced palette at the design step,
-separates from all four zone floors — which are all pale by decision — so
-nothing needs re-inking onto CSS properties and nothing needs generating per
-zone. The three skeletons are the proof. Open question 8 is closed.
+**Asked for directly.** *"Go ahead and recolor the floor, try and make it a
+little less bright, make it a little more like ancient cavern vibes."*
 
-**What is true today.** `GENERATED` holds three bodies and a player fights all
-of them: the **Husk** is `hewer`, the **Gaunt** is `gaunt`, the **Bonecaller**
-is `shroud` — Normal family, `undead`, six states apiece (idle, walk, attack,
-hurt, death, and a cast; three NAMED casts for the Bonecaller). `BEASTIARY` is
-21 hand-drawn creatures at grid 24, and the Demonic and Prismatic pools are six
-apiece, all hand-drawn, standing on generated ground.
+**What is true today.** The Fissure draws `lit_round`, a 25-tile generated Wang
+set shipped whole as a data URI in `src/render/generated-tiles.ts` and written
+by `tools/art/zoneset.mts emit`. It is BAKED HEX — every other pixel in the game
+takes its ink from a CSS property at draw time, and a generated surface is what
+gave that up. Its ask is `CAVE` in `zoneset.mts`, a pale rock-dust floor under
+near-black broken stone.
 
-**Read "The process, as it now stands" and "Doing this a thousand times" above
-before spending anything.** Both are written for a session with no memory of
-this one, and the second one is the list of things that have already cost time.
+**Why it is wrong.** The floor is bright enough to read as sand rather than as
+stone somebody stopped working, and the Fissure's own line in `MAP_THEMES` is a
+working somebody gave up on.
 
-- [ ] **The Demonic and Prismatic pools, twelve bodies.** They are the two zones
-      whose ground is generated and whose bodies are not, which is the mismatch
-      the Fissure just stopped having. About 360 generations and a day of
-      waiting — the wall clock is the budget, not the generations.
-- [ ] **Watch the SOURCE SIZE, which is the real ceiling.** Three bodies are
-      2.63 MB; twelve more is about 10 MB of `generated-art.ts` and a committed
-      `docs/app.js` to match. That is probably the practical limit for "every
-      sprite is a list of strings", and going past it is a `RULES.md` decision
-      rather than a phase. Measure it as you go and say so before it bites.
-- [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
-      `GENERATED`, so an id in both is a generated body that never draws,
-      silently — it cost a whole session's judgement once. The demo fails a
-      shared id; keep that check.
+- [ ] **Do it as a colour pass at EMIT, not as a generation.** `zoneset.mts
+      emit` already reads `tools/art/cache/zones/<name>.png` and base64s it; the
+      change is a pass over those pixels before the encode, so re-colouring is
+      free and repeatable and nothing is asked of the generator. **The cached
+      PNG may not survive the container** — the durable copy of that sheet is
+      the data URI already in `generated-tiles.ts`, so read it back out of there
+      if the cache is gone.
+- [ ] **Shift the sheet GLOBALLY, never per tile.** Floor and rock are one
+      image and tiles interlock at their edges; two tiles shifted differently is
+      the checkerboard that every mixing experiment in this file already failed
+      on. Darkening plus a pull off saturation toward the zone's own
+      grey-brown is the shape of it — an old cavern is dim and desaturated, not
+      a hue swap.
+- [ ] **The TONE RULE outranks the ask.** A LIGHT floor under near-black rock,
+      said at both ends. `cavern_lit` is the measured counter-example sitting
+      beside the shipping set: asked pale-rock-over-dark-floor, it reads INSIDE
+      OUT, the pale expanse taking the eye as ground and the room reading as a
+      hole punched in it. So the floor may get dimmer and older; it may not
+      approach the rock, and if the pass takes it there the pass has gone too
+      far.
+- [ ] **The bodies are the other end of it.** All three skeletons are asked
+      near-black because every zone floor is pale by decision. A floor taken
+      far enough down costs them their silhouette, so judge the floor with
+      monsters standing on it — which is what `npm run peek` is.
+- [ ] **Only the Fissure.** The other three sets are not in the ask and each
+      was toned off its own zone's line.
 
 **Traps.**
 
+- **`docs/app.js` is committed and carries the sheet.** A re-emit changes a
+  data URI inside the bundle, so `npm run build` is not optional and the diff
+  will be large and unreadable. That is expected.
+- **`generated-tiles.ts` says "Do not edit by hand" and means it.** The pass
+  belongs in `zoneset.mts` so the next re-emit does not undo it.
+- **Props are toned to the ground they stand on.** `PropSpec.tone` pulls a
+  generated prop toward the ground's mean and spread, and those were computed
+  against the CURRENT floor. Moving the floor moves what the cover reads as, so
+  look at the loose stone after the shift, not just the tiles.
+- **`canvas2d` is untouched** — it has no sprites and keeps its drawn rock. It
+  is the fallback and has always looked different.
+
+**Done when.** The Fissure floor reads dimmer and older in a live descent, the
+rock is still unmistakably darker than it, the three skeletons still separate
+from it, and the pass that did it is a function in `zoneset.mts` rather than an
+edited data URI.
+
+**What must not break, in order.** `comments`, `typecheck`, `build`, `peek`,
+`shots`.
+
+### Phase 4 — Six Normal monsters, all of them the skeletons' kind
+
+**The ask CHANGED, and it got much smaller.** *The user's words: "Have it just
+be the normal mobs, but cut some of the medium sized ones out so there's only 6
+mobs total (keeping the three skeletons we just made with good art obviously),
+and then make sure they are all based around the art created with the skeletons.
+That sort of vibe."* So the Demonic and Prismatic pools are OUT of this phase
+entirely — twelve bodies and a day of wall clock became three bodies and a cut.
+
+**What is true today.** The Normal pool is **11** rows in `MONSTERS`, three of
+them generated:
+
+| id | sprite | art | weight | what it is |
+|---|---|---|---|---|
+| `grub` | `grub` | drawn | 1000 | the commonest thing in the pool |
+| `husk` | `hewer` | **generated** | 800 | the mine skeleton with the tool |
+| `sparkmite` | `sparkmite` | drawn | 700 | tiny, elemental |
+| `stalker` | `stalker` | drawn | 600 | fast, weak, beast |
+| `cinder_hound` | `cinder_hound` | drawn | 520 | beast |
+| `shale_crawler` | `shale_crawler` | drawn | 480 | beast, tough |
+| `gale_wisp` | `gale_wisp` | drawn | 420 | elemental |
+| `rime_crab` | `rime_crab` | drawn | 340 | beast, tough |
+| `gaunt` | `gaunt` | **generated** | 300 | the tall one |
+| `bonecaller` | `shroud` | **generated** | 300 | robed, throws |
+| `brute` | `brute` | drawn | 260 | humanoid, the heavy |
+
+**Why it is wrong.** Eight hand-drawn creatures at grid 24 standing beside three
+generated bodies at grid 96 is two art eras in one pack, and it is the mismatch
+the ground stopped having when every zone got a set.
+
+**Read "The process, as it now stands" and "Doing this a thousand times" above
+before spending anything.** Both are written for a session with no memory of
+this one, and the second is the list of what has already cost time.
+
+- [ ] **Six rows in the Normal pool, and the three skeletons are three of
+      them.** The other eight are cut from `MONSTERS`.
+- [ ] **Three new GENERATED bodies, in the skeletons' register** — near-black
+      bone, dried gore, `undead`, told apart by SILHOUETTE the way the first
+      three are. That is what "that sort of vibe" is, and the asks already in
+      `tools/art/bodies.json` are the reference for how to say it.
+- [ ] **Choose the three by ROLE, not by which drawn monster is liked.** The
+      skeletons cover a common melee (Husk), reach (Gaunt) and a thrower
+      (Bonecaller). What the pool loses with the eight is a SWARM — `grub` at
+      weight 1000 is the commonest thing a player meets — something FAST
+      (`stalker`), and a HEAVY (`brute`, `rime_crab`). Those are the three
+      silhouettes to design: small and many, quick, and big and slow.
+- [ ] **Redistribute the weights so the pool still has a common one.** Six rows
+      sharing 11 rows' worth of weight is not a rescale — decide what a player
+      meets most and say so.
+- [ ] **The hand-drawn grids STAY in `BEASTIARY`.** A cut monster is a row
+      removed from `MONSTERS`, not art deleted: `SPRITE_KINDS` sweeps that
+      table, the renderers name `grub`, `stalker` and `brute` directly
+      (`canvas2d`'s fallback radius, `renderer.ts`'s colour cases, pixi's
+      warm-up texture) and the demo asks `framesOf('grub')`. Deleting the art
+      is a second phase and nobody asked for one.
+- [ ] **Watch the SOURCE SIZE.** Three bodies are 2.63 MB of
+      `generated-art.ts`; three more is about 5.3 MB, plus a committed
+      `docs/app.js` carrying the same. Measure it and say the number — the
+      practical ceiling for "every sprite is a list of strings" is somewhere
+      near 10 MB and going past it is a `RULES.md` decision, not a phase.
+
+**Traps.**
+
+- **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
+  `GENERATED`, so an id in both is a generated body that never draws, silently
+  — it cost a whole session's judgement once. Do not name a new body `grub`.
+- **A generated body wants `scale` 1.45–1.6, not the doll's 1**, and the demo
+  fails a fought generated monster under 1.3. A SWARM body is the awkward one:
+  it has to read small, and the way to do that is its own `scale` and `radius`
+  rather than leaving it at the doll's.
+- **The boss reinforces `from: 'husk'`** (`BOSSES` in `src/data.ts`). That
+  survives this phase, but anything cut is worth grepping for the same shape.
+- **`MONSTER_ABILITIES` is rolled per PACK off the run's rng and is not keyed
+  by monster**, so cutting rows does not touch what a pack throws. The demo's
+  danger and ladder measurements DO move, because the pool's composition
+  changes what a band fights — measure it, print it, carry on. Balance is not
+  tuned.
 - **The demo's `THE SANDBOX` section is gone and this phase still owes what it
   was for.** What survived is table-level: every frame that ships is reached, a
-  swing and a cast draw different runs, each thrown skill has its own animation,
-  no transform stands in for a frame. What went with the room is the only check
-  that DROVE a body — that every facing is SEEN in a live sim, that a caster
-  actually casts. A generated body in a descent is where that comes back.
-- **A generated body wants `scale` 1.45–1.6, not the doll's 1.** It spans about
-  69% of its grid where the doll spans nearly all of 24. The demo holds it.
-- **Hand-drawn and generated bodies in ONE pack pool read as two art eras.**
-  Normal is 11 monsters and 3 of them are generated. That is the thing to look
-  at in a descent before deciding whether a pool gets finished or left alone.
+  swing and a cast draw different runs, each thrown skill has its own
+  animation, no transform stands in for a frame. What went with the room is the
+  check that DROVE a body — every facing SEEN in a live sim, a caster actually
+  casting. A generated body in a descent is where that comes back.
 
-**Done when.** Every monster a player meets in a zone with a generated floor is
-a generated body, or the ones that are not are named here with a reason.
+**Done when.** `MONSTERS` holds six Normal rows, every one of them a generated
+body in the skeletons' register, and a Fissure descent reads as one art era.
 
-**What is NOT in this phase.** A true GIANT. The Gaunt is tall but built on the
-same 96 grid as the others, so height is all it has. It has now been judged in a
-descent and the answer came back — **Phase 2 doubles it** — so what is still not
-here is a body GENERATED to be imposing rather than an existing one drawn
-bigger.
+**What is NOT in this phase.** The Demonic and Prismatic pools, which are
+twelve hand-drawn bodies and are now nobody's phase — they are the backlog until
+asked for. And a true GIANT: the Gaunt is tall on the same 96 grid as the
+others, **Phase 2 doubles it**, and a body GENERATED to be imposing is still not
+written down anywhere.
 
-### Phase 4 — A quest log instead of a pointing finger
+### Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1408,51 +1505,6 @@ Every one is parked deliberately. Ask before acting on any of them.
    `56d599a`: the wall tile placed one row lower than it is keyed, flanks turned
    a quarter, no near wall. Nothing is blocked on it and it was never asked for
    twice; it is here so nobody rediscovers the geometry.
-
-10. **Can the Fissure floor be RECOLOURED, and should it be?** *Asked by the
-    user: "Can we recolor the floor easily in the fissure zone?"* The first half
-    is answered here so the second half is one sentence.
-
-    **Not the way a hand-drawn zone is.** Every other pixel in the game takes
-    its ink from a CSS property at draw time, which is what makes a zone
-    recolour for free; a generated tileset is BAKED HEX, shipped whole as a
-    data URI in `src/render/generated-tiles.ts`, and giving that up was what the
-    generated surface cost. There is no palette to move.
-
-    **Three ways it can still be done, cheapest first, none of them a
-    generation.**
-
-    - **A colour pass at EMIT.** `tools/art/zoneset.mts emit` reads
-      `tools/art/cache/zones/<name>.png` and base64s it; a hue/tone pass over
-      those pixels before the encode is the whole change, and re-emitting is
-      free and repeatable. It is the same shape as the deleted sandbox's
-      `tone`/`retoned`, which moved an alternate set onto the first set's mean
-      and spread per channel. Shift the sheet GLOBALLY rather than per tile: the
-      floor and the rock are one image, tiles interlock at their edges, and two
-      tiles shifted differently is the checkerboard every mixing experiment
-      already failed on.
-    - **A tint at DECODE.** `pixi.ts` slices the sheet into one canvas per tile
-      inside the renderer's own await. A pass over those canvases — or
-      `sprite.tint` on the floor sprites — is per-zone colour at runtime, which
-      is the nearest thing to the palette that was given up. A tint MULTIPLIES,
-      so it can only darken or colourise, never lighten. `canvas2d` is
-      unaffected either way; it has no sprites and keeps its drawn rock.
-    - **Ask for the set again.** `zoneset.mts ask/get/emit` off a new colour
-      line, which is a few generations and a round of judging. The only route
-      that changes the stone's DETAIL rather than its hue.
-
-    **What constrains all three is the TONE RULE, and it is not negotiable.** A
-    LIGHT floor under near-black rock, said at both ends. `cavern_lit` is in
-    `zoneset.mts` as the measured counter-example: asked the zone's own way
-    round, pale rock over a dark floor, it reads INSIDE OUT — the pale expanse
-    takes the eye as ground and the room reads as a hole punched in it. A hue
-    the floor is allowed to be is a wide choice; a floor darker than its rock is
-    not one of them. The bodies are the other end of it: all three are asked
-    near-black because every zone floor is pale, so a floor that goes dark
-    costs the monsters their silhouette.
-
-    **What is NOT answered: whether to, and to what.** Nothing is blocked on it
-    and no phase assumes it. Name a colour and it is the emit pass.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
