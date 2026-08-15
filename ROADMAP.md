@@ -868,9 +868,11 @@ look is a row in `GENERATED` like every other body.
   completed and billed. Both forms are one regex and both must be handled.
 - **A ROTATION'S SIZE COMES FROM THE REFERENCE IMAGE, not from `size`.** The
   wanderer was rotated with `size: 96` off a 128 design and came back 128x128.
-  That matters twice over: at 128 a v3 animation costs TWO generations per
-  direction rather than one, and an edit still only takes 4 frames. Rotating
-  from a design already reduced to 96 is 2 generations and buys both back.
+  That matters three times over: at 128 a v3 animation costs TWO generations per
+  direction rather than one, a body is **1.78x the source** it would be at 96,
+  and a `create_character_state` of it inherits the size for good. **`body.mts
+  rotate` resamples the design to `size` before sending it**, which is the fix;
+  the re-rotation cost 2 generations and came back 96x96.
 - **THE SOURCE SIZE IS THE WALL, not the generation budget.** SIX bodies are
   **4.67 MB** of `generated-art.ts` — about **0.8 MB per body** at grid 96. It
   gzips ~19:1 so the wire is fine, but the REPO carries the raw megabytes and
@@ -1341,7 +1343,7 @@ can drift into being a different person.
 
 | | generations | source |
 |---|---|---|
-| the base man, rotated | **2, spent** — `c169b1f2-813a-400b-bc6b-17ec3baf9226` | |
+| the base man, rotated at 96 | **2, spent** — `b1eb6625-be3c-4f5d-9a1d-2bf19dd5928c` | |
 | animate the base man, six states | ~68 | ~0.8 MB |
 | each trade: one state + its animations | 40 + ~68 = **~108** | ~0.8 MB |
 | **two trades now** | **~216** | ~1.6 MB |
@@ -1392,10 +1394,11 @@ five; measure the first trade look and put the number here.
 - **A generated body is drawn at its own `scale`**, 1.35-1.9 rather than the
   doll's 1, because it spans about 69% of its grid. A hero left at 1 renders a
   third smaller than the pack he stands in.
-- **He was rotated at 128, not the 96 a body ships at**, because the reference
-  image's size beats the `size` argument. At 128 a v3 animation costs two
-  generations per direction — so re-rotating off a 96 design pays for itself on
-  the first animation, and every trade state after it inherits the size.
+- **A state inherits its source's SIZE**, so the base man being at 96 is what
+  keeps every trade look at 96. He was first rotated at 128 — the reference
+  image's size beats the `size` argument — which is 1.78x the source per body
+  and two generations a direction to animate. `body.mts rotate` resamples the
+  design to `size` before sending it now, and re-rotating cost 2.
 - **Anything that must MATCH goes in one call.** A look is one
   `create_character_state`; asking for its helm and its coat separately is two
   different helms.
@@ -1591,10 +1594,11 @@ Every one is parked deliberately. Ask before acting on any of them.
 
 11. **Does the base man keep his backpack?** The rotation gave the wanderer a
     pack the design forbade in as many words — "no weapon, no armour, no pack" —
-    and it is on all five facings. He is now the no-trade look AND the ancestor
-    of every trade state, so it would be on all eleven bodies for good. Three
-    generations re-designs him and two re-rotate; doing it also lands him at 96
-    instead of 128, which halves every animation after it.
+    and it survived the re-rotation at 96 on all five facings. He is now the
+    no-trade look AND the ancestor of every trade state, so it is on all eleven
+    bodies for good, and it is the loudest thing in his silhouette from behind
+    — which is the half a trade look has to compete with. Three generations
+    re-designs him and two re-rotate. Nothing else is blocked on it.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls

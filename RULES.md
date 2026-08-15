@@ -769,9 +769,11 @@ around 600, not the 1,200 written down before any of it had been run.
 
 **A rotation's SIZE comes from the reference image, not from `size`.** The
 wanderer was asked for at `size: 96` off a 128 design and came back 128x128.
-`size` is what a body ships at and a design is drawn at 128, so the two disagree
-and the design wins — reduce the design to the grid before rotating, or pay two
-generations a direction for every animation after it.
+A design is drawn at 128 and a body ships at 96, so the two always disagree and
+the design wins — which costs two generations a direction for every animation
+after it, **1.78x the source per body**, and the size is inherited by every
+`create_character_state` of that character. `body.mts rotate` resamples the
+design to `size` before it sends it, and that is not optional.
 
 **AN EDIT IS CONSISTENT WITHIN A CALL AND NOT ACROSS ONE.** `edit_image` applies
 one edit to a LIST of frames and the docs sell it for "a character's

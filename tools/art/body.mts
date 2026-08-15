@@ -22,7 +22,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { callTool, download, fields, urlsIn } from './mcp.mts';
-import { decodePng, encodePng } from './png.mts';
+import { decodePng, encodePng, type Decoded } from './png.mts';
 
 interface StateAsk {
   say: string;
@@ -159,6 +159,32 @@ function palette(): string {
   return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
 }
 
+/** A square design at another size, area-averaged. This is a REFERENCE and not
+ *  art that ships, so it is not held to the integer rule the conversion is —
+ *  what it has to be is the size the rotation should come back at. */
+function resample({ width, height, rgba }: Decoded, size: number): string {
+  const out = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const x0 = Math.floor((x * width) / size);
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) * width) / size));
+      const y0 = Math.floor((y * height) / size);
+      const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * height) / size));
+      const sum = [0, 0, 0, 0];
+      for (let sy = y0; sy < y1; sy++)
+        for (let sx = x0; sx < x1; sx++) {
+          const a = rgba[(sy * width + sx) * 4 + 3];
+          for (let c = 0; c < 3; c++) sum[c] += rgba[(sy * width + sx) * 4 + c] * a;
+          sum[3] += a;
+        }
+      const n = (y1 - y0) * (x1 - x0);
+      const d = (y * size + x) * 4;
+      for (let c = 0; c < 3; c++) out[d + c] = sum[3] ? Math.round(sum[c] / sum[3]) : 0;
+      out[d + 3] = Math.round(sum[3] / n);
+    }
+  return encodePng(size, size, out).toString('base64');
+}
+
 if (command === 'design') {
   // ONE image, one generation, ~30 seconds. Everything after this costs thirty,
   // so a body nobody likes is meant to die here.
@@ -209,17 +235,18 @@ if (command === 'design') {
     console.log(`${dir}/${sprite}-${facing}.png`);
   }
 } else if (command === 'rotate') {
-  // The approved design, turned into eight facings. `size` is 96 and not the
-  // design's 128: 96 is the grid a body ships at, and at 128 every animation
-  // costs two generations per direction instead of one.
-  const png = readFileSync(process.argv[4]).toString('base64');
+  // The approved design, turned into eight facings at the grid a body SHIPS at.
+  // The reference's own size beats `size` — a 128 design came back 128 — and at
+  // 128 an animation costs two generations a direction and a body is 1.78x the
+  // source. So the design is resampled to `size` before it is sent.
+  const size = body!.size ?? 96;
   const out = await callTool('create_character', {
     name: body!.name,
     description: body!.look,
     body_type: 'humanoid',
     mode: 'v3',
-    reference_image_base64: png,
-    size: body!.size ?? 96,
+    reference_image_base64: resample(decodePng(readFileSync(process.argv[4])), size),
+    size,
     view: 'high top-down',
   });
   console.log(said(out, /id|status/i));
