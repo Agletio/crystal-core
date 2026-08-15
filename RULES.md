@@ -691,6 +691,16 @@ REST spec also LIES: `/rotate` documents 16–200 and takes only 128, 64, 32 or
 16. Reach for the MCP tools first; `tools/art/*` still holds the CONVERSION,
 which is worth keeping whatever does the asking.
 
+**The MCP TOOL LIST IS NOT THE WHOLE API.** `https://api.pixellab.ai/mcp/docs`
+points at `https://api.pixellab.ai/v2/llms.txt`, and
+`https://api.pixellab.ai/v2/openapi.json` is the same thing machine-readable.
+Most v2 endpoints are the MCP tools renamed, but `POST /transfer-outfit-v2` has
+no MCP tool: it applies an outfit from a REFERENCE IMAGE across animation
+frames, which is the one reskin that is anchored to a picture rather than to a
+prompt. **Read both pages before deciding a thing cannot be done** — three
+sessions have now lost time to a capability sitting in plain sight, and the
+third was this one.
+
 **The MCP tools may not be in a session's tool list, and that is not a
 blocker.** The server answers plain JSON-RPC over ONE POST returning a single
 `data:` line, with no session to hold — `tools/art/mcp.mts` is that, and

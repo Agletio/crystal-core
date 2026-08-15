@@ -577,6 +577,40 @@ rather than on the art.
 
 ### The generator, as it actually is
 
+**THE MCP TOOL LIST IS NOT THE WHOLE API, and the docs page says where the rest
+is.** `https://api.pixellab.ai/mcp/docs` ends with a pointer to
+`https://api.pixellab.ai/v2/llms.txt`, and `https://api.pixellab.ai/v2/openapi.json`
+is the machine-readable version. Most v2 endpoints ARE the MCP tools under
+another name — `/edit-animation-v2` is `edit_image`, and its frame tiers match
+what was measured — but one has no MCP tool at all:
+
+- **`POST /transfer-outfit-v2`** takes a REFERENCE IMAGE of an outfit and applies
+  it across animation frames, "maintains animation motion while changing
+  appearance". That is a reference-anchored reskin rather than a text-prompted
+  one, which is the thing `edit_image` cannot do — every batch is anchored to the
+  same picture instead of re-imagining the outfit per call. **At 96 it holds
+  THREE frames a request** (81-256px is a 2x2 grid and the reference eats a
+  slot), so over a body's ~70 frames it is 24 Pro calls and worse economics than
+  `create_character_state` plus an animation. **It is the right tool the day a
+  look has to land on frames that already exist**, and the wrong one for building
+  a look from scratch. `additional_instructions` is where a view hint goes.
+- `/interpolation-v2` fills frames BETWEEN two keyframes, 16-128px. Nothing wants
+  it today; it is the answer if a 4-frame state ever needs to be 8.
+- `/animate-with-text-v3` states the budget the v3 cost scales on:
+  `width x height x frame_count <= 524,288`. At 96 that is 56 frames.
+- `create_portrait_character(direction='character_to_portrait')` turns a finished
+  character into a bust portrait — which is `PORTRAITS` in
+  `src/render/portraits.ts`, the grid-48 shoulders-up table every speaker needs.
+  20 generations at sizes up to 64. Nobody has spent one; the four speakers are
+  hand-drawn.
+- `create_image_pro` takes up to **four LABELLED reference images**, each with a
+  `usage` note saying what to take from it ("character base", "outfit and
+  armour"). That labelling is what makes combining references work at all.
+
+**A tool's cost is the GRID it fills, not the thing you asked for.** Measured on
+the account: `edit_image` over one 128 frame is 20 generations and over four is
+40, and a rotation is 2. So batching is most of what a piece costs.
+
 - **`create_topdown_tileset` tops out at 21 distinct corner combinations.** 16
   tiles at transition 0/0.25/0.5, 25 at 1.0 — and the 25 are 21 keys plus four
   wall CONTINUATIONS that share their corners with a twin. No prompt, mode or
