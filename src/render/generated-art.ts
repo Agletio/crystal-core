@@ -1,7 +1,7 @@
 /**
- * Written by `tools/art/sandbox.mts`. Do not edit by hand.
+ * Written by `tools/art/tables.mts`. Do not edit by hand.
  *
- * The sandbox's bodies, generated through the MCP server and reduced to the
+ * The generated bodies, off the MCP server and reduced to the
  * same list of strings every hand-drawn one is. Each carries its OWN key: the
  * five inks belong to `BEASTIARY`, not to the renderer.
  */

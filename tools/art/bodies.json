@@ -1,5 +1,5 @@
 {
- "_": "What to ASK the generator for. `sandbox.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
+ "_": "What to ASK the generator for. `generated.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
  "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
  "dirs": [
   "north",

@@ -1,5 +1,5 @@
 /**
- * Written by `tools/art/sandbox.mts`. Do not edit by hand.
+ * Written by `tools/art/tables.mts`. Do not edit by hand.
  *
  * Furniture for a room with generated ground under it. `PROPS` in
  * `renderer.ts` is the hand-drawn answer and is decals; this is a picture, so

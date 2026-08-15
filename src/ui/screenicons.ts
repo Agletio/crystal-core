@@ -175,19 +175,6 @@ const ICONS: Record<string, string[]> = {
     '..........',
     '..........',
   ],
-  // A frame with a body standing in it: a room you go to look at something.
-  'dev-sandbox': [
-    '..........',
-    '.########.',
-    '.#......#.',
-    '.#..##..#.',
-    '.#..##..#.',
-    '.#.####.#.',
-    '.#..##..#.',
-    '.#.#..#.#.',
-    '.########.',
-    '..........',
-  ],
 };
 
 export const GRID = 10;

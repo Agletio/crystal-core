@@ -11,7 +11,6 @@ import type { ScenePlan } from '../scenes';
 import {
   COVER_PROPS,
   COVER_RATE,
-  HUNG_PROPS,
   SOLID_PROPS,
   VIGNETTES,
   WALL_PROPS,
@@ -272,19 +271,15 @@ export function wangKey(grid: Grid, x: number, y: number): number {
 /**
  * Rock a generated SET cannot draw, opened until none is left. A set answers 21
  * of the 81 corner keys, and what it lacks is not a gap in the art but shapes
- * its terrain model never makes — a diagonal step in a wall is the one this
- * carve makes and that one does not. Drawn as the nearest key it holds, such a
- * cell puts a cut face where solid rock belongs; built from quadrants of other
- * tiles it puts a sliver of floor inside the stone, which measured worse. So it
- * is GEOMETRY, exactly as `thinRock` was: only ever OPEN rock, so nothing can
- * be stranded, run to a fixed point since one cell moves its neighbours.
+ * its terrain model never makes — a diagonal step in a wall is one. Drawn as
+ * the nearest key it holds, such a cell puts a cut face where solid rock
+ * belongs, so it is GEOMETRY exactly as `thinRock` is: only ever OPEN rock, and
+ * run to a fixed point, since opening one cell moves its neighbours.
  */
-function fitCorners(grid: Grid, zone: string, keep: Vec2[] = []): void {
+function fitCorners(grid: Grid, zone: string): void {
   const set = ZONES[zone];
   if (!set) return;
   const known = new Set(set.tiles.map((t) => t.key));
-  // Rock something is HUNG on stays rock: opening it leaves a torch on air.
-  const held = new Set(keep.map((v) => v.y * grid.width + v.x));
   for (let pass = 0; pass < 12; pass++) {
     let opened = 0;
     for (let y = -1; y <= grid.height; y++) {
@@ -300,7 +295,7 @@ function fitCorners(grid: Grid, zone: string, keep: Vec2[] = []): void {
             const cx = x + dx;
             const cy = y + dy;
             if (cx < 1 || cy < 1 || cx >= grid.width - 1 || cy >= grid.height - 1) continue;
-            if (grid.at(cx, cy) !== WALL || held.has(cy * grid.width + cx)) continue;
+            if (grid.at(cx, cy) !== WALL) continue;
             if (
               grid.at(cx - 1, cy) === WALL && grid.at(cx + 1, cy) === WALL &&
               grid.at(cx, cy - 1) === WALL && grid.at(cx, cy + 1) === WALL
@@ -335,8 +330,7 @@ export function dressRooms(
   keep: Vec2[] = []
 ): MapProp[] {
   const out: MapProp[] = [];
-  // Dressing over a hand-placed prop, the hole or the person standing in the
-  // room is furniture on top of furniture.
+  // Over the hole, or over a hand-placed prop, is furniture on furniture.
   const taken = new Set(keep.map((v) => v.y * grid.width + v.x));
 
   const clear = (x: number, y: number, w: number, h: number): boolean => {
@@ -384,8 +378,7 @@ export function dressRooms(
 
 /** Furniture you go AROUND rather than over. Blocked one tile at a time and
  *  UNDONE the moment it cuts anything off: a prop that walls a passage is a map
- *  the hero stands still in forever, and no amount of an altar being solid is
- *  worth that. Never in a passage to begin with, which is most of it. */
+ *  the hero stands still in forever, and no altar is worth that. */
 function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
   const spared = new Set(must.map((v) => v.y * grid.width + v.x));
   for (const p of props) {
@@ -554,6 +547,9 @@ function reachable(grid: Grid, from: Vec2): Set<number> {
 /** Rooms joined by corridors. `layoutComplexity` off the crystal and the
  *  tier's own `sizeScale` both drive the map's size and its room count, so "of
  *  Winding Ways" and a deeper tier each produce a genuinely longer walk. */
+/** Arrangements per chamber, over the 30 a descent can hold. */
+const DRESS_PER_ROOM = 1;
+
 export function generateMap(
   mods: RolledMod[],
   rng: Rng,
@@ -605,10 +601,8 @@ export function generateMap(
   }
   const exit = roomCenter(exitRoom);
 
-  // The room chain should already connect everything, but an unreachable exit
-  // produces a hero that stands still forever — the worst failure mode in
-  // something you sit and watch. Prove reachability; carve straight through
-  // if the generator somehow failed.
+  // An unreachable exit is a hero that stands still forever, which is the worst
+  // failure in something you sit and watch. Prove it, and carve if it failed.
   const exitKey = Math.round(exit.y) * grid.width + Math.round(exit.x);
   if (!reachable(grid, entrance).has(exitKey)) {
     carveCorridor(grid, entrance, exit, rng, 0); // straight, whatever the world
@@ -622,50 +616,39 @@ export function generateMap(
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  return { grid, rooms, entrance, exit, props: [], vein, theme, bare: !!zone, zone };
+  // A generated surface is DRESSED, and only a generated one: the furniture,
+  // the cover and the growth are generated pictures, which a zone drawing its
+  // own rock has none of.
+  const props: MapProp[] = [];
+  if (zone) {
+    // Its own stream, or dressing a map moves which monsters spawn in it.
+    const dress = new Rng(rng.int(1, 1e9));
+    // The hole, the way out, and every room's MIDDLE — which is where
+    // `placeIn` puts a pack that could not find room.
+    const keep = [entrance, exit, ...rooms.map(roomCenter)].map((v) => ({
+      x: Math.round(v.x),
+      y: Math.round(v.y),
+    }));
+    props.push(...dressRooms(grid, rooms, dress, DRESS_PER_ROOM, keep));
+    props.push(...dressWalls(grid, dress, [...keep, ...props]));
+    props.unshift(...coverFloor(grid, dress));
+    block(grid, props, keep);
+  }
+
+  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone };
 }
 
 /**
  * The map an authored room is: ONE chamber, cut the way its world cuts, with
  * the hole you came up out of and nothing else. Beside `generateMap` rather
- * than a flag on it, and sharing `carveRoom` — the part that makes a scene the
- * same rock as a descent. The plan is absolute tiles and every roll is off a
- * fixed seed, so a room is the same room every time it is entered.
+ * than a flag on it, sharing `carveRoom`. The plan is absolute tiles and the
+ * cut is hashed off the tile it lands on, so a room is the same room always.
  */
-export function sceneMap(
-  plan: ScenePlan,
-  theme: MapTheme,
-  vein = 1,
-  bare = false,
-  zone?: string
-): GameMap {
-  // `also` is more chambers, cut the same way. Where they do not touch they
-  // are JOINED by the same wandering corridor a descent is joined by, so a
-  // scene can be a winding cavern rather than one hall — the rng is fixed,
-  // because a place you come up in is the same place every time.
-  const rooms = [plan.room, ...(plan.also ?? [])];
-  const grid = new Grid(
-    Math.max(...rooms.map((r) => r.x + r.w)) + 2,
-    Math.max(...rooms.map((r) => r.y + r.h)) + 2
-  );
-  const cut = plan.cut ?? CUT[theme] ?? 'dug';
-  const spare = [...plan.props, plan.entrance, plan.stands, ...(plan.patrol ?? [])];
-  for (const r of rooms) carveRoom(grid, r, cut, spare);
-  if (plan.joins) {
-    const rng = new Rng(1);
-    for (const [a, b] of plan.joins) {
-      if (rooms[a] && rooms[b]) {
-        carveCorridor(grid, roomCenter(rooms[a]), roomCenter(rooms[b]), rng, WOBBLE[cut]);
-      }
-    }
-  }
-  if (zone) {
-    fitCorners(
-      grid,
-      zone,
-      plan.props.filter((p) => HUNG_PROPS.has(p.id)).map((p) => ({ x: p.x, y: p.y - 1 }))
-    );
-  }
+export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
+  const rooms = [plan.room];
+  const grid = new Grid(plan.room.x + plan.room.w + 2, plan.room.y + plan.room.h + 2);
+  const spare = [...plan.props, plan.entrance, plan.stands];
+  carveRoom(grid, plan.room, CUT[theme] ?? 'dug', spare);
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
@@ -673,17 +656,6 @@ export function sceneMap(
   // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
   // walk to, and one tile carrying both means nothing draws a second hole.
   const props = [...plan.props];
-  const plain = plan.plain ?? [];
-  const busy = [...spare, ...(plan.busy ?? [])];
-  if (plan.dress) {
-    const loose = rooms.filter((r) => !plain.includes(r));
-    props.push(...dressRooms(grid, loose, new Rng(2), plan.dress, busy));
-  }
-  // What the ROCK does is its own decision, and is most of what a room needs.
-  if (plan.grown) {
-    props.push(...dressWalls(grid, new Rng(3), [...busy, ...props], plain));
-    props.unshift(...coverFloor(grid, new Rng(4)));
-  }
-  block(grid, props, [entrance, plan.stands, ...(plan.busy ?? []), ...(plan.patrol ?? [])]);
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare, zone };
+  block(grid, props, [entrance, plan.stands]);
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: false };
 }

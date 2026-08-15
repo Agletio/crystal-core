@@ -1,19 +1,16 @@
 /**
  * Scenes: the authored rooms you come up into at the end of a cleared descent.
- * A `RunSim` over a map nobody generated — one room, the props where somebody
- * put them, the people in it, and at most one thing to put down. What a later
- * room adds is a field here; `src/scenes/*` is content.
+ * A `RunSim` over a map nobody generated — one chamber, the props where
+ * somebody put them, the people in it. `src/scenes/*` is content.
  */
-import type { Cut, MapProp, Room, Vec2 } from './sim/grid';
+import type { MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
 import { WORKSHOP } from './scenes/workshop';
 import { READING_ROOM } from './scenes/reading-room';
 import { OSSUARY } from './scenes/ossuary';
 import { ORRERY } from './scenes/orrery';
-import { SANDBOX } from './scenes/sandbox';
 
-/** What somebody DOES between two lines, off the pose machinery that already
- *  exists — so a beat may never lean on one for meaning. */
+/** What somebody DOES between two lines, off the pose machinery that exists. */
 export type SceneAct = 'pace' | 'work' | 'face';
 
 export interface SceneBeat {
@@ -21,30 +18,13 @@ export interface SceneBeat {
   act?: SceneAct; // what is done while the line is on screen
 }
 
-/** A body to be LOOKED at: nothing it deals or takes lands on anything. */
-export interface SceneDummy {
-  sprite: string;
-  at: Vec2;
-  scale: number;
-  ability?: string; // a `MONSTER_ABILITIES` id: the thrown ones are the cast
-  rooted?: boolean; // holds its post rather than chasing, so a layout survives
-  speed?: number; // a multiplier on move speed, for a room meant to be watched
-}
-
-/** The room and everything standing in it, in absolute tiles. */
+/** The room and everything standing in it, in absolute tiles. Nothing scatters
+ *  into one: what the ROCK does belongs to a descent, out of `generateMap`. */
 export interface ScenePlan {
   room: Room;
-  also?: Room[]; // more chambers, cut the same way
-  joins?: [number, number][]; // which of them a corridor connects, by index
-  cut?: Cut; // how the rock is cut, over whatever the zone's own answer is
   entrance: Vec2; // the only hole: `GameMap.exit` is this tile too
   stands: Vec2; // where the person is before the hero has crossed to them
-  patrol?: Vec2[]; // a circuit the SANDBOX hero walks, so every facing shows
-  busy?: Vec2[]; // tiles a body already stands on: no furniture, never blocked
   props: MapProp[]; // put exactly here, by hand
-  plain?: Room[]; // chambers laid out by hand: nothing is scattered into one
-  dress?: number; // and this many VIGNETTES scattered per chamber besides
-  grown?: boolean; // and what the rock does on its own: cover, and what grows
 }
 
 export interface SceneDef {
@@ -57,10 +37,6 @@ export interface SceneDef {
   beats?: SceneBeat[]; // the room's own person, before the fight
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
-  dummies?: SceneDummy[]; // and their presence is what makes a room a SANDBOX
-  bare?: boolean; // the zone's own rock stands down. Pixi only
-  zone?: string; // a generated tileset for the whole surface
-  hero?: SceneDummy; // a body the hero is drawn as, over the doll it is made of
 }
 
 // A person smaller than the things you kill reads as set dressing.
@@ -74,8 +50,8 @@ export const scaleFor = (sprite: string): number =>
 
 export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, OSSUARY, ORRERY];
 
-/** `SCENES` is what the SCHEDULE walks, so a room outside it — the sandbox —
- *  is a room no amount of playing ever arrives in. */
+/** Every room is in `SCENES`: one the schedule cannot reach is one nobody
+ *  arrives in. */
 export const SCENE_BY_ID: Record<string, SceneDef> = Object.fromEntries(
-  [...SCENES, SANDBOX].map((s) => [s.id, s])
+  SCENES.map((s) => [s.id, s])
 );

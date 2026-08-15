@@ -6,17 +6,18 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**The Fissure is drawn by a GENERATED TILESET, in the real game.** Not the
-sandbox — a live descent. The other three zones still draw their own rock. The
+**The Fissure is drawn by a GENERATED TILESET, in the real game** — a live
+descent. The other three zones still draw their own rock. The
 decision open question 8 was parked on has been taken by the user in the doing:
 generated art ships, and the runtime palette is what it cost.
 
-**The SANDBOX is being deleted and the work moves into the game.** *The user's
+**The SANDBOX IS DELETED and the work has moved into the game.** *The user's
 call, in their words: "We are going to just delete the sandbox and start
 updating graphics in the actual game. I think it either works or it doesn't."*
-That is Phase 1 below. Judging art in a room nobody plays turned out to cost a
-round trip on every question — the room is dressed as the Fissure, so anything
-learnt there had to be re-checked in a descent anyway.
+A Fissure descent is now the dressed room the sandbox was — cover at the wall
+feet, roots on the cut face, arrangements you can read — and `npm run peek` is
+pointed at one. Judging art in a room nobody plays cost a round trip on every
+question, and there is nothing left to round-trip through.
 
 ### If it does not work, revert to one of these
 
@@ -25,12 +26,12 @@ Two clean points, both pushed. **Tags could not be pushed — the remote answers
 
 | commit | what it is |
 |---|---|
-| `3f31b6a` | the last commit with the Fissure still HAND-DRAWN. The generated tileset exists but only the sandbox uses it. Reverting here undoes the zone in the game and keeps everything else. |
+| `3f31b6a` | the last commit with the Fissure still HAND-DRAWN. The generated tileset exists but nothing a player runs uses it. Reverting here undoes the zone in the game and keeps everything else. |
 | `83b8488` | the BLANK room: every generated tileset deleted, props and bodies kept. Reverting here drops generated terrain entirely. |
 | `9c85286` | before this session. The old two-tile wall, the chasms, the lightmap. |
 
-`452887c` is the commit that put the tileset into the Fissure, and it is the
-only one that touches what a player runs. Everything before it is the sandbox.
+`452887c` is the commit that put the tileset into the Fissure. Everything
+before it was the sandbox, and the sandbox is gone.
 
 ## How to work
 
@@ -41,17 +42,59 @@ one, `git fetch` and check you are on the tip of the branch: a phase you can
 still see in a stale clone may already be built. Do not promote a backlog item
 into a phase without being asked.
 
-**`npm run shots` is RED and it predates all of this.** `desktop: the first
-descent never met the Lampwright` — it reaches the room and the first bubble,
-then never advances to `#met`. Verified by stashing: it fails identically at
-`9c85286` with nothing modified. Not diagnosed. Do not read it as a regression
-and do not spend a phase on it without being asked.
+**`npm run shots` was RED for `desktop: the first descent never met the
+Lampwright`, and it is GREEN now.** It was never diagnosed, and it has NOT been
+fixed on purpose: dressing a descent consumes one draw from the run's own rng,
+which shifts every roll after it, and the first descent now happens to reach
+`#met`. So it is a seed away from coming back. If it does, that is the old
+undiagnosed fault and not a regression.
 
-**What the last thirteen phases turned out to know that their writing did not.**
+**What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
-**What the last thirteen phases turned out to know that their writing did not.**
-Kept here because the next thing built on top of them will want it.
+- **The sandbox's deletion had to answer its own trap, and it answered it the
+  expensive way.** The phase said either keep a descent that dresses or delete
+  the prop tables and say so. `VIGNETTES`, `COVER_PROPS`, `WALL_PROPS`,
+  `STAIN_PROPS`, `SOLID_PROPS` and every entry in `PROP_ART` were reachable
+  ONLY through the sandbox — `generateMap` returned `props: []` and the four
+  authored rooms are not `bare` — so deleting the room would have retired every
+  generated prop in the repo one phase before Phase 2 generates more. So
+  `generateMap` dresses, gated on `ZONE[theme]`: cover, growth on the face and
+  `DRESS_PER_ROOM` arrangements per chamber. The other three zones get it free
+  the moment they get a set.
+- **`Grid.solid` was a layer the PATHFINDER did not know about.** `findPath`
+  and `nearestByPath` tested `grid.at(...) === WALL` where everything else asks
+  `grid.walkable`, so the first descent with furniture in it walked the hero
+  onto a brazier and parked it there for 5,821 ticks: every repath from a tile
+  it cannot stand on comes back empty, and the descent never ends. It was
+  invisible while only the sandbox had furniture, because nothing in that room
+  had to reach an exit. Anything asking "can a body be here" asks `walkable`.
+- **A body could always clip a wall CORNER, and the demo's six seeds missed
+  it.** `advance` interpolated straight to the next waypoint with no
+  walkability test: waypoints never cut a corner, but a body pushed off the
+  lattice by separation can cross one getting back to them. Measured on the
+  UNCHANGED code over 60 seeds it happens on one of them — so it is pre-existing
+  and the rng shift merely landed on it. `glide` moves per axis now, and both
+  movers measure 0 ticks in rock over 80 seeds each.
+- **`RULES.md` and `CLAUDE.md` describe a renderer that is partly not there,
+  and this phase only fixed what it touched.** `lightMap`, `ROCK_TOP`,
+  `ROCK_REACH`, `GRAIN`, `GLOW_PROPS`, `WALL_FACE`, `thinRock`, `wangCorners`,
+  `wangNear`, `wangShadow`, `VOID` and every chasm are all named in prose and
+  none exists in `src/` — they went with `83b8488` and `aecbe3c` and the docs
+  did not follow. The sandbox and chasm passages are gone from both files now;
+  **anything else either file says about the renderer is worth grepping for
+  before trusting.** What the deleted work FOUND is still true and is written up
+  further down this file.
+- **`torch` and `hung` are generated art nothing places.** They are
+  `HUNG_PROPS`, which is placed by hand and never scattered, and the hand that
+  placed them was the shrine. `roots` keeps the set load-bearing because
+  `dressWalls` scatters it. The first authored room built on a generated set is
+  what they are waiting for.
+- **A scene lost its multi-chamber machinery with the room that used it.**
+  `ScenePlan` is `room`, `entrance`, `stands`, `props` and nothing else:
+  `also`, `joins`, `cut`, `patrol`, `busy`, `plain`, `dress` and `grown` were
+  all the sandbox's, and no authored room ever used one. Putting `also`/`joins`
+  back is about ten lines of `sceneMap` and it is in the history at `2b965bc`.
 
 - **A phase's seven measured traps were all real, and all cheap.** The skills
   phase named seven things a fresh session would get wrong, every one of them
@@ -816,52 +859,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — Delete the sandbox; judge in the game
-
-**The user's call, in their words:** *"We are going to just delete the sandbox
-and start updating graphics in the actual game. I think it either works or it
-doesn't."* Take it before anything else, because every phase after it is
-graphics work and this is what decides where that work is looked at.
-
-**What is true today.** `#dev-sandbox` on the rail opens `SANDBOX` in
-`src/scenes/sandbox.ts` — a scene outside `SCENES`, reached only through
-`SCENE_BY_ID`. It carries seven chambers, a ring of corridors, a hand-laid
-shrine of twenty props, eleven dummies and a patrol. `RULES.md` has a long
-section of rules that exist only for it (`SceneDef.dummies`, nothing loses life,
-Abandon as the only way out, a body PACES).
-
-**Why it goes.** It is dressed as the Fissure, so anything learnt in it had to
-be re-checked in a descent anyway — every question this session asked cost that
-round trip. The Fissure now draws the same tileset, so a descent IS the sandbox,
-with monsters that fight back.
-
-- [ ] **Delete `src/scenes/sandbox.ts` and the `#dev-sandbox` rail button.**
-      `SCENE_BY_ID` loses its one entry that is not in `SCENES`.
-- [ ] **Delete `SceneDef.dummies` and everything downstream** — the
-      no-one-dies guard in `dealDamage`, the dropped-target-every-tick rule,
-      `rooted`, `SHOW_FIGHT`/`SHOW_WALK`, the PACE walk, `ScenePlan.busy` and
-      `patrol`. Check each against a real `SceneDef` first: the Lampwright's
-      workshop and the boss rooms use the same machinery and must not lose it.
-- [ ] **`GameMap.bare` STAYS.** It is what the Fissure runs on now. What goes is
-      the room, not the mechanism.
-- [ ] **Keep `npm run peek`, pointed at a DESCENT.** It is the only tool that
-      magnifies a crop, and every fault this session was invisible at ship size
-      and obvious at 4x. `descent.tmp.mjs` in the scratchpad is the shape:
-      launch, wait, shoot. Fold it into `tools/sandbox-peek.mjs` and rename.
-- [ ] **The demo's sandbox checks go with it.** They are in the section that
-      also checks the shrine, the cover split and `HUNG_PROPS`; the prop rules
-      are about the GAME and have to survive, the room's do not.
-- [ ] **`RULES.md` loses its sandbox section, `CLAUDE.md` its description.**
-
-**Traps.** The dev kit and `smoke.mjs` both name `dev-sandbox`. And the shrine
-is the only place `HUNG_PROPS`, `STAIN_PROPS` and the hand-laid vignette rules
-are exercised — deleting it silently retires those, so either keep a descent
-that dresses, or delete the tables too and say so.
-
-**Done when.** Nothing in the repo mentions the sandbox, the suite is green, and
-a descent is what you look at to judge art.
-
-### Phase 2 — The other three zones
+### Phase 1 — The other three zones
 
 **What is true today.** `ZONE` in `src/sim/grid.ts` has one entry, `fissure`.
 The Rot, the Cavern and the Seam draw their own rock, decals and living motion
@@ -880,11 +878,28 @@ the one state it should not stay in.
       the tendrils, the light travelling a facet. Every zone has some by
       decision. Decide whether they come back as generated props or the zone
       keeps its own motion over a generated floor.
+- [ ] **Each new set brings DRESSING with it, and the furniture is the
+      Fissure's.** `generateMap` dresses whenever `ZONE[theme]` answers, so a
+      zone gets cover, growth and arrangements the moment it gets a set — out
+      of `VIGNETTES`, `COVER_PROPS` and `WALL_PROPS`, which are rails, carts,
+      pit props and mine spoil. That is a WORKING, and the Rot is not one.
+      Decide whether a zone gets its own tables or shares these, and say why.
+
+**Traps.**
+
+- **A SCENE is not bare and stays hand-drawn.** The four authored rooms keep
+  the old rock, so a Fissure descent drawn from a set now hands you into a
+  workshop drawn the old way. Making a scene bare needs `PROP_ART` entries for
+  `bench`, `lamprack` and the lanterns — the demo's "every prop in one is
+  drawn" check is what will say so — and it is a decision, not a fix.
+- **`fitCorners` opens about 40 cells in 2700 and only ever opens**, so a new
+  set with different gaps makes its zone marginally more open. Nothing can be
+  walled off by it, and `demo`'s reachability sweep is what proves it.
 
 **Done when.** Every zone draws a generated set, or the ones that do not are
 named here with a reason.
 
-### Phase 3 — The bodies, in the game
+### Phase 2 — The bodies, in the game
 
 **What is true today.** `GENERATED` in `src/render/generated-art.ts` holds the
 skeleton, the revenant and the delver hero, generated for the sandbox and drawn
@@ -896,8 +911,8 @@ has been run end to end twice. What it costs is the thing to read first: about
 roster of twenty is around 1,200.
 
 - [ ] **One body first, in a descent, at the size a body actually occupies.**
-      Not a model sheet. The whole reason the sandbox is going is that a room
-      is not where this is judged.
+      Not a model sheet. The whole reason the sandbox went is that a room is
+      not where this is judged; `npm run peek` shoots a descent.
 - [ ] **A sprite id may be in ONE table.** `monsterArt` asks `BEASTIARY` before
       `GENERATED`, so an id in both is a generated body that never draws,
       silently — it cost a whole session's judgement once. The demo fails a
@@ -906,9 +921,19 @@ roster of twenty is around 1,200.
       like the tileset. Ranks are still applied at runtime as LIGHT, which is
       the part that must keep working.
 
+**Traps.**
+
+- **The demo's `THE SANDBOX` section is gone and this phase owes what it was
+  for.** What survived is table-level and needs no room: every frame that ships
+  is reached, a swing and a cast draw different runs, each thrown skill has its
+  own animation, no transform stands in for a frame. What went with the room is
+  the only check that DROVE a body — that every facing is seen, that a caster
+  actually casts in a live sim. A generated body in a descent is where that
+  comes back, and it is this phase's to write.
+
 **Done when.** A player fights a generated body in a real descent and it reads.
 
-### Phase 4 — A quest log instead of a pointing finger
+### Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

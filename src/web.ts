@@ -37,7 +37,6 @@ import {
   initRun,
   sceneEnded,
   onRunFocused,
-  openSandbox,
   skipToGift,
   refreshRunPanels,
 } from './ui/run';
@@ -138,9 +137,6 @@ const guard = (id: string, title: string, mode: StartMode) =>
   });
 
 guard('dev-kit', 'Restart with the dev kit?', 'dev');
-
-// Wipes nothing and banks nothing, so unlike the kit beside it it asks nothing.
-document.getElementById('dev-sandbox')!.addEventListener('click', openSandbox);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {

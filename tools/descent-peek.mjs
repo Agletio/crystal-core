@@ -1,17 +1,16 @@
 /**
- * The sandbox room, shot in real Chromium off the committed bundle. The only
- * view that judges the floor: Pixi is the only renderer that draws a generated
- * tileset, so the room cannot be drawn out of the source the way `zone-peek`
- * draws a zone.
+ * A DESCENT, shot in real Chromium off the committed bundle. The only view that
+ * judges the floor: Pixi alone draws a generated tileset, so a map cannot be
+ * drawn out of the source the way `zone-peek` draws a zone.
  *
  * Not part of the suite. Requires a current bundle.
  *
- *   node tools/sandbox-peek.mjs out.png [zoom] [panX] [panY] [crop]
+ *   node tools/descent-peek.mjs out.png [zoom] [panX] [panY] [crop]
  *
  * `zoom` is wheel steps OUT of the default — 0 is close enough to judge a wall,
- * 4 frames a chamber, 9 fits the whole room. `pan` is pixels the map moves
- * under the camera. `crop` is `x,y,w,h,scale`, magnified NEAREST, because a
- * fault half a tile across is invisible at the size it ships at.
+ * 4 frames a chamber, 9 fits a good deal of the map. `pan` is pixels the map
+ * moves under the camera. `crop` is `x,y,w,h,scale`, magnified NEAREST, because
+ * a fault half a tile across is invisible at the size it ships at.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -22,11 +21,11 @@ import { chromium } from 'playwright';
 
 const docs = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs');
 if (!existsSync(join(docs, 'app.js'))) {
-  console.error('sandbox-peek: docs/app.js missing — run `npm run build` first');
+  console.error('descent-peek: docs/app.js missing — run `npm run build` first');
   process.exit(1);
 }
 
-const [out = 'sandbox.png', zoom = 4, panX = 0, panY = 0, crop] = process.argv.slice(2);
+const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop] = process.argv.slice(2);
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 const server = createServer(async (req, res) => {
@@ -55,8 +54,22 @@ await page.evaluate(() => document.getElementById('save-play')?.click());
 await page.waitForTimeout(200);
 await page.evaluate(() => document.querySelector('#welcome-skills .welcomecard')?.click());
 await page.waitForTimeout(700);
-await page.evaluate(() => document.getElementById('dev-sandbox')?.click());
-await page.waitForTimeout(2500);
+// The dev kit, so a descent is dressed at a real run power rather than at the
+// bare Fissure's, and then down the hole. The wait covers the handover.
+await page.evaluate(() => document.getElementById('dev-kit')?.click());
+await page.waitForTimeout(400);
+await page.evaluate(() => document.getElementById('confirm-yes')?.click());
+await page.waitForTimeout(700);
+await page.evaluate(() => document.getElementById('run-launch')?.click());
+await page.waitForTimeout(3000);
+// The kit leaves a screen open and the point is the floor. Escape shuts
+// whatever is on top, and space puts the camera back on the hero.
+for (let i = 0; i < 3; i++) {
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(120);
+}
+await page.keyboard.press('Space');
+await page.waitForTimeout(200);
 
 for (let i = 0; i < Number(zoom); i++) await page.mouse.wheel(0, 120);
 await page.waitForTimeout(400);
@@ -73,8 +86,8 @@ for (let i = 0; i < legs; i++) {
 }
 await page.waitForTimeout(800);
 
-if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'scene') {
-  console.error('sandbox-peek: the sandbox button did not open a room');
+if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'running') {
+  console.error('descent-peek: nothing launched a descent');
   process.exit(1);
 }
 
@@ -103,4 +116,4 @@ if (crop) {
 
 await browser.close();
 server.close();
-console.log(`sandbox-peek: wrote ${out}`);
+console.log(`descent-peek: wrote ${out}`);

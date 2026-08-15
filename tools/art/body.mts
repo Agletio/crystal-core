@@ -1,6 +1,6 @@
 /**
  * Asking the generator for a body, one step at a time. `bodies.json` is what
- * to say and `sandbox.json` is what came back — this walks between them.
+ * to say and `generated.json` is what came back — this walks between them.
  *
  *   npx tsx tools/art/body.mts ask   skeleton      one character, 8 rotations
  *   npx tsx tools/art/body.mts state skeleton      every state, on ONE facing
@@ -41,7 +41,7 @@ const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   props: { id: string; tiles: number; say: string; view?: string; size?: number }[];
 };
 type Made = { sprite: string; states: Record<string, { group: string }> };
-const shipped = JSON.parse(readFileSync(here('sandbox.json'), 'utf8')) as {
+const shipped = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
   hero: Made;
   bodies: Made[];
   props: { id: string }[];
@@ -104,7 +104,7 @@ if (command === 'ask') {
     detail: 'medium detail',
   });
   console.log(said(out, /id|status/i));
-  console.log('put that id in bodies.json AND sandbox.json before going on');
+  console.log('put that id in bodies.json AND generated.json before going on');
 } else if (command === 'state' || command === 'fill') {
   const character = body!.character;
   if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
@@ -116,7 +116,7 @@ if (command === 'ask') {
   for (const [name, ask] of Object.entries(body!.states)) {
     const group = command === 'fill' ? known[name] : undefined;
     if (command === 'fill' && !group) {
-      console.log(`${name}: not in sandbox.json yet — judge it first`);
+      console.log(`${name}: not in generated.json yet — judge it first`);
       continue;
     }
     // Only what is MISSING, so a fill is idempotent: the rate limit answers
@@ -191,7 +191,7 @@ if (command === 'ask') {
 } else if (command === 'props') {
   // ~15-30s each and about five may be in flight, so they go in twos with a
   // pause. Nothing here waits for one: the id is what is wanted, and
-  // `sandbox.mts` reads whatever has finished by the time it runs.
+  // `tables.mts` reads whatever has finished by the time it runs.
   // Only what has no id yet, so a run after adding a row costs one generation.
   // Naming one is how a bad roll is asked for AGAIN.
   const done = new Set(shipped.props.map((p) => p.id));

@@ -48,11 +48,10 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | screenshots, and an overflow probe |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
-| `npm run peek` | the sandbox room, at a zoom, a pan and a magnified crop |
+| `npm run peek` | a DESCENT, at a zoom, a pan and a magnified crop |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
-table, and while the work is the SANDBOX the main game's harnesses are out of
-that loop by the user's decision. **Nothing teaches, by decision:** the guided
+table. **Nothing teaches, by decision:** the guided
 opening was deleted so the first hour can be PLAYED with nothing explaining it,
 and teaching comes back as a quest log once somebody has played it and got
 stuck.
@@ -65,36 +64,21 @@ source.
 `animate_character`, `create_topdown_tileset`) are what the website uses and are
 far beyond the REST API; reach for them first. `tools/art/mcp.mts` speaks to it
 over plain JSON-RPC, so a session with no client for it is not blocked, and
-`tools/art/sandbox.mts` pulls characters, a tileset and props into the three
+`tools/art/tables.mts` pulls characters, a tileset and props into the three
 tables the renderer reads. `tools/art/import.mts` takes a website export straight into
 grids.
 
-**The sandbox** is where generated art is judged: `#dev-sandbox` on the rail,
-nothing dies and nothing ends it. It is a scene with `dummies` rather than a
-mode — the room is `src/scenes/sandbox.ts` and is the one scene outside
-`SCENES`, so the schedule can never hand you it. It is a SHOWCASE and laid out
-like a DESCENT: chambers the size `generateMap` cuts (`ScenePlan.also`), eight
-tiles of rock apart so what joins them is a TUNNEL, in a ring with two spurs
-through a chamber in the middle of it — a loop with nothing inside is a donut.
-A `grown` room swells into HEADLANDS and keeps ISLANDS of rock standing in it,
-which is what makes a chamber a cavern rather than a hall; the swell only ever
-adds, and an island never lands on furniture a room was authored around. The
-hero walks the `patrol` ring, swinging at what came into reach and then moving
-on regardless — `SHOW_FIGHT`/`SHOW_WALK` — or bodies in reach pin it where it
-stands and one facing of one animation is all it ever shows. A body PACES near
-where it was put while nothing is happening to it, for the same reason —
-`ScenePlan.busy` is where they stand, and neither furniture nor a chasm may
-land on one. Casters are `rooted` so the layout survives contact, and
-`hero.speed` walks the hero rather than sending it at a descent's sprint.
+**Generated art is judged in a DESCENT.** *The user's call: "We are going to
+just delete the sandbox and start updating graphics in the actual game. I think
+it either works or it doesn't."* There is no room for looking at art in; a
+descent over a generated set IS one, with monsters that fight back. `npm run
+peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
+magnified crop, because every fault worth finding is invisible at ship size.
 
-**Nothing the game itself draws is in it**: the ground is a generated Wang set, the furniture is
-generated pictures, the bodies are generated and so is the HERO, over the doll
-it is otherwise made of. It is dressed as THE FISSURE off that zone's own line
-— "a working somebody gave up on. Rotted props, webs, a candle still going."
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
-and `tools/art/sandbox.json` is what came BACK, one row per thing.
+and `tools/art/generated.json` is what came BACK, one row per thing.
 `tools/art/body.mts` walks between them — `ask`, `state`, `sheet`, `fill`,
-`props`, `watch` — and `sandbox.mts` reads the second and writes the three
+`props`, `watch` — and `tables.mts` reads the second and writes the three
 tables. A prop row carries `tiles`, `view`, `size`, and the two knobs that
 settle a generated picture into the stone: `tone` toward the ground's mean and
 spread, and `dull` toward its own luma, because a mean per channel moves how
@@ -117,28 +101,6 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
-**A chasm is the third thing a cell can be, and it is what makes an edge a
-LEDGE.** `VOID` beside `WALL` and `FLOOR`: nothing walks on it, and it is KEYED
-as though it were stone so the floor ends at a proper edge. `ScenePlan.chasms`
-cuts one the way its world cuts a room, BEFORE the passages — so a corridor that
-crosses one is a walkway, and that is the whole of how a bridge gets made. No
-islands are left standing in one, because ground in mid air ragged round is
-black scraps rather than a drop. The sandbox has four, each biting a chamber's
-rim: every edge being rock going UP is a room in a hall, and the point of a
-chasm is the variation.
-
-**A hole is WALLED with the wall tile.** Nothing is recoloured or faded into a
-drop: the picture that reads as a wall standing UP under rock reads as a wall
-going DOWN under ground, and all that differs is which cell it lands in. The FAR
-wall is keyed with the world INVERTED — the hole as the low ground — and then
-laid ONE ROW LOWER than it was keyed, so it hangs inside the hole and the floor
-above it stays floor. The FLANKS are the same tile TURNED a quarter, rock
-outward and face into the hole, since a set only draws a face pointing at the
-camera. There is no NEAR wall: you look over the lip. Both are drawn OVER the
-lightmap and take the light of the LEDGE they hang from — what the map touches
-at a rim it smears across the tile, and a drop smeared is fog. Under them is
-black, and there is never a floor down there.
-
 **THE FISSURE is drawn by a generated tileset, and the other three zones are
 not.** `ZONE` in `src/sim/grid.ts` maps a theme to a set; a theme with one is
 `bare`, so its own floor, decals and living motion all stand down — a tileset is
@@ -153,42 +115,22 @@ cut face between them. A deep-walled set has that third value at a vertex: the
 cliff fills the cell BELOW the boundary, which is what makes the face two thirds
 of a tile rather than a seventh of one. It is drawn at THAT size and never
 stretched: the face is a run of rounded columns, so a tile of it made taller is
-a row of grey posts standing along the wall. And it STANDS DOWN by `WALL_FACE`,
-because a cut face is a vertical surface and `intoRock` lights the rock's edge
-cell — which is exactly that one — brightest of all the stone on the map. A tile the set cannot draw is not a tile: rock one cell thick holds no rock
-corner anywhere, so `thinRock` cuts it back to floor after every carve rather
-than leave a wall melting into the ground. `wangCorners` marks a floor vertex under a rock one,
-and `wangNear` is the fallback for a corner no set answers, since a key nothing
-draws is a hole in the floor. `wangShadow` is the one key class NOT drawn: a
-cut face at a corner with no rock at any of them is the cell below a cliff, and
-the set draws it as a flat dark rectangle that reads as paving at the foot of
-the wall. It falls back to plain floor.
+a row of grey posts standing along the wall. `wangKey` in `src/sim/grid.ts`
+answers it, and it lives there rather than in a renderer because it is a fact
+about the GRID first — what a set cannot draw, the carve must not make, which is
+`fitCorners`.
+
+**A set answers 21 of the 81 keys, and the renderer's backstop is the NEAREST
+one it holds** — the cut face scoring one step from either terrain and floor
+three from rock. Four of the 25 tiles are wall CONTINUATIONS sharing their
+corners with a twin, told apart by the pattern rows above and below, and those
+rows are CORNER values one row out rather than the cell's tile type: read wrong,
+a lip tile repeats down a face as a pale line running up it.
 
 **The map has no EDGE.** The grid is where the stone stops being stored, not
-where it stops: a chamber sitting two tiles from the boundary ends on a straight
-lit line with flat background past it. So the rock is drawn `EDGE` tiles beyond
-the grid on every side, out there is further from any floor than `ROCK_REACH`,
-and the last ring fades to true black — which is also the background under a
-generated map, so what the fade arrives at carries on forever. The zone's own
-rock keeps `rockDeep`: it draws only the band you could see from a room, and
-black behind THAT is a chamber floating in nothing.
-
-**The LIGHT is a MAP, and it is the renderer's rather than the set's.** A set
-is drawn to be looked at as terrain, so its stone is lit like the floor; flat
-across a map that reads as chambers punched out of a paved field. In `pixi.ts`,
-`ROCK_TOP` knocks the rock back and `ROCK_REACH` runs it to nothing under three
-tiles in, leaving a lit rim; `GRAIN` is smooth value noise over about three
-tiles, which is the only thing that answers the repetition, since a set has ONE
-picture per corner combination and TURNING a tile or mixing in a second set's
-both read worse than repeating. `GLOW_PROPS` name what throws light — a candle,
-a wall torch, a bed of embers — and lift their own corner of the room toward
-`WARM`.
-
-None of it is a TINT. `lightMap` bakes the lot into one texel per lattice
-CORNER and lets the GPU interpolate: a tint is per TILE, so every falloff one
-can express is a staircase of flat rectangles, and a wall's own shadow drawn
-that way is a grey box. Interpolated, the shadow is just the rock's dark
-bleeding half a tile onto the floor at its foot.
+where it stops: a chamber sitting two tiles from the boundary would end on a
+straight lit line with flat background past it. So the rock is drawn `EDGE`
+tiles beyond the grid on every side.
 
 **The only thing SCATTERED is what the rock does on its own.** A room's worth
 of objects dropped one tile at a time reads as exactly that, however carefully
@@ -221,11 +163,12 @@ Open floor is nearly all `grit` — a few specks read as a floor with something
 on it, where anything with a SHAPE out in the middle of a room reads as
 something somebody threw there.
 
-**One chamber is laid out by HAND** — `SHRINE` in `src/scenes/sandbox.ts`, and
-`ScenePlan.plain` is what keeps the scatter out of it. It is the reference the
-scatter is measured against: a slab against the wall, light and a body hanging
-on the face over it, what ran off it on the floor, and the leavings at the
-edges.
+**A DESCENT over a generated set is what gets dressed, and only that.**
+`generateMap` lays the cover, the growth on the face and the arrangements when
+`ZONE[theme]` answers, and nothing at all when it does not — the furniture is
+generated pictures and a zone still drawing its own rock has art for none of
+them. A SCENE is the other half of the rule: one chamber and props placed by
+hand, with nothing scattered into it at all.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
@@ -411,18 +354,20 @@ lands on, so a place is the same place every time you come up in it. There is
 also no exit — `GameMap.exit` is the entrance, so nothing draws a second hole
 and there is nothing to walk to.
 
-`GameMap.ground` names a generated tileset and is set by a scene alone. When it
-is there the zone's own rock stands down entirely — floor, decals, the moving
-parts and the entrance — because a tileset is the whole surface. `wangCorners`
-in `render/renderer.ts` says which of a tile's four corners are floor, and Pixi
-draws one sprite per cell off that; `canvas2d` has no sprites and keeps its
-colours. `PROP_ART` is the same idea for the furniture: a prop is a PICTURE
-anchored at the foot of its tile, where `PROPS` is decals, and `tiles` says how
-much of the floor it covers — a fact about the art, not about the room.
+`GameMap.zone` names the generated tileset and `bare` says the zone's own rock
+stands down for it — floor, decals and the moving parts — because a tileset is
+the whole surface. It is a DESCENT's, off `ZONE[theme]`; a scene is never bare,
+so the four authored rooms still draw the rock the old way. Pixi draws one
+sprite per cell off `wangKey`; `canvas2d` has no sprites and keeps its colours.
+`PROP_ART` is the same idea for the furniture: a prop is a PICTURE anchored at
+the foot of its tile, where `PROPS` is decals, and `tiles` says how much of the
+floor it covers — a fact about the art, not about the room.
 
-`GameMap.props` is furniture, empty on every generated map, drawn by `PROPS` in
-`src/render/renderer.ts` beside `mouth()`: pure functions returning `Decal[]`, so
-a prop is decals rather than a sprite and never appears in `BEASTIARY`.
+`GameMap.props` is furniture: on a scene it is what somebody put there by hand,
+on a generated map it is what the rock did plus the arrangements `dressRooms`
+placed. A hand-drawn prop is drawn by `PROPS` in `src/render/renderer.ts` beside
+`mouth()`: pure functions returning `Decal[]`, so a prop is decals rather than a
+sprite and never appears in `BEASTIARY`.
 `RunState.folk` is who is in the room, a LIST and deliberately out of `monsters`,
 because nothing in combat may ever be able to see a person.
 
@@ -852,7 +797,7 @@ been walked to.
 ## Shape
 
 ```
-tools/art/mcp.mts  the generator, over JSON-RPC; sandbox.mts pulls art in
+tools/art/mcp.mts  the generator, over JSON-RPC; tables.mts pulls art in
 tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
 tools/art/         the art pipeline: a row is generated, converted, accepted
 src/data.ts        every table: mods, currencies, bases, skills, monsters

@@ -109,7 +109,7 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
 import type { MapProp } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, HERO_FRAMES, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -1346,9 +1346,7 @@ rule('SPRITES — is the pixel art well formed?');
 
   // GENERATED bodies are their own table, and `monsterArt` asks `BEASTIARY`
   // FIRST — so a sprite id in both is a generated body that never draws, in
-  // silence. That cost a whole session's judgement of generated art once: the
-  // sandbox's `husk` was the hand-drawn one the entire time it was being
-  // looked at and reasoned about.
+  // silence. That cost a whole session's judgement of generated art once.
   {
     const shared = Object.keys(GENERATED).filter((id) => BEASTIARY[id]);
     check(
@@ -1384,8 +1382,7 @@ rule('SPRITES — is the pixel art well formed?');
 
     // Nothing may ask for a frame nobody DREW. `makeSheet` builds one canvas
     // per frame the art has, and every frame past that falls back to the first
-    // in silence — which is a body that lunges at you and never moves, and is
-    // exactly what the sandbox looked like for a session.
+    // in silence — which is a body that lunges at you and never moves.
     const past: string[] = [];
     const reached = new Set<string>();
     for (const [id, art] of Object.entries(GENERATED)) {
@@ -1493,16 +1490,12 @@ rule('SPRITES — is the pixel art well formed?');
     halfDrawn.join(', ')
   );
   // A prop is decals and never a sprite, so a mis-typed id is a bench that
-  // silently is not there rather than a missing texture. A room with GENERATED
-  // ground draws its furniture out of the generated table instead — a tileset
-  // is the whole surface, and the hand-drawn decals stand down with it.
-  const noProp = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
-    if (!s) return [];
-    const drawn = s.bare ? PROP_ART : PROPS;
-    return sceneMap(s.plan, s.theme, 1, s.bare)
-      .props.filter((p) => !drawn[p.id])
-      .map((p) => `${s.id}: ${p.id}`);
-  });
+  // silently is not there rather than a missing texture.
+  const noProp = SCENES.flatMap((s) =>
+    sceneMap(s.plan, s.theme, 1)
+      .props.filter((p) => !PROPS[p.id])
+      .map((p) => `${s.id}: ${p.id}`)
+  );
   check(noProp.length === 0, 'and every prop in one is drawn', [...new Set(noProp)].join(', '));
 
   // A VIGNETTE is placed as one thing, so its own props have to fit inside the
@@ -1514,13 +1507,6 @@ rule('SPRITES — is the pixel art well formed?');
   ]);
   check(spilling.length === 0, `all ${VIGNETTES.length} arrangements fit the room they claim`, spilling.join(', '));
 
-  // And the dressing actually happened. A scene asking for it and getting
-  // nothing is a room that reads as empty for a reason nobody would look for.
-  const bare = [...SCENES, SCENE_BY_ID.sandbox].filter(
-    (s) => s?.plan.dress && sceneMap(s.plan, s.theme, 1, s.bare).props.length < 6
-  );
-  check(bare.length === 0, 'and a room that asks to be dressed is', bare.map((s) => s?.id).join(', '));
-
   // The two tables the ROCK is dressed from, which no vignette references and
   // so nothing else sweeps.
   const noArt = [...COVER_PROPS, ...WALL_PROPS]
@@ -1529,26 +1515,39 @@ rule('SPRITES — is the pixel art well formed?');
     .filter((id) => !PROP_ART[id]);
   check(noArt.length === 0, 'and everything the rock gathers is drawn too', noArt.join(', '));
 
-  // The sandbox draws a GENERATED zone, so the zone's own rock stands down and
-  // the surface is the set's. What is scattered on it is what the rock does —
-  // cover at the foot of the wall — and every prop STANDING on the floor is one
-  // somebody placed by hand.
+  // A DESCENT over a generated set is what is dressed, and it is the only thing
+  // that is: the furniture is generated pictures, so a zone still drawing its
+  // own rock has none of it. What stands on the floor is an ARRANGEMENT and
+  // what drifts under it is cover, which is the whole of the difference between
+  // texture and confetti.
+  const dressedMap = (seed: number, theme: MapTheme = 'fissure') =>
+    generateMap([], new Rng(seed), 1, 1, theme);
   {
-    const box = SCENE_BY_ID.sandbox!;
-    const dressed = sceneMap(box.plan, box.theme, 1, box.bare, box.zone);
-    const standing = (of: MapProp[]) =>
-      of.filter((p) => !COVER_SET.has(p.id) && !HUNG_PROPS.has(p.id)).length;
-    const cover = dressed.props.filter((p) => COVER_SET.has(p.id)).length;
-    const put = standing(dressed.props);
-    line(`  ${put} props in the sandbox, ${cover} of cover under them`);
+    const map = dressedMap(11);
+    const standing = map.props.filter((p) => !COVER_SET.has(p.id));
+    const cover = map.props.filter((p) => COVER_SET.has(p.id));
+    const undrawn = [...new Set(map.props.filter((p) => !PROP_ART[p.id]).map((p) => p.id))];
+    line(`  ${standing.length} props over a Fissure descent, ${cover.length} of cover under them`);
     check(
-      box.bare === true &&
-        !!box.zone &&
-        !!ZONES[box.zone] &&
-        put === standing(box.plan.props) &&
-        cover > put,
-      'and the sandbox draws a generated zone, the hand-placed shrine, and nothing scattered',
-      `zone ${box.zone}, ${put} standing against ${standing(box.plan.props)} authored, ${cover} cover`
+      map.bare === true &&
+        !!map.zone &&
+        !!ZONES[map.zone] &&
+        standing.length >= 8 &&
+        cover.length > standing.length &&
+        undrawn.length === 0,
+      'a Fissure descent draws a generated zone and is dressed out of the generated table',
+      `zone ${map.zone}, ${standing.length} standing, ${cover.length} cover, undrawn ${undrawn.join(', ')}`
+    );
+
+    // A zone with no set of its own keeps its own decals and must stay bare of
+    // furniture: none of these props is drawn on hand-drawn rock.
+    const drawnRock = MAP_THEMES.filter((t) => dressedMap(12, t.id).props.length > 0)
+      .filter((t) => !dressedMap(12, t.id).zone)
+      .map((t) => t.id);
+    check(
+      drawnRock.length === 0,
+      'and a zone still drawing its own rock is dressed with nothing',
+      drawnRock.join(', ')
     );
 
     // COVER is drawn as one pass UNDER the furniture, so an id in both a cover
@@ -1557,7 +1556,6 @@ rule('SPRITES — is the pixel art well formed?');
     const both = [...WALL_PROPS]
       .map((w) => w.id)
       .concat(VIGNETTES.flatMap((v) => v.props.map((p) => p.id)))
-      .concat(box.plan.props.map((p) => p.id))
       .filter((id) => COVER_SET.has(id));
     check(
       both.length === 0,
@@ -1567,117 +1565,114 @@ rule('SPRITES — is the pixel art well formed?');
   }
 
   // Furniture you cannot walk through, and the two ways that goes wrong: a
-  // solid tile in a passage, and a solid tile under somebody standing on it.
+  // solid tile that is not floor, and a solid tile nothing is standing on.
+  // Then that it never walls the map off — everything the hero is sent to has
+  // to still be reachable from the hole, or a run stands still forever.
   {
-    const box = SCENE_BY_ID.sandbox!;
-    const { grid, props } = sceneMap(box.plan, box.theme, 1, box.bare);
     const solid: string[] = [];
     let blocked = 0;
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
-        if (!grid.solid[y * grid.width + x]) continue;
-        blocked++;
-        if (grid.at(x, y) !== FLOOR) solid.push(`${x},${y} is not chamber floor`);
-        if (!props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
-          solid.push(`${x},${y} blocks with nothing standing on it`);
+    let cut = 0;
+    for (const seed of [3, 17, 41, 88]) {
+      const { grid, props, entrance, exit, rooms } = dressedMap(seed);
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          if (!grid.solid[y * grid.width + x]) continue;
+          blocked++;
+          if (grid.at(x, y) !== FLOOR && grid.at(x, y) !== TUNNEL) {
+            solid.push(`${seed}: ${x},${y} is not floor`);
+          }
+          if (!props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
+            solid.push(`${seed}: ${x},${y} blocks with nothing standing on it`);
+          }
         }
       }
-    }
-    for (const d of box.dummies ?? []) {
-      if (grid.solid[d.at.y * grid.width + d.at.x]) solid.push(`${d.sprite} stands in furniture`);
-    }
-    line(`  ${blocked} tiles of the sandbox are furniture you go around`);
-    check(blocked >= 4 && solid.length === 0, 'furniture blocks, and only where it may', solid.join(', '));
-
-    // And it never walls the map off. Everything the hero is sent to has to
-    // still be reachable from the hole, or a run stands still forever.
-    const seen = new Set<number>();
-    const queue = [box.plan.entrance.y * grid.width + box.plan.entrance.x];
-    seen.add(queue[0]);
-    for (let head = 0; head < queue.length; head++) {
-      const x = queue[head] % grid.width;
-      const y = (queue[head] - x) / grid.width;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        if (!grid.walkable(x + dx, y + dy)) continue;
-        const to = (y + dy) * grid.width + (x + dx);
-        if (seen.has(to)) continue;
-        seen.add(to);
-        queue.push(to);
+      const seen = new Set<number>();
+      const queue = [Math.round(entrance.y) * grid.width + Math.round(entrance.x)];
+      seen.add(queue[0]);
+      for (let head = 0; head < queue.length; head++) {
+        const x = queue[head] % grid.width;
+        const y = (queue[head] - x) / grid.width;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          if (!grid.walkable(x + dx, y + dy)) continue;
+          const to = (y + dy) * grid.width + (x + dx);
+          if (seen.has(to)) continue;
+          seen.add(to);
+          queue.push(to);
+        }
+      }
+      // The way out, and every room's middle: `placeIn` drops a pack that could
+      // not find room on the middle, so furniture standing on one is a pack in
+      // the rock that nothing can ever reach.
+      for (const at of [exit, ...rooms.map(roomCenter)]) {
+        const key = Math.round(at.y) * grid.width + Math.round(at.x);
+        if (!seen.has(key)) cut++;
       }
     }
-    const cut = [
-      ...(box.plan.patrol ?? []).map((m) => ['patrol', m] as const),
-      ...(box.dummies ?? []).map((d) => [d.sprite, d.at] as const),
-    ]
-      .filter(([, at]) => !seen.has(at.y * grid.width + at.x))
-      .map(([who, at]) => `${who}@${at.x},${at.y}`);
-    check(cut.length === 0, 'and nothing it stands in front of is walled off', cut.join(', '));
-  }
-
-  // The one chamber laid out by hand, which is the reference the scatter is
-  // measured against. Nothing is scattered into it, and it carries the things
-  // only an author places: light on the wall, and a body hanging beside it.
-  {
-    const box = SCENE_BY_ID.sandbox!;
-    const plain = box.plan.plain ?? [];
-    const { props } = sceneMap(box.plan, box.theme, 1, box.bare);
-    const inside = (p: MapProp) =>
-      plain.some((r) => p.x >= r.x - 1 && p.y >= r.y - 1 && p.x < r.x + r.w + 1 && p.y < r.y + r.h + 1);
-    const authored = new Set(box.plan.props.map((p) => `${p.id}@${p.x},${p.y}`));
-    const strays = props.filter(
-      (p) => inside(p) && !COVER_SET.has(p.id) && !authored.has(`${p.id}@${p.x},${p.y}`)
-    );
-    const hung = box.plan.props.filter((p) => HUNG_PROPS.has(p.id));
+    line(`  ${blocked} tiles of furniture to go around over four descents`);
     check(
-      plain.length > 0 && strays.length === 0 && hung.length >= 3,
-      `the ${box.plan.props.length}-prop shrine is laid out by hand and nothing scatters into it`,
-      `${strays.length} strays, ${hung.length} on the wall`
+      blocked >= 4 && solid.length === 0 && cut === 0,
+      'furniture blocks, only where it may, and never walls anything off',
+      `${solid.slice(0, 4).join(', ')}${cut > 0 ? ` — ${cut} landmarks cut off` : ''}`
+    );
+
+    // And a ROUTE goes around it. `Grid.solid` is a second layer, so anything
+    // reading `tiles` alone paths straight through the altar and parks the hero
+    // on a tile it can never step off — a descent that never ends.
+    const through: string[] = [];
+    for (const seed of [3, 17, 41, 88]) {
+      const { grid, entrance, exit } = dressedMap(seed);
+      for (const wp of findPath(grid, entrance, exit)) {
+        if (grid.solid[wp.y * grid.width + wp.x]) through.push(`${seed}: ${wp.x},${wp.y}`);
+      }
+    }
+    check(
+      through.length === 0,
+      'and a route from the hole to the way out goes around it rather than through',
+      through.slice(0, 4).join(', ')
     );
   }
 
   // Where a prop is PUT, which the id check cannot see. A room is authored by
   // hand in absolute tiles, so the three ways to get that wrong are outside the
   // walls, stacked on another prop, and standing on the hole or on the person.
-  const misplaced = [...SCENES, SCENE_BY_ID.sandbox].flatMap((s) => {
-    if (!s) return [];
-    const { entrance, stands, patrol } = s.plan;
-    // The GRID, not the rectangle: a plan may carve more chambers and join
-    // them with corridors, so where the floor actually is is a thing only the
-    // carve knows. Everything placed by hand has to stand on it.
-    // The MAP's props, not the plan's: a plan may ask to be dressed, and what
-    // that put down is exactly what has to be somewhere it can be.
-    const { grid, props } = sceneMap(s.plan, s.theme, 1, s.bare, s.zone);
+  const misplaced = SCENES.flatMap((s) => {
+    const { entrance, stands } = s.plan;
+    const { grid, props } = sceneMap(s.plan, s.theme, 1);
     const seen = new Set<string>();
     const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
-    // A WALL prop is drawn side-on and belongs ON the cut face — which the set
-    // fills the cell BELOW the boundary with, so it is a FLOOR tile with rock
-    // over it. Held to the rock tile instead, every root hangs a tile above
-    // the wall it is growing on.
-    const hangs = HUNG_PROPS;
-    const face = (p: MapProp): boolean => !rock(p) && grid.at(p.x, p.y - 1) === WALL;
-    // COVER is under everything and claims nothing, so it is exempt from the
-    // one-thing-per-tile rule the furniture is held to.
     return [
-      ...props.filter((p) => !COVER_SET.has(p.id)).flatMap((p) => {
+      ...props.flatMap((p) => {
         const at = `${p.x},${p.y}`;
         const wrong: string[] = [];
-        if (hangs.has(p.id) ? !face(p) : rock(p)) wrong.push('in the rock');
+        if (rock(p)) wrong.push('in the rock');
         if (seen.has(at)) wrong.push('stacked');
         if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
         if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
         seen.add(at);
         return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
       }),
-      ...(s.dummies ?? [])
-        .filter((d) => rock(d.at))
-        .map((d) => `${s.id} ${d.sprite}@${d.at.x},${d.at.y} in the rock`),
-      ...(patrol ?? [])
-        .filter(rock)
-        .map((m) => `${s.id} patrol@${m.x},${m.y} in the rock`),
       ...(rock(entrance) ? [`${s.id} entrance in the rock`] : []),
     ];
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
+
+  // A WALL prop is drawn side-on and belongs ON the cut face — which a set
+  // fills the cell BELOW the boundary with, so it is a FLOOR tile with rock
+  // over it. Held to the rock tile instead, every root hangs a tile above the
+  // wall it is growing on.
+  {
+    const { grid, props } = dressedMap(23);
+    const off = props
+      .filter((p) => HUNG_PROPS.has(p.id))
+      .filter((p) => grid.at(p.x, p.y) === WALL || grid.at(p.x, p.y - 1) !== WALL)
+      .map((p) => `${p.id}@${p.x},${p.y}`);
+    const growing = props.filter((p) => HUNG_PROPS.has(p.id)).length;
+    check(
+      growing > 0 && off.length === 0,
+      `all ${growing} things growing on the rock are on the cut face`,
+      off.slice(0, 4).join(', ')
+    );
+  }
 
   // A room of one shape is a room that reads as the last one. Each has its own
   // signature furniture; the lanterns are the only thing they all share.
@@ -1920,7 +1915,9 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
         if (tile === WALL) continue;
         if (tile === TUNNEL) tunnels++;
         if (tile === FLOOR) rooms++;
-        if (!grid.walkable(x, y)) unwalkable++;
+        // Furniture is the OTHER reason a carved tile blocks, and a legitimate
+        // one. What this is watching for is a tile CONSTANT nothing walks on.
+        if (!grid.solid[y * grid.width + x] && !grid.walkable(x, y)) unwalkable++;
       }
     }
 
@@ -1938,7 +1935,11 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
 
   line(`  ${rooms} chamber tiles, ${tunnels} passage tiles across three maps`);
   check(rooms > 0 && tunnels > 0, 'maps have both chambers and passages', 'one kind is missing');
-  check(unwalkable === 0, 'every carved tile is walkable', `${unwalkable} carved tiles block the hero`);
+  check(
+    unwalkable === 0,
+    'every carved tile with nothing standing on it is walkable',
+    `${unwalkable} carved tiles block the hero`
+  );
   check(
     roomsCutByCorridors === 0,
     'a corridor never relabels the inside of the room it joins',
@@ -2291,97 +2292,6 @@ for (const tree of BUILT_TREES) {
     held = held.filter((id) => id !== loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
-}
-
-// ===========================================================================
-rule('THE SANDBOX — does the room show what a body can DO?');
-
-// It is a dev screen, so nothing here is balance. What it IS is the one place
-// generated art gets judged, and a room where half the animations never play
-// is a room that cannot be judged. So: every ability the def names actually
-// fires, and the renderer picks a different run of frames for a melee swing
-// and for a thrown one.
-{
-  const room = SCENE_BY_ID.sandbox;
-  const bodies = room?.dummies ?? [];
-  const named = bodies.map((d) => d.ability).filter(Boolean) as string[];
-  check(
-    named.length === bodies.length && named.every((a) => MONSTER_ABILITY_BY_ID[a]),
-    `all ${bodies.length} bodies in the sandbox name an ability that exists`,
-    named.join(', ')
-  );
-  // One of each SHAPE — a room of six melee bodies never plays the cast.
-  const thrown = named.filter((a) => MONSTER_ABILITY_BY_ID[a]?.skill);
-  check(
-    thrown.length > 0 && thrown.length < named.length,
-    'and both shapes are in it: something to swing and something to throw',
-    `${thrown.length} thrown of ${named.length}`
-  );
-
-  const sim = new RunSim([], createGame('dev').character, new Rng(5), { scene: 'sandbox' });
-  const kinds = new Set<string>();
-  const frames = new Set<number>();
-  // What the room is FOR: every facing of every body, and the hero seen doing
-  // each of the things it does. A room where all of that is true of a still is
-  // a room somebody has to drive to review.
-  const facings = new Map<string, Set<number>>();
-  const doing = new Set<string>();
-  const start = { x: sim.state.hero.x, y: sim.state.hero.y };
-  let walked = 0;
-  for (let i = 0; i < 8000 && sim.state.status === 'running'; i++) {
-    sim.step(TICK);
-    for (const v of sim.state.vfx) kinds.add(v.kind);
-    walked = Math.max(walked, Math.hypot(sim.state.hero.x - start.x, sim.state.hero.y - start.y));
-    for (const e of [sim.state.hero, ...sim.state.monsters]) {
-      if (e.dead) continue;
-      if (!facings.has(e.sprite)) facings.set(e.sprite, new Set());
-      facings.get(e.sprite)!.add(facingRow(e.sprite, e.facing));
-      if (e.kind === 'hero') doing.add(e.action);
-      if (e.action === 'attack' && e.kind === 'monster') {
-        frames.add(
-          generatedFrame(e.sprite, {
-            action: e.action, through: 0.5, elapsed: sim.state.elapsed, walked: e.walked,
-            skill: e.skillId, facing: e.facing, spell: false,
-          })
-        );
-      }
-    }
-  }
-  line(`  ${sim.state.monsters.length} bodies, ${kinds.size} kinds of effect: ${[...kinds].sort().join(', ')}`);
-  // Every thrown ability's own vfx, so a skill that stopped firing is caught
-  // rather than being one of six things nobody looked at.
-  const missing = thrown
-    .map((a) => SKILL_BY_ID[MONSTER_ABILITY_BY_ID[a]!.skill!]?.vfxKind ?? '')
-    .filter((k) => k && !kinds.has(k));
-  check(missing.length === 0, 'and everything that throws something is throwing it', missing.join(', '));
-  check(
-    frames.size > 1,
-    'a melee swing and a cast draw DIFFERENT frames',
-    `${[...frames].sort().join(', ')} — one run for both`
-  );
-  // The two rules the room lives by, measured rather than assumed.
-  check(
-    sim.state.status === 'running' && sim.state.monsters.every((m) => !m.dead),
-    'nothing died in it, and it never ended',
-    `${sim.state.status}, ${sim.state.monsters.filter((m) => m.dead).length} down`
-  );
-
-  // And the three the SHOWCASE lives by. A hero that stops at the first body
-  // it meets shows one facing of one animation for the life of the room, which
-  // is what the circuit exists to stop.
-  check(walked > 12, 'the hero walks the room rather than standing in it', `${walked.toFixed(1)} tiles`);
-  check(
-    doing.has('move') && doing.has('attack'),
-    'and is seen walking AND swinging',
-    [...doing].join(', ')
-  );
-  const flat = [...facings].filter(([id, rows]) => (GENERATED[id]?.dirs.length ?? 1) > 1 && rows.size < 3);
-  check(
-    flat.length === 0,
-    `and every body is met from 3 or more of its facings`,
-    flat.map(([id, r]) => `${id}: ${r.size}`).join(', ')
-  );
-  line(`  facings seen: ${[...facings].map(([id, r]) => `${id} ${r.size}`).join(', ')}`);
 }
 
 // ===========================================================================

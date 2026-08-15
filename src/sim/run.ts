@@ -58,7 +58,7 @@ import {
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
-import type { SceneAct, SceneDummy } from '../scenes';
+import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
 import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, Look, SkillDef } from '../types';
@@ -85,13 +85,6 @@ const SEPARATION_PASSES = 2;
 const AGGRO_CHAIN_RADIUS = 4.5;
 
 /** How near the way out the last encounter comes up the hole behind you. */
-const SHOW_FIGHT = 4; // seconds a sandbox hero swings at what came into reach
-const SHOW_WALK = 6; // and then walks on regardless of what is still there
-/** How far a sandbox body wanders off where it was put, and how long it stands
- *  about between wanders. */
-const PACE_REACH = 2.5;
-const PACE_REST: [number, number] = [0.8, 3];
-
 const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
@@ -213,9 +206,6 @@ export interface Entity {
   slowed?: number;
   /** Tiles this body has actually walked, for the walk cycle to read. */
   walked: number;
-  home?: Vec2; // where a SANDBOX body was put
-  roam?: Vec2; // and where it is pacing to
-  rest?: number; // seconds of standing still left before it picks somewhere
   dead: boolean;
 }
 
@@ -379,11 +369,6 @@ export class RunSim {
    * Read once at spawn — nothing about a set changes mid-descent.
    */
   readonly set: RunSet;
-  /** A room with bodies in it to be looked at. Nothing loses life while this is
-   *  set, so nothing dies and the run has no end to reach. */
-  private readonly sandbox: boolean;
-  private readonly patrol: Vec2[];
-  private patrolAt = 0;
 
   constructor(
     crystals: Item[],
@@ -402,12 +387,10 @@ export class RunSim {
     this.set = runSet(crystals);
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
-    // Sockets are the only thing that lengthens a descent. An empty Fissure is
-    // index zero of the same table, not a special case beside it.
-    this.sandbox = !!def?.dummies?.length;
-    this.patrol = this.sandbox ? (def?.plan.patrol ?? []) : [];
+    // Sockets are the only thing that lengthens a descent: an empty Fissure is
+    // index zero of the same table rather than a special case beside it.
     const map = def
-      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)), def.bare, def.zone)
+      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)))
       : generateMap(
           this.set.mods,
           rng,
@@ -417,14 +400,12 @@ export class RunSim {
         );
     const stats = characterStats(character);
 
-    // A room may draw the hero as a BODY rather than as the doll: a sandbox
-    // uses none of the game's own art, and the doll is most of it.
     const hero: Entity = {
       id: 0,
       kind: 'hero',
-      sprite: def?.hero?.sprite ?? 'hero',
-      ...(def?.hero ? {} : { look: lookOf(character) }),
-      scale: def?.hero?.scale ?? 1.15,
+      sprite: 'hero',
+      look: lookOf(character),
+      scale: 1.15,
       rank: 'common',
       x: map.entrance.x,
       y: map.entrance.y,
@@ -439,10 +420,7 @@ export class RunSim {
       life: stats.maxLife,
       mana: stats.maxMana,
       effects: [],
-      // `HERO_BASE.moveSpeed` is a descent's sprint; a room to be watched is not.
-      stats: def?.hero?.speed
-        ? { ...stats, moveSpeed: stats.moveSpeed * def.hero.speed }
-        : stats,
+      stats,
       cooldown: 0,
       path: [],
       pathTimer: 0,
@@ -453,9 +431,8 @@ export class RunSim {
       dead: false,
     };
 
-    // A scene has no packs at all, which is what makes it one: whatever it
-    // holds is called up by name, and a sandbox names its bodies in the def.
-    const monsters = def ? (def.dummies ?? []).map((d) => this.dummy(d, hero)) : this.spawn(map);
+    // No packs at all is what makes a scene one: it calls up what it holds.
+    const monsters = def ? [] : this.spawn(map);
     if (def) this.priceKills();
     this.byId = new Map(monsters.map((m) => [m.id, m]));
 
@@ -488,61 +465,6 @@ export class RunSim {
     };
 
     if (def) this.state.folk.push(this.stand(def.who, def.plan.stands));
-  }
-
-  /** A body for the sandbox: a monster in every way the sim reads, off
-   *  `MONSTER_BASE` and the empty set. Nothing loses life while one is up. */
-  private dummy(spec: SceneDummy, hero: Entity): Entity {
-    const ability = MONSTER_ABILITY_BY_ID[spec.ability ?? ''];
-    const stats = monsterStats([], {
-      id: spec.sprite,
-      name: spec.sprite,
-      family: 'normal',
-      life: 1,
-      damage: 1,
-      moveSpeed: 1,
-      attacksPerSecond: 0.8,
-      attackRange: 1,
-      radius: 0.3,
-      sprite: spec.sprite,
-      scale: spec.scale,
-      weight: 0,
-    }, ability);
-    const thrown = SKILL_BY_ID[ability?.skill ?? ''];
-    // A ROOTED body holds its post rather than joining the clump: speed 0, so
-    // neither the chase nor the pacing has to know about it.
-    const reach = { ...stats, ...thrownReach(thrown), ...(spec.rooted ? { moveSpeed: 0 } : {}) };
-    return {
-      id: this.nextId++,
-      kind: 'monster',
-      sprite: spec.sprite,
-      scale: spec.scale,
-      rank: 'common',
-      radius: 0.3,
-      // A body with a skill goes through the path a ranged pack does.
-      skillId: ability?.skill ?? null,
-      x: spec.at.x,
-      y: spec.at.y,
-      home: { x: spec.at.x, y: spec.at.y },
-      facing: Math.atan2(hero.y - spec.at.y, hero.x - spec.at.x),
-      action: 'idle',
-      actionTimer: 0,
-      deathAge: 0,
-      ailments: [],
-      bounty: 0,
-      life: reach.maxLife,
-      mana: 0,
-      effects: [],
-      stats: reach,
-      cooldown: 0,
-      path: [],
-      pathTimer: 0,
-      targetId: null,
-      walked: 0,
-      aggroed: true, // they are the point of the room
-      hitFlash: 0,
-      dead: false,
-    };
   }
 
   /** A person in a room: no stats worth anything, no bounty, and out of
@@ -634,10 +556,6 @@ export class RunSim {
     // fifty entities cheap and makes "all Brutes hit this hard" true by
     // construction.
     const statsFor = new Map<string, CombatStats>();
-
-    // Baseline for the finale, so it scales with the crystal like everything
-    // else rather than being a fixed lump of numbers. Fixed to one monster
-    // across every family: the closing fight is the same fight in all three.
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -868,6 +786,20 @@ export class RunSim {
    * up by its rank where it stood) falls back to its centre, so it can always
    * walk out of somewhere it should never have been.
    */
+  /** A step that never puts a body's own tile in rock. `canStep` refuses a
+   *  corner-cutting diagonal, but a body pushed off the lattice can cross one
+   *  getting back to the path; one already in rock may move anywhere. */
+  private glide(e: Entity, x: number, y: number): void {
+    const { grid } = this.state.map;
+    if (!grid.walkable(e.x, e.y)) {
+      e.x = x;
+      e.y = y;
+      return;
+    }
+    if (grid.walkable(x, e.y)) e.x = x;
+    if (grid.walkable(e.x, y)) e.y = y;
+  }
+
   private nudge(e: Entity, dx: number, dy: number): void {
     const { grid } = this.state.map;
     const stuck = !grid.fits(e.x, e.y, e.radius);
@@ -931,14 +863,6 @@ export class RunSim {
         hero.targetId = null;
         hero.path = [];
       }
-      return;
-    }
-
-    // A sandbox has nowhere to walk out to: round the circuit forever instead,
-    // meeting the same bodies from a different side on every lap.
-    if (this.patrol.length > 0) {
-      const mark = this.patrol[this.patrolAt % this.patrol.length];
-      if (dist(hero, mark) <= AT_EXIT || !this.advance(hero, mark, dt)) this.patrolAt++;
       return;
     }
 
@@ -1293,12 +1217,6 @@ export class RunSim {
     if (m.cooldown > 0) m.cooldown -= dt;
 
     const d = dist(m, hero);
-    // A sandbox body PACES while nothing is happening to it: standing still is
-    // one facing of one animation, and this room exists to show the others.
-    if (this.sandbox && !(m.aggroed && d <= ACTIVE_RANGE)) {
-      this.pace(m, dt);
-      return;
-    }
     if (d > ACTIVE_RANGE) return;
 
     // Woken by sight, and once woken they chase around corners. Waking one
@@ -1328,26 +1246,6 @@ export class RunSim {
       return;
     }
     this.advance(m, hero, dt);
-  }
-
-  /** A short walk near where it was put, a stand about, and another. A `rooted`
-   *  body has no speed, so a caster still holds the post the layout wants. */
-  private pace(m: Entity, dt: number): void {
-    if (m.actionTimer > 0) m.actionTimer -= dt;
-    if (!m.home || m.stats.moveSpeed <= 0) return;
-    if ((m.rest ?? 0) > 0) {
-      m.rest = (m.rest ?? 0) - dt;
-      this.settleAction(m, false);
-      return;
-    }
-    if (m.roam && dist(m, m.roam) > 0.35 && this.advance(m, m.roam, dt)) return;
-    // Off HOME: wandering from wherever it stopped walks a body across the room.
-    const turn = this.rng.float(0, Math.PI * 2);
-    const away = this.rng.float(0.8, PACE_REACH);
-    const to = { x: m.home.x + Math.cos(turn) * away, y: m.home.y + Math.sin(turn) * away };
-    m.roam = this.state.map.grid.fits(to.x, to.y, m.radius) ? to : { ...m.home };
-    m.rest = this.rng.float(PACE_REST[0], PACE_REST[1]);
-    m.path = [];
   }
 
   /**
@@ -1403,12 +1301,6 @@ export class RunSim {
   }
 
   private acquireTarget(hero: Entity): Entity | null {
-    // Held until it dies is, where nothing dies, one facing forever — and it
-    // lets go on a CLOCK, or bodies in reach pin it and the circuit never runs.
-    if (this.sandbox) {
-      hero.targetId = null;
-      if (this.state.elapsed % (SHOW_FIGHT + SHOW_WALK) >= SHOW_FIGHT) return null;
-    }
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
       if (held && !held.dead) return held;
@@ -1433,7 +1325,6 @@ export class RunSim {
       hero.path = [];
       return best;
     }
-    if (this.sandbox) return null;
 
     const key = nearestByPath(grid, hero, (k) => occupancy.has(k));
     if (key === null) return null;
@@ -1473,13 +1364,11 @@ export class RunSim {
         continue;
       }
       if (d <= remaining) {
-        e.x = wp.x;
-        e.y = wp.y;
+        this.glide(e, wp.x, wp.y);
         e.path.shift();
         remaining -= d;
       } else {
-        e.x += (dx / d) * remaining;
-        e.y += (dy / d) * remaining;
+        this.glide(e, e.x + (dx / d) * remaining, e.y + (dy / d) * remaining);
         remaining = 0;
       }
     }
@@ -1493,9 +1382,9 @@ export class RunSim {
   }
 
   /** The movement skill, firing ITSELF, along the path already found: the
-   *  furthest walkable waypoint in reach, so it never lands a body in rock. A
-   *  STEP also wants a clear line and goes through; a JUMP wants none and goes
-   *  over. Neither reaches anywhere the walk could not. */
+   *  furthest walkable waypoint in reach. A STEP wants a clear line and goes
+   *  through; a JUMP wants none and goes over, and neither reaches anywhere
+   *  the walk could not. */
   private maybeMove(hero: Entity): void {
     const skill = this.mover;
     if (!skill || this.moveIn > 0 || hero.path.length === 0) return;
@@ -1807,9 +1696,7 @@ export class RunSim {
     // range or the line of sight.
     this.wake(defender, true);
 
-    // Everything else about the hit still happens — the flash, the recoil, the
-    // number over the head — because a sandbox is for watching a hit land.
-    if (!this.sandbox) defender.life -= dmg;
+    defender.life -= dmg;
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
     defender.actionTimer = HURT_POSE;

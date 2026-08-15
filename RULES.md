@@ -701,7 +701,7 @@ bearer token on a `backblaze.pixellab.ai` URL is a 401, and only
 **Generated art is QUANTISED to a palette of its own.** An export's colours are
 not a palette — three frames of one body arrive with more distinct RGB values
 than there are characters to name them — so the commonest are the key and
-everything else snaps by redmean. `Inks` in `tools/art/sandbox.mts` is two
+everything else snaps by redmean. `Inks` in `tools/art/tables.mts` is two
 passes for that: `note` every pixel, `settle`, then `char`.
 
 **A generated body has named STATES; a hand-drawn one has walk-walk-swing.**
@@ -711,7 +711,7 @@ is named for an ACTION — `idle`, `walk`, `attack` — or for the SKILL it uses
 which is looked up FIRST, so fire, frost and lightning are three animations.
 `cast` is the fallback and only reached for a SPELL: the hero carries both a
 swing and a cast, and without that test it would cast while swinging a sword.
-A further state is a row in `tools/art/sandbox.json` and a change to nothing.
+A further state is a row in `tools/art/generated.json` and a change to nothing.
 
 **Nothing may ask for a frame nobody DREW.** `makeSheet` builds one canvas per
 frame and `framesOf` is the count; it was the constant `CREATURE_FRAMES` = 3,
@@ -731,7 +731,7 @@ an angle into that half and buckets it.
 **A generated body is drawn at its OWN grid, never `CELL`.** The camera lands
 one in about 87 device pixels, so 256 was downsampled before anybody saw it —
 and at five facings a body is ninety canvases at four bytes a pixel. `GRID` in
-`sandbox.mts` is 96 for the same reason, Pixi scales by the texture's own
+`tables.mts` is 96 for the same reason, Pixi scales by the texture's own
 width, and `GLOW.reach` is scaled by `grid / CELL` or the light swallows it.
 
 **A state names WHICH WINDOW of its animation to keep.** A generation degrades
@@ -1424,85 +1424,56 @@ of it.
   `src/ui/run.ts` does, off `sceneWaiting`. That is why the whole of this leaves
   every headless harness alone: they drive `RunSim` directly and never ask.
 
-**A SANDBOX is a scene with bodies in it, and `SceneDef.dummies` is the whole
-of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
-`SCENES` is what the schedule walks and the sandbox is not in it, only in
-`SCENE_BY_ID`, so no amount of playing arrives there.
+**A DESCENT over a generated set is what is DRESSED, and there is no room for
+looking at art in.** *The user's call, in their words: "We are going to just
+delete the sandbox and start updating graphics in the actual game. I think it
+either works or it doesn't."* `SceneDef.dummies`, the patrol, the pacing, the
+nobody-dies guard and `#dev-sandbox` are all gone. A descent IS the room the
+sandbox was, with monsters that fight back — so `npm run peek` is pointed at
+one, and that is where art is judged.
 
-- **Nothing loses life while one is on the map.** One guard in `dealDamage`,
-  and it is what makes the room terminate-proof from the other end: nobody
-  dies, so the flood never runs dry, the hero never falls, and the run has no
-  end to reach. Everything else about a hit still happens — the flash, the
-  recoil, the number over the head — because watching a hit land is the point.
-- **The hero's committed target is DROPPED every tick in one.** Held until the
-  target dies is, where nothing dies, a hero facing one way forever.
-- **A dummy comes off `MONSTER_BASE` and the empty set**, never `MONSTERS` and
-  never `BEASTIARY`. Nothing about it may reach a balance table, or the demo's
-  measurements move under it.
-- **Abandon is the only way out**, and the only room where it is live outside a
-  descent. It banks nothing, because nothing happened.
-- **A generated tileset REPLACES the whole surface.** `GameMap.ground` names
-  one; when it is set the zone's floor fills, its `tileDecals`, its
-  `livingDecals` and its entrance rect all stand down. Masonry with the
-  Fissure's flagstones stamped over it is two floors at once. Pixi only —
-  `canvas2d` has no sprites and that stays correct.
+- **Only a zone with a SET is dressed.** `generateMap` lays the cover, the
+  growth and the arrangements when `ZONE[theme]` answers, and nothing at all
+  when it does not: the furniture is generated pictures, and a zone still
+  drawing its own rock has art for none of them. The other three zones are
+  Phase 2's, and until then they are bare of furniture on purpose.
+- **A SCENE is one chamber and hand-placed props, and nothing scatters into
+  one.** `ScenePlan` is `room`, `entrance`, `stands` and `props` — what the
+  ROCK does belongs to a descent. Multiple chambers, corridors between them and
+  a per-plan `cut` were the sandbox's and went with it; a room that wants them
+  back is ten lines of `sceneMap` and is in the history.
+- **A ROUTE reads `Grid.solid`, and `Grid.walkable` is the one answer.**
+  `src/sim/pathfind.ts` tested the TILE, which walked the hero straight onto
+  the altar standing on it and parked it there for good — every repath from a
+  tile it cannot stand on comes back empty, so the descent never ends. Anything
+  asking "can a body be here" asks `walkable`, never `tiles`.
+- **Furniture BLOCKS, and gives that up the moment it cuts anything off.**
+  `SOLID_PROPS` in `vignettes.ts`, `Grid.solid` beside `Grid.tiles`. A second
+  layer, because the ground under an altar is still floor and every renderer
+  keys off `tiles` — marking it rock cuts a hole in the floor to draw a table
+  in. Blocked one tile at a time, and undone if the flood from the hole stops
+  reaching the way out or any room's MIDDLE, which is where `placeIn` drops a
+  pack that could not find room.
+- **A generated tileset REPLACES the whole surface.** `GameMap.bare` with
+  `GameMap.zone` naming the set; when it is set the zone's floor fill, its
+  `tileDecals`, its `livingDecals` and its hand-drawn props all stand down.
+  Masonry with the Fissure's flagstones stamped over it is two floors at once.
+  Pixi only — `canvas2d` has no sprites and that stays correct.
+- **A generated map draws ONLY the generated furniture.** `PROPS` and
+  `PROP_ART` share ids on purpose — the ossuary's bones are drawn and a
+  descent's are generated — so a `bare` map skips the hand-drawn pass entirely.
+  It did not once, and every bone pile carried a pale rectangle nobody could
+  find in the art.
 - **Furniture goes down a CLUSTER at a time.** `VIGNETTES` is authored
-  arrangements and `dressRooms` places them, gated by `ScenePlan.dress`. What
-  the ROCK does is a separate switch, `ScenePlan.grown`: `coverFloor` on the
-  floor and `dressWalls` on the cut face, over the WHOLE grid so a corridor is
-  dressed like a chamber.
+  arrangements and `dressRooms` places them, `DRESS_PER_ROOM` per chamber.
 - **An arrangement is chosen for the SPOT, not given one.** A ragged room holds
   a four-tile square in about one spot in fifteen, so picking the altar and
   hunting for room leaves the chamber bare; picking a spot and taking the
   biggest that fits there, biggest first, lands it. Weight is multiplied by
   AREA, or the small ones take every space big enough for the large ones.
-- **A generated map draws ONLY the generated furniture.** `PROPS` and
-  `PROP_ART` share ids on purpose — the ossuary's bones are drawn and the
-  sandbox's are generated — so a map with `ground` set has to skip the
-  hand-drawn pass entirely. It did not, and every bone pile in the sandbox
-  carried a pale rectangle nobody could find in the art.
 - **The rock does not stop at the GRID.** It is drawn `EDGE` tiles past it on
-  every side, where every cell is further from a floor than `ROCK_REACH`, and
-  the last ring fades to true black — which is the renderer's background under
-  a generated map, so the fade arrives somewhere however far the camera pulls
-  back. The grid is sized off the rooms plus a couple of tiles, so a chamber
-  near the boundary was ending on a straight lit line with flat colour past it.
-  A map with no generated ground keeps `rockDeep`, for the reason it always
-  had: it draws only the band you could see from a room.
-- **BLACK belongs to the rock, or to a hole that reads as one.** *The user's
-  call, looking at it.* Deep rock going out is what answers the repeating
-  stone. Anything else black at the size a cell draws has to EARN it: the
-  sandbox's first three chasms were shredded into scraps of black square in
-  the open floor, which reads as tiles somebody forgot.
-- **The CUT FACE stands down.** `WALL_FACE`, by how many of the tile's corners
-  are face. It is a vertical surface under a light from above, and `intoRock`
-  was doing the exact opposite — the rock's edge cell is the best lit stone on
-  the map, and that cell is the one the set draws as cliff. So every wall wore
-  a band paler than the floor at its foot, which is a grey slab standing there
-  rather than a drop. This one is a per-tile tint on PURPOSE, and does not
-  break the rule against those: a cliff is a discrete surface with a hard edge,
-  not a falloff, so there is no gradient to staircase.
-- **A DROP is keyed a SECOND time, with the world inverted.** The set draws one
-  relationship — rock above, face below — so a hole keyed as stone comes out a
-  raised BLOCK: the cliff lands on the wrong rim and the near edge just stops.
-  `drop` in `buildGround` makes the hole the low ground and everything else the
-  high, and the pass is drawn over the first WHERE THERE IS A FACE — everywhere
-  else that keying is solid rock, and drawing it would paint over the map. What
-  it puts down is the lip: the ground's own edge, lit, ending in a face.
-- **Nothing stands up inside a HOLE.** `carveRoom` skips its islands when the
-  fill is not `FLOOR`. An island in a chasm is ground in mid air, and ragged
-  round as well it comes out as black scraps rather than as a drop.
-- **A chasm BITES a chamber's rim.** That is what makes it a ledge rather than
-  a pit in the rock nobody can walk to, and it is the whole reason to cut one:
-  every edge being rock going UP is a room in a hall. A join across one arrives
-  as a walkway for free, since a passage pinches to two tiles and `carve`
-  writes over a hole. None may cover a tile somebody stands on — restoring
-  those tile by tile is what shredded the first three.
-- **A hole is cut BEFORE the passages.** `VOID` is neither ground nor rock;
-  `carve` writes over one, so the corridor that crosses a chasm is a bridge and
-  no second mechanism is needed to make one. Nothing a room stands somebody on
-  is ever left as void — the reserved tiles are restored after the cut, since a
-  hole under the hero is a room nobody can be in.
+  every side, so a chamber near the boundary is not left ending on a straight
+  lit line with flat colour past it.
 - **What a SET cannot draw, the CARVE must not make.** `fitCorners` in
   `src/sim/grid.ts` opens rock until every cell is a key the set holds, and
   `wangKey` lives beside it because the key is a fact about the GRID first. A
@@ -1513,67 +1484,17 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   measured and both are worse: drawn as the nearest key, such a cell puts a cut
   face where solid rock belongs; built from QUADRANTS of other tiles it puts a
   sliver of floor inside the stone, because a quadrant's picture is not decided
-  by its own corner. It is geometry, exactly as `thinRock` was, and safe for the
-  same reason — opening only ever adds space.
-  - Only a cell TOUCHING floor is opened. Allowed anywhere it punched 50
-    unreachable pockets into the middle of the stone; restricted, none.
-  - Rock a hand-placed prop HANGS on is held, or the repair opens the wall
-    under a torch and leaves it on air.
-- **A hole is walled with the WALL TILE, placed to read as below the floor.**
-  *The user's, with an assembled reference: "the exact tiles we use for walls
-  right now, just place them in a way that makes them look like they are lower
-  than the floor."* Nothing is recoloured to fake a drop and nothing is faded
-  into one — the picture that reads as a wall standing UP when it sits under
-  rock reads as a wall going DOWN when it hangs under ground, and the only
-  difference is which cell it lands in.
-  - The FAR wall: keyed with the world inverted, then laid ONE ROW LOWER than
-    it was keyed. Keyed-and-laid together it paints the last walkable row as
-    cliff; a row down it is inside the hole with the floor still floor.
-  - The FLANKS: the same tile TURNED a quarter, `turned` in `buildGround`. A
-    set draws a face pointing at the camera, so a pit's east and west walls are
-    that picture rotated, rock outward and face into the hole. This is the ONE
-    exception to never turning a tile, and it is narrow: a floor tile rotated
-    clashes with the neighbour it shares a light with, where a wall inside a
-    hole has no neighbour to agree with.
-  - The NEAR wall does not exist. You look over the lip; there is nothing to
-    see, and drawing one would be a wall standing in front of its own floor.
-- **A hole's wall takes the LEDGE's light and is drawn over the lightmap.**
-  What the map touches at a rim it smears across the whole tile, and a drop
-  smeared is fog — that is what the old `VOID_FADE` came to, and it was doing
-  nothing besides, since `intoRock` seeds off every non-rock cell and a hole is
-  one, so every void tile scored the same depth. So the wall is drawn after the
-  light and tinted by `litAt` at the cell it hangs from: the same light,
-  sampled at one cell instead of blended across four. `WALL_FACE` still applies
-  — it is a cut face like any other, and skipping it made the pit walls the
-  brightest thing on the map.
-- **Nothing else about a hole is drawn at all.** No tile, no ring, no fade.
-  Under the wall is the ground layer's own black, which multiplying cannot
-  lift, so the edge is exactly where the ground stops.
-- **Rock a corner set cannot DRAW is cut back to floor.** A corner is rock only
-  where all four cells round it are, so a finger of stone one cell thick holds
-  no rock corner at all and comes out as cut faces with nothing between them —
-  which on screen is a wall melting into the ground. `thinRock` runs after every
-  carve, twice, since cutting one cell can leave its neighbour thin. It only
-  ever opens space, so nothing it does can strand anything.
-- **ONE cut corner is a cliff's corner and is drawn.** Only the cell squarely
-  below a cliff — both top corners the cut face, no rock anywhere — is the flat
-  dark rectangle worth skipping. Skipping the single-corner keys too rounded
-  every wall off into the floor.
-- **A sandbox body PACES.** Standing still is one facing of one animation, and
-  that room's whole job is showing the others. It walks near where it was put,
-  stands about, and goes again — off HOME rather than off wherever it stopped,
-  or a body walks across the room a wander at a time. A `rooted` one has no
-  speed, so a caster still holds the post the layout wants.
-- **The cut face is drawn at the size the SET drew it, and never stretched.**
-  It was grown two tiles tall over the rock behind it, on the finding that a
-  face one tile high is a kerb under a body rendered at one and a half — but
-  that finding was made against a shallow set, and `transition_size` had
-  already answered it by giving the face two thirds of a tile. Stretched on
-  top, every one of the face's rounded columns becomes a POST: what reads is a
-  row of grey uprights standing along the wall, worst where a rock stub two
-  cells wide turns into a crate on the floor. Measured at 1, 1.5 and 2 — 1.5
-  is still a palisade. What HANGS on the face lifts by `WALL_LIFT`, which is
-  into the lower part of its own tile.
+  by its own corner. It is geometry, and safe because opening only ever adds
+  space. Only a cell TOUCHING floor is opened: allowed anywhere it punched 50
+  unreachable pockets into the middle of the stone.
+- **A key a set does not hold takes the NEAREST one it does.** The renderer's
+  backstop, scoring every key the set has with the cut face one step from
+  either terrain and floor three from rock. Falling back by rule rather than by
+  distance left bare squares between two cliffs.
+- **The four wall CONTINUATIONS are told apart by their PATTERN rows**, and
+  those rows are corner values one row out — not the cell's tile type. Read
+  wrong, the wall's lip tile lands anywhere, and a lip repeating down a face is
+  a pale line running up it.
 - **The floor is broken up UNDER the furniture, never with it.** `coverFloor`
   lays loose stone and dust; the renderer draws that pass FIRST, so a slab
   stands on the rubble rather than beside it. Cover claims no tile, blocks
@@ -1602,18 +1523,9 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   than a one-tile nub, or it is a light fixture in mid air. `HUNG_PROPS` is
   everything drawn side-on there and is what the renderer and the demo read;
   `WALL_PROPS` is the smaller list `dressWalls` may SCATTER, and it is roots
-  only. A torch is somebody's, so a torch is placed by hand.
-- **A key a set does not hold takes the NEAREST one it does.** `wangNear`
-  scores every key it has, the cut face counting one step from floor or rock
-  and floor counting three from rock. A generated set answers 21 of the 81, so
-  falling back by rule rather than by distance left bare squares between two
-  cliffs — which is what "the corners do not meet" looks like.
-- **Furniture BLOCKS, and gives that up the moment it cuts anything off.**
-  `SOLID_PROPS` in `vignettes.ts`, `Grid.solid` beside `Grid.tiles`. A second
-  layer, because the ground under an altar is still floor and every renderer
-  keys off `tiles` — marking it rock cuts a hole in the floor to draw a table
-  in. Blocked one tile at a time, and undone if the flood from the hole stops
-  reaching anything the room stands somebody in front of.
+  only. A torch is somebody's, so a torch is placed by hand — which since the
+  shrine went means nothing places one, and `torch` and `hung` are art waiting
+  for an author.
 - **A generated STAIN is drawn back.** The generator shades one like an object
   — domed, lit from one side — whatever the ask says, and at full strength
   that reads as a lump on the floor. `STAIN_ALPHA` sinks it into the stone.
@@ -1631,9 +1543,6 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   is how much of the floor it covers and belongs to the ART: a generator hands
   back a square with a lot of nothing in it, so a prop is cropped to what it
   actually draws before anything measures it.
-- **A room may draw the HERO as a body.** `SceneDef.hero` replaces the doll and
-  its `look` both. It carries its own scale for the reason below, and it is the
-  last thing that made a sandbox use none of the game's own art.
 - **A room's swell may only ADD.** `carveRoom`'s headlands ride on top of the
   ragging rather than replacing it, so every tile the old carve took is still
   taken. A swell that can pull IN puts an authored room's furniture in the
@@ -1643,10 +1552,7 @@ of what makes one.** `#dev-sandbox` on the rail, and nowhere a player goes:
   takes the tiles a plan reserved and drops any island that would land on one:
   a hand-placed prop is a fact about the room, an island is the carve being
   interesting, and the carve loses.
-- **`wangCorners` is a pure function in `render/renderer.ts`**, like every
-  other per-tile answer, so both renderers could only ever agree. A corner is a
-  LATTICE point with four cells round it and is floor if ANY of them is, which
-  is what makes the two terrains interlock.
+
 
 **A bubble is CLAMPED to the window.** The transform hangs a card above its
 anchor point, so a TALL one over somebody standing near the top of the room is
@@ -1841,18 +1747,12 @@ and already automatic.
 | layout, CSS, z-index, anything that MOVES something | `shots`, and `drag` |
 | the dock, a window's position, a drag target | `drag` — 20s, and it prints what `elementFromPoint` hits on a failure |
 | art, sprites, icons | `shots` |
-| the SANDBOX room — its layout, its floor, what the renderer does with a generated tileset | `peek`, and nothing else |
+| a zone's floor, its dressing, what the renderer does with a generated tileset | `peek`, and `demo` for the carve |
 
-**While the work is the sandbox, the main game's harnesses are OUT of the
-loop.** *The user's decision, in their words: "we need to stop testing anything
-on the main game for a while. I want to focus entirely on the demo sandbox
-area. We shouldn't need to test anything in the main game cause we shouldn't be
-changing anything in it."* So the rule is the second half of that sentence
-rather than the first: a sandbox change that reaches the main game is the thing
-to notice, and the way to keep it from reaching is that everything a generated
-tileset does sits behind `buildGround` returning early on a map with no
-`ground`. `comments` and `typecheck` still run — they are seconds and already
-automatic. This lapses the moment a change touches something a player runs.
+**Every graphics change now touches something a player runs.** The exemption
+that took the main game's harnesses out of the loop was for the sandbox, and the
+sandbox is gone: a generated set draws a live descent, so `demo`, `smoke` and
+`shots` are all in the loop for a change to the floor or the dressing.
 
 **When a UI change breaks something, reach for `drag` first.** It found the
 handler race that four rounds of reading a slower harness's output did not,
@@ -1914,13 +1814,13 @@ balance number that reports and can never fail.
   - `tools/model-sheet.mts out.png` — every look, and `out-beasts.png` beside
     it with every creature at every rank. The only view that judges a halo.
   - `tools/model-peek.mts out.png family[,family]` — a few looks, drawn large.
-  - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale]` — the
-    SANDBOX room, off the committed bundle in real Chromium, because Pixi is
-    the only renderer that draws a generated tileset and the room cannot be
-    drawn out of the source. The crop is magnified NEAREST: every fault found
-    in that room so far — the posts along the wall, the black scraps in the
-    floor, the seam where the drawn border stopped — was invisible at the size
-    it ships at and obvious at 5x.
+  - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale]` — a DESCENT
+    on the dev kit, off the committed bundle in real Chromium, because Pixi is
+    the only renderer that draws a generated tileset and a map cannot be drawn
+    out of the source. The crop is magnified NEAREST: every fault found this
+    way so far — the posts along the wall, the black scraps in the floor, the
+    seam where the drawn border stopped — was invisible at the size it ships at
+    and obvious at 5x.
   - `tools/zone-peek.mts out.png [px] [time] [span]` — all four zones off a
     real generated map, centred on the entrance. **`span` must be EVEN**: it is
     halved to find the corner, and an odd one lands the loop on half-tiles and

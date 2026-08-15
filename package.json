@@ -12,7 +12,7 @@
     "shots": "node shots.mjs",
     "mods": "tsx src/mods-check.ts",
     "drag": "node dragprobe.mjs",
-    "peek": "node tools/sandbox-peek.mjs",
+    "peek": "node tools/descent-peek.mjs",
     "comments": "node tools/comment-budget.mjs"
   },
   "devDependencies": {

@@ -1,12 +1,12 @@
 /**
- * The sandbox's art, pulled straight off the MCP server and written into the
+ * The GENERATED art, pulled straight off the MCP server and written into the
  * two tables the renderer reads. Nothing here ships a PNG: a creature and a
  * tileset both come out as lists of strings with a key of their own, exactly
  * like every hand-drawn grid in `src/render`.
  *
- *   npx tsx tools/art/sandbox.mts
+ *   npx tsx tools/art/tables.mts
  *
- * `sandbox.json` beside this file is the SOURCE of truth and names every id;
+ * `generated.json` beside this file is the SOURCE of truth and names every id;
  * nothing here asks the generator for anything new. A character wants a walk
  * animation and a swing — without them the rotation stands in for both and the
  * body does not move.
@@ -92,7 +92,7 @@ type Ground = { grid: number; tiles: Record<number, string[][]>; key: Record<str
 type Prop = { grid: number; tiles: number; rows: string[]; key: Record<string, string> };
 
 const manifest: Manifest = JSON.parse(
-  readFileSync(new URL('./sandbox.json', import.meta.url).pathname, 'utf8')
+  readFileSync(new URL('./generated.json', import.meta.url).pathname, 'utf8')
 );
 
 const hex = (r: number, g: number, b: number): string =>
@@ -477,7 +477,7 @@ const rowSource = (rows: string[], indent: string): string =>
   `[\n${rows.map((r) => `${indent}  '${r}',`).join('\n')}\n${indent}]`;
 
 const header = (what: string): string =>
-  `/**\n * Written by \`tools/art/sandbox.mts\`. Do not edit by hand.\n *\n` +
+  `/**\n * Written by \`tools/art/tables.mts\`. Do not edit by hand.\n *\n` +
   ` * ${what}\n */\n`;
 
 const write = (name: string, text: string): void =>
@@ -492,7 +492,7 @@ for (const spec of [...manifest.bodies, ...(manifest.hero.character ? [manifest.
 write(
   'generated-art.ts',
   header(
-    `The sandbox's bodies, generated through the MCP server and reduced to the\n` +
+    `The generated bodies, off the MCP server and reduced to the\n` +
       ` * same list of strings every hand-drawn one is. Each carries its OWN key: the\n` +
       ` * five inks belong to \`BEASTIARY\`, not to the renderer.`
   ) +
@@ -532,7 +532,7 @@ if (manifest.tileset.id) {
   write(
     'generated-tiles.ts',
     header(
-      `The sandbox's ground: a Wang set whose CORNERS match, so a floor meets rock\n` +
+      `A zone's ground: a Wang set whose CORNERS match, so a floor meets rock\n` +
         ` * without a seam. Keyed by NW/NE/SW/SE as one bit each, high to low, with a\n` +
         ` * NW/NE/SW/SE in base three: 0 floor, 1 rock, 2 the cut face between\n` +
         ` * them, which fills the cell BELOW a boundary so a wall spans two rows.`
