@@ -1,13 +1,8 @@
 {
  "_": "What to ASK the generator for. `generated.json` beside this holds the ids that came BACK and is what ships; this holds the words, so a body can be re-asked, re-rolled or asked for again on a fresh account without anybody reconstructing what was said. `tools/art/body.mts` reads it.",
  "_say": "A state's `say` is `action_description` and the tool warns off environment: movement and pose only, and no room, no floor, no light. Two things are learned and both are in here — naming a weapon the rotation does not hold invents a DIFFERENT one per frame, and an animation drifts off model across its run, so short is safer and 'side profile' is worth saying out loud.",
- "dirs": [
-  "north",
-  "north-east",
-  "east",
-  "south-east",
-  "south"
- ],
+ "face": "south-east",
+ "_face": "The ONE facing generated. It is an angled side profile — front on, but you can see which way a body faces — and the renderer mirrors it for the left half, so two directions cost one. Every quality failure the five-facing era had was a facing other than this one or a strict side.",
  "inks": [
   "#0A0908",
   "#14110F",
@@ -304,29 +299,28 @@
   {
    "sprite": "wanderer",
    "name": "The Wanderer",
-   "character": "d547c059-6efb-466e-8cc1-72db161963ea",
-   "size": 48,
-   "look": "a living man, gaunt and underfed but ALIVE, standing upright, BARE-HEADED with long matted hair and an unkempt beard, nothing on his head at all. He has been lost in the wild a long time and his clothes are WRECKED: a sleeveless tunic torn open and hanging in strips at the hem, one sleeve gone entirely and the other frayed to the elbow, holes worn through at the elbow and the knee, mismatched patches sewn on with twine, trousers shredded below the knee and bound with filthy rag wrappings, boots split at the toe, a frayed rope belt. Empty-handed, no weapon, no armour. His BACK is plain and torn exactly like his front with nothing carried on it. Grimy off-white and dull grey-brown cloth, warm weathered skin at the face, arms and hands so he reads as a LIVING person rather than as one of the dead. NOT a hood, NOT a cowl, NOT a hat, NOT a helmet, NOT a cloak, NOT a cape, NOT a backpack, NOT a bedroll, NOT a satchel, NOT a pack of any kind. NOT a skeleton, NOT undead, NOT a corpse, NOT bone, NOT black, NOT armoured, NOT a knight, NOT a robe, NOT a wizard, NOT bright, NOT clean, NOT colourful. The proportions of an adult man, NOT a big head, NOT chibi, NOT a bobblehead. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "size": 96,
+   "look": "a living man, gaunt and underfed but ALIVE, standing upright and seen at a THREE-QUARTER angle — mostly front on, turned enough that you can tell which way he faces. BARE-HEADED with long matted hair and an unkempt beard, nothing on his head. He has been lost in the wild a long time and his clothes are WRECKED: a sleeveless tunic torn open and hanging in strips at the hem, one sleeve gone and the other frayed to the elbow, holes worn through at the elbow and the knee, mismatched patches sewn on with twine, trousers shredded below the knee and bound with filthy rag wrappings, boots split at the toe, a frayed rope belt. Empty-handed, no weapon, no armour, and nothing carried on his back. Grimy off-white and dull grey-brown cloth, warm weathered skin at the face, arms and hands so he reads as a LIVING person rather than as one of the dead. He is BROAD enough to read at a glance: shoulders square to the viewer, both arms visible, both legs visible. NOT in strict side profile, NOT edge on, NOT a hood, NOT a cowl, NOT a hat, NOT a helmet, NOT a cloak, NOT a backpack, NOT a pack of any kind. NOT a skeleton, NOT undead, NOT a corpse, NOT bone, NOT black, NOT armoured, NOT a knight, NOT a robe, NOT a wizard, NOT bright, NOT clean, NOT colourful. The proportions of an adult man, NOT a big head, NOT chibi, NOT a bobblehead. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {
     "idle": {
      "frames": 4,
-     "say": "standing still in strict side profile, weight settling from one foot to the other, shoulders rising and falling"
+     "say": "standing still at a three-quarter angle, weight settling from one foot to the other, shoulders rising and falling"
     },
     "walk": {
      "frames": 8,
-     "say": "running hard in strict side profile, long driving strides with the knee coming up high and the rear leg kicking back, arms pumping, leaning forward"
+     "say": "running hard toward the viewer at a three-quarter angle, knees driving up high, arms pumping, leaning forward"
     },
     "attack": {
      "frames": 4,
-     "say": "lunging forward onto the front foot in strict side profile and driving one open fist straight ahead at chest height, then pulling it back"
+     "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward and across at chest height, then pulling it back"
     },
     "cast": {
      "frames": 4,
-     "say": "planted with both feet apart in strict side profile, one open hand driven forward from the chest and held out, the other fist pulled back to the hip"
+     "say": "planted with both feet apart at a three-quarter angle, one open hand thrust forward from the chest and held out, the other fist at the hip"
     },
     "death": {
      "frames": 6,
-     "say": "his legs buckling under him and the body pitching forward in strict side profile, folding down onto the ground and coming to rest face down, and staying there"
+     "say": "his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there"
     }
    }
   }

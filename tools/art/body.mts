@@ -4,9 +4,8 @@
  *
  *   body.mts design gaunt [n]     n design images, ONE generation each
  *   body.mts rotate gaunt f.png   the approved design into 8 facings, for 2
- *   body.mts state  gaunt         every state, on ONE facing
+ *   body.mts state  gaunt         every state, on the one FACING
  *   body.mts sheet  gaunt f.png   every frame, to look at
- *   body.mts fill   gaunt         the same states on the other facings
  *   body.mts props                every prop, from scratch
  *   body.mts watch                until nothing is pending
  *
@@ -14,9 +13,9 @@
  * thirty, so a body nobody likes dies at `design`. Three things settle there
  * and nowhere else: the silhouette, the proportions and the TONE.
  *
- * `state` is then deliberately one facing, because a generated animation is
- * judged rather than trusted: look at it, re-roll what is wrong, WINDOW what is
- * nearly right, and only then pay for the other four.
+ * A body is ONE facing — `face` in `bodies.json`, an angled side profile — and
+ * the renderer mirrors it for the left half. An animation is judged rather than
+ * trusted: look at it, re-roll what is wrong, WINDOW what is nearly right.
  *
  * `ROADMAP.md` holds the runbook and the pitfalls. Read them.
  */
@@ -51,7 +50,7 @@ const SLOTS = 10;
 
 const here = (file: string): string => new URL(`./${file}`, import.meta.url).pathname;
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
-  dirs: string[];
+  face: string;
   inks: string[];
   bodies: BodyAsk[];
   props: { id: string; tiles: number; say: string; view?: string; size?: number }[];
@@ -243,7 +242,7 @@ if (command === 'design') {
       height: 128,
       no_background: true,
       view: 'high top-down',
-      direction: 'south',
+      direction: asks.face,
       outline: 'single color black outline',
       shading: 'detailed shading',
       detail: 'highly detailed',
@@ -273,7 +272,7 @@ if (command === 'design') {
   // dressed half of the same pair.
   const text = await callTool('get_character', { character_id: body!.character! });
   const dir = here('cache/designs');
-  for (const facing of asks.dirs) {
+  for (const facing of [asks.face]) {
     const url = new RegExp(`^ {2}${facing}: (https\\S+)$`, 'm').exec(text);
     if (!url) { console.log(`${facing}: no rotation`); continue; }
     writeFileSync(`${dir}/${sprite}-${facing}.png`, await download(url[1]));
@@ -312,25 +311,20 @@ if (command === 'design') {
   });
   console.log(said(out, /id|status/i));
   console.log('put that id in bodies.json AND generated.json before going on');
-} else if (command === 'state' || command === 'fill') {
+} else if (command === 'state') {
   const character = body!.character;
   if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
   // One facing to judge, or the rest to fill in. `fill` appends to the group
   // the judged facing already made, so a body's states stay one group each.
-  const on = command === 'state' ? asks.dirs.slice(2, 3) : asks.dirs.filter((_, i) => i !== 2);
-  const known = groups();
-  const held = command === 'fill' ? await facings(character) : new Map<string, Set<string>>();
+  const on = [asks.face];
+  const held = await facings(character);
   // Naming states asks for THOSE, which is what a re-roll wants: a judged state
   // that failed is deleted and asked again, and the five that passed are not
   // paid for a second time.
   const only = new Set(process.argv.slice(4));
   for (const [name, ask] of Object.entries(body!.states)) {
     if (only.size && !only.has(name)) continue;
-    const group = command === 'fill' ? known[name] : undefined;
-    if (command === 'fill' && !group) {
-      console.log(`${name}: not in generated.json yet — judge it first`);
-      continue;
-    }
+    const group = groups()[name];
     // Only what is MISSING, so a fill is idempotent: the rate limit answers
     // with a hint rather than an error, so a run routinely lands some of a
     // body's facings and not others, and the fix is to run it again.
