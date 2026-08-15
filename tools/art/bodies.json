@@ -96,6 +96,76 @@
     }
    },
    "character": "34dba097-261e-4118-9a31-31e273795920"
+  },
+  {
+   "sprite": "gaunt",
+   "character": "a6e44c6b-7ef6-474c-9c0c-e06baca873b6",
+   "name": "Fissure Gaunt",
+   "look": "a starved skeleton standing upright, thin and long-limbed, a narrow ribcage over a hollow gut and a cracked skull. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. Torn black strings of dried sinew hanging between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    }
+   }
+  },
+  {
+   "sprite": "cleaver",
+   "name": "Fissure Cleaver",
+   "look": "a starved skeleton HUNCHED FORWARD, spine bowed and shoulders hauled up around a cracked skull, thin and long-limbed, both hands gripping the haft of a heavy rusted iron axe held low across the body. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. Torn black strings of dried sinew hanging between the ribs. Dull rust and blackened iron on the axe. Evil, predatory and half-rotted. No clothing, no armour. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    }
+   }
+  },
+  {
+   "sprite": "shrouded",
+   "name": "Fissure Shrouded",
+   "look": "a starved skeleton standing upright in a long ragged ROBE that hangs to the ankles and is torn to loose strips at the hem, the strips lifting and flying out behind it, hood thrown back off a cracked skull, bare finger bones showing at the cuffs. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. The robe is near-black charcoal, filthy and rotted, NOT bright, NOT coloured. Evil, predatory and half-rotted. No armour, no weapon. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+    },
+    "bolt": {
+     "frames": 6,
+     "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
+    },
+    "frost_bolt": {
+     "frames": 4,
+     "say": "side profile, weight dropping onto a wide stance while both arms punch straight out from the ribs with the hands open, then fold back to the chest"
+    },
+    "arc": {
+     "frames": 6,
+     "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
+    }
+   }
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
