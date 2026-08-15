@@ -4424,7 +4424,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
   },
   aethermancer: {
     grid: 48,
-    stride: 1.4,
+    stride: 1.13,
     dirs: ["south-east"],
     frames: [[
       '................................................',
