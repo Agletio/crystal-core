@@ -99,63 +99,99 @@
   },
   {
    "sprite": "gaunt",
-   "character": "a6e44c6b-7ef6-474c-9c0c-e06baca873b6",
+   "character": "b46c8d3f-b2b5-485a-a643-25b6402e9105",
    "name": "Fissure Gaunt",
-   "look": "a starved skeleton standing upright, thin and long-limbed, a narrow ribcage over a hollow gut and a cracked skull. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. Torn black strings of dried sinew hanging between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "look": "an ENORMOUSLY TALL starved undead skeleton, towering and elongated, very long legs carrying most of its height, long thin arms past the knees, a SMALL skull on a long thin neck, empty-handed. Very dark almost-black bone, old blood dried to a rust-brown and black crust. Approved as design tall-b.",
+   "mode": "v3",
+   "size": 96,
    "states": {
     "idle": {
      "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+     "say": "standing still at full height, breathing slowly, ribcage rising and settling, skull turning a little"
     },
     "walk": {
      "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+     "say": "striding forward on very long legs with a stiff hungry gait, knees lifting high, long arms swinging past the hips"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "recoiling hard as it is struck, skull snapping back and the shoulders folding, staggering half a step in strict side profile, then straightening"
+    },
+    "death": {
+     "frames": 6,
+     "say": "the legs buckling under it and the body pitching forward in strict side profile, folding down onto the ground and coming to rest face down, and staying there"
     },
     "attack": {
      "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+     "say": "lunging forward onto the front foot in strict side profile and driving one open hand straight ahead at chest height, fingers spread, then pulling it back"
+    },
+    "cast": {
+     "frames": 6,
+     "say": "planting the back foot in strict side profile and drawing one open palm back beside the skull, then thrusting it forward and hurling something away from the hand"
     }
    }
   },
   {
-   "sprite": "cleaver",
-   "name": "Fissure Cleaver",
-   "look": "a starved skeleton HUNCHED FORWARD, spine bowed and shoulders hauled up around a cracked skull, thin and long-limbed, both hands gripping the haft of a heavy rusted iron axe held low across the body. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. Torn black strings of dried sinew hanging between the ribs. Dull rust and blackened iron on the axe. Evil, predatory and half-rotted. No clothing, no armour. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "sprite": "hewer",
+   "character": "329870bc-efe7-44de-8bcb-4609b862b632",
+   "name": "Fissure Hewer",
+   "look": "a starved undead skeleton HUNCHED FORWARD, spine bowed and shoulders hauled up around the skull, both hands gripping the haft of a heavy rusted digging tool held low. Very dark almost-black bone, old blood dried to a rust-brown and black crust. Approved as design hewer-inked.",
+   "mode": "v3",
+   "size": 96,
    "states": {
     "idle": {
      "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+     "say": "staying hunched forward, breathing slowly, shoulders and ribcage rising and settling, both hands still gripping the haft"
     },
     "walk": {
      "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+     "say": "shambling forward still hunched over, both hands gripping the haft and dragging it low, legs swinging stiffly from the hip"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "recoiling hard as it is struck, skull snapping back and the shoulders folding, staggering half a step in strict side profile, then straightening"
+    },
+    "death": {
+     "frames": 6,
+     "say": "the legs buckling under it and the body pitching forward in strict side profile, folding down onto the ground and coming to rest face down, and staying there"
     },
     "attack": {
      "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+     "say": "hauling both arms up over the shoulder in strict side profile and swinging them down hard across the body in a heavy overhead chop, then dragging back to a hunch"
     }
    }
   },
   {
-   "sprite": "shrouded",
-   "name": "Fissure Shrouded",
-   "look": "a starved skeleton standing upright in a long ragged ROBE that hangs to the ankles and is torn to loose strips at the hem, the strips lifting and flying out behind it, hood thrown back off a cracked skull, bare finger bones showing at the cuffs. The bone is DARK — deep grey-brown going almost black in the hollows, stained and filthy, NOT white, NOT bone white, NOT pale, NOT cream, NOT ivory, NOT light grey. Old dried gore caked across the ribs and the jaw and down the finger bones, DARK BROWN-BLACK dried blood, NOT red, NOT pink, NOT crimson, NOT magenta, NOT bright, NOT wet. Two dim cold points of light deep in the eye sockets. The robe is near-black charcoal, filthy and rotted, NOT bright, NOT coloured. Evil, predatory and half-rotted. No armour, no weapon. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
+   "sprite": "shroud",
+   "character": "f55a5ea6-2a2c-4fe7-bdcd-3a24dc3bbe69",
+   "name": "Fissure Shroud",
+   "look": "a starved undead skeleton in a long ragged near-black robe torn to strips at the hem, hood thrown back off a cracked skull, bare finger bones at the cuffs. Very dark almost-black bone, old blood dried to a rust-brown and black crust. Approved as design shroud-inked.",
+   "mode": "v3",
+   "size": 96,
    "states": {
     "idle": {
      "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
+     "say": "standing still, breathing slowly, the ragged hem stirring and settling around the ankles"
     },
     "walk": {
      "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
+     "say": "gliding forward with a slow stiff gait, the ragged hem lifting and flying out behind it"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "recoiling hard as it is struck, skull snapping back and the shoulders folding, staggering half a step in strict side profile, then straightening"
+    },
+    "death": {
+     "frames": 6,
+     "say": "the legs buckling under it and the body pitching forward in strict side profile, folding down onto the ground and coming to rest face down, and staying there"
     },
     "attack": {
      "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+     "say": "driving one open hand straight ahead at chest height in strict side profile, lunging onto the front foot, the sleeve falling back off the wrist"
     },
     "bolt": {
      "frames": 6,
-     "say": "planting the back foot, drawing one open palm back beside the skull and thrusting it forward, hurling something away from the hand"
+     "say": "drawing one open palm back beside the skull in strict side profile, then thrusting it forward and hurling something away from the hand, the hem snapping back"
     },
     "frost_bolt": {
      "frames": 4,
@@ -163,74 +199,7 @@
     },
     "arc": {
      "frames": 6,
-     "say": "lifting one arm high with the fingers splayed wide, arching the spine back, then whipping the arm down and forward"
-    }
-   }
-  },
-  {
-   "sprite": "gaunt_v3",
-   "character": "617dbef1-9ea0-4fbb-be68-2d3a4bcc10db",
-   "name": "Gaunt v3",
-   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is a cold dark grey-brown, the colour of wet stone, filthy and stained — NOT white, NOT bone white, NOT cream, NOT ivory, NOT pink, NOT mauve, NOT purple, NOT lilac. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
-   "mode": "v3",
-   "size": 96,
-   "states": {
-    "idle": {
-     "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
-    },
-    "walk": {
-     "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
-    }
-   }
-  },
-  {
-   "sprite": "gaunt_real",
-   "character": "79ad7d66-ac50-4ea6-a4ce-18a4b26769f1",
-   "name": "Gaunt Real",
-   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is a cold dark grey-brown, the colour of wet stone, filthy and stained — NOT white, NOT bone white, NOT cream, NOT ivory, NOT pink, NOT mauve, NOT purple, NOT lilac. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
-   "mode": "standard",
-   "proportions": "{\"type\": \"preset\", \"name\": \"realistic_male\"}",
-   "size": 96,
-   "states": {
-    "idle": {
-     "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
-    },
-    "walk": {
-     "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
-    }
-   }
-  },
-  {
-   "sprite": "gaunt_dark",
-   "character": "34b63d50-79ba-41bc-8902-d62a10df27be",
-   "name": "Gaunt Dark",
-   "look": "a starved undead skeleton standing upright, thin and long-limbed, with a SMALL skull on a long thin neck and the proportions of a tall adult man — NOT a big head, NOT an oversized skull, NOT chibi, NOT a bobblehead. A narrow ribcage over a hollow gut, every rib and the spine standing out sharp. The bone is VERY DARK, almost black — a cold charcoal grey-brown the colour of wet slate, soaked and filthy, far darker than any bone should be, closer to burnt wood than to bone. NOT white, NOT off-white, NOT bone white, NOT cream, NOT ivory, NOT tan, NOT beige, NOT sand, NOT gold, NOT yellow, NOT amber, NOT bronze, NOT warm, NOT pale, NOT light. Old blood dried to a crust of DARK RUST-BROWN and BLACK, caked down the ribs and the jaw and hanging off the finger bones — NOT bright red, NOT pink, NOT crimson, NOT magenta. Deep black shadow inside the eye sockets and between every rib, with two dim points of cold light far back in the sockets. Torn black strings of dried sinew between the ribs. Evil, predatory and half-rotted. No clothing, no armour, no weapon, nothing in either hand. No glow, no rim light, no glowing outline and no magic aura of any kind — one flat dead body.",
-   "mode": "v3",
-   "size": 96,
-   "states": {
-    "idle": {
-     "frames": 4,
-     "say": "standing still on guard, breathing slowly, ribcage and shoulders rising and settling, head barely moving"
-    },
-    "walk": {
-     "frames": 8,
-     "say": "walking forward with a stiff shambling gait, legs swinging from the hip, arms hanging and swaying"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "staying in strict side profile, lunging forward onto the front foot and driving one clawed hand straight ahead at chest height, then pulling it back"
+     "say": "lifting one arm high with the fingers splayed wide and arching the spine back, then whipping the arm down and forward across the body"
     }
    }
   }
@@ -466,5 +435,6 @@
    "size": 64,
    "say": "A few thin dead roots creeping FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another and forking, with bare stone showing between them. They lie ON the ground and are dry and colourless. NOT green, NOT leaves, NOT a plant, NOT healthy, NOT standing up, NOT a rope. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty — NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
   }
- ]
+ ],
+ "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask — and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."
 }
