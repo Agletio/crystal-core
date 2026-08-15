@@ -82,11 +82,19 @@ descent over a generated set IS one, with monsters that fight back. `npm run
 peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
 magnified crop, because every fault worth finding is invisible at ship size.
 
-**Only the HERO wears anything, and what he wears is his TRADE.** A look is a
-WHOLE BODY, so it is the pipeline every monster already uses: `dress.mts <look>
---state <character>` puts one on through `create_character_state` — one charge,
-every rotation, identity kept, and the result animates like any other body.
-Equipped gear does not change the sprite.
+**THE HERO IS GENERATED, and what he wears is his TRADE.** He is `wanderer` — a
+starved man bare-headed and in wrecked clothes, six states over five facings —
+and `heroSpriteFor` in `src/sim/appearance.ts` answers the trade's own
+`TradeSpec.sprite`, then him, then the hand-drawn doll. Neither trade has a look
+yet, so everyone is the base man, which is what he is for: you start as nobody
+and taking up a trade is what dresses you. Equipped gear does not change the
+sprite at all.
+
+A look is a WHOLE BODY, so it is the pipeline every monster already uses:
+`dress.mts <look> --state <character>` puts one on through
+`create_character_state` — one charge, every rotation, identity kept, and the
+result animates like any other body. **The doll stays until every trade has
+one**, and then `gear-art.ts`, `look.ts`, `POSES` and `Look` go in one piece.
 
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
 and `tools/art/generated.json` is what came BACK, one row per thing.

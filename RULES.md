@@ -980,15 +980,40 @@ were the per-slot route and it is gone. **No trade is the base man himself**,
 ragged and empty-handed, so you start as nobody and taking up a trade is what
 dresses you.
 
-**THE HERO IS STILL A DOLL until the generated one is in a descent.** `heroArt`
-builds him from `BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`,
-with `gear-art.ts` — 1,409 lines — drawing armour and weapons as LAYERS over him
-at `DOLL_GRID` 24, and `lookOf` turning what is equipped into a `Look`. It works
-because every piece is authored against ONE pose with the grip at (17, 14), so
-12 armour families × 3 tiers × 3 slots reach the screen without 108 drawings.
-Nothing outside the map draws any of it — swept, and the only readers beyond
-those files are the demo's own checks — so it goes in one piece when it goes,
-and not before. Phase 1 of `ROADMAP.md` is that work.
+**An animation is JUDGED on ONE facing before the other four are paid for, and
+the judgement is the point.** Of the hero's six states, three came back wrong
+from a first ask: the death never left its feet, which is the "a body will not
+lie FLAT" trap; the flinch barely moved; the swing read as a reach. The fix was
+not new prose — it was the rule already written here. **Vary the sentence that
+already worked.** The Gaunt's death, hurt and attack `say` strings ship and
+work, and with the pronouns changed they worked for a living man too: he pitches
+forward, drops to his hands and knees and comes to rest flat. `body.mts state`
+takes state NAMES so a re-roll pays for what failed, and `delete_animation`
+clears the group first.
+
+**THE HERO IS GENERATED, and `heroSpriteFor` is the one place that chooses.**
+`src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, then the
+base man `wanderer`, then the doll — so a look nobody has generated is a
+hand-drawn hero rather than an empty tile. `run.ts` sets `Entity.look` ONLY for
+the doll, because an empty `Look` still draws one, and a generated body takes
+`scale` 1.5 where the doll takes 1.15.
+
+**The DOLL is still there and is the fallback.** `heroArt` builds him from
+`BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`, with
+`gear-art.ts` — 1,409 lines — drawing armour as LAYERS over him at `DOLL_GRID`
+24, and `lookOf` turning what is equipped into a `Look`. Nothing outside the map
+draws any of it: swept, and the only readers beyond those two files are the
+demo's own checks. So it goes in ONE piece when it goes, and it does not go
+until every trade has a look — until then a trade with no sprite is the base
+man, which is correct rather than a gap.
+
+**`BodySpec.frames` is the count KEPT, not the count generated.** `spread` in
+`tables.mts` resamples a state's window down to it, so trimming a body costs no
+generations at all — and the hero shipped 36 frames a facing before anybody
+looked. He is 21 now: the monsters' 14 with more walk and more swing, because he
+is the body on screen every second. **Measured, that is 1.3 MB of source against
+a monster's 0.8**, and ten trade bodies would be about 13 MB on top of the 4.67
+already there. The source size is the wall, and the frame budget is the lever.
 
 **Ten trades is a SOURCE SIZE problem and two is not.** A body is ~0.8 MB at
 grid 96 and six already cost 4.67 MB; eleven hero bodies would add about eight
