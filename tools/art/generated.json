@@ -139,19 +139,24 @@
    ],
    "states": {
     "idle": {
-     "group": "50e34a61-fb2a-47fc-bfc1-9db79508d32c"
+     "group": "50e34a61-fb2a-47fc-bfc1-9db79508d32c",
+     "frames": 2
     },
     "walk": {
-     "group": "9fba91e8-d030-4e55-b279-e15b69cea669"
+     "group": "9fba91e8-d030-4e55-b279-e15b69cea669",
+     "frames": 4
     },
     "attack": {
-     "group": "590cd4f1-3530-46fb-ae74-477f755c9811"
+     "group": "590cd4f1-3530-46fb-ae74-477f755c9811",
+     "frames": 3
     },
     "hurt": {
-     "group": "b74a1de7-8684-4cab-88ab-5649cf9ef101"
+     "group": "b74a1de7-8684-4cab-88ab-5649cf9ef101",
+     "frames": 2
     },
     "death": {
-     "group": "d5134262-231c-40d0-901f-b52b59085f91"
+     "group": "d5134262-231c-40d0-901f-b52b59085f91",
+     "frames": 3
     }
    }
   },
@@ -167,19 +172,24 @@
    ],
    "states": {
     "idle": {
-     "group": "b0a98186-91c2-4624-9e3f-7f8f2223047f"
+     "group": "b0a98186-91c2-4624-9e3f-7f8f2223047f",
+     "frames": 2
     },
     "walk": {
-     "group": "df8068f7-2080-4e25-92ec-40a0ab31ce66"
+     "group": "df8068f7-2080-4e25-92ec-40a0ab31ce66",
+     "frames": 4
     },
     "attack": {
-     "group": "7ffa32e1-6cb7-4582-a79d-aa176557f82e"
+     "group": "7ffa32e1-6cb7-4582-a79d-aa176557f82e",
+     "frames": 3
     },
     "hurt": {
-     "group": "eb116607-5fb6-4e17-a9f7-1b311b6c5fd4"
+     "group": "eb116607-5fb6-4e17-a9f7-1b311b6c5fd4",
+     "frames": 2
     },
     "death": {
-     "group": "b31b6cda-22bb-48f2-b402-3ed8458edeb8"
+     "group": "b31b6cda-22bb-48f2-b402-3ed8458edeb8",
+     "frames": 3
     }
    }
   },
@@ -195,19 +205,25 @@
    ],
    "states": {
     "idle": {
-     "group": "6ca95716-858d-4ec0-a15b-eeb1f0c06bd7"
+     "group": "6ca95716-858d-4ec0-a15b-eeb1f0c06bd7",
+     "frames": 2
     },
     "walk": {
-     "group": "8dc1e3c6-1186-4b8b-8d81-11dcd2916d98"
+     "group": "8dc1e3c6-1186-4b8b-8d81-11dcd2916d98",
+     "frames": 4,
+     "to": 0.5
     },
     "attack": {
-     "group": "5578df15-2a0f-4590-abb7-44b47c88f2b5"
+     "group": "5578df15-2a0f-4590-abb7-44b47c88f2b5",
+     "frames": 3
     },
     "hurt": {
-     "group": "29576237-da4c-45a4-8218-69c670562dd9"
+     "group": "29576237-da4c-45a4-8218-69c670562dd9",
+     "frames": 2
     },
     "death": {
-     "group": "5fda2264-c5a7-4d35-aaae-306907f8326c"
+     "group": "5fda2264-c5a7-4d35-aaae-306907f8326c",
+     "frames": 3
     }
    }
   }

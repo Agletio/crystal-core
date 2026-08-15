@@ -302,6 +302,10 @@ if (command === 'design') {
     rows.map((r) => Promise.all(r.urls.map(async (u) => decodePng(await download(u)))))
   );
   const flat = shots.flat();
+  // A state whose frames are still rendering has no urls, and the sizes below
+  // are then a max over nothing — which reaches `encodePng` as a NaN rather
+  // than as a complaint about the thing that is actually wrong.
+  if (flat.length === 0) throw new Error(`${sprite}: no frames yet — still rendering?`);
   const w = Math.max(...flat.map((i) => i.width));
   const h = Math.max(...flat.map((i) => i.height));
   const across = w * Math.max(...shots.map((s) => s.length));
