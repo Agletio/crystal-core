@@ -792,12 +792,23 @@ on `Cel` as `dead`/`dying` and plays over `DEATH_FADE`. `hurt` IS an
 Both play their run ONCE and hold on the last frame, through `once()`, which
 the swing shares: a fall that loops is a body getting up again.
 
-**There is no RUN, and a body may not be given one.** `EntityAction` has a
-single movement action, and `stepMonster` returns before moving until a monster
-has aggroed — so a monster's movement is ALWAYS a chase and one of walk and run
-could never draw, which the "every frame that ships is reached" check fails. The
-one movement animation is asked for as a hungry stride. A real split needs
-unaggroed monsters to wander, which is a change to the SIM.
+**A body that has not seen you PACES, and stays where it was put.** `pace` in
+`src/sim/run.ts`: an anchored wander inside `WANDER_REACH` of the spot it was
+placed, at `WANDER_PACE` of its chase speed, resting between steps. Standing
+perfectly still reads as a prop; a pack that walks somewhere has left the room
+it guards, so `home` is the anchor and the reach is about a tile. It moves by
+`nudge`, never `glide` — `nudge` tests the whole BODY against the rock where
+`glide` tests a centre — and the demo holds all three halves: that it stirs,
+that it stays, and that it is never in rock.
+
+**There is STILL no run, and a body may not be given one.** `EntityAction` has
+a single movement action and both a wander and a chase draw it, so one of walk
+and run would never draw and the "every frame that ships is reached" check
+fails. The one movement animation is asked for as a hungry stride. What the
+pace changed is that a SPLIT is now possible — an unwoken body has a movement
+of its own to animate — but nothing has been generated for it and adding a
+second movement action is still a change to the sim, the manifest and every
+body's ask.
 
 **NOTHING is labelled as a shooter, because the body says it.** The pip over a
 thrower's head is gone and so is `castsVisibly`: only a body marked `throws`

@@ -71,6 +71,19 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **A single-seed check does not fail when a mechanism breaks; it fails when
+  the rng moves.** The wander shifted every draw after it and two checks went
+  red, neither for a real reason. The Slow lands on six maps in eight and the
+  demo measured one of the two that see none — it sweeps eight now. And "a
+  press changes the run" compared two fingerprints eighty seconds apart, which
+  a flask poured into a barely-hurt character correctly does not move; it asks
+  the PRESS whether it spent a charge and put the flask on the hero instead.
+  **Compare the thing you changed, not the far end of a run that contains it.**
+- **A per-entity measurement must be scoped per SIM.** The wander's own check
+  kept one `Map` of home positions across three seeds, and entity ids start
+  again with each `RunSim` — so it measured a body in one descent against where
+  a different body stood in the last and read 27 tiles of drift that nothing
+  had walked.
 - **`tables.mts props` CLOBBERED the zone tilesets, silently.** It wrote a
   `TILESETS` table into `src/render/generated-tiles.ts` — the file
   `zoneset.mts emit` owns — and nothing has read `TILESETS` since generated
