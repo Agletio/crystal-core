@@ -220,6 +220,8 @@ export async function createPixiRenderer(
     skill: e.skillId,
     facing: e.facing,
     spell: casting(e),
+    dead: e.dead,
+    dying: Math.min(1, e.deathAge / DEATH_FADE),
   });
 
   /** A creature's frames at its rank, falling back to the common ones. */

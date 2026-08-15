@@ -1387,19 +1387,23 @@ rule('SPRITES — is the pixel art well formed?');
     const reached = new Set<string>();
     for (const [id, art] of Object.entries(GENERATED)) {
       const skills = [null, ...Object.keys(art.states)];
+      // Dying is not an `EntityAction`, so it is swept as its own axis: a
+      // corpse plays its own run over `DEATH_FADE` whatever it was doing.
       for (const action of ['idle', 'move', 'attack', 'hurt']) {
         for (const skill of skills) {
           for (let turn = 0; turn < 16; turn++) {
             for (const at of [0, 0.34, 0.67, 1]) {
+              for (const dead of [false, true]) {
               const facing = (turn / 16) * Math.PI * 2 - Math.PI;
               const frame = generatedFrame(id, {
                 action, through: at, elapsed: at * 3, walked: at * 3,
-                skill, facing, spell: false,
+                skill, facing, spell: false, dead, dying: at,
               });
               if (frame >= art.frames.length || frame < 0) {
                 past.push(`${id} ${action}/${skill} -> ${frame} of ${art.frames.length}`);
               }
               reached.add(`${id}:${frame}`);
+              }
             }
           }
         }
@@ -1474,7 +1478,7 @@ rule('SPRITES — is the pixel art well formed?');
 
     // A state named for a skill nothing throws is a generation spent on a
     // pose that never plays.
-    const known = new Set(['idle', 'walk', 'attack', 'cast', ...throwers]);
+    const known = new Set(['idle', 'walk', 'attack', 'cast', 'hurt', 'death', ...throwers]);
     const odd = Object.entries(GENERATED).flatMap(([id, art]) =>
       Object.keys(art.states).filter((s) => !known.has(s)).map((s) => `${id}/${s}`)
     );

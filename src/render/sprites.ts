@@ -263,7 +263,15 @@ export interface Cel {
   skill: string | null;
   facing: number;
   spell: boolean;
+  /** A corpse, and how far through `DEATH_FADE`: `EntityAction` has no death. */
+  dead?: boolean;
+  dying?: number;
 }
+
+/** Played once and HELD on the last frame: a swing, a flinch and a fall all
+ *  end where they end rather than looping back round. */
+const once = (run: number[], at: number): number =>
+  run[Math.min(run.length - 1, Math.max(0, Math.floor(at * run.length)))] ?? 0;
 
 export function generatedFrame(sprite: string, e: Cel): number {
   const art = GENERATED[sprite];
@@ -272,10 +280,14 @@ export function generatedFrame(sprite: string, e: Cel): number {
   const stride = art.frames.length / art.dirs.length;
   const row = facingRow(sprite, e.facing) * stride;
 
+  // Falling over outranks whatever it was doing when it was killed.
+  if (e.dead && states.death) return row + once(states.death, e.dying ?? 1);
+  if (e.action === 'hurt' && states.hurt) return row + once(states.hurt, e.through);
+
   if (e.action === 'attack') {
     const own = (e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null);
     const run = own ?? states.attack ?? states.walk ?? [0];
-    return row + (run[Math.min(run.length - 1, Math.floor(e.through * run.length))] ?? 0);
+    return row + once(run, e.through);
   }
   const walk = states.walk ?? [0];
   if (e.action === 'move') return row + walk[Math.floor(e.walked / STRIDE) % walk.length];
@@ -288,10 +300,15 @@ export function generatedFrame(sprite: string, e: Cel): number {
  *  lunge and the bob are TRANSFORMS standing in for frames nobody had drawn;
  *  over frames that exist they are a second motion fighting the first, which
  *  is the shove-the-model-forward look. */
-export function animates(sprite: string, e: Pick<Cel, 'action' | 'skill' | 'spell'>): boolean {
+export function animates(
+  sprite: string,
+  e: Pick<Cel, 'action' | 'skill' | 'spell'> & { dead?: boolean }
+): boolean {
   const states = GENERATED[sprite]?.states;
   if (!states) return false;
+  if (e.dead) return !!states.death;
   if (e.action === 'move') return !!states.walk;
+  if (e.action === 'hurt') return !!states.hurt;
   if (e.action !== 'attack') return false;
   return !!((e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null) ?? states.attack);
 }
