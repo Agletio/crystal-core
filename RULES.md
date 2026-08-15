@@ -799,10 +799,11 @@ could never draw, which the "every frame that ships is reached" check fails. The
 one movement animation is asked for as a hungry stride. A real split needs
 unaggroed monsters to wander, which is a change to the SIM.
 
-**A pip over a monster's head says it SHOOTS, and only where the body does
-not.** `castsVisibly` asks whether the body has an animation of its own for
-what it is throwing; a caster with its own silhouette does not need a label,
-and a hand-drawn pack that all look alike still gets one.
+**NOTHING is labelled as a shooter, because the body says it.** The pip over a
+thrower's head is gone and so is `castsVisibly`: only a body marked `throws`
+can throw, there is one per family, and each has its own animation for every
+bolt it carries. A label doing a silhouette's job is a label to delete the
+moment the silhouette can do it.
 
 **A walk cycle is measured in GROUND COVERED, never in seconds.** `STRIDE` is
 tiles per frame and `Entity.walked` is what a body has actually walked, so a
@@ -1278,10 +1279,17 @@ third and a save can hand out an id the next item then reuses.
 **An element belongs to the MONSTER.** `MONSTER_ABILITIES` in `src/data.ts` says
 what a monster does and what it deals doing it, and `monsterStats` takes one as
 its third argument. Nothing about the map decides a damage type any more. Rolled
-per PACK, exactly as being ranged was and for the same reason — a pack throwing
-two elements reads as noise where a uniform one reads as a thing you recognise
-and answer — and the ranged entries weigh a quarter of the table, which is the
-constant they replaced.
+per PACK — a pack throwing two elements reads as noise where a uniform one reads
+as a thing you recognise and answer.
+
+**A BODY either throws or bites, and never both.** `MonsterDef.throws` picks its
+half of that table, split on the `skill` field, through the single seam
+`abilityFor`. **Every family has exactly one thrower** — Bonecaller, Chanter,
+Prism — and that is load-bearing rather than flavour: measured, a pool with no
+thrower deals about half what it did (demonic 9.9 → 5.1 damage a second,
+prismatic 7.5 → 3.0), which put both aura worlds under the Fissure and broke
+"Normal is the shallow end". Adding a thrower to a family is how you keep that
+rule; taking the last one away is how you break it.
 
 **A crystal ADDS damage; it never converts it.** A share of what a monster
 already hits for, dealt as one type on top of the monster's own. The arithmetic

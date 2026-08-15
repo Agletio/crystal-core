@@ -215,11 +215,16 @@ on it. `COVER_RATE` is indexed by how far a tile is from the ROCK, and that is
 the whole of what makes it ground rather than confetti: debris DRIFTS at the
 foot of a wall and thins to almost nothing in the open. One rate everywhere is
 uniform noise, which is not texture. It claims no tile, blocks nothing, and
-each scrap is shifted off its own colour and size.
+each scrap is shifted off its own colour and size. **It skips a cell with rock
+ABOVE it**, which is the one the cut face is DRAWN in — and also the heaviest
+row of the rate, so every cliff wore a band of stone halfway up it.
 
-**`WALL_PROPS` is what GROWS on the cut face** — roots, and only roots. It is
-the one thing placed INTO rock, on a RUN of it rather than a one-tile nub, and
-drawn side-on because that is the one surface seen from the side. A torch or a
+**`WALL_PROPS` is what GROWS on the cut face** — three shapes of dead root, at a
+rate better than twice what it was, since it is the only thing left standing on
+a descent and carries the wall alone. Three rather than one because a run of cut
+face is where a single picture repeats within sight of itself. It is placed INTO
+rock, on a RUN of it rather than a one-tile nub, and drawn side-on because that
+is the one surface seen from the side. A torch or a
 body hanging there is `HUNG_PROPS`: placed by hand, never scattered, since a
 lit torch on a wall nobody stands near is a bucket in the middle of a room.
 
@@ -308,9 +313,18 @@ so both renderers read one answer.
 table of what a monster does and what it deals doing it — Claws, Emberbite,
 Rimebite, and three thrown ones — rolled per PACK off the run's own rng, because
 a pack throwing two elements reads as noise where a uniform one reads as a thing
-you recognise. The three ranged entries weigh a quarter of the table between
-them, which is exactly the share that used to shoot. `MONSTER_ABILITY_BY_ID`
-names them; a monster skill has no `category`, so it never reaches the Skills
+you recognise.
+
+**And the body decides WHICH HALF of that table it rolls.** `MonsterDef.throws`
+splits it on the `skill` field: a thrower only ever throws and everything else
+only ever bites, so the pack that shoots is the one whose silhouette says so and
+there is nothing to label. **One body per family throws** — the **Bonecaller**
+in the Fissure, the **Chanter** in the Rot, the **Prism** in the Cavern — and
+each rolls fire, frost or lightning fresh. That is not decoration: measured, a
+world with no thrower at all deals about HALF what it did, which took the aura
+worlds below the Fissure and broke the ladder. `abilityFor` in `src/sim/run.ts`
+is the one seam, so a pack, a boss, its adds and the closing encounter all agree
+about which bodies throw. `MONSTER_ABILITY_BY_ID` names them; a monster skill has no `category`, so it never reaches the Skills
 screen. **Lightning Arc** is the one that is not a line to one target: it
 carries 2 Arcs at 60% each off the skill's own `params`, which the projectile
 behaviour sums with whatever a tree grants.
