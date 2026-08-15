@@ -158,7 +158,8 @@
      "group": "d5134262-231c-40d0-901f-b52b59085f91",
      "frames": 3
     }
-   }
+   },
+   "luma": 32
   },
   {
    "sprite": "courser",
@@ -191,7 +192,8 @@
      "group": "b31b6cda-22bb-48f2-b402-3ed8458edeb8",
      "frames": 3
     }
-   }
+   },
+   "luma": 32
   },
   {
    "sprite": "heap",
@@ -225,7 +227,8 @@
      "group": "5fda2264-c5a7-4d35-aaae-306907f8326c",
      "frames": 3
     }
-   }
+   },
+   "luma": 32
   }
  ],
  "props": [

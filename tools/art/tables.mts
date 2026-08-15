@@ -30,6 +30,10 @@ interface BodySpec {
    * western three are reflections and paying for them buys nothing.
    */
   dirs?: string[];
+  /** The mean brightness this body is taken to, over every frame at once. A
+   *  TARGET rather than a gain, so one re-generated brighter still lands with
+   *  the roster. Omitted, it ships as the generator drew it. */
+  luma?: number;
   /**
    * State name -> which animation GROUP ID on the generator, and which window
    * of it to keep. The whole of what makes a body's states data: a further one
@@ -55,6 +59,34 @@ function dulled(image: Decoded, by: number): Decoded {
     for (let c = 0; c < 3; c++) rgba[i + c] = Math.round(rgba[i + c] + (luma - rgba[i + c]) * by);
   }
   return { width: image.width, height: image.height, rgba };
+}
+
+/** Every frame of one body onto a mean BRIGHTNESS, TOGETHER and never per
+ *  frame — a gain off the frame it is handed makes a walk flicker as the arms
+ *  swing, which is `fittedTogether`'s fault in another currency. Bodies asked
+ *  in the same words land different distances from black: the first three
+ *  skeletons measure luma 30-35 and three later ones 43-56. Saturation
+ *  matches already and is left alone. */
+function levelled(images: Decoded[], want: number): Decoded[] {
+  let sum = 0;
+  let n = 0;
+  for (const image of images) {
+    for (let i = 0; i < image.rgba.length; i += 4) {
+      if (image.rgba[i + 3] < 128) continue;
+      sum += 0.299 * image.rgba[i] + 0.587 * image.rgba[i + 1] + 0.114 * image.rgba[i + 2];
+      n++;
+    }
+  }
+  if (n === 0) return images;
+  const by = want / (sum / n);
+  return images.map((image) => {
+    const rgba = new Uint8Array(image.rgba);
+    for (let i = 0; i < rgba.length; i += 4) {
+      if (rgba[i + 3] < 128) continue;
+      for (let c = 0; c < 3; c++) rgba[i + c] = Math.min(255, Math.round(rgba[i + c] * by));
+    }
+    return { width: image.width, height: image.height, rgba };
+  });
 }
 
 /** `tiles` is how much of the FLOOR it covers, which the generator cannot know.
@@ -283,13 +315,13 @@ async function creature(spec: BodySpec): Promise<Art> {
     }
   }
 
-  const images = await Promise.all(
+  const got = await Promise.all(
     wanted.map(async (url) => debackground(decodePng(await download(url))))
   );
-  // A template animation comes back on the character's own canvas and a v3 one
-  // on a larger one, so frames of one body arrive at two sizes. Centred in the
-  // biggest of them they share a grid, and the common fit keeps a raised arm
-  // taller than the walk rather than scaling each frame to fill its own box.
+  const images = spec.luma ? levelled(got, spec.luma) : got;
+  // Frames of one body arrive at two canvas sizes — a template animation on the
+  // character's own and a v3 one larger. Centred in the biggest they share a
+  // grid, and the common fit keeps a raised arm taller than the walk.
   const widest = Math.max(...images.map((i) => i.width));
   const square = images.map((i) => centred(i, widest));
 
