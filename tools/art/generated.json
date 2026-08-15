@@ -264,9 +264,31 @@
    "dirs": [
     "south-east"
    ],
-   "states": {},
+   "states": {
+    "idle": {
+     "group": "1f3083e5-5c59-400b-9d2d-4e7d7757e90f",
+     "frames": 2
+    },
+    "walk": {
+     "group": "6993493f-c66b-467d-850d-ec73530f762f",
+     "frames": 6
+    },
+    "attack": {
+     "group": "a0a8c2c8-c48b-4bd3-aeda-a93578b53589",
+     "frames": 4
+    },
+    "cast": {
+     "group": "cd52bd1e-04f8-4aa9-a90c-265dbf9601a1",
+     "frames": 3
+    },
+    "death": {
+     "group": "6607921f-3a03-494b-9fb3-6bbb06877b09",
+     "frames": 4
+    }
+   },
    "grid": 48,
-   "inks": 24
+   "inks": 24,
+   "stride": 1.19
   }
  ],
  "props": [

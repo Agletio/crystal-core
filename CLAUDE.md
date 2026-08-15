@@ -84,17 +84,14 @@ magnified crop, because every fault worth finding is invisible at ship size.
 
 **THE HERO IS GENERATED, and he IS his TRADE.** `heroSpriteFor` in
 `src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, then
-`wanderer`, then the hand-drawn doll. The Aethermancer has his own body; the
-Alchemist does not yet and stands as the wanderer — a starved man bare-headed
-and in wrecked clothes, who is now only the FALLBACK rather than who you start
-as. There is no nobody to start as: the trade is chosen when the character is
-made. Equipped gear does not change the sprite at all.
+`wanderer`, then the hand-drawn doll. BOTH trades have a body now, so the
+wanderer — a starved man bare-headed and in wrecked clothes — is the FALLBACK
+rather than who you start as, and there is no nobody to start as: the trade is
+chosen when the character is made. Equipped gear does not change the sprite.
 
-A look is a WHOLE BODY, so it is the pipeline every monster already uses:
-`dress.mts <look> --state <character>` puts one on through
-`create_character_state` — one charge, every rotation, identity kept, and the
-result animates like any other body. **The doll stays until every trade has
-one**, and then `gear-art.ts`, `look.ts`, `POSES` and `Look` go in one piece.
+A look is a WHOLE BODY, generated as one and animated like any monster. **Every
+trade has one, so `gear-art.ts`, `look.ts`, `POSES` and `Look` — the hand-drawn
+doll and the per-slot layers it was dressed in — can go in one piece.**
 
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
 and `tools/art/generated.json` is what came BACK, one row per thing.
@@ -745,10 +742,11 @@ in five words — the only three things said before a point is spent. `web.ts`
 makes a character in one gate, `maybeShowPick` then `maybeShowWelcome`, so the
 trade comes before the name and the skill.
 
-That makes `TradeSpec.sprite` the whole of what you look like. The Aethermancer
-is `aethermancer`, a starved man hung with phials of glowing violet — dark
-where the roster is near-black bone and the floors are pale, so a hero is
-neither. The Alchemist has no look yet and stands as the base man.
+That makes `TradeSpec.sprite` the whole of what you look like, and a hero's
+palette has to clear THREE things: the roster's near-black bone, the pale
+floors, and the other hero. The Aethermancer is starved and hung with phials of
+glowing violet; the Alchemist is broad, in a burned leather apron over acid
+green glass and brass. Neither is the other and neither is a monster.
 
 Changing trade is the exception and stays on the Trade screen: it refunds every
 point and costs gold (`tradeSwitchCost`), because a hard lock would be the only

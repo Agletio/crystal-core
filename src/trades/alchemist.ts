@@ -25,6 +25,7 @@ export const ALCHEMIST: TradeSpec = {
     'mouthful at a time, and what is in the flask is the only part of him ' +
     'that has not been used up.',
   prefix: 'alc',
+  sprite: 'alchemist',
   // Nothing here is useless without something else: every notable is worth its
   // point alone, and the spoke is the only thing making one cost more.
   needs: {},
