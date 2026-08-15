@@ -415,6 +415,7 @@ export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
       if (!grid.walkable(x, y) && grid.at(x, y) !== FLOOR) continue;
+      if (grid.at(x, y - 1) === WALL) continue; // it DRAWS the face: stone would land up the wall
       if (!rng.chance(COVER_RATE[offRock(grid, x, y) - 1])) continue;
       out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
     }
@@ -422,8 +423,9 @@ export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   return out;
 }
 
-/** How often a stretch of cut face has something growing on it. */
-const FACE_RATE = 0.16;
+/** How often a stretch of cut face grows something — the only thing left
+ *  standing on a descent, so it carries the wall alone. */
+const FACE_RATE = 0.34;
 
 /**
  * What GROWS on the cut face, and the only thing scattered anywhere. There is

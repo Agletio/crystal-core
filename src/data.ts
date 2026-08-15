@@ -1888,6 +1888,7 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.85,
     attackRange: 1,
     radius: 0.3,
+    throws: true,
     sprite: 'shroud',
     scale: 1.45,
     weight: 300,
@@ -1984,6 +1985,7 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.8,
     attackRange: 1.05,
     radius: 0.3,
+    throws: true,
     sprite: 'chanter',
     scale: 1,
     weight: 720,
@@ -2051,6 +2053,7 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 1.35,
     attackRange: 1,
     radius: 0.28,
+    throws: true,
     sprite: 'prism',
     scale: 0.95,
     weight: 620,
@@ -2116,9 +2119,8 @@ export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
 );
 
 /** What a monster does, and what it deals doing it: an element belongs to the
- *  MONSTER, not the room. Rolled per PACK, as being ranged was, since a pack
- *  throwing two elements reads as noise — and the three ranged entries weigh
- *  250 of 1000, which is the 25% `RANGED_PACK_CHANCE` used to be. */
+ *  MONSTER, not the room. Rolled per PACK off the half of this table its BODY
+ *  can do, since two elements in one pack read as noise. */
 export const MONSTER_ABILITIES: MonsterAbilityDef[] = [
   { id: 'claws', name: 'Claws', damageType: 'physical', skill: null, weight: 600 },
   { id: 'emberbite', name: 'Emberbite', damageType: 'fire', skill: null, weight: 75 },
@@ -2127,6 +2129,11 @@ export const MONSTER_ABILITIES: MonsterAbilityDef[] = [
   { id: 'frost_bolt', name: 'Frost Bolt', damageType: 'cold', skill: 'frost_bolt', weight: 83 },
   { id: 'lightning_arc', name: 'Lightning Arc', damageType: 'lightning', skill: 'arc', weight: 83 },
 ];
+
+/** Which of them a BODY may roll, split on the `skill` field: a thrower throws
+ *  and nothing else does. */
+export const abilitiesFor = (def: MonsterDef): MonsterAbilityDef[] =>
+  MONSTER_ABILITIES.filter((a) => !!a.skill === !!def.throws);
 
 export const MONSTER_ABILITY_BY_ID: Record<string, MonsterAbilityDef> = Object.fromEntries(
   MONSTER_ABILITIES.map((a) => [a.id, a])

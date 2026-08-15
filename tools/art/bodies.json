@@ -532,6 +532,22 @@
    "dull": 0.5,
    "size": 64,
    "say": "A few thin dead roots creeping FLAT across bare rock, seen from DIRECTLY ABOVE looking straight down, straggling apart from one another and forking, with bare stone showing between them. They lie ON the ground and are dry and colourless. NOT green, NOT leaves, NOT a plant, NOT healthy, NOT standing up, NOT a rope. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. MATTE and dusty \u2014 NO highlight, NO gloss, NO shine, NO wet look, NOT polished. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean."
+  },
+  {
+   "id": "roots_long",
+   "tiles": 1.8,
+   "view": "side",
+   "tone": 0.6,
+   "dull": 0.55,
+   "say": "a long ragged fall of dead roots and fibrous strands coming down out of stone, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, thin and tangled with big gaps between the strands, reaching a long way down the rock, a few of them snapped off short, furred with damp. NOT leaves, NOT green, NOT a plant, NOT a vine, NOT healthy, NOT a curtain of cloth, NOT a tree, NOT a trunk, NOT bark, NOT foliage, NOT one solid mass. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
+  },
+  {
+   "id": "roots_thin",
+   "tiles": 1.2,
+   "view": "side",
+   "tone": 0.6,
+   "dull": 0.55,
+   "say": "a thin scatter of dead roots and fibrous strands coming down out of stone, seen FROM THE SIDE straight on, flat against a vertical rock face, NOT from above, NOT from any angle, only a few strands, wiry and far apart with the bare rock showing between them, most of them snapped off short, furred with damp. NOT leaves, NOT green, NOT a plant, NOT a vine, NOT healthy, NOT a curtain of cloth, NOT a tree, NOT a trunk, NOT bark, NOT foliage, NOT one solid mass. Near-black shadows and cold desaturated grey, #33302B in shadow and #4A443C where the light reaches. Grimy, wet, stained. NOT olive, NOT khaki, NOT yellow, NOT orange, NOT cheerful, NOT clean. Almost no light down here."
   }
  ],
  "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask \u2014 and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."

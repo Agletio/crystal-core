@@ -45,6 +45,7 @@ import {
   DANGER_STATS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
+  abilitiesFor,
   MONSTER_ABILITY_BY_ID,
   monsterAddedStat,
   MONSTERS,
@@ -5485,21 +5486,40 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
   );
   check(leaked.length === 0, 'and none of them is a skill you could equip', leaked.map((a) => a.id).join(', '));
 
-  // The share that shoots, held to what RANGED_PACK_CHANCE used to be — the
-  // table replaced a constant and must not have quietly moved the game.
+  // WHICH BODIES throw, which is the whole of what makes a shooting pack
+  // readable: a thrower only throws and everything else only bites, so what is
+  // coming at you is a fact about the silhouette rather than a roll you cannot
+  // see. Every monster in the game is held to it, not just the pool.
+  const wrong = MONSTERS.flatMap((m) => {
+    const can = abilitiesFor(m);
+    const shoots = can.every((a) => a.skill);
+    const bites = can.every((a) => !a.skill);
+    if (can.length === 0) return [`${m.id} can do nothing`];
+    if (!shoots && !bites) return [`${m.id} both throws and bites`];
+    return !!m.throws === shoots ? [] : [`${m.id} throws ${shoots} but is marked ${!!m.throws}`];
+  });
+  const throwers = MONSTERS.filter((m) => m.throws);
+  line(`  ${throwers.length} of ${MONSTERS.length} monsters throw: ${throwers.map((m) => m.id).join(', ')}`);
+  check(
+    wrong.length === 0 && throwers.length > 0,
+    'a body either throws or bites, and never both',
+    wrong.join(', ')
+  );
+
+  // And a thrower has EVERY thrown ability open to it, so which element is a
+  // roll rather than a second table.
+  const bolts = MONSTER_ABILITIES.filter((a) => a.skill);
+  const short = throwers.filter((m) => abilitiesFor(m).length !== bolts.length);
+  check(
+    bolts.length >= 3 && short.length === 0,
+    `and a thrower rolls any of the ${bolts.length}: ${bolts.map((a) => a.name).join(', ')}`,
+    short.map((m) => m.id).join(', ')
+  );
+
   const total = MONSTER_ABILITIES.reduce((n, a) => n + a.weight, 0);
-  const ranged = MONSTER_ABILITIES.filter((a) => a.skill).reduce((n, a) => n + a.weight, 0);
   const elemental = MONSTER_ABILITIES.filter((a) => a.damageType !== 'physical')
     .reduce((n, a) => n + a.weight, 0);
-  line(
-    `  ${Math.round((ranged / total) * 100)}% of packs shoot, and ` +
-      `${Math.round((elemental / total) * 100)}% bring an element of their own`
-  );
-  check(
-    Math.abs(ranged / total - 0.25) < 0.001,
-    'a quarter of packs shoot, which is exactly what the constant it replaced said',
-    `${(ranged / total).toFixed(3)}`
-  );
+  line(`  ${Math.round((elemental / total) * 100)}% of the table brings an element of its own`);
   check(
     elemental / total > 0.2 && elemental / total < 0.6,
     'and an element is something a descent shows you without being made of it',

@@ -201,11 +201,17 @@ export interface Weighted {
   weight: number;
 }
 
-export const WALL_PROPS: Weighted[] = [{ id: 'roots', weight: 100 }];
+/** Three SHAPES, not three wordings: a run of cut face is the one place a
+ *  single picture repeats within sight of itself. */
+export const WALL_PROPS: Weighted[] = [
+  { id: 'roots', weight: 100 },
+  { id: 'roots_long', weight: 80 },
+  { id: 'roots_thin', weight: 70 },
+];
 
 /** And what a PERSON hung on one, placed by hand and never scattered: a lit
  *  torch on a wall nobody stands near is a bucket in the middle of a room. */
-export const HUNG_PROPS = new Set(['roots', 'torch', 'hung']);
+export const HUNG_PROPS = new Set([...WALL_PROPS.map((w) => w.id), 'torch', 'hung']);
 
 /**
  * GROUND COVER — loose stone and dust under everything else, which is what

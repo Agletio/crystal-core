@@ -285,6 +285,7 @@ export interface MonsterDef {
   attacksPerSecond: number;
   attackRange: number;
   radius: number; // in tiles; units push each other apart rather than stacking
+  throws?: boolean; // picks its half of `MONSTER_ABILITIES`: throwers only throw
   sprite: string;
   /** How much of a tile the art covers. Nothing derives it from radius. */
   scale: number;

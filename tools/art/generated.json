@@ -446,6 +446,20 @@
    "tiles": 0.9,
    "tone": 0.7,
    "dull": 0.5
+  },
+  {
+   "id": "roots_long",
+   "object": "001a7f33-2117-4fc5-8657-9c62ee73fd33",
+   "tiles": 1.8,
+   "tone": 0.6,
+   "dull": 0.55
+  },
+  {
+   "id": "roots_thin",
+   "object": "b945e119-3c62-4abf-a3e4-4df4bebce225",
+   "tiles": 1.2,
+   "tone": 0.6,
+   "dull": 0.55
   }
  ]
 }

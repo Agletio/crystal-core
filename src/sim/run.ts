@@ -44,6 +44,7 @@ import {
   MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
   MONSTER_ABILITIES,
+  abilitiesFor,
   MONSTER_ABILITY_BY_ID,
   SKILLS,
   SKILL_BY_ID,
@@ -57,6 +58,7 @@ import {
   socketSize,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
+import type { MonsterAbilityDef, MonsterDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
@@ -564,9 +566,9 @@ export class RunSim {
       // a thing you can recognise and react to.
       const pool = MONSTERS_BY_FAMILY[plan[p] ?? 'normal'];
       const def = this.rng.weighted(pool, (m) => m.weight) ?? pool[0];
-      // Per PACK: a pack throwing two elements reads as noise.
-      const ability =
-        this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+      // Per PACK, off the half of the table this BODY can do: two elements in
+      // one pack read as noise, and the pack that shoots is one you can see.
+      const ability = this.abilityFor(def);
       const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
       // One carrier per pack, whatever the kind. Five Chanters would stack
       // five chants on their own neighbours, and read on screen as fog rather
@@ -1010,7 +1012,7 @@ export class RunSim {
     const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
     if (!def || s.boss) return false;
 
-    const ability = this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const ability = this.abilityFor(MONSTERS[0]);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
     const base = monsterStats(this.set.mods, MONSTERS[0], ability);
     const stats: CombatStats = {
@@ -1067,6 +1069,13 @@ export class RunSim {
     return true;
   }
 
+  /** What this body fights with. One seam, so a pack, a boss, its adds and the
+   *  closing encounter all agree about which bodies throw. */
+  private abilityFor(def: MonsterDef): MonsterAbilityDef {
+    const can = abilitiesFor(def);
+    return this.rng.weighted(can, (a) => a.weight) ?? can[0] ?? MONSTER_ABILITIES[0];
+  }
+
   /** One more of the smaller things, out of the hole you came up. Stops dead
    *  when the boss does: the adds are pressure, never the objective. */
   private sendReinforcements(): void {
@@ -1074,7 +1083,7 @@ export class RunSim {
     const from = MONSTER_BY_ID[this.reinforce?.from ?? ''];
     if (!from || !this.reinforce || !s.boss || s.boss.dead) return;
 
-    const ability = this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const ability = this.abilityFor(from);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
     const stats = monsterStats(this.set.mods, from, ability);
     const mouth = s.map.entrance;
@@ -1139,8 +1148,7 @@ export class RunSim {
     const commonest = pool.reduce((a, b) => (b.weight > a.weight ? b : a));
 
     // One ability for the whole encounter: what comes up the hole is one thing.
-    const ability =
-      this.rng.weighted(MONSTER_ABILITIES, (a) => a.weight) ?? MONSTER_ABILITIES[0];
+    const ability = this.abilityFor(MONSTERS[0]);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
     const base = monsterStats(this.set.mods, MONSTERS[0], ability);
     const stats: CombatStats = {

@@ -52,7 +52,6 @@ import {
   WALK_CYCLE,
   WALK_FRAMES,
   animates,
-  castsVisibly,
   generatedFrame,
   makeLookFrames,
   makeProp,
@@ -699,15 +698,6 @@ export async function createPixiRenderer(
     };
     for (const m of state.monsters) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite);
-
-    // A pip for a body that shoots and does not LOOK like it — see
-    // `castsVisibly`, which is what a caster of its own is for.
-    for (const m of state.monsters) {
-      if (m.dead || !m.skillId || castsVisibly(m.sprite, m.skillId)) continue;
-      vfxLayer
-        .circle(cx(m.x), cy(m.y) - 0.55, 0.11)
-        .fill(toHexNumber(palette.amethyst));
-    }
 
     // Skill and impact effects. Each kind gets a different SHAPE, not just a
     // different colour — at melee range two lines are indistinguishable.

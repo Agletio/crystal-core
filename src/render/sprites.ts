@@ -313,13 +313,6 @@ export function animates(
   return !!((e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null) ?? states.attack);
 }
 
-/** An animation of its own for what it THROWS: the pip is then a label doing
- *  a silhouette's job. */
-export const castsVisibly = (sprite: string, skill: string | null): boolean => {
-  const states = GENERATED[sprite]?.states;
-  return !!states && !!((skill ? states[skill] : null) ?? states.cast);
-};
-
 /** Tiles per frame of a walk. A stride is a DISTANCE, and reading it off the
  *  clock instead is what makes a body skate over the ground. */
 export const STRIDE = 0.42;

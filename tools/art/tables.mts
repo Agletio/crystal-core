@@ -1,19 +1,18 @@
 /**
- * The GENERATED art, pulled straight off the MCP server and written into the
- * two tables the renderer reads. Nothing here ships a PNG: a creature and a
- * tileset both come out as lists of strings with a key of their own, exactly
- * like every hand-drawn grid in `src/render`.
+ * The GENERATED art, off the MCP server and into the tables the renderer reads
+ * — bodies and furniture, each a list of strings with a key of its own, like
+ * every hand-drawn grid in `src/render`. Nothing here ships a PNG and nothing
+ * here asks the generator for anything new: `generated.json` names every id.
  *
- *   npx tsx tools/art/tables.mts
- *
- * `generated.json` beside this file is the SOURCE of truth and names every id;
- * nothing here asks the generator for anything new.
+ *   npx tsx tools/art/tables.mts bodies | props
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
 import { apart, debackground, deshadow, fittedTogether, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
+import { PROP_ART } from '../../src/render/generated-props';
+import { ZONES } from '../../src/render/generated-tiles';
 
 /** Every character a row may use. `.` is transparent and stays out of it. */
 const CHARS =
@@ -180,14 +179,13 @@ class Inks {
   }
 }
 
-/**
- * The grid a body ships at. A DECISION, not whatever the generator handed
- * back: the art is `grid × grid` strings per frame in a committed bundle AND a
- * canvas per frame at four bytes a pixel, and both are paid per FACING now.
- * 96 because the camera lands a body in about 87 device pixels — past that the
- * texture is downsampled before anybody sees it.
- */
+/** The grid a body ships at. A DECISION: the art is `grid × grid` strings per
+ *  frame in a committed bundle AND a canvas per frame at four bytes a pixel,
+ *  both paid per FACING. 96 because the camera lands a body in ~87 device
+ *  pixels — past that it is downsampled before anybody sees it. */
 const GRID = 96;
+
+const SHIPPING_FLOOR = 'lit_round'; // the floor a prop is toned to sit on
 
 /** How many inks a body, a tileset and one prop each settle to. */
 const BODY_INKS = 56;
@@ -483,12 +481,20 @@ function cropped(rows: string[]): string[] {
   );
 }
 
+/** A generated object is NOT permanent — every prop this repo shipped comes
+ *  back `not found` — so a row the server lost keeps the grid it ships. */
 async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record<string, Prop>> {
   const out: Record<string, Prop> = {};
   for (const spec of specs) {
     const text = await callTool('get_map_object', { object_id: spec.object });
     const url = urlsIn(text).find((u) => /\.png/.test(u)) ?? urlsIn(text)[0];
-    if (!url) throw new Error(`${spec.id}: no image — ${text.slice(0, 120)}`);
+    if (!url) {
+      const had = PROP_ART[spec.id];
+      if (!had) throw new Error(`${spec.id}: no image and none shipped — ${text.slice(0, 90)}`);
+      console.log(`  ${spec.id}: gone from the server, keeping the grid that ships`);
+      out[spec.id] = { grid: had.grid, tiles: had.tiles, rows: had.rows, key: had.key };
+      continue;
+    }
     const got = debackground(decodePng(await download(url)));
     const raw = spec.dull ? dulled(got, spec.dull) : got;
     const pull = spec.tone ?? PROP_TONE;
@@ -563,34 +569,16 @@ if (doing('bodies')) write(
 );
 
 // --- the ground ------------------------------------------------------------
-// Before the furniture, which is toned to it: a prop sits in the scene or it
-// reads as a sticker on it.
+// Only to TONE the furniture by, off the set that SHIPS. `generated-tiles.ts`
+// belongs to `zoneset.mts emit` and this tool must never write it: it wrote a
+// `TILESETS` table nothing has read since, and clobbered the zones doing it.
 let floorTone: Tone | null = null;
-if (doing('tiles') || doing('props'))
-if (manifest.tileset.id) {
-  const floor = await ground(manifest.tileset);
-  floorTone = floor.tone;
-  write(
-    'generated-tiles.ts',
-    header(
-      `A zone's ground: a Wang set whose CORNERS match, so a floor meets rock\n` +
-        ` * without a seam. Keyed by NW/NE/SW/SE as one bit each, high to low, with a\n` +
-        ` * NW/NE/SW/SE in base three: 0 floor, 1 rock, 2 the cut face between\n` +
-        ` * them, which fills the cell BELOW a boundary so a wall spans two rows.`
-    ) +
-      `export type GeneratedTiles = {\n  grid: number;\n` +
-      `  /** Every tile that fits a corner combination. More than one is an\n` +
-      `   *  ALTERNATE off a second set of the same terrain — one picture per\n` +
-      `   *  mask reads as graph paper across an open floor. */\n` +
-      `  tiles: Record<number, string[][]>;\n  key: Record<string, string>;\n};\n\n` +
-      `export const TILESETS: Record<string, GeneratedTiles> = {\n  mineshaft: {\n` +
-      `    grid: ${floor.grid},\n    tiles: {\n` +
-      Object.entries(floor.tiles)
-        .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([mask, all]) => `      ${mask}: [${all.map((rows) => rowSource(rows, '      ')).join(', ')}],`)
-        .join('\n') +
-      `\n    },\n    key: ${JSON.stringify(floor.key)},\n  },\n};\n`
-  );
+if (doing('props')) {
+  const set = ZONES[SHIPPING_FLOOR];
+  const sheet = decodePng(Buffer.from(set.png.split(',')[1], 'base64'));
+  const floor = set.tiles.find((t) => t.key === 0) ?? set.tiles[0];
+  const [x, y, w, h] = floor.box;
+  floorTone = tone(sheet, [{ x, y, w, h }]);
 }
 
 // --- the furniture ---------------------------------------------------------
