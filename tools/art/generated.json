@@ -137,7 +137,23 @@
     "south-east",
     "south"
    ],
-   "states": {}
+   "states": {
+    "idle": {
+     "group": "50e34a61-fb2a-47fc-bfc1-9db79508d32c"
+    },
+    "walk": {
+     "group": "9fba91e8-d030-4e55-b279-e15b69cea669"
+    },
+    "attack": {
+     "group": "590cd4f1-3530-46fb-ae74-477f755c9811"
+    },
+    "hurt": {
+     "group": "b74a1de7-8684-4cab-88ab-5649cf9ef101"
+    },
+    "death": {
+     "group": "d5134262-231c-40d0-901f-b52b59085f91"
+    }
+   }
   },
   {
    "sprite": "courser",
