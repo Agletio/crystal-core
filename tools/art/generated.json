@@ -225,6 +225,38 @@
    "grid": 48,
    "inks": 24,
    "stride": 1.74
+  },
+  {
+   "sprite": "aethermancer",
+   "character": "b1e5bb78-feb7-4e75-af33-38c0122e3cc2",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "18092c65-c73c-49ab-89dd-e6326b188bd1",
+     "frames": 2
+    },
+    "walk": {
+     "group": "fa01d3a1-576c-48c3-8c83-ec7d79f26a81",
+     "frames": 6
+    },
+    "attack": {
+     "group": "5b0bcf56-e60f-4adf-8110-ee452f049537",
+     "frames": 4
+    },
+    "cast": {
+     "group": "5e45057f-b00a-4697-8582-2c3e9147efde",
+     "frames": 3
+    },
+    "death": {
+     "group": "0d9d1fd4-cc1f-4214-8e5e-314f97e3feb7",
+     "frames": 4
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.4
   }
  ],
  "props": [

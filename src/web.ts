@@ -41,6 +41,7 @@ import {
   refreshRunPanels,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
+import { initPick, maybeShowPick } from './ui/pick';
 import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import {
   initCharacter,
@@ -110,7 +111,13 @@ function restart(mode: StartMode): void {
     closeCrystals();
     onRunFocused();
   }
-  maybeShowWelcome();
+  makeCharacter();
+}
+
+/** A character is MADE before it is played: which trade you ARE, then the name
+ *  and the skill. `maybeShowPick` is false once a trade is set, so both are one gate. */
+function makeCharacter(): void {
+  if (!maybeShowPick()) maybeShowWelcome();
 }
 
 /** After choosing a skill: the Fissure, and nothing explaining it. */
@@ -190,12 +197,12 @@ initSaveData(
     syncParkedPanels();
     refreshRunPanels();
     onRunFocused();
-    maybeShowWelcome();
+    makeCharacter();
   },
   // A new game in another slot. The slot has already moved, so `restart` is
   // wiping and writing the one being started rather than the one left behind.
   () => restart('fresh'),
-  maybeShowWelcome
+  makeCharacter
 );
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
@@ -347,6 +354,7 @@ onRunFocused();
 // The Fissure is home, and boot always lands there. Opening a screen over it
 // belongs to the dev kit's stocked start.
 initWelcome(game, begin);
+initPick(game, maybeShowWelcome); // the trade, and then the name and the skill
 
 // The title, and what it opens onto: choosing a game comes before playing one,
 // and a fresh browser goes title -> slots -> New game -> name and skill.

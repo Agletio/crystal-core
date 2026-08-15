@@ -82,13 +82,13 @@ descent over a generated set IS one, with monsters that fight back. `npm run
 peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
 magnified crop, because every fault worth finding is invisible at ship size.
 
-**THE HERO IS GENERATED, and what he wears is his TRADE.** He is `wanderer` — a
-starved man bare-headed and in wrecked clothes, six states over five facings —
-and `heroSpriteFor` in `src/sim/appearance.ts` answers the trade's own
-`TradeSpec.sprite`, then him, then the hand-drawn doll. Neither trade has a look
-yet, so everyone is the base man, which is what he is for: you start as nobody
-and taking up a trade is what dresses you. Equipped gear does not change the
-sprite at all.
+**THE HERO IS GENERATED, and he IS his TRADE.** `heroSpriteFor` in
+`src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, then
+`wanderer`, then the hand-drawn doll. The Aethermancer has his own body; the
+Alchemist does not yet and stands as the wanderer — a starved man bare-headed
+and in wrecked clothes, who is now only the FALLBACK rather than who you start
+as. There is no nobody to start as: the trade is chosen when the character is
+made. Equipped gear does not change the sprite at all.
 
 A look is a WHOLE BODY, so it is the pipeline every monster already uses:
 `dress.mts <look> --state <character>` puts one on through
@@ -736,12 +736,25 @@ pool survivable, and `poolFromLife` builds the pool out of the one stat
 everything grants. The Ward wants it full and Overflow empties it; that tension
 is the trade.
 
-**How you GET one is a placeholder and says so on the screen.** It is meant to
-come out of a storyline with the Lampwright that does not exist yet, and that
-story replaces the ACQUISITION without touching the tree, the points or the
-allocation. Changing trade refunds every point and costs gold
-(`tradeSwitchCost`) — a hard lock would be the only unforgiving thing in a game
-that replays allocations rather than trusting them.
+**A trade is not acquired — it is WHO YOU ARE, and you choose it when the
+character is made.** `src/ui/pick.ts` is the first screen of a new game: the
+cast standing in the rock, each playing its own idle off `GENERATED`, and
+clicking one says who he is before you take him. `TradeSpec.lore` is the
+person, `blurb` is the rule he changes, and the five spoke themes are the tree
+in five words — the only three things said before a point is spent. `web.ts`
+makes a character in one gate, `maybeShowPick` then `maybeShowWelcome`, so the
+trade comes before the name and the skill.
+
+That makes `TradeSpec.sprite` the whole of what you look like. The Aethermancer
+is `aethermancer`, a starved man hung with phials of glowing violet — dark
+where the roster is near-black bone and the floors are pale, so a hero is
+neither. The Alchemist has no look yet and stands as the base man.
+
+Changing trade is the exception and stays on the Trade screen: it refunds every
+point and costs gold (`tradeSwitchCost`), because a hard lock would be the only
+unforgiving thing in a game that replays allocations rather than trusting them.
+A save from before any of this has no trade at all, so the hall comes up once
+for it — nothing is refused and no `SAVE_VERSION` moved.
 
 `src/ui/trade.ts` draws it. Twenty nodes FIT, so that web carries a viewBox and
 has no pan, no zoom and no Fit button; the stud art both webs are made of lives
@@ -935,6 +948,7 @@ src/sim/           the deterministic simulation
 src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
+src/ui/pick.ts     character select: who you ARE, before a name or a skill
 src/ui/            one module per screen
 ```
 

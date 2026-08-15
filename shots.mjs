@@ -137,6 +137,14 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('title')?.click());
   await page.evaluate(() => document.getElementById('save-play')?.click());
   await page.waitForTimeout(200);
+  // Who you ARE comes before how you fight, so the cast is standing there
+  // first — shot with one of them open, since a hall saying nothing is half
+  // the screen.
+  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  await page.waitForTimeout(250);
+  await shoot('pick');
+  await page.evaluate(() => document.getElementById('pick-take')?.click());
+  await page.waitForTimeout(200);
   await page.evaluate(() => {
     const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
     const blight = cards.find((c) => /blight/i.test(c.textContent ?? ''));
@@ -311,6 +319,15 @@ for (const vp of VIEWPORTS) {
   // panels have to fit side by side.
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
   await page.evaluate(() => document.getElementById('confirm-yes')?.click());
+  await page.waitForTimeout(300);
+  // A wipe is a new character, so it lands on the hall again — and the hall
+  // covers the screen, which is what the real hover below would hit.
+  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  await page.evaluate(() => document.getElementById('pick-take')?.click());
+  await page.evaluate(() => {
+    document.getElementById('welcome-name').value = 'Vespera';
+    document.querySelector('#welcome-skills .welcomecard')?.click();
+  });
   await page.waitForTimeout(500);
   // The tooltip below is a REAL hover, which a hidden slot refuses.
   await page.evaluate(() => document.getElementById('open-inventory')?.click());

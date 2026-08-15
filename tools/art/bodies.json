@@ -296,6 +296,35 @@
     }
    },
    "character": "6b0088d1-bc59-4261-9df0-cfe66aead6c1"
+  },
+  {
+   "sprite": "aethermancer",
+   "name": "The Aethermancer",
+   "size": 96,
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "lunging onto the front foot at a three-quarter angle and driving one open hand forward at chest height, then pulling it back"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "planted with both feet apart at a three-quarter angle, both open hands thrust forward from the chest and held out"
+    },
+    "death": {
+     "frames": 6,
+     "say": "his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there"
+    }
+   },
+   "character": "b1e5bb78-feb7-4e75-af33-38c0122e3cc2"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",

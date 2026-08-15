@@ -96,6 +96,17 @@ assert(
 $('save-play').click();
 $('save-play').click();
 assert($('savedata').hidden === true, 'Play now takes you into the live slot');
+// A character is MADE before it is played, and the trade is who you ARE, so
+// the cast comes up before the name and the skill do.
+assert($('pick').hidden === false, 'and a character with no trade is made first');
+assert(all('#pick-cast .pickfig').length === 2, 'both trades stand there');
+assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
+$('pick-aethermancer').click();
+assert($('pick-say').hidden === false, 'clicking one says who he is');
+assert($('pick-take') !== null, 'and offers to be him');
+$('pick-take').click();
+assert($('pick').hidden === true, 'taking him closes the hall');
+
 // A slot can hold a game that was never asked what it swings, so playing one
 // still puts the question up rather than assuming a save answered it.
 assert($('welcome').hidden === false, 'and a game with no skill still asks for one');

@@ -226,6 +226,78 @@
     animation: titlepulse 1.9s ease-in-out infinite;
   }
   @keyframes titlepulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+
+  /* Character select. A hall of standing figures with the say-box across the
+     foot of it, so the cast is never covered by what the cast is saying. */
+  .pick {
+    position: fixed; inset: 0; z-index: 62;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    background-color: var(--void); background-image: var(--grit);
+  }
+  .pick::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(70% 55% at 50% 78%, rgba(198,164,120,.16), transparent 70%),
+      radial-gradient(120% 90% at 50% 120%, rgba(196,99,30,.16), transparent 60%),
+      radial-gradient(150% 120% at 50% 40%, transparent 30%, rgba(6,4,10,.88));
+  }
+  .pick__hall {
+    position: relative; z-index: 1; flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(14px, 4vh, 40px); padding: 24px 20px 0; min-height: 0;
+  }
+  .pick__title {
+    margin: 0; font-family: var(--display); font-size: clamp(16px, 2.4vw, 24px);
+    letter-spacing: .18em; text-transform: uppercase; color: var(--dust);
+    text-shadow: 2px 2px 0 #000;
+  }
+  .pick__cast { display: flex; align-items: flex-end; justify-content: center; gap: clamp(20px, 7vw, 90px); flex-wrap: wrap; }
+  /* Every button on the page carries a bevel; a figure standing in a hall is
+     not a button-shaped thing, so this one gives all three back. */
+  .pickfig {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: none; background-image: none; border: 0; box-shadow: none;
+    padding: 6px 10px; cursor: pointer; color: inherit;
+  }
+  /* The canvas is the sprite's own INK, cropped, and this is what magnifies it,
+     so the browser's nearest-neighbour is the only resample. Height is what is
+     fixed: a body is as wide as it is, and forcing a square squashes it. */
+  .pickfig__body {
+    height: clamp(150px, 30vh, 300px); width: auto;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 10px 12px rgba(0,0,0,.8));
+    transition: transform .12s ease-out;
+    transform-origin: 50% 100%;
+  }
+  .pickfig__name {
+    font-family: var(--display); font-size: 12px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--dust); text-shadow: 1px 1px 0 #000;
+    opacity: .6; transition: opacity .12s ease-out, color .12s ease-out;
+  }
+  .pickfig:hover .pickfig__name, .pickfig--on .pickfig__name { opacity: 1; color: var(--citrine); }
+  .pickfig:hover .pickfig__body { transform: translateY(-3px); }
+  .pickfig--on .pickfig__body { transform: translateY(-3px) scale(1.06); }
+
+  .picksay {
+    position: relative; z-index: 1;
+    width: min(760px, calc(100vw - 28px)); margin: 0 auto clamp(14px, 4vh, 40px);
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+    border: 1px solid var(--edge); border-radius: 6px;
+    background: rgba(10,8,14,.92); box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  }
+  .picksay__name { margin: 0; font-family: var(--display); font-size: 17px; letter-spacing: .08em; color: var(--citrine); }
+  .picksay__lore { margin: 0; font-size: 13px; line-height: 1.55; color: var(--dust); }
+  .picksay__rule { margin: 0; font-size: 13px; line-height: 1.5; color: var(--parchment); }
+  .picksay__cost { margin: 0; font-size: 12px; color: var(--dust); opacity: .8; }
+  .pickroads { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pickroads__one {
+    font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 3px 8px; border: 1px solid var(--edge); border-radius: 3px; color: var(--dust);
+  }
+  #pick-take { align-self: flex-start; margin-top: 4px; }
+  /* Nothing behind it is reachable, because nothing behind it is chosen yet. */
+  body:has(.pick:not([hidden])) .corner,
+  body:has(.pick:not([hidden])) .dock { display: none; }
   /* Opened FROM the title it is the whole screen, not a window: there is
      nothing behind it yet to be a window over. */
   .modal--full {
@@ -1901,6 +1973,16 @@
 
 <!-- First run: choose how you fight, then straight into the Fissure. Nothing
      to buy, nothing to understand first. -->
+<!-- Character select. Not a .modal: it is a PLACE, the way the title is, and a
+     card floating over the game would say a trade is a setting. -->
+<div class="pick" id="pick" hidden>
+  <div class="pick__hall">
+    <h2 class="pick__title">Who came down here?</h2>
+    <div class="pick__cast" id="pick-cast"></div>
+  </div>
+  <div class="picksay" id="pick-say" hidden></div>
+</div>
+
 <div class="modal modal--stop" id="welcome" hidden>
   <div class="modal__card">
     <div class="modal__head">

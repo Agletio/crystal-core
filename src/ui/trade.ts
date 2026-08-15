@@ -1,14 +1,14 @@
 /**
- * The Trade screen: pick one, then walk it.
+ * The Trade screen: the web you walk, and the one place you may become
+ * something else.
  *
  * Twenty nodes fit on a screen, so unlike the skill web this one is drawn to
  * FIT and has no pan, no zoom and no Fit button. A map you scroll is what a
  * hundred nodes need; five spokes of four are a picture.
  *
- * How you COME BY a trade is a placeholder and is marked as one on the screen:
- * the intent is a storyline with the Lampwright that is not written, and it
- * will replace the ACQUISITION without touching the tree, the points or the
- * allocation.
+ * A trade is chosen when the character is MADE — it is who you are, and the
+ * body you are drawn as — so the picker here is the CHANGE, not the start. A
+ * save from before that has none, and the character-select screen catches it.
  */
 import { TRADE, TRADE as TRADE_RULES } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
@@ -281,10 +281,11 @@ function render(): void {
       ? `${earned} point${earned === 1 ? '' : 's'} waiting — choose what to be.`
       : `A trade is yours at level ${TRADE.levelsPerPoint}. You are ${character.level}.`;
 
-  // The placeholder, said out loud rather than hidden: what replaces it is a
-  // storyline, and it will replace how you GET one and nothing else.
-  $('trade-placeholder').textContent =
-    'Anyone may take one up for now. Earning one is the Lampwright’s business.';
+  // Who you ARE is chosen when the character is made, so this screen is where
+  // one is WALKED. Changing it is the exception, and it charges for being one.
+  $('trade-placeholder').textContent = chosen
+    ? 'You chose this when you came down here. Becoming something else costs.'
+    : '';
 
   const open = picking || !chosen;
   $('trade-pick').hidden = !open;

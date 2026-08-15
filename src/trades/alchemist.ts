@@ -18,6 +18,12 @@ export const ALCHEMIST: TradeSpec = {
   blurb:
     'A flask carries a buff while it runs, and its Charges come back during a ' +
     'descent — so 2 Charges are a cooldown rather than the whole budget.',
+  lore:
+    'He came down here for the water. Something in the rock changes what is ' +
+    'steeped in it, and he has been steeping things for a long time — his own ' +
+    'blood among them. He does not win a fight so much as outlast it, one ' +
+    'mouthful at a time, and what is in the flask is the only part of him ' +
+    'that has not been used up.',
   prefix: 'alc',
   // Nothing here is useless without something else: every notable is worth its
   // point alone, and the spoke is the only thing making one cost more.
