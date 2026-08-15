@@ -242,7 +242,8 @@
      "frames": 6,
      "say": "collapsing flat, arms giving out under the shoulders and the skull settling on the ground"
     }
-   }
+   },
+   "character": "c4741665-027f-4af2-a9ed-e98b2f377f59"
   },
   {
    "sprite": "courser",
@@ -269,7 +270,8 @@
      "frames": 6,
      "say": "legs buckling and the body folding down onto its side, skull rolling forward"
     }
-   }
+   },
+   "character": "1420dae7-949d-448c-b421-04c14c85686f"
   },
   {
    "sprite": "heap",
@@ -296,7 +298,8 @@
      "frames": 6,
      "say": "coming apart at the shoulders and falling forward onto the knees, the mass sagging"
     }
-   }
+   },
+   "character": "6b0088d1-bc59-4261-9df0-cfe66aead6c1"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
