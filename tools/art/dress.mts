@@ -3,18 +3,14 @@
  *   `dress.mts <outfit> <image> [image ...]`      one edit over a list of frames
  *   `dress.mts <outfit> --state <character-id>`   every rotation of a character
  *
- * `edit_image` applies the SAME edit to a LIST of PNGs and bills by the whole
- * frame grid, and the man comes back the same man at 97% silhouette overlap. But
- * a piece is only consistent WITHIN one call, and a call takes 4 frames at 96 —
- * four facings dressed together got one brimmed helm and the fifth, sent alone,
- * came back visored. So the list form cannot dress a body.
+ * `edit_image` applies the SAME edit to a LIST of PNGs and bills by the frame
+ * grid, and the man comes back the same man at 97% silhouette overlap. But it is
+ * consistent only WITHIN one call, and a call takes 4 frames at 96 — four
+ * facings dressed together got one brimmed helm and the fifth, sent alone, came
+ * back visored. So the list form cannot dress a body.
  *
- * `--state` is what does. `create_character_state` applies one edit across every
- * rotation at once for one charge, keeping identity, and the result is a
- * character in its own right that inherits the skeleton for animations.
- *
- * Either way the edit REPAINTS the whole frame, so what comes back is not a
- * piece. `layer.mts` is the other half: it cuts the slot's band out.
+ * A state INHERITS THE SKELETON, so it animates like any other body — which is
+ * what makes a whole LOOK 40 generations rather than a second character.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { callTool, download, fields, urlsIn } from './mcp.mts';
@@ -27,8 +23,9 @@ const KEEP =
   'Keep the SAME man, the same face, the same pose, the same proportions and the same ' +
   'grimy palette. Do not replace him. No ground, no floor, no shadow, no base.';
 
-/** One outfit is one SLOT's worth: only the band `layer.mts` cuts is kept, so
- *  what an outfit says about the rest of the body is thrown away anyway. */
+/** One entry is one whole LOOK, and a look is what a TRADE looks like. At the
+ *  ~87 device pixels the camera lands a body in, two near-neighbours are the
+ *  same picture, so what separates them has to be SILHOUETTE. */
 export const OUTFITS: Record<string, string> = {
   helm:
     'Put a battered open-faced iron helm on his head, over or instead of the hood. Change NOTHING ' +

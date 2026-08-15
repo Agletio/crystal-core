@@ -794,21 +794,13 @@ appending `?index=N`; a one-frame job carries no index at all. Looking for a url
 per frame finds none, which reads as "never arrived" on a job that completed and
 billed. Handle both forms or pay twice.
 
-**A PIECE OF ARMOUR IS A CROP, NEVER A DIFF.** An edit that dresses a man
-repaints every pixel of him doing it — asked for a helm alone and forbidden to
-touch anything lower, 24% of the change landed on the head and 18% on the boots,
-and a higher threshold does not concentrate it. So subtracting the base leaves
-the whole man. `SLOTS` in `tools/art/layer.mts` is four BANDS of the body's own
-extent; a piece is the dressed frame inside its band and nothing outside it,
-which discards the repaint along with everything else, and registration is free
-because the crop came off that exact frame. Two edits then compose: a helm from
-one and a hauberk from another land on one man.
-
-**A band is cut off ONE frame per facing and re-stamped on the rest**, since no
-call can dress a whole animation. `tools/art/anchor.mts` is what holds that
-honest — the cut sits within 2-4px of the neck across every standing state of a
-shipped body, and `death` opens to 8 because a body lying FLAT has no vertical
-order for a horizontal band to mean anything by.
+**AN EDIT REPAINTS THE WHOLE FRAME, so a dressed frame minus its base is not a
+piece of armour.** Asked for a helm alone and forbidden to touch anything lower,
+24% of the changed pixels landed on the head and 18% on the boots, and a higher
+threshold does not concentrate it. Nothing about the prompt fixes it — the model
+re-renders, it does not paste. **A per-slot layer cut out of one is a route this
+repo tried and abandoned**, and it is why the hero wears his trade rather than
+his gear: a whole-body look needs no layer at all.
 
 **Two animations of one body may not START with the same words.**
 `animate_character` dedupes on a `type` it derives from the FIRST ~30
@@ -960,19 +952,37 @@ them — which is also what lets frames off two canvas sizes (a template
 animation comes back at the character's size, a v3 one larger) keep their
 sizes relative to one another.
 
-**THE HERO IS A DOLL, and the doll is what carries GEAR.** `heroArt` builds him
-from `BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`, with
-`gear-art.ts` — 1,409 lines — drawing armour and weapons as LAYERS over him at
-`DOLL_GRID` 24, and `lookOf` turning what is equipped into a `Look`. It works
+**WHAT THE HERO LOOKS LIKE IS HIS TRADE, not his gear.** *The user's call, and
+it overturned the requirement that came before it: "Ok maybe let's just scratch
+the per equip and make it per trade? Like custom appearance for each trade?"* So
+equipped gear does not change the sprite, a helm is a stat line, and the only
+thing on screen that reads as identity is what the character has BECOME. It fits
+what a trade already is — funded by character level, surviving every skill you
+swap to, the part of a character that is not the skill.
+
+**A trade look is a WHOLE BODY and a STATE of the base man.** Which makes it the
+monster pipeline and nothing new: `create_character_state` off the one rotated
+wanderer, so every trade is recognisably the same man in different kit and none
+can drift into being a different person. No layers, no crops, no anchors — those
+were the per-slot route and it is gone. **No trade is the base man himself**,
+ragged and empty-handed, so you start as nobody and taking up a trade is what
+dresses you.
+
+**THE HERO IS STILL A DOLL until the generated one is in a descent.** `heroArt`
+builds him from `BODY` in `src/render/body.ts` posed by `POSES`/`SWING_POSES`,
+with `gear-art.ts` — 1,409 lines — drawing armour and weapons as LAYERS over him
+at `DOLL_GRID` 24, and `lookOf` turning what is equipped into a `Look`. It works
 because every piece is authored against ONE pose with the grip at (17, 14), so
 12 armour families × 3 tiers × 3 slots reach the screen without 108 drawings.
-**Nothing may delete that until a generated hero can show a different helm, a
-different body and a different pair of boots** — *the user's requirement, in as
-many words, and it is what makes this hard*. A generated body has no
-registration to hang a layer on, and a whole-body LOOK cannot show a helm swap,
-so the replacement has to be per-slot layers over generated frames. The two
-routes that could give that, the experiments that decide between them and the
-44 generations already spent are Phase 1 of `ROADMAP.md`.
+Nothing outside the map draws any of it — swept, and the only readers beyond
+those files are the demo's own checks — so it goes in one piece when it goes,
+and not before. Phase 1 of `ROADMAP.md` is that work.
+
+**Ten trades is a SOURCE SIZE problem and two is not.** A body is ~0.8 MB at
+grid 96 and six already cost 4.67 MB; eleven hero bodies would add about eight
+more. What gives — fewer states, fewer frames, a smaller grid for looks, or the
+no-binary-assets rule — is a decision to take with a measurement in hand, and
+the first trade look is what measures it.
 
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,

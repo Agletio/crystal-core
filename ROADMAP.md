@@ -55,14 +55,22 @@ families over him, and **he has to keep showing a helm, a body and boots
 changing** — the user's requirement, which is what makes a generated
 replacement hard.
 
-**Phase 1's experiments are DONE and the route is D3: a slot is a BAND and a
-piece is a CROP.** A diff of a dressed frame is not a layer — the edit repaints
-the whole man, measured — but the band the piece lives in is, because throwing
-everything outside it away throws the repaint away too. Proved on a still, then
-across all five facings of the rotated wanderer, then across a shipped body's
-animation by re-stamping. **166 generations spent in total and the man is
-rotated and helmed; what remains is animating him, and it needs the user's go
--ahead.**
+**APPEARANCE IS PER TRADE, and that deleted the hard part.** *The user's call:
+"Ok maybe let's just scratch the per equip and make it per trade? Like custom
+appearance for each trade? I want to have like 10 trades eventually but we only
+have two now."* Equipped gear no longer changes the sprite. A trade look is a
+WHOLE BODY — which is the monster pipeline, paid for six times already — so the
+per-slot layers, crops, bands and anchors are all gone with the requirement that
+needed them. **The base man is rotated and the seam is two lines in
+`src/sim/run.ts`; what is left is generations and one open question about what
+the two trades should look like.**
+
+**What the abandoned route measured is kept anyway**, because it is about the
+GENERATOR rather than about the hero, and the next thing to use `edit_image`
+will want all of it: an edit repaints every pixel of the frame it dresses, a
+call takes 4 frames at 96 and 16 at 64, and consistency stops at the call
+boundary. It is under "Doing this a thousand times" and in `RULES.md`. The
+tools that did it — `layer.mts`, `anchor.mts` — are deleted, at `d16ae4e`.
 
 ### If it does not work, revert to one of these
 
@@ -803,36 +811,31 @@ that a swing and a cast draw different runs. Then `npm run build` and
 
 #### 9. DRESS — only for a body that wears things
 
-**Only the HERO wears anything**, so this is not part of a monster's run. Three
-commands, and the order matters:
+**Only the HERO wears anything**, and he wears his TRADE rather than his gear,
+so a look is a whole body and this is not part of a monster's run.
 
 ```
-npx tsx tools/art/body.mts  grab   <sprite>                 the BASE rotations
-npx tsx tools/art/dress.mts <slot> --state <character-id>   the DRESSED ones
-npx tsx tools/art/layer.mts <base> <slot>:<dressed>         the piece, and a fitting
+npx tsx tools/art/body.mts  grab   <sprite>                 the base rotations
+npx tsx tools/art/dress.mts <look> --state <character-id>   every rotation dressed
 ```
 
 `create_character_state` applies ONE edit across every rotation of a character
-for one 20-40 charge, keeps identity, and hands back a character that inherits
-the skeleton for animations. That is the only tool that dresses a whole body
-consistently — see the pitfalls for why `edit_image`'s frame list cannot.
+for one 20-40 charge, keeps identity, body type and proportions, and hands back
+a character that INHERITS THE SKELETON, so it animates like any other. That is
+what makes a trade look 40 generations rather than a second body: every look is
+the same man in different kit and none can drift into being somebody else.
 
-**A piece is a CROP, never a diff.** The edit repaints every pixel of the frame
-it dresses, so subtracting the base leaves the whole man rather than the helm.
-`layer.mts` keeps the slot's BAND of the body's own extent and throws the rest
-away, which discards the repaint with it; registration is free because the crop
-came off that exact frame. `SLOTS` in that file is the four bands, and the head
-cut sits at 0.24 — the base of the neck, judged over 0.18 to 0.28.
+It is also the ONLY tool that dresses a whole body consistently. `edit_image`
+takes a list of frames and is billed by the grid, which reads like the cheaper
+answer and is not — a call holds 4 frames at 96, and **what one call produces
+does not match what the next one does**. See the pitfalls.
 
-`OUTFITS` in `dress.mts` is what to SAY for each piece, and `KEEP` is the clause
+`OUTFITS` in `dress.mts` is what to SAY for each look, and `KEEP` is the clause
 that dresses the man rather than replacing him — 97.4% silhouette overlap with
 the base, holding stance, belt, pouch and feet.
 
-A body has more frames than any edit can dress at once, so a piece is cut off
-ONE frame per facing and re-stamped on the rest at each frame's own band anchor.
-`tools/art/anchor.mts` is what says whether that survives: it prints how far the
-cut drifts off the neck across every frame a body ships, and draws the original
-run over the same run re-headed, which is the half that has to be LOOKED at.
+Then animate the STATE, judge, import and wire exactly as steps 5-8, and the
+look is a row in `GENERATED` like every other body.
 
 ### Doing this a thousand times
 
@@ -1281,175 +1284,135 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A generated hero who SHOWS what he is wearing
+### Phase 1 — A generated hero, and his TRADE is what he wears
 
-**Asked for directly, and the requirement is the hard part.** *"We need to
-generate a new character model. It's going to be quite hard because I need this
-guy to be able to equip gear. Base model should just be a basic man in tattered
-clothes."* Then, after the first sample: **"It has to update to show when you
-equip a different helm, body, and boots at the bare minimum. Ideally gloves too
-but I can give that up if need be."**
+**The user's call, and it replaces the requirement this phase was built around.**
+*"Ok maybe let's just scratch the per equip and make it per trade? Like custom
+appearance for each trade? I want to have like 10 trades eventually but we only
+have two now."* So a helm swap no longer has to show, and **what a character
+looks like is what they have BECOME, not what they picked up.**
 
-**So a whole-body LOOK is not an answer**, and the first draft of this phase is
-wrong. A ladder of complete kits cannot show a helm swap; the hero needs
-PER-SLOT layers over a generated body. That is the whole problem.
+That is not a smaller version of the old phase — it deletes the hard part. A
+trade look is a WHOLE BODY, which is the monster pipeline, already built and
+paid for six times over. No layers, no crops, no anchors, no per-slot bands.
+
+**What it costs the player, said out loud rather than discovered:** equipped
+gear stops changing the sprite. A helm is a stat line and a tooltip, and the
+only thing on screen that reads as identity is the trade. That is the trade
+being made, and `RULES.md` already argues the same way about a trade — it is
+funded by character level, it survives every skill you ever swap to, and it is
+the part of a character that is not the skill.
 
 #### What is true today
 
-The hero is the one body in the game that is not generated, and the only one
-that WEARS anything.
-
 | | |
 |---|---|
-| `heroArt` in `src/render/sprites.ts` | builds him from `HERO_FRAMES` at `DOLL_GRID` 24, colours out of the runtime palette |
-| `src/render/body.ts` | the figure — a man in shirt and trousers, one grid per pose |
-| `src/render/pose.ts` | `POSES` / `SWING_POSES`: which pose a frame is, and where the hand is |
-| `src/render/gear-art.ts` | **1,409 lines** of armour and weapons drawn as LAYERS over him |
-| `lookOf` in `src/sim/appearance.ts` | equipped → `Look` of `{ helmet, body, boots, weapon }` |
+| `src/sim/run.ts:420-421` | the hero spawns as `sprite: 'hero'` with `look: lookOf(character)` — **the entire seam is these two lines** |
+| `heroArt` in `src/render/sprites.ts` | draws `'hero'` from `HERO_FRAMES` at `DOLL_GRID` 24 |
+| `src/render/gear-art.ts` | **1,409 lines** of armour and weapons layered over him |
+| `src/render/look.ts`, `lookOf` in `src/sim/appearance.ts` | equipped → `Look`, and `Look` → rows |
+| `Character.trade` | `string \| null`, and `TRADES` in `src/trades.ts` holds two |
+| `GENERATED` in `src/render/generated-art.ts` | where a generated body lives; `monsterArt` reads it off the sprite id |
 
-**Layering works because everything is authored against ONE pose.** The grip is
-at (17, 14) and `POSES[].hand` moves it. A family is four pieces and its tiers
-are a rule, which is how **12 armour families × 3 tiers × 3 slots** reach the
-screen without 108 drawings. **The doll already does everything the user just
-asked for.** A generated hero that cannot is a downgrade, so `RULES.md` says
-the doll stays until a replacement matches it.
+**Nothing but the map draws the doll.** Swept: outside `look.ts` and
+`gear-art.ts` themselves, the only readers of `HERO_FRAMES`, `lookRows` and
+`drawLook` are `src/demo.ts`'s own sweeps. No screen, no icon, no portrait. So
+the doll and its gear layers are deletable in one go once this ships — about
+1,700 lines and the whole `Look` concept.
 
-#### The experiments are DONE. 122 generations, and the route is D3
+#### The shape
 
-**E1 — LOCALITY. FAILED, and it kills Route D1.** `wanderer-0` was asked for a
-helm ALONE, forbidden to touch anything below the neck. The helm went on and the
-man stayed the same man — and **24% of the changed pixels landed in the head
-band and 18% in the boots**. Raising the difference threshold does not
-concentrate it: at a difference over 200 it is still 29% head and 19% boots, so
-it is a re-render rather than dither, and the "layer" the subtraction writes is
-a scatter over the whole body. Pass wanted ≥85%. **No prompt fixes this** — and
-the whole-outfit mail edit is actually MORE local at the feet than the
-helm-alone edit was, which is the tell.
+**A trade is a sprite id, and no trade is the base man.** `heroSpriteFor(character)`
+answers `wanderer` when `character.trade` is null and the trade's own sprite
+otherwise, and `run.ts` sets `sprite` off it and stops setting `look` at all.
+Everything downstream already works — `monsterArt` finds a generated body by id,
+`makeSheet` memoises per sprite, `animates()` is true for anything in
+`GENERATED`. A tradeless character being the ragged man is the right default and
+costs nothing: you start as nobody, and taking up a trade is what dresses you.
 
-**E3 — FRAME COUNT. ANSWERED, and it cost nothing.** A call takes **16 frames at
-64 and under, 4 up to 128, 1 above it**; the grid is 512x512 in a 4x4, 2x2 or
-1x1 layout. The server refuses an over-long list BEFORE billing and names the
-number, so it was measured by asking for 64 frames at six sizes and reading the
-refusals. Billing follows the grid, not the count: 20 generations for one frame,
-40 for four.
+**A trade look is a STATE of the base man, never its own design.**
+`create_character_state` applies one edit across every rotation of an existing
+character for one charge, keeps identity, body type and proportions, and hands
+back a character that inherits the skeleton for animations. So every trade is
+recognisably the same man in different kit, for 40 generations, and none of them
+can drift into being a different person.
 
-**And the thing E3 was not looking for: an edit is consistent WITHIN a call and
-not across one.** Five facings split 4 + 1 came back as one brimmed helm and one
-visored helm, same description, same seed. So `edit_image`'s frame list cannot
-dress a body at all, and the tool that can is `create_character_state` — one
-edit across every rotation, one charge, identity kept, 40 generations measured.
+#### What it costs
 
-**E2 — ANCHORS. Answered as part of D3 rather than as D2's decider**, since D3
-needs the same stamp. See below.
+| | generations | source |
+|---|---|---|
+| the base man, rotated | **2, spent** — `c169b1f2-813a-400b-bc6b-17ec3baf9226` | |
+| animate the base man, six states | ~68 | ~0.8 MB |
+| each trade: one state + its animations | 40 + ~68 = **~108** | ~0.8 MB |
+| **two trades now** | **~216** | ~1.6 MB |
+| ten trades eventually | ~1,080 | **~8 MB** |
 
-#### Route D3 — the slot is a BAND, and a piece is a CROP
+**The generation budget is not the problem and the SOURCE SIZE is.** Six bodies
+are already 4.67 MB. Eleven hero bodies would add about 8 MB on top, and this
+file already says twelve more monsters at ~14 MB is past what the format should
+carry. **Two trades is comfortable, ten is not**, and the answer is a decision
+rather than a technique — fewer states for a hero look, fewer frames per state,
+a smaller grid for looks than for bodies, or giving up "no binary assets", which
+is a `RULES.md` change and the user's call. **Deleting the doll buys ~1,700
+lines back, which is real but is not megabytes.** Do not walk into this at trade
+five; measure the first trade look and put the number here.
 
-The subtraction fails because the edit repaints everywhere. **So do not
-subtract: keep the band and throw the rest away.** The repaint outside the slot
-goes in the bin with everything else outside the slot, and what is left is a
-piece registered to that exact frame by construction.
+#### Decisions
 
-Proved, with pictures, at three levels:
-
-- **On a still.** A helm crop from one edit, a hauberk crop from a second and
-  greaves from a third composite onto one base man with no seam at 4x. Each
-  slot changes independently — that is the helm swap the user asked for.
-- **Across facings.** `create_character_state` dressed all five east-half
-  rotations of the rotated wanderer in one call, one helm on every one, and each
-  facing's crop drops onto its own base rotation cleanly.
-- **Across an animation, on a shipped body.** A body has far more frames than
-  any call can dress, so a piece is cut off ONE frame per facing and re-stamped
-  on the rest at each frame's own band anchor. `anchor.mts` draws `dragger`'s
-  east run against the same run re-headed from its own first frame and they are
-  indistinguishable — on a floor-crawler, which is the hard case.
-
-**What it costs.** 40 generations a piece, whatever the frame count, because a
-state is one call. Twelve pieces — three slots × four looks — is **480**, plus
-~68 to animate the base man once. Under 600 for the whole hero, against 3,625
-remaining.
-
-#### What is standing, and what it cost
-
-| | |
-|---|---|
-| `wanderer-0` | the approved design, 128x128 |
-| `c169b1f2-813a-400b-bc6b-17ec3baf9226` | the man ROTATED, 8 facings — 2 generations |
-| `740d001f-df7d-4d19-8225-77daf4421722` | the same man in a helm, every rotation — 40 |
-| `tools/art/bodies.json` | both ids are on the `wanderer` row, under `character` and `wears` |
-
-`body.mts grab wanderer` and `dress.mts helm --state <id>` reproduce the pair
-without spending anything twice.
-
-#### What is still UNKNOWN, and none of it is free
-
-- **The stamp on the WANDERER's own animation.** It is proved on `dragger`. He
-  is not animated yet, so it is proved on a monster and not on him.
-- **A body lying FLAT has no band.** The horizontal cut is meaningless on the
-  last frames of a death, and `anchor.mts` measures exactly that — every state
-  holds to a 2-4px spread and `death` opens to 8. Either the cut runs along the
-  body's LONG axis on those frames or a dying hero is unarmoured for the second
-  it takes to fade.
-- **The layers' source size.** A body is ~0.8 MB at grid 96. A band is a
-  fraction of one, but twelve of them is unmeasured — MEASURE THE FIRST.
-- **He was rotated at 128, not the 96 a body ships at**, because the reference
-  image's size wins over `size`. At 128 a v3 animation costs two generations per
-  direction. Re-rotating off a 96 design is 2 generations and buys it back.
-
-#### Then, and only with the user's answer in hand
-
-- [ ] **Rotate and animate the base man** — the runbook above, ~68 generations
-      for six states over five facings.
-- [ ] **Build the pieces** for helm, body and boots at minimum. **Gloves are
-      the hard one and the user has already offered to give them up**: a hand
-      is small, it moves further than any other part between frames, and it is
-      the one anchor a band cannot isolate. Take them only if E1 comes back
-      very clean; otherwise let the body piece include bracers and say so.
-- [ ] **Decide how a WORN item picks a piece.** 12 armour families × 3 tiers
-      cannot each be drawn. The cheap rule is that a family maps to one of a
-      few looks and the tier picks trim, which is what `gear-art.ts` already
-      does — reuse the rule rather than inventing a second one.
-- [ ] **Keep `lookOf` and the `Look` shape.** It already answers "what is on
-      each slot"; a generated hero should consume the same answer, so nothing
-      in `src/sim` learns that the art changed.
+- [ ] **Animate the base man** — the runbook above, six states over five
+      facings: `idle`, `walk`, `attack`, `cast`, `hurt`, `death`. He carries a
+      swing AND a cast where a monster carries one.
+- [ ] **`heroSpriteFor(character)` in `src/sim/appearance.ts`**, replacing
+      `lookOf` — the same file, so the seam does not move. `run.ts` sets
+      `sprite` and drops `look`.
+- [ ] **A trade names its own sprite.** `TradeDef.sprite`, beside `id` and
+      `name`, so a look is a table entry and `src/trades/*.ts` stays content.
+      Never a `Record<tradeId, sprite>` somewhere else — that is a second table
+      to forget to update when trade eleven lands.
+- [ ] **The Alchemist and the Aethermancer get a look each**, written as an
+      `OUTFITS` entry apiece in `dress.mts` and generated off the base man. What
+      they should LOOK like is open question 9.
+- [ ] **Measure the first look's source cost** and write it into the table above
+      before generating the second.
+- [ ] **Delete the doll** — `gear-art.ts`, `look.ts`, `lookOf`, `Look`,
+      `WornPiece`, `HERO_FRAMES`, `POSES`, `SWING_POSES`, `src/render/body.ts`
+      and `src/render/pose.ts`, and the demo sweeps that read them. **Last, and
+      only once a generated hero is on screen in a descent.**
 
 #### Traps
 
-- **The doll is not deletable and this phase must not touch it** until a
-  generated hero shows helm, body and boots at least as well. `gear-art.ts`,
-  `lookOf`, `WornPiece`, `POSES` and `SWING_POSES` all serve it.
+- **The doll is not deletable until the replacement is in a descent.** It is the
+  only thing that draws the hero today, and `shots` is what proves he still
+  draws.
+- **`Look` is in `src/types.ts` and the sim carries it** on `Entity.look`.
+  Removing it touches `run.ts`, `pixi.ts` and `demo.ts` together — do it in one
+  commit or the typecheck is red in the middle.
 - **The hero would lose the runtime palette**, as the monsters did. He is on
   screen in every zone, so say it out loud rather than discovering it.
-- **`animates()` must return true for a generated hero**, or `drawEntity`'s
-  lunge transform runs on top of a real swing.
-- **The hero has states the monsters do not.** `poseOf` indexes `SWING_POSES`
-  by how far through a swing he is, and he carries a swing AND a cast. Minimum
-  is `idle`, `walk`, `attack`, `cast`, `hurt`, `death`.
-- **Source size is the ceiling.** Six bodies are 4.67 MB. A hero is ~0.8 MB;
-  layers are mostly transparent and should be far less, but MEASURE the first
-  one before generating sixteen.
-- **A layer is drawn in the body's own key or it will not match.** A generated
-  body is quantised to its own 56 inks; a crop out of an edit of that body
-  already shares them, but a piece generated separately would not — which is one
-  more reason the crop beats an object with attachment points.
-- **A piece must be cut and stamped in the same PASS.** The crop comes off one
-  frame per facing and lands on the rest; cutting from one facing and stamping
-  onto another is a helm from behind on a man facing you.
-- **Anything that must MATCH goes in one call.** Two `create_character_state`
-  calls for one look — say a helm and its own gorget — are two different helms.
+- **A generated body is drawn at its own `scale`**, 1.35-1.9 rather than the
+  doll's 1, because it spans about 69% of its grid. A hero left at 1 renders a
+  third smaller than the pack he stands in.
+- **He was rotated at 128, not the 96 a body ships at**, because the reference
+  image's size beats the `size` argument. At 128 a v3 animation costs two
+  generations per direction — so re-rotating off a 96 design pays for itself on
+  the first animation, and every trade state after it inherits the size.
+- **Anything that must MATCH goes in one call.** A look is one
+  `create_character_state`; asking for its helm and its coat separately is two
+  different helms.
+- **A measured character has NO trade** and `ladderCharacter` does not take one
+  up, so every headless harness draws the base man. That is correct and must
+  stay — it also means no balance number moves in this phase.
 
 #### Done when
 
-A player can equip a different helm, a different body and a different pair of
-boots and SEE each change on a generated hero. E1 has failed and D1 with it, but
-D3 replaces it and is proved as far as a still and a facing can prove anything —
-what is left is the animation, and that is generations rather than a question.
+A character with no trade walks a descent as the generated ragged man, and
+taking up the Alchemist or the Aethermancer visibly changes who is on screen.
 
 #### What must not break
 
-`comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. The experiments
-touch no `src/` at all; the wiring step touches `sprites.ts` and whatever
-consumes `Look`, and `shots` is what proves the hero still draws.
-
+`comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. `demo` sweeps every
+frame that ships for being reached and every monster for resolving in exactly
+one art table — the hero joins both. `shots` is what proves he draws.
 ### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
@@ -1613,6 +1576,25 @@ Every one is parked deliberately. Ask before acting on any of them.
    `56d599a`: the wall tile placed one row lower than it is keyed, flanks turned
    a quarter, no near wall. Nothing is blocked on it and it was never asked for
    twice; it is here so nobody rediscovers the geometry.
+
+10. **What does an Alchemist LOOK like, and an Aethermancer?** Phase 1 is
+    blocked on nothing else: the pipeline is proved, the base man is rotated,
+    and each look is one `OUTFITS` entry and 108 generations. But a look is the
+    whole of a trade's identity on screen and it should not be guessed — and it
+    has to READ at the ~87 device pixels the camera lands a body in, where two
+    near-neighbours are the same picture. The two in the game pull opposite ways
+    on paper: the Alchemist is flasks, charges and uptime, the Aethermancer is
+    mana as a second health bar. **Ten eventually**, so whatever separates the
+    first two has to keep separating the tenth — which argues for one loud
+    SILHOUETTE decision each rather than a palette each, the same rule the
+    monster roster settled on.
+
+11. **Does the base man keep his backpack?** The rotation gave the wanderer a
+    pack the design forbade in as many words — "no weapon, no armour, no pack" —
+    and it is on all five facings. He is now the no-trade look AND the ancestor
+    of every trade state, so it would be on all eleven bodies for good. Three
+    generations re-designs him and two re-rotate; doing it also lands him at 96
+    instead of 128, which halves every animation after it.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls

@@ -82,12 +82,11 @@ descent over a generated set IS one, with monsters that fight back. `npm run
 peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
 magnified crop, because every fault worth finding is invisible at ship size.
 
-**Only the HERO wears anything, and a piece of armour is a CROP.** `dress.mts`
-puts one slot's worth on a whole character through `create_character_state` —
-one charge, every rotation, identity kept — and `layer.mts` keeps the SLOT's
-band of that dressed frame and throws the rest away, because the edit repaints
-the whole man and a diff of it is not a piece. `anchor.mts` asks whether the
-band keeps landing at the neck across a body's frames, and costs nothing.
+**Only the HERO wears anything, and what he wears is his TRADE.** A look is a
+WHOLE BODY, so it is the pipeline every monster already uses: `dress.mts <look>
+--state <character>` puts one on through `create_character_state` — one charge,
+every rotation, identity kept, and the result animates like any other body.
+Equipped gear does not change the sprite.
 
 Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
 and `tools/art/generated.json` is what came BACK, one row per thing.
@@ -895,7 +894,7 @@ been walked to.
 ```
 tools/art/mcp.mts  the generator, over JSON-RPC; tables.mts pulls art in
 tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
-tools/art/layer.mts a slot's BAND out of a dressed frame; dress.mts puts it on
+tools/art/dress.mts a whole LOOK onto an existing character, every rotation
 tools/art/         the art pipeline: a row is generated, converted, accepted
 src/data.ts        every table: mods, currencies, bases, skills, monsters
 src/mods.ts        capacity, allocation, rolling
