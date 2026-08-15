@@ -6,10 +6,10 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**The Fissure is drawn by a GENERATED TILESET, in the real game** — a live
-descent. The other three zones still draw their own rock. The
+**ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** The
 decision open question 8 was parked on has been taken by the user in the doing:
-generated art ships, and the runtime palette is what it cost.
+generated art ships, and the runtime palette is what it cost. Four sets, one
+per zone, each asked off that zone's own line in `MAP_THEMES`.
 
 **The SANDBOX IS DELETED and the work has moved into the game.** *The user's
 call, in their words: "We are going to just delete the sandbox and start
@@ -90,6 +90,34 @@ Kept here because the next thing built on top of them will want it.
   placed them was the shrine. `roots` keeps the set load-bearing because
   `dressWalls` scatters it. The first authored room built on a generated set is
   what they are waiting for.
+- **Three more zones cost nine generations and no code worth the name.** The
+  whole of Phase 1's zone work was: write the asks off each zone's own line,
+  `ask`, `get`, `emit`, and four lines in `ZONE`. Everything the first set had
+  to learn about the renderer — the twins, the nearest-key fallback, the
+  bounding boxes, `fitCorners` — held for all three without a change. **The
+  pipeline is the thing that was expensive, and it is paid for.**
+- **`cavern_lit` is the tone rule MEASURED, and it is in the file on purpose.**
+  It was asked the Cavern's own way round — pale crystal rock over a dark violet
+  floor, which is exactly what `THEME_INK` says the zone is — and it reads
+  inside out: the pale expanse takes the eye as ground and the chamber reads as
+  a hole punched in it. A zone's identity is its HUE, and the tone is not
+  negotiable. Two asks, two confirmations, and one of them deliberate.
+- **Not asking for stone is not excluding it.** `seam_round` said meat and
+  muscle and crystal throughout, never said stone, and came back as grey
+  cobbles with magenta dots on the rim. The re-ask with NOT stone, NOT rock,
+  NOT brick, NOT cobbles, NOT masonry drew what was asked for.
+- **The Seam ships `seam_pro` and the repetition is the price.** `seam_round2`
+  is the repetition-safe one — near-black rock, sparse crystal — and it reads as
+  the Cavern with a pink floor. `seam_pro` is unmistakably two worlds fused, and
+  its rock is a dense field that repeats visibly across a map. The Seam is the
+  rarest room in the game, so identity beat repetition; the other set is in
+  `zoneset.mts` beside it, one word to switch. **There is nothing left to
+  answer repetition with** — `GRAIN` and the lightmap went at `83b8488` — so the
+  cover scatter is the whole of the answer, which is why it is not gated.
+- **Judging a zone means SOCKETING for it.** A zone is a composition, not a
+  setting, so `npm run peek` takes a zone name and puts the crystals in through
+  the collection screen — two Demonic for the Rot, two Prismatic for the Cavern,
+  two of each for the Seam. There is no other way in, and there should not be.
 - **A scene lost its multi-chamber machinery with the room that used it.**
   `ScenePlan` is `room`, `entrance`, `stands`, `props` and nothing else:
   `also`, `joins`, `cut`, `patrol`, `busy`, `plain`, `dress` and `grown` were
@@ -859,47 +887,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The other three zones
-
-**What is true today.** `ZONE` in `src/sim/grid.ts` has one entry, `fissure`.
-The Rot, the Cavern and the Seam draw their own rock, decals and living motion
-out of `THEME_INK` — so the game is now half generated and half drawn, which is
-the one state it should not stay in.
-
-- [ ] **A set per zone, off that zone's OWN line in `MAP_THEMES`.** The Fissure's
-      set came from its sentence plus its `THEME_INK` hexes; a generic prompt
-      gives generic art. Ask several ways at once — `zoneset.mts ask` is built
-      for it and a tileset is ~100s.
-- [ ] **Say the tone at both ends** — see the findings above. This is the thing
-      that took four generations to learn.
-- [ ] **The Seam is `seam` surface**, one terrain or the other tile by tile.
-      Decide whether it is its own generated set or a mix of two, and say why.
-- [ ] **What is LOST when a zone goes bare**: its `livingDecals` — the webs,
-      the tendrils, the light travelling a facet. Every zone has some by
-      decision. Decide whether they come back as generated props or the zone
-      keeps its own motion over a generated floor.
-- [ ] **Each new set brings DRESSING with it, and the furniture is the
-      Fissure's.** `generateMap` dresses whenever `ZONE[theme]` answers, so a
-      zone gets cover, growth and arrangements the moment it gets a set — out
-      of `VIGNETTES`, `COVER_PROPS` and `WALL_PROPS`, which are rails, carts,
-      pit props and mine spoil. That is a WORKING, and the Rot is not one.
-      Decide whether a zone gets its own tables or shares these, and say why.
-
-**Traps.**
-
-- **A SCENE is not bare and stays hand-drawn.** The four authored rooms keep
-  the old rock, so a Fissure descent drawn from a set now hands you into a
-  workshop drawn the old way. Making a scene bare needs `PROP_ART` entries for
-  `bench`, `lamprack` and the lanterns — the demo's "every prop in one is
-  drawn" check is what will say so — and it is a decision, not a fix.
-- **`fitCorners` opens about 40 cells in 2700 and only ever opens**, so a new
-  set with different gaps makes its zone marginally more open. Nothing can be
-  walled off by it, and `demo`'s reachability sweep is what proves it.
-
-**Done when.** Every zone draws a generated set, or the ones that do not are
-named here with a reason.
-
-### Phase 2 — The bodies, in the game
+### Phase 1 — The bodies, in the game
 
 **What is true today.** `GENERATED` in `src/render/generated-art.ts` holds the
 skeleton, the revenant and the delver hero, generated for the sandbox and drawn
@@ -933,7 +921,7 @@ roster of twenty is around 1,200.
 
 **Done when.** A player fights a generated body in a real descent and it reads.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1080,7 +1068,7 @@ Every one is parked deliberately. Ask before acting on any of them.
    in a live descent, and the runtime palette is what it cost — a painted set is
    baked hex, so four zones will be four generated sets rather than one set with
    four palettes. Ranks are still light applied at runtime, which is the part
-   that has to keep working when BODIES follow in Phase 3.
+   that has to keep working when BODIES follow in Phase 1.
    What is NOT settled, and is a real question when the bodies land: whether to
    re-ink a generated body onto CSS properties to buy the palette back (a
    quantised key is already a small palette, so it is a mapping rather than a
@@ -1136,6 +1124,24 @@ editing two places.
 
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
+
+- **Three zones have no FURNITURE of their own.** Every zone now draws a
+  generated set and the rock dresses all four — cover at the wall's foot, roots
+  on the cut face — but `VIGNETTES` is a mine's and is gated to the Fissure by
+  `WORKED` in `src/sim/grid.ts`. So the Rot, the Cavern and the Seam have
+  nothing a PERSON left in them, which is defensible for now (nobody worked
+  them) and thin. What it would cost is roughly fifteen `create_map_object`
+  generations a zone plus the judging, and a `tone` pass per zone, because a
+  prop is toned toward the ground it stands on and these are toned to pale
+  sand. The tables are already keyed by nothing, so per-zone versions are a
+  lookup rather than a rewrite.
+- **`livingDecals` went quiet in three zones, and two of them were made of it.**
+  A `bare` map stands the zone's own floor, decals and MOTION down, which cost
+  the Fissure nothing (its `motion` is 0.5 and its `density` 0) and costs the
+  Rot and the Cavern their stirring surfaces — the whole of what made those two
+  read as alive rather than as coloured rock. A generated tileset is a still
+  picture and always will be. Whether the motion comes back over a set, as
+  animated props or not at all is unanswered; nothing is blocked on it.
 
 - **Whether a trade has exactly one right skill.** `RULES.md` states the line:
   favouring a skill is fine, requiring one is a skill node that got lost. It is

@@ -175,7 +175,16 @@ const CUT: Record<MapTheme, Cut> = {
  *  stamped over it is two floors at once. */
 export const ZONE: Partial<Record<MapTheme, string>> = {
   fissure: 'lit_round',
+  demonic: 'rot_round',
+  prismatic: 'cavern_round',
+  seam: 'seam_pro',
 };
+
+/** Which zones somebody WORKED. `VIGNETTES` is rails, carts and pit props —
+ *  what a person left, and one zone was ever a working. Cover and growth are
+ *  what the ROCK does and belong to every set: without them an open floor is
+ *  one picture repeated. */
+const WORKED = new Set<MapTheme>(['fissure']);
 
 /** How far a passage wanders off the line between the rooms it joins, and how
  *  much of a dug room's outer ring the rock never gave up. */
@@ -616,9 +625,8 @@ export function generateMap(
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
 
-  // A generated surface is DRESSED, and only a generated one: the furniture,
-  // the cover and the growth are generated pictures, which a zone drawing its
-  // own rock has none of.
+  // A generated surface is DRESSED and one drawing its own rock is not: the
+  // cover, the growth and the furniture are all generated pictures.
   const props: MapProp[] = [];
   if (zone) {
     // Its own stream, or dressing a map moves which monsters spawn in it.
@@ -629,7 +637,7 @@ export function generateMap(
       x: Math.round(v.x),
       y: Math.round(v.y),
     }));
-    props.push(...dressRooms(grid, rooms, dress, DRESS_PER_ROOM, keep));
+    if (WORKED.has(theme)) props.push(...dressRooms(grid, rooms, dress, DRESS_PER_ROOM, keep));
     props.push(...dressWalls(grid, dress, [...keep, ...props]));
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);

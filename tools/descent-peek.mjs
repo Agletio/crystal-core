@@ -25,7 +25,20 @@ if (!existsSync(join(docs, 'app.js'))) {
   process.exit(1);
 }
 
-const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop] = process.argv.slice(2);
+const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop, zone = ''] = process.argv.slice(2);
+
+/** Which crystals to socket for each zone. Half of one world takes the rock,
+ *  and two halves with no Normal is the Seam. */
+const SOCKETS = {
+  fissure: [],
+  rot: ['Demonic', 'Demonic'],
+  cavern: ['Prismatic', 'Prismatic'],
+  seam: ['Demonic', 'Demonic', 'Prismatic', 'Prismatic'],
+};
+if (zone && !SOCKETS[zone]) {
+  console.error(`descent-peek: zone must be one of ${Object.keys(SOCKETS).join(', ')}`);
+  process.exit(1);
+}
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 const server = createServer(async (req, res) => {
@@ -60,6 +73,30 @@ await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.waitForTimeout(400);
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(700);
+// The zone is the composition, so it is chosen by socketing rather than by a
+// setting: the kit is handed every crystal and the collection is where they go.
+for (const want of SOCKETS[zone] ?? []) {
+  await page.evaluate(() => document.getElementById('open-crystals')?.click());
+  await page.waitForTimeout(250);
+  const put = await page.evaluate((family) => {
+    const cards = [...document.querySelectorAll('#crystals-list .crystal')];
+    const card = cards.find(
+      (c) => c.textContent?.includes(family) && /unsocketed/i.test(c.textContent ?? '')
+    );
+    const button = card?.querySelector('button.mini');
+    if (!button) return false;
+    button.click();
+    return true;
+  }, want);
+  if (!put) {
+    console.error(`descent-peek: nothing left to socket for ${want}`);
+    process.exit(1);
+  }
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('crystals-close')?.click());
+  await page.waitForTimeout(200);
+}
+
 await page.evaluate(() => document.getElementById('run-launch')?.click());
 await page.waitForTimeout(3000);
 // The kit leaves a screen open and the point is the floor. Escape shuts

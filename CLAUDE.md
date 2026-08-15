@@ -101,14 +101,23 @@ generation worth keeping, because it drifts off model across its run. What
 looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
 whether any of it goes in the game is the user's call and is open question 8.
 
-**THE FISSURE is drawn by a generated tileset, and the other three zones are
-not.** `ZONE` in `src/sim/grid.ts` maps a theme to a set; a theme with one is
-`bare`, so its own floor, decals and living motion all stand down — a tileset is
+**ALL FOUR zones are drawn by a generated tileset.** `ZONE` in `src/sim/grid.ts`
+maps a theme to a set — `lit_round` for the Fissure, `rot_round` for the Rot,
+`cavern_round` for the Cavern, `seam_pro` for the Seam. A theme with one is
+`bare`, so its own floor, decals and living motion all stand down; a tileset is
 the WHOLE surface. Only the two LANDMARKS survive that, because the way on and
 the way out have to be findable, and `mouth` takes darker inks there: a hole
 reads by contrast, and the rim that stood out on stone is a white box on sand.
 Only Pixi draws a tileset, so `canvas2d` keeps the drawn rock and is still the
 fallback it always was.
+
+Each set was asked for off that zone's OWN line in `MAP_THEMES` and its own
+`THEME_INK` hexes, and every one of them asks for a LIGHT floor and a near-black
+rock — said at both ends, by exclusion as well as by name. That is not the
+zone's own ink: the Cavern is pale rock over a dark floor and the Rot is dark
+throughout. `cavern_lit` was asked the zone's own way round on purpose and it
+reads INSIDE OUT, the pale expanse taking the eye as ground and the room reading
+as a hole in it. It is in `zoneset.mts` beside the one that ships.
 
 **A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
 cut face between them. A deep-walled set has that third value at a vertex: the
@@ -163,12 +172,14 @@ Open floor is nearly all `grit` — a few specks read as a floor with something
 on it, where anything with a SHAPE out in the middle of a room reads as
 something somebody threw there.
 
-**A DESCENT over a generated set is what gets dressed, and only that.**
-`generateMap` lays the cover, the growth on the face and the arrangements when
-`ZONE[theme]` answers, and nothing at all when it does not — the furniture is
-generated pictures and a zone still drawing its own rock has art for none of
-them. A SCENE is the other half of the rule: one chamber and props placed by
-hand, with nothing scattered into it at all.
+**A DESCENT over a generated set is what gets dressed, and what dresses it
+depends on who left it.** `generateMap` lays the cover and the growth on every
+zone that has a set, because that is what the ROCK does and an open floor with
+none of it is one picture repeated. The ARRANGEMENTS are a person's — `VIGNETTES`
+is rails, carts, pit props and a hauling run — so they go only where somebody
+worked, which is `WORKED` and is the Fissure alone. A mine cart standing on
+membrane is somebody else's zone. A SCENE is the other half of the rule: one
+chamber and props placed by hand, with nothing scattered into it at all.
 
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:

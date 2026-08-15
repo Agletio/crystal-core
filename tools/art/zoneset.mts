@@ -115,6 +115,159 @@ const ASK: Record<string, Record<string, unknown>> = {
   },
 };
 
+/** Every set below is written off its zone's OWN line in `MAP_THEMES` and its
+ *  own `THEME_INK` hexes: a generic prompt gives generic art, and the Fissure's
+ *  own sentence is what gave the Fissure. Two asks a zone, `round` against
+ *  `pro`, because that is the pair that settled the first one.
+ *
+ *  The FLOOR is asked LIGHT and the ROCK near-black in every one of them, said
+ *  at both ends and by exclusion. That is not the zone's own ink — the Cavern
+ *  is pale rock over a dark floor and the Rot is dark throughout — and it is
+ *  deliberate: four asks came back with the rock paler than the floor and every
+ *  one read inside out, the eye taking the bright expanse for ground and the
+ *  rooms for holes. `cavern_lit` is the one exception, asked the zone's own way
+ *  round on purpose so the two can be looked at side by side. */
+const ROT_DARK =
+  'VERY DARK blackened red-brown clotted meat, almost black, ' +
+  'NOT pink, NOT bright red, NOT crimson, NOT magenta, NOT grey, NOT brown stone';
+const ROT_LIGHT =
+  'LIGHT warm grey-pink raw membrane, pale and dry, brightly lit, ' +
+  'NOT dark, NOT black, NOT red, NOT crimson, NOT magenta, NOT green';
+
+const CAVERN_DARK =
+  'VERY DARK violet-black rock shot through with dull crystal, almost black, ' +
+  'NOT pale, NOT white, NOT pink, NOT blue, NOT grey stone';
+const CAVERN_LIGHT =
+  'LIGHT lilac-white floor of fine crystal dust and grit, brightly lit, ' +
+  'NOT dark, NOT black, NOT purple, NOT blue, NOT green, NOT sandy';
+
+const ZONE_ASK: Record<string, Record<string, unknown>> = {
+  // THE ROT — "The rock has given way to something that grew here after it."
+  // The walls are not stone with something on them, they are the thing, so
+  // nothing in the ask may say stone.
+  rot_round: {
+    lower_description: `a floor of pale dry membrane and shed skin, ${ROT_LIGHT}`,
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description: 'a sheer cut face of dark wet muscle dropping to the floor',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot_pro: {
+    lower_description: `a floor of pale dry membrane and shed skin, ${ROT_LIGHT}`,
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description: 'a sheer cut face of dark wet muscle dropping to the floor',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.7,
+    spread_x: 0.4,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // THE CAVERN — "Crystal to the ceiling, and every surface holding light."
+  cavern_round: {
+    lower_description: `a floor of crushed crystal grit, ${CAVERN_LIGHT}`,
+    upper_description: `a mass of crystal grown solid, ${CAVERN_DARK}`,
+    transition_description: 'a sheer cut face of dark crystal dropping to the floor',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // The zone's own way round: pale rock over a dark floor. The one ask that
+  // breaks the tone rule, made on purpose so the pair can be judged together.
+  cavern_lit: {
+    lower_description:
+      'a dark violet cavern floor in shadow, DEEP indigo-violet, ' +
+      'NOT pale, NOT white, NOT pink, NOT grey, NOT brown',
+    upper_description:
+      'a mass of PALE luminous crystal, light rose-white, glowing from within, ' +
+      'NOT dark, NOT black, NOT violet, NOT grey stone',
+    transition_description: 'a sheer face of pale crystal dropping to a dark floor',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // THE SEAM — "Two worlds fused at a join that should not exist." ONE set and
+  // never two mixed: an edge tile carries the cut face and its neighbour has to
+  // continue it, so a per-tile mix of two sets tears at every wall.
+  seam_round: {
+    lower_description: `a floor of pale membrane crusted with crystal grit, ${ROT_LIGHT}`,
+    upper_description:
+      'a mass of dark clotted meat with violet crystal breaking out through it, ' +
+      'VERY DARK blackened red shot with purple, almost black, ' +
+      'NOT pale, NOT pink, NOT grey, NOT brown stone',
+    transition_description:
+      'a sheer cut face of dark muscle split by crystal shards, dropping to the floor',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // `seam_round` came back as grey COBBLES with crystal dots on the rim: the
+  // standard shape pipeline draws masonry whatever the words say, and "stone"
+  // has to be excluded by name rather than merely not asked for.
+  seam_round2: {
+    lower_description: `a floor of pale membrane crusted with crystal grit, ${ROT_LIGHT}`,
+    upper_description:
+      'a solid mass of dark clotted MEAT and muscle with violet crystal shards ' +
+      'breaking out through it, VERY DARK blackened red shot with purple, ' +
+      'almost black, NOT stone, NOT rock, NOT brick, NOT cobbles, NOT masonry, ' +
+      'NOT grey, NOT pale, NOT pink',
+    transition_description:
+      'a sheer cut face of dark muscle split by crystal shards, NOT stone, NOT brick',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  seam_pro: {
+    lower_description: `a floor of pale membrane crusted with crystal grit, ${ROT_LIGHT}`,
+    upper_description:
+      'a mass of dark clotted meat with violet crystal breaking out through it, ' +
+      'VERY DARK blackened red shot with purple, almost black, ' +
+      'NOT pale, NOT pink, NOT grey, NOT brown stone',
+    transition_description:
+      'a sheer cut face of dark muscle split by crystal shards, dropping to the floor',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.8,
+    spread_x: 0.4,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+};
+
+Object.assign(ASK, ZONE_ASK);
+
 mkdirSync(OUT, { recursive: true });
 
 if (process.argv[2] === 'ask') {

@@ -1501,6 +1501,7 @@ rule('SPRITES — is the pixel art well formed?');
   // A VIGNETTE is placed as one thing, so its own props have to fit inside the
   // footprint it declares — over the edge, two of them overlap and a cart ends
   // up inside an altar.
+  const VIGNETTE_PROPS = new Set(VIGNETTES.flatMap((v) => v.props.map((p) => p.id)));
   const spilling = VIGNETTES.flatMap((v) => [
     ...v.props.filter((p) => p.x < 0 || p.y < 0 || p.x >= v.w || p.y >= v.h).map((p) => `${v.id}/${p.id}`),
     ...v.props.filter((p) => !PROP_ART[p.id]).map((p) => `${v.id}/${p.id} undrawn`),
@@ -1539,15 +1540,23 @@ rule('SPRITES — is the pixel art well formed?');
       `zone ${map.zone}, ${standing.length} standing, ${cover.length} cover, undrawn ${undrawn.join(', ')}`
     );
 
-    // A zone with no set of its own keeps its own decals and must stay bare of
-    // furniture: none of these props is drawn on hand-drawn rock.
-    const drawnRock = MAP_THEMES.filter((t) => dressedMap(12, t.id).props.length > 0)
-      .filter((t) => !dressedMap(12, t.id).zone)
-      .map((t) => t.id);
+    // What the ROCK does belongs to every zone with a set — without it an open
+    // floor is one picture repeated. What a PERSON left is a working's, and
+    // only one zone was ever a working, so a vignette anywhere else is a mine
+    // cart standing on membrane.
+    const worked = MAP_THEMES.filter((t) => {
+      const it = dressedMap(12, t.id);
+      return it.props.some((p) => VIGNETTE_PROPS.has(p.id));
+    }).map((t) => t.id);
+    const setless = MAP_THEMES.filter((t) => !dressedMap(12, t.id).zone).map((t) => t.id);
+    const undressed = MAP_THEMES.filter((t) => {
+      const it = dressedMap(12, t.id);
+      return !!it.zone && it.props.length === 0;
+    }).map((t) => t.id);
     check(
-      drawnRock.length === 0,
-      'and a zone still drawing its own rock is dressed with nothing',
-      drawnRock.join(', ')
+      worked.join() === 'fissure' && undressed.length === 0 && setless.length === 0,
+      'every zone draws a set and the rock dresses it, and only the working has furniture',
+      `worked: ${worked.join(', ') || 'none'}; no set: ${setless.join(', ') || 'none'}; bare: ${undressed.join(', ') || 'none'}`
     );
 
     // COVER is drawn as one pass UNDER the furniture, so an id in both a cover

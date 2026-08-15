@@ -1432,11 +1432,23 @@ nobody-dies guard and `#dev-sandbox` are all gone. A descent IS the room the
 sandbox was, with monsters that fight back — so `npm run peek` is pointed at
 one, and that is where art is judged.
 
-- **Only a zone with a SET is dressed.** `generateMap` lays the cover, the
-  growth and the arrangements when `ZONE[theme]` answers, and nothing at all
-  when it does not: the furniture is generated pictures, and a zone still
-  drawing its own rock has art for none of them. The other three zones are
-  Phase 2's, and until then they are bare of furniture on purpose.
+- **Only a zone with a SET is dressed, and WHAT dresses it depends on who left
+  it.** The cover and the growth are what the ROCK does and belong to every set,
+  because an open floor without them is one picture repeated in every cell. The
+  ARRANGEMENTS are a person's — `VIGNETTES` is rails, carts, pit props and a
+  hauling run — so `WORKED` gates them to the one zone that was ever a working.
+  A mine cart standing on membrane is somebody else's zone.
+- **A generated set is asked LIGHT-FLOOR and DARK-ROCK whatever the zone's own
+  ink says**, at both ends and by exclusion. Measured twice now: `cavern_lit`
+  was asked the Cavern's own way round — pale crystal rock over a dark floor —
+  and reads inside out, the pale expanse taking the eye as ground and the
+  chamber reading as a hole punched in it. The zone's identity is its HUE; the
+  tone is not negotiable.
+- **The standard shape pipeline draws MASONRY unless stone is excluded by
+  name.** `seam_round` came back as grey cobbles with crystal dots on the rim
+  off a prompt that said meat and muscle throughout and never said stone. Not
+  asking for a thing is not excluding it: NOT stone, NOT rock, NOT brick, NOT
+  cobbles, NOT masonry.
 - **A SCENE is one chamber and hand-placed props, and nothing scatters into
   one.** `ScenePlan` is `room`, `entrance`, `stands` and `props` — what the
   ROCK does belongs to a descent. Multiple chambers, corridors between them and
