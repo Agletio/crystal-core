@@ -629,7 +629,7 @@ function renderFlasks(): void {
     const row = el('div', `flask flask--${potion.pool}${drinking ? ' flask--live' : ''}`);
     const use = el('button', 'flask__use') as HTMLButtonElement;
     use.id = `flask-${potion.id}`;
-    use.append(flaskIcon(left, potion.charges, 40, potion.pool));
+    use.append(flaskIcon(left, potion.charges, 46, potion.pool));
     use.append(el('span', 'flask__key', keyName(keyFor(game, potion.binding))));
     use.dataset.at = String(left);
     use.disabled = !live || !sim!.canDrink(potion.id);
@@ -674,7 +674,7 @@ function syncFlasks(): void {
     use.parentElement?.classList.toggle('flask--live', drinking);
     if (use.dataset.at !== String(left)) {
       use.dataset.at = String(left);
-      use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges, 40, potion.pool));
+      use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges, 46, potion.pool));
       use.title = `${potion.name} \u2014 ${left} of ${potion.charges}. ${potion.blurb}`;
     }
   }

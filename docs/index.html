@@ -674,33 +674,26 @@
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 20px);
-    width: auto; margin: 0; gap: 14px; grid-template-columns: auto auto;
-    padding: 3px 1px;
+    width: auto; margin: 0; gap: 12px; grid-template-columns: auto auto;
+    padding: 4px 3px 2px;
     border: 12px solid transparent; border-left-width: 22px; border-right-width: 22px;
     border-image: var(--fix-bar) 14 26 fill / 12px 22px round;
   }
-  /* The flasks sit in sockets on their own small plate — the rack. */
-  body.mapfull #run-stagewrap .flask__use {
-    width: 48px; height: 48px; padding: 0;
-    display: grid; place-items: center;
-    background: transparent; background-image: var(--fix-socket);
-    background-size: 100% 100%; image-rendering: pixelated;
-    border: 0; border-radius: 0; box-shadow: none;
-  }
-  body.mapfull #run-stagewrap .flask__use:hover:not(:disabled) { filter: brightness(1.3); }
-  body.mapfull #run-stagewrap .flask--live .flask__use { filter: brightness(1.25); }
-  .flask { display: flex; align-items: center; gap: 6px; }
+  /* A SHELF: each flask stands in its own dark arched niche cut into the bar,
+     and its threshold controls hang directly under it. */
+  .flask { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .flask__use {
-    position: relative; display: grid; place-items: center;
-    width: 48px; height: 50px; padding: 0;
-    background: var(--panel); background-image: var(--grit);
-    border: 2px solid var(--edge); box-shadow: var(--bevel); cursor: pointer;
+    position: relative; display: grid; place-items: end center;
+    width: 54px; height: 68px; padding: 0 0 3px;
+    background: var(--cut);
+    border: 1px solid var(--edge-lit); border-radius: 26px 26px 2px 2px;
+    box-shadow: var(--sunk); cursor: pointer;
   }
-  .flask__use:hover:not(:disabled) { border-color: var(--citrine); }
+  .flask__use:hover:not(:disabled) { border-color: var(--citrine); filter: brightness(1.2); }
   .flask__use:disabled { opacity: .55; cursor: default; }
-  .flask--live .flask__use { border-color: var(--citrine); }
+  .flask--live .flask__use { border-color: var(--citrine); filter: brightness(1.25); }
   .flask__key {
-    position: absolute; right: 2px; bottom: 0;
+    position: absolute; right: 5px; bottom: 2px;
     font-family: var(--display); font-size: 8px; line-height: 1; color: var(--text-dim);
   }
   .sicon--flask .sicon__ink { fill: var(--text-dim); }
@@ -711,14 +704,14 @@
   .flaskart--dry { filter: grayscale(.9) brightness(.5); }
   /* Each control keeps its own box. Squeezed onto one line beside the name the
      `+` shrank to nothing and stopped taking clicks at all. */
-  .flask__auto { display: flex; align-items: center; gap: 4px; }
+  .flask__auto { display: flex; align-items: center; justify-content: center; gap: 3px; }
   .flask__step {
-    width: 20px; height: 20px; padding: 0; flex: none;
+    width: 16px; height: 16px; padding: 0; flex: none; font-size: 10px;
     background: var(--panel); color: var(--text-dim);
-    border: 2px solid var(--edge); cursor: pointer; font: inherit; line-height: 1;
+    border: 1px solid var(--edge); cursor: pointer; line-height: 1;
   }
   .flask__step:hover { border-color: var(--citrine); color: var(--citrine); }
-  .flask__at { min-width: 30px; text-align: center; font-size: 10px; color: var(--text-dim); }
+  .flask__at { min-width: 26px; text-align: center; font-size: 9px; color: var(--text-dim); }
 
   /* Corners, and each is a CHOICE rather than wherever the flow left it. The
      HUD takes the top left; the numbers stay in the column, which is the right
@@ -794,24 +787,9 @@
   .hp--mana.hp--dry { border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px; border-image: var(--fix-channel) 9 14 fill / 8px 14px round; filter: drop-shadow(0 0 3px var(--rust)); }
 
   /* Two across under the map: the keys are the shortcut and these are the
-     interface, because a phone has no number row. */
-  .flasks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-  .flask { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
-  @media (max-width: 560px) { .flasks { grid-template-columns: 1fr; } }
-  .flask__use {
-    flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; padding: 6px 8px; text-align: left;
-  }
-  .flask__use:disabled { opacity: .4; }
-  .flask__key {
-    flex: none; font-size: 10px; color: var(--text-dim); border: 1px solid var(--edge);
-    padding: 1px 5px;
-  }
-  /* Drinking, so the button says what the bar is doing. */
-  .flask--live .flask__use { border-color: var(--quartz); }
-  .flask__auto { display: flex; align-items: center; gap: 4px; flex: none; }
-  .flask__auto span { font-size: 10px; color: var(--text-dim); min-width: 30px; text-align: center; }
-  .flask__auto button { padding: 2px 6px; font-size: 11px; }
+     interface. One look with the shelf — the niche block above is the whole
+     of the styling, and this only places the pair. */
+  .flasks { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 12px; margin-top: 8px; }
 
 
   .lootline { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--edge); }
