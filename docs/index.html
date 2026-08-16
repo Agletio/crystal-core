@@ -427,16 +427,12 @@
     position: fixed; right: 16px; bottom: 22px; z-index: 34;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
-  /* One row of sockets is wider than half a 1280 screen and the flasks own the
-     bottom centre, so on a narrow desktop window the corner steps up over the
-     flask line rather than landing the rail on the rack. */
-  @media (max-width: 1620px) {
-    body.mapfull .corner { bottom: 104px; }
-  }
   /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
-     every button a riveted socket SET INTO it. ONE row, sockets touching —
-     the user's call — so the buttons are sized to keep the plate on screen. */
-  .rail {
+     every button a riveted socket SET INTO it. The screens are ONE row of
+     touching sockets sized to clear the flask bar at 1280; the utility trio
+     — Fill, Hide, the dev kit — sits on its own small plate above. */
+  .rail { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .rail__row {
     display: flex; justify-content: flex-end;
     align-items: center; gap: 0;
     padding: 4px 2px;
@@ -447,7 +443,7 @@
   }
   .railbtn {
     position: relative; display: grid; place-items: center;
-    width: 40px; height: 40px; padding: 0; font-size: 0;
+    width: 34px; height: 34px; padding: 0; font-size: 0;
     background: transparent; background-image: var(--fix-socket);
     background-size: 100% 100%; image-rendering: pixelated;
     color: var(--text-dim);
@@ -459,8 +455,8 @@
   .sicon { display: block; image-rendering: pixelated; }
   .sicon__ink { fill: currentColor; }
   .sicon__lit { fill: var(--citrine); }
-  .rail__sep { width: 2px; height: 22px; background: var(--edge); margin: 0 2px; }
-  body.panelsoff .rail > :not(.railbtn--keep) { display: none; }
+  body.panelsoff .rail__row--main { display: none; }
+  body.panelsoff .rail__row--tools .railbtn:not(.railbtn--keep) { display: none; }
   body.panelsoff .viewport .panel,
   body.panelsoff .dock,
   body.panelsoff header { display: none; }
@@ -1613,22 +1609,26 @@
     <!-- One per slot: what you ARE, over what you can open. -->
     <div class="skillrow-icons" id="run-skills"></div>
     <nav class="rail" id="rail">
-    <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
-    <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
-    <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
-    <button class="railbtn" id="open-haul" data-key="haul">Haul</button>
-    <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
-    <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
-    <button class="railbtn" id="open-character" data-key="character">Character</button>
-    <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
-    <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
-    <button class="railbtn" id="open-history" data-key="history">History</button>
-    <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
-    <button class="railbtn" id="open-settings">Settings</button>
-    <span class="rail__sep"></span>
-    <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
-    <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
-    <button class="railbtn railbtn--dev" id="dev-kit">Dev kit</button>
+    <!-- The utility trio on its own small plate, above the screens. -->
+    <div class="rail__row rail__row--tools">
+      <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
+      <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
+      <button class="railbtn railbtn--dev" id="dev-kit">Dev kit</button>
+    </div>
+    <div class="rail__row rail__row--main">
+      <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
+      <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
+      <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
+      <button class="railbtn" id="open-haul" data-key="haul">Haul</button>
+      <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
+      <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
+      <button class="railbtn" id="open-character" data-key="character">Character</button>
+      <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
+      <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
+      <button class="railbtn" id="open-history" data-key="history">History</button>
+      <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
+      <button class="railbtn" id="open-settings">Settings</button>
+    </div>
     </nav>
   </div>
 
