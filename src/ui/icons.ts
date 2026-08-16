@@ -6,6 +6,7 @@
 import { monsterArt } from '../render/sprites';
 import { portraitOf } from '../render/portraits';
 import { readPalette } from '../render/renderer';
+import { GENERATED_ICONS } from '../render/generated-icons';
 import type { CurrencyDef, Item } from '../types';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -956,7 +957,19 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
 }
 
 /** Skill icons, for the middle of a tree. */
+/** A generated icon carries its OWN colours, where a hand-drawn one looks every
+ *  character up in the palette — so `sprite` is handed the key directly. */
+function drawn(id: string, size: number): SVGSVGElement | null {
+  const art = GENERATED_ICONS[id];
+  return art ? sprite(art.rows, art.key, size, id) : null;
+}
+
 export function skillIcon(skillId: string, size = 44): SVGSVGElement {
+  // Generated WINS. Five hand-drawn grids answered nine skills — Fireball and
+  // Fire Bolt were one picture and everything else was a sword — and they stay
+  // as the fallback for a skill nobody has drawn yet.
+  const own = drawn(`sk_${skillId}`, size);
+  if (own) return own;
   switch (skillId) {
     case 'fireball':
     case 'bolt':
@@ -972,8 +985,10 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
   }
 }
 
-/** The glyph on a shelf of skills. */
+/** The glyph on a shelf of skills. Generated wins, same as a skill's own. */
 export function categoryIcon(id: string, size = 22): SVGSVGElement {
+  const own = drawn(`cat_${id}`, size);
+  if (own) return own;
   switch (id) {
     case 'spell':
       return sprite(ORB, ARCANE, size, 'spell');

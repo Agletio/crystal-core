@@ -114,4 +114,4 @@ writeFileSync(
     `  key: Record<string, string>;\n};\n\n` +
     `export const ${table.name}: Record<string, ${table.type}> = {\n${body}\n};\n`
 );
-console.log(`${id}: ${grid} grid, ${Object.keys(key).length} inks -> generated-portraits.ts`);
+console.log(`${id}: ${grid} grid, ${Object.keys(key).length} inks -> ${table.file}`);
