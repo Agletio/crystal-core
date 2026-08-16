@@ -1466,7 +1466,124 @@ taking up the Alchemist or the Aethermancer visibly changes who is on screen.
 `comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. `demo` sweeps every
 frame that ships for being reached and every monster for resolving in exactly
 one art table — the hero joins both. `shots` is what proves he draws.
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 2 — A body stands ON its tile, instead of half below it
+
+**The user's call, with a screenshot of the Gaunt hanging off the south edge of
+the map:** *"fix the enemies going off the map, its especially bad for the
+really large enemies. I think generally clipping out to the north is fine
+because its like its just standing tall its just when it clips out south or
+east/west."*
+
+#### What is true today
+
+`spriteFor` in `src/render/pixi.ts` builds every entity sprite with
+`s.anchor.set(0.5)` — dead centre. The sprite is drawn `e.scale` tiles tall, so
+**half of it hangs below the entity's own position**: 0.75 tiles for a hero at
+`HERO_SCALE` 1.5, and **1.6 tiles for the Gaunt at `scale` 3.2**. The sim keeps
+a body inside the walkable grid by its `radius` (0.9 for the Gaunt), and the ART
+is nearly four times that, so a body standing legally on the last floor tile
+draws a long way out over the void.
+
+`PROPS` already does it right — line ~418 of the same file is
+`sprite.anchor.set(0.5, 1)`, anchored at the foot.
+
+`bodyTop(sprite)` in `src/render/sprites.ts` already exists: the fraction of the
+grid where a body's ink STARTS, memoised, measured over every frame so it does
+not move with the animation. There is no `bodyFoot` yet.
+
+#### Why it is wrong
+
+A top-down body should stand on the tile it occupies. Centring means every body
+is drawn lower than where it actually is, which is invisible at `scale` 1.5 and
+is a bug you can see from across the room at 3.2.
+
+#### Decisions
+
+- [ ] `bodyFoot(sprite)` beside `bodyTop`, same shape: the fraction of the grid
+      where ink ENDS, memoised, measured over EVERY frame — per frame it moves
+      with the walk and the body bounces.
+- [ ] Anchor per body so the ink's bottom lands a quarter tile below the
+      entity's position: `anchor.y = bodyFoot(sprite) - 0.25 / e.scale`, `x`
+      stays 0.5. A quarter tile rather than zero because feet exactly on the
+      centre line read as floating.
+- [ ] The health bar moves WITH it. `drawBars` currently computes
+      `cy(e.y) - e.scale * (0.5 - bodyTop(e.sprite)) - h - 0.06`, and that
+      `0.5` IS the old anchor. It becomes the new `anchor.y`, or every bar
+      detaches from every head — this is the one thing that must change in the
+      same commit.
+- [ ] `canvas2d` is the fallback renderer and draws bodies too. Either it gets
+      the same anchor or it is left alone deliberately and said so here.
+
+#### Traps
+
+- **Anchoring at the ink rather than the sprite.** A generated grid is sized to
+  the WIDEST frame of every state, so a standing body does not fill it and
+  `anchor.y` of 1 leaves it floating above the tile. That is what `bodyFoot`
+  is for and why it is measured, not assumed.
+- **Measuring per frame.** `bodyTop` is memoised per SPRITE for this reason.
+- **Thinking this fixes east/west.** It does not. Horizontal overhang is
+  WIDTH: the Gaunt is 3.2 tiles wide because `scale` is one number applied
+  uniformly, and that 3.2 is the user's own call after judging it in a descent
+  (`CLAUDE.md`, "The Gaunt is at 3.2 and is a GIANT"). Do not quietly shrink it
+  to make this phase look finished — the user said north clipping is fine, and
+  east/west is a separate decision they have not made.
+- **The lunge and the bob** in `drawEntities` add to `s.y`. They are offsets on
+  top of the anchor and do not need changing, but check the Gaunt's `death`
+  fade still reads as a fall rather than a jump.
+
+#### Done when
+
+The Gaunt can stand on the southernmost floor tile of a Fissure descent with no
+part of it drawn past the rock, and every health bar still sits just above its
+own body at every `scale` on the roster.
+
+#### What must not break
+
+`comments`, `typecheck`, `build`, `smoke`, `shots`, then `peek`. `shots` proves
+nothing overflows and the app still boots; `peek` is what actually shows a body
+against the rock at a zoom, which is the only place this is visible.
+
+### Phase 2b — Two bodies still stand in a puddle of their own shadow
+
+Small, and separate from the anchor: this is about the ART, not where it is
+drawn.
+
+#### What is true today
+
+`defloor` in `tools/art/convert.mts` erases the cast shadow the generator paints
+under a body, by COLOUR — colours that spill out past the figure and appear
+hardly anywhere above it, erased across the whole low band so the part under the
+feet goes too. It replaced a width rule that kept taking feet off.
+
+It clears the Gaunt. **The Dragger and the Shroud still carry theirs**, because
+their shadow is the same brown as their own bone: every colour rule that removes
+it also puts holes in them, and `defloor` deliberately leaves a shared colour
+alone.
+
+#### Why it is wrong
+
+They read as standing in a puddle. *The user, on the same fault elsewhere: "we
+do need a fix for the circle around the enemies it looks so bad."*
+
+#### Decisions
+
+- [ ] Do NOT push `defloor` harder. It already refuses shared colours on
+      purpose; loosening that is how the feet come off again.
+- [ ] Crop the DESIGN below the hem and re-rotate those two, which is what
+      worked for the Lampwright — his mound came off for nothing where img2img
+      told to stand on nothing drew a BIGGER one. About 10 generations each:
+      design is already approved, so it is `rotate` plus `state`.
+- [ ] Re-measure both strides afterwards. Theirs are the numbers judged in a
+      descent, kept because the gauge is currently reading the SHADOW as
+      feet-at-widest — the demo reports the Gaunt -36%, Shroud -17%, Dragger
+      -10% for exactly this reason, and those go to 0% once the art is clean.
+
+#### Done when
+
+`npm run demo` reports every generated body at 0% off, with no stride left at a
+number a human chose over one the art measured.
+
+### Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
