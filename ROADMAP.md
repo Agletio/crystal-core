@@ -34,6 +34,16 @@ call, in their words: "We are going to just delete the sandbox and start
 updating graphics in the actual game. I think it either works or it doesn't."*
 A descent is where art is judged, and `npm run peek` is pointed at one.
 
+**THE UI IS ONE ART DIRECTION WITH THE MAP.** *The user's call: "we need to
+redo the entire ui... to match the theme of the new fissure art... a more rpg
+fantasy theme... literally everything", and "make sure you specify it in a way
+that doesn't leave any stragglers".* The frame is the Fissure's own rock with
+its lamps on it, in serif; the frame's tokens are SPLIT from the map's so a
+retheme cannot re-ink committed art; the logo is a drawn gem in grid art; and
+"no stragglers" is two machine checks rather than an opinion — `npm run theme`
+fails a hand-written colour or an undefined token, and `shots.mjs` carries a
+CHECKLIST of all 30 screens and fails on one nobody shot.
+
 **YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
 the furniture specifically solid so you can't walk through it."* The bench, the
 shelf, the lampshelf, the lamprack, the slab, the plinth and the orrery are in
@@ -126,6 +136,44 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **NEITHER WEBFONT HAS EVER RENDERED IN A SCREENSHOT THIS REPO TOOK.**
+  Measured on the served page in headless Chromium: `Silkscreen` and `IBM Plex
+  Mono` lay out at exactly the generic fallback's width, so every shot ever
+  judged here was DejaVu, and the "monospace terminal" look was the fallback
+  doing it rather than the chosen face. The last name in each stack is the one
+  being designed, and it is what an offline player gets. **Check what a font
+  actually resolves to before reasoning about it** — measure a string's width
+  against the generic, since `document.fonts.check()` returns true for a family
+  that is not there.
+- **`?fast=` does not exist, and `RULES.md` said it did.** Nothing in `src/`
+  reads a query parameter and the frame loop has no scale on its `dt`, which is
+  why `shots` waits out descents in real time. Corrected there. **Anything
+  either file says about a harness is worth grepping for before trusting** —
+  this is the same failure as the renderer prose, in a new place.
+- **Three CSS variables were used and never defined** — `--edge`,
+  `--parchment`, `--pitch`. An undefined `var()` is invalid at computed-value
+  time, which is neither an error nor a warning: the property silently inherits,
+  so `border: 1px solid var(--edge)` drew a border the colour of the text. They
+  had been in the file long enough that nobody could say when. `npm run theme`
+  is the check that would have caught them on the day.
+- **The retheme was mostly ONE mechanical swap, and the split was the design.**
+  Pointing every UI rule at new frame tokens and leaving `VARS` alone was six
+  string replacements; deciding WHICH names were the frame's took reading what
+  the renderer does with them, and the answer was that `p.void` is the shade end
+  of every hand-drawn creature and portrait. **A shared token between a frame
+  and a renderer is a retheme that repaints the art.**
+- **A grid icon that is not square was being squashed.** `gridIcon` set both
+  `width` and `height` to `size`; every rail icon is 10x10 so it never showed,
+  and the first non-square mark drawn through it was the logo.
+- **The item MENU, the TOAST and the GRAFT bench are the three states no click
+  reaches.** The menu wants a right-click (the press-and-hold is a timer and a
+  flake); the toast is raised by exactly one thing in the whole game, an equip,
+  and `note()` goes to the LEDGER and raises none; the bench is the last beat of
+  a room somebody holds a relic for, so it costs a second cleared descent, which
+  is why `shots` is five minutes rather than two.
+- **The report was being shot as a second picture of the haul.** Every ending
+  opens the haul ON TOP of the report, so a shot taken straight after abandoning
+  is the haul. Close it first.
 - **Making the furniture solid cost the SEVEN IDS and nothing else in the sim.**
   `block`, `Grid.solid`, `walkable`, `findPath` and `glide` were all already
   right, and every one of the 38 pieces blocked with none refused — the rooms
@@ -1395,138 +1443,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — One art direction: the UI matches the game it frames
-
-**The user's call:** *"we need to redo the entire ui. I want the same
-functionality it all has now but designed to match the theme of the new fissure
-art and the enemies in the fissure. Currently it clashes I want a more rpg
-fantasy theme. Im talking literally everything, character, skills, the
-background of the skill tree, the title screen crystal core logo, the ui button
-rail in the bottom right literally everything."* And: *"Make sure you specify it
-in a way that doesn't leave any stragglers in terms of old uis left hidden."*
-
-#### What is true today
-
-The map is now generated pixel art — a warm pale limestone floor, near-black
-rock, amber lamps, and bodies drawn at 48–96 grids. The shell around it is not.
-`docs/index.html` is ~2,030 lines carrying **436 distinct CSS class rules** and
-**197 ids**, over a `:root` palette of flat near-blacks and cool greys
-(`--void #0C0B0E`, `--matrix #1B1922`, `--seam #2E2B3A`, `--dust #877F8C`)
-with square borders, 1–2px strokes and a monospace display face. It reads as a
-terminal wrapped around a fantasy game.
-
-The surface is **34 modules** in `src/ui/`, and this phase touches all of them:
-
-`badge` `character` `confirm` `craft` `crystals` `flaskart` `glossary` `graft`
-`haul` `history` `icons` `inventory` `itemcard` `keys` `menu` `met` `pick`
-`rail` `run` `savedata` `screenicons` `shop` `skills` `speech` `stash` `title`
-`titleart` `toast` `tooltip` `trade` `wear` `webart` `windows` `welcome`
-
-Named specifically because the user did: the Character sheet (`character.ts`),
-Skills and the skill-tree BACKGROUND (`skills.ts`, `webart.ts`, and the trade
-web in `trade.ts`), the title logo (`#title`, `.title__logo` in the stylesheet,
-art in `titleart.ts`), and the bottom-right button rail (`rail.ts`,
-`screenicons.ts`).
-
-#### Why it is wrong
-
-Two art directions in one screen. The game inside the frame is warm, textured
-and hand-lit; the frame is cold, flat and square. Whichever is better, they
-cannot both be right, and the map is the part that took a hundred generations.
-
-#### Decisions
-
-- [ ] **The palette is the spine, and it moves FIRST.** Retheme `:root` in
-      `docs/index.html` toward the stone the game is actually drawn on — the
-      Fissure's own floor and rock and the lamps' amber — and let the 436 rules
-      inherit. A rule that hardcodes a hex instead of a `var()` is a straggler
-      by definition; find them with `grep -nE '#[0-9a-fA-F]{3,6}' docs/index.html`
-      and convert every one.
-- [ ] **`paletteFrom`/`VARS` in `src/render/renderer.ts` reads those same CSS
-      variables**, so the map's own colours move with the frame. Decide
-      deliberately which vars are FRAME and which are MAP, and keep the map's
-      pinned to what the tilesets were generated against — a retheme that
-      drifts `--floor` re-tones art that is already committed.
-- [ ] **A window, a button, a panel and a card get ONE treatment each**, defined
-      once and reused: border, corner, inner shadow, hover, disabled. Fantasy
-      rather than terminal — but bounded, and written down here before any
-      screen is touched.
-- [ ] **The display face.** The monospace is half of why it reads as a console.
-      Choose a replacement that survives at 11px uppercase with letter-spacing,
-      or state that it stays and why. Note `docs/index.html` webfonts come off a
-      CDN an offline runner cannot reach — `shots.mjs` already ignores that
-      error, so a font that fails to load must still leave every screen legible.
-- [ ] **The title logo** is `.title__logo` text with a text-shadow, not art. It
-      becomes a drawn mark. `titleart.ts` paints the two-world wall behind it and
-      already uses the map's own generator — it likely needs re-toning, not
-      replacing.
-- [ ] **The skill-tree background** is currently flat. Both webs draw through
-      `webart.ts` and `nodeCard` in `glossary.ts`; the stud art, the link, the
-      allocated/reachable/blocked states and the ground behind them are one job.
-- [ ] **The rail** (`rail.ts`, `screenicons.ts`) is 20+ glyphs drawn as SVG
-      paths. Its button IDs are what every harness names and they MUST survive
-      — `smoke.mjs` and `shots.mjs` click them by id.
-
-#### No stragglers — how this is PROVEN rather than hoped
-
-This is the part the user asked for explicitly, and eyeballing cannot do it.
-A screen nobody opened during the redesign keeps the old look and nothing says
-so.
-
-- [ ] **Enumerate first.** Write the list of every screen and overlay with the
-      id that opens it, from `SCREENS` in `src/web.ts` and the rail's own table.
-      That list is the checklist and it goes IN this phase before work starts.
-- [ ] **Shoot every one.** `shots.mjs` currently captures 16 states. Extend it
-      until EVERY entry on that list is captured — including the ones that only
-      appear in a condition: the confirm dialog, the item menu, the toast, the
-      tooltip, the glossary card, the haul, the shop, the stash, the craft
-      bench, the graft bench, the Lampwright panel, the save slots, the welcome,
-      the character-select hall, the trade web, both skill webs, and the item
-      card. A state with no shot is a state nobody checked.
-- [ ] **Fail the build on an unthemed rule.** After the palette moves, no
-      literal hex may remain in `docs/index.html` outside `:root`. Add that as a
-      check — `npm run comments` already walks that file, so the pattern for
-      parsing it exists.
-- [ ] **Delete, do not orphan.** Anything replaced comes OUT in the same commit:
-      dead CSS classes, unused ids, superseded icon paths. The doll's deletion
-      is the precedent — `gear-art.ts`, `look.ts`, `body.ts`, `pose.ts` went in
-      one piece rather than being left unreferenced.
-
-#### Traps
-
-- **`docs/index.html` runs at a 25% comment budget** (`SHARE_BY_FILE` in
-  `tools/comment-budget.mjs`) because it is mostly stylesheet. Cutting 400 rules
-  and writing 400 new ones will move that ratio; check `npm run comments` early,
-  not at the end.
-- **`docs/app.js` is committed** and Cloudflare runs no build. Every visual
-  change needs `npm run build` before `smoke`, `shots` or `peek` mean anything.
-- **`mapfull` is the layout**, not a skin: `body.mapfull` makes the stage fixed
-  at `inset: 0` and every panel a corner. A retheme that changes padding or
-  border widths moves `--dock-h`, which is MEASURED at runtime by `measureDock`.
-- **`.modal` paints no scrim and is `pointer-events: none`** with its card
-  `auto`; `.modal--stop` is the exception. Losing that makes every screen block
-  the map, which `shots.mjs`'s `mapProbe` catches — but only on states it shoots.
-- **The overflow probe fails the run** on any element past the viewport, so a
-  wider border or a bigger font can fail `shots` on a screen that merely got
-  roomier.
-- **Both renderers read the palette.** `canvas2d` is the fallback and draws the
-  same map from the same vars; a retheme must be looked at in both.
-
-#### Done when
-
-Every screen on the enumerated list has a shot in `shots/`, all of them read as
-one world with the map, no literal hex survives outside `:root` in
-`docs/index.html`, and nothing replaced is still in the tree.
-
-#### What must not break
-
-`comments`, `typecheck`, `build`, `smoke`, `shots`, `drag`. `smoke` proves the
-557 interactions still work — this phase must not change BEHAVIOUR, only how it
-looks, so a smoke failure is a bug and not an expected update. `drag` proves the
-dock still reorders and a window still goes where you put it, which is the thing
-a layout retheme is most likely to break silently.
-
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

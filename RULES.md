@@ -663,6 +663,69 @@ already followed — do not undo them:
 
 ---
 
+## One art direction
+
+**The frame and the map are ONE WORLD, and the frame has its OWN tokens.**
+*The user's call: "we need to redo the entire ui... designed to match the theme
+of the new fissure art and the enemies in the fissure. Currently it clashes I
+want a more rpg fantasy theme... literally everything."* The shell is lamplit
+stone — the Fissure's floor is rgb(132,126,111) and its rock is pure black, so
+the frame is that rock with the lamps on it.
+
+**`--ink` `--panel` `--panel-lit` `--edge` `--edge-lit` `--text` `--text-dim`
+are the FRAME and nothing else reads them; every name in `VARS` in
+`src/render/renderer.ts` is the MAP and is PINNED.** That split is the whole of
+what stops a retheme re-inking committed art: `p.void` is the shade end of every
+hand-drawn creature and every portrait in the game, so moving `--void` to suit a
+panel repaints the bestiary. The CONTENT accents stay shared on purpose — a tier
+colour, a damage type and a rarity mean the same thing on a card and on the
+floor, which is what they are for.
+
+**Every colour is a token and every token is defined, and `npm run theme`
+fails otherwise.** Two faults, both invisible to a screenshot of some other
+screen: a rule writing a hex by hand, which the palette then moves without; and
+a rule naming a token nobody declared, which is invalid at computed-value time —
+not an error, not a warning, the property silently inherits and a border comes
+out the colour of the text. **Three of those were already in the file**
+(`--edge`, `--parchment`, `--pitch`). A translucent overlay is a TREATMENT
+rather than a colour and is left alone, or every shadow needs a token.
+
+**FOUR TREATMENTS, defined once and reused: a window, a button, a panel and a
+card.** `--bevel` is the chiselled edge, `--gilt` the hairline of lamplight
+inside the dark border that makes it read as carved rather than as a stroke,
+`--sunk` the pressed state and `--lift` the shadow off the page. Every floating
+box — the menu, the toast, the tooltip, the web menu, the report, the say-box —
+takes the WINDOW treatment, so a thing that hangs over a screen cannot drift
+from the screens it hangs over.
+
+**NEITHER WEBFONT HAS EVER RENDERED IN A SCREENSHOT THIS REPO TOOK.** Measured
+on the served page in headless Chromium: `Silkscreen` and `IBM Plex Mono` both
+lay out at exactly the generic fallback's width, so every shot ever judged here
+was the FALLBACK. The last name in each stack is therefore the face that is
+being designed, and it is what an offline player gets: a serif, which is a book
+rather than a console. `--pixel` is kept for what is literally on the pixel grid
+— a key badge, a count. Do not judge a font decision here off the webfont.
+
+**The title's logo is DRAWN, and it is grid art like every other icon.**
+`src/ui/logo.ts` is a list of strings and `gridIcon` renders it, so the mark
+takes its inks from CSS at draw time and there is no image file. `gridIcon` sets
+the height from the GRID rather than from `size`, or a mark that is not square
+is squashed. A cut gem is told by its SILHOUETTE and three readings were paid
+for: a dark body inside a bright outline is a jar, a straight girdle between two
+points is a lantern, and a seam run to the tips leaves it with a stem.
+
+**`shots.mjs` carries the CHECKLIST, and it is what "no stragglers" means.**
+`STATES` is every screen and overlay the game has; a state on that list with no
+file at the end FAILS the run. Adding a screen without shooting it is a red
+harness rather than a thing somebody notices later. Thirty states, and the three
+that cannot be clicked to are worth knowing about: the GLOSSARY is not a screen
+at all (a word is defined at the foot of the card it appears on), the TOAST is
+raised by exactly one thing (an equip — `note()` goes to the ledger and raises
+none), and the GRAFT bench is the last beat of a room somebody holds a relic
+for, so it costs a whole second cleared descent.
+
+---
+
 ## What the art is made of
 
 Read this before touching any of it. A session that does not know these things
@@ -2055,20 +2118,24 @@ two-minute tool timeout will kill them mid-run:
 
 | | |
 |---|---|
-| `comments`, `typecheck`, `mods`, `build` | a second or two each |
+| `comments`, `theme`, `typecheck`, `mods`, `build` | a second or two each |
 | `smoke` | ~10s; it prints its own count, and that is the number |
 | `demo` | ~2min |
-| `shots` | ~2min — desktop only now, waiting out a whole first descent |
+| `shots` | ~5min — desktop only, and it waits out TWO whole descents: one to meet the Lampwright and one to reach a bench in a room |
 | `drag` | ~20s — one dock reorder, and a window dragged by its head |
+| `theme` | instant — every colour a token, every token defined |
 
 None of them hangs. If one looks stuck it is `demo` or `shots`, and the answer
 is to wait or run it in the background, never to assume it broke.
 
-**A harness that plays the game runs it at `?fast=`.** The frame loop scales its
-`dt` off that query, gated to a loopback host, so the sim takes the SAME ticks
-to the same end and merely gets there sooner — the seed still replays. Drop back
-to real time before any pointer work: at 16x a descent can finish between a
-mouse-down and a mouse-up and redraw the dock under the drag.
+**THERE IS NO `?fast=`, and this file claimed there was for months.** Grepped:
+nothing in `src/` reads a query parameter and the frame loop has no scale on its
+`dt`. A harness that plays the game waits out a descent in real time, which is
+why `shots` is minutes rather than seconds. Re-adding one is a change to the
+SIM's clock and a phase of its own — not a thing to slip into a harness — and
+the rule it would come back with is the one that was written here: drop to real
+time before any pointer work, or a descent finishes between a mouse-down and a
+mouse-up and redraws the dock under the drag.
 
 ### Run what the change can break, and nothing else
 

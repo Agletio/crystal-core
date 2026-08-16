@@ -6,6 +6,7 @@
 import { PORTRAITS } from '../render/portraits';
 import { portraitIcon } from './icons';
 import { clearTitleArt, paintTitle } from './titleart';
+import { logoMark } from './logo';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -45,6 +46,8 @@ export function initTitle(start: () => void): void {
     globalThis.clearTimeout(repaint);
     repaint = globalThis.setTimeout(draw, 150);
   });
+
+  $('title-mark').replaceChildren(logoMark());
 
   const cast = $('title-cast');
   cast.replaceChildren();

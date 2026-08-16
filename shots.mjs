@@ -92,6 +92,18 @@ const mapProbe = () => {
   return reached ? null : 'the map takes no pointer — drag, zoom and follow are dead';
 };
 
+/** EVERY screen the game has, as a CHECKLIST: a state here with no file at the
+ *  end fails the run, so one nobody opened cannot quietly keep the old look. */
+const STATES = [
+  'title', 'slots', 'pick', 'welcome', 'fissure',
+  'dock', 'crystals', 'sheet', 'shop', 'stash', 'haul', 'history',
+  'toast', 'itemmenu', 'confirm',
+  'handover', 'descent', 'results',
+  'scene', 'speech', 'lampwright',
+  'skills', 'skill-list', 'skill-web', 'move-web', 'trade',
+  'bench', 'tooltip', 'glossary', 'graft',
+];
+
 const browser = await chromium.launch();
 const problems = [];
 const written = [];
@@ -129,12 +141,18 @@ for (const vp of VIEWPORTS) {
     if (deaf) problems.push(`${vp.name}/${state}: ${deaf}`);
   };
 
-  await shoot('welcome');
+  // The only screen that is a PICTURE: two worlds meeting on a front.
+  await shoot('title');
+
+  // A fresh browser goes title -> slots -> New game, so the slots are shot
+  // where they are met rather than only from the rail.
+  await page.evaluate(() => document.getElementById('title')?.click());
+  await page.waitForTimeout(300);
+  await shoot('slots');
 
   // Choosing a skill dismisses the welcome modal and drops you at the Fissure.
   // Blight, when it's on offer, because its poison field is the effect most
   // worth being able to see in a still.
-  await page.evaluate(() => document.getElementById('title')?.click());
   await page.evaluate(() => document.getElementById('save-play')?.click());
   await page.waitForTimeout(200);
   // Who you ARE comes before how you fight, so the cast is standing there
@@ -144,7 +162,8 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(250);
   await shoot('pick');
   await page.evaluate(() => document.getElementById('pick-take')?.click());
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
+  await shoot('welcome');
   await page.evaluate(() => {
     const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
     const blight = cards.find((c) => /blight/i.test(c.textContent ?? ''));
@@ -160,6 +179,26 @@ for (const vp of VIEWPORTS) {
   await shoot('crystals');
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
   await page.waitForTimeout(200);
+
+  // The dock alone: every other screen is a verb applied to it.
+  await page.evaluate(() => document.getElementById('open-inventory')?.click());
+  await page.waitForTimeout(250);
+  await shoot('dock');
+
+  // The three piles and the ledger, empty — which is how a new player meets
+  // them. A rail button only ever OPENS, so each close id is named too.
+  for (const [state, shut] of [
+    ['shop', 'shop-close'],
+    ['stash', 'stash-close'],
+    ['haul', 'haul-close'],
+    ['history', 'history-close'],
+  ]) {
+    await page.evaluate((id) => document.getElementById(id)?.click(), `open-${state}`);
+    await page.waitForTimeout(250);
+    await shoot(state);
+    await page.evaluate((id) => document.getElementById(id)?.click(), shut);
+    await page.waitForTimeout(150);
+  }
 
   // The sheet, with points waiting. Four rows of name, count, button and a
   // stat sentence is where a narrow column tears, and the narrow viewport
@@ -243,7 +282,12 @@ for (const vp of VIEWPORTS) {
   // Abandon lands on the report now, so the way back to the menu is one more
   // click — the same one every other ending uses.
   await page.evaluate(() => document.querySelector('#run-abandon')?.click());
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(400);
+  // The report every ending lands on. All five also open the HAUL over it, so
+  // that comes off first or this is a second picture of the haul.
+  await page.evaluate(() => document.getElementById('haul-close')?.click());
+  await page.waitForTimeout(250);
+  await shoot('results');
   await page.evaluate(() => document.getElementById('run-again')?.click());
   await page.waitForTimeout(300);
   await page.evaluate(() => document.getElementById('open-skills')?.click());
@@ -253,7 +297,9 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => {
     document.querySelector('#skills-cats .catcard:not([disabled])')?.click();
   });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
+  // The middle depth, which Escape steps back to: a state, not a moment.
+  await shoot('skill-list');
   await page.evaluate(() => {
     const rows = [...document.querySelectorAll('#skills-list .skillrow')];
     (rows.find((r) => /Fireball/.test(r.textContent ?? '')) ?? rows[0])?.click();
@@ -270,6 +316,35 @@ for (const vp of VIEWPORTS) {
   });
   await page.waitForTimeout(300);
   await shoot('skill-web');
+
+  // The GLOSSARY is not a screen: a word is defined at the foot of the card it
+  // appears on. DISPATCHED rather than hovered — a node sits in a panned SVG
+  // under a modal head, so actionability keeps finding something else there.
+  const worded = await page.evaluate(() => {
+    const node = document.querySelector('#skills-web .web__node--notable');
+    if (!node) return false;
+    const box = node.getBoundingClientRect();
+    node.dispatchEvent(
+      new MouseEvent('mouseenter', {
+        bubbles: true,
+        clientX: box.left + box.width / 2,
+        clientY: box.top + box.height / 2,
+      })
+    );
+    return true;
+  });
+  await page.waitForTimeout(300);
+  if (worded && (await page.evaluate(() => document.querySelector('.tip:not([hidden])') !== null))) {
+    await shoot('glossary');
+  } else {
+    problems.push(`${vp.name}: no node card came up, so the glossary has no shot`);
+  }
+  await page.evaluate(() => {
+    document.querySelector('#skills-web .web__node--notable')?.dispatchEvent(
+      new MouseEvent('mouseleave', { bubbles: true })
+    );
+  });
+  await page.waitForTimeout(120);
 
   // A MOVEMENT web, walked to its budget. Nine nodes against a hundred and
   // twelve is the case a layout written for the big one gets wrong: a web that
@@ -324,6 +399,9 @@ for (const vp of VIEWPORTS) {
   // column, a worn column and the item — and the only screen where three
   // panels have to fit side by side.
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
+  await page.waitForTimeout(250);
+  // One of the two things that still stop you, and it paints a scrim.
+  await shoot('confirm');
   await page.evaluate(() => document.getElementById('confirm-yes')?.click());
   await page.waitForTimeout(300);
   // A wipe is a new character, so it lands on the hall again — and the hall
@@ -367,6 +445,65 @@ for (const vp of VIEWPORTS) {
     await shoot('tooltip');
   }
 
+  // The item MENU: the only route to the one thing a piece can do that cannot
+  // be undone. Right-click, because a press-and-hold is a timer and a flake.
+  await page.evaluate(() => document.getElementById('craft-close')?.click());
+  await page.waitForTimeout(150);
+  const piece = await page.$('#inv-gear .slot:not(.slot--empty)');
+  if (piece) {
+    await piece.click({ button: 'right' });
+    await page.waitForTimeout(250);
+    await shoot('itemmenu');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+  }
+
+  // The TOAST is raised by exactly ONE thing — an equip, the single click that
+  // changes what you wear and has to be reversible. `note()` goes to the
+  // LEDGER and raises none, which is the trap.
+  await page.evaluate(() => {
+    document.getElementById('open-character')?.click();
+    document.getElementById('slot-helmet')?.click();
+    const wearable = [...document.querySelectorAll('#inv-gear .slot:not(.slot--empty)')].find(
+      (b) => !b.disabled && !b.classList.contains('slot--off')
+    );
+    wearable?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await page.waitForTimeout(300);
+  if (await page.evaluate(() => document.getElementById('toast')?.hidden === false)) {
+    await shoot('toast');
+  } else {
+    problems.push(`${vp.name}: nothing said anything, so the toast has no shot`);
+  }
+  await page.evaluate(() => document.getElementById('sheet-close')?.click());
+  await page.waitForTimeout(150);
+
+  // The GRAFT bench, which no click reaches: it is the last beat of a room
+  // somebody holds a relic for, so it costs a second cleared descent. The dev
+  // kit carries a specimen, which IS the schedule.
+  await page.evaluate(() => document.getElementById('open-inventory')?.click());
+  await page.evaluate(() => document.querySelector('#run-launch')?.click());
+  try {
+    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
+      timeout: 150000,
+    });
+    await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
+      timeout: 30000,
+    });
+    // Through the DOM: the bubble is anchored to a world point.
+    for (let i = 0; i < 12; i++) {
+      if (await page.evaluate(() => document.getElementById('graft')?.hidden === false)) break;
+      await page.evaluate(() => document.getElementById('speech-next')?.click());
+      await page.waitForTimeout(250);
+    }
+    await page.waitForFunction(() => document.getElementById('graft')?.hidden === false, null, {
+      timeout: 5000,
+    });
+    await shoot('graft');
+  } catch {
+    problems.push(`${vp.name}: the second descent never reached a bench in a room`);
+  }
+
   const spilled = await page.evaluate(() => {
     const wrap = document.querySelector('.webwrap')?.getBoundingClientRect();
     const svg = document.getElementById('skills-web')?.getBoundingClientRect();
@@ -388,6 +525,12 @@ server.close();
 
 console.log(`shots: wrote ${written.length} to shots/`);
 for (const f of written) console.log(`  ${f}`);
+
+// A state nobody shot is a state nobody looked at.
+for (const vp of VIEWPORTS) {
+  const missing = STATES.filter((state) => !written.includes(`${vp.name}-${state}.png`));
+  if (missing.length) problems.push(`${vp.name}: no shot of ${missing.join(', ')}`);
+}
 
 if (problems.length) {
   console.error('\nshots: FAILED');

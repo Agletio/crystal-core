@@ -45,6 +45,9 @@ jobs:
       - name: comments — is any file more prose than code
         run: npm run comments
 
+      - name: theme — is every colour a token, and every token defined
+        run: npm run theme
+
       - name: typecheck
         run: npm run typecheck
 

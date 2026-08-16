@@ -190,8 +190,12 @@ export function gridIcon(rows: string[], size: number, extra?: string): SVGSVGEl
   const span = rows[0]?.length ?? GRID;
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${span} ${rows.length}`);
+  // `size` is the WIDTH and the height follows the grid, or a mark that is not
+  // square is squashed into one. Every rail icon is 10x10, so this is a no-op
+  // for them and the whole of what lets the title's mark be wider than it is
+  // tall.
   svg.setAttribute('width', String(size));
-  svg.setAttribute('height', String(size));
+  svg.setAttribute('height', String(Math.round((size * rows.length) / span)));
   svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('sicon');
   if (extra) svg.classList.add(extra);

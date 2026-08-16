@@ -41,12 +41,13 @@ thing worth pausing for, and pausing between phases is not.
 | | |
 |---|---|
 | `npm run comments` | comment budget |
+| `npm run theme` | every colour a token, every token defined |
 | `npm run typecheck` | tsc |
 | `npm run build` | bundle to `docs/app.js` — **committed**, Cloudflare runs no build |
 | `npm run smoke` | headless boot and interaction |
 | `npm run demo` | sim, economy, trees, balance |
 | `npm run mods` | every modifier rolls, does something, reads |
-| `npm run shots` | screenshots, and an overflow probe |
+| `npm run shots` | ~5min: all 30 screens against a checklist, and an overflow probe |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
 | `npm run peek` | a DESCENT, at a zoom, a pan and a magnified crop |
 
@@ -880,6 +881,23 @@ view — past the map's edge, which is what lets a fight in a corner be centred;
 clamped to the edge itself, as it was, the camera refuses and you spend the
 fight dragging against it.
 
+**ONE ART DIRECTION, and the frame is lamplit stone.** *The user's call: "we
+need to redo the entire ui... designed to match the theme of the new fissure art
+and the enemies in the fissure. Currently it clashes I want a more rpg fantasy
+theme... literally everything."* The shell was a terminal wrapped round a
+fantasy game — cool near-blacks, square 1px strokes, monospace throughout. It is
+now the Fissure's own rock with its lamps on it: warm near-black panels, carved
+edges with a hairline of gold inside them, and a SERIF everywhere there is
+prose. The FRAME has its own tokens (`--ink`, `--panel`, `--edge`, `--text` and
+their neighbours) and the MAP keeps every name the renderer reads, so a retheme
+cannot re-ink committed art. `npm run theme` fails a colour written by hand and
+a token nobody defined.
+
+**The title's logo is DRAWN.** `src/ui/logo.ts` is a cut gem in grid art — a
+list of strings like every other icon, inks out of CSS — over a wordmark carved
+in gold. Neither webfont has ever rendered in a screenshot this repo took, so
+the fallback serif is the face that was actually designed against.
+
 **The map is the SCREEN, and everything else floats on it.** `body.mapfull`,
 toggled by `syncViewportLock`, is the whole of the mechanism: the stage goes
 fixed at `inset: 0` behind the shell, and every panel is a corner. Life, mana
@@ -992,6 +1010,8 @@ src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill
+src/ui/logo.ts     the title's mark, in grid art like every other icon
+tools/theme-check.mjs  every colour a token, and every token defined
 src/ui/            one module per screen
 ```
 
