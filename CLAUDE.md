@@ -908,7 +908,10 @@ sockets; the two flasks stand in dark arched NICHES on the bar-plate rack —
 each a GENERATED bottle (`flask_life`/`flask_mana` in `GENERATED_ICONS`,
 `flaskIcon` answering them first), drained states the same picture gone dull,
 its threshold controls directly under it; life and mana
-are brass-capped channel vessels; every window is the ornate frame with a
+are brass-capped channel vessels, the fill lit like glass and the pool's
+scale etched in as ticks every 100 with a heavier mark each 1000 — the
+hero's floating bar carries the same ticks, enemies' the light alone; every
+window is the ornate frame with a
 carved title plate for its head; the dock, tooltips, web menus, speech bubbles
 and the Fissure's four sockets take the card frame. A window that opens square
 over another's head cascades until the head is clear. Skill and category icons

@@ -177,6 +177,11 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **The channel fixture's cap art intrudes past its border box.** A fill at
+  100% of the content box drew over the right brass cap; the track is padded
+  inside the caps (`.hp--slim` padding, `.hp__track`). Any fixture whose art
+  rounds INTO the frame has the same gap between border-box and visible
+  interior — pad, do not trust the border widths.
 - **One row of rail sockets is wider than half a 1280 screen**, and `shots`
   judges everything at 1280×800. The first fix lifted the corner over the
   flask line below 1620px and the user refused it outright — the corner sits
