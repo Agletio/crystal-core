@@ -1,8 +1,8 @@
 /**
  * Written by `tools/art/portrait.mts`. Do not edit by hand.
  *
- * Generated faces, one frame each and carrying their own colours. `PORTRAITS`
- * merges these OVER the hand-drawn rows.
+ * Generated faces, one frame each and carrying their own colours. The
+ * hand-drawn table merges these OVER its own rows.
  */
 export type GeneratedPortrait = {
   grid: number;

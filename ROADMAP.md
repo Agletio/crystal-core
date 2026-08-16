@@ -1594,6 +1594,15 @@ Each of these is "what object is this, physically", not "what colour is it".
 - [ ] **The title mark is drawn art** — a cut gem and a carved wordmark — not a
       styled `<h1>`. Neither webfont has ever rendered in a screenshot this
       repo takes, so it must be right in the FALLBACK.
+- [ ] **Skill icons become generated pixel art**, both rungs of them: one per
+      CATEGORY (`attack`, `spell`, `passive`, `movement`) and one per SKILL —
+      `strike` `fireball` `bolt` `frost_bolt` `arc` `blight` `surge` `blink`
+      `leap`. `skillIcon` in `src/ui/icons.ts` draws them as hand-drawn grids
+      today, and they appear in four places at once: the Skills screen, the
+      three slots on the HUD, the welcome cards and the item/skill tooltips.
+      A generated table merged OVER the hand-drawn one, the way
+      `GENERATED_PORTRAITS` already merges, so the fallback survives for
+      anything not yet drawn.
 - [ ] **The token pass** — warm stone, amber lamplight, oiled timber, tarnished
       brass — comes with all of the above, not instead of it.
 

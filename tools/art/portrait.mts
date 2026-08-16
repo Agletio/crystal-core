@@ -1,18 +1,20 @@
 /**
- * A generated PORTRAIT into the table the speech panel reads.
- * `portrait.mts <id> <png> [grid]`
+ * A generated STILL — a portrait, or a UI icon — into the table that draws it.
+ * `portrait.mts <id> <png> [grid] [table]`
  *
- * A map body is a silhouette and a portrait is a face, so they are separate
- * assets and this is separate from `tables.mts`: a portrait has no character,
- * no rotation and no states, and comes out of `create_image_pro` as one PNG.
- * `PORTRAITS` in `src/render/portraits.ts` merges what lands here OVER the
- * hand-drawn rows, so a face that has been generated wins and the rest stand.
+ * Separate from `tables.mts` because none of these has a character, a rotation
+ * or states: each is one PNG. `table` is `portraits` (the default) or `icons`,
+ * and each writes its own generated file, which the hand-drawn table merges
+ * OVER — so a thing that has been redrawn wins and everything else stands.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { debackground } from './convert.mts';
 import { decodePng } from './png.mts';
 
-const OUT = new URL('../../src/render/generated-portraits.ts', import.meta.url).pathname;
+const TABLES = {
+  portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces' },
+  icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons' },
+};
 
 type Art = { grid: number; rows: string[]; key: Record<string, string> };
 
@@ -54,9 +56,12 @@ function resample(src: { width: number; height: number; rgba: Uint8Array }, grid
   return out;
 }
 
-const [id, file, gridArg] = process.argv.slice(2);
-if (!id || !file) throw new Error('portrait.mts <id> <png> [grid]');
+const [id, file, gridArg, tableArg] = process.argv.slice(2);
+if (!id || !file) throw new Error('portrait.mts <id> <png> [grid] [table]');
 const grid = Number(gridArg ?? 96);
+const table = TABLES[(tableArg ?? 'portraits') as keyof typeof TABLES];
+if (!table) throw new Error(`no table ${tableArg}`);
+const OUT = new URL(`../../src/render/${table.file}`, import.meta.url).pathname;
 
 const png = debackground(decodePng(readFileSync(file)));
 const rgba = resample(png, grid);
@@ -87,7 +92,7 @@ for (let y = 0; y < grid; y++) {
 let held: Record<string, Art> = {};
 try {
   const src = readFileSync(OUT, 'utf8');
-  const open = src.indexOf('{', src.indexOf('export const GENERATED_PORTRAITS'));
+  const open = src.indexOf('{', src.indexOf(`export const ${table.name}`));
   held = new Function(`return ${src.slice(open, src.lastIndexOf('};') + 1)}`)() as Record<string, Art>;
 } catch { held = {}; }
 held[id] = { grid, rows, key };
@@ -103,10 +108,10 @@ const body = Object.entries(held)
 writeFileSync(
   OUT,
   `/**\n * Written by \`tools/art/portrait.mts\`. Do not edit by hand.\n *\n` +
-    ` * Generated faces, one frame each and carrying their own colours. ` +
-    `\`PORTRAITS\`\n * merges these OVER the hand-drawn rows.\n */\n` +
-    `export type GeneratedPortrait = {\n  grid: number;\n  rows: string[];\n` +
+    ` * ${table.what}, one frame each and carrying their own colours. The\n` +
+    ` * hand-drawn table merges these OVER its own rows.\n */\n` +
+    `export type ${table.type} = {\n  grid: number;\n  rows: string[];\n` +
     `  key: Record<string, string>;\n};\n\n` +
-    `export const GENERATED_PORTRAITS: Record<string, GeneratedPortrait> = {\n${body}\n};\n`
+    `export const ${table.name}: Record<string, ${table.type}> = {\n${body}\n};\n`
 );
 console.log(`${id}: ${grid} grid, ${Object.keys(key).length} inks -> generated-portraits.ts`);
