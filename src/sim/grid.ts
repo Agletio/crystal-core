@@ -658,9 +658,15 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
 
-  // The exit IS the entrance: nothing to walk to, and one tile carrying both
-  // draws no second hole. The stone is the world's own.
+  // The exit IS the entrance: one tile carrying both draws no second hole.
   const props = [...plan.props];
+  if (zone) {
+    // A FIXED stream, so a place is the same twice; `coverFloor` knows no
+    // furniture, so hand-placed tiles come out of it.
+    const key = (v: Vec2) => Math.round(v.y) * grid.width + Math.round(v.x);
+    const taken = new Set([...plan.props.map(key), key(entrance), key(plan.stands)]);
+    props.unshift(...coverFloor(grid, new Rng(9001)).filter((p) => !taken.has(key(p))));
+  }
   block(grid, props, [entrance, plan.stands]);
   return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone };
 }
