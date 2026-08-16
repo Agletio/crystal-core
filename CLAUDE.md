@@ -966,21 +966,15 @@ selling needs room nowhere.
 
 ## The first thing you land on
 
-The title is a WALL of the two far worlds. **The Cavern top left** and **The Rot
-bottom right**, meeting on a front that runs corner to corner and that neither
-of them holds straight — fingers of crystal reaching down into the meat, patches
-of rot holding out inside the crystal. `src/ui/titleart.ts` paints it into one
-2d canvas behind `#title` out of `floorColour`, `tileDecals` and `livingDecals`,
-which is the same stone both renderers draw a descent with: `MAP_THEMES` is a
-LOOK over one generator, so the two halves are that generator seen twice rather
-than a picture of it. Two `FloorPalette`s over one grid, and the mixing lives in
-that module — a `GameMap` still carries a single theme.
-
-It is a still. Nothing ticks behind the title, no renderer boots, and a resize
-repaints rather than animates; `rotHolds` is the front, three displacements over
-the diagonal — lobes, holdouts and a per-tile ragged edge. The logo, the sub-line
-and the cast stand on their own scrim, because the busiest background in the
-game is now behind the smallest text in it.
+The title is the mark and the wordmark on a ceremonial PLAQUE — a generated
+ornamental frame (`plaque` in `UI_FIXTURES`, an `extras` row in
+`tools/art/uikit.json`) — over quiet lamplit stone. *The user's call: the old
+two-worlds wall was "way too noisy".* The ground carries exactly three things:
+the grit texture, one warm lamp glow with a vignette, and the gem mark drawn
+enormous at 5.5% opacity behind everything — which is what keeps the screen
+from being a plain black void without becoming a picture again. Nothing ticks,
+nothing is painted per frame, and the cast stays on the character-select hall
+where it lives. `src/ui/titleart.ts` and the two-worlds canvas are deleted.
 
 ## Saves
 

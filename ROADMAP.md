@@ -55,7 +55,11 @@ carded dock/tooltips/menus/bubbles/sockets. The mechanism rules — the border
 shorthand resetting border-image, fill middles tiling, the window cascade —
 are in `RULES.md` under One art direction. The weak icons are re-asked:
 fireball is a ball in flight, blight is a falling wall of liquid poison at
-the user's word, strike a broadsword with the swing behind it.
+the user's word, strike a broadsword with the swing behind it. **The title
+followed**, at the user's word ("way too noisy... I really don't like it"):
+the two-worlds canvas and `titleart.ts` are deleted, and the title is the
+mark on a generated ceremonial plaque (`extras` in `uikit.json`) over quiet
+stone — one lamp glow, a vignette, and the gem ghosted enormous behind it.
 
 **YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
 the furniture specifically solid so you can't walk through it."* The bench, the

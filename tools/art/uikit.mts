@@ -20,43 +20,59 @@ const CACHE = here('cache/ui');
 const SHEET = `${CACHE}/kit.png`;
 
 interface Piece { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; radius?: number }
+interface Extra { id: string; width: number; height: number; asset: string | null; say: string }
 interface Kit {
   _: string; style: string; palette: string;
   size: { width: number; height: number };
   asset: string | null;
+  extras?: Extra[];
   pieces: Piece[];
 }
 
 const kit = JSON.parse(readFileSync(here('uikit.json'), 'utf8')) as Kit;
 const save = () => writeFileSync(here('uikit.json'), JSON.stringify(kit, null, 1) + '\n');
 
-async function ask(): Promise<void> {
+/** No name asks for the KIT; a name asks for that row of `extras`, alone,
+ *  with the finished kit sheet as the style reference so one style holds. */
+async function ask(which?: string): Promise<void> {
+  const extra = which ? kit.extras?.find((e) => e.id === which) : undefined;
+  if (which && !extra) throw new Error(`no extra called ${which}`);
+  const style = extra && existsSync(SHEET)
+    ? { style_image_base64: readFileSync(SHEET).toString('base64') }
+    : {};
   const out = await callTool('create_ui_asset', {
-    description: kit.style,
+    description: extra ? `${extra.say} ${kit.style}` : kit.style,
     color_palette: kit.palette,
-    width: kit.size.width,
-    height: kit.size.height,
+    width: extra?.width ?? kit.size.width,
+    height: extra?.height ?? kit.size.height,
     no_background: true,
-    name: 'crystal-core fixture kit',
-    pieces: kit.pieces.map(({ id, kind, label, x, y, w, h, radius }) =>
-      ({ id, kind, label, x, y, w, h, radius: radius ?? 0 })),
+    name: `crystal-core ${which ?? 'fixture kit'}`,
+    ...style,
+    ...(extra ? {} : {
+      pieces: kit.pieces.map(({ id, kind, label, x, y, w, h, radius }) =>
+        ({ id, kind, label, x, y, w, h, radius: radius ?? 0 })),
+    }),
   });
   const id = fields(out).ui_asset_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
   if (!id) throw new Error(`no asset id in: ${out.slice(0, 300)}`);
-  kit.asset = id;
+  if (extra) extra.asset = id;
+  else kit.asset = id;
   save();
   console.log(`asked: ${id}`);
 }
 
-async function get(): Promise<void> {
-  if (!kit.asset) throw new Error('nothing asked yet');
+async function get(which?: string): Promise<void> {
+  const extra = which ? kit.extras?.find((e) => e.id === which) : undefined;
+  const asset = extra ? extra.asset : kit.asset;
+  if (!asset) throw new Error('nothing asked yet');
   mkdirSync(CACHE, { recursive: true });
+  const file = extra ? `${CACHE}/${extra.id}.png` : SHEET;
   for (let go = 0; go < 40; go++) {
-    const out = await callTool('get_ui_asset', { ui_asset_id: kit.asset });
+    const out = await callTool('get_ui_asset', { ui_asset_id: asset });
     const url = urlsIn(out).find((u) => /\.png/.test(u)) ?? fields(out).download;
     if (url?.startsWith('http')) {
-      writeFileSync(SHEET, await download(url));
-      console.log(`kit.png (${out.match(/\d+x\d+/)?.[0] ?? 'size unknown'})`);
+      writeFileSync(file, await download(url));
+      console.log(`${extra ? extra.id : 'kit'}.png (${out.match(/\d+x\d+/)?.[0] ?? 'size unknown'})`);
       return;
     }
     if (/failed|error/i.test(out)) throw new Error(out.slice(0, 300));
@@ -68,6 +84,16 @@ async function get(): Promise<void> {
 /** A piece asked for OUTSIDE the kit call — a shape too small for the sheet to
  *  give detail, generated alone and standing in for the kit's own. */
 const SOLO: Record<string, string> = { socket: 'socket96.png' };
+
+/** Every `extras` row with a downloaded PNG is emitted whole. */
+const extraRows = (): string[] =>
+  (kit.extras ?? []).flatMap((e) => {
+    if (!existsSync(`${CACHE}/${e.id}.png`)) return [];
+    const own = decodePng(readFileSync(`${CACHE}/${e.id}.png`));
+    const png = `data:image/png;base64,${encodePng(own.width, own.height, own.rgba).toString('base64')}`;
+    console.log(`${e.id}: ${own.width}x${own.height} (extra)`);
+    return [`  ${e.id}: { w: ${own.width}, h: ${own.height}, png: '${png}' },`];
+  });
 
 function emit(): void {
   if (!existsSync(SHEET)) throw new Error('no kit.png — run get first');
@@ -94,13 +120,13 @@ function emit(): void {
   }
   writeFileSync(
     here('../../src/render/generated-ui.ts'),
-    `/**\n * Written by \`tools/art/uikit.mts emit\`. Do not edit by hand.\n *\n * One entry per FIXTURE: a generated pixel-art frame or plate at the CSS\n * pixel size it displays at. \`src/ui/fixtures.ts\` mounts each as a\n * \`--fix-<id>\` custom property at boot, and the stylesheet applies them as\n * border-image 9-slices and backgrounds.\n */\nexport interface UiFixture { w: number; h: number; png: string }\n\nexport const UI_FIXTURES: Record<string, UiFixture> = {\n${rows.join('\n')}\n};\n`
+    `/**\n * Written by \`tools/art/uikit.mts emit\`. Do not edit by hand.\n *\n * One entry per FIXTURE: a generated pixel-art frame or plate at the CSS\n * pixel size it displays at. \`src/ui/fixtures.ts\` mounts each as a\n * \`--fix-<id>\` custom property at boot, and the stylesheet applies them as\n * border-image 9-slices and backgrounds.\n */\nexport interface UiFixture { w: number; h: number; png: string }\n\nexport const UI_FIXTURES: Record<string, UiFixture> = {\n${[...rows, ...extraRows()].join('\n')}\n};\n`
   );
   console.log('-> src/render/generated-ui.ts');
 }
 
 const verb = process.argv[2];
-if (verb === 'ask') await ask();
-else if (verb === 'get') await get();
+if (verb === 'ask') await ask(process.argv[3]);
+else if (verb === 'get') await get(process.argv[3]);
 else if (verb === 'emit') emit();
-else console.log('uikit.mts ask | get | emit');
+else console.log('uikit.mts ask [extra] | get [extra] | emit');

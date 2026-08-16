@@ -7,6 +7,15 @@
   "height": 512
  },
  "asset": "650735a8-9d7a-4d8c-a3ca-fbf71a03a193",
+ "extras": [
+  {
+   "id": "plaque",
+   "width": 688,
+   "height": 384,
+   "asset": "02061775-6402-4fdf-8729-1160114162d0",
+   "say": "a grand ornamental ceremonial frame for a game TITLE SCREEN: a heavy carved near-black stone plaque border with ornate tarnished brass filigree flourishes swelling at the corners, small violet cut gems set into the border, a thin warm gold hairline along the inner edge, aged and chipped, the middle fully OPEN and EMPTY and transparent. NOT text, NOT letters, NOT a scene, NOT a landscape."
+  }
+ ],
  "pieces": [
   {
    "id": "win",
