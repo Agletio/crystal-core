@@ -1486,7 +1486,121 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — UI polish, round two: six calls off playing the built shell
+
+**The user's calls, verbatim where it matters.** The fixture kit landed and the
+shell reads as built things; playing it surfaced six refinements. Each is small
+and none blocks the others — do them in order, committing each.
+
+#### 1. Flasks: a socket box per flask, and bigger flask art
+
+*"redo flasks to where they still have the main bar behind them but the
+individual boxes behind each flask. Draw new flasks that match the current
+style and make them larger so they fill up most of the height of the bar."*
+
+Today: `.flask` rows sit on the bar-plate fixture with no per-flask housing,
+and the flask art is `flaskart.ts` — a hand-drawn `sicon--flask` recoloured by
+`--life`/`--mana`. Keep the bar; add the SOCKET fixture (the rail's button
+socket already exists in `UI_FIXTURES`) behind each flask; generate two new
+flask icons through `tools/art/icons.json` → `icon.mts` → `portrait.mts ... 48
+icons` (the whole pipeline is committed), sized to fill most of the bar's
+height. `flaskart.ts` keeps working as the fallback, generated wins.
+
+#### 2. The rail: one row, touching, instant themed tooltips, and Settings
+
+*"too many rows make the buttons smaller and get it down to a single row. You
+can have the buttons touching. Also when hovering the button it should
+immediately popup the name of that button... and the tooltip should match the
+other tooltips so its not just white box. We also need to add a settings
+button."*
+
+Today: `.rail` is `flex-wrap: wrap-reverse; max-width: 296px; gap: 6px`
+(docs/index.html ~433), which is what makes rows. Single row: no wrap, no
+max-width, `gap: 0`, buttons sized to fit. The white box is the NATIVE tooltip
+— `rail.ts` sets `button.title` (lines 21 and 31); replace with the game's own
+`.tip` machinery (`tooltip.ts`, `attachTooltip`) showing the label and its key
+IMMEDIATELY on hover (no delay), and drop the `title` attribute in the same
+change or both appear. Settings: a new `open-settings` button and an empty
+window shell (`.modal`, a head, nothing in the body yet) — the button exists so
+the id and the window are there when there is something to put in it. Do NOT
+rename any existing id; `smoke.mjs` clicks them.
+
+#### 3. Save & Load: select a slot, then act on it
+
+*"you click on a save slot and it highlights the box then you can hit play now
+at the top to play the one you've selected. The only thing on the box should be
+your name, trade, and level. At the bottom add save and delete buttons that
+overwrite the slot you have selected. Add warnings."*
+
+Today: `savedata.ts` puts per-row buttons on each slot (`save-<what>-<slot>`
+ids, `slotId()`), and the row prints name, level and saved-when. New model:
+clicking a slot SELECTS it (highlight class, one at a time); **Play now** at
+the top acts on the selection (loads it, or a new game in an empty slot);
+the box shows NAME, TRADE and LEVEL only; **Save here** and **Delete** at the
+bottom act on the selection — Save overwrites the selected slot with the live
+game, Delete clears it, both through `ask()` confirms since both destroy a
+save. The same screen serves the title (`modal--full`) and in-game entry, so
+both flows get the same model. `smoke.mjs` walks this screen by its ids and
+`shots.mjs` shoots `slots` — both need updating WITH the change, and the trap
+from the welcome flow applies: the title route goes through this screen, so a
+broken flow strands every harness at boot.
+
+#### 4. The webs: fantasy nodes, a real centre, no grid behind
+
+*"Im fine with the talents and the layout of the nodes for skills and stuff but
+trades needs a rework. but the theme of the actual nodes doesn't match the rest
+of the game. The skills need a new theme in terms of more fantasy rpg style
+nodes and connections, especially the main center node. Also remove the grid
+background entirely."*
+
+Three separable pieces:
+- **Node and link art** (`webart.ts`: `disc`, `gem`, `stud`) redrawn as
+  fantasy-RPG fittings — carved stone sockets, metal-bound gems, chain or
+  rope links — with the CENTRE node of each web a genuinely bigger, designed
+  piece. Both webs and the moves web draw through this one file, so one
+  retheme lands on all of them.
+- **The grid background behind the webs goes** — and note it is probably the
+  `--grit` texture, so doing item 5 first may do this for free.
+- **The TRADE web "needs a rework"** beyond theme — the user's word, with no
+  further spec. The skills layout is explicitly fine. Ask what a reworked
+  trade web looks like before rebuilding it; retheming its nodes with the
+  others is safe to do now.
+
+#### 5. The grit texture goes, everywhere
+
+*"Replace the grid background literally everywhere. I don't like it."*
+
+The "grid" is `--grit` (docs/index.html ~162): two repeating-linear-gradients
+making a 2px dither, defined ONCE and referenced 17 times, all via
+`var(--grit)`. So the whole item is: design ONE quieter replacement — flat
+panel colour, or a soft stone wash — redefine the token, and check every
+surface still separates from the map behind it. `npm run theme` holds nothing
+here (it checks colours, not textures), so the check is `shots.mjs` before and
+after.
+
+#### 6. The title background: the crack, and two flames
+
+*"main screen the box looks really good I think we just need a non noisy
+background. I was thinking it looks like a small crack that gets referenced
+alot and two like small torches or flames at the entrance?"*
+
+Today `titleart.ts` paints grit + one lamp glow + the gem mark at 5.5%. The
+plaque STAYS. The background becomes: quiet near-black stone (no grit — item
+5), with THE FISSURE itself — the thin crack in the rock the whole game
+descends into, the subtitle's "thin place in the rock" — drawn small and
+central below the plaque, and two small torch flames flanking it at its mouth.
+Drawn art or one generated backdrop through the icon pipeline; either way it
+is a still, painted once, nothing per-frame. Non-noisy is the requirement the
+last title art failed, so err on too quiet.
+
+#### What must not break, for the whole phase
+
+`comments`, `theme`, `typecheck`, `build`, `smoke`, `shots`, `drag` — the same
+seven as the fixture phase, and for the same reasons: `smoke` proves every id
+still answers (the save screen especially), `shots` proves layout and the map's
+pointer, `drag` proves the dock still reorders with the rail rebuilt.
+
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
