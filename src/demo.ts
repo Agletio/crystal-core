@@ -1557,9 +1557,13 @@ rule('SPRITES — is the pixel art well formed?');
     check(odd.length === 0, 'and every state is an action or a skill something throws', odd.join(', '));
   }
 
-  // A scene needs BOTH tables: one of them walks about the room and the other
-  // one speaks, and a character with only half of that is half a person.
-  const halfDrawn = SCENES.filter((s) => !BEASTIARY[s.who] || !PORTRAITS[s.who]).map((s) => s.id);
+  // A scene needs a BODY and a PORTRAIT: one of them walks about the room and
+  // the other one speaks, and a character with only half of that is half a
+  // person. Either table may hold the body — a generated one is not in
+  // `BEASTIARY` at all, and must not be, or it would never draw.
+  const halfDrawn = SCENES.filter(
+    (s) => !(BEASTIARY[s.who] || GENERATED[s.who]) || !PORTRAITS[s.who]
+  ).map((s) => s.id);
   check(
     halfDrawn.length === 0,
     `all ${SCENES.length} scenes have a sprite AND a portrait for whoever is in them`,

@@ -296,9 +296,23 @@
    "dirs": [
     "south-east"
    ],
-   "states": {},
+   "states": {
+    "idle": {
+     "group": "ceedb59b-ea90-4215-8064-9b804a5c4d75",
+     "frames": 2
+    },
+    "walk": {
+     "group": "3ac1b05b-634d-4faa-9d3b-9a20e3387981",
+     "frames": 6
+    },
+    "attack": {
+     "group": "e117f314-b983-431b-8d18-bf8fb8dbd314",
+     "frames": 4
+    }
+   },
    "grid": 48,
-   "inks": 24
+   "inks": 24,
+   "stride": 0.88
   }
  ],
  "props": [
