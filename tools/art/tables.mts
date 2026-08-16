@@ -37,6 +37,7 @@ interface BodySpec {
   /** Legs the art does not show, so nothing measured off them means
    *  anything: a hem to the floor, and a `stride` judged rather than read. */
   robed?: boolean;
+  grounded?: boolean; // feet planted in its drawn ground: deslab/loose stand down
   /** The grid it ships at; the GENERATION must be an integer multiple of it. */
   grid?: number;
   inks?: number; // how many it settles to; 56 is a 96 grid's number, not a 24's
@@ -333,7 +334,9 @@ async function creature(spec: BodySpec): Promise<Art> {
   // Three passes at the ground, since no one of them sees all of it.
   let stranded = 0;
   const square = images.map((i) => {
-    const [joined, dropped] = loose(deslab(defloor(i)));
+    const [joined, dropped] = spec.grounded
+      ? ([defloor(i), 0] as const)
+      : loose(deslab(defloor(i)));
     stranded += dropped;
     return centred(joined, widest);
   });
