@@ -446,13 +446,13 @@ export function dressWalls(grid: Grid, rng: Rng, keep: Vec2[] = [], plain: Room[
       // A RUN of wall, never a nub: something hanging off a one-tile island in
       // the middle of a room reads as a light fixture floating in mid air.
       if (!rock(0, -1) || !rock(0, -2) || (!rock(-1, -1) && !rock(1, -1))) continue;
-      const key = y * grid.width + x;
+      const key = (y - 1) * grid.width + x;
       if (taken.has(key) || !rng.chance(FACE_RATE)) continue;
       taken.add(key);
-      // On the FLOOR cell, which is where the cut face is drawn: the set fills
-      // the cell BELOW the boundary, so anything growing on the face belongs
-      // there. Put on the rock cell it hangs a tile above its own wall.
-      out.push({ id: weighted(WALL_PROPS, rng.next()), x, y });
+      // On the ROCK cell: the deep sets draw a face TWO rows tall, so growth
+      // on the floor cell sat at the wall's foot, over the seam with the
+      // ground. One tile up it hangs on the face itself.
+      out.push({ id: weighted(WALL_PROPS, rng.next()), x, y: y - 1 });
     }
   }
   return out;

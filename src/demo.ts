@@ -1790,15 +1790,20 @@ rule('SPRITES — is the pixel art well formed?');
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
 
-  // A WALL prop is drawn side-on and belongs ON the cut face — which a set
-  // fills the cell BELOW the boundary with, so it is a FLOOR tile with rock
-  // over it. Held to the rock tile instead, every root hangs a tile above the
-  // wall it is growing on.
+  // A WALL prop is drawn side-on and belongs ON the cut face — a deep set
+  // draws that TWO rows tall, so it is the ROCK tile at the boundary: rock
+  // above it, floor below it. On the floor cell instead, every root sat at
+  // the wall's foot, over the seam with the ground.
   {
     const { grid, props } = dressedMap(23);
     const off = props
       .filter((p) => HUNG_PROPS.has(p.id))
-      .filter((p) => grid.at(p.x, p.y) === WALL || grid.at(p.x, p.y - 1) !== WALL)
+      .filter(
+        (p) =>
+          grid.at(p.x, p.y) !== WALL ||
+          grid.at(p.x, p.y - 1) !== WALL ||
+          grid.at(p.x, p.y + 1) === WALL
+      )
       .map((p) => `${p.id}@${p.x},${p.y}`);
     const growing = props.filter((p) => HUNG_PROPS.has(p.id)).length;
     check(
