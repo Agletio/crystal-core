@@ -163,7 +163,8 @@
    "inks": 24,
    "stride": 1.8,
    "luma": 32,
-   "grounded": true
+   "grounded": true,
+   "mound": true
   },
   {
    "sprite": "courser",

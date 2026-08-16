@@ -388,6 +388,67 @@ export function deslab(image: Decoded): Decoded {
   return { width: W, height: H, rgba: out };
 }
 
+/**
+ * The SLAB a grounded body's feet are planted in, cut with the feet KEPT. Its
+ * core rows are horizontal runs WIDER than the body's own chest span — nothing
+ * on a crawling body is — and once those go, everything inside the box they
+ * drew goes too, except a column a limb visibly enters: real ink above the box
+ * where the slab's own thin top edge has almost none. Death frames are the
+ * caller's to skip, since a corpse lies in its ground legitimately.
+ */
+export function demound(image: Decoded): Decoded {
+  const { width: W, height: H, rgba } = image;
+  const at = (x: number, y: number): number => (y * W + x) * 4;
+  const solid = (x: number, y: number, a: Uint8Array = rgba): boolean => a[at(x, y) + 3] > 40;
+
+  let top = H, bottom = -1;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (solid(x, y)) { if (y < top) top = y; bottom = y; break; }
+  if (bottom < 0) return image;
+  const tall = bottom - top;
+  if (tall < 16) return image;
+
+  let coreL = W, coreR = -1;
+  for (let y = Math.round(top + tall * 0.2); y <= Math.round(top + tall * 0.6); y++)
+    for (let x = 0; x < W; x++)
+      if (solid(x, y)) { if (x < coreL) coreL = x; if (x > coreR) coreR = x; }
+  if (coreR < coreL) return image;
+  const limit = Math.max(6, (coreR - coreL + 1) * 0.7);
+
+  const from = Math.round(top + tall * 0.6);
+  const out = new Uint8Array(rgba);
+  let bx0 = W, bx1 = -1, by0 = H, by1 = -1;
+  for (let y = from; y <= bottom; y++) {
+    let x = 0;
+    while (x < W) {
+      if (!solid(x, y)) { x++; continue; }
+      let e = x;
+      while (e < W && solid(e, y)) e++;
+      if (e - x > limit) {
+        for (let k = x; k < e; k++) out.set([0, 0, 0, 0], at(k, y));
+        if (x < bx0) bx0 = x;
+        if (e - 1 > bx1) bx1 = e - 1;
+        if (y < by0) by0 = y;
+        if (y > by1) by1 = y;
+      }
+      x = e;
+    }
+  }
+  if (bx1 < 0) return image;
+
+  const win = Math.max(4, Math.round(tall * 0.15));
+  const need = Math.ceil(win / 2);
+  for (let x = bx0; x <= bx1; x++) {
+    let above = 0;
+    for (let y = Math.max(0, by0 - win); y < by0; y++) if (solid(x, y, out)) above++;
+    if (above >= need) continue;
+    for (let y = Math.max(from, by0 - 3); y <= bottom; y++)
+      if (solid(x, y, out)) out.set([0, 0, 0, 0], at(x, y));
+  }
+  return { width: W, height: H, rgba: out };
+}
+
 /** Everything not JOINED to the body, gone: the scatter of stones the
  *  generator draws around a pair of feet, and whatever a slab leaves stranded
  *  when it goes. It reports what it took, because a genuinely detached scrap

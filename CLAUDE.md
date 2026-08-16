@@ -299,20 +299,27 @@ about on it reads as objects standing about on a floor. A SCENE is the other
 half of the rule and always was — one chamber, props placed by hand, and
 nothing scattered into it at all.
 
-**THE GROUND IS CUT AT IMPORT, by three rules that see different halves of
-it — and a body that stands IN its ground is exempt.** `BodySpec.grounded`
-(the Crawler, the Lampwright) keeps `defloor` and stands `deslab` and `loose`
-down, because the shape cut took the mound with the feet planted in it.
+**THE GROUND IS CUT AT IMPORT, by rules that see different halves of it —
+and a body that stands IN its ground says so.** `BodySpec.grounded` (the
+Crawler, the Lampwright) keeps `defloor` and stands `deslab` and `loose` down,
+because those cuts took the mound with the feet planted in it.
  `defloor` finds it by COLOUR — what spills out beside the body and is
 almost nowhere above it — and is blind to a shadow the body shares a colour
 with. `deslab` finds it by SHAPE: down in the low band, a region of one colour
 wider than it is tall and LIGHTER than the body above it is what the body
 stands on. `loose` takes whatever is left unjoined, which is the scatter of
-stones drawn round a pair of feet. All three are in `tools/art/convert.mts` and
-cost no generation, so a re-import is the whole repair. The light test is what
+stones drawn round a pair of feet. The light test is what
 keeps the feet: a body is asked for near-black bone and the ground is the pale
 floor darkened, and that holds even for a body lying flat in its death frames,
-where every width rule takes the legs off.
+where every width rule takes the legs off. `BodySpec.mound` (the Crawler) is
+the grounded body whose slab still comes OFF, feet kept, by `demound`: the
+slab's core rows are horizontal runs WIDER than the body's own chest span —
+nothing on a crawling body is — and then everything inside the box those runs
+drew goes too, except a column a limb visibly enters from above. Death frames
+keep the slab, since a corpse lies in its ground legitimately and cutting a
+lying body by width is how feet were lost the first time. All of it is in
+`tools/art/convert.mts` and costs no generation, so a re-import is the whole
+repair.
 
 **A body's STRIDE is measured off clean art or it is not measured at all.** The
 shadow was being read as feet-at-widest, which is why three bodies shipped a

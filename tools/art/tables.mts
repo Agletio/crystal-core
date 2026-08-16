@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
-import { apart, debackground, defloor, deslab, fittedTogether, loose, rgb } from './convert.mts';
+import { apart, debackground, defloor, demound, deslab, fittedTogether, loose, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
 import { PROP_ART } from '../../src/render/generated-props';
 import { ZONES } from '../../src/render/generated-tiles';
@@ -38,6 +38,7 @@ interface BodySpec {
    *  anything: a hem to the floor, and a `stride` judged rather than read. */
   robed?: boolean;
   grounded?: boolean; // feet planted in its drawn ground: deslab/loose stand down
+  mound?: boolean; // that ground is a slab `demound` can take, feet kept; death frames keep it
   /** The grid it ships at; the GENERATION must be an integer multiple of it. */
   grid?: number;
   inks?: number; // how many it settles to; 56 is a 96 grid's number, not a 24's
@@ -310,6 +311,7 @@ async function creature(spec: BodySpec): Promise<Art> {
   // have, so a body with no walk still draws rather than throwing.
   const wanted: string[] = [];
   const states: Record<string, number[]> = {};
+  const dead = new Set<number>();
   for (const dir of dirs) {
     const animations = animationFrames(text, dir);
     const still = rotation(text, dir);
@@ -319,6 +321,7 @@ async function creature(spec: BodySpec): Promise<Art> {
       if (urls.length === 0) console.log(`  ${dir} ${name}: no group ${want.group} — standing still`);
       const taken = urls.length > 0 ? spread(urls, want.frames, want.from, want.to) : [still];
       if (from === 0) states[name] = taken.map((_, i) => wanted.length + i);
+      if (name === 'death') taken.forEach((_, i) => dead.add(wanted.length + i));
       wanted.push(...taken);
     }
   }
@@ -333,10 +336,13 @@ async function creature(spec: BodySpec): Promise<Art> {
   const widest = Math.max(...images.map((i) => i.width));
   // Three passes at the ground, since no one of them sees all of it.
   let stranded = 0;
-  const square = images.map((i) => {
+  const square = images.map((i, ix) => {
+    const flat = defloor(i);
     const [joined, dropped] = spec.grounded
-      ? ([defloor(i), 0] as const)
-      : loose(deslab(defloor(i)));
+      ? spec.mound && !dead.has(ix)
+        ? loose(demound(flat))
+        : ([flat, 0] as const)
+      : loose(deslab(flat));
     stranded += dropped;
     return centred(joined, widest);
   });
