@@ -59,7 +59,9 @@ the user's word, strike a broadsword with the swing behind it. **The title
 followed**, at the user's word ("way too noisy... I really don't like it"):
 the two-worlds canvas and `titleart.ts` are deleted, and the title is the
 mark on a generated ceremonial plaque (`extras` in `uikit.json`) over quiet
-stone — one lamp glow, a vignette, and the gem ghosted enormous behind it.
+stone — one lamp glow and a vignette. The gem ghosted enormous behind it came
+and went: at that size its grid pixels read as a banding artifact, the user
+called it, and `src/ui/logo.ts` went with it.
 **Then the ITEMS followed**, at the user's word again: 66 more generated
 icons — twelve crystals (three families × four levels, each family its own
 stone), all 48 armour pieces, the weapons and the jewellery — with
@@ -75,8 +77,16 @@ slice, idempotent on the cache, in about twenty minutes.
 seeing it.** Save & Load is select-then-act — a slot is a button, Play now /
 Save here / Delete act on the pick, warnings on the two that destroy; a
 Settings shell exists (`open-settings`, an empty framed window on purpose);
-the grit dither is a quiet wash everywhere; the title's ground is the crack
-itself with two flames at its mouth. Off the follow-up round: the rail is a
+the grit dither is a quiet wash everywhere; the title's ground is a GENERATED
+scene of the fissure — rock face, lit crack, a lantern either side, meadow —
+a `crackscene` extras row carrying its own `style` words (to escape the kit's
+fixture styling) and an emit-time `crop` (the generator framed it anyway).
+The wordmark is one gradient, a dark stroke and ONE hard shadow — the soft
+halo read as mush — and plaque, mark, wordmark and rules all size off
+`--plaque-w` so a short viewport scales instead of wrapping. Fixture buttons
+highlight WHOLE: the enter plate `fill`s with its own stone and glows at its
+silhouette (`drop-shadow`), because brightness over a flat padding-box centre
+lit a hard rectangle inside the carved edge. Off the follow-up round: the rail is a
 34px touching row of screens with Fill/Hide/dev on their OWN small plate
 above, sized to clear the flask bar at 1280 with no lift; each flask stands
 in a dark arched NICHE on the rack with its threshold controls under it; and
