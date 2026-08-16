@@ -166,6 +166,16 @@ NOT saved — the good default is what most players never drag away from — but
 `--dock-h` is measured against the dock's HOME rather than where it has been
 dragged, or nudging one window reflows every other one.
 
+**A window that OPENS square over another window's head CASCADES.** `unbury` in
+`src/ui/windows.ts`: at open, a card whose rect covers a visible window's head
+steps down-right by 36px until it does not, through the same `--wx`/`--wy` the
+drag writes. Only a COLLIDING open steps — a window alone is exactly where the
+layout put it — and a card the player has dragged (`win--moved`) is left
+alone, as are the dock (a place of its own) and the speech bubbles (anchored
+to a speaker). It exists because the head is the ONLY handle a window has:
+the fixture frames made every card taller, two capped cards aligned their
+tops, and the bench's head vanished under the stash — which `drag` caught.
+
 **The map is the GROUND, not a screen.** `override ?? screenHandler ?? base`.
 The run sets `base` on every phase change; a screen sets `screenHandler` when it
 takes focus. Both in one slot and a descent ticking over takes the dock off
@@ -713,6 +723,34 @@ the height from the GRID rather than from `size`, or a mark that is not square
 is squashed. A cut gem is told by its SILHOUETTE and three readings were paid
 for: a dark body inside a bright outline is a jar, a straight girdle between two
 points is a lantern, and a seam run to the tips leaves it with a stem.
+
+**A FIXTURE is generated pixel art applied as a CSS 9-slice; a glyph is grid
+art.** The kit — `win`, `card`, `socket`, `head`, `bar`, `channel` — is asked
+by `tools/art/uikit.mts` (`ask`/`get`/`emit`, words in `uikit.json`), ships as
+data URIs in `src/render/generated-ui.ts`, and is mounted as `--fix-<id>`
+custom properties at boot by `src/ui/fixtures.ts`. `theme-check` treats the
+`--fix-` prefix as RUNTIME — base64 holds no `#`, so a data URI cannot trip
+the hex scan either. A fixture is authored at the CSS pixel size it displays
+at, so a 9-slice's corners draw 1:1; the socket is the exception, shipped at
+96 for a 48px button because device ratio 2 then lands it pixel-perfect.
+
+- **The `border` SHORTHAND resets `border-image`.** A later rule with
+  `border: 1px solid ...` silently kills an earlier fixture at equal
+  specificity — the HUD vessels drew nothing until their rule moved BELOW the
+  base `.hp` block. Anything giving an element a fixture frame has to win the
+  cascade against every `border:` that reaches it.
+- **A frame's `fill` middle TILES under `repeat: round`, and a near-uniform
+  interior shows the seams** — the fissure sockets drew doubled boxes. Frames
+  are used WITHOUT `fill`; the interior is painted by the element's own
+  background with `background-clip: padding-box`, which also stops the panel
+  colour leaking past the art's silhouette corners. The `bar` plate is the
+  exception: its middle was drawn as a continuous slab and tiles correctly.
+- **`create_ui_asset` over MCP takes flat `width`/`height`**, not the REST
+  schema's `image_size`. Its `pieces` template (labelled rects on a 512-wide
+  virtual canvas) is what buys a whole kit in ONE call — one call is one
+  style, the same boundary `edit_image` taught — but **a piece under ~90px
+  comes back with no detail**; a small fixture is asked ALONE through
+  `create_image_pixflux` and stands in via `SOLO` in `uikit.mts emit`.
 
 **`shots.mjs` carries the CHECKLIST, and it is what "no stragglers" means.**
 `STATES` is every screen and overlay the game has; a state on that list with no

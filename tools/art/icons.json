@@ -53,11 +53,11 @@
   },
   {
    "id": "sk_strike",
-   "say": "a wide sweeping arc of a steel blade cutting left to right, the blade dark iron and the arc a pale cold streak."
+   "say": "a heavy notched iron broadsword tilted diagonally, point to the upper right, with a broad curved streak of pale cold light sweeping behind its blade like the trail of a swing, nothing holding it, NOT a moon, NOT crossed swords."
   },
   {
    "id": "sk_fireball",
-   "say": "a dense ball of roaring orange flame with a bright white-gold core, round and heavy."
+   "say": "a fireball in flight: a round blazing sphere of orange and gold flame with a searing white-hot core, tongues of fire streaming off it into a pointed trailing tail of flame and sparks, NOT a bonfire, NOT a candle, NOT a torch, NOT an explosion."
   },
   {
    "id": "sk_bolt",
@@ -73,7 +73,7 @@
   },
   {
    "id": "sk_blight",
-   "say": "a low roiling cloud of sickly green poison with a few dripping motes falling from it."
+   "say": "a ragged vertical curtain of thick glossy sickly-green slime hanging alone in empty space, long runnels sliding down it and fat drops breaking off its ragged bottom edge, glossy wet highlights on the goo, floating with nothing above it, nothing below it and nothing beside it."
   },
   {
    "id": "sk_surge",

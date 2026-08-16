@@ -49,7 +49,40 @@ const watcher = new MutationObserver((records) => drain(records));
 function drain(records = watcher.takeRecords()): void {
   for (const record of records) {
     const id = named.get(record.target);
-    if (id && !(record.target as HTMLElement).hidden) raiseWindow(id);
+    if (id && !(record.target as HTMLElement).hidden) {
+      unbury(id);
+      raiseWindow(id);
+    }
+  }
+}
+
+/** Stacked centred cards align, so a window can OPEN square over another one's
+ *  head — which is the only handle the buried window has. An open that covers
+ *  a visible head steps down-right until it does not: the cascade. Only a
+ *  colliding open steps, so a window alone is exactly where the layout put it,
+ *  and a card somebody dragged is theirs (`win--moved`) and is left alone. */
+const CASCADE = 36;
+function unbury(id: string): void {
+  const win = wins.get(id);
+  if (!win || win.card === win.layer) return; // the dock has a place of its own
+  if (win.card.classList.contains('win--moved')) return;
+  if (win.card.classList.contains('modal__card--bubble')) return; // anchored to a speaker
+  const heads = [...wins.entries()]
+    .filter(([other, w]) => other !== id && !w.layer.hidden && w.card !== w.layer
+      && !w.card.classList.contains('modal__card--bubble'))
+    .map(([, w]) => w.card.querySelector('.modal__head')?.getBoundingClientRect())
+    .filter((box): box is DOMRect => !!box);
+  if (heads.length === 0) return;
+  for (let go = 0; go < 3; go++) {
+    const box = win.card.getBoundingClientRect();
+    const covered = heads.some((h) => {
+      const cx = h.left + h.width / 2;
+      const cy = h.top + h.height / 2;
+      return cx > box.left && cx < box.right && cy > box.top && cy < box.bottom;
+    });
+    if (!covered) return;
+    const off = windowOffset(win.card);
+    settle(win.card, off.x + CASCADE, off.y + CASCADE);
   }
 }
 

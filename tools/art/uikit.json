@@ -1,0 +1,72 @@
+{
+ "_": "What to SAY for the UI FIXTURE KIT, one create_ui_asset call. `tools/art/uikit.mts ask` fires it, `get` downloads, `emit` cuts the pieces and writes src/render/generated-ui.ts. Every piece is authored at the CSS pixel size it displays at, so a 9-slice's corners draw 1:1.",
+ "style": "Fantasy ARPG interface fixtures carved from near-black cavern stone, edged with dark iron banding and tarnished brass fittings, a thin warm amber lamplight rim along upper edges, aged, chipped and heavy, in the style of Path of Exile and Diablo interface furniture. Dark and carved, NOT bright, NOT colorful, NOT clean, NOT plastic, NOT sci-fi.",
+ "palette": "near-black warm stone, dark iron, tarnished brass, warm amber lamplight",
+ "size": {
+  "width": 512,
+  "height": 512
+ },
+ "asset": "650735a8-9d7a-4d8c-a3ca-fbf71a03a193",
+ "pieces": [
+  {
+   "id": "win",
+   "kind": "rounded_rect",
+   "label": "ornate window frame: thick carved near-black stone border with tarnished brass corner fittings and a hairline of warm gold light along the inner edge, open empty middle",
+   "x": 8,
+   "y": 8,
+   "w": 224,
+   "h": 224,
+   "radius": 4
+  },
+  {
+   "id": "card",
+   "kind": "rounded_rect",
+   "label": "small plain frame: slim carved dark stone border with a faint brass inner hairline, open empty middle",
+   "x": 248,
+   "y": 8,
+   "w": 140,
+   "h": 140,
+   "radius": 3
+  },
+  {
+   "id": "socket",
+   "kind": "rounded_rect",
+   "label": "square recessed button socket: riveted dark iron rim around a sunken dark stone recess",
+   "x": 404,
+   "y": 8,
+   "w": 48,
+   "h": 48,
+   "radius": 3
+  },
+  {
+   "id": "head",
+   "kind": "rounded_rect",
+   "label": "long low title-bar plate of carved dark stone, chamfered edges, brass end fittings, lit top rim",
+   "x": 248,
+   "y": 164,
+   "w": 224,
+   "h": 44,
+   "radius": 3
+  },
+  {
+   "id": "bar",
+   "kind": "rounded_rect",
+   "label": "long horizontal action-bar plate: a carved dark stone slab banded with dark iron, heavy tarnished brass end caps, warm lit top edge",
+   "x": 8,
+   "y": 248,
+   "w": 464,
+   "h": 56,
+   "radius": 4
+  },
+  {
+   "id": "channel",
+   "kind": "rounded_rect",
+   "label": "long narrow recessed gauge channel: a sunken groove in dark stone with a tarnished brass cap at each end, deep inner shadow",
+   "x": 8,
+   "y": 320,
+   "w": 464,
+   "h": 28,
+   "radius": 3
+  }
+ ]
+}

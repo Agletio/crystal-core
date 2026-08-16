@@ -413,18 +413,29 @@
     position: fixed; right: 16px; bottom: 22px; z-index: 34;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
+  /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
+     every button a riveted socket SET INTO it. The plate is a border-image
+     9-slice, so it survives the rail wrapping to any number of rows. */
   .rail {
     display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
-    align-items: center; gap: 6px; max-width: 248px;
+    align-items: center; gap: 6px; max-width: 296px;
+    padding: 4px 2px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent;
+    border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated;
   }
   .railbtn {
     position: relative; display: grid; place-items: center;
-    width: 38px; height: 38px; padding: 0; font-size: 0;
-    background: var(--panel); background-image: var(--grit); color: var(--text-dim);
-    border: 2px solid var(--edge); box-shadow: var(--bevel); cursor: pointer;
+    width: 48px; height: 48px; padding: 0; font-size: 0;
+    background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
+    color: var(--text-dim);
+    border: 0; border-radius: 0; box-shadow: none; cursor: pointer;
   }
-  .railbtn:hover:not(:disabled), .railbtn:focus-visible { border-color: var(--citrine); color: var(--citrine); }
-  .railbtn--dev { border-style: dashed; }
+  .railbtn:hover:not(:disabled), .railbtn:focus-visible { color: var(--citrine); filter: brightness(1.3); }
+  .railbtn:active:not(:disabled) { box-shadow: none; }
+  .railbtn--dev { opacity: .7; }
   .sicon { display: block; image-rendering: pixelated; }
   .sicon__ink { fill: currentColor; }
   .sicon__lit { fill: var(--citrine); }
@@ -481,7 +492,6 @@
   .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
   .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--text-dim); }
   .chip:hover { color: var(--text); border-color: var(--edge-lit); }
-  .chip--on { background: var(--edge); color: var(--text); border-color: var(--rust); }
 
   .cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 20px; align-items: start; }
   @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
@@ -648,8 +658,21 @@
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 20px);
-    width: auto; margin: 0; gap: 20px; grid-template-columns: auto auto;
+    width: auto; margin: 0; gap: 14px; grid-template-columns: auto auto;
+    padding: 3px 1px;
+    border: 12px solid transparent; border-left-width: 22px; border-right-width: 22px;
+    border-image: var(--fix-bar) 14 26 fill / 12px 22px round;
   }
+  /* The flasks sit in sockets on their own small plate — the rack. */
+  body.mapfull #run-stagewrap .flask__use {
+    width: 48px; height: 48px; padding: 0;
+    display: grid; place-items: center;
+    background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
+    border: 0; border-radius: 0; box-shadow: none;
+  }
+  body.mapfull #run-stagewrap .flask__use:hover:not(:disabled) { filter: brightness(1.3); }
+  body.mapfull #run-stagewrap .flask--live .flask__use { filter: brightness(1.25); }
   .flask { display: flex; align-items: center; gap: 6px; }
   .flask__use {
     position: relative; display: grid; place-items: center;
@@ -687,12 +710,16 @@
     position: fixed; left: 16px; bottom: 26px; z-index: 19;
     width: 232px; display: flex; flex-direction: column; gap: 3px;
   }
-  .hud__who { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; }
+  .hud__who {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
+    padding: 2px 6px; margin-bottom: 2px;
+    border: 4px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: var(--fix-head) 6 16 fill / 4px 14px round; image-rendering: pixelated;
+  }
   .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
   .hud__level { color: var(--text-dim); }
   .hud__level b { color: var(--citrine); }
-  .hp--slim { height: 13px; }
-  .hp--slim .hp__text { font-size: 9px; line-height: 13px; }
+  .hp--slim .hp__text { font-size: 9px; line-height: 1; }
 
   /* Flush with the floor, and UNDER everything: read at a glance, never clicked,
      so a window over it costs nothing. `margin: 0` is load-bearing — a fixed box
@@ -736,6 +763,16 @@
   .hp--xp { height: 14px; margin-bottom: 14px; }
   .hp__fill--xp { background: var(--rust); }
   .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); }
+  /* Life and mana are VESSELS: the fill inside a carved channel with brass
+     caps. AFTER every base `.hp` rule, because the `border` shorthand in one
+     of those resets `border-image` and equal specificity is won by order. */
+  .hp--slim {
+    height: 26px; margin-bottom: 0; background: none; box-shadow: none;
+    border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: var(--fix-channel) 9 14 fill / 8px 14px round;
+    image-rendering: pixelated;
+  }
+  .hp--mana.hp--dry { border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px; border-image: var(--fix-channel) 9 14 fill / 8px 14px round; filter: drop-shadow(0 0 3px var(--rust)); }
 
   /* Two across under the map: the keys are the shortcut and these are the
      interface, because a phone has no number row. */
@@ -776,8 +813,16 @@
   .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--text-dim); }
 
   .skillrow-icons { display: flex; gap: 8px; margin: 10px 0 12px; }
-  .skillslot { padding: 4px; display: flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; }
-  .skillslot--empty { border-style: dashed; opacity: .5; }
+  /* The three skill slots are SOCKETS in the action bar's own family, so the
+     bottom-right corner reads as one built object. */
+  .skillslot {
+    padding: 0; display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; min-width: 48px; min-height: 48px;
+    background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
+    border: 0; border-radius: 0; box-shadow: none;
+  }
+  .skillslot--empty { opacity: .45; }
 
   /* One block per equipped skill: only the numbers true of THAT skill. */
   .skillsec { border-left: 3px solid var(--edge-lit); padding: 2px 0 2px 9px; margin-bottom: 12px; }
@@ -892,7 +937,10 @@
   .dock {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 20; /* the band's floor; the stack raises it */
     width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
-    padding: 10px 14px 12px;
+    padding: 4px 8px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated; box-shadow: var(--lift);
   }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
   .dock__head .panel__title { margin: 0; }
@@ -1047,14 +1095,17 @@
   /* --- the Fissure and its socket ------------------------------------- */
   .fissure { font-size: 12px; color: var(--text-dim); margin: 0 0 14px; }
 
-  /* Deliberately looks like a slot waiting to be filled, not a button. */
+  /* A carved recess waiting to be filled — the same iron frame the cards use,
+     dimmed while empty so a filled one reads across the screen. */
   .socket {
     display: block; width: 100%; text-align: left;
-    padding: 14px; background: var(--ink);
-    border: 1px dashed var(--edge-lit);
+    background-color: var(--ink); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated; box-shadow: none; border-radius: 0;
   }
-  .socket:hover { border-color: var(--rust); }
-  .socket--full { border-style: solid; border-color: var(--rust); background: var(--panel); }
+  .socket:hover { filter: brightness(1.25); }
+  .socket:not(.socket--full) { opacity: .62; }
+  .socket--full { box-shadow: inset 0 0 0 1px var(--rust); }
   .sockets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .socket { padding: 10px; }
   .socket__name { font-family: var(--display); font-size: 13px; }
@@ -1092,16 +1143,26 @@
 
   .mini--go { border-color: var(--rust); color: var(--bone); }
   /* The one decision on the screen, sized like it. */
+  /* The one decision on the screen is a carved PLATE, brass caps and all. */
   .mini--enter {
-    padding: 12px 30px; font-size: 15px; letter-spacing: .1em;
-    border-width: 3px; box-shadow: var(--bevel), 0 4px 0 rgba(0,0,0,.5);
+    padding: 8px 22px; font-size: 15px; letter-spacing: .1em;
+    background: none; border: 12px solid transparent;
+    border-left-width: 24px; border-right-width: 24px;
+    border-image: var(--fix-bar) 14 26 fill / 12px 24px round;
+    image-rendering: pixelated;
+    border-radius: 0; box-shadow: 0 4px 0 rgba(0,0,0,.5);
+    color: var(--citrine);
   }
-  .mini--enter:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
+  .mini--enter:hover:not(:disabled) { filter: brightness(1.25); color: var(--citrine); }
+  .mini--enter:active:not(:disabled) { box-shadow: none; }
   .runbar--go { margin-top: 20px; justify-content: center; }
   /* Centred and roomier, now that nothing shares the screen with it. */
   .fissurecard {
     width: min(620px, 100%); margin: min(6vh, 60px) auto 0;
-    padding: 22px 26px; text-align: center;
+    padding: 12px 16px; text-align: center;
+    background-clip: padding-box;
+    border: 30px solid transparent; border-image: var(--fix-win) 30 round;
+    image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
   }
   .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }
@@ -1140,14 +1201,14 @@
   /* Two columns where there is room: what happened on the left, what you got
      on the right. One 360px column meant a good run — several stat rows and a
      handful of drops — pushed the button that dismisses it off the bottom. */
-  .resultcard { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); border: 2px solid var(--edge); border-radius: var(--r); box-shadow: var(--bevel), var(--gilt), var(--lift); padding: 18px; width: min(600px, 100%); }
+  .resultcard { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); background-clip: padding-box; border: 30px solid transparent; border-image: var(--fix-win) 30 round; image-rendering: pixelated; box-shadow: var(--lift); padding: 4px 8px 10px; width: min(600px, 100%); }
   .resultcard__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 620px) { .resultcard__cols { grid-template-columns: 1fr; gap: 10px; } }
   .resultcard__sub:first-child { margin-top: 0; }
-  .resultcard--cleared { border-color: var(--citrine); }
-  .resultcard--died { border-color: var(--ember); }
+  .resultcard--cleared { box-shadow: inset 0 0 0 2px var(--citrine), var(--lift); }
+  .resultcard--died { box-shadow: inset 0 0 0 2px var(--ember), var(--lift); }
   /* Walking out is not a death, but it costs the same descent. */
-  .resultcard--left { border-color: var(--text-dim); }
+  .resultcard--left { box-shadow: inset 0 0 0 2px var(--text-dim), var(--lift); }
   .resultcard__head { font-family: var(--display); font-size: 16px; margin: 0 0 12px; }
   .resultcard--cleared .resultcard__head { color: var(--citrine); }
   .resultcard--died .resultcard__head { color: var(--ember); }
@@ -1200,9 +1261,11 @@
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     width: max-content; max-width: min(300px, calc(100vw - 32px));
     display: flex; align-items: flex-end; gap: 8px;
-    background-color: var(--panel); background-image: var(--grit);
-    border: 2px solid var(--edge-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55);
-    padding: 9px 11px 9px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated;
+    box-shadow: 0 5px 0 rgba(0,0,0,.55);
+    padding: 2px 4px 2px 1px;
   }
   /* Out of the box on two sides. A portrait cropped to the padding reads as an
      icon; one that breaks the frame reads as somebody leaning in. */
@@ -1235,10 +1298,12 @@
      dock, and a card measured in vh would hang over it. */
   /* TREATMENT 1 of 4 — the WINDOW. The panel's slab, lifted off the map and
      given a head to drag it by. */
-  .modal__card { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); border: 2px solid var(--edge); border-radius: var(--r); box-shadow: var(--bevel), var(--gilt), var(--lift); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
+  .modal__card { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); background-clip: padding-box; border: 30px solid transparent; border-image: var(--fix-win) 30 round; image-rendering: pixelated; box-shadow: var(--lift); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
   /* The head is the lit end of the slab, and the rule under it is the seam the
      lamplight stops at. */
-  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--edge); background-image: linear-gradient(rgba(196,99,30,.16), rgba(0,0,0,.22)); box-shadow: inset 0 -1px 0 rgba(190,146,74,.2); }
+  /* The head is a carved TITLE PLATE with brass end fittings, and it is still
+     the drag handle. */
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 14px; margin: 2px 2px 6px; border: 4px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 fill / 4px 16px round; image-rendering: pixelated; }
   /* A face beside the name rather than at the other end of the bar: the head's
      usual space-between would put the person and who they are as far apart as
      the box allows. */
@@ -1363,7 +1428,6 @@
   .skilllist { display: grid; gap: 6px; }
   .skillrow { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; border-left-width: 3px; border-left-color: var(--edge-lit); }
   .skillrow:hover { background: var(--edge); }
-  .skillrow--on { background: var(--edge); border-left-color: var(--rust); }
   .skillrow__head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
   .skillrow__name { font-size: 12px; }
   .skillrow__tag { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
@@ -1378,8 +1442,9 @@
      itself sits, and the corners falling away into nothing. */
   .webwrap {
     position: relative; height: min(50vh, 430px);
-    border: 2px solid var(--edge); box-shadow: var(--bevel);
-    background-color: var(--web-ground);
+    border: 14px solid transparent; border-image: var(--fix-card) 14 round;
+    box-shadow: none;
+    background-color: var(--web-ground); background-clip: padding-box;
     background-image:
       radial-gradient(circle at 50% 50%, rgba(196,99,30,.20), transparent 44%),
       radial-gradient(circle at 50% 50%, rgba(120,88,44,.12) 30%, transparent 68%),
@@ -1396,7 +1461,7 @@
   .webwrap--trade { height: min(44vh, 380px); margin-top: 12px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
-  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); border: 2px solid var(--edge); border-radius: var(--r); box-shadow: var(--bevel), var(--gilt), var(--lift); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
   .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
   .webmenu__row:hover { background: var(--edge); border-color: var(--citrine); }
   .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
@@ -1423,11 +1488,12 @@
      box; TOP LAYER, since what explains a thing may not sit under what rings it. */
   .tip {
     position: fixed; z-index: 100; pointer-events: none;
-    max-width: 340px; padding: 10px 12px;
-    background-color: var(--panel); background-image: var(--grit);
-    border: 2px solid var(--edge); border-radius: var(--r);
+    max-width: 340px; padding: 6px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated;
     color: var(--text); font-size: 11px; line-height: 1.5;
-    box-shadow: var(--bevel), var(--gilt), var(--lift);
+    box-shadow: var(--lift);
   }
   /* A sentence per line, for a currency or a skill. An item card lays itself
      out and must not have its own newlines honoured on top of that. */

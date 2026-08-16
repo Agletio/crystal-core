@@ -70,6 +70,7 @@ import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/
 import { initKeys } from './ui/keys';
 import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
+import { mountFixtures } from './ui/fixtures';
 import { initWindows, topWindow, windowOffset } from './ui/windows';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
@@ -185,6 +186,7 @@ if (typeof ResizeObserver === 'function') new ResizeObserver(measureDock).observ
 globalThis.addEventListener('resize', measureDock);
 measureDock();
 
+mountFixtures();
 initInventory(game);
 initHistory();
 initConfirm();

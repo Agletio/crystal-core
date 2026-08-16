@@ -15,8 +15,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const file = 'docs/index.html';
 const text = readFileSync(resolve(root, file), 'utf8');
 
-/** Set by JS at runtime, so declared where they are computed. */
+/** Set by JS at runtime, so declared where they are computed. `--fix-*` is the
+ *  generated fixture kit, mounted by `src/ui/fixtures.ts` at boot. */
 const RUNTIME = new Set(['--cols', '--dock-h', '--sx', '--sy', '--wx', '--wy']);
+const runtime = (name) => RUNTIME.has(name) || name.startsWith('--fix-');
 
 const open = text.indexOf(':root {');
 const close = text.indexOf('\n  }', open);
@@ -31,7 +33,7 @@ const problems = [];
 
 const defined = new Set([...declarations.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
 for (const [, name] of rest.matchAll(/var\((--[a-z0-9-]+)/g)) {
-  if (!defined.has(name) && !RUNTIME.has(name)) problems.push(`${name} is used but never defined`);
+  if (!defined.has(name) && !runtime(name)) problems.push(`${name} is used but never defined`);
 }
 
 const before = text.slice(0, close).split('\n').length; // a hex 'somewhere' is a hunt
