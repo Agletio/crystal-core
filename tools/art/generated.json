@@ -594,6 +594,13 @@
    "tiles": 1.6,
    "tone": 0.15,
    "dull": 0.22
+  },
+  {
+   "id": "lampshelf",
+   "object": "5322399a-9b22-42c8-90a4-d7f84b08ceb9",
+   "tiles": 1,
+   "tone": 0.2,
+   "dull": 0.45
   }
  ]
 }

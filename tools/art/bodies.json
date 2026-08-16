@@ -618,7 +618,7 @@
   },
   {
    "id": "bench",
-   "tiles": 1,
+   "tiles": 1.5,
    "tone": 0.25,
    "dull": 0.4,
    "say": "a plain low work table of DARK BROWN almost BLACK wood, seen from HIGH ABOVE looking down — a simple rectangular timber top on four straight legs, bare except for two or three small dark iron shapes lying on it. SIMPLE and CHUNKY with FEW COLOURS and BIG readable shapes: flat blocky shading, hard edges, almost no small detail, no clutter, no ornament, no highlights. The wood is DARK COLD BROWN, #2E2419 in shadow and #4A3A28 where the light reaches, grimy and worn. NOT pink, NOT salmon, NOT red, NOT mauve, NOT purple, NOT lilac, NOT warm, NOT pale, NOT light, NOT ornate, NOT busy, NOT detailed, NOT shiny.",
@@ -674,6 +674,16 @@
    "tone": 0.15,
    "dull": 0.22,
    "say": "a large brass orrery standing on the floor, seen from HIGH ABOVE looking down — nested rings and curved arms of dull tarnished brass carrying small spheres of dark stone and pale crystal around a central boss, mounted on a heavy dark timber base. Grimy, stained and old but CARED FOR — a place somebody works, not a ruin. NOT bright, NOT clean, NOT new, NOT painted, NOT colourful."
+  },
+  {
+   "id": "lampshelf",
+   "tiles": 1,
+   "tone": 0.2,
+   "dull": 0.45,
+   "detail": "low detail",
+   "shading": "flat shading",
+   "size": 64,
+   "say": "a tall narrow wooden shelf unit of DARK BROWN almost BLACK wood seen from HIGH ABOVE looking down, its three or four shelves lined with finished LANTERNS of black iron and amber glass standing in a row, two of them faintly lit, with a few loose glass panes and iron rings beside them. SIMPLE and CHUNKY with FEW COLOURS and BIG readable shapes: flat blocky shading, hard edges, almost no small detail. The wood is DARK COLD BROWN, #2E2419 in shadow and #4A3A28 where the light reaches. NOT books, NOT a bookcase, NOT scrolls, NOT paper, NOT pink, NOT salmon, NOT mauve, NOT pale, NOT ornate, NOT busy, NOT detailed."
   }
  ],
  "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask — and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."

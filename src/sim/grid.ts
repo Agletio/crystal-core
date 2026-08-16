@@ -653,6 +653,7 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   const grid = new Grid(plan.room.x + plan.room.w + 2, plan.room.y + plan.room.h + 2);
   const spare = [...plan.props, plan.entrance, plan.stands];
   carveRoom(grid, plan.room, CUT[theme] ?? 'dug', spare);
+  if (zone) fitCorners(grid, zone); // or the floor runs up into the wall
 
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
