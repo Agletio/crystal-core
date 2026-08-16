@@ -1506,122 +1506,150 @@ plinth or orrery, and still reaches whoever is waiting in every one of them.
 `comments`, `typecheck`, `demo`, `build`, `shots`. `demo` is the one that
 matters: it drives `block` directly and walks every scene end to end.
 
-### Phase 2 — ONE art direction: the shell is lamplit stone
+### Phase 2 — The shell becomes BUILT THINGS, not styled rectangles
 
-**The user's call, and it is the whole phase:** *"we need to redo the entire ui.
-I want the same functionality it all has now but designed to match the theme of
-the new fissure art and the enemies in the fissure. Currently it clashes I want
-a more rpg fantasy theme. Im talking literally everything, character, skills,
-the background of the skill tree, the title screen crystal core logo, the ui
-button rail in the bottom right literally everything."*
+**The user's call, and the second half is the phase:** *"we need to redo the
+entire ui... designed to match the theme of the new fissure art and the enemies
+in the fissure. Currently it clashes I want a more rpg fantasy theme... literally
+everything."* Then, on seeing a colour-only plan: *"I wasn't talking about just
+the colors I'm talking shape too. Like instead of all sprayer buttons in the
+bottom right an actual designed bar like wow/poe does with buttons on top of
+that. Apply that logic to everything else."*
+
+**So this is not a re-skin and the token pass is the SMALL part of it.** Every
+cluster of controls becomes a designed FIXTURE — a piece of built furniture with
+art of its own — and the controls sit IN it. A styled rectangle in the right
+colours is the thing being rejected.
 
 #### What is true today
 
-The map is now generated pixel art: a pale sandstone floor under near-black
-bone monsters, warm amber lamps, dark oiled timber. The SHELL around it was
-designed before any of that existed and is a cool near-black terminal —
-`--void: #0C0B0E`, `--matrix: #1B1922`, `--seam: #2E2B3A`, a violet-grey `--dust:
-#877F8C` — with hairline 1px borders and a monospace face. The two do not belong
-to one world.
+Every panel is a CSS box: a background colour, a 1px border, a radius. There is
+no art anywhere in the shell — the only drawn things are the map, the icons and
+`titleart.ts`. Concretely, the pieces that are floating rectangles right now:
 
-The surface is bigger than it looks and it is ALL in two files:
-
-- **`docs/index.html`** — 2,029 lines, ~436 distinct class selectors and ~197
-  ids. Every token is in its `:root`, and it carries its own comment budget
-  share (25%, `SHARE_BY_FILE` in `tools/comment-budget.mjs`) because it is
-  mostly stylesheet.
-- **`src/ui/`** — 34 modules. The full list, so nothing is missed:
-  `badge` `character` `confirm` `craft` `crystals` `flaskart` `glossary`
-  `graft` `haul` `history` `icons` `inventory` `itemcard` `keys` `menu` `met`
-  `pick` `rail` `run` `savedata` `screenicons` `shop` `skills` `speech`
-  `stash` `title` `titleart` `toast` `tooltip` `trade` `wear` `webart`
-  `welcome` `windows`.
-
-Three of those are ART rather than layout and each needs redrawing, not
-restyling: `icons.ts` (every item, currency and skill glyph), `screenicons.ts`
-(the rail's glyphs), `webart.ts` (the studs and gems both webs are built from).
-`titleart.ts` paints the title's two-world wall and is already generated stone.
+- **The rail** (`src/ui/rail.ts`, `.dock`): a grid of square buttons in the
+  bottom-right corner with nothing behind them. This is the example the user
+  gave.
+- **The HUD** (`.corner` bottom-left): life and mana as plain `<div>` bars, and
+  a level number.
+- **The three skill slots and the flasks**: bordered squares in a row.
+- **The XP bar**: a 3px strip across the floor of the window.
+- **Every window** (`.modal__card`): a rectangle with a header row.
+- **Both webs** (`skills.ts`, `trade.ts`, `webart.ts`): nodes on a flat
+  background with no surface behind them.
+- **Item cards and tooltips** (`itemcard.ts`, `tooltip.ts`): bordered boxes.
+- **The title logo** (`.title__logo`): a styled `<h1>`, not a mark.
 
 #### Why it is wrong
 
-The game now has a look, and the frame around it argues with the look. One of
-them has to move, and it is not the art.
+The game's own art is generated pixel art with weight and light in it. The shell
+is a wireframe in a nice palette. A rectangle does not become a fantasy UI by
+being brown.
 
-#### Decisions
+#### The load-bearing decision, to make FIRST
 
-- [ ] **Tokens first, and nothing hard-codes a colour.** `npm run theme`
-      (`tools/theme-check.mjs`) already fails a colour written by hand and a
-      token nobody defines — so re-inking `:root` is the whole retheme for
-      anything that obeyed it. Run it FIRST to find what does not.
-- [ ] The frame's palette is the Fissure's own: warm near-black stone, amber
-      lamplight, dark oiled timber, tarnished brass. The MAP's tokens
-      (`--rock`, `--floor`, `--rock-deep`, the damage ramps) are read by the
-      renderers and must keep their names and their meanings.
-- [ ] A face that is not monospace for prose. The two webfonts have NEVER
-      rendered in a screenshot this repo takes, so whatever is chosen must look
-      right in the FALLBACK — design against the fallback, not the webfont.
-- [ ] Borders, corners and buttons: carved stone and metal rather than 1px
-      hairlines.
-- [ ] `logo.ts` does not exist — the title's "Crystal Core" is a styled `<h1>`
-      (`.title__logo`) in `docs/index.html`. It becomes drawn art, in grid form
-      like every other icon, so it is inks-out-of-CSS rather than a font.
-- [ ] The rail (`rail.ts`, `screenicons.ts`) and its glyphs redrawn. **Its
-      button IDS are what every harness names** — `open-craft`, `open-shop`,
-      `open-haul`, `open-crystals`, `open-stash`, `open-inventory`,
-      `open-character`, `open-skills`, `open-trade`, `open-history`,
-      `open-save` — so the ids outlive the redesign.
-- [ ] The skill web and trade web backgrounds, and the studs in `webart.ts`.
-- [ ] Item cards, tooltips, the glossary's `.kw` mark, badges, toasts.
+**How is a fixture drawn, given the shell is HTML and the art is pixel art?**
+Everything else waits on this, and getting it wrong means doing the whole phase
+twice. The candidates:
+
+1. **Generated art as `border-image` 9-slices.** A frame generated once per
+    fixture, sliced so it stretches to any size. Keeps the layout in CSS, which
+    is where every panel already is, and survives a window being dragged or
+    resized. Costs one generation per frame shape.
+2. **Grid art in the DOM**, the way icons already work — `src/ui/icons.ts`
+    builds inline SVG from rows of characters, inks out of CSS. Consistent with
+    everything else drawn in this repo and re-inks with the tokens for free,
+    but a frame that must stretch is not what a fixed grid is good at.
+3. **A canvas per fixture**, like `titleart.ts`. Total freedom, but it puts
+    layout in JS and the panels are already laid out in CSS.
+
+Pick ONE and write it down here before drawing anything. `1` is the likely
+answer for frames and `2` for glyphs and the logo, but that is a guess and this
+phase should not start on a guess.
+
+#### Decisions — the FIXTURES
+
+Each of these is "what object is this, physically", not "what colour is it".
+
+- [ ] **The rail becomes an action bar.** One carved plate — stone, iron
+      banding, lamplit rim — with the buttons SET INTO sockets in it, the way
+      WoW and PoE build one. Its button ids do not change: `open-craft`,
+      `open-shop`, `open-haul`, `open-crystals`, `open-stash`,
+      `open-inventory`, `open-character`, `open-skills`, `open-trade`,
+      `open-history`, `open-save`. Every harness names them.
+- [ ] **Life and mana become vessels**, not bars — shaped, with the fill inside
+      a container that has edges and depth, mounted in a bracket.
+- [ ] **The flasks sit in something** — a belt, a bandolier, a rack — rather
+      than floating side by side.
+- [ ] **The three skill slots are sockets** in the same fixture family as the
+      action bar, so the bottom of the screen reads as one built object.
+- [ ] **The XP bar is a channel set into the frame**, with ends.
+- [ ] **A window is a panel**: a carved head with the title cut into it,
+      corner fittings, a shaped close, and a body that reads as a surface.
+      Dragging already works (`windows.ts`, `--wx`/`--wy`) and must keep
+      working, so the frame must survive being moved and resized.
+- [ ] **Both webs get a SURFACE** — rock face or hide — and their nodes become
+      sockets cut into it. `webart.ts` is where the studs and gems are built.
+- [ ] **Item cards and tooltips become plates or labels** with a shape.
+- [ ] **The title mark is drawn art** — a cut gem and a carved wordmark — not a
+      styled `<h1>`. Neither webfont has ever rendered in a screenshot this
+      repo takes, so it must be right in the FALLBACK.
+- [ ] **The token pass** — warm stone, amber lamplight, oiled timber, tarnished
+      brass — comes with all of the above, not instead of it.
 
 #### No stragglers — how to PROVE it, rather than believe it
 
-This is the part that is easy to get wrong: a screen nobody opened in testing
-keeps the old look and nobody notices for a month.
+A screen nobody opened keeps the old look for a month.
 
-- [ ] **Enumerate before styling.** Write the list of every `.modal`, every
-      panel and every floating layer out of `docs/index.html` and tick them
-      off. 197 ids and 436 selectors is the haystack; the list is the needle.
-- [ ] **Every screen must appear in `shots.mjs`.** It currently shoots
-      `welcome` `pick` `fissure` `crystals` `sheet` `slots` `handover`
-      `descent` `scene` `speech` `lampwright` `skills` `skill-web` `move-web`
-      `trade` `bench` `tooltip`. Anything reachable and NOT in that list is a
-      screen the retheme can silently miss — add a shot for each one FIRST, so
-      the before/after is visible.
-- [ ] **Grep for orphans at the end**: any selector in `docs/index.html` that
-      no module and no markup references is dead CSS from the old shell, and
-      dead CSS is exactly how an old look survives hidden. Cut it.
-- [ ] **`npm run theme` must be green**, which proves no hand-written colour
-      escaped the tokens.
+- [ ] **Enumerate before drawing.** `docs/index.html` is 2,029 lines with ~436
+      distinct class selectors and ~197 ids; `src/ui/` is 34 modules: `badge`
+      `character` `confirm` `craft` `crystals` `flaskart` `glossary` `graft`
+      `haul` `history` `icons` `inventory` `itemcard` `keys` `menu` `met`
+      `pick` `rail` `run` `savedata` `screenicons` `shop` `skills` `speech`
+      `stash` `title` `titleart` `toast` `tooltip` `trade` `wear` `webart`
+      `welcome` `windows`. Tick every one.
+- [ ] **Every reachable screen appears in `shots.mjs` BEFORE the redesign
+      starts**, so the before/after is visible. It covers `welcome` `pick`
+      `fissure` `crystals` `sheet` `slots` `handover` `descent` `scene`
+      `speech` `lampwright` `skills` `skill-web` `move-web` `trade` `bench`
+      `tooltip` today — anything reachable and missing is a screen the
+      redesign can silently skip.
+- [ ] **Grep for unreferenced selectors at the end.** Dead CSS is exactly how
+      an old shell survives hidden. Cut it.
+- [ ] **`npm run theme` green**, which proves no hand-written colour escaped.
 
 #### Traps
 
 - **The MAP's tokens are not the FRAME's.** `paletteFrom`/`readPalette` in
   `src/render/renderer.ts` read `--rock`, `--floor`, `--ember`, `--citrine` and
   the rest off the live document, and both renderers and every icon resolve
-  their inks through it. Re-inking those re-inks committed ART. Change the
-  frame's tokens; leave the map's alone unless the change is intended.
-- **`docs/app.js` is committed and Cloudflare runs no build.** A retheme that
-  touches any `src/` file must ship a rebuilt bundle.
-- **`.modal` paints no scrim and is `pointer-events: none`** with its card
-  `auto`; `.modal--stop` is the exception. Restyling must not make a window
-  eat the map's pointer — `shots.mjs` has a probe for exactly this
-  (`mapProbe`), and it is why that probe exists.
-- **The comment budget is a DENSITY.** Cutting CSS lowers the allowance in the
-  same file, so prose that fit before can fail after.
-- **Do not renumber or rename ids.** `smoke.mjs` clicks them by id.
+  their inks through it. Re-inking those re-inks committed ART.
+- **A fixture must not eat the map's pointer.** `.modal` paints no scrim and is
+  `pointer-events: none` with its card `auto`; art layers behind panels are
+  exactly how that gets broken. `shots.mjs` has `mapProbe` for this and it is
+  why it exists.
+- **Fixtures have to survive being MOVED.** Windows drag; the dock reorders.
+  `npm run drag` is the harness.
+- **The rail draws over every window and scrim on purpose** — it is how a
+  screen is opened and shut. A fixture with its own stacking must keep that.
+- **`docs/app.js` is committed and Cloudflare runs no build**, so any `src/`
+  change ships a rebuilt bundle.
+- **The comment budget is a DENSITY**, and `docs/index.html` has its own 25%
+  share in `SHARE_BY_FILE`. Cutting CSS lowers what its prose is allowed.
+- **Do not rename ids.** `smoke.mjs` clicks them.
 
 #### Done when
 
-Every screen in the game reads as the same world as a descent: warm stone,
-lamplight and metal. `npm run theme` is green, `shots.mjs` covers every
-reachable screen, and no selector in `docs/index.html` is unreferenced.
+The bottom of the screen reads as one built object with controls set into it,
+every window reads as a made panel rather than a div, and no screen in the game
+is still a bordered rectangle. `npm run theme` is green, `shots.mjs` covers
+every reachable screen, and no selector in `docs/index.html` is unreferenced.
 
 #### What must not break
 
 `comments`, `theme`, `typecheck`, `build`, `smoke`, `shots`, `drag`. `smoke`
-proves the ids still answer; `shots` proves the layout still fits and the map
-still takes a pointer; `drag` proves a window still moves and the dock still
-reorders.
+proves the ids still answer; `shots` proves the layout fits and the map still
+takes a pointer; `drag` proves a window still moves and the dock still reorders.
 
 ### Phase 3 — A quest log instead of a pointing finger
 
