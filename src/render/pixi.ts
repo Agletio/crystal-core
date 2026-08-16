@@ -66,6 +66,7 @@ import {
   COVER_DARK,
   COVER_SET,
   COVER_TINT,
+  HUNG_PROPS,
   STAIN_ALPHA,
   STAIN_PROPS,
 } from '../vignettes';
@@ -80,6 +81,12 @@ const EDGE = 4;
 /** A corner's place in the base-three key, high to low. */
 const PLACE = [27, 9, 3, 1];
 const FLOATER_LIFE = 1.1;
+
+/** How far down the cell UNDER a boundary the cut face reaches, measured off
+ *  the set: only its last fifth is ground. Feet clear it; growth ends on it. */
+const FACE_FOOT = 0.81;
+const FOOT_DROP = FACE_FOOT - 0.5 + 0.09;
+const FACE_HANG = 0.6;
 
 export async function createPixiRenderer(
   host: HTMLElement,
@@ -143,8 +150,7 @@ export async function createPixiRenderer(
   /** The generated PROPS. Under everything, and empty on every map but a bare
    *  one — which is every map a player ever runs. */
   const groundLayer = new Container();
-  // The rock tiles and their growth, UNDER the bodies: drawn over them, the
-  // wall sheared the head off anything standing legally against it.
+  // Rock and its growth, UNDER the bodies: over them it sheared off heads.
   const wallLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
@@ -424,7 +430,7 @@ export async function createPixiRenderer(
       const sprite = new Sprite(canvas);
       sprite.anchor.set(0.5, 1);
       sprite.x = prop.x + 0.5;
-      sprite.y = prop.y + 1;
+      sprite.y = prop.y + 1 + (HUNG_PROPS.has(prop.id) ? FACE_HANG : 0);
       sprite.scale.set(art.tiles / canvas.width);
       if (STAIN_PROPS.has(prop.id)) sprite.alpha = STAIN_ALPHA;
       // Five pictures over a whole floor is five pictures over a whole floor,
@@ -556,7 +562,7 @@ export async function createPixiRenderer(
    *  its height below the entity — 1.6 tiles for the Gaunt at `scale` 3.2,
    *  against the 0.9 radius the sim holds it inside the rock by — so it draws
    *  out over the void. A quarter tile proud of the foot, or the feet float. */
-  const anchorY = (e: Entity): number => bodyFoot(e.sprite) - 0.25 / Math.max(0.1, e.scale);
+  const anchorY = (e: Entity): number => bodyFoot(e.sprite) - FOOT_DROP / Math.max(0.1, e.scale);
 
   function spriteFor(e: Entity): Sprite {
     let s = sprites.get(e.id);

@@ -390,6 +390,29 @@ function project(
 }
 
 /**
+ * The web is BUILT ONCE, at this many pixels per unit, and the camera is one
+ * transform over it. Rebuilding it per wheel tick and per pointer move meant
+ * tearing down and re-creating some six hundred elements a frame, which is
+ * what made a web of pixel art stutter. `NODE_R` is already written at 46, so
+ * a node built here is its own art's size.
+ */
+const BUILD = 46;
+
+/** Web coordinates → the built web's own space, which no camera touches. */
+const place = (x: number, y: number) => ({ x: x * BUILD, y: y * BUILD });
+
+/** The camera, as the one attribute a pan or a zoom writes. */
+function applyView(): void {
+  const view = $('skills-web').querySelector('.web__view');
+  if (!view) return;
+  const box = viewport();
+  const k = scale / BUILD;
+  const tx = box.width / 2 - panX * scale;
+  const ty = box.height / 2 - panY * scale;
+  view.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})`);
+}
+
+/**
  * What the node adds to the skill's mana cost, in its own words. Printed from
  * the grant rather than written into every description, so the line and the
  * number the sim charges cannot come apart.
@@ -407,15 +430,17 @@ function renderWeb(): void {
   const skillId = viewing;
   if (!skillId) return;
 
-  const box = viewport();
+  // Everything goes in ONE group, built in the web's own space; the camera is
+  // that group's transform and nothing here is rebuilt to move it.
+  const view = svgEl('g', { class: 'web__view' });
   const skill = SKILL_BY_ID[skillId];
   const progress = skillProgress(game.character, skillId);
   const nodes = treeFor(skillId);
   const spare = treePointsFor(skillId, progress.level) - progress.allocated.length;
   const taken = new Set(progress.allocated);
 
-  const at = (n: SkillNodeDef) => project(n.x, n.y, box);
-  const middle = project(0, 0, box);
+  const at = (n: SkillNodeDef) => place(n.x, n.y);
+  const middle = place(0, 0);
 
   // Edges first, so nodes sit on top of them. Drawn once per pair — every link
   // is undirected, so drawing both ends would double every stroke and make the
@@ -441,8 +466,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = (NODE_R[node.kind] * scale) / 46;
-      const rTo = other === CENTRE ? HUB_R * (scale / 46) : (NODE_R[other_!.kind] * scale) / 46;
+      const rFrom = (NODE_R[node.kind] * BUILD) / 46;
+      const rTo = other === CENTRE ? HUB_R * (BUILD / 46) : (NODE_R[other_!.kind] * BUILD) / 46;
       const a = { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom };
       const b = { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo };
 
@@ -456,16 +481,16 @@ function renderWeb(): void {
 
   // The chain alone, straight onto the ground: a casing under it read as a
   // black box around every run of links.
-  const casing = Math.max(3, scale * 0.14);
+  const casing = Math.max(3, BUILD * 0.14);
   for (const l of links) {
     for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
-      svg.append(link);
+      view.append(link);
     }
   }
 
   // The middle: the skill itself, and the tooltip explaining its numbers.
   const hub = svgEl('g', { class: 'web__centre' });
-  const hubR = HUB_R * (scale / 46);
+  const hubR = HUB_R * (BUILD / 46);
   for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
   const art = skillIcon(skillId, hubR * 1.25);
   art.setAttribute('x', String(middle.x - hubR * 0.62));
@@ -474,19 +499,11 @@ function renderWeb(): void {
   art.setAttribute('height', String(hubR * 1.25));
   hub.append(art);
   attachTooltip(hub, () => skillSummary(skill).join('\n'));
-  svg.append(hub);
+  view.append(hub);
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = (NODE_R[node.kind] * scale) / 46;
-    // Nothing gained by building DOM for a node three screens away.
-    if (
-      pos.x < -r * 2 || pos.y < -r * 2 ||
-      pos.x > box.width + r * 2 || pos.y > box.height + r * 2
-    ) {
-      continue;
-    }
-
+    const r = (NODE_R[node.kind] * BUILD) / 46;
     const owned = taken.has(node.id);
     const reachable = canAllocate(skillId, node.id, progress.allocated);
     const open = reachable && spare > 0;
@@ -502,7 +519,8 @@ function renderWeb(): void {
       tabindex: '0',
       role: 'button',
       'data-node': node.id,
-      // A stud is a stack of paths with no centre of its own to read back.
+      // Where it sits in the WEB, which a camera never changes: a stud is a
+      // stack of paths with no centre of its own to read back.
       'data-x': pos.x.toFixed(1),
       'data-y': pos.y.toFixed(1),
     });
@@ -542,7 +560,7 @@ function renderWeb(): void {
       if (dragged) return;
       // A node that asks a question never answers it for you.
       if (node.choices && (owned || open)) {
-        openChoice(node, pos, owned);
+        openChoice(node, owned);
         return;
       }
       if (owned) {
@@ -565,9 +583,13 @@ function renderWeb(): void {
         act();
       }
     });
-    svg.append(group);
+    view.append(group);
   }
 
+  // Attached once it is whole, then aimed: a group built into the document is
+  // a layout pass per element added to it.
+  svg.append(view);
+  applyView();
 }
 
 /**
@@ -577,12 +599,15 @@ function renderWeb(): void {
  * mean picking the wrong one first costs a point to undo, which is a tax on
  * finding out what a thing does rather than a decision about your build.
  */
-function openChoice(node: SkillNodeDef, pos: { x: number; y: number }, owned: boolean): void {
+function openChoice(node: SkillNodeDef, owned: boolean): void {
   const host = $('skills-choice');
   const skillId = viewing!;
   const progress = skillProgress(game.character, skillId);
   host.replaceChildren();
   host.hidden = false;
+  // Projected HERE rather than carried on the node: the web is built once, so
+  // what a node knows about itself is where it sits in the web, not on screen.
+  const pos = project(node.x, node.y, viewport());
   host.style.left = `${Math.round(pos.x + 18)}px`;
   host.style.top = `${Math.round(pos.y - 12)}px`;
 
@@ -694,7 +719,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
   ($('skills-back') as HTMLButtonElement).onclick = back;
   ($('skills-fit') as HTMLButtonElement).onclick = () => {
     fit();
-    renderWeb();
+    applyView();
   };
 
   const svg = $('skills-web');
@@ -721,7 +746,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
       panY = before.y - py / scale;
       hideTooltip();
       closeChoice();
-      renderWeb();
+      applyView();
     },
     { passive: false }
   );
@@ -759,7 +784,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
     panY -= dy / scale;
     from = { x: e.clientX, y: e.clientY };
     hideTooltip();
-    renderWeb();
+    applyView();
   });
   const release = () => {
     from = null;

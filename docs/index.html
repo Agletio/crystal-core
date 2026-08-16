@@ -1510,9 +1510,13 @@
   /* Chain over the casing: rusted at rest, lit gold on a taken path. The
      stroke rules are for the drawn fallback; a generated link is a picture,
      so its states are treatments. */
-  .web__chain { stroke: var(--chain-lit); fill: none; image-rendering: pixelated; }
+  /* SMOOTH, not pixelated, and only here: web art is 96px drawn at 76px or
+     less at every zoom the web allows, so it is always MINIFIED — nearest
+     sampling drops and doubles the art's own dark outline rows, which read as
+     black lines across a node at some zooms and not others. */
+  .web__chain { stroke: var(--chain-lit); fill: none; image-rendering: auto; }
   .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
-  .web__node__art, .web__node__img { image-rendering: pixelated; }
+  .web__node__art, .web__node__img { image-rendering: auto; }
   .web__node:hover .web__node__art { filter: brightness(1.25); }
   .web__node--open .web__node__art { filter: drop-shadow(0 0 3px var(--bone)); }
   .web__node--on .web__node__art { filter: brightness(1.35) drop-shadow(0 0 3px var(--citrine)); }

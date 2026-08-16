@@ -139,8 +139,13 @@ is what keeps its feet at the cliff's base.
  `bodyFoot` in
 `src/render/sprites.ts` is where a sprite's ink ENDS as a fraction of its grid,
 measured over every frame beside `bodyTop`, and `anchorY` in `pixi.ts` is that
-less a quarter tile — so the drawing hangs 0.25 tiles below the entity whatever
-its `scale` is. Anchored at the CENTRE it hung half its height: 0.63 tiles for
+less `FOOT_DROP` — so the drawing hangs that far below the entity whatever its
+`scale` is. **The number comes off the ART, not off the tile.** `FACE_FOOT` is
+how far down the cell UNDER a boundary the cut face reaches, MEASURED on the
+shipping set: 0.81, so only the last fifth of the tile a body stands on at a
+north wall is ground at all. At the old quarter tile a foot landed at 0.75 and
+drew ON the cliff — the floating the user reported — so `FOOT_DROP` is
+`FACE_FOOT - 0.5` plus room for the half-tile of drift `fits` allows. Anchored at the CENTRE it hung half its height: 0.63 tiles for
 the hero, 1.33 for the Gaunt, against the 0.7 radius the sim keeps it inside the
 rock by, so a body standing legally on the last floor tile drew a long way out
 over the void. The life bar reads the SAME anchor, or every bar detaches from
@@ -272,7 +277,9 @@ rate better than twice what it was, since it is the only thing left standing on
 a descent and carries the wall alone. Three rather than one because a run of cut
 face is where a single picture repeats within sight of itself. It is placed INTO
 rock, on a RUN of it rather than a one-tile nub, and drawn side-on because that
-is the one surface seen from the side. A torch or a
+is the one surface seen from the side. It hangs `FACE_HANG` past its own cell's
+foot, because the face spans TWO cells: ended at its own cell it stopped
+halfway up the wall, and placed a tile lower it lay on the floor. A torch or a
 body hanging there is `HUNG_PROPS`: placed by hand, never scattered, since a
 lit torch on a wall nobody stands near is a bucket in the middle of a room.
 
@@ -828,6 +835,17 @@ and the `wn_*` icons in `GENERATED_ICONS` are the pictures inside, picked by
 `src/ui/webicons.ts` off the node's own words. `src/ui/webart.ts` keeps drawn
 fallbacks for a missing piece, and how a web is WALKED lives in
 `src/webgraph.ts`, over any list of nodes.
+
+**A skill web is BUILT ONCE and the camera is one transform over it.** Every
+node, chain link and frame goes into a single `.web__view` group in the web's
+own space at `BUILD` pixels per unit; a scroll or a drag writes that group's
+`transform` and nothing else. Rebuilding it per event — some three hundred
+`<image>` elements torn down and re-created — is what made a web of pixel art
+stutter, and it also meant nothing off screen was built, so what was DRAWN was
+a DOM question rather than a camera one. Node art is drawn SMOOTH and not
+`pixelated`, alone among the game's art: 96px pieces are minified at every
+zoom the web allows, and nearest sampling dropped and doubled their own dark
+outline rows, which read as black lines across a node at some zooms only.
 
 ## What a skill costs
 
