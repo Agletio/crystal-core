@@ -13,15 +13,16 @@ ends, the ground and everything standing on it, and it reads as one art era.
 Open question 8 is closed with it: a body asked DARK separates from all four
 zone floors, so nothing is re-inked and nothing is generated per zone. **The
 Demonic and Prismatic pools are still hand-drawn** and are in the backlog, not
-in a phase — twelve more bodies is about 14 MB of source, which is a `RULES.md`
-decision rather than a job.
+in a phase — twelve more bodies is about 800 generations and a lot of judging,
+which is a job nobody has asked for rather than a `RULES.md` decision.
 
 **Before generating anything else, read "The process, as it now stands" and
 "Doing this a thousand times" below.** The first is the runbook and the second
 is every pitfall that has already cost time — the ten-job account-wide limit, a
 refusal that arrives as text rather than an error, a dedup keyed on the first
-thirty characters of a description, characters that vanish from the server, and
-the source size, which is the real ceiling rather than the generation budget.
+thirty characters of a description, and characters that vanish from the server.
+The GENERATION budget is the ceiling; the source size is not, and this file said
+otherwise for months.
 
 **ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** Four
 sets, one per zone, each asked off that zone's own line in `MAP_THEMES`. The
@@ -45,6 +46,13 @@ everything else bites — and the pip over a shooter's head is gone with
 `castsVisibly`. A family with no thrower deals about HALF what it did, measured,
 so that is a mechanism rule and not a balance one.
 
+**THE HERO IS HIS TRADE, and the doll is gone.** Both trades carry a whole
+generated body of their own — the Alchemist broad in a burned apron, the
+Aethermancer starved and hung with violet phials — `wanderer` is what a
+character with no trade is drawn as, and `gear-art.ts`, `look.ts`, `body.ts`,
+`pose.ts` and the `Look` type went with the requirement that needed them. The
+phase that held all of that is finished and deleted.
+
 **NOTHING STANDS IN A PUDDLE ANY MORE.** The ground the generator paints under
 a body is cut at IMPORT by three rules — `defloor` by colour, `deslab` by shape,
 `loose` for what is left unjoined — and the Dragger, the Shroud and the Gaunt
@@ -62,14 +70,7 @@ only: east/west overhang is width and the user has not asked for it.
 is why a pack no longer reads as props, and it is what a walk/run split would
 have needed — the split is now possible and still not built.
 
-**THE HERO IS GENERATED AND HE IS IN A DESCENT.** `wanderer` — a starved man
-bare-headed with his clothes gone, six states over five facings — is what a
-character with no trade is drawn as, and `heroSpriteFor` in
-`src/sim/appearance.ts` is the whole seam. The doll is untouched underneath and
-stays the fallback until every trade has a look. **What is left of Phase 1 is
-the two trade looks, and they are blocked on open question 10.**
-
-**APPEARANCE IS PER TRADE, and that deleted the hard part.** *The user's call:
+**APPEARANCE IS PER TRADE, and it is BUILT.** *The user's call:
 "Ok maybe let's just scratch the per equip and make it per trade? Like custom
 appearance for each trade? I want to have like 10 trades eventually but we only
 have two now."* Equipped gear no longer changes the sprite. A trade look is a
@@ -964,15 +965,15 @@ look is a row in `GENERATED` like every other body.
   and a `create_character_state` of it inherits the size for good. **`body.mts
   rotate` resamples the design to `size` before sending it**, which is the fix;
   the re-rotation cost 2 generations and came back 96x96.
-- **THE SOURCE SIZE IS THE WALL, not the generation budget.** SIX bodies are
-  **4.67 MB** of `generated-art.ts` — about **0.8 MB per body** at grid 96. It
-  gzips ~19:1 so the wire is fine, but the REPO carries the raw megabytes and
-  `docs/app.js` is committed because Cloudflare runs no build. **Twelve more —
-  the Demonic and Prismatic pools — would be about 14 MB, which is past what
-  this format should carry.** At that point it is a decision: fewer states,
-  fewer frames per state, a smaller grid, or giving up "no binary assets",
-  which is a `RULES.md` change and the user's call. Do not walk into it by
-  accident.
+- **THE SOURCE SIZE IS NOT THE WALL, and this file said it was for months.**
+  Measured: `generated-art.ts` is **0.48 MB for TEN bodies** — 33-52 KB each at
+  grid 48, 120 KB for the Gaunt at grid 96 — and `docs/app.js` is 1.62 MB, 0.43
+  gzipped. The **4.67 MB for six** and **0.8 MB per body** written here and in
+  `RULES.md` are from the era when every body was grid 96, and a body's cost is
+  its grid SQUARED times its frames, so re-gridding to how big a body is DRAWN
+  cut it fourfold and nobody re-measured. Twelve more bodies is about 0.5 MB,
+  not 14. **The generation budget is the real cost** — measured at 203 for
+  three bodies. Nothing about "no binary assets" is under pressure.
 - **A body costs ~68 GENERATIONS, not the ~30 this file used to say.** Measured
   over three: 203 generations for 9 designs, 6 rotations, 15 single-facing
   animations and 60 fills — 90 calls, because a v3 animation is more than one
@@ -1377,148 +1378,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A generated hero, and his TRADE is what he wears
-
-**The user's call, and it replaces the requirement this phase was built around.**
-*"Ok maybe let's just scratch the per equip and make it per trade? Like custom
-appearance for each trade? I want to have like 10 trades eventually but we only
-have two now."* So a helm swap no longer has to show, and **what a character
-looks like is what they have BECOME, not what they picked up.**
-
-That is not a smaller version of the old phase — it deletes the hard part. A
-trade look is a WHOLE BODY, which is the monster pipeline, already built and
-paid for six times over. No layers, no crops, no anchors, no per-slot bands.
-
-**What it costs the player, said out loud rather than discovered:** equipped
-gear stops changing the sprite. A helm is a stat line and a tooltip, and the
-only thing on screen that reads as identity is the trade. That is the trade
-being made, and `RULES.md` already argues the same way about a trade — it is
-funded by character level, it survives every skill you ever swap to, and it is
-the part of a character that is not the skill.
-
-#### The base man is DONE and he is in the game
-
-Bare-headed, wrecked clothes, no pack, six states over five facings, walking a
-real Fissure. `wanderer` in `GENERATED`, `heroSpriteFor` wired, whole suite
-green. **What is left of this phase is the two trade looks, and they are blocked
-on open question 10** — what an Alchemist and an Aethermancer should look like.
-
-#### What is true today
-
-| | |
-|---|---|
-| `heroSpriteFor` in `src/sim/appearance.ts` | trade's sprite → base man → doll; `run.ts` sets `look` only for the doll |
-| `heroArt` in `src/render/sprites.ts` | draws `'hero'` from `HERO_FRAMES` at `DOLL_GRID` 24 |
-| `src/render/gear-art.ts` | **1,409 lines** of armour and weapons layered over him |
-| `src/render/look.ts`, `lookOf` in `src/sim/appearance.ts` | equipped → `Look`, and `Look` → rows |
-| `Character.trade` | `string \| null`, and `TRADES` in `src/trades.ts` holds two |
-| `GENERATED` in `src/render/generated-art.ts` | where a generated body lives; `monsterArt` reads it off the sprite id |
-
-**Nothing but the map draws the doll.** Swept: outside `look.ts` and
-`gear-art.ts` themselves, the only readers of `HERO_FRAMES`, `lookRows` and
-`drawLook` are `src/demo.ts`'s own sweeps. No screen, no icon, no portrait. So
-the doll and its gear layers are deletable in one go once this ships — about
-1,700 lines and the whole `Look` concept.
-
-#### The shape
-
-**A trade is a sprite id, and no trade is the base man.** `heroSpriteFor(character)`
-answers `wanderer` when `character.trade` is null and the trade's own sprite
-otherwise, and `run.ts` sets `sprite` off it and stops setting `look` at all.
-Everything downstream already works — `monsterArt` finds a generated body by id,
-`makeSheet` memoises per sprite, `animates()` is true for anything in
-`GENERATED`. A tradeless character being the ragged man is the right default and
-costs nothing: you start as nobody, and taking up a trade is what dresses you.
-
-**A trade look is a STATE of the base man, never its own design.**
-`create_character_state` applies one edit across every rotation of an existing
-character for one charge, keeps identity, body type and proportions, and hands
-back a character that inherits the skeleton for animations. So every trade is
-recognisably the same man in different kit, for 40 generations, and none of them
-can drift into being a different person.
-
-#### What it costs
-
-| | generations | source |
-|---|---|---|
-| the base man: 4 designs, rotated at 96 | **6, spent** — `03409711-a63b-49c6-a548-ac74aacef259` | |
-| his six states, three of them re-rolled | **~110, spent** | **1.3 MB, measured** |
-| each trade: one state + its animations | 40 + ~110 = **~150** | ~1.3 MB |
-| ten trades eventually | ~1,500 | **~13 MB** |
-
-**The generation budget is not the problem and the SOURCE SIZE is.** Six
-monsters are 4.67 MB and the hero added 1.3 — he ships 21 frames a facing where
-they ship 14, and he has six states where they have five. Ten trade looks on top
-of that is about 13 MB, and this file already calls ~14 MB past what the format
-should carry. **Two looks is comfortable, ten is not**, and the answer is a
-decision rather than a technique — fewer frames per state, a smaller grid for
-looks than for bodies, or giving up "no binary assets", which is a `RULES.md`
-change and the user's call. **Deleting the doll buys ~1,700 lines back, which is
-real but is not megabytes.** The lever is `BodySpec.frames`: it is the count
-KEPT rather than the count generated, so trimming a body costs nothing and the
-hero went 36 frames a facing to 21 for free.
-
-#### Decisions
-
-- [x] **Animate the base man** — done: six states over five facings, judged on
-      one facing first, three of them re-rolled. He is in a descent.
-- [x] **`heroSpriteFor(character)` in `src/sim/appearance.ts`** — done, and
-      `run.ts` sets `look` only for the doll.
-- [x] **A trade names its own sprite** — `TradeSpec.sprite`, done. Neither trade
-      carries one, so everyone is the base man.
-- [x] **Measure the first body's source cost** — 1.3 MB at 21 frames a facing.
-- [ ] **The Alchemist and the Aethermancer get a look each**, written as an
-      `OUTFITS` entry apiece in `dress.mts` and generated off the base man
-      (`03409711-a63b-49c6-a548-ac74aacef259`) with `dress.mts <look> --state`.
-      **What they should LOOK like is open question 10 and this is blocked on
-      it.** Each is then animated exactly as the base man was.
-- [ ] **Answer the source-size question before the third look.** Two looks is
-      2.6 MB and fine; ten is about 13 MB and is not. Fewer frames, a smaller
-      grid for looks, or the no-binary-assets rule — the user's call, and it
-      wants the number from look one and look two in hand.
-- [ ] **Delete the doll** — `gear-art.ts`, `look.ts`, `lookOf`, `Look`,
-      `WornPiece`, `HERO_FRAMES`, `POSES`, `SWING_POSES`, `src/render/body.ts`
-      and `src/render/pose.ts`, and the demo sweeps that read them. **Last, and
-      only once EVERY trade has a look** — until then a trade with no sprite
-      falls back to the base man, and that fallback is the doll's replacement
-      rather than the doll itself.
-
-#### Traps
-
-- **The doll is not deletable until the replacement is in a descent.** It is the
-  only thing that draws the hero today, and `shots` is what proves he still
-  draws.
-- **`Look` is in `src/types.ts` and the sim carries it** on `Entity.look`.
-  Removing it touches `run.ts`, `pixi.ts` and `demo.ts` together — do it in one
-  commit or the typecheck is red in the middle.
-- **The hero would lose the runtime palette**, as the monsters did. He is on
-  screen in every zone, so say it out loud rather than discovering it.
-- **A generated body is drawn at its own `scale`**, 1.35-1.9 rather than the
-  doll's 1, because it spans about 69% of its grid. A hero left at 1 renders a
-  third smaller than the pack he stands in.
-- **A state inherits its source's SIZE**, so the base man being at 96 is what
-  keeps every trade look at 96. He was first rotated at 128 — the reference
-  image's size beats the `size` argument — which is 1.78x the source per body
-  and two generations a direction to animate. `body.mts rotate` resamples the
-  design to `size` before sending it now, and re-rotating cost 2.
-- **Anything that must MATCH goes in one call.** A look is one
-  `create_character_state`; asking for its helm and its coat separately is two
-  different helms.
-- **A measured character has NO trade** and `ladderCharacter` does not take one
-  up, so every headless harness draws the base man. That is correct and must
-  stay — it also means no balance number moves in this phase.
-
-#### Done when
-
-A character with no trade walks a descent as the generated ragged man, and
-taking up the Alchemist or the Aethermancer visibly changes who is on screen.
-
-#### What must not break
-
-`comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. `demo` sweeps every
-frame that ships for being reached and every monster for resolving in exactly
-one art table — the hero joins both. `shots` is what proves he draws.
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
@@ -1682,19 +1542,29 @@ Every one is parked deliberately. Ask before acting on any of them.
    a quarter, no near wall. Nothing is blocked on it and it was never asked for
    twice; it is here so nobody rediscovers the geometry.
 
-10. **What does an Alchemist LOOK like, and an Aethermancer?** **Phase 1 is
-    blocked on this and on nothing else.** The base man is finished and in the
-    game, and each look is one `OUTFITS` entry plus ~150 generations off
-    `dress.mts <look> --state 03409711-a63b-49c6-a548-ac74aacef259`. But a look
-    is the whole of a trade's identity on screen and it should not be guessed —
-    and it has to READ at the ~87 device pixels the camera lands a body in,
-    where two near-neighbours are the same picture. The two in the game pull
-    opposite ways on paper: the Alchemist is flasks, charges and uptime, the
-    Aethermancer is mana as a second health bar. **Ten eventually**, so whatever
-    separates the first two has to keep separating the tenth — which argues for
-    one loud SILHOUETTE decision each rather than a palette each, the same rule
-    the monster roster settled on. The base man is bare-armed and narrow, so
-    there is room both ways: bulk him out or draw him longer.
+10. **ANSWERED, and the phase it blocked has landed.** Both trades have a look
+    of their own — the Alchemist broad in a burned leather apron over acid
+    green glass and brass, the Aethermancer starved and hung with violet
+    phials — each a whole generated body, each its own silhouette rather than
+    its own palette, and the doll is deleted. What the answer settled for the
+    eight trades still to come is that a look is a SILHOUETTE decision: two
+    near-neighbours at the ~87 device pixels the camera lands a body in are the
+    same picture whatever their colours are.
+
+11. **How many bodies can ship, now that the wall is measured and is not
+    where this file said it was?** `src/render/generated-art.ts` is **0.48 MB
+    for TEN bodies** — 33–52 KB each at grid 48, and 120 KB for the Gaunt at
+    grid 96 — against the 4.67 MB for six and "0.8 MB per body" written all
+    over this file and `CLAUDE.md`. That figure is from the era when every body
+    was grid 96; cost is grid SQUARED times frames, so re-gridding a body to
+    how big it is drawn cut it fourfold and nobody re-measured. **`docs/app.js`
+    is 1.62 MB, 0.43 MB gzipped.** So ten trade looks are about 0.5 MB and the
+    twelve Demonic and Prismatic bodies are about another 0.5 — not the ~13 and
+    ~14 MB this file has been parking both decisions on. Nothing about "no
+    binary assets" is under pressure and there is no decision to take. What is
+    left is a question rather than a wall: **how big does this get before it
+    matters**, and the answer to ask for is a number the user cares about
+    (repo size, parse time on a cold load), not a re-derivation of this one.
 
 **Decisions taken inside the ladder, and what each one beat.** These are mine
 except where marked, made because the ask invited them and the work stalls
@@ -1742,10 +1612,11 @@ without being asked.
 - **The Demonic and Prismatic pools are still hand-drawn, six bodies each.**
   The Normal pool is six generated bodies now, so those two are the mismatch
   the Fissure stopped having — a Rot descent is a generated floor with hand-drawn
-  bodies on it. Twelve more bodies is roughly 800 generations and, more to the
-  point, about 14 MB of `generated-art.ts`, which is past what "every sprite is
-  a list of strings" should carry: see the source-size pitfall above, because
-  going there is a `RULES.md` decision rather than a phase. **Not asked for.**
+  bodies on it. Twelve more bodies is roughly 800 generations, and that is the
+  whole of the cost: measured, they would add about 0.5 MB of
+  `generated-art.ts` rather than the 14 this file used to claim, so it is a
+  generation budget and a great deal of judging rather than a `RULES.md`
+  decision. **Not asked for.**
   The cheaper shape, if it is ever wanted, is to cut those pools to six
   silhouettes each the way Normal was cut, and generate only what survives.
 - **NO zone has furniture of its own, and that is now a decision rather than a

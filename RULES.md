@@ -1098,15 +1098,17 @@ man, which is correct rather than a gap.
 `tables.mts` resamples a state's window down to it, so trimming a body costs no
 generations at all — and the hero shipped 36 frames a facing before anybody
 looked. He is 21 now: the monsters' 14 with more walk and more swing, because he
-is the body on screen every second. **Measured, that is 1.3 MB of source against
-a monster's 0.8**, and ten trade bodies would be about 13 MB on top of the 4.67
-already there. The source size is the wall, and the frame budget is the lever.
+is the body on screen every second.
 
-**Ten trades is a SOURCE SIZE problem and two is not.** A body is ~0.8 MB at
-grid 96 and six already cost 4.67 MB; eleven hero bodies would add about eight
-more. What gives — fewer states, fewer frames, a smaller grid for looks, or the
-no-binary-assets rule — is a decision to take with a measurement in hand, and
-the first trade look is what measures it.
+**The SOURCE SIZE is not the wall; the GENERATION budget is.**
+`generated-art.ts` is **0.48 MB for ten bodies** — 33-52 KB each at grid 48,
+120 KB for the Gaunt at grid 96 — and `docs/app.js` is 1.62 MB, 0.43 gzipped.
+A body costs its grid SQUARED times its frames, so the rule above, which grids
+a body to how big it is DRAWN, is what keeps it there. Ten trade looks are
+about 0.5 MB and twelve more monsters another 0.5. Three bodies cost 203
+generations, and that is the number to budget against. **Anything quoting 4.67
+MB for six bodies or 0.8 MB apiece is from when every body was grid 96 and has
+not been re-measured since.**
 
 **A generator is an AUTHORING tool, never a shipping format.** `tools/art/` is
 the pipeline and its output is a character grid like every other — generated,
