@@ -14,7 +14,7 @@
   ],
   "grid": 48,
   "inks": 24,
-  "stride": 1.63,
+  "stride": 1.75,
   "states": {
    "idle": {
     "group": "74e54ada-1489-41f9-8f22-46efcac92900",

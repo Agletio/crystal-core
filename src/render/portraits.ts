@@ -10,6 +10,7 @@
  * means is a palette lookup, resolved at CALL time off the live document.
  */
 import { gridRows, mix } from './renderer';
+import { GENERATED_PORTRAITS } from './generated-portraits';
 import type { Palette } from './renderer';
 
 export interface PortraitArt {
@@ -21,7 +22,7 @@ export interface PortraitArt {
 
 const rows = gridRows(48);
 
-export const PORTRAITS: Record<string, PortraitArt> = {
+const DRAWN: Record<string, PortraitArt> = {
   /**
    * Calm, and looking THROUGH something: a banded lens set across the eyes with
    * a light travelling it, where the other two have faces you can meet. Pale
@@ -307,6 +308,19 @@ export const PORTRAITS: Record<string, PortraitArt> = {
       R: mix(p.rust, p.void, 0.75),
     }),
   },
+};
+
+/** A generated face carries its OWN colours, so its `ink` ignores the palette
+ *  where a hand-drawn one looks every character up in it. Generated WINS: a
+ *  face that has been redrawn is the one to show. */
+export const PORTRAITS: Record<string, PortraitArt> = {
+  ...DRAWN,
+  ...Object.fromEntries(
+    Object.entries(GENERATED_PORTRAITS).map(([id, art]) => [
+      id,
+      { grid: art.grid, rows: art.rows, ink: () => art.key },
+    ])
+  ),
 };
 
 export const portraitOf = (id: string): PortraitArt | undefined => PORTRAITS[id];

@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
-import { apart, debackground, deshadow, fittedTogether, rgb } from './convert.mts';
+import { apart, debackground, fittedTogether, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
 import { PROP_ART } from '../../src/render/generated-props';
 import { ZONES } from '../../src/render/generated-tiles';
@@ -337,7 +337,7 @@ async function creature(spec: BodySpec): Promise<Art> {
   // so a generated one rendered a third smaller at the same `scale` — which is
   // invisible until something correctly sized stands next to it.
   const frames = fittedTogether(
-    square.map((image) => deshadow(rowsOf(image, inks))),
+    square.map((image) => rowsOf(image, inks)),
     Math.max(1, Math.round(grid / 24)) * 2,
     grid
   );

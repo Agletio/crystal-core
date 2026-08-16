@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { decodePng } from './png.mts';
-import { debackground, deshadow, fitted } from './convert.mts';
+import { debackground, fitted } from './convert.mts';
 
 /** Every character a row may use. `.` is transparent and stays out of it. */
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-*/=<>?@%&$!~^();:[]{}|,_';
@@ -54,10 +54,10 @@ for (let y = 0; y < grid; y++) {
   rows.push(row);
 }
 
-// The same treatment a generated body gets: the ground off, and scaled to its
-// frame on a baseline with room for the rank's light to fall off into.
+// The same treatment a generated body gets: scaled to its frame on a baseline
+// with room for the rank's light to fall off into.
 const rings = Math.max(1, Math.round(grid / 24));
-const art = fitted(deshadow(rows), rings * 4);
+const art = fitted(rows, rings * 4);
 const source = (r: string[]): string => `[\n${r.map((s) => `      '${s}',`).join('\n')}\n    ]`;
 
 writeFileSync(

@@ -132,7 +132,7 @@ export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
   // its own thin outline and the snap lands those pixels on `#` already, so a
   // second one on top was the slab of black.
   const rings = Math.max(1, Math.round(grid / 24));
-  return fitted(deshadow(rows), rings * 4);
+  return fitted(rows, rings * 4);
 }
 
 /** The body, scaled to fill its grid and stood on a common baseline. A cell is
@@ -217,38 +217,6 @@ export function fittedTogether(frames: string[][], margin: number, out?: number)
     )
   );
 }
-
-/** How much wider than the body a row has to be to be the ground and not feet.
- *  Measured over three sprites: shadowed ones run 1.55 and 2.03, a clean one
- *  0.77. */
-const GROUND = 1.4;
-
-/** The cast shadow the generator paints under a body, asked away twice and
- *  drawn anyway. It travels WITH the sprite, so it reads as a blob to stand on
- *  rather than as light. Found by being far wider than the body above it. */
-export function deshadow(rows: string[]): string[] {
-  const width = rows.map((r) => [...r].filter((c) => c !== '.').length);
-  const body = width.map((n, i) => [i, n] as [number, number]).filter(([, n]) => n > 0);
-  if (body.length < 8) return rows;
-
-  const top = body[0][0];
-  const tall = body[body.length - 1][0] - top;
-  const middle = body
-    .filter(([i]) => i >= top + tall * 0.2 && i <= top + tall * 0.75)
-    .map(([, n]) => n)
-    .sort((a, b) => a - b);
-  if (!middle.length) return rows;
-
-  // Against the WIDEST row of the body, not its median: a shadow is wider than
-  // the whole creature, where a standing figure's feet are merely wider than
-  // its waist — and measuring from the median took the feet off with the blob.
-  const widest = Math.max(...body.filter(([i]) => i <= top + tall * 0.75).map(([, n]) => n));
-  const wide = Math.max(middle[Math.floor(middle.length / 2)] * GROUND, widest * 1.15);
-  const from = body.find(([i, n]) => i > top + tall * 0.75 && n > wide)?.[0];
-  if (from === undefined) return rows;
-  return rows.map((row, y) => (y >= from ? '.'.repeat(row.length) : row));
-}
-
 
 /** The rows as a bestiary entry holds them, ready to paste into the table. */
 export function asSource(rows: string[]): string {

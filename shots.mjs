@@ -223,7 +223,10 @@ for (const vp of VIEWPORTS) {
       const svg = document.querySelector('#met-face svg');
       return svg ? { name: svg.getAttribute('data-sprite'), box: svg.getAttribute('viewBox') } : null;
     });
-    if (face?.name !== 'face-lampwright' || face?.box !== '0 0 48 48') {
+    // Its OWN grid, whatever that is: a portrait is redrawn at whatever size
+    // it needs, and pinning the number here fails on a better one.
+    const square = /^0 0 (\d+) \1$/.exec(face?.box ?? '');
+    if (face?.name !== 'face-lampwright' || !square || Number(square[1]) < 48) {
       problems.push(`${vp.name}: the panel is not showing a portrait — ${JSON.stringify(face)}`);
     }
     await page.evaluate(() => document.getElementById('met-take')?.click());
