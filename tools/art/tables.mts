@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
-import { apart, debackground, defloor, fittedTogether, rgb } from './convert.mts';
+import { apart, debackground, defloor, deslab, fittedTogether, loose, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
 import { PROP_ART } from '../../src/render/generated-props';
 import { ZONES } from '../../src/render/generated-tiles';
@@ -34,6 +34,9 @@ interface BodySpec {
   /** Tiles one whole GAIT CYCLE covers — how far the stride the animation
    *  DEPICTS actually carries the body. Omitted, it takes `STRIDE_CYCLE`. */
   stride?: number;
+  /** Legs the art does not show, so nothing measured off them means
+   *  anything: a hem to the floor, and a `stride` judged rather than read. */
+  robed?: boolean;
   /** The grid it ships at; the GENERATION must be an integer multiple of it. */
   grid?: number;
   inks?: number; // how many it settles to; 56 is a 96 grid's number, not a 24's
@@ -119,6 +122,7 @@ interface Manifest {
 type Art = {
   grid: number;
   stride?: number;
+  robed?: boolean;
   dirs: string[];
   frames: string[][];
   states: Record<string, number[]>;
@@ -326,7 +330,13 @@ async function creature(spec: BodySpec): Promise<Art> {
   // character's own and a v3 one larger. Centred in the biggest they share a
   // grid, and the common fit keeps a raised arm taller than the walk.
   const widest = Math.max(...images.map((i) => i.width));
-  const square = images.map((i) => centred(defloor(i), widest));
+  // Three passes at the ground, since no one of them sees all of it.
+  let stranded = 0;
+  const square = images.map((i) => {
+    const [joined, dropped] = loose(deslab(defloor(i)));
+    stranded += dropped;
+    return centred(joined, widest);
+  });
 
   const grid = spec.grid ?? GRID;
   const inks = new Inks();
@@ -344,9 +354,10 @@ async function creature(spec: BodySpec): Promise<Art> {
   console.log(
     `  ${widest}px into a ${grid} grid, ${inks.distinct} colours into ${inks.size}, ` +
       `${dirs.length} facings x ` +
-      Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ')
+      Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ') +
+      `, ${stranded}px unjoined`
   );
-  return { grid, stride: spec.stride, dirs, frames, states, key: inks.key };
+  return { grid, stride: spec.stride, robed: spec.robed, dirs, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
@@ -554,6 +565,9 @@ if (doing('bodies')) write(
     `  /** Tiles one whole GAIT CYCLE covers. A per-frame stride would let the\n` +
     `   *  frame COUNT decide how far a body travels per footfall. */\n` +
     `  stride?: number;\n` +
+    `  /** Its legs are not visible, so nothing measured off them means\n` +
+    `   *  anything — a hem to the floor, and its stride is judged instead. */\n` +
+    `  robed?: boolean;\n` +
     `  /** Facings, north to south, and only the east half of the compass —\n` +
     `   *  anything facing left is one of these mirrored. */\n` +
     `  dirs: string[];\n` +
@@ -571,6 +585,7 @@ if (doing('bodies')) write(
         ([id, art]) =>
           `  ${id}: {\n    grid: ${art.grid},\n` +
           (art.stride === undefined ? '' : `    stride: ${art.stride},\n`) +
+          (art.robed ? `    robed: true,\n` : '') +
           `    dirs: ${JSON.stringify(art.dirs)},\n` +
           `    frames: [${art.frames.map((f) => rowSource(f, '    ')).join(', ')}],\n` +
           `    states: ${JSON.stringify(art.states)},\n` +

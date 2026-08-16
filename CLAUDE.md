@@ -288,6 +288,25 @@ about on it reads as objects standing about on a floor. A SCENE is the other
 half of the rule and always was — one chamber, props placed by hand, and
 nothing scattered into it at all.
 
+**THE GROUND IS CUT AT IMPORT, by three rules that see different halves of
+it.** `defloor` finds it by COLOUR — what spills out beside the body and is
+almost nowhere above it — and is blind to a shadow the body shares a colour
+with. `deslab` finds it by SHAPE: down in the low band, a region of one colour
+wider than it is tall and LIGHTER than the body above it is what the body
+stands on. `loose` takes whatever is left unjoined, which is the scatter of
+stones drawn round a pair of feet. All three are in `tools/art/convert.mts` and
+cost no generation, so a re-import is the whole repair. The light test is what
+keeps the feet: a body is asked for near-black bone and the ground is the pale
+floor darkened, and that holds even for a body lying flat in its death frames,
+where every width rule takes the legs off.
+
+**A body's STRIDE is measured off clean art or it is not measured at all.** The
+shadow was being read as feet-at-widest, which is why three bodies shipped a
+number a human chose; cut, every body the art can measure reads 0% off.
+`BodySpec.robed` is the exception and it says so on its own line — the
+Bonecaller's hem reaches the floor, so nothing measured off its legs means
+anything and `npm run demo` prints that instead of a percentage.
+
 **A generated body keeps its GROUND, and a design is cropped instead.** The
 shadow the generator paints under a body sits at the same rows as the feet, so
 no width rule tells them apart: the one that tried took most of the Gaunt's legs

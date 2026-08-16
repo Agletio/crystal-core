@@ -914,6 +914,28 @@ over a real swing they are a second motion fighting the first, which is the
 shove-the-model-forward look. `animates` asks whether there are frames for what
 the body is doing, and the demo fails one that is still being moved.
 
+**The GROUND a body is drawn standing on is cut at IMPORT, never re-generated
+away.** Three rules in `tools/art/convert.mts`, each seeing a half the others
+cannot: `defloor` by COLOUR, `deslab` by SHAPE — a region in the low band wider
+than it is tall and lighter than the body above it — and `loose` for whatever
+is left unjoined. The ask already forbids a shadow and the generator draws one
+anyway, so this is a rule rather than a thing to ask for and hope, exactly as
+the background flood already is. **The light test is what keeps the feet**: a
+body is asked for near-black bone and the ground is the pale floor darkened, so
+no foot in the roster passes it, and neither does a body lying flat in its
+death frames — which is the case a width rule alone gets wrong, and did, twice.
+Loosening `defloor`'s refusal to touch a colour the body shares is still the
+one repair that puts holes in a body; the answer is another SIGNAL, never a
+lower threshold.
+
+**A STRIDE is read off the art or it is not read at all.** `npm run demo`
+measures feet-at-widest, which means it measures whatever is at the bottom of
+the frame — with a shadow there it measured the shadow, and three bodies
+shipped a number a human had chosen to compensate. Clean, every body the art
+can measure reads 0% off. `BodySpec.robed` is the one exception and the gauge
+prints the reason instead of a percentage: a hem to the floor hides the legs,
+so a figure off them is one the balance pass could act on and should not.
+
 **A body is PINNED at its FOOT, never at its centre, and everything hung on it
 reads the SAME anchor.** `anchorY` in `src/render/pixi.ts` is `bodyFoot` less a
 quarter tile, so the ink ends 0.25 tiles below the entity at every `scale` on

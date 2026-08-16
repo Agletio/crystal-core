@@ -98,7 +98,7 @@
    },
    "grid": 48,
    "inks": 24,
-   "stride": 1.39,
+   "stride": 1.27,
    "luma": 32
   },
   {
@@ -132,6 +132,7 @@
    "grid": 48,
    "inks": 24,
    "stride": 1.45,
+   "robed": true,
    "luma": 32
   },
   {
@@ -160,7 +161,7 @@
    },
    "grid": 48,
    "inks": 24,
-   "stride": 1.52,
+   "stride": 1.8,
    "luma": 32
   },
   {

@@ -45,6 +45,13 @@ everything else bites — and the pip over a shooter's head is gone with
 `castsVisibly`. A family with no thrower deals about HALF what it did, measured,
 so that is a mechanism rule and not a balance one.
 
+**NOTHING STANDS IN A PUDDLE ANY MORE.** The ground the generator paints under
+a body is cut at IMPORT by three rules — `defloor` by colour, `deslab` by shape,
+`loose` for what is left unjoined — and the Dragger, the Shroud and the Gaunt
+are all clean where the first two were not. No generations were spent. Every
+body the art can measure now reports a stride 0% off; the Shroud's hem hides its
+legs and it says so.
+
 **A BODY STANDS ON ITS TILE.** Every entity sprite is pinned at `bodyFoot` less
 a quarter tile rather than at its centre, so the drawing hangs 0.25 tiles below
 the entity at every `scale` on the roster — it was 0.63 for the hero and 1.33
@@ -309,6 +316,26 @@ Kept here because the next thing built on top of them will want it.
   all the sandbox's, and no authored room ever used one. Putting `also`/`joins`
   back is about ten lines of `sceneMap` and it is in the history at `2b965bc`.
 
+- **THE SHADOW COST NOTHING, AND THE PHASE HAD BUDGETED TWO WHOLE BODIES.** The
+  written plan was to crop the design below the hem, re-rotate and re-animate
+  the Dragger and the Shroud — a new character each, every state judged again,
+  and the roadmap's own measurement says three bodies cost 203 generations.
+  What it beat: **a third RULE at import**, `deslab`, which finds the ground by
+  SHAPE where `defloor` finds it by colour, plus `loose` for the stones left
+  over. Zero generations, no risk to two approved bodies, reversible, and it
+  cleared the Gaunt's residue too — which the phase believed was already clean
+  and was not. **The prohibition the phase wrote was on loosening `defloor`,
+  and it still stands**: the fix was another signal, not a lower threshold.
+  Before re-generating anything to remove an artefact, ask whether the artefact
+  has a shape the import can name.
+- **A shadow is measured as FEET, so the stride gauge was reading it.** Cut, the
+  Gaunt went -36% to 0% with its number untouched, and the Dragger's judged 1.52
+  measured 1.80. The Shroud went the other way — -17% to 85% — because with the
+  ground gone what it measures is the HEM, which is the case `CLAUDE.md` already
+  named and nothing in code knew about. `BodySpec.robed` is that, one line
+  through `generated.json`, `tables.mts` and `GeneratedArt`, and the gauge
+  prints the reason instead of a percentage. **A measurement that reads the
+  wrong thing is worse than none**, because a number gets tuned against.
 - **The anchor phase's own trap was the one it did not write down: the HARNESS
   had already rotted.** `npm run drag` had been red and `npm run peek` had been
   shooting the character-select hall ever since a character became something
@@ -1491,47 +1518,7 @@ taking up the Alchemist or the Aethermancer visibly changes who is on screen.
 `comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. `demo` sweeps every
 frame that ships for being reached and every monster for resolving in exactly
 one art table — the hero joins both. `shots` is what proves he draws.
-### Phase 2 — Two bodies still stand in a puddle of their own shadow
-
-Small, and separate from the anchor: this is about the ART, not where it is
-drawn.
-
-#### What is true today
-
-`defloor` in `tools/art/convert.mts` erases the cast shadow the generator paints
-under a body, by COLOUR — colours that spill out past the figure and appear
-hardly anywhere above it, erased across the whole low band so the part under the
-feet goes too. It replaced a width rule that kept taking feet off.
-
-It clears the Gaunt. **The Dragger and the Shroud still carry theirs**, because
-their shadow is the same brown as their own bone: every colour rule that removes
-it also puts holes in them, and `defloor` deliberately leaves a shared colour
-alone.
-
-#### Why it is wrong
-
-They read as standing in a puddle. *The user, on the same fault elsewhere: "we
-do need a fix for the circle around the enemies it looks so bad."*
-
-#### Decisions
-
-- [ ] Do NOT push `defloor` harder. It already refuses shared colours on
-      purpose; loosening that is how the feet come off again.
-- [ ] Crop the DESIGN below the hem and re-rotate those two, which is what
-      worked for the Lampwright — his mound came off for nothing where img2img
-      told to stand on nothing drew a BIGGER one. About 10 generations each:
-      design is already approved, so it is `rotate` plus `state`.
-- [ ] Re-measure both strides afterwards. Theirs are the numbers judged in a
-      descent, kept because the gauge is currently reading the SHADOW as
-      feet-at-widest — the demo reports the Gaunt -36%, Shroud -17%, Dragger
-      -10% for exactly this reason, and those go to 0% once the art is clean.
-
-#### Done when
-
-`npm run demo` reports every generated body at 0% off, with no stride left at a
-number a human chose over one the art measured.
-
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

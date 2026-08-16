@@ -289,3 +289,143 @@ export function defloor(image: Decoded): Decoded {
     }
   return { width, height, rgba: clean };
 }
+
+/** How far apart two colours may be and still be one region, in redmean. */
+const ONE_REGION = 26;
+/** Where the low band starts, as a fraction of the body's height. */
+const LOW = 0.55;
+/** A slab is at least this much wider than it is tall, and this much lighter
+ *  than the body standing on it. */
+const SLAB_WIDE = 1.6;
+const SLAB_LIGHT = 1.25;
+/** Fewer pixels than this is a speck, and `loose` is what answers a speck. */
+const SLAB_LEAST = 6;
+
+/**
+ * The ground as a SLAB, which is what `defloor` cannot see. A colour rule is
+ * blind to a shadow the body shares a colour with — the Dragger's and the
+ * Shroud's are the same brown as their own bone — and loosening it is how the
+ * feet come off. The shape is the signal instead: down in the low band, a
+ * REGION of one colour that is wider than it is tall and LIGHTER than the body
+ * above it is what the body is standing on. Every foot in the roster fails the
+ * light test, since a body is asked for near-black bone and the ground is the
+ * pale floor darkened; a body lying flat in its death frames fails it too,
+ * which is the case a width rule alone gets wrong.
+ */
+export function deslab(image: Decoded): Decoded {
+  const { width: W, height: H, rgba } = image;
+  const at = (x: number, y: number): number => (y * W + x) * 4;
+  const solid = (x: number, y: number): boolean => rgba[at(x, y) + 3] > 40;
+  const luma = (i: number): number => 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+
+  let top = H;
+  let bottom = -1;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (solid(x, y)) {
+        if (y < top) top = y;
+        bottom = y;
+        break;
+      }
+  if (bottom < 0) return image;
+  const from = Math.round(top + (bottom - top) * LOW);
+
+  // The body's own brightness, read ABOVE the band: measured over the whole
+  // frame a big slab drags the median up to its own level and hides itself.
+  const above: number[] = [];
+  for (let y = top; y < from; y++)
+    for (let x = 0; x < W; x++) if (solid(x, y)) above.push(luma(at(x, y)));
+  if (!above.length) return image;
+  above.sort((a, b) => a - b);
+  const body = above[above.length >> 1];
+
+  const one = (i: number, j: number): boolean =>
+    apart([rgba[i], rgba[i + 1], rgba[i + 2]], [rgba[j], rgba[j + 1], rgba[j + 2]]) <
+    ONE_REGION * ONE_REGION;
+
+  const mine = new Int8Array(W * H);
+  const out = new Uint8Array(rgba);
+  for (let y = from; y <= bottom; y++)
+    for (let x = 0; x < W; x++) {
+      const seed = y * W + x;
+      if (!solid(x, y) || mine[seed]) continue;
+      const cells: number[] = [];
+      const stack = [seed];
+      const lit: number[] = [];
+      mine[seed] = 1;
+      let left = W;
+      let right = -1;
+      let high = H;
+      let low = -1;
+      while (stack.length) {
+        const a = stack.pop()!;
+        cells.push(a);
+        lit.push(luma(a * 4));
+        const ax = a % W;
+        const ay = (a / W) | 0;
+        if (ax < left) left = ax;
+        if (ax > right) right = ax;
+        if (ay < high) high = ay;
+        if (ay > low) low = ay;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = ax + dx;
+            const ny = ay + dy;
+            if (nx < 0 || nx >= W || ny < from || ny > bottom) continue;
+            const j = ny * W + nx;
+            if (mine[j] || !solid(nx, ny) || !one(at(ax, ay), at(nx, ny))) continue;
+            mine[j] = 1;
+            stack.push(j);
+          }
+      }
+      lit.sort((a, b) => a - b);
+      const slab =
+        cells.length >= SLAB_LEAST &&
+        right - left + 1 >= (low - high + 1) * SLAB_WIDE &&
+        lit[lit.length >> 1] >= body * SLAB_LIGHT;
+      if (slab) for (const c of cells) out.set([0, 0, 0, 0], c * 4);
+    }
+  return { width: W, height: H, rgba: out };
+}
+
+/** Everything not JOINED to the body, gone: the scatter of stones the
+ *  generator draws around a pair of feet, and whatever a slab leaves stranded
+ *  when it goes. It reports what it took, because a genuinely detached scrap
+ *  of cloth would go the same way. */
+export function loose({ width: W, height: H, rgba }: Decoded): [Decoded, number] {
+  const mine = new Int32Array(W * H).fill(-1);
+  const sizes: number[] = [];
+  for (let seed = 0; seed < W * H; seed++) {
+    if (rgba[seed * 4 + 3] < 40 || mine[seed] >= 0) continue;
+    const id = sizes.length;
+    let n = 0;
+    const stack = [seed];
+    mine[seed] = id;
+    while (stack.length) {
+      const at = stack.pop()!;
+      n++;
+      const x = at % W;
+      const y = (at / W) | 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const j = ny * W + nx;
+          if (rgba[j * 4 + 3] < 40 || mine[j] >= 0) continue;
+          mine[j] = id;
+          stack.push(j);
+        }
+    }
+    sizes.push(n);
+  }
+  const body = sizes.indexOf(Math.max(...sizes, 0));
+  const out = new Uint8Array(rgba);
+  let dropped = 0;
+  for (let i = 0; i < W * H; i++)
+    if (mine[i] >= 0 && mine[i] !== body) {
+      out.set([0, 0, 0, 0], i * 4);
+      dropped++;
+    }
+  return [{ width: W, height: H, rgba: out }, dropped];
+}

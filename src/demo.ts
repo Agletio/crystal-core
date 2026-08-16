@@ -1541,10 +1541,14 @@ rule('SPRITES — is the pixel art well formed?');
       }
       const depicts = (2 * apart * drawn) / art.grid;
       const shipping = art.stride ?? STRIDE_CYCLE;
+      // A hem to the floor measures as a hem, so printing a percentage off it
+      // would be a figure the balance pass could act on and should not.
+      const off = art.robed
+        ? 'its hem hides its legs, so the number is judged'
+        : `its legs depict ${depicts.toFixed(2)} tiles a cycle and it travels ${shipping.toFixed(2)} ` +
+          `(${depicts ? `${Math.round((100 * (shipping - depicts)) / depicts)}%` : '—'} off)`;
       gauge(
-        `${id.padEnd(9)} moves ${moved.map((m) => `${Math.round(m * 100)}%`.padStart(4)).join('')} per frame; ` +
-          `its legs depict ${depicts.toFixed(2)} tiles a cycle and it travels ${shipping.toFixed(2)} ` +
-          `(${depicts ? `${Math.round((100 * (shipping - depicts)) / depicts)}%` : '—'} off)`
+        `${id.padEnd(9)} moves ${moved.map((m) => `${Math.round(m * 100)}%`.padStart(4)).join('')} per frame; ${off}`
       );
     }
 
