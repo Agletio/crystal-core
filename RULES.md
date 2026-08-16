@@ -134,11 +134,12 @@ together. A fixed box at `bottom: 0` is still pushed by its own margin. And a
 rule for a floating element loses every specificity tie to the class it shares
 markup with, so `.hp.xpbar` and not `.xpbar`.
 
-**The rail is ONE row and the flasks own the bottom centre, so they must not
-meet.** One row of sockets is wider than half a 1280 screen — the width `shots`
-judges at — so below 1620px `body.mapfull .corner` steps up over the flask
-line. A new rail button widens the row; re-check that threshold when adding
-one.
+**The rail sits ON the floor and the flasks own the bottom centre, so they
+must not meet — and the corner never lifts.** The user's call. The screens are
+one row of 34px touching sockets and the utility trio (Fill, Hide, dev kit)
+is its own small plate above, which is what keeps the main row narrow enough
+to clear the flask bar at 1280 — the width `shots` judges at. A new rail
+button widens the row; re-check that clearance when adding one.
 
 **A screen is a WINDOW; only a question stops you.** No scrim, click-through
 layer, card takes the pointer. `.modal--stop` is the short list that blocks,
@@ -552,7 +553,9 @@ enough for the difference to show.
 `neighboursIn`, `canAllocateIn`, `canDeallocateIn`, `replayWeb`. A skill tree
 and a trade tree are different content on the same shape, and two copies of a
 reachability rule is one copy that is wrong. `src/ui/webart.ts` is the same
-answer for the stud art both webs are drawn out of.
+answer for the node art both webs are drawn out of — frames, chain and the
+centre mount — and `src/ui/webicons.ts` for the image inside a frame, picked
+off the node's own words so it cannot state a mechanic the tooltip does not.
 
 **A level GRANTS a baseline and SELLS the rest.** `LEVELLING.lifePerLevel` and
 `LEVELLING.damagePerLevel` are the baseline, handed over for nothing;

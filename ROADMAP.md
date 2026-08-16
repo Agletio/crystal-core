@@ -71,16 +71,19 @@ wrong (nightweave, violet like arcanist's) was re-asked by naming what it may
 NOT be; and a 66-row batch runs in sevens through `icon.mts`'s own ten-job
 slice, idempotent on the cache, in about twenty minutes.
 
-**THE SECOND POLISH ROUND IS IN — six calls off playing the built shell, all
-landed.** Generated flasks fill their sockets on the rack; the rail is ONE row
-of touching sockets with the game's own instant tooltip and a Settings shell
-(`open-settings`, an empty framed window on purpose); Save & Load is
-select-then-act — a slot is a button, Play now / Save here / Delete act on the
-pick, warnings on the two that destroy; the webs wear bound diamonds, chain
-links and a mounted centre with no grid behind them; the grit dither is a
-quiet wash everywhere; and the title's ground is the crack itself with two
-flames at its mouth. The one piece NOT done is the trade web's rework beyond
-theme — open question 12, the user's to spec.
+**THE SECOND POLISH ROUND IS IN, plus the follow-ups the user called off
+seeing it.** Save & Load is select-then-act — a slot is a button, Play now /
+Save here / Delete act on the pick, warnings on the two that destroy; a
+Settings shell exists (`open-settings`, an empty framed window on purpose);
+the grit dither is a quiet wash everywhere; the title's ground is the crack
+itself with two flames at its mouth. Off the follow-up round: the rail is a
+34px touching row of screens with Fill/Hide/dev on their OWN small plate
+above, sized to clear the flask bar at 1280 with no lift; each flask stands
+in a dark arched NICHE on the rack with its threshold controls under it; and
+the webs are PoE-shaped — gold-ringed medallion notables, silver-band minors,
+an image in every frame off the node's own words, rusted oval chain between
+them. The one piece NOT done is the trade web's rework beyond theme — open
+question 12, the user's to spec.
 
 **YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
 the furniture specifically solid so you can't walk through it."* The bench, the
@@ -175,10 +178,11 @@ undiagnosed fault and not a regression.
 Kept here because the next thing built on top of them will want it.
 
 - **One row of rail sockets is wider than half a 1280 screen**, and `shots`
-  judges everything at 1280×800 — so below 1620px `body.mapfull .corner`
-  steps up over the flask line (one media query) rather than landing the rail
-  on the rack. Anything that adds a rail button widens the row and should
-  re-check that threshold.
+  judges everything at 1280×800. The first fix lifted the corner over the
+  flask line below 1620px and the user refused it outright — the corner sits
+  on the floor, and the answer is the utility trio on its own plate plus 34px
+  sockets, which is what clears the flask bar. Adding a rail button widens
+  the row; re-check the clearance.
 - **The forced icon palette had NO red**, so the first life flask came back
   amber; `icons.json` carries three reds now and every future icon ask gets
   them. A colour a batch keeps refusing may simply not be in the palette.
@@ -188,10 +192,13 @@ Kept here because the next thing built on top of them will want it.
 - **A black split on near-black stone is invisible.** The title's crack is
   drawn as the LIGHT in it — the glow spilling out is what reads, and the
   same holds for anything dark carved into the frame's own rock.
-- **`webart.ts` lost `gem` and gained `lozenge` and `mount`.** A notable is a
-  bound diamond, the centre of every web is `mount()` — an eight-pointed
-  setting — and `shine()`'s wedge at hub size read as a slice cut out of the
-  stone, which is why the mount carries a glint instead.
+- **`webart.ts` is frames and chain now: `frame()`, `chain()`, `mount()`.** A
+  notable is a gold-ringed medallion with slim ornament points, a minor a
+  silver band, the links are oval chain runs (every other link edge-on), and
+  the image inside a frame comes from `src/ui/webicons.ts`, picked off the
+  node's own words. `stud`, `gem` and `shine` are gone; `gridIcon` could not
+  draw the images because it ROUNDS its height, which is 0 in a web measured
+  in tiles — `nodeGlyph` builds its own svg with exact sizes.
 
 - **The generator will not draw a MOTION or a PHENOMENON as an object; it
   draws the ACTOR or the SCENE that owns it.** Six generations on one icon

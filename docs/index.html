@@ -121,20 +121,19 @@
 
     /*
      * What the WEBS are made of, which is the one place the frame draws its own
-     * art: a chain, and a stud driven into the rock at each end of it. Warm
-     * stone for a minor and cut brass for a notable, so the two read apart at
+     * art: rusted chain between framed images — an ornate GOLD ring for a
+     * notable and a plainer SILVER band for a minor, so the two read apart at
      * the size the whole web is drawn at rather than only close up.
      */
     --web-ground: #0A0705;
     --rim:       #060403;
     --chain:     #0B0806;
     --chain-lit: #6A5232;
-    --stud:      #3B3223;
-    --stud-lit:  #574836;
-    --stud-hot:  #56462F;
     --stud-gem:  #4E3A20;
-    --stud-gem-lit: #74562D;
-    --stud-gem-hot: #6E5228;
+    --frame-gold:       #8A6A2F;
+    --frame-gold-lit:   #C9A24B;
+    --frame-silver:     #63666C;
+    --frame-silver-lit: #A9AEB6;
     --on-lit:    #F0A055;
     --on-gem-lit:#FBE49B;
 
@@ -1474,8 +1473,9 @@
      readable against the lit rock behind it. */
   .web { shape-rendering: crispEdges; }
   .web__edge { stroke: var(--chain); }
-  .web__edge--lit { stroke: var(--chain-lit); }
-  .web__edge--lit.web__edge--on { stroke: var(--citrine); }
+  /* Oval links drawn over the casing: rusted at rest, gold on a taken path. */
+  .web__chain { stroke: var(--chain-lit); fill: none; }
+  .web__chain--on { stroke: var(--citrine); }
   .web__hub__prong { fill: var(--chain-lit); }
   .web__hub__rim { fill: var(--rim); }
   .web__hub__body { fill: var(--stud-gem); }
@@ -1555,25 +1555,25 @@
    * and a notable is the reason to walk somewhere.
    */
   .web__node { cursor: pointer; }
-  .web__node__rim { fill: var(--rim); }
-  .web__node__body { fill: var(--stud); }
-  .web__node__lit { fill: var(--stud-lit); }
-  /* A notable is a BOUND stone: the rim is its metal, not the casing dark. */
-  .web__node--notable .web__node__rim { fill: var(--chain-lit); }
-  .web__node--notable .web__node__body { fill: var(--stud-gem); }
-  .web__node--notable .web__node__lit { fill: var(--stud-gem-lit); }
-  .web__node:hover .web__node__body { fill: var(--stud-hot); }
-  .web__node--notable:hover .web__node__body { fill: var(--stud-gem-hot); }
+  /* A node is a dark well under a metal ring — gold and ornamented for a
+     notable, a plain silver band for a minor — with its image inside. */
+  .web__node__hole { fill: var(--rim); }
+  .web__node__frame { fill: var(--frame-silver); }
+  .web__node--notable .web__node__frame { fill: var(--frame-gold); }
+  .web__node:hover .web__node__frame { fill: var(--frame-silver-lit); }
+  .web__node--notable:hover .web__node__frame { fill: var(--frame-gold-lit); }
+  .web__node__img .sicon__ink { fill: var(--text-dim); }
+  .web__node__img .sicon__lit { fill: var(--rust); }
 
-  .web__node--on .web__node__body { fill: var(--rust); }
-  .web__node--on .web__node__lit { fill: var(--on-lit); }
-  .web__node--notable.web__node--on .web__node__body { fill: var(--citrine); }
-  .web__node--notable.web__node--on .web__node__lit { fill: var(--on-gem-lit); }
+  .web__node--on .web__node__frame { fill: var(--frame-silver-lit); }
+  .web__node--notable.web__node--on .web__node__frame { fill: var(--citrine); }
+  .web__node--on .web__node__img .sicon__ink { fill: var(--on-lit); }
+  .web__node--on .web__node__img .sicon__lit { fill: var(--on-gem-lit); }
 
   /* Reachable but unaffordable, and reachable-and-affordable. Distinguished
      because "why is this dim" has two different answers. */
   .web__node--locked { opacity: .42; cursor: not-allowed; }
-  .web__node--open .web__node__rim { fill: var(--bone); }
+  .web__node--open .web__node__ring { fill: var(--bone); }
   #history-log { font-size: 12px; }
 
   @media (prefers-reduced-motion: reduce) {

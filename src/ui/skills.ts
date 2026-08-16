@@ -36,7 +36,8 @@ import {
   treePointsFor,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
-import { disc, lozenge, mount, stud, svgEl } from './webart';
+import { chain, frame, mount, svgEl } from './webart';
+import { nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
@@ -464,16 +465,11 @@ function renderWeb(): void {
       })
     );
   }
+  // Oval links over the solid casing: a run of rusted chain, node to node.
   for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
-        'stroke-width': (casing * (l.live ? 0.62 : 0.34)).toFixed(1),
-        // Dashed over the solid casing, so a link reads as a run of chain.
-        'stroke-dasharray': `${(casing * 1.2).toFixed(1)} ${(casing * 0.8).toFixed(1)}`,
-      })
-    );
+    for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
+      svg.append(link);
+    }
   }
 
   // The middle: the skill itself, and the tooltip explaining its numbers.
@@ -519,9 +515,12 @@ function renderWeb(): void {
       'data-x': pos.x.toFixed(1),
       'data-y': pos.y.toFixed(1),
     });
-    const grid = node.kind === 'notable' ? 13 : 9;
-    const spans = node.kind === 'notable' ? lozenge(grid) : disc(grid);
-    for (const part of stud(spans, grid, pos, r, 'web__node')) group.append(part);
+    for (const part of frame(node.kind, pos, r, 'web__node')) group.append(part);
+    const glyphSize = r * 1.24;
+    const glyph = nodeGlyph(node, glyphSize);
+    glyph.setAttribute('x', (pos.x - glyphSize / 2).toFixed(2));
+    glyph.setAttribute('y', (pos.y - Number(glyph.getAttribute('height')) / 2).toFixed(2));
+    group.append(glyph);
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
