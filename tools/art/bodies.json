@@ -619,9 +619,12 @@
   {
    "id": "bench",
    "tiles": 1,
-   "tone": 0.18,
-   "dull": 0.3,
-   "say": "a lampwright's heavy timber workbench seen from HIGH ABOVE looking down, its top strewn with half-built lanterns — loose iron frames, cut panes of glass, coils of wire, a small vice and hand tools laid out in a row. Dark oiled timber, black iron and dull brass, warm rather than cold, worn with use. Grimy and stained but CARED FOR — a working, not a ruin. NOT bright, NOT clean, NOT new, NOT painted, NOT colourful."
+   "tone": 0.25,
+   "dull": 0.4,
+   "say": "a plain low work table of DARK BROWN almost BLACK wood, seen from HIGH ABOVE looking down — a simple rectangular timber top on four straight legs, bare except for two or three small dark iron shapes lying on it. SIMPLE and CHUNKY with FEW COLOURS and BIG readable shapes: flat blocky shading, hard edges, almost no small detail, no clutter, no ornament, no highlights. The wood is DARK COLD BROWN, #2E2419 in shadow and #4A3A28 where the light reaches, grimy and worn. NOT pink, NOT salmon, NOT red, NOT mauve, NOT purple, NOT lilac, NOT warm, NOT pale, NOT light, NOT ornate, NOT busy, NOT detailed, NOT shiny.",
+   "detail": "low detail",
+   "shading": "flat shading",
+   "size": 64
   },
   {
    "id": "lamprack",

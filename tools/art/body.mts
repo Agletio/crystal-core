@@ -350,8 +350,8 @@ if (command === 'design') {
       height: ask.size ?? 96,
       view: ask.view ?? 'high top-down',
       outline: 'single color outline',
-      shading: 'medium shading',
-      detail: 'high detail',
+      shading: ask.shading ?? 'medium shading', // per row: an over-detailed
+      detail: ask.detail ?? 'high detail', //       prop reads as a sticker
     });
     // Written back HERE. An object id copied across by hand is the step that
     // pointed a roster at another character's groups once already, and a prop

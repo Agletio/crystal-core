@@ -541,10 +541,10 @@
   },
   {
    "id": "bench",
-   "object": "b518d6a1-bc63-48bb-bdc2-df905ee938db",
+   "object": "aa71b188-5686-4700-a41a-032373f50d55",
    "tiles": 1,
-   "tone": 0.18,
-   "dull": 0.3
+   "tone": 0.25,
+   "dull": 0.4
   },
   {
    "id": "lamprack",

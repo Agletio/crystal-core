@@ -129,11 +129,15 @@ const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
 
 function setPhase(next: Phase): void {
+  const was = phase;
   phase = next;
   // A scene and a descent are both a map with nothing else on screen, so from
   // outside they are indistinguishable by what is hidden. A harness needs to
   // be able to tell the two apart, and this is the only thing that says so.
   document.body.dataset.runPhase = next;
+  // A room is a fraction of a descent's size, so the scale that frames one
+  // leaves the other a postage stamp in the middle of the screen.
+  if (was !== next) fitCanvas();
   $('run-menu').hidden = next !== 'menu';
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
@@ -928,6 +932,10 @@ let userZoomed = false;
 /** Matches the `.flasks` margin, because they describe the same gap. */
 const FLASK_GAP = 8;
 
+/** How much closer a ROOM is framed than a descent. `clampZoom` still bounds
+ *  it, so this asks rather than sets. */
+const SCENE_ZOOM = 2;
+
 function fitCanvas(): void {
   const box = $('run-stage');
   const width = box.clientWidth;
@@ -941,7 +949,9 @@ function fitCanvas(): void {
 
   // Now that the surface has a real size, pick the scale that fits it. At
   // startup the stage is still unmeasured, so this is the first honest chance.
-  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)));
+  if (!userZoomed && width > 0) {
+    setZoom(defaultZoom(Math.min(width, height)) * (phase === 'scene' ? SCENE_ZOOM : 1));
+  }
 }
 
 /** The stage as a CELL: whatever the row has left once the panels have theirs. */
