@@ -222,3 +222,70 @@ export function fittedTogether(frames: string[][], margin: number, out?: number)
 export function asSource(rows: string[]): string {
   return `[\n${rows.map((r) => `  '${r}',`).join('\n')}\n]`;
 }
+
+/**
+ * The cast shadow the generator paints under a body, asked away and drawn
+ * anyway. It cannot be found by WIDTH — a standing figure's feet are wider
+ * than its waist too, which is how the rule that tried took the Gaunt's legs
+ * off — but it CAN be found by colour: the ellipse spills out past the body on
+ * both sides, and whatever is out there and almost nowhere else is the floor.
+ * Those colours are then erased across the whole low band, which is what takes
+ * the part UNDER the feet without taking the feet.
+ */
+export function defloor(image: Decoded): Decoded {
+  const { width, height, rgba } = image;
+  const at = (x: number, y: number): number => (y * width + x) * 4;
+  const solid = (x: number, y: number): boolean => rgba[at(x, y) + 3] > 40;
+
+  let top = height, bottom = -1;
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if (solid(x, y)) { if (y < top) top = y; bottom = y; break; }
+  const tall = bottom - top;
+  if (tall < 16) return image;
+
+  // The body's own column span, measured over its MIDDLE where nothing is
+  // standing on the ground: chest and waist, never the feet.
+  let coreL = width, coreR = -1;
+  for (let y = Math.round(top + tall * 0.2); y <= Math.round(top + tall * 0.6); y++)
+    for (let x = 0; x < width; x++)
+      if (solid(x, y)) { if (x < coreL) coreL = x; if (x > coreR) coreR = x; }
+  if (coreR < coreL) return image;
+
+  const band = Math.round(top + tall * 0.7);
+  const hex = (i: number) => `${rgba[i]},${rgba[i + 1]},${rgba[i + 2]}`;
+  const out = new Map<string, number>();
+  const low = new Map<string, number>();
+  const inside = new Map<string, number>();
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = at(x, y);
+      if (rgba[i + 3] <= 40) continue;
+      const c = hex(i);
+      if (y < band) { inside.set(c, (inside.get(c) ?? 0) + 1); continue; }
+      low.set(c, (low.get(c) ?? 0) + 1);
+      if (x < coreL - 1 || x > coreR + 1) out.set(c, (out.get(c) ?? 0) + 1);
+    }
+
+  // Two signals, because one body defeats each. Out BESIDE the figure and
+  // hardly above it — which a crawler cannot show, being all low band. And
+  // present down here and NOWHERE above at all, which is what a shadow under
+  // something lying flat looks like. A colour the body shares is left alone:
+  // a hole in a boot is worse than a smudge of floor.
+  const floor = new Set(
+    [...low.keys()].filter((c) => {
+      const above = inside.get(c) ?? 0;
+      const beside = out.get(c) ?? 0;
+      return (beside >= 3 && beside > above * 2) || (above === 0 && (low.get(c) ?? 0) >= 6);
+    })
+  );
+  if (!floor.size) return image;
+
+  const clean = new Uint8Array(rgba);
+  for (let y = band; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = at(x, y);
+      if (rgba[i + 3] > 40 && floor.has(hex(i))) clean.set([0, 0, 0, 0], i);
+    }
+  return { width, height, rgba: clean };
+}

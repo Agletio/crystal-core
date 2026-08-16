@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
-import { apart, debackground, fittedTogether, rgb } from './convert.mts';
+import { apart, debackground, defloor, fittedTogether, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
 import { PROP_ART } from '../../src/render/generated-props';
 import { ZONES } from '../../src/render/generated-tiles';
@@ -326,7 +326,7 @@ async function creature(spec: BodySpec): Promise<Art> {
   // character's own and a v3 one larger. Centred in the biggest they share a
   // grid, and the common fit keeps a raised arm taller than the walk.
   const widest = Math.max(...images.map((i) => i.width));
-  const square = images.map((i) => centred(i, widest));
+  const square = images.map((i) => centred(defloor(i), widest));
 
   const grid = spec.grid ?? GRID;
   const inks = new Inks();
