@@ -44,6 +44,19 @@ retheme cannot re-ink committed art; the logo is a drawn gem in grid art; and
 fails a hand-written colour or an undefined token, and `shots.mjs` carries a
 CHECKLIST of all 30 screens and fails on one nobody shot.
 
+**THE SHELL IS BUILT THINGS.** *The user's call: "instead of all sprayer
+buttons in the bottom right an actual designed bar like wow/poe does with
+buttons on top of that. Apply that logic to everything else."* Six generated
+fixtures out of ONE `create_ui_asset` call plus one pixflux socket
+(`tools/art/uikit.mts`, `src/render/generated-ui.ts`, `--fix-*` mounted by
+`src/ui/fixtures.ts`) dress every cluster the phase named: socketed action
+bar, channel vessels, flask rack, framed windows with carved title plates,
+carded dock/tooltips/menus/bubbles/sockets. The mechanism rules — the border
+shorthand resetting border-image, fill middles tiling, the window cascade —
+are in `RULES.md` under One art direction. The weak icons are re-asked:
+fireball is a ball in flight, blight is a falling wall of liquid poison at
+the user's word, strike a broadsword with the swing behind it.
+
 **YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
 the furniture specifically solid so you can't walk through it."* The bench, the
 shelf, the lampshelf, the lamprack, the slab, the plinth and the orrery are in
@@ -135,6 +148,22 @@ undiagnosed fault and not a regression.
 
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
+
+- **The generator will not draw a MOTION or a PHENOMENON as an object; it
+  draws the ACTOR or the SCENE that owns it.** Six generations on one icon
+  measured it: "a sword-slash" summons a warrior swinging it (exclusions
+  ignored, twice), "a waterfall of poison" summons the cliffs and pool around
+  it, "a crescent of steel" is a moon. What works is describing shape and
+  material with no actor noun in reach, or giving it an object it draws well
+  (a sword) and putting the motion BEHIND it. A detached stray blob in an
+  otherwise good result is cut at import — keep the largest connected
+  component — not re-asked.
+- **`create_ui_asset` facts, all measured:** the MCP tool takes flat
+  `width`/`height` where the REST schema says `image_size`; the `pieces`
+  template really does lay out a whole kit in one 20–40 generation call in
+  one style; a piece under ~90px comes back detail-less (the 48px socket was
+  an empty ring) and is asked ALONE via pixflux instead, standing in through
+  `SOLO` in `uikit.mts emit`.
 
 - **NEITHER WEBFONT HAS EVER RENDERED IN A SCREENSHOT THIS REPO TOOK.**
   Measured on the served page in headless Chromium: `Silkscreen` and `IBM Plex
@@ -1443,227 +1472,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — The shell becomes BUILT THINGS, not styled rectangles
-
-**The user's call, and the second half is the phase:** *"we need to redo the
-entire ui... designed to match the theme of the new fissure art and the enemies
-in the fissure. Currently it clashes I want a more rpg fantasy theme... literally
-everything."* Then, on seeing a colour-only plan: *"I wasn't talking about just
-the colors I'm talking shape too. Like instead of all sprayer buttons in the
-bottom right an actual designed bar like wow/poe does with buttons on top of
-that. Apply that logic to everything else."*
-
-**So this is not a re-skin and the token pass is the SMALL part of it.** Every
-cluster of controls becomes a designed FIXTURE — a piece of built furniture with
-art of its own — and the controls sit IN it. A styled rectangle in the right
-colours is the thing being rejected.
-
-#### What is true today
-
-Every panel is a CSS box: a background colour, a 1px border, a radius. There is
-no art anywhere in the shell — the only drawn things are the map, the icons and
-`titleart.ts`. Concretely, the pieces that are floating rectangles right now:
-
-- **The rail** (`src/ui/rail.ts`, `.dock`): a grid of square buttons in the
-  bottom-right corner with nothing behind them. This is the example the user
-  gave.
-- **The HUD** (`.corner` bottom-left): life and mana as plain `<div>` bars, and
-  a level number.
-- **The three skill slots and the flasks**: bordered squares in a row.
-- **The XP bar**: a 3px strip across the floor of the window.
-- **Every window** (`.modal__card`): a rectangle with a header row.
-- **Both webs** (`skills.ts`, `trade.ts`, `webart.ts`): nodes on a flat
-  background with no surface behind them.
-- **Item cards and tooltips** (`itemcard.ts`, `tooltip.ts`): bordered boxes.
-- **The title logo** (`.title__logo`): a styled `<h1>`, not a mark.
-
-#### Why it is wrong
-
-The game's own art is generated pixel art with weight and light in it. The shell
-is a wireframe in a nice palette. A rectangle does not become a fantasy UI by
-being brown.
-
-#### WHERE THIS GOT TO — read this first
-
-Nearly done. What is DONE and on the branch:
-
-- **Skill and category icons are generated pixel art.** Thirteen: one per
-  category (`cat_attack` `cat_spell` `cat_passive` `cat_movement`) and one per
-  skill (`sk_strike` `sk_fireball` `sk_bolt` `sk_frost_bolt` `sk_arc`
-  `sk_blight` `sk_surge` `sk_blink` `sk_leap`). They live in
-  `src/render/generated-icons.ts`; `skillIcon` and `categoryIcon` in
-  `src/ui/icons.ts` answer a generated one FIRST and fall back to the
-  hand-drawn grids, which stay for anything not yet drawn.
-- **The pipeline for a still image is two tools.** `tools/art/icon.mts` reads
-  `tools/art/icons.json` — one row per id, the words, the forced palette and
-  the "one object, no scene" clause — and downloads to
-  `tools/art/cache/designs/<id>.png`. Then `portrait.mts <id> <png> 48 icons`
-  converts it into the table. `portrait.mts` takes a `table` argument
-  (`portraits` or `icons`); it is not about faces.
-- **The three weak icons are re-asked and shipped** — the user's own words for
-  two of them: `sk_fireball` is a blazing ball in flight with a flame tail,
-  `sk_blight` is a falling wall of liquid poison (a curtain of green slime with
-  drips breaking off its bottom edge), `sk_strike` is a blue-steel broadsword
-  with the swing behind it. What the asks taught is under the operational
-  facts below — the NOUN lessons cost six generations on one icon.
-- **The FIXTURE KIT is generated and mounted.** One `create_ui_asset` call
-  (`tools/art/uikit.mts ask/get/emit`, words in `uikit.json`) plus one pixflux
-  socket: `win` (ornate window frame), `card` (riveted iron frame), `socket`
-  (riveted button socket), `head` (title plate), `bar` (banded action-bar
-  plate), `channel` (gauge groove). `src/render/generated-ui.ts` ships them as
-  data URIs, `src/ui/fixtures.ts` mounts `--fix-*` at boot, and the stylesheet
-  applies them as border-image 9-slices.
-- **Every fixture on the checklist below is applied**: the rail is an iron
-  plate with socketed buttons, the three skill slots and both flasks sit in
-  the same sockets (the flasks on a banded rack plate), life and mana are
-  brass-capped channel vessels, every window is the ornate frame with a
-  carved title plate for a head, the dock / tooltip / web menu / speech bubble
-  / fissure sockets take the card frame, the fissure card and the results card
-  take the window frame, and Enter the Fissure is a carved plate button.
-
-**Operational facts that cost time to learn:**
-
-- The generator will not draw "a slash" or "a poison waterfall" as an OBJECT:
-  a slash noun summons a WARRIOR to swing it (twice, exclusions ignored), a
-  waterfall noun summons the cliff scene around it, and "crescent of steel"
-  summons a moon. What worked: describe the shape and material with no actor
-  noun, or pick an object the model draws well (a sword) and put the motion
-  BEHIND it. A detached stray blob is cheaper to cut at import (keep the
-  largest connected component) than to re-ask.
-- `create_ui_asset` over MCP takes flat `width`/`height`, not the REST body's
-  `image_size` — the validation error names the field.
-- **A `pieces` rect under ~90px gets no detail** — the kit's 48px socket came
-  back an empty ring. The socket that ships was asked ALONE at 96 via
-  `create_image_pixflux` (one generation) and stands in through `SOLO` in
-  `uikit.mts emit`.
-- The `pieces` template otherwise WORKS: labelled rects on the 512 virtual
-  canvas came back as six distinct fixtures in one consistent style, for one
-  20–40 generation call.
-
-**Two operational facts that cost time to learn:**
-
-- The generator **caps at TEN jobs in flight and refuses the rest outright** —
-  a batch of thirteen silently came back as ten. `icon.mts` slices to ten and
-  says what is left over.
-- `tone`/`dull` on a prop and the palette image on an icon are **emit-time and
-  ask-time knobs respectively**: neither can undo a hue the generator chose.
-  A wrong colour is re-asked with the colour NAMED and the wrong one excluded,
-  which is how the salmon workbench became dark timber.
-
-#### The load-bearing decision — MADE, and this is it
-
-**A fixture is GENERATED pixel art applied as a CSS 9-slice; a glyph stays
-grid art.** Decided off three measured facts rather than the guess that stood
-here:
-
-1. **The generator has a UI tool nobody here knew about.** `create_ui_asset`
-   (in the MCP docs, missed three times before): a pixel-art UI panel at
-   192–688px, with a `pieces` template — exact labelled rects/circles on a
-   512-wide virtual canvas — so a whole KIT of fixtures lays out in ONE call,
-   which is the same one-call-consistency rule `edit_image` taught.
-2. **`theme-check` cannot see a data URI and must not be bent.** Base64 holds
-   no `#`, and the `:root` declarations block is never hex-scanned — measured
-   against `tools/theme-check.mjs`'s own regexes. The fixture custom
-   properties (`--fix-*`) are set at BOOT by `src/ui/fixtures.ts` and join the
-   RUNTIME list in the checker, which is the list that exists for exactly this.
-3. **The shipping pattern already exists.** `src/render/generated-ui.ts`
-   mirrors `generated-tiles.ts`: data URIs written by `tools/art/uikit.mts`
-   (`ask` / `get` / `emit`), "do not edit by hand", cache disposable.
-
-A fixture is authored at the CSS pixel size it displays at — a 9-slice's
-corners draw 1:1 and only the runs stretch (`border-image-repeat: round`), so
-the pixels ship at the size they were drawn, which is the same rule as the
-bodies' grids. Glyphs and the logo stay `src/ui/icons.ts` grid art, option 2,
-unchanged.
-
-#### Decisions — the FIXTURES
-
-Each of these is "what object is this, physically", not "what colour is it".
-
-- [x] **The rail becomes an action bar.** One riveted iron plate with the
-      buttons SET INTO sockets, the way WoW and PoE build one. Button ids
-      unchanged, and every harness still names them.
-- [x] **Life and mana become vessels** — the fill inside a carved channel with
-      brass end caps (`--fix-channel`), on the HUD's `.hp--slim` only; the
-      sheet's plain bars stay bars.
-- [x] **The flasks sit in a rack** — two sockets on a banded bar plate.
-- [x] **The three skill slots are sockets** in the same family as the rail's.
-- [x] **The XP bar stays the flush strip, by decision**: it is under
-      everything, never clicked, and 10px flush to the floor has no room for
-      end caps — a channel fixture there read as a bug, not a fixture.
-- [x] **A window is a panel**: the ornate stone frame with brass corner
-      fittings (`--fix-win`), a carved title PLATE for a head (`--fix-head`),
-      still dragged by it. A window that OPENS square over another window's
-      head now cascades down-right until the head is clear (`unbury` in
-      `windows.ts`) — the frames made every card taller, which buried the
-      bench's head under the stash and killed `drag`.
-- [x] **Both webs get a SURFACE** — the web ground sits inside the card frame
-      now; the studs and gems in `webart.ts` were already carved sockets and
-      are untouched.
-- [x] **Item cards and tooltips become plates** — the riveted card frame, with
-      the tier stripe kept inside it.
-- [x] **The title mark is drawn art** — landed in the earlier art-direction
-      commit (`src/ui/logo.ts`).
-- [x] **Skill icons are generated pixel art**, both rungs, merged OVER the
-      hand-drawn grids.
-- [x] **The token pass** landed in the earlier art-direction commit; `--fix-*`
-      joins it as the one RUNTIME-prefixed family `theme-check` knows.
-
-#### No stragglers — how to PROVE it, rather than believe it
-
-A screen nobody opened keeps the old look for a month.
-
-- [ ] **Enumerate before drawing.** `docs/index.html` is 2,029 lines with ~436
-      distinct class selectors and ~197 ids; `src/ui/` is 34 modules: `badge`
-      `character` `confirm` `craft` `crystals` `flaskart` `glossary` `graft`
-      `haul` `history` `icons` `inventory` `itemcard` `keys` `menu` `met`
-      `pick` `rail` `run` `savedata` `screenicons` `shop` `skills` `speech`
-      `stash` `title` `titleart` `toast` `tooltip` `trade` `wear` `webart`
-      `welcome` `windows`. Tick every one.
-- [ ] **Every reachable screen appears in `shots.mjs` BEFORE the redesign
-      starts**, so the before/after is visible. It covers `welcome` `pick`
-      `fissure` `crystals` `sheet` `slots` `handover` `descent` `scene`
-      `speech` `lampwright` `skills` `skill-web` `move-web` `trade` `bench`
-      `tooltip` today — anything reachable and missing is a screen the
-      redesign can silently skip.
-- [ ] **Grep for unreferenced selectors at the end.** Dead CSS is exactly how
-      an old shell survives hidden. Cut it.
-- [ ] **`npm run theme` green**, which proves no hand-written colour escaped.
-
-#### Traps
-
-- **The MAP's tokens are not the FRAME's.** `paletteFrom`/`readPalette` in
-  `src/render/renderer.ts` read `--rock`, `--floor`, `--ember`, `--citrine` and
-  the rest off the live document, and both renderers and every icon resolve
-  their inks through it. Re-inking those re-inks committed ART.
-- **A fixture must not eat the map's pointer.** `.modal` paints no scrim and is
-  `pointer-events: none` with its card `auto`; art layers behind panels are
-  exactly how that gets broken. `shots.mjs` has `mapProbe` for this and it is
-  why it exists.
-- **Fixtures have to survive being MOVED.** Windows drag; the dock reorders.
-  `npm run drag` is the harness.
-- **The rail draws over every window and scrim on purpose** — it is how a
-  screen is opened and shut. A fixture with its own stacking must keep that.
-- **`docs/app.js` is committed and Cloudflare runs no build**, so any `src/`
-  change ships a rebuilt bundle.
-- **The comment budget is a DENSITY**, and `docs/index.html` has its own 25%
-  share in `SHARE_BY_FILE`. Cutting CSS lowers what its prose is allowed.
-- **Do not rename ids.** `smoke.mjs` clicks them.
-
-#### Done when
-
-The bottom of the screen reads as one built object with controls set into it,
-every window reads as a made panel rather than a div, and no screen in the game
-is still a bordered rectangle. `npm run theme` is green, `shots.mjs` covers
-every reachable screen, and no selector in `docs/index.html` is unreferenced.
-
-#### What must not break
-
-`comments`, `theme`, `typecheck`, `build`, `smoke`, `shots`, `drag`. `smoke`
-proves the ids still answer; `shots` proves the layout fits and the map still
-takes a pointer; `drag` proves a window still moves and the dock still reorders.
-
-### Phase 2 — A quest log instead of a pointing finger
+### Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
