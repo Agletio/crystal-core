@@ -1780,13 +1780,16 @@ one, and that is where art is judged.
   layer, because the ground under an altar is still floor and every renderer
   keys off `tiles` — marking it rock cuts a hole in the floor to draw a table
   in. Blocked one tile at a time, and undone if the flood from the hole stops
-  reaching what the map has to reach. **Nothing in the shipped game puts a solid
-  prop down** — they were all arrangements', and the authored rooms furnish
-  themselves with things you walk over — so the demo drives `block` by hand,
-  ringing a scene's person with solids and holding it to refusing the one that
-  closes the ring. A layer with no live producer is the one worth holding, not
-  the one to delete: `findPath` asks `walkable`, and the day furniture comes
-  back is the day this stops being theory.
+  reaching what the map has to reach. **The four AUTHORED ROOMS are what puts
+  one down** — *the user's call, "make the furniture specifically solid so you
+  can't walk through it"* — so the bench, the shelf, the lampshelf, the
+  lamprack, the slab, the plinth and the orrery are all in the set, and the
+  demo holds every one of the 38 to blocking and every room to a route from the
+  hole to the person that goes round them. A lantern and the floor debris are
+  NOT: a lantern is a thing you step over, and cover claims no tile by design.
+  A descent scatters none of it, so the UNDO half still has no live producer
+  and the demo drives it by hand, ringing a scene's person with solids and
+  holding `block` to refusing the one that closes the ring.
 - **A generated tileset REPLACES the whole surface.** `GameMap.bare` with
   `GameMap.zone` naming the set; when it is set the zone's floor fill, its
   `tileDecals`, its `livingDecals` and its hand-drawn props all stand down.

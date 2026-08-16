@@ -268,17 +268,20 @@ is the one surface seen from the side. A torch or a
 body hanging there is `HUNG_PROPS`: placed by hand, never scattered, since a
 lit torch on a wall nobody stands near is a bucket in the middle of a room.
 
-**`SOLID_PROPS` is what you walk around.** `Grid.solid` is a second layer over
-the tiles, because the ground under an altar is still floor and every renderer
-keys its own surface off `tiles`. A tile is blocked one at a time and UNDONE
-the moment it cuts anything off, since a prop across a passage is a map the
-hero stands still in forever. Nothing in the shipped game puts one down — every
-solid prop was an arrangement's, and the four authored rooms furnish themselves
-with things you walk over — so `sceneMap` still calls `block` and the demo
-drives it by hand, ringing a scene's person with solids and holding it to
-refusing the one that would close the ring. `STAIN_PROPS` is the same story: a
+**`SOLID_PROPS` is what you walk around, and the FOUR AUTHORED ROOMS are what
+puts one down.** *The user's call: "make the furniture specifically solid so you
+can't walk through it."* `Grid.solid` is a second layer over the tiles, because
+the ground under an altar is still floor and every renderer keys its own surface
+off `tiles`. A tile is blocked one at a time and UNDONE the moment it cuts
+anything off, since a prop across a passage is a map the hero stands still in
+forever. Every bench, shelf, lampshelf, lamprack, slab, plinth and orrery is in
+the set and all 38 of them block; a lantern and the floor debris are not, because
+a lantern is a thing you step over. A descent still scatters none of it — what
+the rock does claims no tile — so the UNDO half has no live producer either way,
+and the demo drives that by hand, ringing a scene's person with solids and
+holding `block` to refusing the one that would close the ring. `STAIN_PROPS` is a
 mark IN the floor, drawn back so the generator's own domed shading stops reading
-as a lump, and nothing places one either.
+as a lump, and nothing places one at all.
 
 **A DESCENT over a generated set is dressed with what the ROCK did, and with
 nothing else.** `generateMap` lays the cover and the growth on every zone that

@@ -238,11 +238,12 @@ export const COVER_ALPHA = 0.88;
 export const COVER_SET = new Set(COVER_PROPS.map((w) => w.id));
 
 /**
- * What you cannot walk through. A slab of stone, a pit prop, a wrapped body and
- * a lit brazier are all things you go AROUND; a plank, a bone, a stain and a
- * cobweb are things you walk over, and blocking those turns a floor into an
- * obstacle course. It is a fact about the OBJECT, so it is one list rather than
- * a flag per table — the same prop is solid wherever it is dropped.
+ * What you cannot walk through. A slab of stone, a pit prop, a wrapped body, a
+ * lit brazier and every piece of furniture somebody built are things you go
+ * AROUND; a plank, a bone, a lantern, a stain and a cobweb are things you walk
+ * over, and blocking those turns a floor into an obstacle course. It is a fact
+ * about the OBJECT, so it is one list rather than a flag per table — the same
+ * prop is solid wherever it is dropped.
  *
  * `Grid.solid` is where it lands, which is a second layer over the tiles: the
  * ground under an altar is still floor and every renderer keys off that.
@@ -257,6 +258,13 @@ export const SOLID_PROPS = new Set([
   'cocoon',
   'stake',
   'skulls',
+  'bench',
+  'shelf',
+  'lampshelf',
+  'lamprack',
+  'slab',
+  'plinth',
+  'orrery',
 ]);
 
 /** A mark IN the floor rather than a thing standing on it. The generator draws

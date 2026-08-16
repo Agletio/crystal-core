@@ -34,6 +34,14 @@ call, in their words: "We are going to just delete the sandbox and start
 updating graphics in the actual game. I think it either works or it doesn't."*
 A descent is where art is judged, and `npm run peek` is pointed at one.
 
+**YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
+the furniture specifically solid so you can't walk through it."* The bench, the
+shelf, the lampshelf, the lamprack, the slab, the plinth and the orrery are in
+`SOLID_PROPS`, so all 38 pieces across the four rooms block and every route from
+the hole to the person goes round them. `Grid.solid` has a live producer for the
+first time since the arrangements were cut. Lanterns and floor debris stay
+walk-over.
+
 **A descent is what the ROCK did and nothing else** — loose stone drifted at the
 wall's foot and three shapes of root on the cut face, with nothing standing on
 the floor, at the user's word. And the Fissure floor is RETONED at emit:
@@ -118,6 +126,17 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **Making the furniture solid cost the SEVEN IDS and nothing else in the sim.**
+  `block`, `Grid.solid`, `walkable`, `findPath` and `glide` were all already
+  right, and every one of the 38 pieces blocked with none refused — the rooms
+  were authored roomy enough that no piece strands anybody. The whole phase was
+  one `Set` and three demo checks, exactly as the vacuous-check note below
+  predicted. **The prop tile is what a `fits(x, y, 0.3)` test reads**, and for
+  integer coordinates that is `walkable` and nothing more — so the "every prop
+  fits where it was put" sweep started failing on every solid prop the moment
+  furniture blocked. A PROP is asked about its tile and a BODY about whether it
+  fits; split that way the second half catches a person placed on a bench,
+  which is what it was always for.
 - **A single-seed check does not fail when a mechanism breaks; it fails when
   the rng moves.** The wander shifted every draw after it and two checks went
   red, neither for a real reason. The Slow lands on six maps in eight and the
@@ -224,17 +243,15 @@ Kept here because the next thing built on top of them will want it.
   makes doubling a big body's radius safe — it pushes the pack out of its legs
   and cannot strand it.
 - **Stripping the arrangements left `Grid.solid` with NO live producer, and the
-  check that guarded it went vacuous rather than red.** Every solid prop in the
-  game — altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls —
-  only ever arrived through a `VIGNETTES` arrangement, and the four authored
-  rooms furnish themselves with benches, shelves and lanterns, none of which
-  block. So `block` ran over four descents and marked nothing, and a check
-  reading "furniture blocks, only where it may" would have passed forever while
-  proving nothing. It DRIVES the layer now: it rings a scene's person with
-  solids and holds `block` to refusing the one that closes the ring — which is
-  the undo rule, and the old check never tested it at all. **A check whose
-  subject a phase deletes does not fail; it stops meaning anything. Look for
-  the vacuous ones, not just the red ones.**
+  check that guarded it went vacuous rather than red.** Every solid prop —
+  altar, cairn, brazier, pillar, pitprop, cart, cocoon, stake, skulls — only
+  ever arrived through a `VIGNETTES` arrangement, so `block` ran over four
+  descents and marked nothing, and a check reading "furniture blocks, only
+  where it may" passed forever while proving nothing. **A check whose subject a
+  phase deletes does not fail; it stops meaning anything. Look for the vacuous
+  ones, not just the red ones.** The rooms are the producer now — the same
+  check, re-pointed, holds 38 real pieces of furniture — and the by-hand ring
+  is still there for the UNDO half, which nothing a room places exercises.
 - **The Fissure was the only zone `WORKED` held, so emptying that gate was the
   whole phase.** One call site, one `Set`, one constant. Everything else was
   the two demo checks written against the old rule.
@@ -1378,65 +1395,7 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — You walk AROUND the furniture in an authored room
-
-**The user's call:** *"make the furniture specifically solid so you can't walk
-through it."*
-
-#### What is true today
-
-`SOLID_PROPS` in `src/vignettes.ts` holds nine ids — `altar`, `cairn`,
-`brazier`, `pillar`, `pitprop`, `cart`, `cocoon`, `stake`, `skulls` — and none
-of the furniture a scene places is in it. `block()` in `src/sim/grid.ts` only
-marks a tile solid for an id in that set, so the hero walks straight through the
-Lampwright's workbench on his way across the room.
-
-#### Why it is wrong
-
-A room is hand-placed and looked at closely. Walking through a bench is the one
-thing an authored room cannot afford, and it is the only place in the game where
-the player is guaranteed to cross a floor somebody furnished.
-
-#### Decisions
-
-- [ ] Add the scene furniture to `SOLID_PROPS`: `bench`, `shelf`, `lampshelf`,
-      `lamprack`, `slab`, `plinth`, `orrery`. NOT the lanterns and NOT the
-      floor debris — a lantern is a thing you step over, and `COVER_PROPS`
-      claims no tile by design.
-- [ ] Two demo checks break and both need REWRITING rather than relaxing. One
-      prints `N solids put round the person, M of them block, K refused` and
-      drove K NEGATIVE when this was tried — it counts against a fixed
-      expectation of how many of a scene's props are solid. The other is the
-      solidity sweep beside it. Read what each is asserting and restate it for
-      a world where furniture blocks; do not widen the set and loosen the check
-      to match.
-- [ ] Every room stays crossable. `block` already refuses a tile that would cut
-      the room in two, and the demo already proves a route from the hole to
-      whoever is waiting — that check must still pass on all FOUR scenes.
-
-#### Traps
-
-- **The walk is `walkOut`, not the descent's pathing.** It calls `advance` at
-  `SCENE_WALK`, which uses `findPath` over `grid` — solidity is honoured, but a
-  bench dropped on the only line between the hole and the man makes the walk
-  fail and `walkOut` hands the meeting over anyway. Check the workshop's three
-  benches do not wall the man off.
-- **`block` is order-dependent**: it solidifies one prop at a time and undoes
-  any that strands something. The scatter is `unshift`ed in front of the plan's
-  props, so the furniture is considered LAST. Adding solids may change which
-  ones are refused.
-
-#### Done when
-
-The hero's walk across every one of the four rooms goes AROUND every piece of
-furniture, and `demo` proves it on all four rather than on the workshop alone.
-
-#### What must not break
-
-`comments`, `typecheck`, `demo`, `build`, `shots`. `demo` is the one that
-matters: it owns both the solidity checks and the route-to-the-person check.
-
-### Phase 2 — One art direction: the UI matches the game it frames
+### Phase 1 — One art direction: the UI matches the game it frames
 
 **The user's call:** *"we need to redo the entire ui. I want the same
 functionality it all has now but designed to match the theme of the new fissure
@@ -1567,7 +1526,7 @@ looks, so a smoke failure is a bug and not an expected update. `drag` proves the
 dock still reorders and a window still goes where you put it, which is the thing
 a layout retheme is most likely to break silently.
 
-### Phase 3 — A quest log instead of a pointing finger
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching

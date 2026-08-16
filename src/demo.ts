@@ -96,6 +96,7 @@ import { findPath } from './sim/pathfind';
 import { sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
+import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import { ZONES } from './render/generated-tiles';
@@ -111,7 +112,7 @@ import {
   slotUsed,
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
-import type { MapProp } from './sim/grid';
+import type { Grid, MapProp } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
@@ -1668,78 +1669,100 @@ rule('SPRITES — is the pixel art well formed?');
   // Then that it never walls the map off — whatever the hero is sent to has to
   // still be reachable, or a run stands still forever.
   //
-  // Nothing SCATTERS a solid prop: a descent is what the rock did and the four
-  // authored rooms furnish themselves with things you walk over, so `block` is
-  // driven here with solids put on a real room by hand. A layer with no live
-  // producer is exactly the one worth holding, since `findPath` asks
-  // `walkable` and anything reading `tiles` alone parks the hero on a tile it
-  // can never step off.
+  // A descent scatters none of it, so the producer is the four authored rooms:
+  // every bench, shelf, rack, slab, plinth and orrery somebody put down is a
+  // thing you go round. `findPath` asks `walkable`, and anything reading
+  // `tiles` alone parks the hero on a tile it can never step off.
+  const standsIn = (room: SceneDef) => ({
+    x: Math.round(room.plan.stands.x),
+    y: Math.round(room.plan.stands.y),
+  });
+  const at = (grid: Grid, v: { x: number; y: number }) =>
+    Math.round(v.y) * grid.width + Math.round(v.x);
   {
-    const room = SCENES[0];
-    const plain = sceneMap(room.plan, room.theme, 1);
-    const open = (at: { x: number; y: number }): boolean => plain.grid.at(at.x, at.y) === FLOOR;
-    const stands = { x: Math.round(room.plan.stands.x), y: Math.round(room.plan.stands.y) };
-    const key = (at: { x: number; y: number }) =>
-      Math.round(at.y) * plain.grid.width + Math.round(at.x);
-
-    // Beside the person, which is the hardest place to put one: a ring of them
-    // is a meeting that can never happen, and `block` has to refuse the tile
-    // that closes it.
-    const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
-      .map(([dx, dy]) => ({ x: stands.x + dx, y: stands.y + dy }))
-      .filter(open);
-    const walled = sceneMap(
-      { ...room.plan, props: [...room.plan.props, ...ring.map((at) => ({ id: 'cairn', ...at }))] },
-      room.theme,
-      1
-    );
-
-    const solid: string[] = [];
-    let blocked = 0;
-    for (let y = 0; y < walled.grid.height; y++) {
-      for (let x = 0; x < walled.grid.width; x++) {
-        if (!walled.grid.solid[y * walled.grid.width + x]) continue;
-        blocked++;
-        if (walled.grid.at(x, y) !== FLOOR && walled.grid.at(x, y) !== TUNNEL) {
-          solid.push(`${x},${y} is not floor`);
-        }
-        if (!walled.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
-          solid.push(`${x},${y} blocks with nothing standing on it`);
+    const furnished = SCENES.map((room) => ({ room, map: sceneMap(room.plan, room.theme, 1) }));
+    const bad: string[] = [];
+    let solids = 0;
+    for (const { room, map } of furnished) {
+      for (const p of room.plan.props) {
+        if (!SOLID_PROPS.has(p.id)) continue;
+        solids++;
+        if (!map.grid.solid[at(map.grid, p)]) bad.push(`${room.id}: ${p.id}@${p.x},${p.y} is walked through`);
+      }
+      for (let y = 0; y < map.grid.height; y++) {
+        for (let x = 0; x < map.grid.width; x++) {
+          if (!map.grid.solid[y * map.grid.width + x]) continue;
+          const tile = map.grid.at(x, y);
+          if (tile !== FLOOR && tile !== TUNNEL) bad.push(`${room.id}: ${x},${y} is not floor`);
+          if (!map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
+            bad.push(`${room.id}: ${x},${y} blocks with nothing standing on it`);
+          }
         }
       }
     }
+    line(`  ${solids} pieces of furniture across ${SCENES.length} rooms, and you walk round every one`);
+    check(
+      bad.length === 0,
+      `all ${solids} pieces of furniture in the authored rooms block, and only where they may`,
+      bad.slice(0, 4).join(', ')
+    );
+
+    // And a ROUTE goes around each of them. `Grid.solid` is a second layer, so
+    // anything reading `tiles` alone paths straight through the bench.
+    const barred = furnished.flatMap(({ room, map }) => {
+      const route = findPath(map.grid, map.entrance, standsIn(room));
+      if (route.length === 0) return [`${room.id}: no way across at all`];
+      return route
+        .filter((wp) => map.grid.solid[wp.y * map.grid.width + wp.x])
+        .map((wp) => `${room.id}: ${wp.x},${wp.y}`);
+    });
+    check(
+      barred.length === 0,
+      `and in all ${SCENES.length} the route from the hole to whoever is waiting goes around it rather than through`,
+      barred.slice(0, 4).join(', ')
+    );
+  }
+
+  // `block` is order-dependent and UNDOES the piece that strands something,
+  // which nothing a room actually places exercises — so it is driven by hand.
+  // Beside the person is the hardest place to put one: a ring of them is a
+  // meeting that can never happen, and the tile that closes it has to be
+  // refused. A check whose subject nothing reaches is vacuous, not green.
+  {
+    const room = SCENES[0];
+    const plain = sceneMap(room.plan, room.theme, 1);
+    const stands = standsIn(room);
+    const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
+      .map(([dx, dy]) => ({ x: stands.x + dx, y: stands.y + dy }))
+      .filter((v) => plain.grid.at(v.x, v.y) === FLOOR);
+    const walled = sceneMap(
+      { ...room.plan, props: [...room.plan.props, ...ring.map((v) => ({ id: 'cairn', ...v }))] },
+      room.theme,
+      1
+    );
+    const grid = walled.grid;
 
     const seen = new Set<number>();
-    const queue = [key(walled.entrance)];
+    const queue = [at(grid, walled.entrance)];
     seen.add(queue[0]);
     for (let head = 0; head < queue.length; head++) {
-      const x = queue[head] % walled.grid.width;
-      const y = (queue[head] - x) / walled.grid.width;
+      const x = queue[head] % grid.width;
+      const y = (queue[head] - x) / grid.width;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        if (!walled.grid.walkable(x + dx, y + dy)) continue;
-        const to = (y + dy) * walled.grid.width + (x + dx);
+        if (!grid.walkable(x + dx, y + dy)) continue;
+        const to = (y + dy) * grid.width + (x + dx);
         if (seen.has(to)) continue;
         seen.add(to);
         queue.push(to);
       }
     }
-    const spared = ring.length - blocked;
-    line(`  ${ring.length} solids put round the person, ${blocked} of them block, ${spared} refused`);
+    const held = ring.filter((v) => grid.solid[at(grid, v)]).length;
+    const spared = ring.length - held;
+    line(`  ${ring.length} more put round the person, ${held} of them block, ${spared} refused`);
     check(
-      blocked >= 4 && spared >= 1 && solid.length === 0 && seen.has(key(stands)),
-      'furniture blocks, only where it may, and never walls anything off',
-      `${solid.slice(0, 4).join(', ')}${seen.has(key(stands)) ? '' : ' — the person is cut off'}`
-    );
-
-    // And a ROUTE goes around it. `Grid.solid` is a second layer, so anything
-    // reading `tiles` alone paths straight through the altar.
-    const through = findPath(walled.grid, walled.entrance, stands)
-      .filter((wp) => walled.grid.solid[wp.y * walled.grid.width + wp.x])
-      .map((wp) => `${wp.x},${wp.y}`);
-    check(
-      through.length === 0,
-      'and a route from the hole to whoever is waiting goes around it rather than through',
-      through.slice(0, 4).join(', ')
+      held >= 4 && spared >= 1 && seen.has(at(grid, stands)),
+      'and the piece that would wall somebody off is refused instead',
+      `${held} blocked, ${spared} refused${seen.has(at(grid, stands)) ? '' : ' — the person is cut off'}`
     );
   }
 
@@ -6165,17 +6188,21 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     );
     // Everything authored has to be standing on floor, in EVERY room: a bench
     // in the rock is a bench nobody can see, and the cut worries the edges of
-    // a room away tile by tile.
+    // a room away tile by tile. A prop is asked about the TILE and a body about
+    // whether it FITS, which is the same question until furniture blocks — and
+    // then a body standing on a bench is exactly what the second one catches.
     const misplaced: string[] = [];
     for (const scene of SCENES) {
       const built = new RunSim([], g.character, new Rng(6100), { scene: scene.id });
       const grid = built.state.map.grid;
-      const put: Array<readonly [string, number, number]> = [
-        ...built.state.map.props.map((p) => [p.id, p.x, p.y] as const),
+      for (const p of built.state.map.props) {
+        if (grid.at(p.x, p.y) === WALL) misplaced.push(`${scene.id}: ${p.id} at ${p.x},${p.y}`);
+      }
+      const bodies: Array<readonly [string, number, number]> = [
         [scene.who, built.state.folk[0].x, built.state.folk[0].y] as const,
         ['the hole', built.state.map.entrance.x, built.state.map.entrance.y] as const,
       ];
-      for (const [id, x, y] of put) {
+      for (const [id, x, y] of bodies) {
         if (!grid.fits(x, y, 0.3)) misplaced.push(`${scene.id}: ${id} at ${x},${y}`);
       }
       // And the hole has to reach the person, or you arrive in a room you
