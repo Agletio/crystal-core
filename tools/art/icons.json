@@ -32,7 +32,10 @@
   "#4F8A3A",
   "#8FD654",
   "#9AA3A8",
-  "#D6DDE0"
+  "#D6DDE0",
+  "#6E120E",
+  "#B0201A",
+  "#E84438"
  ],
  "icons": [
   {
@@ -386,6 +389,14 @@
   {
    "id": "cur_sigil_of_upheaval",
    "say": "a heavy cast-iron seal cracked clean through the middle, the two halves shifted out of line, dull brass ring broken."
+  },
+  {
+   "id": "flask_life",
+   "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep red liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
+  },
+  {
+   "id": "flask_mana",
+   "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep blue liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
   }
  ]
 }

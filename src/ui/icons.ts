@@ -965,7 +965,7 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
 /** Skill icons, for the middle of a tree. */
 /** A generated icon carries its OWN colours, where a hand-drawn one looks every
  *  character up in the palette — so `sprite` is handed the key directly. */
-function drawn(id: string, size: number): SVGSVGElement | null {
+export function drawn(id: string, size: number): SVGSVGElement | null {
   const art = GENERATED_ICONS[id];
   return art ? sprite(art.rows, art.key, size, id) : null;
 }

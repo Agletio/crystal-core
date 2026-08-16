@@ -689,7 +689,7 @@
   .flask { display: flex; align-items: center; gap: 6px; }
   .flask__use {
     position: relative; display: grid; place-items: center;
-    width: 40px; height: 44px; padding: 0;
+    width: 48px; height: 50px; padding: 0;
     background: var(--panel); background-image: var(--grit);
     border: 2px solid var(--edge); box-shadow: var(--bevel); cursor: pointer;
   }
@@ -703,6 +703,9 @@
   .sicon--flask .sicon__ink { fill: var(--text-dim); }
   .flask--life .sicon--flask .sicon__fill { fill: var(--life); }
   .flask--mana .sicon--flask .sicon__fill { fill: var(--mana); }
+  /* Generated flask states: same picture, the liquid's shine turned down. */
+  .flaskart--low { filter: saturate(.75) brightness(.85); }
+  .flaskart--dry { filter: grayscale(.9) brightness(.5); }
   /* Each control keeps its own box. Squeezed onto one line beside the name the
      `+` shrank to nothing and stopped taking clicks at all. */
   .flask__auto { display: flex; align-items: center; gap: 4px; }
