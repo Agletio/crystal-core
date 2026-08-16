@@ -6368,14 +6368,16 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       check(dropped > 0, 'and one does once it has been', `${dropped} in 40 bare clears`);
       gauge(`a way back drops ${dropped} times in 40 bare clears`);
 
-      // A key already SPENT puts the room at the end of the next clear, and it
-      // goes in front of a room you have not met yet.
+      // A key already SPENT schedules nothing: it opens the fight at the
+      // door, so the clear it would have ridden on owes no room at all.
       const back = createGame('dev');
       back.sockets = {};
+      back.bosses = [bossId];
       back.called = bossId;
+      back.relics = [];
       check(
-        sceneWaiting(back, facts(back, sim.state))?.def.id === INTRO.bossScene,
-        'a key already spent puts the room at the end of the next clear',
+        sceneWaiting(back, facts(back, sim.state)) === null,
+        'a socketed key schedules nothing — the fight is at the door',
         JSON.stringify(sceneWaiting(back, facts(back, sim.state))?.def.id)
       );
       // And a room never drops the key that opens it, or the loop feeds itself.

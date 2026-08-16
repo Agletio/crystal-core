@@ -265,6 +265,8 @@ export const SOLID_PROPS = new Set([
   'slab',
   'plinth',
   'orrery',
+  'gems_big',
+  'gems_small',
 ]);
 
 /** A mark IN the floor rather than a thing standing on it. The generator draws

@@ -112,7 +112,7 @@ export interface GameState {
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
-  called: string | null; // a room a spent key has paid for, owed at the next clear
+  called: string | null; // a fight a socketed key has paid for: the next entry is it
 }
 
 export interface SoldEntry {

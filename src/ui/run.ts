@@ -31,7 +31,6 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   THEME_BY_ID,
-  keyForBoss,
 } from '../data';
 import { spend } from '../economy';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
@@ -39,7 +38,7 @@ import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, sceneWaiting, takeBoss } from '../game/scenes';
 import { relicFor } from '../game/graft';
-import { SCENE_BY_ID } from '../scenes';
+import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -98,7 +97,9 @@ let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
 let leaving = false;
 /** A boss whose key is armed, spent by the launch. UI state like `leaving`:
  *  what is SAVED is the room a spent key has already paid for. */
-let calling: string | null = null;
+/** Whether the room being stood in is a REPEAT of a beaten boss: the speech
+ *  played once, so a bought rematch goes straight to the fight. */
+let revisit = false;
 
 /** The handover: down the hole at the exit, dark for the moment the map is
  *  swapped, out of the entrance of whatever is at the bottom. Nothing in
@@ -251,6 +252,7 @@ function renderMenu(): void {
     }
     grid.append(button);
   }
+  renderKeySocket(grid);
 
   const host = $('run-selected');
   host.replaceChildren();
@@ -289,12 +291,13 @@ function renderMenu(): void {
     )
   );
 
-  renderCall();
-
   // The one thing that can shut the Fissure — and never a dead end, because
   // selling out of the haul needs no room anywhere.
   const blocked = haulFull(game);
   const launcher = $('run-launch') as HTMLButtonElement;
+  launcher.textContent = game.called
+    ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
+    : 'Enter the Fissure';
   launcher.disabled = blocked;
   launcher.classList.toggle('mini--off', blocked);
   $('run-blocked').textContent = blocked
@@ -303,29 +306,38 @@ function renderMenu(): void {
 }
 
 /**
- * Going back for one you have already put down. The button ARMS it and the
- * launch spends the key, so a descent you abandon costs you the way in — the
- * same rule as everywhere else.
+ * The FIFTH socket, under the four the crystals take. A key is SPENT the
+ * moment it goes in — the same rule as socketing anywhere else being
+ * permanent — and what it buys is the next entry: the Fissure opens onto the
+ * boss instead of a descent. Hidden until a boss has been met, since a
+ * keyhole to nowhere teaches nothing.
  */
-function renderCall(): void {
-  const button = $('run-call') as HTMLButtonElement;
+function renderKeySocket(grid: HTMLElement): void {
   const key = BOSS_KEYS.find((k) => (game.wallet[k.id] ?? 0) > 0 && bossBeaten(game, k.boss));
-  button.hidden = !key || game.called !== null;
-  if (!key) {
-    calling = null;
-    return;
+  const armed = game.called ? BOSS_BY_ID[game.called] : null;
+  if (!armed && !key) return;
+
+  const button = el('button', 'socket socket--key') as HTMLButtonElement;
+  button.id = 'run-socket-key';
+  button.classList.toggle('socket--full', !!armed);
+  if (armed) {
+    button.append(el('div', 'socket__name', armed.name));
+    button.append(el('div', 'socket__mods', `${armed.herald} Enter, and it is the fight.`));
+    button.disabled = true;
+  } else if (key) {
+    const who = BOSS_BY_ID[key.boss];
+    button.append(el('div', 'socket__name', `Set ${key.name} — ${game.wallet[key.id]} held`));
+    button.append(el('div', 'socket__mods', `Spends the key. The next entry is ${who?.name ?? key.boss}.`));
+    button.title = key.description;
+    button.onclick = () => {
+      if (!spend(game.wallet, { [key.id]: 1 })) return;
+      game.called = key.boss;
+      note(`${key.name} spent. ${who?.name ?? key.boss} is listening.`);
+      renderMenu();
+      renderInventory();
+    };
   }
-  if (calling && calling !== key.boss) calling = null;
-  const who = BOSS_BY_ID[key.boss];
-  button.textContent = calling
-    ? `Calling ${who?.name ?? key.boss} — ${key.name} spent on entering`
-    : `Call ${who?.name ?? key.boss} — 1 ${key.name}`;
-  button.classList.toggle('mini--on', calling !== null);
-  button.title = key.description;
-  button.onclick = () => {
-    calling = calling ? null : key.boss;
-    renderCall();
-  };
+  grid.append(button);
 }
 
 // ---------------------------------------------------------------------------
@@ -333,21 +345,21 @@ function renderCall(): void {
 // ---------------------------------------------------------------------------
 
 function launch(): void {
+  // A socketed key opens the fight AT the door: the descent this entry would
+  // have been is the fight, not a wait for one.
+  if (game.called) {
+    const den = SCENES.find((s) => s.encounter === game.called);
+    if (den) {
+      seed = Math.floor(Math.random() * 1e9);
+      enterScene(den);
+      return;
+    }
+  }
+
   // An empty set is a real descent, not a missing choice: the bare Fissure is
   // generated fresh each time and never taken from you, which is what makes
   // running out of crystals a setback rather than an end.
   const set = socketed(game);
-
-  // Spent HERE and not at the clear: a descent you walk out of costs you the
-  // way in, which is what abandoning costs everywhere else.
-  if (calling) {
-    const key = keyForBoss(calling);
-    if (key && spend(game.wallet, { [key.id]: 1 })) {
-      game.called = calling;
-      note(`${key.name} spent. ${BOSS_BY_ID[calling]?.name ?? calling} is listening.`);
-    }
-    calling = null;
-  }
 
   seed = Math.floor(Math.random() * 1e9);
   // Who you might meet is the player's business, not the set's: the chance
@@ -455,8 +467,15 @@ function speak(): void {
   const def = SCENE_BY_ID[arrivedIn];
   if (!def) return;
   // A room with something in it says its piece and then goes live; a quiet one
-  // ends on the panel, which is where the gift is.
+  // ends on the panel, which is where the gift is. A REMATCH skips the piece:
+  // the speech was the first meeting's, and a key bought a fight.
   if (def.encounter) {
+    if (revisit) {
+      if (sim?.beginEncounter()) playing = true;
+      absorbEvents();
+      setLeaveLabel();
+      return;
+    }
     startSpeech(def.who, def.name, def.beats ?? [], () => {
       if (sim?.beginEncounter()) playing = true;
       absorbEvents();
@@ -493,7 +512,7 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
 
-  const after = report.cleared ? (def?.after ?? []) : [];
+  const after = report.cleared && !revisit ? (def?.after ?? []) : [];
   if (after.length === 0) return land(report, state);
   startSpeech(def!.who, def!.name, after, () => land(report, state));
 }
@@ -504,6 +523,7 @@ function endEncounter(): void {
 function enterScene(def: SceneDef): void {
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
+  revisit = def.encounter !== null && bossBeaten(game, def.encounter);
   arriving = null;
   arrivedIn = def.id;
   spoke = false;

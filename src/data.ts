@@ -2194,8 +2194,8 @@ export interface BossKeyDef {
   name: string;
   boss: string; // a `BossDef` id
   description: string;
-  /** Chance a cleared descent drops one, before power, and only once its boss
-   *  is down: a way back to somewhere you have never been reads as junk. */
+  /** Chance a KILL drops one, before power, and only once its boss is down —
+   *  a way back to somewhere you have never been reads as junk. Tuned rare. */
   chance: number;
   perPower: number; // per point of run power, so more crystals buys more fights
 }
@@ -2206,8 +2206,8 @@ export const BOSS_KEYS: BossKeyDef[] = [
     name: 'A Written Name',
     boss: 'answering',
     description: 'Three marks copied off a wall. Said aloud in the right place, something turns round.',
-    chance: 0.12,
-    perPower: 1.08,
+    chance: 0.002,
+    perPower: 1.05,
   },
 ];
 

@@ -2460,25 +2460,17 @@ assert(
 }
 
 // --- going back for one you have already put down --------------------------
-// The dev kit is handed every key and every door, so the way back is a button
-// on the Fissure rather than a thing you farm for before you can test it.
+// The dev kit is handed every key and every door, so the FIFTH socket is on
+// the Fissure rather than a thing you farm for before you can test it. It is
+// NOT clicked here: socketing consumes the key and arms the next entry, and a
+// smoke that armed it would fight a boss in every launch below.
 {
-  const call = $('run-call');
-  assert(call !== null, 'the Fissure offers a way back to somebody you put down');
-  assert(call.hidden === false, 'and it is offered while you are holding the way in');
-  assert(/^Call /.test(call.textContent), 'it names who, before you press it', call.textContent);
-  assert(/1 /.test(call.textContent), 'and what it costs, in figures', call.textContent);
-
-  call.click();
-  assert(call.classList.contains('mini--on'), 'pressing it arms the call');
-  assert(/^Calling /.test(call.textContent), 'and says so', call.textContent);
-  assert(
-    /spent on entering/.test(call.textContent),
-    'naming when the key actually goes',
-    call.textContent
-  );
-  call.click();
-  assert(!call.classList.contains('mini--on'), 'and pressing it again puts the key back');
+  const socket = $('run-socket-key');
+  assert(socket !== null, 'the Fissure offers a keyhole under the crystal sockets');
+  assert(/^Set /.test(socket.textContent), 'it names the key it takes', socket.textContent);
+  assert(/\d+ held/.test(socket.textContent), 'and how many are held, in figures', socket.textContent);
+  assert(/Spends the key/.test(socket.textContent), 'and says the cost is the socketing itself', socket.textContent);
+  assert(!socket.disabled, 'an unarmed keyhole is clickable');
 }
 
 // --- he talks in the room, not over a sheet covering it --------------------

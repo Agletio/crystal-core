@@ -570,13 +570,15 @@ costs that room and stops the loop.
 **A way BACK is a key.** `BOSS_KEYS` in `src/data.ts` is its own table and
 never a `CurrencyDef` — a real currency is reachable by the bench's registries,
 which is a bench that can pour a boss key onto a helmet — and it rides in
-`game.wallet` like everything else that is counted. It drops off a cleared
-DESCENT, never out of a room, at a rate that climbs with run power, and only
-once its boss is down: `GameState.bosses` is what you have beaten. Spending it
-is a button on the Fissure that ARMS the call; the launch spends the key and
-sets `GameState.called`, so a descent you walk out of costs you the way in.
-That room then comes at the end of the next clear, through `sceneWaiting` at
-rung 2 like everything else.
+`game.wallet` like everything else that is counted. It drops off a KILL, rare
+enough that a fight stays an occasion, never inside a room, at a rate that
+climbs with run power, and only once its boss is down: `GameState.bosses` is
+what you have beaten. Spending it is the FIFTH SOCKET on the Fissure, under
+the four the crystals take and hidden until a boss has been met: socketing
+CONSUMES the key and sets `GameState.called`, and the next entry is the fight
+— Enter opens the boss's own room directly, the speech skipped on a rematch
+(`revisit` in `src/ui/run.ts`), the `after` lines too. Dying in it loses the
+room and the key, the same price abandoning pays everywhere else.
 
 **The Lambengolmor** is the second voice the game has, met once two crystals
 are set in the wall. His pitch is *stop blindly feeding the stone; learn its

@@ -916,16 +916,15 @@ export class RunSim {
     if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
 
     s.status = 'cleared';
-    this.dropKeys();
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
   }
 
   /**
-   * A way back to a room you have already put down. Per cleared DESCENT rather
-   * than per kill, and never out of a scene — a key that drops in the room it
-   * opens is a loop rather than a reason to run the Fissure.
+   * A way back to a room you have already put down. Per KILL and rare, an
+   * occasion rather than a wage — and never out of a scene: a key that drops
+   * in the room it opens is a loop rather than a reason to run the Fissure.
    */
-  private dropKeys(): void {
+  private rollKeyDrop(): void {
     if (this.options.scene) return;
     const beaten = this.options.beaten ?? [];
     for (const key of BOSS_KEYS) {
@@ -2077,6 +2076,7 @@ export class RunSim {
     this.rollCurrency();
     this.rollGearDrop();
     this.rollRelicDrop();
+    this.rollKeyDrop();
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
   }

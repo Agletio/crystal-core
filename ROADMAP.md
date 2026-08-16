@@ -1640,10 +1640,28 @@ Every one is parked deliberately. Ask before acting on any of them.
    Replacing the placeholder touches the ACQUISITION only — not the tree, not
    the points, not the allocation — so this blocks the STORY and not the system.
 
-2. **What is the fifth socket?** Wanted as an endgame slot holding something
-   that is not a crystal. Deliberately unspecified — the user wants to think
-   about it. `RULES.md` says how to keep it cheap to add; nothing else may
-   assume it.
+2. **ANSWERED — the fifth socket is the KEYHOLE.** The user's call: a boss
+   key socketed under the four crystal sockets is consumed on the spot and the
+   next entry is the fight. Built: keys drop per KILL (rare, gated on the boss
+   being down), `renderKeySocket` in `src/ui/run.ts`, launch opens the boss's
+   room directly, speech skipped on a rematch. What remains of it is question
+   13 below — the fight's MECHANIC.
+
+13. **What is a boss fight's MECHANIC?** The user's call: boss fights should
+   be short, rare, and INTERACTIVE — "if you don't do some sort of mechanic
+   they're very hard to win unless your build is extremely strong." Nothing
+   in a run takes live input today (combat, movement and flasks all drive
+   themselves), so any mechanic needs a new input surface, and clicks must be
+   QUEUED into the tick the way `usePotion` queues, or a seed stops
+   replaying. Candidates proposed, none picked: (a) NAME-MARKS — glowing
+   marks light up around the room in waves; clicking one erases it; each one
+   that survives its window feeds the boss a stack of damage/armour, so a
+   weak build must play whack-a-mark and a monster build can tank the stacks.
+   Thematically strongest for The Answering, which is a thing called up by
+   its own written name. (b) INTERRUPT — the boss channels a near-lethal slam
+   behind a long telegraph; clicking the boss during the channel staggers it.
+   (c) CONDUITS — standing crystals ward the boss to a fraction of damage
+   taken until clicked dead. Waiting on the user before any of it is built.
 
 3. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
    was, off a check reading 6 seeds. Measured over 24, the Seam sat **0.7%
