@@ -1,11 +1,14 @@
 /**
- * A node's frame on a web, as pixel art.
+ * A node's frame on a web: GENERATED art first, raster shapes as the fallback.
  *
- * A shape is rasterised once onto an odd-sided grid and emitted as one path of
- * whole cells, so whatever the zoom the silhouette is the same handful of
- * steps — pixel art rather than vector art that happens to be small. Shared by
- * the skill web and the trade web: two of these would be two looks.
+ * `WEB_ART` holds the generated frames and chain segment as data URIs, drawn
+ * as SVG <image> so one PNG serves every zoom — the webs' units differ by two
+ * orders of magnitude and an <image> does not care. Where a piece is missing
+ * the drawn shapes stand in: rasterised once onto an odd-sided grid, emitted
+ * as one path of whole cells. Shared by the skill web and the trade web: two
+ * of these would be two looks.
  */
+import { WEB_ART } from '../render/generated-web';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -108,12 +111,36 @@ function stamp(spans: Span[], n: number, cx: number, cy: number, r: number): str
  * Which metal is the stylesheet's, off the group's own classes; the image
  * inside is the caller's.
  */
+/** One generated picture, centred on a point and spanning `s` across. */
+function art(id: string, cls: string, cx: number, cy: number, s: number): SVGElement | null {
+  const piece = WEB_ART[id];
+  if (!piece) return null;
+  const h = (s * piece.h) / piece.w;
+  return svgEl('image', {
+    class: cls,
+    href: piece.png,
+    x: (cx - s / 2).toFixed(3),
+    y: (cy - h / 2).toFixed(3),
+    width: s.toFixed(3),
+    height: h.toFixed(3),
+    preserveAspectRatio: 'none',
+  });
+}
+
 export function frame(
   kind: 'minor' | 'notable',
   pos: { x: number; y: number },
   r: number,
   prefix: string
 ): SVGElement[] {
+  const own = art(
+    kind === 'notable' ? 'frame_notable' : 'frame_minor',
+    `${prefix}__art`,
+    pos.x,
+    pos.y,
+    r * 2.3
+  );
+  if (own) return [own];
   const n = 17;
   const out: SVGElement[] = [];
   if (kind === 'notable') {
@@ -140,6 +167,8 @@ export function frame(
  * an eight-pointed setting, and the caller lays its icon over the stone.
  */
 export function mount(pos: { x: number; y: number }, r: number, prefix: string): SVGElement[] {
+  const own = art('frame_hub', `${prefix}__art`, pos.x, pos.y, r * 2.5);
+  if (own) return [own];
   const n = 21;
   const d = disc(n);
   return [
@@ -157,9 +186,10 @@ export function mount(pos: { x: number; y: number }, r: number, prefix: string):
 }
 
 /**
- * A CHAIN between two points: oval links laid along the line, every other one
- * edge-on, the way a hanging chain turns. `width` is the old stroke width, so
- * both webs' units work unchanged. The caller draws its dark casing first.
+ * A CHAIN between two points. The generated segment is laid end to end along
+ * the line as rotated <image>s; without it, oval links are drawn by hand,
+ * every other one edge-on. `width` is the old stroke width, so both webs'
+ * units work unchanged. The caller draws its dark casing first.
  */
 export function chain(
   a: { x: number; y: number },
@@ -172,9 +202,37 @@ export function chain(
   const len = Math.hypot(dx, dy);
   if (len < 1e-3) return [];
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const out: SVGElement[] = [];
+
+  const piece = WEB_ART.chain;
+  if (piece) {
+    // Three links per segment; the run is divided evenly so no link is cut.
+    const segLen = width * 5;
+    const count = Math.max(1, Math.round(len / segLen));
+    const step = len / count;
+    const h = (step * piece.h) / piece.w;
+    for (let i = 0; i < count; i++) {
+      const t = (i + 0.5) / count;
+      const cx = a.x + dx * t;
+      const cy = a.y + dy * t;
+      out.push(
+        svgEl('image', {
+          class: cls,
+          href: piece.png,
+          x: (cx - step / 2).toFixed(3),
+          y: (cy - h / 2).toFixed(3),
+          width: step.toFixed(3),
+          height: h.toFixed(3),
+          preserveAspectRatio: 'none',
+          transform: `rotate(${angle.toFixed(1)} ${cx.toFixed(3)} ${cy.toFixed(3)})`,
+        })
+      );
+    }
+    return out;
+  }
+
   const step = width * 2.1;
   const count = Math.max(1, Math.round(len / step));
-  const out: SVGElement[] = [];
   for (let i = 0; i < count; i++) {
     const t = (i + 0.5) / count;
     const cx = a.x + dx * t;

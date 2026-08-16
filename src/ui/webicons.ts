@@ -7,6 +7,7 @@
  * matches nothing gets a pebble, which is what "a little more generic" means.
  */
 import type { SkillNodeDef } from '../skills-tree';
+import { drawn } from './icons';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -225,9 +226,16 @@ export function glyphFor(node: SkillNodeDef): string {
   return node.kind === 'notable' ? 'sword' : 'pebble';
 }
 
-/** The image, as a nested SVG the caller positions. Its own builder rather
- *  than `gridIcon`, whose rounded height is 0 in a web measured in TILES. */
+/** The image, as a nested SVG the caller positions. The GENERATED icon wins
+ *  (`wn_*` in the icons table); the grid glyphs below are the fallback, built
+ *  by hand rather than `gridIcon`, whose rounded height is 0 in a web
+ *  measured in TILES. */
 export function nodeGlyph(node: SkillNodeDef, size: number): SVGSVGElement {
+  const own = drawn(`wn_${glyphFor(node)}`, size);
+  if (own) {
+    own.classList.add('web__node__img');
+    return own;
+  }
   const rows = GLYPHS[glyphFor(node)];
   const span = Math.max(...rows.map((r) => r.length));
   const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;

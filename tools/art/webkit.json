@@ -1,0 +1,30 @@
+{
+ "_": "What to SAY for the web NODE KIT — the frames and the chain the skill, movement and trade webs are drawn out of. `webkit.mts ask [id ...]` generates any piece with no PNG cached (naming ids re-asks those), and `webkit.mts emit` writes src/render/generated-web.ts as data URIs, the generated-ui.ts pattern. The node ICONS are ordinary icons.json rows (wn_*), not pieces here.",
+ "how": " Pixel art, seen straight on, centred and filling the frame, hard dark outline, chunky readable shapes, tarnished metal lit by warm lamplight. NOT text, NOT a scene, NOT a landscape, NOT a background, NOT a border pattern. Transparent background.",
+ "pieces": [
+  {
+   "id": "frame_notable",
+   "width": 96,
+   "height": 96,
+   "say": "an ornate circular gold medallion frame: one heavy round ring of engraved tarnished gold with four small pointed prongs at the compass points and fine bead detail on the band, the middle of the ring EMPTY dark near-black recessed stone, NOT a coin, NOT a gem, NOT a wheel, NOT a clock."
+  },
+  {
+   "id": "frame_minor",
+   "width": 96,
+   "height": 96,
+   "say": "a plain circular metal ring frame: one simple round band of dark tarnished silver-grey iron with a few rivets on the band and fine bead detail, the middle of the ring EMPTY flat near-black recessed stone with nothing drawn in it, NOT gold, NOT a shield, NOT a spiral, NOT corroded green, NOT a coin, NOT a wheel."
+  },
+  {
+   "id": "frame_hub",
+   "width": 128,
+   "height": 128,
+   "say": "a grand ornate circular gold frame: one heavy engraved ring of tarnished gold with eight short pointed rays around it like a compass rose, the middle of the ring EMPTY dark near-black recessed stone, NOT a coin, NOT a sun face, NOT a clock."
+  },
+  {
+   "id": "chain",
+   "width": 64,
+   "height": 32,
+   "say": "a short horizontal length of rusted iron chain: three interlocked oval chain links seen from the side in a straight horizontal row, dark rusted brown iron with warm highlights, NOT a rope, NOT a necklace, NOT a bracelet."
+  }
+ ]
+}

@@ -1488,9 +1488,15 @@
      readable against the lit rock behind it. */
   .web { shape-rendering: crispEdges; }
   .web__edge { stroke: var(--chain); }
-  /* Oval links drawn over the casing: rusted at rest, gold on a taken path. */
-  .web__chain { stroke: var(--chain-lit); fill: none; }
-  .web__chain--on { stroke: var(--citrine); }
+  /* Chain over the casing: rusted at rest, lit gold on a taken path. The
+     stroke rules are for the drawn fallback; a generated link is a picture,
+     so its states are treatments. */
+  .web__chain { stroke: var(--chain-lit); fill: none; image-rendering: pixelated; }
+  .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
+  .web__node__art, .web__node__img { image-rendering: pixelated; }
+  .web__node:hover .web__node__art { filter: brightness(1.25); }
+  .web__node--open .web__node__art { filter: drop-shadow(0 0 3px var(--bone)); }
+  .web__node--on .web__node__art { filter: brightness(1.35) drop-shadow(0 0 3px var(--citrine)); }
   .web__hub__prong { fill: var(--chain-lit); }
   .web__hub__rim { fill: var(--rim); }
   .web__hub__body { fill: var(--stud-gem); }

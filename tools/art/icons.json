@@ -397,6 +397,66 @@
   {
    "id": "flask_mana",
    "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep blue liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
+  },
+  {
+   "id": "wn_flame",
+   "say": "a teardrop-shaped blaze of orange and gold fire floating alone in empty space, searing white-hot at its middle, nothing under it and nothing holding it, NOT a torch, NOT a candle, NOT a stick, NOT a match."
+  },
+  {
+   "id": "wn_frost",
+   "say": "a six-pointed pale blue ice crystal snowflake, sharp and cold, NOT a star, NOT a flower."
+  },
+  {
+   "id": "wn_bolt",
+   "say": "a single jagged yellow-white lightning bolt, hard angular zigzag, NOT a sword, NOT an arrow."
+  },
+  {
+   "id": "wn_skull",
+   "say": "a small pale bone skull seen from the front, hollow dark eye sockets, NOT a face, NOT a mask."
+  },
+  {
+   "id": "wn_star",
+   "say": "a four-pointed gold starburst glint, bright centre and thin rays, NOT a snowflake, NOT a cross."
+  },
+  {
+   "id": "wn_droplet",
+   "say": "a single fat round drop of glowing deep blue liquid, wet highlight, NOT a flame, NOT a gem."
+  },
+  {
+   "id": "wn_heart",
+   "say": "a deep red heart, chunky and solid with one bright highlight, NOT an apple, NOT a gem."
+  },
+  {
+   "id": "wn_arrow",
+   "say": "a single iron-tipped wooden arrow pointing straight up with grey feather fletching, NOT a spear, NOT a sword."
+  },
+  {
+   "id": "wn_burst",
+   "say": "concentric expanding shockwave rings, a small bright centre with two thin circles around it, NOT a target, NOT an eye."
+  },
+  {
+   "id": "wn_wing",
+   "say": "a single pale feathered wing swept to one side, light and fast, NOT a bird, NOT a leaf."
+  },
+  {
+   "id": "wn_shield",
+   "say": "a small round iron shield with a bright brass boss in the middle, seen straight on, NOT a coin, NOT a wheel."
+  },
+  {
+   "id": "wn_hourglass",
+   "say": "a small wooden hourglass with pale sand falling inside the glass, NOT a bottle, NOT a lantern."
+  },
+  {
+   "id": "wn_orb",
+   "say": "a small violet arcane orb with a bright inner spark and a thin curl of light around it, NOT an eye, NOT a planet."
+  },
+  {
+   "id": "wn_sword",
+   "say": "a short straight iron sword pointing up with a simple brass crossguard and dark grip, NOT crossed swords, NOT a dagger in a hand."
+  },
+  {
+   "id": "wn_pebble",
+   "say": "a small rough grey stone pebble, plain and rounded with one chipped edge, NOT a gem, NOT a coin."
   }
  ]
 }

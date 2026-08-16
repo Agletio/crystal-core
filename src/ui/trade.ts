@@ -52,8 +52,8 @@ let picking = false;
 // them. Nothing measures the element: the wrapper is inside a modal whose own
 // height is decided after this draws, so a box read here is a box that has
 // already moved by the time anyone looks at it.
-const NODE_R = { minor: 0.19, notable: 0.32 };
-const HUB_R = 0.52;
+const NODE_R = { minor: 0.23, notable: 0.37 };
+const HUB_R = 0.56;
 /** Room round the outermost node, so a stud's rim is never against the edge. */
 const MARGIN = 0.7;
 
