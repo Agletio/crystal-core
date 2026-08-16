@@ -67,6 +67,7 @@ import {
   note,
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
+import { initSettings, openSettings, closeSettings, isSettingsOpen } from './ui/settings';
 import { initKeys } from './ui/keys';
 import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
@@ -138,6 +139,7 @@ document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
+document.getElementById('open-settings')!.addEventListener('click', openSettings);
 // The dev kit wipes what you are playing, and sits in a row you click all day.
 const guard = (id: string, title: string, mode: StartMode) =>
   document.getElementById(id)!.addEventListener('click', async () => {
@@ -189,6 +191,7 @@ measureDock();
 mountFixtures();
 initInventory(game);
 initHistory();
+initSettings();
 initConfirm();
 // A loaded backup replaces everything, so every screen has to look again.
 initSaveData(
@@ -334,6 +337,7 @@ const SCREENS: Record<
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
+  settings: { el: 'settings', open: openSettings, close: closeSettings, isOpen: isSettingsOpen },
 };
 
 initWindows(Object.fromEntries(Object.entries(SCREENS).map(([id, s]) => [id, s.el])));

@@ -8,6 +8,7 @@
 import type { GameState } from '../game/state';
 import { keyFor, keyName } from './keys';
 import { screenIcon } from './screenicons';
+import { attachTooltip } from './tooltip';
 
 function dress(button: HTMLElement, game: GameState): void {
   const label = button.textContent?.trim() ?? '';
@@ -15,20 +16,23 @@ function dress(button: HTMLElement, game: GameState): void {
   if (!icon) return;
   button.replaceChildren(icon);
 
-  // A glyph with no accessible name is a button that reads as nothing.
-  if (label) {
-    button.setAttribute('aria-label', label);
-    button.title = label;
-  }
+  // A glyph with no accessible name is a button that reads as nothing. The
+  // hover name is the game's own tooltip — never `title`, which the browser delays.
+  if (label) button.setAttribute('aria-label', label);
 
   const binding = button.dataset.key;
   const key = binding ? keyFor(game, binding) : '';
-  if (!key) return;
-  const badge = document.createElement('span');
-  badge.className = 'railbtn__key';
-  badge.textContent = keyName(key);
-  button.append(badge);
-  button.title = `${label} (${keyName(key)})`;
+  if (key) {
+    const badge = document.createElement('span');
+    badge.className = 'railbtn__key';
+    badge.textContent = keyName(key);
+    button.append(badge);
+  }
+  if (label)
+    attachTooltip(button, () => {
+      const now = binding ? keyFor(game, binding) : '';
+      return now ? `${label} (${keyName(now)})` : label;
+    });
 }
 
 /** The save is where parking lives, so it survives a reload like a keybind. */

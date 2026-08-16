@@ -426,12 +426,18 @@
     position: fixed; right: 16px; bottom: 22px; z-index: 34;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
+  /* One row of sockets is wider than half a 1280 screen and the flasks own the
+     bottom centre, so on a narrow desktop window the corner steps up over the
+     flask line rather than landing the rail on the rack. */
+  @media (max-width: 1620px) {
+    body.mapfull .corner { bottom: 104px; }
+  }
   /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
-     every button a riveted socket SET INTO it. The plate is a border-image
-     9-slice, so it survives the rail wrapping to any number of rows. */
+     every button a riveted socket SET INTO it. ONE row, sockets touching —
+     the user's call — so the buttons are sized to keep the plate on screen. */
   .rail {
-    display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
-    align-items: center; gap: 6px; max-width: 296px;
+    display: flex; justify-content: flex-end;
+    align-items: center; gap: 0;
     padding: 4px 2px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
     border: 14px solid transparent;
@@ -440,7 +446,7 @@
   }
   .railbtn {
     position: relative; display: grid; place-items: center;
-    width: 48px; height: 48px; padding: 0; font-size: 0;
+    width: 40px; height: 40px; padding: 0; font-size: 0;
     background: transparent; background-image: var(--fix-socket);
     background-size: 100% 100%; image-rendering: pixelated;
     color: var(--text-dim);
@@ -1600,9 +1606,7 @@
 <body>
 <div class="wrap">
   <div class="corner" id="corner">
-    <!-- One per slot: what you ARE, over what you can open. In the stack rather
-         than positioned beside it, because a rail that wraps to a third row
-         would otherwise grow up into them. -->
+    <!-- One per slot: what you ARE, over what you can open. -->
     <div class="skillrow-icons" id="run-skills"></div>
     <nav class="rail" id="rail">
     <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
@@ -1616,10 +1620,11 @@
     <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
     <button class="railbtn" id="open-history" data-key="history">History</button>
     <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
+    <button class="railbtn" id="open-settings">Settings</button>
     <span class="rail__sep"></span>
     <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
     <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
-    <button class="railbtn railbtn--dev" id="dev-kit" title="Dev only">Dev kit</button>
+    <button class="railbtn railbtn--dev" id="dev-kit">Dev kit</button>
     </nav>
   </div>
 
@@ -2111,6 +2116,21 @@
     </div>
     <div class="modal__body">
       <div id="history-log"></div>
+    </div>
+  </div>
+</div>
+<!-- An empty shell on purpose: the button and the window exist so there is a
+     place when there is something to put in it. -->
+<div class="modal" id="settings" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Settings</h2>
+      <div class="seedbar">
+        <button class="mini" id="settings-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <p class="empty" id="settings-empty">Nothing to set yet.</p>
     </div>
   </div>
 </div>
