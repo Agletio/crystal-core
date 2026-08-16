@@ -14,6 +14,15 @@
    "height": 384,
    "asset": "02061775-6402-4fdf-8729-1160114162d0",
    "say": "a grand ornamental ceremonial frame for a game TITLE SCREEN: a heavy carved near-black stone plaque border with ornate tarnished brass filigree flourishes swelling at the corners, small violet cut gems set into the border, a thin warm gold hairline along the inner edge, aged and chipped, the middle fully OPEN and EMPTY and transparent. NOT text, NOT letters, NOT a scene, NOT a landscape."
+  },
+  {
+   "id": "crackscene",
+   "width": 512,
+   "height": 288,
+   "asset": "3756c312-4e50-460f-82e8-edf335b8c270",
+   "crop": [56, 46, 400, 196],
+   "say": "a wide pixel art landscape SCENE for a game title screen: the sheer cliff face of a huge near-black rock wall filling most of the frame, a strip of wild dark grassy meadow running along its base in the foreground, a tall narrow vertical CRACK split up the middle of the rock glowing warm amber from deep inside as if something wondrous is hidden within, the glow spilling out onto the grass, one small lit iron lantern standing at each side of the crack's mouth. Filled edge to edge. NOT a frame, NOT a border, NOT text, NOT letters, NOT people.",
+   "style": "Moody dark fantasy pixel art, near-black weathered stone, muted dark green grass, warm amber lamplight, in the style of Path of Exile and Diablo loading screen art. Dark and atmospheric, NOT bright, NOT colorful, NOT cartoonish, NOT sci-fi."
   }
  ],
  "pieces": [

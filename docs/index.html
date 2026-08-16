@@ -270,52 +270,49 @@
       radial-gradient(130% 105% at 50% 50%, transparent 42%, rgba(4,3,2,.82));
   }
   .title > * { position: relative; z-index: 1; }
-  /* The gem, enormous and barely there: what stops the ground being a black
-     void without becoming a picture again. Under the scrim, two classes
-     because `.title > *` is one. */
-  .title .title__ghost {
-    position: absolute; inset: 0; z-index: 0; display: grid; place-items: center;
-    pointer-events: none; opacity: .04;
+  /* The fissure itself, GENERATED: a rock face split by a lit crack, a lantern
+     either side of the mouth, meadow at its foot. Shown at 2x its art, an
+     integer, so every pixel stays square. */
+  .title__crack {
+    width: min(800px, 94vw, 84vh); aspect-ratio: 400 / 196;
+    background-image: var(--fix-crackscene); background-size: 100% 100%;
+    image-rendering: pixelated;
   }
-  .title__ghost .sicon { width: min(125vmin, 1150px); height: auto; }
-  .title__ghost .sicon__ink { fill: var(--seam-cut); }
-  .title__ghost .sicon__fill { fill: var(--gem-dim); }
-  .title__ghost .sicon__lit { fill: var(--citrine); }
-  /* The fissure itself, small and central under the plaque: the split is
-     darker than the stone, the glow and the two flames are the rust and gold
-     every lamp in the game burns. */
-  .title__crack { line-height: 0; image-rendering: pixelated; }
-  .title__crack .sicon__ink { fill: var(--cut); }
-  .title__crack .sicon__fill { fill: var(--rust); }
-  .title__crack .sicon__lit { fill: var(--citrine); }
   /* The plaque holds the mark and the words in its open middle; the padding
      IS the frame's border, measured off the art. */
   .title__plaque {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px;
-    width: min(688px, 94vw); aspect-ratio: 688 / 384;
+    /* The vh term keeps plaque + scene + go-line INSIDE one short viewport:
+       at 800px tall both scale down rather than clipping. The padding is
+       76px/64px at full width as a SHARE of the width the plaque actually
+       gets — percentage padding reads the parent's width, not this box's. */
+    --plaque-w: min(688px, 94vw, 72vh);
+    width: var(--plaque-w); aspect-ratio: 688 / 384;
     background-image: var(--fix-plaque); background-size: 100% 100%;
     image-rendering: pixelated;
-    /* Clear of the carved frame top and bottom: the words sat against it. */
-    padding: 76px 64px;
+    padding: calc(var(--plaque-w) * .11) calc(var(--plaque-w) * .093);
   }
   /* The MARK, and the words under it are a caption to it rather than the logo.
      Grid art, so its two inks are these and nothing is baked into the file. */
   .title__mark { line-height: 0; filter: drop-shadow(0 4px 0 rgba(0,0,0,.75)); }
-  .title__mark .sicon, .title__mark .icon { width: clamp(72px, 10vw, 110px); height: auto; image-rendering: pixelated; }
+  .title__mark .sicon, .title__mark .icon { width: clamp(64px, calc(var(--plaque-w) * .16), 110px); height: auto; image-rendering: pixelated; }
   .title__mark .sicon__ink { fill: var(--seam-cut); }
   .title__mark .sicon__fill { fill: var(--gem-dim); }
   .title__mark .sicon__lit { fill: var(--citrine); }
   /* Carved rather than printed: gold catching light down the face of the
-     letters, and the shadow cut in under them. */
+     letters, a dark stroke crisping their edge, and ONE hard shadow cut in
+     under them — a soft halo on top of it read as mush. */
   .title__logo {
-    margin: 0; font-size: clamp(28px, 5vw, 52px); letter-spacing: .1em;
-    text-transform: uppercase; font-weight: 600;
-    background: linear-gradient(var(--gem-hi) 16%, var(--gem-mid) 50%, var(--gem-dim));
+    /* Sized off the PLAQUE, not the viewport: a wide window over a short one
+       gave a big wordmark in a small plaque, wrapped onto two lines. */
+    margin: 0; font-family: var(--display); font-size: clamp(26px, calc(var(--plaque-w) * .0756), 52px);
+    letter-spacing: .12em; text-transform: uppercase; font-weight: 700;
+    background: linear-gradient(var(--gem-hi) 24%, var(--gem-mid) 58%, var(--gem-dim) 90%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(2px 3px 0 rgba(0,0,0,.92)) drop-shadow(0 0 9px rgba(6,4,2,.8));
+    -webkit-text-stroke: 1px rgba(0,0,0,.45);
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.9));
   }
-  .title__logo span { color: transparent; }
   .title__sub {
     margin: 2px 0 0; font-size: 13px; color: var(--citrine); letter-spacing: .34em;
     text-transform: uppercase; text-shadow: 1px 1px 0 rgba(0,0,0,.95), 0 0 10px rgba(6,4,2,.9);
@@ -324,7 +321,7 @@
   /* A rule either side, fading out: the cheapest thing that reads as a title
      page rather than as a heading. */
   .title__sub::before, .title__sub::after {
-    content: ''; width: clamp(30px, 8vw, 90px); height: 1px;
+    content: ''; width: clamp(20px, calc(var(--plaque-w) * .1), 90px); height: 1px;
     background: linear-gradient(90deg, transparent, var(--edge-lit));
   }
   .title__sub::after { background: linear-gradient(90deg, var(--edge-lit), transparent); }
@@ -449,7 +446,7 @@
     color: var(--text-dim);
     border: 0; border-radius: 0; box-shadow: none; cursor: pointer;
   }
-  .railbtn:hover:not(:disabled), .railbtn:focus-visible { color: var(--citrine); filter: brightness(1.3); }
+  .railbtn:hover:not(:disabled), .railbtn:focus-visible { color: var(--citrine); filter: brightness(1.15); }
   .railbtn:active:not(:disabled) { box-shadow: none; }
   .railbtn--dev { opacity: .7; }
   .sicon { display: block; image-rendering: pixelated; }
@@ -1119,7 +1116,7 @@
     border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
     image-rendering: pixelated; box-shadow: none; border-radius: 0;
   }
-  .socket:hover { filter: brightness(1.25); }
+  .socket:hover { filter: brightness(1.08) drop-shadow(0 0 4px var(--citrine)); }
   .socket:not(.socket--full) { opacity: .62; }
   .socket--full { box-shadow: inset 0 0 0 1px var(--rust); }
   .sockets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1160,17 +1157,19 @@
   .mini--go { border-color: var(--rust); color: var(--bone); }
   /* The one decision on the screen, sized like it. */
   /* The one decision on the screen is a carved PLATE, brass caps and all. */
+  /* `fill` puts the plate's own stone under the words: a flat panel there,
+     brightened on hover, lit up as a hard rectangle inside the carved edge. */
   .mini--enter {
     padding: 8px 22px; font-size: 15px; letter-spacing: .1em;
-    background: none; background-color: var(--panel-lit); background-clip: padding-box;
+    background: none;
     border: 12px solid transparent;
     border-left-width: 24px; border-right-width: 24px;
-    border-image: var(--fix-bar) 14 26 / 12px 24px round;
+    border-image: var(--fix-bar) 14 26 fill / 12px 24px round;
     image-rendering: pixelated;
     border-radius: 0; box-shadow: 0 4px 0 rgba(0,0,0,.5);
     color: var(--citrine);
   }
-  .mini--enter:hover:not(:disabled) { filter: brightness(1.25); color: var(--citrine); }
+  .mini--enter:hover:not(:disabled) { filter: brightness(1.12) drop-shadow(0 0 5px var(--citrine)); color: var(--bone); }
   .mini--enter:active:not(:disabled) { box-shadow: none; }
   .runbar--go { margin-top: 20px; justify-content: center; }
   /* Centred and roomier, now that nothing shares the screen with it. */
@@ -2157,10 +2156,9 @@
 <!-- The first thing a load lands on. Above every window, because nothing else
      is up yet and nothing else may be reached past it. -->
 <div class="title" id="title">
-  <div class="title__ghost" id="title-ghost"></div>
   <div class="title__plaque">
     <div class="title__mark" id="title-mark"></div>
-    <h1 class="title__logo">Crystal <span>Core</span></h1>
+    <h1 class="title__logo">Crystal Core</h1>
     <p class="title__sub">A thin place in the rock.</p>
   </div>
   <div class="title__crack" id="title-crack"></div>

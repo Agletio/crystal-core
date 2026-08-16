@@ -942,10 +942,12 @@ The item tooltip carries the art beside the name (`.tip__head` in
 `itemcard.ts`), and the title's mark is `crys_normal_t4` — the highest-tier
 Normal crystal, the thing the game is about.
 
-**The title's logo is DRAWN.** `src/ui/logo.ts` is a cut gem in grid art — a
-list of strings like every other icon, inks out of CSS — over a wordmark carved
-in gold. Neither webfont has ever rendered in a screenshot this repo took, so
-the fallback serif is the face that was actually designed against.
+**The title's mark is the generated `crys_normal_t4`, over a wordmark carved
+in gold** — one gradient down the letter faces, a dark stroke at their edge and
+ONE hard shadow, because a soft halo stacked on a hard shadow read as mush.
+Neither webfont has ever rendered in a screenshot this repo took, so the
+fallback serif is the face that was actually designed against. `src/ui/logo.ts`
+and its grid-art gem are deleted.
 
 **The map is the SCREEN, and everything else floats on it.** `body.mapfull`,
 toggled by `syncViewportLock`, is the whole of the mechanism: the stage goes
@@ -1008,15 +1010,17 @@ selling needs room nowhere.
 The title is the mark and the wordmark on a ceremonial PLAQUE — a generated
 ornamental frame (`plaque` in `UI_FIXTURES`, an `extras` row in
 `tools/art/uikit.json`) — over quiet lamplit stone. *The user's call: the old
-two-worlds wall was "way too noisy".* The ground carries: one warm lamp glow
-with a vignette, the gem mark drawn enormous at low opacity behind everything —
-which is what keeps the screen from being a plain black void without becoming a
-picture again — and, below the plaque, THE CRACK itself: the fissure drawn in
-grid art (`CRACK` in `src/ui/title.ts`), a lit hairline opening into a glowing
-mouth with a torch flame either side, drawn as the LIGHT in it because a black
-split on near-black stone is invisible. Nothing ticks, nothing is painted per
-frame, and the cast stays on the character-select hall where it lives.
-`src/ui/titleart.ts` and the two-worlds canvas are deleted.
+two-worlds wall was "way too noisy".* Below the plaque is THE FISSURE itself,
+GENERATED (`crackscene`, another `extras` row): the rock face split by a lit
+crack, a lantern either side of the mouth, meadow at its foot, drawn at 2x —
+an integer, so its pixels stay square — off `--fix-crackscene`. An `extras`
+row may carry its own `style` words and a `crop`: the scene escaped the kit's
+fixture styling through the first and lost the ornate frame the generator
+added anyway through the second. The enormous low-opacity gem ghost behind
+everything is gone — its giant grid pixels read as a banding artifact — and
+the scene is what keeps the ground from being a void. Nothing ticks, nothing
+is painted per frame, and the cast stays on the character-select hall where it
+lives. `src/ui/titleart.ts` and the two-worlds canvas are deleted.
 
 ## Saves
 
@@ -1067,7 +1071,6 @@ src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill
-src/ui/logo.ts     the title's mark, in grid art like every other icon
 tools/theme-check.mjs  every colour a token, and every token defined
 src/ui/            one module per screen
 ```

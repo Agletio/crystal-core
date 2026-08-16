@@ -20,7 +20,11 @@ const CACHE = here('cache/ui');
 const SHEET = `${CACHE}/kit.png`;
 
 interface Piece { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; radius?: number }
-interface Extra { id: string; width: number; height: number; asset: string | null; say: string }
+interface Extra {
+  id: string; width: number; height: number; asset: string | null; say: string;
+  style?: string;
+  crop?: [number, number, number, number]; // cut at emit: a generation that arrived framed
+}
 interface Kit {
   _: string; style: string; palette: string;
   size: { width: number; height: number };
@@ -41,7 +45,7 @@ async function ask(which?: string): Promise<void> {
     ? { style_image_base64: readFileSync(SHEET).toString('base64') }
     : {};
   const out = await callTool('create_ui_asset', {
-    description: extra ? `${extra.say} ${kit.style}` : kit.style,
+    description: extra ? `${extra.say} ${extra.style ?? kit.style}` : kit.style,
     color_palette: kit.palette,
     width: extra?.width ?? kit.size.width,
     height: extra?.height ?? kit.size.height,
@@ -85,14 +89,18 @@ async function get(which?: string): Promise<void> {
  *  give detail, generated alone and standing in for the kit's own. */
 const SOLO: Record<string, string> = { socket: 'socket96.png' };
 
-/** Every `extras` row with a downloaded PNG is emitted whole. */
+/** Every `extras` row with a downloaded PNG is emitted, cut to `crop` if set. */
 const extraRows = (): string[] =>
   (kit.extras ?? []).flatMap((e) => {
     if (!existsSync(`${CACHE}/${e.id}.png`)) return [];
     const own = decodePng(readFileSync(`${CACHE}/${e.id}.png`));
-    const png = `data:image/png;base64,${encodePng(own.width, own.height, own.rgba).toString('base64')}`;
-    console.log(`${e.id}: ${own.width}x${own.height} (extra)`);
-    return [`  ${e.id}: { w: ${own.width}, h: ${own.height}, png: '${png}' },`];
+    const [cx, cy, cw, ch] = e.crop ?? [0, 0, own.width, own.height];
+    const cut = new Uint8Array(cw * ch * 4);
+    for (let r = 0; r < ch; r++)
+      cut.set(own.rgba.subarray(((cy + r) * own.width + cx) * 4, ((cy + r) * own.width + cx + cw) * 4), r * cw * 4);
+    const png = `data:image/png;base64,${encodePng(cw, ch, cut).toString('base64')}`;
+    console.log(`${e.id}: ${cw}x${ch} (extra)`);
+    return [`  ${e.id}: { w: ${cw}, h: ${ch}, png: '${png}' },`];
   });
 
 function emit(): void {
