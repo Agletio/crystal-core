@@ -776,14 +776,29 @@
   .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); }
   /* Life and mana are VESSELS: the fill inside a carved channel with brass
      caps. AFTER every base `.hp` rule, because the `border` shorthand in one
-     of those resets `border-image` and equal specificity is won by order. */
+     of those resets `border-image` and equal specificity is won by order.
+     The padding is the caps' own rounded art intruding past the border box —
+     without it a near-full fill draws over the right cap. */
   .hp--slim {
     height: 26px; margin-bottom: 0; background: none; box-shadow: none;
+    padding: 1px 5px;
     border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px;
     border-image: var(--fix-channel) 9 14 fill / 8px 14px round;
     image-rendering: pixelated;
   }
   .hp--mana.hp--dry { border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px; border-image: var(--fix-channel) 9 14 fill / 8px 14px round; filter: drop-shadow(0 0 3px var(--rust)); }
+  .hp__track { position: relative; width: 100%; height: 100%; }
+  /* Lit along its top and settling dark at the foot, so the liquid reads as a
+     body rather than as a paint stripe. A treatment, not a colour. */
+  .hp--slim .hp__fill {
+    background-image: linear-gradient(
+      rgba(255,255,255,.55) 0, rgba(255,255,255,.2) 30%,
+      rgba(0,0,0,.06) 55%, rgba(0,0,0,.38) 100%
+    );
+  }
+  .hp__ticks { position: absolute; inset: 0; pointer-events: none; }
+  .hp__tick { position: absolute; top: 30%; bottom: 0; width: 1px; background: rgba(0,0,0,.45); }
+  .hp__tick--big { top: 0; width: 2px; background: rgba(0,0,0,.6); }
 
   /* Two across under the map: the keys are the shortcut and these are the
      interface. One look with the shelf — the niche block above is the whole
@@ -1700,11 +1715,17 @@
             <span class="hud__level">lv <b id="run-level">1</b></span>
           </div>
           <div class="hp hp--slim">
-            <div class="hp__fill" id="run-hp-fill"></div>
+            <div class="hp__track">
+              <div class="hp__fill" id="run-hp-fill"></div>
+              <div class="hp__ticks" id="run-hp-ticks"></div>
+            </div>
             <div class="hp__text" id="run-hp-text">—</div>
           </div>
           <div class="hp hp--slim hp--mana">
-            <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
+            <div class="hp__track">
+              <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
+              <div class="hp__ticks" id="run-mana-ticks"></div>
+            </div>
             <div class="hp__text" id="run-mana-text">—</div>
           </div>
         </div>

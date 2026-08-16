@@ -653,8 +653,9 @@ export async function createPixiRenderer(
 
     // Life bars on everything alive, not just the wounded — the point is
     // seeing at a glance who is and isn't taking damage. Untouched bars are
-    // dimmed so a full room doesn't shout.
-    const bar = (e: Entity, width: number, colour: string) => {
+    // dimmed so a full room doesn't shout. `notch` marks the scale every 100
+    // life, heavier each 1000 — the hero's alone, or a pack is all stripes.
+    const bar = (e: Entity, width: number, colour: string, notch = false) => {
       if (e.dead) return;
       const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
       const hurt = frac < 1;
@@ -673,9 +674,26 @@ export async function createPixiRenderer(
         color: toHexNumber(colour),
         alpha: hurt ? 1 : 0.45,
       });
+      // Lit along the top and shaded at the foot, so it reads as a vessel.
+      vfxLayer.rect(bx, by, width * frac, h * 0.35).fill({
+        color: 0xffffff,
+        alpha: hurt ? 0.3 : 0.14,
+      });
+      vfxLayer.rect(bx, by + h * 0.75, width * frac, h * 0.25).fill({
+        color: 0x000000,
+        alpha: hurt ? 0.25 : 0.12,
+      });
+      if (!notch) return;
+      for (let at = 100; at < e.stats.maxLife; at += 100) {
+        const big = at % 1000 === 0;
+        vfxLayer
+          .rect(bx + width * (at / e.stats.maxLife) - hair / 2, big ? by : by + h * 0.35,
+            big ? hair * 2 : hair, big ? h : h * 0.65)
+          .fill({ color: toHexNumber(palette.void), alpha: 0.75 });
+      }
     };
     for (const m of state.monsters) bar(m, 0.7, palette.ember);
-    bar(state.hero, 1.1, palette.verdite);
+    bar(state.hero, 1.1, palette.verdite, true);
 
     // Skill and impact effects. Each kind gets a different SHAPE, not just a
     // different colour — at melee range two lines are indistinguishable.

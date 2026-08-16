@@ -687,6 +687,20 @@ function drinkPotion(id: string): void {
   syncFlasks();
 }
 
+/** Marks etched into a vessel at every 100 of the pool, heavier each 1000 —
+ *  rebuilt only when the pool itself moves, since the marks are the SCALE. */
+function syncTicks(host: HTMLElement, max: number): void {
+  const key = String(Math.round(max));
+  if (host.dataset.max === key) return;
+  host.dataset.max = key;
+  host.replaceChildren();
+  for (let at = 100; at < max; at += 100) {
+    const tick = el('div', `hp__tick${at % 1000 === 0 ? ' hp__tick--big' : ''}`);
+    tick.style.left = `${(at / max) * 100}%`;
+    host.append(tick);
+  }
+}
+
 function renderReadout(): void {
   if (!sim) return;
   const s = sim.state;
@@ -707,6 +721,7 @@ function renderReadout(): void {
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
+  syncTicks($('run-hp-ticks'), s.hero.stats.maxLife);
   $('run-hp-text').textContent =
     `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
 
@@ -714,6 +729,7 @@ function renderReadout(): void {
   const spare = Math.max(0, s.hero.mana);
   const pool = Math.max(1, s.hero.stats.maxMana);
   ($('run-mana-fill') as HTMLElement).style.width = `${Math.min(100, (spare / pool) * 100)}%`;
+  syncTicks($('run-mana-ticks'), pool);
   $('run-mana-text').textContent = `${Math.round(spare)} / ${Math.round(pool)}`;
   // Short of the cost is the state worth seeing: it is why the damage dropped.
   ($('run-mana-fill').parentElement as HTMLElement).classList.toggle('hp--dry', spare < cost);

@@ -234,8 +234,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
   }
 
-  /** Shown on everything alive; dimmed while untouched. */
-  function drawLifeBar(v: View, e: Entity, width: number, colour: string): void {
+  /** Shown on everything alive; dimmed while untouched. `notch` marks every
+   *  100 life, heavier each 1000 — the hero's alone. */
+  function drawLifeBar(v: View, e: Entity, width: number, colour: string, notch = false): void {
     const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
     const hurt = frac < 1;
 
@@ -250,6 +251,24 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = hurt ? 1 : 0.45;
     ctx.fillStyle = colour;
     ctx.fillRect(x, y, w * frac, h);
+    // Lit along the top and shaded at the foot, so it reads as a vessel.
+    ctx.fillStyle = 'rgba(255,255,255,.3)';
+    ctx.fillRect(x, y, w * frac, h * 0.35);
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.fillRect(x, y + h * 0.75, w * frac, h * 0.25);
+    if (notch) {
+      ctx.fillStyle = palette.void;
+      ctx.globalAlpha = 0.75;
+      for (let at = 100; at < e.stats.maxLife; at += 100) {
+        const big = at % 1000 === 0;
+        ctx.fillRect(
+          x + w * (at / e.stats.maxLife),
+          big ? y : y + h * 0.35,
+          big ? 2 : 1,
+          big ? h : h * 0.65
+        );
+      }
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -410,7 +429,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.fillStyle = palette.void;
     ctx.fill();
 
-    drawLifeBar(v, hero, 1.1, palette.verdite);
+    drawLifeBar(v, hero, 1.1, palette.verdite, true);
   }
 
   /** Under the bodies: the field they are standing in, not a badge on them. */
