@@ -282,6 +282,13 @@
   .title__ghost .sicon__ink { fill: var(--seam-cut); }
   .title__ghost .sicon__fill { fill: var(--gem-dim); }
   .title__ghost .sicon__lit { fill: var(--citrine); }
+  /* The fissure itself, small and central under the plaque: the split is
+     darker than the stone, the glow and the two flames are the rust and gold
+     every lamp in the game burns. */
+  .title__crack { line-height: 0; image-rendering: pixelated; }
+  .title__crack .sicon__ink { fill: var(--cut); }
+  .title__crack .sicon__fill { fill: var(--rust); }
+  .title__crack .sicon__lit { fill: var(--citrine); }
   /* The plaque holds the mark and the words in its open middle; the padding
      IS the frame's border, measured off the art. */
   .title__plaque {
@@ -2142,6 +2149,7 @@
     <h1 class="title__logo">Crystal <span>Core</span></h1>
     <p class="title__sub">A thin place in the rock.</p>
   </div>
+  <div class="title__crack" id="title-crack"></div>
   <p class="title__go">Click anywhere to begin</p>
 </div>
 
