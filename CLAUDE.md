@@ -902,7 +902,10 @@ frame, a button socket, a title plate, a banded bar plate and a gauge channel
 data URIs in `src/render/generated-ui.ts`, mounted as `--fix-*` at boot by
 `src/ui/fixtures.ts`, and applied as border-image 9-slices. The rail is an
 iron plate with every button in a socket; the three skill slots and the two
-flasks sit in the same sockets, the flasks on a bar-plate rack; life and mana
+flasks sit in the same sockets, the flasks on a bar-plate rack — each flask a
+GENERATED bottle (`flask_life`/`flask_mana` in `GENERATED_ICONS`, `flaskIcon`
+answering them first) filling most of its socket, drained states the same
+picture gone dull; life and mana
 are brass-capped channel vessels; every window is the ornate frame with a
 carved title plate for its head; the dock, tooltips, web menus, speech bubbles
 and the Fissure's four sockets take the card frame. A window that opens square
@@ -949,11 +952,16 @@ moved one back. Touching or opening one raises it within a band of z-indexes
 several open, a hand-written order shuts the one you are not looking at.
 
 **The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
-`src/ui/screenicons.ts`), bottom right. The button IDS are what every harness
-names, so they outlive any rearrangement of it. It draws over every window and every scrim, since it is how
-a screen is opened and shut. Two of its buttons are its own: Hide parks every
-panel and survives its own press AND a reload — `GameState.parked` is a
-preference like a keybind — and Fill asks the browser for the screen.
+`src/ui/screenicons.ts`), bottom right, ONE row of touching 40px sockets. The
+button IDS are what every harness names, so they outlive any rearrangement of
+it. It draws over every window and every scrim, since it is how a screen is
+opened and shut. Hovering a button raises the game's OWN tooltip immediately —
+nothing on the rail sets `title`. Below 1620px the corner steps up over the
+flask line, because one row is wider than half a 1280 screen. Two of its
+buttons are its own: Hide parks every panel and survives its own press AND a
+reload — `GameState.parked` is a preference like a keybind — and Fill asks the
+browser for the screen. Settings (`open-settings`) opens an empty framed shell
+on purpose: the place exists before there is anything to set.
 
 **The map is the GROUND, not a screen.** The dock resolves
 `override ?? screenHandler ?? base`; the run sets `base` on every phase change
@@ -981,20 +989,26 @@ selling needs room nowhere.
 The title is the mark and the wordmark on a ceremonial PLAQUE — a generated
 ornamental frame (`plaque` in `UI_FIXTURES`, an `extras` row in
 `tools/art/uikit.json`) — over quiet lamplit stone. *The user's call: the old
-two-worlds wall was "way too noisy".* The ground carries exactly three things:
-the grit texture, one warm lamp glow with a vignette, and the gem mark drawn
-enormous at 5.5% opacity behind everything — which is what keeps the screen
-from being a plain black void without becoming a picture again. Nothing ticks,
-nothing is painted per frame, and the cast stays on the character-select hall
-where it lives. `src/ui/titleart.ts` and the two-worlds canvas are deleted.
+two-worlds wall was "way too noisy".* The ground carries: one warm lamp glow
+with a vignette, the gem mark drawn enormous at low opacity behind everything —
+which is what keeps the screen from being a plain black void without becoming a
+picture again — and, below the plaque, THE CRACK itself: the fissure drawn in
+grid art (`CRACK` in `src/ui/title.ts`), a lit hairline opening into a glowing
+mouth with a torch flame either side, drawn as the LIGHT in it because a black
+split on near-black stone is invisible. Nothing ticks, nothing is painted per
+frame, and the cast stays on the character-select hall where it lives.
+`src/ui/titleart.ts` and the two-worlds canvas are deleted.
 
 ## Saves
 
 The save is `JSON.stringify(game)` in a localStorage key per SLOT — three of
 them, one LIVE — and there is no server behind the hosted build. `GameState`
-must stay plain data. The live slot autosaves; the Save & Load screen is where
-you copy a game into another slot, load one back, or start a new one, and a new
-game is a thing you do to a slot rather than a button in the header.
+must stay plain data. The live slot autosaves. The Save & Load screen is
+SELECT then act: a slot row is a button that picks itself and shows name,
+trade and level only; Play now at the head closes back into the live game,
+asks before switching into a held one, and starts a new game in an empty one;
+Save here and Delete at the foot act on the pick, warning where a held save
+would be destroyed — Delete refuses the live slot and the empty ones.
 
 A save is full of ids pointing into `data.ts` and the trees, and those move.
 `heal()` in `game/save.ts` runs on every load and drops what no longer resolves:

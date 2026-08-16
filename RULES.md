@@ -134,6 +134,12 @@ together. A fixed box at `bottom: 0` is still pushed by its own margin. And a
 rule for a floating element loses every specificity tie to the class it shares
 markup with, so `.hp.xpbar` and not `.xpbar`.
 
+**The rail is ONE row and the flasks own the bottom centre, so they must not
+meet.** One row of sockets is wider than half a 1280 screen — the width `shots`
+judges at — so below 1620px `body.mapfull .corner` steps up over the flask
+line. A new rail button widens the row; re-check that threshold when adding
+one.
+
 **A screen is a WINDOW; only a question stops you.** No scrim, click-through
 layer, card takes the pointer. `.modal--stop` is the short list that blocks,
 and it is now TWO: a confirm and the welcome. Anything new is a window unless
@@ -699,6 +705,11 @@ not an error, not a warning, the property silently inherits and a border comes
 out the colour of the text. **Three of those were already in the file**
 (`--edge`, `--parchment`, `--pitch`). A translucent overlay is a TREATMENT
 rather than a colour and is left alone, or every shadow needs a token.
+
+**`--grit` is a quiet wash and must stay a valid `<image>`.** The dither weave
+it used to be went at the user's word. Half its users compose it inside a
+`background-image` LIST, and `none` inside a list invalidates the whole
+property silently — so however quiet it gets, it stays a gradient.
 
 **FOUR TREATMENTS, defined once and reused: a window, a button, a panel and a
 card.** `--bevel` is the chiselled edge, `--gilt` the hairline of lamplight
