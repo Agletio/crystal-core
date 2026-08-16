@@ -2057,8 +2057,10 @@ assert($('history').hidden === true, 'history closes');
 // --- three slots -----------------------------------------------------------
 // The hosted build has no server behind it, so localStorage is the whole save.
 // A reload that starts you over is the one bug this feature can have — and now
-// that there are three of them, so is writing into the wrong one. Left near
-// the end on purpose: the last part of it really does wipe everything.
+// that there are three of them, so is writing into the wrong one. The model is
+// SELECT then act: a click picks a slot, and Play now, Save here and Delete
+// all act on the pick. Left near the end on purpose: the last part of it
+// really does wipe everything.
 {
   const stored = (slot) => {
     const raw = window.localStorage.getItem(`crystal-core.save.${slot}`);
@@ -2082,39 +2084,57 @@ assert($('history').hidden === true, 'history closes');
     'the one you are playing says so',
     $('save-row-1').className
   );
-  // The live row offers nothing: a slot is somewhere to keep a game, not
-  // somewhere to remember to save one.
-  assert($('save-copy-1') === null && $('save-load-1') === null, 'and offers no buttons');
+  assert(
+    $('save-row-1').classList.contains('saveslot--picked'),
+    'and starts selected',
+    $('save-row-1').className
+  );
+  // The box is who is in it and nothing else: name, trade and level.
+  assert(/level \d+/i.test(text('save-row-1')), 'a held slot says its level', text('save-row-1'));
+  assert(
+    !/saved|ago/i.test(text('save-row-1')),
+    'and no longer narrates when it saved',
+    text('save-row-1')
+  );
   assert(/empty/i.test(text('save-row-2')), 'an empty slot says so', text('save-row-2'));
-  assert(!!$('save-new-2'), 'and offers to start a game there');
+  // Deleting the slot you are standing in is a question nobody meant to ask.
+  assert($('save-delete').disabled === true, 'Delete refuses the slot you are playing');
 
-  // Copying is how a second slot gets filled without leaving this game.
+  $('save-row-2').click();
+  assert($('save-row-2').classList.contains('saveslot--picked'), 'clicking a slot selects it');
+  assert(!$('save-row-1').classList.contains('saveslot--picked'), 'one selection at a time');
+
+  // Save here fills the selected slot with the live game.
   const owned = dockItems().length;
-  $('save-copy-2').click();
-  assert(stored(2) !== null, 'Copy here fills the other slot');
+  $('save-here').click();
+  assert(stored(2) !== null, 'Save here fills the selected slot');
   assert(
     stored(2).character.name === stored(1).character.name,
     'with the game you are playing',
     `${stored(2)?.character?.name} vs ${stored(1)?.character?.name}`
   );
-  assert(!!$('save-load-2'), 'and it now offers to be loaded');
   assert(
     window.localStorage.getItem('crystal-core.slot') !== '2',
-    'copying does not move you into it',
+    'saving does not move you into it',
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
 
-  // Loading asks first — it is the one action that puts a different game in
-  // front of you, and the answer arrives a microtask after the click.
-  $('save-load-2').click();
-  assert($('confirm').hidden === false, 'Load asks before it switches');
+  // Saving over a held game is the one save that destroys one, so it warns.
+  $('save-here').click();
+  assert($('confirm').hidden === false, 'Save here over a held game asks first');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert($('confirm').hidden === true, 'Escape answers it no');
+
+  // Playing another game asks first — it puts a different game in front of
+  // you, and the answer arrives a microtask after the click.
+  $('save-play').click();
+  assert($('confirm').hidden === false, 'Play now on another game asks before it switches');
   assert(
     document.activeElement === $('confirm-no'),
     'and focus starts on Cancel',
     document.activeElement?.id ?? '(none)'
   );
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  assert($('confirm').hidden === true, 'Escape answers it no');
   await new Promise((r) => setTimeout(r, 0));
   assert(
     window.localStorage.getItem('crystal-core.slot') !== '2',
@@ -2122,7 +2142,7 @@ assert($('history').hidden === true, 'history closes');
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
 
-  $('save-load-2').click();
+  $('save-play').click();
   $('confirm-yes').click();
   await new Promise((r) => setTimeout(r, 0));
   assert(
@@ -2137,14 +2157,25 @@ assert($('history').hidden === true, 'history closes');
     `${dockItems().length} vs ${owned}`
   );
 
-  // A new game is a thing you do to a SLOT. Nothing is lost by it: what you
-  // were playing is still in the slot you left.
+  // Delete acts on the selection, with a warning of its own.
   $('open-save').click();
-  $('save-new-3').click();
+  $('save-row-1').click();
+  assert($('save-delete').disabled === false, 'a held slot you are not in can be deleted');
+  $('save-delete').click();
+  assert($('confirm').hidden === false, 'Delete asks first');
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(stored(1) === null, 'and the slot is gone');
+  assert(stored(2) !== null, 'while the others stay');
+
+  // A new game is Play now on an EMPTY slot. Nothing is lost by it: what you
+  // were playing is still in the slot you left.
+  $('save-row-3').click();
+  $('save-play').click();
   await new Promise((r) => setTimeout(r, 0));
   assert(
     window.localStorage.getItem('crystal-core.slot') === '3',
-    'New game starts in the slot you pressed it on',
+    'Play now on an empty slot starts a new game there',
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
   assert(

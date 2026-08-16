@@ -121,6 +121,8 @@ export function savedAt(slot: Slot = liveSlot()): number | null {
  *  `readSave`: looking at a slot may not reserve the ids inside it. */
 export interface SlotInfo {
   name: string;
+  /** The trade's NAME, or null before one is taken up. */
+  trade: string | null;
   level: number;
   at: number | null;
 }
@@ -131,7 +133,12 @@ export function peekSlot(slot: Slot): SlotInfo | null {
   try {
     const who = (JSON.parse(raw) as Partial<GameState>).character;
     if (!who) return null;
-    return { name: who.name || 'wanderer', level: who.level ?? 1, at: savedAt(slot) };
+    return {
+      name: who.name || 'wanderer',
+      trade: (who.trade && TRADE_BY_ID[who.trade]?.spec.name) || null,
+      level: who.level ?? 1,
+      at: savedAt(slot),
+    };
   } catch {
     return null;
   }

@@ -1382,14 +1382,18 @@
   .find:focus { outline: none; border-color: var(--citrine); }
   .find::placeholder { color: var(--text-dim); }
   .saveslots { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
-  .saveslot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    border: 1px solid var(--edge); padding: 10px 12px; }
-  .saveslot--live { border-color: var(--citrine); }
+  /* A slot is a BUTTON that selects itself; the verbs at the head and foot act
+     on the selection, so the box carries who is in it and nothing else. */
+  .saveslot { display: flex; align-items: center; gap: 12px; width: 100%;
+    background: var(--panel); color: var(--text); font: inherit; text-align: left;
+    border: 1px solid var(--edge); padding: 10px 12px; cursor: pointer;
+    box-shadow: none; }
+  .saveslot:hover { border-color: var(--text-dim); }
+  .saveslot--picked { border-color: var(--citrine); background: var(--panel-lit); }
   .saveslot__who { display: flex; flex-direction: column; gap: 2px; flex: 1 1 180px; min-width: 0; }
   .saveslot__n { font-size: 11px; color: var(--text-dim); letter-spacing: .08em; }
   .saveslot__name { color: var(--bone); }
   .saveslot__when { font-size: 11px; color: var(--text-dim); }
-  .saveslot__acts { display: flex; gap: 6px; align-items: center; }
   .saveslot__live { font-size: 11px; color: var(--citrine); letter-spacing: .08em; }
   .savenote { font-size: 11px; color: var(--verdite); min-height: 16px; margin: 12px 0 0; }
   .savenote--bad { color: var(--ember); }
@@ -2152,15 +2156,16 @@
   <div class="modal__card modal__card--ask">
     <div class="modal__head">
       <h2 class="modal__title">Save &amp; Load</h2>
-      <button class="mini mini--go mini--enter" id="save-play" hidden>Play now</button>
+      <button class="mini mini--go mini--enter" id="save-play">Play now</button>
       <button class="mini" id="save-close">Close</button>
     </div>
     <div class="modal__body">
       <div id="save-where"></div>
       <div class="ask__row" style="justify-content:flex-start">
-        <!-- It autosaves, and people do not believe it. A button that writes
-             now and says so costs one line and buys the confidence to reload. -->
-        <button class="mini" id="save-now">Save now</button>
+        <!-- Save here overwrites the SELECTED slot with the live game; people
+             do not believe the autosave, and this is also that button. -->
+        <button class="mini" id="save-here">Save here</button>
+        <button class="mini mini--danger" id="save-delete">Delete</button>
         <button class="mini" id="save-download">Download backup</button>
         <button class="mini" id="save-load">Load backup</button>
       </div>

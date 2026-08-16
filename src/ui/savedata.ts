@@ -1,10 +1,11 @@
 /**
  * Three slots, and how to get a game out of the browser.
  *
- * The hosted build has no account behind it, so this screen says so plainly —
- * your progress is in THIS browser — and hands you a file that is not. The
- * slot you are playing autosaves like the single save always did: a slot is
- * somewhere to KEEP a game, never somewhere to remember to save one.
+ * The model is SELECT, then act: clicking a slot highlights it, and the three
+ * verbs — Play now at the head, Save here and Delete at the foot — all act on
+ * the selection. A box says who is in it and nothing else: name, trade, level.
+ * The slot you are playing autosaves like the single save always did: a slot
+ * is somewhere to KEEP a game, never somewhere to remember to save one.
  */
 import {
   SLOTS,
@@ -18,7 +19,6 @@ import {
   peekSlot,
   readSave,
   saveGame,
-  savedAt,
   setLiveSlot,
 } from '../game/save';
 import type { Healed, Slot } from '../game/save';
@@ -34,23 +34,14 @@ let onFresh: (() => void) | null = null;
  *  which skill it swings, so playing one still has to put that question up. */
 let onPlay: (() => void) | null = null;
 
+/** The selection every verb acts on. The live slot until a click moves it. */
+let picked: Slot = 1;
+
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-/** "just now", "12 minutes ago", "yesterday" — precision nobody needs, gone. */
-function when(at: number | null): string {
-  if (at === null) return 'not yet';
-  const mins = Math.floor((Date.now() - at) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
 function say(message: string, bad = false): void {
@@ -62,20 +53,13 @@ function say(message: string, bad = false): void {
 /** Stable ids: the smoke test clicks these, and a slot is not a list index. */
 const slotId = (slot: Slot, what: string) => `save-${what}-${slot}`;
 
-function button(slot: Slot, what: string, label: string, go: () => void): HTMLElement {
-  const node = el('button', 'mini', label) as HTMLButtonElement;
-  node.id = slotId(slot, what);
-  node.onclick = go;
-  return node;
-}
-
 async function loadSlot(slot: Slot): Promise<void> {
   const who = peekSlot(slot);
   if (!who) return;
   const yes = await ask({
-    title: `Load ${who.name}?`,
-    text: 'This game keeps playing where it is. You come back to it by loading it.',
-    confirm: 'Load',
+    title: `Play ${who.name}?`,
+    text: 'The game you are in keeps playing where it is. You come back to it by selecting it here.',
+    confirm: 'Play',
   });
   if (!yes) return;
 
@@ -94,38 +78,6 @@ async function loadSlot(slot: Slot): Promise<void> {
   onLoaded?.(healed);
 }
 
-async function copyInto(slot: Slot): Promise<void> {
-  const held = peekSlot(slot);
-  if (held) {
-    const yes = await ask({
-      title: `Copy over ${held.name}?`,
-      text: `Level ${held.level}, saved ${when(held.at)}. It goes.`,
-      confirm: 'Copy',
-    });
-    if (!yes) return;
-  }
-  // Written first, so what lands in the other slot is this second rather than
-  // whatever the autosave timer last got round to.
-  saveGame(game);
-  copySlot(liveSlot(), slot);
-  say(`Copied into slot ${slot}.`);
-  render();
-}
-
-async function wipeSlot(slot: Slot): Promise<void> {
-  const held = peekSlot(slot);
-  if (!held) return;
-  const yes = await ask({
-    title: `Delete ${held.name}?`,
-    text: `Level ${held.level}, saved ${when(held.at)}. This one goes; the others stay.`,
-    confirm: 'Delete',
-  });
-  if (!yes) return;
-  clearSave(slot);
-  say(`Slot ${slot} deleted.`);
-  render();
-}
-
 function newIn(slot: Slot): void {
   // Nothing is lost: the game being played is in its own slot and loading it
   // back is one click. That is the whole reason a new game is a slot's action.
@@ -137,42 +89,83 @@ function newIn(slot: Slot): void {
   onFresh?.();
 }
 
+/** Play the selection: the live game is closed back into, a held slot is
+ *  loaded (asking first), and an empty one starts a new game there. */
+function playNow(): void {
+  const slot = picked;
+  if (slot === liveSlot()) {
+    if (!peekSlot(slot)) return newIn(slot);
+    closeSaveData();
+    onPlay?.();
+    return;
+  }
+  if (peekSlot(slot)) void loadSlot(slot);
+  else newIn(slot);
+}
+
+/** Overwrite the selection with the game being played. */
+async function saveHere(): Promise<void> {
+  const slot = picked;
+  if (slot === liveSlot()) {
+    saveGame(game);
+    say(`Saved just now, in slot ${slot}.`);
+    render();
+    return;
+  }
+  const held = peekSlot(slot);
+  if (held) {
+    const yes = await ask({
+      title: `Save over ${held.name}?`,
+      text: `Level ${held.level}. That game goes, and this one stands in its place.`,
+      confirm: 'Save over it',
+    });
+    if (!yes) return;
+  }
+  // Written first, so what lands in the other slot is this second rather than
+  // whatever the autosave timer last got round to.
+  saveGame(game);
+  copySlot(liveSlot(), slot);
+  say(`Saved into slot ${slot}.`);
+  render();
+}
+
+async function deleteSlot(): Promise<void> {
+  const slot = picked;
+  const held = peekSlot(slot);
+  if (!held || slot === liveSlot()) return;
+  const yes = await ask({
+    title: `Delete ${held.name}?`,
+    text: `Level ${held.level}. This one goes; the others stay.`,
+    confirm: 'Delete',
+  });
+  if (!yes) return;
+  clearSave(slot);
+  say(`Slot ${slot} deleted.`);
+  render();
+}
+
 function slotRow(slot: Slot, live: Slot): HTMLElement {
-  const row = el('div', 'saveslot');
+  const row = el('button', 'saveslot') as HTMLButtonElement;
   row.id = slotId(slot, 'row');
   const held = peekSlot(slot);
-  const mine = slot === live;
-  row.classList.toggle('saveslot--live', mine);
+  row.classList.toggle('saveslot--live', slot === live);
+  row.classList.toggle('saveslot--picked', slot === picked);
 
   const about = el('div', 'saveslot__who');
   about.append(el('span', 'saveslot__n', `Slot ${slot}`));
-  about.append(
-    el(
-      'span',
-      'saveslot__name',
-      held ? `${held.name} — level ${held.level}` : 'Empty'
-    )
-  );
-  about.append(el('span', 'saveslot__when', held ? `saved ${when(held.at)}` : ''));
-  row.append(about);
-
-  const acts = el('div', 'saveslot__acts');
-  // The live row offers nothing: copying a game onto itself is not a thing, and
-  // deleting the one you are standing in is a question nobody meant to ask.
-  if (mine) acts.append(el('span', 'saveslot__live', 'Playing here'));
-  else {
-    if (held) acts.append(button(slot, 'load', 'Load', () => void loadSlot(slot)));
-    acts.append(button(slot, 'copy', 'Copy here', () => void copyInto(slot)));
-    if (!held) acts.append(button(slot, 'new', 'New game', () => newIn(slot)));
-    // Its OWN delete. One button that took all three could not do the thing
-    // anybody actually wants, which is losing ONE game.
-    if (held) {
-      const gone = button(slot, 'wipe', 'Delete', () => void wipeSlot(slot));
-      gone.classList.add('mini--danger');
-      acts.append(gone);
-    }
+  about.append(el('span', 'saveslot__name', held ? held.name : 'Empty'));
+  if (held) {
+    about.append(
+      el('span', 'saveslot__when', `${held.trade ?? 'no trade yet'} — level ${held.level}`)
+    );
   }
-  row.append(acts);
+  row.append(about);
+  if (slot === live) row.append(el('span', 'saveslot__live', 'Playing here'));
+
+  row.onclick = () => {
+    picked = slot;
+    render();
+  };
   return row;
 }
 
@@ -181,6 +174,8 @@ function render(): void {
   host.replaceChildren();
 
   if (!canSave()) {
+    $('save-here').toggleAttribute('disabled', true);
+    $('save-delete').toggleAttribute('disabled', true);
     host.append(
       el(
         'p',
@@ -197,9 +192,8 @@ function render(): void {
       'p',
       'ask__text',
       'Three games, saved to this browser and nowhere else. The one you are ' +
-        'playing writes itself every few seconds; another browser, another ' +
-        'device, or clearing site data starts you over, and a backup file is ' +
-        'the way across.'
+        'playing writes itself every few seconds; select a slot, then Play ' +
+        'now, Save here or Delete act on it.'
     )
   );
 
@@ -207,7 +201,12 @@ function render(): void {
   const rows = el('div', 'saveslots');
   for (const slot of SLOTS) rows.append(slotRow(slot, live));
   host.append(rows);
-  host.append(el('p', 'savemeta', `This one last saved ${when(savedAt())}.`));
+
+  // Deleting the slot you are standing in is a question nobody meant to ask,
+  // and there is nothing in an empty one to delete.
+  const canDelete = picked !== live && peekSlot(picked) !== null;
+  ($('save-delete') as HTMLButtonElement).disabled = !canDelete;
+  ($('save-here') as HTMLButtonElement).disabled = false;
 }
 
 function download(): void {
@@ -236,24 +235,14 @@ async function restore(file: File): Promise<void> {
   onLoaded?.(healed);
 }
 
-/** `full` is the title's route in: the whole screen, and a Play now that gets
- *  you into the live slot without reading three rows first. */
+/** `full` is the title's route in: the whole screen, with no Close to leave by. */
 export function openSaveData(full = false): void {
   $('savedata').hidden = false;
   $('savedata').classList.toggle('modal--full', full);
-  ($('save-play') as HTMLButtonElement).hidden = !full;
   ($('save-close') as HTMLButtonElement).hidden = full;
+  picked = liveSlot();
   say('');
   render();
-}
-
-/** Straight into the live slot — or, with nothing in it, a new game there. The
- *  live slot is ALREADY loaded by the time any of this is on screen, so playing
- *  it is closing the screen rather than loading anything. */
-function playNow(): void {
-  if (!peekSlot(liveSlot())) return newIn(liveSlot());
-  closeSaveData();
-  onPlay?.();
 }
 
 export const closeSaveData = (): void => {
@@ -275,6 +264,8 @@ export function initSaveData(
 
   ($('save-close') as HTMLButtonElement).onclick = closeSaveData;
   ($('save-play') as HTMLButtonElement).onclick = playNow;
+  ($('save-here') as HTMLButtonElement).onclick = () => void saveHere();
+  ($('save-delete') as HTMLButtonElement).onclick = () => void deleteSlot();
   ($('save-download') as HTMLButtonElement).onclick = download;
 
   const file = $('save-file') as HTMLInputElement;
@@ -285,11 +276,4 @@ export function initSaveData(
     file.value = '';
     if (chosen) void restore(chosen);
   };
-
-  ($('save-now') as HTMLButtonElement).onclick = () => {
-    saveGame(game);
-    say(`Saved just now, in slot ${liveSlot()}.`);
-    render();
-  };
-
 }
