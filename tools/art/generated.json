@@ -289,6 +289,16 @@
    "grid": 48,
    "inks": 24,
    "stride": 1.19
+  },
+  {
+   "sprite": "lampwright",
+   "character": "0eccf8ae-d2c8-4a99-9789-98cbc2874d43",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {},
+   "grid": 48,
+   "inks": 24
   }
  ],
  "props": [

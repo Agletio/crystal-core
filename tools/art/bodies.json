@@ -354,6 +354,27 @@
     }
    },
    "character": "dba5147a-a76c-405c-b2a6-b7236ff7307c"
+  },
+  {
+   "sprite": "lampwright",
+   "name": "The Lampwright",
+   "size": 96,
+   "look": "A HOODED FIGURE WITH NO FACE: inside the deep hood is a SOLID BLACK VOID, and the ONLY thing in it is TWO GLOWING YELLOW EYES. No face, no beard, no nose, no mouth, no skin. He holds a long hooked pole upright in front of him, one hand gripping the shaft, a lit LANTERN of dark iron and glowing amber glass hanging from the crook at the top, out to one side and clear of him. Long floor-length rust-brown and dark umber robes, a draped cloak, a wide sash. Stooped, patient. NOT a skeleton, NOT undead, NOT armoured, NOT a wizard, NOT a visible face, NOT a bearded man. No ground, NO SHADOW UNDER HIM, no ellipse, no base, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still at a three-quarter angle, shoulders rising and falling, the hanging lantern swaying a little on its hook"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a three-quarter angle at a slow unhurried stride, the robe swinging, the lantern swaying on its pole"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "bending forward over a workbench at a three-quarter angle, both hands coming down together to work at something in front of him, then straightening"
+    }
+   },
+   "character": "0eccf8ae-d2c8-4a99-9789-98cbc2874d43"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
