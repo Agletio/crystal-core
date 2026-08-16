@@ -41,9 +41,15 @@ export const disc = (n: number): Span[] =>
     return w < 0 ? -1 : w;
   });
 
-/** A cut gem: flat top and bottom, faceted sides. */
-export const gem = (n: number): Span[] =>
-  raster(`g${n}`, n, (dy) => (n - 1) / 2 - Math.abs(dy) * 0.72 - 0.5);
+/** A pointed diamond: the cut stone a notable is bound with. */
+export const lozenge = (n: number): Span[] =>
+  raster(`l${n}`, n, (dy) => {
+    const w = ((n - 1) / 2 - Math.abs(dy)) * 0.98 - 0.1;
+    return w < 0 ? -1 : w;
+  });
+
+/** The whole grid: stamped under a disc its corners are four diagonal points. */
+const square = (n: number): Span[] => raster(`s${n}`, n, () => (n - 1) / 2 - 0.1);
 
 /** Spans → one path, in whole cells, centred on a point and sized to a radius.
  *  Three decimals because a trade web's units are TILES rather than pixels: at
@@ -86,5 +92,27 @@ export function stud(
     svgEl('path', { class: `${prefix}__rim`, d: stamp(spans, n, pos.x, pos.y, r + cell) }),
     svgEl('path', { class: `${prefix}__body`, d: stamp(spans, n, pos.x, pos.y, r) }),
     svgEl('path', { class: `${prefix}__lit`, d: stamp(shine(spans, n), n, pos.x, pos.y, r) }),
+  ];
+}
+
+/**
+ * The CENTRE of a web: a mounted boss rather than a bigger stud. Two metal
+ * layers under a ringed stone — a diamond and the grid's own corners — make
+ * an eight-pointed setting, and the caller lays its icon over the stone.
+ */
+export function mount(pos: { x: number; y: number }, r: number, prefix: string): SVGElement[] {
+  const n = 21;
+  const d = disc(n);
+  return [
+    svgEl('path', { class: `${prefix}__prong`, d: stamp(lozenge(n), n, pos.x, pos.y, r * 1.55) }),
+    svgEl('path', { class: `${prefix}__prong`, d: stamp(square(n), n, pos.x, pos.y, r * 1.08) }),
+    svgEl('path', { class: `${prefix}__rim`, d: stamp(d, n, pos.x, pos.y, r * 1.12) }),
+    svgEl('path', { class: `${prefix}__body`, d: stamp(d, n, pos.x, pos.y, r * 0.94) }),
+    // A glint toward the lamp rather than shine()'s wedge, which at hub size
+    // reads as a slice cut out of the stone.
+    svgEl('path', {
+      class: `${prefix}__lit`,
+      d: stamp(d, n, pos.x - r * 0.3, pos.y - r * 0.3, r * 0.22),
+    }),
   ];
 }

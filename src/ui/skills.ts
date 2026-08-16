@@ -36,7 +36,7 @@ import {
   treePointsFor,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
-import { disc, gem, stud, svgEl } from './webart';
+import { disc, lozenge, mount, stud, svgEl } from './webart';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
@@ -470,6 +470,8 @@ function renderWeb(): void {
         x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
         class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
         'stroke-width': (casing * (l.live ? 0.62 : 0.34)).toFixed(1),
+        // Dashed over the solid casing, so a link reads as a run of chain.
+        'stroke-dasharray': `${(casing * 1.2).toFixed(1)} ${(casing * 0.8).toFixed(1)}`,
       })
     );
   }
@@ -477,7 +479,7 @@ function renderWeb(): void {
   // The middle: the skill itself, and the tooltip explaining its numbers.
   const hub = svgEl('g', { class: 'web__centre' });
   const hubR = HUB_R * (scale / 46);
-  for (const part of stud(gem(19), 19, middle, hubR, 'web__hub')) hub.append(part);
+  for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
   const art = skillIcon(skillId, hubR * 1.25);
   art.setAttribute('x', String(middle.x - hubR * 0.62));
   art.setAttribute('y', String(middle.y - hubR * 0.62));
@@ -518,7 +520,7 @@ function renderWeb(): void {
       'data-y': pos.y.toFixed(1),
     });
     const grid = node.kind === 'notable' ? 13 : 9;
-    const spans = node.kind === 'notable' ? gem(grid) : disc(grid);
+    const spans = node.kind === 'notable' ? lozenge(grid) : disc(grid);
     for (const part of stud(spans, grid, pos, r, 'web__node')) group.append(part);
 
     attachTooltip(group, () => {

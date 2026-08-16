@@ -26,7 +26,7 @@ import { CENTRE } from '../trees/node';
 import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '../sim/character';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
-import { disc, gem, stud, svgEl } from './webart';
+import { disc, lozenge, mount, stud, svgEl } from './webart';
 import { ask } from './confirm';
 import { note } from './history';
 import type { GameState } from '../game/state';
@@ -194,13 +194,15 @@ function renderWeb(): void {
         x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
         class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
         'stroke-width': casing * (l.live ? 0.62 : 0.34),
+        // Dashed over the solid casing, so a link reads as a run of chain.
+        'stroke-dasharray': `${(casing * 1.2).toFixed(2)} ${(casing * 0.8).toFixed(2)}`,
       })
     );
   }
 
   const spec = TRADE_BY_ID[tradeId].spec;
   const hub = svgEl('g', { class: 'web__centre' });
-  for (const part of stud(gem(19), 19, middle, HUB_R, 'web__hub')) hub.append(part);
+  for (const part of mount(middle, HUB_R, 'web__hub')) hub.append(part);
   attachTooltip(hub, () => `${spec.name}\n${spec.blurb}`);
   svg.append(hub);
 
@@ -224,7 +226,7 @@ function renderWeb(): void {
       'data-node': node.id,
     });
     const grid = node.kind === 'notable' ? 13 : 9;
-    for (const part of stud(node.kind === 'notable' ? gem(grid) : disc(grid), grid, pos, r, 'web__node')) {
+    for (const part of stud(node.kind === 'notable' ? lozenge(grid) : disc(grid), grid, pos, r, 'web__node')) {
       group.append(part);
     }
 
