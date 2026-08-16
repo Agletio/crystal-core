@@ -245,25 +245,37 @@ export function animates(
  *  as far per footfall as four. `GeneratedArt.stride` overrides it per body. */
 export const STRIDE_CYCLE = 1.68;
 
-/** How far down its own grid a body's ink STARTS, as a fraction. A sprite
- *  spans `scale` tiles but the drawing does not fill it — every frame is sized
- *  to the widest — so anything hung ABOVE a body wants this or it floats. */
-const tops = new Map<string, number>();
-export function bodyTop(sprite: string): number {
-  const held = tops.get(sprite);
-  if (held !== undefined) return held;
+/** How far down its own grid a body's ink STARTS and ENDS, as fractions. A
+ *  sprite spans `scale` tiles and the drawing does not fill it — every frame is
+ *  sized to the widest — so anything hung ABOVE a body wants the top and
+ *  standing one ON its tile wants the foot. Measured over EVERY frame: per
+ *  frame the band moves with the walk and whatever reads it bounces. */
+const bands = new Map<string, { top: number; foot: number }>();
+function inkBand(sprite: string): { top: number; foot: number } {
+  const held = bands.get(sprite);
+  if (held) return held;
   const art = GENERATED[sprite] ?? BEASTIARY[sprite];
   let top = Infinity;
-  for (const frame of art?.frames ?? [])
+  let foot = -Infinity;
+  for (const frame of art?.frames ?? []) {
     for (let y = 0; y < frame.length && y < top; y++)
       if (/[^.]/.test(frame[y])) {
         top = y;
         break;
       }
-  const found = art && Number.isFinite(top) ? top / art.grid : 0;
-  tops.set(sprite, found);
-  return found;
+    for (let y = frame.length - 1; y >= 0 && y + 1 > foot; y--)
+      if (/[^.]/.test(frame[y])) {
+        foot = y + 1;
+        break;
+      }
+  }
+  const band =
+    art && Number.isFinite(top) ? { top: top / art.grid, foot: foot / art.grid } : { top: 0, foot: 1 };
+  bands.set(sprite, band);
+  return band;
 }
+export const bodyTop = (sprite: string): number => inkBand(sprite).top;
+export const bodyFoot = (sprite: string): number => inkBand(sprite).foot;
 
 export const strideOf = (sprite: string, frames: number): number =>
   (GENERATED[sprite]?.stride ?? STRIDE_CYCLE) / Math.max(1, frames);

@@ -60,19 +60,31 @@ page.on('console', (m) => {
   if (m.type() === 'error' && !/WebGL|GPU/i.test(m.text())) console.log('page:', m.text());
 });
 
+/** A character is MADE before it is played: the trade, then the name and the
+ *  skill. Every new game runs that gate, and the dev kit IS a new game — so
+ *  this is walked twice or the second one sits on the hall forever. */
+async function makeCharacter() {
+  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('pick-take')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.querySelector('#welcome-skills .welcomecard')?.click());
+  await page.waitForTimeout(700);
+}
+
 await page.goto(`${base}/index.html`, { waitUntil: 'load' });
 await page.waitForTimeout(900);
 await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
-await page.waitForTimeout(200);
-await page.evaluate(() => document.querySelector('#welcome-skills .welcomecard')?.click());
-await page.waitForTimeout(700);
+await page.waitForTimeout(250);
+await makeCharacter();
 // The dev kit, so a descent is dressed at a real run power rather than at the
 // bare Fissure's, and then down the hole. The wait covers the handover.
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.waitForTimeout(400);
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(700);
+await makeCharacter();
 // The zone is the composition, so it is chosen by socketing rather than by a
 // setting: the kit is handed every crystal and the collection is where they go.
 for (const want of SOCKETS[zone] ?? []) {

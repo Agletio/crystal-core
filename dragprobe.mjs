@@ -39,18 +39,32 @@ page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
 await page.goto(`${base}/index.html`, { waitUntil: 'load' });
 await page.waitForTimeout(700);
 
+/** A character is MADE before it is played: the trade, then the name and the
+ *  skill. The dev kit IS a new game, so the gate is walked twice — and the
+ *  hall takes every pointer, so anything after it times out rather than
+ *  failing on what it was actually looking for. */
+async function makeCharacter() {
+  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('pick-take')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => {
+    const name = document.getElementById('welcome-name');
+    if (name) name.value = 'Probe';
+    document.querySelectorAll('#welcome-skills .welcomecard')[0]?.click();
+  });
+  await page.waitForTimeout(500);
+}
+
 // Straight to a stocked game: the dev kit start is the one with gear in it.
 await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
-await page.waitForTimeout(200);
-await page.evaluate(() => {
-  document.getElementById('welcome-name').value = 'Probe';
-  document.querySelectorAll('#welcome-skills .welcomecard')[0]?.click();
-});
-await page.waitForTimeout(500);
+await page.waitForTimeout(250);
+await makeCharacter();
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(600);
+await makeCharacter();
 await page.evaluate(() => document.getElementById('open-inventory')?.click());
 await page.waitForTimeout(300);
 

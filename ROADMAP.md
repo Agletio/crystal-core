@@ -45,6 +45,12 @@ everything else bites — and the pip over a shooter's head is gone with
 `castsVisibly`. A family with no thrower deals about HALF what it did, measured,
 so that is a mechanism rule and not a balance one.
 
+**A BODY STANDS ON ITS TILE.** Every entity sprite is pinned at `bodyFoot` less
+a quarter tile rather than at its centre, so the drawing hangs 0.25 tiles below
+the entity at every `scale` on the roster — it was 0.63 for the hero and 1.33
+for the Gaunt, which is what put a big body out over the void. North and south
+only: east/west overhang is width and the user has not asked for it.
+
 **A body that has not seen you PACES**, an anchored wander about a tile wide. It
 is why a pack no longer reads as props, and it is what a walk/run split would
 have needed — the split is now possible and still not built.
@@ -303,6 +309,25 @@ Kept here because the next thing built on top of them will want it.
   all the sandbox's, and no authored room ever used one. Putting `also`/`joins`
   back is about ten lines of `sceneMap` and it is in the history at `2b965bc`.
 
+- **The anchor phase's own trap was the one it did not write down: the HARNESS
+  had already rotted.** `npm run drag` had been red and `npm run peek` had been
+  shooting the character-select hall ever since a character became something
+  you MAKE — neither walks `pick-take`, and the dev kit is a new game, so the
+  gate runs a second time after `confirm-yes`. `drag` did not say so: it timed
+  out 30 seconds later on a `dblclick` it could not land and named the window
+  it was aiming at. **A harness that restarts the game walks the gate twice**,
+  and it is in `RULES.md` now.
+- **`bodyFoot` reads the SHADOW as the foot, for the two bodies that still have
+  one.** Every body measures its ink ending at 0.917 of its grid, which for the
+  Dragger and the Shroud is the bottom of the cast shadow rather than the
+  bottom of the feet. The anchor is right either way — 0.25 tiles of overhang
+  is 0.25 tiles — but cleaning those two moves their foot up, and the phase
+  that does it should re-shoot rather than assume nothing moved.
+- **A stray file called `--help` was in the repo, 400 KB of PNG.**
+  `descent-peek.mjs` takes its output path as the first positional argument, so
+  `node tools/descent-peek.mjs --help` writes a screenshot to a file named
+  `--help`, and one got committed at `d2685f1`. Deleted. The tool has no flags
+  and prints no help.
 - **A phase's seven measured traps were all real, and all cheap.** The skills
   phase named seven things a fresh session would get wrong, every one of them
   measured rather than guessed, and each cost one edit: XP over `SKILL_SLOTS`,
@@ -1466,84 +1491,7 @@ taking up the Alchemist or the Aethermancer visibly changes who is on screen.
 `comments`, `typecheck`, `demo`, `build`, `smoke`, `shots`. `demo` sweeps every
 frame that ships for being reached and every monster for resolving in exactly
 one art table — the hero joins both. `shots` is what proves he draws.
-### Phase 2 — A body stands ON its tile, instead of half below it
-
-**The user's call, with a screenshot of the Gaunt hanging off the south edge of
-the map:** *"fix the enemies going off the map, its especially bad for the
-really large enemies. I think generally clipping out to the north is fine
-because its like its just standing tall its just when it clips out south or
-east/west."*
-
-#### What is true today
-
-`spriteFor` in `src/render/pixi.ts` builds every entity sprite with
-`s.anchor.set(0.5)` — dead centre. The sprite is drawn `e.scale` tiles tall, so
-**half of it hangs below the entity's own position**: 0.75 tiles for a hero at
-`HERO_SCALE` 1.5, and **1.6 tiles for the Gaunt at `scale` 3.2**. The sim keeps
-a body inside the walkable grid by its `radius` (0.9 for the Gaunt), and the ART
-is nearly four times that, so a body standing legally on the last floor tile
-draws a long way out over the void.
-
-`PROPS` already does it right — line ~418 of the same file is
-`sprite.anchor.set(0.5, 1)`, anchored at the foot.
-
-`bodyTop(sprite)` in `src/render/sprites.ts` already exists: the fraction of the
-grid where a body's ink STARTS, memoised, measured over every frame so it does
-not move with the animation. There is no `bodyFoot` yet.
-
-#### Why it is wrong
-
-A top-down body should stand on the tile it occupies. Centring means every body
-is drawn lower than where it actually is, which is invisible at `scale` 1.5 and
-is a bug you can see from across the room at 3.2.
-
-#### Decisions
-
-- [ ] `bodyFoot(sprite)` beside `bodyTop`, same shape: the fraction of the grid
-      where ink ENDS, memoised, measured over EVERY frame — per frame it moves
-      with the walk and the body bounces.
-- [ ] Anchor per body so the ink's bottom lands a quarter tile below the
-      entity's position: `anchor.y = bodyFoot(sprite) - 0.25 / e.scale`, `x`
-      stays 0.5. A quarter tile rather than zero because feet exactly on the
-      centre line read as floating.
-- [ ] The health bar moves WITH it. `drawBars` currently computes
-      `cy(e.y) - e.scale * (0.5 - bodyTop(e.sprite)) - h - 0.06`, and that
-      `0.5` IS the old anchor. It becomes the new `anchor.y`, or every bar
-      detaches from every head — this is the one thing that must change in the
-      same commit.
-- [ ] `canvas2d` is the fallback renderer and draws bodies too. Either it gets
-      the same anchor or it is left alone deliberately and said so here.
-
-#### Traps
-
-- **Anchoring at the ink rather than the sprite.** A generated grid is sized to
-  the WIDEST frame of every state, so a standing body does not fill it and
-  `anchor.y` of 1 leaves it floating above the tile. That is what `bodyFoot`
-  is for and why it is measured, not assumed.
-- **Measuring per frame.** `bodyTop` is memoised per SPRITE for this reason.
-- **Thinking this fixes east/west.** It does not. Horizontal overhang is
-  WIDTH: the Gaunt is 3.2 tiles wide because `scale` is one number applied
-  uniformly, and that 3.2 is the user's own call after judging it in a descent
-  (`CLAUDE.md`, "The Gaunt is at 3.2 and is a GIANT"). Do not quietly shrink it
-  to make this phase look finished — the user said north clipping is fine, and
-  east/west is a separate decision they have not made.
-- **The lunge and the bob** in `drawEntities` add to `s.y`. They are offsets on
-  top of the anchor and do not need changing, but check the Gaunt's `death`
-  fade still reads as a fall rather than a jump.
-
-#### Done when
-
-The Gaunt can stand on the southernmost floor tile of a Fissure descent with no
-part of it drawn past the rock, and every health bar still sits just above its
-own body at every `scale` on the roster.
-
-#### What must not break
-
-`comments`, `typecheck`, `build`, `smoke`, `shots`, then `peek`. `shots` proves
-nothing overflows and the app still boots; `peek` is what actually shows a body
-against the rock at a zoom, which is the only place this is visible.
-
-### Phase 2b — Two bodies still stand in a puddle of their own shadow
+### Phase 2 — Two bodies still stand in a puddle of their own shadow
 
 Small, and separate from the anchor: this is about the ART, not where it is
 drawn.

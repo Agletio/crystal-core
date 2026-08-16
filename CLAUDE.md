@@ -128,6 +128,17 @@ because `scale` is one number and both renderers apply it uniformly. Its
 its legs; `fits` clamps at `BODY_MAX` for walking, so it still takes a one-tile
 gap.
 
+**A body STANDS ON its tile, and it is pinned at its own FOOT.** `bodyFoot` in
+`src/render/sprites.ts` is where a sprite's ink ENDS as a fraction of its grid,
+measured over every frame beside `bodyTop`, and `anchorY` in `pixi.ts` is that
+less a quarter tile — so the drawing hangs 0.25 tiles below the entity whatever
+its `scale` is. Anchored at the CENTRE it hung half its height: 0.63 tiles for
+the hero, 1.33 for the Gaunt, against the 0.7 radius the sim keeps it inside the
+rock by, so a body standing legally on the last floor tile drew a long way out
+over the void. The life bar reads the SAME anchor, or every bar detaches from
+every head. `canvas2d` is untouched: it draws a monster as a circle centred on
+the tile and has no sprite to hang.
+
 The Demonic and Prismatic pools are six hand-drawn bodies each and are the
 mismatch the Fissure just stopped having. `BEASTIARY` keeps every grid the cut
 rows used — the renderers name `grub`, `stalker` and `brute` directly and

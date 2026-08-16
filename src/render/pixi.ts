@@ -52,6 +52,7 @@ import {
   WALK_CYCLE,
   WALK_FRAMES,
   animates,
+  bodyFoot,
   bodyTop,
   generatedFrame,
   makeProp,
@@ -544,12 +545,18 @@ export async function createPixiRenderer(
     builtMap = map;
   }
 
+  /** Where on its own grid a body is PINNED. At the centre a sprite hangs half
+   *  its height below the entity — 1.6 tiles for the Gaunt at `scale` 3.2,
+   *  against the 0.9 radius the sim holds it inside the rock by — so it draws
+   *  out over the void. A quarter tile proud of the foot, or the feet float. */
+  const anchorY = (e: Entity): number => bodyFoot(e.sprite) - 0.25 / Math.max(0.1, e.scale);
+
   function spriteFor(e: Entity): Sprite {
     let s = sprites.get(e.id);
     if (!s) {
       const frames = framesFor(e);
       s = new Sprite(frames[0]);
-      s.anchor.set(0.5);
+      s.anchor.set(0.5, anchorY(e));
       entityLayer.addChild(s);
       sprites.set(e.id, s);
     }
@@ -653,12 +660,10 @@ export async function createPixiRenderer(
       const hurt = frac < 1;
       const h = Math.max(2 / tile, 0.11);
       const bx = cx(e.x) - width / 2;
-      // Above the BODY's own head. The 0.75 this was written as is exactly
-      // half the hero's 1.5 scale, so it held only while every body was one
-      // size and the Gaunt at 3.2 grew straight through it. A sprite is
-      // centred and spans `scale` tiles; `bodyTop` is how far into that the
-      // drawing actually starts, without which the bar floats instead.
-      const by = cy(e.y) - e.scale * (0.5 - bodyTop(e.sprite)) - h - 0.06;
+      // Above the BODY's own head: a sprite spans `scale` tiles about the
+      // anchor both this and the sprite read, and `bodyTop` is how far into
+      // that the drawing starts.
+      const by = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite)) - h - 0.06;
 
       vfxLayer.rect(bx, by, width, h).fill({
         color: toHexNumber(palette.void),

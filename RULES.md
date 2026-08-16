@@ -914,6 +914,18 @@ over a real swing they are a second motion fighting the first, which is the
 shove-the-model-forward look. `animates` asks whether there are frames for what
 the body is doing, and the demo fails one that is still being moved.
 
+**A body is PINNED at its FOOT, never at its centre, and everything hung on it
+reads the SAME anchor.** `anchorY` in `src/render/pixi.ts` is `bodyFoot` less a
+quarter tile, so the ink ends 0.25 tiles below the entity at every `scale` on
+the roster; centred it ended half the drawn height below, which is 1.33 tiles
+for the Gaunt against the 0.7 radius the sim holds it inside the rock by. The
+life bar in `drawBars` reads `anchorY(e)` for the same reason `bodyTop` exists
+— the two numbers are one fact about where the sprite is, and split across two
+call sites every bar detaches the day a `scale` moves. **This fixes NORTH and
+SOUTH and nothing else**: east/west overhang is WIDTH, the Gaunt is 3.2 tiles
+wide because `scale` is one number applied uniformly, and that 3.2 is the
+user's own call. Do not shrink a body to make a vertical fix look finished.
+
 **A tile is keyed by CORNERS in base three, and a key nothing draws is a HOLE.**
 0 floor, 1 rock, 2 the cut face: a deep-walled set puts that third value at a
 vertex and the cliff fills the cell below the boundary, so a wall spans two
@@ -2092,6 +2104,14 @@ balance number that reports and can never fail.
   one — and the skill it picks is Blight, which takes about a minute over its
   first. `document.body.dataset.runPhase` is what tells a harness a room from a
   descent: both are a map with everything else hidden, so nothing else can.
+- **A NEW GAME is made before it is played, and the hall takes every pointer.**
+  Any harness driving the browser walks `pick-<trade>` then `pick-take` before
+  the welcome — and the dev kit IS a new game, so `restart()` runs the gate a
+  second time and the walk happens TWICE. `drag` and `peek` both sat on the
+  hall until this was written down: `drag` failed 30 seconds later on a
+  `dblclick` it could not land, naming the window it was aiming at rather than
+  the sheet in front of it, and `peek` shot the hall itself. A harness that
+  restarts and then times out on something unrelated is this.
 - **Pointer DRAG tests flake.** `npm run drag` is the one that does this now,
   and a reorder has been seen to fail once on a bundle that passed either side
   of it. Re-run before treating one as a regression; the cause is below.
