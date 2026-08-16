@@ -670,13 +670,16 @@
   }
   body.mapfull #run-stagewrap .resultcard { pointer-events: auto; }
   /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
+  /* The plate's FILL middle tiles, and at the niche's height the seams read
+     as lines behind the flasks — so the interior is painted, not the art's. */
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 20px);
     width: auto; margin: 0; gap: 12px; grid-template-columns: auto auto;
     padding: 4px 3px 2px;
+    background-color: var(--panel); background-clip: padding-box;
     border: 12px solid transparent; border-left-width: 22px; border-right-width: 22px;
-    border-image: var(--fix-bar) 14 26 fill / 12px 22px round;
+    border-image: var(--fix-bar) 14 26 / 12px 22px round;
   }
   /* A SHELF: each flask stands in its own dark arched niche cut into the bar,
      and its threshold controls hang directly under it. */
@@ -724,8 +727,9 @@
   .hud__who {
     display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
     padding: 2px 6px; margin-bottom: 2px;
+    background-color: var(--panel); background-clip: padding-box;
     border: 4px solid transparent; border-left-width: 14px; border-right-width: 14px;
-    border-image: var(--fix-head) 6 16 fill / 4px 14px round; image-rendering: pixelated;
+    border-image: var(--fix-head) 6 16 / 4px 14px round; image-rendering: pixelated;
   }
   .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
   .hud__level { color: var(--text-dim); }
@@ -1157,9 +1161,10 @@
   /* The one decision on the screen is a carved PLATE, brass caps and all. */
   .mini--enter {
     padding: 8px 22px; font-size: 15px; letter-spacing: .1em;
-    background: none; border: 12px solid transparent;
+    background: none; background-color: var(--panel-lit); background-clip: padding-box;
+    border: 12px solid transparent;
     border-left-width: 24px; border-right-width: 24px;
-    border-image: var(--fix-bar) 14 26 fill / 12px 24px round;
+    border-image: var(--fix-bar) 14 26 / 12px 24px round;
     image-rendering: pixelated;
     border-radius: 0; box-shadow: 0 4px 0 rgba(0,0,0,.5);
     color: var(--citrine);
@@ -1314,7 +1319,7 @@
      lamplight stops at. */
   /* The head is a carved TITLE PLATE with brass end fittings, and it is still
      the drag handle. */
-  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 14px; margin: 2px 2px 6px; border: 4px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 fill / 4px 16px round; image-rendering: pixelated; }
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 14px; margin: 2px 2px 6px; background-color: var(--panel); background-clip: padding-box; border: 4px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 4px 16px round; image-rendering: pixelated; }
   /* A face beside the name rather than at the other end of the bar: the head's
      usual space-between would put the person and who they are as far apart as
      the box allows. */
