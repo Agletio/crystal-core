@@ -155,13 +155,11 @@
     --r: 3px;
 
     /*
-     * Grime, in two layers of hard-stopped gradient: a dark 4px weave and a
-     * faint lit weave half a pixel off it. Hard stops rather than blends, so it
-     * dithers like a bitmap instead of smearing like a photograph.
+     * A quiet stone wash: lamplight fading down the face, no pattern at all.
+     * Still an <image>, because half its users compose it under a gradient —
+     * `none` inside a background-image LIST invalidates the whole property.
      */
-    --grit:
-      repeating-linear-gradient(0deg, rgba(0,0,0,.34) 0 2px, transparent 2px 4px),
-      repeating-linear-gradient(90deg, rgba(255,226,170,.026) 0 2px, transparent 2px 4px);
+    --grit: linear-gradient(rgba(255,226,170,.028), rgba(0,0,0,.16));
     /** A chiselled edge: lit from the top left, in whole pixels. */
     --bevel: inset 2px 2px 0 rgba(255,224,168,.07), inset -2px -2px 0 rgba(0,0,0,.6);
     /**
@@ -217,7 +215,7 @@
     cursor: text;
   }
 
-  /* Cave wall behind everything: a dark dithered weave, lamplight banked at the
+  /* Cave wall behind everything: quiet dark stone, lamplight banked at the
      foot where the working is and a heavy vignette at the corners. */
   body::before {
     content: '';
@@ -227,11 +225,7 @@
     background-image:
       radial-gradient(ellipse 72% 42% at 50% 112%, rgba(196,99,30,.12), transparent 68%),
       radial-gradient(ellipse 60% 40% at 50% -10%, rgba(120,88,44,.06), transparent 70%),
-      radial-gradient(ellipse 120% 92% at 50% 50%, transparent 40%, rgba(0,0,0,.8)),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.5) 0 2px, transparent 2px 6px),
-      repeating-linear-gradient(90deg, rgba(255,226,170,.022) 0 2px, transparent 2px 6px),
-      repeating-linear-gradient(45deg, rgba(255,226,170,.014) 0 3px, transparent 3px 9px);
-    image-rendering: pixelated;
+      radial-gradient(ellipse 120% 92% at 50% 50%, transparent 40%, rgba(0,0,0,.8));
     z-index: 0;
   }
 
