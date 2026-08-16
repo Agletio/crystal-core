@@ -143,6 +143,9 @@ export async function createPixiRenderer(
   /** The generated PROPS. Under everything, and empty on every map but a bare
    *  one — which is every map a player ever runs. */
   const groundLayer = new Container();
+  // Rock over the bodies: pushed against a north wall a sprite drew its head
+  // on the cliff — occluded by the rock instead, it walks BEHIND it.
+  const wallLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
   // map that was built once.
@@ -153,7 +156,7 @@ export async function createPixiRenderer(
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(groundLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
+  world.addChild(groundLayer, mapLayer, propLayer, auraLayer, entityLayer, wallLayer, vfxLayer);
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
@@ -322,6 +325,7 @@ export async function createPixiRenderer(
    */
   function buildProps(map: GameMap): void {
     groundLayer.removeChildren().forEach((child) => child.destroy());
+    wallLayer.removeChildren().forEach((child) => child.destroy());
     if (!map.bare) return;
 
     const set = map.zone ? ZONES[map.zone] : null;
@@ -392,6 +396,8 @@ export async function createPixiRenderer(
         return best < 0 ? null : art[best];
       };
       const size = 1.002 / set.grid;
+      const rock = (x: number, y: number): boolean =>
+        x < 0 || y < 0 || x >= grid.width || y >= grid.height || grid.at(x, y) === WALL;
       for (let y = -EDGE; y < grid.height + EDGE; y++) {
         for (let x = -EDGE; x < grid.width + EDGE; x++) {
           const texture = pick(x, y);
@@ -400,7 +406,7 @@ export async function createPixiRenderer(
           sprite.x = x;
           sprite.y = y;
           sprite.scale.set(size);
-          groundLayer.addChild(sprite);
+          (rock(x, y) ? wallLayer : groundLayer).addChild(sprite);
         }
       }
     }
@@ -432,7 +438,8 @@ export async function createPixiRenderer(
         sprite.scale.set(sprite.scale.x * (0.82 + roll * 0.36));
         sprite.alpha = COVER_ALPHA;
       }
-      groundLayer.addChild(sprite);
+      // What grows ON the rock rides the rock's own layer, or the overlay hides it.
+      (map.grid.at(prop.x, prop.y) === WALL ? wallLayer : groundLayer).addChild(sprite);
     }
   }
 
