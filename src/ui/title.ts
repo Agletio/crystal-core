@@ -5,6 +5,7 @@
  * black void without becoming a picture again.
  */
 import { logoMark } from './logo';
+import { crystalIcon } from './icons';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -21,7 +22,9 @@ function dismiss(): void {
 export function initTitle(start: () => void): void {
   onStart = start;
 
-  $('title-mark').replaceChildren(logoMark());
+  // The mark over the wordmark is the HIGHEST-TIER Normal crystal — the thing
+  // the game is about — and the ghost stays the abstract gem glyph.
+  $('title-mark').replaceChildren(crystalIcon(4, 110, 'normal'));
   $('title-ghost').replaceChildren(logoMark());
 
   $('title').addEventListener('click', dismiss);

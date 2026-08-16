@@ -86,6 +86,270 @@
   {
    "id": "sk_leap",
    "say": "a curving green arrow arcing up and over, with a puff of dust under its start."
+  },
+  {
+   "id": "crys_normal_t1",
+   "say": "a single rough uncut shard of warm amber-gold crystal, glowing with warm golden light, dull and barely lit."
+  },
+  {
+   "id": "crys_normal_t2",
+   "say": "a cleanly cut gem of warm amber-gold crystal, glowing with warm golden light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_normal_t3",
+   "say": "a large brilliant-cut amber-gold crystal standing point-down, tall kite-shaped facets rising to a peak, warm light blazing in its core, NOT round, NOT a ring."
+  },
+  {
+   "id": "crys_normal_t4",
+   "say": "a magnificent crown-cluster of warm amber-gold crystal, glowing with warm golden light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "crys_demonic_t1",
+   "say": "a single rough uncut shard of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, dull and barely lit."
+  },
+  {
+   "id": "crys_demonic_t2",
+   "say": "a cleanly cut gem of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_demonic_t3",
+   "say": "a large jagged crystal of near-black volcanic glass, deep venom-green fire blazing in its core and thin green veins across its faces, NOT blue, NOT moss, NOT a boulder."
+  },
+  {
+   "id": "crys_demonic_t4",
+   "say": "a magnificent crown-cluster of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "crys_prismatic_t1",
+   "say": "a single rough uncut shard of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, dull and barely lit."
+  },
+  {
+   "id": "crys_prismatic_t2",
+   "say": "a cleanly cut gem of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_prismatic_t3",
+   "say": "a large brilliant-cut crystal of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, light blazing in its core."
+  },
+  {
+   "id": "crys_prismatic_t4",
+   "say": "a magnificent crown-cluster of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "gear_bulwark_helmet",
+   "say": "a heavy great-helm of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_body",
+   "say": "a cuirass chest-plate of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_boots",
+   "say": "a PAIR of armoured boots side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_helmet",
+   "say": "a heavy great-helm of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_body",
+   "say": "a cuirass chest-plate of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_boots",
+   "say": "a PAIR of armoured boots side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_helmet",
+   "say": "a deep pointed hood of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_body",
+   "say": "a sleeved robe of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_boots",
+   "say": "a PAIR of soft boots side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_helmet",
+   "say": "a deep pointed hood of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_body",
+   "say": "a sleeved robe of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_boots",
+   "say": "a PAIR of soft boots side by side, made of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_helmet",
+   "say": "a leather cap with cheek-guards, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_body",
+   "say": "a laced jerkin of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_gloves",
+   "say": "a PAIR of gloves side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_boots",
+   "say": "a PAIR of boots side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_helmet",
+   "say": "a leather cap with cheek-guards, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_body",
+   "say": "a laced jerkin of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_gloves",
+   "say": "a PAIR of gloves side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_boots",
+   "say": "a PAIR of boots side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_templar_helmet",
+   "say": "a heavy great-helm of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_body",
+   "say": "a cuirass chest-plate of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_boots",
+   "say": "a PAIR of armoured boots side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_helmet",
+   "say": "a heavy great-helm of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_body",
+   "say": "a cuirass chest-plate of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_boots",
+   "say": "a PAIR of armoured boots side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_helmet",
+   "say": "a deep pointed hood of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_body",
+   "say": "a sleeved robe of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_boots",
+   "say": "a PAIR of soft boots side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_helmet",
+   "say": "a deep pointed hood of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_body",
+   "say": "a sleeved robe of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_boots",
+   "say": "a PAIR of soft boots side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_raider_helmet",
+   "say": "a leather cap with cheek-guards, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_body",
+   "say": "a laced jerkin of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_gloves",
+   "say": "a PAIR of gloves side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_boots",
+   "say": "a PAIR of boots side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_helmet",
+   "say": "a leather cap with cheek-guards, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_body",
+   "say": "a laced jerkin of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_gloves",
+   "say": "a PAIR of gloves side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_boots",
+   "say": "a PAIR of boots side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_wand",
+   "say": "a slender carved dark-wood wand with a pale glowing crystal at its tip, held upright."
+  },
+  {
+   "id": "gear_sword",
+   "say": "a single straight double-edged steel longsword standing point up, plain crossguard, leather grip."
+  },
+  {
+   "id": "gear_dagger",
+   "say": "a slim double-edged dagger pointing down, wrapped grip, NOT a sword."
+  },
+  {
+   "id": "gear_mace",
+   "say": "a heavy flanged iron mace standing head up on a dark wooden haft."
+  },
+  {
+   "id": "gear_amulet",
+   "say": "a gold amulet: one faceted violet gem pendant hanging from a fine chain pooled beneath it."
+  },
+  {
+   "id": "gear_ring",
+   "say": "one thick gold ring set with a small cut red gem, seen at a slight angle, NOT a hoop of rope."
   }
  ]
 }

@@ -271,8 +271,10 @@ const GEMS: string[][] = [
   ],
 ];
 
-export function crystalIcon(level: number, size = 26): SVGSVGElement {
+export function crystalIcon(level: number, size = 26, family = 'normal'): SVGSVGElement {
   const t = Math.max(1, Math.min(GEMS.length, level));
+  const art = drawn(`crys_${family}_t${Math.min(4, t)}`, size);
+  if (art) return art;
   const colour = CRYSTAL_COLOURS[t - 1] ?? 'var(--amethyst)';
   return sprite(GEMS[t - 1], { o: INK, c: colour, w: 'var(--chalk)', l: '#00000066' }, size, `crystal-t${t}`);
 }
@@ -708,6 +710,8 @@ function armourIcon(family: string, slot: string, size: number): SVGSVGElement |
 }
 
 export function gearIcon(art: string, size = 26): SVGSVGElement {
+  const made = drawn(`gear_${art}`, size);
+  if (made) return made;
   // Armour keys are `family_slot`; every other base names one silhouette.
   const cut = art.lastIndexOf('_');
   if (cut > 0) {
@@ -1084,7 +1088,7 @@ export const relicIcon = (id: string, size = 26): SVGSVGElement =>
 
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
-    return crystalIcon((item.meta.level as number) ?? 1, size);
+    return crystalIcon((item.meta.level as number) ?? 1, size, (item.meta.family as string) ?? 'normal');
   }
   if (item.kind === 'relic') return relicIcon(item.base, size);
   return gearIcon((item.meta.art as string) ?? 'body', size);

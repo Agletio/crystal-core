@@ -909,6 +909,18 @@ and the Fissure's four sockets take the card frame. A window that opens square
 over another's head cascades until the head is clear. Skill and category icons
 are generated pixel art (`GENERATED_ICONS`), merged over the hand-drawn grids.
 
+**EVERY ITEM'S ART IS GENERATED, and a crystal shows its FAMILY as well as its
+level.** 66 more rows in `GENERATED_ICONS`: `crys_<family>_t<level>` — twelve
+crystals on one ladder (rough shard → cut gem → big crystal → crown-cluster),
+amber for Normal, black-and-venom for Demonic, pale iridescent for Prismatic —
+and `gear_<art>` for all 48 armour pieces, the four weapon families and both
+jewellery kinds. `crystalIcon(level, size, family)` and `gearIcon` answer the
+generated table FIRST and keep the hand-drawn grids as the fallback; `itemIcon`
+passes `item.meta.family`, so a Demonic crystal never draws as a Normal one.
+The item tooltip carries the art beside the name (`.tip__head` in
+`itemcard.ts`), and the title's mark is `crys_normal_t4` — the highest-tier
+Normal crystal, the thing the game is about.
+
 **The title's logo is DRAWN.** `src/ui/logo.ts` is a cut gem in grid art — a
 list of strings like every other icon, inks out of CSS — over a wordmark carved
 in gold. Neither webfont has ever rendered in a screenshot this repo took, so

@@ -12,6 +12,7 @@ import { crystalProgress } from '../game/crystals';
 import { FAMILY_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import { glossaryOf, keywordLine } from './glossary';
+import { itemIcon } from './icons';
 import type { Item, RolledMod } from '../types';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -67,9 +68,13 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
       (unique ? ' tip__card--unique' : '')
   );
 
+  // The art beside the name: the same icon the slot shows, big enough to read.
+  const head = el('div', 'tip__head');
+  head.append(itemIcon(item, 36));
   const name = el('div', 'tip__name', item.name);
   if (unique) name.classList.add('tip__name--unique');
-  card.append(name);
+  head.append(name);
+  card.append(head);
 
   // A relic is not on any ladder: no tier, no item level and no capacity. What
   // it IS is the whole card, and the person who wants it is the rest.

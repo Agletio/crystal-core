@@ -301,7 +301,7 @@
   /* The MARK, and the words under it are a caption to it rather than the logo.
      Grid art, so its two inks are these and nothing is baked into the file. */
   .title__mark { line-height: 0; filter: drop-shadow(0 4px 0 rgba(0,0,0,.75)); }
-  .title__mark .sicon { width: clamp(72px, 10vw, 110px); height: auto; }
+  .title__mark .sicon, .title__mark .icon { width: clamp(72px, 10vw, 110px); height: auto; image-rendering: pixelated; }
   .title__mark .sicon__ink { fill: var(--seam-cut); }
   .title__mark .sicon__fill { fill: var(--gem-dim); }
   .title__mark .sicon__lit { fill: var(--citrine); }
@@ -1515,6 +1515,8 @@
   /* An item. The border says the base's tier from across the screen, the same
      four colours the dock slots use. */
   .tip__card { border-left: 3px solid var(--tier1); padding-left: 9px; margin: -1px 0; }
+  .tip__head { display: flex; align-items: center; gap: 8px; }
+  .tip__head .icon { flex: none; image-rendering: pixelated; }
   .tip__card--t2 { border-left-color: var(--tier2); }
   .tip__card--t3 { border-left-color: var(--tier3); }
   .tip__card--locked { border-left-color: var(--locked); }

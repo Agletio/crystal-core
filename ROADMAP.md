@@ -60,6 +60,16 @@ followed**, at the user's word ("way too noisy... I really don't like it"):
 the two-worlds canvas and `titleart.ts` are deleted, and the title is the
 mark on a generated ceremonial plaque (`extras` in `uikit.json`) over quiet
 stone — one lamp glow, a vignette, and the gem ghosted enormous behind it.
+**Then the ITEMS followed**, at the user's word again: 66 more generated
+icons — twelve crystals (three families × four levels, each family its own
+stone), all 48 armour pieces, the weapons and the jewellery — with
+`crystalIcon`/`gearIcon` answering the generated table first, the tooltip
+carrying the art beside the name, and the title's mark now the highest-level
+Normal crystal. What the batch taught: an ask per FAMILY with a shared tier
+sentence keeps a ladder reading as one ladder; the one family that came back
+wrong (nightweave, violet like arcanist's) was re-asked by naming what it may
+NOT be; and a 66-row batch runs in sevens through `icon.mts`'s own ten-job
+slice, idempotent on the cache, in about twenty minutes.
 
 **YOU WALK AROUND THE FURNITURE IN AN AUTHORED ROOM.** *The user's call: "make
 the furniture specifically solid so you can't walk through it."* The bench, the
