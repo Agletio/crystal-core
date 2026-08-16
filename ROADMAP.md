@@ -1378,7 +1378,196 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — You walk AROUND the furniture in an authored room
+
+**The user's call:** *"make the furniture specifically solid so you can't walk
+through it."*
+
+#### What is true today
+
+`SOLID_PROPS` in `src/vignettes.ts` holds nine ids — `altar`, `cairn`,
+`brazier`, `pillar`, `pitprop`, `cart`, `cocoon`, `stake`, `skulls` — and none
+of the furniture a scene places is in it. `block()` in `src/sim/grid.ts` only
+marks a tile solid for an id in that set, so the hero walks straight through the
+Lampwright's workbench on his way across the room.
+
+#### Why it is wrong
+
+A room is hand-placed and looked at closely. Walking through a bench is the one
+thing an authored room cannot afford, and it is the only place in the game where
+the player is guaranteed to cross a floor somebody furnished.
+
+#### Decisions
+
+- [ ] Add the scene furniture to `SOLID_PROPS`: `bench`, `shelf`, `lampshelf`,
+      `lamprack`, `slab`, `plinth`, `orrery`. NOT the lanterns and NOT the
+      floor debris — a lantern is a thing you step over, and `COVER_PROPS`
+      claims no tile by design.
+- [ ] Two demo checks break and both need REWRITING rather than relaxing. One
+      prints `N solids put round the person, M of them block, K refused` and
+      drove K NEGATIVE when this was tried — it counts against a fixed
+      expectation of how many of a scene's props are solid. The other is the
+      solidity sweep beside it. Read what each is asserting and restate it for
+      a world where furniture blocks; do not widen the set and loosen the check
+      to match.
+- [ ] Every room stays crossable. `block` already refuses a tile that would cut
+      the room in two, and the demo already proves a route from the hole to
+      whoever is waiting — that check must still pass on all FOUR scenes.
+
+#### Traps
+
+- **The walk is `walkOut`, not the descent's pathing.** It calls `advance` at
+  `SCENE_WALK`, which uses `findPath` over `grid` — solidity is honoured, but a
+  bench dropped on the only line between the hole and the man makes the walk
+  fail and `walkOut` hands the meeting over anyway. Check the workshop's three
+  benches do not wall the man off.
+- **`block` is order-dependent**: it solidifies one prop at a time and undoes
+  any that strands something. The scatter is `unshift`ed in front of the plan's
+  props, so the furniture is considered LAST. Adding solids may change which
+  ones are refused.
+
+#### Done when
+
+The hero's walk across every one of the four rooms goes AROUND every piece of
+furniture, and `demo` proves it on all four rather than on the workshop alone.
+
+#### What must not break
+
+`comments`, `typecheck`, `demo`, `build`, `shots`. `demo` is the one that
+matters: it owns both the solidity checks and the route-to-the-person check.
+
+### Phase 2 — One art direction: the UI matches the game it frames
+
+**The user's call:** *"we need to redo the entire ui. I want the same
+functionality it all has now but designed to match the theme of the new fissure
+art and the enemies in the fissure. Currently it clashes I want a more rpg
+fantasy theme. Im talking literally everything, character, skills, the
+background of the skill tree, the title screen crystal core logo, the ui button
+rail in the bottom right literally everything."* And: *"Make sure you specify it
+in a way that doesn't leave any stragglers in terms of old uis left hidden."*
+
+#### What is true today
+
+The map is now generated pixel art — a warm pale limestone floor, near-black
+rock, amber lamps, and bodies drawn at 48–96 grids. The shell around it is not.
+`docs/index.html` is ~2,030 lines carrying **436 distinct CSS class rules** and
+**197 ids**, over a `:root` palette of flat near-blacks and cool greys
+(`--void #0C0B0E`, `--matrix #1B1922`, `--seam #2E2B3A`, `--dust #877F8C`)
+with square borders, 1–2px strokes and a monospace display face. It reads as a
+terminal wrapped around a fantasy game.
+
+The surface is **34 modules** in `src/ui/`, and this phase touches all of them:
+
+`badge` `character` `confirm` `craft` `crystals` `flaskart` `glossary` `graft`
+`haul` `history` `icons` `inventory` `itemcard` `keys` `menu` `met` `pick`
+`rail` `run` `savedata` `screenicons` `shop` `skills` `speech` `stash` `title`
+`titleart` `toast` `tooltip` `trade` `wear` `webart` `windows` `welcome`
+
+Named specifically because the user did: the Character sheet (`character.ts`),
+Skills and the skill-tree BACKGROUND (`skills.ts`, `webart.ts`, and the trade
+web in `trade.ts`), the title logo (`#title`, `.title__logo` in the stylesheet,
+art in `titleart.ts`), and the bottom-right button rail (`rail.ts`,
+`screenicons.ts`).
+
+#### Why it is wrong
+
+Two art directions in one screen. The game inside the frame is warm, textured
+and hand-lit; the frame is cold, flat and square. Whichever is better, they
+cannot both be right, and the map is the part that took a hundred generations.
+
+#### Decisions
+
+- [ ] **The palette is the spine, and it moves FIRST.** Retheme `:root` in
+      `docs/index.html` toward the stone the game is actually drawn on — the
+      Fissure's own floor and rock and the lamps' amber — and let the 436 rules
+      inherit. A rule that hardcodes a hex instead of a `var()` is a straggler
+      by definition; find them with `grep -nE '#[0-9a-fA-F]{3,6}' docs/index.html`
+      and convert every one.
+- [ ] **`paletteFrom`/`VARS` in `src/render/renderer.ts` reads those same CSS
+      variables**, so the map's own colours move with the frame. Decide
+      deliberately which vars are FRAME and which are MAP, and keep the map's
+      pinned to what the tilesets were generated against — a retheme that
+      drifts `--floor` re-tones art that is already committed.
+- [ ] **A window, a button, a panel and a card get ONE treatment each**, defined
+      once and reused: border, corner, inner shadow, hover, disabled. Fantasy
+      rather than terminal — but bounded, and written down here before any
+      screen is touched.
+- [ ] **The display face.** The monospace is half of why it reads as a console.
+      Choose a replacement that survives at 11px uppercase with letter-spacing,
+      or state that it stays and why. Note `docs/index.html` webfonts come off a
+      CDN an offline runner cannot reach — `shots.mjs` already ignores that
+      error, so a font that fails to load must still leave every screen legible.
+- [ ] **The title logo** is `.title__logo` text with a text-shadow, not art. It
+      becomes a drawn mark. `titleart.ts` paints the two-world wall behind it and
+      already uses the map's own generator — it likely needs re-toning, not
+      replacing.
+- [ ] **The skill-tree background** is currently flat. Both webs draw through
+      `webart.ts` and `nodeCard` in `glossary.ts`; the stud art, the link, the
+      allocated/reachable/blocked states and the ground behind them are one job.
+- [ ] **The rail** (`rail.ts`, `screenicons.ts`) is 20+ glyphs drawn as SVG
+      paths. Its button IDs are what every harness names and they MUST survive
+      — `smoke.mjs` and `shots.mjs` click them by id.
+
+#### No stragglers — how this is PROVEN rather than hoped
+
+This is the part the user asked for explicitly, and eyeballing cannot do it.
+A screen nobody opened during the redesign keeps the old look and nothing says
+so.
+
+- [ ] **Enumerate first.** Write the list of every screen and overlay with the
+      id that opens it, from `SCREENS` in `src/web.ts` and the rail's own table.
+      That list is the checklist and it goes IN this phase before work starts.
+- [ ] **Shoot every one.** `shots.mjs` currently captures 16 states. Extend it
+      until EVERY entry on that list is captured — including the ones that only
+      appear in a condition: the confirm dialog, the item menu, the toast, the
+      tooltip, the glossary card, the haul, the shop, the stash, the craft
+      bench, the graft bench, the Lampwright panel, the save slots, the welcome,
+      the character-select hall, the trade web, both skill webs, and the item
+      card. A state with no shot is a state nobody checked.
+- [ ] **Fail the build on an unthemed rule.** After the palette moves, no
+      literal hex may remain in `docs/index.html` outside `:root`. Add that as a
+      check — `npm run comments` already walks that file, so the pattern for
+      parsing it exists.
+- [ ] **Delete, do not orphan.** Anything replaced comes OUT in the same commit:
+      dead CSS classes, unused ids, superseded icon paths. The doll's deletion
+      is the precedent — `gear-art.ts`, `look.ts`, `body.ts`, `pose.ts` went in
+      one piece rather than being left unreferenced.
+
+#### Traps
+
+- **`docs/index.html` runs at a 25% comment budget** (`SHARE_BY_FILE` in
+  `tools/comment-budget.mjs`) because it is mostly stylesheet. Cutting 400 rules
+  and writing 400 new ones will move that ratio; check `npm run comments` early,
+  not at the end.
+- **`docs/app.js` is committed** and Cloudflare runs no build. Every visual
+  change needs `npm run build` before `smoke`, `shots` or `peek` mean anything.
+- **`mapfull` is the layout**, not a skin: `body.mapfull` makes the stage fixed
+  at `inset: 0` and every panel a corner. A retheme that changes padding or
+  border widths moves `--dock-h`, which is MEASURED at runtime by `measureDock`.
+- **`.modal` paints no scrim and is `pointer-events: none`** with its card
+  `auto`; `.modal--stop` is the exception. Losing that makes every screen block
+  the map, which `shots.mjs`'s `mapProbe` catches — but only on states it shoots.
+- **The overflow probe fails the run** on any element past the viewport, so a
+  wider border or a bigger font can fail `shots` on a screen that merely got
+  roomier.
+- **Both renderers read the palette.** `canvas2d` is the fallback and draws the
+  same map from the same vars; a retheme must be looked at in both.
+
+#### Done when
+
+Every screen on the enumerated list has a shot in `shots/`, all of them read as
+one world with the map, no literal hex survives outside `:root` in
+`docs/index.html`, and nothing replaced is still in the tree.
+
+#### What must not break
+
+`comments`, `typecheck`, `build`, `smoke`, `shots`, `drag`. `smoke` proves the
+557 interactions still work — this phase must not change BEHAVIOUR, only how it
+looks, so a smoke failure is a bug and not an expected update. `drag` proves the
+dock still reorders and a window still goes where you put it, which is the thing
+a layout retheme is most likely to break silently.
+
+### Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
