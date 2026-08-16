@@ -296,7 +296,8 @@
     width: min(688px, 94vw); aspect-ratio: 688 / 384;
     background-image: var(--fix-plaque); background-size: 100% 100%;
     image-rendering: pixelated;
-    padding: 48px 64px;
+    /* Clear of the carved frame top and bottom: the words sat against it. */
+    padding: 76px 64px;
   }
   /* The MARK, and the words under it are a caption to it rather than the logo.
      Grid art, so its two inks are these and nothing is baked into the file. */
@@ -1496,7 +1497,6 @@
      a smudge. The dark casing under each one is what keeps a lit chain
      readable against the lit rock behind it. */
   .web { shape-rendering: crispEdges; }
-  .web__edge { stroke: var(--chain); }
   /* Chain over the casing: rusted at rest, lit gold on a taken path. The
      stroke rules are for the drawn fallback; a generated link is a picture,
      so its states are treatments. */

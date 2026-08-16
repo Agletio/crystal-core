@@ -1590,7 +1590,7 @@ assert(
   all('#skills-web .web__node--notable.web__node--open').length === 0,
   'and none of them is a first move'
 );
-assert(all('#skills-web .web__edge').length > 100, 'and it is a web, not a list');
+assert(all('#skills-web .web__chain').length > 100, 'and it is a web, not a list');
 
 // The centre is an icon, not a word.
 assert(

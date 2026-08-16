@@ -454,18 +454,9 @@ function renderWeb(): void {
     }
   }
 
-  // Casings first, then every chain: drawn interleaved, a later casing would
-  // cut across an earlier chain wherever two links cross.
+  // The chain alone, straight onto the ground: a casing under it read as a
+  // black box around every run of links.
   const casing = Math.max(3, scale * 0.14);
-  for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: 'web__edge', 'stroke-width': casing.toFixed(1),
-      })
-    );
-  }
-  // Oval links over the solid casing: a run of rusted chain, node to node.
   for (const l of links) {
     for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
       svg.append(link);

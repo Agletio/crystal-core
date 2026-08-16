@@ -180,16 +180,7 @@ function renderWeb(): void {
     }
   }
 
-  const casing = 0.16;
-  for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: 'web__edge', 'stroke-width': casing,
-      })
-    );
-  }
-  // Oval links over the solid casing: a run of rusted chain, node to node.
+  const casing = 0.16; // the chain alone: a casing under it read as a box
   for (const l of links) {
     for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
       svg.append(link);
