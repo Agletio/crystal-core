@@ -1010,10 +1010,12 @@ selling needs room nowhere.
 The title is the mark and the wordmark on a ceremonial PLAQUE — a generated
 ornamental frame (`plaque` in `UI_FIXTURES`, an `extras` row in
 `tools/art/uikit.json`) — over quiet lamplit stone. *The user's call: the old
-two-worlds wall was "way too noisy".* Below the plaque is THE FISSURE itself,
+two-worlds wall was "way too noisy".* Behind the plaque is THE FISSURE itself,
 GENERATED (`crackscene`, another `extras` row): the rock face split by a lit
-crack, a lantern either side of the mouth, meadow at its foot, drawn at 2x —
-an integer, so its pixels stay square — off `--fix-crackscene`. An `extras`
+crack, a lantern either side of the mouth, meadow at its foot — the WHOLE
+screen (`cover`, anchored at the meadow so a tall window crops rock and never
+grass), the plaque and the go-line floating over it and the vignette painting
+between them, off `--fix-crackscene`. An `extras`
 row may carry its own `style` words and a `crop`: the scene escaped the kit's
 fixture styling through the first and lost the ornate frame the generator
 added anyway through the second. The enormous low-opacity gem ghost behind

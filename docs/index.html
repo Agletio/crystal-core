@@ -264,18 +264,22 @@
     background-color: var(--ink); background-image: var(--grit);
   }
   .title::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
     background:
       radial-gradient(46% 40% at 50% 46%, rgba(196,99,30,.13), transparent 72%),
       radial-gradient(130% 105% at 50% 50%, transparent 42%, rgba(4,3,2,.82));
   }
   .title > * { position: relative; z-index: 1; }
-  /* The fissure itself, GENERATED: a rock face split by a lit crack, a lantern
-     either side of the mouth, meadow at its foot. Shown at 2x its art, an
-     integer, so every pixel stays square. */
-  .title__crack {
-    width: min(800px, 94vw, 84vh); aspect-ratio: 400 / 196;
-    background-image: var(--fix-crackscene); background-size: 100% 100%;
+  /* The fissure itself, GENERATED, and it IS the screen: a rock face split by
+     a lit crack, a lantern either side of the mouth, meadow at its foot,
+     covering the whole ground with the plaque floating over it. Anchored at
+     the BOTTOM so a tall window crops sky-rock, never the meadow. The
+     vignette (`::after`) shares its stack level and paints later, which is
+     what lets it darken the scene under the plaque. */
+  .title .title__crack {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: var(--fix-crackscene); background-size: cover;
+    background-position: center bottom;
     image-rendering: pixelated;
   }
   /* The plaque holds the mark and the words in its open middle; the padding
@@ -283,11 +287,11 @@
   .title__plaque {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px;
-    /* The vh term keeps plaque + scene + go-line INSIDE one short viewport:
-       at 800px tall both scale down rather than clipping. The padding is
-       76px/64px at full width as a SHARE of the width the plaque actually
-       gets — percentage padding reads the parent's width, not this box's. */
-    --plaque-w: min(688px, 94vw, 72vh);
+    /* The vh term keeps plaque + go-line inside one short viewport. The
+       padding is 76px/64px at full width as a SHARE of the width the plaque
+       actually gets — percentage padding reads the parent's width, not this
+       box's. */
+    --plaque-w: min(688px, 94vw, 84vh);
     width: var(--plaque-w); aspect-ratio: 688 / 384;
     background-image: var(--fix-plaque); background-size: 100% 100%;
     image-rendering: pixelated;
@@ -328,10 +332,12 @@
   .title__go {
     margin: 10px 0 0; font-family: var(--display); font-size: 12px;
     letter-spacing: .22em; text-transform: uppercase; color: var(--citrine);
-    text-shadow: 1px 1px 0 var(--cut), 0 0 10px rgba(6,4,2,.9);
+    /* Over the scene's own glow now, so the halo is doubled and the pulse
+       never dims past legible. */
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.9), 0 0 12px rgba(6,4,2,.95);
     animation: titlepulse 1.9s ease-in-out infinite;
   }
-  @keyframes titlepulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+  @keyframes titlepulse { 0%, 100% { opacity: .62; } 50% { opacity: 1; } }
 
   /* Character select. A hall of standing figures with the say-box across the
      foot of it, so the cast is never covered by what the cast is saying. */
