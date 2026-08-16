@@ -537,6 +537,62 @@
    "tiles": 1.2,
    "tone": 0.6,
    "dull": 0.55
+  },
+  {
+   "id": "bench",
+   "object": "b518d6a1-bc63-48bb-bdc2-df905ee938db",
+   "tiles": 1,
+   "tone": 0.18,
+   "dull": 0.3
+  },
+  {
+   "id": "lamprack",
+   "object": "dac806aa-165f-464f-b946-275d3d57e14b",
+   "tiles": 1,
+   "tone": 0.15,
+   "dull": 0.28
+  },
+  {
+   "id": "lantern_lit",
+   "object": "5d60fe08-ccf1-4028-a549-d3b7efbe2b5b",
+   "tiles": 0.55,
+   "tone": 0.12,
+   "dull": 0.18
+  },
+  {
+   "id": "lantern_dark",
+   "object": "d251ca35-1760-4f3a-8a40-ca1999d4aef5",
+   "tiles": 0.55,
+   "tone": 0.3,
+   "dull": 0.35
+  },
+  {
+   "id": "shelf",
+   "object": "a95e7813-7383-4a4b-9788-117e8fafb8cf",
+   "tiles": 1,
+   "tone": 0.18,
+   "dull": 0.3
+  },
+  {
+   "id": "slab",
+   "object": "2dff5249-9298-47e8-a79b-53e9a7d063f0",
+   "tiles": 1.2,
+   "tone": 0.4,
+   "dull": 0.4
+  },
+  {
+   "id": "plinth",
+   "object": "d3362671-2575-45cb-89c8-4849b3c70097",
+   "tiles": 0.8,
+   "tone": 0.35,
+   "dull": 0.35
+  },
+  {
+   "id": "orrery",
+   "object": "181499e0-c9d2-4423-bb7c-d21ca5c6d30a",
+   "tiles": 1.6,
+   "tone": 0.15,
+   "dull": 0.22
   }
  ]
 }

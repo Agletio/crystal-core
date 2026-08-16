@@ -56,13 +56,13 @@ const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   face: string;
   inks: string[];
   bodies: BodyAsk[];
-  props: { id: string; tiles: number; say: string; view?: string; size?: number }[];
+  props: { id: string; tiles: number; say: string; view?: string; size?: number; tone?: number; dull?: number }[];
 };
 type Made = { sprite: string; states: Record<string, { group: string }> };
 const shipped = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
   hero: Made;
   bodies: Made[];
-  props: { id: string }[];
+  props: { id: string; object?: string; tiles?: number; tone?: number; dull?: number }[];
 };
 /** The hero is a body like any other here: it is drawn out of the same table,
  *  and only the room it stands in knows the difference. */
@@ -397,7 +397,18 @@ if (command === 'design') {
       shading: 'medium shading',
       detail: 'high detail',
     });
+    // Written back HERE. An object id copied across by hand is the step that
+    // pointed a roster at another character's groups once already, and a prop
+    // with no `object` is silently skipped by `tables.mts` rather than failing.
+    const id = /([0-9a-f-]{36})/.exec(out)?.[1];
     console.log(`${ask.id}: ${said(out, /^id|status/i)}`);
+    if (id) {
+      const row = shipped.props.find((p) => p.id === ask.id);
+      const made = { id: ask.id, object: id, tiles: ask.tiles, ...(ask.tone === undefined ? {} : { tone: ask.tone }), ...(ask.dull === undefined ? {} : { dull: ask.dull }) };
+      if (row) Object.assign(row, made);
+      else shipped.props.push(made);
+      writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+    }
     if (i % 2 === 1) await wait(20_000);
   }
 } else if (command === 'watch') {

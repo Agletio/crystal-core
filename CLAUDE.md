@@ -277,6 +277,13 @@ about on it reads as objects standing about on a floor. A SCENE is the other
 half of the rule and always was — one chamber, props placed by hand, and
 nothing scattered into it at all.
 
+**A generated body keeps its GROUND, and a design is cropped instead.** The
+shadow the generator paints under a body sits at the same rows as the feet, so
+no width rule tells them apart: the one that tried took most of the Gaunt's legs
+and the Dragger's hands, and it is gone. What works is cutting the DESIGN below
+the hem before it is rotated, by looking — the Lampwright's mound came off that
+way for nothing, where img2img told to stand on nothing drew a bigger one.
+
 **Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
 the pipeline and `manifest.json` is one row per sprite and the source of truth:
 generation is content-addressed on the row's hash, and the converted GRID is
@@ -472,8 +479,12 @@ and there is nothing to walk to.
 
 `GameMap.zone` names the generated tileset and `bare` says the zone's own rock
 stands down for it — floor, decals and the moving parts — because a tileset is
-the whole surface. It is a DESCENT's, off `ZONE[theme]`; a scene is never bare,
-so the four authored rooms still draw the rock the old way. Pixi draws one
+the whole surface. **A SCENE takes its world's set too**, off the same
+`ZONE[theme]`: a room somebody lives in cut from different rock than the descent
+below it reads as a different game. So a bare room draws `PROP_ART` and never
+the decals, and every prop the four authored rooms place has to be GENERATED —
+the demo asks the table the room will actually read, because a room that went
+bare with only decals behind it is an empty room. Pixi draws one
 sprite per cell off `wangKey`; `canvas2d` has no sprites and keeps its colours.
 `PROP_ART` is the same idea for the furniture: a prop is a PICTURE anchored at
 the foot of its tile, where `PROPS` is decals, and `tiles` says how much of the

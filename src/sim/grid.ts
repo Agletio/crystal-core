@@ -648,6 +648,7 @@ export function generateMap(
  * cut is hashed off the tile it lands on, so a room is the same room always.
  */
 export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
+  const zone = ZONE[theme];
   const rooms = [plan.room];
   const grid = new Grid(plan.room.x + plan.room.w + 2, plan.room.y + plan.room.h + 2);
   const spare = [...plan.props, plan.entrance, plan.stands];
@@ -656,9 +657,9 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
 
-  // The exit IS the entrance. `GameMap` requires one, a scene has nothing to
-  // walk to, and one tile carrying both means nothing draws a second hole.
+  // The exit IS the entrance: nothing to walk to, and one tile carrying both
+  // draws no second hole. The stone is the world's own.
   const props = [...plan.props];
   block(grid, props, [entrance, plan.stands]);
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: false };
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone };
 }

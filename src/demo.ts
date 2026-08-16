@@ -1569,13 +1569,17 @@ rule('SPRITES — is the pixel art well formed?');
     `all ${SCENES.length} scenes have a sprite AND a portrait for whoever is in them`,
     halfDrawn.join(', ')
   );
-  // A prop is decals and never a sprite, so a mis-typed id is a bench that
-  // silently is not there rather than a missing texture.
-  const noProp = SCENES.flatMap((s) =>
-    sceneMap(s.plan, s.theme, 1)
-      .props.filter((p) => !PROPS[p.id])
-      .map((p) => `${s.id}: ${p.id}`)
-  );
+  // A mis-typed id is a bench that silently is not there rather than a missing
+  // texture. A BARE room draws the generated picture and skips the decals, so
+  // which table has to hold it depends on whether its zone has a set — and a
+  // room that went bare with only decals behind it is an EMPTY room.
+  const noProp = SCENES.flatMap((s) => {
+    const map = sceneMap(s.plan, s.theme, 1);
+    const table = map.bare ? PROP_ART : PROPS;
+    return map.props
+      .filter((p) => !(p.id in table))
+      .map((p) => `${s.id}: ${p.id}${map.bare ? ' (bare, needs generated art)' : ''}`);
+  });
   check(noProp.length === 0, 'and every prop in one is drawn', [...new Set(noProp)].join(', '));
 
   // A VIGNETTE is placed as one thing, so its own props have to fit inside the
