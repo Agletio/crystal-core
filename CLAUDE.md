@@ -129,7 +129,13 @@ because `scale` is one number and both renderers apply it uniformly. Its
 its legs; `fits` clamps at `BODY_MAX` for walking, so it still takes a one-tile
 gap.
 
-**A body STANDS ON its tile, and it is pinned at its own FOOT.** `bodyFoot` in
+**A body STANDS ON its tile, it is pinned at its own FOOT, and the north
+wall occludes it.** Pixi draws every ROCK cell's tile twice — once in the
+ground and again in `wallLayer` above the entities — so a body pushed against
+a north wall walks BEHIND the cliff rather than drawing its head up it; the
+life bars ride above the wall, and anything placed INTO rock (the roots)
+rides that layer too.
+ `bodyFoot` in
 `src/render/sprites.ts` is where a sprite's ink ENDS as a fraction of its grid,
 measured over every frame beside `bodyTop`, and `anchorY` in `pixi.ts` is that
 less a quarter tile — so the drawing hangs 0.25 tiles below the entity whatever
@@ -293,7 +299,10 @@ half of the rule and always was — one chamber, props placed by hand, and
 nothing scattered into it at all.
 
 **THE GROUND IS CUT AT IMPORT, by three rules that see different halves of
-it.** `defloor` finds it by COLOUR — what spills out beside the body and is
+it — and a body that stands IN its ground is exempt.** `BodySpec.grounded`
+(the Crawler, the Lampwright) keeps `defloor` and stands `deslab` and `loose`
+down, because the shape cut took the mound with the feet planted in it.
+ `defloor` finds it by COLOUR — what spills out beside the body and is
 almost nowhere above it — and is blind to a shadow the body shares a colour
 with. `deslab` finds it by SHAPE: down in the low band, a region of one colour
 wider than it is tall and LIGHTER than the body above it is what the body
@@ -801,11 +810,14 @@ A save from before any of this has no trade at all, so the hall comes up once
 for it — nothing is refused and no `SAVE_VERSION` moved.
 
 `src/ui/trade.ts` draws it. Twenty nodes FIT, so that web carries a viewBox and
-has no pan, no zoom and no Fit button; the node art both webs are made of lives
-in `src/ui/webart.ts` — a gold-ringed medallion for a notable, a silver band
-for a minor, rusted chain between them, and `src/ui/webicons.ts` picking the
-small image inside a frame off the node's own words — and how a web is WALKED
-lives in `src/webgraph.ts`, over any list of nodes.
+has no pan, no zoom and no Fit button; the node art both webs are made of is
+GENERATED — `WEB_ART` in `src/render/generated-web.ts` (written by
+`tools/art/webkit.mts`) holds the gold medallion frame, the iron minor ring,
+the hub ring and the rusted chain segment as data URIs drawn as SVG <image>,
+and the `wn_*` icons in `GENERATED_ICONS` are the pictures inside, picked by
+`src/ui/webicons.ts` off the node's own words. `src/ui/webart.ts` keeps drawn
+fallbacks for a missing piece, and how a web is WALKED lives in
+`src/webgraph.ts`, over any list of nodes.
 
 ## What a skill costs
 

@@ -177,6 +177,21 @@ undiagnosed fault and not a regression.
 **What the last phases turned out to know that their writing did not.**
 Kept here because the next thing built on top of them will want it.
 
+- **The web kit is GENERATED and `webkit.mts` owns `generated-web.ts`.** Four
+  pixflux pieces (two node frames, the hub, a chain segment) ship as data URIs
+  drawn as SVG `<image>`, and the fifteen `wn_*` node icons ride the ordinary
+  icon pipeline. The minor frame came back a filled verdigris shield until
+  re-asked as a variation on the notable's working sentence; the flame icon
+  summoned the torch holding it — the actor trap again.
+- **`BodySpec.grounded` keeps a body's drawn ground.** The Crawler stands IN
+  a mound and the Lampwright's robe pools like one, so `deslab` amputated
+  feet and `loose` swept the toes; the flag keeps `defloor` and stands the
+  other two down. Diagnose by running each rule alone over a live frame —
+  every Normal-pool character was still on the server, so it cost nothing.
+- **Rock cells draw again ABOVE entities (`wallLayer` in pixi).** A sprite at
+  the north wall drew its head up the cliff; the overlay makes it walk behind
+  the rock instead. Anything placed INTO rock (the roots) must ride that same
+  layer or the overlay hides it.
 - **The channel fixture's cap art intrudes past its border box.** A fill at
   100% of the content box drew over the right brass cap; the track is padded
   inside the caps (`.hp--slim` padding, `.hp__track`). Any fixture whose art
