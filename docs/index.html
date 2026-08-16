@@ -152,6 +152,8 @@
     --step: 4px;
     /** Carved, not drawn: enough corner to lose the CSS rectangle, no more. */
     --r: 3px;
+    /** The title plaque's width, and everything inside it scales off it. */
+    --plaque-w: min(688px, 94vw, 84vh);
 
     /*
      * A quiet stone wash: lamplight fading down the face, no pattern at all.
@@ -287,11 +289,9 @@
   .title__plaque {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px;
-    /* The vh term keeps plaque + go-line inside one short viewport. The
-       padding is 76px/64px at full width as a SHARE of the width the plaque
-       actually gets — percentage padding reads the parent's width, not this
-       box's. */
-    --plaque-w: min(688px, 94vw, 84vh);
+    /* The padding is 76px/64px at full width as a SHARE of the width the
+       plaque actually gets — percentage padding reads the parent's width,
+       not this box's. */
     width: var(--plaque-w); aspect-ratio: 688 / 384;
     background-image: var(--fix-plaque); background-size: 100% 100%;
     image-rendering: pixelated;
