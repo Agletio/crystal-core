@@ -953,6 +953,8 @@ const SIGILS: Record<string, string[]> = {
 };
 
 export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
+  const own = drawn(`cur_${currency.id}`, size); // generated wins, as everywhere
+  if (own) return own;
   const colour = CLASS_COLOURS[currency.class] ?? 'var(--dust)';
   // An unknown currency still gets a shape rather than nothing, so adding one
   // to the table is a visual to-do rather than an invisible bug.
