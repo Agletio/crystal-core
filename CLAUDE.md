@@ -990,6 +990,7 @@ been walked to.
 
 ```
 tools/art/mcp.mts  the generator, over JSON-RPC; tables.mts pulls art in
+tools/art/icon.mts a UI icon: icons.json is the words, portrait.mts the table
 tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
 tools/art/dress.mts a whole LOOK onto an existing character, every rotation
 tools/art/         the art pipeline: a row is generated, converted, accepted

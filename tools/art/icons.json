@@ -1,0 +1,91 @@
+{
+ "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
+ "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks \u2014 so an element reads at socket size and everything else stays furniture.",
+ "size": 64,
+ "grid": 48,
+ "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
+ "inks": [
+  "#0A0807",
+  "#151109",
+  "#221A10",
+  "#332618",
+  "#443322",
+  "#5A4530",
+  "#7A5C3C",
+  "#9C7A4E",
+  "#C2A06A",
+  "#E2C68E",
+  "#8A3A16",
+  "#C4631E",
+  "#E2871B",
+  "#F5C24A",
+  "#FFE9A8",
+  "#1E3A52",
+  "#2E6C93",
+  "#6FC2E0",
+  "#BFEFFF",
+  "#3A2352",
+  "#6B3FA0",
+  "#A97BE0",
+  "#243B22",
+  "#4F8A3A",
+  "#8FD654",
+  "#9AA3A8",
+  "#D6DDE0"
+ ],
+ "icons": [
+  {
+   "id": "cat_attack",
+   "say": "a heavy notched iron blade crossed with a worn leather grip, seen straight on, cold steel and dark iron."
+  },
+  {
+   "id": "cat_spell",
+   "say": "a cracked violet crystal shard wreathed in a thin curl of arcane light, cold and glowing."
+  },
+  {
+   "id": "cat_passive",
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit \u2014 a thing that is always ON rather than cast."
+  },
+  {
+   "id": "cat_movement",
+   "say": "a pair of winged iron boot-spurs trailing a streak of pale motion, light and fast."
+  },
+  {
+   "id": "sk_strike",
+   "say": "a wide sweeping arc of a steel blade cutting left to right, the blade dark iron and the arc a pale cold streak."
+  },
+  {
+   "id": "sk_fireball",
+   "say": "a dense ball of roaring orange flame with a bright white-gold core, round and heavy."
+  },
+  {
+   "id": "sk_bolt",
+   "say": "a narrow lance of orange fire flying point-first, a hot bright head with a thin trailing tail."
+  },
+  {
+   "id": "sk_frost_bolt",
+   "say": "a jagged shard of pale blue ice flying point-first, sharp and cold with a frosted trailing tail."
+  },
+  {
+   "id": "sk_arc",
+   "say": "a forked bolt of yellow-white lightning splitting into two branches, hard angular zigzags."
+  },
+  {
+   "id": "sk_blight",
+   "say": "a low roiling cloud of sickly green poison with a few dripping motes falling from it."
+  },
+  {
+   "id": "sk_surge",
+   "say": "a clenched iron gauntlet fist wrapped in a bright amber flare, a blow that has just landed."
+  },
+  {
+   "id": "sk_blink",
+   "say": "a violet arcane rift torn open in the air, an oval slit of cold light with the edges peeling back."
+  },
+  {
+   "id": "sk_leap",
+   "say": "a curving green arrow arcing up and over, with a puff of dust under its start."
+  }
+ ]
+}

@@ -1546,6 +1546,42 @@ The game's own art is generated pixel art with weight and light in it. The shell
 is a wireframe in a nice palette. A rectangle does not become a fantasy UI by
 being brown.
 
+#### WHERE THIS GOT TO — read this first
+
+Started. What is DONE and on the branch:
+
+- **Skill and category icons are generated pixel art.** Thirteen: one per
+  category (`cat_attack` `cat_spell` `cat_passive` `cat_movement`) and one per
+  skill (`sk_strike` `sk_fireball` `sk_bolt` `sk_frost_bolt` `sk_arc`
+  `sk_blight` `sk_surge` `sk_blink` `sk_leap`). They live in
+  `src/render/generated-icons.ts`; `skillIcon` and `categoryIcon` in
+  `src/ui/icons.ts` answer a generated one FIRST and fall back to the
+  hand-drawn grids, which stay for anything not yet drawn.
+- **The pipeline for a still image is two tools.** `tools/art/icon.mts` reads
+  `tools/art/icons.json` — one row per id, the words, the forced palette and
+  the "one object, no scene" clause — and downloads to
+  `tools/art/cache/designs/<id>.png`. Then `portrait.mts <id> <png> 48 icons`
+  converts it into the table. `portrait.mts` takes a `table` argument
+  (`portraits` or `icons`); it is not about faces.
+
+Still to do on the icons, and both are one generation each:
+
+- [ ] **`sk_strike` came back a plain sword**, near-identical to the crossed
+      swords of `cat_attack`, where the ask wanted a sweeping ARC. Re-ask:
+      `npx tsx tools/art/icon.mts sk_strike`, then convert.
+- [ ] **`sk_blight` reads as a cluster of stones**, not a cloud of poison.
+      Same treatment.
+
+**Two operational facts that cost time to learn:**
+
+- The generator **caps at TEN jobs in flight and refuses the rest outright** —
+  a batch of thirteen silently came back as ten. `icon.mts` slices to ten and
+  says what is left over.
+- `tone`/`dull` on a prop and the palette image on an icon are **emit-time and
+  ask-time knobs respectively**: neither can undo a hue the generator chose.
+  A wrong colour is re-asked with the colour NAMED and the wrong one excluded,
+  which is how the salmon workbench became dark timber.
+
 #### The load-bearing decision, to make FIRST
 
 **How is a fixture drawn, given the shell is HTML and the art is pixel art?**
