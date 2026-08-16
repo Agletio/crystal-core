@@ -210,7 +210,10 @@ for (const vp of VIEWPORTS) {
     // wait: bounded, because a bubble nobody can advance is the failure.
     for (let i = 0; i < 8; i++) {
       if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
-      await page.locator('#speech-next').click({ timeout: 2000 }).catch(() => {});
+      // Through the DOM, not the mouse: the box is anchored to a world point
+      // and the camera is still easing after the walk across, so it never
+      // holds still long enough for an actionability check to pass.
+      await page.evaluate(() => document.getElementById('speech-next')?.click());
       await page.waitForTimeout(250);
     }
     await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {

@@ -14,6 +14,7 @@ const $ = (id: string) => document.getElementById(id)!;
 
 /** How far above a body the bubble's point sits, in tiles. */
 const ABOVE = 0.6;
+const LIFT = 96; // above his head, clear of the room you came to look at
 const EDGE = 12; // pixels of window a clamped bubble keeps around itself
 
 let beats: SceneBeat[] = [];
@@ -90,7 +91,7 @@ export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y
   );
   node.style.setProperty(
     '--sy',
-    `${Math.round(clamp(y, size.height + EDGE, globalThis.innerHeight - EDGE))}px`
+    `${Math.round(clamp(y - LIFT, size.height + EDGE, globalThis.innerHeight - EDGE))}px`
   );
 }
 

@@ -104,6 +104,8 @@ const AT_EXIT = 0.5;
 const PACE_STEP = 2;
 /** How close you get before the one who lurks comes out at you. */
 const LURK_RANGE = 4;
+/** A share of descent speed, for crossing a room you are meant to look at. */
+const SCENE_WALK = 0.4;
 
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
@@ -934,10 +936,9 @@ export class RunSim {
     }
   }
 
-  /** Arriving in a room. THEY cross it, not you — a person who stands still
-   *  while you walk over is furniture. The one who lurks is the exception, and
-   *  he does not move until you are close enough to be worth coming out for.
-   *  Not `step`: nothing in a scene has a clock. */
+  /** Arriving in a room. YOU cross it, at a walk rather than at descent speed:
+   *  the room is the point and arriving instantly skips it. Not `step`:
+   *  nothing in a scene has a clock. */
   walkOut(dt: number): void {
     const s = this.state;
     const met = s.folk[0];
@@ -947,11 +948,8 @@ export class RunSim {
     const lurking = LURKS.has(met.sprite) && apart > LURK_RANGE;
     // A walk that cannot finish still hands the thing over, whoever is walking.
     if (apart > 1.1) {
-      if (lurking) {
-        // Still behind whatever he is behind. You close the distance instead.
-        if (this.advance(s.hero, met, dt)) return;
-      } else if (this.advance(met, s.hero, dt)) {
-        this.face(s.hero, met.x, met.y);
+      if (this.advance(s.hero, met, dt, SCENE_WALK)) {
+        if (!lurking) this.face(met, s.hero.x, s.hero.y); // he watches you come
         return;
       }
     }
@@ -1410,19 +1408,20 @@ export class RunSim {
     this.settleAction(e, went > 1e-6);
   }
 
-  private advance(e: Entity, goal: Vec2, dt: number): boolean {
+  private advance(e: Entity, goal: Vec2, dt: number, pace = 1): boolean {
     e.pathTimer -= dt;
     if (e.path.length === 0 || e.pathTimer <= 0) {
       e.path = findPath(this.state.map.grid, e, goal);
       e.pathTimer = 0.4 + this.rng.float(0, 0.25);
       if (e.path.length === 0) return false;
     }
-    if (e.kind === 'hero') this.maybeMove(e);
+    // Not while PACING: a mover would blink him across the room he is walking.
+    if (e.kind === 'hero' && pace === 1) this.maybeMove(e);
 
     const startX = e.x;
     const startY = e.y;
 
-    let remaining = e.stats.moveSpeed * dt;
+    let remaining = e.stats.moveSpeed * dt * pace;
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];
       const dx = wp.x - e.x;

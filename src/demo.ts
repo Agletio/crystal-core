@@ -6208,8 +6208,9 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'every one of his three speeches is beats, and every beat has words',
       script.map((w) => w.beats.length).join('/')
     );
-    // Who crosses the room. A person who stands still while you walk over is
-    // furniture; the one who lurks is the exception and has to stay one.
+    // Who crosses the room. YOU do, at a walk: the room is what you came up
+    // into and arriving on top of the man skips looking at it. Whoever is
+    // waiting stands where he is, and the meeting still happens.
     const crossed: string[] = [];
     for (const scene of SCENES) {
       const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
@@ -6220,14 +6221,12 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       while (!arriving.state.meeting && ticks++ < 4000) arriving.walkOut(TICK);
       const theyMoved = dist(them, themAt);
       const youMoved = dist(arriving.state.hero, youAt);
-      const shouldLurk = LURKS.has(scene.who);
       if (!arriving.state.meeting) crossed.push(`${scene.id}: never met`);
-      else if (shouldLurk && youMoved <= theyMoved) crossed.push(`${scene.id}: the lurker came to you`);
-      else if (!shouldLurk && theyMoved <= youMoved) crossed.push(`${scene.id}: you went to them`);
+      else if (youMoved <= theyMoved) crossed.push(`${scene.id}: they came to you`);
     }
     check(
       crossed.length === 0,
-      'everyone crosses the room to you, and the one who lurks makes you come to him',
+      'you cross the room to whoever is waiting, and they stand where they are',
       crossed.join(', ')
     );
 

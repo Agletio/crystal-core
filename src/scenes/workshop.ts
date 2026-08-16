@@ -2,9 +2,8 @@
  * The Lampwright's workshop: the small chamber he climbs back down into, and
  * the one room in the game with nothing in it that wants to kill you.
  *
- * Authored to the tile. Every position is absolute and the cut is hashed off
- * the tile it lands on, so this room is the same room every time it is entered
- * without anything having to be seeded — which is what a place is.
+ * Authored to the tile: every position is absolute and the cut is hashed off
+ * the tile it lands on, so it is the same room every time — which is a place.
  */
 import { LAMPWRIGHT } from '../data';
 import type { SceneDef } from '../scenes';
@@ -35,6 +34,16 @@ export const WORKSHOP: SceneDef = {
       { id: 'lantern_dark', x: 11, y: 3 },
       { id: 'lantern_dark', x: 6, y: 4 },
       { id: 'lantern_dark', x: 13, y: 4 },
+      // The middle, which read as a floor with things round the edge of it.
+      { id: 'bench', x: 6, y: 6 },
+      { id: 'lantern_lit', x: 7, y: 6 },
+      { id: 'bench', x: 9, y: 7 },
+      { id: 'lantern_dark', x: 10, y: 7 },
+      { id: 'bench', x: 12, y: 6 },
+      { id: 'lantern_lit', x: 11, y: 6 },
+      { id: 'lamprack', x: 8, y: 9 },
+      { id: 'lantern_dark', x: 4, y: 6 },
+      { id: 'lantern_lit', x: 14, y: 8 },
     ],
   },
   said: LAMPWRIGHT.seen,
