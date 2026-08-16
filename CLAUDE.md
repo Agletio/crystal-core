@@ -129,12 +129,13 @@ because `scale` is one number and both renderers apply it uniformly. Its
 its legs; `fits` clamps at `BODY_MAX` for walking, so it still takes a one-tile
 gap.
 
-**A body STANDS ON its tile, it is pinned at its own FOOT, and the north
-wall occludes it.** Pixi draws every ROCK cell's tile twice — once in the
-ground and again in `wallLayer` above the entities — so a body pushed against
-a north wall walks BEHIND the cliff rather than drawing its head up it; the
-life bars ride above the wall, and anything placed INTO rock (the roots)
-rides that layer too.
+**A body STANDS ON its tile, it is pinned at its own FOOT, and it draws IN
+FRONT of the north wall.** Pixi routes every ROCK cell's tile to `wallLayer`,
+UNDER the entities — anything placed INTO rock (the roots) rides that layer
+too, over its own stone. Occluding bodies with it was tried and sheared the
+head off anything standing legally at a north wall; a body against a cliff
+overlaps the face and reads as standing in front of it, and the foot anchor
+is what keeps its feet at the cliff's base.
  `bodyFoot` in
 `src/render/sprites.ts` is where a sprite's ink ENDS as a fraction of its grid,
 measured over every frame beside `bodyTop`, and `anchorY` in `pixi.ts` is that

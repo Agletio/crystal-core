@@ -143,8 +143,8 @@ export async function createPixiRenderer(
   /** The generated PROPS. Under everything, and empty on every map but a bare
    *  one — which is every map a player ever runs. */
   const groundLayer = new Container();
-  // Rock over the bodies: pushed against a north wall a sprite drew its head
-  // on the cliff — occluded by the rock instead, it walks BEHIND it.
+  // The rock tiles and their growth, UNDER the bodies: drawn over them, the
+  // wall sheared the head off anything standing legally against it.
   const wallLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
@@ -156,7 +156,7 @@ export async function createPixiRenderer(
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(groundLayer, mapLayer, propLayer, auraLayer, entityLayer, wallLayer, vfxLayer);
+  world.addChild(groundLayer, wallLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
@@ -438,7 +438,7 @@ export async function createPixiRenderer(
         sprite.scale.set(sprite.scale.x * (0.82 + roll * 0.36));
         sprite.alpha = COVER_ALPHA;
       }
-      // What grows ON the rock rides the rock's own layer, or the overlay hides it.
+      // What grows ON the rock rides the rock's own layer, drawn after its tiles.
       (map.grid.at(prop.x, prop.y) === WALL ? wallLayer : groundLayer).addChild(sprite);
     }
   }
