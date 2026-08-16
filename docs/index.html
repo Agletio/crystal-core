@@ -1333,9 +1333,13 @@
   /* The gear column stays put and the stats scroll past it. What you are
      equipping is the fixed reference for everything on the right — scrolling
      it away to read a resistance meant losing sight of the thing you were
-     reading it about. Sticky rather than a second scroller, so a short window
-     can still reach the bottom of the slots. */
-  .sheetcols__gear { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+     reading it about. STICKY pins its top for good, so when the dock shortens
+     the card the column scrolls ITSELF, or the ring slots are unreachable. */
+  .sheetcols__gear {
+    position: sticky; top: 0; background: var(--panel); z-index: 1;
+    max-height: calc(100vh - var(--dock-h, 0px) - 165px);
+    overflow-y: auto;
+  }
   @media (max-width: 720px) {
     .sheetcols { grid-template-columns: 1fr; }
     .sheetcols__gear { position: static; }

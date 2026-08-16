@@ -120,6 +120,8 @@ export interface StatParts {
 
 export function statParts(line: StatRoll): StatParts {
   const sign = line.value >= 0 ? '+' : '';
+  const shown = String(Math.round(line.value * 100) / 100); // never float noise
+
 
   // Flat damage always names who can use it. A mace and a ring both grant
   // "+5 Physical Damage" and only one of them arms a spell.
@@ -128,15 +130,15 @@ export function statParts(line: StatRoll): StatParts {
     const name = qualify(line.stat, line.tags.filter((t) => !FAMILY_WORDS[t]));
     const reach = families.length ? families : Object.keys(FAMILY_WORDS);
     return {
-      value: `${sign}${line.value}`,
+      value: `${sign}${shown}`,
       label: `${name} to ${reach.map((t) => FAMILY_WORDS[t]).join(' and ')}`,
     };
   }
 
   const name = qualify(line.stat, line.tags);
-  if (line.form === 'flat') return { value: `${sign}${line.value}`, label: name };
-  if (line.form === 'inc') return { value: `${sign}${line.value}%`, label: `increased ${name}` };
-  return { value: `${line.value}%`, label: `more ${name}` };
+  if (line.form === 'flat') return { value: `${sign}${shown}`, label: name };
+  if (line.form === 'inc') return { value: `${sign}${shown}%`, label: `increased ${name}` };
+  return { value: `${shown}%`, label: `more ${name}` };
 }
 
 /** The same line as one run of text, for anywhere without room for markup. */
