@@ -2172,8 +2172,9 @@ export interface BossDef {
   phases?: BossPhase[];
 }
 
-/** THE TURN: which face of the crystal you present under a boss's attention.
- *  One at a time, free, and each is a TRADE — none is strictly better. */
+/** THE TURN: which face of the crystal you present. Each buys exactly ONE of
+ *  speed, defence and damage and pays with the other TWO, so there is no face
+ *  to sit in — being in the right one at the right instant is the whole of it. */
 export interface FaceDef {
   id: string;
   name: string;
@@ -2188,29 +2189,29 @@ export const FACES: FaceDef[] = [
   {
     id: 'quick',
     name: 'Quick',
-    blurb: 'Half again the speed and twice the blinks. You hit like nothing.',
-    move: 1.45,
-    cooldown: 0.5,
-    taken: 1,
-    dealt: 0.7,
+    blurb: 'Half again the speed and twice the blinks. Everything hurts, and you barely scratch it.',
+    move: 1.5,
+    cooldown: 0.45,
+    taken: 1.35,
+    dealt: 0.5,
   },
   {
     id: 'stone',
     name: 'Stone',
-    blurb: 'Half of what lands on you. You are slow, and you hit like nothing.',
-    move: 0.62,
-    cooldown: 1,
-    taken: 0.5,
-    dealt: 0.7,
+    blurb: 'Half of what lands on you. You are slow, and you barely scratch it.',
+    move: 0.6,
+    cooldown: 1.3,
+    taken: 0.45,
+    dealt: 0.18,
   },
   {
     id: 'edge',
     name: 'Edge',
-    blurb: 'Everything you have, and everything it has back.',
-    move: 1,
-    cooldown: 1,
-    taken: 1.4,
-    dealt: 1.7,
+    blurb: 'Everything you have, and everything it has back. You are slow with it.',
+    move: 0.75,
+    cooldown: 1.3,
+    taken: 1.35,
+    dealt: 1.9,
   },
 ];
 
@@ -2236,11 +2237,10 @@ export const BOSS_FIGHT = {
   fallEvery: 1.6,
   /** Long enough to leave at Quick and not at Edge, which IS the mechanic. */
   fallFuse: 1.5,
-  /** Only QUICK clears it in the fuse: 7.4 tiles quick, 3.2 in Stone, against
-   *  the 6.1 leaving one costs. */
+  /** Only QUICK clears it in the fuse; Stone eats it, which is what tanky is
+   *  for, and pays in marks. */
   fallRadius: 5.5,
-  /** A multiple of the boss's SWING, so gear outscales it, and seconds held. */
-  fallDamage: 26,
+  fallDamage: 26, // a multiple of the boss's SWING, so gear outscales it
   fallStun: 1.1,
   /** A share of max life per second, climbing by `readingRamp` a second. */
   readingPerSecond: 5,
@@ -2249,8 +2249,13 @@ export const BOSS_FIGHT = {
   splitMore: 2.2,
   windup: 0.9, // the rear-back before a circle appears
   markEvery: 1,
-  markMore: 0.14,
-  markCap: 8,
+  markMore: 0.1,
+  markCap: 10,
+  /** Being CAUGHT marks you too: tank them if you can, but not forever. */
+  markPerCatch: 2,
+  markFall: 0.75,
+  enrageAt: 34, // THE DPS CHECK: past it, everything climbs `enrageRamp` a second
+  enrageRamp: 0.1,
 } as const;
 
 export const BOSSES: BossDef[] = [

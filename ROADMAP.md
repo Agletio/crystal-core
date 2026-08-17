@@ -1688,19 +1688,39 @@ buys you a few misses; gear from the tier above walks it.*
 
 ```
                 swapping    sloppy       afk
-    met              7/8       3/8       0/8
-    ground           8/8       8/8       7/8
-    returned         8/8       8/8       8/8
+    met              6/8       2/8       0/8
+    ground           8/8       6/8       5/8
+    returned         8/8       7/8       8/8
 ```
 
 That check is LIVE, not parked, and it is what any future tuning answers to.
-What made it come out: the Fall and the Reading are multiples of the BOSS's
-own swing rather than shares of your max life — a share never gets easier
-however much life you find, so "come back geared and walk it" was unreachable
-by construction — and the Fall is not blunted by Stone at all. Every phase has
-exactly ONE answer: leaving is the only answer to a slam, standing is the only
-answer to something undodgeable. While Stone blunted everything, not playing
-beat playing.
+
+**Each face buys ONE thing and pays with the OTHER TWO** — *the user's call:
+"I kinda like the idea of being rewarded for flicking between each actively,
+kinda like flicking prayers in Old School RuneScape."* Quick is fast and takes
+more and deals less; Stone is armoured and is slow and deals almost nothing;
+Edge hits for nearly double and is slow and takes more. There is no face to
+sit in, which is what makes the flick the skill. It shows in the grid: at the
+gear you meet him with, playing it well wins six in eight where missing a
+third of the swaps wins two.
+
+What else made it come out, and is worth not undoing:
+
+- **The Fall and the Reading are multiples of the BOSS's own swing**, never
+  shares of your max life. A share never gets easier however much life you
+  find, so "come back geared and walk it" was unreachable by construction.
+- **Stone CAN eat the circles** — *the user's call: a tanky build's advantage
+  is tanking them, a damage build's is clearing faster* — and what stops
+  standing in every one of them forever is MARKS. Being caught stacks them,
+  each is more damage taken, and they fall off slowly enough that a whole
+  fight spent eating everything ends with a hero who cannot take a hit.
+- **An ENRAGE at 34 seconds** is the DPS check: past it everything the boss
+  does climbs, so a face that cannot kill cannot win by outlasting.
+- **The hero LEAVES a circle he is standing in**, the way he already paths and
+  drinks. Whether he is quick enough to make it is the player's business. Model
+  a player as turning for a whole PHASE and he deals less over the fight than
+  someone who never turns at all — the demo's policy turns only when something
+  is actually asking, which is what good play looks like.
 
 **What must not break, in order:** `comments`, `typecheck`, `mods`, `build`,
 `smoke`, `shots`, `drag`, and the demo's own boss-room checks.

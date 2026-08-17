@@ -893,6 +893,13 @@ export class RunSim {
   private fallIn = 0;
   private marked = 0;
 
+  /** THE DPS CHECK: past `enrageAt` everything it does climbs, so a fight you
+   *  cannot finish is one you eventually lose however well you turn. */
+  private get rage(): number {
+    const over = this.state.elapsed - BOSS_FIGHT.enrageAt;
+    return over > 0 ? 1 + over * BOSS_FIGHT.enrageRamp : 1;
+  }
+
   /** A boss playing one of its OWN animations: a state is looked up by skill
    *  id first, and nothing is named `slam`, so this borrows that seam. */
   private pose(boss: Entity, state: string): void {
@@ -963,8 +970,10 @@ export class RunSim {
     for (const ring of s.circles) ring.fuse -= dt;
     for (const ring of s.circles.filter((c) => c.fuse <= 0)) {
       if (dist(s.hero, ring) <= ring.r) {
-        this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical', false);
+        this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical');
         s.hero.stun = Math.max(s.hero.stun ?? 0, BOSS_FIGHT.fallStun);
+        // Tank it if you can, but every one marks you.
+        s.marks = Math.min(BOSS_FIGHT.markCap, s.marks + BOSS_FIGHT.markPerCatch);
       }
     }
     s.circles = s.circles.filter((c) => c.fuse > 0);
@@ -979,7 +988,7 @@ export class RunSim {
         s.marks++;
       }
     } else if (s.marks > 0) {
-      this.marked += dt;
+      this.marked += dt * BOSS_FIGHT.markFall;
       while (this.marked >= BOSS_FIGHT.markEvery && s.marks > 0) {
         this.marked -= BOSS_FIGHT.markEvery;
         s.marks--;
@@ -993,15 +1002,11 @@ export class RunSim {
    * shield are worth what they are worth everywhere else — and STONE blunts it,
    * which is the whole reason to turn.
    */
-  private bite(raw: number, type: string, blunt = true): void {
+  private bite(raw: number, type: string): void {
     const hero = this.state.hero;
     if (hero.dead) return;
-    const face = this.turned;
     const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
-    // A slam that LANDS is not blunted by how you stood: the Fall's one
-    // answer is leaving.
-    const held = blunt ? (face?.taken ?? 1) : 1;
-    let total = this.afterResistance(hero, raw * held * marked, type);
+    let total = this.afterResistance(hero, raw * (this.turned?.taken ?? 1) * marked * this.rage, type);
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
@@ -1915,7 +1920,9 @@ export class RunSim {
     const turned = this.turned;
     if (turned) {
       if (attacker.kind === 'hero') scale *= turned.dealt;
-      if (defender.kind === 'hero') scale *= turned.taken * (1 + s.marks * BOSS_FIGHT.markMore);
+      if (defender.kind === 'hero') {
+        scale *= turned.taken * (1 + s.marks * BOSS_FIGHT.markMore) * this.rage;
+      }
       if (defender === s.boss && s.phase === 'split') scale *= BOSS_FIGHT.splitMore;
     }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;

@@ -6504,10 +6504,16 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         //
         // Nothing here is a policy the GAME has: a boss is where automation
         // stops, and these three only exist to measure that decision.
-        const ANSWER: Record<string, string> = {
-          fall: 'quick',
-          reading: 'stone',
-          split: 'edge',
+        // What GOOD play is: Edge by default, because damage is what ends the
+        // fight, and turn only when something is actually asking — a circle
+        // standing on you, or a Reading running. Turning for a whole phase
+        // deals less over the fight than never turning at all, which is a
+        // model of a player rather than a mechanic.
+        const wants = (state: RunState): string => {
+          if (state.circles.some((c) => Math.hypot(c.x - state.hero.x, c.y - state.hero.y) <= c.r)) {
+            return 'quick';
+          }
+          return state.phase === 'reading' ? 'stone' : 'edge';
         };
         const play = (band: number, miss: number, seed: number) => {
           const rng = new Rng(seed);
@@ -6515,11 +6521,12 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
             scene: INTRO.bossRoom,
           });
           room.beginEncounter();
-          let was: string | null = null;
+          let was = FACE_DEFAULT;
           for (let n = 0; n < 3600 && room.state.status === 'running'; n++) {
-            if (room.state.phase && room.state.phase !== was) {
-              was = room.state.phase;
-              if (miss < 1 && rng.next() >= miss) room.turn(ANSWER[was] ?? FACE_DEFAULT);
+            const want = wants(room.state);
+            if (want !== was) {
+              was = want;
+              if (miss < 1 && rng.next() >= miss) room.turn(want);
             }
             room.step(TICK);
           }
