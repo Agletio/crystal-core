@@ -379,8 +379,8 @@
   {
    "sprite": "lambengolmor",
    "name": "The Lambengolmor",
-   "size": 96,
-   "look": "AN ELEGANT TALL MAN WITH GEMS SET INTO HIS SKIN: small faceted violet CRYSTALS are inlaid in a line up each cheekbone, across the brow and along the backs of his hands, each one catching a cold light from inside it. Calm composed face, clean-shaven, close-cropped pale silver hair. A long fitted coat of near-black indigo with narrow pale grey trim, buttoned high, standing straight with one hand raised as if mid-sentence. NOT hooded, NOT a skeleton, NOT undead, NOT armoured, NOT a wizard hat, NOT a staff, NOT a book, NOT floor-length robes. No ground, NO SHADOW UNDER HIM, no ellipse, no base, no other objects.",
+   "size": 128,
+   "look": "a very tall thin gaunt man, stooped slightly at the shoulder, long straight iron-grey hair to the collar and a long grey beard, a long open coat of dark slate falling to the ankle over a black waistcoat. Faceted VIOLET crystals set into the temples and the throat. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall. Grim, austere, weathered. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon. No ground, NO SHADOW under him, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -395,7 +395,7 @@
      "say": "raising one open hand at a three-quarter angle and holding it out, fingers spread, then lowering it again"
     }
    },
-   "character": "db2aac24-e9db-46cd-acd1-4044e2c8a204"
+   "character": "d7d010dc-52fb-4689-99bb-6e2fa692db78"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",

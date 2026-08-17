@@ -158,63 +158,6 @@ export const BEASTIARY: Record<string, BeastArt> = {
    * is hooded, and carrying a rule rather than a lamp. Pale and cold — he is
    * the one who thinks the rock can be read.
    */
-  lambengolmor: {
-    tone: {
-      mass: (p) => mix(p.bone, p.rockDeep, 0.45),
-      lit: (p) => mix(p.bone, p.chalk, 0.3),
-      shade: (p) => mix(p.bone, p.void, 0.62),
-      eye: (p) => p.amethyst,
-    },
-    grid: 24,
-    frames: [
-      rows({
-        2: '.........######.........',
-        3: '........#mssssm#........',
-        4: '........#mmmmmm#........',
-        5: '........#mMMMMm#........',
-        6: '........#meMMem#........',
-        7: '........#mMssMm#........',
-        8: '.......#mmmmmmms#.......',
-        9: '.......#mmmmemss#.......',
-        10: '.......#mmMmmmss#.......',
-        11: '.......#mmMmmmss#.......',
-        12: '......#mmmeemmmss#......',
-        13: '......#mmmMmmmmsmm#.....',
-        14: '......#mmmMmmmmssm#.....',
-        15: '......#mmmMmemmss#......',
-        16: '.....#mmmmMmmmmmss#.....',
-        17: '.....#mmmmMmmmmmss#.....',
-        18: '.....#mmmmMemmmmss#.....',
-        19: '.....#mmmmMmmmmmss#.....',
-        20: '....#mmmmmmmmmmmmss#....',
-        21: '....#mmmmmmmmmmmmss#....',
-        22: '.....##############.....',
-      }),
-      rows({
-        2: '.........######.........',
-        3: '........#mssssm#........',
-        4: '........#mmmmmm#........',
-        5: '........#mMMMMm#........',
-        6: '........#meMMem#........',
-        7: '........#mMssMm#........',
-        8: '.......#mmmmmmms#.......',
-        9: '.......#mmmmemss#.......',
-        10: '.......#mmMmmmss#.......',
-        11: '.......#mmMmmmss#.......',
-        12: '......#mmmMemmmss#......',
-        13: '......#mmmemmmmsmm#.....',
-        14: '......#mmmMmmmmssm#.....',
-        15: '......#mmmMmemmss#......',
-        16: '.....#mmmmMmmmmmss#.....',
-        17: '.....#mmmmMmmmmmss#.....',
-        18: '.....#mmmmMemmmmss#.....',
-        19: '.....#mmmmMmmmmmss#.....',
-        20: '....#mmmmmmmmmmmmss#....',
-        21: '....#mmmmmmmmmmmmss#....',
-        22: '.....##############.....',
-      }),
-    ],
-  },
 
   /**
    * What answers to its name: the rock itself stood up, with a seam lit through
