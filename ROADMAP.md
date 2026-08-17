@@ -2082,6 +2082,17 @@ editing two places.
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
 
+- **THE OSSUARY HAS TO BE REDONE AS A DEMONIC ROOM.** *The user's call, on
+  moving its crystal layout into the reading room: "know that the ostemancer
+  room needs to be comepletely redone as it needs to be a demonci themed room.
+  DOnt do it now just know that it needs to be changed eventually."* It is
+  `theme: 'demonic'` already, so it draws the Rot's own set — what is wrong is
+  what is IN it: a bed of pale gemstone is the Cavern's furniture, and it was
+  authored before the Prismatic room existed to want it. Its arrangement now
+  lives in `reading-room.ts` where it belongs. What the Osteomancer stands in
+  instead is unwritten, and the props for it do not exist yet. **Asked for, and
+  explicitly not now.**
+
 - **The Demonic and Prismatic pools are still hand-drawn, six bodies each.**
   The Normal pool is six generated bodies now, so those two are the mismatch
   the Fissure stopped having — a Rot descent is a generated floor with hand-drawn
