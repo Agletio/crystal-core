@@ -2236,18 +2236,18 @@ export const BOSS_FIGHT = {
   fallEvery: 1.6,
   /** Long enough to leave at Quick and not at Edge, which IS the mechanic. */
   fallFuse: 1.5,
-  fallRadius: 3.2,
-  /** What being caught costs, as a share of max life, and the seconds held. */
-  fallDamage: 0.28,
+  /** Only QUICK clears it in the fuse: 7.4 tiles quick, 3.2 in Stone, against
+   *  the 6.1 leaving one costs. */
+  fallRadius: 5.5,
+  /** A multiple of the boss's SWING, so gear outscales it, and seconds held. */
+  fallDamage: 26,
   fallStun: 1.1,
   /** A share of max life per second, climbing by `readingRamp` a second. */
-  readingPerSecond: 0.055,
-  readingRamp: 0.22,
+  readingPerSecond: 5,
+  readingRamp: 0.3,
   /** What an open crystal costs it. */
   splitMore: 2.2,
-  /** It rears back this long before a circle appears, and a Reading MARKS you
-   *  a stack a second — each worth `markMore`, falling off at one a second. */
-  windup: 0.9,
+  windup: 0.9, // the rear-back before a circle appears
   markEvery: 1,
   markMore: 0.14,
   markCap: 8,

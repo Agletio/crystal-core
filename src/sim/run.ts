@@ -963,7 +963,7 @@ export class RunSim {
     for (const ring of s.circles) ring.fuse -= dt;
     for (const ring of s.circles.filter((c) => c.fuse <= 0)) {
       if (dist(s.hero, ring) <= ring.r) {
-        this.bite(s.hero.stats.maxLife * BOSS_FIGHT.fallDamage, 'physical');
+        this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical', false);
         s.hero.stun = Math.max(s.hero.stun ?? 0, BOSS_FIGHT.fallStun);
       }
     }
@@ -972,7 +972,7 @@ export class RunSim {
     // THE READING: it fixes on you, it cannot be dodged, and it climbs.
     if (s.phase === 'reading') {
       const per = BOSS_FIGHT.readingPerSecond * (1 + BOSS_FIGHT.readingRamp * this.phaseFor);
-      this.bite(s.hero.stats.maxLife * per * dt, 'fire');
+      this.bite(boss.stats.damage * per * dt, 'fire');
       this.marked += dt;
       while (this.marked >= BOSS_FIGHT.markEvery && s.marks < BOSS_FIGHT.markCap) {
         this.marked -= BOSS_FIGHT.markEvery;
@@ -993,12 +993,15 @@ export class RunSim {
    * shield are worth what they are worth everywhere else — and STONE blunts it,
    * which is the whole reason to turn.
    */
-  private bite(raw: number, type: string): void {
+  private bite(raw: number, type: string, blunt = true): void {
     const hero = this.state.hero;
     if (hero.dead) return;
     const face = this.turned;
     const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
-    let total = this.afterResistance(hero, raw * (face?.taken ?? 1) * marked, type);
+    // A slam that LANDS is not blunted by how you stood: the Fall's one
+    // answer is leaving.
+    const held = blunt ? (face?.taken ?? 1) : 1;
+    let total = this.afterResistance(hero, raw * held * marked, type);
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
@@ -1023,6 +1026,20 @@ export class RunSim {
     }
     if (hero.mana < hero.stats.maxMana) {
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.manaRegen * dt);
+    }
+
+    // A CIRCLE ON YOU outranks fighting. Getting out is the character's own
+    // business, like pathing; whether he is QUICK enough is the player's.
+    const under = this.state.circles.find((c) => dist(hero, c) <= c.r);
+    if (under && (hero.stun ?? 0) <= 0) {
+      const away = Math.atan2(hero.y - under.y, hero.x - under.x);
+      const out = under.r + 0.6;
+      const spot = { x: under.x + Math.cos(away) * out, y: under.y + Math.sin(away) * out };
+      hero.targetId = null;
+      this.face(hero, spot.x, spot.y);
+      this.settleAction(hero, true);
+      this.advance(hero, spot, dt);
+      return;
     }
 
     const target = this.acquireTarget(hero);

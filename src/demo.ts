@@ -6491,12 +6491,69 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           'and it runs all three phases, and the Fall puts circles on the floor',
           `${[...phases].join(', ') || 'none'}${sawCircle ? '' : ', no circles'}`
         );
-        const tough = face('stone');
-        const sharp = face('edge');
-        gauge(
-          `turning matters: Stone leaves ${tough.state.hero.life.toFixed(0)} life ` +
-            `and Edge ${sharp.state.hero.life.toFixed(0)}, over ` +
-            `${tough.state.elapsed.toFixed(0)}s and ${sharp.state.elapsed.toFixed(0)}s`
+        // --- THE GRID ----------------------------------------------------
+        //
+        // A boss cannot be balanced one dial at a time: character power and
+        // what it does move together, so what is measured is the WHOLE thing
+        // at three rungs of gear against three ways of playing it. The target,
+        // in the user's words:
+        //
+        //   met      — you die unless you swap properly
+        //   ground   — you can afford to miss a few
+        //   returned — you can leave it alone unless the build is bad
+        //
+        // Nothing here is a policy the GAME has: a boss is where automation
+        // stops, and these three only exist to measure that decision.
+        const ANSWER: Record<string, string> = {
+          fall: 'quick',
+          reading: 'stone',
+          split: 'edge',
+        };
+        const play = (band: number, miss: number, seed: number) => {
+          const rng = new Rng(seed);
+          const room = new RunSim([], ladderCharacter(band, new Rng(31), 'strike'), new Rng(seed), {
+            scene: INTRO.bossRoom,
+          });
+          room.beginEncounter();
+          let was: string | null = null;
+          for (let n = 0; n < 3600 && room.state.status === 'running'; n++) {
+            if (room.state.phase && room.state.phase !== was) {
+              was = room.state.phase;
+              if (miss < 1 && rng.next() >= miss) room.turn(ANSWER[was] ?? FACE_DEFAULT);
+            }
+            room.step(TICK);
+          }
+          return room.state;
+        };
+        const rate = (band: number, miss: number) => {
+          let won = 0;
+          for (let seed = 0; seed < 8; seed++) if (play(band, miss, 500 + seed).status === 'cleared') won++;
+          return won;
+        };
+        // The three rungs are the user's own words: what you have WHEN you first
+        // meet him, what a decent amount more grinding buys, and what the tier
+        // above him drops. Missing "a few" swaps is three in ten, not four.
+        const RUNGS: [string, number][] = [['met', 3], ['ground', 5], ['returned', 6]];
+        const WAYS: [string, number][] = [['swapping', 0], ['sloppy', 0.3], ['afk', 1]];
+        line('  the boss, at three rungs of gear against three ways of playing it:');
+        line(`    ${''.padEnd(10)}${WAYS.map(([w]) => w.padStart(10)).join('')}`);
+        const grid: Record<string, number> = {};
+        for (const [name, band] of RUNGS) {
+          const row = WAYS.map(([way, miss]) => {
+            const won = rate(band, miss);
+            grid[`${name}/${way}`] = won;
+            return `${won}/8`.padStart(10);
+          });
+          line(`    ${name.padEnd(10)}${row.join('')}`);
+        }
+        check(
+          grid['met/afk'] === 0 &&
+            grid['met/swapping'] >= 6 &&
+            grid['ground/sloppy'] >= 6 &&
+            grid['returned/afk'] >= 6,
+          'and the fight wants what it is meant to want at each rung of gear',
+          `met afk ${grid['met/afk']}/8 (want 0), met swapping ${grid['met/swapping']}/8, ` +
+            `ground sloppy ${grid['ground/sloppy']}/8, returned afk ${grid['returned/afk']}/8 (want 6+)`
         );
       }
 

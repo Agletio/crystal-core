@@ -1680,10 +1680,27 @@ does, so a seed replays.
 - **The parked balance checks.** Four are already parked (see above); this
   phase adds damage in a new place, so do not let it quietly move them further.
 
-**Done when** a boss fight makes a build with no movement lose to the Fall, a
-build with no defence lose to the Reading, and a build that turns at the right
-moments beat both — measured in the demo across the ladder, with the whole
-thing running headless off a policy and no hand on the keyboard.
+**Done when** the GRID says so. A boss cannot be tuned one dial at a time —
+character power and what the fight does move together — so the demo plays it
+at three rungs of gear against three ways of playing, and the target is the
+user's own words: *you die if you do not swap; a decent amount more grinding
+buys you a few misses; gear from the tier above walks it.*
+
+```
+                swapping    sloppy       afk
+    met              7/8       3/8       0/8
+    ground           8/8       8/8       7/8
+    returned         8/8       8/8       8/8
+```
+
+That check is LIVE, not parked, and it is what any future tuning answers to.
+What made it come out: the Fall and the Reading are multiples of the BOSS's
+own swing rather than shares of your max life — a share never gets easier
+however much life you find, so "come back geared and walk it" was unreachable
+by construction — and the Fall is not blunted by Stone at all. Every phase has
+exactly ONE answer: leaving is the only answer to a slam, standing is the only
+answer to something undodgeable. While Stone blunted everything, not playing
+beat playing.
 
 **What must not break, in order:** `comments`, `typecheck`, `mods`, `build`,
 `smoke`, `shots`, `drag`, and the demo's own boss-room checks.
