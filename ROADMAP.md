@@ -1310,6 +1310,22 @@ that worked, and these are what it cost:
   says.** `PropSpec.tone` pulls it toward the ground's own mean and spread —
   0.4 by default, which settles it into the scene, and 0.1 for the candle,
   because a flame pulled to grey stops being one.
+- **A PERSON comes back CHIBI unless the proportions are asked for.** The
+  Lambengolmor was asked as "an elegant tall man" and arrived a big-headed
+  anime doll — the user's word, and the model was thrown away. What fixed it in
+  one pass: naming the build ("a SMALL head on a tall long-limbed body, narrow
+  shoulders, long legs, at least eight heads tall"), naming the register
+  ("grim, austere, weathered"), and excluding the look by name — NOT anime, NOT
+  manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT wide
+  eyes, NOT a cartoon. Six designs came back with none of the fault.
+- **A design is APPROVED before it is rotated.** `create_image_pixflux` at 128
+  is one generation and a rotation with its animations is a dozen; the anime
+  body was rotated and animated before anybody looked at it, and all of that
+  was thrown away. Sample first, show the sheet, THEN spend the rotation.
+- **Gems set in SKIN do not survive the shrink.** They read beautifully in a
+  96-grid portrait and are one or two pixels on a 48-grid body. What a person
+  IS has to be in the silhouette — something HELD, or a shape — or the sprite
+  is a plain coat.
 - **The NOUN is the prior, and it fights you.** "altar" draws a tidy ziggurat,
   "ritual circle" a stone medallion, "a dead miner" a modern man in denim and a
   hard hat. Describing the SHAPE and the MATERIAL and naming nothing — "one
