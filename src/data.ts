@@ -1444,6 +1444,9 @@ export const INTRO = {
   /** Two crystals set in the wall is what it takes for somebody to object. */
   bossSockets: 2,
   bossScene: 'reading_room',
+  /** Where what his key calls up is fought: nobody lives in it, and the fifth
+   *  socket is the only way in. */
+  bossRoom: 'answering_hall',
 };
 
 /**

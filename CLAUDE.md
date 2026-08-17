@@ -587,7 +587,15 @@ CONSUMES the key and sets `GameState.called`, and the next entry is the fight
 (`revisit` in `src/ui/run.ts`), the `after` lines too. Dying in it loses the
 room and the key, the same price abandoning pays everywhere else.
 
-**The Lambengolmor** is the second voice the game has, met once two crystals
+**The Lambengolmor** hands over a NAME, not a fight. His room holds no
+encounter at all — geodes banked round the walls and nothing else, since he
+lives inside the thing he studies — and `SceneDef.gives` names the `BOSS_KEY`
+he puts in your hand, once, marked in `GameState.given` as `key:<id>` so the
+room is owed until he has given it and never after. What it calls up is fought
+in `answering_hall`, a chamber nobody lives in that the fifth socket is the
+only way into.
+
+He is the second voice the game has, met once two crystals
 are set in the wall. His pitch is *stop blindly feeding the stone; learn its
 true names and command it* — the crystals are punctuation in an old spell and
 the Lampwright is waking something. He calls **The Answering** up to prove it.
@@ -994,8 +1002,11 @@ and its grid-art gem are deleted.
 **The map is the SCREEN, and everything else floats on it.** `body.mapfull`,
 toggled by `syncViewportLock`, is the whole of the mechanism: the stage goes
 fixed at `inset: 0` behind the shell, and every panel is a corner. Life, mana
-and level are a thin HUD bottom left; the three skill slots and the rail are one
-stack bottom right; a skinny XP bar runs the full width of the floor under
+and level are a thin HUD bottom left, and the three skill slots sit on it over
+the name, touching so they read as one bar rather than three buttons — a slot
+that is WAITING darkens from the bottom up with the seconds left over it
+(`--cool`, `syncCooldowns`, off `RunSim.moverWait`), which today only the
+movement slot has. The rail is its own stack bottom right; a skinny XP bar runs the full width of the floor under
 everything; the flasks are bottom centre.
 
 **A screen is a WINDOW, and only a question stops you.** `.modal` paints no

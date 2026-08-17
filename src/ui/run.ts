@@ -24,6 +24,7 @@ import { compositionText, crystalFamily, farmingText, runSet, setRows } from '..
 import {
   BOSS_BY_ID,
   BOSS_KEYS,
+  BOSS_KEY_BY_ID,
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
@@ -36,7 +37,7 @@ import { spend } from '../economy';
 import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, sceneWaiting, takeBoss } from '../game/scenes';
+import { bossBeaten, gaveKey, sceneWaiting, takeBoss } from '../game/scenes';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
@@ -483,6 +484,23 @@ function speak(): void {
     });
     return;
   }
+  // Somebody who hands over a KEY: he says his piece and it is yours, once and
+  // in person, like everything else in this game. What it opens is the fifth
+  // socket's business, never this room's.
+  if (def.gives) {
+    const key = BOSS_KEY_BY_ID[def.gives];
+    startSpeech(def.who, def.name, def.beats ?? [], () => {
+      if (key && !(game.given ?? []).includes(gaveKey(key.id))) {
+        game.wallet[key.id] = (game.wallet[key.id] ?? 0) + 1;
+        game.given = [...(game.given ?? []), gaveKey(key.id)];
+        note(`${def.name} hands you ${key.name}. It goes in the Fissure's fifth socket.`);
+      }
+      renderInventory();
+      sceneEnded();
+    });
+    return;
+  }
+
   // Somebody who wants what you are carrying. His bench is the last beat, the
   // same shape as a gift's panel — the difference is that nothing is handed
   // over until you press the button, and Keep it walks out still holding it.
@@ -738,6 +756,8 @@ function renderReadout(): void {
   $('run-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('run-xp-fill') as HTMLElement).style.width =
     `${Math.min(100, (game.character.xp / need) * 100)}%`;
+
+  syncCooldowns();
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
@@ -1184,7 +1204,12 @@ function renderSkillIcons(): void {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const cell = el('button', `mini skillslot${held ? '' : ' skillslot--empty'}`) as HTMLButtonElement;
     cell.id = `run-skill-${slot.id}`;
-    cell.append(held ? skillIcon(held.id, 30) : el('span', 'skillslot__none', slot.name[0]));
+    cell.append(held ? skillIcon(held.id, 34) : el('span', 'skillslot__none', slot.name[0]));
+    // Built once and written per frame: a slot that rebuilt to count down
+    // would throw away whatever the cursor was over.
+    const cool = el('span', 'skillslot__cool');
+    cool.id = `run-skill-cool-${slot.id}`;
+    cell.append(cool);
     attachTooltip(cell, () =>
       held
         ? [`${slot.name} — ${held.name}`, held.description, ...skillLines(held).map((l) => `${l}.`)]
@@ -1194,6 +1219,23 @@ function renderSkillIcons(): void {
     );
     cell.onclick = () => openCharacter(slot.id);
     host.append(cell);
+  }
+}
+
+/** The wait on a skill that has one, counted down on its own socket. Only the
+ *  MOVEMENT slot has a cooldown today; the main slot's rate is its attack
+ *  speed, which is a number on the sheet rather than a wait you watch. */
+function syncCooldowns(): void {
+  const wait = sim?.moverWait;
+  for (const slot of SKILL_SLOTS) {
+    const cell = document.getElementById(`run-skill-${slot.id}`);
+    const face = document.getElementById(`run-skill-cool-${slot.id}`);
+    if (!cell || !face) continue;
+    const mine = slot.id === 'movement' && wait && wait.of > 0 && wait.left > 0.05;
+    cell.classList.toggle('skillslot--waiting', !!mine);
+    if (!mine) continue;
+    face.style.setProperty('--cool', `${Math.min(100, (wait!.left / wait!.of) * 100)}%`);
+    face.textContent = wait!.left.toFixed(1);
   }
 }
 

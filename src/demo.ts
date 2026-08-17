@@ -93,7 +93,7 @@ import {
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
-import { sceneWaiting, takeBoss } from './game/scenes';
+import { gaveKey, sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
 import type { SceneDef } from './scenes';
@@ -6351,12 +6351,15 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         'two crystals set in the wall is what it takes for somebody to object',
         called?.def.id ?? 'nobody'
       );
-      const bossId = SCENE_BY_ID[INTRO.bossScene].encounter!;
+      const bossId = SCENE_BY_ID[INTRO.bossRoom].encounter!;
       takeBoss(two, bossId);
       two.relics = [];
+      // His room is owed until he has HANDED the name over, never until the
+      // thing it calls up is down: the fight is the fifth socket's.
+      two.given = [...(two.given ?? []), gaveKey(SCENE_BY_ID[INTRO.bossScene].gives!)];
       check(
         sceneWaiting(two, facts(two, sim.state)) === null,
-        'and once it is down it is never scheduled again',
+        'and once he has handed it over he never asks you back',
         JSON.stringify(sceneWaiting(two, facts(two, sim.state))?.def.id)
       );
 
@@ -6403,7 +6406,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       );
       // And a room never drops the key that opens it, or the loop feeds itself.
       const inRoom = new RunSim([], g.character, new Rng(900), {
-        scene: INTRO.bossScene,
+        scene: INTRO.bossRoom,
         beaten: [bossId],
       });
       inRoom.beginEncounter();
@@ -6418,7 +6421,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       const ends: string[] = [];
       for (const band of [1, 6]) for (const skill of MAIN_SKILLS) {
         const fighter = ladderCharacter(band, new Rng(11), skill.id);
-        const room = new RunSim([], fighter, new Rng(4200), { scene: INTRO.bossScene });
+        const room = new RunSim([], fighter, new Rng(4200), { scene: INTRO.bossRoom });
         room.beginEncounter();
         check(
           room.state.boss !== null && room.state.totalMonsters === 1,

@@ -317,6 +317,17 @@
    "inks": 24,
    "stride": 0.88,
    "grounded": true
+  },
+  {
+   "sprite": "lambengolmor",
+   "character": "db2aac24-e9db-46cd-acd1-4044e2c8a204",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {},
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15
   }
  ],
  "props": [
@@ -625,6 +636,34 @@
    "tiles": 0.9,
    "tone": 0.2,
    "dull": 0.25
+  },
+  {
+   "id": "geode_amber",
+   "object": "4888f222-d3b2-41c1-ac4d-ccd95d062c3c",
+   "tiles": 1.1,
+   "tone": 0.16,
+   "dull": 0.18
+  },
+  {
+   "id": "geode_teal",
+   "object": "29e68b55-bdb7-47ce-8c29-f374fd8af1c5",
+   "tiles": 1,
+   "tone": 0.16,
+   "dull": 0.18
+  },
+  {
+   "id": "geode_rose",
+   "object": "f39a23f1-6bfe-44a6-85fa-004c465037e0",
+   "tiles": 0.95,
+   "tone": 0.16,
+   "dull": 0.18
+  },
+  {
+   "id": "geode_split",
+   "object": "0e449013-eb7b-443d-a236-43fb0e12a004",
+   "tiles": 1.35,
+   "tone": 0.16,
+   "dull": 0.18
   }
  ]
 }

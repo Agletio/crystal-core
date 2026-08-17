@@ -358,6 +358,14 @@ export class RunSim {
   private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
   private moveIn = 0;
+  /** Seconds until the MOVEMENT slot may fire again, and what it counts down
+   *  from: the readout draws the wait, so it reads one number the sim owns. */
+  get moverWait(): { left: number; of: number } {
+    return {
+      left: Math.max(0, this.moveIn),
+      of: (this.mover?.params?.cooldown as number) ?? 0,
+    };
+  }
   /** The movement skill in the slot, resolved once. Null without one. */
   private readonly mover: SkillDef | null;
   /** How many times the hero has cast, for nodes that count casts. */

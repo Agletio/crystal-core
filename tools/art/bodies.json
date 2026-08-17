@@ -375,6 +375,27 @@
     }
    },
    "character": "0eccf8ae-d2c8-4a99-9789-98cbc2874d43"
+  },
+  {
+   "sprite": "lambengolmor",
+   "name": "The Lambengolmor",
+   "size": 96,
+   "look": "AN ELEGANT TALL MAN WITH GEMS SET INTO HIS SKIN: small faceted violet CRYSTALS are inlaid in a line up each cheekbone, across the brow and along the backs of his hands, each one catching a cold light from inside it. Calm composed face, clean-shaven, close-cropped pale silver hair. A long fitted coat of near-black indigo with narrow pale grey trim, buttoned high, standing straight with one hand raised as if mid-sentence. NOT hooded, NOT a skeleton, NOT undead, NOT armoured, NOT a wizard hat, NOT a staff, NOT a book, NOT floor-length robes. No ground, NO SHADOW UNDER HIM, no ellipse, no base, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing composed at a three-quarter angle, chest rising and falling slowly, one hand turning over as if weighing a word"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "pacing forward at a three-quarter angle in an unhurried measured stride, the long coat swinging behind"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "raising one open hand at a three-quarter angle and holding it out, fingers spread, then lowering it again"
+    }
+   },
+   "character": "db2aac24-e9db-46cd-acd1-4044e2c8a204"
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
@@ -705,6 +726,34 @@
    "say": "a loose scatter of broken crystal splinters lying FLAT on the ground, seen from DIRECTLY ABOVE looking straight down, thin slivers of deep violet glass, two or three glowing dimly from inside, the rest dark. NOT a cut gemstone, NOT jewelry, NOT green, NOT blue, NOT pink, NOT bright. Almost no light down here.",
    "tone": 0.2,
    "dull": 0.25
+  },
+  {
+   "id": "geode_amber",
+   "tiles": 1.1,
+   "tone": 0.16,
+   "dull": 0.18,
+   "say": "a large cracked-open geode resting on a stone floor, seen from HIGH ABOVE looking down, a rough near-black rock shell split apart to show a hollow lined with glowing warm AMBER-GOLD crystal points, the light pooling inside it. NOT a gemstone ring, NOT jewelry, NOT a treasure chest, NOT green, NOT blue. Almost no light down here except what is inside the stone."
+  },
+  {
+   "id": "geode_teal",
+   "tiles": 1.0,
+   "tone": 0.16,
+   "dull": 0.18,
+   "say": "a rough rock the size of a boulder BROKEN CLEAN IN HALF on a stone floor, seen from HIGH ABOVE looking down, the two broken faces turned up to show a crust of glowing cold TEAL-CYAN crystal points growing out of the raw stone. It is BROKEN STONE, not a container: NO lid, NO hinge, NO clasp, NO metal, NO box, NO chest, NO bowl, NOT jewelry. Almost no light down here except what is inside the stone."
+  },
+  {
+   "id": "geode_rose",
+   "tiles": 0.95,
+   "tone": 0.16,
+   "dull": 0.18,
+   "say": "a small rough rock CRACKED OPEN on a stone floor, seen from HIGH ABOVE looking down, the split face turned up to show a crust of glowing pale ROSE-PINK crystal points growing out of the raw stone. It is BROKEN STONE, not a container: NO lid, NO hinge, NO clasp, NO metal, NO box, NO chest, NO bowl, NOT jewelry. Almost no light down here except what is inside the stone."
+  },
+  {
+   "id": "geode_split",
+   "tiles": 1.35,
+   "tone": 0.16,
+   "dull": 0.18,
+   "say": "a huge geode broken into two halves lying apart on a stone floor, seen from HIGH ABOVE looking down, rough near-black rock shells whose hollows are lined with glowing iridescent VIOLET and green crystal points, light spilling out of both. NOT a gemstone ring, NOT jewelry, NOT a treasure chest. Almost no light down here except what is inside the stone."
   }
  ],
  "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask \u2014 and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."

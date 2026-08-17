@@ -26,14 +26,17 @@ export function takeBoss(game: GameState, id: string): void {
 export const bossBeaten = (game: GameState, id: string): boolean =>
   (game.bosses ?? []).includes(id);
 
-/** Rung 2: a condition, never a roll. A key opens the fight at the door. */
+/** What a room's person has already handed over, as a `given` entry. */
+export const gaveKey = (id: string): string => `key:${id}`;
+
+/** Rung 2: a condition, never a roll. A key opens the fight at the door, so
+ *  the room that HANDS one over is owed until it has. */
 function scheduled(game: GameState): SceneDef[] {
   const out: SceneDef[] = [];
   const boss = SCENE_BY_ID[INTRO.bossScene];
   const socketed = Object.keys(game.sockets ?? {}).length;
-  if (boss?.encounter && socketed >= INTRO.bossSockets && !bossBeaten(game, boss.encounter)) {
-    out.push(boss);
-  }
+  const owed = boss?.gives && !(game.given ?? []).includes(gaveKey(boss.gives));
+  if (owed && socketed >= INTRO.bossSockets) out.push(boss);
   return out;
 }
 

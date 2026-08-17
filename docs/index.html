@@ -154,6 +154,8 @@
     --r: 3px;
     /** The title plaque's width, and everything inside it scales off it. */
     --plaque-w: min(688px, 94vw, 84vh);
+    /** How far a waiting skill's socket is darkened, written per frame. */
+    --cool: 0%;
 
     /*
      * A quiet stone wash: lamplight fading down the face, no pattern at all.
@@ -832,16 +834,30 @@
   .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--text-dim); }
 
   .skillrow-icons { display: flex; gap: 8px; margin: 10px 0 12px; }
-  /* The three skill slots are SOCKETS in the action bar's own family, so the
-     bottom-right corner reads as one built object. */
+  /* The three skill slots are SOCKETS in the action bar's own family. On the
+     HUD they touch, so the three read as one bar rather than three buttons. */
+  .hud .skillrow-icons { gap: 2px; margin: 0 0 6px; }
   .skillslot {
     padding: 0; display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; min-width: 48px; min-height: 48px;
+    width: 56px; height: 56px; min-width: 56px; min-height: 56px;
     background: transparent; background-image: var(--fix-socket);
     background-size: 100% 100%; image-rendering: pixelated;
     border: 0; border-radius: 0; box-shadow: none;
+    position: relative;
   }
   .skillslot--empty { opacity: .45; }
+  /* A skill that is WAITING: the socket darkens from the bottom up as it comes
+     back, and the seconds left sit over it. Both are written per frame, so
+     nothing here is rebuilt to count down. */
+  .skillslot__cool {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    font-family: var(--display); font-size: 13px; color: var(--bone);
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95);
+    background: linear-gradient(to top, rgba(4,3,2,.82) var(--cool, 0%), transparent var(--cool, 0%));
+    pointer-events: none;
+  }
+  .skillslot--waiting .skillslot__cool { display: flex; }
 
   /* One block per equipped skill: only the numbers true of THAT skill. */
   .skillsec { border-left: 3px solid var(--edge-lit); padding: 2px 0 2px 9px; margin-bottom: 12px; }
@@ -1637,8 +1653,6 @@
 <body>
 <div class="wrap">
   <div class="corner" id="corner">
-    <!-- One per slot: what you ARE, over what you can open. -->
-    <div class="skillrow-icons" id="run-skills"></div>
     <nav class="rail" id="rail">
     <!-- The utility trio on its own small plate, above the screens. -->
     <div class="rail__row rail__row--tools">
@@ -1745,6 +1759,9 @@
         <!-- Thin, and only what is TRUE OF YOU: the two pools you watch and
              the level they belong to. Bottom left, out of the way of the map. -->
         <div class="hud" id="run-hud">
+          <!-- What you ARE, over what you are made of: the three slots sit on
+               the HUD rather than on the rail, which is for screens. -->
+          <div class="skillrow-icons" id="run-skills"></div>
           <div class="hud__who">
             <span class="hud__name" id="run-name">—</span>
             <span class="hud__level">lv <b id="run-level">1</b></span>
