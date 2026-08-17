@@ -572,6 +572,19 @@ export class RunSim {
     return grid.fits(x, y, radius) ? { x, y } : roomCenter(room);
   }
 
+  /** A spot on a room's RIM that holds a body of this size. */
+  private edgeOf(grid: Grid, room: Room, radius: number): Vec2 {
+    const mid = roomCenter(room);
+    const rim = Math.max(1, Math.round(radius) + 1);
+    const spots: Vec2[] = [
+      { x: mid.x, y: room.y + rim },
+      { x: mid.x, y: room.y + room.h - 1 - rim },
+      { x: room.x + rim, y: mid.y },
+      { x: room.x + room.w - 1 - rim, y: mid.y },
+    ];
+    return spots.find((spot) => grid.fits(spot.x, spot.y, radius)) ?? mid;
+  }
+
   /** What one body on this map is worth, and what one aura adds. Read by a
    *  descent and by a boss room alike: a room that pays nothing is a room you
    *  would rather not be in. */
@@ -893,10 +906,14 @@ export class RunSim {
   private fallIn = 0;
   private marked = 0;
 
+  /** When the boss was called up. The enrage counts from THERE, never from the
+   *  room's own clock: its walk across the floor is not your dps. */
+  private fightFrom = 0;
+
   /** THE DPS CHECK: past `enrageAt` everything it does climbs, so a fight you
    *  cannot finish is one you eventually lose however well you turn. */
   private get rage(): number {
-    const over = this.state.elapsed - BOSS_FIGHT.enrageAt;
+    const over = this.state.elapsed - this.fightFrom - BOSS_FIGHT.enrageAt;
     return over > 0 ? 1 + over * BOSS_FIGHT.enrageRamp : 1;
   }
 
@@ -1205,6 +1222,7 @@ export class RunSim {
     const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
     if (!def || s.boss) return false;
 
+    this.fightFrom = s.elapsed;
     if (def.phases?.length) {
       s.phase = def.phases[0].kind;
       s.phaseLeft = def.phases[0].seconds;
@@ -1225,9 +1243,9 @@ export class RunSim {
       ...thrownReach(thrown),
     };
 
-    // At the far end of the room from the hero, so it has to cross the floor.
+    // On the EDGE, so you watch it come rather than walking to meet it.
     const room = s.map.rooms[0];
-    const at = this.placeIn(s.map.grid, room, 0.34 * def.size);
+    const at = this.edgeOf(s.map.grid, room, 0.34 * def.size);
     const boss: Entity = {
       id: this.nextId++,
       kind: 'monster',

@@ -15,9 +15,10 @@ export const ANSWERING_HALL: SceneDef = {
   theme: 'fissure',
   plan: {
     room: { x: 1, y: 1, w: 39, h: 31 },
-    // Far apart, so it is already up and moving by the time you are in reach.
-    entrance: { x: 6, y: 26 },
-    stands: { x: 30, y: 8 },
+    // You land in the MIDDLE and it comes to you off the edge: walking the
+    // length of an empty room to start a fight is dead time.
+    entrance: { x: 20, y: 16 },
+    stands: { x: 20, y: 3 },
     props: [],
   },
   said: 'You say the three marks out loud. Something a long way off in the dark stops, and turns round.',

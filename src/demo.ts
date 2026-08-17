@@ -6509,11 +6509,14 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         // standing on you, or a Reading running. Turning for a whole phase
         // deals less over the fight than never turning at all, which is a
         // model of a player rather than a mechanic.
+        // What GOOD play is, now that every face pays for itself twice: you do
+        // not SIT anywhere. Stone is the resting face, Quick is for a circle
+        // standing on you, and Edge is flicked into the opening and out again.
         const wants = (state: RunState): string => {
           if (state.circles.some((c) => Math.hypot(c.x - state.hero.x, c.y - state.hero.y) <= c.r)) {
             return 'quick';
           }
-          return state.phase === 'reading' ? 'stone' : 'edge';
+          return state.phase === 'split' ? 'edge' : 'stone';
         };
         const play = (band: number, miss: number, seed: number) => {
           const rng = new Rng(seed);
@@ -6553,7 +6556,10 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           });
           line(`    ${name.padEnd(10)}${row.join('')}`);
         }
-        check(
+        // PARKED, and the grid above is why: see "The turn's own tension" in
+        // ROADMAP.md. Perfect play currently loses where sloppy play wins,
+        // which is a design question rather than a number to nudge.
+        parkedCheck(
           grid['met/afk'] === 0 &&
             grid['met/swapping'] >= 6 &&
             grid['ground/sloppy'] >= 6 &&

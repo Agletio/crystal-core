@@ -2192,8 +2192,8 @@ export const FACES: FaceDef[] = [
     blurb: 'Half again the speed and twice the blinks. Everything hurts, and you barely scratch it.',
     move: 1.5,
     cooldown: 0.45,
-    taken: 1.35,
-    dealt: 0.5,
+    taken: 1.12,
+    dealt: 0.4,
   },
   {
     id: 'stone',
@@ -2240,10 +2240,10 @@ export const BOSS_FIGHT = {
   /** Only QUICK clears it in the fuse; Stone eats it, which is what tanky is
    *  for, and pays in marks. */
   fallRadius: 5.5,
-  fallDamage: 26, // a multiple of the boss's SWING, so gear outscales it
+  fallDamage: 19, // a multiple of the boss's SWING, so gear outscales it
   fallStun: 1.1,
   /** A share of max life per second, climbing by `readingRamp` a second. */
-  readingPerSecond: 5,
+  readingPerSecond: 3,
   readingRamp: 0.3,
   /** What an open crystal costs it. */
   splitMore: 2.2,
@@ -2254,7 +2254,7 @@ export const BOSS_FIGHT = {
   /** Being CAUGHT marks you too: tank them if you can, but not forever. */
   markPerCatch: 2,
   markFall: 0.75,
-  enrageAt: 34, // THE DPS CHECK: past it, everything climbs `enrageRamp` a second
+  enrageAt: 40, // THE DPS CHECK: past it, everything climbs `enrageRamp` a second
   enrageRamp: 0.1,
 } as const;
 

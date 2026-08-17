@@ -678,21 +678,20 @@
   /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
   /* The plate's FILL middle tiles, and at the niche's height the seams read
      as lines behind the flasks — so the interior is painted, not the art's. */
+  /* The two flasks stand on nothing: the bar plate behind them was a brown
+     box clipping their own arches, and the niches already read as fixtures. */
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 20px);
     width: auto; margin: 0; gap: 12px; grid-template-columns: auto auto;
-    padding: 4px 3px 2px;
-    background-color: var(--panel); background-clip: padding-box;
-    border: 12px solid transparent; border-left-width: 22px; border-right-width: 22px;
-    border-image: var(--fix-bar) 14 26 / 12px 22px round;
+    padding: 0; background: none; border: 0;
   }
   /* A SHELF: each flask stands in its own dark arched niche cut into the bar,
      and its threshold controls hang directly under it. */
   .flask { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .flask__use {
     position: relative; display: grid; place-items: end center;
-    width: 54px; height: 68px; padding: 0 0 3px;
+    width: 54px; height: 58px; padding: 0 0 3px;
     background: var(--cut);
     border: 1px solid var(--edge-lit); border-radius: 26px 26px 2px 2px;
     box-shadow: var(--sunk); cursor: pointer;
@@ -726,10 +725,20 @@
      hand side; the dock is the bottom, wide and shallow. */
   /* Bottom left, thin, and no panel around it: a slab of chrome around two
      bars is most of what made the old one big. */
+  /* The pools on the left, the three slots to the RIGHT of them: what you ARE
+     beside what you are made of, and the debuffs across the top of both. */
   body.mapfull #run-hud {
     position: fixed; left: 16px; bottom: 26px; z-index: 19;
-    width: 232px; display: flex; flex-direction: column; gap: 3px;
+    width: max-content; display: grid; gap: 3px 8px;
+    grid-template-columns: 232px auto;
+    grid-template-areas: 'marks marks' 'who slots' 'life slots' 'mana slots';
+    align-items: center;
   }
+  body.mapfull #run-hud .skillrow-icons { grid-area: slots; margin: 0; }
+  body.mapfull #run-hud .hud__who { grid-area: who; }
+  body.mapfull #run-hud .hp--slim:nth-of-type(1) { grid-area: life; }
+  body.mapfull #run-hud .hp--slim:nth-of-type(2) { grid-area: mana; }
+  body.mapfull #run-hud .debuffs { grid-area: marks; }
   .hud__who {
     display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
     padding: 2px 6px; margin-bottom: 2px;
@@ -849,6 +858,13 @@
   /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
      slot because it carries a word, and lit on the face that is live. */
   .turnbar { display: flex; gap: 2px; margin: 0 0 6px; align-items: center; flex-wrap: wrap; }
+  /* Over the flasks, because turning and drinking are the two things your
+     hands do in a fight and they belong under the same thumb. */
+  body.mapfull #run-turn {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(var(--dock-h, 0px) + 132px);
+    z-index: 19; margin: 0; justify-content: center; width: max-content;
+  }
   /* What the boss is doing, beside the faces that answer it. */
   .turnsays {
     width: 100%; font-family: var(--display); font-size: 11px;
@@ -866,6 +882,21 @@
     image-rendering: pixelated; border-radius: 0; box-shadow: none;
   }
   .turnface--on { color: var(--citrine); filter: brightness(1.15) drop-shadow(0 0 4px var(--citrine)); }
+  /* WHAT IS ON YOU, over the pools it is spoiling. One box each: the picture,
+     the seconds left under it, and a hover that says what it does. */
+  .debuffs { display: flex; gap: 4px; }
+  .debuff {
+    width: 40px; padding: 2px 0 1px; text-align: center;
+    background-color: var(--panel); background-clip: padding-box;
+    border: 10px solid transparent; border-image: var(--fix-card) 10 / 10px round;
+    image-rendering: pixelated;
+  }
+  .debuff__art { display: block; margin: 0 auto; image-rendering: pixelated; }
+  .debuff__left {
+    font-family: var(--display); font-size: 9px; line-height: 1.2;
+    color: var(--citrine); margin-top: 1px;
+  }
+  .debuff--bad .debuff__left { color: var(--ember); }
   .turnface__key { color: var(--text-dim); font-size: 9px; margin-left: 5px; }
   /* A skill that is WAITING: the socket darkens from the bottom up as it comes
      back, and the seconds left sit over it. Both are written per frame, so
@@ -1783,6 +1814,9 @@
              live, and turning is free. -->
         <div class="turnbar" id="run-turn" hidden></div>
         <div class="hud" id="run-hud">
+          <!-- What is ON you: a picture, what is left of it, and a tooltip
+               saying what it does. Empty and gone when nothing is. -->
+          <div class="debuffs" id="run-debuffs"></div>
           <!-- What you ARE, over what you are made of: the three slots sit on
                the HUD rather than on the rail, which is for screens. -->
           <div class="skillrow-icons" id="run-skills"></div>

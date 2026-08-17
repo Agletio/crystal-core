@@ -1797,6 +1797,43 @@ this phase is cheaper than it looks.
 
 ---
 
+## The turn's own tension, found by the grid
+
+The grid is doing its job: it caught something no amount of nudging fixes.
+**Perfect play loses where sloppy play wins.** At the gear you meet him with:
+
+```
+                swapping    sloppy       afk
+    met              0/8       5/8       4/8
+```
+
+Turning is ACTIVELY HARMFUL, and the reason is structural rather than numeric:
+
+- **`taken` dominates everything.** Stone at 0.45 is worth more than any amount
+  of speed or damage, so every second spent outside it is a loss. A face is
+  only worth turning to if what it buys beats three seconds of halved damage.
+- **A circle is on you almost CONTINUOUSLY during a Fall** — one every 1.6s,
+  each lasting 1.5s — so "turn to Quick while a circle is on you" means being
+  in Quick for the whole phase. With Quick taking 1.35 that is the whole Fall
+  spent at triple Stone's damage taken, to avoid circles that Stone survives.
+  Dodging costs more than being hit, which inverts the mechanic.
+- Softening Quick to 1.12 made every rung winnable by everyone, which is the
+  same failure from the other side.
+
+**Three ways out, none of them picked** — this needs the user:
+
+1. **Quick does not raise damage taken at all.** It pays in damage dealt only.
+   Breaks the "one benefit, two penalties" symmetry, but it is the only face
+   whose job is to be somewhere else, and being somewhere else IS defence.
+2. **Fewer, bigger circles.** One every 4s rather than every 1.6s, so Quick is
+   a flick rather than a phase, and the Fall's damage is what makes it lethal.
+3. **Stone's defence is smaller and its damage penalty lighter** — a 0.7/0.6
+   face rather than 0.45/0.18 — so no face is a place to live.
+
+The measurement stands either way, and the check is PARKED, not deleted: it
+prints the grid every run and fails nothing until the design question is
+answered.
+
 ## The balance pass owes four checks
 
 *The user's call, on seeing the tree's shape change: "we are going to do a big

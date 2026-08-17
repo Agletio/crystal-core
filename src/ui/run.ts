@@ -28,6 +28,7 @@ import {
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
+  BOSS_FIGHT,
   FACES,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -60,7 +61,7 @@ import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
 import { openCharacter, skillLines } from './character';
-import { skillIcon } from './icons';
+import { drawn, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
@@ -760,6 +761,7 @@ function renderReadout(): void {
 
   syncCooldowns();
   syncTurn();
+  syncDebuffs();
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
@@ -1292,6 +1294,57 @@ const SAYS: Record<string, string> = {
   reading: 'THE READING — it is reading you, and you cannot dodge it',
   split: 'THE SPLIT — the crystal is open',
 };
+
+/** What is ON you, over the pools it is spoiling: a picture, the seconds left
+ *  under it, and a hover that says what it does. Built when the SET of them
+ *  changes and only counted down per frame, so a tooltip survives its box. */
+function syncDebuffs(): void {
+  const host = $('run-debuffs');
+  const state = sim?.state;
+  const on: { id: string; icon: string; name: string; says: string; left: number }[] = [];
+  if (state) {
+    const stun = state.hero.stun ?? 0;
+    if (stun > 0) {
+      on.push({
+        id: 'stun',
+        icon: 'dbf_stun',
+        name: 'Stunned',
+        says: 'Held where you stand. You cannot walk, and nothing you turn to will move you until it passes.',
+        left: stun,
+      });
+    }
+    if (state.marks > 0) {
+      on.push({
+        id: 'mark',
+        icon: 'dbf_mark',
+        name: `Marked ×${state.marks}`,
+        says: `Every mark is ${Math.round(BOSS_FIGHT.markMore * 100)}% more damage taken, from anything. They fall off slowly once nothing is adding them — being caught by a Fall adds ${BOSS_FIGHT.markPerCatch}.`,
+        left: state.marks,
+      });
+    }
+  }
+
+  if (host.dataset.on !== on.map((d) => d.id).join(',')) {
+    host.dataset.on = on.map((d) => d.id).join(',');
+    host.replaceChildren();
+    for (const debuff of on) {
+      const box = el('div', `debuff${debuff.id === 'mark' ? ' debuff--bad' : ''}`);
+      box.id = `run-debuff-${debuff.id}`;
+      const art = drawn(debuff.icon, 22) ?? el('span', '', '?');
+      art.classList.add('debuff__art');
+      box.append(art);
+      box.append(el('span', 'debuff__left', ''));
+      attachTooltip(box, () => `${debuff.name}\n${debuff.says}`);
+      host.append(box);
+    }
+  }
+  for (const debuff of on) {
+    const left = document.getElementById(`run-debuff-${debuff.id}`)?.lastElementChild;
+    if (left) {
+      left.textContent = debuff.id === 'stun' ? `${debuff.left.toFixed(1)}s` : `×${debuff.left}`;
+    }
+  }
+}
 
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
