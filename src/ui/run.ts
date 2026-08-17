@@ -29,6 +29,7 @@ import {
   LAMPWRIGHT,
   POTIONS,
   BOSS_FIGHT,
+  BOSS_SHOUTS,
   FACES,
   RUN_SLOTS,
   MAIN_SLOT,
@@ -50,7 +51,7 @@ import { openHaul } from './haul';
 import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
 import { closeGraft, isGraftOpen, openGraft } from './graft';
-import { endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
+import { anchor, endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
@@ -133,6 +134,11 @@ let arriving: SceneDef | null = null;
 let arrivedIn = '';
 let spoke = false;
 /** Close enough to see it. Fit (1×) makes a monster four pixels. */
+/** How long a phase's shout stays up. */
+const SHOUT_FOR = 1.9;
+/** The look at what you called up, there and back. */
+const ARRIVAL = 2.6;
+let arrival = 0;
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
 
@@ -469,6 +475,22 @@ function finish(left = false): void {
 /** Arriving. The lines come first, one at a time over his own head, and the
  *  last of them is the panel, which is where the gift is. `spoke` stops the
  *  frame after arriving from starting the whole thing again. */
+/** ARRIVING AT A FIGHT: the camera crosses to what is standing in the middle,
+ *  holds, and comes back before your own line. A REMATCH skips it. */
+function beginArrival(def: SceneDef): void {
+  arrival = revisit ? 0 : ARRIVAL;
+  if (arrival > 0) renderer?.lookAt(def.plan.stands);
+}
+
+/** Halfway it comes back to the hero; at the end the room gets on with it. */
+function stepArrival(dt: number): void {
+  if (arrival <= 0) return;
+  const was = arrival;
+  arrival = Math.max(0, arrival - dt);
+  if (was > ARRIVAL / 2 && arrival <= ARRIVAL / 2) renderer?.follow();
+  if (arrival === 0 && sim?.state.meeting && !spoke) speak();
+}
+
 function speak(): void {
   spoke = true;
   const def = SCENE_BY_ID[arrivedIn];
@@ -483,7 +505,8 @@ function speak(): void {
       setLeaveLabel();
       return;
     }
-    startSpeech(def.who, def.name, def.beats ?? [], () => {
+    // YOUR line, not its: a boss room has nobody living in it to say one.
+    startSpeech(game.character.name, game.character.name, def.beats ?? [], () => {
       if (sim?.beginEncounter()) playing = true;
       absorbEvents();
       setLeaveLabel();
@@ -551,6 +574,7 @@ function enterScene(def: SceneDef): void {
   arriving = null;
   arrivedIn = def.id;
   spoke = false;
+  arrival = 0;
   banked = null;
   sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
   playing = false;
@@ -559,6 +583,7 @@ function enterScene(def: SceneDef): void {
   // A camera left pointed at a corner of the descent that just ended is a
   // black screen with no obvious way out of it.
   renderer?.follow();
+  if (def.encounter) beginArrival(def);
   setPhase('scene');
   setLeaveLabel();
   fitCanvas();
@@ -781,6 +806,7 @@ function renderReadout(): void {
 
   syncCooldowns();
   syncTurn();
+  syncBossBar();
   syncDebuffs();
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
@@ -948,7 +974,7 @@ function frame(now: number): void {
       accumulator -= TICK;
       steps++;
     }
-    if (sim.state.meeting && !spoke) speak();
+    if (sim.state.meeting && !spoke && arrival <= 0) speak();
   }
   if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
     syncSpeech(renderer, sim.state.folk[0]);
@@ -978,6 +1004,9 @@ function frame(now: number): void {
 
   if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge);
   if (sim) renderReadout();
+  stepArrival(dt);
+  // After the draw: it anchors off where the camera just put the boss.
+  syncShout(dt);
   requestAnimationFrame(frame);
 }
 
@@ -1289,6 +1318,53 @@ function syncCooldowns(): void {
     face.style.setProperty('--cool', `${Math.min(100, (wait!.left / wait!.of) * 100)}%`);
     face.textContent = wait!.left.toFixed(1);
   }
+}
+
+/** What phase the shout on screen belongs to, and how long it has left. */
+let shouted = '';
+let shoutFor = 0;
+/** How many phases have turned over, so the line varies without an rng. */
+let turns = 0;
+
+/** A phase turning over, thrown over its own head and gone. It says nothing
+ *  you have to read: the phase is drawn on the body, and this is what makes
+ *  you look at it. */
+function syncShout(dt: number): void {
+  const s = sim?.state;
+  const boss = s?.boss;
+  const now = s?.phase ?? '';
+  const live = !!boss && !boss.dead && now !== '';
+  if (live && now !== shouted) {
+    const lines = BOSS_SHOUTS[now] ?? [];
+    shouted = now;
+    shoutFor = lines.length > 0 ? SHOUT_FOR : 0;
+    if (lines.length > 0) $('run-shout-said').textContent = lines[turns++ % lines.length];
+  }
+  if (!live) {
+    shouted = '';
+    shoutFor = 0;
+  }
+  shoutFor = Math.max(0, shoutFor - dt);
+  const host = $('run-shout');
+  host.hidden = shoutFor <= 0;
+  if (!host.hidden && renderer && boss) anchor(host, renderer, { x: boss.x, y: boss.y });
+}
+
+/** THE THING IN THE ROOM WITH YOU, across the top and named. A boss carries no
+ *  bar over its own head: at `size` 5 that strip is tiny and a long way from
+ *  where you are looking. */
+function syncBossBar(): void {
+  const host = $('run-boss');
+  const boss = sim?.state.boss;
+  const live = !!boss && !boss.dead;
+  host.hidden = !live;
+  if (!live || !boss) return;
+  const def = BOSS_BY_ID[SCENE_BY_ID[arrivedIn]?.encounter ?? ''];
+  const name = def?.name ?? 'The Answering';
+  const label = $('run-boss-name');
+  if (label.textContent !== name) label.textContent = name;
+  const frac = Math.max(0, Math.min(1, boss.life / boss.stats.maxLife));
+  $('run-boss-fill').style.width = `${(frac * 100).toFixed(1)}%`;
 }
 
 /**

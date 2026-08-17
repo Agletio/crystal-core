@@ -6643,7 +6643,12 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           });
           line(`    ${name.padEnd(10)}${row.join('')}`);
         }
-        check(
+        // PARKED AGAIN, deliberately. *The user's call: "dont do balance yet I
+        // want the fight to not be buggy and feel ok and then we can balance."*
+        // The boss stands in the middle and cannot be shoved, and the dodge
+        // keeps you near it — all three move what a fight costs, and the grid
+        // is the measurement the pass will re-tune against.
+        parkedCheck(
           grid['met/afk'] === 0 &&
             grid['met/swapping'] >= 6 &&
             grid['ground/sloppy'] >= 6 &&

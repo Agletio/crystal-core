@@ -102,6 +102,13 @@ const WANDER_REST: [number, number] = [0.7, 2.8];
 const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
   skill ? { attackRange: skill.range, aggroRange: skill.range + 2 } : {};
 
+/** Ways out of a Fall circle the hero costs. A whole circle rather than a
+ *  sweep from one ray: the cheapest is usually SIDEWAYS, and a sweep that
+ *  stops at the first fit never sees it. `SLIDES` is the same idea a step at
+ *  a time, for a walk a live circle is standing in the way of. */
+const WAYS_OUT = 24;
+const SLIDES = [Math.PI / 3, -Math.PI / 3, Math.PI / 2, -Math.PI / 2, 2.2, -2.2];
+
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
 
@@ -835,13 +842,17 @@ export class RunSim {
     const nx = (dx / d) * overlap;
     const ny = (dy / d) * overlap;
 
-    // The hero shoves rather than being shoved. Otherwise a big pack walks it
-    // backwards off its own path and it never reaches anything.
-    const aw = a.kind === 'hero' ? 0.2 : 1;
-    const bw = b.kind === 'hero' ? 0.2 : 1;
+    // The hero shoves rather than being shoved, or a big pack walks it
+    // backwards off its own path. A BOSS is shoved by NOTHING: one that can be
+    // leaned on ends the fight against a wall. What cannot move hands its half
+    // of the overlap to whatever is standing in it.
+    const weight = (e: Entity) => (e === this.state.boss ? 0 : e.kind === 'hero' ? 0.2 : 1);
+    const aw = weight(a);
+    const bw = weight(b);
+    const push = aw === 0 || bw === 0 ? 2 : 1;
 
-    this.nudge(a, -nx * aw, -ny * aw);
-    this.nudge(b, nx * bw, ny * bw);
+    this.nudge(a, -nx * aw * push, -ny * aw * push);
+    this.nudge(b, nx * bw * push, ny * bw * push);
   }
 
   /**
@@ -892,6 +903,22 @@ export class RunSim {
     return a.stats.attackRange + bulk(a) + bulk(b);
   }
 
+  /** Round a live circle toward `goal`, nearer side first. */
+  private slideRound(e: Entity, goal: Vec2, step: number): void {
+    if (step <= 0) return;
+    const straight = Math.atan2(goal.y - e.y, goal.x - e.x);
+    const grid = this.state.map.grid;
+    for (const turn of SLIDES) {
+      const a = straight + turn;
+      const x = e.x + Math.cos(a) * step;
+      const y = e.y + Math.sin(a) * step;
+      if (!grid.fits(x, y, e.radius)) continue;
+      if (this.state.circles.some((c) => dist({ x, y }, c) <= c.r)) continue;
+      this.glide(e, x, y);
+      return;
+    }
+  }
+
   /** Unobstructed line between two entities. */
   private canSee(a: Entity, b: Entity): boolean {
     return hasLineOfSight(this.state.map.grid, a, b);
@@ -940,9 +967,12 @@ export class RunSim {
     return over > 0 ? 1 + over * BOSS_FIGHT.enrageRamp : 1;
   }
 
-  /** The SHORTEST way clear of every circle he is standing in: how far the ray
-   *  out of the deepest one goes, swept by sixths where the rock is in the way.
-   *  Overshooting is what leaves him walking back across the room. */
+  /**
+   * The way clear of every circle he is standing in, chosen to keep him NEAR
+   * THE BOSS. Straight away is the shortest ray and the worst one: three slams
+   * running walk you to the far wall. Every way out is costed by how far it
+   * leaves him from the thing he is hitting, and the cheapest wins.
+   */
   private wayOut(hero: Entity, on: FallCircle[]): Vec2 {
     const cx = on.reduce((n, c) => n + c.x, 0) / on.length;
     const cy = on.reduce((n, c) => n + c.y, 0) / on.length;
@@ -965,11 +995,18 @@ export class RunSim {
       );
       return { x: hero.x + ux * (far + 0.6), y: hero.y + uy * (far + 0.6) };
     };
-    for (let i = 0; i < 12; i++) {
-      const spot = at(away + ((i + 1) >> 1) * (i % 2 ? -1 : 1) * (Math.PI / 6));
-      if (grid.fits(spot.x, spot.y, hero.radius)) return spot;
+    let best: Vec2 | null = null;
+    let cost = Infinity;
+    for (let i = 0; i < WAYS_OUT; i++) {
+      const spot = at(away + (i / WAYS_OUT) * Math.PI * 2);
+      if (!grid.fits(spot.x, spot.y, hero.radius)) continue;
+      const near = boss ? dist(spot, boss) : 0;
+      if (near < cost) {
+        cost = near;
+        best = spot;
+      }
     }
-    return at(away);
+    return best ?? at(away);
   }
 
   /** A boss playing one of its OWN animations: a state is looked up by skill
@@ -1310,9 +1347,11 @@ export class RunSim {
       ...thrownReach(thrown),
     };
 
-    // On the EDGE, so you watch it come rather than walking to meet it.
-    const room = s.map.rooms[0];
-    const at = this.edgeOf(s.map.grid, room, 0.34 * def.size);
+    const room = s.map.rooms[0]; // THE MIDDLE is its ground; you cross to it
+    const mid = roomCenter(room);
+    const at = s.map.grid.fits(mid.x, mid.y, 0.34 * def.size)
+      ? mid
+      : this.edgeOf(s.map.grid, room, 0.34 * def.size);
     const boss: Entity = {
       id: this.nextId++,
       kind: 'monster',
@@ -1732,8 +1771,9 @@ export class RunSim {
     if (e.kind === 'hero' && this.state.circles.length > 0) {
       const here = this.state.circles.some((c) => dist(e, c) <= c.r);
       if (here && !this.state.circles.some((c) => dist({ x: startX, y: startY }, c) <= c.r)) {
-        e.x = startX;
+        e.x = startX; // round it rather than into it
         e.y = startY;
+        this.slideRound(e, goal, e.stats.moveSpeed * dt * pace * (this.turned?.move ?? 1));
       }
     }
 

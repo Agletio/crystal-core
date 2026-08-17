@@ -615,6 +615,19 @@ by the shortest ray, a live circle is somewhere he waits out rather than walks
 back into, and the mover fires in a boss room, so a blink is a way out of one
 slam without turning at all. Which is why there are three.
 
+**IT STANDS IN THE MIDDLE AND NOTHING SHOVES IT.** You come up at the stairs
+in a corner and cross to it, the camera goes to it and comes back before your
+own character says the only line in the room, and `resolveOverlap` gives a boss
+weight 0 — what cannot move hands its half of the overlap to whatever is
+standing in it. On the rim and pushable it was slowly leaned into a wall.
+
+**AND THE DODGE STAYS NEAR IT.** `wayOut` costs EVERY way clear of the circles
+by how far it leaves you from the boss and takes the cheapest, which is usually
+sideways: straight away is the shortest ray and the worst one, and three slams
+running walked you to the far wall. `slideRound` is the same idea a step at a
+time, so a walk a live circle is standing in front of goes ROUND rather than
+stopping at the rim.
+
 **A REACH IS AN ARM, AND AN ARM STARTS AT THE BODY.** `RunSim.reachTo` adds
 whatever a body is BIGGER than an ordinary one to both ends of the test, so two
 ordinary bodies are exactly `attackRange` apart and nothing in a pack moves.
@@ -632,7 +645,12 @@ them as open arcs on a flattened ring: a dot going round a ring is a dot, and a
 hook going round is the thing everybody already reads as stunned. It is the
 same answer as `RunSim.stalled`, so the picture and the rule cannot drift. A
 ring on the floor is a Fall circle's vocabulary and belongs to nothing else.
-The turn bar says nothing at all.
+The turn bar says nothing at all, and a HIT lightens whatever the phase already
+made it rather than flashing its own colour — flat chalk read as a fourth phase
+and burning stopped being tellable from dazed. A boss carries no bar over its
+head either: at `size` 5 that strip is tiny and a long way from where you are
+looking, so it gets a framed one across the top of the screen, and `BOSS_SHOUTS`
+throws one line over its head as a phase turns over.
 `node tools/boss-peek.mjs <dir>` shoots a whole cycle of it off the bundle.
 
 **The Lambengolmor** hands over a NAME, not a fight. His room holds no

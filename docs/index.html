@@ -873,6 +873,46 @@
   .skillslot--empty { opacity: .45; }
   /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
      slot because it carries a word, and lit on the face that is live. */
+  /* THE THING IN THE ROOM WITH YOU, across the top: a boss is the one enemy
+     worth a bar you never have to find. Narrow enough to leave the room in
+     view — it is a strip, not a curtain. */
+  #run-boss {
+    position: fixed; left: 50%; transform: translateX(-50%); top: 14px; z-index: 19;
+    width: min(520px, calc(100vw - 220px)); pointer-events: none;
+    padding: 6px 12px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated;
+  }
+  .bossbar__name {
+    font-family: var(--display); font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--citrine); text-align: center; margin-bottom: 4px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95);
+  }
+  .bossbar__track {
+    position: relative; height: 13px; background: var(--ink);
+    border: 1px solid var(--edge); overflow: hidden;
+  }
+  .bossbar__fill {
+    position: absolute; inset: 0 auto 0 0; width: 100%;
+    background: linear-gradient(180deg, var(--ember) 0%, var(--ember) 45%, var(--gore) 100%);
+    transition: width .12s linear;
+  }
+  /* Every tenth, so a chunk taken out reads as a chunk rather than a slide. */
+  .bossbar__ticks {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,0,0,.55) calc(10% - 1px) 10%);
+  }
+  .shout {
+    position: fixed; left: 0; top: 0; z-index: 46; pointer-events: none;
+    transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
+    padding: 5px 11px; max-width: 240px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    image-rendering: pixelated;
+    font-family: var(--display); font-size: 13px; letter-spacing: .08em;
+    color: var(--ember); text-align: center; white-space: nowrap;
+  }
   .turnbar { display: flex; gap: 2px; margin: 0 0 6px; align-items: center; flex-wrap: wrap; }
   /* Over the flasks, because turning and drinking are the two things your
      hands do in a fight and they belong under the same thumb. */
@@ -1839,6 +1879,13 @@
         <!-- THE TURN. Only up while something is listening: three faces, one
              live, and turning is free. -->
         <div class="turnbar" id="run-turn" hidden></div>
+        <div id="run-boss" hidden>
+          <div class="bossbar__name" id="run-boss-name"></div>
+          <div class="bossbar__track">
+            <div class="bossbar__fill" id="run-boss-fill"></div>
+            <div class="bossbar__ticks"></div>
+          </div>
+        </div>
         <div class="hud" id="run-hud">
           <!-- What is ON you: a picture, what is left of it, and a tooltip
                saying what it does. Empty and gone when nothing is. -->
@@ -2007,6 +2054,10 @@
 
 <!-- One line, over the head of whoever is saying it. Anchored per frame, so a
      drag or a zoom mid-sentence keeps it where the words are coming from. -->
+<!-- One word over the boss's head as a phase turns over. No button and no
+     answer: it is noise that makes you look at the body. -->
+<div class="shout" id="run-shout" hidden><span id="run-shout-said"></span></div>
+
 <div class="speech" id="speech" hidden>
   <span class="speech__who" id="speech-face"></span>
   <div class="speech__body">

@@ -2285,6 +2285,13 @@ export const BOSSES: BossDef[] = [
   },
 ];
 
+/** Noise that makes you LOOK at the body, where the phase is drawn already. */
+export const BOSS_SHOUTS: Record<string, string[]> = {
+  fall: ['DOWN.', 'BE STILL.', 'HOLD.'],
+  reading: ['RRRRAAAAGHHH', 'I HAVE YOUR NAME', 'AAAAAAHHHH'],
+  split: ['...ngh', '...aah', '...hh'],
+};
+
 export const BOSS_BY_ID: Record<string, BossDef> = Object.fromEntries(
   BOSSES.map((b) => [b.id, b])
 );

@@ -63,6 +63,7 @@ export interface Renderer {
   setZoom(zoom: number, at?: { x: number; y: number }): void;
   /** Drag by a screen-pixel delta. STOPS the follow until `follow()`. */
   panBy(dx: number, dy: number): void;
+  lookAt(at: Vec2): void; // point at a TILE, and stop following, as a drag does
   /** Where a tile is on the SURFACE, in CSS pixels from its top left — the
    *  same split the camera rides on. */
   screenAt(at: Vec2): { x: number; y: number };

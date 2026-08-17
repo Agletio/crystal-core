@@ -15,12 +15,16 @@ export const ANSWERING_HALL: SceneDef = {
   theme: 'fissure',
   plan: {
     room: { x: 1, y: 1, w: 39, h: 31 },
-    // You land in the MIDDLE and it comes to you off the edge: walking the
-    // length of an empty room to start a fight is dead time.
-    entrance: { x: 20, y: 16 },
-    stands: { x: 20, y: 3 },
+    // You come up at the STAIRS in a corner; it is already standing in the
+    // middle. Off the rim it was slowly leaned into a wall.
+    entrance: { x: 6, y: 27 },
+    stands: { x: 20, y: 16 },
     props: [],
   },
   said: 'You say the three marks out loud. Something a long way off in the dark stops, and turns round.',
+  beats: [ // YOURS, not its: nobody lives in here
+    { said: 'It was already standing there. It has been standing there the whole time.', act: 'face' },
+    { said: 'Oh. Oh, no.', act: 'face' },
+  ],
   encounter: 'answering',
 };

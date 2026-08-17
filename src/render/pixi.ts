@@ -38,6 +38,7 @@ import {
   floorColour,
   floorPalette,
   isWallFace,
+  mix,
   poisonDrops,
   poisonFieldRadius,
   livingDecals,
@@ -538,8 +539,7 @@ export async function createPixiRenderer(
         // LANDMARKS, which are how you find the way on and the way out.
         const tile = grid.at(x, y);
         if (bare && tile !== ENTRANCE && tile !== EXIT) continue;
-        // A GENERATED mouth replaces the decal one rather than layering over it.
-        if (MOUTH_ART[map.theme] && (tile === ENTRANCE || tile === EXIT)) continue;
+            if (MOUTH_ART[map.theme] && (tile === ENTRANCE || tile === EXIT)) continue;
         for (const d of tileDecals(bare ? hole : floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
           let batch = batches.get(key);
@@ -672,12 +672,13 @@ export async function createPixiRenderer(
     // Sprites are authored facing right; flip rather than rotate so they
     // never appear upside down.
     s.scale.x = Math.abs(s.scale.x) * (Math.cos(e.facing) < 0 ? -1 : 1);
+    // A hit LIGHTENS what the phase made it: its own flat colour read as a
+    // fourth phase, and burning stopped being tellable from dazed.
+    const phaseTint = e === told?.on ? told.look.tint : null;
     s.tint =
       e.hitFlash > 0
-        ? toHexNumber(palette.chalk)
-        : e === told?.on
-          ? toHexNumber(told.look.tint)
-          : 0xffffff;
+        ? toHexNumber(phaseTint ? mix(phaseTint, palette.chalk, 0.65) : palette.chalk)
+        : toHexNumber(phaseTint ?? '#ffffff');
   }
 
   function drawOverlays(state: RunState): void {
@@ -751,7 +752,7 @@ export async function createPixiRenderer(
           .fill({ color: toHexNumber(palette.void), alpha: 0.75 });
       }
     };
-    for (const m of state.monsters) bar(m, 0.7, palette.ember);
+    for (const m of state.monsters) if (m !== state.boss) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite, true);
 
     // Skill and impact effects. Each kind gets a different SHAPE, not just a
@@ -986,6 +987,11 @@ export async function createPixiRenderer(
 
   const screenAt = (v: { x: number; y: number }) => ({ x: sx(v.x), y: sy(v.y) });
 
+  /** Point at a tile. Same state a drag writes, so `follow()` undoes it. */
+  function lookAt(spot: { x: number; y: number }): void {
+    looking = { x: spot.x, y: spot.y };
+  }
+
   function panBy(dx: number, dy: number): void {
     if (tile <= 0) return;
     looking = { x: at.x - dx / tile, y: at.y - dy / tile };
@@ -1001,5 +1007,5 @@ export async function createPixiRenderer(
     app.destroy(true, { children: true });
   }
 
-  return { resize, draw, setZoom, panBy, follow, screenAt, destroy };
+  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, destroy };
 }

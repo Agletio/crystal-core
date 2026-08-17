@@ -67,6 +67,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       draw: () => {},
       setZoom: () => {},
       panBy: () => {},
+      lookAt: () => {},
       follow: () => {},
       screenAt: () => ({ x: 0, y: 0 }),
       destroy: () => canvas.remove(),
@@ -524,6 +525,10 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     looking = { x: world.x - on.x / next2, y: world.y - on.y / next2 };
   }
 
+  function lookAt(spot: { x: number; y: number }): void {
+    looking = { x: spot.x, y: spot.y };
+  }
+
   function panBy(dx: number, dy: number): void {
     if (lastTile <= 0) return;
     looking = { x: at.x - dx / lastTile, y: at.y - dy / lastTile };
@@ -534,5 +539,5 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   };
 
   resize(cssWidth, cssHeight);
-  return { resize, draw, setZoom, panBy, follow, screenAt, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, destroy: () => canvas.remove() };
 }
