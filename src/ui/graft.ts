@@ -11,7 +11,8 @@
 import { RELIC_BY_ID } from '../data';
 import type { ForgedDef } from '../data';
 import type { SceneDef } from '../scenes';
-import { forgedFor, graftable, spendRelic } from '../game/graft';
+import { forgedFor, graftRefusal, spendRelic } from '../game/graft';
+import { wornItems } from '../game/state';
 import type { GameState } from '../game/state';
 import { baseTier } from '../mods';
 import { describeStatLine } from '../mod-text';
@@ -21,6 +22,7 @@ import { note } from './history';
 import { itemIcon, portraitIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { renderInventory, setInventoryHandler } from './inventory';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -82,33 +84,64 @@ function renderLines(): void {
   }
 }
 
+/** Picking a piece. The lines are per SLOT, so a pick that no longer fits one
+ *  is a pick that would write a helmet's line onto a pair of boots. */
+function take(item: Item): void {
+  piece = item;
+  if (line && !forgedFor(item, room?.id).includes(line)) line = null;
+  renderPieces();
+  renderLines();
+  sync();
+  renderInventory();
+}
+
+/**
+ * WHAT YOU ARE WEARING, laid out the way the sheet lays it out — *the user's
+ * call.* Everything you were CARRYING was in here too, which is an inventory
+ * inside a speech bubble: at a real haul it ran off the side of the screen and
+ * pushed the lines you have to pick from off the bottom, so the bench could be
+ * opened and never used. A carried piece comes in through the DOCK, which is
+ * where it already is.
+ *
+ * A slot he has no use for is dimmed rather than dropped: the answer belongs on
+ * the piece you were about to click.
+ */
 function renderPieces(): void {
   const host = $('graft-pieces');
   host.replaceChildren();
 
-  const all = graftable(game, room?.id);
-  if (all.length === 0) {
-    host.append(el('p', 'empty', 'Nothing you are carrying is any use here.'));
+  const worn = wornItems(game);
+  if (worn.length === 0) {
+    host.append(el('p', 'empty', 'You are wearing nothing he could work on.'));
     return;
   }
-  for (const item of all) {
+  for (const item of worn) {
+    const why = graftRefusal(item, room?.id);
     const btn = el(
       'button',
-      `slot slot--gear slot--t${baseTier(item)}${item === piece ? ' slot--on' : ''}`
+      `slot slot--gear slot--t${baseTier(item)}${item === piece ? ' slot--on' : ''}${why ? ' slot--dim' : ''}`
     ) as HTMLButtonElement;
     btn.append(itemIcon(item, 30));
-    attachTooltip(btn, () => itemCard(item, ['what the base gave it is what gets written over']));
-    btn.onclick = () => {
-      piece = item;
-      // The lines are per slot, so a pick that no longer fits is a pick that
-      // would write a helmet's line onto a pair of boots.
-      if (line && !forgedFor(item, room?.id).includes(line)) line = null;
-      renderPieces();
-      renderLines();
-      sync();
-    };
+    attachTooltip(btn, () =>
+      itemCard(item, [why ?? 'what the base gave it is what gets written over'])
+    );
+    btn.disabled = why !== null;
+    btn.onclick = () => take(item);
     host.append(btn);
   }
+}
+
+/** And the dock answers the same question for what you are CARRYING, which is
+ *  the seam every other screen picks an item through. */
+function pieceHandler() {
+  return {
+    actionFor: (item: Item) =>
+      graftRefusal(item, room?.id) === null
+        ? { label: `Hand over ${item.name}`, run: () => take(item) }
+        : null,
+    highlighted: (item: Item) => item === piece,
+    dimmed: (item: Item) => graftRefusal(item, room?.id),
+  };
 }
 
 function sync(): void {
@@ -138,6 +171,7 @@ export function openGraft(def: SceneDef, held: Item): void {
   renderLines();
   sync();
   $('graft').hidden = false;
+  setInventoryHandler(pieceHandler());
   ($('graft-do') as HTMLButtonElement).focus();
 }
 
@@ -148,6 +182,7 @@ export function closeGraft(): void {
   piece = null;
   line = null;
   $('graft').hidden = true;
+  setInventoryHandler(null);
   hideTooltip();
   onDone?.();
 }

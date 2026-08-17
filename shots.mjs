@@ -522,6 +522,25 @@ for (const vp of VIEWPORTS) {
       timeout: 5000,
     });
     await shoot('graft');
+    // The bench is a BUBBLE anchored over a head, so it can be near an edge —
+    // and it used to hold everything you were carrying, which at a real haul
+    // ran off the side and pushed the lines and the button off the bottom.
+    // Every control has to be on the card AND on the screen, or the bench can
+    // be opened and never used.
+    const lost = await page.evaluate(() => {
+      const card = document.getElementById('graft-card')?.getBoundingClientRect();
+      if (!card) return 'no card';
+      const w = document.documentElement.clientWidth;
+      const h = document.documentElement.clientHeight;
+      const bad = [];
+      for (const el of document.querySelectorAll('#graft-pieces .slot, #graft-do, #graft-leave')) {
+        const r = el.getBoundingClientRect();
+        if (r.right > card.right + 1 || r.left < card.left - 1) bad.push(`${el.id || 'slot'} off the card`);
+        if (r.right > w || r.left < 0 || r.bottom > h || r.top < 0) bad.push(`${el.id || 'slot'} off the screen`);
+      }
+      return bad.length ? [...new Set(bad)].join(', ') : null;
+    });
+    if (lost) problems.push(`${vp.name}/graft: ${lost}`);
   } catch {
     problems.push(`${vp.name}: the second descent never reached a bench in a room`);
   }

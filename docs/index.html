@@ -1285,7 +1285,14 @@
   .met__row { display: flex; gap: 10px; align-items: center; }
   /* His bench. The piece grid is the dock's own slot, so a helmet in here and
      a helmet in the bag are the same picture. */
-  .graft__pieces { --cols: 6; max-width: 264px; }
+  /* WORN gear only, so it is bounded: eight pieces, two rows, and the lines
+     you have to pick from stay on screen under them. */
+  .graft__pieces { --cols: 5; grid-template-rows: none; }
+  .graft__hint { margin: 0; font-size: 9px; color: var(--text-dim); }
+  /* A bubble is anchored over a head and can be near the top of the screen, so
+     it scrolls rather than growing off it. */
+  #graft-card { max-height: min(76vh, 620px); }
+  #graft-card .modal__body { overflow-y: auto; }
   .graft__go { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   .graft__line {
     display: flex; gap: 8px; align-items: baseline; width: 100%;
@@ -1979,6 +1986,7 @@
         <div class="met__row" id="graft-relic"></div>
         <div class="dockcol__label">What he takes it out on</div>
         <div class="slots graft__pieces" id="graft-pieces"></div>
+        <p class="graft__hint">Worn gear. For something you are carrying, open your inventory and click it there.</p>
         <div class="dockcol__label" id="graft-lineslabel">What he writes</div>
         <div class="met__gift" id="graft-lines"></div>
         <div class="graft__go">

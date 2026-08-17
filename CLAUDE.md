@@ -720,6 +720,15 @@ came in: two picks and a button, and nothing is spent until the button.
 name and which lines are on offer all come off it. **Keep it** walks out still
 carrying the relic, so the same room is owed again.
 
+**IT SHOWS WHAT YOU ARE WEARING, and the DOCK is where a carried piece comes
+from.** *The user's call.* Everything you carried was in the bubble too, which
+is an inventory inside a speech bubble: at a real haul it ran off the side of
+the screen and pushed the lines you have to pick from off the bottom, so the
+bench could be opened and never used. Worn gear is eight slots and bounded, a
+piece he has no use for is DIMMED rather than dropped, and a carried one comes
+in through `setInventoryHandler` — the same seam the crafting bench picks an
+item through. `shots.mjs` holds every control to the card and to the screen.
+
 ## Uniques
 
 `UNIQUES` in `data.ts` is a table of named pieces: a base it is a version of,

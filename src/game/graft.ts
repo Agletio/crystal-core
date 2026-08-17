@@ -9,7 +9,7 @@
 import { FORGED, FORGED_BY_ID, RELIC_BY_ID } from '../data';
 import type { ForgedDef } from '../data';
 import { clone } from '../crafting';
-import { gearKindOf, isUnique, relicsIn, wornItems } from './state';
+import { gearKindOf, isUnique, relicsIn } from './state';
 import type { GameState } from './state';
 import type { Item, RolledMod } from '../types';
 
@@ -27,19 +27,15 @@ export function graftRefusal(item: Item, who?: string): string | null {
   return null;
 }
 
-export const graftable = (game: GameState, who?: string): Item[] =>
-  [...game.inventory, ...wornItems(game)].filter((i) => graftRefusal(i, who) === null);
-
 /** What THIS person writes on this piece: the man who takes bodies has no
- *  opinion about a ring, and says so out loud. */
+ *  opinion about a ring. */
 export const forgedFor = (item: Item, who?: string): ForgedDef[] => {
   const kind = gearKindOf(item);
   if (!kind) return [];
   return FORGED.filter((f) => f.kinds.includes(kind) && (who === undefined || f.who === who));
 };
 
-/** Fixed values: a decision that rolls badly is a gamble rather than a trade. */
-function forgedLine(def: ForgedDef): RolledMod {
+function forgedLine(def: ForgedDef): RolledMod { // fixed: a bad roll is a gamble
   const tier = def.mod.tiers[def.mod.tiers.length - 1];
   return {
     entryId: `${def.mod.id}_forged`,
