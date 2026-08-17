@@ -10,7 +10,7 @@ import { createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
-import { EQUIP_SLOTS, POTIONS } from './data';
+import { EQUIP_SLOTS, FACES, POTIONS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
@@ -34,6 +34,7 @@ import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/
 import {
   centreCamera,
   drinkFlask,
+  turnCrystal,
   initRun,
   sceneEnded,
   onRunFocused,
@@ -351,6 +352,9 @@ initKeys(game, {
   ),
   // One entry per potion, off the same table the flasks are drawn from.
   ...Object.fromEntries(POTIONS.map((p) => [p.binding, () => drinkFlask(p.id)])),
+  // And one per FACE. Turning does nothing outside a boss fight, so pressing
+  // one in a descent is a press that quietly goes nowhere rather than an error.
+  ...Object.fromEntries(FACES.map((f) => [`face_${f.id}`, () => turnCrystal(f.id)])),
 });
 
 dressRail(game);

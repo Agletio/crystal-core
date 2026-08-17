@@ -848,7 +848,14 @@
   .skillslot--empty { opacity: .45; }
   /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
      slot because it carries a word, and lit on the face that is live. */
-  .turnbar { display: flex; gap: 2px; margin: 0 0 6px; }
+  .turnbar { display: flex; gap: 2px; margin: 0 0 6px; align-items: center; flex-wrap: wrap; }
+  /* What the boss is doing, beside the faces that answer it. */
+  .turnsays {
+    width: 100%; font-family: var(--display); font-size: 11px;
+    letter-spacing: .08em; color: var(--citrine);
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95); margin-bottom: 2px;
+  }
+  .turnsays--bad { color: var(--ember); }
   .turnface {
     padding: 6px 10px; min-width: 74px;
     font-family: var(--display); font-size: 11px; letter-spacing: .1em;

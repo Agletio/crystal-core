@@ -34,6 +34,7 @@ import {
   BOSS_BY_ID,
   BOSS_KEYS,
   BOSS_KEY_BY_ID,
+  BOSS_POSES,
   FACE_DEFAULT,
   LAMPWRIGHT,
   QUEST_BY_ID,
@@ -1572,7 +1573,7 @@ rule('SPRITES — is the pixel art well formed?');
 
     // A state named for a skill nothing throws is a generation spent on a
     // pose that never plays.
-    const known = new Set(['idle', 'walk', 'attack', 'cast', 'hurt', 'death', ...throwers]);
+    const known = new Set(['idle', 'walk', 'attack', 'cast', 'hurt', 'death', ...BOSS_POSES, ...throwers]);
     const odd = Object.entries(GENERATED).flatMap(([id, art]) =>
       Object.keys(art.states).filter((s) => !known.has(s)).map((s) => `${id}/${s}`)
     );

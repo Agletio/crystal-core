@@ -42,6 +42,7 @@ import {
   BOSS_BY_ID,
   BOSS_FIGHT,
   BOSS_KEYS,
+  BOSS_POSES,
   FACE_BY_ID,
   FACE_DEFAULT,
   MONSTER_BY_ID,
@@ -333,6 +334,9 @@ export interface RunState {
   phaseLeft: number;
   /** Where the Fall has put circles, for whatever draws them. */
   circles: FallCircle[];
+  /** What a Reading has left on you: every mark is more damage taken, and they
+   *  fall off once it stops. What makes the Reading worth answering. */
+  marks: number;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
   /** Swings that could not pay, and swings in all: the calibration is a share. */
@@ -510,6 +514,7 @@ export class RunSim {
       phase: null,
       phaseLeft: 0,
       circles: [],
+      marks: 0,
       damageTaken: {},
     };
 
@@ -886,6 +891,15 @@ export class RunSim {
   private phaseAt = 0;
   private phaseFor = 0;
   private fallIn = 0;
+  private marked = 0;
+
+  /** A boss playing one of its OWN animations: a state is looked up by skill
+   *  id first, and nothing is named `slam`, so this borrows that seam. */
+  private pose(boss: Entity, state: string): void {
+    boss.skillId = state;
+    boss.action = 'attack';
+    boss.actionTimer = ATTACK_POSE;
+  }
 
   /** Which face BITES: only under a boss's attention, and only while it lives.
    *  Everywhere else a descent is exactly the descent it always was. */
@@ -917,7 +931,12 @@ export class RunSim {
       s.phase = phases[this.phaseAt].kind;
       s.phaseLeft = phases[this.phaseAt].seconds;
       this.phaseFor = 0;
-      if (s.phase === 'fall') this.fallIn = 0;
+      this.marked = 0;
+      // Every phase OPENS on its own animation, so the swap is telegraphed by
+      // the thing itself rather than only by a word on the bar.
+      if (s.phase === 'fall') this.fallIn = BOSS_FIGHT.windup;
+      if (s.phase === 'reading') this.pose(boss, BOSS_POSES[1]);
+      if (s.phase === 'split') boss.skillId = null;
     }
 
     // THE FALL: a circle where you ARE, on a fuse. Standing in one when it
@@ -925,6 +944,10 @@ export class RunSim {
     // the answer rather than a nicety.
     if (s.phase === 'fall') {
       this.fallIn -= dt;
+      // It rears back BEFORE the circle appears; the fuse is the rest.
+      if (this.fallIn <= BOSS_FIGHT.windup && !s.circles.some((c) => c.fuse > c.of - 0.05)) {
+        this.pose(boss, BOSS_POSES[0]);
+      }
       if (this.fallIn <= 0) {
         this.fallIn = BOSS_FIGHT.fallEvery;
         s.circles.push({
@@ -934,8 +957,6 @@ export class RunSim {
           fuse: BOSS_FIGHT.fallFuse,
           of: BOSS_FIGHT.fallFuse,
         });
-        boss.action = 'attack';
-        boss.actionTimer = ATTACK_POSE;
       }
     }
 
@@ -952,6 +973,17 @@ export class RunSim {
     if (s.phase === 'reading') {
       const per = BOSS_FIGHT.readingPerSecond * (1 + BOSS_FIGHT.readingRamp * this.phaseFor);
       this.bite(s.hero.stats.maxLife * per * dt, 'fire');
+      this.marked += dt;
+      while (this.marked >= BOSS_FIGHT.markEvery && s.marks < BOSS_FIGHT.markCap) {
+        this.marked -= BOSS_FIGHT.markEvery;
+        s.marks++;
+      }
+    } else if (s.marks > 0) {
+      this.marked += dt;
+      while (this.marked >= BOSS_FIGHT.markEvery && s.marks > 0) {
+        this.marked -= BOSS_FIGHT.markEvery;
+        s.marks--;
+      }
     }
   }
 
@@ -965,7 +997,8 @@ export class RunSim {
     const hero = this.state.hero;
     if (hero.dead) return;
     const face = this.turned;
-    let total = this.afterResistance(hero, raw * (face?.taken ?? 1), type);
+    const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
+    let total = this.afterResistance(hero, raw * (face?.taken ?? 1) * marked, type);
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
@@ -1865,7 +1898,7 @@ export class RunSim {
     const turned = this.turned;
     if (turned) {
       if (attacker.kind === 'hero') scale *= turned.dealt;
-      if (defender.kind === 'hero') scale *= turned.taken;
+      if (defender.kind === 'hero') scale *= turned.taken * (1 + s.marks * BOSS_FIGHT.markMore);
       if (defender === s.boss && s.phase === 'split') scale *= BOSS_FIGHT.splitMore;
     }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;

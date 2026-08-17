@@ -1185,6 +1185,12 @@ export function drinkFlask(id: string): void {
   drinkPotion(id);
 }
 
+/** Turning the crystal, from a key. It QUEUES in the sim, so this is only the
+ *  press: nothing here decides anything a replay would have to agree with. */
+export function turnCrystal(face: string): void {
+  sim?.turn(face);
+}
+
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
@@ -1252,24 +1258,40 @@ function syncTurn(): void {
   const live = !!boss && !boss.dead;
   host.hidden = !live;
   if (!live) return;
-  if (host.childElementCount !== FACES.length) {
+  if (host.childElementCount !== FACES.length + 1) {
     host.replaceChildren();
-    FACES.forEach((face, i) => {
+    // What it is DOING, and what answers it. A fight you have to read off the
+    // floor is one you learn by dying.
+    host.append(el('span', 'turnsays', ''));
+    for (const face of FACES) {
       const cell = el('button', 'mini turnface') as HTMLButtonElement;
       cell.id = `run-face-${face.id}`;
       cell.textContent = face.name;
-      cell.append(el('span', 'turnface__key', String(i + 1)));
+      cell.append(el('span', 'turnface__key', keyName(keyFor(game, `face_${face.id}`))));
       attachTooltip(cell, () => `${face.name}\n${face.blurb}`);
       cell.onclick = () => sim?.turn(face.id);
       host.append(cell);
-    });
+    }
   }
   for (const face of FACES) {
     document
       .getElementById(`run-face-${face.id}`)
       ?.classList.toggle('turnface--on', sim?.state.face === face.id);
   }
+
+  const says = host.firstElementChild as HTMLElement;
+  const marks = sim?.state.marks ?? 0;
+  const said = SAYS[sim?.state.phase ?? ''] ?? '';
+  says.textContent = marks > 0 ? `${said}  ·  marked ${marks}` : said;
+  says.classList.toggle('turnsays--bad', sim?.state.phase === 'reading' || marks > 0);
 }
+
+/** What each phase is, in the fewest words that tell you what to press. */
+const SAYS: Record<string, string> = {
+  fall: 'THE FALL — get out of the circles',
+  reading: 'THE READING — it is reading you, and you cannot dodge it',
+  split: 'THE SPLIT — the crystal is open',
+};
 
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));

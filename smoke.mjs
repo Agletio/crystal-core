@@ -176,7 +176,8 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
   const flasks = all('#run-flasks .flask');
   assert(flasks.length === 2, 'two flasks under the map', String(flasks.length));
   assert(
-    all('#run-flasks .flask__key').map((n) => n.textContent).join(',') === '1,2',
+    // 1-3 are the crystal's three faces now; the flasks come after them.
+    all('#run-flasks .flask__key').map((n) => n.textContent).join(',') === '4,5',
     'on the keys the table binds them to',
     all('#run-flasks .flask__key').map((n) => n.textContent).join(',')
   );

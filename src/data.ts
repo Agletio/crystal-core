@@ -2197,8 +2197,8 @@ export const FACES: FaceDef[] = [
   {
     id: 'stone',
     name: 'Stone',
-    blurb: 'Half of what lands on you. You hit like nothing.',
-    move: 0.9,
+    blurb: 'Half of what lands on you. You are slow, and you hit like nothing.',
+    move: 0.62,
     cooldown: 1,
     taken: 0.5,
     dealt: 0.7,
@@ -2217,8 +2217,7 @@ export const FACES: FaceDef[] = [
 export const FACE_BY_ID: Record<string, FaceDef> = Object.fromEntries(
   FACES.map((f) => [f.id, f])
 );
-/** What a run starts in, and what a hero who never turns fights in — so it is
- *  the one an AFK build is built around, and it is the SAFE one. */
+/** What a hero who never turns fights in, so it is the SAFE one. */
 export const FACE_DEFAULT = 'stone';
 
 /** What a boss DOES, as a cycle — a second boss is a table row. `fall` drops
@@ -2227,6 +2226,10 @@ export interface BossPhase {
   kind: 'fall' | 'reading' | 'split';
   seconds: number;
 }
+
+/** A boss's own windups — neither an action nor a skill, looked up by the
+ *  seam a thrown skill uses. */
+export const BOSS_POSES = ['slam', 'roar'] as const;
 
 export const BOSS_FIGHT = {
   /** A circle every this many seconds, while a Fall runs. */
@@ -2242,6 +2245,12 @@ export const BOSS_FIGHT = {
   readingRamp: 0.22,
   /** What an open crystal costs it. */
   splitMore: 2.2,
+  /** It rears back this long before a circle appears, and a Reading MARKS you
+   *  a stack a second — each worth `markMore`, falling off at one a second. */
+  windup: 0.9,
+  markEvery: 1,
+  markMore: 0.14,
+  markCap: 8,
 } as const;
 
 export const BOSSES: BossDef[] = [
@@ -2820,8 +2829,11 @@ export interface BindingDef {
 
 export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
-  { id: 'potion_life', what: 'Drink the Flask of Blood', key: '1' },
-  { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '2' },
+  { id: 'face_quick', what: 'Turn the crystal to Quick', key: '1' },
+  { id: 'face_stone', what: 'Turn the crystal to Stone', key: '2' },
+  { id: 'face_edge', what: 'Turn the crystal to Edge', key: '3' },
+  { id: 'potion_life', what: 'Drink the Flask of Blood', key: '4' },
+  { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '5' },
   { id: 'inventory', what: 'Open what you are carrying', key: 'i' },
   { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },
