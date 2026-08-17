@@ -1569,7 +1569,103 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — A quest log instead of a pointing finger
+### Phase 1 — THE TURN: a boss fight you have to play
+
+*The user's call, in full: a boss fight has a bar you toggle between three
+modes — agility, damage, defence. The boss forces the swaps. Built on the
+EXISTING boss first, to see how it works.*
+
+**What is true today.** Nothing in a run takes live input. Combat, movement
+and flasks all fire themselves, and `runToCompletion` obeys the same policy a
+player would set, because **no build's power may depend on somebody watching**
+(`RULES.md`). `BossDef` in `src/data.ts` is life, damage, size, bounty and
+`reinforce`; `RunSim.beginEncounter` calls it up and the reinforcement clock
+runs beside `waveTimer`. A boss is a big monster with adds and nothing else.
+
+**Why that is wrong.** A boss is the one fight that should ask something of
+the player, and today the hardest set in the game is won by the same build
+that wins everything else, standing still. Nothing about a fight rewards
+knowing what is coming.
+
+**THE TURN.** The crystal you carry is punctuation in a sentence the rock can
+hear — the Lambengolmor's whole argument. Under a boss's attention it rings,
+and you turn it: which FACE you present is which part of the sentence you are
+saying. Three faces, one syllable each, in the game's own diction:
+
+- **QUICK** — movement speed, mover cooldown and travel distance.
+- **STONE** — damage reduction and resistances.
+- **EDGE** — more damage.
+
+One is live at a time; turning is instant and free, and the bar is the only
+thing on screen a boss fight adds. `KEYWORDS` gains **Turn**, and each face is
+a `GRANTS` bag merged by `treeGrants` like a tree node, a trade node and a
+unique already are — so a face reaches the sim by a path that exists.
+
+**What the boss does, and which face answers it.**
+
+1. **THE FALL** — untargeted circles land where you ARE, telegraphed, back to
+   back and wide enough that a build with no movement cannot clear one. Caught
+   in one: heavy damage and a stun. Answered by QUICK — and by a mover's web,
+   which is what makes those nine nodes worth their points.
+2. **THE READING** — it fixes on you. Undodgeable, ramping: damage climbing or
+   a stacking debuff. Answered by STONE, and **a genuinely tanky build may
+   ignore it and stay on EDGE**, which is the reward for building that way.
+3. **THE SPLIT** — the crystal in it is open and it takes increased damage.
+   Answered by EDGE.
+
+They OVERLAP on purpose: a Split inside a Fall is the fight asking whether you
+want the damage or the exit, and that choice is the whole mechanic.
+
+**Automation is not negotiable.** A stance POLICY sits in `GameState` beside
+`potions` — the same shape as a flask threshold — and `runToCompletion` obeys
+it, so a headless run still terminates and a seed still replays. A live press
+QUEUES into the next tick exactly as `RunSim.usePotion` does. The player is
+choosing the POLICY and may override it by hand; they are never required to
+watch.
+
+**Checkboxes that are decisions.**
+
+- [ ] Three faces, named Quick / Stone / Edge, one live at a time, instant.
+- [ ] `BossPhase` is DATA on `BossDef`: kind, seconds, telegraph, and what it
+      does. A second boss is a table row, never a second engine.
+- [ ] The Fall's circles are drawn by both renderers off `RunState`, the way
+      an aura's reach already is — a room that is lethal for a reason you
+      cannot see reads as a bug.
+- [ ] Caught in a Fall is damage AND a stun; the stun is what makes movement
+      the answer rather than a nice-to-have.
+- [ ] The Reading is survivable on Edge by a build that stacked defence, and
+      the demo measures that it is: one ladder character powers through and a
+      glass one does not.
+- [ ] Turning is free. It costs no mana and has no cooldown, or the bar is a
+      third resource nobody asked for.
+- [ ] ONE trade-specific interaction, and only one. Proposed: the Alchemist's
+      flask extends whichever face is live when it fires (potions are already
+      that trade's engine); the Aethermancer refunds mana on a turn, so
+      weaving is how they stay full. Open until the user picks.
+
+**Traps.**
+
+- **`runToCompletion` must not hang.** Every phase needs an end even if the
+  hero never turns: a boss that waits for input is a headless run that never
+  returns.
+- **The seed must still replay.** Nothing may read wall-clock time or the
+  cursor. Queue presses; never mutate mid-tick.
+- **`DANGER_STATS` and `POWER` are untouched.** A face is not a stat on the
+  sheet and must not fold into run power, or every reward in the game moves.
+- **Both renderers.** `canvas2d` is the fallback and draws no sprites; the
+  circles must be shapes, like the aura fields already are.
+- **The parked balance checks.** Four are already parked (see above); this
+  phase adds damage in a new place, so do not let it quietly move them further.
+
+**Done when** a boss fight makes a build with no movement lose to the Fall, a
+build with no defence lose to the Reading, and a build that turns at the right
+moments beat both — measured in the demo across the ladder, with the whole
+thing running headless off a policy and no hand on the keyboard.
+
+**What must not break, in order:** `comments`, `typecheck`, `mods`, `build`,
+`smoke`, `shots`, `drag`, and the demo's own boss-room checks.
+
+### Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial has been deleted outright so the
 opening can be PLAYED with nothing explaining it. This phase is what teaching
