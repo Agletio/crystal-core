@@ -836,10 +836,16 @@ and the `wn_*` icons in `GENERATED_ICONS` are the pictures inside, picked by
 fallbacks for a missing piece, and how a web is WALKED lives in
 `src/webgraph.ts`, over any list of nodes.
 
-**A skill web is BUILT ONCE and the camera is one transform over it.** Every
-node, chain link and frame goes into a single `.web__view` group in the web's
-own space at `BUILD` pixels per unit; a scroll or a drag writes that group's
-`transform` and nothing else. Rebuilding it per event — some three hundred
+**A skill web is BUILT ONCE, and the camera is a CSS transform on the SVG
+ELEMENT.** Every node, chain link and frame goes into a single `.web__view`
+group in the web's own space at `BUILD` pixels per unit, on a canvas sized to
+hold the whole tree with `origin` at its middle; `.webwrap` is the window and
+clips it. A scroll or a drag writes `style.transform` on the svg and nothing
+else, so the compositor moves a promoted layer instead of re-rastering.
+**Which transform it is matters more than building once did**: written as the
+view group's own SVG `transform` — the obvious way — every element in it
+re-rasters per frame, measured at 50ms a frame against 17 for the same camera
+on the element. Pan and zoom both sit at the vsync floor now. Rebuilding it per event — some three hundred
 `<image>` elements torn down and re-created — is what made a web of pixel art
 stutter, and it also meant nothing off screen was built, so what was DRAWN was
 a DOM question rather than a camera one. Node art is drawn SMOOTH and not

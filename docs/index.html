@@ -1487,6 +1487,15 @@
     overflow: hidden;
   }
   .web { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  /* A web you ROAM is a big canvas under a window, and the camera is a CSS
+     transform ON IT: the compositor moves and scales a promoted layer without
+     re-rastering it, where the same camera written as the content group's own
+     SVG transform re-rasters every element every frame — 50ms a frame against
+     17. `.webwrap` is the window and already clips. */
+  .web--roam {
+    position: absolute; left: 0; top: 0;
+    transform-origin: 0 0; will-change: transform;
+  }
   .web--drag { cursor: grabbing; }
   /* Twenty nodes fit, so the trade web is a picture rather than a map. */
   .webwrap--trade { height: min(44vh, 380px); margin-top: 12px; }
@@ -2094,7 +2103,7 @@
         <!-- The web is bigger than the window on purpose: a hundred nodes
              legible at once would be a hundred dots you cannot read. -->
         <div class="webwrap" id="skills-webwrap">
-          <svg class="web" id="skills-web" role="img" aria-label="skill web"></svg>
+          <svg class="web web--roam" id="skills-web" role="img" aria-label="skill web"></svg>
           <div class="webmenu" id="skills-choice" hidden></div>
           <div class="webhud">
             <button class="mini" id="skills-fit">Fit</button>

@@ -106,9 +106,10 @@ let dragged = false;
  * thing the smoke test cannot check.
  */
 function viewport(): { width: number; height: number } {
-  const box = $('skills-web').getBoundingClientRect();
-  return box.width > 0 && box.height > 0
-    ? { width: box.width, height: box.height }
+  // The WRAP, never the web: the web is a canvas that moves under this window.
+  const host = $('skills-webwrap');
+  return host.clientWidth > 0 && host.clientHeight > 0
+    ? { width: host.clientWidth, height: host.clientHeight }
     : { width: 760, height: 430 };
 }
 
@@ -398,18 +399,23 @@ function project(
  */
 const BUILD = 46;
 
-/** Web coordinates → the built web's own space, which no camera touches. */
-const place = (x: number, y: number) => ({ x: x * BUILD, y: y * BUILD });
+/** Half the built canvas: a web is drawn about 0,0 and an SVG clips to its own
+ *  viewport, so it is shifted into the middle of one big enough to hold it. */
+let origin = 0;
 
-/** The camera, as the one attribute a pan or a zoom writes. */
+/** Web coordinates → the built web's own space, which no camera touches. */
+const place = (x: number, y: number) => ({ x: x * BUILD + origin, y: y * BUILD + origin });
+
+/** The camera: a CSS transform on the SVG ELEMENT, which the compositor moves
+ *  without re-rastering. As the view group's own `transform` — the obvious
+ *  way — every element re-rasters per frame: 50ms against 17. */
 function applyView(): void {
-  const view = $('skills-web').querySelector('.web__view');
-  if (!view) return;
   const box = viewport();
   const k = scale / BUILD;
-  const tx = box.width / 2 - panX * scale;
-  const ty = box.height / 2 - panY * scale;
-  view.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})`);
+  const tx = box.width / 2 - panX * scale - origin * k;
+  const ty = box.height / 2 - panY * scale - origin * k;
+  $('skills-web').style.transform =
+    `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${k.toFixed(4)})`;
 }
 
 /**
@@ -434,6 +440,13 @@ function renderWeb(): void {
   // that group's transform and nothing here is rebuilt to move it.
   const view = svgEl('g', { class: 'web__view' });
   const skill = SKILL_BY_ID[skillId];
+  const nodesFor = treeFor(skillId);
+  // Sized to what it holds: the furthest node, plus room for its own art.
+  const reach =
+    Math.max(1, ...nodesFor.map((n) => Math.max(Math.abs(n.x), Math.abs(n.y)))) + 1.4;
+  origin = Math.ceil(reach * BUILD);
+  svg.style.width = `${origin * 2}px`;
+  svg.style.height = `${origin * 2}px`;
   const progress = skillProgress(game.character, skillId);
   const nodes = treeFor(skillId);
   const spare = treePointsFor(skillId, progress.level) - progress.allocated.length;

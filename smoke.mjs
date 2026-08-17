@@ -1575,10 +1575,8 @@ const webNodes = () => all('#skills-web .web__node');
 // box, which for a hundred nodes is a grey smear. The web is BUILT WHOLE and
 // one transform aims at part of it, so what is on screen is the camera's
 // business rather than the DOM's: Fit pulls that camera back.
-const viewScale = () => {
-  const held = $('skills-web').querySelector('.web__view');
-  return Number(/scale\(([\d.]+)\)/.exec(held?.getAttribute('transform') ?? '')?.[1] ?? 0);
-};
+const viewScale = () =>
+  Number(/scale\(([\d.]+)\)/.exec($('skills-web').style.transform ?? '')?.[1] ?? 0);
 const zoomedIn = viewScale();
 assert(zoomedIn > 0, 'the web is aimed by one transform', String(zoomedIn));
 assert(webNodes().length === 112, 'and built whole, every node once', String(webNodes().length));
