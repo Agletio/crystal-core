@@ -56,6 +56,7 @@ import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import { flaskIcon } from './flaskart';
+import { potionReading, potionWorkings } from '../potion-text';
 import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
@@ -67,6 +68,7 @@ import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
 import type { Item } from '../types';
+import type { PotionDef } from '../data';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -674,8 +676,7 @@ function renderFlasks(): void {
     use.dataset.at = String(left);
     use.disabled = !live || !sim!.canDrink(potion.id);
     use.onclick = () => drinkPotion(potion.id);
-    // The art carries the count; the title is where the number belongs now.
-    use.title = `${potion.name} — ${left} of ${potion.charges}. ${potion.blurb}`;
+    attachTooltip(use, () => flaskSays(potion));
     row.append(use);
 
     const auto = el('div', 'flask__auto');
@@ -692,10 +693,29 @@ function renderFlasks(): void {
         auto.append(button);
       }
     }
-    auto.title = `Fires itself when ${potion.pool} falls to this share.`;
+    attachTooltip(
+      auto,
+      () =>
+        `Fires itself\nWhen your ${potion.pool} falls to this share — and a headless run obeys the same number.`
+    );
     row.append(auto);
     host.append(row);
   }
+}
+
+/**
+ * What THIS flask does for THIS character. Read live off the same grants the
+ * sim reads, because the Alchemist moves the pour, the length, the charges and
+ * three things you only get while one is running — a hover quoting the table
+ * would be wrong for the build the trade exists to make.
+ */
+function flaskSays(potion: PotionDef): string {
+  const stats = sim?.state.hero.stats ?? characterStats(game.character);
+  const max = potion.pool === 'life' ? stats.maxLife : stats.maxMana;
+  const left = sim?.state.charges[potion.id] ?? potion.charges;
+  const fires = game.potions?.[potion.id] ?? potion.threshold;
+  const reading = potionReading(potion, max, treeGrants(game.character));
+  return [potion.name, ...potionWorkings(potion, reading, left, fires)].join('\n');
 }
 
 /**
@@ -715,7 +735,6 @@ function syncFlasks(): void {
     if (use.dataset.at !== String(left)) {
       use.dataset.at = String(left);
       use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges, 46, potion.pool));
-      use.title = `${potion.name} \u2014 ${left} of ${potion.charges}. ${potion.blurb}`;
     }
   }
 }

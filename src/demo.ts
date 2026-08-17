@@ -141,6 +141,7 @@ import {
   treeGrants,
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
+import { potionReading, potionWorkings } from './potion-text';
 import { describeStatLine } from './mod-text';
 import { KEYWORDS, KEYWORD_BY_GRANT, bannedIn, keywordsIn } from './keywords';
 import type { KeywordDef } from './keywords';
@@ -4894,6 +4895,54 @@ rule('TRADE RULES — does each one actually change what the sim does?');
       Math.abs((buffed.potionMore as number) - 1.56) < 1e-9,
       'and two magnitude nodes compound into what a flask is worth while it runs',
       String(buffed.potionMore)
+    );
+
+    // WHAT THE HOVER SAYS IS WHAT IT POURS. The Alchemist moves the pour and
+    // the length at once, so a flask quoting its printed line would be wrong
+    // for exactly the build the trade exists to make. Measured against a hero
+    // emptied first, or regeneration and the cap are in the number too.
+    const steeped = armed(['alc_steeping_m0', 'alc_slow_burn', 'alc_steeping_m1', 'alc_thickened']);
+    const grants = treeGrants(steeped);
+    const flask = POTIONS[0];
+    const sim = new RunSim([], steeped, new Rng(4242));
+    const said = potionReading(flask, sim.state.hero.stats.maxLife, grants);
+    sim.state.hero.life = 1;
+    sim.usePotion(flask.id);
+    let poured = 0;
+    for (let n = 0; n < Math.ceil((said.seconds + 0.5) / TICK); n++) {
+      const was = sim.state.hero.life;
+      sim.step(TICK);
+      poured += Math.max(0, sim.state.hero.life - was);
+    }
+    const regen = sim.state.hero.stats.lifeRegen * (said.seconds + 0.5);
+    line(
+      `  the Alchemist's Flask of Blood: hover says ${Math.round(said.total)} over ` +
+        `${said.seconds.toFixed(1)}s, the sim poured ${Math.round(poured - regen)}`
+    );
+    check(
+      Math.abs(poured - regen - said.total) / said.total < 0.05 && said.seconds === 6,
+      'and what the flask HOVER promises is what the sim actually pours',
+      `${Math.round(said.total)} said, ${Math.round(poured - regen)} poured over ${said.seconds}s`
+    );
+    // In the BUILD's numbers: 7% over 6s where the table says 5% over 4s.
+    const words = potionWorkings(flask, said, 2, flask.threshold).join(' ');
+    check(
+      words.includes(`${Math.round(said.perSecond)} life a second`) &&
+        words.includes('for 6s') &&
+        words.includes('7% of your pool'),
+      'in this build’s own numbers rather than the table’s',
+      words
+    );
+
+    // And what HOLDING one is worth, which is a flask's whole point on three
+    // of the five spokes and reads nowhere else on the screen.
+    const spokes = ['alc_reaction_m0', 'alc_volatile', 'alc_condensate_m0', 'alc_still'];
+    const wide = treeGrants(armed(spokes));
+    const other = potionWorkings(flask, potionReading(flask, 1000, wide), 1, 0.35).join(' ');
+    check(
+      other.includes('more damage') && other.includes('comes back every'),
+      'and says what HOLDING one is worth, and how fast a charge comes back',
+      other
     );
   }
 

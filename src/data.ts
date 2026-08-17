@@ -2488,7 +2488,6 @@ export interface PotionDef {
    * no build's power may depend on somebody watching.
    */
   threshold: number;
-  blurb: string;
 }
 
 export const POTIONS: PotionDef[] = [
@@ -2501,7 +2500,6 @@ export const POTIONS: PotionDef[] = [
     pool: 'life',
     percentPerSecond: 5,
     threshold: 0.35,
-    blurb: '5% of your life a second for 4s. Fires itself at 35% life.',
   },
   {
     id: 'flask_of_mana',
@@ -2512,7 +2510,6 @@ export const POTIONS: PotionDef[] = [
     pool: 'mana',
     percentPerSecond: 6,
     threshold: 0.12,
-    blurb: '6% of your mana a second for 4s. Fires itself at 12% mana, which is about one cast left.',
   },
 ];
 
