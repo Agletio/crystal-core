@@ -16,6 +16,7 @@ import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   auraLook,
+  bossTelegraph,
   burstRadius,
   clampOffset,
   fireBolt,
@@ -446,6 +447,29 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       ctx.strokeStyle = palette.ember;
       ctx.lineWidth = Math.max(1, v.tile * 0.09);
       ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    // WHAT IT IS DOING, on the thing doing it: no sprite here to light, so the
+    // whole telegraph is the field and the core it draws over its own middle.
+    const boss = state.boss;
+    const told = bossTelegraph(palette, state.phase, state.elapsed);
+    if (boss && !boss.dead && told) {
+      const r = boss.scale * told.swell * v.tile;
+      ctx.globalAlpha = told.alpha;
+      ctx.fillStyle = told.colour;
+      ctx.beginPath();
+      ctx.arc(cx(v, boss.x), cy(v, boss.y), r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = told.colour;
+      ctx.lineWidth = Math.max(1, v.tile * 0.07);
+      ctx.stroke();
+      if (told.core > 0) {
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.arc(cx(v, boss.x), cy(v, boss.y), boss.scale * told.core * v.tile, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.globalAlpha = 1;
     }
     for (const m of state.monsters) {

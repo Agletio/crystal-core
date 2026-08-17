@@ -23,6 +23,7 @@ import type { FirePixel, Palette, Renderer } from './renderer';
 import type { Cel } from './sprites';
 import {
   auraLook,
+  bossTelegraph,
   burstRadius,
   clampOffset,
   fireBolt,
@@ -209,6 +210,10 @@ export async function createPixiRenderer(
 
   const sprites = new Map<number, Sprite>();
   const floaters: Text[] = [];
+
+  /** The boss and what its phase looks like, worked out once a frame — three
+   *  passes draw it and none of them may disagree about the beat. */
+  let told: { on: Entity; look: NonNullable<ReturnType<typeof bossTelegraph>> } | null = null;
 
   // `screen`, never `width / resolution`: the renderer's own logical box, in
   // the CSS pixels the world container is positioned in. Halved by a device
@@ -644,13 +649,30 @@ export async function createPixiRenderer(
     // Sprites are authored facing right; flip rather than rotate so they
     // never appear upside down.
     s.scale.x = Math.abs(s.scale.x) * (Math.cos(e.facing) < 0 ? -1 : 1);
-    s.tint = e.hitFlash > 0 ? toHexNumber(palette.chalk) : 0xffffff;
+    s.tint =
+      e.hitFlash > 0
+        ? toHexNumber(palette.chalk)
+        : e === told?.on
+          ? toHexNumber(told.look.tint)
+          : 0xffffff;
   }
 
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
     // Keep hairlines visible however far out we're zoomed.
     const hair = Math.max(0.05, 1 / tile);
+
+    // The light IN it, over its own body: charging in a Reading, hanging open
+    // in a Split. Drawn here because a body is opaque and this is the point.
+    if (told && told.look.core > 0) {
+      const e = told.on;
+      const at = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite)) * 0.55;
+      const r = e.scale * told.look.core;
+      const colour = toHexNumber(told.look.colour);
+      vfxLayer.circle(cx(e.x), at, r * 2.1).fill({ color: colour, alpha: 0.18 });
+      vfxLayer.circle(cx(e.x), at, r).fill({ color: colour, alpha: 0.75 });
+      vfxLayer.circle(cx(e.x), at, r * 0.45).fill({ color: toHexNumber(palette.chalk), alpha: 0.9 });
+    }
 
     /** Fire pixels, in world units. The layer is already scaled to tiles. */
     const blocks = (pixels: FirePixel[], type: string, fade: number) => {
@@ -875,6 +897,14 @@ export async function createPixiRenderer(
       auraLayer.circle(ring.x, ring.y, ring.r * gone).fill({ color: colour, alpha: 0.22 });
       auraLayer.circle(ring.x, ring.y, ring.r).stroke({ color: colour, alpha: 0.9, width: 0.09 });
     }
+    // WHAT IT IS DOING, on the thing doing it: a field under its feet that
+    // swells with the phase, so the fight is read off the boss and not a word.
+    if (told) {
+      const r = told.on.scale * told.look.swell;
+      const colour = toHexNumber(told.look.colour);
+      auraLayer.circle(told.on.x, told.on.y, r).fill({ color: colour, alpha: told.look.alpha });
+      auraLayer.circle(told.on.x, told.on.y, r).stroke({ color: colour, alpha: 0.85, width: 0.07 });
+    }
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;
       const def = AURA_BY_ID[m.aura];
@@ -895,6 +925,10 @@ export async function createPixiRenderer(
       sprites.clear();
       buildMap(state.map);
     }
+
+    const look = bossTelegraph(palette, state.phase, state.elapsed);
+    const boss = state.boss;
+    told = look && boss && !boss.dead ? { on: boss, look } : null;
 
     camera(state.map, state.hero);
     drawProps(state);

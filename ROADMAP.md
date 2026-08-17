@@ -1797,42 +1797,48 @@ this phase is cheaper than it looks.
 
 ---
 
-## The turn's own tension, found by the grid
+## The turn's own tension, answered
 
-The grid is doing its job: it caught something no amount of nudging fixes.
-**Perfect play loses where sloppy play wins.** At the gear you meet him with:
+The grid caught something no amount of nudging fixed: **perfect play lost where
+sloppy play won.** At the gear you meet him with, turning was ACTIVELY HARMFUL —
+a circle was on you almost continuously during a Fall, so "turn to Quick while a
+circle is on you" meant spending the whole phase at triple Stone's damage taken
+to avoid circles Stone survived. Dodging cost more than being hit.
+
+*The user's call: "make the aoe's slams that stall the bosses attacks, so he
+swings hammer back for a few seconds and doesn't do normal attacks during that.
+Make it where hes not spamming these maybe he does a few in a short window and
+then doesn't for a little bit... So the extra damage taken shouldn't matter as
+long as you dont activate it too late and tank the aoe or leave it on after the
+aoe."*
+
+Three things came of it, and together they turned the grid the right way up:
+
+- **A slam STALLS the boss.** From the rear-back until the last circle lands it
+  is hauling the maul out of the floor and neither swings nor closes
+  (`RunSim.slamming`). Quick's 1.35 lands on almost nothing, so the flick is
+  free — and expensive the moment you leave it on.
+- **Circles come in a BURST and then a rest** — `fallBurst` of them
+  `fallEvery` apart, then `fallRest` of ordinary fighting. Quick is a flick and
+  never a stance.
+- **The dodge is actually dodgeable.** It was not: at `fallFuse` 1.5 the exit
+  needed 1.2s of Quick plus reaction and pathing, so the "correct" play was
+  caught anyway. The fuse is 2.0 and `wayOut` leaves every circle he is standing
+  in by the SHORTEST ray rather than the first one in the list — out of one and
+  into the next was how a burst caught a mover.
+
+The grid now reads, and the check is live rather than parked:
 
 ```
                 swapping    sloppy       afk
-    met              0/8       5/8       4/8
+    met              8/8       5/8       0/8
+    ground           8/8       8/8       2/8
+    returned         8/8       8/8       8/8
 ```
 
-Turning is ACTIVELY HARMFUL, and the reason is structural rather than numeric:
-
-- **`taken` dominates everything.** Stone at 0.45 is worth more than any amount
-  of speed or damage, so every second spent outside it is a loss. A face is
-  only worth turning to if what it buys beats three seconds of halved damage.
-- **A circle is on you almost CONTINUOUSLY during a Fall** — one every 1.6s,
-  each lasting 1.5s — so "turn to Quick while a circle is on you" means being
-  in Quick for the whole phase. With Quick taking 1.35 that is the whole Fall
-  spent at triple Stone's damage taken, to avoid circles that Stone survives.
-  Dodging costs more than being hit, which inverts the mechanic.
-- Softening Quick to 1.12 made every rung winnable by everyone, which is the
-  same failure from the other side.
-
-**Three ways out, none of them picked** — this needs the user:
-
-1. **Quick does not raise damage taken at all.** It pays in damage dealt only.
-   Breaks the "one benefit, two penalties" symmetry, but it is the only face
-   whose job is to be somewhere else, and being somewhere else IS defence.
-2. **Fewer, bigger circles.** One every 4s rather than every 1.6s, so Quick is
-   a flick rather than a phase, and the Fall's damage is what makes it lethal.
-3. **Stone's defence is smaller and its damage penalty lighter** — a 0.7/0.6
-   face rather than 0.45/0.18 — so no face is a place to live.
-
-The measurement stands either way, and the check is PARKED, not deleted: it
-prints the grid every run and fails nothing until the design question is
-answered.
+Which is the target in the user's own words: at the gear you meet him with you
+die unless you swap properly, a rung of grinding buys you a few missed swaps,
+and the tier above him lets you leave it alone.
 
 ## The balance pass owes four checks
 

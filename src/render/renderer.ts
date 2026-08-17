@@ -244,6 +244,43 @@ export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alp
   return { colour, alpha: aura.incDamage || aura.incArmour ? 0.07 : 0.09 };
 }
 
+/**
+ * WHAT THE BOSS IS DOING, on the boss. A phase you have to read off a word is
+ * one you learn by dying, so the Reading burns — a hot ring swelling around it
+ * as it winds you in — and the Split is the crystal hanging open, the body gone
+ * dim and dead-looking with the light coming out of it. Nothing says either.
+ *
+ * `swell` is the ring, in tiles about its own size; `alpha` is how much of it
+ * there is; `tint` is what its own ink is multiplied by. Both renderers read
+ * one answer, and `for` is the seconds the phase has run so it can breathe.
+ */
+export function bossTelegraph(
+  palette: Palette,
+  phase: string | null,
+  ran: number
+): { colour: string; swell: number; alpha: number; tint: string; core: number } | null {
+  const beat = 0.5 + 0.5 * Math.sin(ran * 4.2);
+  if (phase === 'reading') {
+    return {
+      colour: palette.ember,
+      swell: 0.66 + 0.12 * beat,
+      alpha: 0.22 + 0.18 * beat,
+      tint: palette.ember,
+      core: 0.1 + 0.05 * beat,
+    };
+  }
+  if (phase === 'split') {
+    return {
+      colour: palette.citrine,
+      swell: 0.42,
+      alpha: 0.05 + 0.04 * beat,
+      tint: palette.dust,
+      core: 0.2 + 0.07 * beat,
+    };
+  }
+  return null;
+}
+
 /** Sparse art as full rows: a table keyed by row number, padded to the grid.
  *  Every hand-drawn table is written that way — only the rows with ink in
  *  them are typed out. */

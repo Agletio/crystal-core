@@ -6504,14 +6504,10 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         //
         // Nothing here is a policy the GAME has: a boss is where automation
         // stops, and these three only exist to measure that decision.
-        // What GOOD play is: Edge by default, because damage is what ends the
-        // fight, and turn only when something is actually asking — a circle
-        // standing on you, or a Reading running. Turning for a whole phase
-        // deals less over the fight than never turning at all, which is a
-        // model of a player rather than a mechanic.
         // What GOOD play is, now that every face pays for itself twice: you do
         // not SIT anywhere. Stone is the resting face, Quick is for a circle
-        // standing on you, and Edge is flicked into the opening and out again.
+        // standing on you and off again the moment it lands, and Edge is
+        // flicked into the opening and out.
         const wants = (state: RunState): string => {
           if (state.circles.some((c) => Math.hypot(c.x - state.hero.x, c.y - state.hero.y) <= c.r)) {
             return 'quick';
@@ -6556,10 +6552,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           });
           line(`    ${name.padEnd(10)}${row.join('')}`);
         }
-        // PARKED, and the grid above is why: see "The turn's own tension" in
-        // ROADMAP.md. Perfect play currently loses where sloppy play wins,
-        // which is a design question rather than a number to nudge.
-        parkedCheck(
+        check(
           grid['met/afk'] === 0 &&
             grid['met/swapping'] >= 6 &&
             grid['ground/sloppy'] >= 6 &&

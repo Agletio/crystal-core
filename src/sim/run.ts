@@ -904,7 +904,18 @@ export class RunSim {
   private phaseAt = 0;
   private phaseFor = 0;
   private fallIn = 0;
+  private fallLeft = 0;
   private marked = 0;
+
+  /** Hauling the maul out of the floor rather than swinging: from the
+   *  rear-back until the last circle lands, and never in the gap between
+   *  bursts. Quick is a FLICK — free for the burst, dear if you leave it on. */
+  private get slamming(): boolean {
+    return (
+      this.state.phase === 'fall' &&
+      (this.state.circles.length > 0 || this.fallIn <= BOSS_FIGHT.windup)
+    );
+  }
 
   /** When the boss was called up. The enrage counts from THERE, never from the
    *  room's own clock: its walk across the floor is not your dps. */
@@ -917,6 +928,38 @@ export class RunSim {
     return over > 0 ? 1 + over * BOSS_FIGHT.enrageRamp : 1;
   }
 
+  /** The SHORTEST way clear of every circle he is standing in: how far the ray
+   *  out of the deepest one goes, swept by sixths where the rock is in the way.
+   *  Overshooting is what leaves him walking back across the room. */
+  private wayOut(hero: Entity, on: FallCircle[]): Vec2 {
+    const cx = on.reduce((n, c) => n + c.x, 0) / on.length;
+    const cy = on.reduce((n, c) => n + c.y, 0) / on.length;
+    let away = Math.atan2(hero.y - cy, hero.x - cx);
+    const boss = this.state.boss;
+    if (Math.hypot(hero.x - cx, hero.y - cy) < 0.05) {
+      away = boss ? Math.atan2(hero.y - boss.y, hero.x - boss.x) : 0;
+    }
+    const grid = this.state.map.grid;
+    const at = (a: number): Vec2 => {
+      const ux = Math.cos(a);
+      const uy = Math.sin(a);
+      const far = Math.max(
+        ...on.map((c) => {
+          const fx = hero.x - c.x;
+          const fy = hero.y - c.y;
+          const b = fx * ux + fy * uy;
+          return -b + Math.sqrt(Math.max(0, b * b - (fx * fx + fy * fy) + c.r * c.r));
+        })
+      );
+      return { x: hero.x + ux * (far + 0.6), y: hero.y + uy * (far + 0.6) };
+    };
+    for (let i = 0; i < 12; i++) {
+      const spot = at(away + ((i + 1) >> 1) * (i % 2 ? -1 : 1) * (Math.PI / 6));
+      if (grid.fits(spot.x, spot.y, hero.radius)) return spot;
+    }
+    return at(away);
+  }
+
   /** A boss playing one of its OWN animations: a state is looked up by skill
    *  id first, and nothing is named `slam`, so this borrows that seam. */
   private pose(boss: Entity, state: string): void {
@@ -925,11 +968,16 @@ export class RunSim {
     boss.actionTimer = ATTACK_POSE;
   }
 
+  /** A boss up and alive, which is the whole of what makes a room a fight. */
+  private get fighting(): boolean {
+    const boss = this.state.boss;
+    return !!boss && !boss.dead;
+  }
+
   /** Which face BITES: only under a boss's attention, and only while it lives.
    *  Everywhere else a descent is exactly the descent it always was. */
   private get turned() {
-    const boss = this.state.boss;
-    return boss && !boss.dead ? FACE_BY_ID[this.state.face] : undefined;
+    return this.fighting ? FACE_BY_ID[this.state.face] : undefined;
   }
 
   /**
@@ -973,7 +1021,8 @@ export class RunSim {
         this.pose(boss, BOSS_POSES[0]);
       }
       if (this.fallIn <= 0) {
-        this.fallIn = BOSS_FIGHT.fallEvery;
+        this.fallLeft = this.fallLeft > 0 ? this.fallLeft - 1 : BOSS_FIGHT.fallBurst - 1;
+        this.fallIn = this.fallLeft > 0 ? BOSS_FIGHT.fallEvery : BOSS_FIGHT.fallRest;
         s.circles.push({
           x: s.hero.x,
           y: s.hero.y,
@@ -1050,18 +1099,16 @@ export class RunSim {
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.manaRegen * dt);
     }
 
-    // A CIRCLE ON YOU outranks fighting. Getting out is the character's own
-    // business, like pathing; whether he is QUICK enough is the player's.
-    const under = this.state.circles.find((c) => dist(hero, c) <= c.r);
-    if (under && (hero.stun ?? 0) <= 0) {
-      const away = Math.atan2(hero.y - under.y, hero.x - under.x);
-      const out = under.r + 0.6;
-      const spot = { x: under.x + Math.cos(away) * out, y: under.y + Math.sin(away) * out };
+    // A CIRCLE ON YOU outranks fighting, and leaving means clearing them ALL —
+    // out of one and into the next is how a burst catches a mover. Getting out
+    // is his own business, like pathing; being QUICK enough is the player's.
+    const on = this.state.circles.filter((c) => dist(hero, c) <= c.r);
+    if (on.length > 0 && (hero.stun ?? 0) <= 0) {
+      const spot = this.wayOut(hero, on);
       hero.targetId = null;
       this.face(hero, spot.x, spot.y);
       this.settleAction(hero, true);
-      this.advance(hero, spot, dt);
-      return;
+      if (this.advance(hero, spot, dt)) return;
     }
 
     const target = this.acquireTarget(hero);
@@ -1457,6 +1504,14 @@ export class RunSim {
       return;
     }
 
+    // A boss mid-slam neither swings nor closes: the maul is in the floor.
+    if (m === this.state.boss && this.slamming) {
+      m.path = [];
+      this.face(m, hero.x, hero.y);
+      this.settleAction(m, false);
+      return;
+    }
+
     if (d <= m.stats.attackRange && this.canSee(m, hero)) {
       m.path = [];
       this.face(m, hero.x, hero.y);
@@ -1654,6 +1709,16 @@ export class RunSim {
       }
     }
 
+    // A live circle is somewhere he WAITS OUT rather than walks back into: the
+    // only way to be inside one is to have had it dropped on you.
+    if (e.kind === 'hero' && this.state.circles.length > 0) {
+      const here = this.state.circles.some((c) => dist(e, c) <= c.r);
+      if (here && !this.state.circles.some((c) => dist({ x: startX, y: startY }, c) <= c.r)) {
+        e.x = startX;
+        e.y = startY;
+      }
+    }
+
     const moved = Math.abs(e.x - startX) > 1e-6 || Math.abs(e.y - startY) > 1e-6;
     // Ground covered, which is what a walk cycle is measured in.
     e.walked += Math.hypot(e.x - startX, e.y - startY);
@@ -1669,9 +1734,10 @@ export class RunSim {
   private maybeMove(hero: Entity): void {
     const skill = this.mover;
     if (!skill || this.moveIn > 0 || hero.path.length === 0) return;
-    // Never in an authored room, and the guard is for the SLOT rather than for
-    // one skill: skipping the last of a walk across a room reads as a bug.
-    if (this.options.scene) return;
+    // Never in a room you are WALKING across — skipping the last of it reads
+    // as a bug — but a boss room is a fight, and a mover is how you leave a
+    // slam without turning at all. Which is why a slam comes in a BURST.
+    if (this.options.scene && !this.fighting) return;
 
     const further = (this.grants.moveDistance as number) ?? 1;
     const reach = ((skill.params?.distance as number) ?? 0) * further;
@@ -1679,10 +1745,17 @@ export class RunSim {
     const grid = this.state.map.grid;
     let landing: Vec2 | null = null;
     let steps = 0;
+    let seen = 0;
     for (const wp of hero.path) {
       if (dist(hero, wp) > reach) break;
-      steps++;
-      if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) landing = wp;
+      seen++;
+      // Never INTO a live circle: a blink out of one that lands in the next is
+      // the mover doing the boss's work for it.
+      if (this.state.circles.some((c) => dist(wp, c) <= c.r)) continue;
+      if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) {
+        landing = wp;
+        steps = seen;
+      }
     }
     if (!landing || steps === 0) return;
 

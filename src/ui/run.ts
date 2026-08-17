@@ -1252,7 +1252,9 @@ function syncCooldowns(): void {
 /**
  * THE TURN, built once per fight and lit per frame. Up only while something is
  * listening — outside a boss room a face bites nothing, so a bar for it would
- * be three buttons that do not do anything.
+ * be three buttons that do not do anything. It says NOTHING about what the
+ * boss is doing: that is drawn on the boss (`bossTelegraph`), and a fight you
+ * read off a caption is one you never look at.
  */
 function syncTurn(): void {
   const host = $('run-turn');
@@ -1260,11 +1262,8 @@ function syncTurn(): void {
   const live = !!boss && !boss.dead;
   host.hidden = !live;
   if (!live) return;
-  if (host.childElementCount !== FACES.length + 1) {
+  if (host.childElementCount !== FACES.length) {
     host.replaceChildren();
-    // What it is DOING, and what answers it. A fight you have to read off the
-    // floor is one you learn by dying.
-    host.append(el('span', 'turnsays', ''));
     for (const face of FACES) {
       const cell = el('button', 'mini turnface') as HTMLButtonElement;
       cell.id = `run-face-${face.id}`;
@@ -1280,20 +1279,7 @@ function syncTurn(): void {
       .getElementById(`run-face-${face.id}`)
       ?.classList.toggle('turnface--on', sim?.state.face === face.id);
   }
-
-  const says = host.firstElementChild as HTMLElement;
-  const marks = sim?.state.marks ?? 0;
-  const said = SAYS[sim?.state.phase ?? ''] ?? '';
-  says.textContent = marks > 0 ? `${said}  ·  marked ${marks}` : said;
-  says.classList.toggle('turnsays--bad', sim?.state.phase === 'reading' || marks > 0);
 }
-
-/** What each phase is, in the fewest words that tell you what to press. */
-const SAYS: Record<string, string> = {
-  fall: 'THE FALL — get out of the circles',
-  reading: 'THE READING — it is reading you, and you cannot dodge it',
-  split: 'THE SPLIT — the crystal is open',
-};
 
 /** What is ON you, over the pools it is spoiling: a picture, the seconds left
  *  under it, and a hover that says what it does. Built when the SET of them

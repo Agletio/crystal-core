@@ -2192,7 +2192,7 @@ export const FACES: FaceDef[] = [
     blurb: 'Half again the speed and twice the blinks. Everything hurts, and you barely scratch it.',
     move: 1.5,
     cooldown: 0.45,
-    taken: 1.12,
+    taken: 1.35,
     dealt: 0.4,
   },
   {
@@ -2233,10 +2233,14 @@ export interface BossPhase {
 export const BOSS_POSES = ['slam', 'roar'] as const;
 
 export const BOSS_FIGHT = {
-  /** A circle every this many seconds, while a Fall runs. */
-  fallEvery: 1.6,
-  /** Long enough to leave at Quick and not at Edge, which IS the mechanic. */
-  fallFuse: 1.5,
+  /** A BURST of circles and then a rest, and it does not SWING through one:
+   *  turning Quick is free for the burst and dear for the rest. */
+  fallBurst: 3,
+  fallEvery: 0.95,
+  fallRest: 3.4,
+  /** Long enough to leave at Quick and not at Edge, which IS the mechanic:
+   *  `fallRadius` and a stride is 1.2s of Quick and 2.4s of anything else. */
+  fallFuse: 2,
   /** Only QUICK clears it in the fuse; Stone eats it, which is what tanky is
    *  for, and pays in marks. */
   fallRadius: 5.5,
@@ -2264,13 +2268,11 @@ export const BOSSES: BossDef[] = [
     name: 'The Answering',
     sprite: 'answering',
     herald: 'Something in the rock has heard its own name.',
-    life: 900, // it has to OUTLIVE its own cycle, or the phases never show
+    life: 1500, // it has to OUTLIVE its own cycle, or the phases never show
     damage: 2.4,
     size: 5, // COLOSSAL: `radius` is 0.34 of it, so separation grows too
     bounty: 30,
     reinforce: { every: 6, size: 2, from: 'husk' },
-    // A Split under a Fall is the fight asking whether you want the damage or
-    // the exit, and that question is the mechanic.
     // Short, and round quickly: every phase has to come up early enough to
     // matter rather than once.
     phases: [
