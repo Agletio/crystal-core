@@ -1825,7 +1825,20 @@ Three things came of it, and together they turned the grid the right way up:
   needed 1.2s of Quick plus reaction and pathing, so the "correct" play was
   caught anyway. The fuse is 2.0 and `wayOut` leaves every circle he is standing
   in by the SHORTEST ray rather than the first one in the list — out of one and
-  into the next was how a burst caught a mover.
+  into the next was how a burst caught a mover. A live circle is also somewhere
+  he WAITS OUT rather than walks back into, and the mover fires in a boss room,
+  so a blink is a way out of one slam without turning at all. *The user's call:
+  "It should use movement skills if you have it to blink out of it too... but
+  thats why I think do a couple in a short burst so you can't ONLY rely on the
+  movement skills."*
+
+And the phase is TOLD ON THE BOSS rather than captioned — *the user's call: "it
+needs to be telegraphed instead of the text telling you what to do... having him
+start like glowing or like super sayan dragonball z type power aura... For
+daamge phase make him look stunned or weakened, crystal exposed etc something
+obvious no text to describe this."* `bossTelegraph` in `render/renderer.ts` is
+the one answer both renderers read, the turn bar says nothing at all, and
+`node tools/boss-peek.mjs <dir>` is how it is judged.
 
 The grid now reads, and the check is live rather than parked:
 

@@ -587,6 +587,41 @@ CONSUMES the key and sets `GameState.called`, and the next entry is the fight
 (`revisit` in `src/ui/run.ts`), the `after` lines too. Dying in it loses the
 room and the key, the same price abandoning pays everywhere else.
 
+**A BOSS IS FOUGHT WITH THE TURN, and it is the one place automation stops.**
+`FACES` in `src/data.ts` is three faces of the crystal on `1` `2` `3` — **Quick**
+is speed and twice the blinks, **Stone** is half of what lands on you, **Edge**
+is everything you have and everything it has back — and every one of them NERFS
+the other two, so no face is a place to live and flicking between them is the
+skill. `FACE_DEFAULT` is Stone, which is what a hero who never turns fights in.
+A face bites only under a live boss (`RunSim.turned`), so a descent is exactly
+the descent it always was.
+
+`BossDef.phases` is its cycle and `BOSS_FIGHT` is every number in it. **The
+Fall** drops circles where you are STANDING, on a fuse long enough to leave at
+Quick and not at anything else; **the Reading** cannot be dodged and climbs,
+which is what Stone is for; **the Split** is the crystal hanging open and is the
+damage window. `marks` is what stacks on you and never comes off fast, so
+tanking forever is not a plan, and past `enrageAt` everything it does climbs —
+the dps check.
+
+**A slam is a COMMITMENT.** From the rear-back until the last circle lands the
+boss neither swings nor closes (`RunSim.slamming`), and circles come in a BURST
+and then a rest. That is the whole of what makes Quick a flick rather than a
+stance: it is free while the maul is in the floor and dear the moment you leave
+it on. The dodge is DODGEABLE — `wayOut` leaves every circle he is standing in
+by the shortest ray, a live circle is somewhere he waits out rather than walks
+back into, and the mover fires in a boss room, so a blink is a way out of one
+slam without turning at all. Which is why there are three.
+
+**And the phase is drawn ON THE BOSS, never captioned.** `bossTelegraph` in
+`src/render/renderer.ts` is the one answer both renderers read: the Reading is a
+`flame` halo the size of the body, breathing, with the body itself gone hot —
+`flame` and not `ember`, or it is the same red disc a Fall circle is — and the
+Split is the body dimmed dead and one small hard `citrine` light where the
+crystal is, inside a ring on the floor. The turn bar says nothing at all. A
+fight you read off a caption is one you never look at.
+`node tools/boss-peek.mjs <dir>` shoots a whole cycle of it off the bundle.
+
 **The Lambengolmor** hands over a NAME, not a fight. His room holds no
 encounter at all — geodes banked round the walls and nothing else, since he
 lives inside the thing he studies — and `SceneDef.gives` names the `BOSS_KEY`
@@ -1126,6 +1161,7 @@ src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill
+tools/boss-peek.mjs  THE ANSWERING, a whole cycle of it, off the bundle
 tools/theme-check.mjs  every colour a token, and every token defined
 src/ui/            one module per screen
 ```

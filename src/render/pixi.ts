@@ -669,9 +669,9 @@ export async function createPixiRenderer(
       const at = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite)) * 0.55;
       const r = e.scale * told.look.core;
       const colour = toHexNumber(told.look.colour);
-      vfxLayer.circle(cx(e.x), at, r * 2.1).fill({ color: colour, alpha: 0.18 });
-      vfxLayer.circle(cx(e.x), at, r).fill({ color: colour, alpha: 0.75 });
-      vfxLayer.circle(cx(e.x), at, r * 0.45).fill({ color: toHexNumber(palette.chalk), alpha: 0.9 });
+      vfxLayer.circle(cx(e.x), at, r * 1.9).fill({ color: colour, alpha: 0.16 });
+      vfxLayer.circle(cx(e.x), at, r).fill({ color: colour, alpha: 0.7 });
+      vfxLayer.circle(cx(e.x), at, r * 0.42).fill({ color: toHexNumber(palette.chalk), alpha: 0.85 });
     }
 
     /** Fire pixels, in world units. The layer is already scaled to tiles. */

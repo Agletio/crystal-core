@@ -260,22 +260,27 @@ export function bossTelegraph(
   ran: number
 ): { colour: string; swell: number; alpha: number; tint: string; core: number } | null {
   const beat = 0.5 + 0.5 * Math.sin(ran * 4.2);
+  // BURNING: a halo about the size of the body, breathing, and the body itself
+  // gone hot. It reads as POWER, so the Split may not have one — and it takes
+  // `flame` where a Fall circle takes `ember`, or the two red discs are one.
   if (phase === 'reading') {
     return {
-      colour: palette.ember,
-      swell: 0.66 + 0.12 * beat,
-      alpha: 0.22 + 0.18 * beat,
-      tint: palette.ember,
-      core: 0.1 + 0.05 * beat,
+      colour: palette.flame,
+      swell: 0.44 + 0.06 * beat,
+      alpha: 0.26 + 0.16 * beat,
+      tint: palette.flame,
+      core: 0.022 + 0.008 * beat,
     };
   }
+  // OPEN: the body dim and dead-looking, one small hard light where the
+  // crystal is. A halo here would say it is winding up, which is the opposite.
   if (phase === 'split') {
     return {
       colour: palette.citrine,
-      swell: 0.42,
-      alpha: 0.05 + 0.04 * beat,
+      swell: 0.34,
+      alpha: 0,
       tint: palette.dust,
-      core: 0.2 + 0.07 * beat,
+      core: 0.045 + 0.015 * beat,
     };
   }
   return null;
