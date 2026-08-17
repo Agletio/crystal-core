@@ -2178,7 +2178,7 @@ export const BOSSES: BossDef[] = [
     herald: 'Something in the rock has heard its own name.',
     life: 260,
     damage: 2.4,
-    size: 2.4,
+    size: 5, // COLOSSAL: `radius` is 0.34 of it, so separation grows too
     bounty: 30,
     reinforce: { every: 6, size: 2, from: 'husk' },
   },

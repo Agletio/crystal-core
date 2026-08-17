@@ -1,9 +1,10 @@
 /**
- * Where the name is said. A bare chamber in the Cavern's own rock with geodes
- * banked against the walls, and nothing in it until you bring the key: the
- * fifth socket spends one, and the next entry opens here.
+ * Where the name is said, and the only room in the game with nothing in it.
  *
- * Nobody lives here, so there is nobody to speak. The rock answers instead.
+ * The Fissure's own rock rather than the Cavern's, and WIDE: the Fall drops
+ * circles where you are standing, so a fight that asks you to leave needs
+ * somewhere to go. Nobody lives here and nothing is placed — a floor with
+ * furniture on it is a floor you get caught against.
  */
 import type { SceneDef } from '../scenes';
 
@@ -11,22 +12,14 @@ export const ANSWERING_HALL: SceneDef = {
   id: 'answering_hall',
   who: 'lambengolmor',
   name: 'The Answering',
-  theme: 'prismatic',
+  theme: 'fissure',
   plan: {
-    room: { x: 1, y: 1, w: 19, h: 15 },
-    entrance: { x: 4, y: 12 },
-    stands: { x: 15, y: 5 },
-    props: [
-      { id: 'geode_split', x: 3, y: 3 },
-      { id: 'geode_amber', x: 17, y: 3 },
-      { id: 'geode_teal', x: 2, y: 9 },
-      { id: 'geode_rose', x: 18, y: 10 },
-      { id: 'geode_amber', x: 10, y: 2 },
-      { id: 'geode_teal', x: 6, y: 14 },
-      { id: 'geode_rose', x: 14, y: 14 },
-      { id: 'geode_split', x: 18, y: 6 },
-    ],
+    room: { x: 1, y: 1, w: 39, h: 31 },
+    // Far apart, so it is already up and moving by the time you are in reach.
+    entrance: { x: 6, y: 26 },
+    stands: { x: 30, y: 8 },
+    props: [],
   },
-  said: 'You say the three marks out loud. The rock hears its own name and turns round.',
+  said: 'You say the three marks out loud. Something a long way off in the dark stops, and turns round.',
   encounter: 'answering',
 };

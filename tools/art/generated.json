@@ -341,6 +341,50 @@
    "grid": 48,
    "inks": 24,
    "stride": 1.15
+  },
+  {
+   "sprite": "answering",
+   "character": "4aa67916-68ff-4eaa-a81e-ac56796aaf55",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "29b45c2a-d7dc-4c6a-8213-bbf591f38238",
+     "frames": 3
+    },
+    "walk": {
+     "group": "598f037a-8202-44fa-a6f4-0550df0f2615",
+     "frames": 6
+    },
+    "attack": {
+     "group": "6228f023-4065-4c61-a07f-0c70606bdfea",
+     "frames": 4
+    },
+    "hurt": {
+     "group": "8a0bf5e2-8144-42f2-ae7f-8116392933ae",
+     "frames": 3
+    },
+    "death": {
+     "group": "437851bf-a962-4e6c-b04e-0d7a70301b7a",
+     "frames": 4
+    }
+   },
+   "grid": 160,
+   "inks": 24,
+   "stride": 1.44,
+   "luma": 32,
+   "statesPending": {
+    "slam": {
+     "group": "aeae03d8-b9c5-4db9-a7c8-370c416bdbbd",
+     "frames": 6
+    },
+    "roar": {
+     "group": "662b0937-0b28-408b-b961-11f0445cf559",
+     "frames": 4
+    }
+   },
+   "_pending": "slam and roar are GENERATED and paid for; nothing plays them until the Fall and the Reading exist. Move them back into `states` in that phase \u2014 the ids are here so it costs no generation."
   }
  ],
  "props": [

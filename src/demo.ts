@@ -1831,7 +1831,12 @@ rule('SPRITES — is the pixel art well formed?');
 
   // A room of one shape is a room that reads as the last one. Each has its own
   // signature furniture; the lanterns are the only thing they all share.
-  const thin = SCENES.filter((s) => new Set(s.plan.props.map((p) => p.id)).size < 3).map((s) => s.id);
+  // A room somebody LIVES in, never an arena: a boss room is empty by design,
+  // because furniture in a fight about leaving a circle is what you get caught
+  // against.
+  const thin = SCENES.filter(
+    (s) => !s.encounter && new Set(s.plan.props.map((p) => p.id)).size < 3
+  ).map((s) => s.id);
   check(thin.length === 0, 'and no room is furnished out of one or two shapes', thin.join(', '));
 
   // Every monster the tables can spawn has to have a drawing, or a pack of

@@ -396,6 +396,44 @@
     }
    },
    "character": "d7d010dc-52fb-4689-99bb-6e2fa692db78"
+  },
+  {
+   "sprite": "answering",
+   "name": "The Answering",
+   "size": 160,
+   "character": "4aa67916-68ff-4eaa-a81e-ac56796aaf55",
+   "look": "a COLOSSAL undead skeleton warlord, plates of fused bone across the shoulders and forearms like pauldrons GROWN rather than forged, a two-handed maul of bone and stone gripped in one fist, a VIOLET CRYSTAL set deep in the hollow of its throat. Near-black bone and dried gore, a tattered dark red drape at the waist. NOT anime, NOT chibi, NOT a knight in metal plate. No ground, NO SHADOW under it, no base.",
+   "_note": "A BOSS is the most complete body in the game: a swing, a SLAM for the Fall, a ROAR for the Reading, and room for more. No two says may share their first 30 characters.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing at a three-quarter angle towering and still, shoulders rising and falling slowly, the maul head resting on the floor"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "striding forward at a three-quarter angle with enormous heavy steps, the maul swinging low at its side"
+    },
+    "attack": {
+     "frames": 6,
+     "say": "swinging the two-handed maul across in a wide flat arc at a three-quarter angle, following through with the whole body"
+    },
+    "slam": {
+     "frames": 8,
+     "say": "rearing back and driving the maul straight DOWN into the floor with both hands at a three-quarter angle, then wrenching it free"
+    },
+    "roar": {
+     "frames": 6,
+     "say": "throwing its skull back and its arms wide at a three-quarter angle, chest thrown open, holding the pose"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "recoiling a half step at a three-quarter angle, head snapping aside"
+    },
+    "death": {
+     "frames": 6,
+     "say": "buckling at the knees at a three-quarter angle and falling forward onto its face, the maul dropping away"
+    }
+   }
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",

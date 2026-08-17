@@ -1616,12 +1616,24 @@ unique already are — so a face reaches the sim by a path that exists.
 They OVERLAP on purpose: a Split inside a Fall is the fight asking whether you
 want the damage or the exit, and that choice is the whole mechanic.
 
-**Automation is not negotiable.** A stance POLICY sits in `GameState` beside
-`potions` — the same shape as a flask threshold — and `runToCompletion` obeys
-it, so a headless run still terminates and a seed still replays. A live press
-QUEUES into the next tick exactly as `RunSim.usePotion` does. The player is
-choosing the POLICY and may override it by hand; they are never required to
-watch.
+**A BOSS IS THE ONE PLACE AUTOMATION STOPS.** *The user's call, and it is an
+exception to a rule this game holds everywhere else, so it is written down as
+one:* boss fights are SHORT and SPARSE — a handful required in the campaign,
+entirely optional in the endgame — and there is no stance policy. Nobody turns
+for you.
+
+What that does NOT license is a fight that hangs: a headless run must still
+terminate with nobody at the keyboard, and it does, because a hero who never
+turns simply fights in whatever face he is standing in. That case has a name
+and it is a DESIGN TARGET rather than a fallback: **AFK must stay winnable by
+a build strong enough to buy it.** The user's words — "you should have the
+ability to build entirely around just afking each boss... that will require
+better gear and more grinding but it should be possible." So the demo runs
+every boss with no input at all, and what it measures is the GEAR at which
+that starts working, not whether it works at level 1.
+
+A live press still QUEUES into the next tick exactly as `RunSim.usePotion`
+does, so a seed replays.
 
 **Checkboxes that are decisions.**
 
@@ -1638,16 +1650,27 @@ watch.
       glass one does not.
 - [ ] Turning is free. It costs no mana and has no cooldown, or the bar is a
       third resource nobody asked for.
-- [ ] ONE trade-specific interaction, and only one. Proposed: the Alchemist's
-      flask extends whichever face is live when it fires (potions are already
-      that trade's engine); the Aethermancer refunds mana on a turn, so
-      weaving is how they stay full. Open until the user picks.
+- [ ] The trade-specific interaction is DEFERRED, at the user's word: get the
+      base mechanics feeling good first. It is open question 14.
 
 **Traps.**
 
 - **`runToCompletion` must not hang.** Every phase needs an end even if the
   hero never turns: a boss that waits for input is a headless run that never
-  returns.
+  returns. Nothing may block ON a turn.
+- **The arena is the FISSURE, wide open.** *The user's call: not the room the
+  man who hands you the key stands in, and not a dressed chamber — the base
+  Fissure's own look with room to run.* The Fall is only a threat if there is
+  somewhere to go, so the room is big and nearly empty, and its theme is
+  `fissure` rather than the Cavern's.
+- **The boss is ENORMOUS**, and its `radius` has to grow with its `scale` or a
+  pack walks through its legs — the Gaunt paid for that lesson already.
+- **A boss is the most COMPLETE body in the game.** *The user's call: multiple
+  kinds of attack animation, a solid walk, and room to add more later.* Where
+  a monster ships idle/walk/attack/death, this one ships a walk, a basic
+  swing, a SLAM for the Fall, a ROAR for the Reading, a hurt and a death — and
+  `generated.json` takes a further state as one row whenever a phase wants
+  one.
 - **The seed must still replay.** Nothing may read wall-clock time or the
   cursor. Queue presses; never mutate mid-tick.
 - **`DANGER_STATS` and `POWER` are untouched.** A face is not a stat on the
@@ -1785,7 +1808,15 @@ Every one is parked deliberately. Ask before acting on any of them.
    room directly, speech skipped on a rematch. What remains of it is question
    13 below — the fight's MECHANIC.
 
-13. **What is a boss fight's MECHANIC?** The user's call: boss fights should
+14. **What does a TRADE do in a boss fight?** Deferred at the user's word —
+   "let's skip this for now and get the base mechanics feeling good." The
+   intent is ONE unique interaction per trade, not a second system. Parked
+   proposals: the Alchemist's flask extends whichever face is live when it
+   fires, since potions are already that trade's engine; the Aethermancer
+   refunds mana on a turn, so weaving is how they stay full.
+
+13. **What is a boss fight's MECHANIC?** ANSWERED — it is THE TURN, written up
+   as Phase 1. Left here for the reasoning that produced it: The user's call: boss fights should
    be short, rare, and INTERACTIVE — "if you don't do some sort of mechanic
    they're very hard to win unless your build is extremely strong." Nothing
    in a run takes live input today (combat, movement and flasks all drive
