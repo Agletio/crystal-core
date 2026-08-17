@@ -26,8 +26,8 @@ export function takeBoss(game: GameState, id: string): void {
 export const bossBeaten = (game: GameState, id: string): boolean =>
   (game.bosses ?? []).includes(id);
 
-/** What a room's person has already handed over, as a `given` entry: rung 2 is
- *  a condition, never a roll, and a room owes its key until it has given it. */
+/** A key already handed over, as a `given` entry: a room owes its own until
+ *  it has, which is rung 2's condition and never a roll. */
 export const gaveKey = (id: string): string => `key:${id}`;
 
 function scheduled(game: GameState): SceneDef[] {
@@ -47,7 +47,6 @@ export function sceneWaiting(game: GameState, clear: QuestFacts): SceneCall | nu
   const next = scheduled(game)[0];
   if (next) return { def: next, gift: null }; // rung 2
 
-  // Rung 3: HOLDING one is the whole condition, and a room owed keeps owing.
   const wanted = SCENES.find((s) => relicFor(game, s.id) !== null);
   return wanted ? { def: wanted, gift: null } : null;
 }
