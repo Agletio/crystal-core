@@ -1,8 +1,7 @@
 /**
- * WHAT A FLASK ACTUALLY DOES, in this character's numbers rather than the
- * table's. Here rather than in the panel so the demo can check that what the
- * hover says is what `RunSim` does — the Alchemist moves five of these at once,
- * and a flask that still quotes its printed line is a flask lying to you.
+ * WHAT A FLASK ACTUALLY DOES, in this character's numbers. Here rather than in
+ * the panel so the demo can hold what the hover says against what `RunSim`
+ * pours — the Alchemist moves five of these at once.
  */
 import type { PotionDef } from './data';
 
@@ -28,8 +27,7 @@ const num = (grants: Grants, id: string, fallback: number): number => {
   return typeof v === 'number' ? v : fallback;
 };
 
-/** `max` is the pool it pours into, which is the whole reason this is not a
- *  constant: a flask restores a SHARE, so building life builds the flask. */
+/** `max` is why this is not a constant: a flask restores a SHARE. */
 export function potionReading(potion: PotionDef, max: number, grants: Grants): PotionReading {
   const share = potion.percentPerSecond * num(grants, 'potionPotency', 1);
   const seconds = potion.seconds * num(grants, 'potionDuration', 1);
@@ -48,33 +46,22 @@ export function potionReading(potion: PotionDef, max: number, grants: Grants): P
 }
 
 const round = (n: number) => Math.round(n).toLocaleString();
-const trim = (n: number) => (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : n.toFixed(1));
+const trim = (n: number) =>
+  Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : n.toFixed(n < 1 ? 2 : 1);
 
-/**
- * The hover, a line at a time. The first line is the pour and the rest are
- * only there when something granted them, so a character with no trade reads
- * exactly as short as it did before there were any.
- */
-export function potionWorkings(
-  potion: PotionDef,
-  reading: PotionReading,
-  left: number,
-  fires: number
-): string[] {
+/** ONE FACT A LINE, and a line only where there is something to say: no
+ *  regeneration means no regeneration LINE, not a line saying there is none. */
+export function potionWorkings(potion: PotionDef, reading: PotionReading, left: number): string[] {
   const pool = potion.pool === 'life' ? 'life' : 'mana';
   const lines = [
-    `${round(reading.perSecond)} ${pool} a second for ${trim(reading.seconds)}s — ` +
-      `${round(reading.total)} in all, at ${trim(reading.share)}% of your pool a second.`,
-    `${left} of ${reading.charges} charges` +
-      (reading.regain > 0
-        ? `, and one comes back every ${(1 / reading.regain).toFixed(1)}s.`
-        : `, and none come back until the next descent.`),
-    `Fires itself at ${Math.round(fires * 100)}% ${pool}.`,
+    `${potion.pool === 'life' ? 'Heals' : 'Restores'} ${trim(reading.share)}% of max ${pool} per second`,
+    `${round(reading.perSecond)} ${pool} per second`,
+    `${round(reading.total)} ${pool} over ${trim(reading.seconds)}s`,
+    `${left}/${reading.charges} charges`,
   ];
-  const held: string[] = [];
-  if (reading.more > 0) held.push(`${trim(reading.more)}% more damage`);
-  if (reading.haste > 0) held.push(`${trim(reading.haste)}% increased attack and cast speed`);
-  if (reading.crit > 0) held.push(`+${trim(reading.crit)}% Critical Chance`);
-  if (held.length > 0) lines.push(`While ANY flask is running: ${held.join(', ')}.`);
+  if (reading.regain > 0) lines.push(`${trim(reading.regain)} charges per second`);
+  if (reading.more > 0) lines.push(`${trim(reading.more)}% more damage while running`);
+  if (reading.haste > 0) lines.push(`${trim(reading.haste)}% increased attack and cast speed while running`);
+  if (reading.crit > 0) lines.push(`+${trim(reading.crit)}% critical chance while running`);
   return lines;
 }

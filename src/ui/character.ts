@@ -19,6 +19,7 @@ import {
   SKILLS,
 } from '../data';
 import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
+import { slotWorkings } from '../skill-text';
 import { GRANT_BY_ID, starvedMultiplier } from '../sim/grants';
 import { damageWorkings } from '../damage-text';
 import { describeStatLine } from '../mod-text';
@@ -385,16 +386,7 @@ function mainRows(): StatRow[] {
 
 /** What a skill that never casts DOES, in figures, out of the grant table so
  *  the line and the switch the sim reads cannot come apart. */
-export function skillLines(skill: SkillDef): string[] {
-  const said = Object.entries(skill.grants ?? {})
-    .map(([id, value]) => GRANT_BY_ID[id]?.say?.(value))
-    .filter((line): line is string => typeof line === 'string');
-  const params = skill.params ?? {};
-  if (typeof params.distance === 'number' && typeof params.cooldown === 'number') {
-    said.push(`Steps up to ${params.distance} tiles every ${params.cooldown}s, on its own`);
-  }
-  return said;
-}
+
 
 /**
  * One block per slot. Every number that would be a different number for a
@@ -441,7 +433,7 @@ function renderSkills(): void {
       );
       for (const row of mainRows()) statRow(box, row);
     } else {
-      for (const line of skillLines(held)) box.append(el('div', 'skillsec__how', `${line}.`));
+      for (const l of slotWorkings(held, game.character)) box.append(el('div', 'skillsec__how', l));
     }
     host.append(box);
   }

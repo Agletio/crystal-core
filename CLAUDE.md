@@ -954,16 +954,32 @@ on somebody watching. The keys are `BINDINGS` entries like every other; the
 buttons beside the map are the interface, since a phone has no number row.
 `RunSim.usePotion` QUEUES a press for the next tick, so a seed still replays.
 
-**A flask says what IT does, never what the table says.** `potion-text.ts` is
-`potionReading` — the pour, the length, the total, the charges and what holding
-one is worth, read off the same grants `RunSim` reads — and `potionWorkings`
-turns it into the hover. It is a module rather than a line in the panel so the
-demo can pour one into an emptied hero and hold the number the hover promised
-against the life that actually arrived. `PotionDef` carries no `blurb` at all:
-the Alchemist moves the pour, the length, the charges and three things you only
-get while one is running, so a printed line is wrong for exactly the build the
-trade exists to make. A character with no trade reads as short as it ever did —
-a granted line is only there when something granted it.
+**A FLASK AND A SKILL SAY WHAT THEY DO FOR THIS BUILD, and never what the table
+says.** `potion-text.ts` and `skill-text.ts` are the two readings —
+`potionReading` is the pour, the length, the total, the charges and what holding
+one is worth; `mainWorkings` is damage, rate, damage a second, crit, mana and
+reach off the sheet's own pass; `slotWorkings` is what a slot GRANTS and a
+mover's two numbers read THROUGH its web. They are modules rather than lines in
+a panel so the demo can pour one into an emptied hero and hold the number the
+hover promised against the life that actually arrived, and hold the skill hover
+against `damageDetail`. `PotionDef` carries no `blurb` at all: the Alchemist
+moves the pour, the length, the charges and three things you only get while one
+is running, so a printed line is wrong for exactly the build the trade exists to
+make.
+
+**ONE FACT A LINE, and a line only where there is something to say.** No
+sentences and no punctuation at the end of one: `17 life per second`,
+`68 life over 4s`, `2/2 charges`. No charge regeneration means no
+regeneration LINE rather than a line saying there is none, so a character with
+no trade reads exactly as short as it ever did.
+
+**The HUD is pointer-TRANSPARENT and its LEAVES hand the pointer back.** A drag
+over the bars still moves the map, which is why `body.mapfull .viewport` takes
+no pointer and the list under it gives one back — and `.skillslot` and
+`.debuff` were not on that list, so three buttons and two hoverable boxes were
+visible, looked right and did nothing at all. `hudProbe` in `shots.mjs` is what
+catches it: a leaf whose own centre hit-tests to the map. A window sitting over
+one is not that.
 
 **Out of mana you are STARVED, not stopped.** The pool drains to 0, the cast
 happens anyway, and it lands for `MANA.starvedDamage` — 50% — of your damage:
@@ -1183,6 +1199,7 @@ src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
 src/sim/           the deterministic simulation
 src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
 src/potion-text.ts what a flask does for THIS build, in its own numbers
+src/skill-text.ts  the same for a skill slot: the sheet's numbers, on a hover
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill

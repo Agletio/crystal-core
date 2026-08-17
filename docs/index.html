@@ -662,7 +662,11 @@
   body.mapfull .viewport .runbar,
   body.mapfull .viewport .panel,
   body.mapfull .viewport .flasks,
-  body.mapfull .viewport .resultcard { pointer-events: auto; }
+  body.mapfull .viewport .resultcard,
+  /* The HUD stays transparent so a drag over the bars still moves the map, but
+     its LEAVES are a button you click and two boxes you hover. */
+  body.mapfull .viewport .skillslot,
+  body.mapfull .viewport .debuff { pointer-events: auto; }
   body.mapfull #run-stagewrap .stage,
   body.mapfull #run-stagewrap .fade {
     position: fixed; inset: 0; z-index: -1;

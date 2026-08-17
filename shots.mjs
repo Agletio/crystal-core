@@ -92,6 +92,24 @@ const mapProbe = () => {
   return reached ? null : 'the map takes no pointer — drag, zoom and follow are dead';
 };
 
+/** The HUD is deliberately pointer-TRANSPARENT so a drag over the bars still
+ *  moves the map — so every leaf of it that takes a click or raises a hover has
+ *  to hand the pointer BACK. One that does not is visible, looks correct, and
+ *  does nothing at all. A window sitting over one is not that: what this
+ *  catches is a leaf whose own pointer falls through to the map. */
+const hudProbe = () => {
+  if (!document.body.classList.contains('mapfull')) return null;
+  const dead = [];
+  for (const el of document.querySelectorAll('.skillslot, .debuff, .flask__use')) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    const on = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const through = !on || on.id === 'run-canvas' || !!on.closest?.('#run-stage');
+    if (through && !el.contains(on)) dead.push(el.id || el.className.split(' ')[0]);
+  }
+  return dead.length ? `falls through to the map: ${[...new Set(dead)].join(', ')}` : null;
+};
+
 /** EVERY screen the game has, as a CHECKLIST: a state here with no file at the
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
@@ -139,6 +157,8 @@ for (const vp of VIEWPORTS) {
     if (over) problems.push(`${vp.name}/${state}: .${over.who} overflows by ${over.past}px`);
     const deaf = await page.evaluate(mapProbe);
     if (deaf) problems.push(`${vp.name}/${state}: ${deaf}`);
+    const mute = await page.evaluate(hudProbe);
+    if (mute) problems.push(`${vp.name}/${state}: ${mute}`);
   };
 
   // The only screen that is a PICTURE: two worlds meeting on a front.

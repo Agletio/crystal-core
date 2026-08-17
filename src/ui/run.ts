@@ -31,6 +31,7 @@ import {
   BOSS_FIGHT,
   FACES,
   RUN_SLOTS,
+  MAIN_SLOT,
   SKILL_BY_ID,
   SKILL_SLOTS,
   THEME_BY_ID,
@@ -57,11 +58,12 @@ import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/render
 import type { Palette, Renderer } from '../render/renderer';
 import { flaskIcon } from './flaskart';
 import { potionReading, potionWorkings } from '../potion-text';
+import { skillWorkings } from '../skill-text';
 import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
-import { openCharacter, skillLines } from './character';
+import { openCharacter } from './character';
 import { drawn, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
@@ -713,9 +715,8 @@ function flaskSays(potion: PotionDef): string {
   const stats = sim?.state.hero.stats ?? characterStats(game.character);
   const max = potion.pool === 'life' ? stats.maxLife : stats.maxMana;
   const left = sim?.state.charges[potion.id] ?? potion.charges;
-  const fires = game.potions?.[potion.id] ?? potion.threshold;
   const reading = potionReading(potion, max, treeGrants(game.character));
-  return [potion.name, ...potionWorkings(potion, reading, left, fires)].join('\n');
+  return [potion.name, ...potionWorkings(potion, reading, left)].join('\n');
 }
 
 /**
@@ -1239,11 +1240,11 @@ function renderSkillIcons(): void {
     const cool = el('span', 'skillslot__cool');
     cool.id = `run-skill-cool-${slot.id}`;
     cell.append(cool);
+    // What it does for THIS character, not what the table prints: a slot's
+    // numbers move with the tree, the trade and every piece worn.
     attachTooltip(cell, () =>
       held
-        ? [`${slot.name} — ${held.name}`, held.description, ...skillLines(held).map((l) => `${l}.`)]
-            .filter(Boolean)
-            .join('\n')
+        ? [held.name, ...skillWorkings(game.character, slot.id, MAIN_SLOT)].join('\n')
         : `${slot.name}\n${slot.blurb}`
     );
     cell.onclick = () => openCharacter(slot.id);

@@ -142,6 +142,7 @@ import {
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
 import { potionReading, potionWorkings } from './potion-text';
+import { mainWorkings, slotWorkings } from './skill-text';
 import { describeStatLine } from './mod-text';
 import { KEYWORDS, KEYWORD_BY_GRANT, bannedIn, keywordsIn } from './keywords';
 import type { KeywordDef } from './keywords';
@@ -3346,6 +3347,47 @@ rule('THE SHEET — does every number on it survive being checked?');
     'and the sim asks for exactly what the sheet promised',
     `${mismatched.length} promises broken — see above`
   );
+
+  // THE HOVER IS THE SAME ANSWER. It is the one place most builds ever read a
+  // number, and it is a slot away from the sheet — so it is held to the sheet's
+  // own totals rather than being trusted to have quoted them.
+  {
+    const who = ladderCharacter(6, new Rng(88), 'fireball');
+    const detail = damageDetail(who);
+    const stats = characterStats(who);
+    const said = mainWorkings(who).join(' | ');
+    line(`  the main slot's hover: ${said.split(' | ').slice(0, 3).join(', ')}`);
+    check(
+      said.includes(`${Math.round(detail.perApplication).toLocaleString()} `) &&
+        said.includes(`${Math.round(detail.perSecond).toLocaleString()} damage per second`) &&
+        said.includes(`${Math.round(stats.critChance)}% critical chance`) &&
+        said.includes(`${stats.attackRange.toFixed(1)} tile reach`),
+      'and the skill HOVER is the sheet’s own numbers, not the table’s',
+      said
+    );
+
+    // A mover's WEB buys distance, and reading `params` would print the number
+    // it had before a single point was spent.
+    const walker = ladderCharacter(6, new Rng(88), 'fireball');
+    equipSkill(walker, 'blink');
+    const mover = SKILL_BY_ID[equippedSkill(walker, 'movement') ?? ''];
+    const bare = mover ? slotWorkings(mover, walker).join(' ') : '';
+    if (mover) {
+      const progress = skillProgress(walker, mover.id);
+      progress.allocated = [...progress.allocated, 'bk_reach_m0', 'bk_longstep'];
+    }
+    const walked = mover ? slotWorkings(mover, walker).join(' ') : '';
+    line(`  the movement slot's hover: ${bare} → ${walked} with Longstep`);
+    check(
+      !!mover &&
+        bare.includes('tiles every') &&
+        bare.includes('on its own') &&
+        walked !== bare &&
+        (treeGrants(walker).moveDistance as number) === 1.6,
+      'and a mover reads its two numbers THROUGH the web, never off the table',
+      `${bare} → ${walked}`
+    );
+  }
 }
 
 // A hit is delivered from `damageByType`, so anything that scales `damage`
@@ -4925,11 +4967,11 @@ rule('TRADE RULES — does each one actually change what the sim does?');
       `${Math.round(said.total)} said, ${Math.round(poured - regen)} poured over ${said.seconds}s`
     );
     // In the BUILD's numbers: 7% over 6s where the table says 5% over 4s.
-    const words = potionWorkings(flask, said, 2, flask.threshold).join(' ');
+    const words = potionWorkings(flask, said, 2).join(' | ');
     check(
-      words.includes(`${Math.round(said.perSecond)} life a second`) &&
-        words.includes('for 6s') &&
-        words.includes('7% of your pool'),
+      words.includes(`${Math.round(said.perSecond)} life per second`) &&
+        words.includes('over 6s') &&
+        words.includes('Heals 7% of max life per second'),
       'in this build’s own numbers rather than the table’s',
       words
     );
@@ -4938,9 +4980,9 @@ rule('TRADE RULES — does each one actually change what the sim does?');
     // of the five spokes and reads nowhere else on the screen.
     const spokes = ['alc_reaction_m0', 'alc_volatile', 'alc_condensate_m0', 'alc_still'];
     const wide = treeGrants(armed(spokes));
-    const other = potionWorkings(flask, potionReading(flask, 1000, wide), 1, 0.35).join(' ');
+    const other = potionWorkings(flask, potionReading(flask, 1000, wide), 1).join(' | ');
     check(
-      other.includes('more damage') && other.includes('comes back every'),
+      other.includes('more damage while running') && other.includes('charges per second'),
       'and says what HOLDING one is worth, and how fast a charge comes back',
       other
     );
