@@ -2168,7 +2168,81 @@ export interface BossDef {
    *  adds are pressure and the boss is the objective. `size` at a time, or
    *  twenty bodies on one tile read as two. */
   reinforce: { every: number; size: number; from: string };
+  /** Run in order and then again from the top, for as long as it lives. */
+  phases?: BossPhase[];
 }
+
+/** THE TURN: which face of the crystal you present under a boss's attention.
+ *  One at a time, free, and each is a TRADE — none is strictly better. */
+export interface FaceDef {
+  id: string;
+  name: string;
+  blurb: string;
+  move: number; // on move speed and how far a mover carries you
+  cooldown: number; // on the mover's own wait
+  taken: number; // on damage you take
+  dealt: number; // on damage you deal
+}
+
+export const FACES: FaceDef[] = [
+  {
+    id: 'quick',
+    name: 'Quick',
+    blurb: 'Half again the speed and twice the blinks. You hit like nothing.',
+    move: 1.45,
+    cooldown: 0.5,
+    taken: 1,
+    dealt: 0.7,
+  },
+  {
+    id: 'stone',
+    name: 'Stone',
+    blurb: 'Half of what lands on you. You hit like nothing.',
+    move: 0.9,
+    cooldown: 1,
+    taken: 0.5,
+    dealt: 0.7,
+  },
+  {
+    id: 'edge',
+    name: 'Edge',
+    blurb: 'Everything you have, and everything it has back.',
+    move: 1,
+    cooldown: 1,
+    taken: 1.4,
+    dealt: 1.7,
+  },
+];
+
+export const FACE_BY_ID: Record<string, FaceDef> = Object.fromEntries(
+  FACES.map((f) => [f.id, f])
+);
+/** What a run starts in, and what a hero who never turns fights in — so it is
+ *  the one an AFK build is built around, and it is the SAFE one. */
+export const FACE_DEFAULT = 'stone';
+
+/** What a boss DOES, as a cycle — a second boss is a table row. `fall` drops
+ *  circles where you stand, `reading` cannot be dodged, `split` opens it. */
+export interface BossPhase {
+  kind: 'fall' | 'reading' | 'split';
+  seconds: number;
+}
+
+export const BOSS_FIGHT = {
+  /** A circle every this many seconds, while a Fall runs. */
+  fallEvery: 1.6,
+  /** Long enough to leave at Quick and not at Edge, which IS the mechanic. */
+  fallFuse: 1.5,
+  fallRadius: 3.2,
+  /** What being caught costs, as a share of max life, and the seconds held. */
+  fallDamage: 0.28,
+  fallStun: 1.1,
+  /** A share of max life per second, climbing by `readingRamp` a second. */
+  readingPerSecond: 0.055,
+  readingRamp: 0.22,
+  /** What an open crystal costs it. */
+  splitMore: 2.2,
+} as const;
 
 export const BOSSES: BossDef[] = [
   {
@@ -2176,11 +2250,22 @@ export const BOSSES: BossDef[] = [
     name: 'The Answering',
     sprite: 'answering',
     herald: 'Something in the rock has heard its own name.',
-    life: 260,
+    life: 900, // it has to OUTLIVE its own cycle, or the phases never show
     damage: 2.4,
     size: 5, // COLOSSAL: `radius` is 0.34 of it, so separation grows too
     bounty: 30,
     reinforce: { every: 6, size: 2, from: 'husk' },
+    // A Split under a Fall is the fight asking whether you want the damage or
+    // the exit, and that question is the mechanic.
+    // Short, and round quickly: every phase has to come up early enough to
+    // matter rather than once.
+    phases: [
+      { kind: 'fall', seconds: 6 },
+      { kind: 'split', seconds: 4 },
+      { kind: 'reading', seconds: 5 },
+      { kind: 'fall', seconds: 5 },
+      { kind: 'split', seconds: 4 },
+    ],
   },
 ];
 

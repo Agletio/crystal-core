@@ -866,6 +866,15 @@ export async function createPixiRenderer(
   /** In tile units, like everything else in the world container. */
   function drawAuras(state: RunState): void {
     auraLayer.clear();
+    // THE FALL, on the floor and under the bodies: it fills as its fuse burns
+    // down, so how long you have left is the picture rather than a number.
+    for (const ring of state.circles) {
+      const gone = 1 - Math.max(0, ring.fuse) / Math.max(0.01, ring.of);
+      const colour = toHexNumber(palette.ember);
+      auraLayer.circle(ring.x, ring.y, ring.r).fill({ color: colour, alpha: 0.1 + gone * 0.28 });
+      auraLayer.circle(ring.x, ring.y, ring.r * gone).fill({ color: colour, alpha: 0.22 });
+      auraLayer.circle(ring.x, ring.y, ring.r).stroke({ color: colour, alpha: 0.9, width: 0.09 });
+    }
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;
       const def = AURA_BY_ID[m.aura];

@@ -434,6 +434,20 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
   /** Under the bodies: the field they are standing in, not a badge on them. */
   function drawAuras(state: RunState, v: View): void {
+    // The Fall, drawn as a shape because this renderer has no sprites.
+    for (const ring of state.circles) {
+      const gone = 1 - Math.max(0, ring.fuse) / Math.max(0.01, ring.of);
+      ctx.globalAlpha = 0.12 + gone * 0.3;
+      ctx.fillStyle = palette.ember;
+      ctx.beginPath();
+      ctx.arc(cx(v, ring.x), cy(v, ring.y), ring.r * v.tile, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = palette.ember;
+      ctx.lineWidth = Math.max(1, v.tile * 0.09);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;
       const def = AURA_BY_ID[m.aura];

@@ -846,6 +846,20 @@
     position: relative;
   }
   .skillslot--empty { opacity: .45; }
+  /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
+     slot because it carries a word, and lit on the face that is live. */
+  .turnbar { display: flex; gap: 2px; margin: 0 0 6px; }
+  .turnface {
+    padding: 6px 10px; min-width: 74px;
+    font-family: var(--display); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--text-dim);
+    background-color: var(--panel); background-clip: padding-box;
+    border: 12px solid transparent;
+    border-image: var(--fix-card) 12 / 12px round;
+    image-rendering: pixelated; border-radius: 0; box-shadow: none;
+  }
+  .turnface--on { color: var(--citrine); filter: brightness(1.15) drop-shadow(0 0 4px var(--citrine)); }
+  .turnface__key { color: var(--text-dim); font-size: 9px; margin-left: 5px; }
   /* A skill that is WAITING: the socket darkens from the bottom up as it comes
      back, and the seconds left sit over it. Both are written per frame, so
      nothing here is rebuilt to count down. */
@@ -1758,6 +1772,9 @@
              you cannot see the life bar of is one you are watching blind. -->
         <!-- Thin, and only what is TRUE OF YOU: the two pools you watch and
              the level they belong to. Bottom left, out of the way of the map. -->
+        <!-- THE TURN. Only up while something is listening: three faces, one
+             live, and turning is free. -->
+        <div class="turnbar" id="run-turn" hidden></div>
         <div class="hud" id="run-hud">
           <!-- What you ARE, over what you are made of: the three slots sit on
                the HUD rather than on the rail, which is for screens. -->

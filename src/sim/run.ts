@@ -9,6 +9,16 @@ import { WALL, generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from '.
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
+import type { BossPhase } from '../data';
+
+/** A circle the Fall has put on the floor, and the seconds until it lands. */
+export interface FallCircle {
+  x: number;
+  y: number;
+  r: number;
+  fuse: number;
+  of: number;
+}
 import { HERO_SCALE, heroSpriteFor } from './appearance';
 import {
   armourReduction,
@@ -30,7 +40,10 @@ import {
   AURA,
   AURA_BY_ID,
   BOSS_BY_ID,
+  BOSS_FIGHT,
   BOSS_KEYS,
+  FACE_BY_ID,
+  FACE_DEFAULT,
   MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
@@ -199,6 +212,8 @@ export interface Entity {
   effects: TimedEffect[];
   stats: CombatStats;
   cooldown: number;
+  /** Held still by something that landed on you. Only the Fall sets it. */
+  stun?: number;
   path: Vec2[];
   pathTimer: number;
   /** Committed target, held across ticks so the hero doesn't thrash. */
@@ -311,6 +326,13 @@ export interface RunState {
   /** What has to be put down before a room is yours, once it has been called
    *  up. Null everywhere else — a descent has a finale, never a boss. */
   boss: Entity | null;
+  /** Which face of the crystal is presented. Only bites while a boss is up. */
+  face: string;
+  /** What the boss is DOING, and how long is left of it. Null everywhere else. */
+  phase: BossPhase['kind'] | null;
+  phaseLeft: number;
+  /** Where the Fall has put circles, for whatever draws them. */
+  circles: FallCircle[];
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
   /** Swings that could not pay, and swings in all: the calibration is a share. */
@@ -338,6 +360,7 @@ export class RunSim {
   /** Placement retries only. Fixed, so the same map places the same way. */
   private readonly retry = new Rng(7919);
   private readonly queued: string[] = []; // presses waiting for the next tick
+  private turning: string | null = null; // a face pressed, taken at the tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -483,6 +506,10 @@ export class RunSim {
       folk: [],
       meeting: false,
       boss: null,
+      face: FACE_DEFAULT,
+      phase: null,
+      phaseLeft: 0,
+      circles: [],
       damageTaken: {},
     };
 
@@ -713,6 +740,7 @@ export class RunSim {
     // Slow, and were ticked nowhere at all until one could carry one.
     for (const m of s.monsters) if (!m.dead && m.effects.length > 0) this.stepEffects(m, dt);
 
+    this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
 
@@ -853,10 +881,105 @@ export class RunSim {
     this.state.vfx.push({ kind, points, damageType, age: 0, ttl });
   }
 
+  /** Where in the boss's cycle we are, and how long this phase has run — the
+   *  Reading climbs off the second number. */
+  private phaseAt = 0;
+  private phaseFor = 0;
+  private fallIn = 0;
+
+  /** Which face BITES: only under a boss's attention, and only while it lives.
+   *  Everywhere else a descent is exactly the descent it always was. */
+  private get turned() {
+    const boss = this.state.boss;
+    return boss && !boss.dead ? FACE_BY_ID[this.state.face] : undefined;
+  }
+
+  /**
+   * What the boss is doing to you. The cycle runs on its own clock, so a fight
+   * with nobody at the keyboard still ends — a hero who never turns simply
+   * fights in whatever face he was left in.
+   */
+  private stepFight(dt: number): void {
+    const s = this.state;
+    const boss = s.boss;
+    const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
+    const phases = def?.phases;
+    if (!boss || boss.dead || !phases?.length) {
+      s.phase = null;
+      s.circles.length = 0;
+      return;
+    }
+
+    s.phaseLeft -= dt;
+    this.phaseFor += dt;
+    if (s.phaseLeft <= 0) {
+      this.phaseAt = (this.phaseAt + 1) % phases.length;
+      s.phase = phases[this.phaseAt].kind;
+      s.phaseLeft = phases[this.phaseAt].seconds;
+      this.phaseFor = 0;
+      if (s.phase === 'fall') this.fallIn = 0;
+    }
+
+    // THE FALL: a circle where you ARE, on a fuse. Standing in one when it
+    // lands is heavy damage and being held still, which is what makes a mover
+    // the answer rather than a nicety.
+    if (s.phase === 'fall') {
+      this.fallIn -= dt;
+      if (this.fallIn <= 0) {
+        this.fallIn = BOSS_FIGHT.fallEvery;
+        s.circles.push({
+          x: s.hero.x,
+          y: s.hero.y,
+          r: BOSS_FIGHT.fallRadius,
+          fuse: BOSS_FIGHT.fallFuse,
+          of: BOSS_FIGHT.fallFuse,
+        });
+        boss.action = 'attack';
+        boss.actionTimer = ATTACK_POSE;
+      }
+    }
+
+    for (const ring of s.circles) ring.fuse -= dt;
+    for (const ring of s.circles.filter((c) => c.fuse <= 0)) {
+      if (dist(s.hero, ring) <= ring.r) {
+        this.bite(s.hero.stats.maxLife * BOSS_FIGHT.fallDamage, 'physical');
+        s.hero.stun = Math.max(s.hero.stun ?? 0, BOSS_FIGHT.fallStun);
+      }
+    }
+    s.circles = s.circles.filter((c) => c.fuse > 0);
+
+    // THE READING: it fixes on you, it cannot be dodged, and it climbs.
+    if (s.phase === 'reading') {
+      const per = BOSS_FIGHT.readingPerSecond * (1 + BOSS_FIGHT.readingRamp * this.phaseFor);
+      this.bite(s.hero.stats.maxLife * per * dt, 'fire');
+    }
+  }
+
+  /**
+   * What the ROOM does to you, rather than what something swung. It is resisted
+   * and the pool eats it exactly as an ailment's tick is, so a ward and a mana
+   * shield are worth what they are worth everywhere else — and STONE blunts it,
+   * which is the whole reason to turn.
+   */
+  private bite(raw: number, type: string): void {
+    const hero = this.state.hero;
+    if (hero.dead) return;
+    const face = this.turned;
+    let total = this.afterResistance(hero, raw * (face?.taken ?? 1), type);
+    const before = total;
+    total = this.absorb(hero, total);
+    const kept = before > 0 ? total / before : 1;
+    this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + before * kept;
+    if (total <= 0) return;
+    hero.life -= total;
+    if (hero.life <= 0) this.kill(hero);
+  }
+
   private stepHero(dt: number): void {
     const s = this.state;
     const hero = s.hero;
 
+    if (hero.stun !== undefined && hero.stun > 0) hero.stun -= dt;
     if (hero.cooldown > 0) hero.cooldown -= dt;
     if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
@@ -1027,6 +1150,13 @@ export class RunSim {
     const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
     if (!def || s.boss) return false;
 
+    if (def.phases?.length) {
+      s.phase = def.phases[0].kind;
+      s.phaseLeft = def.phases[0].seconds;
+      this.phaseAt = 0;
+      this.phaseFor = 0;
+    }
+
     const ability = this.abilityFor(MONSTERS[0]);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
     const base = monsterStats(this.set.mods, MONSTERS[0], ability);
@@ -1163,6 +1293,7 @@ export class RunSim {
     const commonest = pool.reduce((a, b) => (b.weight > a.weight ? b : a));
 
     // One ability for the whole encounter: what comes up the hole is one thing.
+
     const ability = this.abilityFor(MONSTERS[0]);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
     const base = monsterStats(this.set.mods, MONSTERS[0], ability);
@@ -1428,7 +1559,9 @@ export class RunSim {
     const startX = e.x;
     const startY = e.y;
 
-    let remaining = e.stats.moveSpeed * dt * pace;
+    // Held still by a Fall: the stun is what makes a mover the answer.
+    if (e.kind === 'hero' && (e.stun ?? 0) > 0) return false;
+    let remaining = e.stats.moveSpeed * dt * pace * (e.kind === 'hero' ? this.turned?.move ?? 1 : 1);
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];
       const dx = wp.x - e.x;
@@ -1491,7 +1624,7 @@ export class RunSim {
     hero.path = hero.path.slice(steps);
     this.state.blinks++;
     const sooner = (this.grants.moveCooldown as number) ?? 1;
-    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner;
+    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner * (this.turned?.cooldown ?? 1);
 
     if (jumps) this.land(hero); // a step arrives; only a jump LANDS
     const back = (this.grants.moveMana as number) ?? 0;
@@ -1521,6 +1654,12 @@ export class RunSim {
     this.queued.push(id);
   }
 
+  /** Turning the crystal. QUEUED like a potion press, so a seed still replays
+   *  — and free, because a bar that charges you is a third resource. */
+  turn(face: string): void {
+    if (FACE_BY_ID[face]) this.turning = face;
+  }
+
   /** What a potion is waiting for, whoever is asking. */
   potionThreshold(id: string): number {
     return this.options.potionThresholds?.[id] ?? POTION_BY_ID[id]?.threshold ?? 0;
@@ -1548,6 +1687,10 @@ export class RunSim {
     this.stepRecharge(dt);
     for (const id of this.queued) this.drink(id);
     this.queued.length = 0;
+    if (this.turning) {
+      this.state.face = this.turning;
+      this.turning = null;
+    }
 
     for (const potion of POTIONS) {
       const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
@@ -1717,6 +1860,14 @@ export class RunSim {
     const crit = this.useCrit ?? (own > 0 && this.rng.chance(own / 100));
 
     let scale = multiplier * this.rng.float(0.9, 1.1);
+    // THE TURN: what you present multiplies what you deal and what lands on
+    // you, and an open crystal is worth more than either.
+    const turned = this.turned;
+    if (turned) {
+      if (attacker.kind === 'hero') scale *= turned.dealt;
+      if (defender.kind === 'hero') scale *= turned.taken;
+      if (defender === s.boss && s.phase === 'split') scale *= BOSS_FIGHT.splitMore;
+    }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);

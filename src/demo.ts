@@ -34,6 +34,7 @@ import {
   BOSS_BY_ID,
   BOSS_KEYS,
   BOSS_KEY_BY_ID,
+  FACE_DEFAULT,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -6451,6 +6452,53 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           );
         }
       }
+      // --- THE TURN ------------------------------------------------------
+      // A boss is the one place automation stops, so what is checked here is
+      // that the fight WORKS with nobody at the keyboard and that turning is
+      // worth doing — never that a particular face wins.
+      {
+        const face = (id: string) => {
+          const room = new RunSim([], ladderCharacter(4, new Rng(31), 'strike'), new Rng(77), {
+            scene: INTRO.bossRoom,
+          });
+          room.beginEncounter();
+          room.turn(id);
+          runToCompletion(room, 600);
+          return room;
+        };
+        const idle = face(FACE_DEFAULT);
+        check(
+          idle.state.status !== 'running',
+          'a boss fight ends with nobody turning at all — AFK is a build, not a hang',
+          `${idle.state.status} after ${idle.state.elapsed.toFixed(0)}s`
+        );
+        // A character that survives long enough for the MACHINERY to show:
+        // what is under test is the cycle running, never how hard it hits.
+        const phases = new Set<string>();
+        const watch = new RunSim([], ladderCharacter(5, new Rng(31), 'strike'), new Rng(77), {
+          scene: INTRO.bossRoom,
+        });
+        watch.beginEncounter();
+        let sawCircle = false;
+        for (let n = 0; n < 2400 && watch.state.status === 'running'; n++) {
+          watch.step(TICK);
+          if (watch.state.phase) phases.add(watch.state.phase);
+          if (watch.state.circles.length > 0) sawCircle = true;
+        }
+        check(
+          phases.size === 3 && sawCircle,
+          'and it runs all three phases, and the Fall puts circles on the floor',
+          `${[...phases].join(', ') || 'none'}${sawCircle ? '' : ', no circles'}`
+        );
+        const tough = face('stone');
+        const sharp = face('edge');
+        gauge(
+          `turning matters: Stone leaves ${tough.state.hero.life.toFixed(0)} life ` +
+            `and Edge ${sharp.state.hero.life.toFixed(0)}, over ` +
+            `${tough.state.elapsed.toFixed(0)}s and ${sharp.state.elapsed.toFixed(0)}s`
+        );
+      }
+
       // Balance, so it prints and never fails: how long the thing lives and
       // how many smaller ones turned up while it did.
       gauge(`the reading room — wanted: the adds arrive at all`);

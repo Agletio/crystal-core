@@ -28,6 +28,7 @@ import {
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
+  FACES,
   RUN_SLOTS,
   SKILL_BY_ID,
   SKILL_SLOTS,
@@ -758,6 +759,7 @@ function renderReadout(): void {
     `${Math.min(100, (game.character.xp / need) * 100)}%`;
 
   syncCooldowns();
+  syncTurn();
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
@@ -1236,6 +1238,36 @@ function syncCooldowns(): void {
     if (!mine) continue;
     face.style.setProperty('--cool', `${Math.min(100, (wait!.left / wait!.of) * 100)}%`);
     face.textContent = wait!.left.toFixed(1);
+  }
+}
+
+/**
+ * THE TURN, built once per fight and lit per frame. Up only while something is
+ * listening — outside a boss room a face bites nothing, so a bar for it would
+ * be three buttons that do not do anything.
+ */
+function syncTurn(): void {
+  const host = $('run-turn');
+  const boss = sim?.state.boss;
+  const live = !!boss && !boss.dead;
+  host.hidden = !live;
+  if (!live) return;
+  if (host.childElementCount !== FACES.length) {
+    host.replaceChildren();
+    FACES.forEach((face, i) => {
+      const cell = el('button', 'mini turnface') as HTMLButtonElement;
+      cell.id = `run-face-${face.id}`;
+      cell.textContent = face.name;
+      cell.append(el('span', 'turnface__key', String(i + 1)));
+      attachTooltip(cell, () => `${face.name}\n${face.blurb}`);
+      cell.onclick = () => sim?.turn(face.id);
+      host.append(cell);
+    });
+  }
+  for (const face of FACES) {
+    document
+      .getElementById(`run-face-${face.id}`)
+      ?.classList.toggle('turnface--on', sim?.state.face === face.id);
   }
 }
 
