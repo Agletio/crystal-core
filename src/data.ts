@@ -1433,9 +1433,9 @@ export const LAMPWRIGHT = {
  *  scheduled rather than earned. */
 export const INTRO = {
   /** What the first crystal is paid for, with a notable taken in the ACTIVE
-   *  skill's tree: the cheapest notable in every tree is 3 points away, so 3
-   *  is the first level that can afford one. */
-  crystalSkillLevel: 3,
+   *  skill's tree: the cheapest is 4 points away — a way off the centre, a
+   *  step onto the ring, and the short chain there. */
+  crystalSkillLevel: 4,
   /** Forced onto that crystal by the first Shard of Making spent on it, at its
    *  cheapest tier, so a first crystal can never be what walls the game. */
   scriptedMod: 'layout_maze',

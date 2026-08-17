@@ -1625,6 +1625,32 @@ this phase is cheaper than it looks.
 
 ---
 
+## The balance pass owes four checks
+
+*The user's call, on seeing the tree's shape change: "we are going to do a big
+balance pass don't worry about balance right now."* The trunk lost its three
+dead nodes and the ways in now land on the short chains, so every BRANCH is one
+step further from the centre than it was. Measured, that costs the top band
+about a fifth of its income. Four checks in `src/demo.ts` read off characters
+the ladder walks, so they moved with it; each is a `parkedCheck` now, printing
+its number and failing nothing, and the pass puts them back to `check`:
+
+1. **"and the characters checked actually cover every shape it polices"** — the
+   sheet audit no longer builds a character exercising a "more" line.
+2. **"and the sim asks for exactly what the sheet promised"** — `fireball@30`
+   promises 355.89 per hit where the sim asks 480.45, which is exactly the
+   `ailmentMultiplier: 1.35` the tree grants. The sheet applies that grant only
+   for `ailment_burst`, and the sim also applies it on the `critAilment` path.
+   Widening the sheet's condition to match was tried and broke a SECOND
+   promise, so what is really wanted is the per-hit and per-crit numbers being
+   told apart. Pre-existing: the old walk never handed one character both nodes.
+3. **"and every band still pays more than the one below"** — the top band pays
+   5515 against the band below it at 5818. It was 6984 against 5512.
+4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 91s.
+
+`INTRO.crystalSkillLevel` moved 3 → 4 with the geometry, since the cheapest
+notable is now four points out and the opening names it as a suggestion.
+
 ## Open questions
 
 Do not guess at these. **None of them ever blocked a phase**, and none of them

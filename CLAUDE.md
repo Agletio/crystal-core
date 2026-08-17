@@ -1160,6 +1160,16 @@ quietly invent a second word for Pierce.
 
 ## Adding a skill tree
 
+**The trunk is THREE ways in and a ring of twelve.** Each way off the centre
+opens the two short SPURS either side of it — never an anchor, so a way in
+lands on a small chain and a branch is one step further round the ring — and
+nothing links the three to each other, because the centre already does. A ring
+of six in there was three nodes nobody would ever take, sitting between the
+ways in and reaching nothing the ways in did not. `spread` keeps nodes apart by
+what their ART spans (`ART_R`), not by one number for every pair: a frame is
+drawn 2.3 radii across, so two notables at the old 0.92 overlapped by a third
+of a node.
+
 A tree is a `TreeSpec` in `src/trees/` and a line in `BUILT_TREES`. Six
 branches, six trunk notables — `buildTree` refuses anything else rather than
 dropping the extras.

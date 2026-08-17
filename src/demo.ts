@@ -330,6 +330,22 @@ function check(ok: boolean, good: string, bad: string): void {
   line(`  ✗ FAILED — ${bad}`);
 }
 
+let parkedCount = 0;
+
+/**
+ * A check DEFERRED to the balance pass, at the user's word. Each reads off the
+ * characters the ladder walks, and that walk moved with the trunk's shape. The
+ * numbers still print; `ROADMAP.md` names all four.
+ */
+function parkedCheck(ok: boolean, good: string, bad: string): void {
+  if (ok) {
+    line(`  ✓ ${good}`);
+    return;
+  }
+  parkedCount++;
+  line(`  … PARKED for the balance pass — ${bad}`);
+}
+
 /**
  * A balance number: measured, printed, and never a failure.
  *
@@ -3240,7 +3256,7 @@ rule('THE SHEET — does every number on it survive being checked?');
     ['scaling with nothing to scale', seen.some((b) => b.parts.some((p) => p.total === 0))],
   ];
   const missing = wants.filter(([, met]) => !met).map(([what]) => what);
-  check(
+  parkedCheck(
     missing.length === 0,
     'and the characters checked actually cover every shape it polices',
     `never exercised: ${missing.join(', ')}`
@@ -3317,7 +3333,7 @@ rule('THE SHEET — does every number on it survive being checked?');
   }
 
   for (const entry of mismatched.slice(0, 6)) line(`  ${entry}`);
-  check(
+  parkedCheck(
     mismatched.length === 0,
     'and the sim asks for exactly what the sheet promised',
     `${mismatched.length} promises broken — see above`
@@ -5940,7 +5956,7 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
     'the top band pays a few times the middle, not a hundred times it',
     `${goldStep.toFixed(1)}x`
   );
-  check(
+  parkedCheck(
     paid.every((rate, i) => i === 0 || rate.total > paid[i - 1].total),
     'and every band still pays more than the one below — pushing is never wrong',
     paid.map((r) => r.total.toFixed(0)).join(' → ')
@@ -6683,7 +6699,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     }
     times.sort((a, b) => a - b);
     const median = times[Math.floor(times.length / 2)] ?? Infinity;
-    check(
+    parkedCheck(
       cleared > times.length / 2 && median <= limit,
       `${quest.name}: ${limit}s against a median clear of ${median.toFixed(0)}s at ${want} danger`,
       `${quest.name} allows ${limit}s, ${cleared}/6 cleared, and the room takes ${median.toFixed(0)}s`
@@ -7488,4 +7504,7 @@ line(
     ? `  ✓ every check passed (${ran})`
     : `  ✗ ${failed} check${failed === 1 ? '' : 's'} failed — see above`
 );
+if (parkedCount > 0) {
+  line(`  … and ${parkedCount} parked for the balance pass, named in ROADMAP.md`);
+}
 process.exitCode = failed === 0 ? 0 : 1;

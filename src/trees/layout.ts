@@ -15,19 +15,20 @@ import type { SkillNodeDef } from './node';
 import type { BuiltTree, TreeSpec } from './spec';
 
 const TRUNK = [
-  { count: 6, r: 1.35 },
+  // Clear of the HUB's own art, which `spread` cannot see: the middle is drawn
+  // about a unit across and three ways in at 1.35 sat on its frame.
+  { count: 3, r: 1.75 },
   { count: 12, r: 2.7 },
 ];
-/** Ways off the centre. Fewer than the ring holds, so ring one is a walk too. */
-const TRUNK_WAYS_IN = 3;
 /** Trunk slots a branch hangs off, and the ones a trunk spur grows from. */
 const ANCHORS = [0, 2, 4, 6, 8, 10];
 const SPUR_SLOTS = [1, 3, 5, 7, 9, 11];
 const SPUR_R = [3.5, 4.4];
 
 const ENABLER_R = 3.8;
-/** How far out each step along a twig goes. */
-const TWIG_STEP = 1.05;
+/** How far out each step along a twig goes. Wide enough that a twig ending in
+ *  a notable does not have to be shoved apart by `spread` to fit its art. */
+const TWIG_STEP = 1.15;
 /** How wide a branch spreads, as a fraction of the circle. */
 const BRANCH_ARC = 0.125;
 
@@ -47,10 +48,22 @@ const jitter = (a: number, b: number, salt: number): number => {
   return h - Math.floor(h);
 };
 
-/** A node must sit this far from any other, and this far off any line it does
- * not end. The second is the larger: a line under a stud reads as a link to it. */
-const APART = 0.92;
-const CLEAR = 0.55;
+/**
+ * How far a node's ART reaches from its own centre, in web units.
+ *
+ * NOT its radius: a frame is drawn 2.3 radii ACROSS, and a radius is
+ * `NODE_R`/46 units, so a notable's picture reaches 0.63 where the number the
+ * geometry used to keep apart was 0.92 for any pair. Two notables at 0.92
+ * overlap by a third of a node, which is what put touching pictures on the
+ * twigs. Two MINORS still want 0.92, so nothing that reads well moves.
+ */
+const ART_R = { minor: 0.38, notable: 0.63 };
+/** Ground between two pictures, and between a picture and a line under it. */
+const GAP = 0.16;
+const LINE_GAP = 0.08;
+
+const apartFor = (a: SkillNodeDef, b: SkillNodeDef): number =>
+  ART_R[a.kind] + ART_R[b.kind] + GAP;
 
 /**
  * Push apart anything that ended up on top of something else.
@@ -72,7 +85,7 @@ function spread(nodes: SkillNodeDef[], links: Map<string, string[]>): SkillNodeD
     }
   }
 
-  for (let pass = 0; pass < 60; pass++) {
+  for (let pass = 0; pass < 120; pass++) {
     let moved = false;
 
     for (let i = 0; i < nodes.length; i++) {
@@ -82,11 +95,12 @@ function spread(nodes: SkillNodeDef[], links: Map<string, string[]>): SkillNodeD
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.hypot(dx, dy);
-        if (d >= APART) continue;
+        const want = apartFor(a, b);
+        if (d >= want) continue;
         moved = true;
         // Straight away from each other, half the shortfall each, and never
         // toward the middle — the rings have to stay rings.
-        const push = (APART - Math.max(d, 1e-3)) / 2;
+        const push = (want - Math.max(d, 1e-3)) / 2;
         const ux = d < 1e-3 ? 1 : dx / d;
         const uy = d < 1e-3 ? 0 : dy / d;
         a.x -= ux * push;
@@ -109,9 +123,10 @@ function spread(nodes: SkillNodeDef[], links: Map<string, string[]>): SkillNodeD
         const footX = a.x + t * dx;
         const footY = a.y + t * dy;
         const d = Math.hypot(n.x - footX, n.y - footY);
-        if (d >= CLEAR) continue;
+        const clear = ART_R[n.kind] + LINE_GAP;
+        if (d >= clear) continue;
         moved = true;
-        const push = CLEAR - Math.max(d, 1e-3);
+        const push = clear - Math.max(d, 1e-3);
         const len = Math.sqrt(span);
         const ux = d < 1e-3 ? -dy / len : (n.x - footX) / d;
         const uy = d < 1e-3 ? dx / len : (n.y - footY) / d;
@@ -150,17 +165,20 @@ export function buildTree(spec: TreeSpec): BuiltTree {
   };
 
   // --- the trunk ------------------------------------------------------------
-  for (let ring = 1; ring <= TRUNK.length; ring++) {
-    const { count } = TRUNK[ring - 1];
-    for (let i = 0; i < count; i++) join(trunkAt(ring, i), trunkAt(ring, (i + 1) % count));
-  }
-  for (let w = 0; w < TRUNK_WAYS_IN; w++) {
-    join(trunkAt(1, Math.round((w / TRUNK_WAYS_IN) * TRUNK[0].count)), CENTRE);
-  }
-  // Turned half a gap off the ways in, so leaving ring one is a walk as well.
-  for (let s = 0; s < TRUNK[0].count; s += 2) {
-    const outer = Math.round(((s + 1) / TRUNK[0].count) * TRUNK[1].count);
-    join(trunkAt(2, outer % TRUNK[1].count), trunkAt(1, s));
+  //
+  // Three ways off the centre, and each opens the TWO short spurs either side
+  // of it. A ring of six in here was three nodes nobody would ever take: they
+  // sat between the ways in and led nowhere the ways in did not already reach.
+  // Nothing links the three to each other, because the centre already does.
+  const OUTER = TRUNK[1].count;
+  for (let i = 0; i < OUTER; i++) join(trunkAt(2, i), trunkAt(2, (i + 1) % OUTER));
+  for (let i = 0; i < TRUNK[0].count; i++) {
+    join(trunkAt(1, i), CENTRE);
+    // The spur slots either side, never the anchors: a way in lands on a short
+    // chain, and a branch is one step further round the ring.
+    const facing = Math.round((i / TRUNK[0].count) * OUTER);
+    join(trunkAt(2, (facing + OUTER - 1) % OUTER), trunkAt(1, i));
+    join(trunkAt(2, (facing + 1) % OUTER), trunkAt(1, i));
   }
 
   for (let ring = 1; ring <= TRUNK.length; ring++) {
