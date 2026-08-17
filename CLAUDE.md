@@ -850,8 +850,17 @@ on the element. Pan and zoom both sit at the vsync floor now. Rebuilding it per 
 stutter, and it also meant nothing off screen was built, so what was DRAWN was
 a DOM question rather than a camera one. Node art is drawn SMOOTH and not
 `pixelated`, alone among the game's art: 96px pieces are minified at every
-zoom the web allows, and nearest sampling dropped and doubled their own dark
-outline rows, which read as black lines across a node at some zooms only.
+zoom the web allows.
+
+**And a web's icons are BAKED to bitmaps.** `bakedArt` in `src/ui/webicons.ts`
+rasterises a `GENERATED_ICONS` row to a PNG data URI once, through a canvas,
+and both webs draw one `<image>` where an icon is otherwise a `<rect>` per RUN
+of pixels — 395 of them for the average node glyph, some 44,000 across one
+tree. Separate shapes scaled by whatever the zoom happens to be stop meeting
+at their seams, and the ground shows through as black lines that come and go
+as you zoom; a run that rounds to nothing takes a stripe of the picture with
+it. A bitmap has no seams to open. jsdom has no canvas, so the paths stay as
+the fallback and the headless suite still draws.
 
 ## What a skill costs
 

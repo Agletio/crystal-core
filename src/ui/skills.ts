@@ -37,7 +37,7 @@ import {
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
 import { chain, frame, mount, svgEl } from './webart';
-import { nodeGlyph } from './webicons';
+import { bakedArt, nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
@@ -505,7 +505,10 @@ function renderWeb(): void {
   const hub = svgEl('g', { class: 'web__centre' });
   const hubR = HUB_R * (BUILD / 46);
   for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
-  const art = skillIcon(skillId, hubR * 1.25);
+  // Baked like the node glyphs: the middle is the biggest picture in the web
+  // and would open the same seams.
+  const art =
+    bakedArt(`sk_${skillId}`, hubR * 1.25, 'web__node__img') ?? skillIcon(skillId, hubR * 1.25);
   art.setAttribute('x', String(middle.x - hubR * 0.62));
   art.setAttribute('y', String(middle.y - hubR * 0.62));
   art.setAttribute('width', String(hubR * 1.25));
