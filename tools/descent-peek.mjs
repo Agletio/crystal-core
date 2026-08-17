@@ -80,6 +80,8 @@ await page.waitForTimeout(250);
 await makeCharacter();
 // The dev kit, so a descent is dressed at a real run power rather than at the
 // bare Fissure's, and then down the hole. The wait covers the handover.
+await page.evaluate(() => document.getElementById('open-dev')?.click());
+await page.waitForTimeout(150);
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.waitForTimeout(400);
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());

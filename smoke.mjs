@@ -159,11 +159,25 @@ assert(
   'the Fissure consumes nothing',
   `${dockItems().length} vs ${beforeFissure}`
 );
+// The dev MENU: a way to reach a state the game only reaches by playing to
+// it. Every room in the game has a button, because getting one to come up
+// otherwise is a cleared descent per look.
+$('open-dev').click();
+assert($('dev').hidden === false, 'the rail opens a dev menu rather than wiping on the spot');
+assert(
+  all('#dev-body .devbtn').length >= 5,
+  'with a button per room, per rung of gear, and the kit',
+  String(all('#dev-body .devbtn').length)
+);
+for (const id of ['dev-room-workshop', 'dev-room-answering_hall', 'dev-gear-3', 'dev-kit']) {
+  assert($(id) !== null, `and ${id} is one of them`);
+}
 $('dev-kit').click();
 $('confirm-yes').click();
 await new Promise((r) => setTimeout(r, 0));
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('craft').hidden === false, 'a stocked game opens on the bench');
+assert($('dev').hidden === true, 'and the menu shuts behind it');
 
 // --- the flasks --------------------------------------------------------------
 // The one thing a player DOES in a fight, and the first input a descent has
@@ -2258,7 +2272,8 @@ assert(
 {
   // The slot tests above ended on a NEW game, so there is nothing in the dock
   // to search. Restock — this is the last check in the file.
-  $('dev-kit').click();
+  $('open-dev').click();
+$('dev-kit').click();
   $('confirm-yes').click();
   await new Promise((r) => setTimeout(r, 0));
 

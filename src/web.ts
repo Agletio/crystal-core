@@ -40,6 +40,7 @@ import {
   onRunFocused,
   skipToGift,
   refreshRunPanels,
+  enterRoomNow,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initPick, maybeShowPick } from './ui/pick';
@@ -69,6 +70,7 @@ import {
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initSettings, openSettings, closeSettings, isSettingsOpen } from './ui/settings';
+import { initDev, openDev, closeDev, isDevOpen } from './ui/dev';
 import { initKeys } from './ui/keys';
 import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
@@ -141,13 +143,7 @@ document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
 document.getElementById('open-settings')!.addEventListener('click', openSettings);
-// The dev kit wipes what you are playing, and sits in a row you click all day.
-const guard = (id: string, title: string, mode: StartMode) =>
-  document.getElementById(id)!.addEventListener('click', async () => {
-    if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
-  });
-
-guard('dev-kit', 'Restart with the dev kit?', 'dev');
+document.getElementById('open-dev')!.addEventListener('click', openDev);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
@@ -193,6 +189,11 @@ mountFixtures();
 initInventory(game);
 initHistory();
 initSettings();
+initDev(game, {
+  enterRoom: enterRoomNow,
+  restock: () => restart('dev'),
+  refresh: refreshRunPanels,
+});
 initConfirm();
 // A loaded backup replaces everything, so every screen has to look again.
 initSaveData(
@@ -339,6 +340,7 @@ const SCREENS: Record<
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
   settings: { el: 'settings', open: openSettings, close: closeSettings, isOpen: isSettingsOpen },
+  dev: { el: 'dev', open: openDev, close: closeDev, isOpen: isDevOpen },
 };
 
 initWindows(Object.fromEntries(Object.entries(SCREENS).map(([id, s]) => [id, s.el])));

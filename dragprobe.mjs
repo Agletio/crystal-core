@@ -61,6 +61,8 @@ await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
 await page.waitForTimeout(250);
 await makeCharacter();
+await page.evaluate(() => document.getElementById('open-dev')?.click());
+await page.waitForTimeout(150);
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(600);

@@ -1110,7 +1110,7 @@ several open, a hand-written order shuts the one you are not looking at.
 
 **The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
 `src/ui/screenicons.ts`), bottom right on the floor: the screens are ONE row
-of touching 34px sockets and the utility trio — Fill, Hide, the dev kit — is
+of touching 34px sockets and the utility trio — Fill, Hide, the dev menu — is
 its own small plate above, which is what keeps the row clear of the flask bar
 at 1280 with the corner never lifted. The button IDS are what every harness
 names, so they outlive any rearrangement of it. It draws over every window and
@@ -1120,6 +1120,16 @@ Hide parks every panel and survives its own press AND a reload —
 `GameState.parked` is a preference like a keybind — and Fill asks the browser
 for the screen. Settings (`open-settings`) opens an empty framed shell on
 purpose: the place exists before there is anything to set.
+
+**The DEV MENU is a way to reach a state the game only reaches by PLAYING to
+it**, and nothing in it is a rule: every button drives the same entry point the
+game drives. A room per `SceneDef`, because one is SCHEDULED at the end of a
+cleared descent and that is minutes of play for a look at it —
+`enterRoomNow` in `src/ui/run.ts` is the one way in and calls the schedule's own
+`enterScene`. A rung per row of the balance grid, which wears `ladderCharacter`
+at that band and keeps your name and your trade, since a trade is the half of a
+build worth testing; `heal` then replays the attributes and the trade walk
+against the new level. And the old dev kit, which wipes.
 
 **The map is the GROUND, not a screen.** The dock resolves
 `override ?? screenHandler ?? base`; the run sets `base` on every phase change
@@ -1212,6 +1222,7 @@ src/skill-text.ts  the same for a skill slot: the sheet's numbers, on a hover
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill
+src/ui/dev.ts      the dev menu: any room now, any rung of gear now
 tools/boss-peek.mjs  THE ANSWERING, a whole cycle of it, off the bundle
 tools/theme-check.mjs  every colour a token, and every token defined
 src/ui/            one module per screen

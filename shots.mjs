@@ -418,6 +418,8 @@ for (const vp of VIEWPORTS) {
   // The bench, stocked. It is the widest thing in the game — a crystals
   // column, a worn column and the item — and the only screen where three
   // panels have to fit side by side.
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(150);
   await page.evaluate(() => document.getElementById('dev-kit')?.click());
   await page.waitForTimeout(250);
   // One of the two things that still stop you, and it paints a scrim.

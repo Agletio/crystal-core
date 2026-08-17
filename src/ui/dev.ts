@@ -1,0 +1,149 @@
+/**
+ * The dev menu. Not a screen the game has — a way to reach a state the game
+ * only reaches by playing to it, because a room is SCHEDULED at the end of a
+ * cleared descent and a boss wants gear nobody has at level 1.
+ *
+ * Nothing here is a rule: every button drives the same entry point the game
+ * drives, so a room entered from here is the room, not a preview of one.
+ */
+import { Rng } from '../rng';
+import { SCENES } from '../scenes';
+import { BOSS_BY_ID } from '../data';
+import { ladderCharacter } from '../sim/loadout';
+import { mainSkillId } from '../sim/character';
+import { heal } from '../game/save';
+import type { GameState } from '../game/state';
+import { ask } from './confirm';
+import { note } from './history';
+
+const $ = (id: string) => document.getElementById(id)!;
+
+function el(tag: string, cls?: string, text?: string): HTMLElement {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+let game: GameState;
+let hooks: DevHooks;
+
+export interface DevHooks {
+  /** Drops into a room now, by scene id. */
+  enterRoom: (id: string) => boolean;
+  /** Wipes and restocks — what the rail button used to do on its own. */
+  restock: () => void;
+  /** Everything that reads the character, after this menu has moved it. */
+  refresh: () => void;
+}
+
+/**
+ * The three rungs the balance grid measures the boss against, in its own
+ * words: what you meet him with, what a rung of grinding buys, and what the
+ * tier above him drops. The number is a `DROP_BANDS` index.
+ */
+const RUNGS: { band: number; name: string; what: string }[] = [
+  { band: 3, name: 'Met', what: 'what you have when you first meet him' },
+  { band: 5, name: 'Ground', what: 'a good deal more grinding' },
+  { band: 6, name: 'Returned', what: 'the tier above him, come back for it' },
+];
+
+/**
+ * The ladder's own character at a rung, keeping WHO you are: the name and the
+ * trade survive, since a trade is the half of a build this is meant to test.
+ * `heal` replays the attributes and the trade walk against the new level, so a
+ * rung that funds fewer points hands them back rather than stranding them.
+ */
+function outfit(band: number): void {
+  const was = game.character;
+  const next = ladderCharacter(band, new Rng(1), mainSkillId(was));
+  next.name = was.name;
+  next.trade = was.trade;
+  next.tradeAllocated = [...(was.tradeAllocated ?? [])];
+  // A mover and the passive are a CHOICE rather than gear, so they stay.
+  next.equipped = { ...was.equipped, ...next.equipped };
+  game.character = next;
+  heal(game);
+  hooks.refresh();
+  note(`Dev: wearing the ladder at band ${band} — level ${next.level}.`);
+}
+
+function render(): void {
+  const host = $('dev-body');
+  host.replaceChildren();
+
+  const group = (title: string, why: string): HTMLElement => {
+    const box = el('div', 'devgroup');
+    box.append(el('h3', 'devgroup__title', title));
+    box.append(el('p', 'devgroup__why', why));
+    const row = el('div', 'devgroup__row');
+    box.append(row);
+    host.append(box);
+    return row;
+  };
+
+  const rooms = group(
+    'Rooms',
+    'A room is normally scheduled at the end of a cleared descent. These go straight there, with whatever you are wearing.'
+  );
+  for (const scene of SCENES) {
+    const boss = scene.encounter ? BOSS_BY_ID[scene.encounter] : null;
+    const button = el('button', 'mini devbtn') as HTMLButtonElement;
+    button.id = `dev-room-${scene.id}`;
+    button.append(el('span', 'devbtn__name', scene.name));
+    button.append(el('span', 'devbtn__what', boss ? `fight — ${boss.name}` : 'no fight'));
+    button.onclick = () => {
+      if (!hooks.enterRoom(scene.id)) return;
+      close();
+    };
+    rooms.append(button);
+  }
+
+  const gear = group(
+    'Gear',
+    'The characters the balance grid measures the boss against — a whole loadout, level, attributes and tree, at that rung of the drop ladder.'
+  );
+  for (const rung of RUNGS) {
+    const button = el('button', 'mini devbtn') as HTMLButtonElement;
+    button.id = `dev-gear-${rung.band}`;
+    button.append(el('span', 'devbtn__name', rung.name));
+    button.append(el('span', 'devbtn__what', rung.what));
+    button.onclick = () => outfit(rung.band);
+    gear.append(button);
+  }
+
+  const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
+  const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;
+  kit.id = 'dev-kit';
+  kit.append(el('span', 'devbtn__name', 'Restart with the dev kit'));
+  kit.append(el('span', 'devbtn__what', 'every crystal, every key, a rolled set'));
+  kit.onclick = async () => {
+    if (!(await ask({ title: 'Restart with the dev kit?', text: 'You lose everything.', confirm: 'Wipe' }))) {
+      return;
+    }
+    close();
+    hooks.restock();
+  };
+  over.append(kit);
+}
+
+export function isDevOpen(): boolean {
+  return !$('dev').hidden;
+}
+
+export function openDev(): void {
+  render();
+  $('dev').hidden = false;
+}
+
+export function closeDev(): void {
+  $('dev').hidden = true;
+}
+
+const close = closeDev;
+
+export function initDev(state: GameState, on: DevHooks): void {
+  game = state;
+  hooks = on;
+  ($('dev-close') as HTMLButtonElement).onclick = closeDev;
+}

@@ -427,9 +427,11 @@
   /* The bottom-right stack: skills, then the rail beneath them. One column, so
      a rail wrapping to a third row pushes the skills UP rather than under. */
   /* Over every window and every scrim: the rail is how a screen is opened and
-     shut, so it is the one thing that may never end up underneath one. */
+     shut, so it is the one thing that may never end up underneath one. The
+     window band is `Z_BASE + one per REGISTERED screen`, so these three climb
+     with the screen COUNT — at 32 the thirteenth window tied the scrim. */
   .corner {
-    position: fixed; right: 16px; bottom: 22px; z-index: 34;
+    position: fixed; right: 16px; bottom: 22px; z-index: 44;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
   /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
@@ -457,6 +459,16 @@
   .railbtn:hover:not(:disabled), .railbtn:focus-visible { color: var(--citrine); filter: brightness(1.15); }
   .railbtn:active:not(:disabled) { box-shadow: none; }
   .railbtn--dev { opacity: .7; }
+  /* Not a screen the game has: a way to reach a state you would have to play
+     to. Wide buttons, because each one says what it does under its name. */
+  .devgroup { margin-bottom: 14px; }
+  .devgroup__title { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .devgroup__why { margin: 2px 0 7px; font-size: 10px; color: var(--text-dim); max-width: 62ch; }
+  .devgroup__row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .devbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 6px 10px; }
+  .devbtn__name { font-size: 11px; }
+  .devbtn__what { font-size: 9px; color: var(--text-dim); }
+  .devbtn--warn .devbtn__name { color: var(--ember); }
   .sicon { display: block; image-rendering: pixelated; }
   .sicon__ink { fill: currentColor; }
   .sicon__lit { fill: var(--citrine); }
@@ -1329,7 +1341,7 @@
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
      the whole window band, since raising one on focus would otherwise let a
      screen you touched earlier paint through the scrim. Still under the rail. */
-  .modal--stop { background: rgba(6,4,2,.86); pointer-events: auto; z-index: 32; }
+  .modal--stop { background: rgba(6,4,2,.86); pointer-events: auto; z-index: 42; }
   .modal__card { pointer-events: auto; }
   /* A window is dragged by its HEAD, and the drag is a delta on top of whatever
      the layout decided — so a window nobody moves is exactly where it was, and
@@ -1347,7 +1359,7 @@
      transform hangs it above the head rather than on it. Over every window and
      every scrim. TWO classes on the card, because `.modal__card` is one and
      sets a width later in this same sheet. */
-  .speech, .modal--speech { z-index: 40; }
+  .speech, .modal--speech { z-index: 46; }
   .speech {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
@@ -1710,7 +1722,7 @@
     <div class="rail__row rail__row--tools">
       <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
       <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
-      <button class="railbtn railbtn--dev" id="dev-kit">Dev kit</button>
+      <button class="railbtn railbtn--dev" id="open-dev">Dev menu</button>
     </div>
     <div class="rail__row rail__row--main">
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
@@ -2234,6 +2246,18 @@
 </div>
 <!-- An empty shell on purpose: the button and the window exist so there is a
      place when there is something to put in it. -->
+<div class="modal" id="dev" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Dev menu</h2>
+      <div class="seedbar">
+        <button class="mini" id="dev-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body" id="dev-body"></div>
+  </div>
+</div>
+
 <div class="modal" id="settings" hidden>
   <div class="modal__card">
     <div class="modal__head">

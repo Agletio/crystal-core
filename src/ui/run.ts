@@ -1220,6 +1220,28 @@ export function refreshRunPanels(): void {
   renderSkillIcons();
 }
 
+/**
+ * THE DEV MENU'S one way into a room. A room is normally SCHEDULED at the end
+ * of a cleared descent, which is minutes of play for one look at it — so this
+ * is the same `enterScene` the schedule calls, with whatever a descent had
+ * half-finished dropped first. Nothing else may call it: a room arrived at any
+ * other way is a room whose loot and clear belong to a descent nobody ran.
+ */
+export function enterRoomNow(id: string): boolean {
+  const def = SCENE_BY_ID[id];
+  if (!def) return false;
+  greeted = null;
+  greetedState = null;
+  greeting = null;
+  banked = null;
+  pending = null;
+  handover = 0;
+  leaving = false;
+  streak = 0;
+  enterScene(def);
+  return true;
+}
+
 /** What each screen is holding that has not been spent. One place, called
  *  after everything that could change one. */
 /**

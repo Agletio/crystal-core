@@ -9,7 +9,9 @@
  * places rather than five.
  */
 
-/** The band, `Z_BASE + position in the stack`. Above the HUD, under the rail. */
+/** The band, `Z_BASE + position in the stack`. Above the HUD, under the scrim
+ *  at 42 and the rail at 44 — so it holds 22 screens, and the smoke check
+ *  "a scrim covers every window" is what says when it stops. */
 const Z_BASE = 20;
 
 /** How much of a dragged card must stay on screen. Its head is 46px tall. */
