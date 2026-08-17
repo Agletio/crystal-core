@@ -64,6 +64,7 @@ import {
 import { PROP_ART } from './generated-props';
 import { ZONES } from './generated-tiles';
 import {
+  MOUTH_ART,
   COVER_ALPHA,
   COVER_DARK,
   COVER_SET,
@@ -453,6 +454,25 @@ export async function createPixiRenderer(
       // What grows ON the rock rides the rock's own layer, drawn after its tiles.
       (map.grid.at(prop.x, prop.y) === WALL ? wallLayer : groundLayer).addChild(sprite);
     }
+
+    // THE WAY DOWN, over the floor it is cut into and CENTRED on its tile
+    // rather than stood on it: a hole is a thing the ground is missing, so it
+    // has no foot to hang from the way a prop does.
+    const mouthId = MOUTH_ART[map.theme];
+    const mouthArt = mouthId ? PROP_ART[mouthId] : null;
+    const mouthTex = mouthArt ? propTextures(mouthId) : null;
+    if (mouthArt && mouthTex) {
+      // A SCENE's exit IS its entrance, so the pair can be one tile.
+      const holes = map.exit.x === map.entrance.x && map.exit.y === map.entrance.y ? [map.entrance] : [map.entrance, map.exit];
+      for (const at of holes) {
+        const sprite = new Sprite(mouthTex);
+        sprite.anchor.set(0.5, 0.5);
+        sprite.x = at.x + 0.5;
+        sprite.y = at.y + 0.5;
+        sprite.scale.set(mouthArt.tiles / mouthTex.width);
+        groundLayer.addChild(sprite);
+      }
+    }
   }
 
 
@@ -518,6 +538,8 @@ export async function createPixiRenderer(
         // LANDMARKS, which are how you find the way on and the way out.
         const tile = grid.at(x, y);
         if (bare && tile !== ENTRANCE && tile !== EXIT) continue;
+        // A GENERATED mouth replaces the decal one rather than layering over it.
+        if (MOUTH_ART[map.theme] && (tile === ENTRANCE || tile === EXIT)) continue;
         for (const d of tileDecals(bare ? hole : floor, at, x, y)) {
           const key = `${d.colour}|${d.alpha}`;
           let batch = batches.get(key);

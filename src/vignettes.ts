@@ -269,6 +269,16 @@ export const SOLID_PROPS = new Set([
   'gems_small',
 ]);
 
+/** THE WAY DOWN, one per zone and a generated PICTURE: steps cut into stone,
+ *  a ring of teeth, a shaft broken through crystal. The Seam takes the
+ *  Cavern's, being the half of it that is not the Rot. */
+export const MOUTH_ART: Record<string, string> = {
+  fissure: 'mouth_stair',
+  demonic: 'mouth_maw',
+  prismatic: 'mouth_facet',
+  seam: 'mouth_facet',
+};
+
 /** A mark IN the floor rather than a thing standing on it. The generator draws
  *  a stain with the shading of an object — domed, lit from one side — whatever
  *  the ask says, and at full strength that reads as a brown lump on the ground.

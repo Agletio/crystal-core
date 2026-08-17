@@ -792,6 +792,30 @@
    "tone": 0.16,
    "dull": 0.18,
    "say": "a huge geode broken into two halves lying apart on a stone floor, seen from HIGH ABOVE looking down, rough near-black rock shells whose hollows are lined with glowing iridescent VIOLET and green crystal points, light spilling out of both. NOT a gemstone ring, NOT jewelry, NOT a treasure chest. Almost no light down here except what is inside the stone."
+  },
+  {
+   "id": "mouth_stair",
+   "tiles": 2.0,
+   "size": 128,
+   "say": "A SPIRAL STAIRCASE cut down into a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down. The STEPS ARE THE SUBJECT and fill most of the opening: eight or nine separate wedge-shaped stone treads winding clockwise around a central post, each tread clearly separated from the next by a dark line of shadow, each catching light on its flat top face so you can count them. Only the small gap at the very centre is black. The outer rim is broken uneven rock. Pale warm grey stone #8E8279 on the lit treads, #5A5249 on their shadowed sides, #2A2622 in the gaps between them. Worn, chipped, dusty, ancient. NOT an empty hole, NOT a black pit, NOT a well, NOT a smooth funnel, NOT a barrel, NOT a tunnel, NOT featureless, NOT bright, NOT colourful.",
+   "tone": 0.5,
+   "dull": 0.55
+  },
+  {
+   "id": "mouth_maw",
+   "tiles": 2.0,
+   "size": 128,
+   "say": "A round wet opening torn in a floor of dark red meat, ringed with crooked bone TEETH leaning inwards over the gap, seen from DIRECTLY ABOVE looking straight down into the throat. The teeth are pale yellowed bone, uneven in length, some broken, spaced unevenly all the way round the rim. Behind them the flesh is drawn back in wet folds and the middle is pure black going down. Dark meat #5A2320 and #3A1614 in the folds, dried gore, dull bone #9A8F72 for the teeth, pure black #000000 at the centre. Wet, raw, breathing, alive. NOT a skull, NOT a face, NOT a mouth seen from the front, NOT a cartoon, NOT bright red, NOT pink, NOT cheerful.",
+   "tone": 0.3,
+   "dull": 0.25
+  },
+  {
+   "id": "mouth_facet",
+   "tiles": 2.0,
+   "size": 128,
+   "say": "A jagged shaft broken open through a crystal cave floor, seen from DIRECTLY ABOVE looking straight down. The rim is a RAGGED BROKEN edge of angular crystal shards of WILDLY UNEVEN length and irregular spacing \u2014 some long and blade-like, some stubs, some snapped off flat, clustered in places and almost bare in others, all flat-planed and sharp-angled like broken glass rather than smooth. They lean in over a shaft that is pure black with no bottom. Pale lilac and cold white #C8B6D8 and #EDE6F2 on the lit facets, deep violet #3A2A4A in the crevices, pure black #000000 down the middle. Cold, glassy, broken. NOT a flower, NOT petals, NOT a sunflower, NOT symmetrical, NOT evenly spaced, NOT a ring of identical spikes, NOT a gemstone, NOT a jewel, NOT warm, NOT orange.",
+   "tone": 0.3,
+   "dull": 0.25
   }
  ],
  "_design": "A body is DESIGNED before it is rotated. `create_image_pixflux` draws one sprite from `look` for one generation; `create_character` in mode v3 with that PNG as `reference_image_base64` rotates it into eight directions for two more. `look` is the design ask and `states[].say` is the animation ask \u2014 and no two of a body's says may share their first 30 characters, because the server keys a type off that prefix and silently refuses the second."
