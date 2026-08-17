@@ -69,6 +69,21 @@ over plain JSON-RPC, so a session with no client for it is not blocked, and
 tables the renderer reads. `tools/art/import.mts` takes a website export straight into
 grids.
 
+**THE WEBSITE AND THE API ARE THE SAME ACCOUNT, so art the user makes on the
+site is art this repo can pull.** `list_characters`, `list_objects` and
+`list_topdown_tilesets` return everything the key owns, by name and id — 24, 113
+and 28 of them at the time of writing — so nothing has to be pasted in: find it
+by name, `get_character` or `get_map_object` it, and run `tables.mts` over it.
+That is the better loop, because the user can JUDGE a design before accepting
+it where this repo can only ask, look and re-ask.
+
+**A ROW THAT IS `gone from the server` WAS REJECTED, and must not be re-asked.**
+*The user's call: "they are gone because I deleted some stuff that I really
+didn't like wanting you to stop using it."* `tables.mts` prints that line and
+keeps the grid that ships, which is right — a committed grid is what the game
+draws. What it is NOT is a reason to generate a replacement: the id is gone
+because the art was turned down. Ask before re-asking anything that says it.
+
 **Generating art is a RUNBOOK, and it is in `ROADMAP.md`.** "The process, as it
 now stands" is the eight steps — design, approve, rotate, animate, judge,
 import, wire — and "Doing this a thousand times" is every pitfall that has

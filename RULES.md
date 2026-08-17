@@ -795,6 +795,19 @@ eager loop in either place pays the cost back. Measured: 243 sprite cells at boo
 became 1, and a whole 20-second descent draws 30. A descent reaches about eight
 creatures, so drawing the table costs the bestiary to open one map.
 
+**A ROW `tables.mts` CALLS `gone from the server` WAS REJECTED BY THE USER.**
+*Their words: "they are gone because I deleted some stuff that I really didn't
+like wanting you to stop using it."* Keeping the grid that ships is right — a
+committed grid is what the game draws — but that line is NOT a prompt to
+generate a replacement. Ask before re-asking anything that prints it.
+
+**THE SITE AND THE API ARE ONE ACCOUNT.** `list_characters`, `list_objects` and
+`list_topdown_tilesets` return everything the key owns, by name and id, so art
+the user makes on the website is art this repo can pull without anything being
+pasted across — find it by name, `get_character` or `get_map_object` it, and run
+`tables.mts` over it. Prefer it to asking blind: the user can JUDGE a design
+before it is accepted, where asking costs a generation per attempt.
+
 **The generator is an MCP SERVER, and the REST API is a fraction of it.**
 `https://api.pixellab.ai/mcp`, guide at `/mcp/docs`, configured in the committed
 `.mcp.json` which expands `${PIXELLAB_API_KEY}` rather than carrying a token.

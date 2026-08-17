@@ -6,6 +6,14 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**WHAT IS NEXT: nothing, without being asked.** Phase 1 shipped and is marked
+DONE where it stands; Phase 2 is parked by the user's own word until the
+opening has been played. What is left is **the balance pass — four parked
+checks, listed below (the list numbers five; the third is answered)** — and the user has held that too: *"dont do balance yet
+I want the fight to not be buggy and feel ok and then we can balance."* So the
+roadmap holds a held pass, a backlog nobody asked for, and the open questions.
+Say so and list them rather than inventing work.
+
 **THE WHOLE NORMAL POOL IS GENERATED** — the Crawler, the Husk, the Hound, the
 Heap, the Gaunt and the Bonecaller, six rows where there were eleven, all undead
 and all levelled onto one brightness. So a Fissure descent is generated at both
@@ -23,6 +31,14 @@ refusal that arrives as text rather than an error, a dedup keyed on the first
 thirty characters of a description, and characters that vanish from the server.
 The GENERATION budget is the ceiling; the source size is not, and this file said
 otherwise for months.
+
+**THE USER CAN MAKE ART ON THE SITE AND THIS REPO CAN PULL IT.** Same account,
+same key: `list_characters` / `list_objects` / `list_topdown_tilesets` return
+everything it owns by name and id, so nothing has to be pasted across. It is
+the better loop — the user judges a design before accepting it, where asking
+blind costs a generation per attempt and two of the three zone mouths took two.
+And a row `tables.mts` calls `gone from the server` is one the user DELETED
+because they did not want it: keep the grid that ships and do not re-ask it.
 
 **ALL FOUR zones are drawn by a GENERATED TILESET, in live descents.** Four
 sets, one per zone, each asked off that zone's own line in `MAP_THEMES`. The
@@ -1569,7 +1585,19 @@ crystal, so socketing two of them is the whole of what schedules it, and
 socketing two in the PRESET would have changed what a dev game's Fissure is —
 which `smoke` asserts about and every screenshot is taken against.
 
-### Phase 1 — THE TURN: a boss fight you have to play
+### Phase 1 — THE TURN: a boss fight you have to play — **DONE, and BALANCE IS NOT**
+
+**Do not execute this phase. It shipped.** THE ANSWERING is generated, fought
+with three faces on `1` `2` `3`, phases drawn on the boss's own body, and every
+fault the user named after playing it is fixed — see "The turn's own tension"
+and "The fight, made to work before it is made fair" below for what landed and
+why. What is still OWED is the BALANCE pass, and the user has explicitly held
+it: *"dont do balance yet I want the fight to not be buggy and feel ok and then
+we can balance."* The grid is check 5 of "The balance pass owes five checks".
+
+Everything below this line is the phase AS IT WAS WRITTEN, kept because the
+reasoning is what a balance pass has to argue against — not because there is
+work in it. `What is true today` describes the game BEFORE the phase ran.
 
 *The user's call, in full: a boss fight has a bar you toggle between three
 modes — agility, damage, defence. The boss forces the swaps. Built on the
@@ -1850,20 +1878,45 @@ obvious no text to describe this."* `bossTelegraph` in `render/renderer.ts` is
 the one answer both renderers read, the turn bar says nothing at all, and
 `node tools/boss-peek.mjs <dir>` is how it is judged.
 
-The grid now reads, and the check is live rather than parked:
+It hit the target once, at met 6/5/0, ground 8/8/1, returned 8/8/8 — and then
+SIX MORE CHANGES landed on the fight and moved it again. **The check is parked
+again, deliberately.** *The user's call: "dont do balance yet I want the fight
+to not be buggy and feel ok and then we can balance."* It prints its grid every
+run and fails nothing; the pass re-tunes against it.
 
-```
-                swapping    sloppy       afk
-    met              6/8       5/8       0/8
-    ground           8/8       8/8       1/8
-    returned         8/8       8/8       8/8
-```
+## The fight, made to work before it is made fair
 
-Which is the target in the user's own words: at the gear you meet him with you
-die unless you swap properly, a rung of grinding buys you a few missed swaps,
-and the tier above him lets you leave it alone.
+Six faults the user named, all fixed, none of them balance:
 
-## The balance pass owes three checks
+- **It could not reach you and never swung.** `reachTo` measures from the BODY;
+  a 1.7-radius boss against a 1.3 reach was walking in and being shoved out
+  forever, which was also the jitter.
+- **Its poses never cleared.** A pose is looked up by skill id and `pose()` set
+  one it never unset, so every ordinary swing lost the lookup to a windup
+  finished ages ago — and re-posing per tick pinned the slam to its own first
+  frame. `unpose` spends one with its timer.
+- **It was shoved into a wall.** `resolveOverlap` gives a boss weight 0 and
+  hands its half of the overlap to whatever is standing in it. It stands in
+  `roomCenter`; you come up at the stairs in a corner.
+- **The dodge ran to the far wall.** `wayOut` costs EVERY way clear by how far
+  it leaves you from the boss and takes the cheapest — usually sideways — and
+  `slideRound` steps round a live circle rather than stopping at its rim.
+- **The hit flash fought the phase tint.** It LIGHTENS what the phase made it;
+  flat chalk read as a fourth phase and burning stopped being tellable from
+  dazed. The floating head bar is gone for a framed one across the top, and
+  `BOSS_SHOUTS` throws one line over its head as a phase turns over.
+- **It appeared out of the air.** `summonBoss` is `beginEncounter`'s first half
+  on its own: the body is called up on ARRIVAL so the camera has something to
+  cross to, and the cycle starts when the talking stops. Arriving is a look —
+  across to it, back to you, then your own line. A rematch skips the look, not
+  the spawn.
+
+And a landmark KEEPS A TILE OF FLOOR ALL ROUND IT (`clearSpot`), because the
+way down is drawn two tiles across and centred: one a step from the rock has
+half its rim inside the wall. Generated maps are moved; an authored room's is
+the author's, so the demo checks those — and caught two the moment it existed.
+
+## The balance pass owes four checks
 
 *The user's call, on seeing the tree's shape change: "we are going to do a big
 balance pass don't worry about balance right now."* The trunk lost its three
@@ -1886,6 +1939,16 @@ the pass puts them back to `check`:
    back on its own with `RunSim.reachTo`: a body BIGGER than an ordinary one
    could never be reached at all, which took the top band's own income with it.
 4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
+5. **"and the fight wants what it is meant to want at each rung of gear"** —
+   the boss grid, PARKED at the user's word until the fight feels right rather
+   than because it cannot be hit; it has been hit once already. See "The
+   turn's own tension" above for what moved after that.
+
+The demo prints its own parked COUNT at the end of a run, and that count and
+this list have to agree: four parked, and the third here is answered.
+
+The demo prints `… and 4 parked` — that count and this list have to agree, and
+the third is answered rather than parked.
 
 `INTRO.crystalSkillLevel` moved 3 → 4 with the geometry, since the cheapest
 notable is now four points out and the opening names it as a suggestion.
@@ -2081,6 +2144,14 @@ editing two places.
 
 Real, deferred by decision. Not a queue — do not promote one into a phase
 without being asked.
+
+- **The first-visit boss ARRIVAL has never been watched.** The camera crosses
+  to what is standing in the middle, holds, comes back, and then your own
+  character speaks — and the dev kit marks every boss beaten, so entering
+  through the dev menu always takes the rematch path and skips the look. The
+  spawn-before-pan half IS verified (the body exists from the moment you
+  arrive); the pan itself is typechecked and unwatched. Look at it the first
+  time a real save reaches the room.
 
 - **THE OSSUARY HAS TO BE REDONE AS A DEMONIC ROOM.** *The user's call, on
   moving its crystal layout into the reading room: "know that the ostemancer
