@@ -245,6 +245,13 @@ corners with a twin, told apart by the pattern rows above and below, and those
 rows are CORNER values one row out rather than the cell's tile type: read wrong,
 a lip tile repeats down a face as a pale line running up it.
 
+**A LANDMARK KEEPS A TILE OF FLOOR ALL ROUND IT.** The way down is drawn two
+tiles across and CENTRED on its tile, so one stamped a step from the rock has
+half its rim inside the wall. `clearSpot` in `src/sim/grid.ts` walks out to the
+nearest tile that has none, and only a GENERATED map is moved: an authored
+room's landmark is the author's, so the demo checks every `SceneDef` instead —
+which caught two rooms the moment it was written.
+
 **The map has no EDGE.** The grid is where the stone stops being stored, not
 where it stops: a chamber sitting two tiles from the boundary would end on a
 straight lit line with flat background past it. So the rock is drawn `EDGE`
@@ -617,8 +624,10 @@ slam without turning at all. Which is why there are three.
 
 **IT STANDS IN THE MIDDLE AND NOTHING SHOVES IT.** You come up at the stairs
 in a corner and cross to it, the camera goes to it and comes back before your
-own character says the only line in the room, and `resolveOverlap` gives a boss
-weight 0 — what cannot move hands its half of the overlap to whatever is
+own character says the only line in the room — and it is CALLED UP on arrival
+rather than when the talking stops (`RunSim.summonBoss` beside
+`beginEncounter`), or the camera pans to bare floor and it appears out of the
+air. `resolveOverlap` gives a boss weight 0 — what cannot move hands its half of the overlap to whatever is
 standing in it. On the rim and pushable it was slowly leaned into a wall.
 
 **AND THE DODGE STAYS NEAR IT.** `wayOut` costs EVERY way clear of the circles

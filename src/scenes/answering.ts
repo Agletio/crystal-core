@@ -18,7 +18,7 @@ export const ANSWERING_HALL: SceneDef = {
     // You come up at the STAIRS in a corner; it is already standing in the
     // middle. Off the rim it was slowly leaned into a wall.
     entrance: { x: 6, y: 27 },
-    stands: { x: 20, y: 16 },
+    stands: { x: 9, y: 26 }, // beside the stairs; the MIDDLE is what you came to fight
     props: [],
   },
   said: 'You say the three marks out loud. Something a long way off in the dark stops, and turns round.',

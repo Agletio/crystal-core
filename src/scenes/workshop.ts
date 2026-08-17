@@ -15,7 +15,7 @@ export const WORKSHOP: SceneDef = {
   theme: 'fissure', // a working, and it is the shallow end's
   plan: {
     room: { x: 1, y: 1, w: 9, h: 7 },
-    entrance: { x: 2, y: 6 },
+    entrance: { x: 4, y: 6 },
     stands: { x: 7, y: 3 },
     props: [
       // His work, off the boundary ROW: a carve is ragged there and a prop on

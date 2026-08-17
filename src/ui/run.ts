@@ -475,11 +475,14 @@ function finish(left = false): void {
 /** Arriving. The lines come first, one at a time over his own head, and the
  *  last of them is the panel, which is where the gift is. `spoke` stops the
  *  frame after arriving from starting the whole thing again. */
-/** ARRIVING AT A FIGHT: the camera crosses to what is standing in the middle,
- *  holds, and comes back before your own line. A REMATCH skips it. */
-function beginArrival(def: SceneDef): void {
-  arrival = revisit ? 0 : ARRIVAL;
-  if (arrival > 0) renderer?.lookAt(def.plan.stands);
+/** ARRIVING AT A FIGHT. The body is called up FIRST, so the camera has
+ *  something to cross to and it is standing there when you look rather than
+ *  appearing out of the air once you have finished talking. A REMATCH skips
+ *  the look, not the spawn. */
+function beginArrival(): void {
+  const boss = sim?.summonBoss();
+  arrival = revisit || !boss ? 0 : ARRIVAL;
+  if (arrival > 0 && boss) renderer?.lookAt(boss);
 }
 
 /** Halfway it comes back to the hero; at the end the room gets on with it. */
@@ -583,7 +586,7 @@ function enterScene(def: SceneDef): void {
   // A camera left pointed at a corner of the descent that just ended is a
   // black screen with no obvious way out of it.
   renderer?.follow();
-  if (def.encounter) beginArrival(def);
+  if (def.encounter) beginArrival();
   setPhase('scene');
   setLeaveLabel();
   fitCanvas();

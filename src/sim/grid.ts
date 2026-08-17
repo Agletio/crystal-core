@@ -26,6 +26,8 @@ export interface Vec2 {
 
 export const WALL = 0;
 export const FLOOR = 1;
+export const LANDMARK_REACH = 4; // how far a LANDMARK moves to find clear floor
+
 export const ENTRANCE = 2;
 export const EXIT = 3;
 /** Corridor floor. Walkable exactly like FLOOR — it exists so a renderer can
@@ -590,7 +592,7 @@ export function generateMap(
     carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, WOBBLE[cut]);
   }
 
-  const entrance = roomCenter(rooms[0]);
+  const entrance = clearSpot(grid, roomCenter(rooms[0]));
 
   // Exit goes in whichever room is physically farthest from the entrance, so
   // the hero always has a real distance to cover regardless of room order.
@@ -603,7 +605,7 @@ export function generateMap(
       exitRoom = room;
     }
   }
-  const exit = roomCenter(exitRoom);
+  const exit = clearSpot(grid, roomCenter(exitRoom));
 
   // An unreachable exit is a hero that stands still forever, which is the worst
   // failure in something you sit and watch. Prove it, and carve if it failed.
@@ -647,6 +649,34 @@ export function generateMap(
  * than a flag on it, sharing `carveRoom`. The plan is absolute tiles and the
  * cut is hashed off the tile it lands on, so a room is the same room always.
  */
+/**
+ * The nearest tile with a whole tile of FLOOR on every side of it, for a
+ * LANDMARK. The way down is drawn two tiles across and centred on its tile, so
+ * one stamped a step from the rock has half its rim inside the wall — which is
+ * the clipping. Nothing else needs this: a body is a circle and clears rock by
+ * its own radius.
+ */
+export function clearSpot(grid: Grid, want: Vec2): Vec2 {
+  const clear = (x: number, y: number): boolean => {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) if (grid.at(x + dx, y + dy) === WALL) return false;
+    }
+    return true;
+  };
+  const x0 = Math.round(want.x);
+  const y0 = Math.round(want.y);
+  if (clear(x0, y0)) return { x: x0, y: y0 };
+  for (let r = 1; r <= LANDMARK_REACH; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (clear(x0 + dx, y0 + dy)) return { x: x0 + dx, y: y0 + dy };
+      }
+    }
+  }
+  return { x: x0, y: y0 };
+}
+
 export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   const zone = ZONE[theme];
   const rooms = [plan.room];
@@ -655,11 +685,11 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   carveRoom(grid, plan.room, CUT[theme] ?? 'dug', spare);
   if (zone) fitCorners(grid, zone); // or the floor runs up into the wall
 
-  const entrance = { x: Math.round(plan.entrance.x), y: Math.round(plan.entrance.y) };
+  const at = plan.entrance; // NOT nudged: an authored tile is the author's
+  const entrance = { x: Math.round(at.x), y: Math.round(at.y) };
   grid.set(entrance.x, entrance.y, ENTRANCE);
 
-  // The exit IS the entrance: one tile carrying both draws no second hole.
-  const props = [...plan.props];
+  const props = [...plan.props]; // the exit IS the entrance: no second hole
   if (zone) {
     // A FIXED stream, so a place is the same twice; `coverFloor` knows no
     // furniture, so hand-placed tiles come out of it.

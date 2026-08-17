@@ -15,7 +15,7 @@ export const ORRERY: SceneDef = {
   theme: 'prismatic', // his world, and the only one dust comes out of
   plan: {
     room: { x: 1, y: 1, w: 17, h: 13 },
-    entrance: { x: 4, y: 10 },
+    entrance: { x: 8, y: 11 },
     stands: { x: 12, y: 5 },
     props: [
       // The only curve in the game's furniture, and the only pedestals.

@@ -1321,10 +1321,19 @@ export class RunSim {
    * when one starts either. Everything about the thing is a multiplier on the
    * same baseline every other body in the game is built from.
    */
+  /** CALLING IT UP without starting its cycle: the body has to exist before
+   *  the camera crosses to it. Nothing ticks while a room is arrived in. */
+  summonBoss(): Vec2 | null {
+    if (this.state.boss) return this.state.boss;
+    return this.callUp() ? this.state.boss : null;
+  }
+
+  /** And the CYCLE. Idempotent: the body may already be standing there. */
   beginEncounter(): boolean {
     const s = this.state;
     const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
-    if (!def || s.boss) return false;
+    if (!def) return false;
+    if (!s.boss && !this.callUp()) return false;
 
     this.fightFrom = s.elapsed;
     if (def.phases?.length) {
@@ -1333,6 +1342,13 @@ export class RunSim {
       this.phaseAt = 0;
       this.phaseFor = 0;
     }
+    return true;
+  }
+
+  private callUp(): boolean {
+    const s = this.state;
+    const def = BOSS_BY_ID[SCENE_BY_ID[this.options.scene ?? '']?.encounter ?? ''];
+    if (!def || s.boss) return false;
 
     const ability = this.abilityFor(MONSTERS[0]);
     const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;

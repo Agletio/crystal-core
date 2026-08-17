@@ -113,7 +113,7 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, clearSpot, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
 import type { Grid, MapProp } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -1805,7 +1805,11 @@ rule('SPRITES — is the pixel art well formed?');
         seen.add(at);
         return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
       }),
-      ...(rock(entrance) ? [`${s.id} entrance in the rock`] : []),
+      // The way down is drawn TWO tiles across and centred on its tile, so an
+      // authored one a step from the rock has half its rim inside the wall.
+      ...(clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
+        ? []
+        : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
     ];
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
