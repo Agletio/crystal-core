@@ -24,6 +24,7 @@ import type { Cel } from './sprites';
 import {
   auraLook,
   bossTelegraph,
+  dazeMarks,
   burstRadius,
   clampOffset,
   fireBolt,
@@ -662,16 +663,17 @@ export async function createPixiRenderer(
     // Keep hairlines visible however far out we're zoomed.
     const hair = Math.max(0.05, 1 / tile);
 
-    // The light IN it, over its own body: charging in a Reading, hanging open
-    // in a Split. Drawn here because a body is opaque and this is the point.
-    if (told && told.look.core > 0) {
+    // DAZED: marks going round over its head, the one picture everybody
+    // already reads as stunned. Over the body, because that is the point.
+    if (told && told.look.swirl > 0) {
       const e = told.on;
-      const at = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite)) * 0.55;
-      const r = e.scale * told.look.core;
       const colour = toHexNumber(told.look.colour);
-      vfxLayer.circle(cx(e.x), at, r * 1.9).fill({ color: colour, alpha: 0.16 });
-      vfxLayer.circle(cx(e.x), at, r).fill({ color: colour, alpha: 0.7 });
-      vfxLayer.circle(cx(e.x), at, r * 0.42).fill({ color: toHexNumber(palette.chalk), alpha: 0.85 });
+      const head = e.scale * (anchorY(e) - bodyTop(e.sprite));
+      for (const m of dazeMarks(head, e.scale, state.elapsed)) {
+        vfxLayer
+          .arc(cx(e.x) + m.x, cy(e.y) + m.y, m.r, m.from, m.to)
+          .stroke({ color: colour, alpha: m.alpha * told.look.swirl, width: m.width, cap: 'round' });
+      }
     }
 
     /** Fire pixels, in world units. The layer is already scaled to tiles. */
@@ -896,14 +898,6 @@ export async function createPixiRenderer(
       auraLayer.circle(ring.x, ring.y, ring.r).fill({ color: colour, alpha: 0.1 + gone * 0.28 });
       auraLayer.circle(ring.x, ring.y, ring.r * gone).fill({ color: colour, alpha: 0.22 });
       auraLayer.circle(ring.x, ring.y, ring.r).stroke({ color: colour, alpha: 0.9, width: 0.09 });
-    }
-    // WHAT IT IS DOING, on the thing doing it: a field under its feet that
-    // swells with the phase, so the fight is read off the boss and not a word.
-    if (told) {
-      const r = told.on.scale * told.look.swell;
-      const colour = toHexNumber(told.look.colour);
-      auraLayer.circle(told.on.x, told.on.y, r).fill({ color: colour, alpha: told.look.alpha });
-      auraLayer.circle(told.on.x, told.on.y, r).stroke({ color: colour, alpha: 0.85, width: 0.07 });
     }
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;

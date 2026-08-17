@@ -1832,6 +1832,16 @@ Three things came of it, and together they turned the grid the right way up:
   thats why I think do a couple in a short burst so you can't ONLY rely on the
   movement skills."*
 
+Two things the fight was missing turned up the moment it could be watched. The
+boss **never swung its hammer**, because a pose is looked up by skill id and
+`pose()` set one it never cleared — every ordinary swing lost the lookup to a
+windup finished ages ago, and re-posing per tick pinned the slam to its own
+first frame. And it **could not reach you at all**: `attackRange` is measured
+centre to centre, separation holds a 1.7-radius body 2.04 tiles off, and its
+reach is 1.3 — so it walked in, was shoved out, and did that forever, which is
+the jitter. `RunSim.reachTo` measures from the BODY, and two ordinary bodies
+are still exactly `attackRange` apart.
+
 And the phase is TOLD ON THE BOSS rather than captioned — *the user's call: "it
 needs to be telegraphed instead of the text telling you what to do... having him
 start like glowing or like super sayan dragonball z type power aura... For
@@ -1844,8 +1854,8 @@ The grid now reads, and the check is live rather than parked:
 
 ```
                 swapping    sloppy       afk
-    met              8/8       5/8       0/8
-    ground           8/8       8/8       2/8
+    met              6/8       5/8       0/8
+    ground           8/8       8/8       1/8
     returned         8/8       8/8       8/8
 ```
 
@@ -1853,15 +1863,15 @@ Which is the target in the user's own words: at the gear you meet him with you
 die unless you swap properly, a rung of grinding buys you a few missed swaps,
 and the tier above him lets you leave it alone.
 
-## The balance pass owes four checks
+## The balance pass owes three checks
 
 *The user's call, on seeing the tree's shape change: "we are going to do a big
 balance pass don't worry about balance right now."* The trunk lost its three
 dead nodes and the ways in now land on the short chains, so every BRANCH is one
 step further from the centre than it was. Measured, that costs the top band
-about a fifth of its income. Four checks in `src/demo.ts` read off characters
-the ladder walks, so they moved with it; each is a `parkedCheck` now, printing
-its number and failing nothing, and the pass puts them back to `check`:
+about a fifth of its income. Checks in `src/demo.ts` read off characters the ladder walks, so they moved
+with it; each is a `parkedCheck`, printing its number and failing nothing, and
+the pass puts them back to `check`:
 
 1. **"and the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
@@ -1872,9 +1882,10 @@ its number and failing nothing, and the pass puts them back to `check`:
    Widening the sheet's condition to match was tried and broke a SECOND
    promise, so what is really wanted is the per-hit and per-crit numbers being
    told apart. Pre-existing: the old walk never handed one character both nodes.
-3. **"and every band still pays more than the one below"** — the top band pays
-   5515 against the band below it at 5818. It was 6984 against 5512.
-4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 91s.
+3. **ANSWERED — "and every band still pays more than the one below".** It came
+   back on its own with `RunSim.reachTo`: a body BIGGER than an ordinary one
+   could never be reached at all, which took the top band's own income with it.
+4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
 
 `INTRO.crystalSkillLevel` moved 3 → 4 with the geometry, since the cheapest
 notable is now four points out and the opening names it as a suggestion.

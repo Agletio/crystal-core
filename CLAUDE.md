@@ -604,8 +604,10 @@ damage window. `marks` is what stacks on you and never comes off fast, so
 tanking forever is not a plan, and past `enrageAt` everything it does climbs —
 the dps check.
 
-**A slam is a COMMITMENT.** From the rear-back until the last circle lands the
-boss neither swings nor closes (`RunSim.slamming`), and circles come in a BURST
+**A slam is a COMMITMENT, and so is being DAZED.** From the rear-back until the
+last circle lands the boss neither swings nor closes, and it does neither in the
+Split either — `RunSim.stalled` is both, and it is what makes the damage window
+a window rather than a number you have to be told. Circles come in a BURST
 and then a rest. That is the whole of what makes Quick a flick rather than a
 stance: it is free while the maul is in the floor and dear the moment you leave
 it on. The dodge is DODGEABLE — `wayOut` leaves every circle he is standing in
@@ -613,13 +615,24 @@ by the shortest ray, a live circle is somewhere he waits out rather than walks
 back into, and the mover fires in a boss room, so a blink is a way out of one
 slam without turning at all. Which is why there are three.
 
-**And the phase is drawn ON THE BOSS, never captioned.** `bossTelegraph` in
-`src/render/renderer.ts` is the one answer both renderers read: the Reading is a
-`flame` halo the size of the body, breathing, with the body itself gone hot —
-`flame` and not `ember`, or it is the same red disc a Fall circle is — and the
-Split is the body dimmed dead and one small hard `citrine` light where the
-crystal is, inside a ring on the floor. The turn bar says nothing at all. A
-fight you read off a caption is one you never look at.
+**A REACH IS AN ARM, AND AN ARM STARTS AT THE BODY.** `RunSim.reachTo` adds
+whatever a body is BIGGER than an ordinary one to both ends of the test, so two
+ordinary bodies are exactly `attackRange` apart and nothing in a pack moves.
+Measured centre to centre a COLOSSAL body can never touch anything: separation
+holds the pair its own radius apart, which for the boss is 2.04 tiles against a
+reach of 1.3 — it never swung once, and pushing in and being shoved out again
+is the jitter that came with it.
+
+**And the phase is drawn ON THE BOSS, never captioned and never on the floor.**
+`bossTelegraph` in `src/render/renderer.ts` is the one answer both renderers
+read. The Reading turns the BODY red — the tint MULTIPLIES, so mixing toward
+`chalk` is what makes it throb rather than sit there. The Split leaves it grey
+with three `citrine` SWIRLS going round over its head, and `dazeMarks` draws
+them as open arcs on a flattened ring: a dot going round a ring is a dot, and a
+hook going round is the thing everybody already reads as stunned. It is the
+same answer as `RunSim.stalled`, so the picture and the rule cannot drift. A
+ring on the floor is a Fall circle's vocabulary and belongs to nothing else.
+The turn bar says nothing at all.
 `node tools/boss-peek.mjs <dir>` shoots a whole cycle of it off the bundle.
 
 **The Lambengolmor** hands over a NAME, not a fight. His room holds no

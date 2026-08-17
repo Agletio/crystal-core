@@ -809,8 +809,7 @@ export class RunSim {
           for (let dx = -1; dx <= 1; dx++) {
             const list = buckets.get((ay + dy) * grid.width + (ax + dx));
             if (!list) continue;
-            // id ordering visits each pair exactly once.
-            for (const b of list) if (b.id > a.id) this.resolveOverlap(a, b);
+            for (const b of list) if (b.id > a.id) this.resolveOverlap(a, b); // each pair once
           }
         }
       }
@@ -884,6 +883,15 @@ export class RunSim {
     e.action = moving ? 'move' : 'idle';
   }
 
+  /** How far apart two CENTRES may be and still be in reach. An arm starts at
+   *  the BODY: measured centre to centre a COLOSSAL body never touches
+   *  anything, since separation holds the pair further apart than its reach.
+   *  Two ordinary bodies are exactly `attackRange`, so no pack moves. */
+  private reachTo(a: Entity, b: Entity): number {
+    const bulk = (e: Entity) => Math.max(0, e.radius - HERO_BASE.radius);
+    return a.stats.attackRange + bulk(a) + bulk(b);
+  }
+
   /** Unobstructed line between two entities. */
   private canSee(a: Entity, b: Entity): boolean {
     return hasLineOfSight(this.state.map.grid, a, b);
@@ -907,14 +915,18 @@ export class RunSim {
   private fallLeft = 0;
   private marked = 0;
 
-  /** Hauling the maul out of the floor rather than swinging: from the
-   *  rear-back until the last circle lands, and never in the gap between
-   *  bursts. Quick is a FLICK — free for the burst, dear if you leave it on. */
+  /** Hauling the maul out of the floor rather than swinging: rear-back until
+   *  the last circle lands, never in the gap between bursts. Quick is a FLICK. */
   private get slamming(): boolean {
     return (
       this.state.phase === 'fall' &&
       (this.state.circles.length > 0 || this.fallIn <= BOSS_FIGHT.windup)
     );
+  }
+
+  /** Not fighting you at all: mid-slam, or hanging open and DAZED. */
+  private get stalled(): boolean {
+    return this.slamming || this.state.phase === 'split';
   }
 
   /** When the boss was called up. The enrage counts from THERE, never from the
@@ -961,11 +973,18 @@ export class RunSim {
   }
 
   /** A boss playing one of its OWN animations: a state is looked up by skill
-   *  id first, and nothing is named `slam`, so this borrows that seam. */
+   *  id first, and nothing is named `slam`, so this borrows that seam. A pose
+   *  is SPENT with its timer, or it is the only thing the body ever plays and
+   *  the ordinary swing loses the lookup to a windup finished ages ago. */
   private pose(boss: Entity, state: string): void {
     boss.skillId = state;
     boss.action = 'attack';
     boss.actionTimer = ATTACK_POSE;
+  }
+
+  private unpose(boss: Entity): void {
+    const held = boss.skillId as (typeof BOSS_POSES)[number] | null;
+    if (held && boss.actionTimer <= 0 && BOSS_POSES.includes(held)) boss.skillId = null;
   }
 
   /** A boss up and alive, which is the whole of what makes a room a fight. */
@@ -996,6 +1015,7 @@ export class RunSim {
       return;
     }
 
+    this.unpose(boss);
     s.phaseLeft -= dt;
     this.phaseFor += dt;
     if (s.phaseLeft <= 0) {
@@ -1004,9 +1024,7 @@ export class RunSim {
       s.phaseLeft = phases[this.phaseAt].seconds;
       this.phaseFor = 0;
       this.marked = 0;
-      // Every phase OPENS on its own animation, so the swap is telegraphed by
-      // the thing itself rather than only by a word on the bar.
-      if (s.phase === 'fall') this.fallIn = BOSS_FIGHT.windup;
+      if (s.phase === 'fall') this.fallIn = BOSS_FIGHT.windup; // each OPENS on its own pose
       if (s.phase === 'reading') this.pose(boss, BOSS_POSES[1]);
       if (s.phase === 'split') boss.skillId = null;
     }
@@ -1016,8 +1034,10 @@ export class RunSim {
     // the answer rather than a nicety.
     if (s.phase === 'fall') {
       this.fallIn -= dt;
-      // It rears back BEFORE the circle appears; the fuse is the rest.
-      if (this.fallIn <= BOSS_FIGHT.windup && !s.circles.some((c) => c.fuse > c.of - 0.05)) {
+      // It rears back BEFORE the circle appears; the fuse is the rest. Never
+      // where it is ALREADY swinging: re-posed per tick the animation pins to
+      // its first frame and the maul never comes down.
+      if (this.fallIn <= BOSS_FIGHT.windup && boss.skillId !== BOSS_POSES[0]) {
         this.pose(boss, BOSS_POSES[0]);
       }
       if (this.fallIn <= 0) {
@@ -1117,7 +1137,7 @@ export class RunSim {
       const d = dist(hero, target);
       // In range is not enough — you have to be able to see it. Without this a
       // ranged attack happily shoots through a wall.
-      if (d <= hero.stats.attackRange && this.canSee(hero, target)) {
+      if (d <= this.reachTo(hero, target) && this.canSee(hero, target)) {
         hero.path = [];
         this.face(hero, target.x, target.y);
         this.settleAction(hero, false);
@@ -1504,15 +1524,15 @@ export class RunSim {
       return;
     }
 
-    // A boss mid-slam neither swings nor closes: the maul is in the floor.
-    if (m === this.state.boss && this.slamming) {
+    // A stalled boss neither swings nor closes.
+    if (m === this.state.boss && this.stalled) {
       m.path = [];
       this.face(m, hero.x, hero.y);
       this.settleAction(m, false);
       return;
     }
 
-    if (d <= m.stats.attackRange && this.canSee(m, hero)) {
+    if (d <= this.reachTo(m, hero) && this.canSee(m, hero)) {
       m.path = [];
       this.face(m, hero.x, hero.y);
       this.settleAction(m, false);
@@ -1547,10 +1567,9 @@ export class RunSim {
    */
   private bestInReach(hero: Entity): Entity | null {
     const radius = this.areaRadiusFor(hero);
-    const reach = hero.stats.attackRange;
 
     const candidates = this.state.monsters.filter(
-      (m) => !m.dead && dist(hero, m) <= reach && this.canSee(hero, m)
+      (m) => !m.dead && dist(hero, m) <= this.reachTo(hero, m) && this.canSee(hero, m)
     );
     if (candidates.length === 0) return null;
 
@@ -1687,8 +1706,7 @@ export class RunSim {
     const startX = e.x;
     const startY = e.y;
 
-    // Held still by a Fall: the stun is what makes a mover the answer.
-    if (e.kind === 'hero' && (e.stun ?? 0) > 0) return false;
+    if (e.kind === 'hero' && (e.stun ?? 0) > 0) return false; // a Fall holds you still
     let remaining = e.stats.moveSpeed * dt * pace * (e.kind === 'hero' ? this.turned?.move ?? 1 : 1);
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];

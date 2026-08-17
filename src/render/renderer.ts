@@ -245,45 +245,61 @@ export function auraLook(palette: Palette, aura: AuraDef): { colour: string; alp
 }
 
 /**
- * WHAT THE BOSS IS DOING, on the boss. A phase you have to read off a word is
- * one you learn by dying, so the Reading burns — a hot ring swelling around it
- * as it winds you in — and the Split is the crystal hanging open, the body gone
- * dim and dead-looking with the light coming out of it. Nothing says either.
+ * WHAT THE BOSS IS DOING, ON THE BOSS ITSELF. A phase you have to read off a
+ * word is one you learn by dying, and a ring on the floor is a Fall circle's
+ * vocabulary rather than the body's — so this is the BODY: the Reading turns
+ * it red, and the Split leaves it grey with a swirl going round over its head.
  *
- * `swell` is the ring, in tiles about its own size; `alpha` is how much of it
- * there is; `tint` is what its own ink is multiplied by. Both renderers read
- * one answer, and `for` is the seconds the phase has run so it can breathe.
+ * `tint` is what its own ink is multiplied by; `swirl` is how bright the dazed
+ * marks are and 0 is none; `colour` is what they are drawn in. `ran` is the
+ * seconds the phase has run, so both can breathe.
  */
 export function bossTelegraph(
   palette: Palette,
   phase: string | null,
   ran: number
-): { colour: string; swell: number; alpha: number; tint: string; core: number } | null {
+): { tint: string; swirl: number; colour: string } | null {
   const beat = 0.5 + 0.5 * Math.sin(ran * 4.2);
-  // BURNING: a halo about the size of the body, breathing, and the body itself
-  // gone hot. It reads as POWER, so the Split may not have one — and it takes
-  // `flame` where a Fall circle takes `ember`, or the two red discs are one.
+  // BURNING. The tint MULTIPLIES, so it can only darken — mixing toward chalk
+  // is what makes the red throb rather than sit there as one flat wash.
   if (phase === 'reading') {
-    return {
-      colour: palette.flame,
-      swell: 0.44 + 0.06 * beat,
-      alpha: 0.26 + 0.16 * beat,
-      tint: palette.flame,
-      core: 0.022 + 0.008 * beat,
-    };
+    return { tint: mix(palette.ember, palette.chalk, 0.1 + 0.3 * beat), swirl: 0, colour: palette.ember };
   }
-  // OPEN: the body dim and dead-looking, one small hard light where the
-  // crystal is. A halo here would say it is winding up, which is the opposite.
+  // DAZED, and it is not swinging at you: `RunSim.stalled` is the same answer
+  // in the sim, so the picture and the rule cannot drift.
   if (phase === 'split') {
-    return {
-      colour: palette.citrine,
-      swell: 0.34,
-      alpha: 0,
-      tint: palette.dust,
-      core: 0.045 + 0.015 * beat,
-    };
+    return { tint: palette.dust, swirl: 0.7 + 0.3 * beat, colour: palette.citrine };
   }
   return null;
+}
+
+/**
+ * Three SWIRLS going round over a dazed head — offsets in TILES from the
+ * body's own spot, so a renderer only has to say how tall and how big it is.
+ * Each is an open arc rather than a dot, because a dot going round in a
+ * flattened ring is a dot and a hook going round is the thing everybody
+ * already reads as stunned. The far half is smaller and fainter.
+ */
+export function dazeMarks(
+  head: number,
+  size: number,
+  elapsed: number
+): { x: number; y: number; r: number; from: number; to: number; width: number; alpha: number }[] {
+  const spin = elapsed * 3.1;
+  return [0, 1, 2].map((i) => {
+    const a = spin + (i * Math.PI * 2) / 3;
+    const near = 0.5 + 0.5 * Math.sin(a);
+    const small = 0.65 + 0.35 * near;
+    return {
+      x: Math.cos(a) * size * 0.26,
+      y: -head + size * 0.05 + Math.sin(a) * size * 0.08,
+      r: size * 0.07 * small,
+      from: a + 0.7,
+      to: a + 3.5,
+      width: size * 0.035 * small,
+      alpha: 0.5 + 0.5 * near,
+    };
+  });
 }
 
 /** Sparse art as full rows: a table keyed by row number, padded to the grid.
