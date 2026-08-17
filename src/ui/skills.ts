@@ -40,7 +40,8 @@ import { chain, frame, mount, svgEl } from './webart';
 import { bakedArt, nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
-import { nodeCard } from './glossary';
+import { keywordLine, nodeCard } from './glossary';
+import { slotWorkings } from '../skill-text';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { addSkillXp, equipSkill, equippedSkill, mainSkillId, skillProgress, slotForSkill, xpToNext } from '../sim/character';
@@ -137,6 +138,18 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 // ---------------------------------------------------------------------------
 // The skill's own numbers
 // ---------------------------------------------------------------------------
+
+/** A shelf row's card, in the shape a tree node takes so the glossary comes
+ *  with it. The only reading a WEBLESS skill has: the click equips it. */
+function skillCard(skill: SkillDef): HTMLElement {
+  const slot = slotForSkill(skill.id);
+  const where = slot ? SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() : '';
+  const on = !!slot && equippedSkill(game.character, slot) === skill.id;
+  return nodeCard(skill.name, on ? 'equipped' : where ? `${where} slot` : '', [
+    skill.description,
+    ...slotWorkings(skill, game.character),
+  ]);
+}
 
 /**
  * The damage line, with the numbers that actually produced it.
@@ -257,7 +270,7 @@ function renderSlots(): void {
     what.append(el('span', 'slotcard__slot', slot.name));
     what.append(el('span', 'slotcard__name', held?.name ?? 'empty'));
     card.append(what);
-    card.title = held ? held.description : slot.blurb;
+    attachTooltip(card, () => (held ? skillCard(held) : `${slot.name}\n${slot.blurb}`));
 
     // A filled one goes to its web; an empty one, and anything with no web to
     // go to, goes to the shelf this slot ACCEPTS.
@@ -325,6 +338,9 @@ function renderSkillList(): void {
     }
     btn.append(head);
 
+    // A row with only a name on it is a choice made blind.
+    btn.append(keywordLine(skill.description, 'skillrow__how'));
+
     const web = treeFor(skill.id).length;
     const cap = pointCapFor(skill.id);
     btn.append(
@@ -337,6 +353,7 @@ function renderSkillList(): void {
             `${spare} unspent`
       )
     );
+    attachTooltip(btn, () => skillCard(skill));
 
     btn.onclick = () => void open(skill.id);
     host.append(btn);

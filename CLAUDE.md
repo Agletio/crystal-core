@@ -792,6 +792,15 @@ clicking it on the Skills screen EQUIPS it, asking first if the slot is full.
 `MAIN_SKILLS` is what the main slot takes and is what every harness that builds
 a character to fight with reads; neither mover is in it.
 
+**A SHELF ROW SAYS WHAT THE SKILL DOES, on the row.** A skill with a web can be
+read on its web; one WITHOUT is equipped by the very click that would have
+opened it, so a row carrying only a name is a choice made blind — which is what
+picking the passive was. `.skillrow__how` is `SkillDef.description` through
+`keywordLine`, so the words are marked where they appear like everywhere else,
+and the hover is `skillCard`: the same `nodeCard` a tree node raises, carrying
+the description, whatever the skill statically GRANTS, and the glossary for
+both.
+
 ## What a level buys
 
 **Attributes** (`ATTRIBUTES`, `ATTRIBUTE_STEP` in `data.ts`). A character level

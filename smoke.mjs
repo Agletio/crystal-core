@@ -1458,6 +1458,21 @@ $('sheet-close').click();
     'and it says clicking equips rather than promising a web',
     row.textContent
   );
+  // A webless skill is EQUIPPED by the click, so the row is the only place its
+  // description can be read before the decision is made.
+  assert(
+    /Critical/.test(row.querySelector('.skillrow__how')?.textContent ?? ''),
+    'and the row says what it DOES, before you pick it',
+    row.querySelector('.skillrow__how')?.textContent
+  );
+  assert(
+    (row.querySelector('.skillrow__how .kw')?.textContent ?? '') !== '',
+    'with its keywords marked, like everywhere else they appear'
+  );
+  assert(
+    all('#skills-list .skillrow').every((r) => (r.querySelector('.skillrow__how')?.textContent ?? '').length > 0),
+    'every shelf row does, not only the one with no web'
+  );
   row.click();
   assert(
     $('skills-detail').hidden === true,
