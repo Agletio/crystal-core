@@ -533,14 +533,35 @@ for (const vp of VIEWPORTS) {
       const w = document.documentElement.clientWidth;
       const h = document.documentElement.clientHeight;
       const bad = [];
-      for (const el of document.querySelectorAll('#graft-pieces .slot, #graft-do, #graft-leave')) {
+      // The pick LIST scrolls, so a row below its fold legitimately measures
+      // past it — the box is what has to be on the card, and the two buttons.
+      for (const el of [document.getElementById('graft-pieces'), document.getElementById('graft-do'), document.getElementById('graft-leave')]) {
+        if (!el) continue;
         const r = el.getBoundingClientRect();
-        if (r.right > card.right + 1 || r.left < card.left - 1) bad.push(`${el.id || 'slot'} off the card`);
-        if (r.right > w || r.left < 0 || r.bottom > h || r.top < 0) bad.push(`${el.id || 'slot'} off the screen`);
+        const out =
+          r.right > card.right + 1 ||
+          r.left < card.left - 1 ||
+          r.bottom > card.bottom + 1 ||
+          r.top < card.top - 1;
+        if (out) bad.push(`${el.id} off the card`);
+        if (r.right > w || r.left < 0 || r.bottom > h || r.top < 0) bad.push(`${el.id} off the screen`);
       }
       return bad.length ? [...new Set(bad)].join(', ') : null;
     });
     if (lost) problems.push(`${vp.name}/graft: ${lost}`);
+    // A kind has ONE line, so picking the PIECE is the whole choice: one click
+    // has to arm the button, or the line reads as a list you did not notice.
+    const armed = await page.evaluate(() => {
+      const piece = [...document.querySelectorAll('#graft-pieces .slotcell__btn')].find((b) => !b.disabled);
+      if (!piece) return 'nothing worn that he works on';
+      piece.click();
+      const go = document.getElementById('graft-do');
+      const lines = document.querySelectorAll('#graft-lines .graft__line');
+      if (go?.disabled) return 'one click on a piece does not arm the button';
+      if (lines.length === 1 && lines[0].tagName !== 'DIV') return 'a line of one still renders as a pick';
+      return null;
+    });
+    if (armed) problems.push(`${vp.name}/graft: ${armed}`);
   } catch {
     problems.push(`${vp.name}: the second descent never reached a bench in a room`);
   }

@@ -1285,21 +1285,28 @@
   .met__row { display: flex; gap: 10px; align-items: center; }
   /* His bench. The piece grid is the dock's own slot, so a helmet in here and
      a helmet in the bag are the same picture. */
-  /* WORN gear only, so it is bounded: eight pieces, two rows, and the lines
-     you have to pick from stay on screen under them. */
-  .graft__pieces { --cols: 5; grid-template-rows: none; }
+  /* WORN gear only, in the sheet's own labelled slots, so it is bounded and
+     it reads as your gear: eight rows, and the lines stay on screen under. */
+  /* The LIST scrolls, not the card: the lines and the button have to stay
+     under it, or picking a piece scrolls the thing you picked it for away. */
+  .graft__pieces { display: flex; flex-direction: column; gap: 4px; max-height: 22vh; overflow-y: auto; }
+  .graft__pieces .slotcell__btn { min-height: 34px; padding: 4px 7px; }
+  .graft__pieces .slotcell__label { margin-bottom: 1px; font-size: 9px; }
   .graft__hint { margin: 0; font-size: 9px; color: var(--text-dim); }
   /* A bubble is anchored over a head and can be near the top of the screen, so
      it scrolls rather than growing off it. */
   #graft-card { max-height: min(76vh, 620px); }
   #graft-card .modal__body { overflow-y: auto; }
+
   .graft__go { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   .graft__line {
     display: flex; gap: 8px; align-items: baseline; width: 100%;
     text-align: left; padding: 6px 8px; cursor: pointer;
     background: none; border: 1px solid var(--edge); color: var(--bone); font: inherit;
   }
-  .graft__line:hover { border-color: var(--text-dim); }
+  /* A DIV where there is only one line: it is what he writes, not a pick. */
+  button.graft__line:hover { border-color: var(--text-dim); }
+  div.graft__line { cursor: default; }
   .graft__line--on { border-color: var(--citrine); color: var(--citrine); }
   .graft__line b { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }
   .graft__line span { font-size: 12px; color: var(--text-dim); }
@@ -1985,7 +1992,7 @@
       <div class="panel met">
         <div class="met__row" id="graft-relic"></div>
         <div class="dockcol__label">What he takes it out on</div>
-        <div class="slots graft__pieces" id="graft-pieces"></div>
+        <div class="graft__pieces" id="graft-pieces"></div>
         <p class="graft__hint">Worn gear. For something you are carrying, open your inventory and click it there.</p>
         <div class="dockcol__label" id="graft-lineslabel">What he writes</div>
         <div class="met__gift" id="graft-lines"></div>
