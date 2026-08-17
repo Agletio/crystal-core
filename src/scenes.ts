@@ -38,9 +38,7 @@ export interface SceneDef {
   beats?: SceneBeat[]; // the room's own person, before the fight
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
-  /** A `BossKeyDef` id this room's person HANDS OVER, once and in person. The
-   *  fight it opens is the fifth socket's, never this room's. */
-  gives?: string;
+  gives?: string; // a `BossKeyDef` id handed over here, once and in person
 }
 
 // A person smaller than the things you kill reads as set dressing.
