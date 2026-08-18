@@ -6,6 +6,17 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**A WEAPON IS NOW PINNED TO THE HAND, for zero generations.** *"Is there a way
+we can pin a bow to the character when they have a bow etc? like all the time
+same with all the weapons?"* — yes, and the fallback the user named (bow, 1h
+melee and 2h melee body VARIANTS, "way more but idk what else to do") is not
+needed. `HELD` in `src/render/held.ts` draws the item's own inventory icon at a
+hand; `HERO_HANDS` is a hand per FRAME, authored off the art rather than off a
+formula. Both heroes hold all five families. What is NOT done: the OFF hand — a
+shield is not drawn — and the two hand tables cover `attack` and `cast` only, so
+`hurt` and `death` fall back to the resting hand. Both are table rows, not
+mechanism.
+
 **THE HAUL IS GONE AND THE FILTER REPLACED IT, off a direct ask.** *"Remove the
 haul entirely and have everything just go into the inventory. Once full it stops
 and just let your inventory go over budget a bit."* There is one container now:

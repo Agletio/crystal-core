@@ -2,11 +2,12 @@
  * What a character looks like. The renderer is handed art keys and nothing else.
  *
  * A hero IS his trade: the body is `TradeSpec.sprite` and equipped gear does
- * not change it. `wanderer` is what a trade with no look of its own falls back
- * to, and a character with no trade at all cannot be played — the hall is the
- * first screen of a new game.
+ * not change it. What the main hand HOLDS is a second answer and is NOT the
+ * body — a weapon is one picture pinned at the hand.
  */
 import { GENERATED } from '../render/generated-art';
+import { HELD } from '../render/held';
+import { GEAR_BASE_BY_ID } from '../data';
 import { TRADE_BY_ID } from '../trades';
 import type { Character } from './character';
 
@@ -20,3 +21,10 @@ export function heroSpriteFor(character: Character): string {
   return worn && GENERATED[worn] ? worn : HERO_SPRITE;
 }
 
+/** The `HELD` row the main hand draws, off the base's `art` — a weapon's is
+ *  its FAMILY, so every rung of one holds the same picture. */
+export function heldFor(character: Character): string | undefined {
+  const weapon = character.equipment.weapon;
+  const art = weapon ? GEAR_BASE_BY_ID[weapon.base]?.art : undefined;
+  return art && HELD[art] ? art : undefined;
+}

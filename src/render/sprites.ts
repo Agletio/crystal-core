@@ -8,6 +8,8 @@ import { mix, spriteColour } from './renderer';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
 import { PROP_ART } from './generated-props';
+import { GENERATED_ICONS } from './generated-icons';
+import { HELD } from './held';
 import type { MonsterRank } from './bestiary';
 
 /** Pixels per sprite cell: texture, never size on screen. */
@@ -193,33 +195,51 @@ export interface Cel {
   dying?: number;
 }
 
+/** Which STATE a body is playing and how far into it — the index within that
+ *  state's own run, not into `frames`. What is pinned to a hand reads this, so
+ *  a weapon and the arm holding it cannot pick different beats. */
+export interface Beat {
+  state: string;
+  at: number;
+}
+
 /** Played once and HELD on the last frame: a swing, a flinch and a fall all
  *  end where they end rather than looping back round. */
-const once = (run: number[], at: number): number =>
-  run[Math.min(run.length - 1, Math.max(0, Math.floor(at * run.length)))] ?? 0;
+const holdAt = (run: number[], through: number): number =>
+  Math.min(run.length - 1, Math.max(0, Math.floor(through * run.length)));
+
+export function generatedBeat(sprite: string, e: Cel): Beat {
+  const states = GENERATED[sprite]?.states;
+  if (!states) return { state: 'idle', at: 0 };
+
+  if (e.dead && states.death) return { state: 'death', at: holdAt(states.death, e.dying ?? 1) };
+  if (e.action === 'hurt' && states.hurt) return { state: 'hurt', at: holdAt(states.hurt, e.through) };
+
+  if (e.action === 'attack') {
+    const named = e.skill && states[e.skill] ? e.skill : e.spell && states.cast ? 'cast' : null;
+    const state = named ?? (states.attack ? 'attack' : states.walk ? 'walk' : 'idle');
+    return { state, at: holdAt(states[state] ?? [0], e.through) };
+  }
+  const walk = states.walk ?? [0];
+  if (e.action === 'move') {
+    return {
+      state: 'walk',
+      at: Math.floor(e.walked / strideOf(sprite, walk.length)) % walk.length,
+    };
+  }
+  const idle = states.idle;
+  if (idle) return { state: 'idle', at: Math.floor(e.elapsed * IDLE_CYCLE) % idle.length };
+  return { state: 'walk', at: 0 };
+}
 
 export function generatedFrame(sprite: string, e: Cel): number {
   const art = GENERATED[sprite];
   if (!art) return e.action === 'attack' ? ATTACK_FRAME : 0;
-  const states = art.states;
   const stride = art.frames.length / art.dirs.length;
   const row = facingRow(sprite, e.facing) * stride;
-
-  // Falling over outranks whatever it was doing when it was killed.
-  if (e.dead && states.death) return row + once(states.death, e.dying ?? 1);
-  if (e.action === 'hurt' && states.hurt) return row + once(states.hurt, e.through);
-
-  if (e.action === 'attack') {
-    const own = (e.skill ? states[e.skill] : null) ?? (e.spell ? states.cast : null);
-    const run = own ?? states.attack ?? states.walk ?? [0];
-    return row + once(run, e.through);
-  }
-  const walk = states.walk ?? [0];
-  if (e.action === 'move')
-    return row + walk[Math.floor(e.walked / strideOf(sprite, walk.length)) % walk.length];
-  const idle = states.idle;
-  if (idle) return row + idle[Math.floor(e.elapsed * IDLE_CYCLE) % idle.length];
-  return row + walk[0];
+  const beat = generatedBeat(sprite, e);
+  const run = art.states[beat.state] ?? art.states.walk ?? [0];
+  return row + (run[beat.at] ?? run[0] ?? 0);
 }
 
 /** Whether the body has an animation of its OWN for what it is doing. The
@@ -339,6 +359,18 @@ function cell(size = CELL): { canvas: HTMLCanvasElement; ctx: CanvasRenderingCon
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   return ctx ? { canvas, ctx } : null;
+}
+
+/** What a hand is holding, painted at the icon's own grid. The item's own
+ *  picture, so a weapon in a fist costs no generation at all. */
+export function makeHeld(art: string): HTMLCanvasElement | null {
+  const spec = HELD[art];
+  const icon = spec ? GENERATED_ICONS[spec.icon] : undefined;
+  if (!icon) return null;
+  const made = cell(icon.grid);
+  if (!made) return null;
+  drawPixels(made.ctx, { rows: icon.rows, key: icon.key, grid: icon.grid }, icon.grid);
+  return made.canvas;
 }
 
 /** One generated prop, painted at its own grid: a prop is a picture standing

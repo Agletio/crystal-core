@@ -19,7 +19,7 @@ export interface FallCircle {
   fuse: number;
   of: number;
 }
-import { HERO_SCALE, heroSpriteFor } from './appearance';
+import { HERO_SCALE, heldFor, heroSpriteFor } from './appearance';
 import {
   armourReduction,
   characterStats,
@@ -195,6 +195,8 @@ export interface Entity {
   kind: EntityKind;
   /** Which body draws it: a monster's id, or the hero's TRADE. */
   sprite: string;
+  /** A `HELD` row pinned at its hand. The body never changes for it. */
+  held?: string;
   /** How much of a tile the art covers. */
   scale: number;
   /** Common, magic or rare. Drives size, halo and what it is worth. */
@@ -462,6 +464,7 @@ export class RunSim {
       id: 0,
       kind: 'hero',
       sprite: worn,
+      held: heldFor(character),
       scale: HERO_SCALE,
       rank: 'common',
       x: map.entrance.x,

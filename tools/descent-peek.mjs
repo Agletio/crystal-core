@@ -10,7 +10,8 @@
  * `zoom` is wheel steps OUT of the default — 0 is close enough to judge a wall,
  * 4 frames a chamber, 9 fits a good deal of the map. `pan` is pixels the map
  * moves under the camera. `crop` is `x,y,w,h,scale`, magnified NEAREST, because
- * a fault half a tile across is invisible at the size it ships at.
+ * a fault half a tile across is invisible at the size it ships at. `hold` is a
+ * weapon base to put in the hand first — the kit carries one of each family.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -25,7 +26,8 @@ if (!existsSync(join(docs, 'app.js'))) {
   process.exit(1);
 }
 
-const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop, zone = ''] = process.argv.slice(2);
+const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop, zone = '', hold = ''] =
+  process.argv.slice(2);
 
 /** Which crystals to socket for each zone. Half of one world takes the rock,
  *  and two halves with no Normal is the Seam. */
@@ -108,6 +110,28 @@ for (const want of SOCKETS[zone] ?? []) {
   }
   await page.waitForTimeout(200);
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
+  await page.waitForTimeout(200);
+}
+
+// What the main hand is holding is drawn ON the body, so judging it means
+// putting one there: the kit carries one of every family, in the dock.
+if (hold) {
+  await page.evaluate(() => document.getElementById('open-inventory')?.click());
+  await page.waitForTimeout(250);
+  const took = await page.evaluate((want) => {
+    const slot = [...document.querySelectorAll('#inv-gear .slot')].find((b) =>
+      (b.getAttribute('aria-label') ?? '').toLowerCase().includes(want.toLowerCase())
+    );
+    if (!slot) return false;
+    slot.click();
+    return true;
+  }, hold);
+  if (!took) {
+    console.error(`descent-peek: nothing in the dock reads as "${hold}"`);
+    process.exit(1);
+  }
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('inv-close')?.click());
   await page.waitForTimeout(200);
 }
 

@@ -1581,6 +1581,15 @@ runs so a descent's drops are never split. `craftId` is a REFERENCE, not a
 move, and it resolves across the bag, the collection, the worn slots and the
 sockets.
 
+**A WEAPON IS PINNED, NOT WORN.** `HELD` in `src/render/held.ts` names one
+picture per weapon FAMILY and it is the item's own inventory ICON; a hero's
+BODY is still `TradeSpec.sprite` alone and no equipment may ever change it.
+`HERO_HANDS` is a hand per FRAME of a body's own animation, and the demo holds
+each run to exactly the length of the state it pins to — a formula is not
+allowed here, because an overhead smash and a backhand are different arcs.
+`generatedBeat` is the ONE answer for which state and frame is showing, so the
+weapon and the arm cannot disagree. Only Pixi draws one.
+
 **The auto-sell filter is clicked in what you KEEP and stored as what you
 SELL.** `KEEP_GROUPS` and `KEEP_TIERS` in `src/data.ts` are the rows — derived
 from `ARMOUR_FAMILIES.archetypes`, the weapon families and the jewellery kinds,

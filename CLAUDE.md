@@ -103,7 +103,31 @@ magnified crop, because every fault worth finding is invisible at ship size.
 `wanderer` only for a trade with no look of its own. There is no nobody to
 start as: the trade is chosen when the character is made.
 
-**Equipped gear does not change the sprite, and there is no longer any art that
+**A WEAPON IS PINNED TO THE HAND, and it costs no generation at all.** *The
+user's call: "is there a way we can pin a bow to the character when they have a
+bow etc? like all the time same with all the weapons?"* `HELD` in
+`src/render/held.ts` is one row per weapon FAMILY, and the picture it draws is
+the item's OWN inventory icon out of `GENERATED_ICONS` — already drawn upright
+with its grip in the middle, which is the whole of why this was free. `heldFor`
+in `src/sim/appearance.ts` answers the main hand's `GearBase.art`, `Entity.held`
+carries it, and `drawHeld` in `pixi.ts` lays a second sprite over the body at a
+HAND. It rides the SAME anchor the body does, so nothing can drift off a figure,
+and it mirrors with the facing rather than rotating.
+
+**A hand is authored PER FRAME, never off a formula.** `HERO_HANDS` is a hand
+for every frame of every state a hero has: a formula swung a sword the opposite
+way to the arm holding it, because an overhead smash and a backhand are not the
+same arc and nothing in a body's frames says which it is. `generatedBeat` in
+`src/render/sprites.ts` is the one answer for which state and which frame is
+showing, so the weapon and the arm cannot pick different beats. `HeldSpec.turn`
+is the angle that hangs a weapon's BUSINESS END DOWN — a sword is drawn
+blade-down and takes none, a mace and a wand are drawn head-UP and take half a
+turn — which is what lets one hand table swing all five. **A BOW takes no hand
+at all**: it is held out and drawn, so the arm punching past it reads as the bow
+arm going with it, where a swept bow reads as a club. Only Pixi draws one;
+`canvas2d` has no sprites and never did.
+
+**Equipped gear does not change the SPRITE, and there is no longer any art that
 could.** The paper doll is GONE — `body.ts`, `gear-art.ts`, `look.ts`, `pose.ts`,
 the `Look` type, `lookOf`, the per-loadout texture cache and the two model
 viewers, about 1,900 lines. A hero was a figure with four slots of armour and a

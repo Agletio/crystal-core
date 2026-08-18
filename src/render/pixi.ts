@@ -21,6 +21,7 @@ import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import type { Cel } from './sprites';
+import { HELD, handAt } from './held';
 import {
   auraLook,
   bossTelegraph,
@@ -58,6 +59,7 @@ import {
   bodyFoot,
   bodyTop,
   generatedFrame,
+  makeHeld,
   makeProp,
   makeSheet,
   rankedKey,
@@ -212,6 +214,9 @@ export async function createPixiRenderer(
   }
 
   const sprites = new Map<number, Sprite>();
+  /** One per entity that holds something. Its own sprite rather than a child
+   *  of the body, or it would inherit the body's mirroring twice. */
+  const helds = new Map<number, Sprite>();
   const floaters: Text[] = [];
 
   /** The boss and what its phase looks like, worked out once a frame — three
@@ -266,6 +271,19 @@ export async function createPixiRenderer(
 
     world.scale.set(tile);
     world.position.set(offX, offY);
+  }
+
+  const holds = new Map<string, Texture | null>();
+
+  /** What a hand is holding, uploaded on first use like everything else. */
+  function heldTexture(art: string): Texture | null {
+    const already = holds.get(art);
+    if (already !== undefined) return already;
+    const canvas = makeHeld(art);
+    const made = canvas ? Texture.from(canvas) : null;
+    if (made) made.source.scaleMode = 'nearest';
+    holds.set(art, made);
+    return made;
   }
 
   const props = new Map<string, Texture | null>();
@@ -612,6 +630,11 @@ export async function createPixiRenderer(
         stale.destroy();
         sprites.delete(e.id);
       }
+      const dropped = helds.get(e.id);
+      if (dropped) {
+        dropped.destroy();
+        helds.delete(e.id);
+      }
       return;
     }
 
@@ -679,6 +702,54 @@ export async function createPixiRenderer(
       e.hitFlash > 0
         ? toHexNumber(phaseTint ? mix(phaseTint, palette.chalk, 0.65) : palette.chalk)
         : toHexNumber(phaseTint ?? '#ffffff');
+
+    drawHeld(e, s, fade, sunk, elapsed);
+  }
+
+  /**
+   * What is in the hand, pinned to the body it belongs to. It rides the SAME
+   * anchor the body does, so a weapon cannot drift off a figure however the
+   * camera moves, and it flips with the facing rather than rotating — the art
+   * is authored facing east like everything else.
+   */
+  function drawHeld(e: Entity, body: Sprite, fade: number, sunk: number, elapsed: number): void {
+    const texture = e.held ? heldTexture(e.held) : null;
+    const spec = e.held ? HELD[e.held] : undefined;
+    let h = helds.get(e.id);
+    if (!texture || !spec) {
+      if (h) {
+        h.destroy();
+        helds.delete(e.id);
+      }
+      return;
+    }
+    if (!h) {
+      h = new Sprite(texture);
+      // Directly over its own body. The layer draws in the order it was built
+      // and sorts by nothing, exactly as it does for the bodies themselves.
+      entityLayer.addChildAt(h, entityLayer.getChildIndex(body) + 1);
+      helds.set(e.id, h);
+    }
+    h.texture = texture;
+    h.anchor.set(spec.grip[0], spec.grip[1]);
+
+    const facingEast = Math.cos(e.facing) >= 0;
+    const hand = handAt(e.sprite, e.held ?? '', cel(e, elapsed));
+    // Both in fractions of the BODY's grid, so one number moves a hand on
+    // every trade at once — and the vertical one is measured off the same
+    // anchor the body hangs from, or the two come apart as `scale` changes.
+    const dx = (hand.x - 0.5) * e.scale * (facingEast ? 1 : -1);
+    const dy = (hand.y - anchorY(e)) * e.scale;
+    h.x = body.x + dx;
+    h.y = body.y + dy;
+
+    const size = (1 / (texture.width || CELL)) * spec.size * (1 - fade * 0.5);
+    h.scale.set(size);
+    h.scale.x = Math.abs(h.scale.x) * (facingEast ? 1 : -1);
+    h.rotation = (spec.turn + hand.turn) * (facingEast ? 1 : -1) + fade * 1.2;
+    h.alpha = body.alpha;
+    h.tint = body.tint;
+    if (sunk > 0) h.y += sunk * 0.8;
   }
 
   function drawOverlays(state: RunState): void {

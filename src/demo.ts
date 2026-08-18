@@ -121,6 +121,8 @@ import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed }
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
+import { GENERATED_ICONS } from './render/generated-icons';
+import { HELD, HERO_HANDS } from './render/held';
 import { animates, facingRow, generatedFrame } from './render/sprites';
 import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
@@ -1556,6 +1558,46 @@ rule('SPRITES — is the pixel art well formed?');
       }
     }
     check(bad.length === 0, 'and every state of one names frames that exist', bad.join('; '));
+
+    // What a hand HOLDS is pinned to a frame of a body, so both halves have to
+    // resolve: an icon nobody drew is a weapon that silently vanishes, and a
+    // hand run shorter than the state it belongs to leaves a sword hanging on
+    // the frame the arm has already left.
+    {
+      const wrong: string[] = [];
+      for (const [art, spec] of Object.entries(HELD)) {
+        if (!GENERATED_ICONS[spec.icon]) wrong.push(`${art} wants icon ${spec.icon}`);
+        if (!(spec.size > 0)) wrong.push(`${art} is ${spec.size} tiles`);
+      }
+      // Every weapon FAMILY is holdable, or a base drops that nothing draws.
+      const families = [...new Set(WEAPON_BASES.map((b) => b.family ?? b.id))];
+      const nothing = families.filter((f) => !HELD[f]);
+      check(
+        wrong.length === 0 && nothing.length === 0,
+        `every weapon family is held — ${families.join(', ')}`,
+        [...wrong, ...nothing.map((f) => `${f} holds nothing`)].join('; ')
+      );
+
+      for (const [sprite, states] of Object.entries(HERO_HANDS)) {
+        const art = GENERATED[sprite];
+        if (!art) {
+          wrong.push(`${sprite} is not a generated body`);
+          continue;
+        }
+        for (const [state, run] of Object.entries(states)) {
+          const own = art.states[state];
+          if (!own) wrong.push(`${sprite}/${state} is not a state it has`);
+          else if (own.length !== run.length) {
+            wrong.push(`${sprite}/${state}: ${run.length} hands over ${own.length} frames`);
+          }
+        }
+      }
+      check(
+        wrong.length === 0,
+        'and every authored hand run is exactly as long as the animation it pins to',
+        wrong.join('; ')
+      );
+    }
 
     // Nothing may ask for a frame nobody DREW. `makeSheet` builds one canvas
     // per frame the art has, and every frame past that falls back to the first
