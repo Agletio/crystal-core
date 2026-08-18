@@ -5879,6 +5879,42 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
     'and one it does not reach is left alone',
     'the area reaches past what it draws'
   );
+
+  // AREA OF EFFECT MOVES THE POOL. The pool picture is scaled to the vfx's
+  // second point, so if that stopped following the area the art would quietly
+  // lie about what got poisoned. Checked against the SCALE the sim applied
+  // rather than against the formula, which would just be it written twice.
+  {
+    const wrong: string[] = [];
+    let last = 0;
+    for (const scale of [0.5, 1, 1.41, 2]) {
+      let wide = 0;
+      const caught: unknown[] = [];
+      const near = dummy(R * scale - 0.15, 0, 0.001);
+      const past = dummy(R * scale + 0.15, 0, 0.001);
+      SKILL_BEHAVIOURS[skill.behaviour]({
+        skill, user, primary: dummy(0, 0, 0.3), enemies: [near, past],
+        rng: new Rng(3), grants: {}, crit: false, castIndex: 0,
+        hit: () => {},
+        ailment: (t: any) => caught.push(t),
+        areaRadius: (base: number) => base * scale,
+        vfx: (kind: string, points: any[]) => {
+          if (kind === 'blight_field') wide = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+        },
+      } as any);
+      if (Math.abs(wide - R * scale) > 1e-9) wrong.push(`x${scale} drew ${wide.toFixed(3)}`);
+      if (!caught.includes(near)) wrong.push(`x${scale} missed inside its own pool`);
+      if (caught.includes(past)) wrong.push(`x${scale} poisoned past its own pool`);
+      if (wide <= last) wrong.push(`x${scale} did not grow`);
+      last = wide;
+    }
+    line(`  the pool runs ${(R * 0.5).toFixed(2)} to ${(R * 2).toFixed(2)} tiles over that spread of area`);
+    check(
+      wrong.length === 0,
+      'and the pool the renderer draws follows Area of Effect exactly, both ways',
+      wrong.join('; ')
+    );
+  }
 }
 
 // ===========================================================================

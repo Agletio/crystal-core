@@ -1635,6 +1635,12 @@ sprite UNDER its own body in `entityLayer`, which is what puts a shield on the
 far arm; a shield drawn over the chest hid the figure, and which hero you are
 looking at is the silhouette.
 
+**A FIELD'S ART IS DRAWN TO THE RADIUS THE SIM USED.** The blight vfx's second
+point IS the radius — `use.areaRadius(...)`, the one place Area of Effect
+becomes tiles — and the pool picture is scaled to it, so the art cannot lie
+about what got poisoned. The demo runs the behaviour at several area scales and
+holds the drawn circle to what was caught, both in and out.
+
 **EFFECT ART THAT LIES ON THE FLOOR GOES UNDER THE BODIES.** `vfxGroundLayer`
 sits between the props and the entities and `effectSprite(..., ground)` puts a
 picture there — a poison pool over the pack it caught is a lid on the fight.
