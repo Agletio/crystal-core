@@ -434,6 +434,27 @@
      "say": "buckling at the knees at a three-quarter angle and falling forward onto its face, the maul dropping away"
     }
    }
+  },
+  {
+   "sprite": "aethermancer_bow",
+   "character": "d76017ee-4d85-4b67-b30d-dfc686125d72",
+   "name": "The Aethermancer, with a bow",
+   "size": 96,
+   "look": "a MAGE hung with GLASS \u2014 that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY \u2014 no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing still at a three-quarter angle holding his bow, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of the bow in every frame"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, carrying his bow in one hand and never letting go of it, the hanging phials swinging with him"
+    },
+    "attack": {
+     "frames": 8,
+     "say": "a two-beat BOW SHOT seen at a three-quarter angle. He faces the same way in EVERY frame and never turns round or away from the viewer, and he keeps hold of the bow throughout. First he brings the bow up in front of him and draws the string back to his cheek with the other hand, weight on the back foot, then he LOOSES, and the animation ENDS there with the bow arm straight out in front of him and the string hand back beside his jaw. There is no recovery and no settling back: the last frame is the release. Neither arm ever goes behind his back"
+    }
+   }
   }
  ],
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own \u2014 the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",

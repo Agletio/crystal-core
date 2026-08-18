@@ -6,6 +6,22 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**A BOW IS NOW A BODY OF ITS OWN, and the tool for it was already here.**
+`create_character_state` regenerates an existing character with an edit applied
+across every rotation, keeping the same man AND his skeleton — so the variant
+animates like any other body. `dress.mts --state` already wrapped it for
+armour; a `bow` outfit was one table row. `aethermancer_bow` is the trial: the
+state cost about 40 generations and its idle, walk and shot about two each.
+`HOLDING` in `appearance.ts` is the seam, and `pinnedFor` stops the pinned
+picture drawing over a body that already holds one.
+
+**What is left, if it is judged good.** The Alchemist has no bow variant, so he
+still pins one; nobody has a melee variant and the pinned melee is what these
+frames are for. At ~45 generations a combo, two heroes × five families would be
+about 450 of the 2700 left — affordable, but it is a decision, not a default.
+Judged BAD, the whole thing reverts to one line: drop `aethermancer_bow` from
+`HOLDING`.
+
 **BOTH ATTACK ANIMATIONS WERE REDONE TO END FORWARD.** *"The last frame the
 arms like flip backwards."* They did: the source generations turned the body
 right round over their last three frames, and since a one-shot state HOLDS its

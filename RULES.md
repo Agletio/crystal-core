@@ -1595,6 +1595,12 @@ state, since a missing one silently falls back to the wrong arm. A track is the
 HAND, so where a thing sits relative to it is `HeldSpec.reach` and belongs to
 the weapon. Only Pixi draws one.
 
+**A BODY THAT DRAWS ITS OWN WEAPON IS NEVER ALSO PINNED ONE.** `HOLDING` in
+`src/sim/appearance.ts` maps a `HELD` row to the `<body>_<suffix>` variant that
+draws it, `heroSpriteFor` answers that variant where the art exists, and
+`pinnedFor` — not `heldFor` — is what the sim puts on the entity. One seam, so
+a weapon can never be drawn twice.
+
 **AN ATTACK ANIMATION ENDS AT THE STRIKE, and is never asked to recover.** The
 renderer plays a one-shot state once and HOLDS its last frame, so a recovery
 beat is never seen except as the drift it brings — and it brought the worst

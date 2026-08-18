@@ -19,7 +19,7 @@ export interface FallCircle {
   fuse: number;
   of: number;
 }
-import { HERO_SCALE, heldFor, heroSpriteFor } from './appearance';
+import { HERO_SCALE, heroSpriteFor, pinnedFor } from './appearance';
 import {
   armourReduction,
   characterStats,
@@ -465,8 +465,8 @@ export class RunSim {
       id: 0,
       kind: 'hero',
       sprite: worn,
-      held: heldFor(character),
-      offhand: heldFor(character, 'offhand'),
+      held: pinnedFor(character),
+      offhand: pinnedFor(character, 'offhand'),
       scale: HERO_SCALE,
       rank: 'common',
       x: map.entrance.x,

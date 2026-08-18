@@ -386,6 +386,32 @@
    "inks": 24,
    "stride": 1.44,
    "luma": 32
+  },
+  {
+   "sprite": "aethermancer_bow",
+   "character": "d76017ee-4d85-4b67-b30d-dfc686125d72",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "group": "5e3982cd-55fe-431f-a29a-b1a03d5dac2e",
+     "frames": 2
+    },
+    "walk": {
+     "group": "b0f8d067-402b-4ee2-8e71-4daa7beb60de",
+     "frames": 6
+    },
+    "attack": {
+     "group": "1663ba73-488c-457f-95da-c5d193cd1363",
+     "frames": 4,
+     "from": 0.22,
+     "to": 0.78
+    }
+   }
   }
  ],
  "props": [

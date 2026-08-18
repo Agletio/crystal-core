@@ -114,6 +114,20 @@ carries it, and `drawHeld` in `pixi.ts` lays a second sprite over the body at a
 HAND. It rides the SAME anchor the body does, so nothing can drift off a figure,
 and it mirrors with the facing rather than rotating.
 
+**AND A BOW IS A BODY, not a pinned picture.** *The user's call: "on the site I
+see a way to use existing character and regen them holding a prop?"* There is:
+`create_character_state` makes a VARIANT of a character with an edit applied
+across every rotation, keeping the same man's face and proportions and — this
+is what it buys — the same SKELETON, so the variant animates like any other
+body. `dress.mts <outfit> --state <character-id>` is the call and `OUTFITS` is
+what to say; `aethermancer_bow` is the first one, its arms drawn ROUND the bow
+rather than a picture laid over them. It costs 20-40 generations for the state
+plus about two per animation. `HOLDING` in `src/sim/appearance.ts` is the one
+seam: a `HELD` row named there makes `heroSpriteFor` answer `<body>_<suffix>`
+where the art exists, and `pinnedFor` then draws nothing at that hand, so a
+body and a pin can never both draw the same weapon. Every other family stays
+pinned, which is what makes this affordable.
+
 **A hand is authored PER FRAME, never off a formula.** `HERO_HANDS` is a hand
 for every frame of every state a hero has: a formula swung a sword the opposite
 way to the arm holding it, because an overhead smash and a backhand are not the

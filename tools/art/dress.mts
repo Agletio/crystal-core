@@ -21,7 +21,7 @@ const CACHE = new URL('./cache/designs/', import.meta.url).pathname;
 /** The edit DRESSES a man rather than replacing him, and must say so. */
 const KEEP =
   'Keep the SAME man, the same face, the same pose, the same proportions and the same ' +
-  'grimy palette. Do not replace him. No ground, no floor, no shadow, no base.';
+  'palette. Do not replace him. No ground, no floor, no shadow, no base.';
 
 /** One entry is one whole LOOK, and a look is what a TRADE looks like. At the
  *  ~87 device pixels the camera lands a body in, two near-neighbours are the
@@ -40,6 +40,15 @@ export const OUTFITS: Record<string, string> = {
     'Put heavy dark plate armour on him over the tattered clothes: a breastplate, shoulder ' +
     'pauldrons, a closed visored helm and steel greaves. Dark scarred iron, NOT shiny, ' +
     'NOT silver, NOT gold, NOT ornate. ' + KEEP,
+  // A WEAPON rather than a look, and the reason this is worth 40 generations:
+  // a bow the rotations actually HOLD is one an animation can keep hold of,
+  // where a bow named at animation time is invented afresh every frame.
+  bow:
+    'Put a large longbow in one hand: he grips it at its middle and holds it upright in ' +
+    'front of him, the bowstring nearest his body and the limbs curving away. His other ' +
+    'hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string — ' +
+    'light enough to stand out clearly against his dark clothes. Change NOTHING else: the ' +
+    'same head, the same coat, the same belt, the same boots. ' + KEEP,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
