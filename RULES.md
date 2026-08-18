@@ -1595,6 +1595,13 @@ state, since a missing one silently falls back to the wrong arm. A track is the
 HAND, so where a thing sits relative to it is `HeldSpec.reach` and belongs to
 the weapon. Only Pixi draws one.
 
+**A HAND IS THE USER'S MARK, not a number somebody derived.** `HERO_HANDS` was
+authored off a sheet the user drew on — a dot where the hand is, a stroke for
+which way the business end points — and `tools/art/` keeps no copy of that
+sheet, so the numbers ARE the record. The scratch sheet is regenerated from the
+same table it feeds, which is what makes a re-mark cheap: draw on the current
+placement, read the dots back, done.
+
 **A BODY THAT DRAWS ITS OWN WEAPON IS NEVER ALSO PINNED ONE.** `HOLDING` in
 `src/sim/appearance.ts` maps a `HELD` row to the `<body>_<suffix>` variant that
 draws it, `heroSpriteFor` answers that variant where the art exists, and

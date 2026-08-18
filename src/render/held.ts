@@ -53,10 +53,10 @@ const REST: Hand = { x: 0.61, y: 0.51, turn: 0 };
 export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
   alchemist: {
     attack: [ // an OVERHEAD SMASH: fist high, forward at the head, down, through
-      { x: 0.71, y: 0.16, turn: 3.0 },
-      { x: 0.7, y: 0.18, turn: 3.5 },
-      { x: 0.69, y: 0.23, turn: 4.6 },
-      { x: 0.75, y: 0.46, turn: 5.6 },
+      { x: 0.72, y: 0.18, turn: -2.2 },
+      { x: 0.72, y: 0.2, turn: -2.57 },
+      { x: 0.72, y: 0.24, turn: -3.43 },
+      { x: 0.74, y: 0.46, turn: -2.14 },
     ],
     // The LEAD hand, which is the one a bow lives in: it rides the body's
     // lean rather than the strike, so the bow stays braced while the other
@@ -82,12 +82,12 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.44, y: 0.46, turn: 0 },
     ],
     walk: [
-      { x: 0.6, y: 0.52, turn: 0.08 },
-      { x: 0.62, y: 0.5, turn: -0.04 },
-      { x: 0.63, y: 0.51, turn: -0.08 },
-      { x: 0.62, y: 0.53, turn: 0.02 },
-      { x: 0.6, y: 0.52, turn: 0.08 },
-      { x: 0.59, y: 0.51, turn: 0.04 },
+      { x: 0.67, y: 0.5, turn: -1.66 },
+      { x: 0.69, y: 0.48, turn: -1.78 },
+      { x: 0.7, y: 0.49, turn: -1.82 },
+      { x: 0.69, y: 0.51, turn: -1.72 },
+      { x: 0.67, y: 0.5, turn: -1.66 },
+      { x: 0.66, y: 0.49, turn: -1.7 },
     ],
     'walk/off': [
       { x: 0.46, y: 0.46, turn: 0.1 },
@@ -98,8 +98,8 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.45, y: 0.45, turn: 0.05 },
     ],
     idle: [
-      { x: 0.61, y: 0.51, turn: 0 },
-      { x: 0.61, y: 0.52, turn: 0.03 },
+      { x: 0.68, y: 0.46, turn: -1.54 },
+      { x: 0.68, y: 0.52, turn: -1.95 },
     ],
     'idle/off': [
       { x: 0.47, y: 0.46, turn: 0 },
@@ -108,10 +108,10 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
   },
   aethermancer: {
     attack: [ // a BACKHAND: coiled UP across the chest, then out to full stretch
-      { x: 0.5, y: 0.51, turn: 2.2 },
-      { x: 0.37, y: 0.43, turn: 2.5 },
-      { x: 0.37, y: 0.43, turn: 3.0 },
-      { x: 0.77, y: 0.38, turn: 4.7 },
+      { x: 0.51, y: 0.57, turn: -3.07 },
+      { x: 0.41, y: 0.5, turn: 2.43 },
+      { x: 0.4, y: 0.5, turn: -3.04 },
+      { x: 0.87, y: 0.42, turn: -2.22 },
     ],
     'attack/off': [
       { x: 0.48, y: 0.48, turn: 0.15 },
@@ -134,12 +134,12 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.47, y: 0.47, turn: 0 },
     ],
     walk: [
-      { x: 0.6, y: 0.52, turn: 0.08 },
-      { x: 0.62, y: 0.5, turn: -0.04 },
-      { x: 0.63, y: 0.51, turn: -0.08 },
-      { x: 0.62, y: 0.53, turn: 0.02 },
-      { x: 0.6, y: 0.52, turn: 0.08 },
-      { x: 0.59, y: 0.51, turn: 0.04 },
+      { x: 0.45, y: 0.61, turn: -2.2 },
+      { x: 0.47, y: 0.59, turn: -2.3 },
+      { x: 0.48, y: 0.6, turn: -2.34 },
+      { x: 0.47, y: 0.62, turn: -2.24 },
+      { x: 0.45, y: 0.61, turn: -2.2 },
+      { x: 0.44, y: 0.6, turn: -2.24 },
     ],
     'walk/off': [
       { x: 0.47, y: 0.46, turn: 0.1 },
@@ -150,8 +150,8 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.46, y: 0.45, turn: 0.05 },
     ],
     idle: [
-      { x: 0.61, y: 0.51, turn: 0 },
-      { x: 0.61, y: 0.52, turn: 0.03 },
+      { x: 0.46, y: 0.62, turn: -2.17 },
+      { x: 0.46, y: 0.63, turn: -2.38 },
     ],
     'idle/off': [
       { x: 0.48, y: 0.46, turn: 0 },
