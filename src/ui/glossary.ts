@@ -3,8 +3,7 @@
  * always will be, so a keyword inside one cannot be hovered a second time —
  * and does not have to be: the word is MARKED where it appears and every
  * keyword the lines name is defined at the bottom of the same box. Learn Arc
- * once and every card saying +1 Arc after it is free to read. It also works on
- * a phone, which has no hover at all.
+ * once and every card saying +1 Arc after it is free to read.
  */
 import { cutKeywords, keywordsIn } from '../keywords';
 

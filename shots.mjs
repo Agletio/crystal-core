@@ -22,9 +22,7 @@ if (!existsSync(join(docs, 'app.js'))) {
   process.exit(1);
 }
 
-/** Desktop only, per `RULES.md`. Windows floating on a full-screen map mean
- *  nothing at 390px, so the phone viewport reported a layout nobody maintains;
- *  mobile returns as its own shell, and returns here. */
+/** Desktop only, by decision. */
 const VIEWPORTS = [{ name: 'desktop', width: 1280, height: 800 }];
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };

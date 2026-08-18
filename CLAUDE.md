@@ -1,40 +1,50 @@
 # Crystal Core
 
-A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework.
+A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework, no
+server. Ships as `docs/index.html` + a committed `docs/app.js`.
 
-## Three files
+Two files: **this one** (always true, always loaded) and **`ROADMAP.md`** (the
+work that is left). Everything domain-specific is a SKILL — load it when you
+touch that domain, not before.
 
-| | |
+| skill | load before |
 |---|---|
-| **`CLAUDE.md`** | this one — the game as it IS |
-| **`RULES.md`** | what is ALWAYS true: how to work, and what must not break |
-| **`ROADMAP.md`** | the work that is LEFT, and nothing else |
+| `art` | spending a generation on anything: bodies, tilesets, icons, fixtures |
+| `renderer` | `src/render/`, `src/vignettes.ts`, the carve in `src/sim/grid.ts` |
+| `systems` | `src/sim/`, `src/data.ts`, `src/trees/`, `src/trades/`, `src/moves/`, `src/game/`, `src/crafting.ts` |
+| `screens` | `src/ui/`, `src/web.ts`, `docs/index.html` |
+| `harness` | a failing, flaking or hanging check; adding one |
 
-**Start every session by reading `RULES.md`, then `ROADMAP.md`.** This file is
-loaded for you; those two are not.
+## The cycle
 
-**Before either of them, `git fetch` and check you are on the tip of the
-branch.** The clone is taken when the container starts and the branch moves
-under it, so the roadmap you were handed can be listing work that has already
-landed — that has cost a whole phase, built and tested and thrown away.
-`git log --oneline -15 origin/<branch>` is the fastest read of what is done;
-reset onto the tip and re-read the roadmap before picking anything.
+**`git fetch` first, every session.** The clone is taken when the container
+starts and the branch moves under it, so the roadmap you were handed can list
+work that has already landed — that has cost a whole phase, built and tested and
+thrown away. `git log --oneline -15 origin/<branch>` is the fastest read; reset
+onto the tip and re-read the roadmap before picking anything.
 
-One phase at a time, and **no stop between them**: take the lowest-numbered
-phase in the roadmap that is not blocked on an open question, do the WHOLE of
-it, leave the suite green, commit and push, update `ROADMAP.md` and `RULES.md`
-to match what you did — and then start the next phase in the same breath.
-Finishing one is not a stopping point and is never a reason to ask whether to
-continue. The cycle is written out in `RULES.md` and it is the authority on it.
+Then: take the **lowest-numbered phase** not blocked on an open question, do the
+WHOLE of it, leave the suite green, commit and push, update `ROADMAP.md` (delete
+the phase, renumber, move what turned out wrong into Open questions) and this
+file if the game changed — **and start the next phase in the same breath.**
 
-When the roadmap holds nothing but questions, say so and list them rather than
-inventing work.
+**Finishing a phase is not a stopping point.** Do not end the turn to report,
+do not ask whether to carry on. Say what it did in two lines and keep working.
 
-**Ask in a plain message, never through the multiple-choice popup tool.** The
-popup is not always being watched and times out, which loses the question. Write
-it in the reply, stop, and wait for the answer — do not pick one and carry on.
-Once it is answered, carry on without stopping again: a question is the only
-thing worth pausing for, and pausing between phases is not.
+**Push before starting the next phase.** This working tree has been observed
+resetting to the commit it started from, twice in one session; both times
+`git fetch && git reset --hard origin/<branch>` lost nothing, because each phase
+had been pushed as it went green.
+
+Exactly three things end a session, and a finished phase is not one:
+
+- **The roadmap holds nothing but questions** — say so and list them. Do not
+  invent work, and do not promote a backlog item without being asked.
+- **A question needs answering.** **Ask in a plain message, never through the
+  multiple-choice popup** — it is not always watched, it times out, and the
+  question is lost. Write it in the reply, stop, wait. Once answered, carry on
+  without stopping again.
+- **The context runs out.** The harness's call, not a decision.
 
 ## Commands
 
@@ -42,1502 +52,145 @@ thing worth pausing for, and pausing between phases is not.
 |---|---|
 | `npm run comments` | comment budget |
 | `npm run theme` | every colour a token, every token defined |
-| `npm run typecheck` | tsc |
+| `npm run typecheck` | tsc, `src` only |
 | `npm run build` | bundle to `docs/app.js` — **committed**, Cloudflare runs no build |
-| `npm run smoke` | headless boot and interaction |
-| `npm run demo` | sim, economy, trees, balance |
 | `npm run mods` | every modifier rolls, does something, reads |
-| `npm run shots` | ~5min: all 30 screens against a checklist, and an overflow probe |
-| `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
-| `npm run peek` | a DESCENT, at a zoom, a pan, a crop, a skill and a burst of frames |
+| `npm run smoke` | ~10s: headless boot and interaction |
+| `npm run demo` | ~2min: sim, economy, trees, balance |
+| `npm run shots` | ~5min: all 30 screens against a checklist |
+| `npm run drag` | ~20s: the dock reorders, a window goes where you put it |
+| `npm run peek` | a descent, at a zoom, a pan, a crop, a skill, a burst of frames |
 
-**Run what the change can reach, not the whole suite** — `RULES.md` has the
-table. **Nothing teaches, by decision:** the guided
-opening was deleted so the first hour can be PLAYED with nothing explaining it,
-and teaching comes back as a quest log once somebody has played it and got
-stuck.
+**Run what the change can reach, not the whole suite** — the table is in the
+`harness` skill, along with every quirk and flake. Build before `smoke`,
+`shots`, `drag` or `peek`; they load the bundle. Whole suite before a push.
 
-Build before `smoke`, `shots`, `drag` or `peek` — they load the bundle, not the
-source.
+## What holds, whatever you are changing
 
-**The generator is an MCP server** — `https://api.pixellab.ai/mcp`, guide at
-`/mcp/docs`, wired up in `.mcp.json`. Its tools (`create_character`,
-`animate_character`, `create_topdown_tileset`) are what the website uses and are
-far beyond the REST API; reach for them first. `tools/art/mcp.mts` speaks to it
-over plain JSON-RPC, so a session with no client for it is not blocked, and
-`tools/art/tables.mts` pulls characters, a tileset and props into the three
-tables the renderer reads. `tools/art/import.mts` takes a website export straight into
-grids.
-
-**THE WEBSITE AND THE API ARE THE SAME ACCOUNT, so art the user makes on the
-site is art this repo can pull.** `list_characters`, `list_objects` and
-`list_topdown_tilesets` return everything the key owns, by name and id — 24, 113
-and 28 of them at the time of writing — so nothing has to be pasted in: find it
-by name, `get_character` or `get_map_object` it, and run `tables.mts` over it.
-That is the better loop, because the user can JUDGE a design before accepting
-it where this repo can only ask, look and re-ask.
-
-**A ROW THAT IS `gone from the server` WAS REJECTED, and must not be re-asked.**
-*The user's call: "they are gone because I deleted some stuff that I really
-didn't like wanting you to stop using it."* `tables.mts` prints that line and
-keeps the grid that ships, which is right — a committed grid is what the game
-draws. What it is NOT is a reason to generate a replacement: the id is gone
-because the art was turned down. Ask before re-asking anything that says it.
-
-**Generating art is a RUNBOOK, and it is in `ROADMAP.md`.** "The process, as it
-now stands" is the eight steps — design, approve, rotate, animate, judge,
-import, wire — and "Doing this a thousand times" is every pitfall that has
-already cost time. Read both before spending a generation; two sessions running
-have lost time to parameters sitting in plain sight in the generator's own docs
-at `https://api.pixellab.ai/mcp/docs`.
-
-**Generated art is judged in a DESCENT.** *The user's call: "We are going to
-just delete the sandbox and start updating graphics in the actual game. I think
-it either works or it doesn't."* There is no room for looking at art in; a
-descent over a generated set IS one, with monsters that fight back. `npm run
-peek` launches one off the committed bundle and shoots it at a zoom, a pan and a
-magnified crop, because every fault worth finding is invisible at ship size.
-
-**THE HERO IS GENERATED, and he IS his TRADE.** `heroSpriteFor` in
-`src/sim/appearance.ts` answers the trade's own `TradeSpec.sprite`, and
-`wanderer` only for a trade with no look of its own. There is no nobody to
-start as: the trade is chosen when the character is made.
-
-**A WEAPON IS PINNED TO THE HAND, and it costs no generation at all.** *The
-user's call: "is there a way we can pin a bow to the character when they have a
-bow etc? like all the time same with all the weapons?"* `HELD` in
-`src/render/held.ts` is one row per weapon FAMILY, and the picture it draws is
-the item's OWN inventory icon out of `GENERATED_ICONS` — already drawn upright
-with its grip in the middle, which is the whole of why this was free. `heldFor`
-in `src/sim/appearance.ts` answers the main hand's `GearBase.art`, `Entity.held`
-carries it, and `drawHeld` in `pixi.ts` lays a second sprite over the body at a
-HAND. It rides the SAME anchor the body does, so nothing can drift off a figure,
-and it mirrors with the facing rather than rotating.
-
-**AND A BOW IS A BODY, not a pinned picture.** *The user's call: "on the site I
-see a way to use existing character and regen them holding a prop?"* There is:
-`create_character_state` makes a VARIANT of a character with an edit applied
-across every rotation, keeping the same man's face and proportions and — this
-is what it buys — the same SKELETON, so the variant animates like any other
-body. `dress.mts <outfit> --state <character-id>` is the call and `OUTFITS` is
-what to say; `aethermancer_bow` is the first one, its arms drawn ROUND the bow
-rather than a picture laid over them. It costs 20-40 generations for the state
-plus about two per animation. `HOLDING` in `src/sim/appearance.ts` is the one
-seam: a `HELD` row named there makes `heroSpriteFor` answer `<body>_<suffix>`
-where the art exists, and `pinnedFor` then draws nothing at that hand, so a
-body and a pin can never both draw the same weapon. Every other family stays
-pinned, which is what makes this affordable.
-
-**A hand is authored PER FRAME, never off a formula.** `HERO_HANDS` is a hand
-for every frame of every state a hero has: a formula swung a sword the opposite
-way to the arm holding it, because an overhead smash and a backhand are not the
-same arc and nothing in a body's frames says which it is. `generatedBeat` in
-`src/render/sprites.ts` is the one answer for which state and which frame is
-showing, so the weapon and the arm cannot pick different beats. `HeldSpec.turn`
-is the angle that hangs a weapon's BUSINESS END DOWN — a sword is drawn
-blade-down and takes none, a mace and a wand are drawn head-UP and take half a
-turn — which is what lets one hand table swing all five. **BOTH HANDS ARE
-DRAWN**: `HANDS_DRAWN` is the off hand then the main one, `Entity.held` and
-`Entity.offhand` carry a row each, and a weapon may ride a TRACK —
-`HeldSpec.track` names a second run per state, keyed `<state>/<track>`. A
-**shield** and a **bow** both live in the `off` track, which is the arm that
-does NOT strike; `HeldSpec.reach` is how far FORWARD of that hand a thing sits,
-because a bow is held out at arm's length where a shield is strapped at the
-arm — the hand is where the hand is, so the difference belongs to the weapon.
-`HeldSpec.behind` draws a thing UNDER its own body — a shield is on the arm you
-cannot see, and nothing a body carries may ever occlude the body, since which
-hero you are looking at is the silhouette. Only Pixi draws
-one; `canvas2d` has no sprites and never did.
-
-**An attack ENDS at full forward extension, and never recovers.** Both heroes'
-swings were regenerated for it. The old descriptions asked for three beats
-finishing "settles back upright", and a recovery is exactly where a generation
-drifts: the last frames turned the body right round, so the held frame was the
-hero facing backwards with his arms behind him. The words now say he faces the
-same way in EVERY frame and that the animation ENDS at the strike, with no
-recovery — and since `generatedFrame` holds the last frame anyway, a recovery
-was never drawn on screen for anything but the drift it brought.
-
-**Equipped gear does not change the SPRITE, and there is no longer any art that
-could.** The paper doll is GONE — `body.ts`, `gear-art.ts`, `look.ts`, `pose.ts`,
-the `Look` type, `lookOf`, the per-loadout texture cache and the two model
-viewers, about 1,900 lines. A hero was a figure with four slots of armour and a
-weapon layered over it, each authored against a neutral pose and shifted per
-pose; a hero is now one generated body that wears nothing. What a character
-wears is on the sheet, not on the sprite.
-
-Two files hold a body: `tools/art/bodies.json` is what to SAY to the generator
-and `tools/art/generated.json` is what came BACK, one row per thing.
-`tools/art/body.mts` walks between them — `ask`, `state`, `sheet`, `fill`,
-`props`, `watch` — and `tables.mts` reads the second and writes the three
-tables. A prop row carries `tiles`, `view`, `size`, and the two knobs that
-settle a generated picture into the stone: `tone` toward the ground's mean and
-spread, and `dull` toward its own luma, because a mean per channel moves how
-BRIGHT a thing is and never how saturated. Naming one to `props` asks for it
-again; naming nothing asks only for the rows with no id yet.
-
-**The NORMAL pool is six monsters, every one a GENERATED body, and they are one
-dead told apart by SILHOUETTE.** The **Crawler** is `dragger`, fighting from the
-floor and the commonest thing down here; the **Husk** is `hewer`, a mine
-skeleton still gripping the tool it was holding; the **Hound** is `courser`, the
-one body on four legs; the **Heap** is `heap`, many skeletons fused into
-something broad; the **Gaunt** is `gaunt`, towering on legs that carry most of
-its height; the **Bonecaller** is `shroud`, robed and the one that throws.
-Between them they are the swarm, the common melee, the fast one, the heavy, the
-reach and the thrower — six a player can name rather than eleven they cannot.
-All six are `undead` and near-black bone with dried gore, because every zone
-floor is pale by decision and only a dark body separates from all four. **A body
-is LEVELLED onto the roster's own brightness at import** (`BodySpec.luma`,
-`tables.mts`): bodies asked in the same words land different distances from
-black, and three that arrived at luma 43–56 now measure 30–35 with the rest.
-
-They are drawn at `scale` 1.35–1.9, since a generated body spans about 69% of
-its grid where a hand-drawn one spans nearly all of 24. **The Gaunt is at 3.2 and is a GIANT** — the user's call, after judging it
-in a descent: twice the height it stood at, which is twice the width too,
-because `scale` is one number and both renderers apply it uniformly. Its
-`radius` doubled with it, since separation is what stops a pack walking through
-its legs; `fits` clamps at `BODY_MAX` for walking, so it still takes a one-tile
-gap.
-
-**A body STANDS ON its tile, it is pinned at its own FOOT, and it draws IN
-FRONT of the north wall.** Pixi routes every ROCK cell's tile to `wallLayer`,
-UNDER the entities — anything placed INTO rock (the roots) rides that layer
-too, over its own stone. Occluding bodies with it was tried and sheared the
-head off anything standing legally at a north wall; a body against a cliff
-overlaps the face and reads as standing in front of it, and the foot anchor
-is what keeps its feet at the cliff's base.
- `bodyFoot` in
-`src/render/sprites.ts` is where a sprite's ink ENDS as a fraction of its grid,
-measured over every frame beside `bodyTop`, and `anchorY` in `pixi.ts` is that
-less `FOOT_DROP` — so the drawing hangs that far below the entity whatever its
-`scale` is. **The number comes off the ART, not off the tile.** `FACE_FOOT` is
-how far down the cell UNDER a boundary the cut face reaches, MEASURED on the
-shipping set: 0.81, so only the last fifth of the tile a body stands on at a
-north wall is ground at all. At the old quarter tile a foot landed at 0.75 and
-drew ON the cliff — the floating the user reported — so `FOOT_DROP` is
-`FACE_FOOT - 0.5` plus room for the half-tile of drift `fits` allows. Anchored at the CENTRE it hung half its height: 0.63 tiles for
-the hero, 1.33 for the Gaunt, against the 0.7 radius the sim keeps it inside the
-rock by, so a body standing legally on the last floor tile drew a long way out
-over the void. The life bar reads the SAME anchor, or every bar detaches from
-every head. `canvas2d` is untouched: it draws a monster as a circle centred on
-the tile and has no sprite to hang.
-
-The Demonic and Prismatic pools are six hand-drawn bodies each and are the
-mismatch the Fissure just stopped having. `BEASTIARY` keeps every grid the cut
-rows used — the renderers name `grub`, `stalker` and `brute` directly and
-`SPRITE_KINDS` sweeps that table — and `monsterArt` asks it FIRST, so a sprite
-id in both is a generated body that never draws, which the demo fails on.
-
-**A body has six states and two of them are new.** `idle`, `walk`, `attack`,
-`hurt`, `death`, and a cast — one `cast` for the Gaunt and the three NAMED ones
-(`bolt`, `frost_bolt`, `arc`) for the Bonecaller, since a state is looked up by
-the SKILL's id first. `hurt` and `death` play once and hold on the last frame.
-There is one movement state and it is named for the ACTION rather than the gait
-— the HERO's is a run, because at `moveSpeed` 3.4 he covers 1.26 tiles a
-footfall and that is what legs do at that speed; a monster's is a hungry stride
-at 0.84. It is both its chase and the PACING it does before it has seen you — a small anchored wander
-about the spot it was placed, because a pack standing perfectly still reads as
-props rather than as things waiting.
-
-**A body is ONE FACING and the renderer mirrors it.** `face` in `bodies.json`
-is `south-east`, an angled side profile — front on enough to read a face, turned
-well round toward side-on. Two directions for the price of one, and it is the
-angle the generator holds: every quality failure the five-facing era had was
-some other facing. A body may OVERRIDE it — the Hound is `east`, a strict side
-profile, because a quadruped at three-quarters is a tangle of eight legs where a
-biped reads fine. That is a thing the DESIGN decides and a rotation cannot:
-turning a three-quarter body east gives a three-quarter east, so an override
-means designing it again, not animating the one that exists. A body's GRID
-follows how big it is DRAWN, about 32 art pixels to the tile, so the Gaunt at
-`scale` 3.2 is grid 96 where a `scale` 1.45 body is 48 and one art pixel is one
-size across the roster.
-
-**A body declares its own STATES and its own FACINGS.** A state is named for an
-ACTION — `idle`, `walk`, `attack` — or for the SKILL it throws, which is looked
-up first, so fire, frost and lightning are three animations rather than one
-cast; `cast` is the fallback and only for a SPELL, or a hero holding one would
-play it while swinging a sword. `MONSTER_ABILITIES` decides which a body plays,
-so the one skeleton in the room shows claws, an ember bite and all three thrown
-bolts, each with its own pose. `dirs` runs north to south and holds only the
-EAST half of the compass, because the renderer already mirrors anything facing
-left. Frames are direction-MAJOR and the runs are the first facing's, so a
-facing is one stride and everything that draws a body stays flat.
-
-An animation is JUDGED, never trusted: `from`/`to` are the fraction of a
-generation worth keeping, because it drifts off model across its run. What
-looking at it showed — and the PROCESS for doing it again — is in `ROADMAP.md`;
-whether any of it goes in the game is the user's call and is open question 8.
-
-**ALL FOUR zones are drawn by a generated tileset.** `ZONE` in `src/sim/grid.ts`
-maps a theme to a set — `lit_round` for the Fissure, `rot_round` for the Rot,
-`cavern_round` for the Cavern, `seam_pro` for the Seam. A theme with one is
-`bare`, so its own floor, decals and living motion all stand down; a tileset is
-the WHOLE surface. Only the two LANDMARKS survive that, because the way on and
-the way out have to be findable, and `mouth` takes darker inks there: a hole
-reads by contrast, and the rim that stood out on stone is a white box on sand.
-Only Pixi draws a tileset, so `canvas2d` keeps the drawn rock and is still the
-fallback it always was.
-
-Each set was asked for off that zone's OWN line in `MAP_THEMES` and its own
-`THEME_INK` hexes, and every one of them asks for a LIGHT floor and a near-black
-rock — said at both ends, by exclusion as well as by name. That is not the
-zone's own ink: the Cavern is pale rock over a dark floor and the Rot is dark
-throughout. `cavern_lit` was asked the zone's own way round on purpose and it
-reads INSIDE OUT, the pale expanse taking the eye as ground and the room reading
-as a hole in it. It is in `zoneset.mts` beside the one that ships.
-
-**A set is RETONED at emit, which is what stands in for the runtime palette.**
-`RETONE` in `tools/art/zoneset.mts` is a colour pass over the finished sheet —
-`sat` is how much of the original chroma survives and `mul` is a per-channel
-gain — costing no generation and re-runnable, so a floor moves without asking
-for a set again. It runs over the WHOLE sheet and never per tile, because
-tiles interlock at their edges and two toned differently is a checkerboard.
-The Fissure is the one that has one: *the user's call, "make it a little less
-bright, a little more like ancient cavern vibes"*, which took its floor from
-rgb(206,193,158) at luma 193 — beach sand — to rgb(132,126,111) at 126, a dim
-warm grey. Its rock was already pure black, so nothing was lost at that end and
-the tone rule still holds by a mile.
-
-**A tile is keyed by its four CORNERS in base three** — 0 floor, 1 rock, 2 the
-cut face between them. A deep-walled set has that third value at a vertex: the
-cliff fills the cell BELOW the boundary, which is what makes the face two thirds
-of a tile rather than a seventh of one. It is drawn at THAT size and never
-stretched: the face is a run of rounded columns, so a tile of it made taller is
-a row of grey posts standing along the wall. `wangKey` in `src/sim/grid.ts`
-answers it, and it lives there rather than in a renderer because it is a fact
-about the GRID first — what a set cannot draw, the carve must not make, which is
-`fitCorners`.
-
-**A set answers 21 of the 81 keys, and the renderer's backstop is the NEAREST
-one it holds** — the cut face scoring one step from either terrain and floor
-three from rock. Four of the 25 tiles are wall CONTINUATIONS sharing their
-corners with a twin, told apart by the pattern rows above and below, and those
-rows are CORNER values one row out rather than the cell's tile type: read wrong,
-a lip tile repeats down a face as a pale line running up it.
-
-**A LANDMARK KEEPS A TILE OF FLOOR ALL ROUND IT.** The way down is drawn two
-tiles across and CENTRED on its tile, so one stamped a step from the rock has
-half its rim inside the wall. `clearSpot` in `src/sim/grid.ts` walks out to the
-nearest tile that has none, and only a GENERATED map is moved: an authored
-room's landmark is the author's, so the demo checks every `SceneDef` instead —
-which caught two rooms the moment it was written.
-
-**The map has no EDGE.** The grid is where the stone stops being stored, not
-where it stops: a chamber sitting two tiles from the boundary would end on a
-straight lit line with flat background past it. So the rock is drawn `EDGE`
-tiles beyond the grid on every side.
-
-**The only thing SCATTERED is what the rock does on its own, and it is now the
-only thing PLACED.** A room's worth of objects dropped one tile at a time reads
-as exactly that, however carefully the rates are picked — a whole pass of fringe
-and open-floor scatter was tried and is gone, and the ARRANGEMENTS followed it.
-*The user's call: "Get rid of all the props in the fissure zone except for the
-scattered stones... it's just delete everything placed in the dressRooms pass,
-keeping scattered stones and vines and stuff."* So a descent is cover and growth
-and nothing else, and what a PERSON left is placed by hand in a scene.
-`VIGNETTES` and `dressRooms` are still in `src/vignettes.ts` and
-`src/sim/grid.ts` — nothing calls the placer, and it is the only thing that
-knows how to fit an arrangement into a grown room.
-
-**The floor is broken up UNDER everything, and by DENSITY.** `COVER_PROPS` is
-loose stone and dust laid by `coverFloor` and drawn first, so furniture stands
-on it. `COVER_RATE` is indexed by how far a tile is from the ROCK, and that is
-the whole of what makes it ground rather than confetti: debris DRIFTS at the
-foot of a wall and thins to almost nothing in the open. One rate everywhere is
-uniform noise, which is not texture. It claims no tile, blocks nothing, and
-each scrap is shifted off its own colour and size. **It skips a cell with rock
-ABOVE it**, which is the one the cut face is DRAWN in — and also the heaviest
-row of the rate, so every cliff wore a band of stone halfway up it.
-
-**`WALL_PROPS` is what GROWS on the cut face** — three shapes of dead root, at a
-rate better than twice what it was, since it is the only thing left standing on
-a descent and carries the wall alone. Three rather than one because a run of cut
-face is where a single picture repeats within sight of itself. It is placed INTO
-rock, on a RUN of it rather than a one-tile nub, and drawn side-on because that
-is the one surface seen from the side. It hangs `FACE_HANG` past its own cell's
-foot, because the face spans TWO cells: ended at its own cell it stopped
-halfway up the wall, and placed a tile lower it lay on the floor. A torch or a
-body hanging there is `HUNG_PROPS`: placed by hand, never scattered, since a
-lit torch on a wall nobody stands near is a bucket in the middle of a room.
-
-**`SOLID_PROPS` is what you walk around, and the FOUR AUTHORED ROOMS are what
-puts one down.** *The user's call: "make the furniture specifically solid so you
-can't walk through it."* `Grid.solid` is a second layer over the tiles, because
-the ground under an altar is still floor and every renderer keys its own surface
-off `tiles`. A tile is blocked one at a time and UNDONE the moment it cuts
-anything off, since a prop across a passage is a map the hero stands still in
-forever. Every bench, shelf, lampshelf, lamprack, slab, plinth and orrery is in
-the set and all 38 of them block; a lantern and the floor debris are not, because
-a lantern is a thing you step over. A descent still scatters none of it — what
-the rock does claims no tile — so the UNDO half has no live producer either way,
-and the demo drives that by hand, ringing a scene's person with solids and
-holding `block` to refusing the one that would close the ring. `STAIN_PROPS` is a
-mark IN the floor, drawn back so the generator's own domed shading stops reading
-as a lump, and nothing places one at all.
-
-**A DESCENT over a generated set is dressed with what the ROCK did, and with
-nothing else.** `generateMap` lays the cover and the growth on every zone that
-has a set, because an open floor with none of it is one picture repeated. It
-lays nothing on top: no zone is a working, and a floor with objects standing
-about on it reads as objects standing about on a floor. A SCENE is the other
-half of the rule and always was — one chamber, props placed by hand, and
-nothing scattered into it at all.
-
-**THE GROUND IS CUT AT IMPORT, by rules that see different halves of it —
-and a body that stands IN its ground says so.** `BodySpec.grounded` (the
-Crawler, the Lampwright) keeps `defloor` and stands `deslab` and `loose` down,
-because those cuts took the mound with the feet planted in it.
- `defloor` finds it by COLOUR — what spills out beside the body and is
-almost nowhere above it — and is blind to a shadow the body shares a colour
-with. `deslab` finds it by SHAPE: down in the low band, a region of one colour
-wider than it is tall and LIGHTER than the body above it is what the body
-stands on. `loose` takes whatever is left unjoined, which is the scatter of
-stones drawn round a pair of feet. The light test is what
-keeps the feet: a body is asked for near-black bone and the ground is the pale
-floor darkened, and that holds even for a body lying flat in its death frames,
-where every width rule takes the legs off. `BodySpec.mound` (the Crawler) is
-the grounded body whose slab still comes OFF, feet kept, by `demound`: the
-slab's core rows are horizontal runs WIDER than the body's own chest span —
-nothing on a crawling body is — and then everything inside the box those runs
-drew goes too, except a column a limb visibly enters from above. Death frames
-keep the slab, since a corpse lies in its ground legitimately and cutting a
-lying body by width is how feet were lost the first time. All of it is in
-`tools/art/convert.mts` and costs no generation, so a re-import is the whole
-repair.
-
-**A body's STRIDE is measured off clean art or it is not measured at all.** The
-shadow was being read as feet-at-widest, which is why three bodies shipped a
-number a human chose; cut, every body the art can measure reads 0% off.
-`BodySpec.robed` is the exception and it says so on its own line — the
-Bonecaller's hem reaches the floor, so nothing measured off its legs means
-anything and `npm run demo` prints that instead of a percentage.
-
-**A generated body keeps its GROUND, and a design is cropped instead.** The
-shadow the generator paints under a body sits at the same rows as the feet, so
-no width rule tells them apart: the one that tried took most of the Gaunt's legs
-and the Dragger's hands, and it is gone. What works is cutting the DESIGN below
-the hem before it is rotated, by looking — the Lampwright's mound came off that
-way for nothing, where img2img told to stand on nothing drew a bigger one.
-
-**Art is GENERATED into the grids, never shipped as images.** `tools/art/` is
-the pipeline and `manifest.json` is one row per sprite and the source of truth:
-generation is content-addressed on the row's hash, and the converted GRID is
-written back into the manifest, so the PNG stays disposable and what ships is
-the same list of strings everything else is. `npx tsx tools/art/art.mts` takes
-`balance`, `list`, `generate`, `convert`, `sheet`, `accept` and `emit`, and
-`selftest.mts` proves the conversion without spending a generation.
+- **Balance is NOT TUNED, and a balance number never blocks a phase.** Systems
+  are still landing and each hands out more power than the last, so anything
+  tuned now is tuned against a game that does not exist. Measure it, PRINT it,
+  carry on. Balance checks are `gauge()`s that report and never fail; what still
+  FAILS is mechanism — a run that does not end, a determinism break, a step
+  nobody can finish, a screen that overflows, a modifier that does nothing, a
+  save that cannot be healed. One difficulty check stays a failure: a brand new
+  character clearing the bare Fissure.
+- **Every number is said out loud.** Nothing describing a quantity in words when
+  it has a figure behind it — "35% more damage", never "more damage"; "+1 Cloud",
+  never "an extra cloud". The test is whether a player could act differently
+  knowing the figure. FLAVOUR is exempt and must not be "fixed": a character's
+  lines, a unique's line about a dead man.
+- **One word per mechanism, and it is the ONLY word.** `KEYWORDS` in
+  `src/keywords.ts`; `BANNED` is every retired phrasing. The demo sweeps every
+  tree node, trade node, skill, currency, quest, modifier line and
+  `GrantDef.what`.
+- **Automation is universal.** No build's power may depend on the player being
+  present — every balance number comes from headless runs. Anything a player can
+  do mid-descent has a shipped default policy, that policy is what
+  `runToCompletion` runs, and the two are ONE implementation. **A boss is the
+  one written-down exception**; even there, a headless run must terminate.
+- **The game is meant to be WATCHED, and the screen has to allow it.** The
+  payoff of assembling a build is seeing it work. There are two ways to play
+  this — menus and watching — and a change that serves the first at the cost of
+  the second is taking from the half that has less.
+- **Nothing teaches, by decision**, and **nothing is ever prevented.** *"I wanna
+  start from scratch with it. Remove it all, and once all the systems are in
+  place and we see how the intro plays out then we add it in small parts as
+  needed."* Do not put back a smaller tutorial, a hint bar or a first-run
+  tooltip. Teaching comes back as a quest log, driven by what actually confused
+  somebody. A log that greys out what you have not been told about is the same
+  cop-out in a new coat.
+- **This is a DESKTOP game.** Hover may carry meaning, an icon may rely on a
+  keybind, no layout is contorted for a phone. Assume nothing a standalone shell
+  would not have: no URL bar, no back button, no tab title.
+- **There are no image files, and no binary assets.** Every sprite is a list of
+  strings or a data URI in TypeScript. Adding one is a change to how the game
+  ships, not an art decision.
+- **`GameState` is plain data**, `heal()` repairs it on every load, and
+  allocations are REPLAYED rather than trusted. Adding a field costs nothing;
+  renaming an id costs the player whatever pointed at it; `SAVE_VERSION` is only
+  bumped when a save must be REFUSED, which wipes everyone.
+- **Only Pixi draws sprites**; `canvas2d` is a fallback with none. Sprite work
+  being invisible there is correct. Anything per-tile is a pure function in
+  `render/renderer.ts` so both renderers read one answer.
+- **Claims need evidence.** A balance claim needs a measurement, an art claim
+  needs a screenshot.
 
 ## Comments
 
 Comments carry what the code cannot: an invariant, a unit, a constraint that
 looks arbitrary, a trap. Everything else is noise.
 
-- **State what is true.** Never "this used to be X" or "changed from Y". A
-  reader who needs the old behaviour has `git log`; a reader who does not is
-  being told about a thing that no longer exists.
-- **Skip the why when the code shows it.** `if (spare > 0)` does not need a
-  comment saying it checks for spare points.
-- **No provenance.** Not the bug that prompted the change, not the measurement
-  that motivated the number — unless the number is unexplainable without it.
+- **State what is true.** Never "this used to be X". A reader who needs the old
+  behaviour has `git log`.
+- **Skip the why when the code shows it.** No provenance — not the bug that
+  prompted the change, not the measurement behind the number, unless the number
+  is unexplainable without it.
 - Trailing comments are free and often the right size.
 
-`npm run comments` enforces a hard cap: standalone comment lines may not exceed
-`max(10, 20% of the file)`. Comments are found by parsing — @babel/parser for
-JS/TS, parse5 for HTML plus its inline `<style>`/`<script>` — never by matching
-text, so a `//` inside a string is not a comment. Trailing comments are free.
-
-`SHARE_BY_FILE` gives one file its own share: `docs/index.html` runs at 25%,
-because a share is a DENSITY and density only stands in for "how much of this is
-prose" while a file's lines are the kind that might need explaining. That file is
-mostly stylesheet — a thousand one-line rules needing nothing said — carrying the
-few load-bearing traps in the project. Adding an entry is a decision to be argued
-for, not a way out of a cut.
-
-It runs automatically as a `PostToolUse` hook the moment you move to a different
-file, and again on `Stop`, so a run of edits on one file is never interrupted
-mid-change. Also in CI, ahead of typecheck.
-
-**Fix a violation by cutting prose.** Padding a file to raise its allowance is
-the one repair that makes the file worse.
-
-## The Fissure
-
-There is one place you go. Four **sockets** hold crystals permanently — a run
-reads them and never spends them. Their COUNT is how long the run is; their
-MODIFIERS are the whole of how hard it is; a crystal's LEVEL is only how many
-modifiers it can hold (1–4 → 0–3); its FAMILY — Normal, Demonic or Prismatic —
-is only WHICH monsters spawn, each socketed crystal converting its share of the
-packs. Nothing else makes a monster stronger.
-
-The three pools weigh the same PER MONSTER, and the demo measures it. What
-differs is what a world brings with it: Demonic and Prismatic carry **auras**
-and the Fissure does not, so the worlds are a ladder as well as three
-opponents — Normal is the shallow end, and you are given its crystals first.
-
-The composition also decides the **zone** (`mapTheme`, `MAP_THEMES`): half of one
-world takes the rock — The Rot, The Cavern — and two halves with no Normal is
-The Seam, which therefore takes exactly two crystals of each. A zone is a LOOK:
-same generator, same packs, different stone under them. It rides on `GameMap`,
-so both renderers read one answer.
-
-**An element belongs to the MONSTER, not the room.** `MONSTER_ABILITIES` is a
-table of what a monster does and what it deals doing it — Claws, Emberbite,
-Rimebite, and three thrown ones — rolled per PACK off the run's own rng, because
-a pack throwing two elements reads as noise where a uniform one reads as a thing
-you recognise.
-
-**And the body decides WHICH HALF of that table it rolls.** `MonsterDef.throws`
-splits it on the `skill` field: a thrower only ever throws and everything else
-only ever bites, so the pack that shoots is the one whose silhouette says so and
-there is nothing to label. **One body per family throws** — the **Bonecaller**
-in the Fissure, the **Chanter** in the Rot, the **Prism** in the Cavern — and
-each rolls fire, frost or lightning fresh. That is not decoration: measured, a
-world with no thrower at all deals about HALF what it did, which took the aura
-worlds below the Fissure and broke the ladder. `abilityFor` in `src/sim/run.ts`
-is the one seam, so a pack, a boss, its adds and the closing encounter all agree
-about which bodies throw. `MONSTER_ABILITY_BY_ID` names them; a monster skill has no `category`, so it never reaches the Skills
-screen. **Lightning Arc** is the one that is not a line to one target: it
-carries 2 Arcs at 60% each off the skill's own `params`, which the projectile
-behaviour sums with whatever a tree grants.
-
-A crystal **adds** rather than converts. "of Cinders", "of Frost" and "of Storms"
-each roll `monsterFire` / `monsterCold` / `monsterLightning`, a share of what a
-monster already hits for dealt as that type ON TOP of its own. The total is what
-it always was — a hit is still multiplied by (1 + share/100) — so `DANGER_STATS`
-weighs them exactly as before; what changed is that carrying one ward blunts a
-part of a hit instead of switching a modifier off. Three modifiers rather than
-one that rolls which element, because a name saying Cinders over a roll saying
-cold is a lie about which resistance to bring. The report splits damage taken by
-type, worst first, and that split is what you read to know which ward to find.
-
-**Auras** (`AURAS`) are why the aura worlds hurt about twice as much as the
-Fissure. One carrier per pack, never buffing itself: Demonic adds a fixed amount
-of damage and of armour, Prismatic multiplies both. Alone each is a hazard;
-together the multiplier lands on what the other added, and nothing multiplies an
-armour nobody granted. Every carrier draws its reach on the floor — a room that
-is lethal for a reason you cannot see reads as a bug.
-
-The Seam was meant to be the worst room in the game and MEASURES level with
-four Demonic crystals rather than above them — it takes two crystals of each, so
-only half its packs carry either aura. That is an open question in
-`ROADMAP.md`, not a settled design.
-
-Danger and socket count fold into one **run power** number (`POWER`,
-`runSet()`), and every reward reads that and nothing else: drops, item level,
-XP and gold. Zero is the bare Fissure and the baseline for all four. Nothing is
-counted twice — a crystal's level is capacity, capacity is modifiers, modifiers
-are danger, and danger is already in power.
-
-**Power buys access; composition and modifiers buy payment.** Item level and
-what a band can drop at all come off power alone. An even split of the two
-other worlds pays 25% more (`REWARD.mixYield`), each world pays in its own
-currency (`FAMILY_YIELD` — Normal gold, Demonic crafting currency, Prismatic
-rarity), and the finding modifiers weight WHICH kind of gear drops. None of
-those touch item level, so no amount of arranging skips a rung.
-
-Danger only counts what the sim still reads. `DangerStat.cap` in `DANGER_STATS`
-is where a stat saturates — a ward at the resistance cap, a crit chance at
-certain, armour where its reduction tops out — and `crystalRewards` scores the
-capped amount, so four wards of one type are paid for as one. Power is clamped
-at `POWER.max`, so the top drop band is reached long before danger runs out;
-past it, danger still pays in rarity, which reads `payingDanger` directly. The
-hardest set in the game is nobody's band, and `deepestSet` is what builds it.
-
-A `DropGate` says a thing does not exist in this run at all — `minPower`, a
-`zone`, or both — and the pool is filtered before the pick, so no amount of
-rarity argues with it. The Sigil of Finality drops only in the Seam.
-
-## Where crystals come from
-
-Never a shop, never a report, and never a roll. At the end of a CLEARED descent
-that owes something you drop into the hole exactly as you always do, and come up
-in a **scene** rather than in the next descent: **the Lampwright's workshop**, a
-small chamber nobody generated with a bench of half-built lanterns in it and
-finished ones standing about lit and unlit. He is across the room; walking over
-is the meeting, and the meeting ends the run — so a gift is never a thing
-standing next to the monsters, and the loot he walks you out with was banked
-before anybody spoke. `giftWaiting` is what is owed, `takeHandover` is the panel
-granting it, and `giftSchedule` is the same answer in words for the collection
-screen.
-
-The panel draws a PORTRAIT, not the map sprite: `PORTRAITS` in
-`src/render/portraits.ts` is a separate table at grid 48, one frame,
-shoulders-up, because a 24-grid silhouette blown up is a blob. What he SAYS is
-flavour — he names no screen, no currency and no number. Nothing in the game
-teaches what to click.
-
-Two things are SCHEDULED, off `GameState.given`. The first weapon on the first
-cleared descent, picked off the skill (`STARTER_WEAPON`). The first Normal
-crystal on the first clear after the ACTIVE SKILL has reached
-`INTRO.crystalSkillLevel` with EVERY point of it spent (`crystalEarned`) — the
-level buys the points and the allocation spends them, so the crystal is paid
-for by the thing that makes a character a build rather than by pressing Enter
-twice. Points rather than a notable, because WHICH node they went on is the one
-decision the tree exists to hand the player. It arrives at LEVEL 1, which holds no modifiers: it is socketed blank,
-and the descent it makes longer is the whole of what it does. A Shard of Making
-comes with it for later, since everything is handed over in person. Five
-cleared descents socketed at no danger buy it its first slot, and THAT is when
-the craft is taught. That roll is the one arranged thing in the game:
-`crystal.meta.scripted` names the family, `add_mod` takes its cheapest tier and
-clears the mark. It rides on the CRYSTAL so the currency lies to nobody.
-
-Everything else is a **quest** (`CRYSTAL_QUESTS`) — the other three Normal
-crystals as much as the two other worlds, completable in any order, each paying
-once. `need` is a list of clauses ANDed together; `kind` names an entry in
-`QUEST_CONDITIONS` and the rest of the clause is that condition's parameters, so
-a new objective is one registry entry and one table row.
-
-A crystal **levels only while socketed**, one clear at a time, multiplied by the
-set's danger (`CRYSTAL_XP`, `advanceSocketed`). That is the cost of levelling a
-blank: it is holding a socket that could have carried danger. A tier gained
-rewrites the base, name, quality and capacity together — nothing reads a crystal
-by fewer than all four — and never removes what is already rolled on it.
-
-`src/ui/crystals.ts` is where the collection is compared, since four sockets
-against everything you have ever been given is a comparison rather than a bag.
-
-## A room you arrive in
-
-A **scene** is an authored room you come up into at the end of a cleared
-descent: one chamber nobody generated, no packs at all, the props where somebody
-put them and the people standing in it. It is a `RunSim` like any other —
-`RunOptions.scene` names a `SceneDef` and the constructor calls `sceneMap`
-instead of `generateMap` — so both renderers draw one with no changes, and a
-room with a fight in it will be a filled-in field rather than a second engine.
-
-`sceneMap` in `src/sim/grid.ts` sits beside `generateMap` and shares `carveRoom`
-with it, so a room is cut out of some world's rock the way that world cuts.
-There is no rng: a plan is absolute tiles and a cut is hashed off the tile it
-lands on, so a place is the same place every time you come up in it. There is
-also no exit — `GameMap.exit` is the entrance, so nothing draws a second hole
-and there is nothing to walk to.
-
-`GameMap.zone` names the generated tileset and `bare` says the zone's own rock
-stands down for it — floor, decals and the moving parts — because a tileset is
-the whole surface. **A SCENE takes its world's set too**, off the same
-`ZONE[theme]`: a room somebody lives in cut from different rock than the descent
-below it reads as a different game. So a bare room draws `PROP_ART` and never
-the decals, and every prop the four authored rooms place has to be GENERATED —
-the demo asks the table the room will actually read, because a room that went
-bare with only decals behind it is an empty room. Pixi draws one
-sprite per cell off `wangKey`; `canvas2d` has no sprites and keeps its colours.
-`PROP_ART` is the same idea for the furniture: a prop is a PICTURE anchored at
-the foot of its tile, where `PROPS` is decals, and `tiles` says how much of the
-floor it covers — a fact about the art, not about the room.
-
-`GameMap.props` is furniture: on a scene it is what somebody put there by hand,
-on a generated map it is what the rock did and only that.
-A hand-drawn prop is drawn by `PROPS` in `src/render/renderer.ts` beside
-`mouth()`: pure functions returning `Decal[]`, so a prop is decals rather than a
-sprite and never appears in `BEASTIARY`.
-`RunState.folk` is who is in the room, a LIST and deliberately out of `monsters`,
-because nothing in combat may ever be able to see a person.
-
-`sceneWaiting` in `src/game/scenes.ts` is the schedule and returns **at most
-one** scene per clear, highest rung first and never rolled; it ASKS
-`giftWaiting` rather than replacing it. `src/sim` never decides that a scene
-happens — `finish()` in `src/ui/run.ts` does, which is why every headless
-harness drives `RunSim` directly and is left alone by all of it.
-
-**A room may have something in it.** `SceneDef.encounter` names a `BossDef` in
-`BOSSES` — its own art, its own rank, life and damage as multipliers on
-`MONSTER_BASE` like every other body, and `reinforce` for the smaller things
-that keep arriving while it lives. A boss is NEVER in `MONSTERS`, which is the
-pack pool. The room says its `beats`, `RunSim.beginEncounter` calls the thing
-up, the reinforcement clock runs beside `waveTimer` and **stops the moment the
-boss is down** — which is the whole of why a room with something endless in it
-still terminates. Killing the boss clears it; the adds are pressure and never
-the objective. Then it says its `after` lines, and a boss room is a DESCENT:
-its loot banks, its clear counts, and it lands on the same report. Dying in it
-costs that room and stops the loop.
-
-**A way BACK is a key.** `BOSS_KEYS` in `src/data.ts` is its own table and
-never a `CurrencyDef` — a real currency is reachable by the bench's registries,
-which is a bench that can pour a boss key onto a helmet — and it rides in
-`game.wallet` like everything else that is counted. It drops off a KILL, rare
-enough that a fight stays an occasion, never inside a room, at a rate that
-climbs with run power, and only once its boss is down: `GameState.bosses` is
-what you have beaten. Spending it is the FIFTH SOCKET on the Fissure, under
-the four the crystals take and hidden until a boss has been met: socketing
-CONSUMES the key and sets `GameState.called`, and the next entry is the fight
-— Enter opens the boss's own room directly, the speech skipped on a rematch
-(`revisit` in `src/ui/run.ts`), the `after` lines too. Dying in it loses the
-room and the key, the same price abandoning pays everywhere else.
-
-**A BOSS IS FOUGHT WITH THE TURN, and it is the one place automation stops.**
-`FACES` in `src/data.ts` is three faces of the crystal on `1` `2` `3` — **Quick**
-is speed and twice the blinks, **Stone** is half of what lands on you, **Edge**
-is everything you have and everything it has back — and every one of them NERFS
-the other two, so no face is a place to live and flicking between them is the
-skill. `FACE_DEFAULT` is Stone, which is what a hero who never turns fights in.
-A face bites only under a live boss (`RunSim.turned`), so a descent is exactly
-the descent it always was.
-
-`BossDef.phases` is its cycle and `BOSS_FIGHT` is every number in it. **The
-Fall** drops circles where you are STANDING, on a fuse long enough to leave at
-Quick and not at anything else; **the Reading** cannot be dodged and climbs,
-which is what Stone is for; **the Split** is the crystal hanging open and is the
-damage window. `marks` is what stacks on you and never comes off fast, so
-tanking forever is not a plan, and past `enrageAt` everything it does climbs —
-the dps check.
-
-**A slam is a COMMITMENT, and so is being DAZED.** From the rear-back until the
-last circle lands the boss neither swings nor closes, and it does neither in the
-Split either — `RunSim.stalled` is both, and it is what makes the damage window
-a window rather than a number you have to be told. Circles come in a BURST
-and then a rest. That is the whole of what makes Quick a flick rather than a
-stance: it is free while the maul is in the floor and dear the moment you leave
-it on. The dodge is DODGEABLE — `wayOut` leaves every circle he is standing in
-by the shortest ray, a live circle is somewhere he waits out rather than walks
-back into, and the mover fires in a boss room, so a blink is a way out of one
-slam without turning at all. Which is why there are three.
-
-**IT STANDS IN THE MIDDLE AND NOTHING SHOVES IT.** You come up at the stairs
-in a corner and cross to it, the camera goes to it and comes back before your
-own character says the only line in the room — and it is CALLED UP on arrival
-rather than when the talking stops (`RunSim.summonBoss` beside
-`beginEncounter`), or the camera pans to bare floor and it appears out of the
-air. `resolveOverlap` gives a boss weight 0 — what cannot move hands its half of the overlap to whatever is
-standing in it. On the rim and pushable it was slowly leaned into a wall.
-
-**AND THE DODGE STAYS NEAR IT.** `wayOut` costs EVERY way clear of the circles
-by how far it leaves you from the boss and takes the cheapest, which is usually
-sideways: straight away is the shortest ray and the worst one, and three slams
-running walked you to the far wall. `slideRound` is the same idea a step at a
-time, so a walk a live circle is standing in front of goes ROUND rather than
-stopping at the rim.
-
-**A REACH IS AN ARM, AND AN ARM STARTS AT THE BODY.** `RunSim.reachTo` adds
-whatever a body is BIGGER than an ordinary one to both ends of the test, so two
-ordinary bodies are exactly `attackRange` apart and nothing in a pack moves.
-Measured centre to centre a COLOSSAL body can never touch anything: separation
-holds the pair its own radius apart, which for the boss is 2.04 tiles against a
-reach of 1.3 — it never swung once, and pushing in and being shoved out again
-is the jitter that came with it.
-
-**And the phase is drawn ON THE BOSS, never captioned and never on the floor.**
-`bossTelegraph` in `src/render/renderer.ts` is the one answer both renderers
-read. The Reading turns the BODY red — the tint MULTIPLIES, so mixing toward
-`chalk` is what makes it throb rather than sit there. The Split leaves it grey
-with three `citrine` SWIRLS going round over its head, and `dazeMarks` draws
-them as open arcs on a flattened ring: a dot going round a ring is a dot, and a
-hook going round is the thing everybody already reads as stunned. It is the
-same answer as `RunSim.stalled`, so the picture and the rule cannot drift. A
-ring on the floor is a Fall circle's vocabulary and belongs to nothing else.
-The turn bar says nothing at all, and a HIT lightens whatever the phase already
-made it rather than flashing its own colour — flat chalk read as a fourth phase
-and burning stopped being tellable from dazed. A boss carries no bar over its
-head either: at `size` 5 that strip is tiny and a long way from where you are
-looking, so it gets a framed one across the top of the screen, and `BOSS_SHOUTS`
-throws one line over its head as a phase turns over.
-`node tools/boss-peek.mjs <dir>` shoots a whole cycle of it off the bundle.
-
-**The Lambengolmor** hands over a NAME, not a fight. His room holds no
-encounter at all — geodes banked round the walls and nothing else, since he
-lives inside the thing he studies — and `SceneDef.gives` names the `BOSS_KEY`
-he puts in your hand, once, marked in `GameState.given` as `key:<id>` so the
-room is owed until he has given it and never after. What it calls up is fought
-in `answering_hall`, a chamber nobody lives in that the fifth socket is the
-only way into.
-
-He is the second voice the game has, met once two crystals
-are set in the wall. His pitch is *stop blindly feeding the stone; learn its
-true names and command it* — the crystals are punctuation in an old spell and
-the Lampwright is waking something. He calls **The Answering** up to prove it.
-The game never says which of them is right.
-
-**He talks over his own head, a line at a time.** `src/ui/speech.ts` is the
-bubble: built once and updated per frame, anchored off `Renderer.screenAt` so
-the camera moving under it keeps the words on the speaker. A **beat**
-(`SceneBeat`) is a line and what is DONE while it is up — `SceneAct` is `pace`,
-`work` or `face`, performed by `RunSim.perform` off the walk and pose machinery
-that already exists, so an act is `Entity.action` and nothing else.
-
-**Every line looks the same and says who is speaking**: a PORTRAIT out of the
-top-left corner of the box, the speaker's `SceneDef.name` above the words, and
-a **Next** button. The portrait breaks the frame on purpose — cropped to the
-padding it reads as an icon, over the edge it reads as somebody leaning in —
-and the LAST beat is `#met`, the same shape with what he is holding in it and
-Take it instead of Next. Escape skips the rest and grants, because the gift is
-yours the moment a panel is up. The scrim is gone: a scene is already a stop,
-and a sheet over the room hid the room.
-
-A scene is the fourth `Phase`: a map on screen, so `mapfull` stays on and the
-rail stays up, but nothing is ticking, and Leave and Abandon go quiet because
-there is nothing to abandon.
-
-## What a corpse is for
-
-**Two people take something off you and write with it.** The **Osteomancer** is
-in the Rot and frantic — *gimme, gimme* — and wants what the world did not
-finish. He is drawn STARVED, in both tables: a skull too big for the chest under
-it, a bone half-mask shoved up on the brow, and enough gap between his limbs to
-see the floor. He is not strong enough to take a body, which is why he asks. The **Astral-Geometer** is in the Cavern, is the one down here who is
-not in a hurry, and wants the dust, because a body is an opinion and dust is a
-measurement. Each has their OWN lines and refuses what the other works on.
-
-A **relic** (`RELICS` in `data.ts`) is a third `ItemKind` beside gear and
-crystals: `pristine_specimen` out of the Demonic zone, `prismatic_dust` out of
-the Prismatic one, each gated to exactly one world and rolled per kill off
-the sim's own rng. It is loot, so it banks like everything else, and
-`GameState.relics` is where it goes when you take it out — uncapped for the
-reason crystals are, since nothing sells one and a cap could only lose it. Its
-own dock column, drawn only while you are holding something and with no click in
-it at all. Holding one is the WHOLE of what schedules his room, at rung 3 of
-`sceneWaiting`.
-
-**A graft replaces the IMPLICIT.** `FORGED` in `data.ts` is the lines nothing
-else in the game can write — weight 0 so nothing rolls one, in `ALL_MODS`
-anyway so a save resolves it — and `graft()` in `src/game/graft.ts` puts one in
-`Item.implicits` where the base's own line stood. That is the trade: what the
-smith meant the piece to be is gone. `ForgedDef.who` is whose room it is
-written in and `kinds` is what it goes on: the Osteomancer takes `helmet`,
-`body` and `boots`, the Geometer `ring` and `amulet`. Jewellery has no implicit
-at all, so a graft there ADDS where there was nothing — which is why the one
-that changes the DELIVERY charges `manaMultiplier` for it, the same rule the
-trees follow, and the conditional one is free. A unique is REFUSED,
-because `makeUnique` puts a named piece's whole identity into `implicits` and
-nothing could put it back. The armour rating is not the implicit and is
-untouched. A second graft replaces the first, so a first one is never a mistake
-you cannot walk back, and `item.meta.grafted` is what makes the card say
-"grafted" rather than "base".
-
-**`ModDef.grants` is how a LINE changes a rule.** Merged by `treeGrants` off
-what is worn, out of the same `GRANTS` table a tree node, a trade node and a
-unique use. Bone-Ledger bursts a killed enemy (`explodeOnKill`, which already
-existed); Wound-Keeper leaves a **Bleed** on every hit (`bleedOnHit`, which is a
-new `Changes` class — `ailment` — and its eight rows in `INTERACTIONS`);
-Long-Gait is a stat line and needs no path at all, since `statMods` already
-reads implicits exactly like rolled mods. Facet-Cut bursts the hit and pays
-mana for it; Long-Angle is more damage at range, which is conditional and free.
-
-A bench is the LAST BEAT of the room it is in, in the same bubble the lines
-came in: two picks and a button, and nothing is spent until the button.
-`src/ui/graft.ts` names nobody — the `SceneDef` comes in, and the portrait, the
-name and which lines are on offer all come off it. **Keep it** walks out still
-carrying the relic, so the same room is owed again.
-
-**IT SHOWS WHAT YOU ARE WEARING, and the DOCK is where a carried piece comes
-from.** *The user's call.* Everything you carried was in the bubble too, which
-is an inventory inside a speech bubble: at a full bag it ran off the side of
-the screen and pushed the lines you have to pick from off the bottom, so the
-bench could be opened and never used. Worn gear is a bounded list of slots, a
-piece he has no use for is DIMMED rather than dropped, and a carried one comes
-in through `setInventoryHandler` — the same seam the crafting bench picks an
-item through. `shots.mjs` holds every control to the card and to the screen.
-
-## Uniques
-
-`UNIQUES` in `data.ts` is a table of named pieces: a base it is a version of,
-fixed lines rolled once by `makeUnique`, a `grants` bag out of the SAME table
-the skill trees hand switches to the sim through, and a `DropGate`. Nothing at a
-bench reaches one — the lines are implicits and the item declares no modifier
-slots, so capacity is zero and every currency refuses it. `treeGrants` merges
-what is worn after the tree, so a unique reaches the sim by a tree's own path
-rather than a second one. Every one is a TRADE, paid for by a downside on the
-item, and the demo holds that line. Every world drops something of its own, and
-the Fissure gets two for being the shallow end.
-
-## Money
-
-**Gold** is the one currency prices are quoted in. It comes off corpses and out
-of selling gear, and it buys crafting shards and stash space — never a crystal,
-which is given rather than bought. `sellPrice()` in `src/economy.ts` reads the
-same base as a purchase plus what is rolled on the piece, times a fraction held
-low enough that buying and selling back always loses.
-
-Selling one piece is a menu action on the dock, never a click: it is the only
-thing an item can do that cannot be undone. The bulk button in the shop takes
-every carried piece no currency has touched, which is why it can never eat a
-decision.
-
-## Two hands
-
-`EQUIP_SLOTS` holds a **Main Hand** and an **Off Hand**. The main hand keeps
-the id `weapon`, because a save points at it and renaming it would cost every
-player the piece in it; only its NAME changed. The off hand takes a `shield`,
-which is its own `GearKind` and its own three bases.
-
-**A shield is the only source of Block in the game.** `blockChance` is a flat
-implicit on the base and nothing else writes it — no rolled modifier, no tree
-node, no trade — so what an off hand is worth is one number you can read off
-the shield you are holding. A **Block stops the HIT outright**: there is no
-second figure, `DEFENCE.blockCap` is 60%, and it is rolled in `dealDamage`
-against the sim's own rng, so a seed still replays. Like Armour it is a HIT
-rule — an Ailment ticks straight through it — and the report counts
-`RunState.blocked` so a descent says how many it turned aside.
-
-**A bow takes both hands, and that is what pays for it.** `GearBase.hands` is
-2 on the three bow bases and absent everywhere else. `handClash` in
-`src/game/state.ts` is the whole rule: equipping a two-handed weapon empties
-the off hand, equipping an off hand takes the two-hander off, and each is a
-piece that goes back into the bag rather than a refusal — `equipItem` carries
-the displaced piece with the same undo the replaced one gets, and refuses only
-when there is nowhere to put it. A bow carries about twice a wand's increase,
-tagged `attack` where the wand's is tagged `spell`: the wand is the spell
-family and the bow is the attack one. `starterLoadout` skips a two-handed base
-outright, so a measured character always holds a shield and a band is compared
-across one arrangement.
-
-## Two more skills, and a word for what they do
-
-**Arc Lightning** is a spell that arrives already hitting a crowd: three Arcs
-off its own `params` rather than off a point, and it pays for them in the only
-currency left — 44 base damage where Fireball lands 72, so it takes four
-enemies standing near each other to come out ahead. Its tree (`al`) widens the
-Arcs and never the discount.
-
-**Lightning Arrow** is the bow skill and the first attack that is not a swing:
-one arrow at full damage, and where it lands the sky opens on 2 more enemies
-near it. `SkillDef.weapon` is `crude_bow`, so the Lampwright hands a bow rather
-than the attack shelf's sword.
-
-**A FORK is a bolt that falls from above**, on an enemy within `PROJECTILE.fork`
-of the one you AIMED at, for `PROJECTILE.forkDamage`. It is its own bolt rather
-than the shot carrying on, which is the whole of what separates it from Pierce
-and from Arc: nothing about where the shot came from decides who takes one. It
-is a keyword like the rest, `forks`/`forkDamage` are its switches, and both are
-read by the shared `projectile` behaviour — so Arc Lightning can buy Forks and
-Lightning Arrow can buy Arcs, which is what a keyword is for.
-
-Neither skill needed a new behaviour. Both are `projectile`, told apart by
-their `params`, their tags and their trees — the same way Fireball is.
-
-**AN ARROW IS A PICTURE THAT FLIES, AND A STORM OPENS WHERE IT LANDS.**
-*The user's call: "redo the lightning arrow animation so it looks like an actual
-arrow with lightning around it when it's flying. When it hits a target have a
-cloud appear floating a decent amount above the enemy and then have lightning
-bolts come down from the cloud."* `VFX_ART` in `src/render/generated-vfx.ts` is
-the generated stills and `renderer.ts` is the geometry both renderers read:
-`arrowFlight` is where the head has got to and which way it points,
-`stormCloud` the cloud `STORM_HEIGHT` = 3 tiles over what was hit, `stormBolts`
-the three that come down out of it one after another. **Nothing is wrapped
-round the arrow** — *the user's call, "just have the arrow fly"* — so the
-crackle geometry is gone and the picture was regenerated without the lightning
-that was painted into it.
-
-**AND CREEPING BLIGHT IS A POOL WITH POISON FALLING INTO IT.** *The user's
-call.* `poison_pool` and `poison_drop` are two more `VFX_ART` rows;
-`poisonFieldRadius` still snaps the field open and holds it, and the pool
-picture is drawn to exactly that, so the art and what the sim poisoned cannot
-disagree. `poisonDrops` carries a `fall` per glob and Pixi stretches the
-picture along it, so a drop lengthens as it comes down and squashes as it
-lands. The pool goes in `vfxGroundLayer`, UNDER the bodies — a pool drawn over
-them is a lid on the fight — and it is faint, because a cast lasts 10s at
-nearly one a second and several lie on top of each other. Pixi lays the pictures on
-that out of a pooled sprite layer over the blocks; `canvas2d` has no sprites and
-draws `arrowShaft` and `stormPuffs` instead, which is the same split the props
-and the tilesets already follow.
-
-**`SkillDef.impact` is a second kind drawn where each of a shot's HITS lands**,
-with a ttl of its own because a cloud outlives the shot by a long way. It is
-generic — any skill may name one — and it is what makes a Fork the same storm
-as the shot rather than a bare jag from two tiles up.
-
-An effect is asked for through `tools/art/vfx.json` and the same `icon.mts` the
-UI icons go through: a words-file carries its own framing, palette and size.
-`portrait.mts <id> <png> <grid> vfx <keep>` imports it, `keep` being the top
-fraction of the source worth having — **the cloud came back twice with a bolt
-and a ground shadow hung under it, and cropping the design is what took them
-off for nothing.** Effect art is then cropped to its own INK and squared up, so
-the picture's edges are the effect's edges and the arrow's head is its right
-edge, which is what the renderer pins it by.
-
-## Three skills at once
-
-`SKILL_SLOTS` in `data.ts` is a TABLE like `EQUIP_SLOTS` and `RUN_SLOTS`, never
-three named fields: **main** (accepting spell OR attack), **passive** and
-**movement**. `Character.equipped` is slot id → skill id, `mainSkillId` is what
-swings, and every damage number in the game is that one's. `equipSkill` puts a
-skill in the slot its category names and refuses anything else, so equipping
-the blink can never be what stops you swinging. `heal()` empties a slot naming
-a skill that is gone and puts a pre-slots save's bare `skillId` in the main one.
-
-**Killing Surge**, the passive, is a TRADE and that is what makes it worth a
-slot: critical hits deal NO extra damage, and landing one grants 35% more
-damage for 5 seconds. It never casts — the `critIntoBuff` grant IS the skill,
-declared in `sim/grants.ts` like a tree node's, merged by `treeGrants` and read
-in two places: `heroStats` reads `critMultiplier` as 0 while it is equipped,
-and `dealDamage` arms a `TimedEffect` on the hero from the crit that lands.
-The buff refreshes rather than stacking, and the crit that grants it never hits
-harder for doing so.
-
-**Two ways to move, and both fire THEMSELVES** — automation is universal, so
-the shipped policy is what `runToCompletion` runs. `RunSim.maybeMove` goes to
-the furthest waypoint of the path already found within `distance` tiles that is
-walkable, once every `cooldown` seconds, so neither ever lands a body in rock
-nor reaches anywhere the walk could not. **Blink** is a step THROUGH and wants
-a clear line; **Leap** is a jump OVER and wants none — and unlike a step it
-LANDS, which is the one thing either web can hang something off that the other
-cannot. A landing deals no damage and never will: every damage number in the
-game belongs to the skill in the main slot. What it does instead is **Slow**,
-which is a keyword.
-
-**A movement web is three arms of three over SIX points** — `src/moves/` beside
-`src/trees/` and `src/trades/`, sharing `webgraph.ts` and `webart.ts` like they
-do. Nine nodes and six points, so two whole arms fit and a third never does:
-which two is the decision, and no level ever takes it back. `treePointsFor`
-takes a skillId now, because the cap belongs to the WEB — a nine-node web under
-the global 30 would be owned outright by level 9.
-
-**Every EQUIPPED skill takes the run's XP**, over `SKILL_SLOTS`, or a mover's
-web sits at level 1 holding one point forever. And `treeGrants` merges each
-non-main slot's own web beside its static `SkillDef.grants`, or every node of
-one does nothing at all, silently.
-
-The passive is the one skill with no web, and it does not pretend to have one:
-clicking it on the Skills screen EQUIPS it, asking first if the slot is full.
-`MAIN_SKILLS` is what the main slot takes and is what every harness that builds
-a character to fight with reads; neither mover is in it.
-
-**A SHELF ROW SAYS WHAT THE SKILL DOES, on the row.** A skill with a web can be
-read on its web; one WITHOUT is equipped by the very click that would have
-opened it, so a row carrying only a name is a choice made blind — which is what
-picking the passive was. `.skillrow__how` is `SkillDef.description` through
-`keywordLine`, so the words are marked where they appear like everywhere else,
-and the hover is `skillCard`: the same `nodeCard` a tree node raises, carrying
-the description, whatever the skill statically GRANTS, and the glossary for
-both.
-
-## What a level buys
-
-**Attributes** (`ATTRIBUTES`, `ATTRIBUTE_STEP` in `data.ts`). A character level
-hands over `LEVELLING.attributePointsPerLevel` = 3 points and nothing spends
-them but you, on the sheet; level 1 grants none. Five points make a STEP and a
-part-step pays nothing, so the numbers on a step can be generous enough to
-build around. Strength buys attack damage and life, Intelligence spell damage
-and mana, Dexterity attack critical chance and attack speed, Acuity the same
-two for spells.
-
-Every one of them is written as ordinary stat lines under names the modifier
-engine already reads, and `attributeMod` folds the lot into ONE synthetic
-`RolledMod` the way `treeMod` does — so an attribute reaches the sim by exactly
-the path a ring does. The TAGS are the whole of what keeps the four apart:
-`heroStats` passes the skill's tags into the `critChance` computation, so an
-attack critical chance does nothing for a spell, and `attackSpeed` was already
-the wrong stat for one. Untagged gear lines still reach everything.
-
-`heal()` REPLAYS them against the level that paid, exactly as tree points are
-replayed: an attribute that is cut, or a curve that moves, hands the points
-back rather than leaving a character holding what no level granted.
-
-The character level also still scales the skill's own base damage
-(`LEVELLING.damagePerLevel`), which is the granted baseline `lifePerLevel` is
-for life. Attributes are the layer you BUY on top of both.
-
-A count of what is waiting to be spent sits on the rail button that spends it
-(`badge` in `src/ui/badge.ts`) — Character carries unspent attribute points and
-Skills carries the ACTIVE skill's spare tree points, whatever web is on screen.
-Zero shows nothing at all, since a badge reading 0 is a permanent nag.
-
-## A trade: the part of a character that is not the skill
-
-Every scrap of build identity used to belong to the SKILL, and changing skill
-threw the whole of it away. A **trade** is funded by CHARACTER level out of its
-own budget (`TRADE` in `data.ts`: one point every 5 levels, 10 at level 50), so
-nothing about walking one competes with a tree for the same point — and it
-survives every skill you ever swap to.
-
-A trade tree is its OWN shape, not a skill web: five spokes off one middle, four
-nodes each, **alternating minor and notable** — 20 nodes, half of them notables,
-and 10 points. Every other node out is a notable, so five is the ceiling and a
-point spent on a minor whose notable you never buy is a point spent on travel to
-nowhere. Two whole arms fit and no more, so the outer notable of a spoke is a
-commitment. No ring and no fork: a link sideways would let a build hop into a
-neighbour's far notable without walking its arm, and the arm IS the price.
-
-**Every notable changes a RULE, not a number.** A trade handing out percentages
-would compete with the other on percentages and one of them would win; a trade
-that changes what is POSSIBLE cannot be compared. They reach the sim through
-`GRANTS` in `sim/grants.ts` exactly as a tree node and a unique do, merged by
-`treeGrants` as a third SOURCE rather than a third concept.
-
-**The Alchemist** turns potions from a safety net into the engine: a flask
-carries a buff while it runs (`potionMore`, `potionHaste`, `potionCrit`), runs
-longer and pours harder (`potionDuration`, `potionPotency`), and its charges
-come BACK during a descent (`chargeRegen`) — so 2 charges are a cooldown rather
-than the whole budget. The decision inside it is UPTIME: magnitude against
-duration against how fast charges return.
-
-**The Aethermancer** makes mana your second health bar and your damage
-multiplier at once, and all five spokes pull on the SAME pool. `manaShield` pays
-for a share of damage taken — ailments included, since armour never could —
-`overcharge` spends a share of your MAXIMUM pool for proportional damage,
-`manaLeech` returns a share of what you deal, `starvedDamage` makes an empty
-pool survivable, and `poolFromLife` builds the pool out of the one stat
-everything grants. The Ward wants it full and Overflow empties it; that tension
-is the trade.
-
-**A trade is not acquired — it is WHO YOU ARE, and you choose it when the
-character is made.** `src/ui/pick.ts` is the first screen of a new game: the
-cast standing in the rock, each playing its own idle off `GENERATED`, and
-clicking one says who he is before you take him. `TradeSpec.lore` is the
-person, `blurb` is the rule he changes, and the five spoke themes are the tree
-in five words — the only three things said before a point is spent. `web.ts`
-makes a character in one gate, `maybeShowPick` then `maybeShowWelcome`, so the
-trade comes before the name and the skill.
-
-That makes `TradeSpec.sprite` the whole of what you look like, and a hero's
-palette has to clear THREE things: the roster's near-black bone, the pale
-floors, and the other hero. The Aethermancer is starved and hung with phials of
-glowing violet; the Alchemist is broad, in a burned leather apron over acid
-green glass and brass. Neither is the other and neither is a monster.
-
-Changing trade is the exception and stays on the Trade screen: it refunds every
-point and costs gold (`tradeSwitchCost`), because a hard lock would be the only
-unforgiving thing in a game that replays allocations rather than trusting them.
-A save from before any of this has no trade at all, so the hall comes up once
-for it — nothing is refused and no `SAVE_VERSION` moved.
-
-`src/ui/trade.ts` draws it. Twenty nodes FIT, so that web carries a viewBox and
-has no pan, no zoom and no Fit button; the node art both webs are made of is
-GENERATED — `WEB_ART` in `src/render/generated-web.ts` (written by
-`tools/art/webkit.mts`) holds the gold medallion frame, the iron minor ring,
-the hub ring and the rusted chain segment as data URIs drawn as SVG <image>,
-and the `wn_*` icons in `GENERATED_ICONS` are the pictures inside, picked by
-`src/ui/webicons.ts` off the node's own words. `src/ui/webart.ts` keeps drawn
-fallbacks for a missing piece, and how a web is WALKED lives in
-`src/webgraph.ts`, over any list of nodes.
-
-**A skill web is BUILT ONCE, and the camera is a CSS transform on the SVG
-ELEMENT.** Every node, chain link and frame goes into a single `.web__view`
-group in the web's own space at `BUILD` pixels per unit, on a canvas sized to
-hold the whole tree with `origin` at its middle; `.webwrap` is the window and
-clips it. A scroll or a drag writes `style.transform` on the svg and nothing
-else, so the compositor moves a promoted layer instead of re-rastering.
-**Which transform it is matters more than building once did**: written as the
-view group's own SVG `transform` — the obvious way — every element in it
-re-rasters per frame, measured at 50ms a frame against 17 for the same camera
-on the element. Pan and zoom both sit at the vsync floor now. Rebuilding it per event — some three hundred
-`<image>` elements torn down and re-created — is what made a web of pixel art
-stutter, and it also meant nothing off screen was built, so what was DRAWN was
-a DOM question rather than a camera one. Node art is drawn SMOOTH and not
-`pixelated`, alone among the game's art: 96px pieces are minified at every
-zoom the web allows.
-
-**And a web's icons are BAKED to bitmaps.** `bakedArt` in `src/ui/webicons.ts`
-rasterises a `GENERATED_ICONS` row to a PNG data URI once, through a canvas,
-and both webs draw one `<image>` where an icon is otherwise a `<rect>` per RUN
-of pixels — 395 of them for the average node glyph, some 44,000 across one
-tree. Separate shapes scaled by whatever the zoom happens to be stop meeting
-at their seams, and the ground shows through as black lines that come and go
-as you zoom; a run that rounds to nothing takes a stripe of the picture with
-it. A bitmap has no seams to open. jsdom has no canvas, so the paths stay as
-the fallback and the headless suite still draws.
-
-## What a skill costs
-
-Every use of your skill is paid out of **mana** — `HERO_BASE.mana`, and
-`CombatStats.maxMana` beside `maxLife`. The pool never grows with a character
-level, where life does: a pool that grew alongside it would leave the cost
-meaningless by level 10, so sustain is BOUGHT. Three gear modifiers reach it —
-of the Well, of Clarity, of Thrift — through the modifier engine like anything
-else.
-
-Bare, every skill costs the same PER SECOND (`MANA.costPerSecond`).
-`SkillDef.manaCost` is per USE, so a slower skill's number is a bigger one, and
-the demo holds all three to the same rate.
-
-**What a node changes, it charges for.** The 42 notables that change what the
-skill DOES — a Burst, a Splash, another Projectile, another Cloud — each grant
-`manaMultiplier`, which merges by PRODUCT, so a build stacking four of them
-pays about half again a cast. Conditional damage is free: "more against enemies
-below a third of their life" changes a number rather than what the skill is.
-The line the card prints comes out of `GrantDef.say`, never out of the node's
-own prose, so what it charges and what it says cannot drift.
-
-**Two flasks, and they are a descent's budget.** `POTIONS` in `data.ts` — a
-Flask of Blood and a Flask of Quiet, 2 charges each, 4 seconds of heavy
-regeneration apiece. A potion is an EFFECT WITH A DURATION (`TimedEffect` on
-the hero), never a lump of life, because the trade that turns potions into the
-character's engine hangs BUFFS off that same shape. Charges live on `RunState`
-and nowhere in the save, so a descent always begins full and there is nothing
-to hoard.
-
-They fire THEMSELVES at a threshold (`PotionDef.threshold`, moved by the player
-into `GameState.potions`), and that same threshold is what `runToCompletion`
-obeys — one rule with one implementation, because no build's power may depend
-on somebody watching. The keys are `BINDINGS` entries like every other; the
-buttons beside the map are the interface, since a phone has no number row.
-`RunSim.usePotion` QUEUES a press for the next tick, so a seed still replays.
-
-**A FLASK AND A SKILL SAY WHAT THEY DO FOR THIS BUILD, and never what the table
-says.** `potion-text.ts` and `skill-text.ts` are the two readings —
-`potionReading` is the pour, the length, the total, the charges and what holding
-one is worth; `mainWorkings` is damage, rate, damage a second, crit, mana and
-reach off the sheet's own pass; `slotWorkings` is what a slot GRANTS and a
-mover's two numbers read THROUGH its web. They are modules rather than lines in
-a panel so the demo can pour one into an emptied hero and hold the number the
-hover promised against the life that actually arrived, and hold the skill hover
-against `damageDetail`. `PotionDef` carries no `blurb` at all: the Alchemist
-moves the pour, the length, the charges and three things you only get while one
-is running, so a printed line is wrong for exactly the build the trade exists to
-make.
-
-**ONE FACT A LINE, and a line only where there is something to say.** No
-sentences and no punctuation at the end of one: `17 life per second`,
-`68 life over 4s`, `2/2 charges`. No charge regeneration means no
-regeneration LINE rather than a line saying there is none, so a character with
-no trade reads exactly as short as it ever did.
-
-**The HUD is pointer-TRANSPARENT and its LEAVES hand the pointer back.** A drag
-over the bars still moves the map, which is why `body.mapfull .viewport` takes
-no pointer and the list under it gives one back — and `.skillslot` and
-`.debuff` were not on that list, so three buttons and two hoverable boxes were
-visible, looked right and did nothing at all. `hudProbe` in `shots.mjs` is what
-catches it: a leaf whose own centre hit-tests to the map. A window sitting over
-one is not that.
-
-**Out of mana you are STARVED, not stopped.** The pool drains to 0, the cast
-happens anyway, and it lands for `MANA.starvedDamage` — 50% — of your damage:
-your own skill, its own delivery, every grant the tree gave it, every target it
-would have hit. Running dry is a downside you may choose to ignore and answer
-by scaling damage, rather than a wall that deletes the build you walked to. It
-also means a descent always ends and a headless run can never hang.
-
-The multiplier arrives through ONE seam: `starvedMultiplier(grants)` in
-`sim/grants.ts`, which is `MANA.starvedDamage` times the declared
-`starvedDamage` grant (product merge). A trade that makes running dry worse —
-or better — is a table entry rather than a rewrite. It lands in `dealDamage`,
-so ailments and bursts are cut too and no corner of a build runs dry for free.
-
-It is visible: the mana bar goes rust while short of a cast, and the run
-readout carries `starved casts` — the count and what one is worth — in rust
-once there are any. A bare level 1 spends 0% (Strike) to 25% (Blight) of its
-swings starved, measured over real descents with the flasks firing themselves.
-
-## The loop
-
-You press Enter once. A cleared descent launches the next one by itself — that
-is not a setting and there is no checkbox for it — and it keeps going until it
-is stopped: **you die**, **your bags fill**, **someone is waiting at the
-mouth**, or you say so. Saying so has two prices. **Leave after
-this run** finishes the descent you are in and banks it; **Abandon** walks out
-now, and that descent pays nothing — the same rule as dying in it. A meeting is
-the gentlest of the five and costs nothing at all: the descent is already
-cleared and banked when he climbs out, and he walks you up. Every one of the
-five ends on the same report and opens the same dock, so there is one screen
-that means "the run is over, deal with your things", and what earlier clears
-banked is visible rather than assumed. Only the descent you are standing in can
-be lost; each clear banks as it happens and nothing reaches back for it.
-
-**The camera is yours.** Scroll to zoom, drag to look somewhere else, and one
-key puts it back on your character and keeps it there. Dragging is what stops
-it following; zooming never does. It may sit `CAMERA_SLACK` — a quarter of a
-view — past the map's edge, which is what lets a fight in a corner be centred;
-clamped to the edge itself, as it was, the camera refuses and you spend the
-fight dragging against it.
-
-**ONE ART DIRECTION, and the frame is lamplit stone.** *The user's call: "we
-need to redo the entire ui... designed to match the theme of the new fissure art
-and the enemies in the fissure. Currently it clashes I want a more rpg fantasy
-theme... literally everything."* The shell was a terminal wrapped round a
-fantasy game — cool near-blacks, square 1px strokes, monospace throughout. It is
-now the Fissure's own rock with its lamps on it: warm near-black panels, carved
-edges with a hairline of gold inside them, and a SERIF everywhere there is
-prose. The FRAME has its own tokens (`--ink`, `--panel`, `--edge`, `--text` and
-their neighbours) and the MAP keeps every name the renderer reads, so a retheme
-cannot re-ink committed art. `npm run theme` fails a colour written by hand and
-a token nobody defined.
-
-**THE SHELL IS BUILT THINGS, drawn by a GENERATED FIXTURE KIT.** *The user's
-call: "instead of all sprayer buttons in the bottom right an actual designed
-bar like wow/poe does with buttons on top of that. Apply that logic to
-everything else."* Six fixtures — an ornate window frame, a riveted card
-frame, a button socket, a title plate, a banded bar plate and a gauge channel
-— generated by `create_ui_asset` through `tools/art/uikit.mts`, shipped as
-data URIs in `src/render/generated-ui.ts`, mounted as `--fix-*` at boot by
-`src/ui/fixtures.ts`, and applied as border-image 9-slices. The rail is an
-iron plate with every button in a socket; the three skill slots take the same
-sockets; the two flasks stand in dark arched NICHES on the bar-plate rack —
-each a GENERATED bottle (`flask_life`/`flask_mana` in `GENERATED_ICONS`,
-`flaskIcon` answering them first), drained states the same picture gone dull,
-its threshold controls directly under it; life and mana
-are brass-capped channel vessels, the fill lit like glass and the pool's
-scale etched in as ticks every 100 with a heavier mark each 1000 — the
-hero's floating bar carries the same ticks, enemies' the light alone; every
-window is the ornate frame with a
-carved title plate for its head; the dock, tooltips, web menus, speech bubbles
-and the Fissure's four sockets take the card frame. A window that opens square
-over another's head cascades until the head is clear. Skill and category icons
-are generated pixel art (`GENERATED_ICONS`), merged over the hand-drawn grids.
-
-**EVERY ITEM'S ART IS GENERATED, and a crystal shows its FAMILY as well as its
-level.** 66 more rows in `GENERATED_ICONS`: `crys_<family>_t<level>` — twelve
-crystals on one ladder (rough shard → cut gem → big crystal → crown-cluster),
-amber for Normal, black-and-venom for Demonic, pale iridescent for Prismatic —
-and `gear_<art>` for all 48 armour pieces, the four weapon families and both
-jewellery kinds. `crystalIcon(level, size, family)` and `gearIcon` answer the
-generated table FIRST and keep the hand-drawn grids as the fallback; `itemIcon`
-passes `item.meta.family`, so a Demonic crystal never draws as a Normal one.
-The item tooltip carries the art beside the name (`.tip__head` in
-`itemcard.ts`), and the title's mark is `crys_normal_t4` — the highest-tier
-Normal crystal, the thing the game is about.
-
-**The title's mark is the generated `crys_normal_t4`, over a wordmark carved
-in gold** — one gradient down the letter faces, a dark stroke at their edge and
-ONE hard shadow, because a soft halo stacked on a hard shadow read as mush.
-Neither webfont has ever rendered in a screenshot this repo took, so the
-fallback serif is the face that was actually designed against. `src/ui/logo.ts`
-and its grid-art gem are deleted.
-
-**The map is the SCREEN, and everything else floats on it.** `body.mapfull`,
-toggled by `syncViewportLock`, is the whole of the mechanism: the stage goes
-fixed at `inset: 0` behind the shell, and every panel is a corner. Life, mana
-and level are a thin HUD bottom left, and the three skill slots sit on it over
-the name, touching so they read as one bar rather than three buttons — a slot
-that is WAITING darkens from the bottom up with the seconds left over it
-(`--cool`, `syncCooldowns`, off `RunSim.moverWait`), which today only the
-movement slot has. The rail is its own stack bottom right; a skinny XP bar runs the full width of the floor under
-everything; the flasks are bottom centre.
-
-**A screen is a WINDOW, and only a question stops you.** `.modal` paints no
-scrim and is `pointer-events: none` with its card `auto`, so screens no longer
-block the map or each other and several can be open at once. `.modal--stop`
-is the exception — the confirm, the welcome and the Lampwright — where a scrim
-is the point. The inventory is a window like the rest, centred and low, because
-every other screen is a verb applied to it.
-
-**A window is DRAGGED by its head, and ON TOP means touched last.**
-`src/ui/windows.ts` owns both. A drag writes `--wx` / `--wy` on the card and the
-transform is behind `.win--moved`, so the default position stays in CSS and a
-window nobody moved is where the layout put it; double-clicking the head puts a
-moved one back. Touching or opening one raises it within a band of z-indexes
-(`Z_BASE`, under the rail), and `topWindow()` is what Escape answers — with
-several open, a hand-written order shuts the one you are not looking at.
-
-**The rail is every screen as a glyph with its key** (`src/ui/rail.ts`,
-`src/ui/screenicons.ts`), bottom right on the floor: the screens are ONE row
-of touching 34px sockets and the utility trio — Fill, Hide, the dev menu — is
-its own small plate above, which is what keeps the row clear of the flask bar
-at 1280 with the corner never lifted. The button IDS are what every harness
-names, so they outlive any rearrangement of it. It draws over every window and
-every scrim, since it is how a screen is opened and shut. Hovering a button
-raises the game's OWN tooltip immediately — nothing on the rail sets `title`.
-Hide parks every panel and survives its own press AND a reload —
-`GameState.parked` is a preference like a keybind — and Fill asks the browser
-for the screen. Settings (`open-settings`) opens an empty framed shell on
-purpose: the place exists before there is anything to set.
-
-**The DEV MENU is a way to reach a state the game only reaches by PLAYING to
-it**, and nothing in it is a rule: every button drives the same entry point the
-game drives. A room per `SceneDef`, because one is SCHEDULED at the end of a
-cleared descent and that is minutes of play for a look at it —
-`enterRoomNow` in `src/ui/run.ts` is the one way in and calls the schedule's own
-`enterScene`. A rung per row of the balance grid, which wears `ladderCharacter`
-at that band and keeps your name and your trade, since a trade is the half of a
-build worth testing; `heal` then replays the attributes and the trade walk
-against the new level. And the old dev kit, which wipes.
-
-**The map is the GROUND, not a screen.** The dock resolves
-`override ?? screenHandler ?? base`; the run sets `base` on every phase change
-and a screen sets `screenHandler` when it takes focus. Set from the same slot,
-a descent ticking over stole the dock from whatever screen was holding it.
-
-**A descent ends at a place you walk to.** Killing the last thing is not the
-end of it: the hero walks to the exit, and coming near the hole is what brings
-the closing encounter up out of it, a few at a time, so the last fight is
-something that happens on the way out. Reaching the hole is the clear. The exit
-is drawn as the hole it is — the same `mouth()` the entrance has — and nothing
-paints a marker over it.
-
-**THERE IS ONE CONTAINER AND IT IS YOUR BAG.** *The user's call: "remove the
-haul entirely and have everything just go into the inventory. Once full it
-stops and just let your inventory go over budget a bit if it happens to go over
-at the end of a floor."* The haul — a second inert pile a cleared run banked
-into, that you then took pieces out of — is gone, along with its screen, its
-Take what fits and its Sell all. `bankLoot` puts a cleared descent's drops
-straight into `GameState.inventory`, and `bagsFull` is what shuts the Fissure.
-Capacity is read BETWEEN runs and never during one, so a descent's drops arrive
-whole and the bag ends a floor at 35/32 rather than a run being cut in half.
-Being over is a real state: it draws no pads, and selling or stashing is the way
-back under. A full bag is the only thing that shuts the Fissure, and it can
-never wedge — selling needs room nowhere.
-
-**AND THE FILTER IS WHAT KEEPS IT FROM FILLING.** `KEEP_GROUPS` in `data.ts` is
-what an auto-sell rule is clicked in, DERIVED from the tables rather than listed
-again: one group per armour ARCHETYPE PAIRING (`ARMOUR_FAMILIES.archetypes`, so
-Tank, Mage, Rogue and the three hybrids), one per weapon family, one for
-shields, one each for amulets and rings. Beside them are the three base RUNGS.
-A piece is kept when its rung is kept AND its group is, so "tier 3 mage gear" is
-two clicks rather than a row per combination; everything else is sold on the way
-up out of a cleared descent, at `sellPrice`, and never reaches a container at
-all.
-
-`GameState.junk` stores what is SOLD rather than what is kept — so an empty list
-keeps everything, which is what a fresh game and every save written before any
-of this both hold. A named piece is never junk, the same line the bulk sell
-button holds, and a filter sale stays OFF the counter: a descent's worth would
-push every deliberate sale off a twelve-deep shelf. `src/ui/filter.ts` is the
-screen, in the haul's old place on the rail, and it says what it would do to
-what you are carrying right now — a rule about loot nobody has found yet is one
-you set wrong and never find out about.
-
-## The first thing you land on
-
-The title is the mark and the wordmark on a ceremonial PLAQUE — a generated
-ornamental frame (`plaque` in `UI_FIXTURES`, an `extras` row in
-`tools/art/uikit.json`) — over quiet lamplit stone. *The user's call: the old
-two-worlds wall was "way too noisy".* Behind the plaque is THE FISSURE itself,
-GENERATED (`crackscene`, another `extras` row): the rock face split by a lit
-crack, a lantern either side of the mouth, meadow at its foot — the WHOLE
-screen (`cover`, anchored at the meadow so a tall window crops rock and never
-grass), the plaque and the go-line floating over it and the vignette painting
-between them, off `--fix-crackscene`. An `extras`
-row may carry its own `style` words and a `crop`: the scene escaped the kit's
-fixture styling through the first and lost the ornate frame the generator
-added anyway through the second. The enormous low-opacity gem ghost behind
-everything is gone — its giant grid pixels read as a banding artifact — and
-the scene is what keeps the ground from being a void. Nothing ticks, nothing
-is painted per frame, and the cast stays on the character-select hall where it
-lives. `src/ui/titleart.ts` and the two-worlds canvas are deleted.
-
-## Saves
-
-The save is `JSON.stringify(game)` in a localStorage key per SLOT — three of
-them, one LIVE — and there is no server behind the hosted build. `GameState`
-must stay plain data. The live slot autosaves. The Save & Load screen is
-SELECT then act: a slot row is a button that picks itself and shows name,
-trade and level only; Play now at the head closes back into the live game,
-asks before switching into a held one, and starts a new game in an empty one;
-Save here and Delete at the foot act on the pick, warning where a held save
-would be destroyed — Delete refuses the live slot and the empty ones.
-
-A save is full of ids pointing into `data.ts` and the trees, and those move.
-`heal()` in `game/save.ts` runs on every load and drops what no longer resolves:
-items whose base is gone, retired currencies, a cut skill. Tree allocations are
-**replayed** through `canAllocate` rather than trusted, so a reshaped tree
-refunds the points it stranded instead of leaving a build that could never have
-been walked to.
-
-- **Adding a field** needs nothing: a missing key takes its default.
-- **Renaming an id** costs the player whatever pointed at it, and nothing else.
-- **Bump `SAVE_VERSION`** only when a save should be REFUSED — a change `heal()`
-  cannot repair. That wipes everyone's game, so it is the last resort.
+`npm run comments` caps standalone comment lines at `max(10, 20% of the file)`,
+found by parsing rather than by matching text. `SHARE_BY_FILE` gives
+`docs/index.html` 25% because it is mostly one-line CSS rules; adding an entry is
+a decision to argue for, not a way out of a cut. It runs as a `PostToolUse` hook
+when you move to a different file, on `Stop`, and in CI. **Fix a violation by
+cutting prose** — padding a file to raise its allowance is the one repair that
+makes it worse. Expect to pay for a DELETION in prose too: cutting a table lowers
+the ceiling with it.
+
+## The game
+
+**One place you go.** Four sockets hold crystals permanently. Their COUNT is how
+long a run is, their MODIFIERS the whole of how hard it is; a crystal's LEVEL is
+only capacity and its FAMILY (Normal / Demonic / Prismatic) only which monsters
+spawn. Composition also picks the ZONE — four of them, each drawn by its own
+generated tileset. Danger and socket count fold into one **run power**, and
+every reward reads that and nothing else. A fifth socket takes a **boss key**.
+
+**You press Enter once.** A cleared descent launches the next by itself and
+keeps going until you die, your bag fills, someone is waiting at the mouth, or
+you say so. All five end on the same report and open the same dock.
+
+**Crystals are given in person, never bought or rolled.** At the end of a
+cleared descent that owes something you come up in a **scene** — an authored
+room with somebody standing in it — instead of the next descent. Five rooms:
+the Lampwright's workshop, the Lambengolmor's reading room, the answering hall
+(a boss), the ossuary and the orrery (two people who take a relic and write a
+line on your gear that nothing else can).
+
+**A character is a trade, a main skill, two more slots and a bag.** The trade is
+chosen when the character is made and is what the hero LOOKS like; it is funded
+by character level out of its own budget, so it survives every skill you swap.
+Five main skills, each with its own tree; a passive and a mover fill the other
+two slots, the mover having a nine-node web of its own. Attributes are bought
+per level. Every use costs mana; out of mana you are STARVED, not stopped.
+
+**A boss is the one fight you play.** Three faces of the crystal on `1` `2` `3`,
+each buying one thing and paying with the other two, against a cycle of phases
+drawn on the boss's own body.
 
 ## Shape
 
 ```
-tools/art/mcp.mts  the generator, over JSON-RPC; tables.mts pulls art in
-tools/art/icon.mts a still: icons.json or vfx.json is the words, portrait.mts the table
-tools/art/uikit.mts the fixture kit: uikit.json the words, generated-ui.ts the art
-tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
-tools/art/dress.mts a whole LOOK onto an existing character, every rotation
-tools/art/         the art pipeline: a row is generated, converted, accepted
-src/data.ts        every table: mods, currencies, bases, skills, monsters
+src/data.ts        every table: mods, currencies, bases, skills, monsters, bosses
+src/types.ts       the shapes
+src/keywords.ts    the vocabulary, and what is BANNED
 src/mods.ts        capacity, allocation, rolling
 src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
+src/economy.ts     prices
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
-src/scenes.ts      the authored rooms; src/scenes/* are their content
-src/vignettes.ts   arrangements, and what the rock does: cover, growth, solidity
-src/game/scenes.ts what happens at the end of THIS clear, at most one thing
-src/ui/speech.ts   a line over the head of whoever is saying it
-src/skills-tree.ts per-skill webs; src/trees/* and src/moves/* are the content
-src/trades.ts      the character's own web; src/trades/* are the two trades
-src/trees/spec.ts  how a tree is written down; layout.ts turns it into nodes
-src/sim/grants.ts  every switch a tree may hand the sim, and who reads it
+src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
+src/trades.ts      the character's own web; src/trades/* the two trades
+src/moves/         the movement webs
+src/scenes.ts      the authored rooms; src/scenes/* their content
+src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation
-src/game/crystals.ts  gifts, quests, and a crystal's climb from level 1 to 4
-src/potion-text.ts what a flask does for THIS build, in its own numbers
-src/skill-text.ts  the same for a skill slot: the sheet's numbers, on a hover
-src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
+src/sim/grants.ts  every switch anything may hand the sim, and who reads it
+src/sim/grid.ts    generate and carve a map; sceneMap beside it
+src/game/          save, state, report, crystals, scenes, graft
 src/render/        renderer seam: canvas2d fallback, pixi default
-src/ui/pick.ts     character select: who you ARE, before a name or a skill
-src/ui/filter.ts   what comes up out of the Fissure, and what arrives as gold
-src/ui/dev.ts      the dev menu: any room now, any rung of gear now
-tools/boss-peek.mjs  THE ANSWERING, a whole cycle of it, off the bundle
-tools/theme-check.mjs  every colour a token, and every token defined
+src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen
+tools/art/         the generator pipeline; a row is asked, converted, accepted
+tools/*-peek.mjs   screenshots off the committed bundle
+src/demo.ts        the checks; src/mods-check.ts the modifier sweep
 ```
-
-## One word per mechanism
-
-`KEYWORDS` in `src/keywords.ts` is the game's vocabulary, and it is the only
-way any of these things may be said. A talent used to say "strikes one
-additional enemy near the target" and another "passes through one enemy", which
-is two phrasings of one idea and neither word worth anything anywhere else.
-Now it is **+1 Projectile** and **+1 Pierce** — and a bow skill that says
-+5 Arc later costs nothing to learn.
-
-Twenty of them, in three groups. How a use reaches more than one enemy —
-**Projectile**, **Pierce**, **Arc**, **Spread**, **Repeat**, **Burst**,
-**Splash**, **Cloud**. Damage over time — **Ailment** and the three that are
-kinds of one, **Burn**, **Bleed**, **Poison**. And the words every line leans
-on — **Area of Effect**, **increased**, **more**, **Critical**, **Resistance**,
-**Armour**, **Starved**, **Charge**.
-
-`means` carries its own numbers out of the same tables the sim reads
-(`PROJECTILE`, `DEFENCE`, `MANA`, `POTIONS` in `data.ts`), so a glossary cannot
-quote a figure the sim stopped using. `KeywordDef.grants` names the switches
-that ARE the keyword, and `kin` is a keyword that is a KIND of another — saying
-Burn satisfies a node granting an Ailment switch, because Burn is the better
-line.
-
-**It is shown, not hidden behind a second hover.** `.tip` is
-`pointer-events: none` and always will be, so a word inside a tooltip cannot be
-hovered again. `src/ui/glossary.ts` marks every keyword where it appears
-(`.kw`, one colour everywhere) and prints what each one means at the bottom of
-the same card — so you read the definition where you meet the word, and it
-works on a phone, which has no hover at all. Both webs draw their node cards
-through `nodeCard`; item cards MARK keywords and a unique also carries the
-definitions, since a named piece holds no modifiers and has the room.
-
-**`BANNED` is what the game may no longer say** — "chain", "leaps", "passes
-through", "additional target", "explodes" — mapped to the keyword that owns
-each. The demo sweeps every tree node, trade node, skill, currency, quest,
-modifier line and `GrantDef.what` and fails on any of them, and it also holds a
-node handing over a keyword's switch to naming that keyword. A talent cannot
-quietly invent a second word for Pierce.
-
-## Adding a skill tree
-
-**The trunk is THREE ways in and a ring of twelve.** Each way off the centre
-opens the two short SPURS either side of it — never an anchor, so a way in
-lands on a small chain and a branch is one step further round the ring — and
-nothing links the three to each other, because the centre already does. A ring
-of six in there was three nodes nobody would ever take, sitting between the
-ways in and reaching nothing the ways in did not. `spread` keeps nodes apart by
-what their ART spans (`ART_R`), not by one number for every pair: a frame is
-drawn 2.3 radii across, so two notables at the old 0.92 overlapped by a third
-of a node.
-
-A tree is a `TreeSpec` in `src/trees/` and a line in `BUILT_TREES`. Six
-branches, six trunk notables — `buildTree` refuses anything else rather than
-dropping the extras.
-
-Content only: `layout.ts` owns every coordinate. Give the tree a `prefix` no
-other tree uses, because node ids are what a save points at.
-
-**What two nodes come to is written down.** `GrantDef.changes` puts every
-switch a delivery reads into one of seven CLASSES — scale, duration, targets,
-burst, field, crit, type — and `INTERACTIONS` in `src/trees/interactions.ts` is
-all 28 pairs of them with what taking both comes to. The audit is over classes
-rather than nodes because at node level it is 742 pairs across three trees,
-which goes stale the day a node is added; a new node cannot invent a
-combination without inventing a class, and the demo fails an unwritten pair.
-
-Nothing is `blocked` today — every pair composes, Rupture's burst under
-Blight's cloud tree included, which turns out to be a trade the card already
-names rather than a contradiction. The refusal exists for when one appears:
-`blockedBy` in `src/skills-tree.ts` is what `canAllocate` asks, and the node's
-tooltip says which allocated node it clashes with and why.
-
-**Distance is the only price.** There are no spent-point gates: what a notable
-costs is the run of minors in front of it. A twig may only `forkFrom` the twig
-beside it — a fork from further away has to sweep across everything between,
-and `buildTree` refuses it. The demo holds every tree to the geometry: no link
-may cross another, and none may pass under a node it does not join, both of
-which read on screen as a link to somewhere it does not go.
-
-A node's `grants` must be declared in `sim/grants.ts`, and the skill's own
-`behaviour` must be listed as reading it — a tree asking a cloud to pierce is
-a point spent on nothing, and the demo fails on it. Anything two nodes both
-grant needs a `merge`, or the second silently replaces the first.
-
-`needs` names what a grant is useless without, and the demo holds that line to
-its own branch. It is per-tree: Area of Effect lives behind Detonation on
-Fireball, which does not burst without it, and sits on the trunk for Blight,
-which is a circle already.
-
-Positions are in tile units, never pixels. Both renderers must agree exactly,
-so anything per-tile is a pure function in `render/renderer.ts`.

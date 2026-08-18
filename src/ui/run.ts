@@ -683,10 +683,10 @@ function renderCarrying(): void {
 }
 
 /**
- * The flasks. The KEYS are the shortcut and these are the interface — a phone
- * has no number row, so a potion reachable only by keyboard is missing rather
- * than optional. `fires at` is the same threshold the sim's own policy reads,
- * so setting it here is setting what a headless run does.
+ * The flasks. The KEYS are the shortcut and these are the interface, since a
+ * threshold has to be settable by something. `fires at` is the same threshold
+ * the sim's own policy reads, so setting it here is setting what a headless run
+ * does.
  */
 function renderFlasks(): void {
   const host = $('run-flasks');
@@ -1036,7 +1036,7 @@ function setLeaveLabel(): void {
 
 /**
  * Once the player picks a zoom it is theirs and nothing moves it. Until then the
- * starting zoom is recomputed on every resize, so rotating a phone re-picks a
+ * starting zoom is recomputed on every resize, so a resized window re-picks a
  * sane scale rather than keeping one that suited the old shape.
  */
 let userZoomed = false;

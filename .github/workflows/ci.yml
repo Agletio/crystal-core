@@ -64,9 +64,9 @@ jobs:
         run: npm run mods
 
       # `shots` and `drag` are deliberately NOT here. Both drive a real browser,
-      # and `drag` is a pointer test — `RULES.md` records that a reorder has
-      # failed on a bundle that passed either side of it, so it is a thing you
-      # re-run rather than a thing that gates a merge.
+      # and `drag` is a pointer test: a reorder has failed on a bundle that
+      # passed either side of it, so it is a thing you re-run rather than a
+      # thing that gates a merge.
 
       - name: commit the rebuilt bundle
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

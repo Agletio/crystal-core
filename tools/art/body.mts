@@ -15,7 +15,7 @@
  *
  * A body is ONE facing — `face` in `bodies.json`, an angled side profile — and
  * the renderer mirrors it. An animation is judged rather than trusted: look at
- * it, re-roll what is wrong, WINDOW what is nearly right. `ROADMAP.md` holds
+ * it, re-roll what is wrong, WINDOW what is nearly right. The `art` skill holds
  * the runbook and the pitfalls.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

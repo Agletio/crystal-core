@@ -363,7 +363,7 @@ function parkedCheck(ok: boolean, good: string, bad: string): void {
 /**
  * A balance number: measured, printed, and never a failure.
  *
- * `RULES.md` — nothing is tuned until every system is in, and each one still
+ * `CLAUDE.md` — nothing is tuned until every system is in, and each one still
  * to land hands out more power than the last. So the difficulty and reward
  * TARGETS report instead of asserting, and the figure beside each is what the
  * balance pass reads for a before and an after. What must not break is
@@ -4214,7 +4214,7 @@ line('levels — see THE LADDER below for that.');
 // ===========================================================================
 rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
 
-// The rule is in RULES.md: nothing a player reads may describe a quantity in
+// The rule is in CLAUDE.md: nothing a player reads may describe a quantity in
 // words when there is a figure behind it. A digit is a coarse test and a
 // deliberate one — "a third more ground" and "hits harder" both pass any
 // cleverer check by describing something real, and both are the decision being
