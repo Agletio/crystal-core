@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { ModPool, baseTier, computeStat, modCapacity, rollRandomMod } from './mods';
+import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
 import {
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
@@ -15,7 +15,6 @@ import {
 import type {
   GearBase,
   Item,
-  ItemKind,
   MonsterFamily,
   Recipe,
   RolledMod,
@@ -52,9 +51,6 @@ export function reserveItemIds(value: unknown): void {
   }
   for (const nested of Object.values(value)) reserveItemIds(nested);
 }
-
-/** True for an id this module minted. The demo holds every factory to it. */
-export const isItemId = (id: string): boolean => ITEM_ID.test(id);
 
 // ---------------------------------------------------------------------------
 // Item factory
@@ -321,14 +317,6 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
     return { ok: true };
   }
   return { ok: true, item: makeItem(recipe.output.base) };
-}
-
-// A run reports what it was worth itself — see RunState.loot. It drops gold and
-// gear only, so the rare sigils and the Shard of Ruin have no source at all
-// outside the dev kit; see DEV_CURRENCY.
-
-export function kindOf(item: Item): ItemKind {
-  return item.kind;
 }
 
 /** A crystal with its level's slots filled at random. */

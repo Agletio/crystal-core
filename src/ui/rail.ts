@@ -51,11 +51,6 @@ export const syncParkedPanels = (): void => {
   if (state) document.body.classList.toggle('panelsoff', state.parked);
 };
 
-/** The opening cannot ring a button that is parked, so it un-parks first. */
-export const unparkPanels = (): void => {
-  if (parked()) toggleParkedPanels(false);
-};
-
 /** Reads `fullscreenElement`, never a boolean of its own: the browser leaves
  *  fullscreen without asking, and a tracked flag is wrong the first time. */
 export function toggleFullscreen(): void {

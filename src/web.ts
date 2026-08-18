@@ -44,7 +44,7 @@ import {
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
 import { initPick, maybeShowPick } from './ui/pick';
-import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
+import {cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import {
   initCharacter,
   refreshCharacter,

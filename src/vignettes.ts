@@ -186,10 +186,6 @@ export const VIGNETTES: Vignette[] = [
   },
 ];
 
-export const VIGNETTE_BY_ID: Record<string, Vignette> = Object.fromEntries(
-  VIGNETTES.map((v) => [v.id, v])
-);
-
 /**
  * And what the rock does on its own, which is the only thing SCATTERED at all.
  * Everything a person left is a `Vignette` or is placed by hand: a room's worth
@@ -285,16 +281,6 @@ export const MOUTH_ART: Record<string, string> = {
  *  Drawn back, it sinks into the stone and reads as what it is. */
 export const STAIN_PROPS = new Set(['gore', 'splash', 'web']);
 export const STAIN_ALPHA = 0.72;
-
-/** What throws LIGHT, and how far. A candle, a wall torch and a bed of embers
- *  are the only warm things down here; the renderer's lightmap lifts its own
- *  dark toward `warm` around one, so a shrine with candles on it is lit by the
- *  candles rather than by a decision about that room. */
-export const GLOW_PROPS: Record<string, { reach: number; lit: number }> = {
-  candle: { reach: 2.4, lit: 0.55 },
-  torch: { reach: 3.6, lit: 0.85 },
-  brazier: { reach: 3.4, lit: 0.8 },
-};
 
 /** One of a table, off a roll already taken — the caller owns the rng, so a
  *  scene's fixed seed puts the same thing in the same place every time. */

@@ -117,6 +117,23 @@ SAY (`look` is the design, `states[].say` is one animation each);
 `tools/art/generated.json` is what came BACK. `tools/art/body.mts` walks
 between them — `ask`, `state`, `sheet`, `fill`, `props`, `watch`.
 
+**`tools/art/record.mts [sprite …]` reads the group ids back off the server**
+into `generated.json`, matched by the `<sprite>_<state>` name the queue gives.
+They used to be copied across by hand, which once pointed a whole roster at
+another character's groups — something the server refuses and no file checks.
+What a human decides (`grid`, `inks`, `stride`, `luma`, the `from`/`to` window)
+is kept; only the ids are the server's to say.
+
+- **It RUNS ON IMPORT and REWRITES `generated.json`.** So does every other
+  `tools/art/*.mts` — they are scripts, not modules. Importing one to check it
+  loads is not a safe test; it rewrote three shipping `group` ids that way once.
+  Check a tool by reading it, or run it and `git diff` immediately after.
+- **It picks among DUPLICATE groups.** `delete_animation` keys on the TYPE, not
+  the display name, so a re-roll under the same name leaves two groups standing
+  and a name picks whichever the server lists first. Re-running it can therefore
+  silently repoint a body at the animation you threw away — **diff
+  `generated.json` after every run and keep the ids you judged.**
+
 1. **Write the ask** off the game's own tables: `MAP_THEMES` for a zone's line,
    `THEME_INK` for its hexes, `MONSTER_FAMILIES` for what lives there. A
    generic prompt gives generic art.
@@ -256,8 +273,9 @@ Ask it the way the Fissure's `lit_round` was asked:
   own way round and reads INSIDE OUT, the pale expanse taking the eye as ground
   and the room reading as a hole in it. **A zone's identity is its HUE; the tone
   is not negotiable.**
-- Enum values differ from `art.mts`'s: `outline` is `single color outline`,
-  `detail` is `highly detailed`.
+- Its enum values are not the ones the other tools take: `outline` is
+  `single color outline` (not `single color black outline`) and `detail` is
+  `highly detailed` (not `high detail`).
 - A `transition` becomes a bright RIM if you let it. `outline: 'lineless'` does
   not stop it. Ask for the boundary as a shadow, or `transition_size: 0`.
 
@@ -326,6 +344,9 @@ over in a fifth of a second.
 - **A rare monster cannot be judged by shooting and hoping.** Bump its `weight`
   to something absurd, build, shoot, put it back.
 - `tools/boss-peek.mjs <dir>` shoots a whole boss cycle.
+- `npx tsx tools/face-peek.mts out.png [name|name:sprite]` draws the portraits
+  large. `PORTRAITS` is the one table with no pipeline behind it, and art you
+  cannot look at is art you are guessing at.
 - **`tools/*.mts` is NOT typechecked** — `npm run typecheck` covers `src` only.
   A change to the art tools is proven by RUNNING it.
 - **Before adding a writer to a generated file, grep for who else writes that

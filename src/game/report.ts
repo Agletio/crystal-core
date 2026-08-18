@@ -9,7 +9,7 @@ import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
 import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, SKILL_SLOTS } from '../data';
-import { addXp, addSkillXp, equippedSkill, mainSkillId } from '../sim/character';
+import { addXp, addSkillXp, equippedSkill } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
 

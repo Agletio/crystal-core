@@ -18,7 +18,7 @@ import {
 } from '../economy';
 import { addItem, buyBack, carryRoom, sellItem, stashRoom } from '../game/state';
 import type { Placement } from '../game/state';
-import type { GameState, SoldEntry } from '../game/state';
+import type { GameState } from '../game/state';
 import { note } from './history';
 import { crystalIcon, currencyIcon, itemIcon } from './icons';
 import { openMenu } from './menu';

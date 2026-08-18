@@ -9,7 +9,7 @@
  */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
-import { MANA, PROJECTILE } from '../data';
+import {PROJECTILE } from '../data';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';

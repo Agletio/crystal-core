@@ -21,6 +21,6 @@ shots/
 # And from `npm run peek`, which writes here by default.
 descent.png
 
-# Generated PNGs. The accepted GRID in tools/art/manifest.json is the artifact;
+# Generated PNGs. The converted GRID in src/render/generated-*.ts is what ships;
 # the image it came from is disposable and a cloud VM is reclaimed anyway.
 tools/art/cache/

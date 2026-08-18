@@ -16,11 +16,10 @@ import {
   DEFENCE,
   EQUIP_SLOTS,
   LEVELLING,
-  SKILLS,
 } from '../data';
 import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { slotWorkings } from '../skill-text';
-import { GRANT_BY_ID, starvedMultiplier } from '../sim/grants';
+import { starvedMultiplier } from '../sim/grants';
 import { damageWorkings } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
@@ -39,7 +38,7 @@ import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { itemCard } from './itemcard';
 import { setInventoryHandler } from './inventory';
-import type { EquipSlotDef, Item, SkillDef } from '../types';
+import type { EquipSlotDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -288,7 +287,6 @@ interface StatRow {
 
 function renderStats(): void {
   const s = characterStats(game.character);
-  const detail = damageDetail(game.character);
   const host = $('sheet-stats');
   host.replaceChildren();
 

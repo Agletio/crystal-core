@@ -26,7 +26,6 @@ import {
 import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
-  MAX_TREE_POINTS,
   blockedBy,
   pointCapFor,
   canAllocate,
@@ -44,7 +43,7 @@ import { keywordLine, nodeCard } from './glossary';
 import { slotWorkings } from '../skill-text';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { addSkillXp, equipSkill, equippedSkill, mainSkillId, skillProgress, slotForSkill, xpToNext } from '../sim/character';
+import { addSkillXp, equipSkill, equippedSkill, skillProgress, slotForSkill, xpToNext } from '../sim/character';
 import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';

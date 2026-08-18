@@ -40,10 +40,6 @@ export const BUILT_TREES: BuiltTree[] = [
   LIGHTNING_ARROW_SPEC,
 ].map(buildTree);
 
-export const TREE_BY_SKILL: Record<string, BuiltTree> = Object.fromEntries(
-  BUILT_TREES.map((t) => [t.spec.skillId, t])
-);
-
 /** The movement webs: their own geometry and their own budget, but a web the
  *  screen walks exactly like a tree — `treeFor` is what every caller asks. */
 export const MOVE_WEBS: BuiltMove[] = [BLINK_MOVES, LEAP_MOVES].map(buildMove);

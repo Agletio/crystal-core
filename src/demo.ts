@@ -12,7 +12,6 @@ import {
   HERO_BASE,
   MANA,
   POTIONS,
-  MONSTER_BY_ID,
   DROP_BANDS,
   monsterResStat,
   LEVELLING,
@@ -91,7 +90,6 @@ import {
   makeRelic,
   canSell,
   rollGear,
-  runRecipe,
   sellPrice,
 } from './economy';
 import { hasArmourArt } from './ui/icons';
@@ -99,7 +97,7 @@ import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { gaveKey, sceneWaiting, takeBoss } from './game/scenes';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
-import { LURKS, SCENES, SCENE_BY_ID } from './scenes';
+import {SCENES, SCENE_BY_ID } from './scenes';
 import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
@@ -107,7 +105,6 @@ import { ZONES } from './render/generated-tiles';
 import type { RunState } from './sim/run';
 import {
   declaredCapacity,
-  hasOpenSlot,
   baseTier,
   modCapacity,
   slotAllocation,
@@ -115,8 +112,8 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, clearSpot, dist, generateMap, roomCenter, sceneMap } from './sim/grid';
-import type { Grid, MapProp } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, clearSpot, dist, generateMap, sceneMap } from './sim/grid';
+import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
@@ -124,7 +121,7 @@ import { GENERATED } from './render/generated-art';
 import { GENERATED_ICONS } from './render/generated-icons';
 import { HELD, HERO_HANDS } from './render/held';
 import { heldFor } from './sim/appearance';
-import { animates, facingRow, generatedFrame } from './render/sprites';
+import { animates, generatedFrame } from './render/sprites';
 import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
 
@@ -262,7 +259,6 @@ import {
   socketed,
   sortGear,
   relicsIn,
-  sortInventory,
   stashRoom,
   stashUpgradeCost,
   toStash,

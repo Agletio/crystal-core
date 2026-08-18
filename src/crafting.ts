@@ -17,7 +17,6 @@ import type {
   Condition,
   CraftResult,
   CurrencyDef,
-  Effect,
   Item,
   ModSlot,
   RolledMod,
@@ -423,18 +422,6 @@ export function describeMod(mod: RolledMod): string {
   // every caller already marks it as the base. "(T0 Base)" is noise twice over.
   if (mod.slot === 'implicit') return lines;
   return `${lines}  (T${mod.tier} ${mod.name})`;
-}
-
-/**
- * One line per stat, for somewhere with room. Three stats on one wrapped line
- * is a paragraph you have to parse; the continuations are indented so a
- * two-stat modifier still reads as one modifier.
- */
-export function describeModLines(mod: RolledMod): string[] {
-  const tag = mod.slot === 'implicit' ? '  (base)' : `  (T${mod.tier} ${mod.name})`;
-  return mod.stats.map((s, i) =>
-    i === 0 ? `${describeStatLine(s)}${tag}` : `  ${describeStatLine(s)}`
-  );
 }
 
 /** Everything a player could reasonably type: the piece's name, the base it is

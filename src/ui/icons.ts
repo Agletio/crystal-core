@@ -1163,11 +1163,3 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'relic') return relicIcon(item.base, size);
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }
-
-/** Quality → the CSS colour a slot border and a name should take. */
-export const QUALITY_COLOUR: Record<string, string> = {
-  rough: 'var(--dust)',
-  seamed: 'var(--quartz)',
-  faceted: 'var(--citrine)',
-  brilliant: 'var(--ember)',
-};

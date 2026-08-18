@@ -17,10 +17,9 @@ import {
   crystalName,
 } from '../data';
 import type { CrystalQuest } from '../data';
-import { nodeById } from '../skills-tree';
 import { mainSkillId, pointsAvailable } from '../sim/character';
 import { giveGift, lampwrightWeapon } from './state';
-import type { GameState, GiftPlace } from './state';
+import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
 import type { RunSet } from '../sim/crystal';
@@ -139,8 +138,6 @@ export function levelForXp(xp: number): number {
 /** The level a crystal is standing at, whatever its stored fields say. */
 export const crystalLevel = (crystal: Item): number =>
   Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
-
-export const topLevel = (): number => CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
 
 export interface CrystalProgress {
   level: number;

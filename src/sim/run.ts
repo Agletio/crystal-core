@@ -5,7 +5,7 @@
  * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
-import { WALL, generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
+import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
@@ -59,7 +59,6 @@ import {
   MONSTER_RANKS,
   MONSTER_ABILITIES,
   abilitiesFor,
-  MONSTER_ABILITY_BY_ID,
   SKILLS,
   SKILL_BY_ID,
   opensHere,

@@ -148,12 +148,6 @@ export const BASE_TIER_MODS = [2, 4, 6];
 export const baseMods = (tier: number): number =>
   BASE_TIER_MODS[Math.max(0, Math.min(BASE_TIER_MODS.length - 1, tier - 1))];
 
-/**
- * Where a modifier may go. Restricting what a piece can roll is a table, not
- * an engine feature: a base with zero utility slots cannot roll move speed.
- */
-export const GEAR_SLOT_TYPES = ['offence', 'defence', 'utility'] as const;
-
 /** Kept for crystals and any caller that still wants a default gear layout. */
 export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
@@ -399,12 +393,6 @@ export const implicitSpend = (base: GearBase): number =>
     });
     return key ? total + s.range[0] / IMPLICIT_PER_POINT[key] : total;
   }, 0);
-
-/** Points a family spends on one stat key, at a slot and rung. */
-export const familySpendOn = (familyId: string, kind: string, tier: number, key: string): number => {
-  const family = ARMOUR_FAMILIES.find((f) => f.id === familyId);
-  return (family?.mix[key] ?? 0) * armourBudget(kind, tier);
-};
 
 /**
  * Weapons, in five families. Every weapon carries an IMPLICIT no craft can
@@ -2468,10 +2456,6 @@ export const BOSS_KEYS: BossKeyDef[] = [
 export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
-
-/** The key that opens a given boss's room, or nothing. */
-export const keyForBoss = (bossId: string): BossKeyDef | undefined =>
-  BOSS_KEYS.find((k) => k.boss === bossId);
 
 
 /**

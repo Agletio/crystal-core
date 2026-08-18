@@ -256,10 +256,6 @@ export const KEYWORDS: KeywordDef[] = [
   },
 ];
 
-export const KEYWORD_BY_ID: Record<string, KeywordDef> = Object.fromEntries(
-  KEYWORDS.map((k) => [k.id, k])
-);
-
 /** Which keyword owns a grant, for the demo's "every switch has a word" check. */
 export const KEYWORD_BY_GRANT: Record<string, KeywordDef> = Object.fromEntries(
   KEYWORDS.flatMap((k) => (k.grants ?? []).map((g) => [g, k]))

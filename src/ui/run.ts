@@ -69,7 +69,6 @@ import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
-import type { Item } from '../types';
 import type { PotionDef } from '../data';
 
 const $ = (id: string) => document.getElementById(id)!;

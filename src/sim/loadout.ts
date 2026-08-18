@@ -4,7 +4,7 @@
  * well as which modifier tiers can roll.
  */
 import { Rng } from '../rng';
-import { ModPool, modCapacity } from '../mods';
+import { ModPool } from '../mods';
 import {
   ALL_MODS,
   ATTRIBUTES,
@@ -41,9 +41,6 @@ export function starterLoadout(rng: Rng, ilvl = 30): Record<string, Item> {
 export function loadoutMods(equipment: Record<string, Item>): number {
   return Object.values(equipment).reduce((n, i) => n + i.mods.length, 0);
 }
-
-export const loadoutCapacity = (equipment: Record<string, Item>): number =>
-  Object.values(equipment).reduce((n, i) => n + modCapacity(i), 0);
 
 /**
  * What the power band below hands you, for asking whether this one is reachable

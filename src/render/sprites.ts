@@ -4,7 +4,7 @@
  * are transforms, because transforms are free and frames are not.
  */
 import type { Palette } from './renderer';
-import { mix, spriteColour } from './renderer';
+import { mix } from './renderer';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
 import { PROP_ART } from './generated-props';
@@ -342,8 +342,6 @@ export function monsterArt(
   };
 }
 
-export const RANKS: MonsterRank[] = ['common', 'magic', 'rare'];
-
 /** How a creature and its rank name one set of frames. */
 export const rankedKey = (sprite: string, rank: MonsterRank): string => `${sprite}:${rank}`;
 
@@ -396,13 +394,6 @@ export function makeVfx(id: string): HTMLCanvasElement | null {
   return made.canvas;
 }
 
-
-function shade(ctx: CanvasRenderingContext2D, colour: string, dark: string): void {
-  ctx.fillStyle = colour;
-  ctx.strokeStyle = dark;
-  ctx.lineWidth = 2;
-  ctx.lineJoin = 'round';
-}
 
 /** Drawn facing RIGHT (+x). The renderer FLIPS rather than rotates. */
 function drawCreature(

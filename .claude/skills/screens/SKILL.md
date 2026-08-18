@@ -128,12 +128,15 @@ colour and is left alone.
 `background-image` LIST, and `none` inside a list invalidates the whole property
 silently — so however quiet it gets, it stays a gradient.
 
-**NEITHER WEBFONT HAS EVER RENDERED IN A SCREENSHOT THIS REPO TOOK.** Measured
-on the served page in headless Chromium: `Silkscreen` and `IBM Plex Mono` lay
-out at exactly the generic fallback's width. **The last name in each stack is
-the face being designed**, and it is what an offline player gets. Check what a
-font resolves to by measuring a string against the generic — `document.fonts.check()`
-returns true for a family that is not there.
+**NO WEBFONT IS FETCHED, so the LAST name in each stack is the face that
+draws** — a serif, and it is what these stacks are chosen for. `--display`
+names Cinzel and `--body` EB Garamond; neither is loaded, so they render only
+where a player has them installed, and every screenshot this repo has ever
+judged was the fallback. Adding a `<link>` for them would change how every
+screen looks and invalidate those screenshots, so it is a design decision
+rather than a fix. Check what a font actually resolves to by measuring a
+string's width against the generic — `document.fonts.check()` returns true for
+a family that is not there.
 
 ## Fixtures
 

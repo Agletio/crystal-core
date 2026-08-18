@@ -191,9 +191,6 @@ const ICONS: Record<string, string[]> = {
 
 export const GRID = 10;
 
-/** Every id that has one, so a rail cannot list a button with no glyph. */
-export const hasIcon = (id: string): boolean => id in ICONS;
-
 const NS = 'http://www.w3.org/2000/svg';
 
 /** Any grid of `#` ink and `+` accent as an SVG. The flasks draw through this

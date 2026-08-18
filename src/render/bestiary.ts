@@ -4,7 +4,7 @@
  * none of them share a colour on screen.
  *
  * `x` is the RANK accent — dull on a common one, lit on a magic, blazing on a
- * rare. The rank also grows the body and puts a halo round it; see `haloed`.
+ * rare. The rank also grows the body and lights it; see `GLOW` in `sprites.ts`.
  */
 import { gridRows, mix } from './renderer';
 import type { Palette } from './renderer';
@@ -152,18 +152,6 @@ export const BEASTIARY: Record<string, BeastArt> = {
       }),
     ],
   },
-
-  /**
-   * The Lambengolmor: upright where the Lampwright stoops, bare-headed where he
-   * is hooded, and carrying a rule rather than a lamp. Pale and cold — he is
-   * the one who thinks the rock can be read.
-   */
-
-  /**
-   * What answers to its name: the rock itself stood up, with a seam lit through
-   * it and eyes it did not have a moment ago. WIDE rather than tall — the thing
-   * you cannot get round — and the seam is what widens when it swings.
-   */
 
   /** Low, wide and segmented. Almost no vertical presence: the thing you walk over. */
   grub: {
@@ -525,165 +513,6 @@ export const BEASTIARY: Record<string, BeastArt> = {
       11: '.....##mmMMMMMm#........',
       12: '.......#m##s##s#........',
       13: '........#.#..#.#........',
-    }),
-  },
-  /** Nothing solid at all. A knot of moving air with something bright at the centre. */
-  gale_wisp: {
-    tone: {
-      mass: (p) => mix(p.quartz, p.rockDeep, 0.5),
-    lit: (p) => mix(p.quartz, p.chalk, 0.3),
-    shade: (p) => mix(p.quartz, p.void, 0.6),
-    eye: (p) => p.chalk,
-    },
-    grid: 24,
-    frames: [
-      rows({
-        4: '...........#######......',
-        5: '..........#mMMMMMm#.....',
-        6: '..###ss#MMsxxxsMM#......',
-        7: '.#ssmmm#MsxeeexsM#......',
-        8: '.##mssmmMsxxxsMmM#......',
-        9: '..###smMMmMsMmMMMm#.....',
-        10: '......##mMMsMMMMMm#.....',
-        11: '.......##sMmMMMMm##.....',
-        12: '..........########......',
-      }),
-      rows({
-        4: '...........#######......',
-        5: '..........#mMMMMMs#.....',
-        6: '.###s.#MMsxxxsMM#.......',
-        7: '..#ssMm#MsxeeexsM#......',
-        8: '##mssmmmMsxxxsMmM#......',
-        9: '.###ssmMMmMsMmMMMm#.....',
-        10: '......##mMMsMMMMMm#.....',
-        11: '.......##sMmMMMMm##.....',
-        12: '..........########......',
-      }),
-    ],
-    attack: rows({
-      4: '.............######.....',
-      5: '............#mMMMm#.....',
-      6: '.......##s#MMsxxxsM#....',
-      7: '....#ssmm#MsxeeexsMM#...',
-      8: '..#MssmmMsxxxsMMMmMM#...',
-      9: '..###smMMmMsMmMMMMMs#...',
-      10: '....##mMMsMmMMMMm#......',
-      11: '......##smMMMMMm##......',
-      12: '.........########.......',
-    }),
-  },
-  /** Low and armoured, with one claw far too big for it. Everything it touches frosts. */
-  rime_crab: {
-    tone: {
-      mass: (p) => mix(p.quartz, p.void, 0.4),
-    lit: (p) => mix(p.quartz, p.chalk, 0.45),
-    shade: (p) => mix(p.quartz, p.void, 0.65),
-    eye: (p) => p.chalk,
-    },
-    grid: 24,
-    frames: [
-      rows({
-        2: '..............##..##....',
-        3: '..............#x##x#....',
-        4: '..............#xMMx#....',
-        5: '..............#MMMM#....',
-        6: '..####......#MMM#.......',
-        7: '..#xxM#.....#MM#........',
-        8: '..#MMM#....#MM#.........',
-        9: '..#MMM######MMM#........',
-        10: '..##mMMsMMsMMMMMMe#.....',
-        11: '...#MMsmMsmMMMMMMx#.....',
-        12: '...#mMmsMmsMMMMMMe#.....',
-        13: '....##s##s##s##s##......',
-        14: '.....#..#..#..#.........',
-      }),
-      rows({
-        2: '..............##..##....',
-        3: '..............#x##x#....',
-        4: '..............#xMMx#....',
-        5: '..............#MMMM#....',
-        6: '..####......#MMM#.......',
-        7: '..#xxM#.....#MM#........',
-        8: '..#MMM#....#MM#.........',
-        9: '..#MMM######MMM#........',
-        10: '..##mMMsMMsMMMMMMe#.....',
-        11: '...#MMsmMsmMMMMMMx#.....',
-        12: '...#sMmsMmsMMMMMMe#.....',
-        13: '.....##s##s##s##s#......',
-        14: '......#..#..#..#........',
-      }),
-    ],
-    attack: rows({
-      0: '............###..###....',
-      1: '............#xx##xx#....',
-      2: '............#xMMMMx#....',
-      3: '..............#MMMM#....',
-      4: '...............#MM#.....',
-      5: '..............#MM#......',
-      6: '..####....#MM#..........',
-      7: '..#xxM#...#MM#..........',
-      8: '..#MMM#..#MM#...........',
-      9: '..#MMM######MM#.........',
-      10: '...##mMMsMMsMMMMe#......',
-      11: '....#MMsmMsmMMMMx#......',
-      12: '....#mMmsMmsMMMMe#......',
-      13: '.....##m##m##m##........',
-      14: '.......#..#..#..........',
-    }),
-  },
-  /** Small, and never where it was. The arc between its horns is the only warning. */
-  sparkmite: {
-    tone: {
-      mass: (p) => mix(p.citrine, p.void, 0.35),
-    lit: (p) => mix(p.citrine, p.chalk, 0.35),
-    shade: (p) => mix(p.citrine, p.void, 0.6),
-    eye: (p) => p.chalk,
-    },
-    grid: 24,
-    frames: [
-      rows({
-        3: '.......##......##.......',
-        4: '.......#x#....#x#.......',
-        5: '.......#x#....#x#.......',
-        6: '.......##x#..#x##.......',
-        7: '........##x##x##........',
-        8: '......###mMMMMm###......',
-        9: '.....#mMMsxxxxsMMm#.....',
-        10: '.....#MMseeeeeesMM#.....',
-        11: '.....#mMmsxxxxsmMm#.....',
-        12: '......###mMMMMm###......',
-        13: '........#ms##sm#........',
-        14: '........##....##........',
-      }),
-      rows({
-        3: '.......##......##.......',
-        4: '.......#x#....#x#.......',
-        5: '.......#x#....#x#.......',
-        6: '.......##x#..#x##.......',
-        7: '........##x##x##........',
-        8: '......###mMMMMm###......',
-        9: '.....#mMMsxxxxsMMm#.....',
-        10: '.....#MMseeeeeesMM#.....',
-        11: '.....#mMmsxxxxsmMm#.....',
-        12: '......###mMMMMm###......',
-        13: '........#m#..#m#........',
-        14: '........##....##........',
-      }),
-    ],
-    attack: rows({
-      2: '.......##......##.......',
-      3: '.......#x#....#x#.......',
-      4: '.......#xx#..#xx#.......',
-      5: '........#xx##xx#........',
-      6: '.........#xxxxxx#.......',
-      7: '.......##xxxxxx##.......',
-      8: '......###mMxxMm###......',
-      9: '.....#mMMsxxxxsMMm#.....',
-      10: '.....#MMseeeeeesMM#.....',
-      11: '.....#mMmsxxxxsmMm#.....',
-      12: '......###mMMMMm###......',
-      13: '........#ms##sm#........',
-      14: '........##....##........',
     }),
   },
 
@@ -1455,66 +1284,7 @@ export const MONSTER_FRAMES: Record<string, string[][]> = Object.fromEntries(
   Object.entries(BEASTIARY).map(([id, art]) => [id, art.frames])
 );
 
-/** Common, magic, rare. The accent ink and the halo both key off this. */
+/** Common, magic, rare. The accent ink keys off this, and `GLOW` is the light
+ *  a rank is drawn with. */
 export type MonsterRank = 'common' | 'magic' | 'rare';
 
-export const HALO: Record<MonsterRank, string | null> = {
-  common: null,
-  magic: 'b',
-  rare: 'o',
-};
-
-/** EXTRA rings outward per rank. Both recolour the whole edge; only the rare
- *  grows past it, which is what says which of the two is the rarer. */
-export const HALO_RANK: Record<MonsterRank, number> = { common: 0, magic: 0, rare: 1 };
-
-/**
- * The creature's own dark edge, RECOLOURED from the outside in. Grown outward
- * instead it was a hairline of gold outside a thick black border, which reads
- * as a fringe rather than as a rank. Stops at the body, so nothing is eaten and
- * a `#` used for detail INSIDE a creature stays dark. Grown outward: a halo
- * that ate a pixel of the body would thin every leg it touched.
- */
-export function haloed(frame: string[], ink: string | null, extra = 0): string[] {
-  if (!ink) return frame;
-  const out = frame.map((row) => [...row]);
-  const at = (x: number, y: number): string => out[y]?.[x] ?? '.';
-
-  // The WHOLE edge, not a share of it: recolouring half left a black band still
-  // sitting against the body, which is what it reads as at any size on screen.
-  // It floods through `#` from the outside, so detail inside a creature stays.
-  for (;;) {
-    const edge: Array<[number, number]> = [];
-    const open = (x: number, y: number): boolean => at(x, y) === '.' || at(x, y) === ink;
-    out.forEach((row, y) =>
-      row.forEach((c, x) => {
-        if (c !== '#') return;
-        if (open(x - 1, y) || open(x + 1, y) || open(x, y - 1) || open(x, y + 1)) edge.push([x, y]);
-      })
-    );
-    if (!edge.length) break;
-    for (const [x, y] of edge) out[y][x] = ink;
-  }
-
-  // Then outward, which is the whole of what makes one rank's band the wider.
-  for (let ring = 0; ring < extra; ring++) {
-    const grown: Array<[number, number]> = [];
-    out.forEach((row, y) =>
-      row.forEach((c, x) => {
-        if (c !== '.') return;
-        if (at(x - 1, y) !== '.' || at(x + 1, y) !== '.' || at(x, y - 1) !== '.' || at(x, y + 1) !== '.') {
-          grown.push([x, y]);
-        }
-      })
-    );
-    for (const [x, y] of grown) out[y][x] = ink;
-  }
-  return out.map((row) => row.join(''));
-}
-
-/**
- * How many rings make the ONE the 24 grid was drawn with. A ring is in art
- * pixels, so a single one on a 256 grid is a third of a device pixel on screen:
- * it aliases in and out along the silhouette and reads as a broken line.
- */
-export const haloRings = (grid: number): number => Math.max(1, Math.round(grid / 24));

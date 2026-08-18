@@ -190,7 +190,7 @@ src/game/          save, state, report, crystals, scenes, graft
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen
-tools/art/         the generator pipeline; a row is asked, converted, accepted
+tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
 ```

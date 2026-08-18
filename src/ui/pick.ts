@@ -110,7 +110,6 @@ const idleRun = (sprite: string): number[] => GENERATED[sprite]?.states.idle ?? 
 
 function figure(trade: BuiltTrade): HTMLElement {
   const sprite = bodyOf(trade);
-  const art = GENERATED[sprite];
   const stand = el('button', 'pickfig') as HTMLButtonElement;
   stand.id = `pick-${trade.spec.id}`;
   stand.type = 'button';
@@ -200,8 +199,6 @@ function render(): void {
   box.hidden = true;
   tick();
 }
-
-export const isPickUp = (): boolean => !$('pick').hidden;
 
 export function closePick(): void {
   $('pick').hidden = true;

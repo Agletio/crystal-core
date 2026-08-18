@@ -181,9 +181,7 @@ export interface GearBase {
   /** Which slot types it can roll, and the ceiling on each. The TOTAL a piece
    *  may hold comes off `tier` — this only says where those go. */
   slots: Record<string, number>;
-  /** 1, 2 or 3. Holds `BASE_TIER_MODS[tier - 1]` modifiers, and nothing raises
-   *  it: a bigger item means going and finding a better base. */
-  tier: number;
+  tier: number; // 1-3, holding BASE_TIER_MODS[tier - 1]; nothing raises it
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
   /** Hands it takes. Two is a bow: the off hand cannot hold anything with one
@@ -334,21 +332,6 @@ export interface SkillSlotDef {
   name: string;
   accepts: SkillCategory[]; // which shelves may fill it
   blurb: string; // what an empty one is for
-}
-
-/** What the figure is wearing, as art keys. Empty slots are simply absent. */
-export interface WornPiece {
-  family: string;
-  tier: number;
-}
-
-export interface Look {
-  helmet?: WornPiece;
-  body?: WornPiece;
-  gloves?: WornPiece;
-  boots?: WornPiece;
-  /** A weapon's shape is its family: mace, sword, dagger, wand. */
-  weapon?: { kind: string };
 }
 
 export interface Recipe {

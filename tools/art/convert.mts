@@ -5,16 +5,6 @@
  */
 import type { Decoded } from './png.mts';
 
-/** The inks a creature is authored in. `x` is the per-rank accent and `b`/`o`
- *  are the halo, all three applied at RUNTIME — so nothing generated may hold
- *  them, and nothing here may emit them. */
-export type Inks = { '#': string; M: string; m: string; s: string; e: string };
-
-export const INK_CHARS = ['#', 'M', 'm', 's', 'e'] as const;
-
-/** Below this an averaged block is floor rather than creature. */
-const SOLID = 0.5;
-
 export function rgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '').trim();
   const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
@@ -33,9 +23,6 @@ export function apart(a: [number, number, number], b: [number, number, number]):
   return (2 + r / 256) * dr * dr + 4 * dg * dg + (2 + (255 - r) / 256) * db * db;
 }
 
-/** Block-average, then snap. Integer factors only: a non-integer downscale
- *  resamples across pixel boundaries, which is the blur pixel art exists to
- *  not be — so it REFUSES rather than producing something plausible. */
 /** Fraction of the canvas that must already be clear for the ask to have worked. */
 const ASSUME_CUT_OUT = 0.02;
 
@@ -78,108 +65,13 @@ export function debackground(image: Decoded): Decoded {
   return { width, height, rgba: out };
 }
 
-export function toGrid(image: Decoded, grid: number, inks: Inks): string[] {
-  if (image.width !== image.height) {
-    throw new Error(`${image.width}x${image.height} is not square`);
-  }
-  if (image.width % grid !== 0) {
-    throw new Error(`${image.width}px does not divide into a ${grid} grid — generate at a multiple`);
-  }
-
-  const block = image.width / grid;
-  const targets = INK_CHARS.map((c) => ({ char: c, rgb: rgb(inks[c]) }));
-  const rows: string[] = [];
-
-  for (let gy = 0; gy < grid; gy++) {
-    let row = '';
-    for (let gx = 0; gx < grid; gx++) {
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      let a = 0;
-      for (let y = 0; y < block; y++) {
-        for (let x = 0; x < block; x++) {
-          const at = ((gy * block + y) * image.width + (gx * block + x)) * 4;
-          // Weighted by alpha, so a block half off the edge takes the colour
-          // of the half that IS creature.
-          const w = image.rgba[at + 3] / 255;
-          r += image.rgba[at] * w;
-          g += image.rgba[at + 1] * w;
-          b += image.rgba[at + 2] * w;
-          a += w;
-        }
-      }
-
-      if (a / (block * block) < SOLID) {
-        row += '.';
-        continue;
-      }
-      const mean: [number, number, number] = [r / a, g / a, b / a];
-      let best = targets[0];
-      let bestBy = Infinity;
-      for (const target of targets) {
-        const by = apart(mean, target.rgb);
-        if (by < bestBy) {
-          bestBy = by;
-          best = target;
-        }
-      }
-      row += best.char;
-    }
-    rows.push(row);
-  }
-  // Air for the glow to fall off into, and NO derived edge: the generator draws
-  // its own thin outline and the snap lands those pixels on `#` already, so a
-  // second one on top was the slab of black.
-  const rings = Math.max(1, Math.round(grid / 24));
-  return fitted(rows, rings * 4);
-}
-
-/** The body, scaled to fill its grid and stood on a common baseline. A cell is
- *  one tile whatever it was authored at, so a body filling 57% of its frame
- *  renders 40% smaller at the same `scale`. The margin is the rings' room. */
-export function fitted(rows: string[], margin: number): string[] {
-  const grid = rows.length;
-  let top = grid;
-  let bottom = -1;
-  let left = grid;
-  let right = -1;
-  rows.forEach((row, y) =>
-    [...row].forEach((c, x) => {
-      if (c === '.') return;
-      top = Math.min(top, y);
-      bottom = Math.max(bottom, y);
-      left = Math.min(left, x);
-      right = Math.max(right, x);
-    })
-  );
-  if (bottom < 0) return rows;
-
-  const room = grid - margin * 2;
-  const by = Math.min(room / (right - left + 1), room / (bottom - top + 1));
-  const wide = Math.round((right - left + 1) * by);
-  const tall = Math.round((bottom - top + 1) * by);
-  const offX = Math.round((grid - wide) / 2);
-  // Stood on the baseline rather than centred, so nothing floats or sinks.
-  const offY = grid - margin - tall;
-
-  return Array.from({ length: grid }, (_, y) =>
-    Array.from({ length: grid }, (_, x) => {
-      const sx = left + Math.floor((x - offX) / by);
-      const sy = top + Math.floor((y - offY) / by);
-      if (x < offX || x >= offX + wide || y < offY || y >= offY + tall) return '.';
-      return rows[sy]?.[sx] ?? '.';
-    }).join('')
-  );
-}
-
 /**
  * Every frame of one animation, fitted ONCE, into a grid of your choosing.
- * `fitted` measures the frame it is given, so run per frame a walk cycle is
- * scaled and re-centred differently on every step and the body jitters against
- * its own feet. The box is the union of all of them and the transform is the
- * same for each — which is also what lets frames off two different canvases
- * keep their sizes relative to one another.
+ * Measured per FRAME instead, a walk cycle is scaled and re-centred differently
+ * on every step and the body jitters against its own feet. The box is the union
+ * of all of them and the transform is the same for each — which is also what
+ * lets frames off two different canvases keep their sizes relative to one
+ * another.
  */
 export function fittedTogether(frames: string[][], margin: number, out?: number): string[][] {
   const grid = frames[0]?.length ?? 0;
@@ -216,11 +108,6 @@ export function fittedTogether(frames: string[][], margin: number, out?: number)
       }).join('')
     )
   );
-}
-
-/** The rows as a bestiary entry holds them, ready to paste into the table. */
-export function asSource(rows: string[]): string {
-  return `[\n${rows.map((r) => `  '${r}',`).join('\n')}\n]`;
 }
 
 /**

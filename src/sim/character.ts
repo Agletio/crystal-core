@@ -150,8 +150,6 @@ export function skillProgress(character: Character, skillId: string): SkillProgr
   return progress;
 }
 
-export const pointsSpent = (p: SkillProgress): number => p.allocated.length;
-
 /** Capped by the tree, not your level: a tree you can fill in is not a decision. */
 export const pointsAvailable = (skillId: string, p: SkillProgress): number =>
   treePointsFor(skillId, p.level) - p.allocated.length;

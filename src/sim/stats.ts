@@ -27,7 +27,7 @@ import type { Character } from './character';
 import { nodeById } from '../skills-tree';
 import { tradeGrants } from '../trades';
 import { critBuff, mergeGrants } from './grants';
-import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
+import type {MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
 
 export interface CombatStats {
   maxLife: number;
