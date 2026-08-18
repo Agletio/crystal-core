@@ -108,6 +108,12 @@ const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
 const WAYS_OUT = 24;
 const SLIDES = [Math.PI / 3, -Math.PI / 3, Math.PI / 2, -Math.PI / 2, 2.2, -2.2];
 
+/** Slack on a line asked to clear the boss's body — the dodge worth having runs
+ *  ALONG the rim and grazes it. `BEHIND` prices one reachable only THROUGH the
+ *  body, wider than the room, so every honest way out wins. */
+const ROUND_THE_BOSS = 0.15;
+const BEHIND_THE_BOSS = 1000;
+
 /** Relaxation iterations for body separation. See separate(). */
 const SEPARATION_PASSES = 2;
 
@@ -861,15 +867,6 @@ export class RunSim {
     this.nudge(b, nx * bw * push, ny * bw * push);
   }
 
-  /**
-   * Move an entity, refusing any component that would put its BODY inside a
-   * wall. Separation is what pushes things into rock — a path only ever runs
-   * down tile centres — so this is where the clipping was.
-   *
-   * An entity already overlapping a wall (spawned at a room's edge, or scaled
-   * up by its rank where it stood) falls back to its centre, so it can always
-   * walk out of somewhere it should never have been.
-   */
   /** A step that never puts a body's own tile in rock. `canStep` refuses a
    *  corner-cutting diagonal, but a body pushed off the lattice can cross one
    *  getting back to the path; one already in rock may move anywhere. */
@@ -884,6 +881,10 @@ export class RunSim {
     if (grid.walkable(e.x, y)) e.y = y;
   }
 
+  /** A shove, refusing any component that would put a BODY inside a wall:
+   *  separation is what pushes things into rock, a path running only down tile
+   *  centres. One already overlapping a wall falls back to its centre, so it
+   *  can always walk out of somewhere it should never have been. */
   private nudge(e: Entity, dx: number, dy: number): void {
     const { grid } = this.state.map;
     const stuck = !grid.fits(e.x, e.y, e.radius);
@@ -909,17 +910,51 @@ export class RunSim {
     return a.stats.attackRange + bulk(a) + bulk(b);
   }
 
-  /** Round a live circle toward `goal`, nearer side first. */
+  /** Nowhere he may walk INTO. The pathfinder cannot see the second of them:
+   *  `findPath` reads walls and a boss is not one, so a route behind it runs
+   *  through a body `resolveOverlap` gives weight 0, and he leans on it. */
+  private penned(at: Vec2, radius: number): boolean {
+    return this.inCircle(at) || this.inBody(at, radius);
+  }
+
+  private inCircle(at: Vec2): boolean {
+    return this.state.circles.some((c) => dist(at, c) <= c.r);
+  }
+
+  private inBody(at: Vec2, radius: number): boolean {
+    const boss = this.state.boss;
+    return !!boss && !boss.dead && dist(at, boss) < boss.radius + radius;
+  }
+
+  /** Whether walking straight at `to` goes THROUGH the boss. The bar is the
+   *  closer of the body and where he stands NOW, or separation leaving him a
+   *  hair inside the rim refuses every direction at once. */
+  private throughBoss(hero: Entity, to: Vec2): boolean {
+    const boss = this.state.boss;
+    if (!boss || boss.dead) return false;
+    const dx = to.x - hero.x;
+    const dy = to.y - hero.y;
+    const len = dx * dx + dy * dy;
+    const t = len > 1e-9 ? Math.max(0, Math.min(1, ((boss.x - hero.x) * dx + (boss.y - hero.y) * dy) / len)) : 0;
+    const closest = Math.hypot(hero.x + dx * t - boss.x, hero.y + dy * t - boss.y);
+    return closest < Math.min(boss.radius + hero.radius, dist(hero, boss)) - ROUND_THE_BOSS;
+  }
+
+  /** Round what is in the way toward `goal`, nearer side first. The body is
+   *  always refused, a circle only while he is OUT of one — else a hero one was
+   *  dropped on has every direction refused and stands in it. */
   private slideRound(e: Entity, goal: Vec2, step: number): void {
     if (step <= 0) return;
     const straight = Math.atan2(goal.y - e.y, goal.x - e.x);
     const grid = this.state.map.grid;
+    const clear = !this.inCircle(e);
     for (const turn of SLIDES) {
       const a = straight + turn;
       const x = e.x + Math.cos(a) * step;
       const y = e.y + Math.sin(a) * step;
       if (!grid.fits(x, y, e.radius)) continue;
-      if (this.state.circles.some((c) => dist({ x, y }, c) <= c.r)) continue;
+      if (this.inBody({ x, y }, e.radius)) continue;
+      if (clear && this.inCircle({ x, y })) continue;
       this.glide(e, x, y);
       return;
     }
@@ -974,10 +1009,11 @@ export class RunSim {
   }
 
   /**
-   * The way clear of every circle he is standing in, chosen to keep him NEAR
-   * THE BOSS. Straight away is the shortest ray and the worst one: three slams
-   * running walk you to the far wall. Every way out is costed by how far it
-   * leaves him from the thing he is hitting, and the cheapest wins.
+   * The way clear of every circle he stands in, costed by how far it leaves him
+   * from the boss. Straight away is the shortest ray and the worst one: three
+   * slams running walk you to the far wall. But nearest-to-the-boss is the ray
+   * that runs INTO it, so inside the body is refused and only-through-it priced
+   * as the far wall — which leaves the ways ALONG the rim.
    */
   private wayOut(hero: Entity, on: FallCircle[]): Vec2 {
     const cx = on.reduce((n, c) => n + c.x, 0) / on.length;
@@ -1006,9 +1042,11 @@ export class RunSim {
     for (let i = 0; i < WAYS_OUT; i++) {
       const spot = at(away + (i / WAYS_OUT) * Math.PI * 2);
       if (!grid.fits(spot.x, spot.y, hero.radius)) continue;
+      if (this.inBody(spot, hero.radius)) continue;
       const near = boss ? dist(spot, boss) : 0;
-      if (near < cost) {
-        cost = near;
+      const price = this.throughBoss(hero, spot) ? near + BEHIND_THE_BOSS : near;
+      if (price < cost) {
+        cost = price;
         best = spot;
       }
     }
@@ -1788,11 +1826,12 @@ export class RunSim {
       }
     }
 
-    // A live circle is somewhere he WAITS OUT rather than walks back into: the
-    // only way to be inside one is to have had it dropped on you.
-    if (e.kind === 'hero' && this.state.circles.length > 0) {
-      const here = this.state.circles.some((c) => dist(e, c) <= c.r);
-      if (here && !this.state.circles.some((c) => dist({ x: startX, y: startY }, c) <= c.r)) {
+    // Both walked ROUND, never into, and asked SEPARATELY: standing in a circle
+    // is no licence to walk into the body, and Stone stands in one for whole fights.
+    if (e.kind === 'hero' && (this.state.circles.length > 0 || this.fighting)) {
+      const was = { x: startX, y: startY };
+      const stepped = (into: (p: Vec2) => boolean) => into(e) && !into(was);
+      if (stepped((p) => this.inCircle(p)) || stepped((p) => this.inBody(p, e.radius))) {
         e.x = startX; // round it rather than into it
         e.y = startY;
         this.slideRound(e, goal, e.stats.moveSpeed * dt * pace * (this.turned?.move ?? 1));
@@ -1829,9 +1868,11 @@ export class RunSim {
     for (const wp of hero.path) {
       if (dist(hero, wp) > reach) break;
       seen++;
-      // Never INTO a live circle: a blink out of one that lands in the next is
-      // the mover doing the boss's work for it.
-      if (this.state.circles.some((c) => dist(wp, c) <= c.r)) continue;
+      // Never INTO a live circle or the boss: a blink landing in either is the
+      // mover doing the boss's work. A JUMP clears the body; a STEP wants a
+      // line, and one is no clearer through a boss than through a wall.
+      if (this.penned(wp, hero.radius)) continue;
+      if (!jumps && this.throughBoss(hero, wp)) continue;
       if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) {
         landing = wp;
         steps = seen;

@@ -393,6 +393,16 @@ way of doing any of it.**
 - **`wayOut` costs EVERY way clear of the circles by how far it leaves you from
   the boss** and takes the cheapest, which is usually sideways — straight away
   is the shortest ray and the worst one.
+- **The boss's BODY is an obstacle nothing else in the sim knows about.**
+  `findPath` reads walls and a boss is not one, so nearest-to-the-boss was the
+  ray straight INTO it: he pressed in, `resolveOverlap` handed the whole overlap
+  back, and he did that until the circle went off — measured at 67.5% of every
+  dodging tick. `inBody` refuses a way out inside it and `throughBoss` prices one
+  reachable only through it as the far wall, which leaves the ways along the rim.
+- **A hazard the walk refuses is asked WAS HE ALREADY IN IT, one hazard at a
+  time.** Rolled into a single predicate, standing in a circle licenced a step
+  into the body — and Stone stands in one for whole fights. Rolled the other way,
+  `slideRound` refuses every direction the moment a circle lands on him.
 
 ## The loop
 

@@ -6961,6 +6961,13 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           }
           return state.phase === 'split' ? 'edge' : 'stone';
         };
+        // Every DODGING tick of every fight below — he is in a circle and
+        // leaving it — counted against how often he is standing inside the
+        // boss instead. `findPath` reads walls and a boss is not one, so a way
+        // out costed nearest-to-the-boss used to BE the ray through it: he
+        // leant on the thing that cannot be shoved until the circle went off.
+        let ticks = 0;
+        let pressed = 0;
         const play = (band: number, miss: number, seed: number) => {
           const rng = new Rng(seed);
           const room = new RunSim([], ladderCharacter(band, new Rng(31), 'strike'), new Rng(seed), {
@@ -6975,6 +6982,11 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
               if (miss < 1 && rng.next() >= miss) room.turn(want);
             }
             room.step(TICK);
+            const { boss, hero, circles } = room.state;
+            if (!boss || boss.dead) continue;
+            if (!circles.some((c) => Math.hypot(c.x - hero.x, c.y - hero.y) <= c.r)) continue;
+            ticks++;
+            if (Math.hypot(hero.x - boss.x, hero.y - boss.y) < boss.radius + hero.radius) pressed++;
           }
           return room.state;
         };
@@ -7012,6 +7024,15 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           'and the fight wants what it is meant to want at each rung of gear',
           `met afk ${grid['met/afk']}/8 (want 0), met swapping ${grid['met/swapping']}/8, ` +
             `ground sloppy ${grid['ground/sloppy']}/8, returned afk ${grid['returned/afk']}/8 (want 6+)`
+        );
+        // MECHANISM, not balance: a hero leaning on the one body that cannot be
+        // shoved is a hero stood in the circle he was dodging. Measured at
+        // 67.5% before the ways out learnt the boss was in the way.
+        const leaning = (100 * pressed) / Math.max(1, ticks);
+        check(
+          leaning < 5,
+          'and he rounds the boss rather than pressing into it',
+          `inside its body ${leaning.toFixed(1)}% of ${ticks} dodging ticks (want under 5%)`
         );
       }
 
