@@ -766,7 +766,7 @@ carrying the relic, so the same room is owed again.
 from.** *The user's call.* Everything you carried was in the bubble too, which
 is an inventory inside a speech bubble: at a real haul it ran off the side of
 the screen and pushed the lines you have to pick from off the bottom, so the
-bench could be opened and never used. Worn gear is eight slots and bounded, a
+bench could be opened and never used. Worn gear is a bounded list of slots, a
 piece he has no use for is DIMMED rather than dropped, and a carried one comes
 in through `setInventoryHandler` — the same seam the crafting bench picks an
 item through. `shots.mjs` holds every control to the card and to the screen.
@@ -795,6 +795,58 @@ Selling one piece is a menu action on the dock, never a click: it is the only
 thing an item can do that cannot be undone. The bulk button in the shop takes
 every carried piece no currency has touched, which is why it can never eat a
 decision.
+
+## Two hands
+
+`EQUIP_SLOTS` holds a **Main Hand** and an **Off Hand**. The main hand keeps
+the id `weapon`, because a save points at it and renaming it would cost every
+player the piece in it; only its NAME changed. The off hand takes a `shield`,
+which is its own `GearKind` and its own three bases.
+
+**A shield is the only source of Block in the game.** `blockChance` is a flat
+implicit on the base and nothing else writes it — no rolled modifier, no tree
+node, no trade — so what an off hand is worth is one number you can read off
+the shield you are holding. A **Block stops the HIT outright**: there is no
+second figure, `DEFENCE.blockCap` is 60%, and it is rolled in `dealDamage`
+against the sim's own rng, so a seed still replays. Like Armour it is a HIT
+rule — an Ailment ticks straight through it — and the report counts
+`RunState.blocked` so a descent says how many it turned aside.
+
+**A bow takes both hands, and that is what pays for it.** `GearBase.hands` is
+2 on the three bow bases and absent everywhere else. `handClash` in
+`src/game/state.ts` is the whole rule: equipping a two-handed weapon empties
+the off hand, equipping an off hand takes the two-hander off, and each is a
+piece that goes back into the bag rather than a refusal — `equipItem` carries
+the displaced piece with the same undo the replaced one gets, and refuses only
+when there is nowhere to put it. A bow carries about twice a wand's increase,
+tagged `attack` where the wand's is tagged `spell`: the wand is the spell
+family and the bow is the attack one. `starterLoadout` skips a two-handed base
+outright, so a measured character always holds a shield and a band is compared
+across one arrangement.
+
+## Two more skills, and a word for what they do
+
+**Arc Lightning** is a spell that arrives already hitting a crowd: three Arcs
+off its own `params` rather than off a point, and it pays for them in the only
+currency left — 44 base damage where Fireball lands 72, so it takes four
+enemies standing near each other to come out ahead. Its tree (`al`) widens the
+Arcs and never the discount.
+
+**Lightning Arrow** is the bow skill and the first attack that is not a swing:
+one arrow at full damage, and where it lands the sky opens on 2 more enemies
+near it. `SkillDef.weapon` is `crude_bow`, so the Lampwright hands a bow rather
+than the attack shelf's sword.
+
+**A FORK is a bolt that falls from above**, on an enemy within `PROJECTILE.fork`
+of the one you AIMED at, for `PROJECTILE.forkDamage`. It is its own bolt rather
+than the shot carrying on, which is the whole of what separates it from Pierce
+and from Arc: nothing about where the shot came from decides who takes one. It
+is a keyword like the rest, `forks`/`forkDamage` are its switches, and both are
+read by the shared `projectile` behaviour — so Arc Lightning can buy Forks and
+Lightning Arrow can buy Arcs, which is what a keyword is for.
+
+Neither skill needed a new behaviour. Both are `projectile`, told apart by
+their `params`, their tags and their trees — the same way Fireball is.
 
 ## Three skills at once
 

@@ -5,7 +5,7 @@
  * every screen: a line naming what you put on and which slot took it, and one
  * button that puts both pieces back where they were.
  */
-import { equipItem } from '../game/state';
+import { equipItem, handClash } from '../game/state';
 import type { GameState } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import { note } from './history';
@@ -20,11 +20,20 @@ export function onWearChanged(fn: () => void): void {
 }
 
 export function wear(game: GameState, item: Item, slotId: string): boolean {
+  // Read BEFORE the equip: a two-handed weapon empties the other hand, and a
+  // piece that comes off without being named reads as a piece that vanished.
+  const clashSlot = handClash(game.character, item, slotId);
+  const displaced = clashSlot ? game.character.equipment[clashSlot] : null;
+
   const undo = equipItem(game, item, slotId);
-  if (!undo) return false;
+  if (!undo) {
+    if (displaced) note(`No room to carry ${displaced.name} — your gear is full`, 'fail');
+    return false;
+  }
 
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
   note(`Equipped ${item.name}`);
+  if (displaced) note(`${displaced.name} came off — ${item.name} takes both hands`);
   after?.();
 
   toast(`Worn: ${item.name}${slot ? ` — ${slot.name}` : ''}`, {

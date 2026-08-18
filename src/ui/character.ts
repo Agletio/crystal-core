@@ -302,6 +302,13 @@ function renderStats(): void {
       value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
       why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
     },
+    {
+      key: 'block',
+      value: `${Math.round(s.blockChance)}%`,
+      why:
+        `A Blocked hit deals nothing at all, capped at ${DEFENCE.blockCap}%. It ` +
+        'comes off a shield in your off hand and does nothing against damage over time.',
+    },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
     { key: 'mana', value: round(s.maxMana) },
     {

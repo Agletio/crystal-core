@@ -82,6 +82,17 @@ export const KEYWORDS: KeywordDef[] = [
     grants: ['chains', 'chainDamage'],
   },
   {
+    id: 'fork',
+    name: 'Fork',
+    says: ['Fork', 'Forks'],
+    means:
+      `A bolt falls from above on an enemy near the one you hit — within ` +
+      `${PROJECTILE.fork} tiles of it — for ${pct(PROJECTILE.forkDamage)} of ` +
+      `the damage. It is its own bolt, not the shot carrying on, so where the ` +
+      `shot came from decides nothing. Nothing is hit twice by one use.`,
+    grants: ['forks', 'forkDamage'],
+  },
+  {
     id: 'spread',
     name: 'Spread',
     says: ['Spread', 'Spreads'],
@@ -191,6 +202,15 @@ export const KEYWORDS: KeywordDef[] = [
       `Blunts one damage type, Ailments included. It caps at ` +
       `${DEFENCE.resistanceCap}%, and Resistance and Armour multiply rather ` +
       `than adding — at both caps a hit lands for a sixteenth.`,
+  },
+  {
+    id: 'block',
+    name: 'Block',
+    says: ['Block', 'Blocks', 'Blocked'],
+    means:
+      `A Blocked hit deals nothing at all — there is no second number. Block ` +
+      `Chance caps at ${DEFENCE.blockCap}%, comes off a shield in your off ` +
+      `hand and from nowhere else, and does nothing against an Ailment.`,
   },
   {
     id: 'armour',

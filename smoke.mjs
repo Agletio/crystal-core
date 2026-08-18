@@ -110,7 +110,7 @@ assert($('pick').hidden === true, 'taking him closes the hall');
 // A slot can hold a game that was never asked what it swings, so playing one
 // still puts the question up rather than assuming a save answered it.
 assert($('welcome').hidden === false, 'and a game with no skill still asks for one');
-assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
+assert(all('#welcome-skills .welcomecard').length === 5, 'all skills offered');
 assert($('welcome-name') !== null, 'and asks who you are');
 
 $('welcome-name').value = 'Vespera';
@@ -1198,7 +1198,7 @@ assert(
 {
   const cells = all('#craft-worn .wornslot');
   // Empty ones too: they are where a dragged piece lands.
-  assert(cells.length === 8, 'every equip slot is drawn', String(cells.length));
+  assert(cells.length === 9, 'every equip slot is drawn', String(cells.length));
   const live = cells.filter((b) => !b.disabled);
   assert(live.length > 0, 'and what you are wearing is clickable', String(cells.length));
 
@@ -1263,10 +1263,10 @@ $('open-character').click();
 assert($('sheet').hidden === false, 'character sheet opens');
 
 const slots = all('#sheet-slots .slotcell');
-assert(slots.length === 8, 'all eight equipment slots shown', String(slots.length));
+assert(slots.length === 9, 'every equipment slot shown', String(slots.length));
 
 const worn = all('#sheet-slots .slotcell__btn--worn');
-assert(worn.length === 8, 'starter set fills every slot', String(worn.length));
+assert(worn.length === 9, 'starter set fills every slot', String(worn.length));
 assert(all('#sheet-stats .stat').length >= 5, 'sheet lists the character’s own stats');
 
 // --- three sections, one per slot ------------------------------------------
@@ -1583,7 +1583,7 @@ cats[0].click();
 assert($('skills-cats').hidden === true, 'picking a category leaves the categories');
 assert($('skills-list').hidden === false, 'and shows what is on that shelf');
 assert($('skills-back').hidden === false, 'with a way back');
-assert(all('#skills-list .skillrow').length === 2, 'both spells listed');
+assert(all('#skills-list .skillrow').length === 3, 'all three spells listed');
 
 // Back really does go back.
 $('skills-back').click();
@@ -1933,7 +1933,7 @@ $('open-character').click();
 const invBefore = invItems().length;
 worn[0].click();
 assert(
-  all('#sheet-slots .slotcell__btn--worn').length === 7,
+  all('#sheet-slots .slotcell__btn--worn').length === 8,
   'unequipping empties the slot'
 );
 assert(invItems().length === invBefore + 1, 'unequipped item returns to inventory');
@@ -1962,7 +1962,7 @@ assert(/wear as/i.test(named(lit[0])), 'the lit slot says what clicking does', n
 
 lit[0].click();
 assert(
-  all('#sheet-slots .slotcell__btn--worn').length === 8,
+  all('#sheet-slots .slotcell__btn--worn').length === 9,
   're-equipping fills the slot'
 );
 assert(invItems().length === invBefore, 'equipped item leaves the inventory');

@@ -1,7 +1,7 @@
 {
  "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
  "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
- "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks \u2014 so an element reads at socket size and everything else stays furniture.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
  "size": 64,
  "grid": 48,
  "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
@@ -48,7 +48,7 @@
   },
   {
    "id": "cat_passive",
-   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit \u2014 a thing that is always ON rather than cast."
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
   },
   {
    "id": "cat_movement",
@@ -465,6 +465,22 @@
   {
    "id": "dbf_mark",
    "say": "a single angular RUNE like three scratched tally marks struck into bone, glowing hot violet at the edges as if freshly cut. Nothing else."
+  },
+  {
+   "id": "gear_bow",
+   "say": "a THICK recurve war bow standing upright and filling the whole frame, its two heavy limbs carved from warm lit honey-brown timber with brass caps at the tips, a BRIGHT pale taut bowstring running straight down between them, a dark bound leather grip at the middle, strongly lit against the dark, NOT thin, NOT a crescent moon, NOT a harp, NOT a lyre, NOT an arrow."
+  },
+  {
+   "id": "gear_shield",
+   "say": "a heavy kite shield seen straight on, dark timber face bound with riveted iron bands and a raised round steel boss at its centre, wide at the top and tapering to a point at the bottom, NOT a crest, NOT a coat of arms, NOT lettering."
+  },
+  {
+   "id": "sk_arc_lightning",
+   "say": "a jagged yellow-white lightning bolt splitting into three forked branches that leap sideways, hard angular zigzags with a searing white core, NOT a cloud, NOT a storm, NOT a sky."
+  },
+  {
+   "id": "sk_lightning_arrow",
+   "say": "a single arrow flying point-first, its shaft crackling with yellow-white lightning and forked sparks arcing off it, feathered fletching at the tail, NOT a bow, NOT a bolt of lightning on its own."
   }
  ]
 }

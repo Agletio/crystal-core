@@ -1279,6 +1279,85 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
   );
 }
 
+// A bow takes both hands. Neither direction may be a refusal: the piece in the
+// other hand comes OFF and goes back in the bag, and the undo puts both back —
+// otherwise swapping between a shield build and a bow build is a puzzle.
+{
+  const game = createGame('fresh');
+  game.inventory = [];
+  const bow = makeGear('crude_bow', 20);
+  const shield = makeGear('bark_buckler', 20);
+  const sword = makeGear('rusted_sword', 20);
+  for (const item of [bow, shield, sword]) addItem(game, item);
+
+  equipItem(game, shield, 'offhand');
+  const undoBow = equipItem(game, bow, 'weapon');
+  check(
+    game.character.equipment.weapon?.id === bow.id &&
+      !game.character.equipment.offhand &&
+      game.inventory.some((i) => i.id === shield.id),
+    'a bow takes the off hand off rather than refusing to go on',
+    `weapon=${game.character.equipment.weapon?.name} offhand=${game.character.equipment.offhand?.name}`
+  );
+  check(
+    undoBow?.() === true &&
+      game.character.equipment.offhand?.id === shield.id &&
+      !game.character.equipment.weapon,
+    'and undoing it puts the shield back in the hand it came out of',
+    `offhand=${game.character.equipment.offhand?.name}`
+  );
+
+  // And the other way round, which is the direction a player hits by accident.
+  equipItem(game, bow, 'weapon');
+  equipItem(game, shield, 'offhand');
+  check(
+    game.character.equipment.offhand?.id === shield.id &&
+      !game.character.equipment.weapon &&
+      game.inventory.some((i) => i.id === bow.id),
+    'and an off hand takes the two-hander off the same way',
+    `weapon=${game.character.equipment.weapon?.name} offhand=${game.character.equipment.offhand?.name}`
+  );
+
+  // A one-handed weapon clashes with nothing, or every sword build would be
+  // dropping its shield on the floor.
+  equipItem(game, sword, 'weapon');
+  check(
+    game.character.equipment.weapon?.id === sword.id &&
+      game.character.equipment.offhand?.id === shield.id,
+    'while a one-handed weapon leaves the off hand exactly where it was',
+    `offhand=${game.character.equipment.offhand?.name}`
+  );
+}
+
+// Block is a shield and nothing else, and a stat nobody can see landing is a
+// stat that might not be wired at all. Two runs of the same seed against the
+// same set: one holding a shield, one holding nothing.
+{
+  const blocksIn = (shield: string | null): { blocked: number; chance: number } => {
+    const game = createGame('dev');
+    equipSkill(game.character, 'strike');
+    game.character.level = 16;
+    game.character.equipment = {};
+    if (shield) game.character.equipment.offhand = makeGear(shield, 40);
+    const sim = new RunSim([], game.character, new Rng(99));
+    runToCompletion(sim, 400);
+    return {
+      blocked: sim.state.blocked,
+      chance: characterStats(game.character).blockChance,
+    };
+  };
+  const bare = blocksIn(null);
+  const held = blocksIn('tower_shield');
+  line(`  a Graven Tower Shield is ${held.chance}% Block, and turned aside ${held.blocked} hits in one descent`);
+  check(bare.chance === 0 && bare.blocked === 0, 'nothing but a shield grants Block', `${bare.chance}% bare`);
+  check(held.chance > 0 && held.blocked > 0, 'and a shield really does turn hits aside', `${held.blocked} blocked`);
+  check(
+    held.chance <= DEFENCE.blockCap,
+    'and it never reads past the cap',
+    `${held.chance}% against a cap of ${DEFENCE.blockCap}%`
+  );
+}
+
 // The bench takes worn gear, so the crafting window can show what you are
 // wearing beside it. Two things have to hold: the bench must RESOLVE a worn
 // item, and a craft must land back in the equip slot rather than in the bag.
@@ -4070,6 +4149,14 @@ rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?'
   for (const def of ALL_MODS) {
     for (const s of def.tiers[0]?.stats ?? []) {
       read(`mod/${def.id}`, describeStatLine({ ...s, value: s.range[0] } as never));
+    }
+  }
+  // A base's implicit prints on the card exactly as a rolled line does, and for
+  // some mechanisms it is the ONLY line that ever names them: Block is a shield
+  // and nothing else, so a sweep that skipped implicits could not see the word.
+  for (const base of GEAR_BASES) {
+    for (const s of base.implicit ?? []) {
+      read(`base/${base.id}`, describeStatLine({ ...s, value: s.range[0] } as never));
     }
   }
 

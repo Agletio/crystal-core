@@ -6,6 +6,20 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**TWO HANDS, TWO SKILLS AND A KEYWORD LANDED, off a direct ask rather than off
+this file.** The off hand exists (`EQUIP_SLOTS` gained `offhand`, the main hand
+keeps the id `weapon`), shields are a `GearKind` with the game's only source of
+Block, bows are a two-handed weapon family, and `handClash` is the whole of what
+"two-handed" means. **Arc Lightning** and **Lightning Arrow** are the fourth and
+fifth main skills, both on the shared `projectile` behaviour with trees of their
+own, and **Fork** is a new keyword with its two switches. `CLAUDE.md` has the
+mechanism and `RULES.md` has the rules it is held to. What this MOVED, printed
+rather than tuned: kills/s at the reference rung is strike 5.19, fireball 3.59,
+arc_lightning 5.34, lightning_arrow 6.50 — Lightning Arrow is the strongest main
+skill in the game and Fireball is still the weakest, both for the balance pass.
+Every ladder character now wears a shield, which is armour and Block the earlier
+grids did not have; the band ladder still clears 12/12 at every rung.
+
 **WHAT IS NEXT: nothing, without being asked.** Phase 1 shipped and is marked
 DONE where it stands; Phase 2 is parked by the user's own word until the
 opening has been played. What is left is **the balance pass — four parked
@@ -1952,6 +1966,21 @@ the third is answered rather than parked.
 
 `INTRO.crystalSkillLevel` moved 3 → 4 with the geometry, since the cheapest
 notable is now four points out and the opening names it as a suggestion.
+
+**The pass also owes the two new skills and the off hand a look**, and none of
+it is a check today:
+
+- **Lightning Arrow is the strongest main skill and Fireball the weakest** —
+  6.50 kills/s against 3.59 at the reference rung, with Strike at 5.19 and Arc
+  Lightning at 5.34. A bow gives up a shield to get there, which the kills/s
+  grid cannot see because `ladderCharacter` never holds one.
+- **What a shield is worth is not measured against what a bow is worth.** Every
+  ladder character wears one, so every band gained armour and up to 22% Block
+  against the grids that were recorded before it existed. Nothing compares the
+  two arrangements, and the honest version of that comparison needs a measured
+  character that holds a bow — which `starterLoadout` deliberately refuses.
+- **`DEFENCE.blockCap` at 60% and a Block that stops the whole hit** is the
+  simplest rule that could work and has not been weighed against anything.
 
 ## Open questions
 

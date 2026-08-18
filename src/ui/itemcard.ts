@@ -9,7 +9,7 @@ import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import { FAMILY_BY_ID, GEAR_BASE_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import { glossaryOf, keywordLine } from './glossary';
 import { itemIcon } from './icons';
@@ -114,8 +114,17 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
 
   // The base, or what stands where it stood: a grafted line under a heading
   // reading "base" is a lie about where it came from.
-  if (item.armour || item.implicits.length > 0) {
+  const hands = GEAR_BASE_BY_ID[item.base]?.hands ?? 1;
+  if (item.armour || item.implicits.length > 0 || hands > 1) {
     const base = group(item.meta.grafted !== undefined ? 'grafted' : 'base');
+    // What it costs to hold, said where the rest of the base is said: an off
+    // hand emptied by a weapon nobody told you was two-handed reads as a bug.
+    if (hands > 1) {
+      const row = el('div', 'rolled');
+      row.append(el('span', 'rolled__v', String(hands)));
+      row.append(el('span', 'rolled__k', 'Hands — your off hand stays empty'));
+      base.append(row);
+    }
     if (item.armour) {
       const row = el('div', 'rolled');
       row.append(el('span', 'rolled__v', String(item.armour)));

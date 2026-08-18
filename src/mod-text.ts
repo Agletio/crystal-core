@@ -31,6 +31,7 @@ const NAMED: Record<string, string> = {
   castSpeed: 'Cast Speed',
   critChance: 'Critical Chance',
   critMultiplier: 'Critical Damage',
+  blockChance: 'Block Chance',
   areaOfEffect: 'Area of Effect',
   moveSpeed: 'Movement Speed',
   attackRange: 'Attack Range',

@@ -30,6 +30,7 @@ export function starterLoadout(rng: Rng, ilvl = 30): Record<string, Item> {
   for (const slot of EQUIP_SLOTS) {
     const base = defaultGearBase(slot.accepts, ilvl, REFERENCE_ARMOUR_FAMILY);
     if (!base) continue;
+    if ((base.hands ?? 1) > 1) continue; // never a bow: a reference set holds a shield
     // More than any base holds, and let modCapacity decide.
     equipment[slot.id] = rollGear(base.id, ilvl, 99, pool, rng);
   }

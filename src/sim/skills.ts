@@ -281,6 +281,30 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       last = next;
     }
 
+    // Forks come out of the SKY on enemies near the one you AIMED at, never
+    // off the end of the chain: a Fork is its own bolt rather than the shot
+    // carrying on, so nothing about where the shot went decides who takes one.
+    const forks = num(g.forks, 0) + num(use.skill.params?.forks, 0);
+    if (forks > 0) {
+      const falloff = num(
+        g.forkDamage,
+        num(use.skill.params?.forkDamage, PROJECTILE.forkDamage)
+      );
+      const near = use.enemies
+        .filter(
+          (e) => !e.dead && !struck.has(e) && separation(use.primary, e) <= PROJECTILE.fork
+        )
+        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b))
+        .slice(0, forks);
+
+      for (const e of near) {
+        if (!strike(e, falloff)) continue;
+        // Drawn from two tiles above the victim down onto it, which is what
+        // makes a Fork read as falling rather than as another Arc.
+        use.vfx('arc', [{ x: e.x, y: e.y - 2 }, { x: e.x, y: e.y }]);
+      }
+    }
+
     // Every Projectile past the first, at FULL damage: a shot that is thrown
     // is a shot that lands, and a falloff on it was one number too many for
     // what the keyword promises.

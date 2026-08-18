@@ -10,6 +10,7 @@ import {
   CRYSTAL_QUESTS,
   EQUIP_SLOTS,
   FISSURE,
+  GEAR_BASE_BY_ID,
   INTRO,
   RELIC_BY_ID,
   RUN_SLOTS,
@@ -555,6 +556,23 @@ export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
   return gearKindOf(item) === slot.accepts;
 }
 
+/** Off the BASE, so an item out of a save answers the same. */
+export const isTwoHanded = (item: Item): boolean =>
+  (GEAR_BASE_BY_ID[item.base]?.hands ?? 1) > 1;
+
+/** The slot this equip would empty, or null. A bow and an off hand cannot both
+ *  be held, and putting one on takes the other off rather than being refused. */
+export function handClash(character: Character, item: Item, slotId: string): string | null {
+  if (slotId === 'weapon' && isTwoHanded(item)) {
+    return character.equipment.offhand ? 'offhand' : null;
+  }
+  if (slotId === 'offhand') {
+    const held = character.equipment.weapon;
+    return held && isTwoHanded(held) ? 'weapon' : null;
+  }
+  return null;
+}
+
 /** Puts an equip back. False once the slot holds something chosen since. */
 export type Undo = () => boolean;
 
@@ -563,17 +581,32 @@ export function equipItem(game: GameState, item: Item, slotId: string): Undo | n
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
   if (!slot || !fitsSlot(item, slot)) return null;
 
+  // What comes off the OTHER hand is a net addition to the bag, so it can be
+  // refused for the same reason unequipping can: the removal below frees the
+  // slot `previous` takes, which leaves this room exactly as it reads now.
+  const clashSlot = handClash(game.character, item, slotId);
+  const clash = clashSlot ? game.character.equipment[clashSlot] ?? null : null;
+  if (clash && carryRoom(game, clash.kind) <= 0) return null;
+
   const previous = game.character.equipment[slotId] ?? null;
   // Removing first guarantees room, so what comes off is carried, never stashed.
   const at = game.inventory.indexOf(item);
   if (!removeItem(game, item)) return null;
   if (previous) addItem(game, previous);
+  if (clash && clashSlot) {
+    delete game.character.equipment[clashSlot];
+    addItem(game, clash);
+  }
   game.character.equipment[slotId] = item;
 
   return () => {
     if (game.character.equipment[slotId] !== item) return false;
     delete game.character.equipment[slotId];
     if (previous) removeItem(game, previous);
+    if (clash && clashSlot) {
+      removeItem(game, clash);
+      game.character.equipment[clashSlot] = clash;
+    }
     game.inventory.splice(Math.min(Math.max(at, 0), game.inventory.length), 0, item);
     if (previous) game.character.equipment[slotId] = previous;
     return true;

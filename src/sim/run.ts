@@ -346,6 +346,7 @@ export interface RunState {
   marks: number;
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
+  blocked: number; // hits a shield turned aside; zero with nothing in the off hand
   /** Swings that could not pay, and swings in all: the calibration is a share. */
   dryCasts: number;
   /** Times the movement skill fired. Zero without one equipped. */
@@ -523,6 +524,7 @@ export class RunSim {
       circles: [],
       marks: 0,
       damageTaken: {},
+      blocked: 0,
     };
 
     if (def) this.state.folk.push(this.stand(def.who, def.plan.stands));
@@ -2073,6 +2075,18 @@ export class RunSim {
   ): void {
     const s = this.state;
     if (defender.dead) return;
+
+    // A Block stops a HIT and nothing else: an ailment ticks straight through
+    // it, exactly as it does through armour. Rolled only when there is a chance
+    // at all, or a character with no shield would burn a number every swing.
+    if (defender.kind === 'hero' && defender.stats.blockChance > 0) {
+      if (this.rng.chance(defender.stats.blockChance / 100)) {
+        s.blocked++;
+        s.floaters.push({ x: defender.x, y: defender.y, text: 'block', age: 0, crit: false, on: 'hero' });
+        this.wake(defender, true);
+        return;
+      }
+    }
 
     // Inside a skill use, crit was decided once for the whole cast. A plain
     // monster swing rolls its own.

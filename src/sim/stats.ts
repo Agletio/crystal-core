@@ -55,6 +55,8 @@ export interface CombatStats {
   resistances: Record<string, number>;
   /** Percent reduction against HITS only, already capped. */
   armourReduction: number;
+  /** Percent chance a HIT is turned aside outright, already capped. */
+  blockChance: number;
   /** Extra percent damage on a crit, on top of the base doubling. */
   critMultiplier: number;
   /** AREA, not radius. Behaviours must go through `areaRadius`, never this. */
@@ -299,6 +301,7 @@ export function heroStats(
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour,
     armourReduction: armourReduction(armour),
+    blockChance: Math.min(DEFENCE.blockCap, percentStat(mods, 'blockChance')), // a shield, and nothing else
     resistances: resistancesFrom(mods),
     attackRange: computeStat(skill.range, mods, 'attackRange'),
     aggroRange: HERO_BASE.aggroRange,
@@ -507,6 +510,7 @@ export function monsterStats(
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,
     armourReduction: blunted,
+    blockChance: 0,
     resistances,
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,

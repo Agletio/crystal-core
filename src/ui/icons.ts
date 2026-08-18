@@ -204,6 +204,7 @@ const BOOT = [
 ];
 
 const STEEL = { o: INK, s: '#B9C2CC', d: '#7A8492', g: 'var(--citrine)', h: '#6B4526' };
+const STORM = { o: INK, y: 'var(--citrine)', w: '#FFF7CC', d: '#7A8492', h: '#6B4526' };
 const ROT = { o: INK, v: '#4E8C33', g: 'var(--venom)', w: '#EAFFC0' };
 const ARCANE = { o: INK, b: '#5C3A96', c: 'var(--amethyst)', w: '#EBD9FF', y: 'var(--citrine)' };
 const CRYSTAL = { o: INK, c: '#3E7F99', q: 'var(--quartz)', w: '#EAF9FF' };
@@ -332,6 +333,64 @@ const MACE = [
   '.....oho....',
   '.....oho....',
   '.....ooo....',
+];
+
+const FORKED = [
+  '.......oo...',
+  '......oywo..',
+  '.....oyywo..',
+  '....oyywo...',
+  '...oyywo....',
+  '..oyyyyyo...',
+  '...oyywwo...',
+  '....oyywo...',
+  '.....oywo...',
+  '......oyo...',
+  '.......oo...',
+];
+
+const ARROW = [
+  '........ooo.',
+  '.......oywo.',
+  '......oyywo.',
+  '.....oyyoo..',
+  '....oyyo....',
+  '...oyyo.....',
+  '..oyyo......',
+  '.ohyo.......',
+  'odho........',
+  'oddo........',
+  'ooo.........',
+];
+
+const BOW = [
+  '....ohho....',
+  '...ohhho....',
+  '..ohho.wo...',
+  '..ohho..w...',
+  '.ohho...w...',
+  '.ohho...w...',
+  '.ohho...w...',
+  '.ohho...w...',
+  '..ohho..w...',
+  '..ohho.wo...',
+  '...ohhho....',
+  '....ohho....',
+];
+
+const SHIELD = [
+  'oooooooooooo',
+  'osssssssssso',
+  'osgssssssgso',
+  'osgssddssgso',
+  'osggsddsggso',
+  'osssgddgssso',
+  '.ossgddgsso.',
+  '.osssddssso.',
+  '..osssddso..',
+  '...ossdso...',
+  '....osso....',
+  '.....oo.....',
 ];
 
 const HELMET = [
@@ -730,6 +789,10 @@ export function gearIcon(art: string, size = 26): SVGSVGElement {
       return sprite(DAGGER, GEAR, size, 'dagger');
     case 'mace':
       return sprite(MACE, GEAR, size, 'mace');
+    case 'bow':
+      return sprite(BOW, GEAR, size, 'bow');
+    case 'shield':
+      return sprite(SHIELD, GEAR, size, 'shield');
     case 'helmet':
       return sprite(HELMET, GEAR, size, 'helmet');
     case 'gloves':
@@ -982,6 +1045,11 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
       return sprite(FIREBALL, FIRE_PALETTE, size, 'fireball');
     case 'blight':
       return sprite(BLIGHT, ROT, size, 'blight');
+    case 'arc_lightning':
+    case 'arc':
+      return sprite(FORKED, STORM, size, 'arc_lightning');
+    case 'lightning_arrow':
+      return sprite(ARROW, STORM, size, 'lightning_arrow');
     case 'surge':
       return sprite(SURGE, STEEL, size, 'surge');
     case 'blink':

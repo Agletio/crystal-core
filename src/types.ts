@@ -165,6 +165,7 @@ export interface CurrencyDef {
 /** What slot a base occupies. Rings fit either ring slot. */
 export type GearKind =
   | 'weapon'
+  | 'shield'
   | 'helmet'
   | 'body'
   | 'gloves'
@@ -185,6 +186,9 @@ export interface GearBase {
   tier: number;
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
+  /** Hands it takes. Two is a bow: the off hand cannot hold anything with one
+   *  in the main hand, which is what a bow's bigger implicit is paid for by. */
+  hands?: number;
   family?: string;
   /** Lowest item level that may drop this base. Absent means from the start. */
   ilvl?: number;

@@ -71,7 +71,7 @@ export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
  *  crystal that hunts boots is one you socket for a day. */
 export const DROP_GROUPS: Array<{ id: string; mod: string; kinds: GearKind[] }> = [
   { id: 'weapons', mod: 'of the Armoury', kinds: ['weapon'] },
-  { id: 'armour', mod: 'of the Foundry', kinds: ['helmet', 'body', 'gloves', 'boots'] },
+  { id: 'armour', mod: 'of the Foundry', kinds: ['helmet', 'body', 'gloves', 'boots', 'shield'] },
   { id: 'trinkets', mod: 'of the Reliquary', kinds: ['amulet', 'ring'] },
 ];
 
@@ -116,6 +116,9 @@ export const AILMENT = {
 export const DEFENCE = {
   resistanceCap: 75,
   armourCap: 75,
+  /** A Block stops a HIT outright, so the chance is the whole of it. Short of
+   *  certain, or a shield would be the only defence worth wearing. */
+  blockCap: 60,
   /** Armour points at which reduction reaches half the cap. */
   armourHalfPoint: 300,
   /**
@@ -159,8 +162,10 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // Gear mods declare appliesTo: ['gear'], so every base rolls from one pool and
 // a new base needs no new mod content.
 
+// The main hand keeps the id `weapon`: a save points at it.
 export const EQUIP_SLOTS: EquipSlotDef[] = [
-  { id: 'weapon', name: 'Weapon', accepts: 'weapon' },
+  { id: 'weapon', name: 'Main Hand', accepts: 'weapon' },
+  { id: 'offhand', name: 'Off Hand', accepts: 'shield' },
   { id: 'helmet', name: 'Helmet', accepts: 'helmet' },
   { id: 'body', name: 'Body', accepts: 'body' },
   { id: 'gloves', name: 'Gloves', accepts: 'gloves' },
@@ -402,10 +407,11 @@ export const familySpendOn = (familyId: string, kind: string, tier: number, key:
 };
 
 /**
- * One-handed weapons, in four families. Every weapon carries an IMPLICIT no
- * craft can touch — wands spell damage or cast speed, swords attack speed,
- * daggers flat crit, maces flat damage of ONE type, so a mace commits you.
- * Rungs within a family are gated by ilvl, so bases are themselves progression.
+ * Weapons, in five families. Every weapon carries an IMPLICIT no craft can
+ * touch — wands spell damage or cast speed, swords attack speed, daggers flat
+ * crit, maces flat damage of ONE type, so a mace commits you. Rungs within a
+ * family are gated by ilvl, so bases are themselves progression. Bows are the
+ * one TWO-HANDED family, and the off hand is what pays for their increase.
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
@@ -414,7 +420,8 @@ const weapon = (
   name: string,
   family: string,
   ilvl: number,
-  implicit: StatSpec[]
+  implicit: StatSpec[],
+  hands = 1
 ): GearBase => ({
   id, name, kind: 'weapon', art: family, family, ilvl,
   // Off the rung it drops at, so a side-grade arriving beside a rung holds
@@ -422,6 +429,7 @@ const weapon = (
   tier: BASE_TIER_ILVL.indexOf(ilvl) + 1,
   slots: { ...WEAPON_SLOTS },
   implicit,
+  ...(hands > 1 ? { hands } : {}),
 });
 
 export const WEAPON_BASES: GearBase[] = [
@@ -483,6 +491,45 @@ export const WEAPON_BASES: GearBase[] = [
   weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], [
     { stat: 'damage', form: 'flat', range: [14, 14], tags: ['physical', 'attack'] },
   ]),
+
+  // --- bows: the attack family, and the only two-handed one -----------
+  //
+  // Tagged 'attack' where the wand's line is tagged 'spell'. Twice the increase,
+  // because holding one gives up an off hand — a shield's Block and its rating.
+  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], [
+    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['attack'] },
+  ], 2),
+  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], [
+    { stat: 'damage', form: 'inc', range: [32, 32], tags: ['attack'] },
+  ], 2),
+  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], [
+    { stat: 'damage', form: 'inc', range: [48, 48], tags: ['attack'] },
+  ], 2),
+];
+
+/** The off hand, and the only source of Block in the game: a rating like a body
+ *  armour's and a chance to turn a hit aside. A bow gives up the lot. */
+const SHIELD_SLOTS = { offence: 1, defence: 4, utility: 1 };
+
+const shield = (
+  id: string,
+  name: string,
+  tier: number,
+  armour: number,
+  block: number
+): GearBase => ({
+  id, name, kind: 'shield', art: 'shield', family: 'shield',
+  ilvl: BASE_TIER_ILVL[tier - 1],
+  tier,
+  slots: { ...SHIELD_SLOTS },
+  armour,
+  implicit: [{ stat: 'blockChance', form: 'flat', range: [block, block] }],
+});
+
+export const SHIELD_BASES: GearBase[] = [
+  shield('bark_buckler', 'Bark Buckler', 1, 34, 15),
+  shield('banded_kite', 'Banded Kite Shield', 2, 62, 22),
+  shield('tower_shield', 'Graven Tower Shield', 3, 96, 30),
 ];
 
 /**
@@ -500,6 +547,7 @@ const trinket = (id: string, name: string, kind: GearKind, tier: number): GearBa
 
 export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
+  ...SHIELD_BASES,
   ...ARMOUR_BASES,
   trinket('amulet', 'Bone Amulet', 'amulet', 1),
   trinket('jade_amulet', 'Jade Amulet', 'amulet', 2),
@@ -1603,6 +1651,8 @@ export const PROJECTILE = {
   corridor: 0.85, // half-width of the corridor a Pierce searches
   pierceDamage: 0.7, // what a pierced enemy takes unless a talent says otherwise
   arcDamage: 0.7, // and what an arced-to one takes
+  fork: 3.2, // how far a Fork falls, from the enemy you aimed at
+  forkDamage: 0.45, // and what it lands for. A Fork is a second bolt, not the same one
 };
 
 /**
@@ -2930,6 +2980,7 @@ export const DEV_GEAR = [
     ...WEAPON_BASES.filter(
       (b, i) => WEAPON_BASES.findIndex((o) => o.family === b.family) === i
     ).map((b) => b.id),
+    'banded_kite',
     'amulet',
     'ring',
   ]),
@@ -3102,6 +3153,53 @@ export const SKILLS: SkillDef[] = [
     range: 5.5,
     vfxKind: 'arc',
     params: { chains: 2, chainDamage: 0.6 },
+  },
+  {
+    /**
+     * Born with three Arcs where every other skill buys its second target with
+     * a point, and it pays in the only currency left: what ONE target is worth.
+     * 44 where Fireball lands 72, so it takes four enemies standing near each
+     * other to come out ahead. The tree widens the Arcs, never the discount.
+     */
+    id: 'arc_lightning',
+    name: 'Arc Lightning',
+    category: 'spell',
+    description:
+      'A bolt of lightning with 3 Arcs, each for 70% of the damage. It hits a ' +
+      'crowd bare, and hits one enemy for less than anything else does.',
+    tags: ['spell', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['lightning'],
+    baseDamage: 44,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 6,
+    vfxKind: 'arc',
+    params: { chains: 3, chainDamage: 0.7 },
+  },
+  {
+    /**
+     * The bow skill. One arrow at full damage, and where it lands the sky opens
+     * on enemies near it — Forks, which are their OWN bolts rather than the
+     * arrow carrying on, so the shot's line decides nothing about who takes one. */
+    id: 'lightning_arrow',
+    name: 'Lightning Arrow',
+    category: 'attack',
+    description:
+      'An arrow of lightning at range. Full damage to what it hits, and 2 ' +
+      'Forks fall on enemies near it for 45% each.',
+    tags: ['attack', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['lightning'],
+    weapon: 'crude_bow', // a bow, not the attack shelf's sword
+    baseDamage: 58,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 7,
+    vfxKind: 'arrow',
+    params: { forks: 2, forkDamage: 0.45 },
   },
   {
     /**

@@ -128,6 +128,9 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   // a monster brings its own element now and a descent routinely shows three
   // of these. What you read off it is which resistance to go and find.
   const totalTaken = Object.values(run.damageTaken).reduce((n, v) => n + v, 0);
+  if (run.blocked > 0) {
+    rows.push({ label: 'hits blocked', value: String(run.blocked) });
+  }
   if (totalTaken > 0) {
     rows.push({ label: 'damage taken', value: String(round(totalTaken)) });
     const split = Object.entries(run.damageTaken)

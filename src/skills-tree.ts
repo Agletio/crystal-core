@@ -12,8 +12,10 @@ import { GRANT_BY_ID } from './sim/grants';
 import type { Changes } from './sim/grants';
 import { interactionOf } from './trees/interactions';
 import { buildTree } from './trees/layout';
+import { ARC_LIGHTNING_SPEC } from './trees/arc_lightning';
 import { BLIGHT_SPEC } from './trees/blight';
 import { FIREBALL_SPEC } from './trees/fireball';
+import { LIGHTNING_ARROW_SPEC } from './trees/lightning_arrow';
 import { STRIKE_SPEC } from './trees/strike';
 import { MOVE_POINTS, buildMove } from './moves/layout';
 import { BLINK_MOVES } from './moves/blink';
@@ -30,7 +32,13 @@ export type { NodeStat, SkillNodeDef } from './trees/node';
 export const MAX_TREE_POINTS = 30;
 
 /** Every tree, built. The demo holds all of them to the same rules. */
-export const BUILT_TREES: BuiltTree[] = [STRIKE_SPEC, FIREBALL_SPEC, BLIGHT_SPEC].map(buildTree);
+export const BUILT_TREES: BuiltTree[] = [
+  STRIKE_SPEC,
+  FIREBALL_SPEC,
+  BLIGHT_SPEC,
+  ARC_LIGHTNING_SPEC,
+  LIGHTNING_ARROW_SPEC,
+].map(buildTree);
 
 export const TREE_BY_SKILL: Record<string, BuiltTree> = Object.fromEntries(
   BUILT_TREES.map((t) => [t.spec.skillId, t])

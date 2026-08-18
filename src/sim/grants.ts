@@ -482,6 +482,28 @@ export const GRANTS: GrantDef[] = [
   },
 
   {
+    id: 'forks',
+    changes: 'targets',
+    what: 'the skill gains a Fork',
+    reads: ['projectile'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n} Fork${n === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'forkDamage',
+    changes: 'targets',
+    what: 'a Fork lands for more of the damage',
+    reads: ['projectile'],
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Forks deal ${pct(n)} of the damage`;
+    },
+  },
+
+  {
     id: 'splashMultiplier',
     changes: 'targets',
     what: 'what the Splash deals',

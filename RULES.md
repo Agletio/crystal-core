@@ -487,6 +487,45 @@ percentage. Killing Surge gives up crit damage entirely for a window of more
 damage, and both halves are one grant — half-applying it would be a character
 that paid and got nothing.
 
+**BLOCK IS A SHIELD AND NOTHING ELSE.** `blockChance` is a flat implicit on a
+shield base and no rolled modifier, tree node, trade or unique writes it. That
+is deliberate: an off hand is a slot whose entire worth is one number you can
+read off the piece in it, and a Block that could arrive from four places would
+be a stat you audit rather than a choice you make. It is capped at
+`DEFENCE.blockCap`.
+
+**A Block stops the HIT, and there is no second number.** It never reduces. So
+the only figure a player has to learn is the chance, and the rule is the same
+shape as Armour's in the one way that matters: it applies to HITS and an
+Ailment goes straight through it. Rolled in `dealDamage` off `RunSim.rng`, and
+only when the chance is above zero — a character with no shield may not burn a
+number every swing, or gear would move a seed's replay.
+
+**Hands are a fact about the BASE.** `GearBase.hands`, read through
+`isTwoHanded`, never a tag on the item and never a family name anyone tests
+for. `handClash` is the ONE answer to "what does this equip empty", asked by
+`equipItem` before it touches anything; the displaced piece rides the same undo
+the replaced one does, and an equip is refused only when there is nowhere to
+put what comes off — never because the arrangement is illegal. Putting a bow on
+takes the shield off. It does not tell you no.
+
+**A two-handed weapon is never in a MEASURED set.** `starterLoadout` skips one,
+so every ladder character holds a shield and every band is compared across the
+same arrangement. What a bow trades an off hand for is a BUILD, and a build is
+the thing a measurement is not allowed to pick.
+
+**A new main skill does not get a new behaviour unless the DELIVERY is new.**
+Arc Lightning and Lightning Arrow are both `projectile`, told apart by `params`,
+tags and their trees — the same way Fireball is. What they added was one
+keyword, `Fork`, and its two switches, because "a bolt falls from above on an
+enemy near the one you hit" is genuinely not Pierce, Arc, Projectile or Burst.
+A skill that is an old delivery with new numbers is a table row.
+
+**A KEYWORD's switches are read by the BEHAVIOUR, not by the skill.** `forks`
+and `forkDamage` are read by `projectile`, so Arc Lightning can buy Forks and
+Lightning Arrow can buy Arcs. That is the whole return on a keyword: learn it
+on one skill and it is free to read on the next.
+
 **Mana is bought, never granted.** The pool does not grow with a character
 level. Life does, and one that grew alongside it would leave the cost
 meaningless by level 10 — the whole pressure is that casting more, or casting
