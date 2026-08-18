@@ -1,5 +1,5 @@
 /**
- * One item, drawn the way every screen draws it. The dock, the haul, the
+ * One item, drawn the way every screen draws it. The dock, the shop, the
  * stash, the shelf, the sheet and the bench each built their own string out of
  * the same four facts, so the game said an item six slightly different ways
  * and none could use colour. The split `statParts` makes is the point: the

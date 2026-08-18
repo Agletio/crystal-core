@@ -38,7 +38,7 @@ import {
   THEME_BY_ID,
 } from '../data';
 import { spend } from '../economy';
-import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
+import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, gaveKey, sceneWaiting, takeBoss } from '../game/scenes';
@@ -47,7 +47,6 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
-import { openHaul } from './haul';
 import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
 import { closeGraft, isGraftOpen, openGraft } from './graft';
@@ -60,7 +59,7 @@ import type { Palette, Renderer } from '../render/renderer';
 import { flaskIcon } from './flaskart';
 import { potionReading, potionWorkings } from '../potion-text';
 import { skillWorkings } from '../skill-text';
-import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
+import { openInventory, renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
@@ -305,8 +304,8 @@ function renderMenu(): void {
   );
 
   // The one thing that can shut the Fissure — and never a dead end, because
-  // selling out of the haul needs no room anywhere.
-  const blocked = haulFull(game);
+  // selling needs no room anywhere.
+  const blocked = bagsFull(game);
   const launcher = $('run-launch') as HTMLButtonElement;
   launcher.textContent = game.called
     ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
@@ -314,7 +313,7 @@ function renderMenu(): void {
   launcher.disabled = blocked;
   launcher.classList.toggle('mini--off', blocked);
   $('run-blocked').textContent = blocked
-    ? 'Your haul is full. Empty some of it before you go back down.'
+    ? 'Your bags are full. Sell or stash some of it before you go back down.'
     : '';
 }
 
@@ -410,7 +409,7 @@ function launch(): void {
 
 /**
  * A run ended. Bank it, then decide whether there is another one. Capacity is
- * read HERE and never during a run, which is why the haul may end up over its
+ * read HERE and never during a run, which is why the bag may end up over its
  * limit rather than a descent's drops being split.
  */
 function finish(left = false): void {
@@ -452,7 +451,7 @@ function finish(left = false): void {
     ? 'left'
     : !report.cleared
       ? 'died'
-      : report.haulFull
+      : report.bagsFull
         ? 'full'
         : leaving
           ? 'chose'
@@ -461,7 +460,7 @@ function finish(left = false): void {
   // `leaving` is the only stop you choose while the fight is still on, so it
   // is checked here rather than at the launch: the descent you armed it during
   // still finishes and still banks.
-  if (report.cleared && !report.haulFull && !leaving) {
+  if (report.cleared && !report.bagsFull && !leaving) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -603,8 +602,11 @@ function land(report: RunReport, run: RunState): void {
   setPhase('results');
   setLeaveLabel();
   renderInventory();
-  // Nothing to sort is the one case a grid of empty slots is wrong for.
-  if (game.haul.length > 0) openHaul(haltLine(report));
+  // The bag is where a descent's loot now IS, unless it found nothing at all.
+  if (report.items.length > 0) {
+    openInventory();
+    note(haltLine(report));
+  }
 }
 
 /** 1 standing, 0 underground. Drives the sprite and the dark over it. */
@@ -614,22 +616,20 @@ function emergeNow(): number {
   return t < DESCEND ? 1 - t / DESCEND : Math.min(1, (t - DESCEND) / (1 - DESCEND));
 }
 
-/** What the haul screen says about why you are looking at it. */
+/** Why the loop stopped, in one line on the log. */
 function haltLine(report: RunReport): string {
   const runs = streak === 1 ? 'one descent' : `${streak} descents`;
   // Losing the descent you were standing in is the whole cost, and the thing
   // it is easiest to read as losing the lot — so say what is still yours.
   const kept =
     streak > 0
-      ? `Everything ${runs} banked is here; only the one you were in is gone.`
-      : game.haul.length > 0
-        ? 'That descent banked nothing, but what was already here is still yours.'
-        : 'A descent only pays if you finish it.';
+      ? `Everything ${runs} banked is yours; only the one you were in is gone.`
+      : 'A descent only pays if you finish it.';
 
   if (halt === 'met') return `${LAMPWRIGHT.name} walked you out. Cleared ${runs}.`;
   if (halt === 'left') return `You walked out. ${kept}`;
   if (halt === 'died') return `You died. ${kept}`;
-  if (halt === 'full') return `The haul is full after ${runs}. Clear some of it to go again.`;
+  if (halt === 'full') return `Your bags are full after ${runs}. Clear some of it to go again.`;
   if (halt === 'chose') return `Cleared ${runs}, and stopped where you asked.`;
   return `Cleared ${runs}.`;
 }
@@ -871,7 +871,7 @@ function renderResults(report: RunReport, run: RunState): void {
   cols.append(left);
 
   const right = el('div');
-  right.append(el('p', 'resultcard__sub', report.cleared ? 'Into the haul' : 'Loot lost'));
+  right.append(el('p', 'resultcard__sub', report.cleared ? 'Into your bags' : 'Loot lost'));
   const loot = el('div', 'lootlist');
   const rows = lootRows(run);
 
@@ -1016,7 +1016,7 @@ function frame(now: number): void {
 /**
  * The gentle way out, and the only stop you can choose while the fight is on.
  * Nothing to arm when this descent was already the last one — with the loop
- * off, or with the haul about to shut the Fissure, it ends by itself.
+ * off, or with the bag about to shut the Fissure, it ends by itself.
  */
 function setLeaveLabel(): void {
   const btn = $('run-leave') as HTMLButtonElement;
@@ -1130,7 +1130,7 @@ export function initRun(state: GameState): void {
   void upgradeRenderer(stage, palette);
 
   ($('run-launch') as HTMLButtonElement).onclick = () => {
-    if (haulFull(game)) return;
+    if (bagsFull(game)) return;
     streak = 0;
     leaving = false;
     launch();
@@ -1145,7 +1145,7 @@ export function initRun(state: GameState): void {
 
   // The hard way out, and the only one that costs you something: this descent
   // banks nothing, exactly as dying in it would. Every clear before it already
-  // banked as it happened, so it ends on the same card and the same haul.
+  // banked as it happened, so it ends on the same card.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
     if (!sim || phase === 'scene') return;
     // Walking over to him: already banked, so nothing to walk out of.

@@ -114,7 +114,7 @@ const hudProbe = () => {
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
   'title', 'slots', 'pick', 'welcome', 'fissure',
-  'dock', 'crystals', 'sheet', 'shop', 'stash', 'haul', 'history',
+  'dock', 'crystals', 'sheet', 'shop', 'stash', 'filter', 'history',
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
@@ -210,7 +210,7 @@ for (const vp of VIEWPORTS) {
   for (const [state, shut] of [
     ['shop', 'shop-close'],
     ['stash', 'stash-close'],
-    ['haul', 'haul-close'],
+    ['filter', 'filter-close'],
     ['history', 'history-close'],
   ]) {
     await page.evaluate((id) => document.getElementById(id)?.click(), `open-${state}`);
@@ -303,9 +303,9 @@ for (const vp of VIEWPORTS) {
   // click — the same one every other ending uses.
   await page.evaluate(() => document.querySelector('#run-abandon')?.click());
   await page.waitForTimeout(400);
-  // The report every ending lands on. All five also open the HAUL over it, so
-  // that comes off first or this is a second picture of the haul.
-  await page.evaluate(() => document.getElementById('haul-close')?.click());
+  // The report every ending lands on. Nothing is closed first: the dock is
+  // where a descent's loot now lands, so the report standing over an open one
+  // IS the state, and the card lays itself out in what is left of the screen.
   await page.waitForTimeout(250);
   await shoot('results');
   await page.evaluate(() => document.getElementById('run-again')?.click());
@@ -523,7 +523,7 @@ for (const vp of VIEWPORTS) {
     });
     await shoot('graft');
     // The bench is a BUBBLE anchored over a head, so it can be near an edge —
-    // and it used to hold everything you were carrying, which at a real haul
+    // and it used to hold everything you were carrying, which at a full bag
     // ran off the side and pushed the lines and the button off the bottom.
     // Every control has to be on the card AND on the screen, or the bench can
     // be opened and never used.

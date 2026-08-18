@@ -1108,9 +1108,8 @@
   /* The stash is a modal, not the dock: it can be as deep as you have paid
      for, and scroll if it outgrows the card. */
   /* Where the loop stops. The count going red is the whole warning. */
-  .haul__why { font-size: 12px; color: var(--citrine); margin: 0 0 8px; }
-  .haul__count--full { color: var(--ember); }
-  #haul-take, #haul-sellall { flex: 1 1 0; justify-content: center; text-align: center; }
+  .keeprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  .keepbtn { min-width: 92px; justify-content: center; text-align: center; }
   .slots--stash {
     grid-template-columns: repeat(auto-fill, 40px);
     grid-template-rows: none;
@@ -1782,7 +1781,7 @@
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
       <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
       <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
-      <button class="railbtn" id="open-haul" data-key="haul">Haul</button>
+      <button class="railbtn" id="open-filter" data-key="filter">Filter</button>
       <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
       <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
       <button class="railbtn" id="open-character" data-key="character">Character</button>
@@ -1825,7 +1824,7 @@
         <p class="runsrc">
           Clear it all, then something waits at the exit.
           A socketed crystal stays socketed, and a cleared descent starts the
-          next one until you die or the haul fills.
+          next one until you die or your bags fill.
         </p>
       </div>
     </div>
@@ -2005,9 +2004,9 @@
   </div>
 </div>
 
-<!-- The haul. One terminus for the loop: a death and a full haul both land
-     here, because both mean the same thing — the run is over, deal with your
-     things. Inert like the stash, and the only container the Fissure fills. -->
+<!-- The auto-sell filter. Clicked in what you KEEP, and read on the way up
+     out of a cleared descent: what it does not keep never reaches a container
+     at all, it arrives as gold. -->
 <!-- The Lampwright. A body on the map you walk to, not a line in a report:
      the crystal is handed over here and is yours from that moment, whatever
      happens further down. -->
@@ -2067,28 +2066,25 @@
   </div>
 </div>
 
-<div class="modal" id="haul" hidden>
-  <div class="modal__card modal__card--wide">
+<div class="modal" id="filter" hidden>
+  <div class="modal__card">
     <div class="modal__head">
-      <h2 class="modal__title">The Haul</h2>
+      <h2 class="modal__title">The Filter</h2>
       <div class="seedbar">
-        <code id="haul-count">0 / 0</code>
-        <input class="find" id="haul-find" type="search" placeholder="Find" aria-label="Filter what is drawn" />
-        <button class="chip" id="haul-sort" title="Group by slot, best first">Sort</button>
-        <button class="mini" id="haul-close">Close</button>
+        <button class="chip" id="filter-all">Keep everything</button>
+        <button class="chip" id="filter-none">Keep nothing</button>
+        <button class="mini" id="filter-close">Close</button>
       </div>
     </div>
     <div class="modal__body">
       <div class="panel">
-        <p class="haul__why" id="haul-why" hidden></p>
-        <p class="empty" id="haul-hint"></p>
-        <div class="slots slots--stash" id="haul-slots"></div>
-      </div>
-      <div class="panel">
-        <div class="runbar">
-          <button class="buy" id="haul-take"></button>
-          <button class="buy" id="haul-sellall"></button>
-        </div>
+        <p class="empty" id="filter-hint"></p>
+        <div class="dockcol__label">Rungs</div>
+        <div class="keeprow" id="filter-tiers"></div>
+        <div class="dockcol__label">Weapons and jewellery</div>
+        <div class="keeprow" id="filter-gear"></div>
+        <div class="dockcol__label">Armour</div>
+        <div class="keeprow" id="filter-armour"></div>
       </div>
     </div>
   </div>

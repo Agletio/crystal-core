@@ -199,9 +199,10 @@ second, a press that straddled a rebuild landed on a node no longer in the
 document, and the threshold buttons did nothing at all for as long as they
 existed.
 
-**A button that clears a heap may not eat a decision.** Both bulk sells —
-the shop's and the haul's — exclude uniques, because a named piece is only ever
-a decision. Selling one is still a menu action on the piece.
+**A button that clears a heap may not eat a decision.** The shop's bulk sell
+and the auto-sell filter both exclude uniques, because a named piece is only
+ever a decision — and a rule set weeks ago was not a decision about this one.
+Selling a unique is still a menu action on the piece.
 
 **The worlds are a ladder, not three equal opponents.** The pools weigh the same
 per monster, but Demonic and Prismatic carry auras and Normal does not, so they
@@ -210,7 +211,7 @@ reason to exist through drops nothing else has: it is the only world with TWO
 uniques of its own, which is the debt that paid.
 
 **Death** costs **only the run you died in** and **stops the idle loop**. Not
-the crystals, not the gear, and not the haul banked from earlier clears.
+the crystals, not the gear, and not what earlier clears banked.
 Stopping the loop is the real teeth: a set you cleared four times and died on
 the fifth is a setup problem you have to go and fix rather than eat repeatedly.
 
@@ -233,7 +234,7 @@ free slot does not destroy four of them. You triage before continuing.
 **A relic is carried to a PERSON, never to a bench.** `RELICS` is its own table
 and `'relic'` is its own `ItemKind`: `canSell` refuses one, no bulk button can
 see one, and the two registries in `src/crafting.ts` never reach it. It is loot
-and lands in the haul; `GameState.relics` is where it lives once taken out, and
+and banks like any drop; `GameState.relics` is where it lives, and
 `carryRoom` is `Infinity` there for the reason it is for a crystal — nothing
 sells one, so a cap could only throw loot away. Its dock column has NO click in
 it: the only thing you can do with one is walk it to somebody.
@@ -1570,12 +1571,27 @@ item is corrupted. Anything that "locks an item" sets that flag rather than
 inventing a second one.
 
 **Containers.** `GameState` holds `inventory` (the dock — gear only, capped by
-`CARRY.gear`), `stash` (inert, capacity bought with gold), `haul` (a cleared
-run's loot, inert, `HAUL_CAP`), `crystals` (every crystal you own that is not
-socketed, UNCAPPED), `sold` (the counter, `SOLD_CAP`), `sockets` and
+`CARRY.gear`, and the ONLY place a cleared run's loot lands), `stash` (inert,
+capacity bought with gold), `crystals` (every crystal you own that is not
+socketed, UNCAPPED), `relics`, `sold` (the counter, `SOLD_CAP`), `sockets` and
 `shopStock`. Inert means: nothing acts on the item until it is moved into the
-dock. `craftId` is a REFERENCE, not a move, and it resolves across the bag, the
-collection, the worn slots and the sockets.
+dock. There is no second pile a run banks into: `bankLoot` puts drops in the
+bag, over its limit if that is where they land, and `bagsFull` is read BETWEEN
+runs so a descent's drops are never split. `craftId` is a REFERENCE, not a
+move, and it resolves across the bag, the collection, the worn slots and the
+sockets.
+
+**The auto-sell filter is clicked in what you KEEP and stored as what you
+SELL.** `KEEP_GROUPS` and `KEEP_TIERS` in `src/data.ts` are the rows — derived
+from `ARMOUR_FAMILIES.archetypes`, the weapon families and the jewellery kinds,
+so a family added to a table lands in a group without being listed twice — and
+`GameState.junk` holds the ids that are SOLD. An empty `junk` therefore keeps
+everything, which is what a fresh game and every save written before the filter
+existed both hold; a filter can only ever start by doing nothing. A piece is
+kept when its RUNG is kept AND its GROUP is, never OR, or one click would sell
+almost the whole game. It is read on the way up in `bankLoot` and nowhere else,
+so a piece already in a container is safe from it, and what it sells never
+reaches the counter.
 
 **A dev level button, per ladder.** `skills-devlevel` grants a SKILL level and
 `sheet-devlevel` grants a CHARACTER one, both marked `.mini--dev`. Attributes
@@ -1717,24 +1733,21 @@ crystals column, which is the only route to crafting one.
 
 **One comparator orders every pile.** `sortGear(items)` in `src/game/state.ts`
 sorts in place — by equipment slot, then base tier, then modifier count, then
-name — and `sortInventory(game)` is one line calling it. The dock and the haul
-both use it, so the two screens cannot drift into ordering the same pieces
-differently, and the demo sorts one set of pieces as each and fails if the
-answers differ. Sorting the haul is not MOVING: it is inert, and a sort that
-took something out of it would be the one screen that spends your loot for you.
-The haul has exactly two buttons — Take what fits and Sell all — because two
-sell buttons side by side asked the player to care about a distinction nobody
-asked for.
+name — and `sortInventory(game)` is one line calling it. Every screen that
+draws a pile uses it, so two cannot drift into ordering the same pieces
+differently, and the demo sorts one set twice and fails if the answers differ.
+Sorting is not MOVING: a sort that took something out of a pile would be the
+one screen that spends your loot for you.
 
-**A pile is searched by `itemMatches`** in `src/crafting.ts` — the dock and the
-haul both filter through it, over the piece's name, its base's name, kind and
-family, and every line printed on it. Substring, case-blind, no syntax. What it
+**A pile is searched by `itemMatches`** in `src/crafting.ts` — every screen
+with a Find box filters through it, over the piece's name, its base's name,
+kind and family, and every line printed on it. Substring, case-blind, no syntax. What it
 does is DRAW fewer things: nothing moves, nothing is consumed, and every count
 beside a filtered grid still reads the real container, or a search looks like
 it sold your gear. The box is UI state in the module, never on `GameState`.
 
 **An item is drawn in exactly one place.** `itemCard(item, notes)` in
-`src/ui/itemcard.ts` builds the card every screen hovers — the dock, the haul,
+`src/ui/itemcard.ts` builds the card every screen hovers — the dock, the shop,
 the stash, the shelf, the sheet and both of the bench's columns. `notes` is the
 only thing that differs per screen: the lines about what a click does, or why
 it cannot. Adding a fact about an item means editing one function.
@@ -1756,7 +1769,7 @@ check `docs/index.html` for the name before inventing it.
 the counter (`GameState.sold`, newest first, `SOLD_CAP` of them) at exactly
 what it paid; `buyBack` takes it off for the same number, so the pair is
 neutral and the shelf cannot be ground for gold. A SALE needs room nowhere — 
-that asymmetry is what stops a full haul wedging the loop — but a buy-back is
+that asymmetry is what stops a full bag wedging the loop — but a buy-back is
 a purchase and refuses when there is nowhere to put it. Sell mode is UI state
 in `src/ui/shop.ts` laid over the dock through `setInventoryOverride`.
 

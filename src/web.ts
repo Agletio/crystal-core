@@ -26,7 +26,7 @@ import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
-import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
+import { initFilter, openFilter, closeFilter, isFilterOpen } from './ui/filter';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
@@ -112,7 +112,7 @@ function restart(mode: StartMode): void {
     closeCraft();
     closeShop();
     closeStash();
-    closeHaul();
+    closeFilter();
     closeCrystals();
     onRunFocused();
   }
@@ -133,7 +133,7 @@ function begin(): void {
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
 document.getElementById('open-shop')!.addEventListener('click', openShop);
-document.getElementById('open-haul')!.addEventListener('click', () => openHaul());
+document.getElementById('open-filter')!.addEventListener('click', openFilter);
 document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
 document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-inventory')!.addEventListener('click', openInventory);
@@ -225,8 +225,9 @@ initCraft(game, onRunFocused, () => {
 initShop(game);
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
-// Taking things out of the haul is what unblocks Enter, so the map re-reads.
-initHaul(game, () => {
+// What the filter keeps decides whether a descent fills the bag, and a full
+// bag is what shuts the Fissure — so the launcher re-reads.
+initFilter(game, () => {
   refreshRunPanels();
   refreshShop();
 });
@@ -334,7 +335,7 @@ const SCREENS: Record<
   trade: { el: 'trade', open: openTrade, close: closeTrade, isOpen: isTradeOpen },
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
-  haul: { el: 'haul', open: openHaul, close: closeHaul, isOpen: isHaulOpen },
+  filter: { el: 'filter', open: openFilter, close: closeFilter, isOpen: isFilterOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },

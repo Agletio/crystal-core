@@ -110,7 +110,7 @@ function take(item: Item): void {
  * WHAT YOU ARE WEARING, in the sheet's own labelled slots — *the user's call,*
  * so it reads as your gear rather than as a tray of icons. Everything you were
  * CARRYING was in here too, which is an inventory inside a speech bubble: at a
- * real haul it ran off the side of the screen and pushed the lines off the
+ * full bag it ran off the side of the screen and pushed the lines off the
  * bottom, so the bench could be opened and never used. A carried piece comes
  * in through the DOCK, which is where it already is.
  *

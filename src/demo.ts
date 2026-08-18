@@ -66,6 +66,8 @@ import {
   BASE_TIER_ILVL,
   GEAR_BASES,
   GEAR_BASE_BY_ID,
+  KEEP_GROUPS,
+  keepGroupFor,
   BASE_TIER_MODS,
   RUN_SLOTS,
   armourBudget,
@@ -228,7 +230,8 @@ import {
   CARRY,
   addItem,
   SOLD_CAP,
-  bankToHaul,
+  bagsFull,
+  bankLoot,
   buyBack,
   buyStashSpace,
   carryRoom,
@@ -239,8 +242,7 @@ import {
   grantFirstClear,
   lampwrightWeapon,
   giftWeapon,
-  HAUL_CAP,
-  haulFull,
+  keepsItem,
   plainGear,
   replaceItem,
   selectForCraft,
@@ -254,7 +256,6 @@ import {
   sortInventory,
   stashRoom,
   stashUpgradeCost,
-  takeWhatFits,
   toStash,
   unequipItem,
 } from './game/state';
@@ -929,55 +930,63 @@ rule('DROPS — does the set decide what the map can give you?');
 }
 
 // ===========================================================================
-rule('THE HAUL — where does the loop stop, and can it wedge shut?');
+rule('THE FILTER — what comes up out of the Fissure, and can the loop wedge?');
 
-// The loop only ever ends in two places and both are this container. What has
-// to hold: a run never loses a drop, capacity is read between runs so nothing
-// is split, and there is always a way back under the limit — otherwise the
+// There is one container now: your bag. Everything a cleared descent found
+// either lands in it or arrives as gold, and which of the two is a standing
+// rule you set once. What has to hold: a run never loses a drop, capacity is
+// read between runs so nothing is split, the filter is read on the way up and
+// nowhere else, and there is always a way back under the limit — otherwise the
 // game has a state you cannot play out of.
 {
+  // Every base is in EXACTLY one group, or the filter has a hole a piece falls
+  // through — and a piece nothing matches would be silently unsellable forever.
+  {
+    const homeless = GEAR_BASES.filter((b) => !keepGroupFor(b));
+    const doubled = GEAR_BASES.filter((b) => KEEP_GROUPS.filter((g) => g.holds(b)).length > 1);
+    line(`  ${KEEP_GROUPS.length} groups over ${GEAR_BASES.length} bases: ` +
+      KEEP_GROUPS.map((g) => `${g.name} ${GEAR_BASES.filter((b) => g.holds(b)).length}`).join(', '));
+    check(
+      homeless.length === 0 && doubled.length === 0,
+      'every gear base falls in exactly one keep group',
+      `${homeless.length} in none, ${doubled.length} in two`
+    );
+  }
+
   const game = createGame('fresh');
   const drops = Array.from({ length: 20 }, (_, i) => makeGear('ash_wand', i + 1));
-  bankToHaul(game, drops);
+  const first = bankLoot(game, drops);
   check(
-    game.haul.length === 20 && game.inventory.length === 0,
-    'a cleared run banks into the haul and not into your bags',
-    `${game.haul.length} hauled, ${game.inventory.length} carried`
+    game.inventory.length === 20 && first.sold === 0,
+    'with nothing junked a cleared run banks the lot into your bags',
+    `${game.inventory.length} carried, ${first.sold} sold`
   );
 
   // Deliberately past the limit: the alternative is splitting a descent's
-  // drops, and the run that was cut in half is the one you remember. Half of
-  // it rolled, so the bulk button and Sell all are answering different
-  // questions rather than the same one twice.
-  const flood = HAUL_CAP + CARRY.gear;
-  bankToHaul(
+  // drops, and the run that was cut in half is the one you remember.
+  const flood = CARRY.gear;
+  bankLoot(
     game,
     Array.from({ length: flood }, (_, i) =>
       i % 2 === 0 ? makeGear('ash_wand', 5) : rollGear('ash_wand', 40, 2, pool, new Rng(600 + i))
     )
   );
   check(
-    game.haul.length === 20 + flood && haulFull(game),
+    game.inventory.length === 20 + flood && bagsFull(game),
     'and overflows rather than dropping anything on the floor',
-    `${game.haul.length} of ${HAUL_CAP}`
+    `${game.inventory.length} of ${CARRY.gear}`
   );
 
-  const took = takeWhatFits(game);
-  check(
-    took === CARRY.gear && game.inventory.length === CARRY.gear,
-    'taking what fits fills the bag exactly once',
-    `${took} moved, ${game.inventory.length} carried`
-  );
-
-  // The wedge: haul over its limit, both bags full, stash full. Selling is the
-  // one move that needs room nowhere, which is what makes it the way out.
+  // The wedge: bag over its limit, stash full. Selling is the one move that
+  // needs room nowhere, which is what makes it the way out.
   while (stashRoom(game) > 0) game.stash.push(makeGear('ash_wand', 1));
   check(
-    takeWhatFits(game) === 0 && haulFull(game),
+    carryRoom(game, 'gear') <= 0 && stashRoom(game) === 0 && bagsFull(game),
     'with everything full there is nowhere left to put one',
-    `${game.haul.length} hauled, ${carryRoom(game, 'gear')} bag room`
+    `${game.inventory.length} carried, ${carryRoom(game, 'gear')} bag room`
   );
-  // What a Find box matches. A haul is a night's work and the only other way
+
+  // What a Find box matches. A bag is a night's work and the only other way
   // to read it is one hover at a time, so the answer has to cover everything
   // printed on a piece rather than just its name.
   {
@@ -1001,55 +1010,123 @@ rule('THE HAUL — where does the loop stop, and can it wedge shut?');
     );
   }
 
-  // The haul is ordered by the DOCK's comparator, so the two piles read the
-  // same way — and ordering is not moving: the haul is inert, and a sort that
-  // quietly took something out of it would be the one screen that spends your
-  // loot for you.
+  // Sorting is not moving: the dock's comparator orders the pile in place and
+  // a sort that quietly took something out of it would be the one screen that
+  // spends your loot for you.
   {
     const pile = createGame('dev');
-    pile.haul = [
+    pile.inventory = [
       makeGear('bulwark_helmet_t1', 8),
       makeGear('rusted_sword', 8),
       makeGear('shiv', 30),
       makeGear('bulwark_body_t2', 30),
     ];
-    const was = [...pile.haul];
-    sortGear(pile.haul);
+    const was = [...pile.inventory];
+    sortGear(pile.inventory);
     check(
-      pile.haul.length === was.length && was.every((i) => pile.haul.includes(i)),
-      'sorting the haul holds exactly what it held',
-      `${was.length} in, ${pile.haul.length} out`
+      pile.inventory.length === was.length && was.every((i) => pile.inventory.includes(i)),
+      'sorting a pile holds exactly what it held',
+      `${was.length} in, ${pile.inventory.length} out`
     );
-    const order = pile.haul.map((i) => i.id).join(',');
-    sortGear(pile.haul);
+    const order = pile.inventory.map((i) => i.id).join(',');
+    sortGear(pile.inventory);
     check(
-      pile.haul.map((i) => i.id).join(',') === order,
+      pile.inventory.map((i) => i.id).join(',') === order,
       'and sorting it twice changes nothing',
       order
     );
-    const dock = createGame('dev');
-    dock.inventory = [...was];
-    sortInventory(dock);
-    check(
-      dock.inventory.map((i) => i.base).join(',') === pile.haul.map((i) => i.base).join(','),
-      'and orders a pile the way the dock orders the same pile',
-      `${dock.inventory.map((i) => i.base).join(',')} vs ${pile.haul.map((i) => i.base).join(',')}`
-    );
   }
 
-  const sold = sellAll(game, plainGear(game.haul));
+  const sold = sellAll(game, plainGear(game.inventory));
   check(
-    sold.count > 0 && !haulFull(game) && sold.gold > 0,
+    sold.count > 0 && !bagsFull(game) && sold.gold > 0,
     `and selling ${sold.count} pieces for ${sold.gold} gold reopens the Fissure`,
-    `${game.haul.length} still hauled after selling ${sold.count}`
+    `${game.inventory.length} still carried after selling ${sold.count}`
   );
-  // Sell everything, with every container still full. This is the state the
-  // loop can actually reach and the one a room check would wedge.
-  const rest = sellAll(game, [...game.haul]);
+  const rest = sellAll(game, [...game.inventory]);
   check(
-    game.haul.length === 0 && rest.count > 0,
-    'and selling ALL of it empties the haul with every other container full',
-    `${game.haul.length} left after selling ${rest.count}`
+    game.inventory.length === 0 && rest.count > 0,
+    'and selling ALL of it empties the bag with every other container full',
+    `${game.inventory.length} left after selling ${rest.count}`
+  );
+}
+
+// The two axes, and what taking both comes to. A rung and a group are ANDed,
+// so "tier 3 mage gear" is two clicks — and the demo is what stops the two
+// halves quietly becoming an OR, which would sell almost everything.
+{
+  const game = createGame('fresh');
+  const mageHelm = makeGear('arcanist_helmet_t3', 46);
+  const mageBoot = makeGear('arcanist_boots_t1', 1);
+  const tankHelm = makeGear('bulwark_helmet_t3', 46);
+  const bow = makeGear('yew_longbow', 46);
+
+  check(
+    [mageHelm, tankHelm, bow].every((i) => keepsItem(game, i)),
+    'an untouched filter keeps everything, so a save that never opens it is unchanged',
+    `junk holds ${game.junk.length}`
+  );
+
+  game.junk = ['armour_spell'];
+  check(
+    !keepsItem(game, mageHelm) && !keepsItem(game, mageBoot) &&
+      keepsItem(game, tankHelm) && keepsItem(game, bow),
+    'junking a group sells every rung of it and touches nothing else',
+    `mage t3 ${keepsItem(game, mageHelm)}, tank ${keepsItem(game, tankHelm)}`
+  );
+
+  game.junk = ['t1', 't2'];
+  check(
+    !keepsItem(game, mageBoot) && keepsItem(game, mageHelm) && keepsItem(game, tankHelm),
+    'junking a rung sells every group at it and touches nothing else',
+    `t1 ${keepsItem(game, mageBoot)}, t3 ${keepsItem(game, mageHelm)}`
+  );
+
+  game.junk = [...KEEP_GROUPS.map((g) => g.id), 't1', 't2'].filter((id) => id !== 'armour_spell');
+  check(
+    keepsItem(game, mageHelm) && !keepsItem(game, mageBoot) && !keepsItem(game, tankHelm) &&
+      !keepsItem(game, bow),
+    'and both axes together keep exactly one rung of one group',
+    `mage t3 ${keepsItem(game, mageHelm)}, mage t1 ${keepsItem(game, mageBoot)}`
+  );
+
+  // A unique is only ever a decision, and a rule set weeks ago was not a
+  // decision about this one. The same line the bulk sell button holds.
+  const named = makeUnique(UNIQUES[0], 60, new Rng(3));
+  check(
+    keepsItem(game, named),
+    'a named piece is never junk, whatever the filter says about its base',
+    named.name
+  );
+}
+
+// What the filter is FOR: gold, banked on the way up, and a bag that fills
+// slower for it. Both halves have to land on the report, or a screen you set
+// once and never open again is invisible.
+{
+  const game = createGame('fresh');
+  game.junk = ['armour_melee'];
+  const loot = [
+    makeGear('bulwark_helmet_t2', 22),
+    makeGear('bulwark_body_t2', 22),
+    makeGear('arcanist_helmet_t2', 22),
+  ];
+  const before = balance(game.wallet, 'gold');
+  const banked = bankLoot(game, loot);
+  check(
+    banked.sold === 2 && banked.kept.length === 1 && game.inventory.length === 1,
+    'the filter takes its share on the way up and the rest lands in the bag',
+    `${banked.sold} sold, ${banked.kept.length} kept, ${game.inventory.length} carried`
+  );
+  check(
+    banked.gold > 0 && balance(game.wallet, 'gold') === before + banked.gold,
+    `and what it sold is real gold — ${banked.gold} of it`,
+    `${balance(game.wallet, 'gold')} against ${before}`
+  );
+  check(
+    game.sold.length === 0,
+    'and never reaches the counter, where a descent of them would bury a real sale',
+    `${game.sold.length} on the counter`
   );
 }
 
@@ -1128,12 +1205,12 @@ rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
     runs++;
     const report = buildReport(game, final);
     if (!report.cleared) { stop = 'died'; break; }
-    if (report.haulFull) { stop = 'full'; break; }
+    if (report.bagsFull) { stop = 'full'; break; }
   }
-  line(`  the loop ran ${runs} descents and stopped: ${stop} (${game.haul.length} in the haul)`);
+  line(`  the loop ran ${runs} descents and stopped: ${stop} (${game.inventory.length} carried)`);
   check(
     stop !== 'never' && runs > 1,
-    'a loop stops on a death or a full haul, and never on the first clear',
+    'a loop stops on a death or a full bag, and never on the first clear',
     `${stop} after ${runs}`
   );
 }
@@ -2103,9 +2180,8 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
 {
   const game = createGame('fresh');
   grantFirstClear(game);
-  bankToHaul(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
+  bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
   takeHandover(game, { weapon: true, crystal: false, quests: [] });
-  takeWhatFits(game);
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -6157,7 +6233,7 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
   line(`  share of income from selling: ${shares.map((s) => `${Math.round(s * 100)}%`).join(' ')}`);
   check(
     shares.every((s) => s > 0.1 && s < 0.95),
-    'gold comes off corpses early and out of the haul late, and neither ever stops',
+    'gold comes off corpses early and out of selling late, and neither ever stops',
     shares.map((s) => `${Math.round(s * 100)}%`).join(' ')
   );
 
@@ -7241,15 +7317,14 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     RELICS.filter((r) => !SCENE_BY_ID[r.wants]).map((r) => r.id).join(', ')
   );
 
-  // It is loot, so it lands in the haul with everything else — and nothing
-  // sells one, which is what keeps a bulk button from eating it.
+  // It is loot, so it banks with everything else — and nothing sells one,
+  // which is what keeps both the bulk button and the filter from eating it.
   const specimen = makeRelic(RELICS[0]);
-  bankToHaul(g, [specimen, makeGear('ash_wand', 1)]);
+  bankLoot(g, [specimen, makeGear('ash_wand', 1)]);
   check(sellPrice(specimen) === 0 && !canSell(specimen), 'nothing sells a specimen', String(sellPrice(specimen)));
-  takeWhatFits(g);
   check(
     relicsIn(g).length === 1 && g.inventory.every((i) => i.kind === 'gear'),
-    'and taking it out of the haul puts it in its own column',
+    'and banking it puts it in its own column rather than the bag',
     `${relicsIn(g).length} relics, ${g.inventory.length} in the bag`
   );
 
@@ -7497,11 +7572,13 @@ rule('THE SAVE — does a save survive the game changing under it?');
   progress.allocated = [...kept, 'fb_a_node_that_moved', ...progress.allocated.slice(4)];
   progress.choices = { fb_gone: 'cold', ...progress.choices };
   game.inventory.push({ ...game.inventory[0], id: 'ghost', base: 'base_that_was_renamed' });
-  // The haul is a container a save can sit in for a week, so it rots too.
-  bankToHaul(game, [
+  // A save written before the haul went keeps one, and everything in it is as
+  // rotten as the bag it is about to be poured into.
+  (game as unknown as { haul: Item[] }).haul = [
     makeGear('ash_wand', 1),
     { ...game.inventory[0], id: 'haul_ghost', base: 'base_that_was_renamed' },
-  ]);
+  ];
+  game.junk = ['armour_spell', 'a_filter_row_that_was_cut'];
   game.wallet.shard_of_something_removed = 9;
   (game.character as any).equipped.main = 'a_skill_that_was_cut';
 
@@ -7541,9 +7618,16 @@ rule('THE SAVE — does a save survive the game changing under it?');
     'a dropped base is still in the bag'
   );
   check(
-    game.haul.length === 1 && !game.haul.some((i) => i.id === 'haul_ghost'),
-    'and one sitting unsorted in the haul goes the same way',
-    `${game.haul.length} left in the haul`
+    (game as unknown as { haul?: Item[] }).haul === undefined &&
+      game.inventory.some((i) => i.base === 'ash_wand') &&
+      !game.inventory.some((i) => i.id === 'haul_ghost'),
+    'an old haul is poured into the bag, minus whatever had rotted in it',
+    `${game.inventory.length} carried`
+  );
+  check(
+    game.junk.length === 1 && game.junk[0] === 'armour_spell',
+    'and a filter row nothing resolves is dropped, which only ever keeps more',
+    game.junk.join(', ')
   );
   check(
     game.sockets.s1?.id === good.id &&

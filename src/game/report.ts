@@ -3,7 +3,7 @@
  * what it earned. The overlay knows nothing about what the rows mean, so a new
  * stat is a line in buildReport() and nothing else.
  */
-import { bankToHaul, grantFirstClear, haulFull } from './state';
+import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { advanceSocketed } from './crystals';
 import type { CrystalGain } from './crystals';
@@ -33,8 +33,10 @@ export interface RunReport {
   levelled: CrystalGain[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
-  /** Whether the haul is at or over capacity now this run has banked. */
-  haulFull: boolean;
+  /** Whether the bag is at or over its limit now this run has banked. */
+  bagsFull: boolean;
+  /** What the auto-sell filter turned into gold on the way up. */
+  filtered: { sold: number; gold: number };
   xp: number;
   levelsGained: number;
 }
@@ -58,6 +60,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
 
   const banked: Record<string, number> = {};
   let levelled: CrystalGain[] = [];
+  let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
 
   if (cleared) {
     game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
@@ -68,10 +71,11 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
       banked[id] = n;
       grant(game.wallet, id, n);
     }
-    // Whole, into the haul: the bags are yours to arrange and a run is not
-    // allowed to fill them behind your back. Nothing is refused here, so
-    // capacity is a thing checked between runs rather than during one.
-    bankToHaul(game, run.loot.items);
+    // Through the FILTER and into the bag. Nothing is refused here, so
+    // capacity is a thing checked between runs rather than during one, and a
+    // descent that overfills the bag by three is a bag reading 35/32.
+    filtered = bankLoot(game, run.loot.items);
+    if (filtered.gold > 0) banked.gold = (banked.gold ?? 0) + filtered.gold;
 
     // The opening payout. Folded into the same banked/items shape so the
     // overlay shows it as loot rather than it appearing silently in the bag.
@@ -117,8 +121,13 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
-  if (cleared && run.loot.items.length > 0) {
-    rows.push({ label: 'sent to the haul', value: String(run.loot.items.length) });
+  if (cleared && filtered.kept.length > 0) {
+    rows.push({ label: 'into your bags', value: String(filtered.kept.length) });
+  }
+  // What the filter did, said in what it paid: a screen you set once and then
+  // never open again must still report itself every single descent.
+  if (filtered.sold > 0) {
+    rows.push({ label: 'sold by the filter', value: `${filtered.sold} for ${filtered.gold} gold` });
   }
   for (const gain of levelled) {
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
@@ -150,10 +159,11 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     headline: left ? 'You walked out' : cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
-    items: cleared ? [...run.loot.items] : [],
+    items: cleared ? [...filtered.kept] : [],
     levelled,
     lostLoot: !cleared && hadLoot,
-    haulFull: haulFull(game),
+    bagsFull: bagsFull(game),
+    filtered: { sold: filtered.sold, gold: filtered.gold },
     xp: Math.round(run.xpGained),
     levelsGained,
   };

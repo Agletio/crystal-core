@@ -19,6 +19,8 @@ import {
   FAMILY_BY_ID,
   FORGED_BY_ID,
   GEAR_BASE_BY_ID,
+  KEEP_GROUPS,
+  KEEP_TIERS,
   MAIN_SKILLS,
   MAIN_SLOT,
   PLAYER_SKILLS,
@@ -29,6 +31,7 @@ import {
   SKILL_BY_ID,
   UNIQUE_BY_ID,
   crystalName,
+  tierKeepId,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
@@ -194,12 +197,10 @@ export function clearSave(slot: Slot = liveSlot()): void {
 // --- healing an old save ----------------------------------------------------
 //
 // A save is full of IDS pointing into the data tables and the trees, and those
-// move as the game is built. The shape looks after itself — a field added since
-// the save was written takes its default, one removed is simply never read
-// again — so what actually rots is a reference to something that is gone.
-//
-// Every one of them is dropped rather than trusted, and anything paid for is
-// handed back. A tree that was reshaped costs you a respec, not the character.
+// move as the game is built. The shape looks after itself, so what rots is a
+// reference to something gone. Every one is dropped rather than trusted, and
+// anything paid for is handed back: a reshaped tree costs a respec, not the
+// character.
 
 /** What a load had to throw away. Empty when the save was already current. */
 export interface Healed {
@@ -321,8 +322,12 @@ export function heal(game: GameState): Healed {
   };
   game.inventory = keep(game.inventory);
   game.stash = keep(game.stash);
-  // Hand-edited saves reach here, and one that predates the haul has no key.
-  game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
+  // The haul is gone: what a save held in it comes into the bag, over the limit
+  // if that is where it lands. Over is a real state, and a better one than a
+  // night's loot vanishing on load.
+  const hauled = (game as unknown as { haul?: Item[] }).haul;
+  if (Array.isArray(hauled)) game.inventory.push(...keep(hauled));
+  delete (game as unknown as { haul?: Item[] }).haul;
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
   game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
   // Same rule as every other container: a base that is gone takes its entry.
@@ -343,7 +348,6 @@ export function heal(game: GameState): Healed {
   };
   game.inventory = container(game.inventory);
   game.stash = container(game.stash);
-  game.haul = container(game.haul);
 
   for (const item of [...game.crystals, ...Object.values(game.sockets ?? {})]) {
     if (item.kind !== 'crystal') continue;
@@ -371,7 +375,7 @@ export function heal(game: GameState): Healed {
   // stands where the base's own implicit stood, so a forged def that no longer
   // resolves has to put that line BACK — otherwise the piece keeps a hole
   // where the base's line used to be and nothing can ever fill it.
-  for (const item of [...game.inventory, ...game.stash, ...game.haul, ...wornItems(game)]) {
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     if (item.meta.grafted === undefined || FORGED_BY_ID[String(item.meta.grafted)]) continue;
     item.implicits = makeGear(item.base, item.ilvl).implicits;
     delete item.meta.grafted;
@@ -383,6 +387,16 @@ export function heal(game: GameState): Healed {
   // room called up by a key that has since been cut is a room nobody can enter.
   game.bosses = (Array.isArray(game.bosses) ? game.bosses : []).filter((id) => BOSS_BY_ID[id]);
   if (game.called && !BOSS_BY_ID[game.called]) game.called = null;
+
+  // A row nothing resolves goes: dropping one only ever KEEPS more, which is
+  // the safe direction for a repair nobody asked for.
+  {
+    const rows = new Set([
+      ...KEEP_GROUPS.map((g) => g.id),
+      ...KEEP_TIERS.map((t) => tierKeepId(t)),
+    ]);
+    game.junk = (Array.isArray(game.junk) ? game.junk : []).filter((id) => rows.has(id));
+  }
 
   // A threshold for a potion that no longer exists costs its entry; one out of
   // range is clamped rather than dropped, so a save never fires a flask at a

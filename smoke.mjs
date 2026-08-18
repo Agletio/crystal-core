@@ -137,7 +137,7 @@ assert(
 assert(all('#inv-gear .slot--empty').length > 0, 'the dock keeps empty slots');
 
 // One place, always open. An empty set is a real descent, not a missing
-// choice, and the only thing that ever shuts the Fissure is a full haul —
+// choice, and the only thing that ever shuts the Fissure is a full bag —
 // which selling always empties, so there is no state you cannot play out of.
 const socketButtons = () => all('#run-sockets .socket');
 assert(socketButtons().length === 4, 'the Fissure has four sockets', String(socketButtons().length));
@@ -719,41 +719,59 @@ assert(
   text('inv-gear-label')
 );
 
-// --- the haul -------------------------------------------------------------
-// One terminus for the loop: a death and a full haul both land here. Only its
-// shape is checked in jsdom — a run takes a minute of real time, so the loop
-// itself is walked headlessly in the demo.
-assert($('haul').hidden === true, 'the haul starts closed');
-$('open-haul').click();
-assert($('haul').hidden === false, 'and opens from the header');
+// --- the filter -----------------------------------------------------------
+// What comes up out of the Fissure with you and what arrives as gold. Clicked
+// in what you KEEP, and stored as the inverse, so a save that has never opened
+// it keeps everything.
+assert($('filter').hidden === true, 'the filter starts closed');
+$('open-filter').click();
+assert($('filter').hidden === false, 'and opens from the rail');
+
+const keepToggles = () => all('#filter .keepbtn');
+assert(keepToggles().length > 3, 'it draws a toggle per rung and per group', String(keepToggles().length));
 assert(
-  /^0 \/ \d+$/.test(text('haul-count')),
-  'a fresh haul is empty and says what it holds',
-  text('haul-count')
+  all('#filter-tiers .keepbtn').length === 3,
+  'three rungs, which is what a base tier is',
+  String(all('#filter-tiers .keepbtn').length)
 );
-assert(all('#haul-slots .slot').length > 0, 'the grid draws the room it has');
+assert(all('#filter-gear .keepbtn').length > 0, 'weapons and jewellery in their own row');
+assert(all('#filter-armour .keepbtn').length > 0, 'and the armour sets in theirs');
 assert(
-  all('#haul-slots .slot:not(.slot--empty)').length === 0,
-  'and nothing is in it yet'
+  keepToggles().every((b) => b.classList.contains('mini--on')),
+  'and everything starts KEPT, so an unopened filter does nothing',
+  String(keepToggles().filter((b) => !b.classList.contains('mini--on')).length)
 );
-// The rule the slot counts cannot show, and the reason it is not a third bag.
 assert(
-  /worn, crafted or socketed/i.test(text('haul-hint')),
-  'it says nothing here can be used until you take it out',
-  text('haul-hint')
+  /keeping everything/i.test(text('filter-hint')),
+  'which it says, rather than leaving you to read the buttons',
+  text('filter-hint')
 );
-assert($('haul-take').disabled === true, 'with nothing to take');
-assert($('haul-sell') === null, 'and no second sell button beside the first');
-assert($('haul-sort') !== null, 'a Sort, the same one the dock has');
-assert($('haul-sort').disabled === true, 'off while there is nothing to order');
-// The way out of a full everything: a sale needs room nowhere, which is what
-// stops the one thing that can shut the Fissure from wedging it.
-assert($('haul-sellall') !== null, 'and a way to empty the whole thing');
-assert($('haul-sellall').disabled === true, 'off while there is nothing in it');
-assert($('haul-why').hidden === true, 'opening it yourself needs no explanation');
+
+// A toggle is the whole interface: click one and it is what gets sold.
+keepToggles()[0].click();
+assert(
+  !keepToggles()[0].classList.contains('mini--on'),
+  'clicking one turns it off'
+);
+assert(
+  !/keeping everything/i.test(text('filter-hint')),
+  'and the line stops saying nothing is being sold',
+  text('filter-hint')
+);
+$('filter-all').click();
+assert(
+  keepToggles().every((b) => b.classList.contains('mini--on')),
+  'Keep everything puts the lot back'
+);
+$('filter-none').click();
+assert(
+  keepToggles().every((b) => !b.classList.contains('mini--on')),
+  'and Keep nothing is the other end of the same rule'
+);
+$('filter-all').click();
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-assert($('haul').hidden === true, 'Escape closes it');
+assert($('filter').hidden === true, 'Escape closes it');
 
 // --- the collection --------------------------------------------------------
 // Four sockets against everything you have ever been given. Nothing here is

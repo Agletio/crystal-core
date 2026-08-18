@@ -6,6 +6,21 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**THE HAUL IS GONE AND THE FILTER REPLACED IT, off a direct ask.** *"Remove the
+haul entirely and have everything just go into the inventory. Once full it stops
+and just let your inventory go over budget a bit."* There is one container now:
+`bankLoot` puts a cleared descent's drops straight into the bag, over its limit
+if that is where they land, and `bagsFull` is what shuts the Fissure. What keeps
+it from filling is the **auto-sell filter** — `KEEP_GROUPS` and `KEEP_TIERS` in
+`src/data.ts`, `GameState.junk`, `src/ui/filter.ts` in the haul's old place on
+the rail. Fourteen groups derived from the tables (one per armour archetype
+pairing, one per weapon family, shields, amulets, rings) against the three
+rungs, ANDed, clicked in what you KEEP and stored as what you SELL — so a save
+that never opens it keeps everything. `CLAUDE.md` has the mechanism and
+`RULES.md` the rules it is held to. What this took out with it: the haul screen,
+Take what fits, Sell all out of the haul, and `HAUL_CAP`. A save holding one is
+poured into the bag by `heal()`.
+
 **TWO HANDS, TWO SKILLS AND A KEYWORD LANDED, off a direct ask rather than off
 this file.** The off hand exists (`EQUIP_SLOTS` gained `offhand`, the main hand
 keeps the id `weapon`), shields are a `GearKind` with the game's only source of
@@ -311,9 +326,9 @@ Kept here because the next thing built on top of them will want it.
   and `note()` goes to the LEDGER and raises none; the bench is the last beat of
   a room somebody holds a relic for, so it costs a second cleared descent, which
   is why `shots` is five minutes rather than two.
-- **The report was being shot as a second picture of the haul.** Every ending
-  opens the haul ON TOP of the report, so a shot taken straight after abandoning
-  is the haul. Close it first.
+- **The report was being shot as a second picture of the dock.** A descent
+  that found anything opens the dock ON TOP of the report, so a shot taken
+  straight after abandoning is the dock. Close it first.
 - **Making the furniture solid cost the SEVEN IDS and nothing else in the sim.**
   `block`, `Grid.solid`, `walkable`, `findPath` and `glide` were all already
   right, and every one of the 38 pieces blocked with none refused — the rooms
@@ -599,10 +614,10 @@ Kept here because the next thing built on top of them will want it.
   moment a relic existed that was meant to be somewhere else. Sweeping a table
   is only right when it asks each row about ITSELF.
 
-- **`fromHaul` pushed straight into `game.inventory`.** Every kind that is not
-  gear was routed correctly by `addItem` and then routed WRONG the moment it
-  came out of the haul, which is the one door a drop actually walks through. It
-  calls `addItem` now. Anything that adds a container has to check both.
+- **The door a drop walks through routed every non-gear kind WRONG.** `addItem`
+  had it right and the banking path did not, so a relic landed in the gear bag.
+  `bankLoot` asks `addItem` for anything that is not gear. Anything that adds a
+  container has to check both.
 - **The dev preset carrying a relic scheduled his room over two boss checks.**
   Holding one IS the schedule, so the kit holding every relic means the ossuary
   is always owed — and two checks asserting "nobody is waiting" started
@@ -1565,9 +1580,9 @@ measurements all drive `RunSim` directly and never ask for a scene.
 - **`SAVE_VERSION`.** Everything the ladder adds to `GameState` is a new key, and
   a missing key takes its default. The version is bumped only when a save must
   be REFUSED, which wipes every player's game. Nothing in this ladder qualifies.
-- **The report and the haul.** Every scene arrives AFTER `buildReport` has
+- **The report and the bag.** Every scene arrives AFTER `buildReport` has
   banked the clear, and every ending still lands on the same report and opens
-  the same haul. A scene is a reason the loop stopped, never a new ending.
+  the same dock. A scene is a reason the loop stopped, never a new ending.
 - **Loot is banked before anybody speaks.** That is what makes a meeting unable
   to be a hazard, and it is the reason a scene is on the far side of the hole
   rather than in the room you just cleared.
@@ -2249,13 +2264,9 @@ without being asked.
   question is now answerable rather than deferred: play it, and if it still
   feels like too much, measure the rate before changing it.
 - **A first descent can drop nothing at all.** Gear rolls at 5% a kill, so
-  about a third of first clears bank an empty haul — which is a new player
+  about a third of first clears bank nothing at all — which is a new player
   meeting the loop's payoff screen with nothing in it. A guaranteed first drop
   is the obvious answer. Written down as the opening's, and it outlived it.
-- **No per-item "keep" rule for the haul.** Every drop goes to the haul and
-  triage is manual. A filter that hides a drop is the kind of thing you only get
-  right once you know what a good drop looks like — and now that uniques drop,
-  the answer has moved.
 - **Blight, Strike and Fireball are not the same game.** The old note here said
   Blight cleared the top 12/12 against Strike's 3/12. That number is dead;
   `TRADE RULES` now measures all three at the deep end every run, and it reads

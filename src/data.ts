@@ -561,6 +561,100 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
   GEAR_BASES.map((b) => [b.id, b])
 );
 
+// --- what the filter is clicked in -----------------------------------------
+//
+// A group is a SET somebody builds toward — every mage piece, every bow — and
+// never one base at a time: 66 bases is a spreadsheet, where what you are
+// keeping is a build. Both halves are DERIVED from the tables above, so a
+// family or a weapon rung added there lands in a group without being listed
+// twice.
+
+export interface KeepGroup {
+  id: string;
+  name: string;
+  /** What the row holds, said in the names it actually drops under. */
+  detail: string;
+  holds(base: GearBase): boolean;
+}
+
+/** What an archetype is called to somebody choosing gear rather than reading
+ *  the table. `melee` is the one that has no obvious word for it. */
+const ARCHETYPE_NAME: Record<string, string> = {
+  melee: 'Tank',
+  spell: 'Mage',
+  rogue: 'Rogue',
+};
+
+const capitalise = (word: string): string => word[0].toUpperCase() + word.slice(1);
+
+/** One group per ARCHETYPE PAIRING, not per family: what a person means by
+ *  "mage gear" is both mage families, and a hybrid is a third thing again. */
+const armourGroups = (): KeepGroup[] => {
+  const out: KeepGroup[] = [];
+  for (const family of ARMOUR_FAMILIES) {
+    const key = family.archetypes.join('_');
+    if (out.some((g) => g.id === `armour_${key}`)) continue;
+    const kin = ARMOUR_FAMILIES.filter((f) => f.archetypes.join('_') === key);
+    out.push({
+      id: `armour_${key}`,
+      name: family.archetypes.map((a) => ARCHETYPE_NAME[a] ?? a).join(' / '),
+      detail: `${kin.map((f) => f.words[2]).join(' and ')} armour`,
+      holds: (base) => kin.some((f) => f.id === base.family),
+    });
+  }
+  return out;
+};
+
+const weaponGroups = (): KeepGroup[] => {
+  const out: KeepGroup[] = [];
+  for (const base of WEAPON_BASES) {
+    const family = base.family ?? base.id;
+    if (out.some((g) => g.id === `weapon_${family}`)) continue;
+    const kin = WEAPON_BASES.filter((b) => b.family === family);
+    out.push({
+      id: `weapon_${family}`,
+      name: `${capitalise(family)}s`,
+      detail: kin.map((b) => b.name).join(', '),
+      holds: (b) => b.family === family,
+    });
+  }
+  return out;
+};
+
+export const KEEP_GROUPS: KeepGroup[] = [
+  ...weaponGroups(),
+  {
+    id: 'shield',
+    name: 'Shields',
+    detail: SHIELD_BASES.map((b) => b.name).join(', '),
+    holds: (base) => base.kind === 'shield',
+  },
+  ...armourGroups(),
+  {
+    id: 'amulet',
+    name: 'Amulets',
+    detail: 'Bone, Jade and Onyx',
+    holds: (base) => base.kind === 'amulet',
+  },
+  {
+    id: 'ring',
+    name: 'Rings',
+    detail: 'Copper, Silver and Gold',
+    holds: (base) => base.kind === 'ring',
+  },
+];
+
+/** The group a base falls in. Every base is in exactly one; the demo holds it. */
+export const keepGroupFor = (base: GearBase): KeepGroup | undefined =>
+  KEEP_GROUPS.find((g) => g.holds(base));
+
+/** The filter's id for a base rung, alongside a group's. One namespace, so
+ *  `GameState.junk` is a flat list rather than two lists that can disagree. */
+export const tierKeepId = (tier: number): string => `t${tier}`;
+
+/** Rungs, low to high. Three of them, and `BASE_TIER_ILVL` is why. */
+export const KEEP_TIERS: number[] = BASE_TIER_ILVL.map((_, i) => i + 1);
+
 // --- mod pool --------------------------------------------------------------
 //
 // Tiers are authored best-first and gated by `ilvl`. Keep each slot type
@@ -2436,10 +2530,9 @@ export const ASTRAL_GEOMETER = {
 };
 
 /**
- * Something you carry to a PERSON. It is loot, so it lands in the haul like
- * everything else; it is never sold, never spent at the bench, and it is the
- * whole of what schedules the room of whoever wants it. One per world that
- * has somebody in it.
+ * Something you carry to a PERSON. It is loot, so it banks like everything
+ * else; it is never sold, never spent at the bench, and it is the whole of what
+ * schedules the room of whoever wants it. One per world with somebody in it.
  */
 export const RELICS: RelicDef[] = [
   {
@@ -2901,7 +2994,7 @@ export const BINDINGS: BindingDef[] = [
   { id: 'trade', what: 'Open your trade', key: 't' },
   { id: 'craft', what: 'Open the bench', key: 'b' },
   { id: 'shop', what: 'Open the shop', key: 'v' },
-  { id: 'haul', what: 'Open the haul', key: 'h' },
+  { id: 'filter', what: 'Open the auto-sell filter', key: 'j' },
   { id: 'crystals', what: 'Open the crystal collection', key: 'y' },
   { id: 'stash', what: 'Open the stash', key: 'x' },
   { id: 'history', what: 'Open the log', key: 'l' },

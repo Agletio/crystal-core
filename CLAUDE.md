@@ -724,7 +724,7 @@ measurement. Each has their OWN lines and refuses what the other works on.
 A **relic** (`RELICS` in `data.ts`) is a third `ItemKind` beside gear and
 crystals: `pristine_specimen` out of the Demonic zone, `prismatic_dust` out of
 the Prismatic one, each gated to exactly one world and rolled per kill off
-the sim's own rng. It is loot, so it lands in the haul like everything else, and
+the sim's own rng. It is loot, so it banks like everything else, and
 `GameState.relics` is where it goes when you take it out — uncapped for the
 reason crystals are, since nothing sells one and a cap could only lose it. Its
 own dock column, drawn only while you are holding something and with no click in
@@ -764,7 +764,7 @@ carrying the relic, so the same room is owed again.
 
 **IT SHOWS WHAT YOU ARE WEARING, and the DOCK is where a carried piece comes
 from.** *The user's call.* Everything you carried was in the bubble too, which
-is an inventory inside a speech bubble: at a real haul it ran off the side of
+is an inventory inside a speech bubble: at a full bag it ran off the side of
 the screen and pushed the lines you have to pick from off the bottom, so the
 bench could be opened and never used. Worn gear is a bounded list of slots, a
 piece he has no use for is DIMMED rather than dropped, and a carried one comes
@@ -1115,13 +1115,13 @@ swings starved, measured over real descents with the flasks firing themselves.
 
 You press Enter once. A cleared descent launches the next one by itself — that
 is not a setting and there is no checkbox for it — and it keeps going until it
-is stopped: **you die**, **the haul fills**, **someone is waiting at the
+is stopped: **you die**, **your bags fill**, **someone is waiting at the
 mouth**, or you say so. Saying so has two prices. **Leave after
 this run** finishes the descent you are in and banks it; **Abandon** walks out
 now, and that descent pays nothing — the same rule as dying in it. A meeting is
 the gentlest of the five and costs nothing at all: the descent is already
 cleared and banked when he climbs out, and he walks you up. Every one of the
-five ends on the same report and opens the same haul, so there is one screen
+five ends on the same report and opens the same dock, so there is one screen
 that means "the run is over, deal with your things", and what earlier clears
 banked is visible rather than assumed. Only the descent you are standing in can
 be lost; each clear banks as it happens and nothing reaches back for it.
@@ -1246,14 +1246,37 @@ something that happens on the way out. Reaching the hole is the clear. The exit
 is drawn as the hole it is — the same `mouth()` the entrance has — and nothing
 paints a marker over it.
 
-The **haul** (`GameState.haul`, `HAUL_CAP`) is where a cleared run's loot lands
-— never in your bags, which are yours to arrange. It is inert exactly as the
-stash is: take a piece out before it can be worn, crafted or socketed. Capacity
-is read BETWEEN runs and never during one, so `bankToHaul` refuses nothing and
-the haul ends up over its limit rather than a descent's drops being split.
+**THERE IS ONE CONTAINER AND IT IS YOUR BAG.** *The user's call: "remove the
+haul entirely and have everything just go into the inventory. Once full it
+stops and just let your inventory go over budget a bit if it happens to go over
+at the end of a floor."* The haul — a second inert pile a cleared run banked
+into, that you then took pieces out of — is gone, along with its screen, its
+Take what fits and its Sell all. `bankLoot` puts a cleared descent's drops
+straight into `GameState.inventory`, and `bagsFull` is what shuts the Fissure.
+Capacity is read BETWEEN runs and never during one, so a descent's drops arrive
+whole and the bag ends a floor at 35/32 rather than a run being cut in half.
+Being over is a real state: it draws no pads, and selling or stashing is the way
+back under. A full bag is the only thing that shuts the Fissure, and it can
+never wedge — selling needs room nowhere.
 
-A full haul is the only thing that shuts the Fissure, and it can never wedge:
-selling needs room nowhere.
+**AND THE FILTER IS WHAT KEEPS IT FROM FILLING.** `KEEP_GROUPS` in `data.ts` is
+what an auto-sell rule is clicked in, DERIVED from the tables rather than listed
+again: one group per armour ARCHETYPE PAIRING (`ARMOUR_FAMILIES.archetypes`, so
+Tank, Mage, Rogue and the three hybrids), one per weapon family, one for
+shields, one each for amulets and rings. Beside them are the three base RUNGS.
+A piece is kept when its rung is kept AND its group is, so "tier 3 mage gear" is
+two clicks rather than a row per combination; everything else is sold on the way
+up out of a cleared descent, at `sellPrice`, and never reaches a container at
+all.
+
+`GameState.junk` stores what is SOLD rather than what is kept — so an empty list
+keeps everything, which is what a fresh game and every save written before any
+of this both hold. A named piece is never junk, the same line the bulk sell
+button holds, and a filter sale stays OFF the counter: a descent's worth would
+push every deliberate sale off a twelve-deep shelf. `src/ui/filter.ts` is the
+screen, in the haul's old place on the rail, and it says what it would do to
+what you are carrying right now — a rule about loot nobody has found yet is one
+you set wrong and never find out about.
 
 ## The first thing you land on
 
@@ -1325,6 +1348,7 @@ src/skill-text.ts  the same for a skill slot: the sheet's numbers, on a hover
 src/game/graft.ts  a relic and one piece of armour, spent on a line no drop rolls
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/ui/pick.ts     character select: who you ARE, before a name or a skill
+src/ui/filter.ts   what comes up out of the Fissure, and what arrives as gold
 src/ui/dev.ts      the dev menu: any room now, any rung of gear now
 tools/boss-peek.mjs  THE ANSWERING, a whole cycle of it, off the bundle
 tools/theme-check.mjs  every colour a token, and every token defined
