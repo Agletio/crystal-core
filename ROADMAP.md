@@ -17,6 +17,20 @@ questions. **Say so and list them rather than inventing work.**
 
 ### Live known issues
 
+- **The mover NEVER fires while you are standing in a Fall circle.** Measured
+  across 72 boss fights at three rungs: 0 blinks and 0 leaps from inside one,
+  every time. `maybeMove` refuses a landing inside a circle, and Blink reaches
+  5 tiles against a `fallRadius` of 5.5 — so no waypoint it can reach is ever
+  outside. Leap's 6 clears it on paper and never in practice. **Quick's
+  `cooldown: 0.45` therefore buys nothing toward leaving a slam**; its
+  `move: 1.5` is the whole of what gets you out. Whether that is the intent is
+  an open question below.
+- **`ladderCharacter` equips no mover at all**, so every number the boss grid
+  prints is a character with an empty movement slot. It is not a wrong state — a
+  new character starts that way and equips one by hand on the Skills screen —
+  but it is worth 1/8 → 6/8 at the `met` rung, which is larger than anything the
+  balance pass is likely to move. Decide whether the grid should carry one
+  before tuning against it.
 - **`npm run shots` can go red on `desktop: the first descent never met the
   Lampwright`.** Two separate causes, and the cheap one is far commoner:
   **running it beside `demo` or `smoke`** starves the browser and it loses the
@@ -284,6 +298,20 @@ be picked up — they are decisions the user has not made. Ask before acting.
    was grid 96. Cost is grid SQUARED times frames. Nothing about "no binary
    assets" is under pressure and there is no decision to take; what is wanted is
    a number the user cares about (repo size, parse time on a cold load).
+
+10. **Is Quick meant to be SPEED, or the blink?** Its `blurb` sells both — "Half
+    again the speed and twice the blinks" — and only the first is doing anything.
+    Measured across 72 fights at three rungs, the mover fires 0 times from inside
+    a Fall circle, because `maybeMove` refuses a landing inside one and Blink
+    reaches 5 tiles against a `fallRadius` of 5.5. Three ways out, and they are
+    not the same game:
+    - **Leave it.** Quick is speed, `cooldown` is only for repositioning between
+      slams, and the blurb loses its second half.
+    - **Let the blink reach.** `distance` past 5.5, or `moveDistance` on the face
+      — a slam becomes something you press a button to leave, on a cooldown.
+    - **Let a landing sit inside a circle.** Cheapest, and the least honest: it
+      makes a blink out of one circle and into the next legal again, which
+      `maybeMove` refuses on purpose.
 
 ---
 
