@@ -527,6 +527,32 @@ and `forkDamage` are read by `projectile`, so Arc Lightning can buy Forks and
 Lightning Arrow can buy Arcs. That is the whole return on a keyword: learn it
 on one skill and it is free to read on the next.
 
+**A SKILL SAYS WHAT IT THROWS AND WHAT IT LEAVES, and both are table entries.**
+`SkillDef.vfxKind` is the thing in flight and `SkillDef.impact` is a second kind
+drawn where each of its HITS lands, emitted by the behaviour with a ttl of its
+own — what a shot leaves has to boil up, strike and break apart, and no
+projectile's life is long enough to hold that. It is generic: a skill with an
+impact draws it on every strike including a Fork, and a skill without one keeps
+the bare jag from two tiles up. A new effect is a row in a table and a branch in
+each renderer, never a new behaviour.
+
+**AN EFFECT'S GEOMETRY IS A PURE FUNCTION AND ITS PICTURE IS PIXI'S.**
+`arrowFlight`, `arrowSparks`, `stormCloud` and `stormBolts` in `renderer.ts` are
+the answer both renderers read, so what is drawn cannot come apart between them;
+the GENERATED still on top is Pixi's alone, exactly as a prop, a held weapon and
+a tileset are, and `canvas2d` draws the shape out of its own blocks. A flicker
+is hashed off POSITION and never off the clock — the arrow's crackle re-rolls
+because the head moves, which is the same rule `fireBolt`'s wobble follows.
+
+**EFFECT ART IS CROPPED TO ITS OWN INK AND SQUARED UP.** `square` in
+`portrait.mts`, for the `vfx` table only. The picture's edges are then the
+effect's edges and the renderer pins it by them — the arrow's head IS its right
+edge — which is why the arrow can be anchored at the point its flight has
+reached without anybody measuring the art. `keep` is the top fraction of the
+source worth having, and it exists because the generator hangs things under a
+cloud: asked twice, in the hardest words available, it drew a bolt and a ground
+shadow both times. Cropping the design is what takes those off, for nothing.
+
 **Mana is bought, never granted.** The pool does not grow with a character
 level. Life does, and one that grew alongside it would leave the cost
 meaningless by level 10 — the whole pressure is that casting more, or casting
@@ -2369,13 +2395,17 @@ balance number that reports and can never fail.
   - `tools/model-sheet.mts out.png` — every look, and `out-beasts.png` beside
     it with every creature at every rank. The only view that judges a halo.
   - `tools/model-peek.mts out.png family[,family]` — a few looks, drawn large.
-  - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale]` — a DESCENT
-    on the dev kit, off the committed bundle in real Chromium, because Pixi is
-    the only renderer that draws a generated tileset and a map cannot be drawn
-    out of the source. The crop is magnified NEAREST: every fault found this
-    way so far — the posts along the wall, the black scraps in the floor, the
-    seam where the drawn border stopped — was invisible at the size it ships at
-    and obvious at 5x.
+  - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale] [zone]
+    [hold] [skill] [shots]` — a DESCENT on the dev kit, off the committed
+    bundle in real Chromium, because Pixi is the only renderer that draws a
+    generated tileset and a map cannot be drawn out of the source. The crop is
+    magnified NEAREST: every fault found this way so far — the posts along the
+    wall, the black scraps in the floor, the seam where the drawn border
+    stopped — was invisible at the size it ships at and obvious at 5x. An
+    EFFECT needs the last two: it belongs to a skill, and it is over in a fifth
+    of a second, so one frame behind the default skill can never hold one.
+    `shots` takes frames as fast as they can be taken and numbers all but the
+    last, which keeps the name asked for.
   - `tools/zone-peek.mts out.png [px] [time] [span]` — all four zones off a
     real generated map, centred on the entrance. **`span` must be EVEN**: it is
     halved to find the corner, and an odd one lands the loop on half-tiles and

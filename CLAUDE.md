@@ -49,7 +49,7 @@ thing worth pausing for, and pausing between phases is not.
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run shots` | ~5min: all 30 screens against a checklist, and an overflow probe |
 | `npm run drag` | 20s: the dock reorders, and a window goes where you put it |
-| `npm run peek` | a DESCENT, at a zoom, a pan and a magnified crop |
+| `npm run peek` | a DESCENT, at a zoom, a pan, a crop, a skill and a burst of frames |
 
 **Run what the change can reach, not the whole suite** — `RULES.md` has the
 table. **Nothing teaches, by decision:** the guided
@@ -903,6 +903,34 @@ Lightning Arrow can buy Arcs, which is what a keyword is for.
 Neither skill needed a new behaviour. Both are `projectile`, told apart by
 their `params`, their tags and their trees — the same way Fireball is.
 
+**AN ARROW IS A PICTURE THAT FLIES, AND A STORM OPENS WHERE IT LANDS.**
+*The user's call: "redo the lightning arrow animation so it looks like an actual
+arrow with lightning around it when it's flying. When it hits a target have a
+cloud appear floating a decent amount above the enemy and then have lightning
+bolts come down from the cloud."* `VFX_ART` in `src/render/generated-vfx.ts` is
+the two generated stills — `arrow` and `storm` — and `renderer.ts` is the
+geometry both renderers read: `arrowFlight` is where the head has got to and
+which way it points, `arrowSparks` the lightning wrapped round the shaft,
+`stormCloud` the cloud `STORM_HEIGHT` = 3 tiles over what was hit, `stormBolts`
+the three that come down out of it one after another. Pixi lays the pictures on
+that out of a pooled sprite layer over the blocks; `canvas2d` has no sprites and
+draws `arrowShaft` and `stormPuffs` instead, which is the same split the props
+and the tilesets already follow.
+
+**`SkillDef.impact` is a second kind drawn where each of a shot's HITS lands**,
+with a ttl of its own because a cloud outlives the shot by a long way. It is
+generic — any skill may name one — and it is what makes a Fork the same storm
+as the shot rather than a bare jag from two tiles up.
+
+An effect is asked for through `tools/art/vfx.json` and the same `icon.mts` the
+UI icons go through: a words-file carries its own framing, palette and size.
+`portrait.mts <id> <png> <grid> vfx <keep>` imports it, `keep` being the top
+fraction of the source worth having — **the cloud came back twice with a bolt
+and a ground shadow hung under it, and cropping the design is what took them
+off for nothing.** Effect art is then cropped to its own INK and squared up, so
+the picture's edges are the effect's edges and the arrow's head is its right
+edge, which is what the renderer pins it by.
+
 ## Three skills at once
 
 `SKILL_SLOTS` in `data.ts` is a TABLE like `EQUIP_SLOTS` and `RUN_SLOTS`, never
@@ -1379,7 +1407,7 @@ been walked to.
 
 ```
 tools/art/mcp.mts  the generator, over JSON-RPC; tables.mts pulls art in
-tools/art/icon.mts a UI icon: icons.json is the words, portrait.mts the table
+tools/art/icon.mts a still: icons.json or vfx.json is the words, portrait.mts the table
 tools/art/uikit.mts the fixture kit: uikit.json the words, generated-ui.ts the art
 tools/art/body.mts a body: ask it, animate one facing, judge it, fill the rest
 tools/art/dress.mts a whole LOOK onto an existing character, every rotation

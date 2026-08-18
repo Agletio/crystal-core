@@ -6,6 +6,26 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**LIGHTNING ARROW HAS AN ANIMATION, off a direct ask.** *"Redo the lightning
+arrow animation so it looks like an actual arrow with lightning around it when
+it's flying. When it hits a target have a cloud appear floating a decent amount
+above the enemy and then have lightning bolts come down from the cloud."* It
+draws as a GENERATED arrow rotated to its flight with lightning wrapped round
+the shaft, and every hit opens a generated cloud three tiles over the victim
+that throws three bolts down onto it. Three generations, all pixflux: one arrow
+and two clouds, the second and third of which taught that a composition the
+model wants to draw is cropped rather than argued with. `SkillDef.impact` is
+the seam and is generic, `VFX_ART` is the table, and `vfx.json` is the words —
+`CLAUDE.md` has the mechanism and `RULES.md` the rules it is held to.
+
+**What this left open.** The cloud sits three tiles over the entity's FOOT, so
+on a body as tall as the Gaunt it lands at the chest rather than clear of the
+head; a height that read off the body's own scale would want the sim to carry
+it in the vfx, which is a change to what a vfx point MEANS. Nothing else in the
+game needs that yet. And a bow is still fired point blank — the hero closes to
+the range the pack closes to — which is why the arrow flies slower than a
+fireball: the shot mostly crosses one tile.
+
 **A BOW IS NOW A BODY OF ITS OWN, and the tool for it was already here.**
 `create_character_state` regenerates an existing character with an edit applied
 across every rotation, keeping the same man AND his skeleton — so the variant
@@ -1192,6 +1212,14 @@ look is a row in `GENERATED` like every other body.
 
 **The pitfalls that cost real time here, in the order they will bite.**
 
+- **A COMPOSITION THE MODEL WANTS TO DRAW IS NOT ARGUED OUT OF IT — IT IS
+  CROPPED.** Asked for a storm cloud alone, pixflux drew the cloud and hung a
+  bolt, a column and a ground shadow under it. Re-asked with every one of those
+  named as a NOT and the word "storm" dropped for "rain cloud", it drew the
+  cloud and hung rain and a smaller bolt under it. Two generations to learn
+  that the model has one idea of what belongs under a cloud. The `keep`
+  fraction in `portrait.mts` took it off for nothing, and this is the same
+  lesson the Lampwright's mound taught: **cut the DESIGN, do not re-ask it.**
 - **THE DOCS HOLD TOOLS NOBODY HERE KNEW ABOUT, and they change the plan.**
   `create_character_state` (an edit applied across every rotation, keeping
   identity), `edit_image` (one edit across a LIST of frames, billed by the
