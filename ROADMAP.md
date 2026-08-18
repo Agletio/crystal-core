@@ -6,15 +6,26 @@ or something you need in order to do one, it is in the wrong file.
 
 ## Where this stands
 
+**BOTH ATTACK ANIMATIONS WERE REDONE TO END FORWARD.** *"The last frame the
+arms like flip backwards."* They did: the source generations turned the body
+right round over their last three frames, and since a one-shot state HOLDS its
+last frame that was what stayed on screen. The cause was the description asking
+for a recovery — "settles back upright" — which is the beat a generation drifts
+in and the one the renderer never shows anyway. Both `say` lines now state that
+he faces the same way in every frame and that the animation ENDS at full forward
+extension, and both were regenerated at 8 frames. Windowing could not have
+fixed it: neither source contained a forward strike at all.
+
 **A WEAPON IS NOW PINNED TO THE HAND, for zero generations.** *"Is there a way
 we can pin a bow to the character when they have a bow etc? like all the time
 same with all the weapons?"* — yes, and the fallback the user named (bow, 1h
 melee and 2h melee body VARIANTS, "way more but idk what else to do") is not
 needed. `HELD` in `src/render/held.ts` draws the item's own inventory icon at a
 hand; `HERO_HANDS` is a hand per FRAME, authored off the art rather than off a
-formula. Both heroes hold all five families. What is NOT done: the OFF hand — a
-shield is not drawn — and the two hand tables cover `attack` and `cast` only, so
-`hurt` and `death` fall back to the resting hand. Both are table rows, not
+formula. Both heroes hold all five families, across `idle`, `walk`, `attack` and
+`cast`, and a bow rides a TRACK of its own so it follows the bracing arm rather
+than the striking one. What is NOT done: the OFF hand — a shield is not drawn —
+and `hurt` and `death` fall back to the resting hand. Both are table rows, not
 mechanism.
 
 **THE HAUL IS GONE AND THE FILTER REPLACED IT, off a direct ask.** *"Remove the

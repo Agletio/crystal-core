@@ -245,9 +245,9 @@
      "frames": 6
     },
     "attack": {
-     "group": "cc2295b3-7654-469e-bd09-2b9206c947b8",
+     "group": "254ff396-e580-457b-ae8a-b38d23e52dc7",
      "frames": 4,
-     "to": 0.82
+     "from": 0.34
     },
     "cast": {
      "group": "37a5091e-b86e-4910-96fa-c598f03753cf",
@@ -279,9 +279,9 @@
      "frames": 6
     },
     "attack": {
-     "group": "e3a682c7-01b5-4826-ae8f-270f158763b4",
+     "group": "4626ab2f-e888-410a-9eea-bee3cf259104",
      "frames": 4,
-     "to": 0.82
+     "from": 0.34
     },
     "cast": {
      "group": "18be27af-1d92-4b94-9bb4-670b5365fd0f",

@@ -122,10 +122,21 @@ same arc and nothing in a body's frames says which it is. `generatedBeat` in
 showing, so the weapon and the arm cannot pick different beats. `HeldSpec.turn`
 is the angle that hangs a weapon's BUSINESS END DOWN — a sword is drawn
 blade-down and takes none, a mace and a wand are drawn head-UP and take half a
-turn — which is what lets one hand table swing all five. **A BOW takes no hand
-at all**: it is held out and drawn, so the arm punching past it reads as the bow
-arm going with it, where a swept bow reads as a club. Only Pixi draws one;
+turn — which is what lets one hand table swing all five. **A weapon may ride a
+TRACK of its own**: `HeldSpec.track` names a second run per state, keyed
+`<state>/<track>`, because a bow lives in the LEAD hand where a sword is swung
+by the other — so `attack/bow` follows the bracing arm while `attack` follows
+the striking one, and both move with the animation. Only Pixi draws one;
 `canvas2d` has no sprites and never did.
+
+**An attack ENDS at full forward extension, and never recovers.** Both heroes'
+swings were regenerated for it. The old descriptions asked for three beats
+finishing "settles back upright", and a recovery is exactly where a generation
+drifts: the last frames turned the body right round, so the held frame was the
+hero facing backwards with his arms behind him. The words now say he faces the
+same way in EVERY frame and that the animation ENDS at the strike, with no
+recovery — and since `generatedFrame` holds the last frame anyway, a recovery
+was never drawn on screen for anything but the drift it brought.
 
 **Equipped gear does not change the SPRITE, and there is no longer any art that
 could.** The paper doll is GONE — `body.ts`, `gear-art.ts`, `look.ts`, `pose.ts`,

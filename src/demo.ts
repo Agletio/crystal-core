@@ -1578,17 +1578,36 @@ rule('SPRITES — is the pixel art well formed?');
         [...wrong, ...nothing.map((f) => `${f} holds nothing`)].join('; ')
       );
 
+      // A run may be a TRACK — `attack/bow` is the same animation held in the
+      // other hand — so the state is what is left of the key.
       for (const [sprite, states] of Object.entries(HERO_HANDS)) {
         const art = GENERATED[sprite];
         if (!art) {
           wrong.push(`${sprite} is not a generated body`);
           continue;
         }
-        for (const [state, run] of Object.entries(states)) {
+        for (const [key, run] of Object.entries(states)) {
+          const [state, track] = key.split('/');
           const own = art.states[state];
-          if (!own) wrong.push(`${sprite}/${state} is not a state it has`);
+          if (track && !Object.values(HELD).some((h) => h.track === track)) {
+            wrong.push(`${sprite}/${key}: nothing rides the ${track} track`);
+          }
+          if (!own) wrong.push(`${sprite}/${key} is not a state it has`);
           else if (own.length !== run.length) {
-            wrong.push(`${sprite}/${state}: ${run.length} hands over ${own.length} frames`);
+            wrong.push(`${sprite}/${key}: ${run.length} hands over ${own.length} frames`);
+          }
+        }
+      }
+      // And every track a weapon names is authored for every hero, or it
+      // silently falls back to the swinging hand — which is the other arm.
+      for (const spec of Object.values(HELD)) {
+        if (!spec.track) continue;
+        for (const [sprite, states] of Object.entries(HERO_HANDS)) {
+          for (const key of Object.keys(states)) {
+            if (key.includes('/')) continue;
+            if (!states[`${key}/${spec.track}`]) {
+              wrong.push(`${sprite}/${key} has no ${spec.track} track`);
+            }
           }
         }
       }

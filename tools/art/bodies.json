@@ -312,8 +312,8 @@
      "say": "walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him"
     },
     "attack": {
-     "frames": 10,
-     "say": "a three-beat BACKHAND STRIKE seen at a three-quarter angle: first he coils, weight onto the back foot and the striking arm drawn across his own chest, then he uncoils and lashes the arm out sideways at head height, hips and shoulders whipping round after it, then the arm falls and he settles back upright. Whole body turns into it"
+     "frames": 8,
+     "say": "a two-beat BACKHAND STRIKE seen at a three-quarter angle. He faces the same way in EVERY frame and never turns round or away from the viewer. First he coils with the weight on the back foot and the striking arm drawn across his own chest, then he lashes that arm out FORWARD at head height and steps through onto the front foot, and the animation ENDS there with the arm at full stretch out in front of him. There is no recovery and no settling back: the last frame is the arm at its furthest forward. Neither arm ever goes behind his back"
     },
     "cast": {
      "frames": 10,
@@ -341,8 +341,8 @@
      "say": "walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him"
     },
     "attack": {
-     "frames": 10,
-     "say": "a three-beat OVERHEAD SMASH seen at a three-quarter angle: first he raises one gauntleted fist high above his head, weight on the back foot, then he drives it down and forward onto the front foot, torso folding over the blow, then he straightens back up. Whole body turns into it"
+     "frames": 8,
+     "say": "a two-beat OVERHEAD SMASH seen at a three-quarter angle. He faces the same way in EVERY frame and never turns round or away from the viewer. First he raises one gauntleted fist high above his head with the weight on his back foot, then he drives it down and FORWARD in front of his chest, stepping onto the front foot, and the animation ENDS there with that arm extended forward and low in front of him. There is no recovery and no settling back: the last frame is the arm at its furthest forward. Neither arm ever goes behind his back"
     },
     "cast": {
      "frames": 10,

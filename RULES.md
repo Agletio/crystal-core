@@ -1588,7 +1588,18 @@ BODY is still `TradeSpec.sprite` alone and no equipment may ever change it.
 each run to exactly the length of the state it pins to — a formula is not
 allowed here, because an overhead smash and a backhand are different arcs.
 `generatedBeat` is the ONE answer for which state and frame is showing, so the
-weapon and the arm cannot disagree. Only Pixi draws one.
+weapon and the arm cannot disagree. A weapon may ride a TRACK — `HeldSpec.track`
+keys a second run `<state>/<track>` — because a bow is held in the LEAD hand and
+a sword is swung by the other; the demo fails a track a hero has not authored
+for every state, since a missing one silently falls back to the wrong arm. Only
+Pixi draws one.
+
+**AN ATTACK ANIMATION ENDS AT THE STRIKE, and is never asked to recover.** The
+renderer plays a one-shot state once and HOLDS its last frame, so a recovery
+beat is never seen except as the drift it brings — and it brought the worst
+kind: the body turned right round and the held frame was a hero facing
+backwards. Every `say` for a swing states that he faces the same way in every
+frame and that the animation ENDS at full forward extension.
 
 **The auto-sell filter is clicked in what you KEEP and stored as what you
 SELL.** `KEEP_GROUPS` and `KEEP_TIERS` in `src/data.ts` are the rows — derived
