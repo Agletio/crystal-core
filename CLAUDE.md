@@ -144,8 +144,9 @@ DRAWN**: `HANDS_DRAWN` is the off hand then the main one, `Entity.held` and
 does NOT strike; `HeldSpec.reach` is how far FORWARD of that hand a thing sits,
 because a bow is held out at arm's length where a shield is strapped at the
 arm — the hand is where the hand is, so the difference belongs to the weapon.
-The off hand draws OVER the main one, so a shield covers the grip of what is
-held beside it, which is what a shield in front of you does. Only Pixi draws
+`HeldSpec.behind` draws a thing UNDER its own body — a shield is on the arm you
+cannot see, and nothing a body carries may ever occlude the body, since which
+hero you are looking at is the silhouette. Only Pixi draws
 one; `canvas2d` has no sprites and never did.
 
 **An attack ENDS at full forward extension, and never recovers.** Both heroes'

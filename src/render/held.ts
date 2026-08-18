@@ -29,6 +29,9 @@ export interface HeldSpec {
    *  bow is held out at arm's length; a shield is strapped at the arm. The
    *  hand is where the hand is, so this belongs to the weapon. */
   reach?: number;
+  /** Drawn UNDER the body rather than over it, which is what puts a thing on
+   *  the arm you cannot see. The body is never occluded by what it carries. */
+  behind?: boolean;
 }
 
 /** By the base's `art` — a weapon's is its FAMILY, so one row covers a rung. */
@@ -38,7 +41,12 @@ export const HELD: Record<string, HeldSpec> = {
   dagger: { icon: 'gear_dagger', grip: [0.5, 0.3], size: 0.7, turn: 0.5 },
   mace: { icon: 'gear_mace', grip: [0.5, 0.7], size: 1.0, turn: Math.PI + 0.5 },
   wand: { icon: 'gear_wand', grip: [0.5, 0.55], size: 0.62, turn: Math.PI + 0.5 },
-  shield: { icon: 'gear_shield', grip: [0.5, 0.45], size: 0.46, turn: 0, track: 'off', reach: -0.01 },
+  // BEHIND the body and on the FAR arm: a shield drawn over the chest hides the
+  // figure it belongs to, and which hero you are looking at is the silhouette.
+  shield: {
+    icon: 'gear_shield', grip: [0.5, 0.45], size: 0.5, turn: 0,
+    track: 'off', reach: -0.05, behind: true,
+  },
 };
 
 export interface Hand {

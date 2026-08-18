@@ -1602,6 +1602,13 @@ sheet, so the numbers ARE the record. The scratch sheet is regenerated from the
 same table it feeds, which is what makes a re-mark cheap: draw on the current
 placement, read the dots back, done.
 
+**NOTHING A BODY CARRIES MAY OCCLUDE THE BODY.** *The user's call: "layer to
+where character is always above the shield and just have it behind the
+character so it's always on the other side."* `HeldSpec.behind` inserts the
+sprite UNDER its own body in `entityLayer`, which is what puts a shield on the
+far arm; a shield drawn over the chest hid the figure, and which hero you are
+looking at is the silhouette.
+
 **A BODY THAT DRAWS ITS OWN WEAPON IS NEVER ALSO PINNED ONE.** `HOLDING` in
 `src/sim/appearance.ts` maps a `HELD` row to the `<body>_<suffix>` variant that
 draws it, `heroSpriteFor` answers that variant where the art exists, and

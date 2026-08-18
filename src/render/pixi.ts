@@ -736,10 +736,11 @@ export async function createPixiRenderer(
     }
     if (!h) {
       h = new Sprite(texture);
-      // Over its own body, and the OFF hand over the main one: `HANDS_DRAWN`
-      // inserts in that order, so a shield covers the grip of what it is
-      // being held beside, which is what a shield in front of you does.
-      entityLayer.addChildAt(h, entityLayer.getChildIndex(body) + 1);
+      // A BEHIND thing goes under its own body — a shield is on the arm you
+      // cannot see, and nothing a body carries may occlude the body. The rest
+      // go over it, off hand last, so a shield's own strap-arm covers nothing.
+      const at = entityLayer.getChildIndex(body);
+      entityLayer.addChildAt(h, spec.behind ? at : at + 1);
       helds.set(key, h);
     }
     h.texture = texture;
