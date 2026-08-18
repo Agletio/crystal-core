@@ -10,8 +10,8 @@ or something you need in order to do one, it is in the wrong file.
 arrow animation so it looks like an actual arrow with lightning around it when
 it's flying. When it hits a target have a cloud appear floating a decent amount
 above the enemy and then have lightning bolts come down from the cloud."* It
-draws as a GENERATED arrow rotated to its flight with lightning wrapped round
-the shaft, and every hit opens a generated cloud three tiles over the victim
+draws as a GENERATED arrow rotated to its flight — bare, since *"just have the
+arrow fly"* — and every hit opens a generated cloud three tiles over the victim
 that throws three bolts down onto it. Three generations, all pixflux: one arrow
 and two clouds, the second and third of which taught that a composition the
 model wants to draw is cropped rather than argued with. `SkillDef.impact` is
@@ -25,6 +25,16 @@ it in the vfx, which is a change to what a vfx point MEANS. Nothing else in the
 game needs that yet. And a bow is still fired point blank — the hero closes to
 the range the pack closes to — which is why the arrow flies slower than a
 fireball: the shot mostly crosses one tile.
+
+**THE ARROW LOST ITS LIGHTNING AND BLIGHT BECAME A POOL.** *"Remove the yellow
+lightning from the arrow when it's travelling, just have the arrow fly"* — the
+crackle was in TWO places, `arrowSparks` in the geometry and gold zigzags
+painted into the sprite itself, so the words were rewritten and the picture
+re-asked. Blight is now `poison_pool` and `poison_drop`: a splat on the ground
+under the bodies with globs falling into it, stretched along their own fall.
+Three generations. `vfxGroundLayer` is the new seam — effect art that lies on
+the FLOOR goes under the entities, and `descent-peek` now SPACES its shots,
+which back to back were all one instant and no use for judging an effect.
 
 **A BOW IS NOW A BODY OF ITS OWN, and the tool for it was already here.**
 `create_character_state` regenerates an existing character with an edit applied

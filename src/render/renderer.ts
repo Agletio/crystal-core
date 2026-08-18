@@ -1675,9 +1675,8 @@ export interface Flight {
 
 /**
  * Where the arrow has got to and which way it is pointing. One answer for the
- * sprite Pixi lays down, the shaft canvas2d draws instead, and the lightning
- * both wrap round it — three drawings of one arrow may not disagree about
- * where it is.
+ * sprite Pixi lays down and the shaft canvas2d draws instead, so two drawings
+ * of one arrow cannot disagree about where it is.
  */
 export function arrowFlight(from: Vec2, to: Vec2, t: number): Flight {
   const travel = Math.min(1, t * ARROW_SPEED);
@@ -1695,56 +1694,6 @@ function along(from: Vec2, to: Vec2): { ux: number; uy: number; nx: number; ny: 
   const dy = to.y - from.y;
   const span = Math.hypot(dx, dy) || 1;
   return { ux: dx / span, uy: dy / span, nx: -dy / span, ny: dx / span };
-}
-
-/**
- * The lightning WRAPPED round the shaft: blocks either side of the arrow, and
- * two short branches thrown off it. Hashed off where the head has got to rather
- * than off the clock, so it re-rolls as the arrow flies and both renderers
- * crackle identically.
- */
-export function arrowSparks(from: Vec2, to: Vec2, t: number): FirePixel[] {
-  const flight = arrowFlight(from, to, t);
-  const { ux, uy, nx, ny } = along(from, to);
-  const salt = Math.round(flight.x * 12) * 31 + Math.round(flight.y * 12);
-  const pixels: FirePixel[] = [];
-  if (flight.alpha <= 0) return pixels;
-
-  const STEPS = 11;
-  for (let i = 0; i < STEPS; i++) {
-    const back = (i / STEPS) * ARROW_SPAN;
-    const noise = tileNoise(i, salt, 89);
-    // Sides ALTERNATE and the hash only says how far, the same rule the arc
-    // follows: hashed sides land together half the time and read as a wobble.
-    const off = (i % 2 === 0 ? 1 : -1) * (0.03 + noise * 0.11);
-    pixels.push({
-      x: onGrid(flight.x - ux * back + nx * off),
-      y: onGrid(flight.y - uy * back + ny * off),
-      size: FIRE_PX * (noise > 0.62 ? 2 : 1),
-      shade: noise > 0.74 ? 2 : 1,
-      alpha: flight.alpha * (noise > 0.3 ? 1 : 0.55),
-    });
-  }
-
-  // Two branches leaving the shaft entirely, which is the part that says
-  // lightning rather than a glow painted along a stick.
-  for (let b = 0; b < 2; b++) {
-    const root = (0.2 + b * 0.4) * ARROW_SPAN;
-    const away = tileNoise(b, salt, 101) > 0.5 ? 1 : -1;
-    const reach = 0.12 + tileNoise(b, salt, 103) * 0.2;
-    for (let s = 1; s <= 4; s++) {
-      const out = (s / 4) * reach;
-      const bend = Math.sin((s / 4) * Math.PI * 2) * FIRE_PX * 1.5;
-      pixels.push({
-        x: onGrid(flight.x - ux * (root + out * 0.4) + nx * away * out + ux * bend),
-        y: onGrid(flight.y - uy * (root + out * 0.4) + ny * away * out + uy * bend),
-        size: FIRE_PX,
-        shade: s > 2 ? 0 : 1,
-        alpha: flight.alpha * (1 - s / 5) * 0.9,
-      });
-    }
-  }
-  return pixels;
 }
 
 /** The arrow ITSELF, for the renderer with no sprites: a gold dart with a
@@ -1908,18 +1857,20 @@ export interface PoisonDrop {
   /** Radius of the droplet, in tiles. */
   r: number;
   alpha: number;
+  fall: number; // 0 leaving the sky, 1 landing: Pixi stretches the glob by it
 }
 
 /** How many droplets fall per field. Enough to read as rain, cheap to draw. */
 const DROP_COUNT = 16;
 /** How far above the ground a droplet starts, in tiles. */
-const DROP_HEIGHT = 1.15;
+const DROP_HEIGHT = 2.6;
 /** Fraction of the effect's life spent snapping open. */
 const OPEN = 0.16;
 
 /**
- * Snaps open, then HOLDS at the true radius. Appearing at full size reads as an
- * aura; the hold is what keeps it a statement about what got caught.
+ * Snaps open, then HOLDS at the true radius: appearing at full size reads as an
+ * aura. The POOL picture is drawn to this, so the art and what the sim
+ * poisoned cannot disagree.
  */
 export function poisonFieldRadius(radius: number, t: number): number {
   if (t >= OPEN) return radius;
@@ -1955,6 +1906,7 @@ export function poisonDrops(
       // a second effect.
       r: 0.05 + 0.035 * fall,
       alpha: Math.min(1, fall * 4) * (1 - fall) * 1.5 * (1 - t),
+      fall,
     });
   }
   return drops;

@@ -908,11 +908,23 @@ their `params`, their tags and their trees — the same way Fireball is.
 arrow with lightning around it when it's flying. When it hits a target have a
 cloud appear floating a decent amount above the enemy and then have lightning
 bolts come down from the cloud."* `VFX_ART` in `src/render/generated-vfx.ts` is
-the two generated stills — `arrow` and `storm` — and `renderer.ts` is the
-geometry both renderers read: `arrowFlight` is where the head has got to and
-which way it points, `arrowSparks` the lightning wrapped round the shaft,
+the generated stills and `renderer.ts` is the geometry both renderers read:
+`arrowFlight` is where the head has got to and which way it points,
 `stormCloud` the cloud `STORM_HEIGHT` = 3 tiles over what was hit, `stormBolts`
-the three that come down out of it one after another. Pixi lays the pictures on
+the three that come down out of it one after another. **Nothing is wrapped
+round the arrow** — *the user's call, "just have the arrow fly"* — so the
+crackle geometry is gone and the picture was regenerated without the lightning
+that was painted into it.
+
+**AND CREEPING BLIGHT IS A POOL WITH POISON FALLING INTO IT.** *The user's
+call.* `poison_pool` and `poison_drop` are two more `VFX_ART` rows;
+`poisonFieldRadius` still snaps the field open and holds it, and the pool
+picture is drawn to exactly that, so the art and what the sim poisoned cannot
+disagree. `poisonDrops` carries a `fall` per glob and Pixi stretches the
+picture along it, so a drop lengthens as it comes down and squashes as it
+lands. The pool goes in `vfxGroundLayer`, UNDER the bodies — a pool drawn over
+them is a lid on the fight — and it is faint, because a cast lasts 10s at
+nearly one a second and several lie on top of each other. Pixi lays the pictures on
 that out of a pooled sprite layer over the blocks; `canvas2d` has no sprites and
 draws `arrowShaft` and `stormPuffs` instead, which is the same split the props
 and the tilesets already follow.

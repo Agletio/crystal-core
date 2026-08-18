@@ -208,9 +208,13 @@ async function frame() {
   return Buffer.from(png, 'base64');
 }
 
-// The last one keeps the name asked for, so a single shot is one file.
+// The last one keeps the name asked for, so a single shot is one file. They are
+// SPACED: taken back to back they are all the same instant, which is no use at
+// all for the thing `shots` exists for — watching an effect run.
+const APART = 220;
 for (let i = 0; i + 1 < Number(shots); i++) {
   await writeFile(out.replace(/\.png$/, `-${String(i).padStart(2, '0')}.png`), await frame());
+  await page.waitForTimeout(APART);
 }
 await writeFile(out, await frame());
 

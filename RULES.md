@@ -537,7 +537,7 @@ the bare jag from two tiles up. A new effect is a row in a table and a branch in
 each renderer, never a new behaviour.
 
 **AN EFFECT'S GEOMETRY IS A PURE FUNCTION AND ITS PICTURE IS PIXI'S.**
-`arrowFlight`, `arrowSparks`, `stormCloud` and `stormBolts` in `renderer.ts` are
+`arrowFlight`, `stormCloud`, `stormBolts` and `poisonDrops` in `renderer.ts` are
 the answer both renderers read, so what is drawn cannot come apart between them;
 the GENERATED still on top is Pixi's alone, exactly as a prop, a held weapon and
 a tileset are, and `canvas2d` draws the shape out of its own blocks. A flicker
@@ -1634,6 +1634,11 @@ character so it's always on the other side."* `HeldSpec.behind` inserts the
 sprite UNDER its own body in `entityLayer`, which is what puts a shield on the
 far arm; a shield drawn over the chest hid the figure, and which hero you are
 looking at is the silhouette.
+
+**EFFECT ART THAT LIES ON THE FLOOR GOES UNDER THE BODIES.** `vfxGroundLayer`
+sits between the props and the entities and `effectSprite(..., ground)` puts a
+picture there — a poison pool over the pack it caught is a lid on the fight.
+Everything in the AIR keeps `vfxArtLayer`, over the lot.
 
 **A BODY THAT DRAWS ITS OWN WEAPON IS NEVER ALSO PINNED ONE.** `HOLDING` in
 `src/sim/appearance.ts` maps a `HELD` row to the `<body>_<suffix>` variant that

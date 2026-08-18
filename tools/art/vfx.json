@@ -1,5 +1,5 @@
 {
- "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws — canvas2d has no sprites and keeps its blocks.",
+ "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws \u2014 canvas2d has no sprites and keeps its blocks.",
  "_how": "An effect is drawn in the WORLD at about a tile across and is laid over a lit stone floor, so: no ground, no shadow, no actor holding it, and the thing itself is the only light in the frame.",
  "_inks": "Storm greys and near-black, with the game's own lightning gold (--citrine #D9A441) and a white core. A bolt is the one saturated ink.",
  "size": 64,
@@ -24,12 +24,21 @@
   "#D9A441",
   "#F5C24A",
   "#FFE9A8",
-  "#FFFFFF"
+  "#FFFFFF",
+  "#0B1A0E",
+  "#16301A",
+  "#22471F",
+  "#325E24",
+  "#47792B",
+  "#5F9433",
+  "#7CB03D",
+  "#9CCB4E",
+  "#C3E27A"
  ],
  "icons": [
   {
    "id": "arrow",
-   "say": "a single arrow flying level and pointing RIGHT, drawn horizontally across the middle of the frame: a dark wooden shaft, a sharp pale steel broadhead at the right end, three short grey feathers at the left end, and gold-white lightning crackling along and around the shaft in short forked branches, brightest at the head. NOT a bow, NOT a bowstring, NOT a hand, NOT a quiver, NOT a target, NOT an arrow pointing any other way.",
+   "say": "a single arrow flying level and pointing RIGHT, drawn horizontally across the middle of the frame: a dark wooden shaft, a sharp pale steel broadhead at the right end, three short grey feathers at the left end, and nothing else at all. NOT lightning, NOT sparks, NOT electricity, NOT a glow, NOT gold, NOT yellow, NOT fire, NOT a trail, NOT a bow, NOT a bowstring, NOT a hand, NOT a quiver, NOT a target, NOT an arrow pointing any other way.",
    "grid": 48
   },
   {
@@ -37,6 +46,17 @@
    "say": "ONE small dark RAIN CLOUD alone in empty space, seen from the side, wider than it is tall, dark blue-grey and heavy, lumpy billowed top, flat ragged underside, a faint warm gold glow buried inside it. Nothing at all beneath it: empty transparent space below the cloud and all round it. NOT an explosion, NOT a mushroom cloud, NOT a tornado, NOT a funnel, NOT a column, NOT a beam, NOT a stem, NOT a bolt, NOT rain falling, NOT a ground, NOT a shadow, NOT a horizon, NOT smoke, NOT a face.",
    "size": 96,
    "keep": 0.58
+  },
+  {
+   "id": "poison_pool",
+   "say": "ONE shallow POOL of thick sickly green poison lying flat on the ground, seen from ABOVE and slightly to the side, wider than it is tall: an irregular rounded splat with a ragged dripping edge, a few fat bubbles rising in it, a paler acid-green sheen across the middle and a dark bile-green rim. It sits alone in empty transparent space. NOT a sphere, NOT a ball, NOT a bottle, NOT a flask, NOT a cauldron, NOT a skull, NOT a face, NOT a splash rising up, NOT a ground, NOT a floor, NOT a shadow, NOT a container.",
+   "size": 96,
+   "keep": 1
+  },
+  {
+   "id": "poison_drop",
+   "say": "ONE single falling GLOB of thick sickly green poison, seen from the side, taller than it is wide: a fat rounded blob at the BOTTOM drawn out into a thin tapering tail above it, like a heavy droplet mid-fall, dark bile-green with a paler acid-green highlight down one side. It is alone in empty transparent space. NOT a bottle, NOT a flask, NOT a vial, NOT a bubble, NOT a leaf, NOT a flame, NOT a splash, NOT a puddle, NOT a ground, NOT a shadow, NOT rain, NOT several drops.",
+   "grid": 48
   }
  ]
 }

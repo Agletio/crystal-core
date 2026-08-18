@@ -16,7 +16,6 @@ import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
   arrowShaft,
-  arrowSparks,
   auraLook,
   bossTelegraph,
   dazeMarks,
@@ -410,10 +409,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       } else if (fx.kind === 'shard') {
         blocks(v, frostShard(from, to, t), fx.damageType, 1);
       } else if (fx.kind === 'arrow') {
-        // No sprites here, so the arrow is drawn out of the same blocks its
-        // lightning is: a gold dart with a head and a split tail.
+        // No sprites here, so the arrow is drawn out of blocks: a gold dart
+        // with a head and a split tail.
         blocks(v, arrowShaft(from, to, t), fx.damageType, 1);
-        blocks(v, arrowSparks(from, to, t), fx.damageType, 1);
       } else if (fx.kind === 'storm') {
         const cloud = stormCloud(from, t);
         ctx.globalAlpha = cloud.alpha * 0.9;

@@ -26,7 +26,6 @@ import type { HandSlot } from './held';
 import {
   ARROW_SPAN,
   arrowFlight,
-  arrowSparks,
   auraLook,
   bossTelegraph,
   dazeMarks,
@@ -174,12 +173,15 @@ export async function createPixiRenderer(
   const vfxLayer = new Graphics();
   // A generated effect is a PICTURE, so it cannot be drawn into the blocks
   // layer beside the lightning that wraps it.
+  /** Effect art that lies ON the floor, under everything standing on it. */
+  const vfxGroundLayer = new Container();
   const vfxArtLayer = new Container();
   const entityLayer = new Container();
   const textLayer = new Container();
 
   world.addChild(
-    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer, vfxArtLayer
+    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, vfxGroundLayer,
+    entityLayer, vfxLayer, vfxArtLayer
   );
   app.stage.addChild(world, textLayer);
 
@@ -232,19 +234,28 @@ export async function createPixiRenderer(
   const helds = new Map<string, Sprite>();
   const floaters: Text[] = [];
   const effectArt: Sprite[] = [];
+  const groundArt: Sprite[] = [];
   let effectsDrawn = 0;
+  let groundDrawn = 0;
 
-  /** A pooled sprite for one effect this frame. The vfx layer is redrawn every
-   *  frame, so a picture is HIDDEN when it is not wanted rather than torn down
-   *  — the same rule the floaters follow. */
-  function effectSprite(texture: Texture, span: number): Sprite {
-    let s = effectArt[effectsDrawn];
+  /**
+   * A pooled sprite for one effect this frame. The vfx layer is redrawn every
+   * frame, so a picture is HIDDEN when it is not wanted rather than torn down —
+   * the same rule the floaters follow. `ground` puts it UNDER the bodies, which
+   * is where a thing lying on the floor belongs: a pool drawn over them is a
+   * lid on the fight.
+   */
+  function effectSprite(texture: Texture, span: number, ground = false): Sprite {
+    const pool = ground ? groundArt : effectArt;
+    const at = ground ? groundDrawn : effectsDrawn;
+    let s = pool[at];
     if (!s) {
       s = new Sprite(texture);
-      vfxArtLayer.addChild(s);
-      effectArt[effectsDrawn] = s;
+      (ground ? vfxGroundLayer : vfxArtLayer).addChild(s);
+      pool[at] = s;
     }
-    effectsDrawn++;
+    if (ground) groundDrawn++;
+    else effectsDrawn++;
     s.texture = texture;
     s.visible = true;
     s.rotation = 0;
@@ -812,6 +823,7 @@ export async function createPixiRenderer(
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
     effectsDrawn = 0;
+    groundDrawn = 0;
     // Keep hairlines visible however far out we're zoomed.
     const hair = Math.max(0.05, 1 / tile);
 
@@ -894,29 +906,35 @@ export async function createPixiRenderer(
       if (!from) continue;
       const to = fx.points[1] ?? from;
 
+      // POISON FALLS AND POOLS. The second point IS the radius — see
+      // poisonDrops — so the pool is drawn to exactly what the sim poisoned.
       if (fx.kind === 'blight_field') {
-        // The second point IS the radius — see poisonDrops. Drawing anything
-        // else here would be lying about what the sim poisoned.
         const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        const pool = vfxTexture('poison_pool');
+        if (pool) {
+          // Faint, because a cast lasts 10s at nearly one a second and up to
+          // nine of these lie on top of each other: at any weight that reads
+          // it stacks into a solid lid over the fight.
+          const s = effectSprite(pool, radius * 2, true);
+          s.anchor.set(0.5, 0.5);
+          s.x = cx(from.x);
+          s.y = cy(from.y);
+          s.alpha = Math.max(0, 0.62 * (1 - t * t));
+        }
 
-        vfxLayer
-          .circle(cx(from.x), cy(from.y), radius)
-          .fill({ color: colour, alpha: Math.max(0, 0.22 * (1 - t)) });
-        // The rim has to stay legible as the circle grows, so it outlives the
-        // fill rather than fading with it.
-        vfxLayer
-          .circle(cx(from.x), cy(from.y), radius)
-          .stroke({
-            width: Math.max(hair, 0.07),
-            color: colour,
-            alpha: Math.max(0, 0.85 * (1 - t * 0.55)),
-          });
-
+        // Globs coming DOWN into it. Stretched along the fall and squashed as
+        // they land, which is the whole of what makes it rain rather than
+        // pictures blinking on over a puddle.
+        const glob = vfxTexture('poison_drop');
         for (const d of poisonDrops(from.x, from.y, radius, t)) {
-          if (d.alpha <= 0) continue;
-          vfxLayer
-            .circle(cx(d.x), cy(d.y), d.r)
-            .fill({ color: colour, alpha: Math.min(1, d.alpha) });
+          if (d.alpha <= 0 || !glob) continue;
+          const g = effectSprite(glob, d.r * 5);
+          g.anchor.set(0.5, 1);
+          g.scale.y *= 1 + (1 - d.fall) * 0.7;
+          g.scale.x *= 1 - (1 - d.fall) * 0.25;
+          g.x = cx(d.x);
+          g.y = cy(d.y);
+          g.alpha = Math.min(1, d.alpha);
         }
         continue;
       }
@@ -973,10 +991,10 @@ export async function createPixiRenderer(
         continue;
       }
 
-      // THE ARROW: the picture flies and the lightning is drawn round it. It is
-      // pinned by its HEAD, which the import left at the right edge of its own
-      // frame, and mirrored rather than turned over when it flies west — an
-      // arrow rotated past vertical is an arrow lit from underneath.
+      // THE ARROW, and nothing wrapped round it: it is pinned by its HEAD,
+      // which the import left at the right edge of its own frame, and mirrored
+      // rather than turned over when it flies west — an arrow rotated past
+      // vertical is an arrow lit from underneath.
       if (fx.kind === 'arrow') {
         const flight = arrowFlight(from, to, t);
         const texture = flight.alpha > 0 ? vfxTexture('arrow') : null;
@@ -989,7 +1007,6 @@ export async function createPixiRenderer(
           s.y = flight.y;
           s.alpha = flight.alpha;
         }
-        blocks(arrowSparks(from, to, t), fx.damageType, 1);
         continue;
       }
 
@@ -1018,6 +1035,7 @@ export async function createPixiRenderer(
       }
     }
     for (let i = effectsDrawn; i < effectArt.length; i++) effectArt[i].visible = false;
+    for (let i = groundDrawn; i < groundArt.length; i++) groundArt[i].visible = false;
   }
 
   /** Damage numbers live in screen space so zooming doesn't blur them. */

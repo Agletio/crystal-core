@@ -220,9 +220,7 @@ import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } f
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import {
-  ARROW_SPAN,
   arrowFlight,
-  arrowSparks,
   auraLook,
   floorPalette,
   lightningArc,
@@ -6132,17 +6130,6 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
       arrowFlight(from, to, 0.2).angle === arrowFlight(from, to, 0.9).angle,
       'and it points the same way the whole flight, since a picture is turned rather than posed',
       'the arrow turns in the air'
-    );
-
-    // The crackle is WRAPPED round the shaft: away from it, it is a second
-    // effect rather than lightning on an arrow.
-    const wrapped = arrowSparks(from, to, 0.3);
-    const head = arrowFlight(from, to, 0.3);
-    const strayed = wrapped.filter((p) => Math.hypot(p.x - head.x, p.y - head.y) > ARROW_SPAN * 1.4);
-    check(
-      wrapped.length > 10 && strayed.length === 0,
-      'the lightning it flies in stays on the arrow',
-      `${wrapped.length} blocks, ${strayed.length} off it`
     );
 
     // The cloud is ABOVE what was hit and the bolts come DOWN out of it, which
