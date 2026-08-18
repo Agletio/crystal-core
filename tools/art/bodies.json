@@ -312,12 +312,12 @@
      "say": "walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him"
     },
     "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one open hand forward at chest height, then pulling it back"
+     "frames": 10,
+     "say": "a three-beat BACKHAND STRIKE seen at a three-quarter angle: first he coils, weight onto the back foot and the striking arm drawn across his own chest, then he uncoils and lashes the arm out sideways at head height, hips and shoulders whipping round after it, then the arm falls and he settles back upright. Whole body turns into it"
     },
     "cast": {
-     "frames": 4,
-     "say": "planted with both feet apart at a three-quarter angle, both open hands thrust forward from the chest and held out"
+     "frames": 10,
+     "say": "a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it"
     },
     "death": {
      "frames": 6,
@@ -341,12 +341,12 @@
      "say": "walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him"
     },
     "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one gauntleted fist forward at chest height, then pulling it back"
+     "frames": 10,
+     "say": "a three-beat OVERHEAD SMASH seen at a three-quarter angle: first he raises one gauntleted fist high above his head, weight on the back foot, then he drives it down and forward onto the front foot, torso folding over the blow, then he straightens back up. Whole body turns into it"
     },
     "cast": {
-     "frames": 4,
-     "say": "planted with both feet apart at a three-quarter angle, one hand thrust forward from the chest holding a flask out at arm length, the other fist at the hip"
+     "frames": 10,
+     "say": "a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it"
     },
     "death": {
      "frames": 6,

@@ -292,17 +292,27 @@ if (command === 'design') {
       into ??= got;
       console.log(`${name}/${facing}: ${got}`);
     }
+    // Written back like a prop's, or a re-roll leaves the shipped row pointing
+    // at the group it meant to REPLACE. The author's sampling is kept.
+    if (into && shipped.bodies) {
+      const row = shipped.bodies.find((b: { sprite: string }) => b.sprite === sprite);
+      const state = row?.states?.[name];
+      if (state) {
+        state.group = into;
+        writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+      }
+    }
   }
 } else if (command === 'sheet') {
-  // One row per animation, one column per frame, straight off the generator:
-  // which frames are on model is the only thing `from`/`to` can be picked from.
+  // One row per animation, one per frame: the only way to pick `from`/`to`.
   const text = await callTool('get_character', { character_id: body!.character! });
   const rows: { name: string; urls: string[] }[] = [];
   let group = '';
   for (const line of text.split('\n')) {
     const head = /^ {2}(\S.*?) — \d+ dir/.exec(line);
     if (head) group = head[1];
-    const dir = /^ {4}east: (https\S.*)$/.exec(line);
+    // ANY facing: a body declares its own, and a hero's is south-east.
+    const dir = /^ +[a-z-]+: (https\S.*)$/.exec(line);
     if (dir && group && !rows.some((r) => r.name === group)) {
       rows.push({ name: group, urls: urlsIn(dir[1]) });
     }
