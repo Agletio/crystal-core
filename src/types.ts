@@ -323,6 +323,7 @@ export interface SkillDef {
   manaCost: number; // per USE, so a slower skill's number is a bigger one
   range: number; // in tiles
   vfxKind?: string; // a name, not a shape. Unset draws a generic line
+  impact?: string; // a second kind, drawn where each of its hits LANDS
   params?: Record<string, any>; // behaviour-specific knobs
   grants?: Record<string, unknown>; // switches an EQUIPPED skill hands the sim
 }

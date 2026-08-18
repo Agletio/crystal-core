@@ -220,15 +220,22 @@ import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } f
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import {
+  ARROW_SPAN,
+  arrowFlight,
+  arrowSparks,
   auraLook,
   floorPalette,
   lightningArc,
   livingDecals,
   PROPS,
+  STORM_HEIGHT,
+  stormBolts,
+  stormCloud,
   sweepRing,
   paletteFrom,
   tileDecals,
 } from './render/renderer';
+import { VFX_ART } from './render/generated-vfx';
 import {
   CARRY,
   addItem,
@@ -6090,6 +6097,83 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
         JSON.stringify(lightningArc(to, from, 0.2)) !== JSON.stringify(drawn),
       'and it is hashed off its own ends, so two leaps never share a silhouette',
       'the arc is not deterministic'
+    );
+  }
+
+  // The arrow is a PICTURE that flies and a storm where it lands, and both are
+  // pure geometry here — the sprite Pixi lays down reads the same answer.
+  {
+    const arrow = SKILL_BY_ID.lightning_arrow;
+    check(
+      arrow.vfxKind === 'arrow' && arrow.impact === 'storm' && VFX_ART.arrow && VFX_ART.storm
+        ? true
+        : false,
+      'the bow skill names a flight and an impact, and there is art for both',
+      `${arrow.vfxKind} then ${arrow.impact}`
+    );
+
+    const from = { x: 2, y: 4 };
+    const to = { x: 9, y: 7 };
+    const span = Math.hypot(to.x - from.x, to.y - from.y);
+    const off = (p: { x: number; y: number }): number =>
+      Math.abs((p.x - from.x) * (to.y - from.y) - (p.y - from.y) * (to.x - from.x)) / span;
+    const early = arrowFlight(from, to, 0.2);
+    const late = arrowFlight(from, to, 0.9);
+    line(
+      `  the arrow is ${off(early).toFixed(2)} tiles off its own line at a fifth of the way, ` +
+        `and lands ${Math.hypot(late.x - to.x, late.y - to.y).toFixed(2)} from what it was aimed at`
+    );
+    check(
+      off(early) < 1e-9 && Math.hypot(late.x - to.x, late.y - to.y) < 1e-9,
+      'it flies along the line it was shot down and stops at the target',
+      `${off(early)} off, ${Math.hypot(late.x - to.x, late.y - to.y)} short`
+    );
+    check(
+      arrowFlight(from, to, 0.2).angle === arrowFlight(from, to, 0.9).angle,
+      'and it points the same way the whole flight, since a picture is turned rather than posed',
+      'the arrow turns in the air'
+    );
+
+    // The crackle is WRAPPED round the shaft: away from it, it is a second
+    // effect rather than lightning on an arrow.
+    const wrapped = arrowSparks(from, to, 0.3);
+    const head = arrowFlight(from, to, 0.3);
+    const strayed = wrapped.filter((p) => Math.hypot(p.x - head.x, p.y - head.y) > ARROW_SPAN * 1.4);
+    check(
+      wrapped.length > 10 && strayed.length === 0,
+      'the lightning it flies in stays on the arrow',
+      `${wrapped.length} blocks, ${strayed.length} off it`
+    );
+
+    // The cloud is ABOVE what was hit and the bolts come DOWN out of it, which
+    // is the whole picture — a cloud on the floor is a puff of smoke.
+    const at = { x: 6, y: 6 };
+    const cloud = stormCloud(at, 0.5);
+    line(`  the cloud opens ${(at.y - cloud.y).toFixed(1)} tiles over what was hit`);
+    check(
+      Math.abs(at.y - cloud.y - STORM_HEIGHT) < 1e-9 && cloud.x === at.x && cloud.span > 0,
+      'the cloud floats over the thing it landed on',
+      `${cloud.x},${cloud.y} span ${cloud.span}`
+    );
+    check(
+      stormCloud(at, 0.02).span < cloud.span && stormCloud(at, 0.99).alpha < cloud.alpha,
+      'and it boils up and breaks apart rather than blinking on and off',
+      `${stormCloud(at, 0.02).span} then ${cloud.span}`
+    );
+
+    const bolts = stormBolts(at, 0.6);
+    const above = bolts.filter((p) => p.y < cloud.y - 0.2);
+    const below = bolts.filter((p) => p.y > at.y + 0.6);
+    line(`  ${bolts.length} blocks of lightning fall out of it`);
+    check(
+      bolts.length > 30 && above.length === 0 && below.length === 0,
+      'and every bolt runs from the cloud down to what it hit, and no further',
+      `${bolts.length} blocks, ${above.length} over the cloud, ${below.length} under the target`
+    );
+    check(
+      stormBolts(at, 0.0).length === 0,
+      'nothing strikes before the cloud is there',
+      'a bolt arrives ahead of its own cloud'
     );
   }
 

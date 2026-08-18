@@ -1,19 +1,27 @@
 /**
- * A generated STILL — a portrait, or a UI icon — into the table that draws it.
- * `portrait.mts <id> <png> [grid] [table]`
+ * A generated STILL — a portrait, a UI icon, an effect — into the table that
+ * draws it.   `portrait.mts <id> <png> [grid] [table] [keep]`
  *
  * Separate from `tables.mts` because none of these has a character, a rotation
- * or states: each is one PNG. `table` is `portraits` (the default) or `icons`,
- * and each writes its own generated file, which the hand-drawn table merges
- * OVER — so a thing that has been redrawn wins and everything else stands.
+ * or states: each is one PNG. `table` is `portraits` (the default), `icons` or
+ * `vfx`, and each writes its own generated file. `keep` is the top fraction of
+ * the source worth having, and only `vfx` reads it — see `square`.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { debackground } from './convert.mts';
 import { decodePng } from './png.mts';
 
 const TABLES = {
-  portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces' },
-  icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons' },
+  portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces, one frame each and carrying their own colours. The\n * hand-drawn table merges these OVER its own rows.' },
+  icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons, one frame each and carrying their own colours.\n * The hand-drawn table merges these OVER its own rows.' },
+  vfx: {
+    file: 'generated-vfx.ts', name: 'VFX_ART', type: 'GeneratedVfx',
+    what:
+      'Effect art, drawn in the WORLD rather than in a panel: cropped to its own\n' +
+      ' * ink and squared up, so the picture\'s edges are the effect\'s edges and the\n' +
+      ' * renderer can pin it by them. One frame each, carrying their own\n' +
+      " * colours, and only Pixi draws one — canvas2d has no sprites.",
+  },
 };
 
 type Art = { grid: number; rows: string[]; key: Record<string, string> };
@@ -42,8 +50,43 @@ function quantise(rgba: Uint8Array, want: number): Map<string, string> {
   return new Map(order.map((h) => [h, kept.includes(h) ? h : near(h)]));
 }
 
+type Png = { width: number; height: number; rgba: Uint8Array };
+
+/**
+ * The top `keep` of the frame, then the ink ALONE, centred in a square. An
+ * effect is drawn in the world and pinned by the edges of its own picture — the
+ * arrow's head IS the right edge — so anything the generator hung underneath it
+ * has to come off before the picture means that.
+ */
+function square(src: Png, keep: number): Png {
+  const height = Math.max(1, Math.round(src.height * keep));
+  let x0 = src.width, x1 = -1, y0 = height, y1 = -1;
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < src.width; x++) {
+      if (src.rgba[(y * src.width + x) * 4 + 3] < 40) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  if (x1 < 0) throw new Error('nothing left after the crop');
+  const w = x1 - x0 + 1;
+  const h = y1 - y0 + 1;
+  const side = Math.max(w, h);
+  const out = new Uint8Array(side * side * 4);
+  const ox = Math.floor((side - w) / 2);
+  const oy = Math.floor((side - h) / 2);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const s = ((y + y0) * src.width + x + x0) * 4;
+      const d = ((y + oy) * side + x + ox) * 4;
+      for (let k = 0; k < 4; k++) out[d + k] = src.rgba[s + k];
+    }
+  return { width: side, height: side, rgba: out };
+}
+
 /** Nearest-neighbour down to the grid it ships at, alpha carried through. */
-function resample(src: { width: number; height: number; rgba: Uint8Array }, grid: number) {
+function resample(src: Png, grid: number) {
   const out = new Uint8Array(grid * grid * 4);
   for (let y = 0; y < grid; y++)
     for (let x = 0; x < grid; x++) {
@@ -56,15 +99,16 @@ function resample(src: { width: number; height: number; rgba: Uint8Array }, grid
   return out;
 }
 
-const [id, file, gridArg, tableArg] = process.argv.slice(2);
-if (!id || !file) throw new Error('portrait.mts <id> <png> [grid] [table]');
+const [id, file, gridArg, tableArg, keepArg] = process.argv.slice(2);
+if (!id || !file) throw new Error('portrait.mts <id> <png> [grid] [table] [keep]');
 const grid = Number(gridArg ?? 96);
-const table = TABLES[(tableArg ?? 'portraits') as keyof typeof TABLES];
+const name = (tableArg ?? 'portraits') as keyof typeof TABLES;
+const table = TABLES[name];
 if (!table) throw new Error(`no table ${tableArg}`);
 const OUT = new URL(`../../src/render/${table.file}`, import.meta.url).pathname;
 
 const png = debackground(decodePng(readFileSync(file)));
-const rgba = resample(png, grid);
+const rgba = resample(name === 'vfx' ? square(png, Number(keepArg ?? 1)) : png, grid);
 const fold = quantise(rgba, 40);
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+*$%&@?!<>[]{}~';
@@ -108,8 +152,7 @@ const body = Object.entries(held)
 writeFileSync(
   OUT,
   `/**\n * Written by \`tools/art/portrait.mts\`. Do not edit by hand.\n *\n` +
-    ` * ${table.what}, one frame each and carrying their own colours. The\n` +
-    ` * hand-drawn table merges these OVER its own rows.\n */\n` +
+    ` * ${table.what}\n */\n` +
     `export type ${table.type} = {\n  grid: number;\n  rows: string[];\n` +
     `  key: Record<string, string>;\n};\n\n` +
     `export const ${table.name}: Record<string, ${table.type}> = {\n${body}\n};\n`

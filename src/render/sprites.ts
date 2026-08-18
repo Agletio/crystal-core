@@ -8,6 +8,7 @@ import { mix, spriteColour } from './renderer';
 import { BEASTIARY } from './bestiary';
 import { GENERATED } from './generated-art';
 import { PROP_ART } from './generated-props';
+import { VFX_ART } from './generated-vfx';
 import { GENERATED_ICONS } from './generated-icons';
 import { HELD } from './held';
 import type { MonsterRank } from './bestiary';
@@ -377,6 +378,17 @@ export function makeHeld(art: string): HTMLCanvasElement | null {
  *  on a tile, so nothing about it belongs in `CELL`. */
 export function makeProp(id: string): HTMLCanvasElement | null {
   const art = PROP_ART[id];
+  if (!art) return null;
+  const made = cell(art.grid);
+  if (!made) return null;
+  drawPixels(made.ctx, { rows: art.rows, key: art.key, grid: art.grid }, art.grid);
+  return made.canvas;
+}
+
+/** One generated effect, at its own grid. Cropped to its own ink at import, so
+ *  the canvas's edges are the effect's edges and the renderer pins it by them. */
+export function makeVfx(id: string): HTMLCanvasElement | null {
+  const art = VFX_ART[id];
   if (!art) return null;
   const made = cell(art.grid);
   if (!made) return null;

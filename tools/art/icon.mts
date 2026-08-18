@@ -1,13 +1,14 @@
 /**
- * A UI ICON, asked for and downloaded.   `icon.mts [id ...]`
+ * A UI ICON, asked for and downloaded.   `icon.mts [<words>.json] [id ...]`
  *
  * `icons.json` beside this is what to SAY, one row per id, so an icon can be
  * re-asked or re-rolled without anybody reconstructing the words. Naming ids
- * asks for THOSE; naming nothing asks for every row with no PNG cached yet.
+ * asks for THOSE; naming nothing asks for every row with no PNG cached yet. A
+ * words-file carries its own framing, palette and size, so `vfx.json` is this
+ * same tool asking for something that is not an icon at all.
  *
- * It stops at the download. `portrait.mts <id> <png> 48 icons` is what puts one
- * in `src/render/generated-icons.ts`, because a portrait and an icon are the
- * same problem — one PNG, no character, no rotation, no states.
+ * It stops at the download. `portrait.mts <id> <png> 48 icons` puts one in a
+ * table: a portrait, an icon and an effect are one problem — one PNG, no rig.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { callTool, download, fields } from './mcp.mts';
@@ -16,11 +17,14 @@ import { encodePng } from './png.mts';
 const here = (file: string): string => new URL(`./${file}`, import.meta.url).pathname;
 const CACHE = here('cache/designs');
 
-const asks = JSON.parse(readFileSync(here('icons.json'), 'utf8')) as {
+const args = process.argv.slice(2);
+const words = args[0]?.endsWith('.json') ? args.shift()! : 'icons.json';
+
+const asks = JSON.parse(readFileSync(here(words), 'utf8')) as {
   size: number;
   how: string;
   inks: string[];
-  icons: { id: string; say: string }[];
+  icons: { id: string; say: string; size?: number }[];
 };
 
 /** The forced palette, as an image: only its colours are read. */
@@ -36,7 +40,7 @@ function palette(): string {
   return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
 }
 
-const want = new Set(process.argv.slice(2));
+const want = new Set(args);
 const todo = asks.icons.filter((i) =>
   want.size ? want.has(i.id) : !existsSync(`${CACHE}/${i.id}.png`)
 );
@@ -47,7 +51,8 @@ const jobs: [string, string][] = [];
 for (const ask of todo.slice(0, 10)) {
   const out = await callTool('create_image_pixflux', {
     description: ask.say + asks.how,
-    width: asks.size, height: asks.size, no_background: true, view: 'side',
+    width: ask.size ?? asks.size, height: ask.size ?? asks.size,
+    no_background: true, view: 'side',
     outline: 'single color black outline', shading: 'medium shading', detail: 'medium detail',
     text_guidance_scale: 13, color_image_url: palette(),
   });

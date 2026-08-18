@@ -1657,6 +1657,246 @@ export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
   return pixels;
 }
 
+/** How long the arrow is DRAWN, in tiles: the sprite is `VFX_ART.arrow`, and
+ *  its head sits at the point the flight has reached. */
+export const ARROW_SPAN = 0.95;
+/** Its share of its own life spent travelling. Slower than `fireBolt`: the
+ *  hero fights at the range the monsters close to, so a shot mostly crosses
+ *  ONE tile and a fast one is never seen. */
+const ARROW_SPEED = 1.25;
+const ARROW_LAND = 1 / ARROW_SPEED;
+
+export interface Flight {
+  x: number;
+  y: number;
+  angle: number;
+  alpha: number;
+}
+
+/**
+ * Where the arrow has got to and which way it is pointing. One answer for the
+ * sprite Pixi lays down, the shaft canvas2d draws instead, and the lightning
+ * both wrap round it — three drawings of one arrow may not disagree about
+ * where it is.
+ */
+export function arrowFlight(from: Vec2, to: Vec2, t: number): Flight {
+  const travel = Math.min(1, t * ARROW_SPEED);
+  const after = Math.max(0, (t - ARROW_LAND) / (1 - ARROW_LAND));
+  return {
+    x: from.x + (to.x - from.x) * travel,
+    y: from.y + (to.y - from.y) * travel,
+    angle: Math.atan2(to.y - from.y, to.x - from.x),
+    alpha: 1 - after,
+  };
+}
+
+function along(from: Vec2, to: Vec2): { ux: number; uy: number; nx: number; ny: number } {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const span = Math.hypot(dx, dy) || 1;
+  return { ux: dx / span, uy: dy / span, nx: -dy / span, ny: dx / span };
+}
+
+/**
+ * The lightning WRAPPED round the shaft: blocks either side of the arrow, and
+ * two short branches thrown off it. Hashed off where the head has got to rather
+ * than off the clock, so it re-rolls as the arrow flies and both renderers
+ * crackle identically.
+ */
+export function arrowSparks(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const flight = arrowFlight(from, to, t);
+  const { ux, uy, nx, ny } = along(from, to);
+  const salt = Math.round(flight.x * 12) * 31 + Math.round(flight.y * 12);
+  const pixels: FirePixel[] = [];
+  if (flight.alpha <= 0) return pixels;
+
+  const STEPS = 11;
+  for (let i = 0; i < STEPS; i++) {
+    const back = (i / STEPS) * ARROW_SPAN;
+    const noise = tileNoise(i, salt, 89);
+    // Sides ALTERNATE and the hash only says how far, the same rule the arc
+    // follows: hashed sides land together half the time and read as a wobble.
+    const off = (i % 2 === 0 ? 1 : -1) * (0.03 + noise * 0.11);
+    pixels.push({
+      x: onGrid(flight.x - ux * back + nx * off),
+      y: onGrid(flight.y - uy * back + ny * off),
+      size: FIRE_PX * (noise > 0.62 ? 2 : 1),
+      shade: noise > 0.74 ? 2 : 1,
+      alpha: flight.alpha * (noise > 0.3 ? 1 : 0.55),
+    });
+  }
+
+  // Two branches leaving the shaft entirely, which is the part that says
+  // lightning rather than a glow painted along a stick.
+  for (let b = 0; b < 2; b++) {
+    const root = (0.2 + b * 0.4) * ARROW_SPAN;
+    const away = tileNoise(b, salt, 101) > 0.5 ? 1 : -1;
+    const reach = 0.12 + tileNoise(b, salt, 103) * 0.2;
+    for (let s = 1; s <= 4; s++) {
+      const out = (s / 4) * reach;
+      const bend = Math.sin((s / 4) * Math.PI * 2) * FIRE_PX * 1.5;
+      pixels.push({
+        x: onGrid(flight.x - ux * (root + out * 0.4) + nx * away * out + ux * bend),
+        y: onGrid(flight.y - uy * (root + out * 0.4) + ny * away * out + uy * bend),
+        size: FIRE_PX,
+        shade: s > 2 ? 0 : 1,
+        alpha: flight.alpha * (1 - s / 5) * 0.9,
+      });
+    }
+  }
+  return pixels;
+}
+
+/** The arrow ITSELF, for the renderer with no sprites: a gold dart with a
+ *  broad head and a split tail, built along the line it flies. */
+export function arrowShaft(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const flight = arrowFlight(from, to, t);
+  const { ux, uy, nx, ny } = along(from, to);
+  const pixels: FirePixel[] = [];
+  if (flight.alpha <= 0) return pixels;
+
+  const steps = Math.round(ARROW_SPAN / FIRE_PX);
+  for (let i = 0; i <= steps; i++) {
+    const back = i * FIRE_PX;
+    // The head is three blocks across and the shaft one, so the silhouette
+    // POINTS — which is the whole of what tells an arrow from a bolt.
+    const wide = i < 2 ? 1 : i < 4 ? 2 : i > steps - 4 ? 2 : 0;
+    for (let j = -wide; j <= wide; j++) {
+      if (i > steps - 4 && j === 0) continue;
+      pixels.push({
+        x: onGrid(flight.x - ux * back + nx * j * FIRE_PX),
+        y: onGrid(flight.y - uy * back + ny * j * FIRE_PX),
+        size: FIRE_PX,
+        shade: i < 3 ? 2 : j === 0 ? 1 : 0,
+        alpha: flight.alpha,
+      });
+    }
+  }
+  return pixels;
+}
+
+/** How far ABOVE what it landed on the cloud opens, and how wide it is drawn
+ *  there, both in tiles. */
+export const STORM_HEIGHT = 3;
+export const STORM_SPAN = 1.6;
+/** Fraction of the effect's life spent boiling up — the arrow is still in the
+ *  air until then — and the point past which it is breaking apart again. */
+const STORM_OPEN = 0.3;
+const STORM_GONE = 0.7;
+/** How many bolts come down, the share of the life each has to fall in, and
+ *  how far a joint of one leans off the drop. */
+const STORM_BOLTS = 3;
+const STORM_FALL = 0.42;
+const STORM_KINK = 0.16;
+
+export interface Cloud {
+  x: number;
+  y: number;
+  /** Tiles across, right now: it boils up rather than arriving at full size. */
+  span: number;
+  alpha: number;
+}
+
+/** Where the cloud is and how much of it there is. Pixi lays the generated
+ *  picture on this and canvas2d draws `stormPuffs` of it. */
+export function stormCloud(at: Vec2, t: number): Cloud {
+  const open = Math.min(1, t / STORM_OPEN);
+  const gone = Math.max(0, (t - STORM_GONE) / (1 - STORM_GONE));
+  return {
+    x: at.x,
+    y: at.y - STORM_HEIGHT,
+    span: STORM_SPAN * (0.55 + 0.45 * (1 - (1 - open) * (1 - open))),
+    alpha: Math.min(1, open * 1.4) * (1 - gone),
+  };
+}
+
+export interface CloudPuff {
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** The cloud as lumps, for the renderer with no sprites. Hashed off its own
+ *  place, so a cloud is the same cloud every time it opens there. */
+export function stormPuffs(cloud: Cloud): CloudPuff[] {
+  const salt = Math.round(cloud.x * 17 + cloud.y * 7);
+  const puffs: CloudPuff[] = [];
+  const COUNT = 7;
+  for (let i = 0; i < COUNT; i++) {
+    const noise = tileNoise(i, salt, 113);
+    const across = (i / (COUNT - 1) - 0.5) * cloud.span * 0.86;
+    puffs.push({
+      x: cloud.x + across,
+      y: cloud.y - (0.5 - Math.abs(across) / cloud.span) * cloud.span * 0.22 + noise * 0.06,
+      r: cloud.span * (0.17 + (1 - Math.abs(across) / (cloud.span * 0.5)) * 0.1 + noise * 0.04),
+    });
+  }
+  return puffs;
+}
+
+/**
+ * The bolts, out of the cloud's underside and down onto what was hit. Each
+ * starts on its own beat, so they come down one after another rather than as
+ * one three-pronged fork — a storm is a run of strikes.
+ *
+ * Its own jag rather than `lightningArc`'s: that one kinks by a third of its
+ * SPAN, which over a three-tile fall is a lazy zigzag, and it spits at both
+ * ends — three of those inside one cloud is a heap of blocks rather than
+ * lightning. A fall kinks sideways and lands once.
+ */
+export function stormBolts(at: Vec2, t: number): FirePixel[] {
+  const cloud = stormCloud(at, t);
+  const salt = Math.round(at.x * 13 + at.y * 29);
+  const pixels: FirePixel[] = [];
+  const JOINTS = 5;
+
+  for (let i = 0; i < STORM_BOLTS; i++) {
+    const start = STORM_OPEN + (i / STORM_BOLTS) * (1 - STORM_OPEN - STORM_FALL * 0.5);
+    if (t < start) continue;
+    const life = Math.min(1, (t - start) / STORM_FALL);
+    const noise = tileNoise(i, salt, 127);
+    const from = {
+      x: cloud.x + (noise - 0.5) * cloud.span * 0.5,
+      y: cloud.y + cloud.span * 0.16,
+    };
+    const to = { x: at.x + (noise - 0.5) * 0.34, y: at.y };
+
+    const point = (j: number): Vec2 => {
+      const down = j / JOINTS;
+      const off =
+        j === 0 || j === JOINTS
+          ? 0
+          : (j % 2 === 0 ? 1 : -1) * (0.4 + tileNoise(j, salt + i, 53) * 0.6) * STORM_KINK;
+      return { x: from.x + (to.x - from.x) * down + off, y: from.y + (to.y - from.y) * down };
+    };
+
+    for (let j = 0; j < JOINTS; j++) {
+      const a = point(j);
+      const b = point(j + 1);
+      const steps = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / FIRE_PX));
+      for (let step = 0; step <= steps; step++) {
+        const x = a.x + (b.x - a.x) * (step / steps);
+        const y = a.y + (b.y - a.y) * (step / steps);
+        pixels.push({ x: onGrid(x), y: onGrid(y), size: FIRE_PX, shade: 2, alpha: 1 - life });
+        // A cooler sheath down one side, so it is a filament rather than a wire.
+        const flare = tileNoise(j * 9 + step, salt + i, 67);
+        if (flare > 0.6) {
+          pixels.push({
+            x: onGrid(x + FIRE_PX * (flare > 0.85 ? 2 : 1)),
+            y: onGrid(y),
+            size: FIRE_PX,
+            shade: flare > 0.85 ? 0 : 1,
+            alpha: (1 - life) * 0.7,
+          });
+        }
+      }
+    }
+    // One burst where the storm lands: three of them is a pile of blocks.
+    if (i === 0) for (const spark of fireSparks(to, life)) pixels.push(spark);
+  }
+  return pixels;
+}
+
 /**
  * The falling-poison animation, as pure geometry, so the radius DRAWN is the
  * radius the sim used — the skill emits it as a second point and nothing here

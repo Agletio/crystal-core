@@ -24,6 +24,9 @@ import type { Cel } from './sprites';
 import { HANDS_DRAWN, HELD, handAt } from './held';
 import type { HandSlot } from './held';
 import {
+  ARROW_SPAN,
+  arrowFlight,
+  arrowSparks,
   auraLook,
   bossTelegraph,
   dazeMarks,
@@ -43,6 +46,8 @@ import {
   mix,
   poisonDrops,
   poisonFieldRadius,
+  stormBolts,
+  stormCloud,
   livingDecals,
   PROPS,
   tileDecals,
@@ -63,6 +68,7 @@ import {
   makeHeld,
   makeProp,
   makeSheet,
+  makeVfx,
   rankedKey,
 } from './sprites';
 import { PROP_ART } from './generated-props';
@@ -166,10 +172,15 @@ export async function createPixiRenderer(
   // Under the bodies: an aura is a field on the floor, not a badge on a monster.
   const auraLayer = new Graphics();
   const vfxLayer = new Graphics();
+  // A generated effect is a PICTURE, so it cannot be drawn into the blocks
+  // layer beside the lightning that wraps it.
+  const vfxArtLayer = new Container();
   const entityLayer = new Container();
   const textLayer = new Container();
 
-  world.addChild(groundLayer, wallLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer);
+  world.addChild(
+    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, entityLayer, vfxLayer, vfxArtLayer
+  );
   app.stage.addChild(world, textLayer);
 
   let builtMap: GameMap | null = null;
@@ -220,6 +231,26 @@ export async function createPixiRenderer(
    *  mirroring twice. */
   const helds = new Map<string, Sprite>();
   const floaters: Text[] = [];
+  const effectArt: Sprite[] = [];
+  let effectsDrawn = 0;
+
+  /** A pooled sprite for one effect this frame. The vfx layer is redrawn every
+   *  frame, so a picture is HIDDEN when it is not wanted rather than torn down
+   *  — the same rule the floaters follow. */
+  function effectSprite(texture: Texture, span: number): Sprite {
+    let s = effectArt[effectsDrawn];
+    if (!s) {
+      s = new Sprite(texture);
+      vfxArtLayer.addChild(s);
+      effectArt[effectsDrawn] = s;
+    }
+    effectsDrawn++;
+    s.texture = texture;
+    s.visible = true;
+    s.rotation = 0;
+    s.scale.set(span / (texture.width || CELL));
+    return s;
+  }
 
   /** The boss and what its phase looks like, worked out once a frame — three
    *  passes draw it and none of them may disagree about the beat. */
@@ -298,6 +329,19 @@ export async function createPixiRenderer(
     const made = canvas ? Texture.from(canvas) : null;
     if (made) made.source.scaleMode = 'nearest';
     props.set(id, made);
+    return made;
+  }
+
+  const effects = new Map<string, Texture | null>();
+
+  /** A generated effect as a texture, uploaded on first use like the rest. */
+  function vfxTexture(id: string): Texture | null {
+    const already = effects.get(id);
+    if (already !== undefined) return already;
+    const canvas = makeVfx(id);
+    const made = canvas ? Texture.from(canvas) : null;
+    if (made) made.source.scaleMode = 'nearest';
+    effects.set(id, made);
     return made;
   }
 
@@ -767,6 +811,7 @@ export async function createPixiRenderer(
 
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
+    effectsDrawn = 0;
     // Keep hairlines visible however far out we're zoomed.
     const hair = Math.max(0.05, 1 / tile);
 
@@ -928,6 +973,42 @@ export async function createPixiRenderer(
         continue;
       }
 
+      // THE ARROW: the picture flies and the lightning is drawn round it. It is
+      // pinned by its HEAD, which the import left at the right edge of its own
+      // frame, and mirrored rather than turned over when it flies west — an
+      // arrow rotated past vertical is an arrow lit from underneath.
+      if (fx.kind === 'arrow') {
+        const flight = arrowFlight(from, to, t);
+        const texture = flight.alpha > 0 ? vfxTexture('arrow') : null;
+        if (texture) {
+          const s = effectSprite(texture, ARROW_SPAN);
+          s.anchor.set(1, 0.5);
+          s.rotation = flight.angle;
+          s.scale.y *= Math.abs(flight.angle) > Math.PI / 2 ? -1 : 1;
+          s.x = flight.x;
+          s.y = flight.y;
+          s.alpha = flight.alpha;
+        }
+        blocks(arrowSparks(from, to, t), fx.damageType, 1);
+        continue;
+      }
+
+      // THE STORM: a cloud a long way over what was hit, and bolts down out of
+      // it. The first point is the VICTIM — the height is the drawing's.
+      if (fx.kind === 'storm') {
+        const cloud = stormCloud(from, t);
+        const texture = cloud.alpha > 0 ? vfxTexture('storm') : null;
+        if (texture) {
+          const s = effectSprite(texture, cloud.span);
+          s.anchor.set(0.5);
+          s.x = cloud.x;
+          s.y = cloud.y;
+          s.alpha = cloud.alpha;
+        }
+        blocks(stormBolts(from, t), fx.damageType, 1);
+        continue;
+      }
+
       if (fx.points.length >= 2) {
         vfxLayer.moveTo(cx(from.x), cy(from.y));
         for (const p of fx.points.slice(1)) vfxLayer.lineTo(cx(p.x), cy(p.y));
@@ -936,6 +1017,7 @@ export async function createPixiRenderer(
         blocks(fireSparks(from, t), fx.damageType, 1);
       }
     }
+    for (let i = effectsDrawn; i < effectArt.length; i++) effectArt[i].visible = false;
   }
 
   /** Damage numbers live in screen space so zooming doesn't blur them. */

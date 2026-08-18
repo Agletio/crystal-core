@@ -64,6 +64,8 @@ export function within(at: Entity, enemy: Entity, radius: number): boolean {
 const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
+const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
+
 /**
  * Which enemies the Projectiles past the first take. Nearest by default; a node
  * may widen the Spread and turn the pick around, which is the only way a wider
@@ -201,6 +203,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   projectile: (use) => {
     const g = use.grants;
     const kind = use.skill.vfxKind ?? 'bolt';
+    const impact = use.skill.impact;
 
     const castMultiplier = castScale(g, use.castIndex);
     const explode = g.explode as { radius: number; multiplier: number } | undefined;
@@ -214,6 +217,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       if (target.dead || struck.has(target)) return false;
       struck.add(target);
       use.hit(target, falloff * castMultiplier * targetScale(use, target));
+      // A cloud over the thing it hit, for a skill that leaves one.
+      if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL);
 
       critAilment(use, target, falloff);
 
@@ -299,9 +304,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
       for (const e of near) {
         if (!strike(e, falloff)) continue;
-        // Drawn from two tiles above the victim down onto it, which is what
-        // makes a Fork read as falling rather than as another Arc.
-        use.vfx('arc', [{ x: e.x, y: e.y - 2 }, { x: e.x, y: e.y }]);
+        // Two tiles above the victim and down onto it, which is what makes a
+        // Fork read as falling — unless an IMPACT has already drawn one here.
+        if (!impact) use.vfx('arc', [{ x: e.x, y: e.y - 2 }, { x: e.x, y: e.y }]);
       }
     }
 

@@ -3292,6 +3292,7 @@ export const SKILLS: SkillDef[] = [
     manaCost: 7.5,
     range: 7,
     vfxKind: 'arrow',
+    impact: 'storm',
     params: { forks: 2, forkDamage: 0.45 },
   },
   {

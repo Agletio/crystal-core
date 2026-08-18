@@ -15,6 +15,8 @@ import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
+  arrowShaft,
+  arrowSparks,
   auraLook,
   bossTelegraph,
   dazeMarks,
@@ -34,6 +36,9 @@ import {
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
+  stormBolts,
+  stormCloud,
+  stormPuffs,
   livingDecals,
   PROPS,
   tileDecals,
@@ -404,6 +409,22 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         blocks(v, fireBolt(from, to, t), fx.damageType, 1);
       } else if (fx.kind === 'shard') {
         blocks(v, frostShard(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'arrow') {
+        // No sprites here, so the arrow is drawn out of the same blocks its
+        // lightning is: a gold dart with a head and a split tail.
+        blocks(v, arrowShaft(from, to, t), fx.damageType, 1);
+        blocks(v, arrowSparks(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'storm') {
+        const cloud = stormCloud(from, t);
+        ctx.globalAlpha = cloud.alpha * 0.9;
+        ctx.fillStyle = palette.void;
+        for (const puff of stormPuffs(cloud)) {
+          ctx.beginPath();
+          ctx.arc(cx(v, puff.x), cy(v, puff.y), puff.r * v.tile, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = Math.max(0, 1 - t);
+        blocks(v, stormBolts(from, t), fx.damageType, 1);
       } else if (fx.points.length >= 2) {
         ctx.beginPath();
         ctx.moveTo(cx(v, from.x), cy(v, from.y));

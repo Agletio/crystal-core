@@ -5,13 +5,18 @@
  *
  * Not part of the suite. Requires a current bundle.
  *
- *   node tools/descent-peek.mjs out.png [zoom] [panX] [panY] [crop]
+ *   node tools/descent-peek.mjs out.png [zoom] [panX] [panY] [crop] [zone]
+ *                                [hold] [skill] [shots]
  *
  * `zoom` is wheel steps OUT of the default — 0 is close enough to judge a wall,
  * 4 frames a chamber, 9 fits a good deal of the map. `pan` is pixels the map
  * moves under the camera. `crop` is `x,y,w,h,scale`, magnified NEAREST, because
  * a fault half a tile across is invisible at the size it ships at. `hold` is a
  * weapon base to put in the hand first — the kit carries one of each family.
+ * `skill` is which one to take at the welcome, by name, since an EFFECT is a
+ * skill's and cannot be judged behind another one; `shots` is how many frames
+ * to take, as fast as they can be taken, because an effect is over in a fifth
+ * of a second and one screenshot of a descent will not hold one.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -26,8 +31,10 @@ if (!existsSync(join(docs, 'app.js'))) {
   process.exit(1);
 }
 
-const [out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop, zone = '', hold = ''] =
-  process.argv.slice(2);
+const [
+  out = 'descent.png', zoom = 4, panX = 0, panY = 0, crop, zone = '', hold = '',
+  skill = '', shots = 1,
+] = process.argv.slice(2);
 
 /** Which crystals to socket for each zone. Half of one world takes the rock,
  *  and two halves with no Normal is the Seam. */
@@ -70,7 +77,18 @@ async function makeCharacter() {
   await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.waitForTimeout(250);
-  await page.evaluate(() => document.querySelector('#welcome-skills .welcomecard')?.click());
+  const took = await page.evaluate((want) => {
+    const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
+    const card = want
+      ? cards.find((c) => (c.textContent ?? '').toLowerCase().includes(want.toLowerCase()))
+      : cards[0];
+    card?.click();
+    return Boolean(card);
+  }, skill);
+  if (!took) {
+    console.error(`descent-peek: no skill on the welcome reads as "${skill}"`);
+    process.exit(1);
+  }
   await page.waitForTimeout(700);
 }
 
@@ -166,8 +184,11 @@ if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'running') {
   process.exit(1);
 }
 
-const shot = await page.screenshot();
-if (crop) {
+/** One frame, magnified if a crop was asked for: a fault half a tile across is
+ *  invisible at the size it ships at. */
+async function frame() {
+  const shot = await page.screenshot();
+  if (!crop) return shot;
   const [x, y, w, h, scale = 4] = crop.split(',').map(Number);
   const png = await page.evaluate(
     async ({ data, x, y, w, h, scale }) => {
@@ -184,10 +205,14 @@ if (crop) {
     },
     { data: shot.toString('base64'), x, y, w, h, scale }
   );
-  await writeFile(out, Buffer.from(png, 'base64'));
-} else {
-  await writeFile(out, shot);
+  return Buffer.from(png, 'base64');
 }
+
+// The last one keeps the name asked for, so a single shot is one file.
+for (let i = 0; i + 1 < Number(shots); i++) {
+  await writeFile(out.replace(/\.png$/, `-${String(i).padStart(2, '0')}.png`), await frame());
+}
+await writeFile(out, await frame());
 
 await browser.close();
 server.close();
