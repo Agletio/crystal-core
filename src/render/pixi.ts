@@ -21,7 +21,8 @@ import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import type { Cel } from './sprites';
-import { HELD, handAt } from './held';
+import { HANDS_DRAWN, HELD, handAt } from './held';
+import type { HandSlot } from './held';
 import {
   auraLook,
   bossTelegraph,
@@ -214,9 +215,10 @@ export async function createPixiRenderer(
   }
 
   const sprites = new Map<number, Sprite>();
-  /** One per entity that holds something. Its own sprite rather than a child
-   *  of the body, or it would inherit the body's mirroring twice. */
-  const helds = new Map<number, Sprite>();
+  /** One per HAND of an entity that holds something, keyed `id:slot`. Its own
+   *  sprite rather than a child of the body, or it would inherit the body's
+   *  mirroring twice. */
+  const helds = new Map<string, Sprite>();
   const floaters: Text[] = [];
 
   /** The boss and what its phase looks like, worked out once a frame — three
@@ -630,11 +632,7 @@ export async function createPixiRenderer(
         stale.destroy();
         sprites.delete(e.id);
       }
-      const dropped = helds.get(e.id);
-      if (dropped) {
-        dropped.destroy();
-        helds.delete(e.id);
-      }
+      for (const slot of HANDS_DRAWN) drop(e.id, slot);
       return;
     }
 
@@ -703,42 +701,56 @@ export async function createPixiRenderer(
         ? toHexNumber(phaseTint ? mix(phaseTint, palette.chalk, 0.65) : palette.chalk)
         : toHexNumber(phaseTint ?? '#ffffff');
 
-    drawHeld(e, s, fade, sunk, elapsed);
+    for (const slot of HANDS_DRAWN) drawHeld(e, slot, s, fade, sunk, elapsed);
   }
 
+  const drop = (id: number, slot: HandSlot): void => {
+    const stale = helds.get(`${id}:${slot}`);
+    if (!stale) return;
+    stale.destroy();
+    helds.delete(`${id}:${slot}`);
+  };
+
   /**
-   * What is in the hand, pinned to the body it belongs to. It rides the SAME
+   * What is in one hand, pinned to the body it belongs to. It rides the SAME
    * anchor the body does, so a weapon cannot drift off a figure however the
    * camera moves, and it flips with the facing rather than rotating — the art
    * is authored facing east like everything else.
    */
-  function drawHeld(e: Entity, body: Sprite, fade: number, sunk: number, elapsed: number): void {
-    const texture = e.held ? heldTexture(e.held) : null;
-    const spec = e.held ? HELD[e.held] : undefined;
-    let h = helds.get(e.id);
+  function drawHeld(
+    e: Entity,
+    slot: HandSlot,
+    body: Sprite,
+    fade: number,
+    sunk: number,
+    elapsed: number
+  ): void {
+    const art = slot === 'main' ? e.held : e.offhand;
+    const texture = art ? heldTexture(art) : null;
+    const spec = art ? HELD[art] : undefined;
+    const key = `${e.id}:${slot}`;
+    let h = helds.get(key);
     if (!texture || !spec) {
-      if (h) {
-        h.destroy();
-        helds.delete(e.id);
-      }
+      drop(e.id, slot);
       return;
     }
     if (!h) {
       h = new Sprite(texture);
-      // Directly over its own body. The layer draws in the order it was built
-      // and sorts by nothing, exactly as it does for the bodies themselves.
+      // Over its own body, and the OFF hand over the main one: `HANDS_DRAWN`
+      // inserts in that order, so a shield covers the grip of what it is
+      // being held beside, which is what a shield in front of you does.
       entityLayer.addChildAt(h, entityLayer.getChildIndex(body) + 1);
-      helds.set(e.id, h);
+      helds.set(key, h);
     }
     h.texture = texture;
     h.anchor.set(spec.grip[0], spec.grip[1]);
 
     const facingEast = Math.cos(e.facing) >= 0;
-    const hand = handAt(e.sprite, e.held ?? '', cel(e, elapsed));
+    const hand = handAt(e.sprite, art ?? '', cel(e, elapsed));
     // Both in fractions of the BODY's grid, so one number moves a hand on
     // every trade at once — and the vertical one is measured off the same
     // anchor the body hangs from, or the two come apart as `scale` changes.
-    const dx = (hand.x - 0.5) * e.scale * (facingEast ? 1 : -1);
+    const dx = (hand.x + (spec.reach ?? 0) - 0.5) * e.scale * (facingEast ? 1 : -1);
     const dy = (hand.y - anchorY(e)) * e.scale;
     h.x = body.x + dx;
     h.y = body.y + dy;

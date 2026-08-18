@@ -9,6 +9,11 @@
 import type { Cel } from './sprites';
 import { generatedBeat } from './sprites';
 
+/** Both hands, in the order they are drawn. `main` is `EQUIP_SLOTS`' weapon
+ *  and `off` is its off hand, so a bow emptying the off hand empties this. */
+export const HANDS_DRAWN = ['off', 'main'] as const;
+export type HandSlot = (typeof HANDS_DRAWN)[number];
+
 export interface HeldSpec {
   icon: string;
   grip: [number, number]; // where the hand grips it, a fraction of its own grid
@@ -17,19 +22,23 @@ export interface HeldSpec {
    *  blade-down and takes none, a mace head-UP and takes half a turn — which
    *  is what lets one hand table swing all of them. */
   turn: number;
-  /** Which hand run it rides. A BOW is held in the LEAD hand where a sword is
-   *  swung by the other, so it reads a track of its own. */
+  /** Which hand run it rides. `off` is the arm that does NOT strike — a bow
+   *  and a shield both live there, where a sword is swung by the other. */
   track?: string;
-  behind?: boolean;
+  /** How far FORWARD of the hand it sits, in fractions of the body's grid. A
+   *  bow is held out at arm's length; a shield is strapped at the arm. The
+   *  hand is where the hand is, so this belongs to the weapon. */
+  reach?: number;
 }
 
 /** By the base's `art` — a weapon's is its FAMILY, so one row covers a rung. */
 export const HELD: Record<string, HeldSpec> = {
-  bow: { icon: 'gear_bow', grip: [0.47, 0.5], size: 0.85, turn: 0, track: 'bow' },
+  bow: { icon: 'gear_bow', grip: [0.47, 0.5], size: 0.85, turn: 0, track: 'off', reach: 0.11 },
   sword: { icon: 'gear_sword', grip: [0.5, 0.28], size: 1.15, turn: 0.5 },
   dagger: { icon: 'gear_dagger', grip: [0.5, 0.3], size: 0.7, turn: 0.5 },
   mace: { icon: 'gear_mace', grip: [0.5, 0.7], size: 1.0, turn: Math.PI + 0.5 },
   wand: { icon: 'gear_wand', grip: [0.5, 0.55], size: 0.62, turn: Math.PI + 0.5 },
+  shield: { icon: 'gear_shield', grip: [0.5, 0.45], size: 0.46, turn: 0, track: 'off', reach: -0.01 },
 };
 
 export interface Hand {
@@ -52,11 +61,11 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
     // The LEAD hand, which is the one a bow lives in: it rides the body's
     // lean rather than the strike, so the bow stays braced while the other
     // arm goes past it.
-    'attack/bow': [
-      { x: 0.52, y: 0.4, turn: 0.1 },
-      { x: 0.5, y: 0.34, turn: 0.05 },
-      { x: 0.51, y: 0.4, turn: -0.05 },
-      { x: 0.6, y: 0.42, turn: -0.2 },
+    'attack/off': [
+      { x: 0.42, y: 0.4, turn: 0.1 },
+      { x: 0.4, y: 0.34, turn: 0.05 },
+      { x: 0.41, y: 0.4, turn: -0.05 },
+      { x: 0.5, y: 0.42, turn: -0.2 },
     ],
     cast: [ // an OVERARM THROW: cocked past the ear, slung down, hanging
       { x: 0.44, y: 0.34, turn: 1.6 },
@@ -65,12 +74,12 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.74, y: 0.52, turn: -1.5 },
       { x: 0.66, y: 0.56, turn: -0.4 },
     ],
-    'cast/bow': [
-      { x: 0.42, y: 0.42, turn: 0.15 },
-      { x: 0.44, y: 0.4, turn: 0.05 },
-      { x: 0.48, y: 0.4, turn: -0.05 },
-      { x: 0.5, y: 0.42, turn: -0.12 },
-      { x: 0.46, y: 0.44, turn: 0 },
+    'cast/off': [
+      { x: 0.4, y: 0.44, turn: 0.15 },
+      { x: 0.42, y: 0.42, turn: 0.05 },
+      { x: 0.46, y: 0.42, turn: -0.05 },
+      { x: 0.48, y: 0.44, turn: -0.12 },
+      { x: 0.44, y: 0.46, turn: 0 },
     ],
     walk: [
       { x: 0.6, y: 0.52, turn: 0.08 },
@@ -80,35 +89,35 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.6, y: 0.52, turn: 0.08 },
       { x: 0.59, y: 0.51, turn: 0.04 },
     ],
-    'walk/bow': [
-      { x: 0.57, y: 0.46, turn: 0.1 },
-      { x: 0.59, y: 0.44, turn: 0 },
-      { x: 0.6, y: 0.45, turn: -0.1 },
-      { x: 0.59, y: 0.47, turn: 0 },
-      { x: 0.57, y: 0.46, turn: 0.1 },
-      { x: 0.56, y: 0.45, turn: 0.05 },
+    'walk/off': [
+      { x: 0.46, y: 0.46, turn: 0.1 },
+      { x: 0.48, y: 0.44, turn: 0 },
+      { x: 0.49, y: 0.45, turn: -0.1 },
+      { x: 0.48, y: 0.47, turn: 0 },
+      { x: 0.46, y: 0.46, turn: 0.1 },
+      { x: 0.45, y: 0.45, turn: 0.05 },
     ],
     idle: [
       { x: 0.61, y: 0.51, turn: 0 },
       { x: 0.61, y: 0.52, turn: 0.03 },
     ],
-    'idle/bow': [
-      { x: 0.58, y: 0.46, turn: 0 },
-      { x: 0.58, y: 0.47, turn: 0.03 },
+    'idle/off': [
+      { x: 0.47, y: 0.46, turn: 0 },
+      { x: 0.47, y: 0.47, turn: 0.03 },
     ],
   },
   aethermancer: {
-    attack: [ // a BACKHAND: coiled across the chest, then out to full stretch
-      { x: 0.5, y: 0.51, turn: 1.4 },
-      { x: 0.37, y: 0.43, turn: 1.0 },
-      { x: 0.37, y: 0.43, turn: 0.9 },
-      { x: 0.77, y: 0.38, turn: -1.3 },
+    attack: [ // a BACKHAND: coiled UP across the chest, then out to full stretch
+      { x: 0.5, y: 0.51, turn: 2.2 },
+      { x: 0.37, y: 0.43, turn: 2.5 },
+      { x: 0.37, y: 0.43, turn: 3.0 },
+      { x: 0.77, y: 0.38, turn: 4.7 },
     ],
-    'attack/bow': [
-      { x: 0.58, y: 0.48, turn: 0.15 },
-      { x: 0.5, y: 0.43, turn: 0.05 },
-      { x: 0.49, y: 0.43, turn: 0 },
-      { x: 0.64, y: 0.4, turn: -0.2 },
+    'attack/off': [
+      { x: 0.48, y: 0.48, turn: 0.15 },
+      { x: 0.4, y: 0.43, turn: 0.05 },
+      { x: 0.39, y: 0.43, turn: 0 },
+      { x: 0.54, y: 0.4, turn: -0.2 },
     ],
     cast: [
       { x: 0.46, y: 0.38, turn: 1.8 },
@@ -117,12 +126,12 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.75, y: 0.46, turn: -1.4 },
       { x: 0.68, y: 0.52, turn: -0.5 },
     ],
-    'cast/bow': [
-      { x: 0.44, y: 0.44, turn: 0.15 },
-      { x: 0.47, y: 0.41, turn: 0.05 },
-      { x: 0.52, y: 0.42, turn: -0.05 },
-      { x: 0.54, y: 0.44, turn: -0.12 },
-      { x: 0.5, y: 0.46, turn: 0 },
+    'cast/off': [
+      { x: 0.41, y: 0.45, turn: 0.15 },
+      { x: 0.44, y: 0.43, turn: 0.05 },
+      { x: 0.49, y: 0.43, turn: -0.05 },
+      { x: 0.51, y: 0.45, turn: -0.12 },
+      { x: 0.47, y: 0.47, turn: 0 },
     ],
     walk: [
       { x: 0.6, y: 0.52, turn: 0.08 },
@@ -132,21 +141,21 @@ export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
       { x: 0.6, y: 0.52, turn: 0.08 },
       { x: 0.59, y: 0.51, turn: 0.04 },
     ],
-    'walk/bow': [
-      { x: 0.58, y: 0.46, turn: 0.1 },
-      { x: 0.6, y: 0.44, turn: 0 },
-      { x: 0.61, y: 0.45, turn: -0.1 },
-      { x: 0.6, y: 0.47, turn: 0 },
-      { x: 0.58, y: 0.46, turn: 0.1 },
-      { x: 0.57, y: 0.45, turn: 0.05 },
+    'walk/off': [
+      { x: 0.47, y: 0.46, turn: 0.1 },
+      { x: 0.49, y: 0.44, turn: 0 },
+      { x: 0.5, y: 0.45, turn: -0.1 },
+      { x: 0.49, y: 0.47, turn: 0 },
+      { x: 0.47, y: 0.46, turn: 0.1 },
+      { x: 0.46, y: 0.45, turn: 0.05 },
     ],
     idle: [
       { x: 0.61, y: 0.51, turn: 0 },
       { x: 0.61, y: 0.52, turn: 0.03 },
     ],
-    'idle/bow': [
-      { x: 0.59, y: 0.46, turn: 0 },
-      { x: 0.59, y: 0.47, turn: 0.03 },
+    'idle/off': [
+      { x: 0.48, y: 0.46, turn: 0 },
+      { x: 0.48, y: 0.47, turn: 0.03 },
     ],
   },
 };

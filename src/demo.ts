@@ -123,6 +123,7 @@ import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
 import { GENERATED_ICONS } from './render/generated-icons';
 import { HELD, HERO_HANDS } from './render/held';
+import { heldFor } from './sim/appearance';
 import { animates, facingRow, generatedFrame } from './render/sprites';
 import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
@@ -242,6 +243,7 @@ import {
   crystalsIn,
   equipItem,
   grantFirstClear,
+  handClash,
   lampwrightWeapon,
   giftWeapon,
   keepsItem,
@@ -1616,6 +1618,29 @@ rule('SPRITES — is the pixel art well formed?');
         'and every authored hand run is exactly as long as the animation it pins to',
         wrong.join('; ')
       );
+
+      // BOTH hands reach the renderer. The off hand is the one a shield lives
+      // in, and it is a second field on the entity — read off the wrong slot
+      // it draws the weapon twice and nobody can tell from a still.
+      {
+        const who = makeCharacter({}, 'strike');
+        who.trade = 'alchemist';
+        who.equipment.weapon = makeGear('rusted_sword', 8);
+        who.equipment.offhand = makeGear('bark_buckler', 8);
+        const both = { main: heldFor(who), off: heldFor(who, 'offhand') };
+        check(
+          both.main === 'sword' && both.off === 'shield',
+          'a worn sword and shield answer as two different pictures, one per hand',
+          JSON.stringify(both)
+        );
+        // A two-hander empties the off hand, so nothing can hold both.
+        const clash = handClash(who, makeGear('crude_bow', 8), 'weapon');
+        check(
+          clash === 'offhand',
+          'and a bow takes the off hand off, so a shield and a bow never draw together',
+          String(clash)
+        );
+      }
     }
 
     // Nothing may ask for a frame nobody DREW. `makeSheet` builds one canvas

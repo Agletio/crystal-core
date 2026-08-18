@@ -195,8 +195,9 @@ export interface Entity {
   kind: EntityKind;
   /** Which body draws it: a monster's id, or the hero's TRADE. */
   sprite: string;
-  /** A `HELD` row pinned at its hand. The body never changes for it. */
+  /** `HELD` rows pinned at each hand. The body never changes for either. */
   held?: string;
+  offhand?: string;
   /** How much of a tile the art covers. */
   scale: number;
   /** Common, magic or rare. Drives size, halo and what it is worth. */
@@ -465,6 +466,7 @@ export class RunSim {
       kind: 'hero',
       sprite: worn,
       held: heldFor(character),
+      offhand: heldFor(character, 'offhand'),
       scale: HERO_SCALE,
       rank: 'common',
       x: map.entrance.x,

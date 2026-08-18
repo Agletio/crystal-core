@@ -1589,10 +1589,11 @@ each run to exactly the length of the state it pins to — a formula is not
 allowed here, because an overhead smash and a backhand are different arcs.
 `generatedBeat` is the ONE answer for which state and frame is showing, so the
 weapon and the arm cannot disagree. A weapon may ride a TRACK — `HeldSpec.track`
-keys a second run `<state>/<track>` — because a bow is held in the LEAD hand and
-a sword is swung by the other; the demo fails a track a hero has not authored
-for every state, since a missing one silently falls back to the wrong arm. Only
-Pixi draws one.
+keys a second run `<state>/<track>` — because a shield and a bow live in the arm
+that does NOT strike; the demo fails a track a hero has not authored for every
+state, since a missing one silently falls back to the wrong arm. A track is the
+HAND, so where a thing sits relative to it is `HeldSpec.reach` and belongs to
+the weapon. Only Pixi draws one.
 
 **AN ATTACK ANIMATION ENDS AT THE STRIKE, and is never asked to recover.** The
 renderer plays a one-shot state once and HOLDS its last frame, so a recovery

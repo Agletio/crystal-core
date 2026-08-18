@@ -122,12 +122,17 @@ same arc and nothing in a body's frames says which it is. `generatedBeat` in
 showing, so the weapon and the arm cannot pick different beats. `HeldSpec.turn`
 is the angle that hangs a weapon's BUSINESS END DOWN — a sword is drawn
 blade-down and takes none, a mace and a wand are drawn head-UP and take half a
-turn — which is what lets one hand table swing all five. **A weapon may ride a
-TRACK of its own**: `HeldSpec.track` names a second run per state, keyed
-`<state>/<track>`, because a bow lives in the LEAD hand where a sword is swung
-by the other — so `attack/bow` follows the bracing arm while `attack` follows
-the striking one, and both move with the animation. Only Pixi draws one;
-`canvas2d` has no sprites and never did.
+turn — which is what lets one hand table swing all five. **BOTH HANDS ARE
+DRAWN**: `HANDS_DRAWN` is the off hand then the main one, `Entity.held` and
+`Entity.offhand` carry a row each, and a weapon may ride a TRACK —
+`HeldSpec.track` names a second run per state, keyed `<state>/<track>`. A
+**shield** and a **bow** both live in the `off` track, which is the arm that
+does NOT strike; `HeldSpec.reach` is how far FORWARD of that hand a thing sits,
+because a bow is held out at arm's length where a shield is strapped at the
+arm — the hand is where the hand is, so the difference belongs to the weapon.
+The off hand draws OVER the main one, so a shield covers the grip of what is
+held beside it, which is what a shield in front of you does. Only Pixi draws
+one; `canvas2d` has no sprites and never did.
 
 **An attack ENDS at full forward extension, and never recovers.** Both heroes'
 swings were regenerated for it. The old descriptions asked for three beats

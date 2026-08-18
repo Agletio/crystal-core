@@ -22,11 +22,12 @@ same with all the weapons?"* — yes, and the fallback the user named (bow, 1h
 melee and 2h melee body VARIANTS, "way more but idk what else to do") is not
 needed. `HELD` in `src/render/held.ts` draws the item's own inventory icon at a
 hand; `HERO_HANDS` is a hand per FRAME, authored off the art rather than off a
-formula. Both heroes hold all five families, across `idle`, `walk`, `attack` and
-`cast`, and a bow rides a TRACK of its own so it follows the bracing arm rather
-than the striking one. What is NOT done: the OFF hand — a shield is not drawn —
-and `hurt` and `death` fall back to the resting hand. Both are table rows, not
-mechanism.
+formula. Both heroes hold all five families across `idle`, `walk`, `attack` and
+`cast`, and the OFF hand is drawn too: a shield and a bow both ride the `off`
+track, which is the arm that does not strike. What is NOT done: `hurt` and
+`death` fall back to the resting hand, and a BOW is still pinned to the melee
+frames — the user's call is that a bow gets a second animation of its own
+later, and the melee weapons are what these frames are for.
 
 **THE HAUL IS GONE AND THE FILTER REPLACED IT, off a direct ask.** *"Remove the
 haul entirely and have everything just go into the inventory. Once full it stops

@@ -21,10 +21,10 @@ export function heroSpriteFor(character: Character): string {
   return worn && GENERATED[worn] ? worn : HERO_SPRITE;
 }
 
-/** The `HELD` row the main hand draws, off the base's `art` — a weapon's is
- *  its FAMILY, so every rung of one holds the same picture. */
-export function heldFor(character: Character): string | undefined {
-  const weapon = character.equipment.weapon;
-  const art = weapon ? GEAR_BASE_BY_ID[weapon.base]?.art : undefined;
+/** The `HELD` row a SLOT draws, off the base's `art` — a weapon's is its
+ *  FAMILY, so every rung of one holds the same picture. */
+export function heldFor(character: Character, slotId = 'weapon'): string | undefined {
+  const worn = character.equipment[slotId];
+  const art = worn ? GEAR_BASE_BY_ID[worn.base]?.art : undefined;
   return art && HELD[art] ? art : undefined;
 }
