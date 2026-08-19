@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, POTIONS, PROJECTILE } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -139,7 +139,8 @@ export const KEYWORDS: KeywordDef[] = [
     means:
       'Damage in a circle around what was hit, for a share of that hit. It ' +
       'overlaps freely — two Bursts on one enemy both land — and Area of ' +
-      'Effect widens every Burst.',
+      `Effect widens every Burst. A Burst set off by a DEATH sets off the ` +
+      `Bursts of whatever it kills, ${BURST.chainDepth} deep.`,
     grants: ['explode', 'explodeRadius', 'explodeMultiplierAdd', 'explodeOnKill'],
   },
   {

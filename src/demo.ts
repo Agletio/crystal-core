@@ -3103,6 +3103,52 @@ rule('FIREBALL — do the notables actually change the cast?');
     burst.names.join()
   );
 
+  // THE CHAIN. A kill Burst sets off the Burst of whatever it kills, so what
+  // has to hold is that it travels FURTHER than one hop and that a body it
+  // cannot kill is where it stops. Both are silent failures otherwise: one
+  // reads as a small Burst, the other as an unstoppable one.
+  {
+    const line5 = (tough: number | null) =>
+      [3, 4.8, 6.6, 8.4, 10.2].map((x, i) => dummy(x, 0, tough === i ? 1e6 : 1));
+    const far = dummy(20, 0, 1);
+
+    const chainCast = (bodies: any[]) => {
+      const reached: any[] = [];
+      SKILL_BEHAVIOURS.projectile({
+        skill: SKILL_BY_ID.fireball,
+        user: dummy(0, 0), primary: bodies[0], enemies: [...bodies, far],
+        rng: new Rng(9), grants: { explodeOnKill: { radius: 2, multiplier: 1 } },
+        crit: false, castIndex: 0,
+        hit: (who: any) => {
+          reached.push(who);
+          // Frail bodies die to anything; the tough one never does, which is
+          // what makes it a wall rather than a slower link.
+          if (who.life < 1e6) who.dead = true;
+        },
+        ailment: () => {}, areaRadius: (base: number) => base, vfx: () => {},
+      } as any);
+      return reached;
+    };
+
+    const open = line5(null);
+    const swept = chainCast(open);
+    line(`  chain, open line   → ${swept.length} of 5 bodies 1.8 tiles apart, and ${swept.includes(far) ? 'the far one too' : 'nothing across the room'}`);
+    check(
+      swept.length === 5 && !swept.includes(far),
+      'a chain walks the whole line, four hops out, and stops where the line does',
+      `${swept.length} reached, far ${swept.includes(far)}`
+    );
+
+    const walled = line5(2);
+    const stopped = chainCast(walled);
+    line(`  chain, one wall    → ${stopped.length} bodies, the third of them alive`);
+    check(
+      stopped.length === 3 && !walled[2].dead && !stopped.includes(walled[4]),
+      'and a body it cannot kill is where the chain stops',
+      `${stopped.length} reached, wall dead ${walled[2].dead}`
+    );
+  }
+
   // No target may be hit twice by one cast, whatever combination is on. This
   // is what stops pierce, chain and spread from all piling onto the same
   // three enemies and reading as raw damage instead of as coverage.

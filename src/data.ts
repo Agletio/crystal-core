@@ -1903,6 +1903,13 @@ export const MELEE = {
   echoDamage: 0.7, // what an Echo lands for, where the one you aimed at takes all
 };
 
+/** A killed enemy's Burst sets off the Burst of whatever IT kills, so a floor
+ *  packed tightly enough goes up off one cast. Depth is a COUNT and never a
+ *  time or a budget — one seed has to replay one chain. */
+export const BURST = {
+  chainDepth: 8, // how many times a death may set off the next death's Burst
+};
+
 /**
  * A trade is the part of a character that is not the skill, and its points are
  * their own currency: funded by CHARACTER level, so walking one never competes

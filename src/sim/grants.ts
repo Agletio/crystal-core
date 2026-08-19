@@ -8,7 +8,7 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { MANA } from '../data';
+import { BURST, MANA } from '../data';
 
 export const STATS = 'stats';
 
@@ -597,11 +597,15 @@ export const GRANTS: GrantDef[] = [
   {
     id: 'explodeOnKill',
     changes: 'burst',
-    what: 'a killed enemy Bursts',
+    what: 'a killed enemy Bursts, and so does whatever that Burst kills',
     reads: HITTERS,
     say: (v) => {
       const p = pair(v, 'radius', 'multiplier');
-      return p && `A killed enemy Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
+      return (
+        p &&
+        `A killed enemy Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage — ` +
+          `and what THAT kills Bursts too, ${BURST.chainDepth} deep`
+      );
     },
   },
 

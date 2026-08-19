@@ -9,7 +9,7 @@
  */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
-import { MELEE, PROJECTILE } from '../data';
+import { BURST, MELEE, PROJECTILE } from '../data';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -49,13 +49,10 @@ export function separation(a: Entity, b: Entity): number {
 }
 
 /**
- * Whether a circle of `radius` drawn around `at` touches `enemy` AT ALL.
- *
- * Every area is drawn as that circle, so this has to be the body it overlaps
- * rather than the centre it contains — a ring visibly over a monster that took
- * no damage is the game contradicting the only picture of the rule it gives
- * you. Only the victim's body counts: the circle is a geometric radius from a
- * point, not a second body.
+ * Whether a circle of `radius` drawn around `at` touches `enemy` AT ALL — the
+ * body it overlaps, not the centre it contains, because that circle is the only
+ * picture of the rule a player gets. Only the VICTIM's body counts: the circle
+ * is a geometric radius from a point, not a second body.
  */
 export function within(at: Entity, enemy: Entity, radius: number): boolean {
   return separation(at, enemy) - enemy.radius <= radius;
@@ -66,11 +63,9 @@ const num = (v: unknown, fallback: number): number =>
 
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
 
-/**
- * Which enemies the Projectiles past the first take. Nearest by default; a node
- * may widen the Spread and turn the pick around, which is the only way a wider
- * one is worth anything in a room already full inside the bare radius.
- */
+/** Which enemies the Projectiles past the first take. Nearest by default; a
+ *  node may widen the Spread and turn the pick AROUND, which is the only way a
+ *  wider one is worth anything in a room already full inside the bare radius. */
 function spreadTargets(use: SkillUse, from: Entity[], count: number): Entity[] {
   const reach = PROJECTILE.spread * num(use.grants.spreadRange, 1);
   const far = use.grants.spreadFar === true;
@@ -115,21 +110,71 @@ export function targetScale(use: SkillUse, target: Entity): number {
   return m;
 }
 
-/** Overlaps freely: overlapping is what area damage is for. */
+/** Overlaps freely: overlapping is what area damage is for. Returns whoever it
+ *  put down, which is what the next hop of a chain Bursts from. */
 export function blastAround(
   use: SkillUse,
   at: Entity,
   radius: number,
   multiplier: number,
   scale: (target: Entity) => number
-): void {
-  if (multiplier <= 0 || radius <= 0) return;
+): Entity[] {
+  if (multiplier <= 0 || radius <= 0) return [];
+  const killed: Entity[] = [];
   for (const enemy of use.enemies) {
     if (enemy === at || enemy.dead) continue;
     if (!within(at, enemy, radius)) continue;
     use.hit(enemy, multiplier * scale(enemy));
+    if (enemy.dead) killed.push(enemy);
   }
   use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32);
+  return killed;
+}
+
+/**
+ * The Burst a delivery leaves where it landed, and the chain of deaths that
+ * follows it. Every behaviour carrying a Burst comes through here.
+ *
+ * `dealsHits` is whether the delivery deals HIT damage: a kill Burst is a
+ * HITTER's grant and Blight's circle deals none, so a poisoner wearing one gets
+ * the Burst it landed and never the one a death sets off.
+ */
+export function burstFrom(
+  use: SkillUse,
+  at: Entity,
+  falloff: number,
+  scale: (target: Entity) => number,
+  dealsHits: boolean
+): void {
+  const g = use.grants;
+  const explode = g.explode as { radius: number; multiplier: number } | undefined;
+  if (explode) {
+    blastAround(
+      use,
+      at,
+      use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
+      (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff,
+      scale
+    );
+  }
+
+  // Asked after the Burst, because the Burst is what usually kills it.
+  const onKill = dealsHits
+    ? (g.explodeOnKill as { radius: number; multiplier: number } | undefined)
+    : undefined;
+  if (!onKill || !at.dead) return;
+
+  // Breadth-first, and DEATH is what marks a body seen: `blastAround` steps over
+  // a corpse, so nothing Bursts twice and a chain that stops killing stops dead.
+  const radius = use.areaRadius(onKill.radius);
+  let front = [at];
+  for (let hop = 0; hop < BURST.chainDepth && front.length > 0; hop++) {
+    const next: Entity[] = [];
+    for (const body of front) {
+      next.push(...blastAround(use, body, radius, onKill.multiplier, scale));
+    }
+    front = next;
+  }
 }
 
 /** Distance along and off the ray origin→through. Behind the origin is negative. */
@@ -176,14 +221,12 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * A thrown ball of fire, and everything a tree can make of one. Bare, it is
-   * `single_target` with a longer arm; order matters — aimed-at, then pierced,
-   * then leapt-to, then spread, with a burst around each.
+   * A thrown ball of fire, and everything a tree can make of one. Order
+   * matters — aimed-at, then pierced, then leapt-to, then spread.
    *
-   * Nothing is hit twice by one cast. Without that, pierce and chain and spread
-   * all find the same clump and stack on it, and talents meant to make you hit
-   * MORE things just make you hit the same things harder. Bursts are exempt:
-   * overlapping is what area damage is for.
+   * Nothing is hit twice by one cast, or pierce and chain and spread all find
+   * the same clump and talents meant to make you hit MORE things just make you
+   * hit the same things harder. Bursts are exempt: overlapping is the point.
    */
   projectile: (use) => {
     const g = use.grants;
@@ -191,32 +234,16 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const impact = use.skill.impact;
 
     const castMultiplier = castScale(g, use.castIndex);
-    const explode = g.explode as { radius: number; multiplier: number } | undefined;
-    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
     const struck = new Set<Entity>();
-    const blast = (at: Entity, radius: number, multiplier: number): void =>
-      blastAround(use, at, radius, multiplier, (e) => castMultiplier * targetScale(use, e));
-
     const strike = (target: Entity, falloff: number): boolean => {
       if (target.dead || struck.has(target)) return false;
       struck.add(target);
-      use.hit(target, falloff * castMultiplier * targetScale(use, target));
+      use.hit(target, falloff * scale(target));
       // A cloud over the thing it hit, for a skill that leaves one.
       if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL);
-
-
-      if (explode) {
-        blast(
-          target,
-          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
-          (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff
-        );
-      }
-      // Checked after the burst, because the burst is what usually kills it.
-      if (onKill && target.dead) {
-        blast(target, use.areaRadius(onKill.radius), onKill.multiplier);
-      }
+      burstFrom(use, target, falloff, scale, true);
       return true;
     };
 
@@ -316,40 +343,22 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * ONE enemy, hit hard, and nothing else until a tree buys Echoes. An Echo is
-   * the same blow landing on the next body out from the one you struck, and
-   * each one after it may look `MELEE.echoStep` further — so buying more of
-   * them reaches further into a pack without a second switch for the distance.
-   *
-   * Nothing is hit twice by one use, exactly as a Projectile's coverage works:
-   * without that, Echoes and Repeats both find the enemy in front of you and
-   * read as raw damage rather than as reach.
+   * ONE enemy, hit hard, and nothing else until a tree buys Echoes. Each Echo
+   * past the first may look `MELEE.echoStep` further, so buying more reaches
+   * deeper into a pack with no second switch for the distance. Nothing is hit
+   * twice by one use, or Echoes and Repeats read as damage rather than reach.
    */
   melee: (use) => {
     const g = use.grants;
     const castMultiplier = castScale(g, use.castIndex);
     const kind = use.skill.vfxKind ?? 'slash';
 
-    const explode = g.explode as { radius: number; multiplier: number } | undefined;
-    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
     const swing = (target: Entity, falloff: number): void => {
       if (target.dead) return;
       use.hit(target, falloff * scale(target));
-
-      if (explode) {
-        blastAround(
-          use,
-          target,
-          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
-          (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff,
-          scale
-        );
-      }
-      if (onKill && target.dead) {
-        blastAround(use, target, use.areaRadius(onKill.radius), onKill.multiplier, scale);
-      }
+      burstFrom(use, target, falloff, scale, true);
     };
 
     swing(use.primary, 1);
@@ -408,8 +417,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const dy = use.primary.y - use.user.y;
     const facing = Math.hypot(dx, dy) < 1e-3 ? use.user.facing : Math.atan2(dy, dx);
 
-    const explode = g.explode as { radius: number; multiplier: number } | undefined;
-    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
     const inside = (e: Entity): boolean => {
@@ -417,9 +424,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       if (arc >= 360) return true;
       let off = Math.abs(Math.atan2(e.y - use.user.y, e.x - use.user.x) - facing);
       if (off > Math.PI) off = Math.PI * 2 - off;
-      // The BODY counts, not the centre: `within` already reads a body for the
-      // reach, and an edge that read one way at the rim and another at the
-      // flank would be a wedge that lies about who is in it.
+      // The BODY counts at the flank too, or the wedge lies about who is in it.
       const away = Math.max(separation(use.user, e), 1e-3);
       return off - Math.asin(Math.min(1, e.radius / away)) <= half;
     };
@@ -427,24 +432,11 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     for (const enemy of use.enemies) {
       if (enemy.dead || !inside(enemy)) continue;
       use.hit(enemy, scale(enemy));
-
-      if (explode) {
-        blastAround(
-          use,
-          enemy,
-          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
-          explode.multiplier + num(g.explodeMultiplierAdd, 0),
-          scale
-        );
-      }
-      if (onKill && enemy.dead) {
-        blastAround(use, enemy, use.areaRadius(onKill.radius), onKill.multiplier, scale);
-      }
+      burstFrom(use, enemy, 1, scale, true);
     }
 
-    // The wedge as the sim used it: where you stand, then its two RIM corners.
-    // Reach and opening are both bought, so both have to be readable off the
-    // picture or half the branch moves nothing on screen.
+    // Where you stand, then the two RIM corners. Reach and opening are both
+    // bought, so both have to be readable off the picture.
     use.vfx(use.skill.vfxKind ?? 'wedge', [
       { x: use.user.x, y: use.user.y },
       { x: use.user.x + Math.cos(facing - half) * reach, y: use.user.y + Math.sin(facing - half) * reach },
@@ -473,7 +465,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       ? { radius: use.areaRadius(contagion), generation: 0 }
       : undefined;
 
-    const explode = g.explode as { radius: number; multiplier: number } | undefined;
     // Half a cast, never a fixed time: a fixed one is on screen most of the
     // time at any real cast speed, and reads as an aura rather than a spell.
     const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
@@ -486,15 +477,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
       }
 
-      if (explode) {
-        blastAround(
-          use,
-          at,
-          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
-          explode.multiplier + num(g.explodeMultiplierAdd, 0),
-          (e) => castMultiplier * targetScale(use, e)
-        );
-      }
+      burstFrom(use, at, 1, (e) => castMultiplier * targetScale(use, e), false);
 
       // Second point IS the radius, so the renderer draws what the sim used.
       use.vfx(
