@@ -723,11 +723,16 @@ assert(
 // What comes up out of the Fissure with you and what arrives as gold. Clicked
 // in what you KEEP, and stored as the inverse, so a save that has never opened
 // it keeps everything.
-assert($('filter').hidden === true, 'the filter starts closed');
-$('open-filter').click();
-assert($('filter').hidden === false, 'and opens from the rail');
+// It lives in Settings now: a rule you set once belongs with the other rules
+// you set once, not on a rail beside the screens you open every descent.
+assert($('settings').hidden === true, 'settings starts closed');
+$('open-settings').click();
+assert($('settings').hidden === false, 'and opens from the rail');
+$('set-tab-filter').click();
+assert($('set-pane-filter').hidden === false, 'the auto-sell filter is a tab in it');
+assert(document.getElementById('open-filter') === null, 'and it left the rail behind');
 
-const keepToggles = () => all('#filter .keepbtn');
+const keepToggles = () => all('#set-pane-filter .keepbtn');
 assert(keepToggles().length > 3, 'it draws a toggle per rung and per group', String(keepToggles().length));
 assert(
   all('#filter-tiers .keepbtn').length === 3,
@@ -770,8 +775,41 @@ assert(
 );
 $('filter-all').click();
 
+// --- the keys, and the book ------------------------------------------------
+$('set-tab-keys').click();
+assert(
+  all('#settings-keys .keyrow').length >= 15,
+  'every binding there is has a row you can rebind',
+  String(all('#settings-keys .keyrow').length)
+);
+const wasKey = text('key-set-inventory');
+$('key-set-inventory').click();
+assert(/press/i.test(text('key-set-inventory')), 'clicking one waits for a press');
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'q', bubbles: true }));
+assert(
+  text('key-set-inventory') === 'Q' && text('key-set-inventory') !== wasKey,
+  'and the next key pressed is the new binding',
+  text('key-set-inventory')
+);
+$('key-set-inventory').click();
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+assert(
+  text('key-set-inventory') === 'Q',
+  'a key another binding already holds is REFUSED, never swapped',
+  text('key-set-inventory')
+);
+
+$('set-tab-book').click();
+const bookRows = () => all('#book-rows .bookrow');
+assert(bookRows().length > 20, 'the book lists every keyword there is', String(bookRows().length));
+$('book-find').value = 'burn';
+$('book-find').dispatchEvent(new window.Event('input', { bubbles: true }));
+assert(bookRows().length > 0 && bookRows().length < 20, 'and a Find box narrows it', String(bookRows().length));
+$('book-find').value = '';
+$('book-find').dispatchEvent(new window.Event('input', { bubbles: true }));
+
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-assert($('filter').hidden === true, 'Escape closes it');
+assert($('settings').hidden === true, 'Escape closes it');
 
 // --- the collection --------------------------------------------------------
 // Four sockets against everything you have ever been given. Nothing here is

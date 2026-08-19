@@ -26,7 +26,7 @@ import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
-import { initFilter, openFilter, closeFilter, isFilterOpen } from './ui/filter';
+import { initFilter } from './ui/filter';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
@@ -112,7 +112,7 @@ function restart(mode: StartMode): void {
     closeCraft();
     closeShop();
     closeStash();
-    closeFilter();
+    closeSettings();
     closeCrystals();
     onRunFocused();
   }
@@ -133,7 +133,6 @@ function begin(): void {
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
 document.getElementById('open-shop')!.addEventListener('click', openShop);
-document.getElementById('open-filter')!.addEventListener('click', openFilter);
 document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
 document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-inventory')!.addEventListener('click', openInventory);
@@ -143,7 +142,7 @@ document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-trials')!.addEventListener('click', openTrials);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
-document.getElementById('open-settings')!.addEventListener('click', openSettings);
+document.getElementById('open-settings')!.addEventListener('click', () => openSettings());
 document.getElementById('open-dev')!.addEventListener('click', openDev);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
@@ -189,7 +188,7 @@ measureDock();
 mountFixtures();
 initInventory(game);
 initHistory();
-initSettings();
+initSettings(game, refreshRunPanels);
 initDev(game, {
   enterRoom: enterRoomNow,
   restock: () => restart('dev'),
@@ -339,12 +338,11 @@ const SCREENS: Record<
   trials: { el: 'trials', open: openTrials, close: closeTrials, isOpen: isTrialsOpen },
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
-  filter: { el: 'filter', open: openFilter, close: closeFilter, isOpen: isFilterOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
-  settings: { el: 'settings', open: openSettings, close: closeSettings, isOpen: isSettingsOpen },
+  settings: { el: 'settings', open: () => openSettings(), close: closeSettings, isOpen: isSettingsOpen },
   dev: { el: 'dev', open: openDev, close: closeDev, isOpen: isDevOpen },
 };
 

@@ -1590,6 +1590,14 @@
   .trialrow--done .trialrow__name { color: var(--citrine); }
   .trialrow__state { color: var(--text-dim); font-size: 11px; }
   .trialrow__detail { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+  .settabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .keyrows, .bookrows { display: flex; flex-direction: column; gap: 4px; max-height: min(52vh, 440px); overflow-y: auto; }
+  .keyrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 3px 2px; }
+  .keyrow__what { color: var(--text-dim); font-size: 12px; }
+  .keyrow--wait .keyrow__key { color: var(--citrine); }
+  .bookrow { padding: 4px 2px; border-bottom: 1px solid var(--edge); }
+  .bookrow__name { color: var(--citrine); }
+  .bookrow__means { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
   .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
@@ -1733,7 +1741,6 @@
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
       <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
       <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
-      <button class="railbtn" id="open-filter" data-key="filter">Filter</button>
       <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
       <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
       <button class="railbtn" id="open-character" data-key="character">Character</button>
@@ -1742,7 +1749,7 @@
       <button class="railbtn" id="open-trials" data-key="trials">Trials</button>
       <button class="railbtn" id="open-history" data-key="history">History</button>
       <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
-      <button class="railbtn" id="open-settings">Settings</button>
+      <button class="railbtn" id="open-settings" data-key="settings">Settings</button>
     </div>
     </nav>
   </div>
@@ -2018,30 +2025,6 @@
   </div>
 </div>
 
-<div class="modal" id="filter" hidden>
-  <div class="modal__card">
-    <div class="modal__head">
-      <h2 class="modal__title">The Filter</h2>
-      <div class="seedbar">
-        <button class="chip" id="filter-all">Keep everything</button>
-        <button class="chip" id="filter-none">Keep nothing</button>
-        <button class="mini" id="filter-close">Close</button>
-      </div>
-    </div>
-    <div class="modal__body">
-      <div class="panel">
-        <p class="empty" id="filter-hint"></p>
-        <div class="dockcol__label">Rungs</div>
-        <div class="keeprow" id="filter-tiers"></div>
-        <div class="dockcol__label">Weapons and jewellery</div>
-        <div class="keeprow" id="filter-gear"></div>
-        <div class="dockcol__label">Armour</div>
-        <div class="keeprow" id="filter-armour"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- The collection. Sockets hold four and nothing is ever spent, so what you
      own outgrows what you can use almost at once — this is where two crystals
      are compared, and where the worlds you have not reached are listed. -->
@@ -2307,7 +2290,34 @@
       </div>
     </div>
     <div class="modal__body">
-      <p class="empty" id="settings-empty">Nothing to set yet.</p>
+      <div class="settabs">
+        <button class="mini mini--on" id="set-tab-keys">Keys</button>
+        <button class="mini" id="set-tab-filter">Auto-sell</button>
+        <button class="mini" id="set-tab-book">The Book</button>
+      </div>
+      <div id="set-pane-keys">
+        <p class="skillhead__sub">Click a key to rebind it. Escape always closes what is on top.</p>
+        <div class="keyrows" id="settings-keys"></div>
+      </div>
+      <div id="set-pane-filter" hidden>
+        <div class="settabs">
+          <button class="chip" id="filter-all">Keep everything</button>
+          <button class="chip" id="filter-none">Keep nothing</button>
+        </div>
+        <div class="panel">
+          <p class="empty" id="filter-hint"></p>
+          <div class="dockcol__label">Rungs</div>
+          <div class="keeprow" id="filter-tiers"></div>
+          <div class="dockcol__label">Weapons and jewellery</div>
+          <div class="keeprow" id="filter-gear"></div>
+          <div class="dockcol__label">Armour</div>
+          <div class="keeprow" id="filter-armour"></div>
+        </div>
+      </div>
+      <div id="set-pane-book" hidden>
+        <input class="find" id="book-find" placeholder="Find a word" />
+        <div class="bookrows" id="book-rows"></div>
+      </div>
     </div>
   </div>
 </div>

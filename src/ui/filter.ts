@@ -79,22 +79,10 @@ export function render(): void {
         : `${doomed.length} of what you carry matches what this sells — ${worth} gold. It only ever runs on the way up, so those stay.`;
 }
 
-export function openFilter(): void {
-  $('filter').hidden = false;
-  render();
-}
-
-export function closeFilter(): void {
-  $('filter').hidden = true;
-  hideTooltip();
-}
-
-export const isFilterOpen = (): boolean => !$('filter').hidden;
 
 export function initFilter(state: GameState, refresh: () => void): void {
   game = state;
   onChanged = refresh;
-  ($('filter-close') as HTMLButtonElement).onclick = closeFilter;
   ($('filter-all') as HTMLButtonElement).onclick = () => {
     game.junk = [];
     render();

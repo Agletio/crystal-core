@@ -112,7 +112,7 @@ const hudProbe = () => {
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
   'title', 'slots', 'pick', 'welcome', 'fissure',
-  'dock', 'crystals', 'sheet', 'shop', 'stash', 'filter', 'history',
+  'dock', 'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
@@ -208,7 +208,7 @@ for (const vp of VIEWPORTS) {
   for (const [state, shut] of [
     ['shop', 'shop-close'],
     ['stash', 'stash-close'],
-    ['filter', 'filter-close'],
+    ['settings', 'settings-close'],
     ['history', 'history-close'],
   ]) {
     await page.evaluate((id) => document.getElementById(id)?.click(), `open-${state}`);
