@@ -6,14 +6,15 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**There is no phase waiting to be taken.** Phase 1 (the boss fight) shipped.
-Phase 2 (a quest log) is parked by the user's own word until the stripped
-opening has been played. The balance pass is written up below and the user has
-held it: *"dont do balance yet I want the fight to not be buggy and feel ok and
-then we can balance."*
+**Phases 1–4 are the TRIALS WEB and are waiting to be taken.** They came out of
+the user's own proposal and are specified below. Phase 5 (a quest log) stays
+parked by his word until the stripped opening has been played. The balance pass
+is written up below and is held: *"dont do balance yet I want the fight to not
+be buggy and feel ok and then we can balance."*
 
-So this file holds a held pass, a backlog nobody asked for, and the open
-questions. **Say so and list them rather than inventing work.**
+**Read "The trials web" before taking Phase 1.** The four phases share one seam
+and one set of traps, and a session that takes Phase 2 without reading it will
+add a node that silently buys item level.
 
 ### Live known issues
 
@@ -22,7 +23,9 @@ questions. **Say so and list them rather than inventing work.**
   with plate and with neither it does not — but nothing about beating it opens
   anything. Item tier is bought by run POWER alone (`DROP_BANDS[power].ilvl`
   against `BASE_TIER_ILVL = [1, 22, 46]`), families are held to the SAME threat
-  by the demo on purpose, and `BOSSES` has one entry. The open question is #11.
+  by the demo on purpose, and `BOSSES` has one entry. The open question is #10.
+  **Phase 1 pays the boss in a TRIAL POINT**, which is a different answer to the
+  same complaint and does not settle the tier ladder.
 - **`npm run shots` can go red on `desktop: the first descent never met the
   Lampwright`.** Two separate causes, and the cheap one is far commoner:
   **running it beside `demo` or `smoke`** starves the browser and it loses the
@@ -157,7 +160,303 @@ numbers in tables; if it wants a mechanism changed, that is a phase.
 
 ---
 
-## Phase 1 — A quest log instead of a pointing finger
+## The trials web — read this before Phases 1–4
+
+**The whole of the user's proposal, in his words:** *"I think the anwser is just
+another skill tree. Unlock points through various challenges that come up as a
+sort of story mode, maybe its the boss fight, maybe its a really hard map we
+specifically create, you unlock it sequentially through the story, Encounter
+someone they show you a room, a boss etc. fight it and win you get points for
+your new skill tree. The tree can have stuff similar to POE league mechnics that
+make certain things harder and mroe rewarding. Like we can add events essentially
+around the maps that have harder enemies, better loot, etc."*
+
+**What is wrong today**, in one sentence: `CRYSTAL_LEVELS` tops out at 3
+modifiers and there are 4 sockets, so **12 crystal modifiers is the entire
+permanent difficulty ceiling of the game** — a player who out-grows it has
+nothing left to turn, which is the first of the two failure modes he named.
+
+**Why a tree and not a slider.** A slider is a difficulty setting; a tree makes
+reaching further along the same axis into the CONTENT. The points are earned
+sequentially from authored rooms, so "I am blowing through this" becomes the
+trigger for the next thing rather than a reason to stop.
+
+### Decisions taken, and what each beat
+
+- **Per character**, on `Character`, beside `tradeAllocated`. The user's call.
+  It beat account-wide, which was mine: account-wide means a second character
+  never re-walks the soft part, but it also makes the first character's
+  achievement invisible on every one after it.
+- **Called a TRIAL, and that is the only word** — the challenge is a trial, the
+  web is the trials web, the points are trial points. `trial` appears **nowhere**
+  in `src/` today, so it costs no collision. It beat "the world web", which
+  collides outright: `world` already means a monster family in `CLAUDE.md`, the
+  demo and half the tables. Renaming is one sentence and a prefix.
+- **Three event MECHANISMS, not four.** Hoards, the Welling, and Bearers — where
+  Bearers is one mechanism with a ROW per relic rather than two near-identical
+  events for the Osteomancer and the Astral-Geometer. That is what makes the
+  count land on the user's own *"start with 3 different events"* after he
+  described four.
+- **Every phase ships points AND something to spend them on.** Each event phase
+  adds its own trial to the ladder as well as its own nodes, so no phase ends
+  with a tree nobody can fill or points nobody can spend.
+
+### The seam: a trial node is a `RolledMod`, exactly like a crystal's
+
+`treeMod` and `attributeMod` already fold a whole allocation into ONE synthetic
+`RolledMod`; a `trialMod` does the same and merges into `RunSet.mods`. Then a
+node reading `monsterLife` or `packSize` needs no new plumbing at all, and
+`crystalRewards` scores it through `DANGER_STATS` like everything else — harder
+and better-paying falls out of the arithmetic already there.
+
+**What an EVENT needs on top of that** is a resolved bag on `RunOptions`, the
+way `potionThresholds` and `beaten` already ride there. `src/sim` must never
+learn where it came from.
+
+### Traps — all four phases
+
+- **A "×danger" node buys ITEM LEVEL for free, and that breaks a standing
+  rule.** `runSet` computes `power` from `rewards.danger / POWER.perDanger`, and
+  `bandFor(power).ilvl` is the drop tier. The rule is *"Power buys access;
+  composition and modifiers buy payment."* So a node whose whole content is a
+  multiplier on `crystalRewards` hands out tier-3 bases for nothing. **A trial
+  node adds real monster stats and lets danger and power move honestly, or it
+  pays in `rarity` / `yield` and leaves `power` alone. A bare danger multiplier
+  is refused.** The user asked for one by name — this is why it is not built as
+  asked, and it is the single thing most likely to be got wrong.
+- **Automation is universal and has NO exception.** Anything a player could do
+  mid-descent needs a shipped default policy that `runToCompletion` runs, and
+  that policy is the only implementation. This is why a Hoard is **never
+  clicked** (see Phase 2) — an event with no interaction in it satisfies the rule
+  by construction, and is the cheapest correct shape.
+- **A run must always END.** `runToCompletion` is bounded at 600s and a headless
+  run that does not finish is a mechanism FAILURE, not a balance number. The
+  Welling spawns monsters from corpses; unbounded, it never terminates.
+- **`s.totalMonsters` counts the whole encounter the moment it starts**, or the
+  readout ticks down and then climbs. Anything that adds bodies mid-descent has
+  to say so to the counter.
+- **The tree must not become pure upside.** The crystal rule is that a modifier
+  with no downside is *"a mod with no decision in it"*. Points are scarce by
+  construction (one per authored trial, and trials are authored), but nodes must
+  still compete — the ring/branch shape does that if the layout is walked, and
+  does not if every node hangs off the centre.
+- **`replayWeb` or the allocation is trusted**, which is the one thing `heal()`
+  exists to prevent. Points earned is `Character.trials.length`, so a trial that
+  is deleted refunds rather than stranding.
+- **Node ids are what a save points at.** Give the web a `prefix` no other web
+  uses.
+- **A new screen is a new shot.** `npm run shots` walks 30 screens against a
+  checklist; a rail icon with no entry in `ICONS` renders nothing and fails
+  nowhere.
+- **Every phase puts itself in the dev kit** — `START_PRESETS.dev`, so the web
+  is reachable without beating anything.
+
+---
+
+## Phase 1 — The trials web, and the first point in it
+
+**What is true today.** `Character` carries `trade`/`tradeAllocated` and
+`skills[].allocated` and nothing else that spends points. `src/webgraph.ts` is
+written over "any list of nodes" and already drives three webs (`skills-tree.ts`,
+`trades.ts`, `moves/spec.ts`). `BOSSES` has one entry and beating it sets
+`game.bosses` through `takeBoss` — **and opens nothing at all**, which the Live
+known issues section already calls out.
+
+**Why it is wrong.** The only permanent difficulty in the game is 12 crystal
+modifiers, and beating the one boss in it is worth nothing but a mark in an
+array.
+
+- [ ] **`TRIALS` is a table, walked in ORDER.** `{ id, name, needs, gives }` —
+      `needs` names what completes it, `gives` is the point. Trial 1 is the
+      EXISTING Answering Hall boss, so this phase adds a point source without
+      authoring a room. Decide whether `needs` is a registry the way
+      `QUEST_CONDITIONS` is; it will be, by the third trial.
+- [ ] **`Character.trials: string[]`** (completed, in order) and
+      **`Character.trialAllocated: string[]`**. Points available is
+      `trials.length - trialAllocated.length`. No second counter — a stored
+      point total is a number that can disagree with the list.
+- [ ] **`TRIAL_NODES` with GENERIC nodes only.** No events this phase. The
+      user's two examples: more rare monsters, and paying more. The rare-monster
+      one needs a stat the spawn loop reads — `MONSTER_RANKS` weights are
+      constants inside `spawn()` and nothing scales them yet — plus a
+      `DANGER_STATS` entry, because a rare that is worth 10× bounty and 6× life
+      is danger and must be scored as danger.
+- [ ] **`trialMod(character)` folds the allocation into one `RolledMod`**, the
+      way `treeMod` and `attributeMod` do, merged into `RunSet.mods`. **Decide
+      where it merges** — `runSet(crystals)` takes crystals and nothing else
+      today, so either it grows a second argument or the caller merges. Whichever
+      it is, `src/demo.ts` must be able to build the set with and without a
+      character or every existing measurement changes shape.
+- [ ] **A screen on the rail**, with an `ICONS` entry, a dock slot and a shot.
+      Load the `screens` skill first.
+- [ ] **`heal()` replays it** through `replayWeb` against `trials.length`, and
+      drops a trial id that no longer resolves.
+- [ ] **The dev preset completes every trial**, so the web is reachable.
+
+**Done when.** Beating the Answering Hall gives one trial point, spending it
+changes a measured run — more danger, more reward — and `heal()` refunds it if
+the node is deleted.
+
+**What must not break, in order.** `npm run comments`, `npm run typecheck`,
+`npm run mods`, `npm run build`, `npm run demo` (the web-geometry checks are
+generic and will police this one too), `npm run smoke`, `npm run shots` — and
+`shots` **alone**, never beside `demo` or `smoke`.
+
+---
+
+## Phase 2 — Hoards: a pack with something worth killing it for
+
+**What is true today.** `spawn()` builds packs of one kind, one ability, one
+optional aura carrier, and rolls a `rank` per monster off `MONSTER_RANKS`.
+`MapProp` is `{ id, x, y }` and props are decoration nothing in the sim reads.
+Loot comes off `rollGearDrop`, per kill, off `this.set.band`.
+
+**Why it is wrong.** Nothing in a descent is worth walking toward. Every pack is
+the same proposition, so watching one is watching all of them.
+
+**The user's shape, and the automation rule.** *"basically think strong boxes in
+POE but instead of clicking and monsters spawn just have them spawned in but more
+monsters spawn around them and make them a little tougher."* **Nothing is
+clicked** — that is not a simplification, it is what makes the event legal under
+*"anything a player can do mid-descent has a shipped default policy"*. A Hoard is
+a PACK MODIFIER: a box stands in it, the pack is bigger and ranked up, and the
+box pays out when the pack is dead.
+
+- [ ] **A Hoard is a pack, not an entity.** The box is a prop the sim knows
+      about; killing the pack banks its loot. Decide whether the box needs a
+      body at all — a prop already draws, and a generated one is an `art` job.
+- [ ] **Nodes: how OFTEN, how MUCH, and what KIND.** The third is the user's
+      *"one node that lets you select a preference for gear type it drops"* —
+      `dropBias` and `DROP_GROUPS` already exist and are exactly this, so the
+      node is a choice node feeding the bias that is already read by
+      `pickGearBase`. **`SkillProgress.choices` is the precedent for a node that
+      offers an option**; this web needs the same field.
+- [ ] **Its own trial**, so the phase ships a point with the nodes.
+- [ ] **The loot is banked, not dropped on the floor.** `state.loot.items` is
+      the one path up.
+
+**Trap.** Both pack-size stats are `rewards: false` in `DANGER_STATS` — density
+does not pay, on purpose, because it pays in extra kills. A Hoard pack that is
+bigger AND ranked up is paying twice unless the rank half is what carries the
+danger.
+
+**Done when.** A headless descent with the Hoard node allocated contains boxes,
+they are guarded, killing the guards pays, and nothing in the run needs a click.
+
+**What must not break.** As Phase 1, plus `npm run peek` — a box nobody can see
+is a box that is not there.
+
+---
+
+## Phase 3 — The Welling: what comes up out of a body
+
+**What is true today.** `spawn()` places every monster before the descent starts
+and `s.totalMonsters` is set once from that count. Nothing adds a body mid-run
+except the closing encounter, which sets the counter when it starts.
+
+**Why it is wrong.** A fight has one shape: the pack you can see is the pack
+there is. Nothing escalates because you are winning.
+
+**The user's shape.** *"when an enemy dies it has a chance to spawn another enemy
+from its body... chance for mobs to tier up when summoned in. Like a normal dies
+it summons in a magic, magic summons a rare, rare has a small chance to summon a
+boss etc."*
+
+- [ ] **On death, a chance to spawn one body at the corpse.** `MONSTER_RANKS` is
+      an ordered list, so "tiers up" is an index step and needs no new table.
+- [ ] **It must TERMINATE.** A chain where each death can spawn a death is a run
+      that may never end, and `runToCompletion` failing is a mechanism failure.
+      Decide the bound and write it down: a per-descent cap, a decaying chance,
+      or a rank ceiling that cannot re-spawn. **Pick one and say which it beat.**
+- [ ] **`s.totalMonsters` learns about each one**, or the readout climbs.
+- [ ] **"rare has a small chance to summon a boss" is a decision, not a task.**
+      `BOSSES` is deliberately NOT `MONSTERS` — a boss has phases, a room and a
+      terminus of its own, and one loose in a descent has none of that. Either
+      the top rung is a `BOSSES` entry with the phase machinery suppressed, or it
+      is a fourth `MONSTER_RANKS` row that is merely enormous. **The second is
+      cheaper and is the recommendation**; the first is what the user's words
+      literally say. Ask, or take it and write down what it beat.
+- [ ] **Its own trial.**
+
+**Trap.** Killing a spawned body pays gold and XP through `priceKills`; an
+uncapped chain is an uncapped XP faucet, and XP is not gated by power.
+
+**Done when.** A headless descent with the node allocated ends, its monster count
+is honest, and the deep end measurably escalates.
+
+**What must not break.** As Phase 1. `npm run demo` proves termination; the
+600-second bound in `runToCompletion` is the check that already exists.
+
+---
+
+## Phase 4 — Bearers: the thing somebody is waiting for
+
+**What is true today.** `RELICS` has two rows, both `chance: 0.006` per kill,
+each gated to one zone by `opensHere`, each naming the scene that `wants` it.
+`sceneWaiting` schedules that room the moment one is held. So the two authored
+rooms that write a line nothing else can are behind a 0.6%-per-kill roll and
+nothing else.
+
+**Why it is wrong.** The best two rewards in the game are pure luck, and a player
+who wants one has no way to go and get it.
+
+**The user's shape.** *"we can make two centered around the existing mechanics
+with the corpses and the gemstone guy for the unique mods. Make it where really
+hard enemies can spawn and guarantee corpse/dust or maybe increase the drop rate
+of them."*
+
+- [ ] **ONE mechanism, a row per relic.** A Bearer is a single very hard body
+      that drops what it carries on death. `RELICS` already has the gate and the
+      `wants`; the Bearer row points at a relic id and inherits both.
+- [ ] **The gate is a WALL and stays one.** *"A `DropGate` says a thing does not
+      exist in this run at all... the pool is filtered before the pick, so no
+      amount of rarity argues with it."* A Bearer in the Fissure may not hand out
+      a Rot corpse.
+- [ ] **Nodes: how often a Bearer appears, and how hard.** Whether the drop is
+      GUARANTEED or merely much likelier is a decision — guaranteed makes the
+      node a switch rather than a number, which reads better and is worth more.
+- [ ] **Hard means hard.** *"really hard enemies"* — it must be a body a build
+      can lose to, or the reward is free.
+- [ ] **Its own trial.**
+
+**Trap.** `rollRelicDrop` runs per kill over all of `RELICS`; a Bearer that drops
+through that path rolls the OTHER relic too. It needs its own path, or the loop
+needs to know which body just died.
+
+**Done when.** A player who wants a graft can build toward one, a Bearer is
+gated to the right world, and killing one in the wrong world is impossible rather
+than unlucky.
+
+**What must not break.** As Phase 1, plus the demo's existing relic checks: each
+relic exists in ONE world, and every one names a scene that exists.
+
+---
+
+## After the four — the balance pass is the other half
+
+The user's own last clause: *"Then just tune the scaling difficulty better to
+where when you get those high end danger mods its actually going to require a
+clever build with very good gear. For that stuff im not even sure its going to be
+something you can test."*
+
+**Half of it is testable and it is the important half.** Proving a clever build
+CLEARS the deep end needs authored candidate builds, which rot every time a
+system lands. Proving the WALL EXISTS — that a naive build fails at a given
+danger — is `ladderCharacter` plus `runToCompletion` over a grid, which the demo
+already does, and a run that never ends is a mechanism failure rather than a
+balance number. That is what answers his second fear.
+
+**Recommendation, not a decision: run the balance pass BEFORE Phase 2.** Every
+trial node's numbers get authored against whatever the baseline is, and the
+baseline today is *"deliberately soft everywhere"* by this file's own admission —
+so node values set now are values set twice. Phase 1 is safe either way; it adds
+the machinery and one point.
+
+**Held pending the user's word**, like the rest of the pass.
+
+---
+
+## Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
@@ -227,6 +526,12 @@ be picked up — they are decisions the user has not made. Ask before acting.
    person in it, beats you click through, a panel at the end that does
    something — so answering this is content under `src/scenes/` rather than a
    system.
+
+   **The trials web is the same shape and may answer this for free.** A trial is
+   *"Encounter someone they show you a room, a boss etc. fight it and win"*,
+   which is a storyline told in rooms, and he is the only voice the game has.
+   Whether the trial ladder IS the Lampwright's story or runs beside it is
+   unanswered, and worth asking before Phase 2 authors a second room.
 
 2. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
    seeds it sat 0.7% BELOW four Demonic crystals on damage taken per second;
