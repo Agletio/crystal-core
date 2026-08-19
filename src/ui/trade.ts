@@ -317,7 +317,11 @@ function render(): void {
 export function openTrade(): void {
   $('trade').hidden = false;
   picking = false;
-  cam.home();
+  // Opens FRAMED, unlike the skills web. That one holds a hundred and sixteen
+  // nodes and fitting them is a grey smear you would zoom straight out of;
+  // forty-five fit and stay readable, and a web whose shape you cannot see is
+  // a web nobody plans a route through.
+  cam.fit(tradeNodes(game.character.trade), 1.1);
   render();
 }
 
