@@ -26,6 +26,7 @@ import {
   addXp,
   attributePointsLeft,
   equippedSkill,
+  openSlots,
   attributeSteps,
   spendAttribute,
   xpToNext,
@@ -307,6 +308,14 @@ function renderStats(): void {
         `A Blocked hit deals nothing at all, capped at ${DEFENCE.blockCap}%. It ` +
         'comes off a shield in your off hand and does nothing against damage over time.',
     },
+    {
+      key: 'dodge',
+      value: `${Math.round(s.dodgeChance)}%`,
+      why:
+        `A Dodged hit deals nothing at all, capped at ${DEFENCE.dodgeCap}%. It is ` +
+        'TRADED for your Armour rather than worn beside it, and does nothing ' +
+        'against damage over time.',
+    },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
     { key: 'mana', value: round(s.maxMana) },
     {
@@ -402,7 +411,9 @@ function renderSkills(): void {
   const host = $('sheet-skills');
   host.replaceChildren();
 
-  for (const slot of SKILL_SLOTS) {
+  // OPEN ones only: a slot the level has not reached is not part of your kit
+  // yet, and the skills screen is where what is coming belongs.
+  for (const slot of openSlots(game.character)) {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const main = slot.id === MAIN_SLOT;
     const box = el('div', `skillsec${main ? ' skillsec--main' : ''}`);

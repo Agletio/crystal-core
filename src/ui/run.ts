@@ -15,6 +15,7 @@ import {
   attributePointsLeft,
   equippedSkill,
   mainSkillId,
+  openSlots,
   spareTreePoints,
   tradePointsLeft,
   trialPointsLeft,
@@ -1297,7 +1298,9 @@ function renderSkillIcons(): void {
   const host = $('run-skills');
   host.replaceChildren();
 
-  for (const slot of SKILL_SLOTS) {
+  // OPEN ones only: a slot the level has not reached is not part of your kit
+  // yet, and the skills screen is where what is coming belongs.
+  for (const slot of openSlots(game.character)) {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const cell = el('button', `mini skillslot${held ? '' : ' skillslot--empty'}`) as HTMLButtonElement;
     cell.id = `run-skill-${slot.id}`;

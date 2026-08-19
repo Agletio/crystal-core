@@ -21,6 +21,7 @@ import {
   MAIN_SLOT,
   PLAYER_SKILLS,
   SKILL_SLOTS,
+  skillsInCategory,
   SKILL_SLOT_BY_ID,
   AURA,
   AURAS,
@@ -210,6 +211,7 @@ import {
   equipSkill,
   equippedSkill,
   mainSkillId,
+  openSlots,
   slotForSkill,
   makeCharacter,
   pointsAvailable,
@@ -4776,18 +4778,35 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
 // can break quietly is a slot accepting the wrong shelf, a save losing the
 // skill it was swinging, or a trade that took something away and gave nothing.
 {
-  line(`  ${SKILL_SLOTS.map((s) => `${s.name}: ${s.accepts.join('/')}`).join(' · ')}`);
+  line(
+    `  ${SKILL_SLOTS.map((s) => `${s.name}: ${s.accepts.join('/')}` + (s.unlocksAt ? ` @${s.unlocksAt}` : '')).join(' · ')}`
+  );
+  const passiveSlots = SKILL_SLOTS.filter((s) => s.accepts.includes('passive'));
   check(
-    SKILL_SLOTS.length === 3
-      && SKILL_SLOT_BY_ID[MAIN_SLOT]?.accepts.join(',') === 'spell,attack'
+    SKILL_SLOT_BY_ID[MAIN_SLOT]?.accepts.join(',') === 'spell,attack'
       && SKILL_SLOTS.every((s) => s.accepts.length > 0 && s.blurb.length > 0),
-    'three slots, declared as a table, and every one says what it is for',
+    `${SKILL_SLOTS.length} slots, declared as a table, and every one says what it is for`,
     SKILL_SLOTS.map((s) => s.id).join(', ')
   );
-  // Every shelf fills exactly one slot, and every slot has something to put in
+  // THREE passives, and the two beyond the first are gated: a slot you have
+  // from the start is a pick, and one you climb to is a build.
+  check(
+    passiveSlots.length === 3
+      && passiveSlots.map((s) => s.unlocksAt ?? 1).join(',') === '1,20,40',
+    'three passive slots, opening at levels 1, 20 and 40',
+    passiveSlots.map((s) => `${s.id}@${s.unlocksAt ?? 1}`).join(', ')
+  );
+  check(
+    LEVELLING.maxLevel === 99 && passiveSlots.every((s) => (s.unlocksAt ?? 1) <= LEVELLING.maxLevel),
+    `and every one of them is reachable inside the ${LEVELLING.maxLevel} levels there are`,
+    String(LEVELLING.maxLevel)
+  );
+  // Every shelf fills at least one slot, and every slot has something to put in
   // it — an empty shelf is a slot nobody can fill.
   const homeless = PLAYER_SKILLS.filter((s) => !slotForSkill(s.id));
-  const bare = SKILL_SLOTS.filter((slot) => !PLAYER_SKILLS.some((s) => slotForSkill(s.id) === slot.id));
+  const bare = SKILL_SLOTS.filter(
+    (slot) => !PLAYER_SKILLS.some((s) => s.category && slot.accepts.includes(s.category))
+  );
   check(
     homeless.length === 0 && bare.length === 0,
     'every skill has a slot and every slot has a skill',
@@ -4805,6 +4824,79 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
         && equippedSkill(c, 'passive') === 'surge',
       'and equipping one lands in its own slot without displacing the others',
       JSON.stringify(c.equipped)
+    );
+  }
+
+  // The gate itself, walked. A level 1 character has ONE passive however many
+  // it is handed; a level 40 one has three and they are three DIFFERENT ones.
+  {
+    const young = makeCharacter({}, 'strike');
+    const passives = skillsInCategory('passive');
+    for (const p of passives.slice(0, 3)) equipSkill(young, p.id);
+    const heldYoung = Object.entries(young.equipped ?? {}).filter(([id]) => id.startsWith('passive'));
+    check(
+      heldYoung.length === 1 && openSlots(young).length === SKILL_SLOTS.length - 2,
+      'a level 1 character fills one passive slot however many it is offered',
+      `${heldYoung.length} filled, ${openSlots(young).length} slots open`
+    );
+
+    const grown = makeCharacter({}, 'strike');
+    grown.level = 40;
+    for (const p of passives.slice(0, 3)) equipSkill(grown, p.id);
+    const heldGrown = Object.entries(grown.equipped ?? {})
+      .filter(([id]) => id.startsWith('passive'))
+      .map(([, what]) => what);
+    check(
+      heldGrown.length === 3 && new Set(heldGrown).size === 3,
+      'and a level 40 one fills all three, with three different passives in them',
+      heldGrown.join(', ')
+    );
+
+    // The one thing three slots off one shelf could get wrong: a passive held
+    // twice merges its own grants into itself, which is a build nobody walked.
+    const doubled = makeCharacter({}, 'strike');
+    doubled.level = 40;
+    equipSkill(doubled, passives[0].id, 'passive');
+    equipSkill(doubled, passives[0].id, 'passive2');
+    check(
+      Object.values(doubled.equipped ?? {}).filter((w) => w === passives[0].id).length === 1,
+      'and one held in two slots MOVES rather than doubling',
+      JSON.stringify(doubled.equipped)
+    );
+
+    // And a save that says otherwise is healed, not trusted.
+    const cheat = createGame('fresh');
+    cheat.character.level = 5;
+    cheat.character.equipped = { main: 'strike', passive: 'surge', passive3: passives[1].id };
+    heal(cheat);
+    check(
+      cheat.character.equipped.passive3 === undefined && cheat.character.equipped.passive === 'surge',
+      'and a save holding one in a slot the level has not opened has it healed away',
+      JSON.stringify(cheat.character.equipped)
+    );
+  }
+
+  // Every passive is a TRADE and every switch it hands over is read. A passive
+  // never casts, so its static grants ARE the skill — an unread one is a slot
+  // spent on a line that prints and does nothing.
+  {
+    const unread: string[] = [];
+    for (const p of skillsInCategory('passive')) {
+      for (const key of Object.keys(p.grants ?? {})) {
+        const def = GRANT_BY_ID[key];
+        if (!def) unread.push(`${p.id}: ${key} is not declared`);
+        else if (!def.reads.includes(STATS)) unread.push(`${p.id}: ${key} is not read off the stat layer`);
+        else if (def.say && def.say((p.grants ?? {})[key]) === null) {
+          unread.push(`${p.id}: ${key} is the wrong shape to say`);
+        }
+      }
+    }
+    line(`  ${skillsInCategory('passive').length} passives, all no_cast, all reading STATS`);
+    check(unread.length === 0, 'every passive grants only declared switches the sim reads', unread.join(', '));
+    check(
+      skillsInCategory('passive').every((p) => p.behaviour === 'no_cast' && Object.keys(p.grants ?? {}).length > 0),
+      'and every one of them changes a RULE rather than casting anything',
+      skillsInCategory('passive').map((p) => `${p.id}:${p.behaviour}`).join(', ')
     );
   }
 
@@ -4848,6 +4940,158 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
       if (sim.state.hero.effects.some((e) => e.id === 'crit_surge')) seen = true;
     }
     check(seen, 'and a crit in a real descent arms it', 'the buff never appeared');
+  }
+
+  // And the five that came after it, each measured at the seam it changed.
+  // Declared and read is not the same as DOES SOMETHING, which is the promise
+  // `npm run mods` makes about a modifier and this section makes about a slot.
+  {
+    const wearing = (id: string, level = 40) => {
+      const c = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+      c.level = level;
+      equipSkill(c, id);
+      return c;
+    };
+    const strike = SKILL_BY_ID.strike;
+
+    // BLOOD PACT: no pool at all, and the damage you deal comes back as life.
+    {
+      const c = wearing('bloodpact');
+      const g = treeGrants(c);
+      const pool = heroStats([], 40, strike, g).maxMana;
+      const bare = heroStats([], 40, strike, {}).maxMana;
+      line(`  Blood Pact: mana ${bare.toFixed(0)} bare, ${pool.toFixed(0)} worn`);
+      check(bare > 0 && pool === 0, 'Blood Pact leaves no mana pool at all', `${bare} then ${pool}`);
+
+      const sim = new RunSim([], c, new Rng(77));
+      let spent = false;
+      const started = sim.state.hero.life;
+      for (let i = 0; i < 3000 && sim.state.status === 'running'; i++) {
+        sim.step(TICK);
+        if (sim.state.casts > 0) spent = true;
+        if (spent) break;
+      }
+      check(
+        spent && sim.state.dryCasts === 0,
+        'and it casts anyway, never Starved, because life is what pays',
+        `${sim.state.casts} casts, ${sim.state.dryCasts} dry`
+      );
+      check(started > 0, 'and it started the descent on a full bar', String(started));
+    }
+
+    // REFRACTION: a tail of Prismatic off the elemental half, resisted as
+    // Prismatic and not as the type that carried it.
+    {
+      const share = (SKILL_BY_ID.refraction.grants ?? {}).prismaticExtra as number;
+      // A FIRE skill, so there is an elemental half for the tail to come off,
+      // and the same seeds either side of it.
+      // TIME to clear, never kills: every seed clears either way, so a count is
+      // saturated and reads the same however much harder you hit.
+      const clears = (who: Character): number => {
+        let total = 0;
+        for (const seed of [11, 13, 17, 19, 23, 29, 31, 37]) {
+          total += runToCompletion(new RunSim([], who, new Rng(seed))).elapsed;
+        }
+        return total / 8;
+      };
+      const plain = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
+      plain.level = 40;
+      const lit = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
+      lit.level = 40;
+      equipSkill(lit, 'refraction');
+      const before = clears(plain);
+      const after = clears(lit);
+      line(`  Refraction: ${after.toFixed(1)}s a clear against ${before.toFixed(1)}s over eight seeds`);
+      check(
+        typeof share === 'number' && share > 0 && after < before,
+        `Refraction's ${Math.round(share * 100)}% tail is damage that actually lands`,
+        `${after.toFixed(1)}s against ${before.toFixed(1)}s`
+      );
+    }
+
+    // THE TWO AURAS: each names its own group and nothing else, so a passive
+    // for Fire never quietly softens Poison as well.
+    {
+      const el = (SKILL_BY_ID.unmaking.grants ?? {}).elementalShred as { radius: number; amount: number };
+      const oc = (SKILL_BY_ID.unbinding.grants ?? {}).occultShred as { radius: number; amount: number };
+      line(`  the auras: ${el.amount}% off Elemental and ${oc.amount}% off Occult, both within ${el.radius} tiles`);
+      check(
+        el.amount > 0 && oc.amount > 0 && el.radius > 0 && oc.radius > 0
+          && !(SKILL_BY_ID.unmaking.grants ?? {}).occultShred
+          && !(SKILL_BY_ID.unbinding.grants ?? {}).elementalShred,
+        'each aura takes resistance off its OWN group and leaves the other alone',
+        JSON.stringify([el, oc])
+      );
+      // The groups they name are the ones the damage table has, and the two of
+      // them between them cover every type that belongs to one.
+      const grouped = DAMAGE_TYPES.filter((d) => d.group);
+      check(
+        new Set(grouped.map((d) => d.group)).size === 2 && grouped.length === 6,
+        'and between them they cover all 6 grouped damage types',
+        grouped.map((d) => `${d.id}:${d.group}`).join(', ')
+      );
+    }
+
+    // FEATHERSTEP: armour stops blunting and starts dodging, and the two are
+    // never both on — that IS the trade.
+    {
+      const c = wearing('featherstep');
+      const plate: RolledMod = {
+        entryId: 'probe', defId: 'probe', group: 'probe', slot: 'defence',
+        name: 'probe', tier: 1, tags: [],
+        stats: [{ stat: 'armour', form: 'flat', value: 400, tags: [] }],
+      };
+      const bare = heroStats([plate], 40, strike, {});
+      const light = heroStats([plate], 40, strike, treeGrants(c));
+      line(
+        `  Featherstep: ${bare.armourReduction.toFixed(0)}% blunting becomes ` +
+          `${light.dodgeChance.toFixed(0)}% Dodge`
+      );
+      check(
+        bare.armourReduction > 0 && bare.dodgeChance === 0
+          && light.armourReduction === 0 && light.dodgeChance > 0,
+        'Featherstep trades every point of blunting for a Dodge chance',
+        `${bare.armourReduction}/${bare.dodgeChance} then ${light.armourReduction}/${light.dodgeChance}`
+      );
+      check(
+        light.dodgeChance < bare.armourReduction && light.dodgeChance <= DEFENCE.dodgeCap,
+        'and gets back LESS than it gave up, which is the squishy half of it',
+        `${light.dodgeChance} against ${bare.armourReduction}`
+      );
+
+      // And it moves. A kiting hero gives ground while the skill recovers, so
+      // over a real descent he covers more ground than one that stands in it.
+      const walked = (who: Character): number => {
+        const sim = new RunSim([], who, new Rng(808));
+        let far = 0;
+        let last = { x: sim.state.hero.x, y: sim.state.hero.y };
+        for (let i = 0; i < 2400 && sim.state.status === 'running'; i++) {
+          sim.step(TICK);
+          far += Math.hypot(sim.state.hero.x - last.x, sim.state.hero.y - last.y);
+          last = { x: sim.state.hero.x, y: sim.state.hero.y };
+        }
+        return far;
+      };
+      const still = walked(makeCharacter(starterLoadout(new Rng(9)), 'strike'));
+      const kiting = walked(wearing('featherstep'));
+      line(`  and covers ${kiting.toFixed(0)} tiles against ${still.toFixed(0)} standing still`);
+      check(kiting > still, 'and a kiting hero covers more ground than one that stands in it', `${kiting} / ${still}`);
+    }
+
+    // CONTAGION: what a body carried passes on, and everything you apply is
+    // weaker for it.
+    {
+      const c = wearing('contagion');
+      const g = treeGrants(c);
+      const aura = g.ailmentSpread as { radius: number; stacks: number };
+      const weak = g.ailmentWeak as number;
+      line(`  Contagion: ${aura.stacks} stack within ${aura.radius} tiles, everything ${Math.round((1 - weak) * 100)}% weaker`);
+      check(
+        aura.stacks === 1 && aura.radius > 0 && weak > 0 && weak < 1,
+        'Contagion passes ONE stack on and weakens every Ailment to pay for it',
+        JSON.stringify([aura, weak])
+      );
+    }
   }
 
   // A movement skill fires ITSELF and may never put a body in rock. BOTH of

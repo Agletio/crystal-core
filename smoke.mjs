@@ -1506,18 +1506,27 @@ assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.len
 // Three depths now. The old screen put every skill and every node on one
 // page, which was fine at ten nodes and is a wall at a hundred.
 $('sheet-close').click();
-// --- three slots, and equipping into one -----------------------------------
+// --- the slot row, and equipping into one -----------------------------------
 // Equipping the passive must not stop you swinging: they are different slots,
 // and the button says which one it is talking about.
 {
   $('open-skills').click();
-  // The three slots are the top of the screen now: what you are holding, over
-  // the shelves it came off.
+  // Every slot is at the top of the screen — what you are holding, over the
+  // shelves it came off — INCLUDING the two nobody has reached yet: a slot you
+  // cannot fill is half the reason to keep levelling.
   const slots = all('#skills-slots .slotcard');
-  assert(slots.length === 3, 'the top row is the three slots', String(slots.length));
+  assert(slots.length === 5, 'the top row is every slot', String(slots.length));
+  const locked = slots.filter((c) => c.classList.contains('slotcard--locked'));
+  assert(locked.length === 2, 'two of them locked at level 1', String(locked.length));
+  assert(
+    locked.every((c) => /level \d+/.test(c.textContent ?? '')),
+    'and each says which level opens it',
+    locked.map((c) => c.textContent).join(' | ')
+  );
+  assert(locked.every((c) => c.disabled), 'and neither can be clicked into');
   assert(
     slots.filter((c) => c.classList.contains('slotcard--empty')).length === 2,
-    'two of them empty on a fresh character'
+    'two of the three you HAVE are empty on a fresh character'
   );
 
   all('#skills-cats .catcard').find((c) => /Passive/.test(c.textContent ?? '')).click();

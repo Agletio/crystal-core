@@ -1520,7 +1520,9 @@
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
 
-  .slotrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  /* Five now, and auto-fit rather than a count: a sixth slot is a table row
+     and must never also be a CSS edit. */
+  .slotrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
   .slotcard { text-align: left; padding: 12px; display: flex; align-items: center; gap: 10px; }
   .slotcard:hover { background: var(--edge); border-color: var(--rust); }
   .slotcard--empty { border-style: dashed; }
@@ -1528,6 +1530,12 @@
   .slotcard__slot { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
   .slotcard__name { font-family: var(--display); font-size: 12px; }
   .slotcard--empty .slotcard__name { color: var(--text-dim); }
+  /* A slot the level has not opened is READABLE and dead, never hidden: what
+     is coming is half the reason to keep climbing. */
+  .slotcard--locked { opacity: .45; border-style: dotted; cursor: default; }
+  .slotcard--locked:hover { background: none; border-color: var(--edge); }
+  /* Armed: the next skill you pick lands HERE, so the card says which. */
+  .slotcard--arming { border-color: var(--citrine); border-style: solid; }
   .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .catcard { text-align: left; padding: 14px; display: flex; flex-direction: column; gap: 5px; }
   .catcard:hover:not(:disabled) { background: var(--edge); border-color: var(--rust); }

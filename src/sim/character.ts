@@ -11,7 +11,7 @@ import {
 import { treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, canAllocateTrade, canDeallocateTrade, tradePointsFor } from '../trades';
 import { canAllocateTrial, canDeallocateTrial, trialPointsFor } from '../trials';
-import type { Item } from '../types';
+import type { Item, SkillSlotDef } from '../types';
 
 /**
  * A skill's own progression. Levels come from USE — only the active skill takes
@@ -134,18 +134,49 @@ export const equippedSkill = (character: Character, slotId: string): string | nu
 export const mainSkillId = (character: Character): string =>
   equippedSkill(character, MAIN_SLOT) ?? '';
 
-/** Which slot a skill goes in, by its category. Null for a monster's. */
+/** Which SHELF a skill comes off. Not where one LANDS — with three passive
+ *  slots that is `targetSlotFor`. Null for a monster's. */
 export function slotForSkill(skillId: string): string | null {
   const category = SKILL_BY_ID[skillId]?.category;
   if (!category) return null;
   return SKILL_SLOTS.find((s) => s.accepts.includes(category))?.id ?? null;
 }
 
-/** IN PLACE. Refuses a skill the slot does not accept. */
-export function equipSkill(character: Character, skillId: string): boolean {
-  const slot = slotForSkill(skillId);
-  if (!slot || !SKILL_SLOT_BY_ID[slot]) return false;
-  character.equipped = { ...(character.equipped ?? {}), [slot]: skillId };
+/** The slots this character has actually reached. */
+export const openSlots = (character: Character): SkillSlotDef[] =>
+  SKILL_SLOTS.filter((s) => character.level >= (s.unlocksAt ?? 1));
+
+export const slotIsOpen = (character: Character, slotId: string): boolean =>
+  character.level >= (SKILL_SLOT_BY_ID[slotId]?.unlocksAt ?? 1);
+
+/** Where it would land: the slot it is in, else the first EMPTY one it fits,
+ *  else the first it fits at all. Null when nothing open takes it. */
+export function targetSlotFor(character: Character, skillId: string): string | null {
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (!category) return null;
+  const fits = openSlots(character).filter((s) => s.accepts.includes(category));
+  const held = fits.find((s) => equippedSkill(character, s.id) === skillId);
+  if (held) return held.id;
+  return (fits.find((s) => !equippedSkill(character, s.id)) ?? fits[0])?.id ?? null;
+}
+
+/** IN PLACE. Refuses a slot the skill does not fit or the level has not opened;
+ *  one held elsewhere MOVES, since two slots holding one passive would merge
+ *  its grants into itself. */
+export function equipSkill(character: Character, skillId: string, slotId?: string): boolean {
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (!category) return false;
+  const slot = slotId ?? targetSlotFor(character, skillId);
+  if (!slot) return false;
+  const def = SKILL_SLOT_BY_ID[slot];
+  if (!def || !def.accepts.includes(category) || !slotIsOpen(character, slot)) return false;
+
+  const held = { ...(character.equipped ?? {}) };
+  for (const [id, what] of Object.entries(held)) {
+    if (what === skillId && id !== slot) delete held[id];
+  }
+  held[slot] = skillId;
+  character.equipped = held;
   return true;
 }
 
@@ -227,7 +258,9 @@ export function addXp(character: Character, amount: number): number {
   character.xp += amount;
   let gained = 0;
 
-  while (character.xp >= xpToNext(character.level)) {
+  // The cap is on the LEVEL, never the bank: xp past it buys nothing and the
+  // number still climbs, so a report never reads as a loss.
+  while (character.level < LEVELLING.maxLevel && character.xp >= xpToNext(character.level)) {
     character.xp -= xpToNext(character.level);
     character.level++;
     gained++;

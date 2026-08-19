@@ -254,6 +254,109 @@ export const GRANTS: GrantDef[] = [
     say: () =>
       'Mana pays the whole of an Ailment rather than its share, while there is mana to pay with',
   },
+  // --- what a PASSIVE hands over -------------------------------------------
+  //
+  // A passive never casts, so its static `grants` ARE the skill and every one
+  // of these reads STATS: the sim asks for them, not a delivery, which is what
+  // lets any of the six sit beside any main skill.
+  {
+    id: 'ailmentSpread',
+    what: 'an ailing body passes what it carried on when it dies',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'radius', 'stacks');
+      return p && `A body dying with an Ailment gives ${p[1]} stack of each to every enemy within ${p[0]} tiles`;
+    },
+  },
+  {
+    id: 'ailmentWeak',
+    what: 'every Ailment you apply is weaker, damage and Slow alike',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Ailments you apply are ${pct(1 - n)} weaker, in damage and in Slow alike`;
+    },
+  },
+  {
+    id: 'bloodCost',
+    what: 'you have no mana at all and a use is paid for in life',
+    reads: [STATS],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Your mana pool is 0 and every use costs ${n} life per point it would have cost`;
+    },
+  },
+  {
+    id: 'lifeLeech',
+    what: 'a share of the damage you deal returns as life',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of the damage you deal returns to you as life`;
+    },
+  },
+  {
+    id: 'prismaticExtra',
+    what: 'your Elemental damage carries Prismatic damage on top of it',
+    // LAST, and off what the Elemental half already came to: it multiplies a
+    // number every other multiplier is already in, and is resisted as
+    // Prismatic rather than as the type that carried it.
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `You deal ${pct(n)} of your Elemental damage as extra Prismatic damage`;
+    },
+  },
+  {
+    id: 'elementalShred',
+    what: 'enemies near you are softer to Fire, Cold and Lightning',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'radius', 'amount');
+      return p && `Enemies within ${p[0]} tiles have ${p[1]}% less Fire, Cold and Lightning Resistance`;
+    },
+  },
+  {
+    id: 'occultShred',
+    what: 'enemies near you are softer to Poison, Dark and Light',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'radius', 'amount');
+      return p && `Enemies within ${p[0]} tiles have ${p[1]}% less Poison, Dark and Light Resistance`;
+    },
+  },
+  {
+    id: 'armourToDodge',
+    what: 'Armour stops being reduction and becomes a Dodge chance',
+    reads: [STATS],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Your Armour blunts nothing and is instead ${pct(n)} of itself as Dodge`;
+    },
+  },
+  {
+    id: 'unhitHaste',
+    what: 'you move faster the longer nothing has landed on you',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'after', 'more');
+      return p && `${pct(p[1])} increased Movement Speed once ${p[0]}s have passed without a hit landing on you`;
+    },
+  },
+  {
+    id: 'kite',
+    what: 'you give ground while your skill is recovering instead of standing in it',
+    reads: [STATS],
+    say: (v) => (v === true ? 'You back off to the edge of your own reach while your skill recovers' : null),
+  },
+
   {
     id: 'manaOnKill',
     what: 'a kill returns mana',

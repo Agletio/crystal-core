@@ -59,6 +59,7 @@ export interface CombatStats {
   resistances: Record<string, number>;
   /** Percent reduction against HITS only, already capped. */
   armourReduction: number;
+  dodgeChance: number; // a HIT stopped outright, like a Block; armour traded for it
   /** Percent chance a HIT is turned aside outright, already capped. */
   blockChance: number;
   /** Extra percent damage on a crit, on top of the base doubling. */
@@ -293,10 +294,14 @@ export function heroStats(
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
 
-  // The Aethermancer's one road to mana that nothing else offers: it lands on
-  // the BASE, so Intelligence and a ring of the Well scale it like any other.
+  // The Aethermancer's one road to mana: it lands on the BASE, so Intelligence
+  // and a ring of the Well scale it like any other. A passive ZEROES it and
+  // pays in life instead, which makes every mana line on your gear dead weight
+  // — the same shape of choice armour makes below, blunting or dodging.
   const vein = typeof grants.poolFromLife === 'number' ? grants.poolFromLife : 0;
-  const maxMana = computeStat(HERO_BASE.mana + maxLife * vein, mods, 'mana');
+  const maxMana = grants.bloodCost ? 0 : computeStat(HERO_BASE.mana + maxLife * vein, mods, 'mana');
+  const shed = typeof grants.armourToDodge === 'number' ? grants.armourToDodge : 0;
+  const blunted = armourReduction(armour);
 
   return {
     maxLife,
@@ -333,7 +338,8 @@ export function heroStats(
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour,
-    armourReduction: armourReduction(armour),
+    armourReduction: shed > 0 ? 0 : blunted,
+    dodgeChance: shed > 0 ? Math.min(DEFENCE.dodgeCap, blunted * shed) : 0,
     blockChance: Math.min(DEFENCE.blockCap, percentStat(mods, 'blockChance')), // a shield, and nothing else
     resistances: resistancesFrom(mods),
     attackRange: computeStat(skill.range, mods, 'attackRange'),
@@ -576,6 +582,7 @@ export function monsterStats(
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,
     armourReduction: blunted,
+    dodgeChance: 0,
     blockChance: 0,
     resistances,
     attackRange: MONSTER_BASE.attackRange * def.attackRange,

@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
+import { AILMENT, DAMAGE_TYPE_BY_ID, POTIONS, POTION_BY_ID } from '../data';
 import { percentStat } from '../mods';
 import type { BossPhase } from '../data';
 
@@ -127,6 +127,7 @@ const AGGRO_CHAIN_RADIUS = 4.5;
 
 /** How near the way out the last encounter comes up the hole behind you. */
 const FINALE_RANGE = 5;
+const KITE_EDGE = 0.92; // of your own reach; short of all of it, or a hair of drift eats the use
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
@@ -387,6 +388,7 @@ export interface RunState {
   /** Damage taken, by type. The results overlay renders whatever it is handed. */
   damageTaken: Record<string, number>;
   blocked: number; // hits a shield turned aside; zero with nothing in the off hand
+  dodged: number; // and hits stepped out of, which is the same shape without one
   /** Swings that could not pay, and swings in all: the calibration is a share. */
   dryCasts: number;
   /** Times the movement skill fired. Zero without one equipped. */
@@ -429,6 +431,8 @@ export class RunSim {
   /** True for the length of a cast that bought extra damage with the pool. */
   /** Mana this cast spent overcharging, which is also what it ADDS. */
   private overcharged = 0;
+  /** Seconds since anything last landed on the hero. */
+  private sinceHit = 0;
   /** Fractions of a flask charge banked back, by potion id. */
   private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
@@ -575,6 +579,7 @@ export class RunSim {
       marks: 0,
       damageTaken: {},
       blocked: 0,
+      dodged: 0,
     };
 
     if (def) this.state.folk.push(this.stand(def.who, def.plan.stands));
@@ -978,6 +983,29 @@ export class RunSim {
     if (ok(e.x, e.y + dy)) e.y += dy;
   }
 
+  /** A step away from whatever is nearest, only while the skill is recovering
+   *  and only out to `KITE_EDGE` of your reach. Returns whether it moved. */
+  private kiteFrom(hero: Entity, dt: number): boolean {
+    if (this.grants.kite !== true) return false;
+    let near: Entity | null = null;
+    let closest = Infinity;
+    for (const m of this.state.monsters) {
+      if (m.dead) continue;
+      const d = dist(hero, m);
+      if (d < closest) {
+        closest = d;
+        near = m;
+      }
+    }
+    if (!near) return false;
+    const edge = this.reachTo(hero, near) * KITE_EDGE;
+    if (closest >= edge || closest < 1e-3) return false;
+
+    const step = Math.min(edge - closest, hero.stats.moveSpeed * dt * this.paceOf(hero));
+    this.nudge(hero, ((hero.x - near.x) / closest) * step, ((hero.y - near.y) / closest) * step);
+    return true;
+  }
+
   /** Decay the transient pose and fall back to whether it's moving. */
   private settleAction(e: Entity, moving: boolean): void {
     if (e.actionTimer > 0) return;
@@ -1256,6 +1284,7 @@ export class RunSim {
     const kept = before > 0 ? total / before : 1;
     this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + before * kept;
     if (total <= 0) return;
+    this.sinceHit = 0;
     hero.life -= total;
     if (hero.life <= 0) this.kill(hero);
   }
@@ -1268,6 +1297,7 @@ export class RunSim {
     if (hero.cooldown > 0) hero.cooldown -= dt;
     if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
+    this.sinceHit += dt;
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
     if (hero.life < hero.stats.maxLife) {
@@ -1298,7 +1328,12 @@ export class RunSim {
       if (d <= this.reachTo(hero, target) && this.canSee(hero, target)) {
         hero.path = [];
         this.face(hero, target.x, target.y);
-        this.settleAction(hero, false);
+        // Standing in it is the default and a passive replaces it: while the
+        // skill is recovering, give ground out to the EDGE of your own reach
+        // and no further. Past the edge you would be walking back in for every
+        // use, which is a build that cannot kill rather than one that kites.
+        const gave = hero.cooldown > 0 && this.kiteFrom(hero, dt);
+        this.settleAction(hero, gave);
         if (hero.cooldown <= 0) this.swing(hero, target);
       } else if (!this.advance(hero, target, dt)) {
         // Route vanished mid-chase. Drop it; the next flood picks correctly.
@@ -2093,6 +2128,22 @@ export class RunSim {
     // window the Alchemist's rather than a stat block with a duration.
     const cost = this.grants.potionFree && this.flasked() ? 0 : hero.stats.manaCost;
     this.state.casts++;
+
+    // NO POOL AT ALL: life is the only currency, so the use always happens and
+    // the price is always paid, and regeneration becomes the whole build.
+    const blood = (this.grants.bloodCost as number) ?? 0;
+    if (blood > 0) {
+      hero.life -= cost * blood;
+      this.starved = false;
+      this.overcharged = 0;
+      if (hero.life <= 0) {
+        this.kill(hero);
+        return;
+      }
+      this.useSkill(hero, target, this.skill);
+      return;
+    }
+
     let paid = hero.mana + 1e-9 >= cost;
 
     // Or LIFE pays what the pool cannot, so the Aethermancer is never Starved
@@ -2183,8 +2234,13 @@ export class RunSim {
 
   /** What a step is multiplied by: a running flask, and nothing else yet. */
   private paceOf(e: Entity): number {
-    if (e.kind !== 'hero' || !this.flasked()) return 1;
-    return 1 + ((this.grants.potionMove as number) ?? 0) / 100;
+    if (e.kind !== 'hero') return 1;
+    let pace = this.flasked() ? 1 + ((this.grants.potionMove as number) ?? 0) / 100 : 1;
+    // Untouched for long enough, and speed IS the defence. It is a pace rather
+    // than a stat so that being hit takes it away the instant it happens.
+    const ramp = this.grants.unhitHaste as { after: number; more: number } | undefined;
+    if (ramp && this.sinceHit >= ramp.after) pace *= 1 + ramp.more;
+    return pace;
   }
 
   /** ONE answer, for a body with a skill and a body without. In two places a
@@ -2213,6 +2269,16 @@ export class RunSim {
         return;
       }
     }
+    // A DODGE is the same shape and the same place in the order: the hit does
+    // not happen, so nothing it carried happens either.
+    if (defender.kind === 'hero' && defender.stats.dodgeChance > 0) {
+      if (this.rng.chance(defender.stats.dodgeChance / 100)) {
+        s.dodged++;
+        s.floaters.push({ x: defender.x, y: defender.y, text: 'dodge', age: 0, crit: false, on: 'hero' });
+        this.wake(defender, true);
+        return;
+      }
+    }
 
     // Inside a skill use, crit was decided once for the whole cast. A plain
     // monster swing rolls its own.
@@ -2233,7 +2299,7 @@ export class RunSim {
     }
     // EXPOSURE changes a HIT rather than ticking: more damage taken, from anyone.
     const exposed = stacksOf(defender, 'exposure');
-    if (exposed > 0) scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0)) / 100;
+    if (exposed > 0) scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0) * this.weak()) / 100;
     // A flask that blunts what reaches you. The window is the trade.
     if (defender.kind === 'hero' && this.flasked()) {
       scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
@@ -2273,10 +2339,22 @@ export class RunSim {
 
     const byType: Record<string, number> = {};
     let dmg = 0;
+    let elemental = 0;
     for (const [type, amount] of Object.entries(dealt)) {
-      const dealt = this.afterResistance(defender, amount * scale * lift, type) * armour;
+      const raw = amount * scale * lift;
+      if (DAMAGE_TYPE_BY_ID[type]?.group === 'elemental') elemental += raw;
+      const dealt = this.afterResistance(defender, raw, type) * armour;
       byType[type] = (byType[type] ?? 0) + dealt;
       dmg += dealt;
+    }
+    // LAST, off the elemental total BEFORE its own resistance: every multiplier
+    // is already in that number, and the tail is resisted as Prismatic instead,
+    // so hardening against Fire does not harden against what Fire carried.
+    const tail = attacker.kind === 'hero' ? ((this.grants.prismaticExtra as number) ?? 0) : 0;
+    if (tail > 0 && elemental > 0) {
+      const extra = this.afterResistance(defender, elemental * tail, 'prismatic') * armour;
+      byType.prismatic = (byType.prismatic ?? 0) + extra;
+      dmg += extra;
     }
     // The floor is on the HIT, not per type: a hit split six ways would
     // otherwise be worth six times the minimum.
@@ -2301,6 +2379,7 @@ export class RunSim {
     this.wake(defender, true);
 
     defender.life -= dmg;
+    if (defender.kind === 'hero') this.sinceHit = 0;
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
     defender.actionTimer = HURT_POSE;
@@ -2383,7 +2462,20 @@ export class RunSim {
   /** Typeless has no entry, so it passes through untouched — by design. */
   private afterResistance(defender: Entity, amount: number, type: string): number {
     const res = defender.stats.resistances[type] ?? 0;
-    return amount * (1 - res / 100);
+    return amount * (1 - (res - this.shredding(defender, type)) / 100);
+  }
+
+  /** What an aura has taken off a monster's ward for this type, here and now.
+   *  Never the hero's: an aura you carry cannot soften you. */
+  private shredding(defender: Entity, type: string): number {
+    if (defender.kind === 'hero') return 0;
+    const group = DAMAGE_TYPE_BY_ID[type]?.group;
+    if (!group) return 0;
+    const aura = (group === 'elemental' ? this.grants.elementalShred : this.grants.occultShred) as
+      | { radius: number; amount: number }
+      | undefined;
+    if (!aura) return 0;
+    return dist(this.state.hero, defender) <= aura.radius ? aura.amount : 0;
   }
 
   /** A hit lands, so whatever its damage TYPES carry lands with it: an ailment
@@ -2422,7 +2514,7 @@ export class RunSim {
     // how long it runs. They reach the new ailments exactly as they reached
     // the old one, so a walked Rend tree is not a walked tree that does nothing.
     const g = attacker.kind === 'hero' ? this.grants : {};
-    const more = (g.ailmentMultiplier as number) ?? 1;
+    const more = ((g.ailmentMultiplier as number) ?? 1) * (attacker.kind === 'hero' ? this.weak() : 1);
     const longer = (g.ailmentDuration as number) ?? 1;
     const dps = (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more;
     target.ailments.push({
@@ -2439,7 +2531,7 @@ export class RunSim {
    *  place a swing rate is multiplied, so there is no second slow. */
   private chill(target: Entity, def: AilmentDef): void {
     const stacks = stacksOf(target, 'chill');
-    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0)) / 100);
+    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0) * this.weak()) / 100);
     const live = target.effects.find((x) => x.id === SLOWED);
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
     else target.effects.push({ id: SLOWED, remaining: def.seconds });
@@ -2471,13 +2563,31 @@ export class RunSim {
     }
   }
 
+  /** What the body was CARRYING passes on: one stack of each kind it had, and
+   *  never onward again — a spread that spreads is a run that never ends. */
+  private spreadAilments(victim: Entity): void {
+    const aura = this.grants.ailmentSpread as { radius: number; stacks: number } | undefined;
+    if (!aura || victim.kind === 'hero' || victim.ailments.length === 0) return;
+
+    const kinds = [...new Set(victim.ailments.map((a) => a.id))];
+    for (const m of this.state.monsters) {
+      if (m === victim || m.dead || dist(m, victim) > aura.radius) continue;
+      for (const id of kinds) {
+        const def = AILMENT_BY_ID[id];
+        if (!def) continue;
+        for (let n = 0; n < aura.stacks; n++) this.strike(this.state.hero, m, def);
+      }
+    }
+    this.emit('burst', [{ x: victim.x, y: victim.y }, { x: victim.x + aura.radius, y: victim.y }], 'poison', 0.3);
+  }
+
   /** CURSE pays when the body DIES: a share of what it could hold, to whatever
    *  is round it. */
   private burstCurse(victim: Entity): void {
     const def = AILMENT_BY_ID.curse;
     const stacks = stacksOf(victim, 'curse');
     if (!def?.burstShare || stacks === 0) return;
-    const damage = victim.stats.maxLife * ((stacks * def.burstShare) / 100);
+    const damage = victim.stats.maxLife * ((stacks * def.burstShare * this.weak()) / 100);
     if (damage <= 0) return;
 
     const radius = def.burstRadius ?? 2;
@@ -2658,8 +2768,20 @@ export class RunSim {
   /** Damage dealt, back as mana. The road that pays for spending the pool. */
   private leech(hero: Entity, damage: number): void {
     const share = (this.grants.manaLeech as number) ?? 0;
-    if (share <= 0 || damage <= 0) return;
-    hero.mana = Math.min(hero.stats.maxMana, hero.mana + damage * share);
+    if (share > 0 && damage > 0) {
+      hero.mana = Math.min(hero.stats.maxMana, hero.mana + damage * share);
+    }
+    const life = (this.grants.lifeLeech as number) ?? 0;
+    if (life > 0 && damage > 0) {
+      hero.life = Math.min(hero.stats.maxLife, hero.life + damage * life);
+    }
+  }
+
+  /** What every Ailment you apply is worth, as one multiplier. ONE seam, or a
+   *  passive that softens a Burn would leave a Chill at full strength — and
+   *  every ailment in the game is the hero's, so there is no second source. */
+  private weak(): number {
+    return (this.grants.ailmentWeak as number) ?? 1;
   }
 
   /** A defender's armour once the room has had its say. The stat pipeline's
@@ -2738,6 +2860,7 @@ export class RunSim {
     this.rollRelicDrop();
     this.rollKeyDrop();
     this.burstCurse(victim);
+    this.spreadAilments(victim);
     this.openHoard(victim);
     this.wellUp(victim);
     // Its own path, never `rollRelicDrop`: that loops every row, so a Bearer

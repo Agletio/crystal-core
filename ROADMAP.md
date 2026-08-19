@@ -13,10 +13,11 @@ has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
 Ward and Overcharge. Phase 1 below (a quest log) stays parked by his word until
 the stripped opening has been played, and the balance pass is held.
 
-**Shockwave's ICON is a hand-drawn 12x12 grid and reads as a funnel** rather
-than as ground opening — `WEDGE` in `src/ui/icons.ts`, distinct from Strike's
-sword and legible, which is all it had to be. Every other main skill has a
-GENERATED icon under `sk_<id>`; this one is waiting for its generation.
+**Shockwave and the six passives carry HAND-DRAWN 12x12 icons** — `WEDGE`,
+`SPORES`, `CHALICE`, `PRISM`, `SUNDER`, `UNBIND` and `FEATHER` in
+`src/ui/icons.ts`. Each is a distinct silhouette, which is all a 26px slot card
+needs; every other skill has a GENERATED icon under `sk_<id>` and these seven
+are waiting for theirs.
 
 **One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
 and boss controls"* — the flasks are `potion_life` and `potion_mana` in
@@ -48,6 +49,9 @@ to look:
 | Overcharge | ADDED damage equal to the mana spent, and nothing at all if the cost went unpaid |
 | Shockwave | the sixth main skill and the second melee one: the `cone` behaviour, the Cone keyword, `src/trees/shockwave.ts` |
 | Strike, reworked | Splash is GONE — `cleave` is now `melee`, one enemy hit hard, and Echoes are bought |
+| three passive slots | `SkillSlotDef.unlocksAt`, opening at levels 1, 20 and 40 of the 99 there are |
+| six more passives | Contagion, Blood Pact, Refraction, Unmaking, Unbinding, Featherstep — nine new grants, all read off STATS |
+| Dodge | a HIT stopped outright, TRADED for armour and never worn beside it; `DEFENCE.dodgeCap` |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would

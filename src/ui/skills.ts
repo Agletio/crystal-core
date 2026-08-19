@@ -43,7 +43,16 @@ import { keywordLine, nodeCard } from './glossary';
 import { slotWorkings } from '../skill-text';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { addSkillXp, equipSkill, equippedSkill, skillProgress, slotForSkill, xpToNext } from '../sim/character';
+import {
+  addSkillXp,
+  equipSkill,
+  equippedSkill,
+  skillProgress,
+  slotForSkill,
+  slotIsOpen,
+  targetSlotFor,
+  xpToNext,
+} from '../sim/character';
 import { AILMENT_OF_TYPE, DAMAGE_TYPE_BY_ID } from '../data';
 import type { CombatStats } from '../sim/stats';
 
@@ -80,6 +89,13 @@ let onChanged: (() => void) | null = null;
 /** Where you are. Null category means the top. */
 let category: SkillCategory | null = null;
 let viewing: string | null = null;
+/** Which slot the next pick fills, set by clicking an empty one. A MODE, so it
+ *  lives here and never in the save. */
+let arming: string | null = null;
+
+/** In ANY slot, which is the only right question once one shelf feeds three. */
+const heldAnywhere = (skillId: string): boolean =>
+  Object.values(game.character.equipped ?? {}).includes(skillId);
 
 // --- the map view ----------------------------------------------------------
 //
@@ -173,7 +189,7 @@ function skillSummary(skill: SkillDef): string[] {
   const stats = characterStats(game.character);
   const progress = skillProgress(game.character, skill.id);
   const grants = treeGrants(game.character);
-  const mine = skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '');
+  const mine = heldAnywhere(skill.id);
 
   const converted = convertedType(skill, grants);
   const dealt = converted ?? skill.damageTypes[0] ?? 'physical';
@@ -241,7 +257,9 @@ async function open(skillId: string): Promise<void> {
     return;
   }
 
-  const slot = slotForSkill(skillId);
+  const slot = (arming && SKILL_SLOT_BY_ID[arming]?.accepts.includes(SKILL_BY_ID[skillId]?.category as never)
+    ? arming
+    : targetSlotFor(game.character, skillId));
   if (!slot) return;
   const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
   if (held?.id === skillId) return;
@@ -255,7 +273,8 @@ async function open(skillId: string): Promise<void> {
   ) {
     return;
   }
-  equipSkill(game.character, skillId);
+  equipSkill(game.character, skillId, slot);
+  arming = null;
   render();
 }
 
@@ -270,21 +289,37 @@ function renderSlots(): void {
   host.replaceChildren();
 
   for (const slot of SKILL_SLOTS) {
-    const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
-    const card = el('button', `slotcard${held ? '' : ' slotcard--empty'}`) as HTMLButtonElement;
+    const locked = !slotIsOpen(game.character, slot.id);
+    const held = locked ? undefined : SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
+    const card = el(
+      'button',
+      `slotcard${held || locked ? '' : ' slotcard--empty'}${locked ? ' slotcard--locked' : ''}` +
+        (arming === slot.id ? ' slotcard--arming' : '')
+    ) as HTMLButtonElement;
     card.id = skillSlotCardId(slot.id);
     card.append(held ? skillIcon(held.id, 26) : categoryIcon(slot.accepts[0], 26));
 
     const what = el('span', 'slotcard__what');
     what.append(el('span', 'slotcard__slot', slot.name));
-    what.append(el('span', 'slotcard__name', held?.name ?? 'empty'));
+    what.append(
+      el('span', 'slotcard__name', locked ? `level ${slot.unlocksAt}` : (held?.name ?? 'empty'))
+    );
     card.append(what);
-    attachTooltip(card, () => (held ? skillCard(held) : `${slot.name}\n${slot.blurb}`));
+    attachTooltip(card, () =>
+      locked
+        ? `${slot.name}\nOpens at level ${slot.unlocksAt}. You are ${game.character.level}.`
+        : held
+          ? skillCard(held)
+          : `${slot.name}\n${slot.blurb}`
+    );
 
-    // A filled one goes to its web; an empty one, and anything with no web to
-    // go to, goes to the shelf this slot ACCEPTS.
+    // A filled one goes to its web. An empty one ARMS itself and opens the
+    // shelf it accepts, so what you pick lands in the slot you clicked —
+    // without that, three passive slots would all be filled by the first.
+    card.disabled = locked;
     card.onclick = () => {
       if (held && treeFor(held.id).length > 0) return void open(held.id);
+      arming = held ? null : slot.id;
       category = (held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0] ?? null;
       viewing = null;
       render();
@@ -342,7 +377,7 @@ function renderSkillList(): void {
     btn.id = skillRowId(skill.id);
     const head = el('span', 'skillrow__head');
     head.append(el('span', 'skillrow__name', skill.name));
-    if (skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '')) {
+    if (heldAnywhere(skill.id)) {
       head.append(el('span', 'skillrow__tag', 'equipped'));
     }
     btn.append(head);
@@ -390,7 +425,7 @@ function renderHeader(): void {
     ` · ${progress.xp}/${xpToNext(progress.level)} xp`;
 
   const equip = $('skills-equip') as HTMLButtonElement;
-  const slot = slotForSkill(skillId);
+  const slot = targetSlotFor(game.character, skillId);
   const equipped = !!slot && equippedSkill(game.character, slot) === skillId;
   // Which of the three it goes in, said out loud: a skill that cannot displace
   // the one you are swinging is a skill nobody would guess is equippable.
@@ -398,7 +433,8 @@ function renderHeader(): void {
   equip.textContent = equipped ? `Equipped — ${where}` : where ? `Equip as ${where}` : 'Equip';
   equip.disabled = equipped || !slot;
   equip.onclick = () => {
-    equipSkill(game.character, skillId);
+    equipSkill(game.character, skillId, slot ?? undefined);
+    arming = null;
     render();
     renderWeb();
   };

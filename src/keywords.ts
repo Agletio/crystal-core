@@ -295,6 +295,17 @@ export const KEYWORDS: KeywordDef[] = [
       `hand and from nowhere else, and does nothing against an Ailment.`,
   },
   {
+    id: 'dodge',
+    name: 'Dodge',
+    says: ['Dodge', 'Dodges', 'Dodged'],
+    means:
+      `A Dodged hit deals nothing at all, exactly as a Blocked one does, and ` +
+      `does nothing against an Ailment either. It caps at ${DEFENCE.dodgeCap}% ` +
+      `and is TRADED for Armour rather than worn beside it: what stops some ` +
+      `hits outright no longer blunts the rest.`,
+    grants: ['armourToDodge'],
+  },
+  {
     id: 'armour',
     name: 'Armour',
     says: ['Armour'],

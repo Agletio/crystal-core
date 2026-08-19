@@ -183,6 +183,98 @@ const WEDGE = [
   '.....oo.....',
 ];
 
+/** The passives, one silhouette each. They sit side by side in a slot row, so
+ *  what has to differ is the SHAPE — colour alone is unreadable at 26px. */
+const SPORES = [
+  '..o......o..',
+  '.ovo....ovo.',
+  '..o..oo..o..',
+  '....ovvo....',
+  '.o.ovvvvo.o.',
+  'ovo.ovvo.ovo',
+  '.o.o.oo.o.o.',
+  '....o..o....',
+  '.o.o....o.o.',
+  'ovo......ovo',
+  '.o........o.',
+  '............',
+];
+
+const CHALICE = [
+  '..o......o..',
+  '.orrrrrrro..',
+  '.orwwwwro.o.',
+  '..orrrrro...',
+  '...orrro....',
+  '....oro.....',
+  '....oro.....',
+  '...ooooo....',
+  '..orrrrro...',
+  '..ooooooo...',
+  '............',
+  '............',
+];
+
+const PRISM = [
+  '.....oo.....',
+  '....occo....',
+  '...occcco...',
+  '..occwwcco..',
+  '.occwwwwcco.',
+  'occccccccco.',
+  '.oyo.oo.obo.',
+  '..oyo.o.obo.',
+  '...oyo.obo..',
+  '....oy.bo...',
+  '.....oo.....',
+  '............',
+];
+
+const SUNDER = [
+  '....oo......',
+  '...offo.....',
+  '..offfo..o..',
+  '.offo...ofo.',
+  'ofo....offo.',
+  'oo....offo..',
+  '.....offo...',
+  '....offo....',
+  '...offo.....',
+  '..offo......',
+  '..oo........',
+  '............',
+];
+
+const UNBIND = [
+  '..oo....oo..',
+  '.obbo..obbo.',
+  '.obbbooobbo.',
+  '..obbbbbbo..',
+  '...obbbbo...',
+  '....obbo....',
+  '...obbbbo...',
+  '..obbbbbbo..',
+  '.obbbooobbo.',
+  '.obbo..obbo.',
+  '..oo....oo..',
+  '............',
+];
+
+const FEATHER = [
+  '.........oo.',
+  '........osso',
+  '.......osso.',
+  '..o...osso..',
+  '.oso.osso...',
+  '.ossoosso...',
+  '..ossosso...',
+  '...ossso....',
+  '..oosso.....',
+  '.oo.oo......',
+  'oo..........',
+  '............',
+];
+
 const ORB = [
   '.y........y.',
   '....oooo....',
@@ -223,7 +315,8 @@ const STEEL = { o: INK, s: '#B9C2CC', d: '#7A8492', g: 'var(--citrine)', h: '#6B
 const STORM = { o: INK, y: 'var(--citrine)', w: '#FFF7CC', d: '#7A8492', h: '#6B4526' };
 const ROT = { o: INK, v: '#4E8C33', g: 'var(--venom)', w: '#EAFFC0' };
 const ARCANE = { o: INK, b: '#5C3A96', c: 'var(--amethyst)', w: '#EBD9FF', y: 'var(--citrine)' };
-const CRYSTAL = { o: INK, c: '#3E7F99', q: 'var(--quartz)', w: '#EAF9FF' };
+const CRYSTAL = { o: INK, c: '#3E7F99', q: 'var(--quartz)', w: '#EAF9FF', y: 'var(--citrine)', b: '#5C3A96' };
+const BLOOD = { o: INK, r: '#8E2230', w: '#E86A6A' };
 const LEATHER = { o: INK, b: '#7A5A34', d: '#4A3A22' };
 
 /**
@@ -1068,6 +1161,18 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
       return sprite(ARROW, STORM, size, 'lightning_arrow');
     case 'shockwave':
       return sprite(WEDGE, STEEL, size, 'shockwave');
+    case 'contagion':
+      return sprite(SPORES, ROT, size, 'contagion');
+    case 'bloodpact':
+      return sprite(CHALICE, BLOOD, size, 'bloodpact');
+    case 'refraction':
+      return sprite(PRISM, CRYSTAL, size, 'refraction');
+    case 'unmaking':
+      return sprite(SUNDER, FIRE_PALETTE, size, 'unmaking');
+    case 'unbinding':
+      return sprite(UNBIND, ARCANE, size, 'unbinding');
+    case 'featherstep':
+      return sprite(FEATHER, STEEL, size, 'featherstep');
     case 'surge':
       return sprite(SURGE, STEEL, size, 'surge');
     case 'blink':

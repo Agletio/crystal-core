@@ -195,6 +195,9 @@ export const AILMENT = {
 export const DEFENCE = {
   resistanceCap: 75,
   armourCap: 75,
+  /** A Dodge stops a HIT outright like a Block, and caps lower: armour is
+   *  traded for it rather than worn beside it. */
+  dodgeCap: 50,
   /** A Block stops a HIT outright, so the chance is the whole of it. Short of
    *  certain, or a shield would be the only defence worth wearing. */
   blockCap: 60,
@@ -3240,6 +3243,8 @@ START_PRESETS.dev.gear = DEV_GEAR;
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
+  maxLevel: 99, // the top of the climb; XP past it is banked and buys nothing
+
   lifePerLevel: 14,
   /** PERCENT of the skill's own base per level, so skills stay in proportion. */
   damagePerLevel: 2.2,
@@ -3527,6 +3532,125 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     grants: { critIntoBuff: { more: 35, seconds: 5 } },
   },
+  // The rest of the shelf. Every one is a TRADE — what it takes away is the
+  // reason the thing it gives is worth a slot — and every one is `no_cast`
+  // with static `grants`, which `treeGrants` merges out of whichever passive
+  // slot it happens to sit in.
+  {
+    id: 'contagion',
+    name: 'Contagion',
+    category: 'passive',
+    description:
+      'A body dying with an Ailment gives 1 stack of each to every enemy within ' +
+      '3 tiles. Ailments you apply are 40% weaker, in damage and in Slow alike.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    // One stack and no onward spread: a room where every death re-ails the
+    // room is a room that never stops, and a headless run that never ends.
+    grants: { ailmentSpread: { radius: 3, stacks: 1 }, ailmentWeak: 0.6 },
+  },
+  {
+    id: 'bloodpact',
+    name: 'Blood Pact',
+    category: 'passive',
+    description:
+      'Your mana pool is 0 and every use costs 1.4 life per point of mana it ' +
+      'would have cost. 3% of the damage you deal returns to you as life.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    // The leech is ON the passive rather than left to the tables: a build with
+    // no pool and no way back is a passive nobody can finish a descent with.
+    grants: { bloodCost: 1.4, lifeLeech: 0.03 },
+  },
+  {
+    id: 'refraction',
+    name: 'Refraction',
+    category: 'passive',
+    description:
+      'You deal 30% of your Elemental damage as extra Prismatic damage. It is ' +
+      'worked out LAST, so nothing scales it twice — and it is resisted as ' +
+      'Prismatic, so hardening against Fire does not harden against it.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { prismaticExtra: 0.3 },
+  },
+  {
+    id: 'unmaking',
+    name: 'Unmaking',
+    category: 'passive',
+    description:
+      'Enemies within 5 tiles have 25% less Fire, Cold and Lightning Resistance.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { elementalShred: { radius: 5, amount: 25 } },
+  },
+  {
+    id: 'unbinding',
+    name: 'Unbinding',
+    category: 'passive',
+    description:
+      'Enemies within 5 tiles have 25% less Poison, Dark and Light Resistance.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { occultShred: { radius: 5, amount: 25 } },
+  },
+  {
+    /**
+     * SPEED as a defensive layer, which is three rules rather than one: armour
+     * stops blunting and starts Dodging at 60% of what it was worth, standing
+     * untouched makes you faster, and you give ground while the skill recovers
+     * instead of standing in the pack. On average 60% of your armour is less
+     * mitigation than all of it, and it arrives all-or-nothing — the squishy
+     * half of the trade is both of those at once.
+     */
+    id: 'featherstep',
+    name: 'Featherstep',
+    category: 'passive',
+    description:
+      'Your Armour blunts nothing and is instead 60% of itself as Dodge. ' +
+      '60% increased Movement Speed once 2s have passed without a hit landing ' +
+      'on you, and you back off to the edge of your own reach while your skill ' +
+      'recovers.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { armourToDodge: 0.6, unhitHaste: { after: 2, more: 0.6 }, kite: true },
+  },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and
   // fires it ITSELF, because automation is universal.
@@ -3603,6 +3727,22 @@ export const SKILL_SLOTS: SkillSlotDef[] = [
     name: 'Passive',
     accepts: ['passive'],
     blurb: 'Always on, and paid for by giving something up.',
+  },
+  // Two more of the same shelf, LEVEL-GATED: three at once is a build rather
+  // than a pick, so they arrive across the climb instead of at the start.
+  {
+    id: 'passive2',
+    name: 'Second Passive',
+    accepts: ['passive'],
+    blurb: 'A second one, from level 20.',
+    unlocksAt: 20,
+  },
+  {
+    id: 'passive3',
+    name: 'Third Passive',
+    accepts: ['passive'],
+    blurb: 'A third one, from level 40.',
+    unlocksAt: 40,
   },
   {
     id: 'movement',

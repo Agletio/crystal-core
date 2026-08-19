@@ -332,6 +332,8 @@ export interface SkillSlotDef {
   name: string;
   accepts: SkillCategory[]; // which shelves may fill it
   blurb: string; // what an empty one is for
+  /** Character level the slot opens at. Absent is level 1, which is most. */
+  unlocksAt?: number;
 }
 
 export interface Recipe {

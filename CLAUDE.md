@@ -180,9 +180,12 @@ chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
 then a fork into two branches — and ten points reach one spoke whole.
-Six main skills, each with its own tree; a passive and a mover fill the other
-two slots, the mover having a nine-node web of its own. Attributes are bought
-per level. Every use costs mana; out of mana you are STARVED, not stopped.
+Six main skills, each with its own tree; a mover and THREE passives fill the
+other slots, the mover having a nine-node web of its own. **A passive changes a
+RULE and pays for it**, and the second and third slots open at levels 20 and 40
+of the 99 there are. Attributes are bought per level. Every use costs mana; out
+of mana you are STARVED, not stopped — unless a passive took the pool away, and
+then life pays.
 
 **A boss is fought by your BUILD**, like everything else — a cycle of phases
 drawn on its own body, and what answers them is what you are wearing. Move speed

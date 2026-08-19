@@ -300,10 +300,16 @@ function healSkillSlots(character: Character): boolean {
   const legacy = (character as unknown as { skillId?: string }).skillId;
   const kept: Record<string, string> = {};
 
+  // A slot the level has not reached drops what is in it, and one skill may sit
+  // in only one: a passive held twice merges its own grants into itself.
+  const seen = new Set<string>();
   for (const slot of SKILL_SLOTS) {
     const held = character.equipped?.[slot.id] ?? (slot.id === MAIN_SLOT ? legacy : undefined);
     const category = held ? SKILL_BY_ID[held]?.category : undefined;
-    if (held && category && slot.accepts.includes(category)) kept[slot.id] = held;
+    if (!held || !category || !slot.accepts.includes(category)) continue;
+    if (character.level < (slot.unlocksAt ?? 1) || seen.has(held)) continue;
+    seen.add(held);
+    kept[slot.id] = held;
   }
   if (!kept[MAIN_SLOT]) kept[MAIN_SLOT] = MAIN_SKILLS[0]?.id ?? PLAYER_SKILLS[0]?.id ?? 'strike';
 
