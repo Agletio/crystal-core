@@ -72,9 +72,9 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_shell',
             name: 'The Outer Shell',
             description:
-              'Mana pays the WHOLE of an Ailment rather than its share, while ' +
-              'there is mana to pay with. Armour never could, which is what ' +
-              'makes the pool worth spending on it.',
+              'Mana pays 100% of an Ailment rather than the 20% a hit pays, ' +
+              'while there is mana to pay with. Armour never could, which is ' +
+              'what makes the pool worth spending on.',
             grants: { wardWhole: true },
           },
         },

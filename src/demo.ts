@@ -5326,8 +5326,10 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const who = makeCharacter({}, 'strike');
     who.level = 50;
     takeUpTrade(who, 'aethermancer');
-    allocateTrade(who, TRADE_BY_ID.aethermancer.nodes[0].id);
-    allocateTrade(who, 'aet_ward');
+    // A gate is three steps out, so the stem is walked before it is reached.
+    for (const step of ['aet_warding_m0', 'aet_warding_m1', 'aet_ward']) {
+      allocateTrade(who, step);
+    }
     const before = treeGrants(who).manaShield;
     equipSkill(who, 'blight');
     check(
@@ -5362,7 +5364,11 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const saved = createGame('fresh');
     saved.character.level = 50;
     takeUpTrade(saved.character, 'alchemist');
-    for (const n of ['alc_reaction_m0', 'alc_volatile', 'alc_reaction_m1', 'alc_detonation']) {
+    // Stem, gate, then a branch: the walk the new shape actually allows.
+    for (const n of [
+      'alc_reaction_m0', 'alc_reaction_m1', 'alc_volatile',
+      'alc_detonating_m0', 'alc_detonating_m1', 'alc_detonation',
+    ]) {
       allocateTrade(saved.character, n);
     }
     const walked = saved.character.tradeAllocated.length;
@@ -5370,7 +5376,7 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     saved.character.level = 1;
     const cut = heal(saved);
     check(
-      walked === 4 && saved.character.tradeAllocated.length === 0 && cut.points >= walked,
+      walked === 6 && saved.character.tradeAllocated.length === 0 && cut.points >= walked,
       'a level that never paid for a trade point hands it back on load',
       `${walked} walked, ${saved.character.tradeAllocated.length} kept, ${cut.points} refunded`
     );

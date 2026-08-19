@@ -165,7 +165,7 @@ export const ALCHEMIST: TradeSpec = {
             description:
               'A Critical leaves you dealing 35% more damage for 4s. Etched ' +
               'Glass buys you the crits; this is what one is worth after it lands.',
-            grants: { critBuff: { more: 35, seconds: 4 } },
+            grants: { critIntoBuff: { more: 35, seconds: 4 } },
           },
         },
       ],
@@ -257,8 +257,8 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_frugal',
             name: 'Nothing Wasted',
             description:
-              'While a flask is running your uses cost no mana at all. He does ' +
-              'not brew more; he stops pouring any of it away.',
+              'While a flask is running your uses cost 0 mana. He does not brew ' +
+              'more; he stops pouring any of it away.',
             grants: { potionFree: true },
           },
         },
