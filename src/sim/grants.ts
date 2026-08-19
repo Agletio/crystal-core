@@ -215,6 +215,76 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `${pct(n)} of the damage you deal returns to you as mana`;
     },
   },
+  // --- what a BRANCH of a trade hands over ---------------------------------
+  //
+  // A trade notable changes a RULE and never a number, or two trades compete
+  // on percentages and one of them wins. These are the rules the second branch
+  // of each spoke exists for. No `changes` class on any: none is read by a
+  // DELIVERY, so none can invent a combination `INTERACTIONS` has to price.
+  {
+    id: 'potionMove',
+    what: 'you move faster while a flask is running',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `While a flask is running you move ${Math.round(n)}% faster`;
+    },
+  },
+  {
+    id: 'potionLess',
+    what: 'a running flask blunts what reaches you',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `While a flask is running you take ${pct(n)} less damage`;
+    },
+  },
+  {
+    id: 'potionFree',
+    what: 'a running flask pays for your uses',
+    reads: [STATS],
+    say: () => 'While a flask is running your uses cost no mana',
+  },
+  {
+    id: 'wardWhole',
+    what: 'mana pays the WHOLE of an Ailment rather than a share',
+    reads: [STATS],
+    say: () =>
+      'Mana pays the whole of an Ailment rather than its share, while there is mana to pay with',
+  },
+  {
+    id: 'manaOnKill',
+    what: 'a kill returns mana',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Every kill returns ${pct(n)} of your maximum mana`;
+    },
+  },
+  {
+    id: 'payWithLife',
+    what: 'a use you cannot pay for is paid in life instead',
+    reads: [STATS],
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A use you cannot pay for spends life instead, ${n} life for every point of mana — so you are never Starved, only bleeding`;
+    },
+  },
+  {
+    id: 'overchargeYield',
+    what: 'an overcharged use adds more than it spent',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Overcharge adds ${n}x what it spent rather than matching it`;
+    },
+  },
   {
     id: 'poolFromLife',
     what: 'part of your life counts toward your mana pool',

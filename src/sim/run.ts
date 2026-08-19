@@ -1883,7 +1883,7 @@ export class RunSim {
     const startY = e.y;
 
     if (e.kind === 'hero' && (e.stun ?? 0) > 0) return false; // a Fall holds you still
-    let remaining = e.stats.moveSpeed * dt * pace;
+    let remaining = e.stats.moveSpeed * dt * pace * this.paceOf(e);
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];
       const dx = wp.x - e.x;
@@ -1911,7 +1911,7 @@ export class RunSim {
       if (stepped((p) => this.inCircle(p)) || stepped((p) => this.inBody(p, e.radius))) {
         e.x = startX; // round it rather than into it
         e.y = startY;
-        this.slideRound(e, goal, e.stats.moveSpeed * dt * pace);
+        this.slideRound(e, goal, e.stats.moveSpeed * dt * pace * this.paceOf(e));
       }
     }
 
@@ -2089,10 +2089,24 @@ export class RunSim {
   /** The one place mana is spent. Short of it you are STARVED: the pool drains
    *  to 0 and the cast lands at `starvedMultiplier`, skill and tree intact. */
   private swing(hero: Entity, target: Entity): void {
-    const cost = hero.stats.manaCost;
+    // A running flask can pay for the whole thing, which is what makes that
+    // window the Alchemist's rather than a stat block with a duration.
+    const cost = this.grants.potionFree && this.flasked() ? 0 : hero.stats.manaCost;
     this.state.casts++;
-    const paid = hero.mana + 1e-9 >= cost;
-    hero.mana = paid ? hero.mana - cost : 0;
+    let paid = hero.mana + 1e-9 >= cost;
+
+    // Or LIFE pays what the pool cannot, so the Aethermancer is never Starved
+    // — only bleeding, which is a different problem and a survivable one.
+    const perMana = (this.grants.payWithLife as number) ?? 0;
+    if (!paid && perMana > 0) {
+      const short = cost - hero.mana;
+      hero.life -= short * perMana;
+      hero.mana = 0;
+      paid = true;
+      if (hero.life <= 0) this.kill(hero);
+    } else {
+      hero.mana = paid ? hero.mana - cost : 0;
+    }
     if (!paid) this.state.dryCasts++;
     this.starved = !paid;
     // A cost that is a SHARE of the pool, so stacking mana pays for itself.
@@ -2167,6 +2181,12 @@ export class RunSim {
     return slow * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
   }
 
+  /** What a step is multiplied by: a running flask, and nothing else yet. */
+  private paceOf(e: Entity): number {
+    if (e.kind !== 'hero' || !this.flasked()) return 1;
+    return 1 + ((this.grants.potionMove as number) ?? 0) / 100;
+  }
+
   /** ONE answer, for a body with a skill and a body without. In two places a
    *  Slow reached melee packs or ranged ones, never both. */
   private swingCooldown(e: Entity): number {
@@ -2214,6 +2234,10 @@ export class RunSim {
     // EXPOSURE changes a HIT rather than ticking: more damage taken, from anyone.
     const exposed = stacksOf(defender, 'exposure');
     if (exposed > 0) scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0)) / 100;
+    // A flask that blunts what reaches you. The window is the trade.
+    if (defender.kind === 'hero' && this.flasked()) {
+      scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
+    }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
@@ -2243,7 +2267,8 @@ export class RunSim {
     // What the cast paid, ADDED point for point: a bigger pool hits harder.
     const dealt = { ...attacker.stats.damageByType };
     if (this.overcharged > 0 && attacker.kind === 'hero') {
-      dealt[OVERCHARGE_TYPE] = (dealt[OVERCHARGE_TYPE] ?? 0) + this.overcharged;
+      const yieldOf = (this.grants.overchargeYield as number) ?? 1;
+      dealt[OVERCHARGE_TYPE] = (dealt[OVERCHARGE_TYPE] ?? 0) + this.overcharged * yieldOf;
     }
 
     const byType: Record<string, number> = {};
@@ -2551,7 +2576,7 @@ export class RunSim {
     // which is the whole reason letting mana do it is worth a trade.
     if (e.kind === 'hero') {
       const before = total;
-      total = this.absorb(e, total);
+      total = this.absorb(e, total, true);
       const kept = before > 0 ? total / before : 1;
       for (const [type, dealt] of Object.entries(byType)) {
         this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + dealt * kept;
@@ -2621,8 +2646,8 @@ export class RunSim {
   /** A share of what would reach the hero, paid at one point of pool for one of
    *  damage. Returns what gets through, and is the one seam a hit and an
    *  ailment tick both ask, so the two can never drift. */
-  private absorb(hero: Entity, damage: number): number {
-    const share = shieldShare(this.grants);
+  private absorb(hero: Entity, damage: number, ailment = false): number {
+    const share = ailment && this.grants.wardWhole ? 1 : shieldShare(this.grants);
     if (share <= 0 || hero.mana <= 0 || damage <= 0) return damage;
     const paid = Math.min(hero.mana, damage * share);
     hero.mana -= paid;
@@ -2700,6 +2725,11 @@ export class RunSim {
 
     s.killed++;
     if (victim.welled) s.welled++;
+    const back = (this.grants.manaOnKill as number) ?? 0;
+    if (back > 0) {
+      const hero = s.hero;
+      hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+    }
     s.xpGained += this.xpPerKill * victim.bounty;
     s.loot.currency.gold =
       (s.loot.currency.gold ?? 0) + this.goldPerKill * victim.bounty;

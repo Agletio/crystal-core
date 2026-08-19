@@ -5148,17 +5148,17 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
       [...orphans, ...dear].map((n) => n.id).join(', ')
     );
 
-    // The alternating claim, and the whole of what makes the tree a decision:
-    // every other node out is a notable, so ten points are always five of them
-    // — and the far one on a spoke costs its whole arm, so only two fit.
-    const wrong = notables.filter((n) => (distance.get(n.id) ?? 0) % 2 !== 0);
+    // The shape, and the whole of what makes the tree a decision: a GATE is
+    // three steps out and a branch tip six, so ten points buy one spoke walked
+    // whole and a second gate — never two whole spokes.
+    const gates = trade.spec.spokes.map((sp) => distance.get(sp.gate.id) ?? 0);
     const deepest = Math.max(...nodes.map((n) => distance.get(n.id) ?? 0));
-    const arms = Math.floor(TRADE.maxPoints / deepest);
-    line(`  the deepest node costs ${deepest} of ${TRADE.maxPoints} — ${arms} whole arms fit`);
+    const whole = Math.floor(TRADE.maxPoints / deepest);
+    line(`  a gate costs ${gates[0]}, the deepest node ${deepest} of ${TRADE.maxPoints}`);
     check(
-      wrong.length === 0 && arms === 2,
-      'notables alternate with travel, and only 2 whole arms fit in the budget',
-      `${wrong.map((n) => n.id).join(', ')} · ${arms} arms`
+      gates.every((d) => d === 3) && deepest === 6 && whole === 1,
+      'a gate is 3 steps out and a tip 6, so ONE spoke fits whole and no more',
+      `gates ${gates.join('/')} · deepest ${deepest} · ${whole} whole`
     );
 
     // Every switch declared, read whatever the skill's delivery is, and able to
@@ -5301,12 +5301,15 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     line(
       `  200 random walks reached ${fewest} to ${most} notables; walked on purpose, ${notablesIn(aimed)}`
     );
+    // Three GATES is what ten points buys if you spend them all on stems, and
+    // it is the ceiling: a fourth gate is twelve. What a walk decides is
+    // whether those points go to breadth or to one spoke's far branch.
     check(
-      stuck === 0 && most === TRADE.maxPoints / 2 && notablesIn(aimed) === TRADE.maxPoints / 2,
-      `${TRADE.maxPoints} points always spend, and ${TRADE.maxPoints / 2} notables is the ceiling`,
+      stuck === 0 && most === 3 && notablesIn(aimed) === 3,
+      `${TRADE.maxPoints} points always spend, and 3 notables is the ceiling`,
       `${stuck} walks short, ${most} the most reached`
     );
-    check(fewest < TRADE.maxPoints / 2, 'and a careless walk pays for travel it never uses', String(fewest));
+    check(fewest < 3, 'and a careless walk pays for travel it never uses', String(fewest));
 
     while (walker.tradeAllocated.length > 0) {
       const loose = walker.tradeAllocated.find((x) =>

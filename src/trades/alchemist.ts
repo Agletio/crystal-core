@@ -116,9 +116,10 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_lightfoot',
             name: 'Light on the Rock',
             description:
-              '+14% increased Movement Speed. The window is worth what you can ' +
-              'reach inside it, and standing still is the one way to waste one.',
-            stats: [stat('moveSpeed', 'inc', 14)],
+              'While a flask is running you move 30% faster. The window is ' +
+              'worth what you can reach inside it, and standing still is the ' +
+              'one way to waste one.',
+            grants: { potionMove: 30 },
           },
         },
       ],
@@ -162,9 +163,9 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_deepcut',
             name: 'The Long Cut',
             description:
-              '+55% Critical Damage. Etched Glass buys you the crits; this ' +
-              'decides what one is worth when it lands.',
-            stats: [stat('critMultiplier', 'flat', 55)],
+              'A Critical leaves you dealing 35% more damage for 4s. Etched ' +
+              'Glass buys you the crits; this is what one is worth after it lands.',
+            grants: { critBuff: { more: 35, seconds: 4 } },
           },
         },
       ],
@@ -208,9 +209,9 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_tempered',
             name: 'Tempered Glass',
             description:
-              '+18% increased Life and +420 Armour. A window you die inside is ' +
-              'a window you did not open.',
-            stats: [stat('life', 'inc', 18), stat('armour', 'flat', 420)],
+              'While a flask is running you take 30% less damage. A window you ' +
+              'die inside is a window you did not open.',
+            grants: { potionLess: 0.3 },
           },
         },
       ],
@@ -226,7 +227,7 @@ export const ALCHEMIST: TradeSpec = {
         id: 'alc_still',
         name: 'The Still',
         description: 'Each flask regains a Charge every 14.3s of a descent.',
-        grants: { potionRefill: 14.3 },
+        grants: { chargeRegen: 0.07 },
       },
       branches: [
         {
@@ -240,9 +241,9 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_cascade',
             name: 'Cascade',
             description:
-              'And another every 10s on top of it, so a flask is a cooldown ' +
-              'rather than a budget.',
-            grants: { potionRefill: 10 },
+              'Another Charge every 12.5s on its own, and one every 6.7s with ' +
+              'the Still in front of it.',
+            grants: { chargeRegen: 0.08 },
           },
         },
         {
@@ -256,9 +257,9 @@ export const ALCHEMIST: TradeSpec = {
             id: 'alc_frugal',
             name: 'Nothing Wasted',
             description:
-              '+18% reduced Mana Cost. He does not brew more; he stops pouring ' +
-              'any of it away.',
-            stats: [stat('manaCost', 'inc', -18)],
+              'While a flask is running your uses cost no mana at all. He does ' +
+              'not brew more; he stops pouring any of it away.',
+            grants: { potionFree: true },
           },
         },
       ],

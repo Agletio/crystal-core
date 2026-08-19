@@ -72,9 +72,10 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_shell',
             name: 'The Outer Shell',
             description:
-              '+520 Armour and +14% to all Resistances. The pool pays for what ' +
-              'gets through; this decides how much does.',
-            stats: [stat('armour', 'flat', 520), stat('elementalRes', 'flat', 14)],
+              'Mana pays the WHOLE of an Ailment rather than its share, while ' +
+              'there is mana to pay with. Armour never could, which is what ' +
+              'makes the pool worth spending on it.',
+            grants: { wardWhole: true },
           },
         },
       ],
@@ -123,9 +124,10 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_rime',
             name: 'Rimebound',
             description:
-              '+45% chance to Chill. What Overcharge adds is Cold, so what it ' +
-              'spends the pool on is also what freezes the room.',
-            stats: [stat('ailmentChance', 'flat', 45, ['chill'])],
+              '+45% chance to apply the Ailment your damage carries. What ' +
+              'Overcharge adds is Cold, so what it spends the pool on is also ' +
+              'what freezes the room.',
+            grants: { ailmentChance: 45 },
           },
         },
       ],
@@ -169,9 +171,9 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_wellspring',
             name: 'Wellspring',
             description:
-              '+70% increased Mana Regeneration. The Siphon pays you for ' +
-              'killing; this pays you for standing there.',
-            stats: [stat('manaRegen', 'inc', 70)],
+              'Every kill returns 4% of your maximum mana. The Siphon pays you ' +
+              'for damage; this pays you for finishing.',
+            grants: { manaOnKill: 0.04 },
           },
         },
       ],
@@ -215,9 +217,10 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_thrift',
             name: 'Never Dry',
             description:
-              '+22% reduced Mana Cost. Dry Season makes running out survivable; ' +
-              'this is the road where you do not.',
-            stats: [stat('manaCost', 'inc', -22)],
+              'A use you cannot pay for spends life instead, 2 life for every ' +
+              'point of mana. Dry Season makes running out survivable; this is ' +
+              'the road where you never run out, only bleed.',
+            grants: { payWithLife: 2 },
           },
         },
       ],
@@ -263,9 +266,10 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_widening',
             name: 'The Wider Bore',
             description:
-              '+40% increased Mana. Overcharge spends a share of the pool, so ' +
-              'every point of it here is a point of damage there.',
-            stats: [stat('mana', 'inc', 40)],
+              'Overcharge adds 1.6x what it spent rather than matching it. ' +
+              'Cataclysm buys a bigger mouthful; this makes every mouthful go ' +
+              'further.',
+            grants: { overchargeYield: 1.6 },
           },
         },
       ],
