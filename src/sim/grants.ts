@@ -195,31 +195,14 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'overcharge',
-    what: 'a cast may spend a share of your maximum mana for more damage',
-    reads: [STATS],
-    say: (v) => {
-      const p = pair(v, 'share', 'more');
-      return p && `Each use spends a further ${pct(p[0])} of your maximum mana and deals ${pct(p[1])} more damage`;
-    },
-  },
-  {
-    id: 'overchargeMore',
-    what: 'an overcharged cast deals more still',
+    what: 'a cast spends a share of your maximum mana and ADDS that much damage',
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `An overcharged use deals a further ${pct(n)} more damage`;
-    },
-  },
-  {
-    id: 'manaLeech',
-    what: 'damage you deal comes back as mana',
-    reads: [STATS],
-    merge: 'sum',
-    say: (v) => {
-      const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of the damage you deal returns as mana`;
+      return n === null
+        ? null
+        : `Each use spends ${pct(n)} of your maximum mana and adds that much Cold damage`;
     },
   },
   {
@@ -658,14 +641,15 @@ export function bleedOf(
  * declares both halves and every amplifier after it sums into `more`, so the
  * sim, the sheet and the card all read one answer.
  */
-export function overchargeOf(
-  grants: Record<string, unknown>
-): { share: number; more: number } | null {
-  const v = grants.overcharge as { share?: unknown; more?: unknown } | undefined;
-  if (typeof v?.share !== 'number' || typeof v?.more !== 'number') return null;
-  const extra = typeof grants.overchargeMore === 'number' ? grants.overchargeMore : 0;
-  return { share: Math.max(0, v.share), more: Math.max(0, v.more + extra) };
-}
+/**
+ * The share of your MAXIMUM mana a cast spends, and therefore how much damage
+ * it adds — the two are the same number, which is the whole point: what you
+ * pay is what you get, so a bigger pool is a bigger hit rather than a bigger
+ * buffer you never touch. A `more` multiplier gave a stacked pool nothing and
+ * made regeneration the only stat that mattered.
+ */
+export const overchargeOf = (grants: Record<string, unknown>): number =>
+  Math.max(0, (grants.overcharge as number) ?? 0);
 
 /** The share of a hit the mana pool pays before life does. Capped: a pool that
  *  ate everything would be a second life bar rather than a trade. */

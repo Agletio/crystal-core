@@ -5368,11 +5368,27 @@ rule('TRADE RULES — does each one actually change what the sim does?');
       'Overcharge spends a share of the maximum pool on uses it can pay for',
       `${over.sim.state.overcharges} of ${over.sim.state.casts} casts`
     );
-    const deal = overchargeOf(treeGrants(armed(['aet_overflow_m0', 'aet_overcharge', 'aet_overflow_m1', 'aet_cataclysm'])));
+    const both = armed(['aet_overflow_m0', 'aet_overcharge', 'aet_overflow_m1', 'aet_cataclysm']);
+    const share = overchargeOf(treeGrants(both));
     check(
-      deal !== null && Math.abs(deal.more - 0.85) < 1e-9 && deal.share === 0.12,
-      'and an amplifier past it sums into what an overcharged use is worth',
-      `${deal?.share} for ${deal?.more}`
+      Math.abs(share - 0.18) < 1e-9,
+      'and a second node sums into the share, which is the price AND the payoff',
+      String(share)
+    );
+
+    // The whole of what was wrong with the old shape: a MORE multiplier paid a
+    // stacked pool nothing, so regeneration was the only mana stat worth
+    // having. What it adds now IS what it spent, so the pool is the damage.
+    const small = characterStats(both);
+    const bigger = armed([
+      'aet_overflow_m0', 'aet_overcharge', 'aet_overflow_m1', 'aet_cataclysm',
+      'aet_vessel_m0', 'aet_vessel_m1', 'aet_vessel',
+    ]);
+    const pool = characterStats(bigger).maxMana;
+    check(
+      pool > small.maxMana && pool * share > small.maxMana * share,
+      'so a bigger pool is a bigger hit, which a `more` multiplier never gave',
+      `${Math.round(small.maxMana * share)} added against ${Math.round(pool * share)}`
     );
 
     const dry = armed(['aet_siphoning_m0', 'aet_siphon']);

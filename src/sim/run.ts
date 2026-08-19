@@ -272,6 +272,8 @@ export interface Entity {
 export const stacksOf = (e: Entity, id: string): number =>
   e.ailments.reduce((n, a) => n + (a.id === id ? 1 : 0), 0);
 
+const OVERCHARGE_TYPE = 'cold'; // whatever the skill deals: the pool is his, and cold
+
 /** A box in a pack. `opened` turns when the last guard goes down. */
 export interface Hoard {
   id: number;
@@ -424,7 +426,8 @@ export class RunSim {
   /** True for the length of a cast the hero could not pay for. */
   private starved = false;
   /** True for the length of a cast that bought extra damage with the pool. */
-  private overcharged = false;
+  /** Mana this cast spent overcharging, which is also what it ADDS. */
+  private overcharged = 0;
   /** Fractions of a flask charge banked back, by potion id. */
   private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
@@ -2092,22 +2095,20 @@ export class RunSim {
     if (!paid) this.state.dryCasts++;
     this.starved = !paid;
     // A cost that is a SHARE of the pool, so stacking mana pays for itself.
-    this.overcharged = paid && this.spendOvercharge(hero);
+    this.overcharged = paid ? this.spendOvercharge(hero) : 0;
     this.useSkill(hero, target, this.skill);
     this.starved = false;
-    this.overcharged = false;
+    this.overcharged = 0;
   }
 
-  /** Whether this use was overcharged. Silently skipped when the pool is short,
-   *  so the trade never turns a payable cast into a starved one. */
-  private spendOvercharge(hero: Entity): boolean {
-    const deal = overchargeOf(this.grants);
-    if (!deal) return false;
-    const price = hero.stats.maxMana * deal.share;
-    if (price <= 0 || hero.mana < price) return false;
+  /** What it PAID, or 0 when short. The payment IS the damage. */
+  private spendOvercharge(hero: Entity): number {
+    const share = overchargeOf(this.grants);
+    const price = hero.stats.maxMana * share;
+    if (price <= 0 || hero.mana < price) return 0;
     hero.mana -= price;
     this.state.overcharges++;
-    return true;
+    return price;
   }
 
   private useSkill(user: Entity, primary: Entity, skill: SkillDef): void {
@@ -2217,7 +2218,6 @@ export class RunSim {
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
     // Conditions on the WHOLE use: a burst is worth what made it.
     if (attacker.kind === 'hero') {
-      if (this.overcharged) scale *= 1 + (overchargeOf(this.grants)?.more ?? 0);
       if (this.flasked()) scale *= (this.grants.potionMore as number) ?? 1;
     }
     // From a crit that landed BEFORE this one: the crit granting it never
@@ -2239,9 +2239,15 @@ export class RunSim {
         ? ((swing + boost.flatDamage) * (1 + boost.incDamage / 100)) / swing
         : 1;
 
+    // What the cast paid, ADDED point for point: a bigger pool hits harder.
+    const dealt = { ...attacker.stats.damageByType };
+    if (this.overcharged > 0 && attacker.kind === 'hero') {
+      dealt[OVERCHARGE_TYPE] = (dealt[OVERCHARGE_TYPE] ?? 0) + this.overcharged;
+    }
+
     const byType: Record<string, number> = {};
     let dmg = 0;
-    for (const [type, amount] of Object.entries(attacker.stats.damageByType)) {
+    for (const [type, amount] of Object.entries(dealt)) {
       const dealt = this.afterResistance(defender, amount * scale * lift, type) * armour;
       byType[type] = (byType[type] ?? 0) + dealt;
       dmg += dealt;

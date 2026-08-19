@@ -39,14 +39,18 @@ export const AETHERMANCER: TradeSpec = {
           id: 'aet_ward',
           name: 'Aether Ward',
           description:
-            '20% of damage taken is paid out of mana before it reaches your ' +
-            'life — Ailments included, which Armour never blunts.',
+            '20% of every hit is paid out of mana before it reaches your life. ' +
+            'Take 100 and you lose 80 life and 20 mana; with 10 mana left you ' +
+            'lose 90 life and the 10; with none you lose the whole 100. ' +
+            'Ailments included, which Armour never blunts.',
           grants: { manaShield: 0.2 },
         },
         {
           id: 'aet_bulwark',
           name: 'Bulwark of Aether',
-          description: 'A further 25% of damage taken comes off mana first.',
+          description:
+            'A further 25% of every hit comes off mana first, so 45% of it ' +
+            'does — while there is mana to pay it with.',
           grants: { manaShield: 0.25 },
         },
       ],
@@ -63,15 +67,18 @@ export const AETHERMANCER: TradeSpec = {
           id: 'aet_overcharge',
           name: 'Overcharge',
           description:
-            'Each use spends a further 12% of your maximum mana and deals 40% ' +
-            'more damage. The only cost in the game that grows as you stack mana.',
-          grants: { overcharge: { share: 0.12, more: 0.4 } },
+            'Each use spends 10% of your MAXIMUM mana and adds that much Cold ' +
+            'damage. A 400 pool spends 40 and adds 40; a 1200 pool spends 120 ' +
+            'and adds 120. A use that cannot pay spends nothing and adds nothing.',
+          grants: { overcharge: 0.1 },
         },
         {
           id: 'aet_cataclysm',
           name: 'Cataclysm',
-          description: 'An overcharged use deals a further 45% more damage.',
-          grants: { overchargeMore: 0.45 },
+          description:
+            'A further 8% of the pool per use, and a further 8% of it added — ' +
+            'the price and the payoff are the same number and always will be.',
+          grants: { overcharge: 0.08 },
         },
       ],
     },
@@ -131,8 +138,8 @@ export const AETHERMANCER: TradeSpec = {
           id: 'aet_vessel',
           name: 'The Vessel',
           description:
-            '15% of your maximum life is added to your mana pool — the one road ' +
-            'to mana that runs through the stat everything grants.',
+            '15% of your maximum life is added to your maximum mana — the one ' +
+            'road to a bigger pool that runs through the stat everything grants.',
           grants: { poolFromLife: 0.15 },
         },
         {
