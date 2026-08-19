@@ -34,7 +34,6 @@ import {
   BOSS_KEYS,
   BOSS_KEY_BY_ID,
   BOSS_POSES,
-  FACE_DEFAULT,
   LAMPWRIGHT,
   QUEST_BY_ID,
   DAMAGE_GROUPS,
@@ -214,6 +213,7 @@ import {
 } from './sim/character';
 import type { Character } from './sim/character';
 import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
+import type { BuildShape } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
 import {
@@ -6900,30 +6900,25 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           );
         }
       }
-      // --- THE TURN ------------------------------------------------------
-      // A boss is the one place automation stops, so what is checked here is
-      // that the fight WORKS with nobody at the keyboard and that turning is
-      // worth doing — never that a particular face wins.
+      // --- WHAT THE BUILD ANSWERS WITH -----------------------------------
+      // A boss is automated like everything else, so nothing here is a way of
+      // PLAYING it: what is measured is whether the BUILD gets you out.
       {
-        const face = (id: string) => {
-          const room = new RunSim([], ladderCharacter(4, new Rng(31), 'strike'), new Rng(77), {
-            scene: INTRO.bossRoom,
-          });
-          room.beginEncounter();
-          room.turn(id);
-          runToCompletion(room, 600);
-          return room;
-        };
-        const idle = face(FACE_DEFAULT);
+        const idle = new RunSim([], ladderCharacter(4, new Rng(31), 'strike'), new Rng(77), {
+          scene: INTRO.bossRoom,
+        });
+        idle.beginEncounter();
+        runToCompletion(idle, 600);
         check(
           idle.state.status !== 'running',
-          'a boss fight ends with nobody turning at all — AFK is a build, not a hang',
+          'a boss fight ends with nobody at the keyboard, like every other room',
           `${idle.state.status} after ${idle.state.elapsed.toFixed(0)}s`
         );
-        // A character that survives long enough for the MACHINERY to show:
-        // what is under test is the cycle running, never how hard it hits.
+        // A character that survives long enough for the MACHINERY to show and
+        // kills slowly enough to let it: a tank at the rung the fight is sized
+        // against. Anything over-geared puts the boss down inside one phase.
         const phases = new Set<string>();
-        const watch = new RunSim([], ladderCharacter(5, new Rng(31), 'strike'), new Rng(77), {
+        const watch = new RunSim([], ladderCharacter(2, new Rng(31), 'strike', 'tank'), new Rng(77), {
           scene: INTRO.bossRoom,
         });
         watch.beginEncounter();
@@ -6942,25 +6937,14 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         //
         // A boss cannot be balanced one dial at a time: character power and
         // what it does move together, so what is measured is the WHOLE thing
-        // at three rungs of gear against three ways of playing it. The target,
-        // in the user's words:
+        // at three rungs of gear against three SHAPES of build. The target, in
+        // the user's words: *"a build with movespeed boots and move speed bases
+        // should be able to blink + run out and a full armour build should be
+        // able to just tank it"*, and a build that is neither does not make it
+        // out. The rung is his too — *"full t1 gear and at least 1 decent mod
+        // for your build on every piece"* — with the rung under it there to
+        // prove the grind is real and the rung over it to prove gear still wins.
         //
-        //   met      — you die unless you swap properly
-        //   ground   — you can afford to miss a few
-        //   returned — you can leave it alone unless the build is bad
-        //
-        // Nothing here is a policy the GAME has: a boss is where automation
-        // stops, and these three only exist to measure that decision.
-        // What GOOD play is, now that every face pays for itself twice: you do
-        // not SIT anywhere. Stone is the resting face, Quick is for a circle
-        // standing on you and off again the moment it lands, and Edge is
-        // flicked into the opening and out.
-        const wants = (state: RunState): string => {
-          if (state.circles.some((c) => Math.hypot(c.x - state.hero.x, c.y - state.hero.y) <= c.r)) {
-            return 'quick';
-          }
-          return state.phase === 'split' ? 'edge' : 'stone';
-        };
         // Every DODGING tick of every fight below — he is in a circle and
         // leaving it — counted against how often he is standing inside the
         // boss instead. `findPath` reads walls and a boss is not one, so a way
@@ -6968,19 +6952,12 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         // leant on the thing that cannot be shoved until the circle went off.
         let ticks = 0;
         let pressed = 0;
-        const play = (band: number, miss: number, seed: number) => {
-          const rng = new Rng(seed);
-          const room = new RunSim([], ladderCharacter(band, new Rng(31), 'strike'), new Rng(seed), {
+        const play = (band: number, shape: BuildShape, seed: number) => {
+          const room = new RunSim([], ladderCharacter(band, new Rng(31), 'strike', shape), new Rng(seed), {
             scene: INTRO.bossRoom,
           });
           room.beginEncounter();
-          let was = FACE_DEFAULT;
           for (let n = 0; n < 3600 && room.state.status === 'running'; n++) {
-            const want = wants(room.state);
-            if (want !== was) {
-              was = want;
-              if (miss < 1 && rng.next() >= miss) room.turn(want);
-            }
             room.step(TICK);
             const { boss, hero, circles } = room.state;
             if (!boss || boss.dead) continue;
@@ -6990,40 +6967,37 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
           }
           return room.state;
         };
-        const rate = (band: number, miss: number) => {
+        const rate = (band: number, shape: BuildShape) => {
           let won = 0;
-          for (let seed = 0; seed < 8; seed++) if (play(band, miss, 500 + seed).status === 'cleared') won++;
+          for (let seed = 0; seed < 8; seed++) if (play(band, shape, 500 + seed).status === 'cleared') won++;
           return won;
         };
-        // The three rungs are the user's own words: what you have WHEN you first
-        // meet him, what a decent amount more grinding buys, and what the tier
-        // above him drops. Missing "a few" swaps is three in ten, not four.
-        const RUNGS: [string, number][] = [['met', 3], ['ground', 5], ['returned', 6]];
-        const WAYS: [string, number][] = [['swapping', 0], ['sloppy', 0.3], ['afk', 1]];
-        line('  the boss, at three rungs of gear against three ways of playing it:');
-        line(`    ${''.padEnd(10)}${WAYS.map(([w]) => w.padStart(10)).join('')}`);
+        const RUNGS: [string, number][] = [['thin t1', 1], ['full t1', 2], ['t2', 4]];
+        const SHAPES: BuildShape[] = ['runner', 'tank', 'neither'];
+        line('  the boss, at three rungs of gear against three shapes of build:');
+        line(`    ${''.padEnd(10)}${SHAPES.map((s) => s.padStart(10)).join('')}`);
         const grid: Record<string, number> = {};
         for (const [name, band] of RUNGS) {
-          const row = WAYS.map(([way, miss]) => {
-            const won = rate(band, miss);
-            grid[`${name}/${way}`] = won;
+          const row = SHAPES.map((shape) => {
+            const won = rate(band, shape);
+            grid[`${name}/${shape}`] = won;
             return `${won}/8`.padStart(10);
           });
           line(`    ${name.padEnd(10)}${row.join('')}`);
         }
-        // PARKED AGAIN, deliberately. *The user's call: "dont do balance yet I
-        // want the fight to not be buggy and feel ok and then we can balance."*
-        // The boss stands in the middle and cannot be shoved, and the dodge
-        // keeps you near it — all three move what a fight costs, and the grid
-        // is the measurement the pass will re-tune against.
-        parkedCheck(
-          grid['met/afk'] === 0 &&
-            grid['met/swapping'] >= 6 &&
-            grid['ground/sloppy'] >= 6 &&
-            grid['returned/afk'] >= 6,
-          'and the fight wants what it is meant to want at each rung of gear',
-          `met afk ${grid['met/afk']}/8 (want 0), met swapping ${grid['met/swapping']}/8, ` +
-            `ground sloppy ${grid['ground/sloppy']}/8, returned afk ${grid['returned/afk']}/8 (want 6+)`
+        // A REAL check, and the second difficulty one in the game: this boss is
+        // the barrier between tier 1 and tier 2, so a build that answers it
+        // walking through and a build that does not walking into a wall IS the
+        // mechanism. Over-gearing it at t2 is meant to trivialise it — that is
+        // what over-gearing is, and it is measured rather than asserted.
+        check(
+          grid['full t1/runner'] >= 6 &&
+            grid['full t1/tank'] >= 6 &&
+            grid['full t1/neither'] === 0 &&
+            grid['thin t1/runner'] === 0,
+          'and full tier 1 answers it with speed or with plate, and with neither it does not',
+          `full t1: runner ${grid['full t1/runner']}/8, tank ${grid['full t1/tank']}/8 (want 6+), ` +
+            `neither ${grid['full t1/neither']}/8 (want 0); thin t1 runner ${grid['thin t1/runner']}/8 (want 0)`
         );
         // MECHANISM, not balance: a hero leaning on the one body that cannot be
         // shoved is a hero stood in the circle he was dodging. Measured at

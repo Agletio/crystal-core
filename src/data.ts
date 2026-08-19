@@ -2304,54 +2304,6 @@ export interface BossDef {
   phases?: BossPhase[];
 }
 
-/** THE TURN: which face of the crystal you present. Each buys exactly ONE of
- *  speed, defence and damage and pays with the other TWO, so there is no face
- *  to sit in — being in the right one at the right instant is the whole of it. */
-export interface FaceDef {
-  id: string;
-  name: string;
-  blurb: string;
-  move: number; // on move speed and how far a mover carries you
-  cooldown: number; // on the mover's own wait
-  taken: number; // on damage you take
-  dealt: number; // on damage you deal
-}
-
-export const FACES: FaceDef[] = [
-  {
-    id: 'quick',
-    name: 'Quick',
-    blurb: 'Half again the speed and twice the blinks. Everything hurts, and you barely scratch it.',
-    move: 1.5,
-    cooldown: 0.45,
-    taken: 1.35,
-    dealt: 0.4,
-  },
-  {
-    id: 'stone',
-    name: 'Stone',
-    blurb: 'Half of what lands on you. You are slow, and you barely scratch it.',
-    move: 0.6,
-    cooldown: 1.3,
-    taken: 0.45,
-    dealt: 0.18,
-  },
-  {
-    id: 'edge',
-    name: 'Edge',
-    blurb: 'Everything you have, and everything it has back. You are slow with it.',
-    move: 0.75,
-    cooldown: 1.3,
-    taken: 1.35,
-    dealt: 1.9,
-  },
-];
-
-export const FACE_BY_ID: Record<string, FaceDef> = Object.fromEntries(
-  FACES.map((f) => [f.id, f])
-);
-/** What a hero who never turns fights in, so it is the SAFE one. */
-export const FACE_DEFAULT = 'stone';
 
 /** What a boss DOES, as a cycle — a second boss is a table row. `fall` drops
  *  circles where you stand, `reading` cannot be dodged, `split` opens it. */
@@ -2365,17 +2317,15 @@ export interface BossPhase {
 export const BOSS_POSES = ['slam', 'roar'] as const;
 
 export const BOSS_FIGHT = {
-  /** A BURST of circles and then a rest, and it does not SWING through one:
-   *  turning Quick is free for the burst and dear for the rest. */
-  fallBurst: 3,
+  fallBurst: 3, // a BURST and then a rest, and it does not SWING through one
   fallEvery: 0.95,
   fallRest: 3.4,
-  /** Long enough to leave at Quick and not at Edge, which IS the mechanic:
-   *  `fallRadius` and a stride is 1.2s of Quick and 2.4s of anything else. */
-  fallFuse: 2,
-  /** Only QUICK clears it in the fuse; Stone eats it, which is what tanky is
-   *  for, and pays in marks. */
-  fallRadius: 5.5,
+  /** THE SPLIT, read together. Leaving crosses `fallRadius` + a stride, 5
+   *  tiles: 1.72s at a bare 2.9 move speed and the fuse beats you, 1.42s with
+   *  move speed on. Blink's own 5 tiles clear it outright, which is what makes
+   *  the movement slot an answer. Neither, and you stand in it. */
+  fallFuse: 1.5,
+  fallRadius: 4.4,
   fallDamage: 19, // a multiple of the boss's SWING, so gear outscales it
   fallStun: 1.1,
   /** A share of max life per second, climbing by `readingRamp` a second. */
@@ -2390,7 +2340,8 @@ export const BOSS_FIGHT = {
   /** Being CAUGHT marks you too: tank them if you can, but not forever. */
   markPerCatch: 2,
   markFall: 0.75,
-  enrageAt: 40, // THE DPS CHECK: past it, everything climbs `enrageRamp` a second
+  /** THE DPS CHECK, behind the measured kill at the rung it is met at. */
+  enrageAt: 70,
   enrageRamp: 0.1,
 } as const;
 
@@ -2400,8 +2351,9 @@ export const BOSSES: BossDef[] = [
     name: 'The Answering',
     sprite: 'answering',
     herald: 'Something in the rock has heard its own name.',
-    life: 1500, // it has to OUTLIVE its own cycle, or the phases never show
-    damage: 2.4,
+    /** FULL TIER 1 GEAR: 65s runner, 52s tank, measured. Twice its own cycle. */
+    life: 600,
+    damage: 1.4, // under the swing, the slam and the Reading alike
     size: 5, // COLOSSAL: `radius` is 0.34 of it, so separation grows too
     bounty: 30,
     reinforce: { every: 6, size: 2, from: 'husk' },
@@ -2967,9 +2919,6 @@ export interface BindingDef {
 
 export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
-  { id: 'face_quick', what: 'Turn the crystal to Quick', key: '1' },
-  { id: 'face_stone', what: 'Turn the crystal to Stone', key: '2' },
-  { id: 'face_edge', what: 'Turn the crystal to Edge', key: '3' },
   { id: 'potion_life', what: 'Drink the Flask of Blood', key: '4' },
   { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '5' },
   { id: 'inventory', what: 'Open what you are carrying', key: 'i' },

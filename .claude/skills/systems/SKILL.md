@@ -373,13 +373,15 @@ way of doing any of it.**
   abandoning costs the way in.
 - **A boss is scheduled and marked at the CLEAR, never at the door**, or a room
   you died in would be gone forever.
-- **A boss is the one place automation stops** — the explicit exception to the
-  universal-automation rule, because boss fights are short and sparse.
-  `FACES` on `1`/`2`/`3`, live only under a boss (`RunSim.turned`), each
-  buying one thing and paying with the other two, `FACE_DEFAULT` being what a
-  hero who never turns fights in. **AFK must stay winnable by a build strong
-  enough to buy it**, and a headless run must terminate with nobody at the
-  keyboard. A press QUEUES into the next tick.
+- **A boss is automated like every other room**, and the universal-automation
+  rule has no exception any more. What answers a boss is the BUILD: move speed
+  and a mover carry you clear of a slam, enough plate lets you stand in one, and
+  a build with neither does not come back up. `ladderCharacter` takes a
+  `BuildShape` so the demo can measure exactly that, rather than measuring a way
+  of playing.
+- **A SLAM is a HIT and armour blunts it; the Reading is a drain and goes
+  through**, exactly as an ailment does — `bite`'s third argument. That split is
+  the whole of why plate answers one of them and nothing else in the room.
 - **`RunSim.stalled`** is both the slam commitment and the daze, which is what
   makes the damage window a window rather than a number you have to be told.
 - **`resolveOverlap` gives a boss weight 0** — what cannot move hands its half

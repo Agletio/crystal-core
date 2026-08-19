@@ -84,11 +84,11 @@ Exactly three things end a session, and a finished phase is not one:
   `src/keywords.ts`; `BANNED` is every retired phrasing. The demo sweeps every
   tree node, trade node, skill, currency, quest, modifier line and
   `GrantDef.what`.
-- **Automation is universal.** No build's power may depend on the player being
-  present — every balance number comes from headless runs. Anything a player can
-  do mid-descent has a shipped default policy, that policy is what
-  `runToCompletion` runs, and the two are ONE implementation. **A boss is the
-  one written-down exception**; even there, a headless run must terminate.
+- **Automation is universal, and there is NO exception.** No build's power may
+  depend on the player being present — every balance number comes from headless
+  runs. Anything a player can do mid-descent has a shipped default policy, that
+  policy is what `runToCompletion` runs, and the two are ONE implementation. A
+  boss was the one exception for a while and is not any more.
 - **The game is meant to be WATCHED, and the screen has to allow it.** The
   payoff of assembling a build is seeing it work. There are two ways to play
   this — menus and watching — and a change that serves the first at the cost of
@@ -164,9 +164,10 @@ Five main skills, each with its own tree; a passive and a mover fill the other
 two slots, the mover having a nine-node web of its own. Attributes are bought
 per level. Every use costs mana; out of mana you are STARVED, not stopped.
 
-**A boss is the one fight you play.** Three faces of the crystal on `1` `2` `3`,
-each buying one thing and paying with the other two, against a cycle of phases
-drawn on the boss's own body.
+**A boss is fought by your BUILD**, like everything else — a cycle of phases
+drawn on its own body, and what answers them is what you are wearing. Move speed
+and a movement skill carry you out of a slam; enough plate lets you stand in one;
+a build with neither does not come back up. It is the barrier between tiers.
 
 ## Shape
 

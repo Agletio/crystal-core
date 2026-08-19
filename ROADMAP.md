@@ -17,20 +17,12 @@ questions. **Say so and list them rather than inventing work.**
 
 ### Live known issues
 
-- **The mover NEVER fires while you are standing in a Fall circle.** Measured
-  across 72 boss fights at three rungs: 0 blinks and 0 leaps from inside one,
-  every time. `maybeMove` refuses a landing inside a circle, and Blink reaches
-  5 tiles against a `fallRadius` of 5.5 — so no waypoint it can reach is ever
-  outside. Leap's 6 clears it on paper and never in practice. **Quick's
-  `cooldown: 0.45` therefore buys nothing toward leaving a slam**; its
-  `move: 1.5` is the whole of what gets you out. Whether that is the intent is
-  an open question below.
-- **`ladderCharacter` equips no mover at all**, so every number the boss grid
-  prints is a character with an empty movement slot. It is not a wrong state — a
-  new character starts that way and equips one by hand on the Skills screen —
-  but it is worth 1/8 → 6/8 at the `met` rung, which is larger than anything the
-  balance pass is likely to move. Decide whether the grid should carry one
-  before tuning against it.
+- **The tier ladder the boss is meant to gate does not exist yet.** The fight
+  itself now lands where it was asked to — full tier 1 answers it with speed or
+  with plate and with neither it does not — but nothing about beating it opens
+  anything. Item tier is bought by run POWER alone (`DROP_BANDS[power].ilvl`
+  against `BASE_TIER_ILVL = [1, 22, 46]`), families are held to the SAME threat
+  by the demo on purpose, and `BOSSES` has one entry. The open question is #11.
 - **`npm run shots` can go red on `desktop: the first descent never met the
   Lampwright`.** Two separate causes, and the cheap one is far commoner:
   **running it beside `demo` or `smoke`** starves the browser and it loses the
@@ -120,7 +112,7 @@ change rather than as drift: six generated bodies replaced eleven and one
 thrower per family replaced a quarter of all packs shooting, which took the
 blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
 
-### It owes four parked checks
+### It owes three parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
@@ -135,12 +127,9 @@ count and this list has to agree with it.**
    Widening the sheet's condition broke a SECOND promise, so what is wanted is
    the per-hit and per-crit numbers being told apart. Pre-existing.
 3. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
-4. **"the fight wants what it is meant to want at each rung of gear"** — the
-   boss grid, parked at the user's word until the fight feels right rather than
-   because it cannot be hit. It has been hit once already, at met 6/5/0, ground
-   8/8/1, returned 8/8/8, and then six more changes landed on the fight. The
-   target is the user's own words: *you die if you do not swap; a decent amount
-   more grinding buys you a few misses; gear from the tier above walks it.*
+
+The boss grid came OUT of this list: the turn was deleted, the fight was rebuilt
+around what a build carries, and the check is a real `check` again.
 
 ### It also owes the two newest skills and the off hand a look
 
@@ -299,19 +288,31 @@ be picked up — they are decisions the user has not made. Ask before acting.
    assets" is under pressure and there is no decision to take; what is wanted is
    a number the user cares about (repo size, parse time on a cold load).
 
-10. **Is Quick meant to be SPEED, or the blink?** Its `blurb` sells both — "Half
-    again the speed and twice the blinks" — and only the first is doing anything.
-    Measured across 72 fights at three rungs, the mover fires 0 times from inside
-    a Fall circle, because `maybeMove` refuses a landing inside one and Blink
-    reaches 5 tiles against a `fallRadius` of 5.5. Three ways out, and they are
-    not the same game:
-    - **Leave it.** Quick is speed, `cooldown` is only for repositioning between
-      slams, and the blurb loses its second half.
-    - **Let the blink reach.** `distance` past 5.5, or `moveDistance` on the face
-      — a slam becomes something you press a button to leave, on a cooldown.
-    - **Let a landing sit inside a circle.** Cheapest, and the least honest: it
-      makes a blink out of one circle and into the next legal again, which
-      `maybeMove` refuses on purpose.
+10. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
+    fissure get decent t1 beat this boss and then you can progress to the
+    prismatic area where you can get t2 items fight a boss progress to demonic
+    t3 etc."* — and his own caveat, *"I know the crystal system will probably
+    need to be touched up too."* Four things in the way, and none is a small
+    edit:
+    - **Tier is bought by POWER, not by permission.** `DROP_BANDS[power].ilvl`
+      against `BASE_TIER_ILVL = [1, 22, 46]`, and `POWER` is sockets plus
+      danger. A player who never fights a boss reaches ilvl 46 by socketing
+      four crystals. Gating tier means item level stops coming off power alone.
+    - **Families are deliberately NOT a ladder.** `CLAUDE.md` and the demo hold
+      Normal, Demonic and Prismatic to the same threat — *"a family decides
+      WHICH monsters you fight and nothing about how hard they are"* — and two
+      uniques exist to give Normal its own reason. Making Prismatic the tier-2
+      world reverses that decision and retires those reasons.
+    - **The ZONE is picked by composition, not by family.** `mapTheme` reads the
+      whole set, and there are four zones against three families.
+    - **`BOSSES` has one entry.** A ladder of three needs two more bosses, each
+      with its own body, phases and room — the Answering alone was a phase.
+
+    The cheapest shape that keeps every existing rule: leave families alone, and
+    gate the DROP ilvl on bosses beaten rather than reversing what a family
+    means — `bandFor` reads `game.bosses` as a ceiling on top of power. Then a
+    second boss is a table row plus a body, not a redesign. **Not started, and
+    not to be guessed at.**
 
 ---
 
@@ -368,6 +369,14 @@ without being asked.**
   item level; sell mode and buy-back make a heap a few clicks), so the question
   is answerable: play it, and if it still feels like too much, measure the rate
   before changing it.
+- **No gear line reduces a movement skill's cooldown.** The user's own aside —
+  *"a movement skill thats buffed with some CDR (i know we dont have this yet)"*.
+  `moveCooldown` is a declared grant with a product merge and `say` already
+  written; the only source is `Quickening` inside each mover's own web. A gear
+  mod would be one `ModDef` in `GEAR_UTILITY_MODS` carrying `grants:
+  { moveCooldown: n }` — but `ModDef.grants` sits on the FAMILY and not on the
+  tier, so it is one fixed value or one family per value. The boss now reads
+  right without it, so this is a want rather than a gap.
 - **A first descent can drop nothing at all.** Gear rolls at 5% a kill, so about
   a third of first clears bank nothing — a new player meeting the payoff screen
   with an empty one. A guaranteed first drop is the obvious answer.

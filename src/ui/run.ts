@@ -30,7 +30,6 @@ import {
   POTIONS,
   BOSS_FIGHT,
   BOSS_SHOUTS,
-  FACES,
   RUN_SLOTS,
   MAIN_SLOT,
   SKILL_BY_ID,
@@ -807,7 +806,6 @@ function renderReadout(): void {
     `${Math.min(100, (game.character.xp / need) * 100)}%`;
 
   syncCooldowns();
-  syncTurn();
   syncBossBar();
   syncDebuffs();
 
@@ -1238,12 +1236,6 @@ export function drinkFlask(id: string): void {
   drinkPotion(id);
 }
 
-/** Turning the crystal, from a key. It QUEUES in the sim, so this is only the
- *  press: nothing here decides anything a replay would have to agree with. */
-export function turnCrystal(face: string): void {
-  sim?.turn(face);
-}
-
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
@@ -1367,38 +1359,6 @@ function syncBossBar(): void {
   if (label.textContent !== name) label.textContent = name;
   const frac = Math.max(0, Math.min(1, boss.life / boss.stats.maxLife));
   $('run-boss-fill').style.width = `${(frac * 100).toFixed(1)}%`;
-}
-
-/**
- * THE TURN, built once per fight and lit per frame. Up only while something is
- * listening — outside a boss room a face bites nothing, so a bar for it would
- * be three buttons that do not do anything. It says NOTHING about what the
- * boss is doing: that is drawn on the boss (`bossTelegraph`), and a fight you
- * read off a caption is one you never look at.
- */
-function syncTurn(): void {
-  const host = $('run-turn');
-  const boss = sim?.state.boss;
-  const live = !!boss && !boss.dead;
-  host.hidden = !live;
-  if (!live) return;
-  if (host.childElementCount !== FACES.length) {
-    host.replaceChildren();
-    for (const face of FACES) {
-      const cell = el('button', 'mini turnface') as HTMLButtonElement;
-      cell.id = `run-face-${face.id}`;
-      cell.textContent = face.name;
-      cell.append(el('span', 'turnface__key', keyName(keyFor(game, `face_${face.id}`))));
-      attachTooltip(cell, () => `${face.name}\n${face.blurb}`);
-      cell.onclick = () => sim?.turn(face.id);
-      host.append(cell);
-    }
-  }
-  for (const face of FACES) {
-    document
-      .getElementById(`run-face-${face.id}`)
-      ?.classList.toggle('turnface--on', sim?.state.face === face.id);
-  }
 }
 
 /** What is ON you, over the pools it is spoiling: a picture, the seconds left

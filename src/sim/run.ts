@@ -43,8 +43,6 @@ import {
   BOSS_FIGHT,
   BOSS_KEYS,
   BOSS_POSES,
-  FACE_BY_ID,
-  FACE_DEFAULT,
   MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
@@ -108,9 +106,9 @@ const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
 const WAYS_OUT = 24;
 const SLIDES = [Math.PI / 3, -Math.PI / 3, Math.PI / 2, -Math.PI / 2, 2.2, -2.2];
 
-/** Slack on a line asked to clear the boss's body — the dodge worth having runs
- *  ALONG the rim and grazes it. `BEHIND` prices one reachable only THROUGH the
- *  body, wider than the room, so every honest way out wins. */
+/** Slack on a line asked to clear the boss's body: the dodge worth having runs
+ *  ALONG the rim. `BEHIND` prices one reachable only THROUGH it, out of range
+ *  of the room, so every honest way out wins. */
 const ROUND_THE_BOSS = 0.15;
 const BEHIND_THE_BOSS = 1000;
 
@@ -342,8 +340,6 @@ export interface RunState {
   /** What has to be put down before a room is yours, once it has been called
    *  up. Null everywhere else — a descent has a finale, never a boss. */
   boss: Entity | null;
-  /** Which face of the crystal is presented. Only bites while a boss is up. */
-  face: string;
   /** What the boss is DOING, and how long is left of it. Null everywhere else. */
   phase: BossPhase['kind'] | null;
   phaseLeft: number;
@@ -380,7 +376,6 @@ export class RunSim {
   /** Placement retries only. Fixed, so the same map places the same way. */
   private readonly retry = new Rng(7919);
   private readonly queued: string[] = []; // presses waiting for the next tick
-  private turning: string | null = null; // a face pressed, taken at the tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -528,7 +523,6 @@ export class RunSim {
       folk: [],
       meeting: false,
       boss: null,
-      face: FACE_DEFAULT,
       phase: null,
       phaseLeft: 0,
       circles: [],
@@ -910,9 +904,8 @@ export class RunSim {
     return a.stats.attackRange + bulk(a) + bulk(b);
   }
 
-  /** Nowhere he may walk INTO. The pathfinder cannot see the second of them:
-   *  `findPath` reads walls and a boss is not one, so a route behind it runs
-   *  through a body `resolveOverlap` gives weight 0, and he leans on it. */
+  /** Nowhere he may walk INTO. `findPath` reads walls and a boss is not one, so
+   *  a route behind it runs through a body `resolveOverlap` gives weight 0. */
   private penned(at: Vec2, radius: number): boolean {
     return this.inCircle(at) || this.inBody(at, radius);
   }
@@ -927,8 +920,8 @@ export class RunSim {
   }
 
   /** Whether walking straight at `to` goes THROUGH the boss. The bar is the
-   *  closer of the body and where he stands NOW, or separation leaving him a
-   *  hair inside the rim refuses every direction at once. */
+   *  closer of the body and where he stands NOW, or a hair inside the rim
+   *  refuses every direction at once. */
   private throughBoss(hero: Entity, to: Vec2): boolean {
     const boss = this.state.boss;
     if (!boss || boss.dead) return false;
@@ -1074,12 +1067,6 @@ export class RunSim {
     return !!boss && !boss.dead;
   }
 
-  /** Which face BITES: only under a boss's attention, and only while it lives.
-   *  Everywhere else a descent is exactly the descent it always was. */
-  private get turned() {
-    return this.fighting ? FACE_BY_ID[this.state.face] : undefined;
-  }
-
   /**
    * What the boss is doing to you. The cycle runs on its own clock, so a fight
    * with nobody at the keyboard still ends — a hero who never turns simply
@@ -1137,7 +1124,7 @@ export class RunSim {
     for (const ring of s.circles) ring.fuse -= dt;
     for (const ring of s.circles.filter((c) => c.fuse <= 0)) {
       if (dist(s.hero, ring) <= ring.r) {
-        this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical');
+        this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical', true);
         s.hero.stun = Math.max(s.hero.stun ?? 0, BOSS_FIGHT.fallStun);
         // Tank it if you can, but every one marks you.
         s.marks = Math.min(BOSS_FIGHT.markCap, s.marks + BOSS_FIGHT.markPerCatch);
@@ -1164,16 +1151,17 @@ export class RunSim {
   }
 
   /**
-   * What the ROOM does to you, rather than what something swung. It is resisted
-   * and the pool eats it exactly as an ailment's tick is, so a ward and a mana
-   * shield are worth what they are worth everywhere else — and STONE blunts it,
-   * which is the whole reason to turn.
+   * What the ROOM does to you, rather than what something swung. Resisted and
+   * absorbed as an ailment's tick is. A SLAM is a HIT and armour blunts it; the
+   * Reading is a drain and goes through, which is the whole of why plate
+   * answers one of them and nothing else in the room.
    */
-  private bite(raw: number, type: string): void {
+  private bite(raw: number, type: string, hit = false): void {
     const hero = this.state.hero;
     if (hero.dead) return;
     const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
-    let total = this.afterResistance(hero, raw * (this.turned?.taken ?? 1) * marked * this.rage, type);
+    const blunt = hit ? 1 - this.blunting(hero) / 100 : 1;
+    let total = this.afterResistance(hero, raw * marked * this.rage, type) * blunt;
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
@@ -1806,7 +1794,7 @@ export class RunSim {
     const startY = e.y;
 
     if (e.kind === 'hero' && (e.stun ?? 0) > 0) return false; // a Fall holds you still
-    let remaining = e.stats.moveSpeed * dt * pace * (e.kind === 'hero' ? this.turned?.move ?? 1 : 1);
+    let remaining = e.stats.moveSpeed * dt * pace;
     while (remaining > 0 && e.path.length > 0) {
       const wp = e.path[0];
       const dx = wp.x - e.x;
@@ -1827,14 +1815,14 @@ export class RunSim {
     }
 
     // Both walked ROUND, never into, and asked SEPARATELY: standing in a circle
-    // is no licence to walk into the body, and Stone stands in one for whole fights.
+    // is no licence to walk into the body, and a tank stands in one for a while.
     if (e.kind === 'hero' && (this.state.circles.length > 0 || this.fighting)) {
       const was = { x: startX, y: startY };
       const stepped = (into: (p: Vec2) => boolean) => into(e) && !into(was);
       if (stepped((p) => this.inCircle(p)) || stepped((p) => this.inBody(p, e.radius))) {
         e.x = startX; // round it rather than into it
         e.y = startY;
-        this.slideRound(e, goal, e.stats.moveSpeed * dt * pace * (this.turned?.move ?? 1));
+        this.slideRound(e, goal, e.stats.moveSpeed * dt * pace);
       }
     }
 
@@ -1891,7 +1879,7 @@ export class RunSim {
     hero.path = hero.path.slice(steps);
     this.state.blinks++;
     const sooner = (this.grants.moveCooldown as number) ?? 1;
-    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner * (this.turned?.cooldown ?? 1);
+    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner;
 
     if (jumps) this.land(hero); // a step arrives; only a jump LANDS
     const back = (this.grants.moveMana as number) ?? 0;
@@ -1921,12 +1909,6 @@ export class RunSim {
     this.queued.push(id);
   }
 
-  /** Turning the crystal. QUEUED like a potion press, so a seed still replays
-   *  — and free, because a bar that charges you is a third resource. */
-  turn(face: string): void {
-    if (FACE_BY_ID[face]) this.turning = face;
-  }
-
   /** What a potion is waiting for, whoever is asking. */
   potionThreshold(id: string): number {
     return this.options.potionThresholds?.[id] ?? POTION_BY_ID[id]?.threshold ?? 0;
@@ -1954,10 +1936,6 @@ export class RunSim {
     this.stepRecharge(dt);
     for (const id of this.queued) this.drink(id);
     this.queued.length = 0;
-    if (this.turning) {
-      this.state.face = this.turning;
-      this.turning = null;
-    }
 
     for (const potion of POTIONS) {
       const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
@@ -2139,14 +2117,11 @@ export class RunSim {
     const crit = this.useCrit ?? (own > 0 && this.rng.chance(own / 100));
 
     let scale = multiplier * this.rng.float(0.9, 1.1);
-    // THE TURN: what you present multiplies what you deal and what lands on
-    // you, and an open crystal is worth more than either.
-    const turned = this.turned;
-    if (turned) {
-      if (attacker.kind === 'hero') scale *= turned.dealt;
-      if (defender.kind === 'hero') {
-        scale *= turned.taken * (1 + s.marks * BOSS_FIGHT.markMore) * this.rage;
-      }
+    // A boss fight's OWN multipliers, which the room applies and no build sets:
+    // marks and the enrage climb what lands on you, and an open crystal takes
+    // more than it ever does closed.
+    if (this.fighting) {
+      if (defender.kind === 'hero') scale *= (1 + s.marks * BOSS_FIGHT.markMore) * this.rage;
       if (defender === s.boss && s.phase === 'split') scale *= BOSS_FIGHT.splitMore;
     }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
