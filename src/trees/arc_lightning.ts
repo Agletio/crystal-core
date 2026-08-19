@@ -152,7 +152,7 @@ const BRANCHES: Branch[] = [
       description:
         'Arc Lightning can no longer Critically strike. A cast that would have ' +
         'instead leaves an Ailment worth 240% of the hit over 4s.',
-      grants: { critAilment: { multiplier: 2.4, seconds: 4 } },
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -181,7 +181,7 @@ const BRANCHES: Branch[] = [
           name: 'Static Cling',
           description:
             'An Ailment ticking Critically lays the same Ailment on everything within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -343,7 +343,7 @@ export const ARC_LIGHTNING_SPEC: TreeSpec = {
     explodeOnKill: 'al_thunderclap',
     ailmentMultiplier: 'al_ionise',
     ailmentDuration: 'al_ionise',
-    ailmentSpread: 'al_ionise',
+    ailmentChance: 'al_ionise',
     spreadRange: 'al_split',
     spreadFar: 'al_split',
     forkDamage: 'al_stormfront',

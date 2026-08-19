@@ -88,15 +88,89 @@ export const GROUP_OF_KIND: Record<string, string> = Object.fromEntries(
  * — a converted skill burns, bleeds or withers without any node saying so.
  */
 export const AILMENT_NAMES: Record<string, string> = {
-  physical: 'bleeding',
-  fire: 'burning',
-  cold: 'frostbite',
-  lightning: 'arcing',
-  poison: 'poison',
-  dark: 'withering',
-  light: 'searing',
-  prismatic: 'resonance',
+  physical: 'Bleed',
+  fire: 'Burn',
+  cold: 'Chill',
+  lightning: 'Shock',
+  poison: 'Poison',
+  dark: 'Curse',
+  light: 'Exposure',
 };
+
+/**
+ * WHAT A DAMAGE TYPE DOES over time. Dealing the type applies it at `chance`
+ * percent, so an ailment is a fact about the damage and not a node somebody
+ * bought. A damage ailment scales by its OWN tags and nothing else — Fire,
+ * Burn and Damage over Time reach a Burn where Spell, Attack and Critical
+ * never do, which falls out of the tag filter `computeStat` already applies.
+ * Prismatic has no row on purpose: what it gets instead is that little down
+ * here wards against it, which is a `DEFENCE` rule.
+ */
+export interface AilmentDef {
+  id: string;
+  name: string;
+  type: string; // the damage type that applies it
+  kind: 'damage' | 'chill' | 'shock' | 'curse' | 'exposure';
+  chance: number; // percent per HIT; over 100 stacks — 250% is two and a 50% roll
+  seconds: number;
+  tags?: string[]; // what its damage scales by; never the skill's, which is the point
+  dps?: number; // per second at ONE stack, before its own scaling
+  bySource?: boolean; // only applied by something that SAYS so. Poison alone
+  slowPer?: number; // Chill: percent off movement, attack and cast speed per stack
+  /** Stacks that Freeze. The hit after one is a Critical. */
+  freezeAt?: number;
+  freezeSeconds?: number;
+  /** Shock: what each tick throws at neighbours, and how far. */
+  arcShare?: number;
+  arcTargets?: number;
+  arcRadius?: number;
+  /** Curse: share of the target's MAXIMUM life it bursts for, per stack. */
+  burstShare?: number;
+  burstRadius?: number;
+  /** Exposure: percent increased damage taken, per stack. */
+  takenPer?: number;
+}
+
+export const AILMENTS: AilmentDef[] = [
+  {
+    id: 'burn', name: 'Burn', type: 'fire', kind: 'damage', chance: 15, seconds: 4,
+    tags: ['fire', 'burn', 'overTime'], dps: 26,
+  },
+  {
+    id: 'bleed', name: 'Bleed', type: 'physical', kind: 'damage', chance: 15, seconds: 5,
+    tags: ['physical', 'bleed', 'overTime'], dps: 22,
+  },
+  {
+    id: 'poison', name: 'Poison', type: 'poison', kind: 'damage', chance: 100, seconds: 6,
+    tags: ['poison', 'overTime'], dps: 19, bySource: true,
+  },
+  {
+    id: 'chill', name: 'Chill', type: 'cold', kind: 'chill', chance: 25, seconds: 3,
+    slowPer: 6, freezeAt: 8, freezeSeconds: 1.4,
+  },
+  {
+    id: 'shock', name: 'Shock', type: 'lightning', kind: 'shock', chance: 20, seconds: 4,
+    tags: ['lightning', 'shock', 'overTime'], dps: 7,
+    arcShare: 0.8, arcTargets: 3, arcRadius: 2.4,
+  },
+  {
+    id: 'curse', name: 'Curse', type: 'dark', kind: 'curse', chance: 20, seconds: 8,
+    burstShare: 4, burstRadius: 2.2,
+  },
+  {
+    id: 'exposure', name: 'Exposure', type: 'light', kind: 'exposure', chance: 20, seconds: 5,
+    takenPer: 4,
+  },
+];
+
+export const AILMENT_BY_ID: Record<string, AilmentDef> = Object.fromEntries(
+  AILMENTS.map((a) => [a.id, a])
+);
+
+/** The ailment a damage type carries, or undefined for one that carries none. */
+export const AILMENT_OF_TYPE: Record<string, AilmentDef> = Object.fromEntries(
+  AILMENTS.map((a) => [a.type, a])
+);
 
 /** Damage that nothing scales and nothing resists. */
 export const TYPELESS = 'typeless';
@@ -1159,6 +1233,65 @@ const DELIVERY_DAMAGE_MODS: ModDef[] = DELIVERY_TAGS.map((tag) => ({
   ],
 }));
 
+/**
+ * What scales an AILMENT, and the only gear that does. `overTime` reaches every
+ * damage ailment; a per-ailment line reaches one. Neither is tagged spell,
+ * attack or critical, which is the whole of why none of those touch a Burn.
+ */
+const AILMENT_MODS: ModDef[] = [
+  {
+    id: 'inc_over_time_damage',
+    slot: 'offence',
+    name: 'Lingering',
+    appliesTo: ['gear'],
+    tags: ['damage', 'overTime'],
+    tiers: [
+      { ilvl: 45, weight: 260, stats: [{ stat: 'damage', form: 'inc', range: [26, 40], tags: ['overTime'] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'damage', form: 'inc', range: [10, 22], tags: ['overTime'] }] },
+    ],
+  },
+  ...AILMENTS.filter((a) => a.dps).map((a) => ({
+    id: `inc_${a.id}_damage`,
+    slot: 'offence' as const,
+    name: `of ${a.name}s`,
+    appliesTo: ['gear' as const],
+    tags: ['damage', a.id],
+    tiers: [
+      {
+        ilvl: 40,
+        weight: 220,
+        stats: [{ stat: 'damage', form: 'inc' as const, range: [34, 52] as [number, number], tags: [a.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 620,
+        stats: [{ stat: 'damage', form: 'inc' as const, range: [14, 28] as [number, number], tags: [a.id] }],
+      },
+    ],
+  })),
+  // Not for a `bySource` ailment: Poison is applied BY a skill and never by
+  // dealing the type, so a chance to apply one is a line that does nothing.
+  ...AILMENTS.filter((a) => !a.bySource).map((a) => ({
+    id: `chance_${a.id}`,
+    slot: 'offence' as const,
+    name: `of the ${a.name}`,
+    appliesTo: ['gear' as const],
+    tags: ['ailment', a.id],
+    tiers: [
+      {
+        ilvl: 35,
+        weight: 200,
+        stats: [{ stat: 'ailmentChance', form: 'flat' as const, range: [18, 30] as [number, number], tags: [a.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 560,
+        stats: [{ stat: 'ailmentChance', form: 'flat' as const, range: [7, 15] as [number, number], tags: [a.id] }],
+      },
+    ],
+  })),
+];
+
 const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
   {
     id: `flat_${type.id}_damage`,
@@ -1248,6 +1381,7 @@ export const GEAR_MODS: ModDef[] = [
   ...GEAR_UTILITY_MODS,
   ...TYPED_DAMAGE_MODS,
   ...DELIVERY_DAMAGE_MODS,
+  ...AILMENT_MODS,
   ...RESISTANCE_MODS,
 ];
 

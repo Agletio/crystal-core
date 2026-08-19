@@ -44,7 +44,18 @@ import { slotWorkings } from '../skill-text';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { addSkillXp, equipSkill, equippedSkill, skillProgress, slotForSkill, xpToNext } from '../sim/character';
-import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
+import { AILMENT_OF_TYPE, DAMAGE_TYPE_BY_ID } from '../data';
+import type { CombatStats } from '../sim/stats';
+
+/** What this skill's own damage type leaves behind, at this build's numbers. */
+function ailmentLine(type: string, stats: CombatStats): string {
+  const def = AILMENT_OF_TYPE[type];
+  if (!def) return `${DAMAGE_TYPE_BY_ID[type]?.name ?? type}: no Ailment`;
+  const chance = Math.round(stats.ailmentChance?.[def.id] ?? def.chance);
+  const dps = Math.round(stats.ailmentDps?.[def.id] ?? def.dps ?? 0);
+  const worth = def.dps ? ` for ${dps}/s over ${def.seconds}s` : ` for ${def.seconds}s`;
+  return `${def.name}: ${chance}% a hit${worth}`;
+}
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
@@ -194,11 +205,10 @@ function skillSummary(skill: SkillDef): string[] {
       ? `damage per cast: ${Math.round(detail.perApplication)} over ${detail.seconds}s`
       : `damage per hit: ${Math.round(detail.perApplication)}`,
     `rate: ${detail.rate.toFixed(2)}/s  →  ${Math.round(detail.perSecond)} dps`,
-    grants.critAilment
-      ? `crit: converted to ${AILMENT_NAMES[dealt] ?? 'a lasting wound'}`
-      : `crit: ${Math.round(stats.critChance)}% for ${(
-          2 + stats.critMultiplier / 100
-        ).toFixed(2)}x`
+    `crit: ${Math.round(stats.critChance)}% for ${(
+      2 + stats.critMultiplier / 100
+    ).toFixed(2)}x`,
+    ailmentLine(dealt, stats) // what its own damage type leaves behind
   );
 
   if (converted) {

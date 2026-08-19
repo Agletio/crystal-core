@@ -71,8 +71,11 @@ import {
   socketSize,
   HOARD,
   RELIC_BY_ID,
+  AILMENTS,
+  AILMENT_BY_ID,
+  AILMENT_OF_TYPE,
 } from '../data';
-import type { BossDef, EncounterDef } from '../data';
+import type { AilmentDef, BossDef, EncounterDef } from '../data';
 import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
@@ -150,6 +153,8 @@ export type EntityKind = 'hero' | 'monster';
  *  an ailment the answer to a target you cannot punch through. Separate
  *  entries rather than one number, so each expires on its own clock. */
 export interface Ailment {
+  /** An `AilmentDef` id. What it IS decides what it DOES. */
+  id: string;
   /** What the ailment IS, for naming and for what contagion plants. */
   type: string;
   /** Damage per second before resistance, per damage type. */
@@ -157,10 +162,6 @@ export interface Ailment {
   remaining: number;
   /** Countdown to the next lump. Discrete, so a poison can critically TICK. */
   tickIn: number;
-  /** Crit chance of whoever applied it, snapshotted. */
-  critChance: number;
-  /** Extra crit damage of whoever applied it, snapshotted. */
-  critMultiplier: number;
   /**
    * Contagion. Present only when the poison can propagate; absent poison is
    * inert and just ticks.
@@ -256,12 +257,20 @@ export interface Entity {
   abilityId?: string;
   welled?: boolean; // came up out of a body rather than being spawned with the map
   bears?: string; // a `RelicDef` id this body is carrying, handed over when it dies
+  /** Just out of a Freeze: the next hit on it is a Critical, whatever your
+   *  chance is. Crit comes back to an ailment from THIS side and no other. */
+  thawed?: boolean;
   /** Where a body that has not seen you paces about: where it was PUT, the spot
    *  it is ambling to, and the pause before the next one. Anchored, so a pack
    *  cannot drift out of the room it stands in. */
   wander?: { home: Vec2; to: Vec2; wait: number };
   dead: boolean;
 }
+
+/** How many of one ailment are running. Stacks are separate entries so each
+ *  expires on its own clock, which is what lets a chance over 100% mean it. */
+export const stacksOf = (e: Entity, id: string): number =>
+  e.ailments.reduce((n, a) => n + (a.id === id ? 1 : 0), 0);
 
 /** A box in a pack. `opened` turns when the last guard goes down. */
 export interface Hoard {
@@ -2115,11 +2124,7 @@ export class RunSim {
     const chance = this.critChanceOf(user);
     const crit = chance > 0 && this.rng.chance(chance / 100);
 
-    // Kindling and the like: the roll still HAPPENS — the behaviour needs to
-    // know a crit came up so it can do something else with it — but the hit
-    // itself lands as a normal hit. A behaviour cannot take a crit back after
-    // asking for the damage, so the suppression has to be here.
-    this.useCrit = grants.critAilment ? false : crit;
+    this.useCrit = crit;
 
     behaviour({
       skill,
@@ -2190,7 +2195,11 @@ export class RunSim {
     // Inside a skill use, crit was decided once for the whole cast. A plain
     // monster swing rolls its own.
     const own = this.critChanceOf(attacker);
-    const crit = this.useCrit ?? (own > 0 && this.rng.chance(own / 100));
+    let crit = this.useCrit ?? (own > 0 && this.rng.chance(own / 100));
+    if (defender.thawed) {
+      crit = true;
+      defender.thawed = false;
+    }
 
     let scale = multiplier * this.rng.float(0.9, 1.1);
     // A boss fight's OWN multipliers, which the room applies and no build sets:
@@ -2200,6 +2209,9 @@ export class RunSim {
       if (defender.kind === 'hero') scale *= (1 + s.marks * BOSS_FIGHT.markMore) * this.rage;
       if (defender === s.boss && s.phase === 'split') scale *= BOSS_FIGHT.splitMore;
     }
+    // EXPOSURE changes a HIT rather than ticking: more damage taken, from anyone.
+    const exposed = stacksOf(defender, 'exposure');
+    if (exposed > 0) scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0)) / 100;
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
@@ -2249,6 +2261,8 @@ export class RunSim {
       }
     }
     if (attacker.kind === 'hero') this.leech(attacker, dmg);
+
+    this.applyTyped(attacker, defender, byType); // what the types carried, on a body still up
 
     // Being hit is the most reliable way to notice someone, whatever the
     // range or the line of sight.
@@ -2314,12 +2328,11 @@ export class RunSim {
     if (bleed.seconds <= 0 || dealt <= 0) return;
     if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
     target.ailments.push({
+      id: 'bleed',
       type: 'physical',
       dps: { physical: (dealt * bleed.multiplier) / bleed.seconds },
       remaining: bleed.seconds,
       tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
-      critChance: 0,
-      critMultiplier: 0,
     });
   }
 
@@ -2339,6 +2352,109 @@ export class RunSim {
   private afterResistance(defender: Entity, amount: number, type: string): number {
     const res = defender.stats.resistances[type] ?? 0;
     return amount * (1 - res / 100);
+  }
+
+  /** A hit lands, so whatever its damage TYPES carry lands with it: an ailment
+   *  is a fact about the damage rather than a node. Over 100% is more than one
+   *  stack — 250% is two for certain and a coin at a third. */
+  private applyTyped(attacker: Entity, target: Entity, byType: Record<string, number>): void {
+    // THE HERO'S ALONE. A monster's difficulty is what a crystal rolls and
+    // nothing else — "modifiers are the whole of how hard it is" — so letting
+    // every pack burn and chill you would be a second, unweighed difficulty
+    // source that no danger number accounts for. Measured: it took the first
+    // descent from winnable to 1 clear in 24. Beat retuning every band, which
+    // is the balance pass, and that is held.
+    if (attacker.kind !== 'hero' || target.dead) return;
+    for (const [type, dealt] of Object.entries(byType)) {
+      if (dealt <= 0) continue;
+      const def = AILMENT_OF_TYPE[type];
+      if (!def || def.bySource) continue; // Poison is applied BY a skill, never by its type
+
+      // A tree's own element is what its chance node raises: the grant is
+      // untagged and the type it lands on is the one the skill actually dealt.
+      const bought = attacker.kind === 'hero' ? ((this.grants.ailmentChance as number) ?? 0) : 0;
+      const chance = (attacker.stats.ailmentChance?.[def.id] ?? def.chance) + bought;
+      if (chance <= 0) continue;
+      let count = Math.floor(chance / 100);
+      const over = chance - count * 100; // rolled only when there IS one, or the seed parts
+      if (over > 0 && this.rng.chance(over / 100)) count++;
+      for (let i = 0; i < count; i++) this.strike(attacker, target, def);
+    }
+  }
+
+  /** ONE stack. The oldest falls off at the cap rather than the new one being
+   *  refused, so re-applying to a saturated target still refreshes. */
+  private strike(attacker: Entity, target: Entity, def: AilmentDef): void {
+    if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
+    // The two switches a tree still hands over: what an ailment is worth and
+    // how long it runs. They reach the new ailments exactly as they reached
+    // the old one, so a walked Rend tree is not a walked tree that does nothing.
+    const g = attacker.kind === 'hero' ? this.grants : {};
+    const more = (g.ailmentMultiplier as number) ?? 1;
+    const longer = (g.ailmentDuration as number) ?? 1;
+    const dps = (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more;
+    target.ailments.push({
+      id: def.id,
+      type: def.type,
+      dps: def.dps ? { [def.type]: dps } : {},
+      remaining: def.seconds * longer,
+      tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
+    });
+    if (def.kind === 'chill') this.chill(target, def);
+  }
+
+  /** CHILL slows and enough of it FREEZES, riding `Entity.slowed` — the one
+   *  place a swing rate is multiplied, so there is no second slow. */
+  private chill(target: Entity, def: AilmentDef): void {
+    const stacks = stacksOf(target, 'chill');
+    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0)) / 100);
+    const live = target.effects.find((x) => x.id === SLOWED);
+    if (live) live.remaining = Math.max(live.remaining, def.seconds);
+    else target.effects.push({ id: SLOWED, remaining: def.seconds });
+
+    if (def.freezeAt && stacks >= def.freezeAt) {
+      target.stun = Math.max(target.stun ?? 0, def.freezeSeconds ?? 1);
+      target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
+      target.ailments = target.ailments.filter((a) => a.id !== 'chill');
+      target.slowed = 0;
+    }
+  }
+
+  /** SHOCK: a little lightning onto the neighbours every tick. Weak on one
+   *  body and worth having against a room. */
+  private shockArc(from: Entity, ailment: Ailment, scale: number): void {
+    const def = AILMENT_BY_ID.shock;
+    if (!def?.arcShare) return;
+    const near = (from.kind === 'hero' ? this.state.monsters : [this.state.hero])
+      .filter((m) => m !== from && !m.dead && dist(m, from) <= (def.arcRadius ?? 2))
+      .slice(0, def.arcTargets ?? 3);
+    const each = (ailment.dps[def.type] ?? 0) * scale * def.arcShare;
+    if (each <= 0) return;
+    for (const m of near) {
+      m.life -= this.afterResistance(m, each, def.type);
+      if (m.life <= 0) this.kill(m);
+    }
+    if (near.length > 0) {
+      this.emit('arc', [{ x: from.x, y: from.y }, { x: near[0].x, y: near[0].y }], def.type, 0.14);
+    }
+  }
+
+  /** CURSE pays when the body DIES: a share of what it could hold, to whatever
+   *  is round it. */
+  private burstCurse(victim: Entity): void {
+    const def = AILMENT_BY_ID.curse;
+    const stacks = stacksOf(victim, 'curse');
+    if (!def?.burstShare || stacks === 0) return;
+    const damage = victim.stats.maxLife * ((stacks * def.burstShare) / 100);
+    if (damage <= 0) return;
+
+    const radius = def.burstRadius ?? 2;
+    for (const m of this.state.monsters) {
+      if (m === victim || m.dead || dist(m, victim) > radius) continue;
+      m.life -= this.afterResistance(m, damage, def.type);
+      if (m.life <= 0) this.kill(m);
+    }
+    this.emit('burst', [{ x: victim.x, y: victim.y }, { x: victim.x + radius, y: victim.y }], def.type, 0.3);
   }
 
   /** `multiplier` is total damage across the duration, never per tick. */
@@ -2368,9 +2484,8 @@ export class RunSim {
       remaining: seconds,
       // Staggered by a partial tick so a burst of poison applied on the same
       // frame doesn't then crit in lockstep forever after.
+      id: 'poison',
       tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
-      critChance: attacker.stats.critChance,
-      critMultiplier: attacker.stats.critMultiplier,
       spread: spread
         ? {
             source: attacker,
@@ -2406,13 +2521,10 @@ export class RunSim {
       ailment.tickIn += AILMENT_TICK;
       if (slice <= 0) continue;
 
-      let scale = slice;
-      const crit =
-        ailment.critChance > 0 && this.rng.chance(ailment.critChance / 100);
-      if (crit) {
-        scale *= 2 + ailment.critMultiplier / 100;
-        if (ailment.spread) contagious.push(ailment.spread);
-      }
+      // Crit no longer reaches an ailment: it is not in one's tags and it no
+      // longer rides the stack. Contagion is planted by the tick itself.
+      const scale = slice;
+      if (ailment.spread) contagious.push(ailment.spread);
 
       // Resisted per type, never armoured — which is what lets an ailment
       // threaten a build no hit can get through.
@@ -2421,6 +2533,8 @@ export class RunSim {
         total += dealt;
         if (e.kind === 'hero') byType[type] = (byType[type] ?? 0) + dealt;
       }
+
+      if (ailment.id === 'shock') this.shockArc(e, ailment, scale);
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);
 
@@ -2569,6 +2683,7 @@ export class RunSim {
     this.rollGearDrop();
     this.rollRelicDrop();
     this.rollKeyDrop();
+    this.burstCurse(victim);
     this.openHoard(victim);
     this.wellUp(victim);
     // Its own path, never `rollRelicDrop`: that loops every row, so a Bearer

@@ -3058,19 +3058,6 @@ rule('FIREBALL — do the notables actually change the cast?');
     `${everything.hits.length} hits on ${seen.size} enemies`
   );
 
-  // Kindling: the crit becomes a burn. The suppression of the crit itself
-  // lives in the sim, so what is checkable here is that the burn lands.
-  const kindled = cast({ critAilment: { multiplier: 2.6, seconds: 4 } }, true);
-  check(kindled.burns.length === 1, 'a Kindling crit sets the target alight', String(kindled.burns.length));
-  const uncrit = cast({ critAilment: { multiplier: 2.6, seconds: 4 } }, false);
-  check(uncrit.burns.length === 0, 'and a normal hit does not', String(uncrit.burns.length));
-  const longer = cast({ critAilment: { multiplier: 2.6, seconds: 4 }, ailmentDuration: 1.6 }, true);
-  check(
-    longer.burns[0].seconds > kindled.burns[0].seconds,
-    'Slow Burn lengthens it',
-    `${longer.burns[0]?.seconds} vs ${kindled.burns[0]?.seconds}`
-  );
-
   // Overload counts casts, so the fifth one is the one that pays.
   const overload = { everyNth: { n: 5, multiplier: 3 } };
   const early = cast(overload).hits[0].multiplier;

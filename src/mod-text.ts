@@ -4,6 +4,7 @@
  * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
 import {
+  AILMENTS,
   ADDED_DAMAGE_TYPES,
   DAMAGE_TYPES,
   DAMAGE_TYPE_BY_ID,
@@ -58,6 +59,7 @@ const NAMED: Record<string, string> = {
     ])
   ),
   ...Object.fromEntries(DROP_GROUPS.map((g) => [findStat(g.id), `Chance to Find ${titled(g.id)}`])),
+  ailmentChance: 'Chance to apply',
 };
 
 /** Every tag that names a thing worth putting in front of "Damage". */
@@ -66,6 +68,10 @@ const TAG_WORDS: Record<string, string> = Object.fromEntries([
   ...DAMAGE_GROUPS.map((g) => [g, titled(g)]),
   ...DELIVERY_TAGS.map((t) => [t, titled(t)]),
   ['attack', 'Attack'], // not in DELIVERY_TAGS: that list mints a mod per entry
+  ['overTime', 'Damage over Time'],
+  // Every ailment names itself, so "increased Burn Damage" and "increased
+  // Bleed Damage" are two lines rather than two spellings of one.
+  ...AILMENTS.map((a) => [a.id, a.name]),
 ]);
 
 /** Null when nothing here can say it, which is what the mods check refuses. */

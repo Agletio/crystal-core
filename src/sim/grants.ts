@@ -327,7 +327,17 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
-  { id: 'critAilment', what: 'a Critical leaves an Ailment instead', reads: HITTERS, changes: 'crit' },
+  {
+    id: 'ailmentChance',
+    changes: 'ailment',
+    what: 'more of your hits leave the Ailment their damage carries',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${Math.round(n)}% chance to apply the Ailment your damage carries`;
+    },
+  },
   {
     id: 'bleedOnHit',
     changes: 'ailment',
@@ -342,7 +352,7 @@ export const GRANTS: GrantDef[] = [
     id: 'ailmentMultiplier',
     changes: 'scale',
     what: 'Ailments you apply deal more',
-    reads: SHARED,
+    reads: [STATS],
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
@@ -353,14 +363,13 @@ export const GRANTS: GrantDef[] = [
     id: 'ailmentDuration',
     changes: 'duration',
     what: 'Ailments you apply last longer',
-    reads: SHARED,
+    reads: [STATS],
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `Ailments you apply last ${more(n)} longer`;
     },
   },
-  { id: 'ailmentSpread', what: 'a Critical tick spreads the Ailment', reads: HITTERS, changes: 'crit' },
 
   {
     id: 'explode',

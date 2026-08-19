@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { DEFENCE, MANA, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, POTIONS, PROJECTILE } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -43,6 +43,28 @@ export interface KeywordDef {
 }
 
 const pct = (n: number): string => `${Math.round(n * 100)}%`;
+
+/**
+ * An ailment's line, out of `AILMENTS` rather than quoted by hand — the table
+ * the sim reads is the table the glossary prints, so the two cannot drift.
+ */
+function ailmentMeans(id: string): string {
+  const a = AILMENT_BY_ID[id];
+  const applied = a.bySource
+    ? 'Applied only by something that says it applies one'
+    : `${a.chance}% of hits dealing ${DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type} damage apply one`;
+  const does =
+    a.kind === 'chill'
+      ? `Each stack takes ${a.slowPer}% off movement, attack and cast speed. ${a.freezeAt} stacks FREEZE it for ${a.freezeSeconds}s and clear them, and the next hit on a body coming out of one is a Critical whatever your chance is.`
+      : a.kind === 'curse'
+        ? `When the body dies it bursts for ${a.burstShare}% of its maximum life per stack, ${a.burstRadius} tiles across.`
+        : a.kind === 'exposure'
+          ? `Each stack is ${a.takenPer}% increased damage taken, from anyone.`
+          : a.kind === 'shock'
+            ? `${a.dps} damage a second, and every tick throws ${pct(a.arcShare ?? 0)} of it at up to ${a.arcTargets} enemies within ${a.arcRadius} tiles.`
+            : `${a.dps} damage a second. Scaled by ${(a.tags ?? []).join(', ')} and by nothing else — never by Spell, Attack or Critical.`;
+  return `${applied}, for ${a.seconds}s. ${does}`;
+}
 
 /**
  * Ordered longest-first at the bottom of this file, so "Critical Damage" is
@@ -147,15 +169,61 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Ailment',
     says: ['Ailment', 'Ailments'],
     means:
-      'Damage left ON an enemy, paid out over a duration rather than at once ' +
-      '— a Burn, a Bleed or a Poison. Resistance blunts an Ailment; Armour ' +
-      'never does, which is what makes one the answer to something you cannot ' +
-      'punch through.',
-    grants: ['critAilment', 'ailmentMultiplier', 'ailmentDuration', 'ailmentSpread', 'bleedOnHit'],
+      'What a DAMAGE TYPE leaves behind. Dealing a type applies its Ailment at ' +
+      `that Ailment's own chance; past 100% you apply a second, past 200% a ` +
+      'third. Resistance blunts one and Armour never does, which is what makes ' +
+      'an Ailment the answer to something you cannot punch through.',
+    grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit'],
   },
-  { id: 'burn', name: 'Burn', says: ['Burn', 'Burns', 'Burning'], means: 'The Fire Ailment.', kin: 'ailment' },
-  { id: 'bleed', name: 'Bleed', says: ['Bleed', 'Bleeds', 'Bleeding'], means: 'The Physical Ailment.', kin: 'ailment' },
-  { id: 'poison', name: 'Poison', says: ['Poison', 'Poisons', 'Poisoned'], means: 'The Poison Ailment.', kin: 'ailment' },
+  {
+    id: 'burn',
+    name: 'Burn',
+    says: ['Burn', 'Burns', 'Burning'],
+    means: ailmentMeans('burn'),
+    kin: 'ailment',
+  },
+  {
+    id: 'bleed',
+    name: 'Bleed',
+    says: ['Bleed', 'Bleeds', 'Bleeding'],
+    means: ailmentMeans('bleed'),
+    kin: 'ailment',
+  },
+  {
+    id: 'poison',
+    name: 'Poison',
+    says: ['Poison', 'Poisons', 'Poisoned'],
+    means: ailmentMeans('poison'),
+    kin: 'ailment',
+  },
+  {
+    id: 'chill',
+    name: 'Chill',
+    says: ['Chill', 'Chills', 'Chilled'],
+    means: ailmentMeans('chill'),
+    kin: 'ailment',
+  },
+  {
+    id: 'shock',
+    name: 'Shock',
+    says: ['Shock', 'Shocks', 'Shocked'],
+    means: ailmentMeans('shock'),
+    kin: 'ailment',
+  },
+  {
+    id: 'curse',
+    name: 'Curse',
+    says: ['Curse', 'Curses', 'Cursed'],
+    means: ailmentMeans('curse'),
+    kin: 'ailment',
+  },
+  {
+    id: 'exposure',
+    name: 'Exposure',
+    says: ['Exposure', 'Expose', 'Exposes', 'Exposed'],
+    means: ailmentMeans('exposure'),
+    kin: 'ailment',
+  },
 
   // --- the stats every line leans on --------------------------------------
   {

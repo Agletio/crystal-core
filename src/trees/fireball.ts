@@ -37,7 +37,7 @@ const BRANCHES: Branch[] = [
       description:
         'Fireball can no longer Critically strike. A cast that would have ' +
         'instead leaves a Burn worth 260% of the hit over 4s.',
-      grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -66,7 +66,7 @@ const BRANCHES: Branch[] = [
           name: 'Wildfire',
           description:
             'A Burn ticking Critically lays the same Burn on everything within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -349,7 +349,7 @@ export const FIREBALL_SPEC: TreeSpec = {
     explodeOnKill: 'fb_detonation',
     ailmentMultiplier: 'fb_kindling',
     ailmentDuration: 'fb_kindling',
-    ailmentSpread: 'fb_kindling',
+    ailmentChance: 'fb_kindling',
     spreadRange: 'fb_splitcast',
     spreadFar: 'fb_splitcast',
     pierceDamage: 'fb_piercing',

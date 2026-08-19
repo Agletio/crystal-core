@@ -115,23 +115,6 @@ export function targetScale(use: SkillUse, target: Entity): number {
   return m;
 }
 
-/**
- * The ailment a crit leaves behind. Its element follows the skill, so a
- * converted tree burns in its new type without any node saying so.
- */
-export function critAilment(use: SkillUse, target: Entity, falloff: number): void {
-  const g = use.grants;
-  const on = g.critAilment as { multiplier: number; seconds: number } | undefined;
-  if (!on || !use.crit) return;
-  const spread = num(g.ailmentSpread, 0);
-  use.ailment(
-    target,
-    on.multiplier * num(g.ailmentMultiplier, 1) * falloff,
-    on.seconds * num(g.ailmentDuration, 1),
-    spread > 0 ? { radius: spread, generation: 0 } : undefined
-  );
-}
-
 /** Overlaps freely: overlapping is what area damage is for. */
 export function blastAround(
   use: SkillUse,
@@ -220,7 +203,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       // A cloud over the thing it hit, for a skill that leaves one.
       if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL);
 
-      critAilment(use, target, falloff);
 
       if (explode) {
         blast(
@@ -355,7 +337,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const swing = (target: Entity, falloff: number): void => {
       if (target.dead) return;
       use.hit(target, falloff * scale(target));
-      critAilment(use, target, falloff);
 
       if (explode) {
         blastAround(

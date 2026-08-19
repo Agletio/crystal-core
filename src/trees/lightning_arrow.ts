@@ -212,7 +212,7 @@ const BRANCHES: Branch[] = [
       description:
         'Lightning Arrow can no longer Critically strike. A shot that would ' +
         'have instead leaves an Ailment worth 260% of the hit over 4s.',
-      grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -241,7 +241,7 @@ const BRANCHES: Branch[] = [
           name: 'Earthing Field',
           description:
             'An Ailment ticking Critically lays the same Ailment on everything within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -327,7 +327,7 @@ export const LIGHTNING_ARROW_SPEC: TreeSpec = {
     explodeOnKill: 'la_shrapnel',
     ailmentMultiplier: 'la_takeaim',
     ailmentDuration: 'la_takeaim',
-    ailmentSpread: 'la_takeaim',
+    ailmentChance: 'la_takeaim',
     spreadRange: 'la_volley',
     spreadFar: 'la_volley',
     pierceDamage: 'la_broadhead',

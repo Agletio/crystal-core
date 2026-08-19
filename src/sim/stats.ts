@@ -2,6 +2,7 @@
 import { aggregate, computeStat, percentStat } from '../mods';
 import {
   AILMENT,
+  AILMENTS,
   AILMENT_NAMES,
   ATTRIBUTES,
   DAMAGE_TYPES,
@@ -65,6 +66,8 @@ export interface CombatStats {
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
+  ailmentDps: Record<string, number>; // per id, at ONE stack, under its OWN tags
+  ailmentChance: Record<string, number>; // per id, percent per hit; over 100 stacks
 }
 
 /**
@@ -84,6 +87,29 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
     const own = computeStat(0, mods, `${type.id}Res`);
     const group = type.group ? computeStat(0, mods, `${type.group}Res`) : 0;
     out[type.id] = Math.min(DEFENCE.resistanceCap, own + group);
+  }
+  return out;
+}
+
+/** An ailment's damage a second at one stack, under ITS tags. That is the whole
+ *  of why Spell, Attack and Critical do not scale a Burn: none is tagged fire,
+ *  burn or overTime, so the filter never lets them through. */
+export function ailmentDamage(mods: RolledMod[], skill?: SkillDef): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const def of AILMENTS) {
+    if (!def.dps) continue;
+    // Applied BY a skill rather than by a type, so its tags reach it too.
+    const tags = [...(def.tags ?? []), ...(def.bySource ? skill?.tags ?? [] : [])];
+    out[def.id] = computeStat(def.dps, mods, 'damage', tags);
+  }
+  return out;
+}
+
+/** Tagged by damage TYPE, so a line aimed at Fire raises the Burn alone. */
+export function ailmentChances(mods: RolledMod[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const def of AILMENTS) {
+    out[def.id] = def.chance + percentStat(mods, 'ailmentChance', [def.type, def.id]);
   }
   return out;
 }
@@ -222,7 +248,9 @@ export function damageDetail(character: Character): DamageDetail {
   // A factor applied where the workings cannot show it is a sheet whose parts
   // do not add up to its own total.
   const ailment: DamageStep[] =
-    overTime && scale !== 1 ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'ailment', value: scale }] : [];
+    overTime && scale !== 1
+      ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'Ailment', value: scale }]
+      : [];
 
   const breakdown = damageBreakdown(statMods(character), character.level, skill, grants, ailment);
   const perApplication = breakdown.total;
@@ -286,6 +314,8 @@ export function heroStats(
     // Percentages with no base to scale — see percentStat.
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
+    ailmentDps: ailmentDamage(mods, skill),
+    ailmentChance: ailmentChances(mods),
     damage: breakdown.total,
     damageByType: breakdown.byType,
     // A spell has no business getting faster because you found a sharper sword.
@@ -546,6 +576,8 @@ export function monsterStats(
     areaOfEffect: 0,
     rarity: 0,
     currencyFind: 0,
+    ailmentDps: {},
+    ailmentChance: {},
     /** What monsters on this map hurt you with. Shows in the results overlay. */
     damageType: type,
   };

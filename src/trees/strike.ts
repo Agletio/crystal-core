@@ -75,9 +75,9 @@ const BRANCHES: Branch[] = [
       id: 'st_rend',
       name: 'Rend',
       description:
-        'Strike can no longer Critically strike. A swing that would have ' +
-        'instead leaves a Bleed worth 240% of the hit over 5s.',
-      grants: { critAilment: { multiplier: 2.4, seconds: 5 } },
+        '+55% chance to apply the Ailment your damage carries. Strike is ' +
+        'Physical, so what it carries is a Bleed.',
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -105,9 +105,9 @@ const BRANCHES: Branch[] = [
           id: 'st_butchery',
           name: 'Butchery',
           description:
-            'A Bleed ticking Critically opens the same wound on everything ' +
-            'within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+            'A further +45% chance to apply the Ailment, so a swing past 100% ' +
+            'leaves two Bleeds rather than one.',
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -361,7 +361,7 @@ export const STRIKE_SPEC: TreeSpec = {
     splashRadius: 'st_sweep',
     ailmentMultiplier: 'st_rend',
     ailmentDuration: 'st_rend',
-    ailmentSpread: 'st_rend',
+    ailmentChance: 'st_rend',
     doubleStrike: 'st_onslaught',
     areaOfEffect: 'st_shockwave',
     explodeRadius: 'st_shockwave',
