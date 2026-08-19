@@ -178,6 +178,8 @@ one no danger number accounts for.
 **A character is a trade, a main skill, two more slots and a bag.** The trade is
 chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
+Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
+then a fork into two branches — and ten points reach one spoke whole.
 Five main skills, each with its own tree; a passive and a mover fill the other
 two slots, the mover having a nine-node web of its own. Attributes are bought
 per level. Every use costs mana; out of mana you are STARVED, not stopped.
@@ -199,6 +201,7 @@ src/economy.ts     prices
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
 src/trades.ts      the character's own web; src/trades/* the two trades
+src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
 src/scenes.ts      the authored rooms; src/scenes/* their content

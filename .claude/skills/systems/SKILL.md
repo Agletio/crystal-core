@@ -88,7 +88,7 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
 |---|---|---|
 | skill tree (`src/trees/`) | 3 ways in, a ring of 12, 6 branches, 6 trunk notables | level-funded |
 | movement web (`src/moves/`) | 3 arms of 3 | 6 — two whole arms fit, a third never does |
-| trade tree (`src/trades/`) | 5 spokes of 4, alternating minor/notable | 10 — five notables is the CEILING |
+| trade tree (`src/trades/`) | 5 spokes of 9: a stem of 2, a GATE, then two branches of 3 | 10 — ONE spoke walked whole, and 3 notables is the CEILING |
 
 - **Content only**; `layout.ts` owns every coordinate, in tile units. Give a
   tree a `prefix` no other tree uses — node ids are what a save points at.
@@ -97,8 +97,10 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
   layouts rather than bending it.
 - **Distance is the only price.** No spent-point gates: what a notable costs is
   the run of minors in front of it. A twig may only `forkFrom` the twig beside
-  it. No ring and no fork on a trade spoke — a link sideways lets a build reach
-  a neighbour's far notable without walking its arm, and the arm IS the price.
+  it. No ring and no link SIDEWAYS on a trade spoke — that would let a build
+  reach a neighbour's far notable without walking its arm, and the arm IS the
+  price. A trade spoke does fork, but only forward and only at its gate: the
+  stem is what both branches cost.
 - **The demo holds every web to its geometry**: no link crosses another, none
   passes under a node it does not join. `spread` keeps nodes apart by what
   their ART spans (`ART_R`), not by one number per pair.
