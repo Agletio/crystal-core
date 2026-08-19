@@ -281,6 +281,66 @@ export function bossTelegraph(
  * flattened ring is a dot and a hook going round is the thing everybody
  * already reads as stunned. The far half is smaller and fainter.
  */
+/**
+ * What a body CARRYING an ailment looks like: small, over the body, read at a
+ * glance, and a pure function so the two renderers cannot disagree. `stacks`
+ * only THICKENS it — twelve Burns as twelve times the marks is a body nobody
+ * can see, so the count caps into a fraction and size carries the rest.
+ */
+export function ailmentMarks(
+  id: string,
+  stacks: number,
+  head: number,
+  size: number,
+  elapsed: number
+): { x: number; y: number; r: number; alpha: number }[] {
+  if (stacks <= 0) return [];
+  const weight = Math.min(1, stacks / 6);
+  const many = 2 + Math.round(weight * 2);
+  const out: { x: number; y: number; r: number; alpha: number }[] = [];
+
+  for (let i = 0; i < many; i++) {
+    // Each mark on its own clock, or they pulse in lockstep and read as one
+    // flashing thing rather than as several.
+    const seed = i * 2.399;
+    const t = (elapsed * RISE[id] + seed) % 1;
+    const across = Math.sin(seed * 4.7) * size * 0.22;
+
+    // Held AROUND the body rather than leaving it: frost sits ON a thing.
+    if (id === 'chill' || id === 'exposure') {
+      const a = seed + elapsed * 0.7;
+      out.push({
+        x: Math.cos(a) * size * 0.3,
+        y: -head * 0.55 + Math.sin(a) * size * 0.14,
+        r: size * (0.05 + weight * 0.035),
+        alpha: 0.55 + 0.45 * Math.sin(elapsed * 3 + seed),
+      });
+      continue;
+    }
+
+    // Everything else LEAVES the body: flame and poison up, blood down.
+    const up = id === 'bleed' ? -1 : 1;
+    out.push({
+      x: across * (1 - t * 0.4),
+      y: -head * 0.35 - up * t * size * 0.5,
+      r: size * (0.045 + weight * 0.03) * (1 - t * 0.55),
+      alpha: (1 - t) * (0.6 + weight * 0.4),
+    });
+  }
+  return out;
+}
+
+/** How fast each one moves off the body. Frost and Exposure orbit instead. */
+const RISE: Record<string, number> = {
+  burn: 1.5,
+  bleed: 1.1,
+  poison: 0.9,
+  shock: 2.6,
+  curse: 1.0,
+  chill: 1,
+  exposure: 1,
+};
+
 export function dazeMarks(
   head: number,
   size: number,

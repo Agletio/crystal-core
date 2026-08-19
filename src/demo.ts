@@ -42,6 +42,7 @@ import {
   ARMOUR_FAMILIES,
   ADDED_DAMAGE_STATS,
   ADDED_DAMAGE_TYPES,
+  AILMENTS,
   DANGER_STATS,
   DROP_GROUPS,
   MONSTER_RANKS,
@@ -146,6 +147,8 @@ import {
   statMods,
   treeGrants,
   trialMod,
+  ailmentChances,
+  retag,
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
 import { potionReading, potionWorkings } from './potion-text';
@@ -2726,6 +2729,55 @@ for (const web of MOVE_WEBS) {
     held = held.filter((id) => id !== loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+}
+
+// ===========================================================================
+rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
+
+{
+  const chanceLine = (value: number, tag: string): RolledMod => ({
+    entryId: 'x', defId: 'x', group: 'x', slot: 'x', name: 'x', tier: 1, tags: [],
+    stats: [{ stat: 'ailmentChance', form: 'flat', value, tags: [tag] }],
+  });
+
+  check(
+    AILMENTS.every((a) => a.bySource || a.chance === 0),
+    'no ailment a damage type applies has a base chance: one is BOUGHT',
+    AILMENTS.filter((a) => !a.bySource && a.chance !== 0).map((a) => a.id).join(', ')
+  );
+  check(
+    ailmentChances([])['burn'] === 0 && ailmentChances([chanceLine(25, 'burn')])['burn'] === 25,
+    'and a chance line is the whole of what turns one on',
+    String(ailmentChances([chanceLine(25, 'burn')])['burn'])
+  );
+  // Tagged by TYPE reaches it too, which is what lets one gear line cover the
+  // element rather than the player learning two vocabularies for one thing.
+  check(
+    ailmentChances([chanceLine(30, 'fire')])['burn'] === 30,
+    'and a line aimed at the TYPE reaches its ailment as well',
+    String(ailmentChances([chanceLine(30, 'fire')])['burn'])
+  );
+
+  const owners = AILMENTS.filter((a) => !a.bySource).map((a) => a.type);
+  check(
+    new Set(owners).size === owners.length,
+    'each damage type owns exactly ONE ailment, so dealing it is the other half',
+    owners.join(', ')
+  );
+
+  // CONVERSION has to carry the chance across, or a tree of Burn chance
+  // survives a turn to cold as chance to apply something you no longer deal.
+  const fire = SKILLS.find((s) => s.damageTypes.includes('fire'))!;
+  check(
+    retag('fire', fire, 'cold') === 'cold' && retag('burn', fire, 'cold') === 'chill',
+    'and a conversion retags the AILMENT with the type, Burn chance to Chill chance',
+    `${retag('fire', fire, 'cold')} / ${retag('burn', fire, 'cold')}`
+  );
+  check(
+    retag('bleed', fire, 'cold') === 'bleed',
+    'while an ailment the skill never dealt is left exactly where it was',
+    retag('bleed', fire, 'cold')
+  );
 }
 
 // ===========================================================================

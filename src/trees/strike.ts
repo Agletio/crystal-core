@@ -113,7 +113,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+5% increased Bleed Duration', grants: { ailmentDuration: 1.05 } },
+      { text: '+9% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],

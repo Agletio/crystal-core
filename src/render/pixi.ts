@@ -13,7 +13,10 @@
  * the caller falls back to canvas2d.
  */
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
-import { AURA, AURA_BY_ID } from '../data';
+import { AURA, AURA_BY_ID,
+  AILMENTS,
+  AILMENT_BY_ID,
+} from '../data';
 import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -27,6 +30,8 @@ import {
   ARROW_SPAN,
   arrowFlight,
   auraLook,
+  ailmentMarks,
+  damageColour,
   bossTelegraph,
   dazeMarks,
   burstRadius,
@@ -854,6 +859,22 @@ export async function createPixiRenderer(
       }
     }
 
+    // WHAT IS ON A BODY. Over it, in the ailment's own damage colour, one
+    // clutch of marks per ailment — so a burning thing looks burning without
+    // anybody reading a number off a bar.
+    for (const e of [state.hero, ...state.monsters]) {
+      if (e.dead || e.ailments.length === 0) continue;
+      const head = e.scale * (anchorY(e) - bodyTop(e.sprite));
+      for (const def of AILMENTS) {
+        const stacks = e.ailments.reduce((n, a) => n + (a.id === def.id ? 1 : 0), 0);
+        if (stacks === 0) continue;
+        const colour = toHexNumber(damageColour(palette, def.type));
+        for (const m of ailmentMarks(def.id, stacks, head, e.scale, state.elapsed)) {
+          vfxLayer.circle(cx(e.x) + m.x, cy(e.y) + m.y, m.r).fill({ color: colour, alpha: m.alpha });
+        }
+      }
+    }
+
     /** Fire pixels, in world units. The layer is already scaled to tiles. */
     const blocks = (pixels: FirePixel[], type: string, fade: number) => {
       const shades = fireShades(palette, type);
@@ -1068,9 +1089,19 @@ export async function createPixiRenderer(
       const t = f.age / FLOATER_LIFE;
       label.visible = true;
       label.text = f.text;
-      label.style.fontSize = Math.max(10, Math.min(28, tile * (f.crit ? 0.75 : 0.6)));
+      // A TICK is smaller and wears its ailment's colour, so a stream of them
+      // reads as the poison working rather than as the swing landing.
+      const ticked = f.tick ? AILMENT_BY_ID[f.tick] : undefined;
+      const size = f.crit ? 0.75 : ticked ? 0.42 : 0.6;
+      label.style.fontSize = Math.max(9, Math.min(28, tile * size));
       label.style.fill = toHexNumber(
-        f.on === 'hero' ? palette.ember : f.crit ? palette.citrine : palette.chalk
+        ticked
+          ? damageColour(palette, ticked.type)
+          : f.on === 'hero'
+            ? palette.ember
+            : f.crit
+              ? palette.citrine
+              : palette.chalk
       );
       label.alpha = Math.max(0, 1 - t);
       label.x = sx(f.x);

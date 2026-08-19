@@ -289,6 +289,7 @@ export interface Floater {
   age: number;
   crit: boolean;
   on: EntityKind;
+  tick?: string; // an ailment id: a TICK, drawn smaller and in its own colour
 }
 
 /**
@@ -2513,6 +2514,7 @@ export class RunSim {
   private stepAilments(e: Entity, dt: number): void {
     if (e.ailments.length === 0 || e.dead) return;
     let total = 0;
+    const ticked: Record<string, number> = {}; // per ailment, so a tick can be SEEN
     const byType: Record<string, number> = {};
     let contagious: Ailment['spread'][] = [];
 
@@ -2537,6 +2539,7 @@ export class RunSim {
       for (const [type, dps] of Object.entries(ailment.dps)) {
         const dealt = this.afterResistance(e, dps * scale, type);
         total += dealt;
+        ticked[ailment.id] = (ticked[ailment.id] ?? 0) + dealt;
         if (e.kind === 'hero') byType[type] = (byType[type] ?? 0) + dealt;
       }
 
@@ -2558,6 +2561,21 @@ export class RunSim {
     // Spread BEFORE the victim can die, so a killing tick still infects the
     // pack — the corpse is exactly when you want the disease to jump.
     for (const s of contagious) this.spreadAilment(e, s!);
+
+    // ONE floater per ailment, never one per stack: twelve Burns are one
+    // number climbing rather than twelve on top of each other.
+    for (const [id, dealt] of Object.entries(ticked)) {
+      if (dealt < 1) continue;
+      this.state.floaters.push({
+        x: e.x,
+        y: e.y,
+        text: String(Math.round(dealt)),
+        age: 0,
+        crit: false,
+        on: e.kind,
+        tick: id,
+      });
+    }
 
     if (total <= 0) return;
 

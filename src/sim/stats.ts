@@ -3,7 +3,9 @@ import { aggregate, computeStat, percentStat } from '../mods';
 import {
   AILMENT,
   AILMENTS,
+  AILMENT_BY_ID,
   AILMENT_NAMES,
+  AILMENT_OF_TYPE,
   ATTRIBUTES,
   DAMAGE_TYPES,
   ADDED_DAMAGE_TYPES,
@@ -343,6 +345,17 @@ export function heroStats(
  * The allocated nodes as one synthetic mod, so they go through the same
  * aggregation as gear rather than a second parallel system that drifts.
  */
+/** One tag under a conversion: a damage type becomes the converted type, and
+ *  the AILMENT of a type becomes that type's ailment — which is what keeps
+ *  "+18% chance to Burn" worth its point on a Fireball turned cold. */
+export function retag(tag: string, skill: SkillDef, converted: string | null): string {
+  if (!converted) return tag;
+  if (skill.damageTypes.includes(tag)) return converted;
+  const was = AILMENT_BY_ID[tag];
+  if (was && skill.damageTypes.includes(was.type)) return AILMENT_OF_TYPE[converted]?.id ?? tag;
+  return tag;
+}
+
 export function treeMod(character: Character): RolledMod | null {
   const skillId = mainSkillId(character);
   const progress = character.skills[skillId];
@@ -359,10 +372,10 @@ export function treeMod(character: Character): RolledMod | null {
       form: s.form,
       value: s.value,
       // Conversion retags the tree's own lines, so the fire wedge you walked
-      // through to reach it becomes a cold wedge rather than dead weight.
-      tags: (s.tags ?? []).map((t) =>
-        converted && skill.damageTypes.includes(t) ? converted : t
-      ),
+      // through to reach it becomes a cold wedge rather than dead weight —
+      // AILMENT tags included, or a tree of Burn chance survives a conversion
+      // to cold as a tree of chance to apply something you no longer deal.
+      tags: (s.tags ?? []).map((t) => retag(t, skill, converted)),
     }));
 
   if (stats.length === 0) return null;

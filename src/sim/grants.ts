@@ -206,6 +206,16 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    id: 'manaLeech',
+    what: 'a share of the damage you deal returns as mana',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of the damage you deal returns to you as mana`;
+    },
+  },
+  {
     id: 'poolFromLife',
     what: 'part of your life counts toward your mana pool',
     reads: [STATS],
