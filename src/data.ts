@@ -111,7 +111,12 @@ export interface AilmentDef {
   name: string;
   type: string; // the damage type that applies it
   kind: 'damage' | 'chill' | 'shock' | 'curse' | 'exposure';
-  chance: number; // percent per HIT; over 100 stacks — 250% is two and a 50% roll
+  /** Percent per HIT before anything raises it, and ZERO for everything a
+   *  damage type applies: an Ailment is BOUGHT, never free. A baseline would
+   *  be unconditional damage on every build in the game, which measured as the
+   *  boss ceasing to be a barrier — a thin-geared runner beat it 4 times in 8.
+   *  Over 100% stacks: 250% is two and a 50% roll at a third. */
+  chance: number;
   seconds: number;
   tags?: string[]; // what its damage scales by; never the skill's, which is the point
   dps?: number; // per second at ONE stack, before its own scaling
@@ -133,11 +138,11 @@ export interface AilmentDef {
 
 export const AILMENTS: AilmentDef[] = [
   {
-    id: 'burn', name: 'Burn', type: 'fire', kind: 'damage', chance: 15, seconds: 4,
+    id: 'burn', name: 'Burn', type: 'fire', kind: 'damage', chance: 0, seconds: 4,
     tags: ['fire', 'burn', 'overTime'], dps: 26,
   },
   {
-    id: 'bleed', name: 'Bleed', type: 'physical', kind: 'damage', chance: 15, seconds: 5,
+    id: 'bleed', name: 'Bleed', type: 'physical', kind: 'damage', chance: 0, seconds: 5,
     tags: ['physical', 'bleed', 'overTime'], dps: 22,
   },
   {
@@ -145,20 +150,20 @@ export const AILMENTS: AilmentDef[] = [
     tags: ['poison', 'overTime'], dps: 19, bySource: true,
   },
   {
-    id: 'chill', name: 'Chill', type: 'cold', kind: 'chill', chance: 25, seconds: 3,
+    id: 'chill', name: 'Chill', type: 'cold', kind: 'chill', chance: 0, seconds: 3,
     slowPer: 6, freezeAt: 8, freezeSeconds: 1.4,
   },
   {
-    id: 'shock', name: 'Shock', type: 'lightning', kind: 'shock', chance: 20, seconds: 4,
+    id: 'shock', name: 'Shock', type: 'lightning', kind: 'shock', chance: 0, seconds: 4,
     tags: ['lightning', 'shock', 'overTime'], dps: 7,
     arcShare: 0.8, arcTargets: 3, arcRadius: 2.4,
   },
   {
-    id: 'curse', name: 'Curse', type: 'dark', kind: 'curse', chance: 20, seconds: 8,
+    id: 'curse', name: 'Curse', type: 'dark', kind: 'curse', chance: 0, seconds: 8,
     burstShare: 4, burstRadius: 2.2,
   },
   {
-    id: 'exposure', name: 'Exposure', type: 'light', kind: 'exposure', chance: 20, seconds: 5,
+    id: 'exposure', name: 'Exposure', type: 'light', kind: 'exposure', chance: 0, seconds: 5,
     takenPer: 4,
   },
 ];

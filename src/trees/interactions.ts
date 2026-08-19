@@ -1,16 +1,12 @@
 /**
- * What taking two changing nodes together COMES TO. `mergeGrants` says what
- * two nodes granting the SAME switch fold to; what nothing said is what happens
- * when two change DIFFERENT things about one cast — a burst under a tree about
- * a cloud, a conversion under both — and a point spent on a combination nobody
+ * What taking two changing nodes together COMES TO. `mergeGrants` says what two
+ * nodes granting the SAME switch fold to; a point spent on a combination nobody
  * decided the meaning of is a point spent on nothing.
  *
- * The audit is over `Changes` CLASSES rather than nodes: at node level it is
- * 742 pairs across three trees, a book nobody reads that goes stale the day a
- * node is added. There are 28 class pairs, and a new node cannot invent a
- * combination without inventing a class. `blocked` refuses a pair with no
- * coherent answer and the card says why; nothing is blocked today, which is a
- * finding rather than an omission.
+ * Audited over `Changes` CLASSES, not nodes — 742 pairs at node level goes
+ * stale the day one is added. A node cannot invent a combination without
+ * inventing a class, and a class no live grant declares takes its pairs with
+ * it: `crit` did, when the two turning a Critical into an Ailment were retired.
  */
 import type { Changes } from '../sim/grants';
 

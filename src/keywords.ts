@@ -52,7 +52,7 @@ function ailmentMeans(id: string): string {
   const a = AILMENT_BY_ID[id];
   const applied = a.bySource
     ? 'Applied only by something that says it applies one'
-    : `${a.chance}% of hits dealing ${DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type} damage apply one`;
+    : `Applied by a hit dealing ${DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type} damage, at whatever chance you have bought`;
   const does =
     a.kind === 'chill'
       ? `Each stack takes ${a.slowPer}% off movement, attack and cast speed. ${a.freezeAt} stacks FREEZE it for ${a.freezeSeconds}s and clear them, and the next hit on a body coming out of one is a Critical whatever your chance is.`
