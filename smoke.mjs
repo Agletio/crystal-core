@@ -2434,18 +2434,26 @@ $('dev-kit').click();
   $('trade-pick-alchemist').click();
   assert($('trade-webwrap').hidden === false, 'taking one up draws its web');
   assert(
-    all('#trade-web .web__node').length === 20,
-    'twenty nodes, drawn to fit rather than scrolled',
+    all('#trade-web .web__node').length === 45,
+    'forty-five nodes: five spokes of a stem, a gate and two branches',
     String(all('#trade-web .web__node').length)
   );
+  // It ROAMS now, like the skills web and through the same camera.
+  assert($('trade-fit') !== null, 'and it has a Fit button, so it is a map rather than a picture');
   assert(
-    $('trade-web').querySelector('.web--drag') === null &&
-      window.getComputedStyle($('trade-web')).cursor === 'default',
-    'and it is a picture rather than a map — nothing to drag'
+    /translate/.test($('trade-web').style.transform),
+    'the camera is a transform on the SVG element, never a rebuild per frame',
+    $('trade-web').style.transform
   );
 
   const open = () => all('#trade-web .web__node--open');
   assert(open().length === 5, 'five ways in, one per spoke', String(open().length));
+  // The FORK: nothing past a gate is reachable until the gate is.
+  assert(
+    all('#trade-web .web__node--locked').length === 40,
+    'and everything past the first step is locked behind the walk to it',
+    String(all('#trade-web .web__node--locked').length)
+  );
   open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trade-web .web__node--on').length === 1,
