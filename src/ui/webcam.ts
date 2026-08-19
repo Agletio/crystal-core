@@ -57,15 +57,22 @@ export class Camera {
     this.panY = 0;
   }
 
-  /** Frames the whole web with a margin, whatever shape it is. */
+  /** Frames the web off its actual EXTENTS, centred on the middle of those
+   *  rather than on 0,0 and a radius: arms that reach further one way than
+   *  another are not a circle, and treating them as one clips the far side. */
   fit(nodes: { x: number; y: number }[], margin = 0.9): void {
     if (nodes.length === 0) return;
     const box = this.box();
-    const reach = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y))) + margin;
-    this.panX = 0;
-    this.panY = 0;
+    const xs = nodes.map((n) => n.x);
+    const ys = nodes.map((n) => n.y);
+    // The middle counts: every web hangs off it, node there or not.
+    const lo = { x: Math.min(0, ...xs) - margin, y: Math.min(0, ...ys) - margin };
+    const hi = { x: Math.max(0, ...xs) + margin, y: Math.max(0, ...ys) + margin };
+
+    this.panX = (lo.x + hi.x) / 2;
+    this.panY = (lo.y + hi.y) / 2;
     this.scale = clamp(
-      Math.min(box.width, box.height) / (reach * 2),
+      Math.min(box.width / (hi.x - lo.x), box.height / (hi.y - lo.y)),
       this.spec.zoom.min,
       this.spec.zoom.max
     );
