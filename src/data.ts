@@ -3803,6 +3803,31 @@ export const SKILL_CATEGORIES: Array<{
   { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.' },
 ];
 
+/** What the Skills screen offers: a shelf is everything ONE KIND OF SLOT takes,
+ *  so Attacks and Spells share one because one slot takes both. Inside it they
+ *  are still told apart, by a header bar per category. */
+export const SKILL_SHELVES: Array<{
+  id: string;
+  name: string;
+  blurb: string;
+  holds: SkillCategory[];
+}> = [
+  {
+    id: 'ability',
+    name: 'Abilities',
+    blurb: 'What you kill with. Attacks swing, spells cast.',
+    holds: ['attack', 'spell'],
+  },
+  { id: 'passive', name: 'Passive Skills', blurb: 'Always on, and always a trade.', holds: ['passive'] },
+  { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.', holds: ['movement'] },
+];
+
+export const SHELF_BY_ID = Object.fromEntries(SKILL_SHELVES.map((s) => [s.id, s]));
+
+/** Every category is on exactly one, and the demo holds it to that. */
+export const shelfForCategory = (category: SkillCategory): string =>
+  SKILL_SHELVES.find((s) => s.holds.includes(category))?.id ?? SKILL_SHELVES[0].id;
+
 /** The three a character holds at once, as a TABLE like `EQUIP_SLOTS`: a
  *  fourth is one entry rather than a fourth named field. */
 export const SKILL_SLOTS: SkillSlotDef[] = [

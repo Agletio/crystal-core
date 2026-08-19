@@ -174,12 +174,26 @@ casts per second, reach. With three skills equipped a mixed sheet cannot be
 written down, which is why the split exists. An empty slot prints
 `SkillSlotDef.blurb` rather than a dark square.
 
-**A SHELF ROW SAYS WHAT THE SKILL DOES, on the row.** `.skillrow__how` is
-`SkillDef.description` through `keywordLine`. A skill with a web can be read on
-its web; **one WITHOUT is EQUIPPED by the very click that would have opened it**
-— "no web yet" is a promise the game will not keep for a passive, and a dead end
-is worse than a verb — so a row carrying only a name is a choice made blind.
-Displacing what is in the slot asks first.
+**A SHELF IS PICTURES, and the words are one hover away.** `SKILL_SHELVES` in
+`src/data.ts` is what the top offers — a shelf is everything ONE KIND OF SLOT
+takes, so attacks and spells share one — and inside it a `.shelfhead` bar per
+CATEGORY tells them apart. Each skill is a `.skilltile`: its icon, its name
+under it, and two marks — equipped, and a point waiting. The full card is the
+tooltip.
+
+That REPLACED a rule, and the rule was right until it was not: a row used to
+print `SkillDef.description` because a row carrying only a name is a choice
+made blind. *The user's call: "instead of a bunch of text it has rows of the
+ability icons with maybe just the name under the icon and hover to get the
+tooltip… that way we can fit way more abilites and not have walls and walls of
+text greet you but the info can still be there."* Eleven skills of prose is a
+wall in front of the decision. **Nothing was taken away** — the tooltip is the
+same `nodeCard`, keywords marked, and smoke hovers a tile and reads it. Do not
+put the paragraph back on the tile; put anything new in the card.
+
+**A skill WITHOUT a web is EQUIPPED by the very click that would have opened
+it** — "no web yet" is a promise the game will not keep for a passive, and a
+dead end is worse than a verb. Displacing what is in the slot asks first.
 
 **The Skills screen opens at the TOP.** Where you were last time is not where
 you are going, and a screen that reopens three deep hides the two questions

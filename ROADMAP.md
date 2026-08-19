@@ -58,6 +58,7 @@ to look:
 | Sundering | the BURST as a passive — flat off character level, on a clock, scaled by nothing the build owns |
 | Hoarfrost | a spike every 0.7s at everything Chilled, flat off level, and worth nothing to a build that Chills nothing |
 | ten generated icons | through `icons.json` → `icon.mts` → `portrait.mts`, replacing every hand-drawn grid |
+| the shelf is PICTURES | `SKILL_SHELVES` — attacks and spells share one, a header bar per category, a tile per skill and the card on the hover |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would

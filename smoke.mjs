@@ -1530,37 +1530,42 @@ $('sheet-close').click();
   );
 
   all('#skills-cats .catcard').find((c) => /Passive/.test(c.textContent ?? '')).click();
-  const row = all('#skills-list .skillrow')[0];
+  assert(
+    all('#skills-list .shelfhead').length >= 1,
+    'a shelf opens under a header bar naming what is on it',
+    String(all('#skills-list .shelfhead').length)
+  );
+  const row = all('#skills-list .skilltile')[0];
   assert(!!row, 'the passive shelf has something on it');
   assert(
-    /click to equip/i.test(row.textContent ?? ''),
-    'and it says clicking equips rather than promising a web',
+    (row.querySelector('.skilltile__name')?.textContent ?? '').length > 0 &&
+      !!row.querySelector('svg'),
+    'and a tile is a PICTURE with a name under it, not a paragraph',
     row.textContent
   );
-  // A webless skill is EQUIPPED by the click, so the row is the only place its
-  // description can be read before the decision is made.
+  // A webless skill is EQUIPPED by the click, so what it does has to be
+  // readable BEFORE the decision — one hover away rather than on the tile.
+  row.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert($('tooltip').hidden === false, 'hovering a tile raises its card');
   assert(
-    /Critical/.test(row.querySelector('.skillrow__how')?.textContent ?? ''),
-    'and the row says what it DOES, before you pick it',
-    row.querySelector('.skillrow__how')?.textContent
+    /Critical/.test(text('tooltip')),
+    'and the card says what it DOES, before you pick it',
+    text('tooltip')
   );
   assert(
-    (row.querySelector('.skillrow__how .kw')?.textContent ?? '') !== '',
+    ($('tooltip').querySelector('.kw')?.textContent ?? '') !== '',
     'with its keywords marked, like everywhere else they appear'
   );
-  assert(
-    all('#skills-list .skillrow').every((r) => (r.querySelector('.skillrow__how')?.textContent ?? '').length > 0),
-    'every shelf row does, not only the one with no web'
-  );
+  row.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
   row.click();
   assert(
     $('skills-detail').hidden === true,
     'a passive never opens a tree — there is not going to be one'
   );
   assert(
-    /equipped/i.test(all('#skills-list .skillrow')[0].textContent ?? ''),
+    all('#skills-list .skilltile')[0].classList.contains('skilltile--on'),
     'clicking it equipped it instead',
-    all('#skills-list .skillrow')[0].textContent
+    all('#skills-list .skilltile')[0].className
   );
   $('skills-back').click();
   assert(
@@ -1591,7 +1596,7 @@ assert($('skills').hidden === false, 'skills modal opens');
 assert($('skills-cats').hidden === false, 'it opens on the categories');
 assert($('skills-list').hidden === true, 'not on a skill list');
 assert($('skills-detail').hidden === true, 'and not on a web');
-assert(all('#skills-cats .catcard').length === 4, 'four categories offered');
+assert(all('#skills-cats .catcard').length === 3, 'three shelves offered');
 assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 
 // A second way to move, and both of them have a web to spend points in — the
@@ -1599,11 +1604,13 @@ assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 {
   const movement = all('#skills-cats .catcard').find((c) => /Movement/.test(c.textContent ?? ''));
   movement.click();
-  const rows = all('#skills-list .skillrow');
+  const rows = all('#skills-list .skilltile');
   assert(rows.length === 2, 'the movement shelf holds Blink and Leap', String(rows.length));
+  // The badge is only drawn for a skill that HAS a web with a point waiting,
+  // so its presence is the claim: both movers have one to spend in.
   assert(
-    rows.every((r) => /spent/.test(r.textContent ?? '')),
-    'and each has a web to spend in, rather than "no web yet"',
+    rows.every((r) => !!r.querySelector('.skilltile__spare')),
+    'and each has a web with a point waiting in it',
     rows.map((r) => r.textContent).join(' | ')
   );
   rows.find((r) => /Leap/.test(r.textContent ?? '')).click();
@@ -1628,8 +1635,8 @@ $('open-skills').click();
 assert($('skills-cats').hidden === false, 'reopening lands on the categories again');
 assert($('skills-detail').hidden === true, 'never three deep where you left it');
 
-// All four shelves have something on them now: a character holds three skills
-// at once, one out of each of three slots.
+// Every shelf has something on it now: a character holds three kinds of skill
+// at once, and attacks and spells share one shelf.
 const cats = all('#skills-cats .catcard');
 assert(
   cats.filter((c) => c.disabled).length === 0,
@@ -1648,17 +1655,17 @@ cats[0].click();
 assert($('skills-cats').hidden === true, 'picking a category leaves the categories');
 assert($('skills-list').hidden === false, 'and shows what is on that shelf');
 assert($('skills-back').hidden === false, 'with a way back');
-assert(all('#skills-list .skillrow').length === 4, 'every spell on the shelf is listed');
+assert(all('#skills-list .skilltile').length === 7, 'every ability on the shelf is listed');
 
 // Back really does go back.
 $('skills-back').click();
 assert($('skills-cats').hidden === false, 'back returns to the categories');
 cats[0].click();
 
-const fireballRow = all('#skills-list .skillrow').find((b) =>
+const fireballRow = all('#skills-list .skilltile').find((b) =>
   /Fireball/.test(b.textContent ?? '')
 );
-assert(!!fireballRow, 'Fireball is on the spell shelf');
+assert(!!fireballRow, 'Fireball is on the ability shelf, beside the attacks');
 fireballRow.click();
 assert($('skills-detail').hidden === false, 'opening a skill shows its web');
 assert($('skills-list').hidden === true, 'and leaves the list behind');
@@ -1850,14 +1857,14 @@ assert($('skills').hidden === true, 'and only then closes');
 // that lost a branch still builds, and still draws, just smaller.
 $('open-skills').click();
 for (const [skill, shelf, total, notables] of [
-  ['Strike', 'Attacks', 112, 29],
-  ['Fireball', 'Spells', 109, 28],
-  ['Creeping Blight', 'Spells', 116, 30],
+  ['Strike', 'Abilities', 112, 29],
+  ['Fireball', 'Abilities', 109, 28],
+  ['Creeping Blight', 'Abilities', 116, 30],
 ]) {
   const card = all('#skills-cats .catcard').find((c) => c.textContent?.includes(shelf));
   assert(!!card, `${shelf} is a shelf you can open`);
   card.click();
-  const row = all('#skills-list .skillrow').find((b) => b.textContent?.includes(skill));
+  const row = all('#skills-list .skilltile').find((b) => b.textContent?.includes(skill));
   assert(!!row, `${skill} is on the ${shelf} shelf`);
   row.click();
 
@@ -1890,8 +1897,8 @@ $('skills-close').click();
 // applied where the working cannot show it is how the two stop matching.
 {
   $('open-skills').click();
-  all('#skills-cats .catcard').find((c) => c.textContent?.includes('Spells')).click();
-  all('#skills-list .skillrow').find((b) => b.textContent?.includes('Creeping Blight')).click();
+  all('#skills-cats .catcard').find((c) => c.textContent?.includes('Abilities')).click();
+  all('#skills-list .skilltile').find((b) => b.textContent?.includes('Creeping Blight')).click();
   $('skills-equip').click();
 
   // Canopy is the node that made this necessary: it buys a wider cloud with

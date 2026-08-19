@@ -1,26 +1,21 @@
 /**
- * The Skills screen: three depths, one question each.
+ * The Skills screen: three depths, one question each — which SHELF, which
+ * skill, its web. Back is how you go up and only one level is ever on screen,
+ * because a list beside a hundred-node web is a wall in front of the only
+ * thing you came here to do.
  *
- *   1  what KIND of skill — spells, attacks, passives, movement
- *   2  which one
- *   3  its web
- *
- * It used to be a list beside a web, which meant every skill you owned and
- * every node of the one you were looking at were on screen at the same time.
- * That was survivable with ten nodes. At a hundred it is a wall, and the wall
- * is in the way of the only thing you came here to do, which is decide where
- * the next point goes. So: Back is how you go up, and the screen only ever
- * shows one level.
- *
- * The web is a MAP, not a diagram. It does not fit in the window and it is not
- * meant to — you scroll to zoom and drag to move, the same as any other map,
- * because a hundred nodes shrunk to fit are a hundred dots you cannot read.
+ * The web is a MAP, not a diagram. It does not fit the window and is not meant
+ * to — scroll to zoom, drag to move, because a hundred nodes shrunk to fit are
+ * a hundred dots you cannot read.
  */
 import {
   SKILL_BY_ID,
   SKILL_CATEGORIES,
+  SKILL_SHELVES,
   SKILL_SLOTS,
   SKILL_SLOT_BY_ID,
+  SHELF_BY_ID,
+  shelfForCategory,
   skillsInCategory,
 } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
@@ -39,7 +34,7 @@ import { chain, frame, mount, svgEl } from './webart';
 import { bakedArt, nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
-import { keywordLine, nodeCard } from './glossary';
+import { nodeCard } from './glossary';
 import { slotWorkings } from '../skill-text';
 import type { SkillNodeDef } from '../skills-tree';
 import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
@@ -70,8 +65,9 @@ import type { SkillCategory, SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
-/** The three depths of this screen, each with a stable id. */
-export const skillCatId = (categoryId: string): string => `skillcat-${categoryId}`;
+/** The three depths, each with a stable id. `skillcat-` names a SHELF now; the
+ *  prefix outlives what it names, and every harness still finds one. */
+export const skillCatId = (shelfId: string): string => `skillcat-${shelfId}`;
 export const skillRowId = (skillId: string): string => `skillrow-${skillId}`;
 export const skillNodeId = (nodeId: string): string => `skillnode-${nodeId}`;
 export const skillSlotCardId = (slotId: string): string => `skillslot-${slotId}`;
@@ -86,8 +82,8 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let onChanged: (() => void) | null = null;
 
-/** Where you are. Null category means the top. */
-let category: SkillCategory | null = null;
+/** Where you are. Null shelf means the top. */
+let shelf: string | null = null;
 let viewing: string | null = null;
 /** Which slot the next pick fills, set by clicking an empty one. A MODE, so it
  *  lives here and never in the save. */
@@ -249,7 +245,7 @@ function skillSummary(skill: SkillDef): string[] {
  */
 async function open(skillId: string): Promise<void> {
   if (treeFor(skillId).length > 0) {
-    category = SKILL_BY_ID[skillId]?.category ?? category;
+    shelf = shelfForCategory(SKILL_BY_ID[skillId]?.category ?? 'attack');
     viewing = skillId;
     home();
     render();
@@ -320,7 +316,7 @@ function renderSlots(): void {
     card.onclick = () => {
       if (held && treeFor(held.id).length > 0) return void open(held.id);
       arming = held ? null : slot.id;
-      category = (held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0] ?? null;
+      shelf = shelfForCategory((held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0]);
       viewing = null;
       render();
     };
@@ -328,31 +324,27 @@ function renderSlots(): void {
   }
 }
 
-function renderCategories(): void {
+function renderShelves(): void {
   const host = $('skills-cats');
   host.replaceChildren();
 
-  for (const cat of SKILL_CATEGORIES) {
-    const skills = skillsInCategory(cat.id);
+  for (const rack of SKILL_SHELVES) {
+    const skills = rack.holds.flatMap((c) => skillsInCategory(c));
     const card = el('button', 'catcard') as HTMLButtonElement;
-    card.id = skillCatId(cat.id);
+    card.id = skillCatId(rack.id);
     const head = el('span', 'catcard__head');
-    head.append(categoryIcon(cat.id, 26));
-    head.append(el('span', 'catcard__name', cat.name));
+    head.append(categoryIcon(rack.holds[0], 26));
+    head.append(el('span', 'catcard__name', rack.name));
     card.append(head);
-    card.append(el('span', 'catcard__blurb', cat.blurb));
+    card.append(el('span', 'catcard__blurb', rack.blurb));
     card.append(
-      el(
-        'span',
-        'catcard__count',
-        skills.length === 0 ? 'empty' : `${skills.length} available`
-      )
+      el('span', 'catcard__count', skills.length === 0 ? 'empty' : `${skills.length} available`)
     );
     // An empty shelf is still shown — it says where something is going to go.
     // Making it clickable would only ever open a blank list.
     card.disabled = skills.length === 0;
     card.onclick = () => {
-      category = cat.id;
+      shelf = rack.id;
       viewing = null;
       render();
     };
@@ -364,43 +356,50 @@ function renderCategories(): void {
 // Level 2 — the skills on a shelf
 // ---------------------------------------------------------------------------
 
+/**
+ * A shelf, as PICTURES: a tile per skill, the name under it, and what it does
+ * on the hover. A row of prose each was readable at four skills and a wall at
+ * eleven; the information did not go anywhere, since the tooltip is the same
+ * card with the same keywords marked.
+ */
 function renderSkillList(): void {
   const host = $('skills-list');
   host.replaceChildren();
-  if (!category) return;
+  const rack = shelf ? SHELF_BY_ID[shelf] : null;
+  if (!rack) return;
 
-  for (const skill of skillsInCategory(category)) {
-    const progress = skillProgress(game.character, skill.id);
-    const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
+  for (const category of rack.holds) {
+    const skills = skillsInCategory(category);
+    if (skills.length === 0) continue;
 
-    const btn = el('button', 'skillrow') as HTMLButtonElement;
-    btn.id = skillRowId(skill.id);
-    const head = el('span', 'skillrow__head');
-    head.append(el('span', 'skillrow__name', skill.name));
-    if (heldAnywhere(skill.id)) {
-      head.append(el('span', 'skillrow__tag', 'equipped'));
+    // Even when the shelf holds ONE: it names what you are looking at, and a
+    // shelf that grows a second kind needs no change here.
+    const bar = el('div', 'shelfhead');
+    bar.append(categoryIcon(category, 18));
+    bar.append(el('span', 'shelfhead__name', SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? category));
+    bar.append(el('span', 'shelfhead__count', `${skills.length}`));
+    host.append(bar);
+
+    const grid = el('div', 'skillgrid');
+    for (const skill of skills) {
+      const progress = skillProgress(game.character, skill.id);
+      const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
+      const mine = heldAnywhere(skill.id);
+
+      const btn = el('button', `skilltile${mine ? ' skilltile--on' : ''}`) as HTMLButtonElement;
+      btn.id = skillRowId(skill.id);
+      btn.append(skillIcon(skill.id, 44));
+      btn.append(el('span', 'skilltile__name', skill.name));
+      // Two marks and no prose: what is held, and what has a point waiting.
+      if (mine) btn.append(el('span', 'skilltile__tag', 'equipped'));
+      if (spare > 0 && treeFor(skill.id).length > 0) {
+        btn.append(el('span', 'skilltile__spare', String(spare)));
+      }
+      attachTooltip(btn, () => skillCard(skill));
+      btn.onclick = () => void open(skill.id);
+      grid.append(btn);
     }
-    btn.append(head);
-
-    // A row with only a name on it is a choice made blind.
-    btn.append(keywordLine(skill.description, 'skillrow__how'));
-
-    const web = treeFor(skill.id).length;
-    const cap = pointCapFor(skill.id);
-    btn.append(
-      el(
-        'span',
-        'skillrow__meta',
-        web === 0
-          ? `level ${progress.level} · no web — click to equip`
-          : `level ${progress.level} · ${progress.allocated.length}/${cap} spent · ` +
-            `${spare} unspent`
-      )
-    );
-    attachTooltip(btn, () => skillCard(skill));
-
-    btn.onclick = () => void open(skill.id);
-    host.append(btn);
+    host.append(grid);
   }
 }
 
@@ -733,7 +732,7 @@ function render(): void {
   hideTooltip();
 
   closeChoice();
-  const depth = viewing ? 3 : category ? 2 : 1;
+  const depth = viewing ? 3 : shelf ? 2 : 1;
   $('skills-cats').hidden = depth !== 1;
   $('skills-list').hidden = depth !== 2;
   $('skills-detail').hidden = depth !== 3;
@@ -744,14 +743,14 @@ function render(): void {
     depth === 1
       ? 'Skills'
       : depth === 2
-        ? SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? 'Skills'
+        ? SHELF_BY_ID[shelf!]?.name ?? 'Skills'
         : SKILL_BY_ID[viewing!]?.name ?? 'Skills';
 
   $('skills-slots').hidden = depth !== 1;
 
   if (depth === 1) {
     renderSlots();
-    renderCategories();
+    renderShelves();
   }
   if (depth === 2) renderSkillList();
   if (depth === 3) renderHeader();
@@ -761,7 +760,7 @@ function render(): void {
 
 function back(): void {
   if (viewing) viewing = null;
-  else category = null;
+  else shelf = null;
   render();
 }
 
@@ -769,7 +768,7 @@ function back(): void {
  *  a screen that reopens three deep hides the two questions above it. */
 export function openSkills(): void {
   $('skills').hidden = false;
-  category = null;
+  shelf = null;
   viewing = null;
   render();
 }
@@ -785,7 +784,7 @@ export function isSkillsOpen(): boolean {
 
 /** Escape steps back one level, and only closes from the top. */
 export function skillsEscape(): void {
-  if (viewing || category) back();
+  if (viewing || shelf) back();
   else closeSkills();
 }
 

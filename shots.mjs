@@ -319,7 +319,7 @@ for (const vp of VIEWPORTS) {
   // The middle depth, which Escape steps back to: a state, not a moment.
   await shoot('skill-list');
   await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('#skills-list .skillrow')];
+    const rows = [...document.querySelectorAll('#skills-list .skilltile')];
     (rows.find((r) => /Fireball/.test(r.textContent ?? '')) ?? rows[0])?.click();
   });
   await page.waitForTimeout(400);

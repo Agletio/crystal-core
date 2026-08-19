@@ -21,6 +21,8 @@ import {
   MAIN_SKILLS,
   MAIN_SLOT,
   PLAYER_SKILLS,
+  SKILL_CATEGORIES,
+  SKILL_SHELVES,
   SKILL_SLOTS,
   skillsInCategory,
   SKILL_SLOT_BY_ID,
@@ -4782,6 +4784,30 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
   line(
     `  ${SKILL_SLOTS.map((s) => `${s.name}: ${s.accepts.join('/')}` + (s.unlocksAt ? ` @${s.unlocksAt}` : '')).join(' · ')}`
   );
+  // A SHELF is what the Skills screen offers, and a category on none of them is
+  // a skill nobody can reach — the screen walks shelves, not categories.
+  {
+    const homelessCat = SKILL_CATEGORIES.filter(
+      (c) => SKILL_SHELVES.filter((sh) => sh.holds.includes(c.id)).length !== 1
+    );
+    line(`  ${SKILL_SHELVES.map((sh) => `${sh.name}: ${sh.holds.join('+')}`).join(' · ')}`);
+    check(
+      homelessCat.length === 0,
+      `${SKILL_SHELVES.length} shelves, and every category is on exactly one`,
+      homelessCat.map((c) => c.id).join(', ')
+    );
+    // And a shelf is what ONE KIND of slot takes, which is the whole reason
+    // attacks and spells share one: a shelf nothing can equip off opens onto a
+    // decision the character cannot make.
+    const orphan = SKILL_SHELVES.filter(
+      (sh) => !SKILL_SLOTS.some((slot) => sh.holds.every((c) => slot.accepts.includes(c)))
+    );
+    check(
+      orphan.length === 0,
+      'and every shelf is exactly what one kind of slot accepts',
+      orphan.map((sh) => sh.id).join(', ')
+    );
+  }
   const passiveSlots = SKILL_SLOTS.filter((s) => s.accepts.includes('passive'));
   check(
     SKILL_SLOT_BY_ID[MAIN_SLOT]?.accepts.join(',') === 'spell,attack'
