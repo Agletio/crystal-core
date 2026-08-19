@@ -416,6 +416,8 @@ for (const vp of VIEWPORTS) {
   // The trials: a ladder beside a web, which is the only screen putting a list
   // and a web side by side and so the only one where either can crowd the other.
   await page.evaluate(() => {
+    document.getElementById('open-dev')?.click();
+    document.getElementById('dev-trials')?.click();
     document.getElementById('open-trials')?.click();
     for (let i = 0; i < 3; i++) {
       const open = document.querySelector('#trials-web .web__node--open');

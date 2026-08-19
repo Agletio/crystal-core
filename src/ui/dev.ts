@@ -8,7 +8,7 @@
  */
 import { Rng } from '../rng';
 import { SCENES } from '../scenes';
-import { BOSS_BY_ID } from '../data';
+import { BOSS_BY_ID, TRIALS } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId } from '../sim/character';
 import { heal } from '../game/save';
@@ -111,6 +111,24 @@ function render(): void {
     button.onclick = () => outfit(rung.band);
     gear.append(button);
   }
+
+  // A trial is normally a room and a boss, so without this the web behind them
+  // can only be looked at on a save that has already done the work.
+  const trials = group(
+    'Trials',
+    'Points for the trials web. Normally earned once each, at the end of a cleared descent.'
+  );
+  const paid = el('button', 'mini devbtn') as HTMLButtonElement;
+  paid.id = 'dev-trials';
+  paid.append(el('span', 'devbtn__name', `Do every trial`));
+  paid.append(el('span', 'devbtn__what', `${TRIALS.length} points, the whole web's budget`));
+  paid.onclick = () => {
+    game.character.trials = TRIALS.map((t) => t.id);
+    hooks.refresh();
+    note(`Dev: ${TRIALS.length} trial points.`);
+    close();
+  };
+  trials.append(paid);
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;

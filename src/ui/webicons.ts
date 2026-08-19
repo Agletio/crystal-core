@@ -197,6 +197,10 @@ const GLYPHS: Record<string, string[]> = {
 
 /** Most specific first: an element beats a delivery beats a plain number. */
 const MATCH: [RegExp, string][] = [
+  // FIRST, because the trials web writes in monster stats and every other rule
+  // here reads a stat as the HERO's: `monsterLife` on a heart says the node
+  // gives you life, where it gives it to what you are fighting.
+  [/monster|pack ?(count|size)/, 'skull'],
   [/fire|burn|ember|cinder|ignit|scorch/, 'flame'],
   [/cold|frost|chill|freez|rime/, 'frost'],
   [/lightning|arc\b|shock|storm/, 'bolt'],
