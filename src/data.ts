@@ -2409,6 +2409,43 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
 
+/** Something done once, paying ONE point into the trials web — hence no `gives`
+ *  field. Twelve crystal modifiers is the whole permanent difficulty of the
+ *  game; a trial is how that ceiling rises, and few trials is what keeps the
+ *  web a decision. */
+export interface TrialDef {
+  id: string;
+  name: string;
+  detail: string; // the objective, in words a player can act on
+  need: Array<Record<string, unknown> & { kind: string }>; // ANDed; `kind` is in TRIAL_CONDITIONS
+}
+
+/** In ORDER, and the order is the story. These three are what a descent already
+ *  knows how to prove; a rung that is a ROOM comes with the phase authoring it. */
+export const TRIALS: TrialDef[] = [
+  {
+    id: 'the_answering',
+    name: 'The Answering',
+    detail: 'Put down the thing in the rock that knows its own name.',
+    need: [{ kind: 'boss', boss: 'answering' }],
+  },
+  {
+    id: 'full_wall',
+    name: 'A Full Wall',
+    detail: 'Clear a descent with all four sockets holding a crystal.',
+    need: [{ kind: 'sockets', value: 4 }],
+  },
+  {
+    id: 'deep_water',
+    name: 'Deep Water',
+    detail: 'Clear a descent worth 400 danger.',
+    need: [{ kind: 'danger', value: 400 }],
+  },
+];
+
+export const TRIAL_BY_ID: Record<string, TrialDef> = Object.fromEntries(
+  TRIALS.map((t) => [t.id, t])
+);
 
 /**
  * The Osteomancer, who is in the Rot and wants what it did not finish. His
@@ -2648,6 +2685,10 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   layoutComplexity: { weight: 0.2, rewards: true },
   packCount: { weight: 0.5, rewards: false },
   packSize: { weight: 0.5, rewards: false },
+  // +100% lifts the average monster's life 14.4% and its damage 3.0% over
+  // `MONSTER_RANKS` — 0.10 and 0.03 of what those weigh. The EFFECT saturates
+  // where the score does not, so the cap is where the line runs 21% ahead.
+  monsterRank: { weight: 0.13, rewards: true, cap: 400 },
 };
 
 /**
@@ -2925,6 +2966,7 @@ export const BINDINGS: BindingDef[] = [
   { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },
   { id: 'trade', what: 'Open your trade', key: 't' },
+  { id: 'trials', what: 'Open the trials and their web', key: 'r' },
   { id: 'craft', what: 'Open the bench', key: 'b' },
   { id: 'shop', what: 'Open the shop', key: 'v' },
   { id: 'filter', what: 'Open the auto-sell filter', key: 'j' },

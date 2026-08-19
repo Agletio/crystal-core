@@ -10,6 +10,7 @@ import {
 } from '../data';
 import { treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, canAllocateTrade, canDeallocateTrade, tradePointsFor } from '../trades';
+import { canAllocateTrial, canDeallocateTrial, trialPointsFor } from '../trials';
 import type { Item } from '../types';
 
 /**
@@ -43,6 +44,11 @@ export interface Character {
   trade: string | null;
   /** Nodes walked on it, out of a budget character level funds. */
   tradeAllocated: string[];
+  /** Trials done, in the order they were done. Its LENGTH is the point budget
+   *  for the trials web — a second counter is a number that can disagree. */
+  trials: string[];
+  /** Nodes walked on the trials web. */
+  trialAllocated: string[];
 }
 
 export function makeCharacter(
@@ -59,7 +65,29 @@ export function makeCharacter(
     attributes: {},
     trade: null,
     tradeAllocated: [],
+    trials: [],
+    trialAllocated: [],
   };
+}
+
+/** Points the trials done have paid, and what is left of them. */
+export const trialPointsLeft = (character: Character): number =>
+  trialPointsFor(character.trials ?? []) - (character.trialAllocated?.length ?? 0);
+
+/** One node, or nothing when it is not reachable or nothing is spare. */
+export function allocateTrial(character: Character, nodeId: string): boolean {
+  if (trialPointsLeft(character) <= 0) return false;
+  character.trialAllocated ??= [];
+  if (!canAllocateTrial(nodeId, character.trialAllocated)) return false;
+  character.trialAllocated.push(nodeId);
+  return true;
+}
+
+/** Refused when it would strand another node, exactly as a tree refund is. */
+export function deallocateTrial(character: Character, nodeId: string): boolean {
+  if (!canDeallocateTrial(nodeId, character.trialAllocated ?? [])) return false;
+  character.trialAllocated = character.trialAllocated.filter((id) => id !== nodeId);
+  return true;
 }
 
 /** Points a character level has bought toward a trade, and what is left of them. */

@@ -26,6 +26,7 @@ import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './cha
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
 import { tradeGrants } from '../trades';
+import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
 import type {MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
 
@@ -344,6 +345,26 @@ export function treeMod(character: Character): RolledMod | null {
     tier: 1,
     tags: [],
     stats,
+  };
+}
+
+/** The trials web as one synthetic mod, bound for `RunSet.mods` rather than for
+ *  `statMods`: every line on it is monster-facing, so it goes where a crystal's
+ *  modifiers go and is weighed for danger by the same `crystalRewards`. */
+export function trialMod(character: Character): RolledMod | null {
+  const stats = (character.trialAllocated ?? []).flatMap(
+    (id) => trialNodeById(id)?.stats ?? []
+  );
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'trials',
+    defId: 'trials',
+    group: 'trials',
+    slot: 'trials',
+    name: 'Trials',
+    tier: 1,
+    tags: [],
+    stats: stats.map((s) => ({ ...s, tags: s.tags ?? [] })),
   };
 }
 

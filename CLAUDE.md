@@ -11,7 +11,7 @@ touch that domain, not before.
 |---|---|
 | `art` | spending a generation on anything: bodies, tilesets, icons, fixtures |
 | `renderer` | `src/render/`, `src/vignettes.ts`, the carve in `src/sim/grid.ts` |
-| `systems` | `src/sim/`, `src/data.ts`, `src/trees/`, `src/trades/`, `src/moves/`, `src/game/`, `src/crafting.ts` |
+| `systems` | `src/sim/`, `src/data.ts`, `src/trees/`, `src/trades/`, `src/moves/`, `src/trials/`, `src/game/`, `src/crafting.ts` |
 | `screens` | `src/ui/`, `src/web.ts`, `docs/index.html` |
 | `harness` | a failing, flaking or hanging check; adding one |
 
@@ -140,11 +140,19 @@ the ceiling with it.
 ## The game
 
 **One place you go.** Four sockets hold crystals permanently. Their COUNT is how
-long a run is, their MODIFIERS the whole of how hard it is; a crystal's LEVEL is
-only capacity and its FAMILY (Normal / Demonic / Prismatic) only which monsters
-spawn. Composition also picks the ZONE — four of them, each drawn by its own
-generated tileset. Danger and socket count fold into one **run power**, and
-every reward reads that and nothing else. A fifth socket takes a **boss key**.
+long a run is, their MODIFIERS how hard it is; a crystal's LEVEL is only capacity
+and its FAMILY (Normal / Demonic / Prismatic) only which monsters spawn.
+Composition also picks the ZONE — four of them, each drawn by its own generated
+tileset. Danger and socket count fold into one **run power**, and every reward
+reads that and nothing else. A fifth socket takes a **boss key**.
+
+**Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
+Four sockets of three is all the difficulty a crystal can ever hold, so the web
+is a standing set of modifiers on top — earned one point at a time by doing a
+TRIAL, never bought by a level. Its lines merge into `RunSet.mods` beside the
+crystals' own and are weighed by the same `crystalRewards`, so harder is what
+pays. Per CHARACTER, and what it makes worse is every descent that character
+takes.
 
 **You press Enter once.** A cleared descent launches the next by itself and
 keeps going until you die, your bag fills, someone is waiting at the mouth, or
@@ -182,6 +190,7 @@ src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
 src/trades.ts      the character's own web; src/trades/* the two trades
 src/moves/         the movement webs
+src/trials.ts      the web a TRIAL pays for; src/trials/* its arms
 src/scenes.ts      the authored rooms; src/scenes/* their content
 src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation

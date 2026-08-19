@@ -9,6 +9,7 @@ import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, POTIONS, POTION_BY_ID } from '../data';
+import { percentStat } from '../mods';
 import type { BossPhase } from '../data';
 
 /** A circle the Fall has put on the floor, and the seconds until it lands. */
@@ -28,6 +29,7 @@ import {
   mapDensity,
   monsterStats,
   treeGrants,
+  trialMod,
 } from './stats';
 import type { CombatStats } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
@@ -69,7 +71,7 @@ import {
   socketSize,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
-import type { MonsterAbilityDef, MonsterDef } from '../types';
+import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
@@ -444,7 +446,7 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
-    this.set = runSet(crystals);
+    this.set = runSet(crystals, trialMod(character));
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
     // Sockets are the only thing that lengthens a descent: an empty Fissure is
@@ -637,6 +639,12 @@ export class RunSim {
     // construction.
     const statsFor = new Map<string, CombatStats>();
 
+    // Every rank ABOVE common weighs more. One weighted pick either way, so a
+    // set that lifts this cannot move where the seed goes next.
+    const lift = 1 + percentStat(this.set.mods, 'monsterRank') / 100;
+    const rankWeight = (r: MonsterRankDef): number =>
+      r.weight * (r === MONSTER_RANKS[0] ? 1 : lift);
+
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
 
@@ -660,7 +668,7 @@ export class RunSim {
         // Per monster, not per pack: a pack with one blue thing in it is a
         // pack you look at. Stats key on the rank too, or every rare in the
         // run would share the common one's life.
-        const rank = this.rng.weighted(MONSTER_RANKS, (r) => r.weight) ?? MONSTER_RANKS[0];
+        const rank = this.rng.weighted(MONSTER_RANKS, rankWeight) ?? MONSTER_RANKS[0];
         const statsKey = `${def.id}:${ability.id}:${rank.id}`;
         let stats = statsFor.get(statsKey);
         if (!stats) {

@@ -59,6 +59,7 @@ import {
   skillsEscape,
 } from './ui/skills';
 import { initTrade, openTrade, closeTrade, isTradeOpen } from './ui/trade';
+import { initTrials, openTrials, closeTrials, isTrialsOpen } from './ui/trials';
 import {
   initHistory,
   openHistory,
@@ -139,6 +140,7 @@ document.getElementById('open-inventory')!.addEventListener('click', openInvento
 document.getElementById('open-character')!.addEventListener('click', () => openCharacter());
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
+document.getElementById('open-trials')!.addEventListener('click', openTrials);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
 document.getElementById('open-settings')!.addEventListener('click', openSettings);
@@ -216,6 +218,8 @@ initCharacter(game, refreshRunPanels, onRunFocused);
 initSkills(game, refreshRunPanels);
 // A trade node changes what the sim does, so the map's readouts re-read too.
 initTrade(game, refreshRunPanels);
+// A trial node changes what the DESCENT is, so the set's readouts re-read too.
+initTrials(game, refreshRunPanels);
 // A craft can land on a worn piece now, so the map's readouts re-read after one.
 initCraft(game, onRunFocused, () => {
   refreshRunPanels();
@@ -332,6 +336,7 @@ const SCREENS: Record<
   },
   skills: { el: 'skills', open: openSkills, close: closeSkills, isOpen: isSkillsOpen },
   trade: { el: 'trade', open: openTrade, close: closeTrade, isOpen: isTradeOpen },
+  trials: { el: 'trials', open: openTrials, close: closeTrials, isOpen: isTrialsOpen },
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
   filter: { el: 'filter', open: openFilter, close: closeFilter, isOpen: isFilterOpen },

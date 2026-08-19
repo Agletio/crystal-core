@@ -43,6 +43,7 @@ import {
   ADDED_DAMAGE_STATS,
   ADDED_DAMAGE_TYPES,
   DANGER_STATS,
+  TRIALS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
   abilitiesFor,
@@ -95,6 +96,8 @@ import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { gaveKey, sceneWaiting, takeBoss } from './game/scenes';
+import { TRIAL_CONDITIONS, healTrials } from './game/trials';
+import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
 import type { SceneDef } from './scenes';
@@ -140,6 +143,7 @@ import {
   effectiveSkill,
   statMods,
   treeGrants,
+  trialMod,
 } from './sim/stats';
 import { damageWorkings, readWorkings } from './damage-text';
 import { potionReading, potionWorkings } from './potion-text';
@@ -2720,6 +2724,90 @@ for (const web of MOVE_WEBS) {
     held = held.filter((id) => id !== loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+}
+
+// ===========================================================================
+rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
+
+{
+  const nodes = trialNodes();
+  const bare = [makeCrystal(2), makeCrystal(2)];
+
+  // Every clause has to name a condition that exists, or the trial is one
+  // nobody can ever finish and the point behind it never arrives.
+  const strays = TRIALS.flatMap((t) =>
+    t.need.filter((c) => !TRIAL_CONDITIONS[c.kind]).map((c) => `${t.id}: ${c.kind}`)
+  );
+  check(strays.length === 0, `all ${TRIALS.length} trials ask conditions that exist`, strays.join(', '));
+
+  // Every line on this web is DANGER, which is the whole bargain: reward is
+  // derived from danger, so a node that is not weighed is a node paying nothing.
+  const unweighed = nodes.flatMap((n) =>
+    (n.stats ?? []).filter((s) => !DANGER_STATS[s.stat]).map((s) => `${n.id}: ${s.stat}`)
+  );
+  check(
+    unweighed.length === 0,
+    `every stat on all ${nodes.length} trial nodes is one \`crystalRewards\` weighs`,
+    unweighed.join(', ')
+  );
+
+  // Walked in, and out again, at the full budget the trials can ever pay.
+  const walk: string[] = [];
+  const spendRng = new Rng(4141);
+  while (walk.length < TRIAL_POINTS_MAX) {
+    const open = nodes.filter((n) => canAllocateTrial(n.id, walk));
+    if (open.length === 0) break;
+    walk.push(spendRng.pick(open)!.id);
+  }
+  check(walk.length === TRIAL_POINTS_MAX, `all ${TRIAL_POINTS_MAX} trial points can be spent`, String(walk.length));
+  let held = [...walk];
+  while (held.length > 0) {
+    const loose = held.find((id) => canDeallocateTrial(id, held));
+    if (!loose) break;
+    held = held.filter((id) => id !== loose);
+  }
+  check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+
+  // The whole web on one character, against the same crystals: what it does to
+  // a descent has to be visible in the SET, or none of the rest of this matters.
+  const walked = { ...ladderCharacter(4, new Rng(7)), trials: TRIALS.map((t) => t.id), trialAllocated: nodes.map((n) => n.id) };
+  const before = runSet(bare);
+  const after = runSet(bare, trialMod(walked));
+  check(
+    after.rewards.danger > before.rewards.danger,
+    'the whole web walked raises a set\'s danger',
+    `${Math.round(before.rewards.danger)} -> ${Math.round(after.rewards.danger)}`
+  );
+  check(
+    after.rewards.rarity > before.rewards.rarity,
+    'and pays for it in rarity, off the same arithmetic a crystal pays by',
+    `${Math.round(before.rewards.rarity)}% -> ${Math.round(after.rewards.rarity)}%`
+  );
+
+  // `monsterRank` is the one stat this phase INVENTED, so it is the one that
+  // can be declared, weighed, printed on a card and read by nothing at all.
+  const ranked = (character: Character): number => {
+    const sim = new RunSim(bare, character, new Rng(5150));
+    return sim.state.monsters.filter((m) => m.rank !== 'common').length;
+  };
+  const plain = ranked(ladderCharacter(4, new Rng(7)));
+  const lifted = ranked({
+    ...ladderCharacter(4, new Rng(7)),
+    trials: TRIALS.map((t) => t.id),
+    trialAllocated: nodes.filter((n) => (n.stats ?? []).some((s) => s.stat === 'monsterRank')).map((n) => n.id),
+  });
+  check(lifted > plain, 'and the Watch really does put more Rares in a room', `${plain} -> ${lifted}`);
+
+  // A trial deleted refunds the point it bought rather than stranding the walk.
+  const save = createGame('dev');
+  save.character.trialAllocated = [...walk];
+  save.character.trials = [TRIALS[0].id, 'a_trial_nobody_wrote'];
+  healTrials(save.character);
+  check(
+    save.character.trials.length === 1 && save.character.trialAllocated.length === 1,
+    'and heal() refunds a walk no surviving trial paid for',
+    `${save.character.trials.length} trials, ${save.character.trialAllocated.length} nodes`
+  );
 }
 
 // ===========================================================================

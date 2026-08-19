@@ -1579,6 +1579,17 @@
   .web--drag { cursor: grabbing; }
   /* Twenty nodes fit, so the trade web is a picture rather than a map. */
   .webwrap--trade { height: min(44vh, 380px); margin-top: 12px; }
+  /* The ladder beside the web: the order is the story, so it is read down. */
+  .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
+  .trialsplit .webwrap--trade { margin-top: 0; }
+  .trialladder { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .trialrow { border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; background-color: var(--panel); background-clip: padding-box; padding: 4px 6px; }
+  .trialrow--done { filter: brightness(1.12); }
+  .trialrow__head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .trialrow__name { color: var(--text); }
+  .trialrow--done .trialrow__name { color: var(--citrine); }
+  .trialrow__state { color: var(--text-dim); font-size: 11px; }
+  .trialrow__detail { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
   .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
@@ -1721,6 +1732,7 @@
       <button class="railbtn" id="open-character" data-key="character">Character</button>
       <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
       <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
+      <button class="railbtn" id="open-trials" data-key="trials">Trials</button>
       <button class="railbtn" id="open-history" data-key="history">History</button>
       <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
       <button class="railbtn" id="open-settings">Settings</button>
@@ -2199,6 +2211,31 @@
 
 <!-- The trade: the part of a character that is not the skill. Twenty nodes fit
      on a screen, so this web is drawn to fit and has no map controls. -->
+<div class="modal" id="trials" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">Trials</h2>
+      <div class="seedbar">
+        <button class="mini" id="trials-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="skillhead">
+        <div>
+          <div class="skillhead__sub" id="trials-sub"></div>
+          <div class="skillhead__sub" id="trials-note"></div>
+        </div>
+      </div>
+      <div class="trialsplit">
+        <div class="trialladder" id="trials-ladder"></div>
+        <div class="webwrap webwrap--trade" id="trials-webwrap">
+          <svg class="web web--still" id="trials-web" role="img" aria-label="trials web"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="trade" hidden>
   <div class="modal__card modal__card--wide">
     <div class="modal__head">

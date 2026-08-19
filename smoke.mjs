@@ -2449,6 +2449,48 @@ $('dev-kit').click();
   assert($('trade').hidden === true, 'and it closes again');
 }
 
+// --- the trials: the one web a level never pays for -----------------------
+{
+  assert($('open-trials') !== null, 'there is a Trials button on the rail');
+  $('open-trials').click();
+  assert($('trials').hidden === false, 'and it opens a screen of its own');
+
+  assert(
+    all('#trials-ladder .trialrow').length === 3,
+    'the ladder lists every trial there is, done or not',
+    String(all('#trials-ladder .trialrow').length)
+  );
+  assert(
+    all('#trials-ladder .trialrow--done').length === 3,
+    'and the dev kit has done all of them, so the web can be walked',
+    String(all('#trials-ladder .trialrow--done').length)
+  );
+  assert(
+    all('#trials-web .web__node').length === 9,
+    'nine nodes, drawn to fit rather than scrolled',
+    String(all('#trials-web .web__node').length)
+  );
+
+  const openTrial = () => all('#trials-web .web__node--open');
+  assert(openTrial().length === 3, 'three ways in, one per arm', String(openTrial().length));
+  openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#trials-web .web__node--on').length === 1,
+    'a trial point spends on the node you clicked',
+    String(all('#trials-web .web__node--on').length)
+  );
+  all('#trials-web .web__node--on')[0].dispatchEvent(
+    new window.MouseEvent('click', { bubbles: true })
+  );
+  assert(
+    all('#trials-web .web__node--on').length === 0,
+    'clicking it again refunds it',
+    String(all('#trials-web .web__node--on').length)
+  );
+  $('trials-close').click();
+  assert($('trials').hidden === true, 'and it closes again');
+}
+
 // --- keeping going is not a choice ----------------------------------------
 // Chaining descents is what this game is; Leave after this run and Abandon are
 // the two ways out and there is no third.

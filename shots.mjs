@@ -116,7 +116,7 @@ const STATES = [
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
-  'skills', 'skill-list', 'skill-web', 'move-web', 'trade',
+  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials',
   'bench', 'tooltip', 'glossary', 'graft',
 ];
 
@@ -412,6 +412,20 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('trade');
   await page.evaluate(() => document.getElementById('trade-close')?.click());
+
+  // The trials: a ladder beside a web, which is the only screen putting a list
+  // and a web side by side and so the only one where either can crowd the other.
+  await page.evaluate(() => {
+    document.getElementById('open-trials')?.click();
+    for (let i = 0; i < 3; i++) {
+      const open = document.querySelector('#trials-web .web__node--open');
+      if (!open) break;
+      open.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(300);
+  await shoot('trials');
+  await page.evaluate(() => document.getElementById('trials-close')?.click());
 
   // The bench, stocked. It is the widest thing in the game — a crystals
   // column, a worn column and the item — and the only screen where three

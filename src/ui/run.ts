@@ -10,13 +10,14 @@
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
 import type { RunEvent, RunState } from '../sim/run';
-import { characterStats, treeGrants } from '../sim/stats';
+import { characterStats, treeGrants, trialMod } from '../sim/stats';
 import {
   attributePointsLeft,
   equippedSkill,
   mainSkillId,
   spareTreePoints,
   tradePointsLeft,
+  trialPointsLeft,
   xpToNext,
 } from '../sim/character';
 import { describeMod } from '../crafting';
@@ -41,6 +42,7 @@ import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, gaveKey, sceneWaiting, takeBoss } from '../game/scenes';
+import { takeTrials } from '../game/trials';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
@@ -269,7 +271,8 @@ function renderMenu(): void {
 
   const set = socketed(game);
   const chips = el('div', 'setrows');
-  for (const row of setRows(set)) {
+  const standing = trialMod(game.character);
+  for (const row of setRows(set, standing)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
     chip.append(el('span', 'mult__v', row.value));
@@ -287,7 +290,7 @@ function renderMenu(): void {
 
   // What the set is FOR. Every world pays in its own currency and no two are
   // comparable, so this is the difference between choosing and guessing.
-  const farms = farmingText(set);
+  const farms = farmingText(set, standing);
   if (farms) host.append(el('p', 'setcomp', farms));
   host.append(
     el(
@@ -405,6 +408,18 @@ function launch(): void {
   renderInventory();
 }
 
+/** Trials pay at the CLEAR, on the same rule a boss is marked by, and every
+ *  open one is asked. Says what was won: an unspent point is a wasted room. */
+function payTrials(state: RunState): void {
+  const won = takeTrials(game, {
+    set: state.set,
+    elapsed: state.elapsed,
+    socketed: socketed(game),
+  });
+  for (const trial of won) note(`${trial.name}. One trial point.`, 'add');
+  if (won.length > 0) renderBadges();
+}
+
 /**
  * A run ended. Bank it, then decide whether there is another one. Capacity is
  * read HERE and never during a run, which is why the bag may end up over its
@@ -425,6 +440,8 @@ function finish(left = false): void {
   // just bought both count towards the meeting it schedules.
   // A scene never schedules a scene: the queue is read at the end of a
   // DESCENT, or a room hands you straight into the next room.
+  if (report.cleared) payTrials(sim.state);
+
   const scene = report.cleared && phase !== 'scene'
     ? sceneWaiting(game, {
         set: sim.state.set,
@@ -556,8 +573,10 @@ function endEncounter(): void {
 
   const def = SCENE_BY_ID[arrivedIn];
   const state = sim.state;
-  // Marked at the clear, so a room you died in is one you meet again.
+  // Marked at the clear, so a room you died in is one you meet again. BEFORE
+  // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
+  if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];
   if (after.length === 0) return land(report, state);
@@ -1416,5 +1435,6 @@ function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
+  badge('open-trials', trialPointsLeft(game.character));
 }
 

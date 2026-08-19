@@ -7,6 +7,7 @@
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { healQuests, ownedCrystals } from './crystals';
+import { healTrials } from './trials';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
@@ -468,6 +469,7 @@ export function heal(game: GameState): Healed {
 
   out.points += replayAttributes(game.character);
   out.points += replayTrade(game.character);
+  out.points += healTrials(game.character);
 
   out.skill = healSkillSlots(game.character);
   return out;

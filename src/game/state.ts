@@ -15,6 +15,7 @@ import {
   RUN_SLOTS,
   SKILL_BY_ID,
   START_PRESETS,
+  TRIALS,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
   keepGroupFor,
@@ -196,6 +197,9 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
+  // Every trial done, so the whole web is walkable: a screen nobody can reach
+  // holding points nobody has is a screen nobody tested.
+  game.character.trials = mode === 'dev' ? TRIALS.map((t) => t.id) : [];
   game.called = null;
   game.sold = [];
   // Zero, not the character's level, so the next open restocks rather than

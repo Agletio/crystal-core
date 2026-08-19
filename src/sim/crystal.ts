@@ -139,8 +139,9 @@ export interface RunSet {
   pays: { gold: number; currency: number; rarity: number };
 }
 
-export function runSet(crystals: Item[]): RunSet {
-  const mods = crystals.flatMap((c) => c.mods);
+export function runSet(crystals: Item[], standing?: RolledMod | null): RunSet {
+  // The trials web, as one mod. Optional: a measured SET carries no walked web.
+  const mods = [...crystals.flatMap((c) => c.mods), ...(standing ? [standing] : [])];
   const rewards = crystalRewards(mods);
   const power = Math.min(
     POWER.max,
@@ -202,9 +203,13 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
   return rows;
 }
 
-/** Rows for the whole socketed set, which is what a run is actually launched with. */
-export function setRows(crystals: Item[]): Array<{ label: string; value: string }> {
-  const set = runSet(crystals);
+/** Rows for the whole socketed set, `standing` included — a screen without it
+ *  quotes a danger the run will not have. */
+export function setRows(
+  crystals: Item[],
+  standing?: RolledMod | null
+): Array<{ label: string; value: string }> {
+  const set = runSet(crystals, standing);
   return [
     { label: 'sockets', value: `${set.filled}/4` },
     { label: 'danger', value: Math.round(set.rewards.danger).toString() },
@@ -218,8 +223,8 @@ export function setRows(crystals: Item[]): Array<{ label: string; value: string 
  * adds, and what its modifiers point the drops at. Empty for a set that is
  * simply a set — there is nothing to say about the bare Fissure.
  */
-export function farmingText(crystals: Item[]): string {
-  const set = runSet(crystals);
+export function farmingText(crystals: Item[], standing?: RolledMod | null): string {
+  const set = runSet(crystals, standing);
   const said: string[] = [];
   if (set.pays.gold > 1.02) said.push(`+${Math.round((set.pays.gold - 1) * 100)}% gold`);
   if (set.pays.currency > 1.02) {

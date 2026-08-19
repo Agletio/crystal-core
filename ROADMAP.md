@@ -6,28 +6,30 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**Nine phases are waiting.** Phases 1–4 are the TRIALS WEB, 5–9 are the rest of
-what the user asked for. Phase 10 (a quest log) stays parked by his word until
-the stripped opening has been played.
+**Eight phases are waiting.** Phase 9 (a quest log) stays parked by the user's
+word until the stripped opening has been played.
 
-**The ORDER of 1–9 is provisional and it is MINE, not the user's.** He wrote all
-nine down in one go and said *"Let me know once this is all added adn then I
-will tell you how to proceed."* Cheap and independent first, then the big
-system, then the shell — but **ask before assuming the lowest number is what he
-wants next.** Renumbering is one edit.
+**The TRIALS WEB ITSELF HAS LANDED** — the web, its points, the screen, the
+ladder and the seam into `RunSet.mods`. What is left of it is the three EVENTS,
+which are Phases 1–3.
 
 | | | |
 |---|---|---|
-| 1–4 | the trials web | a fourth web, its points, three events |
-| 5 | the skill tree's tints | an hour |
-| 6 | the arrow out of the bow | an hour, render-side only |
-| 7 | **ailments per damage type** | the big one — 44 node slots and a sim rewrite |
-| 8 | settings becomes a screen | keybindings, and the filter moves in |
-| 9 | the book | one searchable place for every keyword |
+| 1–3 | Hoards, the Welling, Bearers | the three events, each with its own trial |
+| 4 | the skill tree's tints | an hour |
+| 5 | the arrow out of the bow | an hour, render-side only |
+| 6 | **ailments per damage type** | the big one — 44 node slots and a sim rewrite |
+| 7 | settings becomes a screen | keybindings, and the filter moves in |
+| 8 | the book | one searchable place for every keyword |
 
-**Read "The trials web" before taking Phases 1–4.** They share one seam and one
-set of traps, and a session that takes Phase 2 without reading it will add a
-node that silently buys item level.
+**The ORDER is provisional and it is MINE, not the user's.** He wrote them all
+down in one go and said *"Let me know once this is all added adn then I will tell
+you how to proceed."* Cheap and independent first, then the big system, then the
+shell — but **ask before assuming the lowest number is what he wants next.**
+
+**Read "The trials web" before taking Phases 1–3.** They share one seam and one
+set of traps, and a session that takes one without reading it will add a node
+that silently buys item level.
 
 **The balance pass is HELD AGAIN**, and this time with a reason rather than a
 timing: *"imagine if we had spent time balancing before we implemented this map
@@ -44,8 +46,8 @@ gauge while doing anything else.
   anything. Item tier is bought by run POWER alone (`DROP_BANDS[power].ilvl`
   against `BASE_TIER_ILVL = [1, 22, 46]`), families are held to the SAME threat
   by the demo on purpose, and `BOSSES` has one entry. The open question is #10.
-  **Phase 1 pays the boss in a TRIAL POINT**, which is a different answer to the
-  same complaint and does not settle the tier ladder.
+  **Beating it now pays a TRIAL POINT**, which is a different answer to the same
+  complaint and does not settle the tier ladder.
 - **`npm run shots` can go red on `desktop: the first descent never met the
   Lampwright`.** Two separate causes, and the cheap one is far commoner:
   **running it beside `demo` or `smoke`** starves the browser and it loses the
@@ -243,13 +245,20 @@ ABOUT, and whether being pulled one way closes the other off. A branching ladder
 is a different table from a linear one — `TRIALS` is walked in order in Phase 1,
 and a fork is a second field. **Ask before authoring the second room.**
 
-### The seam: a trial node is a `RolledMod`, exactly like a crystal's
+### The seam, as BUILT
 
-`treeMod` and `attributeMod` already fold a whole allocation into ONE synthetic
-`RolledMod`; a `trialMod` does the same and merges into `RunSet.mods`. Then a
-node reading `monsterLife` or `packSize` needs no new plumbing at all, and
-`crystalRewards` scores it through `DANGER_STATS` like everything else — harder
-and better-paying falls out of the arithmetic already there.
+`trialMod(character)` in `src/sim/stats.ts` folds the allocation into ONE
+synthetic `RolledMod`, beside `treeMod` and `attributeMod`. `runSet(crystals,
+standing?)` merges it, and the ONLY caller passing it is the `RunSim`
+constructor — every measurement in the demo still builds a set from crystals
+alone, which is what keeps a rung a rung. A node reading `monsterLife` or
+`packSize` needed no plumbing at all, and `crystalRewards` scores every one of
+them through `DANGER_STATS`, so harder-and-better-paying is the arithmetic that
+was already there.
+
+`monsterRank` is the one stat this invented: `percentStat(set.mods,
+'monsterRank')` lifts the weight of every `MONSTER_RANKS` row above common, in
+`spawn()`. ONE weighted pick either way, so lifting it cannot move a seed.
 
 **What an EVENT needs on top of that** is a resolved bag on `RunOptions`, the
 way `potionThresholds` and `beaten` already ride there. `src/sim` must never
@@ -295,58 +304,7 @@ learn where it came from.
 
 ---
 
-## Phase 1 — The trials web, and the first point in it
-
-**What is true today.** `Character` carries `trade`/`tradeAllocated` and
-`skills[].allocated` and nothing else that spends points. `src/webgraph.ts` is
-written over "any list of nodes" and already drives three webs (`skills-tree.ts`,
-`trades.ts`, `moves/spec.ts`). `BOSSES` has one entry and beating it sets
-`game.bosses` through `takeBoss` — **and opens nothing at all**, which the Live
-known issues section already calls out.
-
-**Why it is wrong.** The only permanent difficulty in the game is 12 crystal
-modifiers, and beating the one boss in it is worth nothing but a mark in an
-array.
-
-- [ ] **`TRIALS` is a table, walked in ORDER.** `{ id, name, needs, gives }` —
-      `needs` names what completes it, `gives` is the point. Trial 1 is the
-      EXISTING Answering Hall boss, so this phase adds a point source without
-      authoring a room. Decide whether `needs` is a registry the way
-      `QUEST_CONDITIONS` is; it will be, by the third trial.
-- [ ] **`Character.trials: string[]`** (completed, in order) and
-      **`Character.trialAllocated: string[]`**. Points available is
-      `trials.length - trialAllocated.length`. No second counter — a stored
-      point total is a number that can disagree with the list.
-- [ ] **`TRIAL_NODES` with GENERIC nodes only.** No events this phase. The
-      user's two examples: more rare monsters, and paying more. The rare-monster
-      one needs a stat the spawn loop reads — `MONSTER_RANKS` weights are
-      constants inside `spawn()` and nothing scales them yet — plus a
-      `DANGER_STATS` entry, because a rare that is worth 10× bounty and 6× life
-      is danger and must be scored as danger.
-- [ ] **`trialMod(character)` folds the allocation into one `RolledMod`**, the
-      way `treeMod` and `attributeMod` do, merged into `RunSet.mods`. **Decide
-      where it merges** — `runSet(crystals)` takes crystals and nothing else
-      today, so either it grows a second argument or the caller merges. Whichever
-      it is, `src/demo.ts` must be able to build the set with and without a
-      character or every existing measurement changes shape.
-- [ ] **A screen on the rail**, with an `ICONS` entry, a dock slot and a shot.
-      Load the `screens` skill first.
-- [ ] **`heal()` replays it** through `replayWeb` against `trials.length`, and
-      drops a trial id that no longer resolves.
-- [ ] **The dev preset completes every trial**, so the web is reachable.
-
-**Done when.** Beating the Answering Hall gives one trial point, spending it
-changes a measured run — more danger, more reward — and `heal()` refunds it if
-the node is deleted.
-
-**What must not break, in order.** `npm run comments`, `npm run typecheck`,
-`npm run mods`, `npm run build`, `npm run demo` (the web-geometry checks are
-generic and will police this one too), `npm run smoke`, `npm run shots` — and
-`shots` **alone**, never beside `demo` or `smoke`.
-
----
-
-## Phase 2 — Hoards: a pack with something worth killing it for
+## Phase 1 — Hoards: a pack with something worth killing it for
 
 **What is true today.** `spawn()` builds packs of one kind, one ability, one
 optional aura carrier, and rolls a `rank` per monster off `MONSTER_RANKS`.
@@ -390,7 +348,7 @@ is a box that is not there.
 
 ---
 
-## Phase 3 — The Welling: what comes up out of a body
+## Phase 2 — The Welling: what comes up out of a body
 
 **What is true today.** `spawn()` places every monster before the descent starts
 and `s.totalMonsters` is set once from that count. Nothing adds a body mid-run
@@ -431,7 +389,7 @@ is honest, and the deep end measurably escalates.
 
 ---
 
-## Phase 4 — Bearers: the thing somebody is waiting for
+## Phase 3 — Bearers: the thing somebody is waiting for
 
 **What is true today.** `RELICS` has two rows, both `chance: 0.006` per kill,
 each gated to one zone by `opensHere`, each naming the scene that `wants` it.
@@ -502,7 +460,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 5 — Tell an allocated node from one you could take
+## Phase 4 — Tell an allocated node from one you could take
 
 **What is true today.** `docs/index.html:1608–1696`. A reachable node is
 `.web__node--open` and gets `drop-shadow(0 0 3px var(--bone))`; an allocated one
@@ -541,7 +499,7 @@ allocated / reachable / locked by someone who has not been told the rule.
 
 ---
 
-## Phase 6 — The arrow comes out of the bow
+## Phase 5 — The arrow comes out of the bow
 
 **What is true today.** `src/sim/skills.ts:241` emits the shot as
 `use.vfx(kind, [{x: use.user.x, y: use.user.y}, {x: use.primary.x, y:
@@ -586,7 +544,7 @@ sim was touched and the fix is in the wrong place.
 
 ---
 
-## Phase 7 — An ailment per damage type
+## Phase 6 — An ailment per damage type
 
 **The biggest phase in this file.** Read the whole of it before starting; it
 rewrites a sim mechanism, retires four tree notables, and reopens the keyword
@@ -748,7 +706,7 @@ Expect `demo` to be where this phase lives or dies.
 
 ---
 
-## Phase 8 — Settings stops being an empty shell
+## Phase 7 — Settings stops being an empty shell
 
 **What is true today.** `src/ui/settings.ts` is 21 lines and says so in its own
 header: *"an empty shell on purpose. The rail button and this window exist so
@@ -795,7 +753,7 @@ build`, `npm run smoke` (it holds ids that are about to move), `npm run drag`,
 
 ---
 
-## Phase 9 — The book
+## Phase 8 — The book
 
 **What is true today.** `src/ui/glossary.ts` already marks every keyword inside a
 line (`keywordLine`) and appends *what every keyword these lines name means*
@@ -840,7 +798,7 @@ and the checklist has to learn it.
 
 ---
 
-## Phase 10 — A quest log instead of a pointing finger
+## Phase 9 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
