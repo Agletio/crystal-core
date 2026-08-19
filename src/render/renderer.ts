@@ -1574,10 +1574,10 @@ export function iceSpikes(at: Vec2, t: number): FirePixel[] {
   const up = Math.min(1, t * 3); // they arrive fast and then stand and fade
   const alpha = 1 - Math.max(0, (t - 0.35) / 0.65);
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) { // a fifth of a tile apart; at an eighth they merge
     const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 29);
-    const lean = (i - 3) * 0.13 + (noise - 0.5) * 0.1;
-    const tall = (0.75 - Math.abs(i - 3) * 0.14) * (0.7 + noise * 0.5) * up;
+    const lean = (i - 2) * 0.2 + (noise - 0.5) * 0.06;
+    const tall = (0.8 - Math.abs(i - 2) * 0.17) * (0.7 + noise * 0.5) * up;
     const foot = at.x + lean * 0.9;
     for (let step = 0; step * FIRE_PX < tall; step++) {
       const along = (step * FIRE_PX) / Math.max(tall, 1e-3);
