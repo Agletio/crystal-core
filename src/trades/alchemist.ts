@@ -37,18 +37,43 @@ export const ALCHEMIST: TradeSpec = {
         { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
         { text: '+8% increased Damage', stats: [stat('damage', 'inc', 8)] },
       ],
-      notables: [
+      gate: {
+        id: 'alc_volatile',
+        name: 'Volatile Mixture',
+        description: 'While a flask is running you deal 20% more damage.',
+        grants: { potionMore: 1.2 },
+      },
+      branches: [
         {
-          id: 'alc_volatile',
-          name: 'Volatile Mixture',
-          description: 'While a flask is running you deal 20% more damage.',
-          grants: { potionMore: 1.2 },
+          id: 'detonating',
+          theme: 'Detonating',
+          minors: [
+            { text: '+9% increased Damage', stats: [stat('damage', 'inc', 9)] },
+            { text: '+11% increased Damage', stats: [stat('damage', 'inc', 11)] },
+          ],
+          notable: {
+            id: 'alc_detonation',
+            name: 'Detonation',
+            description: 'And 30% more again on top of that, while one runs.',
+            grants: { potionMore: 1.3 },
+          },
         },
         {
-          id: 'alc_detonation',
-          name: 'Detonation',
-          description: 'And 30% more again on top of that.',
-          grants: { potionMore: 1.3 },
+          id: 'residue',
+          theme: 'Residue',
+          minors: [
+            { text: '+11% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 11)] },
+            { text: '+14% increased Damage over Time', stats: [stat('damage', 'inc', 14, ['overTime'])] },
+          ],
+          notable: {
+            id: 'alc_residue',
+            name: 'What It Leaves',
+            description:
+              '+40% chance to apply the Ailment your damage carries, and they ' +
+              'deal 25% more. What a flask opens is a window; this is the burn ' +
+              'that is still running when it shuts.',
+            grants: { ailmentChance: 40, ailmentMultiplier: 1.25 },
+          },
         },
       ],
     },
@@ -59,18 +84,42 @@ export const ALCHEMIST: TradeSpec = {
         { text: '+3% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 3)] },
         { text: '+3% increased Cast Speed', stats: [stat('castSpeed', 'inc', 3)] },
       ],
-      notables: [
+      gate: {
+        id: 'alc_quicksilver',
+        name: 'Quicksilver',
+        description: 'While a flask is running you attack and cast 15% faster.',
+        grants: { potionHaste: 15 },
+      },
+      branches: [
         {
-          id: 'alc_quicksilver',
-          name: 'Quicksilver',
-          description: 'While a flask is running you attack and cast 15% faster.',
-          grants: { potionHaste: 15 },
+          id: 'fevered',
+          theme: 'Fevered',
+          minors: [
+            { text: '+4% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 4)] },
+            { text: '+4% increased Cast Speed', stats: [stat('castSpeed', 'inc', 4)] },
+          ],
+          notable: {
+            id: 'alc_fever',
+            name: 'Fever',
+            description: 'And another 20% faster while one runs.',
+            grants: { potionHaste: 20 },
+          },
         },
         {
-          id: 'alc_fever',
-          name: 'Fever',
-          description: 'And another 20% faster while one runs.',
-          grants: { potionHaste: 20 },
+          id: 'lightfoot',
+          theme: 'Lightfoot',
+          minors: [
+            { text: '+4% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 4)] },
+            { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
+          ],
+          notable: {
+            id: 'alc_lightfoot',
+            name: 'Light on the Rock',
+            description:
+              '+14% increased Movement Speed. The window is worth what you can ' +
+              'reach inside it, and standing still is the one way to waste one.',
+            stats: [stat('moveSpeed', 'inc', 14)],
+          },
         },
       ],
     },
@@ -81,18 +130,42 @@ export const ALCHEMIST: TradeSpec = {
         { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
         { text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
       ],
-      notables: [
+      gate: {
+        id: 'alc_etched',
+        name: 'Etched Glass',
+        description: 'While a flask is running you have +8% Critical Chance.',
+        grants: { potionCrit: 8 },
+      },
+      branches: [
         {
-          id: 'alc_etched',
-          name: 'Etched Glass',
-          description: 'While a flask is running you have +8% Critical Chance.',
-          grants: { potionCrit: 8 },
+          id: 'faceted',
+          theme: 'Faceted',
+          minors: [
+            { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
+            { text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
+          ],
+          notable: {
+            id: 'alc_facets',
+            name: 'Cut Facets',
+            description: 'And a further +12% Critical Chance while one runs.',
+            grants: { potionCrit: 12 },
+          },
         },
         {
-          id: 'alc_facets',
-          name: 'Cut Facets',
-          description: 'And a further +12% Critical Chance while one runs.',
-          grants: { potionCrit: 12 },
+          id: 'deepcut',
+          theme: 'Deep Cut',
+          minors: [
+            { text: '+18% Critical Damage', stats: [stat('critMultiplier', 'flat', 18)] },
+            { text: '+22% Critical Damage', stats: [stat('critMultiplier', 'flat', 22)] },
+          ],
+          notable: {
+            id: 'alc_deepcut',
+            name: 'The Long Cut',
+            description:
+              '+55% Critical Damage. Etched Glass buys you the crits; this ' +
+              'decides what one is worth when it lands.',
+            stats: [stat('critMultiplier', 'flat', 55)],
+          },
         },
       ],
     },
@@ -103,18 +176,42 @@ export const ALCHEMIST: TradeSpec = {
         { text: '+8% increased Life', stats: [stat('life', 'inc', 8)] },
         { text: '+20% increased Life Regeneration', stats: [stat('lifeRegen', 'inc', 20)] },
       ],
-      notables: [
+      gate: {
+        id: 'alc_slow_burn',
+        name: 'Slow Burn',
+        description: 'Flasks run 50% longer, so the window they open is half again as wide.',
+        grants: { potionDuration: 1.5 },
+      },
+      branches: [
         {
-          id: 'alc_slow_burn',
-          name: 'Slow Burn',
-          description: 'Flasks run 50% longer, so the window they open is half again as wide.',
-          grants: { potionDuration: 1.5 },
+          id: 'thickening',
+          theme: 'Thickening',
+          minors: [
+            { text: '+24% increased Life Regeneration', stats: [stat('lifeRegen', 'inc', 24)] },
+            { text: '+9% increased Life', stats: [stat('life', 'inc', 9)] },
+          ],
+          notable: {
+            id: 'alc_thickened',
+            name: 'Thickened',
+            description: 'And restore 40% more per second while they run.',
+            grants: { potionPotency: 1.4 },
+          },
         },
         {
-          id: 'alc_thickened',
-          name: 'Thickened',
-          description: 'And restore 40% more per second while they run.',
-          grants: { potionPotency: 1.4 },
+          id: 'tempering',
+          theme: 'Tempering',
+          minors: [
+            { text: '+11% increased Life', stats: [stat('life', 'inc', 11)] },
+            { text: '+180 Armour', stats: [stat('armour', 'flat', 180)] },
+          ],
+          notable: {
+            id: 'alc_tempered',
+            name: 'Tempered Glass',
+            description:
+              '+18% increased Life and +420 Armour. A window you die inside is ' +
+              'a window you did not open.',
+            stats: [stat('life', 'inc', 18), stat('armour', 'flat', 420)],
+          },
         },
       ],
     },
@@ -125,20 +222,44 @@ export const ALCHEMIST: TradeSpec = {
         { text: '+10% increased Mana', stats: [stat('mana', 'inc', 10)] },
         { text: '+15% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 15)] },
       ],
-      notables: [
+      gate: {
+        id: 'alc_still',
+        name: 'The Still',
+        description: 'Each flask regains a Charge every 14.3s of a descent.',
+        grants: { potionRefill: 14.3 },
+      },
+      branches: [
         {
-          id: 'alc_still',
-          name: 'The Still',
-          description: 'Each flask regains a Charge every 14.3s of a descent.',
-          grants: { chargeRegen: 0.07 },
+          id: 'cascading',
+          theme: 'Cascading',
+          minors: [
+            { text: '+18% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 18)] },
+            { text: '+12% increased Mana', stats: [stat('mana', 'inc', 12)] },
+          ],
+          notable: {
+            id: 'alc_cascade',
+            name: 'Cascade',
+            description:
+              'And another every 10s on top of it, so a flask is a cooldown ' +
+              'rather than a budget.',
+            grants: { potionRefill: 10 },
+          },
         },
         {
-          id: 'alc_cascade',
-          name: 'Cascade',
-          description:
-            'Another Charge every 12.5s on its own, and one every 6.7s with ' +
-            'the Still in front of it.',
-          grants: { chargeRegen: 0.08 },
+          id: 'frugality',
+          theme: 'Frugality',
+          minors: [
+            { text: '+6% reduced Mana Cost', stats: [stat('manaCost', 'inc', -6)] },
+            { text: '+8% increased Mana', stats: [stat('mana', 'inc', 8)] },
+          ],
+          notable: {
+            id: 'alc_frugal',
+            name: 'Nothing Wasted',
+            description:
+              '+18% reduced Mana Cost. He does not brew more; he stops pouring ' +
+              'any of it away.',
+            stats: [stat('manaCost', 'inc', -18)],
+          },
         },
       ],
     },

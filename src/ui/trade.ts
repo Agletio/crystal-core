@@ -2,9 +2,10 @@
  * The Trade screen: the web you walk, and the one place you may become
  * something else.
  *
- * Twenty nodes fit on a screen, so unlike the skill web this one is drawn to
- * FIT and has no pan, no zoom and no Fit button. A map you scroll is what a
- * hundred nodes need; five spokes of four are a picture.
+ * FORTY-FIVE nodes no longer fit a card, so this roams: scroll to zoom, drag
+ * to move, Fit to see the shape of it. Through `webcam.ts`, which the skills
+ * web uses too — one camera, and it already knows why rebuilding per frame is
+ * what made the other one stutter.
  *
  * A trade is chosen when the character is MADE — it is who you are, and the
  * body you are drawn as — so the picker here is the CHANGE, not the start. A
@@ -27,6 +28,7 @@ import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '..
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
 import { chain, frame, mount, svgEl } from './webart';
+import { BUILD, Camera } from './webcam';
 import { nodeGlyph } from './webicons';
 import { ask } from './confirm';
 import { note } from './history';
@@ -48,14 +50,19 @@ let onChanged: (() => void) | null = null;
  *  is a decision you made once, and leaving it on screen buries the web. */
 let picking = false;
 
-// Everything below is in WEB units, and the svg carries a viewBox that frames
-// them. Nothing measures the element: the wrapper is inside a modal whose own
-// height is decided after this draws, so a box read here is a box that has
-// already moved by the time anyone looks at it.
+/** In WEB UNITS; `BUILD` turns them into the pixels the art is drawn at. */
 const NODE_R = { minor: 0.23, notable: 0.37 };
 const HUB_R = 0.56;
-/** Room round the outermost node, so a stud's rim is never against the edge. */
-const MARGIN = 0.7;
+
+/** Forty-five nodes no longer fit a card, so this web roams like the skills
+ *  one — and through the SAME camera, or the two drift and one of them is the
+ *  slow one. */
+const cam = new Camera({
+  svg: 'trade-web',
+  wrap: 'trade-webwrap',
+  home: 46,
+  zoom: { min: 14, max: 130, step: 1.18 },
+});
 
 /** Every node's own line, printed from the GRANT rather than its prose, so
  *  what the sim does and what the card says cannot come apart. */
@@ -142,13 +149,20 @@ function renderWeb(): void {
   const taken = new Set(allocated);
   const spare = tradePointsLeft(game.character);
 
-  const reach = Math.max(1, ...nodes.map((n) => Math.hypot(n.x, n.y))) + MARGIN;
-  svg.setAttribute('viewBox', `${-reach} ${-reach} ${reach * 2} ${reach * 2}`);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  // ONE group, built in the web's own space at a fixed scale. The camera is a
+  // transform over the whole thing and nothing here is rebuilt to move it —
+  // rebuilding per wheel tick is what made the skills web stutter.
+  const view = svgEl('g', { class: 'web__view' });
+  const reach = Math.max(1, ...nodes.map((n) => Math.max(Math.abs(n.x), Math.abs(n.y)))) + 1.4;
+  cam.origin = Math.ceil(reach * BUILD);
+  svg.style.width = `${cam.origin * 2}px`;
+  svg.style.height = `${cam.origin * 2}px`;
 
-  const at = (n: { x: number; y: number }) => ({ x: n.x, y: n.y });
-  const middle = { x: 0, y: 0 };
+  const at = (n: { x: number; y: number }) => cam.place(n.x, n.y);
+  const middle = cam.place(0, 0);
   const byId = new Map(nodes.map((n) => [n.id, n]));
+  const rOf = (kind: 'minor' | 'notable') => NODE_R[kind] * BUILD;
+  const hubR = HUB_R * BUILD;
 
   // Edges first, so studs sit on top of them, and trimmed to each end's rim: a
   // line drawn centre to centre shows through a dimmed node.
@@ -170,8 +184,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = NODE_R[node.kind];
-      const rTo = other === CENTRE ? HUB_R : NODE_R[far!.kind];
+      const rFrom = rOf(node.kind);
+      const rTo = other === CENTRE ? hubR : rOf(far!.kind);
       links.push({
         a: { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom },
         b: { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo },
@@ -180,22 +194,22 @@ function renderWeb(): void {
     }
   }
 
-  const casing = 0.16; // the chain alone: a casing under it read as a box
+  const casing = Math.max(3, BUILD * 0.14);
   for (const l of links) {
     for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
-      svg.append(link);
+      view.append(link);
     }
   }
 
   const spec = TRADE_BY_ID[tradeId].spec;
   const hub = svgEl('g', { class: 'web__centre' });
-  for (const part of mount(middle, HUB_R, 'web__hub')) hub.append(part);
+  for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
   attachTooltip(hub, () => `${spec.name}\n${spec.blurb}`);
-  svg.append(hub);
+  view.append(hub);
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = NODE_R[node.kind];
+    const r = rOf(node.kind);
     const owned = taken.has(node.id);
     const reachable = canAllocateTrade(tradeId, node.id, allocated);
     const open = reachable && spare > 0;
@@ -233,6 +247,8 @@ function renderWeb(): void {
     });
 
     const act = () => {
+      // A drag that ends over a node is not a click on it.
+      if (cam.dragged) return;
       if (owned) deallocateTrade(game.character, node.id);
       else if (!allocateTrade(game.character, node.id)) return;
       render();
@@ -245,8 +261,11 @@ function renderWeb(): void {
         act();
       }
     });
-    svg.append(group);
+    view.append(group);
   }
+
+  svg.append(view);
+  cam.apply();
 }
 
 /** Stable id per node, so a tutorial step could ring one. */
@@ -298,6 +317,7 @@ function render(): void {
 export function openTrade(): void {
   $('trade').hidden = false;
   picking = false;
+  cam.home();
   render();
 }
 
@@ -313,4 +333,9 @@ export function initTrade(state: GameState, changed?: () => void): void {
   onChanged = changed ?? null;
 
   ($('trade-close') as HTMLButtonElement).onclick = closeTrade;
+  ($('trade-fit') as HTMLButtonElement).onclick = () => {
+    cam.fit(tradeNodes(game.character.trade));
+    cam.apply();
+  };
+  cam.attach();
 }

@@ -171,7 +171,7 @@ import {
   bleedOf,
 } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
-import { TRADE_NODES } from './trades/layout';
+import { SPOKE_COUNT, TRADE_NODES } from './trades/layout';
 import {
   TRADES,
   TRADE_BY_ID,
@@ -5102,12 +5102,23 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const notables = nodes.filter((n) => n.kind === 'notable');
     line(`  ${id}: ${nodes.length} nodes, ${notables.length} of them notable`);
 
+    // Three notables a spoke: the GATE everybody on it takes, and the tip of
+    // each branch past the fork.
     check(
       nodes.length === TRADE_NODES
-        && notables.length === TRADE_NODES / 2
+        && notables.length === SPOKE_COUNT * 3
         && new Set(nodes.map((n) => n.id)).size === nodes.length,
-      `${TRADE_NODES} nodes, half of them notables, and no id used twice`,
+      `${TRADE_NODES} nodes, ${SPOKE_COUNT * 3} of them notables, and no id used twice`,
       `${nodes.length} nodes, ${notables.length} notable`
+    );
+
+    // The FORK is the shape: a gate carries two ways on, and nothing else does.
+    const forks = nodes.filter((n) => neighboursOfTrade(id, n.id).size === 3);
+    check(
+      forks.length === SPOKE_COUNT &&
+        forks.every((n) => trade.spec.spokes.some((sp) => sp.gate.id === n.id)),
+      'and the only node with two ways past it is the gate everyone walks',
+      forks.map((n) => n.id).join(', ')
     );
 
     // Distance is the only price here too: what a node costs is the walk.
@@ -5279,7 +5290,11 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     // reaches a sixth notable, and a careless walk reaches fewer than five.
     const aimed = fresh();
     for (const spoke of trade.spec.spokes) {
-      for (const step of [`${trade.spec.prefix}_${spoke.id}_m0`, spoke.notables[0].id]) {
+      for (const step of [
+        `${trade.spec.prefix}_${spoke.id}_m0`,
+        `${trade.spec.prefix}_${spoke.id}_m1`,
+        spoke.gate.id,
+      ]) {
         allocateTrade(aimed, step);
       }
     }
