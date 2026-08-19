@@ -62,6 +62,10 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
   return [o[a] as number, o[b] as number];
 };
 
+/** What EVERY delivery scales by: how good this cast is, and what the body in
+ *  front of you is. A behaviour opts in by calling `castScale`/`targetScale`. */
+const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target'];
+/** And the ones that call `blastAround`, which is a narrower list. */
 const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone'];
 const HITTERS = ['projectile', 'melee', 'cone'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
@@ -260,6 +264,27 @@ export const GRANTS: GrantDef[] = [
   // of these reads STATS: the sim asks for them, not a delivery, which is what
   // lets any of the six sit beside any main skill.
   {
+    id: 'burstOnHit',
+    what: 'your hit Bursts on its own, for damage nothing about your build set',
+    // FLAT, off character level and nothing else. A Burst that is a share of
+    // your hit inherits every multiplier already stacked, which is a rider no
+    // build declines; one that never scales at all is dead by band 3.
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'every', 'perLevel');
+      return p && `Every ${p[0]}s your next hit Bursts for ${p[1]} Physical damage per character level`;
+    },
+  },
+  {
+    id: 'frostVolley',
+    what: 'ice spikes go out at everything you have Chilled, on their own clock',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'every', 'perLevel');
+      return p && `Every ${p[0]}s a spike goes out at every Chilled enemy for ${p[1]} Cold damage per character level`;
+    },
+  },
+  {
     id: 'ailmentSpread',
     what: 'an ailing body passes what it carried on when it dies',
     reads: [STATS],
@@ -450,13 +475,13 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
-  { id: 'everyNth', what: 'every nth cast is worth more', reads: SHARED, changes: 'scale' },
-  { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SHARED, changes: 'scale' },
+  { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
+  { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
   {
     id: 'moreClose',
     changes: 'scale',
     what: 'more damage to enemies near you',
-    reads: SHARED,
+    reads: SCALED,
     say: (v) => {
       const p = pair(v, 'within', 'more');
       return p && `${pct(p[1])} more damage to enemies within ${p[0]} tiles`;
@@ -466,7 +491,7 @@ export const GRANTS: GrantDef[] = [
     id: 'moreFar',
     changes: 'scale',
     what: 'more damage to enemies far from you',
-    reads: SHARED,
+    reads: SCALED,
     say: (v) => {
       const p = pair(v, 'beyond', 'more');
       return p && `${pct(p[1])} more damage to enemies over ${p[0]} tiles away`;
@@ -476,7 +501,7 @@ export const GRANTS: GrantDef[] = [
     id: 'moreVsLow',
     changes: 'scale',
     what: 'more damage to enemies low on life',
-    reads: SHARED,
+    reads: SCALED,
     say: (v) => {
       const p = pair(v, 'below', 'more');
       return p && `${pct(p[1])} more damage to enemies below ${pct(p[0])} of their life`;
@@ -486,7 +511,7 @@ export const GRANTS: GrantDef[] = [
     id: 'moreVsFull',
     changes: 'scale',
     what: 'more damage to enemies near full life',
-    reads: SHARED,
+    reads: SCALED,
     say: (v) => {
       const p = pair(v, 'above', 'more');
       return p && `${pct(p[1])} more damage to enemies above ${pct(p[0])} of their life`;

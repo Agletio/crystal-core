@@ -151,15 +151,17 @@ function alongRay(
 }
 
 export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
-  /** One target, full damage. The floor every other behaviour builds on. */
+  /** One target, full damage — the floor the rest build on. */
   single_target: (use) => {
-    use.hit(use.primary, 1);
+    const castMultiplier = castScale(use.grants, use.castIndex);
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+    use.hit(use.primary, scale(use.primary));
 
     const extra = (use.grants.extraTargets as number) ?? 0;
     if (extra > 0) {
       const others = spreadTargets(use, use.enemies.filter((e) => e !== use.primary), extra);
       for (const other of others) {
-        use.hit(other, 1);
+        use.hit(other, scale(other));
         use.vfx(use.skill.vfxKind ?? 'swing', [
           { x: use.primary.x, y: use.primary.y },
           { x: other.x, y: other.y },

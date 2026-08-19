@@ -16,6 +16,7 @@ import { ARC_LIGHTNING_SPEC } from './trees/arc_lightning';
 import { BLIGHT_SPEC } from './trees/blight';
 import { FIREBALL_SPEC } from './trees/fireball';
 import { LIGHTNING_ARROW_SPEC } from './trees/lightning_arrow';
+import { RIMESPIKE_SPEC } from './trees/rimespike';
 import { SHOCKWAVE_SPEC } from './trees/shockwave';
 import { STRIKE_SPEC } from './trees/strike';
 import { MOVE_POINTS, buildMove } from './moves/layout';
@@ -37,6 +38,7 @@ export const BUILT_TREES: BuiltTree[] = [
   STRIKE_SPEC,
   SHOCKWAVE_SPEC,
   FIREBALL_SPEC,
+  RIMESPIKE_SPEC,
   BLIGHT_SPEC,
   ARC_LIGHTNING_SPEC,
   LIGHTNING_ARROW_SPEC,

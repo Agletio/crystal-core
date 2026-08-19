@@ -1564,6 +1564,36 @@ export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] 
 }
 
 /**
+ * Ice driven up THROUGH the ground under a body: blades growing out of the
+ * point they landed on, tallest in the middle. Drawn at the TARGET rather than
+ * travelling to it — nothing here is in flight, and a bolt crossing the room
+ * would say the opposite.
+ */
+export function iceSpikes(at: Vec2, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  const up = Math.min(1, t * 3); // they arrive fast and then stand and fade
+  const alpha = 1 - Math.max(0, (t - 0.35) / 0.65);
+
+  for (let i = 0; i < 7; i++) {
+    const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 29);
+    const lean = (i - 3) * 0.13 + (noise - 0.5) * 0.1;
+    const tall = (0.75 - Math.abs(i - 3) * 0.14) * (0.7 + noise * 0.5) * up;
+    const foot = at.x + lean * 0.9;
+    for (let step = 0; step * FIRE_PX < tall; step++) {
+      const along = (step * FIRE_PX) / Math.max(tall, 1e-3);
+      pixels.push({
+        x: onGrid(foot + lean * along * 0.35),
+        y: onGrid(at.y - step * FIRE_PX),
+        size: FIRE_PX * (along > 0.7 ? 1 : 2), // a blade tapers toward its point
+        shade: along > 0.55 ? 2 : 1,
+        alpha,
+      });
+    }
+  }
+  return pixels;
+}
+
+/**
  * The wedge a Cone covers, as a front of broken ground travelling out along it.
  * The two RIM corners are what the sim used, so both things a build buys — how
  * wide it opens and how far it runs — are read off the picture rather than

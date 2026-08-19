@@ -106,6 +106,15 @@ Exactly three things end a session, and a finished phase is not one:
 - **There are no image files, and no binary assets.** Every sprite is a list of
   strings or a data URI in TypeScript. Adding one is a change to how the game
   ships, not an art decision.
+- **ART IS GENERATED, never hand-written.** *The user's call: "make sure you're
+  using the pixel lab art generator and not creating art yourself. We need it to
+  match the rest of the art."* A grid typed out by hand does not sit beside a
+  roster that came off one generator with one forced palette, however readable
+  it is on its own. **Load the `art` skill and use the pipeline** — `icons.json`
+  → `icon.mts` → `portrait.mts` for an icon, `bodies.json` → `body.mts` for a
+  body, `zoneset.mts` for a floor, `uikit.mts` for a fixture. The grids already
+  in `src/ui/icons.ts` are what shipped before there was a generator; they are a
+  FALLBACK for an id nobody has drawn yet and **nothing new joins them.**
 - **`GameState` is plain data**, `heal()` repairs it on every load, and
   allocations are REPLAYED rather than trusted. Adding a field costs nothing;
   renaming an id costs the player whatever pointed at it; `SAVE_VERSION` is only
@@ -180,7 +189,7 @@ chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
 then a fork into two branches — and ten points reach one spoke whole.
-Six main skills, each with its own tree; a mover and THREE passives fill the
+Seven main skills, each with its own tree; a mover and THREE passives fill the
 other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40
 of the 99 there are. Attributes are bought per level. Every use costs mana; out

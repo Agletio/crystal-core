@@ -300,6 +300,9 @@ export function buildTree(spec: TreeSpec): BuiltTree {
             ? {
                 ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),
                 ...(twig.notable.grants ? { grants: twig.notable.grants } : {}),
+                // A twig may ask a QUESTION too. Dropped here, a choice node on
+                // a branch is a notable that silently grants nothing at all.
+                ...(twig.notable.choices ? { choices: twig.notable.choices } : {}),
               }
             : {
                 ...(minor.stats ? { stats: minor.stats } : {}),

@@ -12,6 +12,7 @@ import {
   HERO_BASE,
   MANA,
   MELEE,
+  PASSIVE_DAMAGE,
   POTIONS,
   DROP_BANDS,
   monsterResStat,
@@ -5076,6 +5077,63 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
       const kiting = walked(wearing('featherstep'));
       line(`  and covers ${kiting.toFixed(0)} tiles against ${still.toFixed(0)} standing still`);
       check(kiting > still, 'and a kiting hero covers more ground than one that stands in it', `${kiting} / ${still}`);
+    }
+
+    // SUNDERING and HOARFROST: both deal damage NOTHING about the build set, so
+    // what has to hold is that the figure moves with LEVEL and with nothing
+    // else — the whole reason the Burst came out of the trees.
+    {
+      const at = (id: string, level: number): number => {
+        const c = wearing(id, level);
+        const g = treeGrants(c);
+        const bag = (g.burstOnHit ?? g.frostVolley) as { every: number; perLevel: number };
+        return bag.perLevel * level;
+      };
+      line(`  Sundering: ${at('sundering', 20)} at level 20, ${at('sundering', 40)} at 40`);
+      check(
+        at('sundering', 40) === at('sundering', 20) * 2 && at('sundering', 20) > 0,
+        'Sundering scales on character level and on nothing else',
+        `${at('sundering', 20)} then ${at('sundering', 40)}`
+      );
+
+      // And a build stacked to the roof does not move it, which a share of the
+      // hit could never say.
+      const rich: RolledMod = {
+        entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
+        name: 'probe', tier: 1, tags: [],
+        stats: [{ stat: 'damage', form: 'inc', value: 400, tags: [] }],
+      };
+      const bare = heroStats([], 40, strike, treeGrants(wearing('sundering'))).damage;
+      const fat = heroStats([rich], 40, strike, treeGrants(wearing('sundering'))).damage;
+      check(
+        fat > bare * 2 && at('sundering', 40) === PASSIVE_DAMAGE.sunderPerLevel * 40,
+        'and 400% increased Damage moves the hit and leaves the Burst alone',
+        `${bare.toFixed(0)} → ${fat.toFixed(0)}, Burst still ${at('sundering', 40)}`
+      );
+
+      // Hoarfrost asks for a CHILL it cannot apply, so it is worth nothing in a
+      // hand that deals no Cold — measured, not asserted from the table.
+      const volley = treeGrants(wearing('hoarfrost')).frostVolley as { every: number; perLevel: number };
+      const cold = (skill: string, worn: boolean): number => {
+        let total = 0;
+        for (const seed of [11, 13, 17, 19]) {
+          const c = makeCharacter(starterLoadout(new Rng(9)), skill);
+          c.level = 40;
+          if (worn) equipSkill(c, 'hoarfrost');
+          total += runToCompletion(new RunSim([], c, new Rng(seed))).elapsed;
+        }
+        return total / 4;
+      };
+      const chillFree = cold('strike', true) - cold('strike', false);
+      line(
+        `  Hoarfrost: every ${volley.every}s at ${volley.perLevel} a level, and ` +
+          `${chillFree >= 0 ? 'no' : 'some'} help to a build that Chills nothing`
+      );
+      check(
+        volley.every > 0 && volley.perLevel > 0 && chillFree >= -0.5,
+        'Hoarfrost is worth nothing to a build that applies no Chill',
+        `${chillFree.toFixed(2)}s difference on Strike`
+      );
     }
 
     // CONTAGION: what a body carried passes on, and everything you apply is

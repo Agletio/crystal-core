@@ -40,6 +40,7 @@ import {
   frostShard,
   lightningArc,
   coneWedge,
+  iceSpikes,
   sweepRing,
   fireBurst,
   fireShades,
@@ -1003,6 +1004,12 @@ export async function createPixiRenderer(
       }
 
       // THREE points, and the last two are the wedge's own rim corners.
+      if (fx.kind === 'spikes') {
+        // At the TARGET: the second point is where they came up, not a path.
+        blocks(iceSpikes(to, t), fx.damageType, 1);
+        continue;
+      }
+
       if (fx.kind === 'wedge' && fx.points[2]) {
         blocks(coneWedge(from, to, fx.points[2], t), fx.damageType, 1);
         continue;

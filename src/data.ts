@@ -192,6 +192,22 @@ export const AILMENT = {
  * curves with armour POINTS, not with the size of the hit, and applies to HITS
  * only: damage over time goes through resistance alone.
  */
+/**
+ * What a passive deals on its OWN, and the whole point of the number: it comes
+ * off character LEVEL and nothing else. A share of your hit inherits every
+ * multiplier a build already stacked, which makes it a rider no build declines;
+ * flat and never scaling dies by band 3. Level is the one input that is not a
+ * choice, so it can be tuned with one figure and can never become a target.
+ */
+export const PASSIVE_DAMAGE = {
+  sunderPerLevel: 5.5, // Sundering's Burst, physical
+  sunderEvery: 4, // seconds between one Burst being armed and the next
+  sunderRadius: 2.4,
+  frostPerLevel: 0.9, // Hoarfrost's spike, cold, and it goes off far more often
+  frostEvery: 0.7,
+  frostRange: 7,
+};
+
 export const DEFENCE = {
   resistanceCap: 75,
   armourCap: 75,
@@ -3365,6 +3381,30 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
+     * ONE target, and the hardest single hit a spell has: 104 at 0.90/s where
+     * Fireball takes 72 at 1.20. The spikes come up UNDER what you aimed at, so
+     * there is nothing in flight to pierce, fork or arc — what its tree buys
+     * instead is what a Chill is worth, which is the one thing Cold has that
+     * nothing else does.
+     */
+    id: 'rimespike',
+    name: 'Rimespike',
+    category: 'spell',
+    description:
+      'Ice drives up through the ground under one enemy. One target, and it ' +
+      'hits harder for it.',
+    tags: ['spell'],
+    behaviour: 'single_target',
+    damageTypes: ['cold'],
+    baseDamage: 104,
+    addedEffectiveness: 100,
+    rateMultiplier: 0.75,
+    manaCost: 10,
+    range: 5,
+    vfxKind: 'spikes',
+  },
+  {
+    /**
      * The one with a tree behind it. Bare, it is one enemy at range and nothing
      * else; bursting, piercing, leaping and burning are all nodes you walked
      * to. The skill is the seed, the tree is the build.
@@ -3623,6 +3663,56 @@ export const SKILLS: SkillDef[] = [
     manaCost: 0,
     range: 0,
     grants: { occultShred: { radius: 5, amount: 25 } },
+  },
+  {
+    /**
+     * The BURST, taken out of every tree and made a slot you spend. What it
+     * deals comes off character LEVEL and nothing about the build, so it is the
+     * one area answer that cannot be stacked — and it is on a clock, so it is a
+     * rhythm rather than a rider on every hit.
+     */
+    id: 'sundering',
+    name: 'Sundering',
+    category: 'passive',
+    description:
+      'Every 4s your next hit Bursts for 5.5 Physical damage per character ' +
+      'level, within 2.4 tiles. Nothing you own scales it — not damage, not ' +
+      'Critical, not Area of Effect.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: {
+      burstOnHit: { every: PASSIVE_DAMAGE.sunderEvery, perLevel: PASSIVE_DAMAGE.sunderPerLevel },
+    },
+  },
+  {
+    /**
+     * Worth exactly what the rest of the build already does to the room: it
+     * asks for a Chill it cannot apply itself, so it is dead in a hand that
+     * deals no Cold and an engine in one that does.
+     */
+    id: 'hoarfrost',
+    name: 'Hoarfrost',
+    category: 'passive',
+    description:
+      'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, for ' +
+      '0.9 Cold damage per character level. It applies no Chill of its own.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: {
+      frostVolley: { every: PASSIVE_DAMAGE.frostEvery, perLevel: PASSIVE_DAMAGE.frostPerLevel },
+    },
   },
   {
     /**

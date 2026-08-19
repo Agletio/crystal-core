@@ -9,6 +9,23 @@ Everything ships as **data in TypeScript** — grids of strings, or a sheet as a
 data URI. There are no image files; `docs/` is `index.html` and `app.js`. The
 generator is an authoring tool, never a shipping format.
 
+**EVERY picture goes through the generator. Writing a grid by hand is not an
+option**, however small the thing is and however quick it would be — *the
+user's call: "make sure you're using the pixel lab art generator and not
+creating art yourself. We need it to match the rest of the art."* Hand-drawn
+art reads as hand-drawn beside a roster that came off one generator under one
+forced palette: seven icons written out by hand shipped once and were replaced
+the same week. The grids still in `src/ui/icons.ts` predate the pipeline and
+are a FALLBACK for an id nobody has drawn; nothing new joins them. A new skill,
+monster, prop, zone or fixture is a row in the words-file for its tool and a
+run of that tool — **if the key or the network is not there, say so and leave
+the art undone rather than typing one out.**
+
+**Judge before importing, and re-ask what missed.** Ten icons in one batch came
+back with three wrong nouns; each was re-asked with the noun that fought
+removed, and one of them took four tries. That is normal and it is cheap — a
+design is one generation. What is not cheap is a picture nobody looked at.
+
 ## The generator
 
 MCP server at `https://api.pixellab.ai/mcp`, wired in `.mcp.json` (expands

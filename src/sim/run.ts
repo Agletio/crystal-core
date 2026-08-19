@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, DAMAGE_TYPE_BY_ID, POTIONS, POTION_BY_ID } from '../data';
+import { AILMENT, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
 import { percentStat } from '../mods';
 import type { BossPhase } from '../data';
 
@@ -457,6 +457,11 @@ export class RunSim {
   private waveTimer = 0;
   /** Countdown to the next aura pass. */
   private auraTimer = 0;
+  /** The character's LEVEL, which is the only thing a flat passive scales on. */
+  private readonly level: number;
+  /** Seconds until Sundering arms the next Burst, and until Hoarfrost fires. */
+  private sunderIn = 0;
+  private frostIn = 0;
   /** One aura's worth of flat damage on this map, in real damage. */
   private auraDamage = 0;
   /** The line being acted out, and whether its one act has finished. */
@@ -485,6 +490,7 @@ export class RunSim {
     this.rng = rng;
     this.options = options;
     this.grants = treeGrants(character);
+    this.level = character.level;
     this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
     // The tree can change what the skill IS — its damage type, its tags — and
     // the sim has to fight with the same skill the stat sheet described, or a
@@ -842,6 +848,8 @@ export class RunSim {
       this.auraTimer = AURA.tick;
       this.readAuras();
     }
+    if (this.sunderIn > 0) this.sunderIn -= dt;
+    this.stepFrost(dt);
 
     // Whatever is still climbing out, on its own clock rather than on the
     // room emptying: reinforcements arrive whether or not you are winning.
@@ -2379,6 +2387,7 @@ export class RunSim {
     this.wake(defender, true);
 
     defender.life -= dmg;
+    if (attacker.kind === 'hero' && defender.kind !== 'hero') this.sunder(defender);
     if (defender.kind === 'hero') this.sinceHit = 0;
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
@@ -2561,6 +2570,50 @@ export class RunSim {
     if (near.length > 0) {
       this.emit('arc', [{ x: from.x, y: from.y }, { x: near[0].x, y: near[0].y }], def.type, 0.14);
     }
+  }
+
+  /**
+   * HOARFROST: a spike at everything you have Chilled, on its own clock. It
+   * asks for a Chill it did not apply, so the passive is worth exactly what the
+   * rest of the build already does to the room — and worth nothing on its own,
+   * which is what keeps it off every build.
+   */
+  private stepFrost(dt: number): void {
+    const volley = this.grants.frostVolley as { every: number; perLevel: number } | undefined;
+    if (!volley) return;
+    this.frostIn -= dt;
+    if (this.frostIn > 0) return;
+    this.frostIn = volley.every;
+
+    const hero = this.state.hero;
+    const damage = volley.perLevel * this.level;
+    for (const m of this.state.monsters) {
+      if (m.dead || stacksOf(m, 'chill') === 0) continue;
+      if (dist(hero, m) > PASSIVE_DAMAGE.frostRange) continue;
+      m.life -= this.afterResistance(m, damage, 'cold');
+      this.emit('shard', [{ x: hero.x, y: hero.y }, { x: m.x, y: m.y }], 'cold', 0.2);
+      if (m.life <= 0) this.kill(m);
+    }
+  }
+
+  /**
+   * SUNDERING: a Burst the BUILD did not pay for, so it is not scaled by
+   * anything the build stacked — `perLevel` off character level and nothing
+   * else, on a cooldown, which is the whole of how it stays balanceable.
+   */
+  private sunder(at: Entity): void {
+    const burst = this.grants.burstOnHit as { every: number; perLevel: number } | undefined;
+    if (!burst || this.sunderIn > 0 || at.dead) return;
+    this.sunderIn = burst.every;
+
+    const damage = burst.perLevel * this.level;
+    const radius = PASSIVE_DAMAGE.sunderRadius;
+    for (const m of this.state.monsters) {
+      if (m.dead || dist(m, at) > radius) continue;
+      m.life -= this.afterResistance(m, damage, 'physical');
+      if (m.life <= 0) this.kill(m);
+    }
+    this.emit('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 'physical', 0.32);
   }
 
   /** What the body was CARRYING passes on: one stack of each kind it had, and
