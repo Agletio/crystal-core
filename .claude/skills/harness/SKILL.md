@@ -5,20 +5,22 @@ description: Running and reading the test suite — what each harness proves, ho
 
 # The harnesses
 
-About **seven minutes** end to end. Three are slow enough that a two-minute tool
+About **twelve minutes** end to end. Four are slow enough that a two-minute tool
 timeout kills them mid-run — background them.
 
 | | |
 |---|---|
 | `comments`, `theme`, `typecheck`, `mods`, `build` | a second or two each |
-| `smoke` | ~10s; it prints its own count, and that is the number |
+| `smoke` | ~4min — measured; it plays a descent too. It prints its own count, and that is the number |
 | `demo` | ~2min |
 | `shots` | ~5min — it waits out TWO whole descents |
 | `drag` | ~20s |
 | `peek` | a real descent in real time |
 
-**None of them hangs.** If one looks stuck it is `demo` or `shots`; wait, or
-background it. Never assume it broke.
+**None of them hangs**, and `smoke` is the one that looks like it does: it
+prints a line per check, but through a PIPE that output is buffered, so
+`npm run smoke | tail` shows an empty screen for four minutes and then
+everything at once. Redirect to a file and watch the file. Never assume it broke.
 
 **Do NOT run `shots` concurrently with `demo` or `smoke`.** It waits out real
 descents in real time against a two-minute budget, so under contention it loses

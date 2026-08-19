@@ -49,6 +49,8 @@ let onChanged: (() => void) | null = null;
 /** Whether the two cards are up. Forced open with no trade taken; otherwise it
  *  is a decision you made once, and leaving it on screen buries the web. */
 let picking = false;
+/** Cleared whenever the web goes away, so it is framed again on the way back. */
+let framed = false;
 
 /** In WEB UNITS; `BUILD` turns them into the pixels the art is drawn at. */
 const NODE_R = { minor: 0.23, notable: 0.37 };
@@ -298,8 +300,10 @@ function render(): void {
     : '';
 
   const open = picking || !chosen;
+  const showWeb = !!chosen && !open;
   $('trade-pick').hidden = !open;
-  $('trade-webwrap').hidden = !chosen || open;
+  $('trade-webwrap').hidden = !showWeb;
+  if (!showWeb) framed = false;
 
   const swap = $('trade-swap') as HTMLButtonElement;
   swap.hidden = !chosen;
@@ -311,17 +315,27 @@ function render(): void {
 
   if (open) renderPicker();
   else renderWeb();
+  // Opens FRAMED, unlike the skills web. That one holds a hundred and sixteen
+  // nodes and fitting them is a grey smear you would zoom straight out of;
+  // forty-five fit and stay readable, and a web whose shape you cannot see is
+  // a web nobody plans a route through.
+  //
+  // Framed HERE rather than in `openTrade`, and after the wrap is shown: a
+  // hidden element measures nothing, so a fit before the render is a fit to a
+  // guessed box — and taking a trade up reaches the web without opening the
+  // screen at all.
+  if (showWeb && !framed) {
+    cam.fit(tradeNodes(character.trade!), 1.1);
+    cam.apply();
+    framed = true;
+  }
   onChanged?.();
 }
 
 export function openTrade(): void {
   $('trade').hidden = false;
   picking = false;
-  // Opens FRAMED, unlike the skills web. That one holds a hundred and sixteen
-  // nodes and fitting them is a grey smear you would zoom straight out of;
-  // forty-five fit and stay readable, and a web whose shape you cannot see is
-  // a web nobody plans a route through.
-  cam.fit(tradeNodes(game.character.trade), 1.1);
+  framed = false;
   render();
 }
 

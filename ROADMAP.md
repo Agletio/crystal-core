@@ -28,6 +28,10 @@ to look:
 | the arrow | `bowMuzzle` in `src/render/pixi.ts`, render-side only |
 | ailments | `AILMENTS` in `src/data.ts`; applied by damage TYPE, bought never free, the hero's alone |
 | settings | keys, the filter moved in, and the book — `src/ui/settings.ts` |
+| one camera | `src/ui/webcam.ts` — the skills web and the trade web pan and zoom through the same class |
+| the trade webs | 45 nodes each, a stem of three forking into two branches of three; `src/trades/{spec,layout}.ts` |
+| Aether Ward | a share of every hit is paid out of mana first — the mechanic was right, the words were not |
+| Overcharge | ADDED damage equal to the mana spent, and nothing at all if the cost went unpaid |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would
@@ -138,11 +142,11 @@ change rather than as drift: six generated bodies replaced eleven and one
 thrower per family replaced a quarter of all packs shooting, which took the
 blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
 
-### It owes three parked checks
+### It owes two parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it.**
+count and this list has to agree with it — two today.**
 
 1. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
@@ -152,10 +156,12 @@ count and this list has to agree with it.**
    `ailment_burst` and the sim also applies it on the `critAilment` path.
    Widening the sheet's condition broke a SECOND promise, so what is wanted is
    the per-hit and per-crit numbers being told apart. Pre-existing.
-3. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
 
-The boss grid came OUT of this list: the turn was deleted, the fight was rebuilt
-around what a build carries, and the check is a real `check` again.
+Two more `parkedCheck` sites exist and currently PASS — every band paying more
+than the one below, and the timed quest — so they print a tick and count for
+nothing. They stay parked because either can go red on a balance number alone.
+The boss grid came out of the list entirely: the turn was deleted, the fight was
+rebuilt around what a build carries, and the check is a real `check` again.
 
 ### It also owes the two newest skills and the off hand a look
 

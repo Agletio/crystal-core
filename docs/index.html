@@ -1556,7 +1556,11 @@
      a lit cavern — dithered rock, a warm glow at the middle where the skill
      itself sits, and the corners falling away into nothing. */
   .webwrap {
-    position: relative; height: min(50vh, 430px);
+    /* The last term is the one that matters: an open dock shortens the card,
+       and a window that cannot shrink is a window whose bottom is cut off
+       instead — the spokes hanging off the low half of a web, gone. 205px is
+       everything above and below it inside the card. */
+    position: relative; height: min(50vh, 430px, calc(100vh - var(--dock-h, 0px) - 205px)); min-height: 170px;
     border: 14px solid transparent; border-image: var(--fix-card) 14 round;
     box-shadow: none;
     background-color: var(--web-ground); background-clip: padding-box;
@@ -1577,8 +1581,8 @@
     transform-origin: 0 0; will-change: transform;
   }
   .web--drag { cursor: grabbing; }
-  /* Twenty nodes fit, so the trade web is a picture rather than a map. */
-  .webwrap--trade { height: min(44vh, 380px); margin-top: 12px; }
+  /* The trials web shares its row with the ladder, so it is the shorter one. */
+  .webwrap--trade { height: min(44vh, 380px, calc(100vh - var(--dock-h, 0px) - 205px)); margin-top: 12px; }
   /* The ladder beside the web: the order is the story, so it is read down. */
   .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
   .trialsplit .webwrap--trade { margin-top: 0; }
