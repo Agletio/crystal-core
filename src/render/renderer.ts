@@ -1659,7 +1659,7 @@ export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
 
 /** How long the arrow is DRAWN, in tiles: the sprite is `VFX_ART.arrow`, and
  *  its head sits at the point the flight has reached. */
-export const ARROW_SPAN = 0.95;
+export const ARROW_SPAN = 0.62;
 /** Its share of its own life spent travelling. Slower than `fireBolt`: the
  *  hero fights at the range the monsters close to, so a shot mostly crosses
  *  ONE tile and a fast one is never seen. */

@@ -820,6 +820,20 @@ export async function createPixiRenderer(
     if (sunk > 0) h.y += sunk * 0.8;
   }
 
+  /** Where the BOW is, not the shooter's tile. The sim's origin stays
+   *  `use.user`: it is the ray pierce walks, so moving it would change what
+   *  the shot HITS. `drawHeld`'s arithmetic, applied to the arrow. */
+  function bowMuzzle(hero: Entity, elapsed: number, from: { x: number; y: number }): { x: number; y: number } {
+    const spec = HELD.bow;
+    if (!spec) return from;
+    const hand = handAt(hero.sprite, 'bow', cel(hero, elapsed));
+    const east = Math.cos(hero.facing) >= 0;
+    return {
+      x: from.x + (hand.x + (spec.reach ?? 0) - 0.5) * hero.scale * (east ? 1 : -1),
+      y: from.y + (hand.y - anchorY(hero)) * hero.scale,
+    };
+  }
+
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
     effectsDrawn = 0;
@@ -996,7 +1010,7 @@ export async function createPixiRenderer(
       // rather than turned over when it flies west — an arrow rotated past
       // vertical is an arrow lit from underneath.
       if (fx.kind === 'arrow') {
-        const flight = arrowFlight(from, to, t);
+        const flight = arrowFlight(bowMuzzle(state.hero, state.elapsed, from), to, t);
         const texture = flight.alpha > 0 ? vfxTexture('arrow') : null;
         if (texture) {
           const s = effectSprite(texture, ARROW_SPAN);

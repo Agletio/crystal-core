@@ -1618,8 +1618,15 @@
   .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
   .web__node__img { image-rendering: auto; }
   .web__node:hover .web__node__img { filter: brightness(1.25); }
-  .web__node--open .web__node__img { filter: drop-shadow(0 0 3px var(--bone)); }
-  .web__node--on .web__node__img { filter: brightness(1.35) drop-shadow(0 0 3px var(--citrine)); }
+  /* Allocated and available are told apart by VALUE and SPREAD, never by hue:
+     they were bone against citrine, two warm yellows three steps apart, over
+     art that is warm already. An allocated node is much brighter and carries a
+     tight core inside a wide halo; an available one is deliberately DIMMER
+     than the rock it sits on, with one soft ring and no core. */
+  .web__node--open .web__node__img { filter: brightness(.86) drop-shadow(0 0 4px var(--bone)); }
+  .web__node--on .web__node__img {
+    filter: brightness(1.55) drop-shadow(0 0 1px var(--on-gem-lit)) drop-shadow(0 0 8px var(--citrine));
+  }
   .web__centre { cursor: help; }
 
   /* Tooltip. Custom because the native title is delayed and drawn in the OS's
