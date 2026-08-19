@@ -3115,6 +3115,50 @@ rule('FIREBALL — do the notables actually change the cast?');
   const early = cast(overload).hits[0].multiplier;
   line(`  overload cast 1    → x${early}`);
   check(early === 1, 'the first cast is ordinary', String(early));
+
+  // --- and the WEDGE, which is the only delivery with a direction ----------
+  //
+  // Everything above is about how far a shot reaches. A Cone is about which
+  // WAY it is pointing, and nothing else in the game has ever had to be.
+  const wedge = (grants: Record<string, unknown>) => {
+    const user = dummy(0, 0);
+    const ahead = dummy(2, 0);
+    const flank = dummy(1, 1.6); // 58° off, so the bare wedge does not hold it
+    const back = dummy(-2, 0);
+    const far = dummy(9, 0);
+    const enemies = [ahead, flank, back, far];
+    const hits: any[] = [];
+    SKILL_BEHAVIOURS.cone({
+      skill: SKILL_BY_ID.shockwave,
+      user, primary: ahead, enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0,
+      hit: (who: any) => hits.push(who),
+      ailment: () => {},
+      areaRadius: (base: number) => base,
+      vfx: () => {},
+    } as any);
+    const name = (e: any) =>
+      e === ahead ? 'ahead' : e === flank ? 'flank' : e === back ? 'back' : 'far';
+    return hits.map(name);
+  };
+
+  const front = wedge({});
+  line(`  wedge bare         → ${front.join(', ')}`);
+  check(front.join() === 'ahead', 'a bare Cone takes what is in front of it and nothing else', front.join());
+
+  const opened = wedge({ coneArc: 60 });
+  line(`  wedge +60°         → ${opened.join(', ')}`);
+  check(opened.includes('flank'), 'opening it wider catches the flank', opened.join());
+  check(!opened.includes('back'), 'and still nothing behind you', opened.join());
+
+  const around = wedge({ coneArc: 260 });
+  line(`  wedge +260°        → ${around.join(', ')}`);
+  check(around.includes('back'), 'past 360° there is no behind left', around.join());
+  check(!around.includes('far'), 'and it never reaches past its own length', around.join());
+
+  const longer = wedge({ coneReach: 3 });
+  line(`  wedge reach x3     → ${longer.join(', ')}`);
+  check(longer.includes('far'), 'where reaching further does exactly that', longer.join());
 }
 
 // ===========================================================================
@@ -3146,6 +3190,10 @@ rule('EVERY TREE — does every notable actually change the cast?');
       out.push(e);
     }
     out.push(dummy(3, 1.1, 1e6), dummy(3, 2.2, 1), dummy(2, 2, 6e4));
+    // 58° off the axis, so a WEDGE that opens wider catches something it did
+    // not before: everything else here is within 45°, which the narrowest cone
+    // in the game already holds.
+    out.push(dummy(1, 1.6, 1e6));
     return out;
   };
 

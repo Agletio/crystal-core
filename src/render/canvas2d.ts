@@ -24,6 +24,7 @@ import {
   fireBolt,
   frostShard,
   lightningArc,
+  coneWedge,
   sweepRing,
   fireBurst,
   fireShades,
@@ -404,6 +405,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       } else if (fx.kind === 'sweep') {
         // Second point carries the radius, same contract as the burst.
         blocks(v, sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
+      } else if (fx.kind === 'wedge' && fx.points[2]) {
+        // THREE points, and the last two are the wedge's own rim corners.
+        blocks(v, coneWedge(from, to, fx.points[2], t), fx.damageType, 1);
       } else if (fx.kind === 'bolt') {
         blocks(v, fireBolt(from, to, t), fx.damageType, 1);
       } else if (fx.kind === 'shard') {

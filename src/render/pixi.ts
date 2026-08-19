@@ -39,6 +39,7 @@ import {
   fireBolt,
   frostShard,
   lightningArc,
+  coneWedge,
   sweepRing,
   fireBurst,
   fireShades,
@@ -998,6 +999,12 @@ export async function createPixiRenderer(
       if (fx.kind === 'sweep') {
         // Second point carries the radius, same contract as the burst.
         blocks(sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
+        continue;
+      }
+
+      // THREE points, and the last two are the wedge's own rim corners.
+      if (fx.kind === 'wedge' && fx.points[2]) {
+        blocks(coneWedge(from, to, fx.points[2], t), fx.damageType, 1);
         continue;
       }
 

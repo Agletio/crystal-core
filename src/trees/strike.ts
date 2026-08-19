@@ -153,8 +153,10 @@ const BRANCHES: Branch[] = [
     id: 'shockwave',
     theme: 'Tremor',
     enabler: {
+      // The ID is what a save points at and never moves; the NAME did, because
+      // Shockwave is a skill now and one word may name one mechanism.
       id: 'st_shockwave',
-      name: 'Shockwave',
+      name: 'Quake',
       description:
         'Every enemy the swing lands on Bursts, for 50% of the damage within ' +
         '1.6 tiles. Strike gains the Area tag.',

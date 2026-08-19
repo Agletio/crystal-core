@@ -62,8 +62,8 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
   return [o[a] as number, o[b] as number];
 };
 
-const SHARED = ['projectile', 'cleave', 'ailment_burst'];
-const HITTERS = ['projectile', 'cleave'];
+const SHARED = ['projectile', 'cleave', 'ailment_burst', 'cone'];
+const HITTERS = ['projectile', 'cleave', 'cone'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
  *  landing from a step that never lands anywhere. */
 const MOVERS = ['step', 'leap'];
@@ -606,6 +606,32 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `+${n} Repeat${n === 1 ? '' : 's'}`;
+    },
+  },
+
+  {
+    id: 'coneArc',
+    changes: 'targets',
+    // Degrees SUM and reach MULTIPLIES, and the pair is not arbitrary: a
+    // percentage of an angle means nothing to read, and a wedge that opened by
+    // a fifth each time would pass a full circle in four nodes.
+    what: 'the Cone opens wider',
+    reads: ['cone'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The Cone opens ${n}° wider`;
+    },
+  },
+  {
+    id: 'coneReach',
+    changes: 'targets',
+    what: 'the Cone reaches further',
+    reads: ['cone'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The Cone reaches ${more(n)} further`;
     },
   },
 

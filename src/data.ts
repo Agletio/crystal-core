@@ -3328,6 +3328,33 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
+     * The other melee skill, and the opposite trade: Strike picks one enemy and
+     * pays the rest a share, this pays everything in the wedge the whole hit
+     * and charges in the number and the rate. 58 at 0.90/s against 72 at 1.20,
+     * so one body in front of you is 60% of a Strike and three is over twice.
+     */
+    id: 'shockwave',
+    name: 'Shockwave',
+    category: 'attack',
+    description:
+      'A wave driven through the ground. A Cone in front of you, and everything ' +
+      'standing in it takes the whole hit.',
+    // Area from the start, unlike Strike: the wedge IS the skill.
+    tags: ['attack', 'melee', 'area'],
+    behaviour: 'cone',
+    damageTypes: ['physical'],
+    baseDamage: 58,
+    addedEffectiveness: 100,
+    rateMultiplier: 0.75,
+    manaCost: 10,
+    // Shorter than the wedge it throws: you swing when something is in sword
+    // reach and the wave carries out past it.
+    range: 2.2,
+    vfxKind: 'wedge',
+    params: { coneReach: 3.4, coneArc: 100 },
+  },
+  {
+    /**
      * The one with a tree behind it. Bare, it is one enemy at range and nothing
      * else; bursting, piercing, leaping and burning are all nodes you walked
      * to. The skill is the seed, the tree is the build.

@@ -13,6 +13,11 @@ has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
 Ward and Overcharge. Phase 1 below (a quest log) stays parked by his word until
 the stripped opening has been played, and the balance pass is held.
 
+**Shockwave's ICON is a hand-drawn 12x12 grid and reads as a funnel** rather
+than as ground opening — `WEDGE` in `src/ui/icons.ts`, distinct from Strike's
+sword and legible, which is all it had to be. Every other main skill has a
+GENERATED icon under `sk_<id>`; this one is waiting for its generation.
+
 **One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
 and boss controls"* — the flasks are `potion_life` and `potion_mana` in
 `BINDINGS` and rebind on the keys tab, but **a boss is not driven by the player
@@ -41,6 +46,7 @@ to look:
 | the trade webs | 45 nodes each, a stem of three forking into two branches of three; `src/trades/{spec,layout}.ts` |
 | Aether Ward | a share of every hit is paid out of mana first — the mechanic was right, the words were not |
 | Overcharge | ADDED damage equal to the mana spent, and nothing at all if the cost went unpaid |
+| Shockwave | the sixth main skill and the second melee one: the `cone` behaviour, the Cone keyword, `src/trees/shockwave.ts` |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would

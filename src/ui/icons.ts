@@ -167,6 +167,22 @@ const BLADE = [
   '....oooo....',
 ];
 
+/** The other melee skill: a wedge opening away from you, lit along its front. */
+const WEDGE = [
+  '.o..o..o..o.',
+  'osssssssssso',
+  'osddddddddso',
+  '.oddddddddo.',
+  '.oddddddddo.',
+  '..oddddddo..',
+  '..oddddddo..',
+  '...oddddo...',
+  '...oddddo...',
+  '....oddo....',
+  '....oddo....',
+  '.....oo.....',
+];
+
 const ORB = [
   '.y........y.',
   '....oooo....',
@@ -1050,6 +1066,8 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
       return sprite(FORKED, STORM, size, 'arc_lightning');
     case 'lightning_arrow':
       return sprite(ARROW, STORM, size, 'lightning_arrow');
+    case 'shockwave':
+      return sprite(WEDGE, STEEL, size, 'shockwave');
     case 'surge':
       return sprite(SURGE, STEEL, size, 'surge');
     case 'blink':

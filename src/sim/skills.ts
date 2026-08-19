@@ -374,6 +374,74 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
+   * A wedge in FRONT of you: everything standing in it takes the whole hit and
+   * nothing takes a share, so a use is worth how many bodies the wedge holds.
+   * No target cap — with one, opening the wedge would buy nothing past it.
+   * params: { coneReach, coneArc }
+   */
+  cone: (use) => {
+    const g = use.grants;
+    const castMultiplier = castScale(g, use.castIndex);
+    const reach = use.areaRadius(
+      ((use.skill.params?.coneReach as number) ?? 3.4) * num(g.coneReach, 1)
+    );
+    const arc = Math.min(
+      360,
+      ((use.skill.params?.coneArc as number) ?? 100) + num(g.coneArc, 0)
+    );
+    const half = (arc / 2) * (Math.PI / 180);
+
+    // Aimed at what triggered the use, and at the body's own facing when that
+    // is standing on top of you: a wedge with no direction hits nothing.
+    const dx = use.primary.x - use.user.x;
+    const dy = use.primary.y - use.user.y;
+    const facing = Math.hypot(dx, dy) < 1e-3 ? use.user.facing : Math.atan2(dy, dx);
+
+    const explode = g.explode as { radius: number; multiplier: number } | undefined;
+    const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+
+    const inside = (e: Entity): boolean => {
+      if (!within(use.user, e, reach)) return false;
+      if (arc >= 360) return true;
+      let off = Math.abs(Math.atan2(e.y - use.user.y, e.x - use.user.x) - facing);
+      if (off > Math.PI) off = Math.PI * 2 - off;
+      // The BODY counts, not the centre: `within` already reads a body for the
+      // reach, and an edge that read one way at the rim and another at the
+      // flank would be a wedge that lies about who is in it.
+      const away = Math.max(separation(use.user, e), 1e-3);
+      return off - Math.asin(Math.min(1, e.radius / away)) <= half;
+    };
+
+    for (const enemy of use.enemies) {
+      if (enemy.dead || !inside(enemy)) continue;
+      use.hit(enemy, scale(enemy));
+
+      if (explode) {
+        blastAround(
+          use,
+          enemy,
+          use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
+          explode.multiplier + num(g.explodeMultiplierAdd, 0),
+          scale
+        );
+      }
+      if (onKill && enemy.dead) {
+        blastAround(use, enemy, use.areaRadius(onKill.radius), onKill.multiplier, scale);
+      }
+    }
+
+    // The wedge as the sim used it: where you stand, then its two RIM corners.
+    // Reach and opening are both bought, so both have to be readable off the
+    // picture or half the branch moves nothing on screen.
+    use.vfx(use.skill.vfxKind ?? 'wedge', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.user.x + Math.cos(facing - half) * reach, y: use.user.y + Math.sin(facing - half) * reach },
+      { x: use.user.x + Math.cos(facing + half) * reach, y: use.user.y + Math.sin(facing + half) * reach },
+    ]);
+  },
+
+  /**
    * No hit at all — a circle of poison on the target, with no target cap, so
    * the way to poison more is a bigger circle.
    * params: { radius, duration }

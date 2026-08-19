@@ -1564,6 +1564,58 @@ export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] 
 }
 
 /**
+ * The wedge a Cone covers, as a front of broken ground travelling out along it.
+ * The two RIM corners are what the sim used, so both things a build buys — how
+ * wide it opens and how far it runs — are read off the picture rather than
+ * assumed. A ring would say neither.
+ */
+export function coneWedge(origin: Vec2, left: Vec2, right: Vec2, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  const a0 = Math.atan2(left.y - origin.y, left.x - origin.x);
+  let a1 = Math.atan2(right.y - origin.y, right.x - origin.x);
+  // The rim runs the SHORT way round from left to right, which past half a
+  // turn is the reflex side — an Encirclement wedge is nearly a whole circle.
+  while (a1 < a0) a1 += Math.PI * 2;
+  const reach = Math.hypot(left.x - origin.x, left.y - origin.y);
+  if (reach <= 0) return pixels;
+
+  // The front, not the whole wedge: what a wave leaves behind it is the crack,
+  // and a filled cone reads as a floor the fight is standing on.
+  const front = reach * (0.25 + 0.75 * Math.min(1, t * 1.5));
+  const step = FIRE_PX * 2;
+  const count = Math.max(10, Math.round(((a1 - a0) * front) / step));
+
+  for (let i = 0; i <= count; i++) {
+    const angle = a0 + ((a1 - a0) * i) / count;
+    const noise = tileNoise(i, Math.round(front * 24), 53);
+    // Ragged, or it reads as an arc somebody drew rather than ground opening.
+    const out = front * (0.86 + noise * 0.18);
+    pixels.push({
+      x: onGrid(origin.x + Math.cos(angle) * out),
+      y: onGrid(origin.y + Math.sin(angle) * out),
+      size: FIRE_PX * (noise > 0.62 ? 3 : 2),
+      shade: noise > 0.72 ? 2 : 1,
+      alpha: (1 - t) * 0.95,
+    });
+  }
+
+  // And the two edges, so the wedge has sides and you can see where it stops.
+  for (const angle of [a0, a1]) {
+    for (let i = 1; i <= 5; i++) {
+      const out = (front * i) / 5;
+      pixels.push({
+        x: onGrid(origin.x + Math.cos(angle) * out),
+        y: onGrid(origin.y + Math.sin(angle) * out),
+        size: FIRE_PX,
+        shade: 0,
+        alpha: (1 - t) * 0.55,
+      });
+    }
+  }
+  return pixels;
+}
+
+/**
  * The lightning arc: a jag drawn WHOLE from the first frame and burning out
  * rather than travelling — what separates an arc from a bolt is that it is
  * already there. Each kink is hashed off the two ends, so a leap is the same

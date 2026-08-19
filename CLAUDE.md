@@ -180,7 +180,7 @@ chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
 then a fork into two branches — and ten points reach one spoke whole.
-Five main skills, each with its own tree; a passive and a mover fill the other
+Six main skills, each with its own tree; a passive and a mover fill the other
 two slots, the mover having a nine-node web of its own. Attributes are bought
 per level. Every use costs mana; out of mana you are STARVED, not stopped.
 

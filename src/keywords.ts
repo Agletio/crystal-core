@@ -153,6 +153,17 @@ export const KEYWORDS: KeywordDef[] = [
     grants: ['splashMultiplier', 'splashRadius'],
   },
   {
+    id: 'cone',
+    name: 'Cone',
+    says: ['Cone', 'Cones'],
+    means:
+      'A wedge in front of you. Everything standing in it takes the WHOLE hit ' +
+      'and nothing takes a share, and there is no target limit — so how many ' +
+      'bodies the wedge holds is the whole of what a use is worth. Area of ' +
+      'Effect reaches every Cone further.',
+    grants: ['coneArc', 'coneReach'],
+  },
+  {
     id: 'cloud',
     name: 'Cloud',
     says: ['Cloud', 'Clouds'],
