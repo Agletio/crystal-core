@@ -2410,9 +2410,8 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
 );
 
 /** Something done once, paying ONE point into the trials web — hence no `gives`
- *  field. Twelve crystal modifiers is the whole permanent difficulty of the
- *  game; a trial is how that ceiling rises, and few trials is what keeps the
- *  web a decision. */
+ *  field. Twelve crystal modifiers was the whole permanent difficulty of the
+ *  game; this is how that ceiling rises, and few trials keep it a decision. */
 export interface TrialDef {
   id: string;
   name: string;
@@ -2440,6 +2439,12 @@ export const TRIALS: TrialDef[] = [
     name: 'Deep Water',
     detail: 'Clear a descent worth 400 danger.',
     need: [{ kind: 'danger', value: 400 }],
+  },
+  {
+    id: 'what_they_carried',
+    name: 'What They Carried',
+    detail: 'Open a Hoard, by killing everything standing over it.',
+    need: [{ kind: 'hoards', value: 1 }],
   },
 ];
 
@@ -2685,10 +2690,21 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   layoutComplexity: { weight: 0.2, rewards: true },
   packCount: { weight: 0.5, rewards: false },
   packSize: { weight: 0.5, rewards: false },
-  // +100% lifts the average monster's life 14.4% and its damage 3.0% over
-  // `MONSTER_RANKS` — 0.10 and 0.03 of what those weigh. The EFFECT saturates
-  // where the score does not, so the cap is where the line runs 21% ahead.
+  // +100% lifts average monster life 14.4% and damage 3.0% over `MONSTER_RANKS`
+  // — 0.10 and 0.03 of those. Capped: the effect saturates, the score does not.
   monsterRank: { weight: 0.13, rewards: true, cap: 400 },
+  // Percent of PACKS guarding a Hoard, so it caps at every one. Scores their
+  // RANK; the extra BODIES are density, which pays in kills and not here.
+  hoardChance: { weight: 0.33, rewards: true, cap: 100 },
+};
+
+/** A pack with something in it worth walking towards. Nothing is CLICKED, which
+ *  is what makes it legal under universal automation: the last guard down. */
+export const HOARD = {
+  prop: 'cart', // no new art: a cart standing in the rock is already a hoard
+  size: 1.6, // the guard, against an ordinary pack
+  rank: 250, // `monsterRank`, on the guard alone
+  drops: 3, // pieces when the last of them is down
 };
 
 /**

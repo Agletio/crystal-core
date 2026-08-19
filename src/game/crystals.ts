@@ -224,6 +224,8 @@ export interface QuestFacts {
   elapsed: number;
   /** The crystals it was launched with, already paid their experience. */
   socketed: Item[];
+  /** Hoards opened during it. Absent for a caller that has no run behind it. */
+  hoards?: number;
 }
 
 export type QuestConditionImpl = (facts: QuestFacts, params: any) => boolean;

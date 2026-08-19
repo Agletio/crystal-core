@@ -52,6 +52,23 @@ export const TRIAL_WEB: TrialSpec = {
       },
     },
     {
+      id: 'hoard',
+      theme: 'The Hoard',
+      blurb: 'Somebody left something down here, and something is standing over it.',
+      minors: [
+        { text: '+12% of packs guard a Hoard', stats: [stat('hoardChance', 'inc', 12)] },
+        { text: '+12% of packs guard a Hoard', stats: [stat('hoardChance', 'inc', 12)] },
+      ],
+      notable: {
+        id: 'tr_the_hoard',
+        name: 'What Was Left',
+        description:
+          '+30% of packs guard a Hoard. They were carrying it out and did not ' +
+          'get far. Whatever is standing over it now was not with them.',
+        stats: [stat('hoardChance', 'inc', 30)],
+      },
+    },
+    {
       id: 'press',
       // Density is the one kind of danger that does not pay: `DANGER_STATS` has
       // both pack stats at `rewards: false`, because they already pay in kills.

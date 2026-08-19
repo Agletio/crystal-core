@@ -69,6 +69,7 @@ import {
   socketPackSize,
   socketPacks,
   socketSize,
+  HOARD,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
 import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
@@ -247,11 +248,21 @@ export interface Entity {
   slowed?: number;
   /** Tiles this body has actually walked, for the walk cycle to read. */
   walked: number;
+  /** Which HOARD this body guards. The last guard down is what opens it. */
+  hoard?: number;
   /** Where a body that has not seen you paces about: where it was PUT, the spot
    *  it is ambling to, and the pause before the next one. Anchored, so a pack
    *  cannot drift out of the room it stands in. */
   wander?: { home: Vec2; to: Vec2; wait: number };
   dead: boolean;
+}
+
+/** A box in a pack. `opened` turns when the last guard goes down. */
+export interface Hoard {
+  id: number;
+  x: number;
+  y: number;
+  opened: boolean;
 }
 
 export interface Floater {
@@ -322,6 +333,8 @@ export interface RunState {
   monsters: Entity[];
   floaters: Floater[];
   vfx: Vfx[];
+  /** Every Hoard put down this descent, and whether its guard is dead yet. */
+  hoards: Hoard[];
   elapsed: number;
   status: RunStatus;
   killed: number;
@@ -425,6 +438,9 @@ export class RunSim {
   /** The boss's own clock, beside `waveTimer` and stopped by the same death. */
   private reinforce: BossDef['reinforce'] | null = null;
   private reinforceTimer = 0;
+  private nextHoard = 0;
+  /** Filled by `spawn`, which runs BEFORE `this.state` exists. */
+  private putDown: Hoard[] = [];
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -506,6 +522,7 @@ export class RunSim {
       monsters,
       floaters: [],
       vfx: [],
+      hoards: this.putDown,
       elapsed: 0,
       status: 'running',
       killed: 0,
@@ -641,12 +658,25 @@ export class RunSim {
 
     // Every rank ABOVE common weighs more. One weighted pick either way, so a
     // set that lifts this cannot move where the seed goes next.
-    const lift = 1 + percentStat(this.set.mods, 'monsterRank') / 100;
-    const rankWeight = (r: MonsterRankDef): number =>
+    const rank0 = percentStat(this.set.mods, 'monsterRank');
+    const rankWeight = (r: MonsterRankDef, lift: number): number =>
       r.weight * (r === MONSTER_RANKS[0] ? 1 : lift);
+
+    // Rolled ONLY when something bought it, or a set with no Hoards in it would
+    // still spend a draw a set with none does not, and the seed would part.
+    const hoardChance = percentStat(this.set.mods, 'hoardChance');
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
+      const hoarded = hoardChance > 0 && this.rng.chance(hoardChance / 100);
+      const hoard = hoarded ? ++this.nextHoard : 0;
+      const lift = 1 + (rank0 + (hoarded ? HOARD.rank : 0)) / 100;
+      const guards = hoarded ? Math.round(packSize * HOARD.size) : packSize;
+      if (hoarded) {
+        const middle = roomCenter(room); // a PROP: both renderers already draw one
+        map.props.push({ id: HOARD.prop, x: middle.x, y: middle.y });
+        this.putDown.push({ id: hoard, x: middle.x, y: middle.y, opened: false });
+      }
 
       // One kind per pack. Mixed packs read as noise; a uniform pack reads as
       // a thing you can recognise and react to.
@@ -659,16 +689,16 @@ export class RunSim {
       // One carrier per pack, whatever the kind. Five Chanters would stack
       // five chants on their own neighbours, and read on screen as fog rather
       // than as a thing in the middle of the room worth killing first.
-      const carrier = def.aura ? this.rng.int(0, packSize - 1) : -1;
+      const carrier = def.aura ? this.rng.int(0, guards - 1) : -1;
 
       // Stats differ between the melee and ranged variants of a kind, so they
       // key separately — a ranged pack reaches much further and has to notice
       // the hero from beyond its own reach to ever open fire.
-      for (let i = 0; i < packSize; i++) {
+      for (let i = 0; i < guards; i++) {
         // Per monster, not per pack: a pack with one blue thing in it is a
         // pack you look at. Stats key on the rank too, or every rare in the
         // run would share the common one's life.
-        const rank = this.rng.weighted(MONSTER_RANKS, rankWeight) ?? MONSTER_RANKS[0];
+        const rank = this.rng.weighted(MONSTER_RANKS, (r) => rankWeight(r, lift)) ?? MONSTER_RANKS[0];
         const statsKey = `${def.id}:${ability.id}:${rank.id}`;
         let stats = statsFor.get(statsKey);
         if (!stats) {
@@ -715,6 +745,7 @@ export class RunSim {
           pathTimer: 0,
           targetId: null,
           walked: 0,
+          ...(hoarded ? { hoard } : {}),
           aggroed: false,
           hitFlash: 0,
           dead: false,
@@ -2500,6 +2531,7 @@ export class RunSim {
     this.rollGearDrop();
     this.rollRelicDrop();
     this.rollKeyDrop();
+    this.openHoard(victim);
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
   }
@@ -2515,7 +2547,15 @@ export class RunSim {
     const hero = this.state.hero.stats;
     const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
     const chance = drops.gearChance * this.set.yield * (1 + rarity / 200);
-    if (!this.rng.chance(chance)) return;
+    if (this.rng.chance(chance)) this.dropGear();
+  }
+
+  /** ONE piece, unconditionally. A Hoard pays in these rather than in a second
+   *  kind of loot: what it changes is HOW MANY, never what the band can hold. */
+  private dropGear(): void {
+    const drops = this.set.band;
+    const hero = this.state.hero.stats;
+    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
 
     // A named piece instead of a rolled one. A gate is a wall, so the pool is
     // filtered before the pick and no amount of rarity argues with it.
@@ -2535,6 +2575,19 @@ export class RunSim {
 
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
     this.state.loot.items.push(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng));
+  }
+
+  /** The last guard is down, so the Hoard opens. Nothing is clicked and nothing
+   *  is walked to — the guard WAS the lock, which is what lets a headless run
+   *  open every one it can beat with no policy to ship. */
+  private openHoard(victim: Entity): void {
+    if (!victim.hoard) return;
+    const box = this.state.hoards.find((h) => h.id === victim.hoard);
+    if (!box || box.opened) return;
+    if (this.state.monsters.some((m) => !m.dead && m.hoard === victim.hoard)) return;
+
+    box.opened = true;
+    for (let i = 0; i < HOARD.drops; i++) this.dropGear();
   }
 
   /** A corpse for whoever wants one. A gate is a wall, so the pool is filtered

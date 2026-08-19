@@ -23,6 +23,8 @@ export const TRIAL_CONDITIONS: Record<string, TrialConditionImpl> = {
   sockets: (_g, f, p) => f.set.filled >= Number(p.value),
 
   danger: (_g, f, p) => f.set.rewards.danger >= Number(p.value),
+
+  hoards: (_g, f, p) => (f.hoards ?? 0) >= Number(p.value),
 };
 
 export const trialMet = (trial: TrialDef, game: GameState, facts: QuestFacts): boolean =>

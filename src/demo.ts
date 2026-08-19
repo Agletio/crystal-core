@@ -2798,6 +2798,49 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   });
   check(lifted > plain, 'and the Watch really does put more Rares in a room', `${plain} -> ${lifted}`);
 
+  // A HOARD is the first EVENT, and the whole of it has to be provable without
+  // a player: it is put down, it is guarded, and killing the guard opens it.
+  const hoarder: Character = {
+    ...ladderCharacter(4, new Rng(7)),
+    trials: TRIALS.map((t) => t.id),
+    trialAllocated: nodes
+      .filter((n) => (n.stats ?? []).some((s) => s.stat === 'hoardChance'))
+      .map((n) => n.id),
+  };
+  const withHoards = new RunSim(bare, hoarder, new Rng(3131));
+  const without = new RunSim(bare, ladderCharacter(4, new Rng(7)), new Rng(3131));
+  check(
+    withHoards.state.hoards.length > 0 && without.state.hoards.length === 0,
+    'a Hoard is put down only by a walked arm',
+    `${withHoards.state.hoards.length} with it, ${without.state.hoards.length} without`
+  );
+  check(
+    withHoards.state.monsters.filter((m) => m.hoard).length > 0,
+    'and it is guarded — the guard IS the lock, since nothing is ever clicked',
+    String(withHoards.state.monsters.filter((m) => m.hoard).length)
+  );
+
+  // The seed may not part on a set that bought no Hoards: the roll is only
+  // taken when the chance is above zero, exactly as a Block is.
+  const plainA = new RunSim(bare, ladderCharacter(4, new Rng(7)), new Rng(777));
+  const plainB = new RunSim(bare, ladderCharacter(4, new Rng(7)), new Rng(777));
+  check(
+    plainA.state.monsters.length === plainB.state.monsters.length &&
+      plainA.state.monsters[0]?.x === plainB.state.monsters[0]?.x,
+    'and a set that bought none spends no draw on one',
+    `${plainA.state.monsters.length} vs ${plainB.state.monsters.length}`
+  );
+
+  const heldBefore = withHoards.state.loot.items.length;
+  runToCompletion(withHoards, 400);
+  const opened = withHoards.state.hoards.filter((h) => h.opened).length;
+  const paid = withHoards.state.loot.items.length - heldBefore;
+  check(
+    opened > 0 && paid > 0,
+    'and a headless run opens one and is paid for it, with no policy to ship',
+    `${opened}/${withHoards.state.hoards.length} opened, ${paid} pieces`
+  );
+
   // A trial deleted refunds the point it bought rather than stranding the walk.
   const save = createGame('dev');
   save.character.trialAllocated = [...walk];
