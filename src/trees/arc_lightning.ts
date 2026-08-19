@@ -75,7 +75,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 0, at: 1 },
         notable: {
           id: 'al_downpour',
@@ -88,60 +88,49 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[1], COMMON[0], COMMON[2], COMMON[1]],
   },
   {
-    id: 'thunderclap',
-    theme: 'Blastwork',
+    id: 'potential',
+    theme: 'Potential',
     enabler: {
-      id: 'al_thunderclap',
-      name: 'Thunderclap',
+      id: 'al_potential',
+      name: 'Potential',
       description:
-        'Arc Lightning Bursts at every stop, for 35% of the damage within 1.6 ' +
-        'tiles. Arc Lightning gains the Area tag.',
-      // The cheapest Burst in the game per cast and the dearest per build: with
-      // five Arcs live it goes off six times, which is what the 35% is for.
-      grants: {
-        explode: { radius: 1.6, multiplier: 0.35 },
-        addTags: ['area'],
-        manaMultiplier: 1.2,
-      },
+        'Each use on the same enemy as the last builds 7% Momentum against ' +
+        'it, up to 55%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 7, max: 55 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'al_shockwave',
-          name: 'Shockwave',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
-        },
-      },
-      {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
-        notable: {
-          id: 'al_overpressure',
-          name: 'Overpressure',
-          description: 'The Burst carries +30% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.3, manaMultiplier: 1.08 },
+          id: 'al_capacitor',
+          name: 'Capacitor',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
         minors: 4,
-        forkFrom: { twig: 1, at: 1 },
         notable: {
-          id: 'al_deathrattle',
-          name: 'Death Rattle',
+          id: 'al_reservoir',
+          name: 'Reservoir',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
+        },
+      },
+      {
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
+        notable: {
+          id: 'al_grounding',
+          name: 'Grounding Line',
           description:
-            'An enemy killed by Arc Lightning Bursts, for 50% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.5 }, manaMultiplier: 1.15 },
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'ionisation',
@@ -337,10 +326,9 @@ export const ARC_LIGHTNING_SPEC: TreeSpec = {
   // Arcs are not in here: the skill has three of its own, so a node that makes
   // an Arc better does something the moment it is bought.
   needs: {
-    areaOfEffect: 'al_thunderclap',
-    explodeRadius: 'al_thunderclap',
-    explodeMultiplierAdd: 'al_thunderclap',
-    explodeOnKill: 'al_thunderclap',
+    momentumPer: 'al_potential',
+    momentumMax: 'al_potential',
+    momentumKeep: 'al_potential',
     ailmentMultiplier: 'al_ionise',
     ailmentDuration: 'al_ionise',
     ailmentChance: 'al_ionise',

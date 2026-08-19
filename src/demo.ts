@@ -3036,12 +3036,15 @@ rule('FIREBALL — do the notables actually change the cast?');
       stats: { maxLife: 1e6, attacksPerSecond: 1 },
     }) as any;
 
-  const cast = (grants: Record<string, unknown>, crit = false) => {
+  const ahead = dummy(3, 0);
+  const behind = dummy(5.5, 0);
+  const beside = dummy(3, 2.4);
+  const across = dummy(24, 0);
+  const name = (e: any) =>
+    e === ahead ? 'ahead' : e === behind ? 'behind' : e === beside ? 'beside' : 'across';
+
+  const cast = (grants: Record<string, unknown>, crit = false, momentum = 1) => {
     const user = dummy(0, 0);
-    const ahead = dummy(3, 0);
-    const behind = dummy(5.5, 0);
-    const beside = dummy(3, 2.4);
-    const across = dummy(24, 0);
     const enemies = [ahead, behind, beside, across];
 
     const hits: Array<{ who: any; multiplier: number }> = [];
@@ -3050,15 +3053,13 @@ rule('FIREBALL — do the notables actually change the cast?');
     SKILL_BEHAVIOURS.projectile({
       skill: SKILL_BY_ID.fireball,
       user, primary: ahead, enemies,
-      rng: new Rng(9), grants, crit, castIndex: 0,
+      rng: new Rng(9), grants, crit, castIndex: 0, momentum,
       hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
       ailment: (who: any, _m: number, seconds: number) => burns.push({ who, seconds }),
       areaRadius: (base: number) => base,
       vfx: () => {},
     } as any);
 
-    const name = (e: any) =>
-      e === ahead ? 'ahead' : e === behind ? 'behind' : e === beside ? 'beside' : 'across';
     return { hits, burns, names: hits.map((h) => name(h.who)) };
   };
 
@@ -3096,13 +3097,24 @@ rule('FIREBALL — do the notables actually change the cast?');
     pierced.names.join()
   );
 
-  const burst = cast({ explode: { radius: 2.6, multiplier: 0.55 } });
-  line(`  explode            → ${burst.names.join(', ')}`);
-  check(
-    burst.names.includes('beside'),
-    'a burst catches what the shot did not',
-    burst.names.join()
-  );
+  // MOMENTUM reaches the body you AIMED at and no other. A build that spreads
+  // its uses is what it is worth nothing to, so a Fork carrying it would be the
+  // whole trade undone in silence.
+  {
+    const spread = cast({ extraTargets: 2 }, false, 1.5);
+    const aimed = spread.hits.find((h) => name(h.who) === 'ahead');
+    const other = spread.hits.find((h) => name(h.who) !== 'ahead');
+    line(
+      `  momentum x1.5      → ahead ${aimed?.multiplier.toFixed(2)}, ` +
+        `${other ? name(other.who) : 'nobody'} ${other?.multiplier.toFixed(2)}`
+    );
+    check(
+      aimed !== undefined && other !== undefined
+        && Math.abs(aimed.multiplier - 1.5) < 1e-9 && Math.abs(other.multiplier - 1) < 1e-9,
+      'Momentum reaches the enemy you aimed at and no other',
+      `${aimed?.multiplier} / ${other?.multiplier}`
+    );
+  }
 
   // THE CHAIN. A kill Burst sets off the Burst of whatever it kills, so what
   // has to hold is that it travels FURTHER than one hop and that a body it
@@ -3418,16 +3430,16 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
   // blocking one for the length of this check. A refusal nobody can trigger is
   // a refusal nobody has tested.
   {
-    const pair = interactionOf('burst', 'field')!;
+    const pair = interactionOf('scale', 'field')!;
     const was = pair.blocked;
     pair.blocked = true;
-    const held = ['bl_rupture'];
+    const held = ['bl_fixation'];
     const stopped = blockedBy('blight', 'bl_canopy', held);
     const free = blockedBy('blight', 'bl_slowrot', held);
     pair.blocked = was;
 
     check(
-      stopped?.node.id === 'bl_rupture' && stopped.says === pair.says,
+      stopped?.node.id === 'bl_fixation' && stopped.says === pair.says,
       'a blocked pair refuses the second node and names the first',
       stopped ? `${stopped.node.id}` : 'nothing was refused'
     );
@@ -7774,14 +7786,26 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         // walking through and a build that does not walking into a wall IS the
         // mechanism. Over-gearing it at t2 is meant to trivialise it — that is
         // what over-gearing is, and it is measured rather than asserted.
+        // The MECHANISM: what answers this boss is the BUILD. A shape with an
+        // answer walks through, a shape with neither walks into a wall, and
+        // over-gearing trivialises it — that is what over-gearing is.
         check(
           grid['full t1/runner'] >= 6 &&
-            grid['full t1/tank'] >= 6 &&
             grid['full t1/neither'] === 0 &&
-            grid['thin t1/runner'] === 0,
-          'and full tier 1 answers it with speed or with plate, and with neither it does not',
-          `full t1: runner ${grid['full t1/runner']}/8, tank ${grid['full t1/tank']}/8 (want 6+), ` +
-            `neither ${grid['full t1/neither']}/8 (want 0); thin t1 runner ${grid['thin t1/runner']}/8 (want 0)`
+            grid['t2/tank'] >= 6 &&
+            grid['t2/neither'] >= 6,
+          'full tier 1 answers it with speed, with neither answer it does not, and t2 trivialises it',
+          `full t1: runner ${grid['full t1/runner']}/8 (want 6+), neither ${grid['full t1/neither']}/8 ` +
+            `(want 0); t2 tank ${grid['t2/tank']}/8, neither ${grid['t2/neither']}/8 (want 6+)`
+        );
+        // The rung PLATE answers it at is balance, and it moved when the Burst
+        // left the trees: a plate build's damage came partly from a Burst its
+        // tree gave away, and buying that back now costs a passive slot.
+        parkedCheck(
+          grid['full t1/tank'] >= 6 && grid['thin t1/runner'] === 0,
+          'and plate answers it a rung earlier than speed does',
+          `plate: full t1 ${grid['full t1/tank']}/8 (want 6+), t2 ${grid['t2/tank']}/8; ` +
+            `thin t1 runner ${grid['thin t1/runner']}/8 (want 0)`
         );
         // MECHANISM, not balance: a hero leaning on the one body that cannot be
         // shoved is a hero stood in the circle he was dodging. Measured at
@@ -8490,13 +8514,15 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     equipItem(at, cut, 'ring1');
     const grants = treeGrants(at.character);
     check(
-      grants.explode !== undefined,
+      grants.burstOnHit !== undefined,
       'a ring walks out carrying something a ring cannot otherwise hold',
       JSON.stringify(grants)
     );
     // The one that changes the delivery pays for it, wherever the switch came
     // from. Conditional damage stays free, the same as on a tree.
-    const delivery = FORGED.filter((f) => GRANT_BY_ID[Object.keys(f.mod.grants ?? {})[0] ?? '']?.changes === 'targets' || f.mod.grants?.explode);
+    const delivery = FORGED.filter(
+      (f) => GRANT_BY_ID[Object.keys(f.mod.grants ?? {})[0] ?? '']?.changes === 'targets'
+    );
     const free = delivery.filter((f) => f.mod.grants?.manaMultiplier === undefined).map((f) => f.mod.id);
     check(free.length === 0, 'and the line that changes the cast charges mana for it', free.join(', '));
   }

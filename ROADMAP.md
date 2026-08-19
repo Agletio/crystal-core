@@ -169,11 +169,11 @@ change rather than as drift: six generated bodies replaced eleven and one
 thrower per family replaced a quarter of all packs shooting, which took the
 blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
 
-### It owes four parked checks
+### It owes five parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — four today.**
+count and this list has to agree with it — five today.**
 
 1. **"none of the four is a wall for the character that clears the Fissure"** —
    **read this one first.** Demonic and the Seam each kill it 7 times in 12,
@@ -196,11 +196,26 @@ count and this list has to agree with it — four today.**
    It passed while Strike was at 72 and does not at 80, which is the whole
    reason it is parked rather than tuned.
 
+5. **"plate answers the boss a rung earlier than speed does"** — it does not
+   any more: **full tier 1 plate clears it 0 times in 8 where speed clears 8,
+   and plate only comes good at t2 (8/8).** Measured cause, and it is not a
+   number: a plate build's damage came partly from a Burst its own tree gave
+   away for free, and since the Burst moved out of the trees and into a passive
+   SLOT that build has to spend a slot to buy it back. `ladderCharacter` now
+   fills its passive slots at random, which is what a real character has, and
+   the draw is often no help against a crowd. Thin tier 1 speed also crept to
+   3/8 against a floor of 0 from the same change.
+
+The boss grid's MECHANISM is still a real `check` and stays one — speed answers
+it at full tier 1, a build with neither answer never does, and t2 trivialises
+it. Only the rung PLATE comes good at is parked.
+
 One more `parkedCheck` site exists and currently PASSES — every band paying more
-than the one below — so it prints a tick and counts for nothing. The boss grid
-is a real `check` and stays one: **Strike's `baseDamage` is calibrated against
-it**, at 80, which is the most the gate allows (95 let thin tier 1 clear the
-boss 5 times in 8; 72 left full tier 1 plate at 4/8 against a floor of 6).
+than the one below — so it prints a tick and counts for nothing. **Strike's
+`baseDamage` was calibrated against the boss grid** at 80 (95 let thin tier 1
+clear it 5 times in 8; 72 left full tier 1 plate at 4/8), and that calibration
+is now against a grid whose plate row is parked, so it is worth re-deriving in
+the pass rather than trusted.
 
 ### It also owes the two newest skills and the off hand a look
 

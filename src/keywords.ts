@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -137,11 +137,24 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Burst',
     says: ['Burst', 'Bursts'],
     means:
-      'Damage in a circle around what was hit, for a share of that hit. It ' +
-      'overlaps freely — two Bursts on one enemy both land — and Area of ' +
-      `Effect widens every Burst. A Burst set off by a DEATH sets off the ` +
-      `Bursts of whatever it kills, ${BURST.chainDepth} deep.`,
-    grants: ['explode', 'explodeRadius', 'explodeMultiplierAdd', 'explodeOnKill'],
+      `Damage in a circle. A Burst you carry goes off around YOU on a cooldown, ` +
+      `${PASSIVE_DAMAGE.sunderRadius} tiles across, for a figure off your ` +
+      `character level that nothing but increased Damage moves. A Burst set off ` +
+      `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
+      `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
+    grants: ['burstOnHit', 'explodeOnKill'],
+  },
+  {
+    id: 'momentum',
+    name: 'Momentum',
+    says: ['Momentum'],
+    means:
+      'Damage that BUILDS while you keep using the skill on one enemy. Each ' +
+      'use on the same enemy as the last adds to it, up to a cap; using it on ' +
+      'anything else drops it back to nothing. It reaches the enemy you aimed ' +
+      'at and no other, so it is worth nothing to a build that spreads its ' +
+      'uses around.',
+    grants: ['momentum', 'momentumPer', 'momentumMax', 'momentumKeep'],
   },
   {
     id: 'echo',

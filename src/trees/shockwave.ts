@@ -48,7 +48,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'sw_encirclement',
@@ -68,55 +68,49 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    id: 'fault',
-    theme: 'Fault',
+    id: 'pressure',
+    theme: 'Pressure',
     enabler: {
-      id: 'sw_fault',
-      name: 'Faultline',
+      id: 'sw_pressure',
+      name: 'Pressure',
       description:
-        'Every enemy the wave lands on Bursts, for 45% of the damage within ' +
-        '1.6 tiles.',
-      grants: { explode: { radius: 1.6, multiplier: 0.45 }, manaMultiplier: 1.15 },
+        'Each use on the same enemy as the last builds 8% Momentum against ' +
+        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'sw_rift',
-          name: 'Rift',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
+          id: 'sw_bearing',
+          name: 'Bearing',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'sw_collapse',
-          name: 'Collapse',
-          description: 'The Burst carries +55% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.55, manaMultiplier: 1.08 },
+          id: 'sw_deadweight',
+          name: 'Dead Weight',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'sw_afterfall',
-          name: 'Afterfall',
+          id: 'sw_carrythrough',
+          name: 'Carry-Through',
           description:
-            'An enemy killed by Shockwave Bursts, for 60% of the damage within ' +
-            '2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      COMMON[4],
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'fracture',
@@ -375,10 +369,9 @@ export const SHOCKWAVE_SPEC: TreeSpec = {
   // The Cone is the skill, so opening it needs nothing bought first; a Burst
   // and a Bleed both do, and every switch that only tunes one is listed here.
   needs: {
-    explode: 'sw_fault',
-    explodeRadius: 'sw_fault',
-    explodeMultiplierAdd: 'sw_fault',
-    explodeOnKill: 'sw_fault',
+    momentumPer: 'sw_pressure',
+    momentumMax: 'sw_pressure',
+    momentumKeep: 'sw_pressure',
     ailmentChance: 'sw_fracture',
     ailmentMultiplier: 'sw_fracture',
     ailmentDuration: 'sw_fracture',

@@ -23,6 +23,9 @@ export interface SkillUse {
   grants: Record<string, unknown>; // behaviour switches from the skill tree
   crit: boolean; // whether this whole use crit
   castIndex: number; // uses so far by this user, from zero
+  /** What Momentum this use has BUILT against `primary`, and against nobody
+   *  else — resolved by the sim, because the streak outlives one use. */
+  momentum: number;
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
@@ -107,11 +110,14 @@ export function targetScale(use: SkillUse, target: Entity): number {
 
   const full = g.moreVsFull as { above: number; more: number } | undefined;
   if (full && target.life >= target.stats.maxLife * full.above) m *= 1 + full.more;
+
+  // The body you AIMED at and no other: Momentum is what staying on one thing
+  // is worth, so spilling it onto whatever a Fork found would be the opposite.
+  if (target === use.primary) m *= use.momentum ?? 1;
   return m;
 }
 
-/** Overlaps freely: overlapping is what area damage is for. Returns whoever it
- *  put down, which is what the next hop of a chain Bursts from. */
+/** Overlaps freely, and returns whoever it put down — the next hop of a chain. */
 export function blastAround(
   use: SkillUse,
   at: Entity,
@@ -131,36 +137,17 @@ export function blastAround(
   return killed;
 }
 
-/**
- * The Burst a delivery leaves where it landed, and the chain of deaths that
- * follows it. Every behaviour carrying a Burst comes through here.
- *
- * `dealsHits` is whether the delivery deals HIT damage: a kill Burst is a
- * HITTER's grant and Blight's circle deals none, so a poisoner wearing one gets
- * the Burst it landed and never the one a death sets off.
- */
+/** The chain a DEATH sets off. No tree grants this — it is a unique's whole
+ *  reason to exist — and `dealsHits` keeps it off Blight's circle, which deals
+ *  no hit damage for it to be a share of. */
 export function burstFrom(
   use: SkillUse,
   at: Entity,
-  falloff: number,
   scale: (target: Entity) => number,
   dealsHits: boolean
 ): void {
-  const g = use.grants;
-  const explode = g.explode as { radius: number; multiplier: number } | undefined;
-  if (explode) {
-    blastAround(
-      use,
-      at,
-      use.areaRadius(explode.radius * num(g.explodeRadius, 1)),
-      (explode.multiplier + num(g.explodeMultiplierAdd, 0)) * falloff,
-      scale
-    );
-  }
-
-  // Asked after the Burst, because the Burst is what usually kills it.
   const onKill = dealsHits
-    ? (g.explodeOnKill as { radius: number; multiplier: number } | undefined)
+    ? (use.grants.explodeOnKill as { radius: number; multiplier: number } | undefined)
     : undefined;
   if (!onKill || !at.dead) return;
 
@@ -243,7 +230,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       use.hit(target, falloff * scale(target));
       // A cloud over the thing it hit, for a skill that leaves one.
       if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL);
-      burstFrom(use, target, falloff, scale, true);
+      burstFrom(use, target, scale, true);
       return true;
     };
 
@@ -358,7 +345,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const swing = (target: Entity, falloff: number): void => {
       if (target.dead) return;
       use.hit(target, falloff * scale(target));
-      burstFrom(use, target, falloff, scale, true);
+      burstFrom(use, target, scale, true);
     };
 
     swing(use.primary, 1);
@@ -432,7 +419,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     for (const enemy of use.enemies) {
       if (enemy.dead || !inside(enemy)) continue;
       use.hit(enemy, scale(enemy));
-      burstFrom(use, enemy, 1, scale, true);
+      burstFrom(use, enemy, scale, true);
     }
 
     // Where you stand, then the two RIM corners. Reach and opening are both
@@ -477,7 +464,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
       }
 
-      burstFrom(use, at, 1, (e) => castMultiplier * targetScale(use, e), false);
+      burstFrom(use, at, (e) => castMultiplier * targetScale(use, e), false);
 
       // Second point IS the radius, so the renderer draws what the sim used.
       use.vfx(

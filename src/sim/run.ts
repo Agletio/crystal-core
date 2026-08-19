@@ -464,6 +464,9 @@ export class RunSim {
   /** Seconds until Sundering arms the next Burst, and until Hoarfrost fires. */
   private sunderIn = 0;
   private frostIn = 0;
+  /** Whose body Momentum is built against, and how many uses have gone into it. */
+  private momentumOn = -1;
+  private momentumStacks = 0;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
   private readonly passiveScale: Record<string, number>;
   /** One aura's worth of flat damage on this map, in real damage. */
@@ -2199,6 +2202,7 @@ export class RunSim {
 
     const grants = user.kind === 'hero' ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
+    const momentum = user.kind === 'hero' ? this.stepMomentum(primary) : 1;
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
@@ -2221,6 +2225,7 @@ export class RunSim {
           ? this.state.monsters.filter((m) => !m.dead)
           : [this.state.hero],
       rng: this.rng,
+      momentum,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
@@ -2231,6 +2236,25 @@ export class RunSim {
 
     this.useCrit = null;
     user.cooldown = this.swingCooldown(user);
+  }
+
+  /** MOMENTUM, advanced once per use: what THIS use is worth against the body
+   *  it is aimed at, before the use adds to it. */
+  private stepMomentum(primary: Entity): number {
+    const bag = this.grants.momentum as { per: number; max: number } | undefined;
+    if (!bag) return 1;
+
+    // HALVED on a switch, never zeroed: a room with adds takes the hero off the
+    // body he is working on constantly, and a streak one add wipes never exists.
+    if (primary.id !== this.momentumOn) {
+      this.momentumOn = primary.id;
+      if (this.grants.momentumKeep !== true) this.momentumStacks >>= 1;
+    }
+    const per = bag.per + ((this.grants.momentumPer as number) ?? 0);
+    const ceiling = bag.max + ((this.grants.momentumMax as number) ?? 0);
+    const built = Math.min(ceiling, this.momentumStacks * per);
+    this.momentumStacks++;
+    return 1 + built / 100;
   }
 
   /** Critical chance, plus whatever a running flask is adding to the hero's. */

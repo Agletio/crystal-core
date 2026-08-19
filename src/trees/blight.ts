@@ -52,7 +52,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'bl_plaguebearer',
@@ -68,53 +68,49 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[3], COMMON[4], COMMON[0], COMMON[3]],
   },
   {
-    id: 'rupture',
-    theme: 'Rupture',
+    id: 'fixation',
+    theme: 'Fixation',
     enabler: {
-      id: 'bl_rupture',
-      name: 'Rupture',
+      id: 'bl_fixation',
+      name: 'Fixation',
       description:
-        'Blight Bursts as it lands, for 70% of the damage within 1.5 tiles. A ' +
-        'Burst is a HIT, so Armour blunts it where the Poison it leaves ignores it.',
-      grants: { explode: { radius: 1.5, multiplier: 0.7 }, manaMultiplier: 1.15 },
+        'Each use on the same enemy as the last builds 7% Momentum against ' +
+        'it, up to 55%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 7, max: 55 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'bl_shrapnel',
-          name: 'Shrapnel',
-          description: 'The Burst covers 50% more ground.',
-          grants: { explodeRadius: 1.5, manaMultiplier: 1.08 },
+          id: 'bl_saturation',
+          name: 'Saturation',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'bl_overpressure',
-          name: 'Overpressure',
-          description: 'The Burst carries +30% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.3, manaMultiplier: 1.08 },
+          id: 'bl_deepening',
+          name: 'Deepening',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'bl_sporeburst',
-          name: 'Sporeburst',
-          description: 'The Burst covers 35% more ground and carries +25% of the damage.',
-          grants: { explodeRadius: 1.35, explodeMultiplierAdd: 0.25, manaMultiplier: 1.08 },
+          id: 'bl_takehold',
+          name: 'Taking Hold',
+          description:
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[1],
-      COMMON[0],
-      { text: '+5% larger Burst', grants: { explodeRadius: 1.05 } },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'miasma',
@@ -354,9 +350,10 @@ export const BLIGHT_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
+    momentumPer: 'bl_fixation',
+    momentumMax: 'bl_fixation',
+    momentumKeep: 'bl_fixation',
     contagionRadius: 'bl_contagion',
-    explodeRadius: 'bl_rupture',
-    explodeMultiplierAdd: 'bl_rupture',
     extraFields: 'bl_miasma',
   },
 };

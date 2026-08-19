@@ -132,7 +132,7 @@ const BRANCHES: Branch[] = [
     },
     twigs: [
       {
-        minors: 4,
+        minors: 3,
         notable: {
           id: 'st_flurry',
           name: 'Flurry',
@@ -153,55 +153,49 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[2], COMMON[1], COMMON[2], COMMON[0]],
   },
   {
-    id: 'shockwave',
-    theme: 'Tremor',
+    id: 'rhythm',
+    theme: 'Rhythm',
     enabler: {
-      // The ID is what a save points at and never moves; the NAME did, because
-      // Shockwave is a skill now and one word may name one mechanism.
-      id: 'st_shockwave',
-      name: 'Quake',
+      id: 'st_rhythm',
+      name: 'Rhythm',
       description:
-        'Every enemy the swing lands on Bursts, for 50% of the damage within ' +
-        '1.6 tiles. Strike gains the Area tag.',
-      grants: { explode: { radius: 1.6, multiplier: 0.5 }, addTags: ['area'], manaMultiplier: 1.15 },
+        'Each use on the same enemy as the last builds 9% Momentum against ' +
+        'it, up to 70%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 9, max: 70 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'st_faultline',
-          name: 'Faultline',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
+          id: 'st_cadence',
+          name: 'Cadence',
+          description: 'Momentum builds 5% faster per use.',
+          grants: { momentumPer: 5 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'st_upheaval',
-          name: 'Upheaval',
-          description: 'The Burst carries +50% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.5, manaMultiplier: 1.08 },
+          id: 'st_relentless',
+          name: 'Relentless',
+          description: 'Momentum reaches 45% higher.',
+          grants: { momentumMax: 45 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'st_aftershock',
-          name: 'Aftershock',
-          description: 'An enemy killed by Strike Bursts, for 60% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+          id: 'st_followthrough',
+          name: 'Follow-Through',
+          description:
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'bulwark',
@@ -362,14 +356,13 @@ export const STRIKE_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
+    momentumPer: 'st_rhythm',
+    momentumMax: 'st_rhythm',
+    momentumKeep: 'st_rhythm',
     echoDamage: 'st_sweep',
     ailmentMultiplier: 'st_rend',
     ailmentDuration: 'st_rend',
     ailmentChance: 'st_rend',
     doubleStrike: 'st_onslaught',
-    areaOfEffect: 'st_shockwave',
-    explodeRadius: 'st_shockwave',
-    explodeMultiplierAdd: 'st_shockwave',
-    explodeOnKill: 'st_shockwave',
   },
 };

@@ -1681,7 +1681,7 @@ const viewScale = () =>
   Number(/scale\(([\d.]+)\)/.exec($('skills-web').style.transform ?? '')?.[1] ?? 0);
 const zoomedIn = viewScale();
 assert(zoomedIn > 0, 'the web is aimed by one transform', String(zoomedIn));
-assert(webNodes().length === 109, 'and built whole, every node once', String(webNodes().length));
+assert(webNodes().length === 111, 'and built whole, every node once', String(webNodes().length));
 
 $('skills-fit').click();
 assert(viewScale() < zoomedIn, 'and Fit pulls back to all of it', `${zoomedIn} -> ${viewScale()}`);
@@ -1857,9 +1857,9 @@ assert($('skills').hidden === true, 'and only then closes');
 // that lost a branch still builds, and still draws, just smaller.
 $('open-skills').click();
 for (const [skill, shelf, total, notables] of [
-  ['Strike', 'Abilities', 112, 29],
-  ['Fireball', 'Abilities', 109, 28],
-  ['Creeping Blight', 'Abilities', 116, 30],
+  ['Strike', 'Abilities', 114, 29],
+  ['Fireball', 'Abilities', 111, 28],
+  ['Creeping Blight', 'Abilities', 118, 30],
 ]) {
   const card = all('#skills-cats .catcard').find((c) => c.textContent?.includes(shelf));
   assert(!!card, `${shelf} is a shelf you can open`);

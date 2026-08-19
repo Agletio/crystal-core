@@ -128,7 +128,7 @@ const BRANCHES: Branch[] = [
     },
     twigs: [
       {
-        minors: 4,
+        minors: 3,
         notable: {
           id: 'la_rebound',
           name: 'Rebound',
@@ -150,58 +150,49 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[0], COMMON[2], COMMON[1], COMMON[0]],
   },
   {
-    id: 'shrapnel',
-    theme: 'Blastwork',
+    id: 'mark',
+    theme: 'Mark',
     enabler: {
-      id: 'la_shrapnel',
-      name: 'Shrapnel Head',
+      id: 'la_mark',
+      name: 'Mark',
       description:
-        'Lightning Arrow Bursts where it lands, for 50% of the damage within ' +
-        '1.8 tiles. Lightning Arrow gains the Area tag.',
-      grants: {
-        explode: { radius: 1.8, multiplier: 0.5 },
-        addTags: ['area'],
-        manaMultiplier: 1.15,
-      },
+        'Each use on the same enemy as the last builds 8% Momentum against ' +
+        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'la_concussive',
-          name: 'Concussive Head',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
-        },
-      },
-      {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
-        notable: {
-          id: 'la_charged',
-          name: 'Charged Head',
-          description: 'The Burst carries +40% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.4, manaMultiplier: 1.08 },
+          id: 'la_ranging',
+          name: 'Ranging Shot',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
         minors: 4,
-        forkFrom: { twig: 1, at: 1 },
         notable: {
-          id: 'la_deathrattle',
-          name: 'Death Rattle',
+          id: 'la_deadeye',
+          name: 'Dead Eye',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
+        },
+      },
+      {
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
+        notable: {
+          id: 'la_quarry',
+          name: 'Quarry',
           description:
-            'An enemy killed by Lightning Arrow Bursts, for 60% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[1],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'ionisation',
@@ -321,10 +312,9 @@ export const LIGHTNING_ARROW_SPEC: TreeSpec = {
   // Forks are not in here: the skill looses two of its own, so a node that
   // makes a Fork hit harder does something the moment it is bought.
   needs: {
-    areaOfEffect: 'la_shrapnel',
-    explodeRadius: 'la_shrapnel',
-    explodeMultiplierAdd: 'la_shrapnel',
-    explodeOnKill: 'la_shrapnel',
+    momentumPer: 'la_mark',
+    momentumMax: 'la_mark',
+    momentumKeep: 'la_mark',
     ailmentMultiplier: 'la_takeaim',
     ailmentDuration: 'la_takeaim',
     ailmentChance: 'la_takeaim',

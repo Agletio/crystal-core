@@ -571,38 +571,54 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
+  // MOMENTUM. Damage that builds while you keep hitting ONE body and drops the
+  // moment you switch, so it is worth everything to a build that commits and
+  // nothing to one that sprays. It is what a Burst branch became: coverage used
+  // to be the only thing a branch could sell, and this sells the opposite.
   {
-    id: 'explode',
-    changes: 'burst',
-    what: 'the hit Bursts where it lands',
-    reads: SHARED,
+    id: 'momentum',
+    changes: 'scale',
+    what: 'staying on one enemy builds Momentum against it',
+    reads: [STATS],
     say: (v) => {
-      const p = pair(v, 'radius', 'multiplier');
-      return p && `The hit Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage`;
+      const p = pair(v, 'per', 'max');
+      return (
+        p &&
+        `Each use on the same enemy as the last builds ${p[0]}% Momentum against it, up to ${p[1]}%; using it elsewhere halves what you have built`
+      );
     },
   },
   {
-    id: 'explodeRadius',
-    changes: 'burst',
-    what: 'the Burst covers more ground',
-    reads: SHARED,
-    merge: 'product',
-    say: (v) => {
-      const n = asNumber(v);
-      return n === null ? null : `The Burst covers ${more(n)} more ground`;
-    },
-  },
-  {
-    id: 'explodeMultiplierAdd',
-    changes: 'burst',
-    what: 'the Burst hits harder',
-    reads: SHARED,
+    id: 'momentumPer',
+    changes: 'scale',
+    what: 'Momentum builds faster',
+    reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `The Burst carries +${pct(n)} of the damage`;
+      return n === null ? null : `Momentum builds ${n}% faster per use`;
     },
   },
+  {
+    id: 'momentumMax',
+    changes: 'scale',
+    what: 'Momentum reaches higher',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Momentum reaches ${n}% higher`;
+    },
+  },
+  {
+    id: 'momentumKeep',
+    changes: 'scale',
+    what: 'Momentum carries to the next enemy whole instead of being halved',
+    reads: [STATS],
+    say: (v) =>
+      v === true ? 'Momentum carries to a new enemy whole instead of being halved' : null,
+  },
+
   {
     id: 'explodeOnKill',
     changes: 'burst',

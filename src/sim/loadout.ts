@@ -11,12 +11,14 @@ import {
   CRYSTAL_LEVELS,
   DROP_BANDS,
   EQUIP_SLOTS,
+  PLAYER_SKILLS,
   REFERENCE_ARMOUR_FAMILY,
   RUN_SLOTS,
+  SKILL_SLOTS,
 } from '../data';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
-import { attributePointsFor, equipSkill, makeCharacter } from './character';
+import { attributePointsFor, equipSkill, makeCharacter, slotIsOpen } from './character';
 import { MOVE_WEBS, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
@@ -88,6 +90,18 @@ export function ladderCharacter(
     progress.allocated.push(node.id);
     if (node.choices?.length) (progress.choices ??= {})[node.id] = rng.pick(node.choices)!.id;
   }
+  // Every passive slot the LEVEL opened, filled at random — the argument the
+  // attributes above make. Since the Burst moved into a slot, an empty one is a
+  // build with no answer to a crowd at all.
+  const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive');
+  for (const slot of SKILL_SLOTS) {
+    if (!slot.accepts.includes('passive') || !slotIsOpen(character, slot.id)) continue;
+    const held = new Set(Object.values(character.equipped ?? {}));
+    const spare = passives.filter((sk) => !held.has(sk.id));
+    if (spare.length === 0) break;
+    equipSkill(character, rng.pick(spare)!.id, slot.id);
+  }
+
   if (shape) walkMover(character, shape);
   return character;
 }

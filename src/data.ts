@@ -1483,9 +1483,9 @@ export const FORGED: ForgedDef[] = [
       name: 'Facet-Cut',
       appliesTo: ['gear'],
       tags: ['forged'],
-      grants: { explode: { radius: 1.4, multiplier: 0.3 }, manaMultiplier: 1.15 },
+      grants: { burstOnHit: { every: 5, perLevel: 3.5 } },
       tiers: [
-        { ilvl: 1, weight: 0, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [10, 10] }] },
+        { ilvl: 1, weight: 0, stats: [{ stat: 'damage', form: 'inc', range: [10, 10] }] },
       ],
     },
   },
@@ -3059,7 +3059,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'life', form: 'inc', range: [-45, -35] },
       { stat: 'damage', form: 'inc', range: [40, 60] },
     ],
-    grants: { explode: { radius: 1.6, multiplier: 0.5 }, explodeRadius: 1.5, explodeMultiplierAdd: 0.4 },
+    grants: { burstOnHit: { every: 2.5, perLevel: 7 } },
     gate: { zone: 'seam', minPower: 4 },
   },
 ];

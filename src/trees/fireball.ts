@@ -59,7 +59,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'fb_wildfire',
@@ -78,54 +78,49 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    id: 'detonation',
-    theme: 'Blastwork',
+    id: 'bellows',
+    theme: 'Bellows',
     enabler: {
-      id: 'fb_detonation',
-      name: 'Detonation',
+      id: 'fb_bellows',
+      name: 'Bellows',
       description:
-        'Fireball Bursts where it lands, for 55% of the damage within 1.8 ' +
-        'tiles. Fireball gains the Area tag.',
-      grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'], manaMultiplier: 1.15 },
+        'Each use on the same enemy as the last builds 8% Momentum against ' +
+        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'fb_concussive',
-          name: 'Concussive Blast',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
+          id: 'fb_draught',
+          name: 'Draught',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'fb_fuelair',
-          name: 'Fuel-Air Charge',
-          description: 'The Burst carries +45% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.45, manaMultiplier: 1.08 },
+          id: 'fb_furnace',
+          name: 'Furnace',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'fb_chainreaction',
-          name: 'Cascade',
+          id: 'fb_forgefire',
+          name: 'Forge-Fire',
           description:
-            'An enemy killed by Fireball Bursts, for 60% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'volley',
@@ -343,10 +338,9 @@ export const FIREBALL_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    areaOfEffect: 'fb_detonation',
-    explodeRadius: 'fb_detonation',
-    explodeMultiplierAdd: 'fb_detonation',
-    explodeOnKill: 'fb_detonation',
+    momentumPer: 'fb_bellows',
+    momentumMax: 'fb_bellows',
+    momentumKeep: 'fb_bellows',
     ailmentMultiplier: 'fb_kindling',
     ailmentDuration: 'fb_kindling',
     ailmentChance: 'fb_kindling',
