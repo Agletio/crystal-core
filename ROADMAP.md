@@ -7,10 +7,19 @@ in order to do one, it is in the wrong file.
 ## Where this stands
 
 **NOTHING IS WAITING BUT A QUESTION.** Everything the user asked for in the
-trials-web round has landed: the web and its six arms, all three events, the
-skill-tree tints, the arrow, the ailment rework, settings and the book. Phase 1
-below (a quest log) stays parked by his word until the stripped opening has been
-played, and the balance pass is held.
+trials-web round has landed — the web and its six arms, all three events, the
+skill-tree tints, the arrow, the ailment rework, settings and the book — and so
+has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
+Ward and Overcharge. Phase 1 below (a quest log) stays parked by his word until
+the stripped opening has been played, and the balance pass is held.
+
+**One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
+and boss controls"* — the flasks are `potion_life` and `potion_mana` in
+`BINDINGS` and rebind on the keys tab, but **a boss is not driven by the player
+any more.** The turn was deleted and the fight rebuilt around what a build
+carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
+for a key to hold. Ask before adding one; it would be a mechanism, not a
+binding.
 
 **So this file holds a parked phase, a held pass, the open questions and a
 backlog nobody asked for. Say so and list them rather than inventing work.**

@@ -357,8 +357,6 @@ initKeys(game, {
   ),
   // One entry per potion, off the same table the flasks are drawn from.
   ...Object.fromEntries(POTIONS.map((p) => [p.binding, () => drinkFlask(p.id)])),
-  // And one per FACE. Turning does nothing outside a boss fight, so pressing
-  // one in a descent is a press that quietly goes nowhere rather than an error.
 });
 
 dressRail(game);
