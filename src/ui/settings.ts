@@ -66,6 +66,10 @@ function renderKeys(): void {
 function capture(event: KeyboardEvent): void {
   if (!listening) return;
   event.preventDefault();
+  // And it goes NO FURTHER. Without this the press also fires whatever it is
+  // currently bound to, so rebinding onto `c` opened the character sheet
+  // under the settings window on its way past.
+  event.stopImmediatePropagation();
   if (event.key === 'Escape') {
     listening = null;
     render();
