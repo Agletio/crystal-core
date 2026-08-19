@@ -43,6 +43,7 @@ import {
   ADDED_DAMAGE_STATS,
   ADDED_DAMAGE_TYPES,
   DANGER_STATS,
+  DROP_GROUPS,
   TRIALS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
@@ -2742,13 +2743,39 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
 
   // Every line on this web is DANGER, which is the whole bargain: reward is
   // derived from danger, so a node that is not weighed is a node paying nothing.
+  // A FINDING stat is the one exception, and it is the same exception a crystal
+  // makes — it carries no danger there either, and what it costs is the slot.
+  const finding = new Set(DROP_GROUPS.map((g) => findStat(g.id)));
   const unweighed = nodes.flatMap((n) =>
-    (n.stats ?? []).filter((s) => !DANGER_STATS[s.stat]).map((s) => `${n.id}: ${s.stat}`)
+    (n.stats ?? [])
+      .filter((s) => !DANGER_STATS[s.stat] && !finding.has(s.stat))
+      .map((s) => `${n.id}: ${s.stat}`)
   );
   check(
     unweighed.length === 0,
-    `every stat on all ${nodes.length} trial nodes is one \`crystalRewards\` weighs`,
+    `every stat on all ${nodes.length} trial nodes is one \`crystalRewards\` weighs, or a finding line`,
     unweighed.join(', ')
+  );
+
+  // The one node that asks something. An option nothing reads is the whole
+  // reason `NodeChoice.stats` exists rather than only `grants`.
+  const asks = nodes.filter((n) => (n.choices ?? []).length > 0);
+  check(asks.length === 1, 'exactly one trial node asks a question', String(asks.length));
+  const asked = asks[0];
+  const aimed = (pick: string): number => {
+    const who: Character = {
+      ...ladderCharacter(4, new Rng(7)),
+      trials: TRIALS.map((t) => t.id),
+      trialAllocated: [asked.id],
+      trialChoices: { [asked.id]: pick },
+    };
+    return dropBias(runSet(bare, trialMod(who)).mods)[pick] ?? 1;
+  };
+  const bent = DROP_GROUPS.map((g) => `${g.id} ${aimed(g.id).toFixed(2)}x`);
+  check(
+    DROP_GROUPS.every((g) => aimed(g.id) > 1.01),
+    `and every one of its ${DROP_GROUPS.length} options bends what drops`,
+    bent.join(', ')
   );
 
   // Walked in, and out again, at the full budget the trials can ever pay.

@@ -1,10 +1,10 @@
 /**
  * The Trials screen: the ladder on the left, the web on the right.
  *
- * Nine nodes fit on a screen, so like the trade web this one is drawn to FIT
+ * A dozen nodes fit on a screen, so like the trade web this one is drawn to FIT
  * and has no pan, no zoom and no Fit button. Everything below is in WEB units
- * and the svg carries a viewBox framing them; nothing measures the element,
- * because the modal's own height is decided after this draws.
+ * and the svg carries a viewBox framing them; nothing measures the element
+ * while DRAWING, because the modal's height is decided after this runs.
  */
 import { TRIALS } from '../data';
 import {
@@ -184,6 +184,13 @@ function drawNode(
   });
 
   const act = () => {
+    // A node that asks something never allocates on the click itself: the
+    // option IS the allocation, so there is no state where one is taken and
+    // the other is not.
+    if (node.choices?.length) {
+      if (owned || open) openChoice(node, owned);
+      return;
+    }
     if (owned) deallocateTrial(game.character, node.id);
     else if (!allocateTrial(game.character, node.id)) return;
     render();
@@ -199,10 +206,63 @@ function drawNode(
   svg.append(group);
 }
 
+/**
+ * The one node that ASKS something. A choice is free to change once taken —
+ * two mutually exclusive nodes would tax finding out what a thing does.
+ *
+ * Placed by MEASURING the stud, which the trade web's header forbids at draw
+ * time for a good reason: the modal decides its own height after the web draws.
+ * By the time a node is clicked that has happened, so a box read here is a box
+ * that has stopped moving.
+ */
+function openChoice(node: SkillNodeDef, owned: boolean): void {
+  const host = $('trials-choice');
+  const wrap = $('trials-webwrap');
+  host.replaceChildren();
+  host.hidden = false;
+
+  const stud = document.getElementById(trialNodeId(node.id))?.getBoundingClientRect();
+  const box = wrap.getBoundingClientRect();
+  host.style.left = `${Math.round((stud?.right ?? box.left) - box.left + 8)}px`;
+  host.style.top = `${Math.round((stud?.top ?? box.top) - box.top - 8)}px`;
+
+  const pick = (id: string) => {
+    if (!owned && !allocateTrial(game.character, node.id)) return;
+    game.character.trialChoices = { ...(game.character.trialChoices ?? {}), [node.id]: id };
+    host.hidden = true;
+    render();
+  };
+
+  for (const choice of node.choices ?? []) {
+    const taken = game.character.trialChoices?.[node.id] === choice.id;
+    const row = el('button', `webmenu__row${taken ? ' webmenu__row--on' : ''}`);
+    row.append(el('span', 'webmenu__name', choice.name));
+    row.append(el('span', 'webmenu__desc', choice.description));
+    (row as HTMLButtonElement).onclick = () => pick(choice.id);
+    host.append(row);
+  }
+
+  if (owned && canDeallocateTrial(node.id, game.character.trialAllocated ?? [])) {
+    const drop = el('button', 'webmenu__row webmenu__row--drop');
+    drop.append(el('span', 'webmenu__name', 'Refund this node'));
+    (drop as HTMLButtonElement).onclick = () => {
+      deallocateTrial(game.character, node.id);
+      host.hidden = true;
+      render();
+    };
+    host.append(drop);
+  }
+}
+
+const closeChoice = (): void => {
+  $('trials-choice').hidden = true;
+};
+
 // ---------------------------------------------------------------------------
 
 function render(): void {
   hideTooltip();
+  closeChoice();
 
   const { character } = game;
   const earned = (character.trials ?? []).length;

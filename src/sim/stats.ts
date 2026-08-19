@@ -352,9 +352,11 @@ export function treeMod(character: Character): RolledMod | null {
  *  `statMods`: every line on it is monster-facing, so it goes where a crystal's
  *  modifiers go and is weighed for danger by the same `crystalRewards`. */
 export function trialMod(character: Character): RolledMod | null {
-  const stats = (character.trialAllocated ?? []).flatMap(
-    (id) => trialNodeById(id)?.stats ?? []
-  );
+  const stats = (character.trialAllocated ?? []).flatMap((id) => {
+    const node = trialNodeById(id);
+    const taken = node?.choices?.find((c) => c.id === character.trialChoices?.[id]);
+    return [...(node?.stats ?? []), ...(taken?.stats ?? [])];
+  });
   if (stats.length === 0) return null;
   return {
     entryId: 'trials',

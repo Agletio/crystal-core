@@ -4,7 +4,7 @@
  * row. Taken at the CLEAR, never at the door, exactly as a boss is.
  */
 import { TRIALS, TRIAL_BY_ID } from '../data';
-import { replayTrialNodes, trialPointsFor } from '../trials';
+import { replayTrialNodes, trialNodeById, trialPointsFor } from '../trials';
 import type { TrialDef } from '../data';
 import type { QuestFacts } from './crystals';
 import type { Character } from '../sim/character';
@@ -58,5 +58,15 @@ export function healTrials(character: Character): number {
   );
   const kept = replayTrialNodes(wanted, trialPointsFor(character.trials));
   character.trialAllocated = kept;
+
+  // A choice on a node nobody walked, or an option that no longer exists, is a
+  // stat line acting on a run off a node the player cannot see.
+  const choices = character.trialChoices ?? {};
+  for (const [nodeId, pick] of Object.entries(choices)) {
+    const node = kept.includes(nodeId) ? trialNodeById(nodeId) : undefined;
+    if (!node?.choices?.some((c) => c.id === pick)) delete choices[nodeId];
+  }
+  character.trialChoices = choices;
+
   return wanted.length - kept.length;
 }

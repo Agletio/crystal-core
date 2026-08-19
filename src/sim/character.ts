@@ -49,6 +49,8 @@ export interface Character {
   trials: string[];
   /** Nodes walked on the trials web. */
   trialAllocated: string[];
+  /** Trials node id -> the option taken on it, for nodes that offer one. */
+  trialChoices?: Record<string, string>;
 }
 
 export function makeCharacter(
@@ -87,6 +89,7 @@ export function allocateTrial(character: Character, nodeId: string): boolean {
 export function deallocateTrial(character: Character, nodeId: string): boolean {
   if (!canDeallocateTrial(nodeId, character.trialAllocated ?? [])) return false;
   character.trialAllocated = character.trialAllocated.filter((id) => id !== nodeId);
+  delete character.trialChoices?.[nodeId];
   return true;
 }
 

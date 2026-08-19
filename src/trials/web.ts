@@ -11,6 +11,7 @@
  * multiplied `danger` without making anything harder would buy item level for
  * nothing: `POWER` reads danger, and `bandFor(power).ilvl` is the drop tier.
  */
+import { DROP_GROUPS, findStat } from '../data';
 import { stat } from '../trees/node';
 import type { TrialSpec } from './spec';
 
@@ -63,9 +64,18 @@ export const TRIAL_WEB: TrialSpec = {
         id: 'tr_the_hoard',
         name: 'What Was Left',
         description:
-          '+30% of packs guard a Hoard. They were carrying it out and did not ' +
-          'get far. Whatever is standing over it now was not with them.',
+          '+30% of packs guard a Hoard, and you say what they were carrying. ' +
+          'They did not get far. What stands over it now was not with them.',
         stats: [stat('hoardChance', 'inc', 30)],
+        // The one node on this web that ASKS something, and the only pure
+        // upside on it: what it costs is the arm, exactly as a finding
+        // modifier on a crystal costs the slot a danger roll wanted.
+        choices: DROP_GROUPS.map((g) => ({
+          id: g.id,
+          name: g.id[0].toUpperCase() + g.id.slice(1),
+          description: `+60% increased ${g.id} found, everywhere.`,
+          stats: [stat(findStat(g.id), 'inc', 60)],
+        })),
       },
     },
     {

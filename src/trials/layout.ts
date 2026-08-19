@@ -59,6 +59,7 @@ export function buildTrials(spec: TrialSpec): BuiltTrials {
           ? {
               ...(arm.notable.stats ? { stats: arm.notable.stats } : {}),
               ...(arm.notable.grants ? { grants: arm.notable.grants } : {}),
+              ...(arm.notable.choices ? { choices: arm.notable.choices } : {}),
             }
           : { stats: minor!.stats ?? [] }),
       });

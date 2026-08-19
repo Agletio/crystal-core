@@ -439,8 +439,7 @@ export class RunSim {
   private reinforce: BossDef['reinforce'] | null = null;
   private reinforceTimer = 0;
   private nextHoard = 0;
-  /** Filled by `spawn`, which runs BEFORE `this.state` exists. */
-  private putDown: Hoard[] = [];
+  private putDown: Hoard[] = []; // `spawn` runs BEFORE `this.state` exists
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
