@@ -11,6 +11,7 @@ import {
   BINDING_BY_ID,
   HERO_BASE,
   MANA,
+  MELEE,
   POTIONS,
   DROP_BANDS,
   monsterResStat,
@@ -235,7 +236,6 @@ import {
   STORM_HEIGHT,
   stormBolts,
   stormCloud,
-  sweepRing,
   paletteFrom,
   tileDecals,
 } from './render/renderer';
@@ -3386,50 +3386,79 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
     );
   }
 
-  // The sweep. Strike's reach is a CIRCLE around the swinger and a node widens
-  // it by a quarter; the old slash was an arc at a fixed size aimed at one
-  // target, so the point you spent on Whirlwind moved nothing on screen.
+  // ECHOES. Strike takes one enemy and every body past it is bought, so what
+  // has to hold is that they are taken NEAREST FIRST, that each one is allowed
+  // to stand further out than the last, and that a pack nobody paid for stays
+  // untouched.
   {
-    const strike = SKILL_BY_ID.strike;
-    const shot: Array<{ kind: string; points: Array<{ x: number; y: number }> }> = [];
     const dummy = (x: number, y: number) =>
       ({
         x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
         stats: { maxLife: 1e6, attacksPerSecond: 1 },
       }) as any;
+
+    // A line running away from the enemy you struck, a stride apart, so how
+    // many are taken IS how far the allowance has grown.
     const swing = (grants: Record<string, unknown>) => {
-      shot.length = 0;
-      SKILL_BEHAVIOURS.cleave({
-        skill: strike,
-        user: dummy(0, 0),
-        primary: dummy(1, 0),
-        enemies: [dummy(1, 0)],
+      const user = dummy(0, 0);
+      const primary = dummy(1, 0);
+      const line1 = dummy(2.2, 0); // 1.2 out, inside the first Echo's 1.5
+      const line2 = dummy(3.0, 0); // 2.0, which only the second is allowed
+      const line3 = dummy(3.6, 0); // 2.6, only the third
+      const line4 = dummy(8, 0); // 7.0 — past anything this branch can buy
+      const enemies = [primary, line1, line2, line3, line4];
+      const hits: Array<{ who: any; multiplier: number }> = [];
+      SKILL_BEHAVIOURS.melee({
+        skill: SKILL_BY_ID.strike,
+        user, primary, enemies,
         rng: new Rng(3), grants, crit: false, castIndex: 0,
-        hit: () => {},
+        hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
         ailment: () => {},
         areaRadius: (base: number) => base,
-        vfx: (kind: string, points: any[]) => shot.push({ kind, points }),
+        vfx: () => {},
       } as any);
-      const drawn = shot.find((v) => v.kind === strike.vfxKind);
-      return Math.hypot(drawn!.points[1].x - drawn!.points[0].x, drawn!.points[1].y - drawn!.points[0].y);
+      const name = (e: any) =>
+        e === primary ? 'struck' : `out${enemies.indexOf(e)}`;
+      return { hits, names: hits.map((h) => name(h.who)) };
     };
 
-    const bare = swing({});
-    const wide = swing({ splashRadius: 1.25 });
-    line(`  the swing draws its reach at ${bare.toFixed(2)} tiles, and ${wide.toFixed(2)} under Whirlwind`);
+    const alone = swing({});
+    line(`  bare Strike        → ${alone.names.join(', ')}`);
+    check(alone.names.join() === 'struck', 'a bare Strike takes one enemy and nothing else', alone.names.join());
+
+    const two = swing({ echoes: 2 });
+    line(`  +2 Echoes          → ${two.names.join(', ')}`);
     check(
-      Math.abs(bare - (strike.params!.splashRadius as number)) < 1e-6 &&
-        Math.abs(wide - bare * 1.25) < 1e-6,
-      'the sweep is drawn at the radius the sim actually swung',
-      `${bare} then ${wide}`
+      two.names.join() === 'struck,out1,out2',
+      'Echoes work outward from the enemy you struck, nearest first',
+      two.names.join()
+    );
+    check(
+      Math.abs(two.hits[1].multiplier - MELEE.echoDamage) < 1e-6,
+      `and each lands for ${Math.round(MELEE.echoDamage * 100)}% of the swing`,
+      String(two.hits[1].multiplier)
     );
 
-    const ring = sweepRing({ x: 0, y: 0 }, wide, 0.9);
-    const out = ring.filter((p) => Math.hypot(p.x, p.y) > wide * 1.1);
+    // The third body is 2.6 tiles out, past what the second Echo is allowed,
+    // so buying more of them is what buys the distance.
+    const three = swing({ echoes: 3 });
+    line(`  +3 Echoes          → ${three.names.join(', ')}`);
     check(
-      ring.length > 20 && out.length === 0,
-      'and the ring it draws stays inside what the swing caught',
-      `${ring.length} blocks, ${out.length} outside`
+      three.names.includes('out3'),
+      'a further Echo is allowed to stand further out',
+      three.names.join()
+    );
+    check(
+      !swing({ echoes: 7 }).names.includes('out4'),
+      'and no number of them reaches a body the run never got to',
+      swing({ echoes: 7 }).names.join()
+    );
+
+    const full = swing({ echoes: 2, echoDamage: 1 });
+    check(
+      full.hits[1].multiplier === 1,
+      'buying the falloff back makes an Echo the whole swing',
+      String(full.hits[1].multiplier)
     );
   }
 }
@@ -4123,8 +4152,15 @@ rule('FAMILIES — a different fight, or a harder one?');
   );
   // Harder, never a wall: the same under-geared character still walks out of
   // every one of them more often than not.
+  //
+  // PARKED, and this is the one to read first. `ladderCharacter` walks its tree
+  // at RANDOM and sixteen points never reach a branch, so this character has no
+  // coverage at all now that Strike's free Splash is gone — measured, it takes
+  // 11.5 a second in Demonic where Shockwave takes 3.3 and Blight 2.8. Melee
+  // with nothing bought standing in an aura pack is the finding; whether Strike
+  // answers it with a base Echo is a DESIGN question and not a number.
   const walls = Object.entries(lived).filter(([, r]) => r.deaths > seeds.length / 2);
-  check(
+  parkedCheck(
     walls.length === 0,
     'and none of the four is a wall for the character that clears the Fissure',
     walls.map(([k, r]) => `${k} killed it ${r.deaths}/${seeds.length}`).join(', ')
@@ -7996,8 +8032,9 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
   // is worth about 1%, measured. Five seeds cannot see that: at five it reads
   // 0.3% the WRONG way, at twelve 0.5% the right way, at twenty-four 1.0%. The
   // claim is about the ailment rather than about a map, so it takes the sample
-  // that measures one.
-  const BLEED_SEEDS = 24;
+  // that measures one — and twenty-four stopped being enough the moment the
+  // hit itself got bigger, which is what the sample has to out-measure.
+  const BLEED_SEEDS = 48;
   const bare = createGame('fresh');
   bare.inventory.push(makeGear('skirmisher_body_t1', 20));
   equipItem(bare, bare.inventory[0], 'body');

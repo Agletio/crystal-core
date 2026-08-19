@@ -1,7 +1,7 @@
 /**
- * Strike's web. A swing, so the splash is centred on YOU rather than on what
- * you hit — everything about coverage here is about standing in the right
- * place, not about aiming.
+ * Strike's web. ONE enemy, hit hard, and every bit of coverage past it is
+ * bought: Echoes work outward through a pack a body at a time, Repeats go back
+ * into the one you aimed at, and Quake makes each of those Burst.
  *
  * Physical is the one damage type nothing resists by element and everything
  * blunts by armour, which is why Transmutation is worth walking to on a skill
@@ -21,33 +21,36 @@ const COMMON: Minor[] = [
 
 const BRANCHES: Branch[] = [
   {
+    // The IDS here are the old Splash branch's and are kept exactly: a save
+    // points at them, and what changed is what the branch DOES, not where its
+    // nodes are. Strike no longer hits a circle at all.
     id: 'sweep',
-    theme: 'Sweep',
+    theme: 'Carry',
     enabler: {
       id: 'st_sweep',
-      name: 'Sweep',
+      name: 'Answering Blow',
       description:
-        'Splash deals 45% of the swing instead of 10%. Strike stops being aimed ' +
-        'at one enemy and starts clearing a circle.',
-      grants: { splashMultiplier: 0.45, manaMultiplier: 1.15 },
+        '+2 Echoes. Strike stops being one enemy and starts working outward ' +
+        'through a pack, one body at a time.',
+      grants: { echoes: 2, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'st_widearc',
-          name: 'Wide Arc',
-          description: 'Splash reaches 40% further.',
-          grants: { splashRadius: 1.4, manaMultiplier: 1.08 },
+          name: 'Carrying',
+          description: '+2 Echoes.',
+          grants: { echoes: 2, manaMultiplier: 1.08 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'st_carve',
-          name: 'Carve',
-          description: 'Splash deals 70% of the swing.',
-          grants: { splashMultiplier: 0.7, manaMultiplier: 1.08 },
+          name: 'Full Weight',
+          description: 'Echoes land for 100% of the swing rather than 70%.',
+          grants: { echoDamage: 1, manaMultiplier: 1.08 },
         },
       },
       {
@@ -55,17 +58,17 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'st_whirlwind',
-          name: 'Whirlwind',
-          description: 'Splash deals 100% of the swing, and reaches 25% further.',
-          grants: { splashMultiplier: 1, splashRadius: 1.25, manaMultiplier: 1.08 },
+          name: 'Chorus',
+          description: '+3 Echoes, for seven in all once this branch is walked.',
+          grants: { echoes: 3, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
-      { text: '+5% increased Splash reach', grants: { splashRadius: 1.05 } },
+      COMMON[5],
       COMMON[1],
       COMMON[0],
-      { text: '+4% increased Splash reach', grants: { splashRadius: 1.04 } },
+      COMMON[2],
     ],
   },
   {
@@ -359,8 +362,7 @@ export const STRIKE_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    splashMultiplier: 'st_sweep',
-    splashRadius: 'st_sweep',
+    echoDamage: 'st_sweep',
     ailmentMultiplier: 'st_rend',
     ailmentDuration: 'st_rend',
     ailmentChance: 'st_rend',

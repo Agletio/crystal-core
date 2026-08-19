@@ -218,7 +218,7 @@ const BRANCHES: Branch[] = [
   },
   {
     id: 'echo',
-    theme: 'Echo',
+    theme: 'Rumble',
     enabler: {
       id: 'sw_reverberation',
       name: 'Reverberation',

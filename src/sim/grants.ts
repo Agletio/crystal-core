@@ -62,8 +62,8 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
   return [o[a] as number, o[b] as number];
 };
 
-const SHARED = ['projectile', 'cleave', 'ailment_burst', 'cone'];
-const HITTERS = ['projectile', 'cleave', 'cone'];
+const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone'];
+const HITTERS = ['projectile', 'melee', 'cone'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
  *  landing from a step that never lands anywhere. */
 const MOVERS = ['step', 'leap'];
@@ -576,32 +576,32 @@ export const GRANTS: GrantDef[] = [
   },
 
   {
-    id: 'splashMultiplier',
+    id: 'echoes',
     changes: 'targets',
-    what: 'what the Splash deals',
-    reads: ['cleave'],
-    merge: 'max',
+    what: 'the swing Echoes onto enemies out from the one you struck',
+    reads: ['melee'],
+    merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Splash deals ${pct(n)} of the swing`;
+      return n === null ? null : `+${n} Echo${n === 1 ? '' : 'es'}`;
     },
   },
   {
-    id: 'splashRadius',
+    id: 'echoDamage',
     changes: 'targets',
-    what: 'how far the Splash reaches',
-    reads: ['cleave'],
-    merge: 'product',
+    what: 'an Echo lands for more of the swing',
+    reads: ['melee'],
+    merge: 'max',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Splash reaches ${more(n)} further`;
+      return n === null ? null : `Echoes land for ${pct(n)} of the swing`;
     },
   },
   {
     id: 'doubleStrike',
     changes: 'targets',
     what: 'more Repeats at the enemy you aimed at',
-    reads: ['cleave'],
+    reads: ['melee'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);

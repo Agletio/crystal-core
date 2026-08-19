@@ -47,6 +47,7 @@ to look:
 | Aether Ward | a share of every hit is paid out of mana first — the mechanic was right, the words were not |
 | Overcharge | ADDED damage equal to the mana spent, and nothing at all if the cost went unpaid |
 | Shockwave | the sixth main skill and the second melee one: the `cone` behaviour, the Cone keyword, `src/trees/shockwave.ts` |
+| Strike, reworked | Splash is GONE — `cleave` is now `melee`, one enemy hit hard, and Echoes are bought |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would
@@ -65,7 +66,7 @@ thing at a time"* — so what comes next is whatever playing it turns up.
   with plate and with neither it does not — but nothing about beating it opens
   anything. Item tier is bought by run POWER alone (`DROP_BANDS[power].ilvl`
   against `BASE_TIER_ILVL = [1, 22, 46]`), families are held to the SAME threat
-  by the demo on purpose, and `BOSSES` has one entry. The open question is #10.
+  by the demo on purpose, and `BOSSES` has one entry. The open question is #11.
   **Beating it now pays a TRIAL POINT**, which is a different answer to the same
   complaint and does not settle the tier ladder.
 - **`npm run shots` can go red on `desktop: the first descent never met the
@@ -157,26 +158,38 @@ change rather than as drift: six generated bodies replaced eleven and one
 thrower per family replaced a quarter of all packs shooting, which took the
 blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
 
-### It owes two parked checks
+### It owes four parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — two today.**
+count and this list has to agree with it — four today.**
 
-1. **"the characters checked actually cover every shape it polices"** — the
+1. **"none of the four is a wall for the character that clears the Fissure"** —
+   **read this one first.** Demonic and the Seam each kill it 7 times in 12,
+   where before Strike lost its free Splash they killed it none. The cause is
+   measured and is not a number: `ladderCharacter` walks its tree at RANDOM and
+   sixteen points never reach a branch, so that character now has no coverage
+   at all — it takes **11.5 damage a second in Demonic where Shockwave takes
+   3.3, Blight 2.8 and Fireball 7.3.** Melee with nothing bought, standing in an
+   aura pack, is the finding. **Whether Strike answers it with a base Echo is a
+   DESIGN question and open — see Open questions.**
+2. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
-2. **"the sim asks for exactly what the sheet promised"** — `fireball@30`
+3. **"the sim asks for exactly what the sheet promised"** — `fireball@30`
    promises 355.89 per hit where the sim asks 480.45, which is exactly the
    `ailmentMultiplier: 1.35` the tree grants: the sheet applies it only for
    `ailment_burst` and the sim also applies it on the `critAilment` path.
    Widening the sheet's condition broke a SECOND promise, so what is wanted is
    the per-hit and per-crit numbers being told apart. Pre-existing.
+4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
+   It passed while Strike was at 72 and does not at 80, which is the whole
+   reason it is parked rather than tuned.
 
-Two more `parkedCheck` sites exist and currently PASS — every band paying more
-than the one below, and the timed quest — so they print a tick and count for
-nothing. They stay parked because either can go red on a balance number alone.
-The boss grid came out of the list entirely: the turn was deleted, the fight was
-rebuilt around what a build carries, and the check is a real `check` again.
+One more `parkedCheck` site exists and currently PASSES — every band paying more
+than the one below — so it prints a tick and counts for nothing. The boss grid
+is a real `check` and stays one: **Strike's `baseDamage` is calibrated against
+it**, at 80, which is the most the gate allows (95 let thin tier 1 clear the
+boss 5 times in 8; 72 left full tier 1 plate at 4/8 against a floor of 6).
 
 ### It also owes the two newest skills and the off hand a look
 
@@ -433,7 +446,16 @@ be picked up — they are decisions the user has not made. Ask before acting.
    off — a branching `TRIALS` table is a different table from a linear one.
    Ask before authoring the second room.
 
-2. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
+2. **Does Strike ship with one Echo, or none?** The user's words were *"it
+   should just be a single target hit that hits pretty hard with ability to hit
+   extra targets"*, and it was built exactly that way: zero Echoes bare, the
+   whole branch bought. The measured cost is parked check 1 — an untreed Strike
+   character is now the ONLY build that dies in Demonic, at 11.5 damage taken a
+   second against Shockwave's 3.3. One base Echo at 70% would restore a melee
+   floor without giving anything back that reads as Area. **Not taken on his
+   behalf: it is his line about what the skill IS.**
+
+3. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
    seeds it sat 0.7% BELOW four Demonic crystals on damage taken per second;
    after the Normal pool became six generated bodies it is **-21.1%**. The cause
    is structural: the Seam takes exactly two crystals of each world, so only half
@@ -444,38 +466,38 @@ be picked up — they are decisions the user has not made. Ask before acting.
    several percent whenever anything in the sim changes, so the demo PRINTS the
    margin rather than asserting an ordering.
 
-3. **Does anyone live in the Seam?** Four characters, three worlds and the
+4. **Does anyone live in the Seam?** Four characters, three worlds and the
    Fissure — the room that is supposed to be the worst in the game has nobody in
    it. `RunState.folk` is a list partly for this. Leans on question 2.
 
-4. **Nothing but the Fissure hands out an element.** Every monster brings its
+5. **Nothing but the Fissure hands out an element.** Every monster brings its
    own, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack is as
    likely to throw frost as a Cavern one. Biasing the table by monster FAMILY
    would make a world's fights feel like that world's: one field on
    `MonsterFamilyDef` plus a weight lookup. Written down because the table it
    needs already exists.
 
-5. **The Cavern and the Fissure have no currency of their own.**
+6. **The Cavern and the Fissure have no currency of their own.**
    `sigil_of_upheaval` is gated to Demonic and `sigil_of_finality` to the Seam;
    the other two are gated to nothing. Every world now has uniques of its own —
    the Fissure two — so this may already be paid. **Provisional, and mine:** left
    as it is rather than inventing a gate. Ask before gating an EXISTING currency
    to the Cavern; it would make a staple zone-locked.
 
-6. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
+7. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
    this for now and get the base mechanics feeling good."* The intent is ONE
    unique interaction per trade, not a second system. Parked proposals: the
    Alchemist's flask extends whichever face is live when it fires, since potions
    are already that trade's engine; the Aethermancer refunds mana on a turn, so
    weaving is how they stay full.
 
-7. **What does a reworked TRADE web look like?** The user's word during the
+8. **What does a reworked TRADE web look like?** The user's word during the
    polish round: *"trades needs a rework"*, beyond the node theme, with no
    further spec. The retheme itself landed on all three webs, so what is left is
    the trade web's SHAPE or its content, and only the user can say which. **The
    skills layout is explicitly fine.**
 
-8. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
+9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
    hanging into a hole, bridges — was built, judged and deleted at the user's
    instruction (`83b8488`). How to draw one: the wall tile placed ONE ROW LOWER
    than it is keyed (the same picture that reads as a wall standing up under
@@ -484,7 +506,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    at its own rim. The code is at `56d599a`. Never asked for twice; here so
    nobody rediscovers the geometry.
 
-9. **How big does the bundle get before it matters?** `generated-art.ts` is
+10. **How big does the bundle get before it matters?** `generated-art.ts` is
    0.48 MB for TEN bodies (33–52 KB each at grid 48, 120 KB for the Gaunt at
    96); `docs/app.js` is 1.62 MB, 0.43 gzipped. Ten trade looks are about 0.5 MB
    and twelve more monster bodies another 0.5 — **not the ~13 MB this file
@@ -493,7 +515,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    assets" is under pressure and there is no decision to take; what is wanted is
    a number the user cares about (repo size, parse time on a cold load).
 
-10. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
+11. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
     fissure get decent t1 beat this boss and then you can progress to the
     prismatic area where you can get t2 items fight a boss progress to demonic
     t3 etc."* — and his own caveat, *"I know the crystal system will probably

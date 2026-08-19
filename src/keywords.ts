@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, POTIONS, PROJECTILE } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -143,14 +143,16 @@ export const KEYWORDS: KeywordDef[] = [
     grants: ['explode', 'explodeRadius', 'explodeMultiplierAdd', 'explodeOnKill'],
   },
   {
-    id: 'splash',
-    name: 'Splash',
-    says: ['Splash', 'Splashes'],
+    id: 'echo',
+    name: 'Echo',
+    says: ['Echo', 'Echoes'],
     means:
-      'A swing hits everything in its reach for a share of what it deals the ' +
-      'target. The circle is around YOU, not around what you hit, so Splash ' +
-      'is about where you stand.',
-    grants: ['splashMultiplier', 'splashRadius'],
+      `The swing landing again on the next enemy out from the one you struck, ` +
+      `for ${pct(MELEE.echoDamage)} of it. The first looks ${MELEE.echo} tiles ` +
+      `from that enemy and each one after it looks ${MELEE.echoStep} tiles ` +
+      `further, so more Echoes reach deeper into a pack. Nothing is hit twice ` +
+      `by one use.`,
+    grants: ['echoes', 'echoDamage'],
   },
   {
     id: 'cone',
@@ -242,7 +244,8 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Area of Effect',
     says: ['Area of Effect'],
     means:
-      'Widens every Burst, Cloud and Splash the skill makes. It grows the ' +
+      'Widens every Burst and Cloud the skill makes, and reaches a Cone ' +
+      'further. It grows the ' +
       'AREA, so a radius goes by the square root of it, and it never touches ' +
       'damage.',
   },
@@ -319,7 +322,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Slow', 'Slows', 'Slowed'],
     means:
       'An enemy swings and casts more slowly for a duration. It is NOT a ' +
-      'Splash — a Splash is damage in a circle and a Slow deals none, because ' +
+      'Burst — a Burst is damage in a circle and a Slow deals none, because ' +
       'every damage number in the game belongs to the skill in your main slot.',
     grants: ['landingSlow'],
   },

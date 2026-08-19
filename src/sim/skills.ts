@@ -9,7 +9,7 @@
  */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
-import {PROJECTILE } from '../data';
+import { MELEE, PROJECTILE } from '../data';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -314,21 +314,19 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   },
 
   /**
-   * Full damage to the target, a fraction to everything in reach of the USER —
-   * it is a swing, so the splash is centred on you rather than on what you hit.
-   * params: { splashRadius, splashMultiplier }
+   * ONE enemy, hit hard, and nothing else until a tree buys Echoes. An Echo is
+   * the same blow landing on the next body out from the one you struck, and
+   * each one after it may look `MELEE.echoStep` further — so buying more of
+   * them reaches further into a pack without a second switch for the distance.
+   *
+   * Nothing is hit twice by one use, exactly as a Projectile's coverage works:
+   * without that, Echoes and Repeats both find the enemy in front of you and
+   * read as raw damage rather than as reach.
    */
-  cleave: (use) => {
+  melee: (use) => {
     const g = use.grants;
     const castMultiplier = castScale(g, use.castIndex);
-    const radius = use.areaRadius(
-      ((use.skill.params?.splashRadius as number) ?? 2.2) * num(g.splashRadius, 1)
-    );
-    // Whirlwind and the like override the splash fraction outright.
-    const splash =
-      (g.splashMultiplier as number) ??
-      (use.skill.params?.splashMultiplier as number) ??
-      0.1;
+    const kind = use.skill.vfxKind ?? 'slash';
 
     const explode = g.explode as { radius: number; multiplier: number } | undefined;
     const onKill = g.explodeOnKill as { radius: number; multiplier: number } | undefined;
@@ -353,23 +351,34 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     };
 
     swing(use.primary, 1);
-    // Extra swings land on what you aimed at, and stop once it is down.
+    // Repeats land on what you aimed at, and stop once it is down.
     for (let i = 0; i < num(g.doubleStrike, 0); i++) swing(use.primary, 1);
 
-    if (splash > 0) {
-      for (const enemy of use.enemies) {
-        if (enemy === use.primary) continue;
-        if (within(use.user, enemy, radius)) swing(enemy, splash);
+    const echoes = num(g.echoes, 0);
+    if (echoes > 0) {
+      const share = num(g.echoDamage, MELEE.echoDamage);
+      const out = use.enemies
+        .filter((e) => !e.dead && e !== use.primary)
+        .sort((a, b) => separation(use.primary, a) - separation(use.primary, b));
+
+      let taken = 0;
+      for (const other of out) {
+        if (taken >= echoes) break;
+        // Sorted nearest-first, so the first one too far away means every one
+        // after it is too — the allowance only grows once an Echo is spent.
+        if (separation(use.primary, other) > MELEE.echo + MELEE.echoStep * taken) break;
+        taken++;
+        swing(other, share);
+        use.vfx(kind, [
+          { x: use.primary.x, y: use.primary.y },
+          { x: other.x, y: other.y },
+        ]);
       }
     }
 
-    // The REACH, drawn as the circle it is. The old slash was an arc in the
-    // direction of the target, which was wrong twice: the hitbox is a circle
-    // around the SWINGER, and a node widening it by a quarter moved nothing on
-    // screen. Second point carries the radius, the same contract as a burst.
-    use.vfx(use.skill.vfxKind ?? 'swing', [
+    use.vfx(kind, [
       { x: use.user.x, y: use.user.y },
-      { x: use.user.x + radius, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
     ]);
   },
 

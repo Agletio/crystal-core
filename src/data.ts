@@ -1876,6 +1876,14 @@ export const PROJECTILE = {
   forkDamage: 0.45, // and what it lands for. A Fork is a second bolt, not the same one
 };
 
+/** An Echo is the same blow arriving at the next body out, each one looking
+ *  FURTHER — so buying more reaches deeper with no second switch for range. */
+export const MELEE = {
+  echo: 1.5, // how far the FIRST Echo looks, from the enemy you struck
+  echoStep: 0.6, // and how much further out each one after it may look
+  echoDamage: 0.7, // what an Echo lands for, where the one you aimed at takes all
+};
+
 /**
  * A trade is the part of a character that is not the skill, and its points are
  * their own currency: funded by CHARACTER level, so walking one never competes
@@ -3309,30 +3317,27 @@ export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
 
 export const SKILLS: SkillDef[] = [
   {
+    /** The hardest single hit in the game, reaching ONE enemy: everything past
+     *  what you aimed at is BOUGHT. The NUMBER did not move with the kit — the
+     *  boss gate is calibrated on this figure with this skill, and the pass is
+     *  held. */
     id: 'strike',
     name: 'Strike',
     category: 'attack',
-    description:
-      'A sweeping melee hit. Full damage to the target, 10% to everything else in reach.',
+    description: 'A hard melee blow. One enemy, until its tree buys Echoes.',
     tags: ['attack', 'melee'],
-    behaviour: 'cleave',
+    behaviour: 'melee',
     damageTypes: ['physical'],
-    baseDamage: 72,
+    baseDamage: 80,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
-    vfxKind: 'sweep',
-    // Splash is placeholder-cheap: the mechanism is the point, not the 10%.
-    params: { splashRadius: 2.2, splashMultiplier: 0.1 },
+    vfxKind: 'slash',
   },
   {
-    /**
-     * The other melee skill, and the opposite trade: Strike picks one enemy and
-     * pays the rest a share, this pays everything in the wedge the whole hit
-     * and charges in the number and the rate. 58 at 0.90/s against 72 at 1.20,
-     * so one body in front of you is 60% of a Strike and three is over twice.
-     */
+    /** The opposite trade to Strike: that takes ONE enemy hard, this takes
+     *  everything in the wedge for less each — 58 at 0.90/s against 72 at 1.20. */
     id: 'shockwave',
     name: 'Shockwave',
     category: 'attack',
