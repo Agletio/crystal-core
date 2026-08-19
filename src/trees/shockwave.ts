@@ -119,7 +119,7 @@ const BRANCHES: Branch[] = [
       id: 'sw_fracture',
       name: 'Fracture',
       description:
-        '+50% chance to apply the Ailment your damage carries. Shockwave is ' +
+        '+50% chance to Bleed. Shockwave is ' +
         'Physical, so what it carries is a Bleed.',
       grants: { ailmentChance: 50 },
     },
@@ -149,7 +149,7 @@ const BRANCHES: Branch[] = [
           id: 'sw_shatter',
           name: 'Shatter',
           description:
-            'A further +45% chance to apply the Ailment, so a wave past 100% ' +
+            'A further +45% chance to Bleed, so a wave past 100% ' +
             'leaves two Bleeds rather than one.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
@@ -157,7 +157,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
+      { text: '+9% chance to Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],

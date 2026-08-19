@@ -117,14 +117,14 @@ export const AETHERMANCER: TradeSpec = {
           id: 'rime',
           theme: 'Rime',
           minors: [
-            { text: '+12% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 12, ['chill'])] },
+            { text: '+12% chance to Chill', stats: [stat('ailmentChance', 'flat', 12, ['chill'])] },
             { text: '+16% increased Cold Damage', stats: [stat('damage', 'inc', 16, ['cold'])] },
           ],
           notable: {
             id: 'aet_rime',
             name: 'Rimebound',
             description:
-              '+45% chance to apply the Ailment your damage carries. What ' +
+              '+45% chance to apply your Ailment. What ' +
               'Overcharge adds is Cold, so what it spends the pool on is also ' +
               'what freezes the room.',
             grants: { ailmentChance: 45 },

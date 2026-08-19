@@ -535,7 +535,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${Math.round(n)}% chance to apply the Ailment your damage carries`;
+      return n === null ? null : `+${Math.round(n)}% chance to apply your Ailment`;
     },
   },
   {

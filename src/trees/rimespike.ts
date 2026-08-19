@@ -28,7 +28,7 @@ const BRANCHES: Branch[] = [
       id: 'rs_rime',
       name: 'Rime',
       description:
-        '+55% chance to apply the Ailment your damage carries. Rimespike is ' +
+        '+55% chance to Chill. Rimespike is ' +
         'Cold, so what it carries is a Chill.',
       grants: { ailmentChance: 55 },
     },
@@ -58,14 +58,14 @@ const BRANCHES: Branch[] = [
           id: 'rs_killingfrost',
           name: 'Killing Frost',
           description:
-            'A further +45% chance to apply the Ailment, so a hit past 100% ' +
+            'A further +45% chance to Chill, so a hit past 100% ' +
             'leaves two Chills rather than one — and a Freeze comes twice as fast.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
-      { text: '+9% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 9, ['chill'])] },
+      { text: '+9% chance to Chill', stats: [stat('ailmentChance', 'flat', 9, ['chill'])] },
       { text: '+6% increased Chill Damage', grants: { ailmentMultiplier: 1.06 } },
       COMMON[0],
       COMMON[3],

@@ -78,7 +78,7 @@ const BRANCHES: Branch[] = [
       id: 'st_rend',
       name: 'Rend',
       description:
-        '+55% chance to apply the Ailment your damage carries. Strike is ' +
+        '+55% chance to Bleed. Strike is ' +
         'Physical, so what it carries is a Bleed.',
       grants: { ailmentChance: 55 },
     },
@@ -108,7 +108,7 @@ const BRANCHES: Branch[] = [
           id: 'st_butchery',
           name: 'Butchery',
           description:
-            'A further +45% chance to apply the Ailment, so a swing past 100% ' +
+            'A further +45% chance to Bleed, so a swing past 100% ' +
             'leaves two Bleeds rather than one.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
@@ -116,7 +116,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
+      { text: '+9% chance to Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],

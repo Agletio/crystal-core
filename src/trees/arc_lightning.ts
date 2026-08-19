@@ -176,7 +176,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Ailment Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
+      { text: '+9% chance to Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],

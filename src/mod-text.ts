@@ -4,6 +4,7 @@
  * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
 import {
+  AILMENT_BY_ID,
   AILMENTS,
   ADDED_DAMAGE_TYPES,
   DAMAGE_TYPES,
@@ -59,7 +60,7 @@ const NAMED: Record<string, string> = {
     ])
   ),
   ...Object.fromEntries(DROP_GROUPS.map((g) => [findStat(g.id), `Chance to Find ${titled(g.id)}`])),
-  ailmentChance: 'Chance to apply',
+  ailmentChance: 'Chance to apply your Ailment',
 };
 
 /** Every tag that names a thing worth putting in front of "Damage". */
@@ -108,6 +109,12 @@ export function qualify(stat: string, tags: string[] = []): string {
   const base = statLabel(stat);
   // A resistance already names its type; tagging it again would stutter.
   if (resistancePrefix(stat)) return base;
+
+  // The one stat whose tag reads AFTER it: "Chance to Bleed", not "Bleed Chance".
+  if (stat === 'ailmentChance') {
+    const named = tags.map((t) => AILMENT_BY_ID[t]).filter(Boolean);
+    return named.length ? `Chance to ${named.map((a) => a.verb ?? a.name).join(' ')}` : base;
+  }
 
   const words = tags.map((t) => TAG_WORDS[t]).filter(Boolean);
   return words.length ? `${words.join(' ')} ${base}` : base;

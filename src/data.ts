@@ -110,6 +110,8 @@ export interface AilmentDef {
   id: string;
   name: string;
   type: string; // the damage type that applies it
+  /** The name as a VERB, for "Chance to Bleed" — only where it is not one. */
+  verb?: string;
   kind: 'damage' | 'chill' | 'shock' | 'curse' | 'exposure';
   /** Percent per HIT before anything raises it, and ZERO for everything a
    *  damage type applies: an Ailment is BOUGHT, never free. A baseline would
@@ -163,7 +165,7 @@ export const AILMENTS: AilmentDef[] = [
     burstShare: 4, burstRadius: 2.2,
   },
   {
-    id: 'exposure', name: 'Exposure', type: 'light', kind: 'exposure', chance: 0, seconds: 5,
+    id: 'exposure', name: 'Exposure', verb: 'Expose', type: 'light', kind: 'exposure', chance: 0, seconds: 5,
     takenPer: 4,
   },
 ];

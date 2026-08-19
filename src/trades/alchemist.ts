@@ -62,14 +62,14 @@ export const ALCHEMIST: TradeSpec = {
           id: 'residue',
           theme: 'Residue',
           minors: [
-            { text: '+11% chance to apply the Ailment', stats: [stat('ailmentChance', 'flat', 11)] },
+            { text: '+11% chance to apply your Ailment', stats: [stat('ailmentChance', 'flat', 11)] },
             { text: '+14% increased Damage over Time', stats: [stat('damage', 'inc', 14, ['overTime'])] },
           ],
           notable: {
             id: 'alc_residue',
             name: 'What It Leaves',
             description:
-              '+40% chance to apply the Ailment your damage carries, and they ' +
+              '+40% chance to apply your Ailment, and they ' +
               'deal 25% more. What a flask opens is a window; this is the burn ' +
               'that is still running when it shuts.',
             grants: { ailmentChance: 40, ailmentMultiplier: 1.25 },
