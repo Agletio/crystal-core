@@ -28,6 +28,8 @@ import {
   effectiveSkill,
   mapDensity,
   monsterStats,
+  passiveScale,
+  statMods,
   treeGrants,
   trialMod,
 } from './stats';
@@ -462,6 +464,8 @@ export class RunSim {
   /** Seconds until Sundering arms the next Burst, and until Hoarfrost fires. */
   private sunderIn = 0;
   private frostIn = 0;
+  /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
+  private readonly passiveScale: Record<string, number>;
   /** One aura's worth of flat damage on this map, in real damage. */
   private auraDamage = 0;
   /** The line being acted out, and whether its one act has finished. */
@@ -512,6 +516,8 @@ export class RunSim {
           this.set.theme
         );
     const stats = characterStats(character);
+    const lines = statMods(character);
+    this.passiveScale = { physical: passiveScale(lines, 'physical'), cold: passiveScale(lines, 'cold') };
 
     const worn = heroSpriteFor(character);
     const hero: Entity = {
@@ -2586,7 +2592,7 @@ export class RunSim {
     this.frostIn = volley.every;
 
     const hero = this.state.hero;
-    const damage = volley.perLevel * this.level;
+    const damage = volley.perLevel * this.level * this.passiveScale.cold;
     for (const m of this.state.monsters) {
       if (m.dead || stacksOf(m, 'chill') === 0) continue;
       if (dist(hero, m) > PASSIVE_DAMAGE.frostRange) continue;
@@ -2597,23 +2603,25 @@ export class RunSim {
   }
 
   /**
-   * SUNDERING: a Burst the BUILD did not pay for, so it is not scaled by
-   * anything the build stacked — `perLevel` off character level and nothing
-   * else, on a cooldown, which is the whole of how it stays balanceable.
+   * SUNDERING: a Burst around YOU, armed by landing a hit and then on a
+   * cooldown. `perLevel` off character level, scaled only by increases to
+   * Damage and to Physical, so the cooldown, the radius and the per-level
+   * figure are the three numbers it is balanced on and there are no others.
    */
   private sunder(at: Entity): void {
     const burst = this.grants.burstOnHit as { every: number; perLevel: number } | undefined;
     if (!burst || this.sunderIn > 0 || at.dead) return;
     this.sunderIn = burst.every;
 
-    const damage = burst.perLevel * this.level;
+    const hero = this.state.hero;
+    const damage = burst.perLevel * this.level * this.passiveScale.physical;
     const radius = PASSIVE_DAMAGE.sunderRadius;
     for (const m of this.state.monsters) {
-      if (m.dead || dist(m, at) > radius) continue;
+      if (m.dead || dist(m, hero) > radius) continue;
       m.life -= this.afterResistance(m, damage, 'physical');
       if (m.life <= 0) this.kill(m);
     }
-    this.emit('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 'physical', 0.32);
+    this.emit('burst', [{ x: hero.x, y: hero.y }, { x: hero.x + radius, y: hero.y }], 'physical', 0.32);
   }
 
   /** What the body was CARRYING passes on: one stack of each kind it had, and

@@ -8,7 +8,7 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { BURST, MANA } from '../data';
+import { BURST, MANA, PASSIVE_DAMAGE } from '../data';
 
 export const STATS = 'stats';
 
@@ -265,14 +265,19 @@ export const GRANTS: GrantDef[] = [
   // lets any of the six sit beside any main skill.
   {
     id: 'burstOnHit',
-    what: 'your hit Bursts on its own, for damage nothing about your build set',
-    // FLAT, off character level and nothing else. A Burst that is a share of
-    // your hit inherits every multiplier already stacked, which is a rider no
-    // build declines; one that never scales at all is dead by band 3.
+    what: 'landing a hit Bursts around YOU, for damage the skill had no part in',
+    // FLAT off character level, moved only by increases to Damage and to
+    // Physical. A Burst that is a share of your hit inherits every multiplier
+    // already stacked, which is a rider no build declines; one that scales by
+    // nothing at all is dead by band 3. This is the narrow road between them.
     reads: [STATS],
     say: (v) => {
       const p = pair(v, 'every', 'perLevel');
-      return p && `Every ${p[0]}s your next hit Bursts for ${p[1]} Physical damage per character level`;
+      return (
+        p &&
+        `Every ${p[0]}s your next hit Bursts around you for ${p[1]} Physical damage ` +
+          `per character level, ${PASSIVE_DAMAGE.sunderRadius} tiles across`
+      );
     },
   },
   {
@@ -281,7 +286,11 @@ export const GRANTS: GrantDef[] = [
     reads: [STATS],
     say: (v) => {
       const p = pair(v, 'every', 'perLevel');
-      return p && `Every ${p[0]}s a spike goes out at every Chilled enemy for ${p[1]} Cold damage per character level`;
+      return (
+        p &&
+        `Every ${p[0]}s a spike goes out at every Chilled enemy within ` +
+          `${PASSIVE_DAMAGE.frostRange} tiles, for ${p[1]} Cold damage per character level`
+      );
     },
   },
   {

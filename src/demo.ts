@@ -150,6 +150,7 @@ import {
   monsterStats,
   effectiveSkill,
   statMods,
+  passiveScale,
   treeGrants,
   trialMod,
   ailmentChances,
@@ -5151,36 +5152,47 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
       check(kiting > still, 'and a kiting hero covers more ground than one that stands in it', `${kiting} / ${still}`);
     }
 
-    // SUNDERING and HOARFROST: both deal damage NOTHING about the build set, so
-    // what has to hold is that the figure moves with LEVEL and with nothing
-    // else — the whole reason the Burst came out of the trees.
+    // SUNDERING and HOARFROST: what the BUILD may move about a passive's own
+    // damage, and what it may not. Increased Damage and increased damage of its
+    // TYPE, and nothing else — not the tag of the skill that armed it, not
+    // added flat damage. Every line below is one a real modifier rolls, so the
+    // list is the vocabulary rather than a paraphrase of it.
     {
       const at = (id: string, level: number): number => {
-        const c = wearing(id, level);
-        const g = treeGrants(c);
+        const g = treeGrants(wearing(id, level));
         const bag = (g.burstOnHit ?? g.frostVolley) as { every: number; perLevel: number };
         return bag.perLevel * level;
       };
       line(`  Sundering: ${at('sundering', 20)} at level 20, ${at('sundering', 40)} at 40`);
       check(
         at('sundering', 40) === at('sundering', 20) * 2 && at('sundering', 20) > 0,
-        'Sundering scales on character level and on nothing else',
+        'Sundering scales on character level',
         `${at('sundering', 20)} then ${at('sundering', 40)}`
       );
 
-      // And a build stacked to the roof does not move it, which a share of the
-      // hit could never say.
-      const rich: RolledMod = {
+      const probe = (form: 'inc' | 'flat', value: number, tags: string[]): RolledMod => ({
         entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
         name: 'probe', tier: 1, tags: [],
-        stats: [{ stat: 'damage', form: 'inc', value: 400, tags: [] }],
-      };
-      const bare = heroStats([], 40, strike, treeGrants(wearing('sundering'))).damage;
-      const fat = heroStats([rich], 40, strike, treeGrants(wearing('sundering'))).damage;
+        stats: [{ stat: 'damage', form, value, tags }],
+      });
+      const LINES: Array<[string, RolledMod, boolean]> = [
+        ['+100% increased Damage', probe('inc', 100, []), true],
+        ['+100% increased Physical Damage', probe('inc', 100, ['physical']), true],
+        ['+100% increased Spell Damage', probe('inc', 100, ['spell']), false],
+        ['+100% increased Attack Damage', probe('inc', 100, ['attack']), false],
+        ['+100% increased Fire Damage', probe('inc', 100, ['fire']), false],
+        ['+500 added Physical Damage', probe('flat', 500, ['physical']), false],
+      ];
+      const wrong: string[] = [];
+      for (const [name, mod, moves] of LINES) {
+        const got = passiveScale([mod], 'physical');
+        if (moves ? got <= 1 : got !== 1) wrong.push(`${name} → x${got.toFixed(2)}`);
+        line(`    ${name.padEnd(32)} x${got.toFixed(2)}${moves ? '' : '   (and must not)'}`);
+      }
       check(
-        fat > bare * 2 && at('sundering', 40) === PASSIVE_DAMAGE.sunderPerLevel * 40,
-        'and 400% increased Damage moves the hit and leaves the Burst alone',
-        `${bare.toFixed(0)} → ${fat.toFixed(0)}, Burst still ${at('sundering', 40)}`
+        wrong.length === 0 && passiveScale([probe('inc', 100, ['cold'])], 'cold') > 1,
+        'and only by increases to Damage and to its own type — never a skill tag, never flat',
+        wrong.join('; ')
       );
 
       // Hoarfrost asks for a CHILL it cannot apply, so it is worth nothing in a

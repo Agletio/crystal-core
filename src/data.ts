@@ -3682,9 +3682,10 @@ export const SKILLS: SkillDef[] = [
     name: 'Sundering',
     category: 'passive',
     description:
-      'Every 4s your next hit Bursts for 5.5 Physical damage per character ' +
-      'level, within 2.4 tiles. Nothing you own scales it — not damage, not ' +
-      'Critical, not Area of Effect.',
+      'Every 4s your next hit Bursts around YOU for 5.5 Physical damage per ' +
+      'character level, within 2.4 tiles. Increased Damage and increased ' +
+      'Physical Damage move it; nothing else does — not the skill that armed ' +
+      'it, not added flat damage, not Critical, not Area of Effect.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3708,7 +3709,8 @@ export const SKILLS: SkillDef[] = [
     category: 'passive',
     description:
       'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, for ' +
-      '0.9 Cold damage per character level. It applies no Chill of its own.',
+      '0.9 Cold damage per character level. Increased Damage and increased ' +
+      'Cold Damage move it and nothing else does. It applies no Chill of its own.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],

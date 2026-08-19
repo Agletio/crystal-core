@@ -219,6 +219,15 @@ export function damageBreakdown(
   };
 }
 
+/** What a PASSIVE's own damage scales by: increases and mores to Damage that
+ *  are untagged or name this TYPE. Never the skill's tags, never flat. */
+export function passiveScale(mods: RolledMod[], type: string): number {
+  const b = aggregate(mods, 'damage', [type]);
+  let m = 1 + b.inc / 100;
+  for (const more of b.more) m *= 1 + more / 100;
+  return m;
+}
+
 /** How long an ailment this skill applies lasts. Read by the sim and the sheet. */
 export function ailmentSeconds(skill: SkillDef, grants: Record<string, unknown>): number {
   const multiplier = typeof grants.ailmentDuration === 'number' ? grants.ailmentDuration : 1;
