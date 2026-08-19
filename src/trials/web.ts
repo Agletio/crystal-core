@@ -79,6 +79,40 @@ export const TRIAL_WEB: TrialSpec = {
       },
     },
     {
+      id: 'welling',
+      theme: 'The Welling',
+      blurb: 'What you kill is not always what is left standing where it fell.',
+      minors: [
+        { text: '+10% of deaths well up something worse', stats: [stat('wellChance', 'inc', 10)] },
+        { text: '+10% of deaths well up something worse', stats: [stat('wellChance', 'inc', 10)] },
+      ],
+      notable: {
+        id: 'tr_the_welling',
+        name: 'Nothing Stays Down',
+        description:
+          '+25% of deaths well up something worse. A Magic out of a Common, a ' +
+          'Rare out of that, and out of a Rare something the rock has no name for.',
+        stats: [stat('wellChance', 'inc', 25)],
+      },
+    },
+    {
+      id: 'bearer',
+      theme: 'The Bearer',
+      blurb: 'Something down there is carrying what the two of them want.',
+      minors: [
+        { text: '+6% of packs carry a Bearer', stats: [stat('bearerChance', 'inc', 6)] },
+        { text: '+6% of packs carry a Bearer', stats: [stat('bearerChance', 'inc', 6)] },
+      ],
+      notable: {
+        id: 'tr_the_bearer',
+        name: 'Carried Out',
+        description:
+          '+14% of packs carry a Bearer. It comes up at the rank the rock has ' +
+          'no name for, and what it is holding is yours if you can put it down.',
+        stats: [stat('bearerChance', 'inc', 14)],
+      },
+    },
+    {
       id: 'press',
       // Density is the one kind of danger that does not pay: `DANGER_STATS` has
       // both pack stats at `rewards: false`, because they already pay in kills.

@@ -70,6 +70,7 @@ import {
   socketPacks,
   socketSize,
   HOARD,
+  RELIC_BY_ID,
 } from '../data';
 import type { BossDef, EncounterDef } from '../data';
 import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
@@ -250,6 +251,11 @@ export interface Entity {
   walked: number;
   /** Which HOARD this body guards. The last guard down is what opens it. */
   hoard?: number;
+  /** What it IS, so the Welling can raise the same kind one rank up. */
+  defId?: string;
+  abilityId?: string;
+  welled?: boolean; // came up out of a body rather than being spawned with the map
+  bears?: string; // a `RelicDef` id this body is carrying, handed over when it dies
   /** Where a body that has not seen you paces about: where it was PUT, the spot
    *  it is ambling to, and the pause before the next one. Anchored, so a pack
    *  cannot drift out of the room it stands in. */
@@ -335,6 +341,9 @@ export interface RunState {
   vfx: Vfx[];
   /** Every Hoard put down this descent, and whether its guard is dead yet. */
   hoards: Hoard[];
+  /** Bodies that welled up out of another and were then put down. */
+  welled: number;
+  bearers: number; // Bearers put down, and so relics actually taken
   elapsed: number;
   status: RunStatus;
   killed: number;
@@ -440,6 +449,9 @@ export class RunSim {
   private reinforceTimer = 0;
   private nextHoard = 0;
   private putDown: Hoard[] = []; // `spawn` runs BEFORE `this.state` exists
+  private statsFor = new Map<string, CombatStats>(); // per kind, ability and RANK
+  /** Read once: rolled per death, and only ever when something bought it. */
+  private wellChance = 0;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -462,6 +474,7 @@ export class RunSim {
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
     this.set = runSet(crystals, trialMod(character));
+    this.wellChance = percentStat(this.set.mods, 'wellChance');
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
     // Sockets are the only thing that lengthens a descent: an empty Fissure is
@@ -522,6 +535,8 @@ export class RunSim {
       floaters: [],
       vfx: [],
       hoards: this.putDown,
+      welled: 0,
+      bearers: 0,
       elapsed: 0,
       status: 'running',
       killed: 0,
@@ -633,6 +648,32 @@ export class RunSim {
       this.set.pays.gold;
   }
 
+  /** One kind at one rank. A rank scales life and EVERY damage type together:
+   *  one and not the other is a rare that hits like a common. */
+  private rankedStats(
+    def: MonsterDef,
+    ability: MonsterAbilityDef,
+    rank: MonsterRankDef
+  ): CombatStats {
+    const key = `${def.id}:${ability.id}:${rank.id}`;
+    const held = this.statsFor.get(key);
+    if (held) return held;
+
+    const base = monsterStats(this.set.mods, def, ability);
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    const stats: CombatStats = {
+      ...base,
+      maxLife: base.maxLife * rank.life,
+      damage: base.damage * rank.damage,
+      damageByType: Object.fromEntries(
+        Object.entries(base.damageByType).map(([t, v]) => [t, v * rank.damage])
+      ),
+      ...thrownReach(thrown),
+    };
+    this.statsFor.set(key, stats);
+    return stats;
+  }
+
   /** Packs land in rooms other than the entrance: a moment to look first. */
   private spawn(map: GameMap): Entity[] {
     const filled = this.set.filled;
@@ -653,7 +694,6 @@ export class RunSim {
     // Stats are per KIND, not per monster — one shared object per kind keeps
     // fifty entities cheap and makes "all Brutes hit this hard" true by
     // construction.
-    const statsFor = new Map<string, CombatStats>();
 
     // Every rank ABOVE common weighs more. One weighted pick either way, so a
     // set that lifts this cannot move where the seed goes next.
@@ -664,6 +704,10 @@ export class RunSim {
     // Rolled ONLY when something bought it, or a set with no Hoards in it would
     // still spend a draw a set with none does not, and the seed would part.
     const hoardChance = percentStat(this.set.mods, 'hoardChance');
+    // A gate is a WALL: the pool is filtered before the pick, so a Bearer in
+    // the Fissure can never be carrying a corpse the Rot owns.
+    const carried = RELICS.filter((r) => opensHere(r.gate, this.set.power, this.set.theme));
+    const bearerChance = carried.length > 0 ? percentStat(this.set.mods, 'bearerChance') : 0;
 
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
@@ -689,6 +733,10 @@ export class RunSim {
       // five chants on their own neighbours, and read on screen as fog rather
       // than as a thing in the middle of the room worth killing first.
       const carrier = def.aura ? this.rng.int(0, guards - 1) : -1;
+      // One body at the top rung holding what somebody upstairs wants.
+      const bearing = bearerChance > 0 && this.rng.chance(bearerChance / 100);
+      const bearer = bearing ? this.rng.int(0, guards - 1) : -1;
+      const relic = bearing ? this.rng.pick(carried) : undefined;
 
       // Stats differ between the melee and ranged variants of a kind, so they
       // key separately — a ranged pack reaches much further and has to notice
@@ -697,24 +745,11 @@ export class RunSim {
         // Per monster, not per pack: a pack with one blue thing in it is a
         // pack you look at. Stats key on the rank too, or every rare in the
         // run would share the common one's life.
-        const rank = this.rng.weighted(MONSTER_RANKS, (r) => rankWeight(r, lift)) ?? MONSTER_RANKS[0];
-        const statsKey = `${def.id}:${ability.id}:${rank.id}`;
-        let stats = statsFor.get(statsKey);
-        if (!stats) {
-          const base = monsterStats(this.set.mods, def, ability);
-          stats = {
-            ...base,
-            maxLife: base.maxLife * rank.life,
-            damage: base.damage * rank.damage,
-            // Every type scaled together and never re-derived: a rank that
-            // scales one and not the other is a rare that hits like a common.
-            damageByType: Object.fromEntries(
-              Object.entries(base.damageByType).map(([t, v]) => [t, v * rank.damage])
-            ),
-          };
-          stats = { ...stats, ...thrownReach(thrown) };
-          statsFor.set(statsKey, stats);
-        }
+        const rank =
+          i === bearer
+            ? MONSTER_RANKS[MONSTER_RANKS.length - 1]
+            : this.rng.weighted(MONSTER_RANKS, (r) => rankWeight(r, lift)) ?? MONSTER_RANKS[0];
+        const stats = this.rankedStats(def, ability, rank);
 
         const radius = def.radius * rank.scale;
         const at = this.placeIn(map.grid, room, radius);
@@ -726,6 +761,9 @@ export class RunSim {
           rank: rank.id,
           radius,
           skillId: thrown ? ability.skill : null,
+          defId: def.id,
+          abilityId: ability.id,
+          ...(i === bearer && relic ? { bears: relic.id } : {}),
           ...(def.aura && i === carrier ? { aura: def.aura } : {}),
           x: at.x,
           y: at.y,
@@ -2523,6 +2561,7 @@ export class RunSim {
     }
 
     s.killed++;
+    if (victim.welled) s.welled++;
     s.xpGained += this.xpPerKill * victim.bounty;
     s.loot.currency.gold =
       (s.loot.currency.gold ?? 0) + this.goldPerKill * victim.bounty;
@@ -2531,6 +2570,14 @@ export class RunSim {
     this.rollRelicDrop();
     this.rollKeyDrop();
     this.openHoard(victim);
+    this.wellUp(victim);
+    // Its own path, never `rollRelicDrop`: that loops every row, so a Bearer
+    // going through it would hand over the OTHER relic as well.
+    const borne = victim.bears ? RELIC_BY_ID[victim.bears] : undefined;
+    if (borne) {
+      s.loot.items.push(makeRelic(borne));
+      s.bearers++;
+    }
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
   }
@@ -2574,6 +2621,67 @@ export class RunSim {
 
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
     this.state.loot.items.push(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng));
+  }
+
+  /**
+   * THE WELLING: a death brings something up out of the body, one rank higher.
+   *
+   * The rank LADDER is the whole termination proof and there is no counter: a
+   * body comes up one rung above what died, and the top rung — `risen`, weight
+   * 0, which nothing rolls — wells nothing. So one common death raises at most
+   * a magic, a rare and a risen, and a descent can never grow past four times
+   * what it spawned with. That beat a per-descent cap and a decaying chance,
+   * both of which bound the chain with a number somebody has to tune.
+   */
+  private wellUp(victim: Entity): void {
+    if (this.wellChance <= 0 || victim.kind !== 'monster') return;
+    const at = MONSTER_RANKS.findIndex((r) => r.id === victim.rank);
+    const rank = MONSTER_RANKS[at + 1];
+    const def = MONSTER_BY_ID[victim.defId ?? ''];
+    const ability = MONSTER_ABILITIES.find((a) => a.id === victim.abilityId);
+    if (!rank || !def || !ability) return;
+    if (!this.rng.chance(this.wellChance / 100)) return;
+
+    const stats = this.rankedStats(def, ability, rank);
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    const born: Entity = {
+      id: this.nextId++,
+      kind: 'monster',
+      sprite: def.sprite,
+      scale: def.scale * rank.scale,
+      rank: rank.id,
+      radius: def.radius * rank.scale,
+      skillId: thrown ? ability.skill : null,
+      defId: def.id,
+      abilityId: ability.id,
+      x: victim.x,
+      y: victim.y,
+      facing: victim.facing,
+      action: 'idle',
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: rank.bounty,
+      life: stats.maxLife,
+      mana: 0,
+      effects: [],
+      stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      walked: 0,
+      // Awake already: it came up because you killed something, so pretending
+      // it has not noticed you is a body standing still while you walk off.
+      aggroed: true,
+      hitFlash: 0,
+      welled: true,
+      dead: false,
+    };
+    this.state.monsters.push(born);
+    this.byId.set(born.id, born);
+    // Or the readout ticks down and then climbs, which reads as a bug.
+    this.state.totalMonsters++;
   }
 
   /** The last guard is down, so the Hoard opens. Nothing is clicked and nothing

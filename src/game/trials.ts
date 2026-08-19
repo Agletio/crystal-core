@@ -25,6 +25,10 @@ export const TRIAL_CONDITIONS: Record<string, TrialConditionImpl> = {
   danger: (_g, f, p) => f.set.rewards.danger >= Number(p.value),
 
   hoards: (_g, f, p) => (f.hoards ?? 0) >= Number(p.value),
+
+  welled: (_g, f, p) => (f.welled ?? 0) >= Number(p.value),
+
+  bearers: (_g, f, p) => (f.bearers ?? 0) >= Number(p.value),
 };
 
 export const trialMet = (trial: TrialDef, game: GameState, facts: QuestFacts): boolean =>

@@ -416,6 +416,8 @@ function payTrials(state: RunState): void {
     elapsed: state.elapsed,
     socketed: socketed(game),
     hoards: state.hoards.filter((h) => h.opened).length,
+    welled: state.welled,
+    bearers: state.bearers,
   });
   for (const trial of won) note(`${trial.name}. One trial point.`, 'add');
   if (won.length > 0) renderBadges();

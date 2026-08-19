@@ -1286,5 +1286,5 @@ export const MONSTER_FRAMES: Record<string, string[][]> = Object.fromEntries(
 
 /** Common, magic, rare. The accent ink keys off this, and `GLOW` is the light
  *  a rank is drawn with. */
-export type MonsterRank = 'common' | 'magic' | 'rare';
+export type MonsterRank = 'common' | 'magic' | 'rare' | 'risen';
 

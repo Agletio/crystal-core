@@ -211,7 +211,7 @@ export interface RunSlotDef {
 /** Stat fields are MULTIPLIERS on MONSTER_BASE, so identity and difficulty
  *  stay independent. `sprite` is a name, not an asset. */
 export interface MonsterRankDef {
-  id: 'common' | 'magic' | 'rare';
+  id: 'common' | 'magic' | 'rare' | 'risen';
   weight: number;
   life: number;
   damage: number;

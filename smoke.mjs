@@ -2456,23 +2456,23 @@ $('dev-kit').click();
   assert($('trials').hidden === false, 'and it opens a screen of its own');
 
   assert(
-    all('#trials-ladder .trialrow').length === 4,
+    all('#trials-ladder .trialrow').length === 6,
     'the ladder lists every trial there is, done or not',
     String(all('#trials-ladder .trialrow').length)
   );
   assert(
-    all('#trials-ladder .trialrow--done').length === 4,
+    all('#trials-ladder .trialrow--done').length === 6,
     'and the dev kit has done all of them, so the web can be walked',
     String(all('#trials-ladder .trialrow--done').length)
   );
   assert(
-    all('#trials-web .web__node').length === 12,
-    'twelve nodes, drawn to fit rather than scrolled',
+    all('#trials-web .web__node').length === 18,
+    'eighteen nodes, drawn to fit rather than scrolled',
     String(all('#trials-web .web__node').length)
   );
 
   const openTrial = () => all('#trials-web .web__node--open');
-  assert(openTrial().length === 4, 'four ways in, one per arm', String(openTrial().length));
+  assert(openTrial().length === 6, 'six ways in, one per arm', String(openTrial().length));
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,

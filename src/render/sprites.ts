@@ -137,6 +137,7 @@ export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: 
   common: null,
   magic: { colour: (p) => p.chalk, reach: 14 },
   rare: { colour: (p) => p.citrine, reach: 26 },
+  risen: { colour: (p) => p.rust, reach: 38 },
 };
 
 /** A generated body: its own grid, key and frames. `BEASTIARY` is asked FIRST,
@@ -319,6 +320,7 @@ export function monsterArt(
     common: mix(art.tone.shade(palette), art.tone.mass(palette), 0.5),
     magic: art.tone.eye(palette),
     rare: mix(art.tone.eye(palette), palette.chalk, 0.45),
+    risen: mix(art.tone.eye(palette), palette.rust, 0.6),
   };
   // Past the walk cycle is the swing, and a creature without one stands still
   // to hit you — which is what every creature did before there was a frame.

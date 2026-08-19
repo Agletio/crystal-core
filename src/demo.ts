@@ -44,6 +44,7 @@ import {
   ADDED_DAMAGE_TYPES,
   DANGER_STATS,
   DROP_GROUPS,
+  MONSTER_RANKS,
   TRIALS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
@@ -2866,6 +2867,82 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
     opened > 0 && paid > 0,
     'and a headless run opens one and is paid for it, with no policy to ship',
     `${opened}/${withHoards.state.hoards.length} opened, ${paid} pieces`
+  );
+
+  // THE WELLING, and the thing that matters about it is that a run still ENDS.
+  // A chain where each death can cause a death is a run that may never finish,
+  // and a run that does not finish is a mechanism failure rather than a number.
+  const welling: Character = {
+    ...ladderCharacter(4, new Rng(7)),
+    trials: TRIALS.map((t) => t.id),
+    trialAllocated: nodes
+      .filter((n) => (n.stats ?? []).some((s) => s.stat === 'wellChance'))
+      .map((n) => n.id),
+  };
+  const rose = new RunSim(bare, welling, new Rng(2020));
+  const spawnedWith = rose.state.totalMonsters;
+  const ended = runToCompletion(rose, 400);
+  check(
+    ended.status !== 'running',
+    'a descent full of Welling still ENDS — the rank ladder is the whole bound',
+    ended.status
+  );
+  check(
+    ended.welled > 0,
+    'and something really did come up out of a body',
+    `${ended.welled} put down of ${ended.totalMonsters - spawnedWith} raised`
+  );
+  check(
+    ended.totalMonsters === ended.killed || ended.status === 'died',
+    'and the readout counted every one, so it never ticks down and climbs',
+    `${ended.killed}/${ended.totalMonsters}`
+  );
+
+  // The ladder is the proof, so the top rung has to be a rung nothing rolls:
+  // one that came up naturally would make the chain start anywhere.
+  const top = MONSTER_RANKS[MONSTER_RANKS.length - 1];
+  check(
+    top.weight === 0 && MONSTER_RANKS.filter((r) => r.weight === 0).length === 1,
+    `the Welling's top rung (${top.id}) is the one rank nothing ever rolls`,
+    MONSTER_RANKS.map((r) => `${r.id} ${r.weight}`).join(', ')
+  );
+  check(
+    ended.totalMonsters <= spawnedWith * MONSTER_RANKS.length,
+    `so a descent can never grow past ${MONSTER_RANKS.length}x what it spawned with`,
+    `${spawnedWith} -> ${ended.totalMonsters}`
+  );
+
+  // BEARERS. The gate is a wall and has to stay one: a Bearer in the Fissure
+  // handing over a corpse the Rot owns is the whole failure this can have.
+  const bearing = (crystals: Item[]): RunState => {
+    const who: Character = {
+      ...ladderCharacter(4, new Rng(7)),
+      trials: TRIALS.map((t) => t.id),
+      trialAllocated: nodes
+        .filter((n) => (n.stats ?? []).some((s) => s.stat === 'bearerChance'))
+        .map((n) => n.id),
+    };
+    return new RunSim(crystals, who, new Rng(6161)).state;
+  };
+  const inTheRot = bearing([makeCrystal(2, 'demonic'), makeCrystal(2, 'demonic')]);
+  const inTheFissure = bearing(bare);
+  const borne = inTheRot.monsters.filter((m) => m.bears);
+  check(borne.length > 0, 'a walked Bearer arm puts one in the Rot', String(borne.length));
+  check(
+    borne.every((m) => RELIC_BY_ID[m.bears!]?.gate?.zone === 'demonic'),
+    'and what it carries is what THAT world owns, never the other one',
+    [...new Set(borne.map((m) => m.bears))].join(', ')
+  );
+  check(
+    inTheFissure.monsters.every((m) => !m.bears),
+    'and the Fissure owns neither, so nothing there carries one at all',
+    String(inTheFissure.monsters.filter((m) => m.bears).length)
+  );
+  const hardest = MONSTER_RANKS[MONSTER_RANKS.length - 1];
+  check(
+    borne.every((m) => m.rank === hardest.id),
+    `and every Bearer comes up ${hardest.id} — ${hardest.life}x life, so it is a body you can lose to`,
+    [...new Set(borne.map((m) => m.rank))].join(', ')
   );
 
   // A trial deleted refunds the point it bought rather than stranding the walk.

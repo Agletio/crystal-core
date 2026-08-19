@@ -2246,6 +2246,8 @@ export const MONSTER_RANKS: MonsterRankDef[] = [
   { id: 'common', weight: 1000, life: 1, damage: 1, bounty: 1, scale: 1 },
   { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.4 },
   { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.7 },
+  // WEIGHT 0, so nothing rolls one: the top of the Welling's ladder, which is
+  { id: 'risen', weight: 0, life: 14, damage: 2.2, bounty: 25, scale: 2 }, // its termination proof
 ];
 
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
@@ -2439,6 +2441,18 @@ export const TRIALS: TrialDef[] = [
     name: 'Deep Water',
     detail: 'Clear a descent worth 400 danger.',
     need: [{ kind: 'danger', value: 400 }],
+  },
+  {
+    id: 'carried_out',
+    name: 'Carried Out',
+    detail: 'Put down a Bearer and take what it was carrying.',
+    need: [{ kind: 'bearers', value: 1 }],
+  },
+  {
+    id: 'nothing_stays_down',
+    name: 'Nothing Stays Down',
+    detail: 'Put down something that welled up out of a body you had already killed.',
+    need: [{ kind: 'welled', value: 1 }],
   },
   {
     id: 'what_they_carried',
@@ -2696,6 +2710,10 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   // Percent of PACKS guarding a Hoard, so it caps at every one. Scores their
   // RANK; the extra BODIES are density, which pays in kills and not here.
   hoardChance: { weight: 0.33, rewards: true, cap: 100 },
+  // Percent chance a death wells a body ONE RANK UP; the ladder bounds it.
+  wellChance: { weight: 0.5, rewards: true, cap: 100 },
+  // Percent of PACKS carrying a Bearer: a `risen` body roughly triples a pack's
+  bearerChance: { weight: 1.2, rewards: true, cap: 100 }, // life, weighed as monsterLife would
 };
 
 /** A pack with something in it worth walking towards. Nothing is CLICKED, which
