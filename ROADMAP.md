@@ -6,37 +6,38 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**Eight phases are waiting.** Phase 9 (a quest log) stays parked by the user's
-word until the stripped opening has been played.
+**NOTHING IS WAITING BUT A QUESTION.** Everything the user asked for in the
+trials-web round has landed: the web and its six arms, all three events, the
+skill-tree tints, the arrow, the ailment rework, settings and the book. Phase 1
+below (a quest log) stays parked by his word until the stripped opening has been
+played, and the balance pass is held.
 
-**The TRIALS WEB ITSELF HAS LANDED** — the web, its points, the screen, the
-ladder and the seam into `RunSet.mods`. What is left of it is the three EVENTS,
-which are Phases 1–3.
+**So this file holds a parked phase, a held pass, the open questions and a
+backlog nobody asked for. Say so and list them rather than inventing work.**
 
-| | | |
-|---|---|---|
-| 1–3 | Hoards, the Welling, Bearers | the three events, each with its own trial |
-| 4 | the skill tree's tints | an hour |
-| 5 | the arrow out of the bow | an hour, render-side only |
-| 6 | **ailments per damage type** | the big one — 44 node slots and a sim rewrite |
-| 7 | settings becomes a screen | keybindings, and the filter moves in |
-| 8 | the book | one searchable place for every keyword |
+**What landed, in one line each**, so a session that has to undo one knows where
+to look:
 
-**The ORDER is provisional and it is MINE, not the user's.** He wrote them all
-down in one go and said *"Let me know once this is all added adn then I will tell
-you how to proceed."* Cheap and independent first, then the big system, then the
-shell — but **ask before assuming the lowest number is what he wants next.**
+| | |
+|---|---|
+| the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |
+| Hoards | a pack modifier: `HOARD`, `hoardChance`, the `cart` prop, `openHoard` |
+| the Welling | `wellChance`, and the `risen` rank at weight 0 that bounds it |
+| Bearers | `bearerChance`, a `risen` body carrying a gated `RelicDef` |
+| the tints | `docs/index.html` — allocated and available split by VALUE, not hue |
+| the arrow | `bowMuzzle` in `src/render/pixi.ts`, render-side only |
+| ailments | `AILMENTS` in `src/data.ts`; applied by damage TYPE, bought never free, the hero's alone |
+| settings | keys, the filter moved in, and the book — `src/ui/settings.ts` |
 
-**Read "The trials web" before taking Phases 1–3.** They share one seam and one
-set of traps, and a session that takes one without reading it will add a node
-that silently buys item level.
+**The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
+spent time balancing before we implemented this map skill tree even it would
+throw things off massively. We also need to add more passives that could be a
+large power source and probably iterate on trades as well. So I think we hold
+off for now."* Do not start it, and do not tune to a gauge while doing anything
+else.
 
-**The balance pass is HELD AGAIN**, and this time with a reason rather than a
-timing: *"imagine if we had spent time balancing before we implemented this map
-skill tree even it would throw things off massively. We also need to add more
-passives that could be a large power source and probably iterate on trades as
-well. So I think we hold off for now."* Do not start it, and do not tune to a
-gauge while doing anything else.
+**The next word is his.** *"Id rather test all together then iterate on one
+thing at a time"* — so what comes next is whatever playing it turns up.
 
 ### Live known issues
 
@@ -182,7 +183,7 @@ numbers in tables; if it wants a mechanism changed, that is a phase.
 
 ---
 
-## The trials web — read this before Phases 1–4
+## The trials web — what it IS, now that it is built
 
 **The whole of the user's proposal, in his words:** *"I think the anwser is just
 another skill tree. Unlock points through various challenges that come up as a
@@ -242,8 +243,8 @@ Two consequences a phase has to honour:
 
 **Unwritten, and NOT to be guessed at:** what the two of them actually disagree
 ABOUT, and whether being pulled one way closes the other off. A branching ladder
-is a different table from a linear one — `TRIALS` is walked in order in Phase 1,
-and a fork is a second field. **Ask before authoring the second room.**
+is a different table from a linear one — `TRIALS` is walked in order today, and
+a fork is a second field. **Ask before authoring the second room.**
 
 ### The seam, as BUILT
 
@@ -264,7 +265,7 @@ was already there.
 way `potionThresholds` and `beaten` already ride there. `src/sim` must never
 learn where it came from.
 
-### Traps — all four phases
+### Traps — still live, for anything that adds an arm
 
 - **A "×danger" node buys ITEM LEVEL for free, and that breaks a standing
   rule.** `runSet` computes `power` from `rewards.danger / POWER.perDanger`, and
@@ -278,7 +279,7 @@ learn where it came from.
 - **Automation is universal and has NO exception.** Anything a player could do
   mid-descent needs a shipped default policy that `runToCompletion` runs, and
   that policy is the only implementation. This is why a Hoard is **never
-  clicked** (see Phase 2) — an event with no interaction in it satisfies the rule
+  clicked** — an event with no interaction in it satisfies the rule
   by construction, and is the cheapest correct shape.
 - **A run must always END.** `runToCompletion` is bounded at 600s and a headless
   run that does not finish is a mechanism FAILURE, not a balance number. The
@@ -304,134 +305,6 @@ learn where it came from.
 
 ---
 
-## Phase 1 — Hoards: a pack with something worth killing it for
-
-**What is true today.** `spawn()` builds packs of one kind, one ability, one
-optional aura carrier, and rolls a `rank` per monster off `MONSTER_RANKS`.
-`MapProp` is `{ id, x, y }` and props are decoration nothing in the sim reads.
-Loot comes off `rollGearDrop`, per kill, off `this.set.band`.
-
-**Why it is wrong.** Nothing in a descent is worth walking toward. Every pack is
-the same proposition, so watching one is watching all of them.
-
-**The user's shape, and the automation rule.** *"basically think strong boxes in
-POE but instead of clicking and monsters spawn just have them spawned in but more
-monsters spawn around them and make them a little tougher."* **Nothing is
-clicked** — that is not a simplification, it is what makes the event legal under
-*"anything a player can do mid-descent has a shipped default policy"*. A Hoard is
-a PACK MODIFIER: a box stands in it, the pack is bigger and ranked up, and the
-box pays out when the pack is dead.
-
-- [ ] **A Hoard is a pack, not an entity.** The box is a prop the sim knows
-      about; killing the pack banks its loot. Decide whether the box needs a
-      body at all — a prop already draws, and a generated one is an `art` job.
-- [ ] **Nodes: how OFTEN, how MUCH, and what KIND.** The third is the user's
-      *"one node that lets you select a preference for gear type it drops"* —
-      `dropBias` and `DROP_GROUPS` already exist and are exactly this, so the
-      node is a choice node feeding the bias that is already read by
-      `pickGearBase`. **`SkillProgress.choices` is the precedent for a node that
-      offers an option**; this web needs the same field.
-- [ ] **Its own trial**, so the phase ships a point with the nodes.
-- [ ] **The loot is banked, not dropped on the floor.** `state.loot.items` is
-      the one path up.
-
-**Trap.** Both pack-size stats are `rewards: false` in `DANGER_STATS` — density
-does not pay, on purpose, because it pays in extra kills. A Hoard pack that is
-bigger AND ranked up is paying twice unless the rank half is what carries the
-danger.
-
-**Done when.** A headless descent with the Hoard node allocated contains boxes,
-they are guarded, killing the guards pays, and nothing in the run needs a click.
-
-**What must not break.** As Phase 1, plus `npm run peek` — a box nobody can see
-is a box that is not there.
-
----
-
-## Phase 2 — The Welling: what comes up out of a body
-
-**What is true today.** `spawn()` places every monster before the descent starts
-and `s.totalMonsters` is set once from that count. Nothing adds a body mid-run
-except the closing encounter, which sets the counter when it starts.
-
-**Why it is wrong.** A fight has one shape: the pack you can see is the pack
-there is. Nothing escalates because you are winning.
-
-**The user's shape.** *"when an enemy dies it has a chance to spawn another enemy
-from its body... chance for mobs to tier up when summoned in. Like a normal dies
-it summons in a magic, magic summons a rare, rare has a small chance to summon a
-boss etc."*
-
-- [ ] **On death, a chance to spawn one body at the corpse.** `MONSTER_RANKS` is
-      an ordered list, so "tiers up" is an index step and needs no new table.
-- [ ] **It must TERMINATE.** A chain where each death can spawn a death is a run
-      that may never end, and `runToCompletion` failing is a mechanism failure.
-      Decide the bound and write it down: a per-descent cap, a decaying chance,
-      or a rank ceiling that cannot re-spawn. **Pick one and say which it beat.**
-- [ ] **`s.totalMonsters` learns about each one**, or the readout climbs.
-- [ ] **"rare has a small chance to summon a boss" is a decision, not a task.**
-      `BOSSES` is deliberately NOT `MONSTERS` — a boss has phases, a room and a
-      terminus of its own, and one loose in a descent has none of that. Either
-      the top rung is a `BOSSES` entry with the phase machinery suppressed, or it
-      is a fourth `MONSTER_RANKS` row that is merely enormous. **The second is
-      cheaper and is the recommendation**; the first is what the user's words
-      literally say. Ask, or take it and write down what it beat.
-- [ ] **Its own trial.**
-
-**Trap.** Killing a spawned body pays gold and XP through `priceKills`; an
-uncapped chain is an uncapped XP faucet, and XP is not gated by power.
-
-**Done when.** A headless descent with the node allocated ends, its monster count
-is honest, and the deep end measurably escalates.
-
-**What must not break.** As Phase 1. `npm run demo` proves termination; the
-600-second bound in `runToCompletion` is the check that already exists.
-
----
-
-## Phase 3 — Bearers: the thing somebody is waiting for
-
-**What is true today.** `RELICS` has two rows, both `chance: 0.006` per kill,
-each gated to one zone by `opensHere`, each naming the scene that `wants` it.
-`sceneWaiting` schedules that room the moment one is held. So the two authored
-rooms that write a line nothing else can are behind a 0.6%-per-kill roll and
-nothing else.
-
-**Why it is wrong.** The best two rewards in the game are pure luck, and a player
-who wants one has no way to go and get it.
-
-**The user's shape.** *"we can make two centered around the existing mechanics
-with the corpses and the gemstone guy for the unique mods. Make it where really
-hard enemies can spawn and guarantee corpse/dust or maybe increase the drop rate
-of them."*
-
-- [ ] **ONE mechanism, a row per relic.** A Bearer is a single very hard body
-      that drops what it carries on death. `RELICS` already has the gate and the
-      `wants`; the Bearer row points at a relic id and inherits both.
-- [ ] **The gate is a WALL and stays one.** *"A `DropGate` says a thing does not
-      exist in this run at all... the pool is filtered before the pick, so no
-      amount of rarity argues with it."* A Bearer in the Fissure may not hand out
-      a Rot corpse.
-- [ ] **Nodes: how often a Bearer appears, and how hard.** Whether the drop is
-      GUARANTEED or merely much likelier is a decision — guaranteed makes the
-      node a switch rather than a number, which reads better and is worth more.
-- [ ] **Hard means hard.** *"really hard enemies"* — it must be a body a build
-      can lose to, or the reward is free.
-- [ ] **Its own trial.**
-
-**Trap.** `rollRelicDrop` runs per kill over all of `RELICS`; a Bearer that drops
-through that path rolls the OTHER relic too. It needs its own path, or the loop
-needs to know which body just died.
-
-**Done when.** A player who wants a graft can build toward one, a Bearer is
-gated to the right world, and killing one in the wrong world is impossible rather
-than unlucky.
-
-**What must not break.** As Phase 1, plus the demo's existing relic checks: each
-relic exists in ONE world, and every one names a scene that exists.
-
----
-
 ## Not a phase — where the balance pass sits against all this
 
 The user's own last clause: *"Then just tune the scaling difficulty better to
@@ -446,8 +319,8 @@ danger — is `ladderCharacter` plus `runToCompletion` over a grid, which the de
 already does, and a run that never ends is a mechanism failure rather than a
 balance number. That is what answers his second fear.
 
-**I recommended running the balance pass before Phase 2 and the user overruled
-it**, on grounds that are better than mine: *"imagine if we had spent time
+**I recommended running the balance pass before the events and the user
+overruled it**, on grounds that are better than mine: *"imagine if we had spent time
 balancing before we implemented this map skill tree even it would throw things
 off massively. We also need to add more passives that could be a large power
 source and probably iterate on trades as well."* The trials web, an ailment
@@ -460,345 +333,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 4 — Tell an allocated node from one you could take
-
-**What is true today.** `docs/index.html:1608–1696`. A reachable node is
-`.web__node--open` and gets `drop-shadow(0 0 3px var(--bone))`; an allocated one
-is `.web__node--on` and gets `brightness(1.35) drop-shadow(0 0 3px
-var(--citrine))` plus two fill swaps (`--on-lit`, `--on-gem-lit`). `--bone` is
-`#C9BFA3` and `--citrine` is `#D9A441` — **two warm desaturated yellows three
-steps apart**, at 3px blur, behind art that is mostly rust and bone already.
-
-**Why it is wrong**, in the user's words: *"Need to make skill tree ui slightly
-more clear as to what nodes you have selected and one nodes you are capable of
-selected that tint is very simialr so its kinda confusing."* A tree is the one
-screen where the whole point is reading state at a glance.
-
-- [ ] **Separate the two by SHAPE or VALUE, not by hue.** Two warm yellows will
-      still be two warm yellows after a hue nudge, and the art under them is
-      warm too. A ring, a fill, a halo width, a brightness gap that is not
-      subtle — pick one and say which it beat.
-- [ ] **Three states have to be told apart, not two:** allocated, reachable, and
-      `--locked` (opacity .42). Do not fix the first pair and collapse the
-      second.
-- [ ] **`npm run theme` — every colour a token, every token defined.** A hex in
-      a rule fails it.
-- [ ] **All FOUR webs draw through this**, not just the skill trees: the trades
-      web, the movement webs, and the trials web once Phase 1 lands. One change
-      in `docs/index.html`, and check it on each.
-
-**Trap.** `.web__node--on` already sets `.sicon__ink` and `.sicon__lit` fills;
-a change that only touches the drop-shadow will be swamped by them. Read all
-five rules together before editing one.
-
-**Done when.** A screenshot of a half-allocated tree can be sorted into
-allocated / reachable / locked by someone who has not been told the rule.
-
-**What must not break.** `npm run theme`, `npm run build`, `npm run shots`
-(alone) — the skills screen is in the checklist and this is what it looks at.
-
----
-
-## Phase 5 — The arrow comes out of the bow
-
-**What is true today.** `src/sim/skills.ts:241` emits the shot as
-`use.vfx(kind, [{x: use.user.x, y: use.user.y}, {x: use.primary.x, y:
-use.primary.y}])` — the hero's TILE CENTRE. The bow is drawn somewhere else
-entirely: `HELD.bow` in `src/render/held.ts` pins it at the OFF hand
-(`track: 'off'`, `grip: [0.47, 0.5]`, `reach: 0.11`) through `handAt`, and the
-whole offset is MIRRORED when the hero faces west. `ARROW_SPAN` is `0.95` tiles.
-
-**Why it is wrong**, in the user's words: *"Currently it spawns like off to the
-side of the character in certain directions and looks weird."* The sim's origin
-and the drawn bow disagree, and the disagreement flips sign with facing.
-
-- [ ] **Fix it in the RENDERER, never in the sim.** `use.user` is the origin for
-      pierce geometry and target picking; moving it changes what the shot HITS
-      and breaks every seed's replay. The renderer already knows where the bow
-      is — `handAt(sprite, 'bow', cel)` plus `HELD.bow.grip`/`reach` and the
-      facing flip — so the correction is the same arithmetic `drawHeld` already
-      does in `src/render/pixi.ts`.
-- [ ] **`ARROW_SPAN` comes down.** The user asked for a smaller arrow and did
-      not say how much; pick a number, look at it with `npm run peek`, and put
-      the figure in the commit.
-- [ ] **Both renderers, or say why not.** `arrowFlight` is deliberately the ONE
-      answer so the Pixi sprite and the canvas2d shaft cannot disagree. canvas2d
-      draws no held weapon at all, so the bow-relative origin has nothing to
-      anchor to there — **that is expected and is not a bug**, but write down
-      which of the two moved.
-- [ ] **The hero is not the only archer.** Monsters throw through the same
-      `projectile` behaviour and hold no bow; the correction must be a no-op for
-      anything with no `bow` in hand.
-
-**Trap.** `pinnedFor` returns undefined when the BODY already draws the bow —
-`aethermancer_bow` is a generated variant holding one, and the Alchemist has no
-such variant and still pins. So "where the bow is" has two answers depending on
-the hero, and only one of them goes through `HELD`.
-
-**Done when.** `npm run peek` at four facings shows the arrow leaving the bow in
-all four, and the shot still hits exactly what it hit before.
-
-**What must not break.** `npm run build`, then `npm run peek` and `npm run
-shots` (alone). The demo's damage numbers must not move at all — if they do, the
-sim was touched and the fix is in the wrong place.
-
----
-
-## Phase 6 — An ailment per damage type
-
-**The biggest phase in this file.** Read the whole of it before starting; it
-rewrites a sim mechanism, retires four tree notables, and reopens the keyword
-table.
-
-**What is true today.**
-
-- There is **ONE ailment**: a damage-over-time stack, `Ailment` in
-  `src/sim/run.ts:148`. `applyAilment` sets `dps[t] = attacker.stats
-  .damageByType[t] * multiplier / seconds` — **so it scales with everything that
-  scales the hit**: spell damage, attack damage, added flat, all of it. It also
-  snapshots `critChance`/`critMultiplier` and can critically TICK.
-- Its type is `skill.damageTypes[0]` and `AILMENT_NAMES` maps that to a word.
-  The comment above that table says so outright: *"The sim has one ailment and
-  takes its element from the skill, so this is naming rather than mechanics."*
-  **Burning and frostbite are the same thing with two names.**
-- It is applied by three things: the `critAilment` grant (*a Critical leaves an
-  Ailment instead* — `this.useCrit = grants.critAilment ? false : crit`),
-  `bleedOnHit`, and Blight's `ailment_burst` behaviour.
-- `AILMENT.maxStacks` is 12, `AILMENT.tick` is 0.5s, and stacks expire on their
-  own clocks.
-- **44 node references** across five tree files: `strike.ts` 9, `fireball.ts` 9,
-  `arc_lightning.ts` 9, `lightning_arrow.ts` 9, `blight.ts` 8.
-
-**Why it is wrong**, in the user's words: *"Currently we have a bunch of talents
-that remove crit and apply an ailment dot but I want ailments to be related to
-hit damage with a certain type where unless you have a specifc item/class or
-something to change this each damage type has an ailment associated that does a
-certain thing."* An ailment is a NODE you buy today; it should be what a damage
-type DOES.
-
-### The thing that makes this cheap, and a session will miss it
-
-**The tag system already does the scaling rule.** Gear damage mods are all one
-stat with TAGS — `{ stat: 'damage', form: 'inc', tags: ['fire'] }`,
-`tags: ['spell']`, `tags: ['attack']` (`src/data.ts:1152–1197`) — and
-`computeStat(base, mods, stat, contextTags)` in `src/mods.ts:268` filters by
-them. `heroStats` already passes the SKILL's tags in, which is what keeps an
-attack crit off a spell.
-
-So *"you have to scale it through burn damage, fire damage, or damage over time
-mods. So spell damage/attack damage/crit/crit multi etc don't scale it"* is
-**not a new system**: it is computing the ailment's damage with the AILMENT's own
-tag set (`['fire', 'burn', 'overTime']`) instead of the skill's. Spell and
-attack mods fall out because their tags are not in that set. **Do not build a
-parallel scaling path.**
-
-- [ ] **`AILMENTS` is a table, one row per damage type**, replacing
-      `AILMENT_NAMES`. Each row names the ailment, what it does, and its own
-      tags. A row is the only place a new ailment may be added.
-- [ ] **Flat base damage, not a share of the hit.** *"Burns deal a flat damage
-      amout thats preset."* The number lives on the row; `applyAilment` stops
-      reading `attacker.stats.damageByType` for a damage ailment.
-- [ ] **A chance to apply, per damage type, rolled per HIT.** *"You can get %
-      chance to apply the ailment but it only applies if you deal that damage
-      type."*
-- [ ] **Over 100% is a second stack.** `floor(chance/100)` guaranteed
-      applications plus one more at `chance % 100`. Write the formula down where
-      it is read; do not re-derive it at two call sites.
-- [ ] **Attack speed is free.** Application is per hit, so a faster skill applies
-      more; the 12-stack cap is what stops it running away. **No new machinery.**
-- [ ] **The eight rows**, in the user's own words:
-
-| type | ailment | what it does |
-|---|---|---|
-| fire | **Burn** | flat damage over time |
-| physical | **Bleed** | the same, physical |
-| cold | **Chill** | a small % off movement, attack and cast speed PER STACK; **Freeze** at a stack threshold, and the next hit after a Freeze is a guaranteed Critical |
-| lightning | **Shock** | *"very little single target but every tick it does a small lightning chain hitting a few enemies"* |
-| poison | **Poison** | like Burn, but applied ONLY by an item or skill that says it applies Poison, and scaled by that skill's tags |
-| dark | **Cursed** | on the enemy's death, a chance to burst for a share of its life; more stacks, bigger burst |
-| light | **Exposed** | the target takes a stacking % increased damage |
-| prismatic | *(none)* | monsters simply have little or no Prismatic resistance |
-
-- [ ] **Redo all 44 ailment node slots.** *"Redo all the existing no crit,
-      ailment nodes to something else."* This is authoring, not deleting: four
-      trees each hang a NOTABLE off `critAilment` (`st_rend`, `al_ionise`, and
-      Fireball's and Lightning Arrow's), each with branch minors under it, and
-      `TREE_NEEDS` maps `ailmentMultiplier`/`ailmentDuration`/`ailmentSpread`
-      onto those notables. Budget the content, not the deletion.
-- [ ] **A tooltip per ailment**, which is `KEYWORDS` and therefore free on every
-      screen at once — see Phase 9.
-
-### Decisions taken, each overrulable in a sentence
-
-- **The light ailment is called Exposed.** The user: *"dunno what to call this
-  one."* It beat "Lit", which is better flavour under a game full of lamps but
-  says nothing about what it does; `AILMENT_NAMES.light` is `searing` today and
-  that describes fire.
-- **Chill and Exposed are not `changes: 'scale'`.** See the class trap below.
-
-### Traps — and the first two are the expensive ones
-
-- **`GrantDef.changes` may need an EIGHTH class, and that is not free.**
-  `INTERACTIONS` in `src/trees/interactions.ts` holds **28 pairs** over seven
-  classes and *"the demo fails an unwritten pair"*. Chill changes a target's
-  SPEED, Cursed fires on DEATH, Exposed changes what a target TAKES — none is
-  cleanly scale/duration/targets/burst/field/crit/type. An eighth class takes
-  the table from 28 pairs to 36, and every new one has to be written. **Decide
-  early whether these ride an existing class**, because discovering it at the
-  end is eight paragraphs of prose at the worst moment.
-- **Crit leaving ailments is the whole of two mechanisms, and both die.** Today
-  an ailment snapshots crit and can crit-TICK, and `ailmentSpread` (*a Critical
-  tick spreads the Ailment*) has no other trigger. The user's rule — crit does
-  not scale an ailment — deletes crit ticking, which deletes `ailmentSpread`'s
-  reason to exist. **Blight is the skill that pays**: its entire tree is
-  ailments and it loses crit scaling outright. Balance is held, but *a skill
-  that stops working is mechanism, not balance* — measure Blight before and
-  after and print both.
-- **Freeze puts crit back in from the other side.** *"next hit is guranteed crit
-  after freeze"* — that is a crit GRANT on the hero, not on the ailment, and it
-  is not a contradiction. Say so in the code so the next session does not
-  "fix" it.
-- **Poison breaks the general rule on purpose.** Poison is a `DAMAGE_TYPES` row
-  and Blight deals it, so under "dealing the type applies the ailment" every
-  Blight tick would poison. The user wants the opposite: *"it should only be
-  applied by specifc items or skills that say apply poisons."* **Write down
-  which rule wins** — the row needs a flag saying it is never applied by damage
-  type alone.
-- **Prismatic having no resistance collides with a crystal modifier.**
-  `monsterResStat('prismatic')` is a real rolled crystal mod and a real
-  `DANGER_STATS` entry (weight 0.65, capped at `DEFENCE.resistanceCap`). If
-  monsters have no Prismatic resistance, that modifier is a mod that does
-  nothing — which `npm run mods` fails by design. Either it comes out of the
-  pool or "little" means a lower cap rather than none. **Also check
-  `DEFENCE.monsterHitFloor`**: a floor of 0.25 already stops full immunity, so
-  the type may be less resisted than it looks.
-- **Every roll is off `RunSim.rng`, and ONLY when the chance is above zero.**
-  This is the Block precedent, stated in the `systems` skill: a roll taken when
-  the chance is 0 still consumes a draw, and gear would then move a seed's
-  replay.
-- **`Ailment.dps` is `Record<string, number>` because a cast's typed parts tick
-  as themselves** — a cold ring on Blight ticks as cold. Flattening it to one
-  number loses that.
-- **Chill has a home already.** `SLOWED` and `Entity.slowed` exist on monsters
-  (`src/sim/run.ts:137`, `1901`), `swingCooldown(e)` is the ONE place a swing
-  rate is multiplied, and `Entity.effects` is ticked for monsters. **Do not
-  invent a second slow.**
-- **`AILMENT_NAMES`' own comment becomes false** and must be rewritten in the
-  same commit, along with the `KEYWORDS` entries for Ailment, Burn, Bleed and
-  Poison — whose `means` lines are currently *"The Fire Ailment."* and so on,
-  which is naming standing in for a definition.
-- **There are NO gear mods for ailment or over-time damage today.** Grep found
-  none. The user names three scaling sources — burn damage, fire damage, damage
-  over time — and only the middle one exists. Adding the other two is `ModDef`
-  rows, and `npm run mods` holds every modifier to rolling, doing something and
-  reading.
-
-**Done when.** Every damage type either applies its own ailment or is written
-down as not having one; nothing scales a damage ailment except its own tags;
-100%+ application chance stacks; and no tree node in the game says "a Critical
-leaves an Ailment instead".
-
-**What must not break, in order.** `npm run comments`, `npm run theme`, `npm run
-typecheck`, `npm run mods`, `npm run build`, `npm run demo` — which polices the
-keyword sweep, the `INTERACTIONS` pairs, every `GrantDef.say`, and the grant/
-behaviour reading table — then `npm run smoke`, then `npm run shots` **alone**.
-Expect `demo` to be where this phase lives or dies.
-
----
-
-## Phase 7 — Settings stops being an empty shell
-
-**What is true today.** `src/ui/settings.ts` is 21 lines and says so in its own
-header: *"an empty shell on purpose. The rail button and this window exist so
-there is a place the moment something needs setting; nothing does yet."*
-Something does now.
-
-**Most of the work is already done and a session will not expect it.**
-`BINDINGS` in `src/data.ts:2920` is the table of what every key does and defaults
-to; `GameState.keys` overrides by the same id; `keyFor(game, id)` reads the
-override; and `src/ui/keys.ts` says outright that *"a screen that rebinds them is
-a screen and not a rewrite"*. **The flasks are already bound** — `potion_life` to
-`4` and `potion_mana` to `5`. What is missing is the screen that edits them.
-
-- [ ] **A rebinding screen over `BINDINGS`**, one row per entry, driven off the
-      table so a new binding needs no second edit. It must refuse a duplicate,
-      and it must survive `heal()`.
-- [ ] **The auto-sell filter moves in.** *"Move the item filter there out of the
-      main menu."* That is `open-filter` out of the rail, its `ICONS` entry, the
-      `filter` binding (`j`), the dock slot and the `shots` checklist entry —
-      **five places, and `smoke` asserts on at least one of them.** Decide
-      whether the binding survives the move; a screen inside another screen with
-      its own hotkey is defensible and is a decision either way.
-- [ ] **"Boss controls" needs one sentence from the user before it is built.**
-      What exists that could be bound: the fifth socket's *arm the key* button
-      (`game.called`, `src/ui/run.ts:326–345`), `run-leave`, `run-abandon`, and
-      `run-launch`. None has a binding. **The boss FIGHT has no controls at all**
-      — it is automated like every other room, by a rule with no exception — so
-      *"boss controls"* most likely means the launch, not the fight. **Ask.**
-- [ ] **A binding is a PREFERENCE and is saved**; a mode is not. `game.keys`
-      already sits beside `potions`, so this rule is already obeyed — do not add
-      a second store.
-
-**Trap.** `initKeys` ignores every key while an input has focus, on purpose
-(*"Typing is not a shortcut"*). A rebinding row IS an input, so the capture has
-to read the raw event rather than going through the dispatcher.
-
-**Done when.** Every entry in `BINDINGS` can be changed and the change survives a
-reload, and the filter is reachable from settings with nothing left pointing at
-the rail.
-
-**What must not break.** `npm run comments`, `npm run typecheck`, `npm run
-build`, `npm run smoke` (it holds ids that are about to move), `npm run drag`,
-`npm run shots` **alone**.
-
----
-
-## Phase 8 — The book
-
-**What is true today.** `src/ui/glossary.ts` already marks every keyword inside a
-line (`keywordLine`) and appends *what every keyword these lines name means*
-under the card it is on (`glossaryOf`) — because a tooltip is
-`pointer-events: none` and a keyword inside one cannot be hovered twice.
-`KEYWORDS` in `src/keywords.ts` carries `means` for each, with *its own numbers
-out of the tables the sim reads*. **So the content exists and is already correct;
-what is missing is a place to read it that is not a hover.**
-
-**Why it is wrong**, in the user's words: *"add somethign like a help, book
-something idk just something that has all the tooltip descriptions for
-everything you use like blast, arc, bleed etc in one place where you can search
-and read them."* Learning Arc requires meeting a card that says Arc.
-
-- [ ] **Every `KEYWORDS` entry, in one scrollable place, with a Find box.**
-      Search over `name`, `says` and `means`, so looking up "bleeding" finds
-      Bleed.
-- [ ] **Driven off the table, never a second list.** A keyword added in Phase 7
-      appears here with no edit. The demo should hold that: the book's row count
-      equals `KEYWORDS.length`.
-- [ ] **`kin` is shown**, since a Burn satisfying an Ailment is exactly the thing
-      a player cannot work out from two separate entries.
-- [ ] **Decide where it lives** — a rail screen of its own, or a tab inside
-      settings from Phase 8. A tab is cheaper and the rail is already thirteen
-      icons long; a rail screen is easier to reach mid-decision. **Say which it
-      beat.**
-
-**Trap.** `initKeys` ignores keystrokes while an input has focus — that is what
-lets a Find box exist at all, and `src/ui/keys.ts` names this as the whole reason
-the guard is there. It already works; do not "fix" it.
-
-**Traps, the second.** Keyword text is matched longest-first so *"Critical
-Damage"* is never torn in half by *"Critical"*. A book that re-sorts the table
-for display must not re-sort the table itself.
-
-**Done when.** A player who has never seen a card saying Arc can find out what
-Arc is, by typing.
-
-**What must not break.** `npm run comments`, `npm run typecheck`, `npm run
-build`, `npm run smoke`, `npm run shots` **alone** — a new screen is a new shot
-and the checklist has to learn it.
-
----
-
-## Phase 9 — A quest log instead of a pointing finger
+## Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

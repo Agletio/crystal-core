@@ -165,6 +165,16 @@ the Lampwright's workshop, the Lambengolmor's reading room, the answering hall
 (a boss), the ossuary and the orrery (two people who take a relic and write a
 line on your gear that nothing else can).
 
+**Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is
+one row per type — Burn, Bleed, Chill, Shock, Poison, Curse, Exposure, and
+Prismatic deliberately none. Dealing the type applies it, at a chance you BUY
+and never get free; past 100% you apply a second. A damage ailment scales by its
+OWN tags and nothing else, so Spell, Attack and Critical never reach one, and
+crit is out of them in both directions — it comes back only as the guaranteed
+Critical on a body thawing out of a Freeze. **Ailments are the HERO'S**: a
+monster's difficulty is what a crystal rolls, and a second unweighed source is
+one no danger number accounts for.
+
 **A character is a trade, a main skill, two more slots and a bag.** The trade is
 chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
@@ -190,7 +200,7 @@ src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
 src/trades.ts      the character's own web; src/trades/* the two trades
 src/moves/         the movement webs
-src/trials.ts      the web a TRIAL pays for; src/trials/* its arms
+src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
 src/scenes.ts      the authored rooms; src/scenes/* their content
 src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation
@@ -199,7 +209,7 @@ src/sim/grid.ts    generate and carve a map; sceneMap beside it
 src/game/          save, state, report, crystals, scenes, graft
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
-src/ui/            one module per screen
+src/ui/            one module per screen; settings holds keys, the filter, the book
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
