@@ -633,6 +633,25 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
   return false;
 }
 
+export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in
+
+/** How lit a rock tile is, by how far it sits from the nearest thing that is
+ *  not rock: 1 at the cut face, 0 past `ROCK_DEPTH`. `isWallFace` is this at
+ *  one tile and a hard edge; a generated tileset covers the whole padded grid,
+ *  and two thousand identical rock tiles round a chamber read as wallpaper. */
+export function wallFade(at: (x: number, y: number) => number, x: number, y: number): number {
+  if (at(x, y) !== WALL) return 1;
+  for (let r = 1; r <= ROCK_DEPTH; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (at(x + dx, y + dy) !== WALL) return 1 - (r - 1) / ROCK_DEPTH;
+      }
+    }
+  }
+  return 0;
+}
+
 /** Snaps a 0..1 roll onto the sub-tile grid. */
 const snap = (n: number): number => Math.floor(n * SUB) * U;
 

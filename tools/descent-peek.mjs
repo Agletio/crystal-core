@@ -90,6 +90,27 @@ async function makeCharacter() {
     process.exit(1);
   }
   await page.waitForTimeout(700);
+  await throughOpening();
+}
+
+/** A new character opens in the Lampwright's workshop and the stair behind him
+ *  runs into a descent by itself, so the way to the DOCK is through him and out
+ *  the far side of that descent. */
+async function throughOpening() {
+  for (let i = 0; i < 40; i++) {
+    if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
+    await page.evaluate(() => document.getElementById('speech-next')?.click());
+    await page.waitForTimeout(150);
+  }
+  await page.evaluate(() => document.getElementById('met-take')?.click());
+  for (let i = 0; i < 40; i++) {
+    if (await page.evaluate(() => document.body.dataset.runPhase === 'running')) break;
+    await page.waitForTimeout(150);
+  }
+  await page.evaluate(() => document.getElementById('run-abandon')?.click());
+  await page.waitForTimeout(400);
+  await page.evaluate(() => document.getElementById('run-again')?.click());
+  await page.waitForTimeout(400);
 }
 
 await page.goto(`${base}/index.html`, { waitUntil: 'load' });

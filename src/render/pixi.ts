@@ -51,6 +51,7 @@ import {
   floorColour,
   floorPalette,
   isWallFace,
+  wallFade,
   mix,
   poisonDrops,
   poisonFieldRadius,
@@ -507,15 +508,20 @@ export async function createPixiRenderer(
       const size = 1.002 / set.grid;
       const rock = (x: number, y: number): boolean =>
         x < 0 || y < 0 || x >= grid.width || y >= grid.height || grid.at(x, y) === WALL;
+      const deep = (x: number, y: number) => grid.at(x, y);
       for (let y = -EDGE; y < grid.height + EDGE; y++) {
         for (let x = -EDGE; x < grid.width + EDGE; x++) {
+          const solid = rock(x, y);
+          const lit = solid ? wallFade(deep, x, y) : 1; // into the black behind it
+          if (lit <= 0) continue;
           const texture = pick(x, y);
           if (!texture) continue;
           const sprite = new Sprite(texture);
           sprite.x = x;
           sprite.y = y;
           sprite.scale.set(size);
-          (rock(x, y) ? wallLayer : groundLayer).addChild(sprite);
+          if (lit < 1) sprite.alpha = lit;
+          (solid ? wallLayer : groundLayer).addChild(sprite);
         }
       }
     }
