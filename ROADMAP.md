@@ -10,8 +10,10 @@ in order to do one, it is in the wrong file.
 trials-web round has landed — the web and its six arms, all three events, the
 skill-tree tints, the arrow, the ailment rework, settings and the book — and so
 has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
-Ward and Overcharge. Phase 1 below (a quest log) stays parked by his word until
-the stripped opening has been played, and the balance pass is held.
+Ward and Overcharge. So has everything since — the Burst out of the trees, the
+text rules, attributes on gear, the effect redo, the weapon rework and the
+opening. Phase 1 below (a quest log) stays parked by his word until the
+stripped opening has been played, and the balance pass is held.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
 skill.** *The user's call: "make sure you're using the pixel lab art generator
@@ -59,6 +61,14 @@ to look:
 | Hoarfrost | a spike every 0.7s at everything Chilled, flat off level, and worth nothing to a build that Chills nothing |
 | ten generated icons | through `icons.json` → `icon.mts` → `portrait.mts`, replacing every hand-drawn grid |
 | the shelf is PICTURES | `SKILL_SHELVES` — attacks and spells share one, a header bar per category, a tile per skill and the card on the hover |
+| the Burst left the trees | six branches rethemed; `explodeOnKill` survives on two uniques and nowhere else |
+| every line says its number | no sentence explains a mechanic a second time, no total is counted for you, no stat is given twice |
+| attributes roll on gear | `ATTRIBUTE_MODS` — all three, as gear mods like any other |
+| Contagion is capped | it spreads to 2, and each spread is an explosion drawn in the ailment's own colour |
+| shred is VISIBLE | `Entity.shred`, a ring under the body and arcs over it, in the group's colour |
+| a weapon has damage | base physical on 18 bases; its OWN increases are LOCAL, wands keep spell damage |
+| a skill names its weapon | `SkillDef.requires`; all three doors police it — both equips and taking one off |
+| the Lampwright is FIRST | a new character opens in his workshop, is armed for the skill they chose, and the stair behind him is the first descent |
 
 **The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
 spent time balancing before we implemented this map skill tree even it would
@@ -77,7 +87,7 @@ thing at a time"* — so what comes next is whatever playing it turns up.
   with plate and with neither it does not — but nothing about beating it opens
   anything. Item tier is bought by run POWER alone (`DROP_BANDS[power].ilvl`
   against `BASE_TIER_ILVL = [1, 22, 46]`), families are held to the SAME threat
-  by the demo on purpose, and `BOSSES` has one entry. The open question is #12.
+  by the demo on purpose, and `BOSSES` has one entry. The open question is #11.
   **Beating it now pays a TRIAL POINT**, which is a different answer to the same
   complaint and does not settle the tier ladder.
 - **The Lampwright shot is no longer a lottery, and the seed fault it hid is
@@ -469,23 +479,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    off — a branching `TRIALS` table is a different table from a linear one.
    Ask before authoring the second room.
 
-2. **Does the BURST come out of the six trees?** The user's read, and it is
-   right: *"burst is something you can just add to any build and completely
-   solve aoe."* It is a share of your HIT, so it inherits every multiplier a
-   build already stacked, and it sits on all six trees with near-identical
-   numbers — which is the tell that it is a generic rider rather than any
-   skill's identity. **The replacement is BUILT: `sundering`**, a passive whose
-   Burst is flat off character level, on a 4s clock, and scaled by nothing you
-   own (measured: 400% increased Damage moves the hit and leaves it alone).
-   What is NOT done is taking it out of the trees, and the cost is measured:
-   **six branches** — `st_shockwave`, `sw_fault`, `bl_rupture`, `fb_*`, `al_*`,
-   `la_*` — at an enabler, three twig notables and four minors each, plus **two
-   uniques and two forged lines** that grant `explode` or `explodeOnKill` and
-   would be left granting nothing. That is roughly fifty authored nodes and six
-   new branch THEMES, one per skill, and each theme is a design call rather
-   than a rename. **Ask which six before writing them**, or say to pick.
-
-3. **Does Strike ship with one Echo, or none?** The user's words were *"it
+2. **Does Strike ship with one Echo, or none?** The user's words were *"it
    should just be a single target hit that hits pretty hard with ability to hit
    extra targets"*, and it was built exactly that way: zero Echoes bare, the
    whole branch bought. The measured cost is parked check 1 — an untreed Strike
@@ -494,7 +488,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    floor without giving anything back that reads as Area. **Not taken on his
    behalf: it is his line about what the skill IS.**
 
-4. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
+3. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
    seeds it sat 0.7% BELOW four Demonic crystals on damage taken per second;
    after the Normal pool became six generated bodies it is **-21.1%**. The cause
    is structural: the Seam takes exactly two crystals of each world, so only half
@@ -505,38 +499,38 @@ be picked up — they are decisions the user has not made. Ask before acting.
    several percent whenever anything in the sim changes, so the demo PRINTS the
    margin rather than asserting an ordering.
 
-5. **Does anyone live in the Seam?** Four characters, three worlds and the
+4. **Does anyone live in the Seam?** Four characters, three worlds and the
    Fissure — the room that is supposed to be the worst in the game has nobody in
-   it. `RunState.folk` is a list partly for this. Leans on question 2.
+   it. `RunState.folk` is a list partly for this. Leans on question 1.
 
-6. **Nothing but the Fissure hands out an element.** Every monster brings its
+5. **Nothing but the Fissure hands out an element.** Every monster brings its
    own, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack is as
    likely to throw frost as a Cavern one. Biasing the table by monster FAMILY
    would make a world's fights feel like that world's: one field on
    `MonsterFamilyDef` plus a weight lookup. Written down because the table it
    needs already exists.
 
-7. **The Cavern and the Fissure have no currency of their own.**
+6. **The Cavern and the Fissure have no currency of their own.**
    `sigil_of_upheaval` is gated to Demonic and `sigil_of_finality` to the Seam;
    the other two are gated to nothing. Every world now has uniques of its own —
    the Fissure two — so this may already be paid. **Provisional, and mine:** left
    as it is rather than inventing a gate. Ask before gating an EXISTING currency
    to the Cavern; it would make a staple zone-locked.
 
-8. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
+7. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
    this for now and get the base mechanics feeling good."* The intent is ONE
    unique interaction per trade, not a second system. Parked proposals: the
    Alchemist's flask extends whichever face is live when it fires, since potions
    are already that trade's engine; the Aethermancer refunds mana on a turn, so
    weaving is how they stay full.
 
-9. **What does a reworked TRADE web look like?** The user's word during the
+8. **What does a reworked TRADE web look like?** The user's word during the
    polish round: *"trades needs a rework"*, beyond the node theme, with no
    further spec. The retheme itself landed on all three webs, so what is left is
    the trade web's SHAPE or its content, and only the user can say which. **The
    skills layout is explicitly fine.**
 
-10. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
+9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
    hanging into a hole, bridges — was built, judged and deleted at the user's
    instruction (`83b8488`). How to draw one: the wall tile placed ONE ROW LOWER
    than it is keyed (the same picture that reads as a wall standing up under
@@ -545,7 +539,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    at its own rim. The code is at `56d599a`. Never asked for twice; here so
    nobody rediscovers the geometry.
 
-11. **How big does the bundle get before it matters?** `generated-art.ts` is
+10. **How big does the bundle get before it matters?** `generated-art.ts` is
    0.48 MB for TEN bodies (33–52 KB each at grid 48, 120 KB for the Gaunt at
    96); `docs/app.js` is 1.62 MB, 0.43 gzipped. Ten trade looks are about 0.5 MB
    and twelve more monster bodies another 0.5 — **not the ~13 MB this file
@@ -554,7 +548,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    assets" is under pressure and there is no decision to take; what is wanted is
    a number the user cares about (repo size, parse time on a cold load).
 
-12. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
+11. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
     fissure get decent t1 beat this boss and then you can progress to the
     prismatic area where you can get t2 items fight a boss progress to demonic
     t3 etc."* — and his own caveat, *"I know the crystal system will probably
