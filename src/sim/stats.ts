@@ -23,6 +23,8 @@ import {
   SKILL_SLOTS,
   MAIN_SLOT,
   MOD_BY_ID,
+  GEAR_BASE_BY_ID,
+  WEAPON_SLOT,
   UNIQUE_BY_ID,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -31,7 +33,7 @@ import { nodeById } from '../skills-tree';
 import { tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
-import type {MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
+import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -542,10 +544,58 @@ export function effectiveSkill(
  * Every stat line acting on a character. Implicits count exactly like rolled
  * mods — the only difference is that crafting can't reach them.
  */
+/** What the MAIN HAND swings for, as one flat line an ATTACK reads. LOCAL: a
+ *  bow of 100 with 100% increased Physical ON IT is a bow of 200; the same line
+ *  on a ring scales YOU. */
+export function weaponMod(character: Character): RolledMod | null {
+  const held = character.equipment?.[WEAPON_SLOT];
+  if (!held) return null;
+  const swing = weaponSwing(held);
+  if (swing <= 0) return null;
+
+  return {
+    entryId: 'weapon',
+    defId: 'weapon',
+    group: 'weapon',
+    slot: 'weapon',
+    name: 'Weapon',
+    tier: 1,
+    tags: [],
+    // Tagged ATTACK too, or the sword in your hand would arm a spell.
+    stats: [{ stat: 'damage', form: 'flat', value: swing, tags: ['physical', 'attack'] }],
+  };
+}
+
+/** What ONE weapon swings for: its base scaled by the increases rolled ON it,
+ *  untagged or naming Physical. A typed maul's flat fire and a dagger's crit
+ *  are global and not in here. The card and the sim both ask this. */
+export function weaponSwing(held: Item): number {
+  const base = GEAR_BASE_BY_ID[held.base]?.damage ?? 0;
+  if (base <= 0) return 0;
+  const own = aggregate([...held.mods, ...held.implicits], 'damage', ['physical']);
+  let swing = base * (1 + own.inc / 100);
+  for (const m of own.more) swing *= 1 + m / 100;
+  return swing;
+}
+
+/** True for a line the WEAPON keeps to itself, so nothing counts it twice. */
+const isLocal = (line: StatRoll): boolean =>
+  line.stat === 'damage'
+  && line.form !== 'flat'
+  && line.tags.every((t: string) => t === 'physical');
+
 export function statMods(character: Character): RolledMod[] {
-  const extra = [treeMod(character), attributeMod(character)];
+  const extra = [treeMod(character), attributeMod(character), weaponMod(character)];
   return [
-    ...equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]),
+    ...equippedItems(character).flatMap((i) =>
+      [...i.mods, ...i.implicits].map((m) =>
+        // Already in `weaponMod`. Left here they would scale the whole build
+        // too, which is the bug local exists to stop.
+        i === character.equipment?.[WEAPON_SLOT] && m.stats.some(isLocal)
+          ? { ...m, stats: m.stats.filter((line) => !isLocal(line)) }
+          : m
+      )
+    ),
     ...extra.filter((m): m is RolledMod => m !== null),
   ];
 }

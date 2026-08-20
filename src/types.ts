@@ -184,8 +184,9 @@ export interface GearBase {
   tier: number; // 1-3, holding BASE_TIER_MODS[tier - 1]; nothing raises it
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
-  /** Hands it takes. Two is a bow: the off hand cannot hold anything with one
-   *  in the main hand, which is what a bow's bigger implicit is paid for by. */
+  /** Bare PHYSICAL added to an ATTACK; increases rolled ON it scale this alone. */
+  damage?: number;
+  /** Hands it takes. Two is a bow, and its off hand stays empty. */
   hands?: number;
   family?: string;
   /** Lowest item level that may drop this base. Absent means from the start. */

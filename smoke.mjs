@@ -1973,17 +1973,18 @@ $('skills-close').click();
     document.querySelector('.dmgrow--sum')?.textContent
   );
 
-  // A mace does nothing for a spell. The sheet no longer explains that in
-  // prose, so the mod line has to carry it — in the dock BEFORE you equip, and
-  // on the worn slot after. A cudgel has no rolled mods at all, which is how
-  // the sheet's tooltip came to print "no modifiers" over the only line on it.
+  // A weapon SAYS what it swings for, before you wear it — the number every
+  // increase rolled on the piece scales, and the reason two of one base are not
+  // one weapon. It says Attacks too: a mace does nothing for a spell, and the
+  // sheet no longer explains that in prose. A cudgel has no rolled mods at all,
+  // which is how the sheet's tooltip came to print "no modifiers" over it.
   const mace = filled('#inv-gear').find((b) => /cudgel|maul/i.test(named(b)));
   assert(!!mace, 'the dev kit carries a mace to test with', filled('#inv-gear').map(named).join(' | '));
 
   mace.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
-    /Damage to Attacks/.test(text('tooltip')),
-    'a mace says its damage is for Attacks, before you wear it',
+    /\d+\s*Physical Damage to Attacks/.test(text('tooltip')),
+    'a mace says what it swings for, and that it is for Attacks, before you wear it',
     text('tooltip')
   );
   mace.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));

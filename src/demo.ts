@@ -150,6 +150,7 @@ import {
   damageDetail,
   monsterStats,
   effectiveSkill,
+  weaponMod,
   statMods,
   passiveScale,
   treeGrants,
@@ -3260,6 +3261,74 @@ rule('FIREBALL — do the notables actually change the cast?');
   const longer = wedge({ coneReach: 3 });
   line(`  wedge reach x3     → ${longer.join(', ')}`);
   check(longer.includes('far'), 'where reaching further does exactly that', longer.join());
+}
+
+// ===========================================================================
+rule('THE WEAPON — is its own damage its own?');
+{
+  const inc: RolledMod = {
+    entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
+    name: 'probe', tier: 1, tags: [],
+    stats: [{ stat: 'damage', form: 'inc', value: 100, tags: ['physical'] }],
+  };
+  const wielding = (where: 'none' | 'weapon' | 'ring'): Character => {
+    const c = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+    c.level = 1;
+    delete c.equipment.offhand;
+    for (const worn of Object.values(c.equipment)) {
+      worn.mods = [];
+      worn.implicits = [];
+    }
+    const bow = makeGear('crude_bow', 1);
+    bow.mods = where === 'weapon' ? [inc] : [];
+    bow.implicits = [];
+    c.equipment.weapon = bow;
+    if (where === 'ring') c.equipment.ring1.mods = [inc];
+    return c;
+  };
+  const swing = (c: Character): number => weaponMod(c)?.stats[0].value ?? 0;
+  const base = GEAR_BASE_BY_ID.crude_bow.damage ?? 0;
+
+  line(
+    `  a Crude Bow of ${base} swings ${swing(wielding('none')).toFixed(0)} bare, ` +
+      `${swing(wielding('weapon')).toFixed(0)} with +100% increased Physical ON IT, ` +
+      `${swing(wielding('ring')).toFixed(0)} with the same line on a ring`
+  );
+  check(
+    base > 0
+      && Math.abs(swing(wielding('none')) - base) < 1e-9
+      && Math.abs(swing(wielding('weapon')) - base * 2) < 1e-9
+      && Math.abs(swing(wielding('ring')) - base) < 1e-9,
+    'a damage increase rolled ON the weapon scales the WEAPON, and the same line elsewhere does not',
+    `${swing(wielding('none'))} / ${swing(wielding('weapon'))} / ${swing(wielding('ring'))}`
+  );
+
+  // And it is counted ONCE. Left in the global pool as well, a weapon's own
+  // increase would scale the whole build too — which is the bug local exists
+  // to stop, and it would be invisible in the total.
+  {
+    const c = wielding('weapon');
+    const global = statMods(c).filter((m) => m.entryId === 'probe').flatMap((m) => m.stats);
+    check(
+      global.length === 0,
+      'and it is gone from what the rest of your damage reads, so nothing counts it twice',
+      JSON.stringify(global)
+    );
+  }
+
+  // A SPELL never reads it. The line is tagged `attack`, so a wand user holding
+  // a mace for free damage is refused by the tag rather than by a rule.
+  {
+    const c = wielding('none');
+    const bare = heroStats([], 1, SKILL_BY_ID.fireball).damage;
+    const armed = heroStats(statMods(c), 1, SKILL_BY_ID.fireball).damage;
+    line(`  and a Fireball reads ${armed.toFixed(1)} holding it against ${bare.toFixed(1)} holding nothing`);
+    check(
+      Math.abs(armed - bare) < 1e-9,
+      'and a SPELL takes nothing from the weapon in your hand',
+      `${armed} against ${bare}`
+    );
+  }
 }
 
 // ===========================================================================

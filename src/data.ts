@@ -257,6 +257,9 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // a new base needs no new mod content.
 
 // The main hand keeps the id `weapon`: a save points at it.
+/** The hand a weapon's own damage is read off, named rather than searched for. */
+export const WEAPON_SLOT = 'weapon';
+
 export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'weapon', name: 'Main Hand', accepts: 'weapon' },
   { id: 'offhand', name: 'Off Hand', accepts: 'shield' },
@@ -508,10 +511,11 @@ const weapon = (
   name: string,
   family: string,
   ilvl: number,
+  damage: number,
   implicit: StatSpec[],
   hands = 1
 ): GearBase => ({
-  id, name, kind: 'weapon', art: family, family, ilvl,
+  id, name, kind: 'weapon', art: family, family, ilvl, damage,
   // Off the rung it drops at, so a side-grade arriving beside a rung holds
   // exactly what that rung holds.
   tier: BASE_TIER_ILVL.indexOf(ilvl) + 1,
@@ -522,76 +526,75 @@ const weapon = (
 
 export const WEAPON_BASES: GearBase[] = [
   // --- wands: the spell family ---------------------------------------
-  weapon('ash_wand', 'Ash Wand', 'wand', BASE_TIER_ILVL[0], [
+  weapon('ash_wand', 'Ash Wand', 'wand', BASE_TIER_ILVL[0], 5, [
     { stat: 'damage', form: 'inc', range: [10, 10], tags: ['spell'] },
   ]),
-  weapon('carved_wand', 'Carved Wand', 'wand', BASE_TIER_ILVL[1], [
+  weapon('carved_wand', 'Carved Wand', 'wand', BASE_TIER_ILVL[1], 8, [
     { stat: 'damage', form: 'inc', range: [16, 16], tags: ['spell'] },
   ]),
-  weapon('quartz_wand', 'Quartz Wand', 'wand', BASE_TIER_ILVL[2], [
+  weapon('quartz_wand', 'Quartz Wand', 'wand', BASE_TIER_ILVL[2], 12, [
     { stat: 'damage', form: 'inc', range: [24, 24], tags: ['spell'] },
   ]),
   // A side-grade rather than a fourth rung: it arrives beside the Carved Wand
   // and trades every point of the ladder for speed.
-  weapon('whisper_wand', 'Whispering Wand', 'wand', BASE_TIER_ILVL[1], [
+  weapon('whisper_wand', 'Whispering Wand', 'wand', BASE_TIER_ILVL[1], 7, [
     { stat: 'castSpeed', form: 'inc', range: [12, 12] },
   ]),
 
   // --- swords: attack speed ------------------------------------------
-  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], [
+  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], 16, [
     { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
   ]),
-  weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], [
+  weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], 26, [
     { stat: 'attackSpeed', form: 'inc', range: [13, 13] },
   ]),
-  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], [
+  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], 40, [
     { stat: 'attackSpeed', form: 'inc', range: [18, 18] },
   ]),
 
   // --- daggers: crit --------------------------------------------------
-  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], [
+  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], 11, [
     { stat: 'critChance', form: 'flat', range: [3, 3] },
   ]),
-  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], [
+  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], 18, [
     { stat: 'critChance', form: 'flat', range: [5, 5] },
   ]),
-  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], [
+  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], 28, [
     { stat: 'critChance', form: 'flat', range: [8, 8] },
   ]),
 
-  // --- maces: one damage type each, so the choice commits you ---------
+  // --- maces: the heaviest base, and one damage type each ------------
   //
-  // Tagged 'attack' as well as their type. Without it a mace's flat fire
-  // damage would arm a spell too — a wand user could hold a mace for free
-  // damage, which defeats the point of families.
-  weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], [
-    { stat: 'damage', form: 'flat', range: [5, 5], tags: ['physical', 'attack'] },
+  // A typed maul's flat line is tagged 'attack' too, or a wand user could hold
+  // one for free spell damage. A plain mace's increased PHYSICAL is local.
+  weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], 24, [
+    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['physical'] },
   ]),
-  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], 34, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['fire', 'attack'] },
   ]),
-  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], 34, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['cold', 'attack'] },
   ]),
-  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], 34, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['lightning', 'attack'] },
   ]),
-  weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], [
-    { stat: 'damage', form: 'flat', range: [14, 14], tags: ['physical', 'attack'] },
+  weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], 58, [
+    { stat: 'damage', form: 'inc', range: [45, 45], tags: ['physical'] },
   ]),
 
   // --- bows: the attack family, and the only two-handed one -----------
   //
   // Tagged 'attack' where the wand's line is tagged 'spell'. Twice the increase,
   // because holding one gives up an off hand — a shield's Block and its rating.
-  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], [
-    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['attack'] },
+  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], 21, [
+    { stat: 'attackRange', form: 'inc', range: [25, 25] },
   ], 2),
-  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], [
-    { stat: 'damage', form: 'inc', range: [32, 32], tags: ['attack'] },
+  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], 34, [
+    { stat: 'attackRange', form: 'inc', range: [38, 38] },
   ], 2),
-  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], [
-    { stat: 'damage', form: 'inc', range: [48, 48], tags: ['attack'] },
+  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], 52, [
+    { stat: 'attackRange', form: 'inc', range: [55, 55] },
   ], 2),
 ];
 
