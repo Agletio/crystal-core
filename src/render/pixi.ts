@@ -996,10 +996,25 @@ export async function createPixiRenderer(
       if (fx.kind === 'burst') {
         // Second point carries the radius, same contract as the poison field.
         const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        const grown = burstRadius(radius, t);
         // Dark, not tinted: a translucent flame-coloured disc muddies the floor.
         vfxLayer
-          .circle(cx(from.x), cy(from.y), burstRadius(radius, t))
+          .circle(cx(from.x), cy(from.y), grown)
           .fill({ color: toHexNumber(palette.void), alpha: Math.max(0, 0.3 * (1 - t)) });
+
+        // The shards are a PICTURE, laid to the radius the sim used and turned
+        // off the position so two bursts a tile apart are not the same picture
+        // twice. The blocks stay under it and carry the damage TYPE's colour,
+        // which the baked art cannot: a cold burst and a fire one differ there.
+        const shards = vfxTexture('burst');
+        if (shards) {
+          const art = effectSprite(shards, grown * 2, true);
+          art.anchor.set(0.5, 0.5);
+          art.x = cx(from.x);
+          art.y = cy(from.y);
+          art.rotation = tileNoise(Math.round(from.x * 4), Math.round(from.y * 4), 53) * Math.PI * 2;
+          art.alpha = Math.max(0, 0.9 * (1 - t * t));
+        }
         blocks(fireBurst(from, radius, t), fx.damageType, 1);
         continue;
       }

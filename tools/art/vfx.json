@@ -57,6 +57,11 @@
    "id": "poison_drop",
    "say": "ONE single falling GLOB of thick sickly green poison, seen from the side, taller than it is wide: a fat rounded blob at the BOTTOM drawn out into a thin tapering tail above it, like a heavy droplet mid-fall, dark bile-green with a paler acid-green highlight down one side. It is alone in empty transparent space. NOT a bottle, NOT a flask, NOT a vial, NOT a bubble, NOT a leaf, NOT a flame, NOT a splash, NOT a puddle, NOT a ground, NOT a shadow, NOT rain, NOT several drops.",
    "grid": 48
+  },
+  {
+   "id": "burst",
+   "say": "a loose SCATTER of separate chunky angular fragments thrown violently outward and away from an empty middle, seen from DIRECTLY ABOVE looking straight down, spread far apart with big empty gaps between them and NOT touching one another, uneven and messy and irregular with some fragments much larger than others, the middle completely EMPTY with nothing drawn there, each fragment a hard-edged pale hot white and gold splinter with a near-black edge, the farthest ones smallest. NOT a ring, NOT a hoop, NOT a wreath, NOT a wheel, NOT a gear, NOT a chain, NOT a necklace, NOT beads, NOT evenly spaced, NOT a closed loop, NOT joined up, NOT a circle outline, NOT a ball, NOT a sphere, NOT smoke, NOT a character, NOT text."
   }
- ]
+ ],
+ "_sweep": "A centred radial EFFECT is the one ask this generator would not take. Five variants of the melee sweep came back a beaded wreath, a saw blade, a clock face, a directional cut and a closed sunburst: 'arranged around an empty middle, seen from directly above' is a decorative RING to it, whatever it is told not to draw. The sweep stays procedural, and `sweepRing` breaks its ring on purpose because a closed hoop reads as a shield. Do not spend another generation on it without a genuinely different framing."
 }
