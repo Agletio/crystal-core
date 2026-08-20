@@ -186,11 +186,9 @@ export interface GearBase {
   implicit?: StatSpec[];
   /** Bare PHYSICAL added to an ATTACK; increases rolled ON it scale this alone. */
   damage?: number;
-  /** Hands it takes. Two is a bow, and its off hand stays empty. */
-  hands?: number;
+  hands?: number; // two is a bow, and its off hand stays empty
   family?: string;
-  /** Lowest item level that may drop this base. Absent means from the start. */
-  ilvl?: number;
+  ilvl?: number; // lowest item level that may drop it; absent means from the start
   /** Armour rating the piece carries before any modifier. */
   armour?: number;
 }
@@ -300,11 +298,13 @@ export interface MonsterDef {
 export type SkillCategory = 'spell' | 'attack' | 'passive' | 'movement';
 
 export interface SkillDef {
+  /** A weapon FAMILY or `WEAPON_GROUPS` name this is swung with. Spells: none. */
+  requires?: string;
   id: string;
   name: string;
   description: string;
   category?: SkillCategory; // omitted for monster-only skills
-  /** Base the Lampwright hands a character who chose this, over the category's. */
+  /** Base the Lampwright hands you, over what `requires` would pick. */
   weapon?: string;
   /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */
   tags: string[];

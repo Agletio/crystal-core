@@ -169,11 +169,11 @@ change rather than as drift: six generated bodies replaced eleven and one
 thrower per family replaced a quarter of all packs shooting, which took the
 blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
 
-### It owes five parked checks
+### It owes four parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — five today.**
+count and this list has to agree with it — four today.**
 
 1. **"none of the four is a wall for the character that clears the Fissure"** —
    **read this one first.** Demonic and the Seam each kill it 7 times in 12,
@@ -186,25 +186,20 @@ count and this list has to agree with it — five today.**
    DESIGN question and open — see Open questions.**
 2. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
-3. **"the sim asks for exactly what the sheet promised"** — `fireball@30`
-   promises 355.89 per hit where the sim asks 480.45, which is exactly the
-   `ailmentMultiplier: 1.35` the tree grants: the sheet applies it only for
-   `ailment_burst` and the sim also applies it on the `critAilment` path.
-   Widening the sheet's condition broke a SECOND promise, so what is wanted is
-   the per-hit and per-crit numbers being told apart. Pre-existing.
-4. **"Before The Lamp Dies: 90s against a median clear"** — the room takes 92s.
-   It passed while Strike was at 72 and does not at 80, which is the whole
-   reason it is parked rather than tuned.
+3. **"Before The Lamp Dies: 90s against a median clear"** — the room takes
+   114s. It passed while Strike was at 72 and has not since, and weapons
+   carrying damage of their own moved it again.
 
-5. **"plate answers the boss a rung earlier than speed does"** — it does not
-   any more: **full tier 1 plate clears it 0 times in 8 where speed clears 8,
-   and plate only comes good at t2 (8/8).** Measured cause, and it is not a
-   number: a plate build's damage came partly from a Burst its own tree gave
-   away for free, and since the Burst moved out of the trees and into a passive
-   SLOT that build has to spend a slot to buy it back. `ladderCharacter` now
-   fills its passive slots at random, which is what a real character has, and
-   the draw is often no help against a crowd. Thin tier 1 speed also crept to
-   3/8 against a floor of 0 from the same change.
+**"the sim asks for exactly what the sheet promised" came back on its own** when
+weapons took base damage, and is a `check` again. Nothing was done to it
+directly; the number it was measuring moved under it.
+
+4. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
+   is fixed and the other half is not. Weapons taking damage of their own put
+   full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
+   thin tier 1 SPEED now clears **5/8 against a floor of 0**: a weapon carries
+   damage at every rung, so the rung below the gate got the same lift the gate
+   did. That is the half still parked.
 
 The boss grid's MECHANISM is still a real `check` and stays one — speed answers
 it at full tier 1, a build with neither answer never does, and t2 trivialises

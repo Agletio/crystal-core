@@ -257,6 +257,12 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // a new base needs no new mod content.
 
 // The main hand keeps the id `weapon`: a save points at it.
+/** What a skill will be SWUNG with: one word naming several families, so "any
+ *  melee weapon" is one entry. A spell names nothing at all. */
+export const WEAPON_GROUPS: Record<string, string[]> = {
+  melee: ['sword', 'dagger', 'mace'],
+};
+
 /** The hand a weapon's own damage is read off, named rather than searched for. */
 export const WEAPON_SLOT = 'weapon';
 
@@ -3236,8 +3242,17 @@ export const STARTER_WEAPON: Record<string, string> = {
   attack: 'rusted_sword',
 };
 
-export const starterWeapon = (skill: SkillDef | undefined): string | null =>
-  skill?.weapon ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
+/** Its own override, else the humblest base it can swing, else the category's.
+ *  DERIVED from `requires`, or the opening arms you with a piece it refuses. */
+export const starterWeapon = (skill: SkillDef | undefined): string | null => {
+  if (skill?.weapon) return skill.weapon;
+  const wants = skill?.requires
+    ? WEAPON_GROUPS[skill.requires] ?? [skill.requires]
+    : [];
+  const fitting = WEAPON_BASES.filter((b) => b.family && wants.includes(b.family));
+  const humblest = fitting.sort((a, b) => (a.ilvl ?? 1) - (b.ilvl ?? 1))[0];
+  return humblest?.id ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
+};
 
 /** What a key DOES, declared once. The default is here and an override lands
  *  on `GameState.keys` under the same id, so the screen that edits them later
@@ -3383,6 +3398,7 @@ export const SKILLS: SkillDef[] = [
      *  boss gate is calibrated on this figure with this skill, and the pass is
      *  held. */
     id: 'strike',
+    requires: 'melee',
     name: 'Strike',
     category: 'attack',
     description: 'A hard melee blow. One enemy, until its tree buys Echoes.',
@@ -3400,6 +3416,7 @@ export const SKILLS: SkillDef[] = [
     /** The opposite trade to Strike: that takes ONE enemy hard, this takes
      *  everything in the wedge for less each — 58 at 0.90/s against 72 at 1.20. */
     id: 'shockwave',
+    requires: 'mace',
     name: 'Shockwave',
     category: 'attack',
     description:
@@ -3542,6 +3559,7 @@ export const SKILLS: SkillDef[] = [
      * on enemies near it — Forks, which are their OWN bolts rather than the
      * arrow carrying on, so the shot's line decides nothing about who takes one. */
     id: 'lightning_arrow',
+    requires: 'bow',
     name: 'Lightning Arrow',
     category: 'attack',
     description:

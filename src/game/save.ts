@@ -24,6 +24,7 @@ import {
   KEEP_TIERS,
   MAIN_SKILLS,
   MAIN_SLOT,
+  WEAPON_SLOT,
   PLAYER_SKILLS,
   SKILL_SLOTS,
   POTION_BY_ID,
@@ -37,7 +38,7 @@ import {
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
 import { makeGear, reserveItemIds } from '../economy';
-import { attributePointsFor } from '../sim/character';
+import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
 
@@ -311,7 +312,23 @@ function healSkillSlots(character: Character): boolean {
     seen.add(held);
     kept[slot.id] = held;
   }
-  if (!kept[MAIN_SLOT]) kept[MAIN_SLOT] = MAIN_SKILLS[0]?.id ?? PLAYER_SKILLS[0]?.id ?? 'strike';
+  // Dropped like one whose slot has gone. Both equips refuse to MAKE this
+  // pair, but a save written before a skill wanted a weapon can hold it.
+  const held = character.equipment?.[WEAPON_SLOT] ?? null;
+  if (kept[MAIN_SLOT] && !weaponFits(SKILL_BY_ID[kept[MAIN_SLOT]], held)) {
+    delete kept[MAIN_SLOT];
+  }
+  if (!kept[MAIN_SLOT]) {
+    // What the weapon is FOR first, then anything it can swing: a bow healing
+    // to a spell keeps you playing but throws away the shape of the build.
+    const family = held ? GEAR_BASE_BY_ID[held.base]?.family : undefined;
+    kept[MAIN_SLOT] =
+      MAIN_SKILLS.find((sk) => sk.requires && family && weaponFits(sk, held))?.id
+      ?? MAIN_SKILLS.find((sk) => weaponFits(sk, held))?.id
+      ?? MAIN_SKILLS[0]?.id
+      ?? PLAYER_SKILLS[0]?.id
+      ?? 'strike';
+  }
 
   character.equipped = kept;
   delete (character as unknown as { skillId?: string }).skillId;

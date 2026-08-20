@@ -14,6 +14,7 @@ import {
   RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
+  WEAPON_SLOT,
   START_PRESETS,
   TRIALS,
   CRYSTAL_ILVL,
@@ -25,7 +26,7 @@ import {
 import type { EquipSlotDef, RunSlotDef } from '../types';
 import { canSell, grant, makeCrystal, makeGear, makeRelic, makeUnique, sellPrice } from '../economy';
 import { baseTier } from '../mods';
-import { mainSkillId, makeCharacter } from '../sim/character';
+import { equippedSkill, mainSkillId, makeCharacter, weaponFits } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
@@ -592,6 +593,13 @@ export function equipItem(game: GameState, item: Item, slotId: string): Undo | n
   // What comes off the OTHER hand is a net addition to the bag, so it can be
   // refused for the same reason unequipping can: the removal below frees the
   // slot `previous` takes, which leaves this room exactly as it reads now.
+  // A weapon that strands your MAIN skill is refused, the other half of the
+  // rule `equipSkill` enforces. Without both, swapping a mace for a bow leaves
+  // a Shockwave that cannot be swung and a descent that cannot end.
+  if (slotId === WEAPON_SLOT && !weaponFits(SKILL_BY_ID[mainSkillId(game.character)], item)) {
+    return null;
+  }
+
   const clashSlot = handClash(game.character, item, slotId);
   const clash = clashSlot ? game.character.equipment[clashSlot] ?? null : null;
   if (clash && carryRoom(game, clash.kind) <= 0) return null;

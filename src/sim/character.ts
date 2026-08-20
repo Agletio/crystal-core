@@ -1,7 +1,11 @@
 /** The character: what persists between runs. A run reports XP, this banks it. */
+import { defaultGearBase, makeGear } from '../economy';
 import {
   ATTRIBUTE_BY_ID,
   ATTRIBUTE_STEP,
+  GEAR_BASE_BY_ID,
+  WEAPON_GROUPS,
+  WEAPON_SLOT,
   LEVELLING,
   MAIN_SLOT,
   SKILL_BY_ID,
@@ -11,7 +15,7 @@ import {
 import { treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, canAllocateTrade, canDeallocateTrade, tradePointsFor } from '../trades';
 import { canAllocateTrial, canDeallocateTrial, trialPointsFor } from '../trials';
-import type { Item, SkillSlotDef } from '../types';
+import type { Item, SkillDef, SkillSlotDef } from '../types';
 
 /**
  * A skill's own progression. Levels come from USE — only the active skill takes
@@ -53,10 +57,34 @@ export interface Character {
   trialChoices?: Record<string, string>;
 }
 
+/** Every family a skill will be swung with, resolving a group to its members. */
+export const weaponFamilies = (skill: SkillDef): string[] =>
+  !skill.requires ? [] : WEAPON_GROUPS[skill.requires] ?? [skill.requires];
+
+/** Whether what is in your hand can swing this skill. A spell requires nothing,
+ *  and an EMPTY hand fits everything: holding nothing is not holding wrong. */
+export function weaponFits(skill: SkillDef | undefined, held: Item | null): boolean {
+  if (!skill?.requires || !held) return true;
+  const family = GEAR_BASE_BY_ID[held.base]?.family;
+  return family !== undefined && weaponFamilies(skill).includes(family);
+}
+
 export function makeCharacter(
   equipment: Record<string, Item>,
   skillId: string
 ): Character {
+  // Never MADE holding a weapon its own skill refuses; an empty hand stays empty.
+  const skill = SKILL_BY_ID[skillId];
+  const held = equipment[WEAPON_SLOT] ?? null;
+  if (held && !weaponFits(skill, held)) {
+    const want = defaultGearBase('weapon', held?.ilvl ?? 1, weaponFamilies(skill)[0]);
+    if (want) {
+      equipment = { ...equipment, [WEAPON_SLOT]: makeGear(want.id, held?.ilvl ?? 1) };
+      // Two hands empties the other, as `handClash` would.
+      if ((want.hands ?? 1) > 1) delete equipment.offhand;
+    }
+  }
+
   return {
     name: 'Wanderer',
     level: 1,
@@ -170,6 +198,11 @@ export function equipSkill(character: Character, skillId: string, slotId?: strin
   if (!slot) return false;
   const def = SKILL_SLOT_BY_ID[slot];
   if (!def || !def.accepts.includes(category) || !slotIsOpen(character, slot)) return false;
+  // Refused, not equipped-and-useless: a main skill you cannot swing is a
+  // descent that never ends. The MAIN slot only; a passive is not swung.
+  if (slot === MAIN_SLOT && !weaponFits(SKILL_BY_ID[skillId], character.equipment?.[WEAPON_SLOT] ?? null)) {
+    return false;
+  }
 
   const held = { ...(character.equipped ?? {}) };
   for (const [id, what] of Object.entries(held)) {

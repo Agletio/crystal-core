@@ -20,6 +20,7 @@ import {
   ENCOUNTERS,
   MAIN_SKILLS,
   MAIN_SLOT,
+  starterWeapon,
   PLAYER_SKILLS,
   SKILL_CATEGORIES,
   SKILL_SHELVES,
@@ -217,6 +218,8 @@ import {
   equipSkill,
   equippedSkill,
   mainSkillId,
+  weaponFamilies,
+  weaponFits,
   openSlots,
   slotForSkill,
   makeCharacter,
@@ -1386,8 +1389,12 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
 // A bow takes both hands. Neither direction may be a refusal: the piece in the
 // other hand comes OFF and goes back in the bag, and the undo puts both back —
 // otherwise swapping between a shield build and a bow build is a puzzle.
+//
+// Cast by a SPELL, which requires no weapon at all: a melee skill refuses a bow
+// outright now, and this is about the HAND clash rather than about that.
 {
   const game = createGame('fresh');
+  game.character.equipped = { ...game.character.equipped, main: 'fireball' };
   game.inventory = [];
   const bow = makeGear('crude_bow', 20);
   const shield = makeGear('bark_buckler', 20);
@@ -1468,7 +1475,9 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
 {
   const game = createGame('fresh');
   game.inventory = [];
-  const wand = makeGear('ash_wand', 20);
+  // A sword rather than a wand: a fresh character swings Strike, which refuses
+  // one, and this is about the BENCH rather than about what fits your hand.
+  const wand = makeGear('rusted_sword', 20);
   addItem(game, wand);
   equipItem(game, wand, 'weapon');
   selectForCraft(game, wand);
@@ -3327,6 +3336,64 @@ rule('THE WEAPON — is its own damage its own?');
       Math.abs(armed - bare) < 1e-9,
       'and a SPELL takes nothing from the weapon in your hand',
       `${armed} against ${bare}`
+    );
+  }
+}
+
+// ===========================================================================
+rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
+{
+  const wants: string[] = [];
+  for (const skill of MAIN_SKILLS) {
+    const need = skill.requires ? weaponFamilies(skill).join('/') : 'anything';
+    line(`  ${skill.name.padEnd(17)} ${need}`);
+    // A SPELL names nothing: cast it holding whatever you like.
+    if (skill.category === 'spell' && skill.requires) wants.push(`${skill.id} is a spell and requires ${skill.requires}`);
+  }
+  check(wants.length === 0, 'a spell asks for no weapon at all', wants.join('; '));
+
+  // The weapon the Lampwright hands you SATISFIES the skill you picked. Derived
+  // rather than written twice, and checked, or the opening arms you with a
+  // piece your own skill refuses and the first descent cannot be swung.
+  const wrong = MAIN_SKILLS.filter((sk) => {
+    const base = starterWeapon(sk);
+    return !base || !weaponFits(sk, makeGear(base, 1));
+  }).map((sk) => `${sk.id} → ${starterWeapon(sk)}`);
+  check(wrong.length === 0, 'and the weapon it is opened with is one it can be swung with', wrong.join(', '));
+
+  // BOTH directions refuse, or the pair can still be made from one side.
+  {
+    const game = createGame('fresh');
+    game.inventory = [];
+    const bow = makeGear('crude_bow', 20);
+    const mace = makeGear('cudgel', 20);
+    for (const i of [bow, mace]) addItem(game, i);
+    equipItem(game, mace, 'weapon');
+    equipSkill(game.character, 'shockwave');
+
+    const tookBow = equipItem(game, bow, 'weapon') !== null;
+    const tookArrow = equipSkill(game.character, 'lightning_arrow');
+    line(`  holding a mace and swinging Shockwave: a bow ${tookBow ? 'went on' : 'is refused'}, Lightning Arrow ${tookArrow ? 'went on' : 'is refused'}`);
+    check(
+      !tookBow && !tookArrow && mainSkillId(game.character) === 'shockwave',
+      'a weapon that would strand your skill is refused, and so is a skill your weapon cannot swing',
+      `bow ${tookBow}, arrow ${tookArrow}, holding ${mainSkillId(game.character)}`
+    );
+  }
+
+  // And a SAVE written before the pair was policed is healed rather than left
+  // holding a skill it cannot use, which is a descent that never ends.
+  {
+    const game = createGame('fresh');
+    game.character.equipment.weapon = makeGear('crude_bow', 20);
+    game.character.equipped = { ...game.character.equipped, [MAIN_SLOT]: 'shockwave' };
+    heal(game);
+    const now = mainSkillId(game.character);
+    line(`  and a save holding a bow and Shockwave heals to ${SKILL_BY_ID[now]?.name}`);
+    check(
+      weaponFits(SKILL_BY_ID[now], game.character.equipment.weapon ?? null),
+      'and a save holding a pair neither equip would make is healed to one that works',
+      `${now} with a bow`
     );
   }
 }
