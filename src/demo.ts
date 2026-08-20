@@ -2134,7 +2134,9 @@ rule('SPRITES — is the pixel art well formed?');
   // the doll spans nearly all of 24, so it needs a bigger `scale` to stand the
   // same height as the pack around it.
   const fought = MONSTERS.filter((m) => GENERATED[m.sprite]);
-  const shrunk = fought.filter((m) => m.scale < 1.3).map((m) => `${m.id} at ${m.scale}`);
+  const shrunk = fought
+    .filter((m) => m.scale < 1.3 && (GENERATED[m.sprite]?.copies ?? 1) < 2)
+    .map((m) => `${m.id} at ${m.scale}`);
   line(`  ${fought.length} of ${MONSTERS.length} monsters are generated: ${fought.map((m) => m.id).join(', ')}`);
   check(
     fought.length > 0 && shrunk.length === 0,

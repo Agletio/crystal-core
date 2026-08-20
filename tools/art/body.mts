@@ -294,6 +294,11 @@ if (command === 'design') {
 } else if (command === 'state') {
   const character = body!.character;
   if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
+  // Asked before the rotation images exist it is refused as TEXT, and skipped.
+  for (let go = 0; go < 60; go++) {
+    if (!/still being created/i.test(await callTool('get_character', { character_id: character }))) break;
+    await wait(15_000);
+  }
   const on = [body!.face ?? asks.face];
   // Naming states asks for THOSE, which is what a re-roll wants: a judged state
   // that failed is deleted and asked again, and the rest are not paid for twice.
@@ -334,12 +339,13 @@ if (command === 'design') {
     }
     // Written back like a prop's, or a re-roll leaves the shipped row pointing
     // at the group it meant to REPLACE. The author's sampling is kept.
-    if (into && shipped.bodies) {
-      const row = shipped.bodies.find((b: { sprite: string }) => b.sprite === sprite);
+    if (into) {
+      const now = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as typeof shipped; // re-read: a stale snapshot reverts what was edited mid-run
+      const row = now.bodies.find((b: { sprite: string }) => b.sprite === sprite);
       const state = row?.states?.[name];
       if (state) {
         state.group = into;
-        writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+        writeFileSync(here('generated.json'), `${JSON.stringify(now, null, 1)}\n`);
       }
     }
   }

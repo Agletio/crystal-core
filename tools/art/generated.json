@@ -499,32 +499,32 @@
    "luma": 32
   },
   {
+   "grid": 96,
+   "inks": 24,
+   "luma": 32,
    "sprite": "hornfiend",
-   "character": "3cce3f2b-4bde-45e4-9a42-f89d014e2b1d",
+   "character": "8b26ba0b-ff9d-40c8-8635-5e3f98a645dc",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "151a3bb3-abd6-4b0d-908d-6dc0c654f55e",
+     "group": "dc3acd81-70e5-4588-83dc-941e12cb9535",
      "frames": 5
     },
     "walk": {
-     "group": "c5002ff0-4a3b-4b5a-b73b-6035107f14ef",
+     "group": "0d98415b-0d73-4daf-8722-cd04619642ea",
      "frames": 9
     },
     "attack": {
-     "group": "2f1241fd-864d-41b3-97ab-ef755ae37e6f",
+     "group": "dab506b7-38a4-477d-ab18-2da8785b795d",
      "frames": 5
     },
     "death": {
-     "group": "40fe08a5-5388-4fcb-9031-6285e3ba97ad",
+     "group": "9f526089-9f2b-4fc6-b85e-7136879e9b1a",
      "frames": 7
     }
-   },
-   "grid": 48,
-   "inks": 24,
-   "luma": 32
+   }
   },
   {
    "sprite": "maw",
@@ -672,7 +672,9 @@
    },
    "grid": 48,
    "inks": 24,
-   "luma": 32
+   "luma": 32,
+   "hover": 0.34,
+   "copies": 4
   },
   {
    "sprite": "spire",
@@ -728,7 +730,8 @@
    },
    "grid": 48,
    "inks": 24,
-   "luma": 32
+   "luma": 32,
+   "hover": 0.4
   },
   {
    "sprite": "bloom",

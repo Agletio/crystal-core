@@ -545,7 +545,7 @@
    "sprite": "hornfiend",
    "name": "Rot Hornfiend",
    "mode": "v3",
-   "size": 48,
+   "size": 96,
    "inks": "demonic",
    "look": "a HUGE HEAVY demon, massively broad across the chest and shoulders, head carried low and thrust forward, wearing an ENORMOUS pair of thick curved horns that sweep forward well past its own face and arrive before the rest of it does, thick short legs, long heavy arms ending in blunt claws. MASSIVE and BROAD and FORWARD-LEANING. NOT thin, NOT tall and lanky, NOT winged, NOT armoured, NOT a bull on four legs. The WHOLE BODY is VERY DARK, near-black — matte charcoal hide with no more than a faint oxblood tint down in it, unlit, the darkest thing in the picture. Only the horns and the teeth are lighter, a dull dead bone. NOT bright, NOT vivid, NOT saturated, NOT glossy, NOT scarlet, NOT crimson, NOT bright red, NOT pink, NOT magenta, NOT orange, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT green, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the horns and the chest first, but the far shoulder and the far leg are still visible behind the near ones. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {
@@ -567,7 +567,7 @@
     }
    },
    "approved": "cache/designs/approved/hornfiend.png",
-   "character": "3cce3f2b-4bde-45e4-9a42-f89d014e2b1d"
+   "character": "8b26ba0b-ff9d-40c8-8635-5e3f98a645dc"
   },
   {
    "sprite": "maw",

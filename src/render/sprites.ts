@@ -311,7 +311,7 @@ export const HOVER_CYCLE = 1.6;
  *  not draw is a SCATTER, so several of one thing is one picture and this. */
 export const copiesOf = (sprite: string): number =>
   (GENERATED[sprite] as { copies?: number } | undefined)?.copies ?? 1;
-export const SWARM_ORBIT = 0.42;
+export const SWARM_ORBIT = 0.62;
 export const SWARM_SPIN = 0.9;
 
 export const strideOf = (sprite: string, frames: number): number =>
