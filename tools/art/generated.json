@@ -561,23 +561,23 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "3170e350-94df-4d63-a0c8-aa2cd04420be",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "eecd4c32-6b56-4d33-9400-dda84066a80c",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "c9812b91-01b7-4200-b165-c1074cc157b3",
      "frames": 0
     },
     "cast": {
-     "group": "",
+     "group": "2034bec9-8373-47e9-9dbd-d0b95d0b71d9",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "c02fe84e-5ba7-4deb-8440-6f6e146dbbdc",
      "frames": 0
     }
    },
@@ -593,19 +593,19 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "33d690e7-8d2e-4095-ab14-8d6eafec7ee8",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "a83e6965-378d-4457-a076-1846b4aded53",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "87ba109b-58fc-4a89-b782-c064b7eec234",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "68845e0d-bc22-4486-8a0c-af8b1fdae2b6",
      "frames": 0
     }
    },
@@ -621,19 +621,19 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "449efe78-ab19-4261-86f8-2de9c8dca4b2",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "ba587a74-1db5-4684-80e6-ea6ede3329f7",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "58d5d86e-789b-4992-8146-595133c8f185",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "8bcb0672-3732-412e-8667-fb645a6cd098",
      "frames": 0
     }
    },
@@ -649,23 +649,23 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "4166722e-6eaa-4791-bd07-768502a3f492",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "40a9f6ee-a813-4585-8cec-f77715f81966",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "f7dbeb51-2df6-4b5a-95f5-a0c8ef2c5e85",
      "frames": 0
     },
     "cast": {
-     "group": "",
+     "group": "8e1392be-016b-4b6e-8523-7d08cf2a2718",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "d06f6358-e29b-44ff-9ff8-5ef44977abd3",
      "frames": 0
     }
    },
@@ -681,7 +681,7 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "2e719a34-c2a6-4f7b-bf97-b8214345c6b1",
      "frames": 0
     },
     "walk": {
@@ -689,7 +689,7 @@
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "e4f2ec59-21a3-43b5-92c6-3c902b829f3f",
      "frames": 0
     },
     "death": {

@@ -781,7 +781,7 @@
    "mode": "v3",
    "size": 48,
    "inks": "bloom",
-   "look": "a CLUSTER OF CRYSTAL BLADES with a dead man caught inside it. Great violet crystal spikes, each as long as a man's arm, jut out in every direction from a mass at its middle — and half swallowed inside that mass, still showing between the blades, are the ribs and the cracked skull and one reaching arm of a SKELETON, whose two bare legs hang out of the bottom and carry the whole thing forward at a walk. The CRYSTAL is most of what you see and the bones show through it. NOT a clean whole skeleton, NOT a skeleton with a few small crystals on it, NOT a statue, NOT a cut gem, NOT a jewel, NOT a boulder, NOT a crystal formation sitting on the ground, NOT armoured, NOT robed, NOT winged, NOT flesh, NOT skin. The BONE is VERY DARK and matte, near-black, old blood dried to a rust-brown crust in the joints — NOT lilac bone, NOT violet bone, NOT purple bone, NOT pale bone, NOT white, NOT ivory, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm. The CRYSTAL is dark almost-black violet with deep indigo facets, cold and unlit — NOT pale overall, NOT bright, NOT clear glass, NOT transparent, NOT rainbow, NOT green, NOT cyan. Seen at a STRONG three-quarter angle, turned well round toward side-on. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
+   "look": "a starved undead SKELETON standing upright and walking, ribs and spine bare, a cracked skull, arms hanging — the same dead thing the mine is full of — carrying a CREST OF CRYSTAL BLADES that has burst out through its spine and its shoulder blades from inside and stands up off its back like a fan of spikes, each blade as long as its own forearm, with a crust of smaller crystal spreading up one arm. The skeleton is WALKING and the crest rides on its back. NOT a crystal formation, NOT a cluster on the ground, NOT a skeleton sitting inside crystal, NOT surrounded by crystal, NOT a boulder, NOT a cut gem, NOT a statue, NOT wings, NOT feathers, NOT armoured, NOT robed. Very dark almost-black BONE, old blood dried to a rust-brown and black crust. NOT lilac bone, NOT violet bone, NOT purple bone, NOT pale bone, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT warm, NOT ivory, NOT white. Only the CREST is violet: dark almost-black violet crystal with deep indigo facets, cold and unlit. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the skull and the chest first, but the far shoulder and the far leg are still visible behind the near ones. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
    "states": {
     "idle": {
      "frames": 4,
@@ -839,9 +839,9 @@
    "#2E2722",
    "#3D342C",
    "#4E4238",
+   "#5F5145",
    "#3A1A14",
    "#4E211A",
-   "#1C142E",
    "#2C2046",
    "#5E4382",
    "#9C7FCC"
