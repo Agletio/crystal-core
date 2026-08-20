@@ -41,6 +41,7 @@ interface BodyAsk {
   /** `standard` only, and its default preset is the bobblehead. */
   proportions?: string;
   size?: number;
+  inks?: string; // a row of `palettes`: the room this body lives in, not the roster's
   states: Record<string, StateAsk>;
 }
 
@@ -55,6 +56,7 @@ const here = (file: string): string => new URL(`./${file}`, import.meta.url).pat
 const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   face: string;
   inks: string[];
+  palettes: Record<string, string[]>;
   bodies: BodyAsk[];
   props: { id: string; tiles: number; say: string; view?: string; size?: number; tone?: number; dull?: number }[];
 };
@@ -127,9 +129,12 @@ async function pending(character: string): Promise<string[]> {
  *  from none of them. */
 function palette(): string {
   const S = 8;
-  const w = asks.inks.length * S;
+  const named = body?.inks;
+  if (named && !asks.palettes[named]) throw new Error(`${sprite}: no palette called ${named}`);
+  const inks = named ? asks.palettes[named] : asks.inks;
+  const w = inks.length * S;
   const px = new Uint8Array(w * S * 4);
-  asks.inks.forEach((hex, i) => {
+  inks.forEach((hex, i) => {
     const [r, g, b] = [1, 3, 5].map((o) => parseInt(hex.slice(o, o + 2), 16));
     for (let y = 0; y < S; y++) {
       for (let x = 0; x < S; x++) {
