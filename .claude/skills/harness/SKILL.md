@@ -5,15 +5,15 @@ description: Running and reading the test suite — what each harness proves, ho
 
 # The harnesses
 
-About **twelve minutes** end to end. Four are slow enough that a two-minute tool
+About **sixteen minutes** end to end. Four are slow enough that a two-minute tool
 timeout kills them mid-run — background them.
 
 | | |
 |---|---|
 | `comments`, `theme`, `typecheck`, `mods`, `build` | a second or two each |
 | `smoke` | ~4min — measured; it plays a descent too. It prints its own count, and that is the number |
-| `demo` | ~2min |
-| `shots` | ~5min — it waits out TWO whole descents |
+| `demo` | ~6min — it plays several hundred descents, and a hard game makes each of them longer |
+| `shots` | ~4min — the Lampwright is the OPENING now, so it no longer waits out a cleared descent to reach him |
 | `drag` | ~20s |
 | `peek` | a real descent in real time |
 
@@ -23,10 +23,9 @@ prints a line per check, but through a PIPE that output is buffered, so
 everything at once. Redirect to a file and watch the file. Never assume it broke.
 
 **Do NOT run `shots` concurrently with `demo` or `smoke`.** It waits out real
-descents in real time against a two-minute budget, so under contention it loses
-that race and reports `the first descent never met the Lampwright` — measured:
-red beside the other two, green alone, on the same tree. **A `shots` failure
-that names a missing SCENE is a load result until you have re-run it alone.**
+descents in real time, so under contention it loses that race. **A `shots`
+failure that names a missing SCENE is a load result until you have re-run it
+alone.**
 
 **There is no `?fast=`.** Nothing in `src/` reads a query parameter and the
 frame loop has no scale on its `dt`, which is why a harness that plays the game
@@ -128,10 +127,21 @@ with it.
 
 ## Claims need evidence
 
-- **A balance claim needs a measurement.** `ladderCharacter` in
-  `src/sim/loadout.ts` and the harnesses in `src/demo.ts` are the tools; a
-  throwaway probe is fine for what they do not cover — put it in the scratchpad
-  or delete it.
+- **A balance claim needs a measurement, and it needs the CEILING.** Both live
+  in `src/sim/loadout.ts`: `ladderCharacter` is a random tree walk with its
+  attributes split four ways — the FLOOR, and nobody plays it — where
+  `bestBuild` searches plate, mod pool, attributes, passives, mover and a greedy
+  tree walk, then PLAYS its shortlist because the sheet cannot see a pack.
+  Measured, the gap is 1.4x at band 1 and 3.0x at band 6, so a difficulty tuned
+  until the floor dies is off by up to three times. `buildPower` is the score.
+  **Anything measuring what a descent PAYS must run a ceiling** — a character
+  that dies banks nothing, and the drop, gold and unique checks all went red the
+  day the game got hard because they were reading a build with no plan.
+- **Measure the LOW-WATER life, never the life at the end.** A descent ends in a
+  walk to the exit and regeneration tops you up on the way: every build in the
+  game read 89% or better at the end of runs it was nearly killed in.
+- **`bestBuild` is about a second.** Memoise it per band — `ceiling()` in
+  `src/demo.ts` — rather than building one per run.
 - **An art claim needs a screenshot.** None of these is in the suite, and the
   demo's sprite checks prove grids are square, not that anything reads.
   - `npm run peek -- out.png [zoom] [panX] [panY] [x,y,w,h,scale] [zone] [hold]

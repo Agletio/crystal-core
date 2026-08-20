@@ -7,6 +7,7 @@ import { Rng } from '../rng';
 import { ModPool } from '../mods';
 import {
   ALL_MODS,
+  ARMOUR_FAMILIES,
   ATTRIBUTES,
   CRYSTAL_LEVELS,
   DROP_BANDS,
@@ -14,10 +15,13 @@ import {
   PLAYER_SKILLS,
   REFERENCE_ARMOUR_FAMILY,
   RUN_SLOTS,
+  SKILL_BY_ID,
   SKILL_SLOTS,
 } from '../data';
+import { characterStats, damageDetail } from './stats';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
+import { RunSim, TICK } from './run';
 import { attributePointsFor, equipSkill, makeCharacter, slotIsOpen } from './character';
 import { MOVE_WEBS, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
@@ -167,6 +171,221 @@ function walkMover(character: Character, shape: BuildShape): void {
     }
   }
 }
+
+/** What a build is WORTH, as one number a player would optimise: damage against
+ *  how long it stands in the fire. A GEOMETRIC mean, so dumping either half
+ *  cannot win — a glass cannon and a brick both score badly. */
+export function buildPower(character: Character): number {
+  const stats = characterStats(character);
+  const dps = damageDetail(character).perSecond;
+  const res = Object.values(stats.resistances);
+  const soak = res.length ? res.reduce((a, b) => a + b, 0) / res.length / 100 : 0;
+  const through =
+    (1 - stats.armourReduction / 100) *
+    (1 - stats.dodgeChance / 100) *
+    (1 - stats.blockChance / 100) *
+    (1 - soak);
+  return Math.sqrt(dps * (stats.maxLife / Math.max(0.05, through)));
+}
+
+/** A build takes one or two attributes, never four. */
+const ATTR_PLANS: string[][] = [
+  ['strength', 'dexterity'],
+  ['intelligence', 'acuity'],
+  ['strength'],
+  ['intelligence'],
+  ['dexterity', 'acuity'],
+];
+
+/** The lines a built set is rolled for. `null` is the whole pool, which is what
+ *  an unfocused character wears; the rest are what somebody AIMING rolls. */
+const FOCUS: Array<((stat: string) => boolean) | null> = [
+  null,
+  (s) => CORE.includes(s) || s === 'life' || s === 'armour' || s.endsWith('Res'),
+  (s) => CORE.includes(s) || s === 'life' || s === 'ailmentChance',
+  (s) => CORE.includes(s) || s === 'life' || s === 'moveSpeed' || s === 'blockChance',
+];
+
+/**
+ * The strongest character the search can find at this band — the CEILING, where
+ * `ladderCharacter` is the floor. Tuning against a floor is tuning against a
+ * strawman: a random tree walk with its attributes split four ways is not what
+ * anybody plays, so a difficulty that stops one says nothing about the game.
+ *
+ * Everything a player decides is searched — plate, the lines the set is rolled
+ * for, attributes, passives, mover — and the tree is walked GREEDILY rather than
+ * at random. NOT optimal: the best of what this search covers, and the demo
+ * prints its power so a better build found by hand has a number to argue with.
+ */
+export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: number): Character {
+  const rung = Math.min(Math.max(1, band), DROP_BANDS.length - 1);
+  const ilvl = DROP_BANDS[rung - 1].ilvl;
+  const level = atLevel ?? 4 + rung * 6;
+  const skill = SKILL_BY_ID[skillId];
+  const wear = ARMOUR_FAMILIES.filter((f) =>
+    f.archetypes.some((a) => (skill?.tags ?? []).includes(a === 'rogue' ? 'attack' : a))
+  );
+  const plate = (wear.length ? wear : ARMOUR_FAMILIES).map((f) => f.id);
+  const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive').map((sk) => sk.id);
+  const movers = [null, ...MOVE_WEBS.map((m) => m.spec.skillId)];
+
+  // Two passes, because the tree walk is nearly the whole cost: score every
+  // arrangement BARE, then walk only the few worth walking. The order can move
+  // between the passes, which is what the shortlist is for.
+  const made: Character[] = [];
+  for (const family of plate) {
+    for (const focus of FOCUS) {
+      for (const attrs of ATTR_PLANS) {
+        const pool = focus
+          ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
+          : new ModPool(ALL_MODS);
+        const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
+        character.level = level;
+        pour(character, attrs);
+        // The passives and the mover BEFORE the tree, since what they grant is
+        // in every score the walk reads.
+        fillPassives(character, passives);
+        walkBest(character, rng.pick(movers) ?? null);
+        made.push(character);
+      }
+    }
+  }
+
+  const shortlist = made.sort((a, b) => buildPower(b) - buildPower(a)).slice(0, SHORTLIST);
+  for (const character of shortlist) greedyTree(character, skillId);
+  // And then PLAYED: measured, the score alone picked a band 3 fireball that
+  // cleared 0 of 6 where the random walk cleared 5. One target at a time is a
+  // number the sheet reads; a pack is a thing it cannot see.
+  return played(shortlist, band, rng) ?? shortlist[0] ?? ladderCharacter(band, rng, skillId);
+}
+
+/** How many arrangements get their tree walked. The walk is 90% of the search
+ *  and the bare order is a good but not perfect guide to the walked one. */
+const SHORTLIST = 4;
+/** Seeds each shortlisted build is played over, and the seconds it gets. */
+const TRIALS = [3, 11];
+const PATIENCE = 120;
+
+/** Whichever of them clears most, and gets least hurt doing it. */
+function played(shortlist: Character[], band: number, rng: Rng): Character | null {
+  let best: Character | null = null;
+  let score = -Infinity;
+  for (const character of shortlist) {
+    let cleared = 0;
+    let low = 0;
+    for (const seed of TRIALS) {
+      const sim = new RunSim(ladderSet(band, new Rng(seed * 13 + band), new ModPool(ALL_MODS)), character, new Rng(seed));
+      let worst = 1;
+      let guard = Math.ceil(PATIENCE / TICK);
+      while (sim.state.status === 'running' && guard-- > 0) {
+        sim.step(TICK);
+        worst = Math.min(worst, sim.state.hero.life / Math.max(1, sim.state.hero.stats.maxLife));
+      }
+      if (sim.state.status === 'cleared') cleared++;
+      low += worst;
+    }
+    const scored = cleared * 100 + low;
+    if (scored <= score) continue;
+    score = scored;
+    best = character;
+  }
+  void rng;
+  return best;
+}
+
+
+/** Every point into the named attributes, evenly. */
+function pour(character: Character, wanted: string[]): void {
+  const points = attributePointsFor(character.level);
+  for (const attr of ATTRIBUTES) character.attributes[attr.id] = 0;
+  wanted.forEach((id, i) => {
+    character.attributes[id] =
+      Math.floor(points / wanted.length) + (i < points % wanted.length ? 1 : 0);
+  });
+}
+
+/** Each open slot takes whichever passive raises `buildPower` most. A passive
+ *  changing a RULE the sheet cannot read scores as nothing, which is why the
+ *  demo MEASURES what this search returns rather than trusting the score. */
+function fillPassives(character: Character, passives: string[]): void {
+  for (const slot of SKILL_SLOTS) {
+    if (!slot.accepts.includes('passive') || !slotIsOpen(character, slot.id)) continue;
+    const held = new Set(Object.values(character.equipped ?? {}));
+    const spare = passives.filter((id) => !held.has(id));
+    if (spare.length === 0) return;
+    let take = spare[0];
+    let power = -1;
+    for (const id of spare) {
+      equipSkill(character, id, slot.id);
+      const scored = buildPower(character);
+      if (scored > power) {
+        power = scored;
+        take = id;
+      }
+    }
+    equipSkill(character, take, slot.id);
+  }
+}
+
+/** A mover, walked greedily too: six points buy two whole arms of the three. */
+function walkBest(character: Character, skillId: string | null): void {
+  if (!skillId) return;
+  equipSkill(character, skillId);
+  const web = MOVE_WEBS.find((m) => m.spec.skillId === skillId);
+  if (!web) return;
+  const progress = skillProgress(character, skillId);
+  const budget = treePointsFor(skillId, character.level);
+  while (progress.allocated.length < budget) {
+    const open = web.nodes.filter((n) => canAllocate(skillId, n.id, progress.allocated));
+    if (open.length === 0) return;
+    let take = open[0];
+    let power = -1;
+    for (const node of open) {
+      progress.allocated.push(node.id);
+      const scored = buildPower(character);
+      progress.allocated.pop();
+      if (scored > power) {
+        power = scored;
+        take = node;
+      }
+    }
+    progress.allocated.push(take.id);
+  }
+}
+
+/** The skill's own web, one point at a time, always the open node worth most.
+ *  Greedy is not optimal — a notable three minors away is invisible until the
+ *  minors are paid for — so ties break toward the node NEAREST an unbought
+ *  notable, which is how a player walks one. */
+function greedyTree(character: Character, skillId: string): void {
+  const progress = skillProgress(character, skillId);
+  const tree = treeFor(skillId);
+  const budget = treePointsFor(skillId, character.level);
+  while (progress.allocated.length < budget) {
+    const open = tree.filter((n) => canAllocate(skillId, n.id, progress.allocated));
+    if (open.length === 0) return;
+    let take = open[0];
+    let power = -Infinity;
+    for (const node of open) {
+      progress.allocated.push(node.id);
+      const choice = node.choices?.[0]?.id;
+      if (choice) (progress.choices ??= {})[node.id] = choice;
+      const scored = buildPower(character) + (node.kind === 'minor' ? REACH : 0);
+      progress.allocated.pop();
+      if (scored > power) {
+        power = scored;
+        take = node;
+      }
+    }
+    progress.allocated.push(take.id);
+    if (take.choices?.length) (progress.choices ??= {})[take.id] = take.choices[0].id;
+  }
+}
+
+/** What a minor is worth for being ON THE WAY to something. Without it a greedy
+ *  walk buys the first notable it can reach and then stalls on minors forever,
+ *  which is a worse build than the random walk it is meant to beat. */
+const REACH = 12;
 
 /** Sockets fill before levels climb, so a set grows the way a player's does. */
 const LADDER_SHAPES: Array<[number, number]> = [

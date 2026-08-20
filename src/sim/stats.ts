@@ -1,5 +1,5 @@
 /** Items into combat numbers. A subtle bug here poisons everything downstream. */
-import { aggregate, computeStat, percentStat } from '../mods';
+import { aggregate, computeStat, dangerScore, percentStat } from '../mods';
 import {
   AILMENT,
   AILMENTS,
@@ -9,6 +9,8 @@ import {
   ATTRIBUTES,
   DAMAGE_TYPES,
   ADDED_DAMAGE_TYPES,
+  DANGER,
+  dangerStep,
   DEFENCE,
   DROP_GROUPS,
   HERO_BASE,
@@ -631,8 +633,9 @@ export function monsterStats(
   def: MonsterDef,
   ability?: MonsterAbilityDef
 ): CombatStats {
-  const life = MONSTER_BASE.life * def.life;
-  const damage = MONSTER_BASE.damage * def.damage;
+  const step = dangerStep(dangerScore(mods).danger);
+  const life = MONSTER_BASE.life * def.life * (1 + step * DANGER.lifeAtTop);
+  const damage = MONSTER_BASE.damage * def.damage * (1 + step * DANGER.hitAtTop);
 
   // What this monster deals is its ABILITY's, never the map's — an element
   // belongs to the thing swinging it.

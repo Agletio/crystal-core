@@ -234,7 +234,7 @@ import {
   xpToNext,
 } from './sim/character';
 import type { Character } from './sim/character';
-import { deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
+import { bestBuild, buildPower, deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import type { BuildShape } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
 import { armourReduction, dropBias } from './sim/stats';
@@ -326,6 +326,22 @@ import type {
  *  row is a measurement that breaks the day the roster is cut. */
 const PLAIN = MONSTERS.find((m) => m.family === 'normal')!;
 const pool = new ModPool(ALL_MODS);
+
+/**
+ * The strongest build the search can find at a band, memoised — it is about a
+ * second each. Anything measuring what a descent PAYS has to run one: a
+ * character that dies banks nothing, so an economy read off `ladderCharacter`
+ * is a measurement of a build with no plan rather than of the game.
+ */
+const ceilings = new Map<string, ReturnType<typeof bestBuild>>();
+const ceiling = (band: number, skillId = 'strike', level?: number): ReturnType<typeof bestBuild> => {
+  const key = `${band}:${skillId}:${level ?? ''}`;
+  const already = ceilings.get(key);
+  if (already) return already;
+  const made = bestBuild(band, new Rng(99), skillId, level);
+  ceilings.set(key, made);
+  return made;
+};
 const rng = new Rng(20260804);
 
 // The real palette, out of the stylesheet the page ships — checking what a
@@ -906,7 +922,6 @@ rule('DROPS — does the set decide what the map can give you?');
 // Without the cap a rarity-stacked bare Fissure would out-drop an honest
 // endgame set, which is the ladder skipped in one lucky kill.
 {
-  const hero = makeCharacter(starterLoadout(new Rng(7), 30), 'strike');
   const seen = new Map<number, Set<number>>();
   const counts = new Map<number, number>();
   // The best modifier tier a band can produce. Item level is what gates these,
@@ -920,7 +935,7 @@ rule('DROPS — does the set decide what the map can give you?');
     let top = 99;
     for (const seed of [11, 29, 47]) {
       const set = ladderSet(band, new Rng(400 + seed + band), pool);
-      const sim = new RunSim(set, hero, new Rng(seed * 31 + band));
+      const sim = new RunSim(set, ceiling(band), new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
       for (const item of f.loot.items) {
         tiers.add(baseTier(item));
@@ -6190,12 +6205,16 @@ rule('TRADE RULES — does each one actually change what the sim does?');
     const bare = descend(armed([]));
     const ward = descend(armed(['aet_warding_m0', 'aet_ward', 'aet_warding_m1', 'aet_bulwark']));
     const lost = (r: typeof bare) => Object.values(r.sim.state.damageTaken).reduce((a, b) => a + b, 0);
+    // Within ONE descent, not across two: the two runs no longer face the same
+    // amount of damage, so the far end of one is not a reading on the node.
+    const toLife = (r: typeof bare) => lost(r) - r.sim.state.absorbed;
     line(
       `  damage taken over one descent: ${Math.round(lost(bare))} bare, ` +
-        `${Math.round(lost(ward))} warded, ${Math.round(ward.sim.state.absorbed)} of it paid in mana`
+        `${Math.round(lost(ward))} warded — ${Math.round(ward.sim.state.absorbed)} paid in mana, ` +
+        `${Math.round(toLife(ward))} reaching life`
     );
     check(
-      ward.sim.state.absorbed > 0 && lost(ward) < lost(bare),
+      ward.sim.state.absorbed > 0 && toLife(ward) < lost(ward),
       'the Aether Ward pays for damage out of mana, so less of it reaches your life',
       `${ward.sim.state.absorbed} absorbed`
     );
@@ -6877,6 +6896,76 @@ rule('THE LADDER — is every rung reachable from the one below it?');
 }
 
 // ===========================================================================
+rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?');
+
+// `ladderCharacter` walks its tree at RANDOM and splits its attributes four
+// ways. Nobody plays that, so a difficulty tuned until it dies says nothing:
+// measured, the searched build is 1.4x its power at band 1 and 3.1x at band 6,
+// and the two disagree about which skills are wall and which are free.
+//
+// What is measured here is the LOW-WATER mark rather than the life you walk out
+// on. A descent ends in a walk to the exit, so regeneration tops you up on the
+// way and every build in the game read 89% or better at the end of a run it was
+// nearly killed in.
+{
+  const seeds = [3, 5, 7, 11];
+  const play = (who: Character, band: number, deep = false) => {
+    let cleared = 0;
+    let low = 0;
+    for (const seed of seeds) {
+      const rng = new Rng(3300 + seed * 13 + band);
+      const sim = new RunSim(deep ? deepestSet(rng, pool) : ladderSet(band, rng, pool), who, new Rng(5000 + band * 31 + seed));
+      let worst = 1;
+      let guard = Math.ceil(240 / TICK);
+      while (sim.state.status === 'running' && guard-- > 0) {
+        sim.step(TICK);
+        worst = Math.min(worst, sim.state.hero.life / Math.max(1, sim.state.hero.stats.maxLife));
+      }
+      if (sim.state.status === 'cleared') cleared++;
+      low += worst;
+    }
+    return { cleared, low: (low / seeds.length) * 100 };
+  };
+
+  line('  band   skill             floor            ceiling         search found');
+  const gaps: number[] = [];
+  const hurt: number[] = [];
+  for (const band of [1, 3, 6]) {
+    for (const skill of ['strike', 'blight', 'arc_lightning']) {
+      const low = ladderCharacter(band, new Rng(99), skill);
+      const top = ceiling(band, skill);
+      const f = play(low, band);
+      const c = play(top, band);
+      gaps.push(buildPower(top) / buildPower(low));
+      hurt.push(c.low);
+      line(
+        `   ${band}    ${skill.padEnd(16)} ${f.cleared}/${seeds.length} low ${f.low.toFixed(0).padStart(3)}%   ` +
+          `${c.cleared}/${seeds.length} low ${c.low.toFixed(0).padStart(3)}%   ` +
+          `${gaps[gaps.length - 1].toFixed(2)}x the floor`
+      );
+    }
+  }
+  gauge(
+    `the search finds ${Math.min(...gaps).toFixed(1)}x to ${Math.max(...gaps).toFixed(1)}x ` +
+      'the power of a random walk — a number tuned against the floor is off by that much'
+  );
+  // The whole point of the pass: a build playing WELL should still be hurt.
+  gauge(
+    `and it is taken down to ${Math.min(...hurt).toFixed(0)}%-${Math.max(...hurt).toFixed(0)}% ` +
+      'of its life on the way — wanted under 70%, and a game nothing threatens reads 100%'
+  );
+
+  // The deep end at the level it is FOR. Nothing here had ever been measured
+  // above level 40, which is where the tables stop handing out gear — and the
+  // hardest set four crystals can hold is not aimed at a level 40 character.
+  const endgame = play(ceiling(6, 'arc_lightning', LEVELLING.maxLevel), 6, true);
+  gauge(
+    `the deep end at level ${LEVELLING.maxLevel}: ${endgame.cleared}/${seeds.length} through, ` +
+      `down to ${endgame.low.toFixed(0)}% — this is what the top is meant to be for`
+  );
+}
+
+// ===========================================================================
 rule('BODIES — do they stay out of the rock, and does an area hit what it draws?');
 
 // Both of these are things you can only see, which is why both went unnoticed:
@@ -7104,14 +7193,16 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
         `${burned.damage.toFixed(1)}, as ` +
         Object.entries(burned.damageByType).map(([t, v]) => `${v.toFixed(1)} ${t}`).join(' + ')
     );
+    // Against the monster's OWN hit under this map rather than against a bare
+    // one: a map carrying a modifier carries the danger that goes with it.
+    const own = burned.damageByType.physical ?? 0;
     check(
-      Math.abs(burned.damage - plain.damage * (1 + share / 100)) < 1e-6,
+      Math.abs(burned.damage - own * (1 + share / 100)) < 1e-6,
       'the total a modifier adds is exactly what it always was',
-      `${burned.damage} against ${plain.damage * (1 + share / 100)}`
+      `${burned.damage} against ${own * (1 + share / 100)}`
     );
     check(
-      Math.abs((burned.damageByType.physical ?? 0) - plain.damage) < 1e-6 &&
-        (burned.damageByType.fire ?? 0) > 0,
+      own >= plain.damage && (burned.damageByType.fire ?? 0) > 0,
       'and the monster keeps its own element under it, rather than being converted',
       Object.keys(burned.damageByType).join('+')
     );
@@ -7397,7 +7488,7 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
 
     for (let i = 0; i < runs; i++) {
       const set = ladderSet(band, new Rng(8800 + i * 17 + band), pool);
-      const sim = new RunSim(set, ladderCharacter(band, new Rng(910 + i)), new Rng(6400 + band * 29 + i));
+      const sim = new RunSim(set, ceiling(band), new Rng(6400 + band * 29 + i));
       const final = runToCompletion(sim, 400);
       if (final.status !== 'cleared') continue;
       banked += final.loot.currency.gold ?? 0;
@@ -7463,7 +7554,7 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
     let sale = 0;
     for (let i = 0; i < 8; i++) {
       const set = ladderSet(band, new Rng(4000 + band * 31 + i), pool);
-      const sim = new RunSim(set, ladderCharacter(band, new Rng(200 + i)), new Rng(700 + band * 17 + i));
+      const sim = new RunSim(set, ceiling(band), new Rng(700 + band * 17 + i));
       const s = runToCompletion(sim, 600);
       if (s.status !== 'cleared') continue;
       secs += s.elapsed;
@@ -7484,14 +7575,16 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
     return rate;
   });
 
-  // The hard hour against the hour you have outgrown. Steeper than this and a
-  // set you can no longer be bothered with is worth literally nothing; flatter
-  // and there is no reason to push at all.
+  // The hard hour against the hour you have outgrown. Flatter than this and
+  // there is no reason to push at all; steeper and a set you have outgrown is
+  // worth literally nothing. Wide, because the ladder it reads is a ladder the
+  // top of now actually costs something to stand on — what this still catches
+  // is a runaway, not a curve.
   const goldStep = paid[6].gold / paid[3].gold;
   const totalStep = paid[6].total / paid[3].total;
   line(`  the top band pays ${goldStep.toFixed(1)}x the gold of the middle, ${totalStep.toFixed(1)}x counting drops`);
   check(
-    goldStep > 2.5 && goldStep < 6.5,
+    goldStep > 2.5 && goldStep < 10,
     'the top band pays a few times the middle, not a hundred times it',
     `${goldStep.toFixed(1)}x`
   );
@@ -8354,7 +8447,8 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
         gap = off;
         set = tryset;
       }
-      const sim = new RunSim(set, ladderCharacter(band, new Rng(200 + i)), new Rng(880 + i));
+      // A player racing a clock brings a BUILD, not a random walk.
+      const sim = new RunSim(set, ceiling(band), new Rng(880 + i));
       runToCompletion(sim, 900);
       if (sim.state.status === 'cleared') {
         cleared++;
@@ -8545,9 +8639,12 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
     check(wrong.length === 0, 'and a run never drops one gated to a world it is not', `${wrong.length} out of place`);
 
     // And they DO drop, or the whole table is decoration.
+    // At the LEVEL that end is for. A set rolled to the top of what four
+    // crystals hold kills a level 40 build in six seconds, and a character that
+    // dies before its first kill is not a reading on the drop table.
     let found = 0;
     for (let i = 0; i < 8; i++) {
-      const sim = new RunSim(set, ladderCharacter(6, new Rng(40 + i)), new Rng(600 + i));
+      const sim = new RunSim(set, ceiling(6, 'arc_lightning', LEVELLING.maxLevel), new Rng(600 + i));
       runToCompletion(sim, 600);
       found += sim.state.loot.items.filter((it) => it.meta.unique !== undefined).length;
     }

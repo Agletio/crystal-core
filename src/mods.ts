@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { GEAR_BASE_BY_ID, baseMods } from './data';
+import { DANGER_STATS, GEAR_BASE_BY_ID, baseMods } from './data';
 import type {
   FillState,
   Item,
@@ -9,6 +9,33 @@ import type {
   RolledMod,
   StatRoll,
 } from './types';
+
+/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
+function totalOf(mods: RolledMod[], stat: string): number {
+  let total = 0;
+  for (const mod of mods) {
+    for (const line of mod.stats) {
+      if (line.stat === stat) total += line.value;
+    }
+  }
+  return total;
+}
+
+/** How dangerous a socketed set is, and how much of that the rewards pay for.
+ *  Here rather than beside `crystalRewards` because the MONSTERS read it too —
+ *  two sums of the same table is one sum that is wrong. */
+export function dangerScore(mods: RolledMod[]): { danger: number; paying: number } {
+  let danger = 0;
+  let paying = 0;
+  for (const [stat, def] of Object.entries(DANGER_STATS)) {
+    const amount = Math.min(totalOf(mods, stat), def.cap ?? Infinity);
+    if (amount === 0) continue;
+    const scored = amount * def.weight;
+    danger += scored;
+    if (def.rewards) paying += scored;
+  }
+  return { danger, paying };
+}
 
 /** Slot types this item actually has. */
 export function slotTypes(item: Item): ModSlot[] {

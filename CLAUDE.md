@@ -67,14 +67,28 @@ Exactly three things end a session, and a finished phase is not one:
 
 ## What holds, whatever you are changing
 
-- **Balance is NOT TUNED, and a balance number never blocks a phase.** Systems
-  are still landing and each hands out more power than the last, so anything
-  tuned now is tuned against a game that does not exist. Measure it, PRINT it,
-  carry on. Balance checks are `gauge()`s that report and never fail; what still
-  FAILS is mechanism — a run that does not end, a determinism break, a step
-  nobody can finish, a screen that overflows, a modifier that does nothing, a
-  save that cannot be healed. One difficulty check stays a failure: a brand new
-  character clearing the bare Fissure.
+- **A balance number never blocks a phase.** Measure it, PRINT it, carry on.
+  Balance checks are `gauge()`s that report and never fail; what still FAILS is
+  mechanism — a run that does not end, a determinism break, a step nobody can
+  finish, a screen that overflows, a modifier that does nothing, a save that
+  cannot be healed. One difficulty check stays a failure: a brand new character
+  clearing the bare Fissure.
+- **A difficulty number is aimed at the CEILING, never at the floor.**
+  `ladderCharacter` walks its tree at random and splits its attributes four
+  ways; `bestBuild` searches plate, lines, attributes, passives, mover and a
+  greedy tree walk, then PLAYS its shortlist because the sheet cannot see a
+  pack. Measured, the second is 1.4× the first at band 1 and 3.0× at band 6 —
+  so anything tuned until the floor dies is off by that much, which is what
+  made the whole game clearable at 89% life or better. **Anything measuring
+  what a descent PAYS runs a ceiling**: a character that dies banks nothing.
+- **Read the LOW-WATER mark, not the life you walk out on.** A descent ends in a
+  walk to the exit and regeneration tops you up on the way, so a build nearly
+  killed twice reports full life at the end.
+- **DANGER is what makes a monster harder, and it now reaches the BODY.**
+  `DANGER.lifeAtTop` and `hitAtTop` in `src/data.ts`, through `dangerStep`,
+  which reads what danger ALONE buys — sockets are length, so they stay out of
+  it, and it saturates with run power where the hero's item level does. Danger 0
+  is exactly 1, so the Fissure a new character walks into is untouched.
 - **Every number is said out loud.** Nothing describing a quantity in words when
   it has a figure behind it — "35% more damage", never "more damage"; "+1 Cloud",
   never "an extra cloud". The test is whether a player could act differently

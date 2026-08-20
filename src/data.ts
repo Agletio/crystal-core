@@ -2030,11 +2030,9 @@ export const MONSTER_BASE = {
   aggroRange: 8,
 };
 
-/**
- * How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
- * Fissure. Length only: monsters are exactly as strong in a four-socket run as
- * in an empty one. `size` is linear, so area goes as its square.
- */
+/** How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
+ *  Fissure. Length only: what a socket holds is the difficulty, never the count.
+ *  `size` is linear, so area goes as its square. */
 export const SOCKET_SCALE = {
   size: [0.62, 1, 1.15, 1.3, 1.45],
   packs: [0.66, 1, 1.5, 2, 2.5],
@@ -2054,13 +2052,26 @@ export const socketSize = (filled: number): number => rung(filled, SOCKET_SCALE.
 export const socketPacks = (filled: number): number => rung(filled, SOCKET_SCALE.packs);
 export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SCALE.packSize);
 
-/**
- * Run power: the one number every reward reads, so difficulty and payout
- * cannot drift apart. 0 is the bare Fissure and the baseline for XP, gold,
- * drops and item level. Danger carries most of it; sockets add a little, never
- * enough that filling sockets beats rolling danger — which is what stops a
- * safe grind from being the best farm.
- */
+/** Run power: the one number every reward reads, so difficulty and payout
+ *  cannot drift apart. 0 is the bare Fissure and the baseline for XP, gold,
+ *  drops and item level. Sockets add a little, never enough to beat danger. */
+/** What a map's DANGER does to the bodies in it, and danger 0 is exactly 1 —
+ *  a new character's Fissure is untouched. A monster that dies before it swings
+ *  cannot be made harder by anything else: a band 6 map's monsters had the 27
+ *  life of the bare Fissure's while the hero hit 7.4 times harder, and every
+ *  defence MULTIPLIES — that build stopped 88% of every hit on 1813 life and
+ *  out-REGENERATED the whole map. Read off what danger alone BUYS, so it
+ *  saturates where the hero's item level does. */
+export const DANGER = {
+  lifeAtTop: 10, // what the top of the curve adds to a body's life
+  hitAtTop: 14, //  and to its hit
+};
+
+/** How far up that curve a map sits, 0 to 1. Sockets are LENGTH, so they stay
+ *  out of it however much run power they buy. */
+export const dangerStep = (danger: number): number =>
+  Math.min(POWER.max, danger / POWER.perDanger) / POWER.max;
+
 export const POWER = {
   perSocket: 0.3,
   /** Danger points that buy one point of run power. */

@@ -12,8 +12,9 @@ skill-tree tints, the arrow, the ailment rework, settings and the book — and s
 has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
 Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
-opening. Phase 1 below (a quest log) stays parked by his word until the
-stripped opening has been played, and the balance pass is held.
+opening. **The balance pass has RUN** — the user released it, and the whole of
+what it found is below. Phase 1 (a quest log) stays parked by his word until the
+stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
 skill.** *The user's call: "make sure you're using the pixel lab art generator
@@ -69,13 +70,27 @@ to look:
 | a weapon has damage | base physical on 18 bases; its OWN increases are LOCAL, wands keep spell damage |
 | a skill names its weapon | `SkillDef.requires`; all three doors police it — both equips and taking one off |
 | the Lampwright is FIRST | a new character opens in his workshop, is armed for the skill they chose, and the stair behind him is the first descent |
+| rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
+| the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
+| danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
 
-**The balance pass is HELD**, by the user's own reasoning: *"imagine if we had
-spent time balancing before we implemented this map skill tree even it would
-throw things off massively. We also need to add more passives that could be a
-large power source and probably iterate on trades as well. So I think we hold
-off for now."* Do not start it, and do not tune to a gauge while doing anything
-else.
+**The balance pass RAN, and what it found was that nothing had ever been
+measured against a build.** *The user's call: "I have a feeling your checks are
+not checking in a useful manner and even tuned to where every skill fails all
+runs I could still make many builds that work."* He was right, and the numbers
+are in `CLAUDE.md` and the `harness` skill. Two things came out of it:
+
+- `bestBuild` in `src/sim/loadout.ts` — the CEILING, searched over plate, mod
+  pool, attributes, passives, mover and a greedy tree walk, then PLAYED, against
+  `ladderCharacter`'s random walk. It is 1.4x the floor at band 1 and 3.0x at
+  band 6, so every difficulty number before this was aimed up to three times too
+  low. Everything measuring what a descent PAYS now runs one.
+- `DANGER.lifeAtTop` / `hitAtTop` through `dangerStep` — danger now reaches the
+  BODY. It had to: a band 6 map's monsters had the 27 life of the bare
+  Fissure's, 90 of them died a second, and a build stopping 88% of every hit on
+  1813 life out-regenerated the entire map. Measured on the LOW-WATER mark
+  rather than the life you walk out on, nothing in the game had ever taken a
+  build below 89%.
 
 **The next word is his.** *"Id rather test all together then iterate on one
 thing at a time"* — so what comes next is whatever playing it turns up.
@@ -150,42 +165,45 @@ tested.
 
 ---
 
-## The balance pass
+## The balance pass — RUN, and what is left of it
 
-**Not a phase, and not started.** Documented so that asking for it is one
-sentence rather than a re-derivation.
+**The first round has landed.** *The user's ask: "make it as hard as you think
+you can from the very start to where you think it will just barely be possible
+to complete."* Measured, at four seeds a band:
 
-**Why it is now possible.** Nothing is tuned until every system is in, because
-each one hands out more power than the last. That list was attributes, then
-trades, then jobs — and trades WERE the jobs. Every one has landed, so the
-reason to lean too easy has expired. Nothing has been tuned to compensate; the
-game is deliberately soft everywhere.
+| | |
+|---|---|
+| naked, level 1, bare Fissure | still clears — the one check that stays a failure — down to **45%** on the way, where it never went below 50% before |
+| band 1, ceiling | 6/6, down to 65-96% |
+| band 3, ceiling | 2/6 to 6/6, down to 8-74% — **the spike**, and melee is what it catches |
+| band 6, ceiling | 5/6 to 6/6, down to 22-89% |
+| band 1-6, FLOOR | dies 1 in 6 to 5 in 6 — a random walk is no longer a build |
+| the deep end at level 40 | 0/6, dead in six seconds |
+| the deep end at level **99** | **3/6, down to 29%** — the top is content you build toward |
 
-**What it would read.** Eight `gauge()` lines in `npm run demo` — measured,
-printed, never asserted, each carrying the figure that was wanted beside the
-figure it got. These are the before:
+**What is still crooked, and is a gauge rather than a task:**
 
-```
-the Seam is -12.6% over the hardest single world    — wanted: same class within 15%
-a trade moves the deep-end kill rate 3.85–7.44/s    — no pairing should be the only one
-2% to 22% of swings go unpaid                       — wanted: 5%–50%
-a starved cast lands for 50% of your damage
-a naked character walks out on 66% life             — wanted: under 70%
-one blank crystal after the first clear: 24/24      — wanted: above 60%
-every band is clearable in gear the band below drops
-the deep end: 1253 danger, 8/12 through             — wall under 4/12, ceiling at 0
-```
+- **Band 3 is harder than band 6** for Strike and Fireball. Not the curve —
+  danger 124 against 404 — but the character: level 22 in band-2 gear is the
+  thinnest point on the ladder.
+- **Arc Lightning is barely touched anywhere**, sitting at 96% low at band 1 and
+  82% at band 6 where Blight reads 22%. A ranged chain skill does not stand in
+  anything.
+- **Strike at level 99 still dies at the deep end.** Melee with the most danger
+  four crystals can roll is the case nothing answers, which is the same finding
+  the parked wall check has been printing since Splash was removed.
 
-**Several moved when the ROSTER did**, and the pass should read that as one
-change rather than as drift: six generated bodies replaced eleven and one
-thrower per family replaced a quarter of all packs shooting, which took the
-blank-crystal rung 18/24 → 24/24 and the deep end 4/12 → 8/12.
+**What it reads.** The `gauge()` lines in `npm run demo` — measured, printed,
+never asserted, each carrying the figure that was wanted beside the figure it
+got. The section to read first is **FLOOR AND CEILING**, which did not exist
+before this round and is the one that says whether any of the others mean
+anything.
 
-### It owes four parked checks
+### It owes five parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — four today.**
+count and this list has to agree with it — five today.**
 
 1. **"none of the four is a wall for the character that clears the Fissure"** —
    **read this one first.** Demonic and the Seam each kill it 7 times in 12,
@@ -199,14 +217,18 @@ count and this list has to agree with it — four today.**
 2. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
 3. **"Before The Lamp Dies: 90s against a median clear"** — the room takes
-   114s. It passed while Strike was at 72 and has not since, and weapons
-   carrying damage of their own moved it again.
+   128s and a searched build clears it 2 times in 6. The clock was written
+   against a game where nothing could kill you.
+4. **"every band still pays more than the one below"** — 145 → 180 → 452 → 389
+   → 1587 → 3797 → 3221, so bands 3 and 6 dip. Both are the bands where a
+   ceiling build is slowest rather than where it earns least: gold is per
+   MINUTE, and the danger curve made those two rungs long.
 
 **"the sim asks for exactly what the sheet promised" came back on its own** when
 weapons took base damage, and is a `check` again. Nothing was done to it
 directly; the number it was measuring moved under it.
 
-4. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
+5. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
    is fixed and the other half is not. Weapons taking damage of their own put
    full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
    thin tier 1 SPEED now clears **5/8 against a floor of 0**: a weapon carries

@@ -14,6 +14,7 @@ import {
   bandFor,
 } from '../data';
 import { dropBias } from './stats';
+import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
 
@@ -26,7 +27,12 @@ export interface CrystalRewards {
   rarity: number;
 }
 
-/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
+export function crystalRewards(mods: RolledMod[]): CrystalRewards {
+  const { danger, paying } = dangerScore(mods);
+  return { danger, payingDanger: paying, rarity: paying * REWARD.rarityPerDanger };
+}
+
+// No tag filter, and NOT computeStat: a design metric, not combat.
 function totalOf(mods: RolledMod[], stat: string): number {
   let total = 0;
   for (const mod of mods) {
@@ -35,21 +41,6 @@ function totalOf(mods: RolledMod[], stat: string): number {
     }
   }
   return total;
-}
-
-export function crystalRewards(mods: RolledMod[]): CrystalRewards {
-  let danger = 0;
-  let payingDanger = 0;
-
-  for (const [stat, def] of Object.entries(DANGER_STATS)) {
-    const amount = Math.min(totalOf(mods, stat), def.cap ?? Infinity);
-    if (amount === 0) continue;
-    const scored = amount * def.weight;
-    danger += scored;
-    if (def.rewards) payingDanger += scored;
-  }
-
-  return { danger, payingDanger, rarity: payingDanger * REWARD.rarityPerDanger };
 }
 
 /** A crystal from before families, or one naming a family that was retired. */
@@ -218,11 +209,8 @@ export function setRows(
   ];
 }
 
-/**
- * What this set is FOR, in words: what the worlds in it pay, what a mixed set
- * adds, and what its modifiers point the drops at. Empty for a set that is
- * simply a set — there is nothing to say about the bare Fissure.
- */
+/** What this set is FOR, in words: what its worlds pay, what a mix adds, and
+ *  what its modifiers point the drops at. Empty for the bare Fissure. */
 export function farmingText(crystals: Item[], standing?: RolledMod | null): string {
   const set = runSet(crystals, standing);
   const said: string[] = [];
