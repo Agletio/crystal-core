@@ -79,6 +79,8 @@ const mapProbe = () => {
   if (!document.body.classList.contains('mapfull')) return null;
   const stage = document.getElementById('run-stage');
   if (!stage || document.querySelector('.modal:not([hidden])')) return null;
+  // The report covers the map on purpose: the descent it belongs to is over.
+  if (document.getElementById('run-results')?.hidden === false) return null;
   const w = document.documentElement.clientWidth;
   const h = document.documentElement.clientHeight;
   const spots = [
@@ -188,6 +190,75 @@ for (const vp of VIEWPORTS) {
     (blight ?? cards[0])?.click();
   });
   await page.waitForTimeout(700);
+
+  // The Lampwright is the FIRST thing a character sees, before the dock and
+  // before any descent. The ROOM first, then a line over his head, then what
+  // he is holding.
+  try {
+    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
+      timeout: 30000,
+    });
+    await shoot('scene');
+    await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
+      timeout: 30000,
+    });
+    await shoot('speech');
+    // The BUTTON advances a beat, so this is the interaction rather than a
+    // wait: bounded, because a bubble nobody can advance is the failure.
+    for (let i = 0; i < 8; i++) {
+      if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
+      // Through the DOM, not the mouse: the box is anchored to a world point
+      // and the camera is still easing after the walk across, so it never
+      // holds still long enough for an actionability check to pass.
+      await page.evaluate(() => document.getElementById('speech-next')?.click());
+      await page.waitForTimeout(250);
+    }
+    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
+      timeout: 5000,
+    });
+    await shoot('lampwright');
+    // A FACE, at its own grid. A map sprite blown up is a silhouette, and this
+    // is the only place in the game anybody is looked at rather than fought.
+    const face = await page.evaluate(() => {
+      const svg = document.querySelector('#met-face svg');
+      return svg ? { name: svg.getAttribute('data-sprite'), box: svg.getAttribute('viewBox') } : null;
+    });
+    // Its OWN grid, whatever that is: a portrait is redrawn at whatever size
+    // it needs, and pinning the number here fails on a better one.
+    const square = /^0 0 (\d+) \1$/.exec(face?.box ?? '');
+    if (face?.name !== 'face-lampwright' || !square || Number(square[1]) < 48) {
+      problems.push(`${vp.name}: the panel is not showing a portrait — ${JSON.stringify(face)}`);
+    }
+    await page.evaluate(() => document.getElementById('met-take')?.click());
+  } catch {
+    problems.push(`${vp.name}: a new character never met the Lampwright`);
+  }
+
+  // The handover, caught in the middle: the hero climbing out of the entrance
+  // with the dark still receding. Taking the weapon walks him to the stair
+  // behind the workshop, and that stair IS the first descent — nothing is
+  // clicked to start it.
+  try {
+    await page.waitForFunction(() => document.body.dataset.runPhase === 'running', null, {
+      timeout: 30000,
+    });
+  } catch {
+    problems.push(`${vp.name}: the stair behind him never ran into a descent`);
+  }
+  await shoot('handover');
+
+  await page.waitForTimeout(4300);
+  await shoot('descent');
+
+  // Abandon lands on the report, the same one every ending uses.
+  await page.evaluate(() => document.querySelector('#run-abandon')?.click());
+  await page.waitForTimeout(400);
+  // The report every ending lands on. Nothing is closed first: the dock is
+  // where a descent's loot now lands, so the report standing over an open one
+  // IS the state, and the card lays itself out in what is left of the screen.
+  await shoot('results');
+  await page.evaluate(() => document.getElementById('run-again')?.click());
+  await page.waitForTimeout(300);
   await shoot('fissure');
 
   // The collection. Nothing is in it yet on a fresh game, but the quest ladder
@@ -239,75 +310,9 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('save-close')?.click());
   await page.waitForTimeout(200);
 
-  // And the run itself. A menu screenshot cannot show whether combat reads,
-  // which is the half of the UI that actually moves.
-  // The handover, caught in the middle: the hero climbing out of the entrance
-  // with the dark still receding. It plays on every launch, so the first
-  // moments of a descent ARE it.
-  await page.evaluate(() => document.querySelector('#run-launch')?.click());
-  await page.waitForTimeout(180);
-  await shoot('handover');
-
-  await page.waitForTimeout(4300);
-  await shoot('descent');
-
-  // The Lampwright, at the END of a cleared descent and after the walk across
-  // to him: the wait covers a whole descent, and Blight takes a minute over
-  // one. The ROOM first, then a line over his head, then what he is holding.
-  try {
-    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
-      timeout: 120000,
-    });
-    await shoot('scene');
-    await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
-      timeout: 30000,
-    });
-    await shoot('speech');
-    // The BUTTON advances a beat, so this is the interaction rather than a
-    // wait: bounded, because a bubble nobody can advance is the failure.
-    for (let i = 0; i < 8; i++) {
-      if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
-      // Through the DOM, not the mouse: the box is anchored to a world point
-      // and the camera is still easing after the walk across, so it never
-      // holds still long enough for an actionability check to pass.
-      await page.evaluate(() => document.getElementById('speech-next')?.click());
-      await page.waitForTimeout(250);
-    }
-    await page.waitForFunction(() => document.getElementById('met')?.hidden === false, null, {
-      timeout: 5000,
-    });
-    await shoot('lampwright');
-    // A FACE, at its own grid. A map sprite blown up is a silhouette, and this
-    // is the only place in the game anybody is looked at rather than fought.
-    const face = await page.evaluate(() => {
-      const svg = document.querySelector('#met-face svg');
-      return svg ? { name: svg.getAttribute('data-sprite'), box: svg.getAttribute('viewBox') } : null;
-    });
-    // Its OWN grid, whatever that is: a portrait is redrawn at whatever size
-    // it needs, and pinning the number here fails on a better one.
-    const square = /^0 0 (\d+) \1$/.exec(face?.box ?? '');
-    if (face?.name !== 'face-lampwright' || !square || Number(square[1]) < 48) {
-      problems.push(`${vp.name}: the panel is not showing a portrait — ${JSON.stringify(face)}`);
-    }
-    await page.evaluate(() => document.getElementById('met-take')?.click());
-  } catch {
-    problems.push(`${vp.name}: the first descent never met the Lampwright`);
-  }
-
   // The skill web, at every depth. It is the one screen with a hundred things
   // on it and its own pan/zoom transform, which makes it the likeliest place
   // for something to end up drawn outside the box it lives in.
-  // Abandon lands on the report now, so the way back to the menu is one more
-  // click — the same one every other ending uses.
-  await page.evaluate(() => document.querySelector('#run-abandon')?.click());
-  await page.waitForTimeout(400);
-  // The report every ending lands on. Nothing is closed first: the dock is
-  // where a descent's loot now lands, so the report standing over an open one
-  // IS the state, and the card lays itself out in what is left of the screen.
-  await page.waitForTimeout(250);
-  await shoot('results');
-  await page.evaluate(() => document.getElementById('run-again')?.click());
-  await page.waitForTimeout(300);
   await page.evaluate(() => document.getElementById('open-skills')?.click());
   await page.waitForTimeout(300);
   await shoot('skills');

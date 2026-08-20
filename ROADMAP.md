@@ -80,14 +80,16 @@ thing at a time"* — so what comes next is whatever playing it turns up.
   by the demo on purpose, and `BOSSES` has one entry. The open question is #12.
   **Beating it now pays a TRIAL POINT**, which is a different answer to the same
   complaint and does not settle the tier ladder.
-- **`npm run shots` can go red on `desktop: the first descent never met the
-  Lampwright`.** Two separate causes, and the cheap one is far commoner:
-  **running it beside `demo` or `smoke`** starves the browser and it loses the
-  two-minute wait (measured — red concurrent, green alone, same tree), so
-  **re-run it alone before treating one as a regression**. Underneath that is a
-  real undiagnosed fault, not fixed on purpose: dressing a descent consumes one
-  draw from the run's rng, so the first descent only happens to reach `#met` at
-  the moment, and it is a seed away from coming back.
+- **The Lampwright shot is no longer a lottery, and the seed fault it hid is
+  still there.** `shots` used to wait out a whole cleared descent to reach him
+  and went red on `the first descent never met the Lampwright` — commonly
+  because running it beside `demo` or `smoke` starved the browser out of the
+  two-minute wait, underneath which sat a real fault: dressing a descent
+  consumes one draw from the run's rng, so a descent reaching `#met` is a seed
+  away from not. He is the OPENING now, so `shots` meets him before any descent
+  and neither cause can reach it — but **the seed fault is undiagnosed and
+  unfixed**, and it is what a scene owed at the end of a descent still rides on.
+  **Still re-run `shots` alone before treating a red as a regression.**
 - **The first-visit boss ARRIVAL has never been watched.** The camera crosses to
   the boss, holds, comes back, then your own character speaks — and the dev kit
   marks every boss beaten, so entering through the dev menu always takes the
