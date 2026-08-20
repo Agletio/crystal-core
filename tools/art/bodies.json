@@ -379,7 +379,7 @@
   {
    "sprite": "lambengolmor",
    "name": "The Lambengolmor",
-   "size": 128,
+   "size": 48,
    "look": "a very tall thin gaunt man, stooped slightly at the shoulder, long straight iron-grey hair to the collar and a long grey beard, a long open coat of dark slate falling to the ankle over a black waistcoat. Faceted VIOLET crystals set into the temples and the throat. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall. Grim, austere, weathered. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon. No ground, NO SHADOW under him, no ellipse, no base.",
    "states": {
     "idle": {
@@ -395,7 +395,7 @@
      "say": "raising one open hand at a three-quarter angle and holding it out, fingers spread, then lowering it again"
     }
    },
-   "character": "d7d010dc-52fb-4689-99bb-6e2fa692db78"
+   "character": "2573ecb4-d434-4d07-9ed9-7ab83803b3c3"
   },
   {
    "sprite": "answering",
@@ -799,7 +799,9 @@
      "frames": 6,
      "say": "its legs buckling under it and the body pitching forward, the growth cracking off where it lands, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/bloom.png",
+   "character": "169fe3bb-0f55-48b4-8913-7a7afb936138"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",

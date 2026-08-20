@@ -323,27 +323,28 @@
    "grounded": true
   },
   {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
    "sprite": "lambengolmor",
-   "character": "d7d010dc-52fb-4689-99bb-6e2fa692db78",
+   "character": "2573ecb4-d434-4d07-9ed9-7ab83803b3c3",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "17f7c286-f53a-4cdd-9aea-600978b62d33",
+     "group": "1bf4d07c-b5e3-45c4-9b2c-78b7b123c636",
      "frames": 2
     },
     "walk": {
-     "group": "7ae25540-874e-40cb-81f2-2648bf01e2d7",
+     "group": "56ab9ed9-7b1b-4a42-8def-b5d8de693f4d",
      "frames": 6
     },
     "attack": {
-     "group": "69424267-ca06-4693-bdff-2b4235cde499",
+     "group": "3a2f0602-ce4c-430e-a54f-0c7b05cad443",
      "frames": 4
     }
    },
-   "grid": 48,
-   "inks": 24,
    "stride": 1.15
   },
   {
@@ -681,10 +682,20 @@
    ],
    "states": {
     "idle": {
-     "group": "2e719a34-c2a6-4f7b-bf97-b8214345c6b1"
+     "group": "2e719a34-c2a6-4f7b-bf97-b8214345c6b1",
+     "frames": 5
     },
     "attack": {
-     "group": "e4f2ec59-21a3-43b5-92c6-3c902b829f3f"
+     "group": "e4f2ec59-21a3-43b5-92c6-3c902b829f3f",
+     "frames": 5
+    },
+    "death": {
+     "group": "6a96ca31-f92f-4a1f-9be4-f0d5ee081774",
+     "frames": 7
+    },
+    "cast": {
+     "group": "26804dfc-4be3-4655-94b1-cb14546381dd",
+     "frames": 7
     }
    },
    "grid": 48,
@@ -709,6 +720,38 @@
     "attack": {
      "group": "758444bf-5ed3-4285-a70e-b4cf546066b3",
      "frames": 5
+    },
+    "death": {
+     "group": "38a728e1-75b1-497b-b3a4-90fffa686ed6",
+     "frames": 7
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "bloom",
+   "character": "169fe3bb-0f55-48b4-8913-7a7afb936138",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "2d07476d-ec8c-4ff6-908c-057df948584c",
+     "frames": 5
+    },
+    "walk": {
+     "group": "3314c2cf-6c2d-4dce-a3da-42eebfea8dc4",
+     "frames": 9
+    },
+    "attack": {
+     "group": "8130dc51-000b-4728-aaf7-13d211c6fb29",
+     "frames": 5
+    },
+    "death": {
+     "group": "d2fd6c21-849a-47b8-89f2-b638d0b0f7ce",
+     "frames": 7
     }
    },
    "grid": 48,

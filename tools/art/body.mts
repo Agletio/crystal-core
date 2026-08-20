@@ -147,24 +147,24 @@ function palette(): string {
   return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
 }
 
-/** The character id into BOTH files, plus the row `record` needs to exist:
- *  copied by hand this is the step that pointed a roster at another
- *  character's groups. */
+/** The character id into BOTH files, plus the row `record` needs: copied by
+ *  hand this pointed a roster at another character's groups. */
 function enrol(sprite: string, character: string): void {
   const ask = asks.bodies.find((b) => b.sprite === sprite)!;
   ask.character = character;
   writeFileSync(here('bodies.json'), `${JSON.stringify(asks, null, 1)}\n`);
 
   const row = shipped.bodies.find((b) => b.sprite === sprite);
-  // No `frames`: `record` keeps a HELD count over the server's, so a seeded
-  // zero never corrects itself and spreads the state to nothing.
+  // No `frames`: `record` keeps a held count over the server's, and a seeded
+  // zero spreads the state to nothing.
   const states = Object.fromEntries(
     Object.keys(ask.states).map((n) => [n, row?.states?.[n] ?? { group: '' }])
   );
+  // Seeded on a new row, never overwritten: re-rotated is not re-judged.
   const made = {
+    grid: 48, inks: 24, luma: 32,
     ...(row ?? {}), sprite, character,
     dirs: [ask.face ?? asks.face], states,
-    grid: 48, inks: 24, luma: 32, // the Fissure mobs' own, so nothing ships sharper or duller
   };
   const at = shipped.bodies.findIndex((b) => b.sprite === sprite);
   if (at < 0) shipped.bodies.push(made as never);

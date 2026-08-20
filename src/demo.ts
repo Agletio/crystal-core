@@ -331,6 +331,11 @@ const PALETTE = paletteFrom((cssVar) => {
 });
 
 const line = (s = '') => console.log(s);
+
+/** A body that CANNOT move needs no walk, and nothing measured off one means
+ *  anything for it. `moveSpeed` 0 is the whole test; the Spire is the first. */
+const rooted = (sprite: string): boolean =>
+  MONSTERS.some((m) => m.sprite === sprite && m.moveSpeed === 0);
 const rule = (t: string) => {
   line();
   line(`── ${t} ${'─'.repeat(Math.max(0, 60 - t.length))}`);
@@ -1564,7 +1569,7 @@ rule('SPRITES — is the pixel art well formed?');
           if (!art.frames[at]) bad.push(`${id}/${state} wants frame ${at} of ${art.frames.length}`);
         }
       }
-      if (!art.states.walk) bad.push(`${id} has no walk`);
+      if (!art.states.walk && !rooted(id)) bad.push(`${id} has no walk`);
       // A facing is one STRIDE along the flat list, so the list has to divide
       // by the facings and a state's runs have to sit inside the first one.
       const stride = art.frames.length / art.dirs.length;
@@ -1754,6 +1759,7 @@ rule('SPRITES — is the pixel art well formed?');
     // generated body actually draws.
     const shoved = Object.entries(GENERATED).flatMap(([id, art]) =>
       ['move', 'attack']
+        .filter((action) => !(action === 'move' && rooted(id)))
         .filter((action) => !animates(id, { action, skill: null, spell: false }))
         .map((action) => `${id} ${action}`)
     );
@@ -1772,6 +1778,7 @@ rule('SPRITES — is the pixel art well formed?');
     // barely a gait and 1% is honest for it; what to read is one facing far
     // below the same body's best.
     for (const [id, art] of Object.entries(GENERATED)) {
+      if (rooted(id)) continue;
       const run = art.states.walk;
       if (!run || run.length < 2) continue;
       const stride = art.frames.length / art.dirs.length;
