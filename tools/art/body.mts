@@ -156,8 +156,11 @@ function enrol(sprite: string, character: string): void {
   writeFileSync(here('bodies.json'), `${JSON.stringify(asks, null, 1)}\n`);
 
   const row = shipped.bodies.find((b) => b.sprite === sprite);
+  // No `frames`: `record` keeps a HELD count over the server's, so seeding one
+  // here is a count of zero that never corrects itself and a state that spreads
+  // to nothing.
   const states = Object.fromEntries(
-    Object.keys(ask.states).map((n) => [n, row?.states?.[n] ?? { group: '', frames: 0 }])
+    Object.keys(ask.states).map((n) => [n, row?.states?.[n] ?? { group: '' }])
   );
   const made = {
     ...(row ?? {}), sprite, character,
