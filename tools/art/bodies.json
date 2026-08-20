@@ -480,7 +480,8 @@
      "frames": 6,
      "say": "its short legs folding under it and the body dropping forward onto its face, coming to rest flat, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/imp.png"
   },
   {
    "sprite": "flenser",
@@ -506,7 +507,8 @@
      "frames": 6,
      "say": "the long legs buckling and the whole narrow body pitching sideways to the ground, the blades clattering down beside it, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/flenser.png"
   },
   {
    "sprite": "bloat",
@@ -514,7 +516,7 @@
    "mode": "v3",
    "size": 96,
    "inks": "demonic",
-   "look": "a BLOATED demon that is mostly belly: one huge distended sack of a gut swallowing the whole body, stretched taut and split open in three or four places, tiny useless arms and two short legs almost buried under the mass, a small head sunk into the top of it with no neck at all. WIDE and ROUND and SWOLLEN, and the limbs are TINY under the mass. NOT tall, NOT muscular, NOT a strongman, NOT broad shoulders, NOT a chest, NOT armoured, NOT a fat man. It has NO WINGS of any kind and nothing at all behind its shoulders. The WHOLE BODY is VERY DARK, near-black — matte charcoal hide with no more than a faint oxblood tint down in it, unlit, the darkest thing in the picture. Only its teeth are lighter, a dull dead bone. NOT bright, NOT vivid, NOT saturated, NOT glossy, NOT scarlet, NOT crimson, NOT bright red, NOT pink, NOT magenta, NOT orange, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT green, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the head and the belly first, but the far shoulder and the far leg are still visible behind the near ones. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "look": "a demon buried under its own ARMOUR: slabs of thick scarred plate grown out of its hide in overlapping layers across the back and the shoulders, piled so heavy that the head has sunk down under the rim of them and barely shows, two short thick legs planted underneath, arms lost somewhere under the mass. It is WIDE and LOW and PLATED, and it looks like it cannot be hurt. NOT tall, NOT thin, NOT a fat belly, NOT a gut, NOT bare skin, NOT muscular, NOT a strongman, NOT forged metal armour, NOT a knight, NOT a shield, NOT winged. Only its teeth are lighter, a dull dead bone. The WHOLE BODY is VERY DARK, near-black — matte charcoal hide with no more than a faint oxblood tint down in it, unlit, the darkest thing in the picture. NOT bright, NOT vivid, NOT saturated, NOT glossy, NOT scarlet, NOT crimson, NOT bright red, NOT pink, NOT magenta, NOT orange, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT green, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the near side first, but the far side is still visible behind it. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {
     "idle": {
      "frames": 4,
@@ -532,7 +534,8 @@
      "frames": 6,
      "say": "the belly giving way and the whole mass collapsing forward onto the ground, sagging flat, and staying there"
     }
-   }
+   },
+   "face": "south-east"
   },
   {
    "sprite": "hornfiend",
@@ -558,16 +561,17 @@
      "frames": 6,
      "say": "the front knee giving out and the great body going down onto its side, the horns dragging along the ground, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/hornfiend.png"
   },
   {
    "sprite": "maw",
    "name": "Rot Maw",
    "mode": "v3",
-   "face": "east",
+   "face": "south-east",
    "size": 48,
    "inks": "demonic",
-   "look": "a sprung BEAR TRAP grown out of bone and gristle: two toothed jaws hinged at the back and hauled wide open, pointing forward, the whole trap mounted on two short thick bent legs underneath it. The TRAP is the creature and there is nothing else to it — no head above the jaws, no skull, no eyes, no snout, no ears, no neck, no face, no arms, no tail. Only its teeth are lighter, a dull dead bone. NOT a dog, NOT a wolf, NOT a hound, NOT a beast, NOT an animal, NOT a lizard, NOT a shark, NOT fur, NOT a head, NOT eyes, NOT steel, NOT metal, NOT rusted iron, NOT a machine. The WHOLE BODY is VERY DARK, near-black — matte charcoal hide with no more than a faint oxblood tint down in it, unlit, the darkest thing in the picture. NOT bright, NOT vivid, NOT saturated, NOT glossy, NOT scarlet, NOT crimson, NOT bright red, NOT pink, NOT magenta, NOT orange, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT green, NOT grey stone. STRICT SIDE PROFILE, seen from DIRECTLY BESIDE it at ninety degrees, its whole length across the frame, its legs in a row along one side. NOT three-quarter, NOT angled, NOT turned toward the viewer, NOT front on. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
+   "look": "a lean upright demon standing on TWO legs with long arms hanging at its sides, and it has NO HEAD: the neck ends in a smooth stump at the shoulders. Its whole CHEST has opened lengthwise instead — two lips of hide drawn right back down the middle of the torso, a double row of long teeth running the length of each lip, and an open throat behind them. The MOUTH IN THE CHEST is the whole read. It has NO WINGS and nothing whatever behind its shoulders. NOT a head, NOT a skull, NOT a face, NOT eyes, NOT a jaw on a head, NOT winged, NOT wings, NOT a bat, NOT a dog, NOT a wolf, NOT a beast on four legs, NOT an animal, NOT a ribcage, NOT ribs, NOT bone showing. Only its teeth are lighter, a dull dead bone. The WHOLE BODY is VERY DARK, near-black — matte charcoal hide with no more than a faint oxblood tint down in it, unlit, the darkest thing in the picture. NOT bright, NOT vivid, NOT saturated, NOT glossy, NOT scarlet, NOT crimson, NOT bright red, NOT pink, NOT magenta, NOT orange, NOT tan, NOT beige, NOT sand, NOT gold, NOT amber, NOT bronze, NOT green, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the near side first, but the far side is still visible behind it. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects, no glow.",
    "states": {
     "idle": {
      "frames": 4,
@@ -615,7 +619,8 @@
      "frames": 6,
      "say": "the raised arms dropping and the legs folding, the body pitching forward onto the open chest, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/chanter.png"
   },
   {
    "sprite": "shardling",
@@ -641,7 +646,8 @@
      "frames": 6,
      "say": "the thin legs snapping under it and the splinter body dropping to the ground and breaking apart where it lands, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/shardling.png"
   },
   {
    "sprite": "lattice",
@@ -668,7 +674,8 @@
      "frames": 6,
      "say": "the legs giving way along its whole length and the spine dropping flat onto the ground, cracking apart, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/lattice.png"
   },
   {
    "sprite": "geode",
@@ -676,7 +683,7 @@
    "mode": "v3",
    "size": 96,
    "inks": "prismatic",
-   "look": "a squat HOLLOW crystal boulder: a heavy rounded shell split wide open across the front, the split lined with uneven crystal teeth, one dim eye set far back inside the hollow, the whole thing carried on two short stubby legs underneath. ROUND and HEAVY and HOLLOW. NOT humanoid, NOT tall, NOT arms, NOT a face on the outside, NOT a cut gem, NOT a jewel. Very dark almost-black violet crystal, deep indigo facets, cold and unlit, with one pale lilac core showing deep in the hollow and casting no light. NOT white, NOT pale overall, NOT bright, NOT clear glass, NOT transparent, NOT rainbow, NOT green, NOT cyan, NOT gold, NOT amber, NOT warm, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the split and the shell first, but the far side of the shell and the far leg are still visible behind the near ones. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
+   "look": "a hunched figure being SWALLOWED BY CRYSTAL: a lean two-legged body dragging itself forward while a heavy mass of crystal growth eats it from the back — the crystal has already taken the whole head and one shoulder and half the chest and is spreading down the arms, and the body underneath is bent double under the weight of it. HEAVY at the back, BENT under it. NOT upright, NOT a cut gem, NOT a jewel, NOT a boulder, NOT a rock, NOT a hollow shell, NOT a face on the crystal, NOT a mouth, NOT teeth. The body underneath is near-black and matte. Very dark almost-black violet crystal, deep indigo facets, cold and unlit, with one pale lilac core showing deep inside it and casting no light. NOT white, NOT pale overall, NOT bright, NOT clear glass, NOT transparent, NOT rainbow, NOT green, NOT cyan, NOT gold, NOT amber, NOT warm, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the near side first, but the far side is still visible behind it. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
    "states": {
     "idle": {
      "frames": 4,
@@ -702,7 +709,7 @@
    "mode": "v3",
    "size": 48,
    "inks": "prismatic",
-   "look": "a crystal WEDGE hanging in the air a hand above the ground: one hard-edged angular block of crystal, tilted nose-down, and three or four smaller loose shards hanging in the air AROUND it, spread apart with clear gaps of empty space between them and the block, none of them touching it. The loose shards are half the picture. FLOATING and ANGULAR. NO legs, NO arms, NO head, NO face, NOT humanoid, NOT a creature, NOT a cut gem, NOT a jewel, NOT wings. Very dark almost-black violet crystal, deep indigo facets, cold and unlit, with one pale lilac core showing deep inside the wedge and casting no light. NOT white, NOT pale overall, NOT bright, NOT clear glass, NOT transparent, NOT rainbow, NOT green, NOT cyan, NOT gold, NOT amber, NOT warm, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on so that you read which way the nose points. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
+   "look": "THREE OR FOUR narrow crystal blades hanging in the air one above another in a loose vertical stack, tilted at different angles, with clear gaps of empty background between every one of them so you can see straight through — they do NOT touch each other and there is nothing joining them. There is NOTHING ELSE in the picture: no body, no core, no head, no arms, no legs, nothing they hang from and nothing they stand on. NOT one crystal, NOT a cluster grown together, NOT a ring, NOT a circle, NOT a creature, NOT humanoid, NOT a face, NOT a cut gem. Very dark almost-black violet crystal, deep indigo facets, cold and unlit, with one pale lilac core showing deep inside it and casting no light. NOT white, NOT pale overall, NOT bright, NOT clear glass, NOT transparent, NOT rainbow, NOT green, NOT cyan, NOT gold, NOT amber, NOT warm, NOT grey stone. Seen at a STRONG three-quarter angle, turned well round toward side-on — you read the profile of the near side first, but the far side is still visible behind it. NOT flat front on, NOT strict side profile. No ground, no floor, no shadow cast on the ground, no base, no platform, no glow, no light rays, no sparkles.",
    "states": {
     "idle": {
      "frames": 4,
@@ -750,7 +757,8 @@
      "frames": 6,
      "say": "toppling off its point and falling full length onto the ground, breaking across the middle where it lands, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/spire.png"
   },
   {
    "sprite": "chime",
@@ -776,7 +784,8 @@
      "frames": 6,
      "say": "the ring coming apart and every shard falling away from the core to the ground, the core dropping last, and staying there"
     }
-   }
+   },
+   "approved": "cache/designs/approved/chime.png"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",
