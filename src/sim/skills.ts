@@ -65,6 +65,7 @@ const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
+const CONE_MOUTH = 0.95; // the Burst under a Cone's mouth, in tiles
 
 /** Which enemies the Projectiles past the first take. Nearest by default; a
  *  node may widen the Spread and turn the pick AROUND, which is the only way a
@@ -117,7 +118,7 @@ export function targetScale(use: SkillUse, target: Entity): number {
   return m;
 }
 
-/** Overlaps freely, and returns whoever it put down — the next hop of a chain. */
+/** Overlaps freely; returns who it put down — the next hop of a chain. */
 export function blastAround(
   use: SkillUse,
   at: Entity,
@@ -421,6 +422,13 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       use.hit(enemy, scale(enemy));
       burstFrom(use, enemy, scale, true);
     }
+
+    // The ground going up UNDER you: sized to the reach it would be a circle
+    // where the wedge is a wedge, and the wedge is what says who it caught.
+    use.vfx('burst', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.user.x + CONE_MOUTH, y: use.user.y },
+    ], 0.26);
 
     // Where you stand, then the two RIM corners. Reach and opening are both
     // bought, so both have to be readable off the picture.

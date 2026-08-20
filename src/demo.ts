@@ -3211,6 +3211,33 @@ rule('FIREBALL — do the notables actually change the cast?');
   line(`  wedge bare         → ${front.join(', ')}`);
   check(front.join() === 'ahead', 'a bare Cone takes what is in front of it and nothing else', front.join());
 
+  // The Burst under the mouth is the SAME picture the passive throws, and it is
+  // drawn at YOUR feet at a fixed size — sized to the reach it would be a
+  // circle where the wedge is a wedge, and what a Cone caught is the wedge's to
+  // say. The wedge itself still carries the reach and the opening.
+  {
+    const shown: Array<{ kind: string; points: any[] }> = [];
+    const user = dummy(0, 0);
+    SKILL_BEHAVIOURS.cone({
+      skill: SKILL_BY_ID.shockwave,
+      user, primary: dummy(2, 0), enemies: [dummy(2, 0)],
+      rng: new Rng(9), grants: { coneReach: 3 }, crit: false, castIndex: 0,
+      hit: () => {}, ailment: () => {}, areaRadius: (base: number) => base,
+      vfx: (kind: string, points: any[]) => shown.push({ kind, points }),
+    } as any);
+    const blast = shown.find((v) => v.kind === 'burst');
+    const cut = shown.find((v) => v.kind !== 'burst');
+    const wide = blast ? Math.hypot(blast.points[1].x - blast.points[0].x, blast.points[1].y - blast.points[0].y) : 0;
+    const far = cut ? Math.hypot(cut.points[1].x - cut.points[0].x, cut.points[1].y - cut.points[0].y) : 0;
+    line(`  and a ${wide.toFixed(2)} tile Burst under a wedge reaching ${far.toFixed(2)}`);
+    check(
+      blast !== undefined && cut !== undefined && wide > 0 && wide < far
+        && blast.points[0].x === user.x && blast.points[0].y === user.y,
+      'a Cone Bursts at your feet, smaller than the wedge it opens',
+      `burst ${wide.toFixed(2)} at ${blast?.points[0].x},${blast?.points[0].y}; wedge ${far.toFixed(2)}`
+    );
+  }
+
   const opened = wedge({ coneArc: 60 });
   line(`  wedge +60°         → ${opened.join(', ')}`);
   check(opened.includes('flank'), 'opening it wider catches the flank', opened.join());
