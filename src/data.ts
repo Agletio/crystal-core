@@ -1401,7 +1401,82 @@ const RESISTANCE_MODS: ModDef[] = [
   })),
 ];
 
+/** Every POINT pays. There is no step to bank toward and nothing is floored,
+ *  so a point spent is a number that moved. */
+export const ATTRIBUTE_STEP = 1;
+
+/**
+ * The four, and what one POINT of each is worth. Every line is an ordinary
+ * stat under a name the modifier engine already reads, so an attribute
+ * reaches the sim by exactly the path gear does. The TAGS are the whole of
+ * what keeps them apart: a critical chance tagged `attack` does nothing for a
+ * spell, and `attackSpeed` is already the wrong stat for one, so Dexterity
+ * and Acuity are two halves of one shape rather than a stat with a switch.
+ */
+export const ATTRIBUTES: AttributeDef[] = [
+  {
+    id: 'strength',
+    name: 'Strength',
+    per: [
+      { stat: 'damage', form: 'inc', value: 1, tags: ['attack'] },
+      { stat: 'life', form: 'inc', value: 0.6, tags: [] },
+    ],
+  },
+  {
+    id: 'intelligence',
+    name: 'Intelligence',
+    per: [
+      { stat: 'damage', form: 'inc', value: 1, tags: ['spell'] },
+      { stat: 'mana', form: 'inc', value: 1.2, tags: [] },
+    ],
+  },
+  {
+    id: 'dexterity',
+    name: 'Dexterity',
+    per: [
+      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['attack'] },
+      { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
+    ],
+  },
+  {
+    id: 'acuity',
+    name: 'Acuity',
+    per: [
+      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['spell'] },
+      { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
+    ],
+  },
+];
+
+export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
+  ATTRIBUTES.map((a) => [a.id, a])
+);
+
+/** One per attribute, so the four you SPEND points on are also four you can
+ *  find. `ATTRIBUTE_STEP` is 1, so a point off a ring is worth a point spent,
+ *  and `attributeMod` adds the two before it works out what they buy. */
+const ATTRIBUTE_MODS: ModDef[] = ATTRIBUTES.map((attr) => ({
+  id: `attr_${attr.id}`,
+  slot: 'offence' as const,
+  name: `of the ${attr.name}`,
+  appliesTo: ['gear' as const],
+  tags: ['attribute', attr.id],
+  tiers: [
+    {
+      ilvl: 40,
+      weight: 240,
+      stats: [{ stat: attr.id, form: 'flat' as const, range: [14, 26] as [number, number], tags: [] }],
+    },
+    {
+      ilvl: 1,
+      weight: 620,
+      stats: [{ stat: attr.id, form: 'flat' as const, range: [4, 12] as [number, number], tags: [] }],
+    },
+  ],
+}));
+
 export const GEAR_MODS: ModDef[] = [
+  ...ATTRIBUTE_MODS,
   ...GEAR_MAIN_MODS,
   ...GEAR_SECONDARY_MODS,
   ...GEAR_UTILITY_MODS,
@@ -3288,56 +3363,6 @@ export const LEVELLING = {
   curveExponent: 1.8,
 };
 
-/** Every POINT pays. There is no step to bank toward and nothing is floored,
- *  so a point spent is a number that moved. */
-export const ATTRIBUTE_STEP = 1;
-
-/**
- * The four, and what one POINT of each is worth. Every line is an ordinary
- * stat under a name the modifier engine already reads, so an attribute
- * reaches the sim by exactly the path gear does. The TAGS are the whole of
- * what keeps them apart: a critical chance tagged `attack` does nothing for a
- * spell, and `attackSpeed` is already the wrong stat for one, so Dexterity
- * and Acuity are two halves of one shape rather than a stat with a switch.
- */
-export const ATTRIBUTES: AttributeDef[] = [
-  {
-    id: 'strength',
-    name: 'Strength',
-    per: [
-      { stat: 'damage', form: 'inc', value: 1, tags: ['attack'] },
-      { stat: 'life', form: 'inc', value: 0.6, tags: [] },
-    ],
-  },
-  {
-    id: 'intelligence',
-    name: 'Intelligence',
-    per: [
-      { stat: 'damage', form: 'inc', value: 1, tags: ['spell'] },
-      { stat: 'mana', form: 'inc', value: 1.2, tags: [] },
-    ],
-  },
-  {
-    id: 'dexterity',
-    name: 'Dexterity',
-    per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['attack'] },
-      { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
-    ],
-  },
-  {
-    id: 'acuity',
-    name: 'Acuity',
-    per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['spell'] },
-      { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
-    ],
-  },
-];
-
-export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
-  ATTRIBUTES.map((a) => [a.id, a])
-);
 
 // --- skills ----------------------------------------------------------------
 //
@@ -3570,7 +3595,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Killing Surge',
     category: 'passive',
     description:
-      'A Critical deals no extra damage. Landing one grants 35% more damage for 5 seconds.',
+      'A Critical deals no extra damage; landing one grants 35% more damage ' +
+      'for 5s.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3590,8 +3616,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Contagion',
     category: 'passive',
     description:
-      'A body dying with an Ailment gives 1 stack of each to every enemy within ' +
-      '3 tiles. Ailments you apply are 40% weaker, in damage and in Slow alike.',
+      'A body dying with an Ailment gives 1 stack of each to every enemy ' +
+      'within 3 tiles, and Ailments you apply are 40% weaker.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3609,8 +3635,9 @@ export const SKILLS: SkillDef[] = [
     name: 'Blood Pact',
     category: 'passive',
     description:
-      'Your mana pool is 0 and every use costs 1.4 life per point of mana it ' +
-      'would have cost. 3% of the damage you deal returns to you as life.',
+      'Your mana pool is 0, every use costs 1.4 life per point of mana it ' +
+      'would have cost, and 3% of the damage you deal returns to you as ' +
+      'life.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3628,9 +3655,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Refraction',
     category: 'passive',
     description:
-      'You deal 30% of your Elemental damage as extra Prismatic damage. It is ' +
-      'worked out LAST, so nothing scales it twice — and it is resisted as ' +
-      'Prismatic, so hardening against Fire does not harden against it.',
+      'You deal 30% of your Elemental damage as extra Prismatic damage.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3684,10 +3709,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Sundering',
     category: 'passive',
     description:
-      'Every 4s your next hit Bursts around YOU for 5.5 Physical damage per ' +
-      'character level, within 2.4 tiles. Increased Damage and increased ' +
-      'Physical Damage move it; nothing else does — not the skill that armed ' +
-      'it, not added flat damage, not Critical, not Area of Effect.',
+      'Every 4s your next hit Bursts around you for 5.5 Physical damage per ' +
+      'character level, 2.4 tiles across.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3710,9 +3733,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Hoarfrost',
     category: 'passive',
     description:
-      'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, for ' +
-      '0.9 Cold damage per character level. Increased Damage and increased ' +
-      'Cold Damage move it and nothing else does. It applies no Chill of its own.',
+      'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, ' +
+      'for 0.9 Cold damage per character level.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3738,10 +3760,9 @@ export const SKILLS: SkillDef[] = [
     name: 'Featherstep',
     category: 'passive',
     description:
-      'Your Armour blunts nothing and is instead 60% of itself as Dodge. ' +
-      '60% increased Movement Speed once 2s have passed without a hit landing ' +
-      'on you, and you back off to the edge of your own reach while your skill ' +
-      'recovers.',
+      'Your Armour blunts nothing and is instead 60% of itself as Dodge, ' +
+      'and you gain 60% increased Movement Speed once 2s have passed ' +
+      'without a hit landing on you.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],

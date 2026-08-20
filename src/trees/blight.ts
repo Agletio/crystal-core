@@ -47,7 +47,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_pandemic',
           name: 'Pandemic',
-          description: 'And a Cloud a Critical tick plants is +1.2 tiles wider again.',
+          description: 'A Cloud a Critical tick plants is +1.2 tiles wider.',
           grants: { contagionRadius: 1.2, manaMultiplier: 1.08 },
         },
       },
@@ -73,9 +73,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_fixation',
       name: 'Fixation',
-      description:
-        'Each use on the same enemy as the last builds 7% Momentum against ' +
-        'it, up to 55%. Using it on anything else HALVES what you have built.',
+      description: '+7% Momentum per use, up to 55%.',
       grants: { momentum: { per: 7, max: 55 } },
     },
     twigs: [
@@ -127,7 +125,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_choking',
           name: 'Choking Haze',
-          description: 'And +1 Cloud on top of that, for three.',
+          description: '+1 Cloud.',
           grants: { extraFields: 1, manaMultiplier: 1.15 },
         },
       },
@@ -136,7 +134,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_smother',
           name: 'Smother',
-          description: 'And +2 more Clouds beyond that, for five.',
+          description: '+2 Clouds.',
           grants: { extraFields: 2, manaMultiplier: 1.15 },
         },
       },
@@ -146,7 +144,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_shroud',
           name: 'Shroud',
-          description: '+2 Clouds again, for seven, and every Cloud covers 15% more ground.',
+          description: '+2 Clouds, and every Cloud covers 15% more ground.',
           grants: { extraFields: 2, fieldRadius: 1.15, manaMultiplier: 1.15 },
         },
       },
@@ -159,9 +157,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_virulence',
       name: 'Virulence',
-      description:
-        'The Poison deals 50% more damage over a 35% shorter time. Blight kills ' +
-        'faster and holds ground worse.',
+      description: 'The Poison deals 50% more damage over a 35% shorter time.',
       grants: { ailmentMultiplier: 1.5, ailmentDuration: 0.65 },
     },
     twigs: [
@@ -207,9 +203,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_canopy',
       name: 'Canopy',
-      description:
-        'The Cloud covers 55% more ground, and its Poison deals 12% less damage. ' +
-        'Blight stops being aimed and starts being placed.',
+      description: 'The Cloud covers 55% more ground, and its Poison deals 12% less damage.',
       grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 },
     },
     twigs: [
@@ -298,9 +292,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_transmutation',
     name: 'Transmutation',
-    description:
-      'Blight stops dealing Poison. Pick what it deals instead — the Poison ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Blight to another damage type.',
     choices: [
       {
         id: 'dark',

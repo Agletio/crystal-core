@@ -53,9 +53,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_encirclement',
           name: 'Encirclement',
-          description:
-            'The Cone opens 150° wider still. Past 360° it is every direction ' +
-            'at once, and where you are facing stops mattering.',
+          description: 'The Cone opens 150° wider.',
           grants: { coneArc: 150, manaMultiplier: 1.15 },
         },
       },
@@ -73,9 +71,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_pressure',
       name: 'Pressure',
-      description:
-        'Each use on the same enemy as the last builds 8% Momentum against ' +
-        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      description: '+8% Momentum per use, up to 60%.',
       grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
@@ -118,9 +114,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_fracture',
       name: 'Fracture',
-      description:
-        '+50% chance to Bleed. Shockwave is ' +
-        'Physical, so what it carries is a Bleed.',
+      description: '+50% chance to apply Bleed.',
       grants: { ailmentChance: 50 },
     },
     twigs: [
@@ -148,16 +142,14 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_shatter',
           name: 'Shatter',
-          description:
-            'A further +45% chance to Bleed, so a wave past 100% ' +
-            'leaves two Bleeds rather than one.',
+          description: '+45% chance to apply Bleed.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
+      { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],
@@ -168,9 +160,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_footing',
       name: 'Braced',
-      description:
-        'Driving a wave through the ground means standing in it: +25% Armour ' +
-        'and +15% maximum Life.',
+      description: '+25% increased Armour and +15% increased maximum Life.',
       stats: [stat('armour', 'inc', 25), stat('life', 'inc', 15)],
     },
     twigs: [
@@ -179,7 +169,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_bedrock',
           name: 'Bedrock',
-          description: 'A further 40% increased Armour.',
+          description: '40% increased Armour.',
           stats: [stat('armour', 'inc', 40)],
         },
       },
@@ -188,7 +178,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_endurance',
           name: 'Endurance',
-          description: 'A further 20% maximum Life, and 120% increased Life Regeneration.',
+          description: '20% maximum Life, and 120% increased Life Regeneration.',
           stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 120)],
         },
       },
@@ -216,9 +206,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_reverberation',
       name: 'Reverberation',
-      description:
-        'Shockwave deals 30% more damage to enemies more than 2.2 tiles away — ' +
-        'the far end of the wedge is where the wave has built up.',
+      description: 'Shockwave deals 30% more damage to enemies more than 2.2 tiles away.',
       grants: { moreFar: { beyond: 2.2, more: 0.3 } },
     },
     twigs: [
@@ -300,18 +288,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'sw_expanse',
     name: 'Expanse',
-    description:
-      '+35% increased Area of Effect, which reaches the Cone further and ' +
-      'widens every Burst with it.',
+    description: '+35% increased Area of Effect.',
     stats: [stat('areaOfEffect', 'inc', 35)],
   },
   {
     id: 'sw_transmutation',
     name: 'Transmutation',
-    description:
-      'Shockwave stops dealing Physical. Pick what it deals instead — the ' +
-      'Physical modifiers in this tree change with it, the ones on your gear ' +
-      'do not.',
+    description: 'Convert Shockwave to another damage type.',
     choices: [
       {
         id: 'fire',

@@ -73,7 +73,7 @@ const HITTERS = ['projectile', 'melee', 'cone'];
 const MOVERS = ['step', 'leap'];
 
 export const GRANTS: GrantDef[] = [
-  { id: 'convertTree', what: 'the skill deals another damage type', reads: [STATS], changes: 'type' },
+  { id: 'convertTree', what: 'the skill is Converted to another damage type', reads: [STATS], changes: 'type' },
   { id: 'addTags', what: 'the skill gains a tag, so more modifiers reach it', reads: [STATS], merge: 'append' },
   {
     id: 'manaMultiplier',

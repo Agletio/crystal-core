@@ -27,7 +27,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'la_stormcall',
       name: 'Storm Call',
-      description: 'Lightning Arrow gains +2 Forks, for four.',
+      description: 'Lightning Arrow gains +2 Forks.',
       grants: { forks: 2, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -46,7 +46,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_deluge',
           name: 'Deluge',
-          description: 'Lightning Arrow gains +3 more Forks, for seven.',
+          description: 'Lightning Arrow gains +3 Forks.',
           grants: { forks: 3, manaMultiplier: 1.15 },
         },
       },
@@ -77,7 +77,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_overdraw',
           name: 'Overdraw',
-          description: 'Lightning Arrow gains +2 more Pierce, for three.',
+          description: 'Lightning Arrow gains +2 Pierce.',
           grants: { pierce: 2, manaMultiplier: 1.15 },
         },
       },
@@ -110,7 +110,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_rain',
           name: 'Rain of Arrows',
-          description: 'Lightning Arrow throws +2 more Projectiles, for four.',
+          description: 'Lightning Arrow throws +2 Projectiles.',
           grants: { extraTargets: 2, manaMultiplier: 1.15 },
         },
       },
@@ -142,7 +142,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_earthchain',
           name: 'Earthing Line',
-          description: 'Lightning Arrow gains +2 more Arcs, for three.',
+          description: 'Lightning Arrow gains +2 Arcs.',
           grants: { chains: 2, manaMultiplier: 1.15 },
         },
       },
@@ -155,9 +155,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'la_mark',
       name: 'Mark',
-      description:
-        'Each use on the same enemy as the last builds 8% Momentum against ' +
-        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      description: '+8% Momentum per use, up to 60%.',
       grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
@@ -201,8 +199,8 @@ const BRANCHES: Branch[] = [
       id: 'la_takeaim',
       name: 'Live Shaft',
       description:
-        'Lightning Arrow can no longer Critically strike. A shot that would ' +
-        'have instead leaves an Ailment worth 260% of the hit over 4s.',
+        'Lightning Arrow cannot Critically strike; a shot that would have ' +
+        'leaves an Ailment worth 260% of the hit over 4s.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -238,7 +236,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Ailment Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
+      { text: '+9% chance to apply Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
       COMMON[3],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],
@@ -269,10 +267,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'la_transmutation',
     name: 'Tipping',
-    description:
-      'Lightning Arrow stops dealing Lightning. Pick what it deals instead — ' +
-      'the Lightning modifiers in this tree change with it, the ones on your ' +
-      'gear do not.',
+    description: 'Convert Lightning Arrow to another damage type.',
     choices: [
       {
         id: 'fire',

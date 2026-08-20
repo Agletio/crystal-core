@@ -430,9 +430,12 @@ export function trialMod(character: Character): RolledMod | null {
 
 /** Everything spent on attributes as ONE synthetic mod, the way the tree
  *  arrives. Whole steps only: a part-step is banked and pays nothing. */
-export function attributeMod(character: Character): RolledMod | null {
+/** What a bag of attribute POINTS buys, as one synthetic mod. Points arrive by
+ *  two roads — spent on a level, or rolled on a ring — and this is the only
+ *  place either turns into stats. An attribute never grants an attribute. */
+export function attributePointsMod(points: Record<string, number>): RolledMod | null {
   const stats = ATTRIBUTES.flatMap((attr) => {
-    const steps = attributeSteps(character, attr.id);
+    const steps = points[attr.id] ?? 0;
     return steps > 0 ? attr.per.map((s) => ({ ...s, value: s.value * steps })) : [];
   });
 
@@ -447,6 +450,22 @@ export function attributeMod(character: Character): RolledMod | null {
     tags: [],
     stats,
   };
+}
+
+/** What WORN mods are worth in attributes, for gear measured with no character. */
+export function wornAttributeMod(mods: RolledMod[]): RolledMod | null {
+  return attributePointsMod(
+    Object.fromEntries(ATTRIBUTES.map((a) => [a.id, aggregate(mods, a.id).flat]))
+  );
+}
+
+export function attributeMod(character: Character): RolledMod | null {
+  const worn = equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]);
+  return attributePointsMod(
+    Object.fromEntries(
+      ATTRIBUTES.map((a) => [a.id, attributeSteps(character, a.id) + aggregate(worn, a.id).flat])
+    )
+  );
 }
 
 /** What ONE skill's own web has been walked to, whichever slot it is in. */

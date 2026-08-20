@@ -5069,29 +5069,35 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     // Prismatic and not as the type that carried it.
     {
       const share = (SKILL_BY_ID.refraction.grants ?? {}).prismaticExtra as number;
-      // A FIRE skill, so there is an elemental half for the tail to come off,
-      // and the same seeds either side of it.
-      // TIME to clear, never kills: every seed clears either way, so a count is
-      // saturated and reads the same however much harder you hit.
-      const clears = (who: Character): number => {
+      // A FIRE skill, so there is an elemental half for the tail to come off.
+      // What a HIT is worth, never a clear: a reference build one-shots its way
+      // through the Fissure, so every point past the first is overkill and a
+      // clock cannot see damage at all. Measured against a body that survives.
+      const landed = (who: Character): number => {
+        const sim = new RunSim([], who, new Rng(11)) as any;
         let total = 0;
-        for (const seed of [11, 13, 17, 19, 23, 29, 31, 37]) {
-          total += runToCompletion(new RunSim([], who, new Rng(seed))).elapsed;
-        }
-        return total / 8;
+        const real = sim.dealDamage.bind(sim);
+        sim.dealDamage = (a: any, d: any, m: number, sk: any) => {
+          if (a.kind === 'hero') d.stats.maxLife = d.life = 1e9; // never overkill
+          const was = d.life;
+          real(a, d, m, sk);
+          if (a.kind === 'hero') total += was - d.life;
+        };
+        for (let n = 0; n < 400 && sim.state.status === 'running'; n++) sim.step(TICK);
+        return total;
       };
       const plain = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
       plain.level = 40;
       const lit = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
       lit.level = 40;
       equipSkill(lit, 'refraction');
-      const before = clears(plain);
-      const after = clears(lit);
-      line(`  Refraction: ${after.toFixed(1)}s a clear against ${before.toFixed(1)}s over eight seeds`);
+      const before = landed(plain);
+      const after = landed(lit);
+      line(`  Refraction: ${after.toFixed(0)} damage landed against ${before.toFixed(0)} without it`);
       check(
-        typeof share === 'number' && share > 0 && after < before,
+        typeof share === 'number' && share > 0 && after > before,
         `Refraction's ${Math.round(share * 100)}% tail is damage that actually lands`,
-        `${after.toFixed(1)}s against ${before.toFixed(1)}s`
+        `${after.toFixed(0)} against ${before.toFixed(0)}`
       );
     }
 

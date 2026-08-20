@@ -29,7 +29,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'al_conduction',
       name: 'Conduction',
-      description: 'Arc Lightning gains +2 Arcs, for five.',
+      description: 'Arc Lightning gains +2 Arcs.',
       grants: { chains: 2, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -48,7 +48,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_cascade',
           name: 'Cascade',
-          description: 'Arc Lightning gains +3 more Arcs, for eight.',
+          description: 'Arc Lightning gains +3 Arcs.',
           grants: { chains: 3, manaMultiplier: 1.15 },
         },
       },
@@ -80,7 +80,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_downpour',
           name: 'Downpour',
-          description: 'Arc Lightning gains +2 more Forks, for four.',
+          description: 'Arc Lightning gains +2 Forks.',
           grants: { forks: 2, manaMultiplier: 1.15 },
         },
       },
@@ -93,9 +93,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'al_potential',
       name: 'Potential',
-      description:
-        'Each use on the same enemy as the last builds 7% Momentum against ' +
-        'it, up to 55%. Using it on anything else HALVES what you have built.',
+      description: '+7% Momentum per use, up to 55%.',
       grants: { momentum: { per: 7, max: 55 } },
     },
     twigs: [
@@ -139,8 +137,8 @@ const BRANCHES: Branch[] = [
       id: 'al_ionise',
       name: 'Ionise',
       description:
-        'Arc Lightning can no longer Critically strike. A cast that would have ' +
-        'instead leaves an Ailment worth 240% of the hit over 4s.',
+        'Arc Lightning cannot Critically strike; a cast that would have leaves ' +
+        'an Ailment worth 240% of the hit over 4s.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -176,7 +174,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Ailment Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
+      { text: '+9% chance to apply Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],
@@ -207,7 +205,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_fan',
           name: 'Fan Out',
-          description: 'Arc Lightning throws +1 Projectile on top of that, for three.',
+          description: 'Arc Lightning throws +1 Projectile.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
         },
       },
@@ -269,9 +267,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'al_transformer',
     name: 'Transformer',
-    description:
-      'Arc Lightning stops dealing Lightning. Pick what it deals instead — the ' +
-      'Lightning modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Arc Lightning to another damage type.',
     choices: [
       {
         id: 'fire',

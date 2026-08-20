@@ -18,7 +18,7 @@ import {
 } from './data';
 import { ModPool, computeStat, instantiate } from './mods';
 import { makeItem, makeCrystal } from './economy';
-import { dropBias, heroStats, monsterStats, mapDensity } from './sim/stats';
+import { dropBias, heroStats, monsterStats, mapDensity, wornAttributeMod } from './sim/stats';
 import { describeMod } from './crafting';
 import { describeStatLine, tagWord } from './mod-text';
 import { treeFor } from './skills-tree';
@@ -99,7 +99,11 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
 // nothing. If NOTHING moves, the mod is decoration.
 {
   /** Every number a hero's stat block exposes, flattened for comparison. */
-  const heroFingerprint = (mods: RolledMod[]): string => {
+  const heroFingerprint = (worn: RolledMod[]): string => {
+    // An attribute line buys nothing on its own — it buys POINTS, and the
+    // points buy stats. Reading gear without that step calls every one inert.
+    const attr = wornAttributeMod(worn);
+    const mods = attr ? [...worn, attr] : worn;
     const parts: string[] = [];
     for (const skill of SKILLS) {
       const s = heroStats(mods, 30, skill);

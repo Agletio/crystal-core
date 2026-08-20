@@ -54,7 +54,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_detonation',
             name: 'Detonation',
-            description: 'And 30% more again on top of that, while one runs.',
+            description: '30% more damage while a flask is running.',
             grants: { potionMore: 1.3 },
           },
         },
@@ -68,10 +68,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_residue',
             name: 'What It Leaves',
-            description:
-              '+40% chance to apply your Ailment, and they ' +
-              'deal 25% more. What a flask opens is a window; this is the burn ' +
-              'that is still running when it shuts.',
+            description: '+40% chance to apply your Ailment, and they deal 25% more damage.',
             grants: { ailmentChance: 40, ailmentMultiplier: 1.25 },
           },
         },
@@ -101,7 +98,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_fever',
             name: 'Fever',
-            description: 'And another 20% faster while one runs.',
+            description: '+20% increased attack and cast speed while a flask is running.',
             grants: { potionHaste: 20 },
           },
         },
@@ -115,10 +112,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_lightfoot',
             name: 'Light on the Rock',
-            description:
-              'While a flask is running you move 30% faster. The window is ' +
-              'worth what you can reach inside it, and standing still is the ' +
-              'one way to waste one.',
+            description: 'While a flask is running you move 30% faster.',
             grants: { potionMove: 30 },
           },
         },
@@ -148,7 +142,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_facets',
             name: 'Cut Facets',
-            description: 'And a further +12% Critical Chance while one runs.',
+            description: '+12% Critical Chance while a flask is running.',
             grants: { potionCrit: 12 },
           },
         },
@@ -162,9 +156,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_deepcut',
             name: 'The Long Cut',
-            description:
-              'A Critical leaves you dealing 35% more damage for 4s. Etched ' +
-              'Glass buys you the crits; this is what one is worth after it lands.',
+            description: 'A Critical leaves you dealing 35% more damage for 4s.',
             grants: { critIntoBuff: { more: 35, seconds: 4 } },
           },
         },
@@ -180,7 +172,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_slow_burn',
         name: 'Slow Burn',
-        description: 'Flasks run 50% longer, so the window they open is half again as wide.',
+        description: 'Flasks run 50% longer.',
         grants: { potionDuration: 1.5 },
       },
       branches: [
@@ -194,7 +186,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_thickened',
             name: 'Thickened',
-            description: 'And restore 40% more per second while they run.',
+            description: 'Flasks restore 40% more per second.',
             grants: { potionPotency: 1.4 },
           },
         },
@@ -208,9 +200,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_tempered',
             name: 'Tempered Glass',
-            description:
-              'While a flask is running you take 30% less damage. A window you ' +
-              'die inside is a window you did not open.',
+            description: 'While a flask is running you take 30% less damage.',
             grants: { potionLess: 0.3 },
           },
         },
@@ -256,9 +246,7 @@ export const ALCHEMIST: TradeSpec = {
           notable: {
             id: 'alc_frugal',
             name: 'Nothing Wasted',
-            description:
-              'While a flask is running your uses cost 0 mana. He does not brew ' +
-              'more; he stops pouring any of it away.',
+            description: 'While a flask is running your uses cost 0 mana.',
             grants: { potionFree: true },
           },
         },

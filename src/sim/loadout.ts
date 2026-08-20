@@ -90,16 +90,19 @@ export function ladderCharacter(
     progress.allocated.push(node.id);
     if (node.choices?.length) (progress.choices ??= {})[node.id] = rng.pick(node.choices)!.id;
   }
-  // Every passive slot the LEVEL opened, filled at random — the argument the
-  // attributes above make. Since the Burst moved into a slot, an empty one is a
-  // build with no answer to a crowd at all.
+  // Every passive slot the LEVEL opened gets filled: since the Burst moved into
+  // one, an empty slot is a build with no answer to a crowd. A SHAPE chooses,
+  // the way it chooses its plate; an unshaped character draws.
   const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive');
+  const wanted = shape ? SHAPE_PASSIVES[shape] : [];
   for (const slot of SKILL_SLOTS) {
     if (!slot.accepts.includes('passive') || !slotIsOpen(character, slot.id)) continue;
     const held = new Set(Object.values(character.equipped ?? {}));
     const spare = passives.filter((sk) => !held.has(sk.id));
     if (spare.length === 0) break;
-    equipSkill(character, rng.pick(spare)!.id, slot.id);
+    const pick = wanted.find((id) => spare.some((sk) => sk.id === id)) ?? (shape ? null : rng.pick(spare)!.id);
+    if (!pick) break;
+    equipSkill(character, pick, slot.id);
   }
 
   if (shape) walkMover(character, shape);
@@ -130,6 +133,15 @@ const SHAPE_PLATE: Record<BuildShape, string> = {
   runner: 'shadow',
   tank: 'bulwark',
   neither: REFERENCE_ARMOUR_FAMILY,
+};
+
+/** What each shape puts in its passive slots. A shape's answer to the boss is
+ *  the whole point of it, so this is chosen and not drawn. `neither` names
+ *  none, which is what having no answer IS. */
+const SHAPE_PASSIVES: Record<BuildShape, string[]> = {
+  runner: ['featherstep'],
+  tank: ['sundering'],
+  neither: [],
 };
 
 /** Two arms fit the six points; naming none leaves the slot EMPTY. */

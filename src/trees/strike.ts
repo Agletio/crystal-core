@@ -29,9 +29,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_sweep',
       name: 'Answering Blow',
-      description:
-        '+2 Echoes. Strike stops being one enemy and starts working outward ' +
-        'through a pack, one body at a time.',
+      description: '+2 Echoes.',
       grants: { echoes: 2, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -59,7 +57,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_whirlwind',
           name: 'Chorus',
-          description: '+3 Echoes, for seven in all once this branch is walked.',
+          description: '+3 Echoes.',
           grants: { echoes: 3, manaMultiplier: 1.08 },
         },
       },
@@ -77,9 +75,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_rend',
       name: 'Rend',
-      description:
-        '+55% chance to Bleed. Strike is ' +
-        'Physical, so what it carries is a Bleed.',
+      description: '+55% chance to apply Bleed.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -107,16 +103,14 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_butchery',
           name: 'Butchery',
-          description:
-            'A further +45% chance to Bleed, so a swing past 100% ' +
-            'leaves two Bleeds rather than one.',
+          description: '+45% chance to apply Bleed.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
+      { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],
@@ -136,7 +130,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_flurry',
           name: 'Flurry',
-          description: 'And +1 Repeat on top of that, for three swings.',
+          description: '+1 Repeat.',
           grants: { doubleStrike: 1, manaMultiplier: 1.15 },
         },
       },
@@ -145,7 +139,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_frenzy',
           name: 'Frenzy',
-          description: 'And +2 more Repeats beyond that, for five swings.',
+          description: '+2 Repeats.',
           grants: { doubleStrike: 2, manaMultiplier: 1.15 },
         },
       },
@@ -158,9 +152,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_rhythm',
       name: 'Rhythm',
-      description:
-        'Each use on the same enemy as the last builds 9% Momentum against ' +
-        'it, up to 70%. Using it on anything else HALVES what you have built.',
+      description: '+9% Momentum per use, up to 70%.',
       grants: { momentum: { per: 9, max: 70 } },
     },
     twigs: [
@@ -203,9 +195,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_bulwark',
       name: 'Bulwark',
-      description:
-        'Strike is a melee skill, and melee means standing in it: +25% Armour ' +
-        'and +15% maximum Life.',
+      description: '+25% increased Armour and +15% increased maximum Life.',
       stats: [stat('armour', 'inc', 25), stat('life', 'inc', 15)],
     },
     twigs: [
@@ -214,7 +204,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_ironhide',
           name: 'Iron Hide',
-          description: 'A further 40% increased Armour.',
+          description: '40% increased Armour.',
           stats: [stat('armour', 'inc', 40)],
         },
       },
@@ -223,7 +213,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_secondwind',
           name: 'Second Wind',
-          description: 'A further 20% maximum Life, and life regenerates far faster.',
+          description: '+20% increased maximum Life and +120% increased Life Regeneration.',
           stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 120)],
         },
       },
@@ -298,9 +288,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_transmutation',
     name: 'Transmutation',
-    description:
-      'Strike stops dealing Physical. Pick what it deals instead — the Physical ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Strike to another damage type.',
     choices: [
       {
         id: 'fire',

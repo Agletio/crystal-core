@@ -167,10 +167,11 @@ function skillCard(skill: SkillDef): HTMLElement {
   const slot = slotForSkill(skill.id);
   const where = slot ? SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() : '';
   const on = !!slot && equippedSkill(game.character, slot) === skill.id;
-  return nodeCard(skill.name, on ? 'equipped' : where ? `${where} slot` : '', [
-    skill.description,
-    ...slotWorkings(skill, game.character),
-  ]);
+  // A passive IS its grants, and `say` reads the same tables the sim does, so
+  // printing the description beside them is the same sentence twice.
+  const workings = slotWorkings(skill, game.character);
+  const body = skill.category === 'passive' ? workings : [skill.description, ...workings];
+  return nodeCard(skill.name, on ? 'equipped' : where ? `${where} slot` : '', body);
 }
 
 /**

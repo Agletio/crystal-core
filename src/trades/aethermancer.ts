@@ -38,10 +38,8 @@ export const AETHERMANCER: TradeSpec = {
         id: 'aet_ward',
         name: 'Aether Ward',
         description:
-          '20% of every hit is paid out of mana before it reaches your life. ' +
-          'Take 100 and you lose 80 life and 20 mana; with 10 mana left you ' +
-          'lose 90 life and the 10; with none you lose the whole 100. ' +
-          'Ailments included, which Armour never blunts.',
+          '20% of every hit, Ailments included, is paid out of mana before it ' +
+          'reaches your life.',
         grants: { manaShield: 0.2 },
       },
       branches: [
@@ -55,9 +53,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_bulwark',
             name: 'Bulwark of Aether',
-            description:
-              'A further 25% of every hit comes off mana first, so 45% of it ' +
-              'does — while there is mana to pay it with.',
+            description: '25% of every hit comes off mana before it reaches your life.',
             grants: { manaShield: 0.25 },
           },
         },
@@ -71,10 +67,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_shell',
             name: 'The Outer Shell',
-            description:
-              'Mana pays 100% of an Ailment rather than the 20% a hit pays, ' +
-              'while there is mana to pay with. Armour never could, which is ' +
-              'what makes the pool worth spending on.',
+            description: 'Mana pays 100% of an Ailment rather than the 20% a hit pays.',
             grants: { wardWhole: true },
           },
         },
@@ -90,10 +83,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_overcharge',
         name: 'Overcharge',
-        description:
-          'Each use spends 10% of your MAXIMUM mana and adds that much Cold ' +
-          'damage. A 400 pool spends 40 and adds 40; a 1200 pool spends 120 ' +
-          'and adds 120. A use that cannot pay spends nothing and adds nothing.',
+        description: 'Each use spends 10% of your maximum mana and adds that much Cold damage.',
         grants: { overcharge: 0.1 },
       },
       branches: [
@@ -107,9 +97,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_cataclysm',
             name: 'Cataclysm',
-            description:
-              'A further 8% of the pool per use, and a further 8% of it added — ' +
-              'the price and the payoff are the same number and always will be.',
+            description: 'Overcharge spends 8% more of the pool per use, and adds 8% more.',
             grants: { overcharge: 0.08 },
           },
         },
@@ -117,16 +105,13 @@ export const AETHERMANCER: TradeSpec = {
           id: 'rime',
           theme: 'Rime',
           minors: [
-            { text: '+12% chance to Chill', stats: [stat('ailmentChance', 'flat', 12, ['chill'])] },
+            { text: '+12% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 12, ['chill'])] },
             { text: '+16% increased Cold Damage', stats: [stat('damage', 'inc', 16, ['cold'])] },
           ],
           notable: {
             id: 'aet_rime',
             name: 'Rimebound',
-            description:
-              '+45% chance to apply your Ailment. What ' +
-              'Overcharge adds is Cold, so what it spends the pool on is also ' +
-              'what freezes the room.',
+            description: '+45% chance to apply your Ailment.',
             grants: { ailmentChance: 45 },
           },
         },
@@ -156,7 +141,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_deep_draw',
             name: 'Deep Draw',
-            description: 'A further 5% of the damage you deal returns as mana.',
+            description: '5% of the damage you deal returns as mana.',
             grants: { manaLeech: 0.05 },
           },
         },
@@ -170,9 +155,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_wellspring',
             name: 'Wellspring',
-            description:
-              'Every kill returns 4% of your maximum mana. The Siphon pays you ' +
-              'for damage; this pays you for finishing.',
+            description: 'Every kill returns 4% of your maximum mana.',
             grants: { manaOnKill: 0.04 },
           },
         },
@@ -202,7 +185,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_last_drop',
             name: 'The Last Drop',
-            description: 'And 81% rather than 65%, so being Starved costs you almost nothing.',
+            description: '81% rather than 65% of your damage while Starved.',
             grants: { starvedDamage: 1.25 },
           },
         },
@@ -217,9 +200,8 @@ export const AETHERMANCER: TradeSpec = {
             id: 'aet_thrift',
             name: 'Never Dry',
             description:
-              'A use you cannot pay for spends life instead, 2 life for every ' +
-              'point of mana. Dry Season makes running out survivable; this is ' +
-              'the road where you never run out, only bleed.',
+              'A use you cannot pay for spends life instead, 2 life for every point ' +
+              'of mana.',
             grants: { payWithLife: 2 },
           },
         },
@@ -235,9 +217,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_vessel',
         name: 'The Vessel',
-        description:
-          '15% of your maximum life is added to your maximum mana — the one ' +
-          'road to a bigger pool that runs through the stat everything grants.',
+        description: '15% of your maximum life is added to your maximum mana.',
         grants: { poolFromLife: 0.15 },
       },
       branches: [
@@ -251,7 +231,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_confluence',
             name: 'Confluence',
-            description: 'A further 20% of your maximum life is added to the pool.',
+            description: '20% of your maximum life is added to the pool.',
             grants: { poolFromLife: 0.2 },
           },
         },
@@ -265,10 +245,7 @@ export const AETHERMANCER: TradeSpec = {
           notable: {
             id: 'aet_widening',
             name: 'The Wider Bore',
-            description:
-              'Overcharge adds 1.6x what it spent rather than matching it. ' +
-              'Cataclysm buys a bigger mouthful; this makes every mouthful go ' +
-              'further.',
+            description: 'Overcharge adds 1.6x what it spent rather than matching it.',
             grants: { overchargeYield: 1.6 },
           },
         },

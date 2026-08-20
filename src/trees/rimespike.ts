@@ -27,9 +27,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_rime',
       name: 'Rime',
-      description:
-        '+55% chance to Chill. Rimespike is ' +
-        'Cold, so what it carries is a Chill.',
+      description: '+55% chance to apply Chill.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -38,7 +36,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_bitter',
           name: 'Bitter Cold',
-          description: 'Chills you apply last 70% longer, so the stacks have time to build.',
+          description: 'Chills you apply last 70% longer.',
           grants: { ailmentDuration: 1.7 },
         },
       },
@@ -57,15 +55,13 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_killingfrost',
           name: 'Killing Frost',
-          description:
-            'A further +45% chance to Chill, so a hit past 100% ' +
-            'leaves two Chills rather than one — and a Freeze comes twice as fast.',
+          description: '+45% chance to apply Chill.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
-      { text: '+9% chance to Chill', stats: [stat('ailmentChance', 'flat', 9, ['chill'])] },
+      { text: '+9% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 9, ['chill'])] },
       { text: '+6% increased Chill Damage', grants: { ailmentMultiplier: 1.06 } },
       COMMON[0],
       COMMON[3],
@@ -118,9 +114,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_depth',
       name: 'From Below',
-      description:
-        'Rimespike deals 30% more damage to enemies more than 3 tiles away — ' +
-        'the ground has further to travel and arrives harder for it.',
+      description: 'Rimespike deals 30% more damage to enemies more than 3 tiles away.',
       grants: { moreFar: { beyond: 3, more: 0.3 } },
     },
     twigs: [
@@ -172,7 +166,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostplate',
           name: 'Frostplate',
-          description: 'A further 45% increased Armour.',
+          description: '45% increased Armour.',
           stats: [stat('armour', 'inc', 45)],
         },
       },
@@ -181,7 +175,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_stillness',
           name: 'Stillness',
-          description: 'A further 20% maximum Life, and 130% increased Life Regeneration.',
+          description: '20% maximum Life, and 130% increased Life Regeneration.',
           stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 130)],
         },
       },
@@ -191,7 +185,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_wellspring',
           name: 'Wellspring',
-          description: 'A further 35% maximum Mana, and 60% increased Mana Regeneration.',
+          description: '35% maximum Mana, and 60% increased Mana Regeneration.',
           stats: [stat('mana', 'inc', 35), stat('manaRegen', 'inc', 60)],
         },
       },
@@ -218,7 +212,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_flurry',
           name: 'Flurry',
-          description: 'A further 25% increased Cast Speed.',
+          description: '25% increased Cast Speed.',
           stats: [stat('castSpeed', 'inc', 25)],
         },
       },
@@ -237,7 +231,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_relentless',
           name: 'Unrelenting',
-          description: 'A further 30% increased Cast Speed, and 25% increased Damage.',
+          description: '30% increased Cast Speed, and 25% increased Damage.',
           stats: [stat('castSpeed', 'inc', 30), stat('damage', 'inc', 25)],
         },
       },
@@ -259,7 +253,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glacier',
           name: 'Glacier',
-          description: 'A further 30% more damage.',
+          description: '30% more damage.',
           stats: [stat('damage', 'more', 30)],
         },
       },
@@ -268,7 +262,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_permafrost',
           name: 'Permafrost',
-          description: 'A further 55% increased Cold Damage.',
+          description: '55% increased Cold Damage.',
           stats: [stat('damage', 'inc', 55, ['cold'])],
         },
       },
@@ -278,10 +272,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_transmutation',
           name: 'Transmutation',
-          description:
-            'Rimespike stops dealing Cold. Pick what it deals instead — the ' +
-            'Cold modifiers in this tree change with it, the ones on your gear ' +
-            'do not.',
+          description: 'Convert Rimespike to another damage type.',
           choices: [
             {
               id: 'fire',

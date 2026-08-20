@@ -35,8 +35,8 @@ const BRANCHES: Branch[] = [
       id: 'fb_kindling',
       name: 'Kindling',
       description:
-        'Fireball can no longer Critically strike. A cast that would have ' +
-        'instead leaves a Burn worth 260% of the hit over 4s.',
+        'Fireball cannot Critically strike; a cast that would have leaves a ' +
+        'Burn worth 260% of the hit over 4s.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -72,7 +72,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+6% increased Burn Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+9% chance to Burn', stats: [stat('ailmentChance', 'flat', 9, ['burn'])] },
+      { text: '+9% chance to apply Burn', stats: [stat('ailmentChance', 'flat', 9, ['burn'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],
@@ -83,9 +83,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_bellows',
       name: 'Bellows',
-      description:
-        'Each use on the same enemy as the last builds 8% Momentum against ' +
-        'it, up to 60%. Using it on anything else HALVES what you have built.',
+      description: '+8% Momentum per use, up to 60%.',
       grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
@@ -148,7 +146,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_volley',
           name: 'Volley',
-          description: 'Fireball throws +1 Projectile on top of that, for three.',
+          description: 'Fireball throws +1 Projectile.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
         },
       },
@@ -158,7 +156,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_barrage',
           name: 'Barrage',
-          description: 'And +2 more Projectiles beyond that, for five.',
+          description: '+2 Projectiles.',
           grants: { extraTargets: 2, manaMultiplier: 1.15 },
         },
       },
@@ -189,7 +187,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overpen',
           name: 'Overpenetration',
-          description: 'Fireball gains +1 more Pierce, for two.',
+          description: 'Fireball gains +1 Pierce.',
           grants: { pierce: 1, manaMultiplier: 1.15 },
         },
       },
@@ -221,7 +219,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_leaping',
           name: 'Leaping Flame',
-          description: 'Fireball gains +1 more Arc, for two.',
+          description: 'Fireball gains +1 Arc.',
           grants: { chains: 1, manaMultiplier: 1.15 },
         },
       },
@@ -286,9 +284,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_transmutation',
     name: 'Transmutation',
-    description:
-      'Fireball stops dealing Fire. Pick what it deals instead — the Fire ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Fireball to another damage type.',
     choices: [
       {
         id: 'cold',

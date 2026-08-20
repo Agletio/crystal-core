@@ -113,7 +113,7 @@ export function qualify(stat: string, tags: string[] = []): string {
   // The one stat whose tag reads AFTER it: "Chance to Bleed", not "Bleed Chance".
   if (stat === 'ailmentChance') {
     const named = tags.map((t) => AILMENT_BY_ID[t]).filter(Boolean);
-    return named.length ? `Chance to ${named.map((a) => a.verb ?? a.name).join(' ')}` : base;
+    return named.length ? `Chance to apply ${named.map((a) => a.name).join(' ')}` : base;
   }
 
   const words = tags.map((t) => TAG_WORDS[t]).filter(Boolean);
