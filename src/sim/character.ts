@@ -61,11 +61,11 @@ export interface Character {
 export const weaponFamilies = (skill: SkillDef): string[] =>
   !skill.requires ? [] : WEAPON_GROUPS[skill.requires] ?? [skill.requires];
 
-/** Whether what is in your hand can swing this skill. A spell requires nothing,
- *  and an EMPTY hand fits everything: holding nothing is not holding wrong. */
+/** Whether what is in your hand can swing this skill. A spell requires nothing
+ *  and is cast bare-handed; a skill that names a weapon needs one IN your hand. */
 export function weaponFits(skill: SkillDef | undefined, held: Item | null): boolean {
-  if (!skill?.requires || !held) return true;
-  const family = GEAR_BASE_BY_ID[held.base]?.family;
+  if (!skill?.requires) return true;
+  const family = held ? GEAR_BASE_BY_ID[held.base]?.family : undefined;
   return family !== undefined && weaponFamilies(skill).includes(family);
 }
 

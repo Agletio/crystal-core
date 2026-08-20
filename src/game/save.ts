@@ -312,10 +312,10 @@ function healSkillSlots(character: Character): boolean {
     seen.add(held);
     kept[slot.id] = held;
   }
-  // Dropped like one whose slot has gone. Both equips refuse to MAKE this
-  // pair, but a save written before a skill wanted a weapon can hold it.
+  // A save written before a skill wanted a weapon can hold the pair. A HELD
+  // mismatch only: an empty hand is the opening, and the choice there stands.
   const held = character.equipment?.[WEAPON_SLOT] ?? null;
-  if (kept[MAIN_SLOT] && !weaponFits(SKILL_BY_ID[kept[MAIN_SLOT]], held)) {
+  if (held && kept[MAIN_SLOT] && !weaponFits(SKILL_BY_ID[kept[MAIN_SLOT]], held)) {
     delete kept[MAIN_SLOT];
   }
   if (!kept[MAIN_SLOT]) {

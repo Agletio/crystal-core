@@ -67,7 +67,7 @@ export function giftSchedule(game: GameState): string {
   const who = LAMPWRIGHT.name;
   const given = game.given ?? [];
   if (!given.includes('weapon')) {
-    return `${who} meets you at the mouth of your first cleared descent.`;
+    return `${who} is waiting on the stair, before you go down at all.`;
   }
   if (!given.includes('crystal')) {
     if (crystalEarned(game)) {

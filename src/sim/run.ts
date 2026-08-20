@@ -379,6 +379,9 @@ export interface RunState {
   folk: Entity[];
   /** True from the moment the hero reaches them until the panel is dismissed. */
   meeting: boolean;
+  /** True once he has walked back to the way on and is standing on it. Only a
+   *  scene sets it: a descent ENDS at its exit rather than carrying on. */
+  leaving: boolean;
   /** What has to be put down before a room is yours, once it has been called
    *  up. Null everywhere else — a descent has a finale, never a boss. */
   boss: Entity | null;
@@ -592,6 +595,7 @@ export class RunSim {
       absorbed: 0,
       folk: [],
       meeting: false,
+      leaving: false,
       boss: null,
       phase: null,
       phaseLeft: 0,
@@ -1424,9 +1428,21 @@ export class RunSim {
     }
   }
 
-  /** Arriving in a room. YOU cross it, at a walk rather than at descent speed:
-   *  the room is the point and arriving instantly skips it. Not `step`:
-   *  nothing in a scene has a clock. */
+  /** The mirror of `walkOut`: away from whoever you just met and down the way
+   *  on, which in a scene is the tile you came in by. `leaving` is true once he
+   *  stands on it, and the loop reads that as the next descent starting. */
+  walkDown(dt: number): void {
+    const s = this.state;
+    if (s.leaving) return;
+    const way = s.map.exit;
+    if (dist(s.hero, { x: way.x, y: way.y } as Entity) > 0.9) {
+      if (this.advance(s.hero, { x: way.x, y: way.y } as Entity, dt, SCENE_WALK)) return;
+    }
+    s.hero.path = [];
+    this.settleAction(s.hero, false);
+    s.leaving = true;
+  }
+
   walkOut(dt: number): void {
     const s = this.state;
     const met = s.folk[0];

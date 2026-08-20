@@ -1762,15 +1762,19 @@ export const LAMPWRIGHT = {
     title: 'The Lampwright',
     beats: [
       {
-        said: 'You came back up. Most do not. I hear the ones that do not, sometimes, still going.',
+        said: 'Going down. Everyone is, when they come past me. Most of them are only going down the once.',
         act: 'face',
       },
       {
-        said: 'You went down there with nothing in your hands. Do not do that again. Take this one — I have carried it a long way and it has never once been any use to me.',
+        said: 'It does not end where you think it ends. There is always another way further in, and the things in it get their opinions from somewhere deeper than you.',
+        act: 'pace',
+      },
+      {
+        said: 'Do not go with nothing in your hands. Take this one — I have carried it a long way and it has never once been any use to me.',
         act: 'work',
       },
       {
-        said: 'Things that come out of the rock can be argued with. Not much. A little. You will find out what I mean and then you will not stop.',
+        said: 'The stair behind me keeps going. I stopped following it. You will not.',
         act: 'face',
       },
     ] as SceneBeat[],

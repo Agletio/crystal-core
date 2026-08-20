@@ -117,8 +117,55 @@ $('welcome-name').value = 'Vespera';
 all('#welcome-skills .welcomecard')[0].click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
-assert($('craft').hidden === true, 'and drops you straight at the Fissure, not the bench');
-assert($('run-launch').disabled === false, 'ready to enter immediately');
+assert($('craft').hidden === true, 'and drops you at the Fissure, not the bench');
+
+// --- the opening: he is the first thing, and he arms you ---------------------
+// You do not go down with nothing in your hands, so the stair starts in his
+// room. He warns you, hands one over, and it goes ON — a weapon in the bag is
+// exactly what he told you not to descend with.
+{
+  assert(
+    document.body.dataset.runPhase === 'scene',
+    'choosing opens on his room rather than on the dock',
+    document.body.dataset.runPhase
+  );
+  // The walk over, his beats, and the panel at the end of them.
+  for (let i = 0; i < 60 && $('met').hidden !== false; i++) {
+    if ($('speech-next')) $('speech-next').click();
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert($('met').hidden === false, 'his lines end on a panel with the weapon in it');
+
+  const take = [...$('met').querySelectorAll('button')].find((b) => /Take/.test(b.textContent));
+  assert(!!take, 'and a button that takes it');
+  take.click();
+  await new Promise((r) => setTimeout(r, 100));
+
+  assert(dockItems().length === 0, 'and nothing of it lands in the bag', String(dockItems().length));
+  $('open-character').click();
+  const hand = $('slot-weapon');
+  assert(
+    hand.classList.contains('slotcell__btn--worn'),
+    'taking it puts it in your HAND',
+    hand.className
+  );
+  $('sheet-close').click();
+
+  // And then he walks to the stair behind him and keeps going: no results
+  // card, no climb out, straight into the first descent.
+  for (let i = 0; i < 80 && document.body.dataset.runPhase === 'scene'; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert(
+    document.body.dataset.runPhase === 'running',
+    'and the stair behind him runs straight into the first descent',
+    document.body.dataset.runPhase
+  );
+  $('run-abandon').click();
+  await new Promise((r) => setTimeout(r, 60));
+  if ($('run-again')) $('run-again').click();
+}
+assert($('run-launch').disabled === false, 'ready to enter again');
 
 // --- a new game starts with literally nothing ------------------------------
 // The app boots fresh on purpose: judging the loop from a stocked inventory

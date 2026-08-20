@@ -1476,9 +1476,10 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
 {
   const game = createGame('fresh');
   game.inventory = [];
-  // A sword rather than a wand: a fresh character swings Strike, which refuses
-  // one, and this is about the BENCH rather than about what fits your hand.
-  const wand = makeGear('rusted_sword', 20);
+  // Cast by a SPELL, which requires no weapon: this is about the BENCH, and
+  // Strike both refuses a wand and refuses to have its sword taken off.
+  game.character.equipped = { ...game.character.equipped, main: 'fireball' };
+  const wand = makeGear('ash_wand', 20);
   addItem(game, wand);
   equipItem(game, wand, 'weapon');
   selectForCraft(game, wand);
@@ -8119,10 +8120,10 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     room.takeGift();
     const weapon = hand.items[0];
     check(
-      weapon?.meta.firstClear === true &&
-        [...g.inventory, ...g.stash].some((i) => i.id === weapon.id),
-      'and hands over a marked weapon the guided opening can point at',
-      `${weapon?.base}`
+      weapon?.meta.firstClear === true
+        && g.character.equipment.weapon?.id === weapon.id,
+      'and hands over a marked weapon, straight into your hand rather than your bag',
+      `${weapon?.base} is ${g.character.equipment.weapon?.id === weapon?.id ? 'worn' : 'in the bag'}`
     );
     check(
       giftWaiting(g) === null,

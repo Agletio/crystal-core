@@ -39,6 +39,8 @@ import {
   onRunFocused,
   skipToGift,
   refreshRunPanels,
+  forgetRun,
+  openOpening,
   enterRoomNow,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
@@ -99,6 +101,7 @@ function healingNote(healed: Healed): string | null {
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
   resetGame(game, mode);
+  forgetRun();
   // The old save outlives the wipe otherwise, and the next reload undoes it.
   clearSave();
   saveGame(game);
@@ -125,9 +128,11 @@ function makeCharacter(): void {
   if (!maybeShowPick()) maybeShowWelcome();
 }
 
-/** After choosing a skill: the Fissure, and nothing explaining it. */
+/** After choosing a skill: the Lampwright, who arms you and points at the
+ *  stair behind him. A game already past him goes straight to the dock. */
 function begin(): void {
   refreshRunPanels();
+  if (openOpening()) return;
   onRunFocused();
 }
 

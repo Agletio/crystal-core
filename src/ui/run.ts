@@ -49,6 +49,7 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
+import { giftWaiting } from '../game/crystals';
 import type { Waiting } from '../game/crystals';
 import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
 import { closeGraft, isGraftOpen, openGraft } from './graft';
@@ -130,6 +131,9 @@ let greetedState: RunState | null = null;
 let greeting: Waiting | null = null;
 /** The room waiting at the bottom of the hole, until the drop has played. */
 let arriving: SceneDef | null = null;
+/** The opening: his room is the first thing, and the stair behind him is what
+ *  the first descent is entered by. Set while that walk is happening. */
+let descending = false;
 /** The room you are standing in, and whether its beats have been started. */
 let arrivedIn = '';
 let spoke = false;
@@ -184,7 +188,13 @@ export function sceneEnded(): void {
   greeted = null;
   greetedState = null;
   greeting = null;
-  if (report && state) land(report, state);
+  if (report && state) {
+    land(report, state);
+    return;
+  }
+  // The OPENING has no report behind it: nothing has been descended yet, and
+  // what is left is the stair behind him that the first descent is entered by.
+  descending = true;
 }
 
 /** Escape, anywhere in a meeting: the rest of the lines are skipped and what
@@ -590,6 +600,20 @@ function endEncounter(): void {
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other
  *  — the packs are what a scene leaves out — so both renderers draw it with no
  *  changes, and nothing ticks: the walk across is the whole of it. */
+/** THE OPENING: his room before anything at all, because going down with
+ *  nothing in your hands is the thing he is standing there to stop. Answers
+ *  whether it took, so a game past it falls through to the dock. */
+export function openOpening(): boolean {
+  const waiting = giftWaiting(game);
+  const workshop = SCENE_BY_ID[LAMPWRIGHT.scene];
+  if (!waiting?.weapon || !workshop) return false;
+  seed = Math.floor(Math.random() * 1e9);
+  greeting = waiting;
+  descending = false;
+  enterScene(workshop);
+  return true;
+}
+
 function enterScene(def: SceneDef): void {
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
@@ -992,12 +1016,17 @@ function frame(now: number): void {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
-      if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
+      if (descending) sim.walkDown(TICK);
+      else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
       else sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;
     }
-    if (sim.state.meeting && !spoke && arrival <= 0) speak();
+    if (descending && sim.state.leaving) {
+      descending = false;
+      launch();
+    }
+    if (!descending && sim.state.meeting && !spoke && arrival <= 0) speak();
   }
   if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
     syncSpeech(renderer, sim.state.folk[0]);
@@ -1264,6 +1293,23 @@ export function refreshRunPanels(): void {
   renderMenu();
   renderBadges();
   renderSkillIcons();
+}
+
+/** A WIPE replaces the game under this module, and what was held for the game
+ *  that is gone would otherwise be held against the new one: a gift nobody is
+ *  standing there to hand over refuses every Abandon for the rest of the run. */
+export function forgetRun(): void {
+  sim = null;
+  greeting = null;
+  greeted = null;
+  greetedState = null;
+  arriving = null;
+  descending = false;
+  banked = null;
+  pending = null;
+  handover = 0;
+  playing = false;
+  setPhase('menu');
 }
 
 /**

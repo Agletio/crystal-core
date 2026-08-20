@@ -232,7 +232,10 @@ export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlac
   if (!base) return null;
   const item = makeGear(base, 1);
   item.meta.firstClear = true;
-  return { item, where: giveGift(game, item) };
+  const where = giveGift(game, item);
+  // Only an empty hand: a later gift never takes off what you chose.
+  if (!game.character.equipment[WEAPON_SLOT]) equipItem(game, item, WEAPON_SLOT);
+  return { item, where };
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
@@ -635,6 +638,11 @@ export function unequipItem(game: GameState, slotId: string): boolean {
   const worn = game.character.equipment[slotId];
   if (!worn) return false;
   if (carryRoom(game, worn.kind) <= 0) return false;
+  // The third door: both equips refuse to MAKE a skill you cannot swing, and
+  // taking the weapon off would make one anyway.
+  if (slotId === WEAPON_SLOT && !weaponFits(SKILL_BY_ID[mainSkillId(game.character)], null)) {
+    return false;
+  }
   delete game.character.equipment[slotId];
   addItem(game, worn);
   return true;
