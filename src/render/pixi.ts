@@ -67,6 +67,12 @@ import {
 import {
   ATTACK_FRAME,
   CELL,
+  HOVER_CYCLE,
+  HOVER_RISE,
+  SWARM_ORBIT,
+  SWARM_SPIN,
+  copiesOf,
+  hoverOf,
   WALK_CYCLE,
   WALK_FRAMES,
   animates,
@@ -237,6 +243,8 @@ export async function createPixiRenderer(
   }
 
   const sprites = new Map<number, Sprite>();
+  /** The extra copies of a body that is several of a thing, keyed id:index. */
+  const swarm = new Map<string, Sprite>();
   /** One per HAND of an entity that holds something, keyed `id:slot`. Its own
    *  sprite rather than a child of the body, or it would inherit the body's
    *  mirroring twice. */
@@ -699,6 +707,7 @@ export async function createPixiRenderer(
         stale.destroy();
         sprites.delete(e.id);
       }
+      unswarm(e.id);
       for (const slot of HANDS_DRAWN) drop(e.id, slot);
       return;
     }
@@ -757,6 +766,13 @@ export async function createPixiRenderer(
       s.y -= Math.abs(Math.sin((elapsed * WALK_CYCLE - 0.5) * Math.PI)) * 0.05;
     }
 
+    // Off its OWN clock, never the walk's: what drifts while it is standing
+    // still is most of what says it is a body rather than an ornament.
+    const hover = hoverOf(e.sprite);
+    if (hover > 0 && !e.dead) {
+      s.y -= hover + Math.sin(elapsed * HOVER_CYCLE + e.id) * HOVER_RISE;
+    }
+
     // Sprites are authored facing right; flip rather than rotate so they
     // never appear upside down.
     s.scale.x = Math.abs(s.scale.x) * (Math.cos(e.facing) < 0 ? -1 : 1);
@@ -769,7 +785,48 @@ export async function createPixiRenderer(
         : toHexNumber(phaseTint ?? '#ffffff');
 
     for (const slot of HANDS_DRAWN) drawHeld(e, slot, s, fade, sunk, elapsed);
+    drawSwarm(e, s, elapsed);
   }
+
+  /**
+   * A body that is SEVERAL of a thing. The generator draws one subject and will
+   * not draw a scatter, so the extra ones are the same texture again, turning
+   * around the entity between them: what the sim holds is still one monster at
+   * one point, and only the picture is a swarm.
+   */
+  function drawSwarm(e: Entity, lead: Sprite, elapsed: number): void {
+    const many = copiesOf(e.sprite);
+    for (let i = 1; i < Math.max(1, many); i++) {
+      const key = `${e.id}:${i}`;
+      let s = swarm.get(key);
+      if (!s) {
+        s = new Sprite(lead.texture);
+        s.anchor.set(0.5, lead.anchor.y);
+        entityLayer.addChild(s);
+        swarm.set(key, s);
+      }
+      const turn = elapsed * SWARM_SPIN + (i / many) * Math.PI * 2;
+      const out = SWARM_ORBIT * e.scale;
+      s.texture = lead.texture;
+      s.scale.set(lead.scale.x, lead.scale.y);
+      s.alpha = lead.alpha;
+      s.tint = lead.tint;
+      s.rotation = lead.rotation;
+      s.visible = !e.dead;
+      s.x = lead.x + Math.cos(turn) * out;
+      // Squashed, so the ring reads as one lying FLAT round it rather than as
+      // a wheel standing on edge — the map is seen from above.
+      s.y = lead.y + Math.sin(turn) * out * 0.5;
+    }
+  }
+
+  const unswarm = (id: number): void => {
+    for (const [key, s] of swarm) {
+      if (!key.startsWith(`${id}:`)) continue;
+      s.destroy();
+      swarm.delete(key);
+    }
+  };
 
   const drop = (id: number, slot: HandSlot): void => {
     const stale = helds.get(`${id}:${slot}`);

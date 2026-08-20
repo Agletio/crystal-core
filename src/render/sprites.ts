@@ -302,9 +302,17 @@ export const bodyFoot = (sprite: string): number => inkBand(sprite).foot;
 /** How far off the ground a body hangs, in tiles, and how far it rises and
  *  falls doing it. A thing with no feet is not pinned by them, and standing it
  *  on the floor is what makes it read as an ornament rather than as alive. */
-export const hoverOf = (sprite: string): number => GENERATED[sprite]?.hover ?? 0;
+export const hoverOf = (sprite: string): number =>
+  (GENERATED[sprite] as { hover?: number } | undefined)?.hover ?? 0;
 export const HOVER_RISE = 0.08;
 export const HOVER_CYCLE = 1.6;
+
+/** How many of a body get drawn, and how they turn: what the generator will
+ *  not draw is a SCATTER, so several of one thing is one picture and this. */
+export const copiesOf = (sprite: string): number =>
+  (GENERATED[sprite] as { copies?: number } | undefined)?.copies ?? 1;
+export const SWARM_ORBIT = 0.42;
+export const SWARM_SPIN = 0.9;
 
 export const strideOf = (sprite: string, frames: number): number =>
   (GENERATED[sprite]?.stride ?? STRIDE_CYCLE) / Math.max(1, frames);

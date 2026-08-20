@@ -457,11 +457,11 @@
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "66ab112d-a52c-4b18-93ee-1c0258e49d41",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "3fe42c79-d385-4c34-80d2-c9a78ac21a23",
      "frames": 0
     }
    },
@@ -477,19 +477,19 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "93adee9c-0ffe-45c2-8d61-f3083e50d7dc",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "88ba6448-79f6-49b0-bbf0-ceec1afd8592",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "4a96fb87-498f-4ce7-b6ad-6db50d1b3ac7",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "e8715ae7-a6da-4883-8885-6fcf068a2666",
      "frames": 0
     }
    },
@@ -505,19 +505,19 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "151a3bb3-abd6-4b0d-908d-6dc0c654f55e",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "c5002ff0-4a3b-4b5a-b73b-6035107f14ef",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "2f1241fd-864d-41b3-97ab-ef755ae37e6f",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "40fe08a5-5388-4fcb-9031-6285e3ba97ad",
      "frames": 0
     }
    },
@@ -533,19 +533,19 @@
    ],
    "states": {
     "idle": {
-     "group": "",
+     "group": "438df255-7948-47d7-96ea-35d1a4b09fe7",
      "frames": 0
     },
     "walk": {
-     "group": "",
+     "group": "9bc58b81-61e5-4df5-a038-76c5ea613810",
      "frames": 0
     },
     "attack": {
-     "group": "",
+     "group": "be9b6ba4-c251-49ec-8271-8a67706b2d16",
      "frames": 0
     },
     "death": {
-     "group": "",
+     "group": "bb8a292b-b67c-4909-ad99-77ef3bb37feb",
      "frames": 0
     }
    },
