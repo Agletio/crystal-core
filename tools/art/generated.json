@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -412,6 +412,322 @@
      "to": 0.78
     }
    }
+  },
+  {
+   "sprite": "imp",
+   "character": "aa150e43-6866-43c5-b297-cb79b740350e",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "0657e37f-4f93-4e82-9eb0-3fca1c62e3f6",
+     "frames": 0
+    },
+    "walk": {
+     "group": "a726388b-9721-4b55-90de-cf672a20690e",
+     "frames": 0
+    },
+    "attack": {
+     "group": "79b3f56b-67e2-4282-8d26-8adb66527a3b",
+     "frames": 0
+    },
+    "death": {
+     "group": "377f68c0-281f-4fc6-89ab-2086adcd9521",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "flenser",
+   "character": "fcdf5bc0-cc16-44cb-9137-198c593a13c6",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "a81a3143-53fd-4e84-baf1-8f341fc67f7b",
+     "frames": 0
+    },
+    "walk": {
+     "group": "fb064800-7753-4a44-a742-e90dfdbbe8db",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "bloat",
+   "character": "a6157fbe-291b-41a6-9ae4-e707fed137cc",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "hornfiend",
+   "character": "3cce3f2b-4bde-45e4-9a42-f89d014e2b1d",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "maw",
+   "character": "eaffbbd2-ec56-484e-9a60-df44965a7a63",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "chanter",
+   "character": "c982d6f0-4f11-414f-ad82-8472268844db",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "cast": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "shardling",
+   "character": "3af88dcf-0315-4711-a1b6-ca3e65f08abd",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "lattice",
+   "character": "82653817-8927-4e28-b377-c6b02d1055d8",
+   "dirs": [
+    "east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "prism",
+   "character": "fcaa93d1-2e26-4b14-82a7-df150d646ebe",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "cast": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "spire",
+   "character": "d4b65bff-8bfe-407f-b970-32540302c524",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
+  },
+  {
+   "sprite": "chime",
+   "character": "af67bcf7-1802-481f-9f71-695ba155448b",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "",
+     "frames": 0
+    },
+    "walk": {
+     "group": "",
+     "frames": 0
+    },
+    "attack": {
+     "group": "",
+     "frames": 0
+    },
+    "death": {
+     "group": "",
+     "frames": 0
+    }
+   },
+   "grid": 48,
+   "inks": 24,
+   "luma": 32
   }
  ],
  "props": [

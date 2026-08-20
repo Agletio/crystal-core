@@ -42,6 +42,7 @@ interface BodyAsk {
   proportions?: string;
   size?: number;
   inks?: string; // a row of `palettes`: the room this body lives in, not the roster's
+  approved?: string; // the design a human picked, relative to this file
   states: Record<string, StateAsk>;
 }
 
@@ -146,6 +147,29 @@ function palette(): string {
   return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
 }
 
+/** The character id into BOTH files, plus the row `record` needs to exist:
+ *  copied by hand this is the step that pointed a roster at another
+ *  character's groups. */
+function enrol(sprite: string, character: string): void {
+  const ask = asks.bodies.find((b) => b.sprite === sprite)!;
+  ask.character = character;
+  writeFileSync(here('bodies.json'), `${JSON.stringify(asks, null, 1)}\n`);
+
+  const row = shipped.bodies.find((b) => b.sprite === sprite);
+  const states = Object.fromEntries(
+    Object.keys(ask.states).map((n) => [n, row?.states?.[n] ?? { group: '', frames: 0 }])
+  );
+  const made = {
+    ...(row ?? {}), sprite, character,
+    dirs: [ask.face ?? asks.face], states,
+    grid: 48, inks: 24, luma: 32, // the Fissure mobs' own, so nothing ships sharper or duller
+  };
+  const at = shipped.bodies.findIndex((b) => b.sprite === sprite);
+  if (at < 0) shipped.bodies.push(made as never);
+  else shipped.bodies[at] = made as never;
+  writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+}
+
 /** A square design at another size, area-averaged. This is a REFERENCE and not
  *  art that ships, so it is not held to the integer rule the conversion is —
  *  what it has to be is the size the rotation should come back at. */
@@ -180,6 +204,7 @@ if (command === 'design') {
   mkdirSync(dir, { recursive: true });
   const jobs: string[] = [];
   for (let n = 0; n < many; n++) {
+    await room(1); // a design asked while a rotation holds the ten comes back refused, as TEXT
     const out = await callTool('create_image_pixflux', {
       description: body!.look,
       width: 128,
@@ -229,17 +254,25 @@ if (command === 'design') {
   // 128 an animation costs two generations a direction and a body is 1.78x the
   // source. So the design is resampled to `size` before it is sent.
   const size = body!.size ?? 96;
+  // No argument takes the design the row was APPROVED at, which is the whole
+  // reason that field is written down: a pick made in conversation is a pick
+  // nothing can re-run.
+  const from = process.argv[4] ?? (body!.approved && here(body!.approved));
+  if (!from) throw new Error(`${sprite}: no png given and no \`approved\` on its row`);
+  await room(2);
   const out = await callTool('create_character', {
     name: body!.name,
     description: body!.look,
     body_type: 'humanoid',
     mode: 'v3',
-    reference_image_base64: resample(decodePng(readFileSync(process.argv[4])), size),
+    reference_image_base64: resample(decodePng(readFileSync(from)), size),
     size,
     view: 'high top-down',
   });
-  console.log(said(out, /id|status/i));
-  console.log('put that id in bodies.json AND generated.json before going on');
+  const id = /character[_ ]?id[:= ]+([0-9a-f-]{36})/i.exec(out)?.[1] ?? /([0-9a-f-]{36})/.exec(out)?.[1];
+  if (!id) { console.log(`${sprite}: REFUSED — ${said(out, /error|hint|slots/i)}`); process.exit(1); }
+  console.log(`${sprite}: ${id}`);
+  enrol(sprite!, id);
 } else if (command === 'ask') {
   const out = await callTool('create_character', {
     name: body!.name,

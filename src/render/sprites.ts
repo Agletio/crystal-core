@@ -299,6 +299,13 @@ function inkBand(sprite: string): { top: number; foot: number } {
 export const bodyTop = (sprite: string): number => inkBand(sprite).top;
 export const bodyFoot = (sprite: string): number => inkBand(sprite).foot;
 
+/** How far off the ground a body hangs, in tiles, and how far it rises and
+ *  falls doing it. A thing with no feet is not pinned by them, and standing it
+ *  on the floor is what makes it read as an ornament rather than as alive. */
+export const hoverOf = (sprite: string): number => GENERATED[sprite]?.hover ?? 0;
+export const HOVER_RISE = 0.08;
+export const HOVER_CYCLE = 1.6;
+
 export const strideOf = (sprite: string, frames: number): number =>
   (GENERATED[sprite]?.stride ?? STRIDE_CYCLE) / Math.max(1, frames);
 /** A hand-drawn creature has no stride, so its two frames run off the clock. */

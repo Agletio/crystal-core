@@ -37,6 +37,7 @@ interface BodySpec {
   /** Legs the art does not show, so nothing measured off them means
    *  anything: a hem to the floor, and a `stride` judged rather than read. */
   robed?: boolean;
+  hover?: number; // tiles it hangs off the ground, for a body with no feet
   grounded?: boolean; // feet planted in its drawn ground: deslab/loose stand down
   mound?: boolean; // that ground is a slab `demound` can take, feet kept; death frames keep it
   /** The grid it ships at; the GENERATION must be an integer multiple of it. */
@@ -125,6 +126,7 @@ type Art = {
   grid: number;
   stride?: number;
   robed?: boolean;
+  hover?: number;
   dirs: string[];
   frames: string[][];
   states: Record<string, number[]>;
@@ -366,7 +368,7 @@ async function creature(spec: BodySpec): Promise<Art> {
       Object.entries(states).map(([n, ix]) => `${n} ${ix.length}f`).join(', ') +
       `, ${stranded}px unjoined`
   );
-  return { grid, stride: spec.stride, robed: spec.robed, dirs, frames, states, key: inks.key };
+  return { grid, stride: spec.stride, robed: spec.robed, hover: spec.hover, dirs, frames, states, key: inks.key };
 }
 
 // ---------------------------------------------------------------------------
@@ -577,6 +579,10 @@ if (doing('bodies')) write(
     `  /** Its legs are not visible, so nothing measured off them means\n` +
     `   *  anything — a hem to the floor, and its stride is judged instead. */\n` +
     `  robed?: boolean;\n` +
+    `  /** Tiles it hangs clear of the ground. A body with no feet is not\n` +
+    `   *  pinned by them, and the drawing bobs on this rather than on a\n` +
+    `   *  walk cycle it does not have. */\n` +
+    `  hover?: number;\n` +
     `  /** Facings, north to south, and only the east half of the compass —\n` +
     `   *  anything facing left is one of these mirrored. */\n` +
     `  dirs: string[];\n` +
@@ -595,6 +601,7 @@ if (doing('bodies')) write(
           `  ${id}: {\n    grid: ${art.grid},\n` +
           (art.stride === undefined ? '' : `    stride: ${art.stride},\n`) +
           (art.robed ? `    robed: true,\n` : '') +
+          (art.hover === undefined ? '' : `    hover: ${art.hover},\n`) +
           `    dirs: ${JSON.stringify(art.dirs)},\n` +
           `    frames: [${art.frames.map((f) => rowSource(f, '    ')).join(', ')}],\n` +
           `    states: ${JSON.stringify(art.states)},\n` +
