@@ -268,6 +268,9 @@ export async function createPixiRenderer(
     s.texture = texture;
     s.visible = true;
     s.rotation = 0;
+    // Pooled, so what a caller SET must go back or it leaks onto the next
+    // effect reusing this sprite. Every caller sets alpha; only some set tint.
+    s.tint = 0xffffff;
     s.scale.set(span / (texture.width || CELL));
     return s;
   }
@@ -964,6 +967,12 @@ export async function createPixiRenderer(
       // poisonDrops — so the pool is drawn to exactly what the sim poisoned.
       if (fx.kind === 'blight_field') {
         const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        // Baked GREEN, and a Converted Blight deals something else. White for
+        // poison leaves the picture exactly as drawn.
+        const ink =
+          fx.damageType === 'poison'
+            ? 0xffffff
+            : toHexNumber(damageColour(palette, fx.damageType));
         const pool = vfxTexture('poison_pool');
         if (pool) {
           // Faint, because a cast lasts 10s at nearly one a second and up to
@@ -974,6 +983,7 @@ export async function createPixiRenderer(
           s.x = cx(from.x);
           s.y = cy(from.y);
           s.alpha = Math.max(0, 0.62 * (1 - t * t));
+          s.tint = ink;
         }
 
         // Globs coming DOWN into it. Stretched along the fall and squashed as
@@ -989,6 +999,7 @@ export async function createPixiRenderer(
           g.x = cx(d.x);
           g.y = cy(d.y);
           g.alpha = Math.min(1, d.alpha);
+          g.tint = ink;
         }
         continue;
       }
@@ -1002,10 +1013,9 @@ export async function createPixiRenderer(
           .circle(cx(from.x), cy(from.y), grown)
           .fill({ color: toHexNumber(palette.void), alpha: Math.max(0, 0.3 * (1 - t)) });
 
-        // The shards are a PICTURE, laid to the radius the sim used and turned
-        // off the position so two bursts a tile apart are not the same picture
-        // twice. The blocks stay under it and carry the damage TYPE's colour,
-        // which the baked art cannot: a cold burst and a fire one differ there.
+        // Laid to the radius the sim used, turned off the position so two a
+        // tile apart are not one picture twice. The blocks under it carry the
+        // damage TYPE, which baked art cannot.
         const shards = vfxTexture('burst');
         if (shards) {
           const art = effectSprite(shards, grown * 2, true);

@@ -47,6 +47,7 @@ import {
   ARMOUR_FAMILIES,
   ADDED_DAMAGE_STATS,
   ADDED_DAMAGE_TYPES,
+  AILMENT_BY_ID,
   AILMENTS,
   DANGER_STATS,
   DROP_GROUPS,
@@ -5302,6 +5303,22 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
           caught === aura.targets,
           'and the cap is what the sim applies, never the whole circle',
           `${caught} caught, ${aura.targets} allowed`
+        );
+
+        // And the PICTURE is of what it reached. A circle at the aura's radius
+        // is a drawing of the uncapped rule, and this one was hardcoded poison
+        // whatever spread — so both the COUNT and the COLOUR are held here.
+        const reaches = sim.state.vfx.filter((v: any) => v.kind === 'arc');
+        const wide = sim.state.vfx.filter(
+          (v: any) => v.kind === 'burst'
+            && Math.hypot(v.points[1].x - v.points[0].x, v.points[1].y - v.points[0].y) > aura.radius * 0.6
+        );
+        line(`  drawing ${reaches.length} reaches in ${new Set(reaches.map((v: any) => v.damageType)).size} colour`);
+        check(
+          reaches.length === caught && wide.length === 0
+            && reaches.every((v: any) => v.damageType === AILMENT_BY_ID.bleed.type),
+          'and it draws one reach per body it caught, in the ailment’s own colour',
+          `${reaches.length} reaches for ${caught} caught, ${wide.length} drawn at the aura's radius`
         );
       }
     }

@@ -2704,9 +2704,22 @@ export class RunSim {
         const def = AILMENT_BY_ID[id];
         if (!def) continue;
         for (let n = 0; n < aura.stacks; n++) this.strike(this.state.hero, m, def);
+        // One reach per body it CAUGHT, in that ailment's colour: a circle at
+        // the aura's radius draws the old uncapped rule, in hardcoded poison.
+        this.emit('arc', [{ x: victim.x, y: victim.y }, { x: m.x, y: m.y }], def.type, 0.24);
       }
     }
-    this.emit('burst', [{ x: victim.x, y: victim.y }, { x: victim.x + aura.radius, y: victim.y }], 'poison', 0.3);
+
+    // What came OFF the body, at the BODY's size: what burst is the corpse.
+    const first = AILMENT_BY_ID[kinds[0]];
+    if (first && caught.length > 0) {
+      this.emit(
+        'burst',
+        [{ x: victim.x, y: victim.y }, { x: victim.x + victim.radius * 1.6, y: victim.y }],
+        first.type,
+        0.28
+      );
+    }
   }
 
   /** CURSE pays when the body DIES: a share of what it could hold, to whatever
@@ -2821,8 +2834,7 @@ export class RunSim {
       }
     }
 
-    // Spread BEFORE the victim can die, so a killing tick still infects the
-    // pack — the corpse is exactly when you want the disease to jump.
+    // BEFORE the victim can die: a killing tick is exactly when it should jump.
     for (const s of contagious) this.spreadAilment(e, s!);
 
     // ONE floater per ailment, never one per stack: twelve Burns are one
@@ -2868,16 +2880,16 @@ export class RunSim {
       jumped = true;
     }
 
-    // Draw the jump even when it lands on nobody: a Contagion proc you cannot
-    // see reads as the talent not working.
+    // A BURST, not a Cloud: nothing lingers, and `blight_field` is a green pool
+    // whatever the type says. Drawn even landing on nobody, or it reads broken.
     this.emit(
-      'blight_field',
+      'burst',
       [
         { x: victim.x, y: victim.y },
         { x: victim.x + spread.radius, y: victim.y },
       ],
       spread.skill.damageTypes[0] ?? 'poison',
-      jumped ? 0.5 : 0.3
+      jumped ? 0.4 : 0.24
     );
   }
 
