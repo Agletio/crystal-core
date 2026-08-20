@@ -341,6 +341,34 @@ const RISE: Record<string, number> = {
   exposure: 1,
 };
 
+/** A damage GROUP's colour, mixed from its own two ends rather than borrowed
+ *  from one member: an aura softening Fire, Cold and Lightning alike may not
+ *  look like a fire aura. */
+export function groupColour(palette: Palette, group: string): string {
+  return group === 'elemental'
+    ? mix(damageColour(palette, 'fire'), damageColour(palette, 'cold'), 0.5)
+    : mix(damageColour(palette, 'poison'), damageColour(palette, 'dark'), 0.5);
+}
+
+/** A ward coming apart: three BROKEN arcs around a body's feet, turning off
+ *  `elapsed` alone so both renderers draw the same instant. */
+export function shredMarks(
+  size: number,
+  elapsed: number
+): { from: number; to: number; r: number; width: number; alpha: number }[] {
+  const spin = elapsed * 1.35;
+  return [0, 1, 2].map((i) => {
+    const a = spin + (i * Math.PI * 2) / 3;
+    return {
+      from: a,
+      to: a + 1.25,
+      r: size * 0.44,
+      width: size * 0.055,
+      alpha: 0.75,
+    };
+  });
+}
+
 export function dazeMarks(
   head: number,
   size: number,

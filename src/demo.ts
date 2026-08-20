@@ -5122,6 +5122,31 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
         'and between them they cover all 6 grouped damage types',
         grouped.map((d) => `${d.id}:${d.group}`).join(', ')
       );
+
+      // The PICTURE may not disagree with the arithmetic: a body wearing the
+      // marks is a body `shredding` actually softens, and one without them is
+      // one it does not. Drawn off `Entity.shred`, decided by `shredding`, so
+      // the two are checked against each other rather than against a formula.
+      {
+        const sim = new RunSim([], wearing('unmaking'), new Rng(11)) as any;
+        let marked = 0;
+        let wrong = 0;
+        for (let n = 0; n < 600 && sim.state.status === 'running'; n++) {
+          sim.step(TICK);
+          for (const m of sim.state.monsters) {
+            if (m.dead) continue;
+            const softened = sim.shredding(m, 'fire') > 0;
+            if (!!m.shred !== softened) wrong++;
+            if (m.shred) marked++;
+          }
+        }
+        line(`  and the marks drawn on ${marked} body-frames all named a softened body`);
+        check(
+          wrong === 0 && marked > 0,
+          'and a body wearing the marks is a body the aura is actually softening',
+          `${wrong} disagreed of ${marked} marked`
+        );
+      }
     }
 
     // FEATHERSTEP: armour stops blunting and starts dodging, and the two are
@@ -5238,19 +5263,47 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
       );
     }
 
-    // CONTAGION: what a body carried passes on, and everything you apply is
-    // weaker for it.
+    // CONTAGION: what a body carried passes on to a FEW, and everything you
+    // apply is weaker for it. The cap is the whole mechanism — uncapped, a pack
+    // dying is what feeds it, so the second death lands on a pack that is
+    // already ailing and the room clears itself. Measured: a naked Strike with
+    // the Bleed node clears 27% faster uncapped and 17% faster at two, and four
+    // is already indistinguishable from uncapped because the radius holds four.
     {
       const c = wearing('contagion');
       const g = treeGrants(c);
-      const aura = g.ailmentSpread as { radius: number; stacks: number };
+      const aura = g.ailmentSpread as { radius: number; stacks: number; targets: number };
       const weak = g.ailmentWeak as number;
-      line(`  Contagion: ${aura.stacks} stack within ${aura.radius} tiles, everything ${Math.round((1 - weak) * 100)}% weaker`);
+      line(
+        `  Contagion: ${aura.stacks} stack to the ${aura.targets} nearest within ` +
+          `${aura.radius} tiles, everything ${Math.round((1 - weak) * 100)}% weaker`
+      );
       check(
         aura.stacks === 1 && aura.radius > 0 && weak > 0 && weak < 1,
         'Contagion passes ONE stack on and weakens every Ailment to pay for it',
         JSON.stringify([aura, weak])
       );
+
+      // The cap holds in the SIM, not just in the table: a body dying in a
+      // crowd hands its Bleed to two of them and to no more.
+      {
+        const sim = new RunSim([], c, new Rng(11)) as any;
+        const hero = sim.state.hero;
+        const bodies = Array.from({ length: 6 }, (_, i) => {
+          const m = { ...sim.state.monsters[0], id: 900 + i, x: hero.x + 0.4 * (i + 1), y: hero.y, dead: false, ailments: [] as unknown[] };
+          return m;
+        });
+        const victim = { ...bodies[0], id: 899, x: hero.x, y: hero.y, ailments: [{ id: 'bleed', stacks: 1 }] };
+        sim.state.monsters = [victim, ...bodies];
+        sim.spreadAilments(victim);
+        const caught = bodies.filter((m: any) => m.ailments.length > 0).length;
+        line(`  and a body dying among ${bodies.length} inside its radius reaches ${caught} of them`);
+        check(
+          caught === aura.targets,
+          'and the cap is what the sim applies, never the whole circle',
+          `${caught} caught, ${aura.targets} allowed`
+        );
+      }
     }
   }
 

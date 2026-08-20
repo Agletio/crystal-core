@@ -3628,7 +3628,7 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     // One stack and no onward spread: a room where every death re-ails the
     // room is a room that never stops, and a headless run that never ends.
-    grants: { ailmentSpread: { radius: 3, stacks: 1 }, ailmentWeak: 0.6 },
+    grants: { ailmentSpread: { radius: 3, stacks: 1, targets: 2 }, ailmentWeak: 0.6 },
   },
   {
     id: 'bloodpact',

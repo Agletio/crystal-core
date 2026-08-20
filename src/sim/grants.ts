@@ -299,7 +299,12 @@ export const GRANTS: GrantDef[] = [
     reads: [STATS],
     say: (v) => {
       const p = pair(v, 'radius', 'stacks');
-      return p && `A body dying with an Ailment gives ${p[1]} stack of each to every enemy within ${p[0]} tiles`;
+      const targets = (v as { targets?: number } | null)?.targets;
+      if (!p || typeof targets !== 'number') return null;
+      return (
+        `A body dying with an Ailment gives ${p[1]} stack of each to the ` +
+        `${targets} nearest enemies within ${p[0]} tiles`
+      );
     },
   },
   {

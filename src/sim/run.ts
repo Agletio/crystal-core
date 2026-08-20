@@ -236,6 +236,9 @@ export interface Entity {
   cooldown: number;
   /** Held still by something that landed on you. Only the Fall sets it. */
   stun?: number;
+  /** Which shred aura reaches this body, for whatever draws it. Never read by
+   *  the sim, which asks `shredding` when a hit lands. */
+  shred?: 'elemental' | 'occult' | 'both';
   path: Vec2[];
   pathTimer: number;
   /** Committed target, held across ticks so the hero doesn't thrash. */
@@ -384,6 +387,8 @@ export interface RunState {
   phaseLeft: number;
   /** Where the Fall has put circles, for whatever draws them. */
   circles: FallCircle[];
+  /** The shred auras the hero carries, as circles. Presentation only. */
+  auras: Array<{ x: number; y: number; r: number; group: 'elemental' | 'occult' }>;
   /** What a Reading has left on you: every mark is more damage taken, and they
    *  fall off once it stops. What makes the Reading worth answering. */
   marks: number;
@@ -591,6 +596,7 @@ export class RunSim {
       phase: null,
       phaseLeft: 0,
       circles: [],
+      auras: [],
       marks: 0,
       damageTaken: {},
       blocked: 0,
@@ -897,6 +903,9 @@ export class RunSim {
     }
 
     this.separate();
+    // LAST: the renderer draws the frame this tick ended on, so a mark set
+    // earlier is a tick behind the body wearing it.
+    this.markShredded();
   }
 
   /**
@@ -2504,6 +2513,32 @@ export class RunSim {
     return amount * (1 - (res - this.shredding(defender, type)) / 100);
   }
 
+  /** The shred auras as circles, and who stands in them. `shredding` still
+   *  decides a hit, so the picture cannot drift off the arithmetic. */
+  private markShredded(): void {
+    const hero = this.state.hero;
+    const bag = (group: 'elemental' | 'occult') =>
+      (group === 'elemental' ? this.grants.elementalShred : this.grants.occultShred) as
+        | { radius: number; amount: number }
+        | undefined;
+
+    this.state.auras.length = 0;
+    for (const group of ['elemental', 'occult'] as const) {
+      const aura = bag(group);
+      if (aura) this.state.auras.push({ x: hero.x, y: hero.y, r: aura.radius, group });
+    }
+
+    for (const m of this.state.monsters) {
+      if (m.dead) {
+        m.shred = undefined;
+        continue;
+      }
+      const reached = this.state.auras.filter((a) => dist(hero, m) <= a.r);
+      m.shred =
+        reached.length === 2 ? 'both' : reached.length === 1 ? reached[0].group : undefined;
+    }
+  }
+
   /** What an aura has taken off a monster's ward for this type, here and now.
    *  Never the hero's: an aura you carry cannot soften you. */
   private shredding(defender: Entity, type: string): number {
@@ -2651,12 +2686,20 @@ export class RunSim {
   /** What the body was CARRYING passes on: one stack of each kind it had, and
    *  never onward again — a spread that spreads is a run that never ends. */
   private spreadAilments(victim: Entity): void {
-    const aura = this.grants.ailmentSpread as { radius: number; stacks: number } | undefined;
+    const aura = this.grants.ailmentSpread as
+      | { radius: number; stacks: number; targets: number }
+      | undefined;
     if (!aura || victim.kind === 'hero' || victim.ailments.length === 0) return;
 
     const kinds = [...new Set(victim.ailments.map((a) => a.id))];
-    for (const m of this.state.monsters) {
-      if (m === victim || m.dead || dist(m, victim) > aura.radius) continue;
+    // The NEAREST few, never the whole circle: uncapped, a pack dying is what
+    // feeds it, so the room clears itself. A cap reaches the pack one at a time.
+    const caught = this.state.monsters
+      .filter((m) => m !== victim && !m.dead && dist(m, victim) <= aura.radius)
+      .sort((a, b) => dist(a, victim) - dist(b, victim))
+      .slice(0, aura.targets);
+
+    for (const m of caught) {
       for (const id of kinds) {
         const def = AILMENT_BY_ID[id];
         if (!def) continue;

@@ -19,6 +19,8 @@ import {
   auraLook,
   bossTelegraph,
   dazeMarks,
+  groupColour,
+  shredMarks,
   burstRadius,
   clampOffset,
   fireBolt,
@@ -478,6 +480,30 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
+    // A SHRED AURA, the same circle and the same arcs the other renderer draws.
+    for (const a of state.auras) {
+      ctx.strokeStyle = groupColour(palette, a.group);
+      ctx.globalAlpha = 0.32;
+      ctx.lineWidth = Math.max(1, 0.07 * v.tile);
+      ctx.beginPath();
+      ctx.arc(cx(v, a.x), cy(v, a.y), a.r * v.tile, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.lineCap = 'round';
+    for (const e of state.monsters) {
+      if (e.dead || !e.shred) continue;
+      ctx.strokeStyle = groupColour(palette, e.shred === 'occult' ? 'occult' : 'elemental');
+      for (const m of shredMarks(e.scale, state.elapsed)) {
+        ctx.globalAlpha = m.alpha;
+        ctx.lineWidth = Math.max(1, m.width * v.tile);
+        ctx.beginPath();
+        ctx.arc(cx(v, e.x), cy(v, e.y), m.r * v.tile, m.from, m.to);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
     // WHAT IT IS DOING, on the thing doing it: the same three marks the other
     // renderer draws. `tint` is a sprite's, and this one has none.
     const boss = state.boss;

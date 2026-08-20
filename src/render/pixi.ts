@@ -34,6 +34,8 @@ import {
   damageColour,
   bossTelegraph,
   dazeMarks,
+  groupColour,
+  shredMarks,
   burstRadius,
   clampOffset,
   fireBolt,
@@ -861,6 +863,21 @@ export async function createPixiRenderer(
       }
     }
 
+    // WHAT A SHRED AURA IS DOING. The circle on the floor is where it reaches;
+    // the arcs are on the bodies standing in it, so which enemies are softened
+    // is readable without hovering anything.
+    for (const e of state.monsters) {
+      if (e.dead || !e.shred) continue;
+      const colour = toHexNumber(
+        groupColour(palette, e.shred === 'occult' ? 'occult' : 'elemental')
+      );
+      for (const m of shredMarks(e.scale, state.elapsed)) {
+        vfxLayer
+          .arc(cx(e.x), cy(e.y), m.r, m.from, m.to)
+          .stroke({ color: colour, alpha: m.alpha, width: m.width, cap: 'round' });
+      }
+    }
+
     // WHAT IS ON A BODY. Over it, in the ailment's own damage colour, one
     // clutch of marks per ailment — so a burning thing looks burning without
     // anybody reading a number off a bar.
@@ -1156,6 +1173,14 @@ export async function createPixiRenderer(
   /** In tile units, like everything else in the world container. */
   function drawAuras(state: RunState): void {
     auraLayer.clear();
+
+    // A shred aura is a field on the floor like any other, drawn where it
+    // REACHES: which enemies it is softening has to be readable off the map.
+    for (const a of state.auras) {
+      auraLayer
+        .circle(cx(a.x), cy(a.y), a.r)
+        .stroke({ color: toHexNumber(groupColour(palette, a.group)), alpha: 0.32, width: 0.07 });
+    }
     // THE FALL, on the floor and under the bodies: it fills as its fuse burns
     // down, so how long you have left is the picture rather than a number.
     for (const ring of state.circles) {
