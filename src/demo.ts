@@ -152,6 +152,7 @@ import {
   monsterStats,
   effectiveSkill,
   weaponMod,
+  skillBase,
   statMods,
   passiveScale,
   treeGrants,
@@ -3378,6 +3379,45 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
       !tookBow && !tookArrow && mainSkillId(game.character) === 'shockwave',
       'a weapon that would strand your skill is refused, and so is a skill your weapon cannot swing',
       `bow ${tookBow}, arrow ${tookArrow}, holding ${mainSkillId(game.character)}`
+    );
+  }
+
+  // CONVERSION is what makes a Physical weapon worth swinging on a Lightning
+  // skill. It MOVES damage and may not make any: on a bare build every type
+  // carries the same increases, so the total either side has to be identical.
+  {
+    const turn = SKILL_BY_ID.lightning_arrow.convert!;
+    const bare = (skillId: string, base: string): Character => {
+      const c = makeCharacter(starterLoadout(new Rng(9)), skillId);
+      c.level = 1;
+      delete c.equipment.offhand;
+      for (const worn of Object.values(c.equipment)) {
+        worn.mods = [];
+        worn.implicits = [];
+      }
+      const w = makeGear(base, 1);
+      w.mods = [];
+      w.implicits = [];
+      c.equipment.weapon = w;
+      return c;
+    };
+    const shot = characterStats(bare('lightning_arrow', 'crude_bow'));
+    const swing = GEAR_BASE_BY_ID.crude_bow.damage ?? 0;
+    const moved = swing * turn.share;
+    line(
+      `  Lightning Arrow turns ${Math.round(turn.share * 100)}% of a bow's ${swing}: ` +
+        Object.entries(shot.damageByType).map(([t, v]) => `${t} ${v.toFixed(1)}`).join(', ')
+    );
+    check(
+      Math.abs((shot.damageByType.physical ?? 0) - (swing - moved)) < 1e-6
+        && Math.abs((shot.damageByType.lightning ?? 0) - (skillBase(SKILL_BY_ID.lightning_arrow, 1) + moved)) < 1e-6,
+      'a Conversion moves a share of the weapon into the skill’s type and leaves the rest',
+      JSON.stringify(shot.damageByType)
+    );
+    check(
+      Math.abs(shot.damage - (skillBase(SKILL_BY_ID.lightning_arrow, 1) + swing)) < 1e-6,
+      'and it MOVES damage rather than making any',
+      `${shot.damage} against ${skillBase(SKILL_BY_ID.lightning_arrow, 1) + swing}`
     );
   }
 

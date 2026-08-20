@@ -257,8 +257,7 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // a new base needs no new mod content.
 
 // The main hand keeps the id `weapon`: a save points at it.
-/** What a skill will be SWUNG with: one word naming several families, so "any
- *  melee weapon" is one entry. A spell names nothing at all. */
+/** What a skill is SWUNG with: one word naming several families. */
 export const WEAPON_GROUPS: Record<string, string[]> = {
   melee: ['sword', 'dagger', 'mace'],
 };
@@ -3560,6 +3559,8 @@ export const SKILLS: SkillDef[] = [
      * arrow carrying on, so the shot's line decides nothing about who takes one. */
     id: 'lightning_arrow',
     requires: 'bow',
+    // The tail left unturned keeps Physical on your bow worth scaling.
+    convert: { from: 'physical', to: 'lightning', share: 0.6 },
     name: 'Lightning Arrow',
     category: 'attack',
     description:

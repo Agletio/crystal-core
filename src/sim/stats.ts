@@ -185,13 +185,25 @@ export function damageBreakdown(
   const steps = [...after];
   const factor = steps.reduce((n, s) => n * s.value, 1);
 
+  // A CONVERSION moves a share of one type into another at the FLAT stage, so
+  // the moved half scales as the new type and the rest does not.
+  const moved: Record<string, number> = {};
+  if (skill.convert) {
+    const { from, share } = skill.convert;
+    const to = converted ?? skill.convert.to;
+    const had = aggregate(mods, 'damage', [...skill.tags, from]).flat * share;
+    moved[from] = (moved[from] ?? 0) - had;
+    moved[to] = (moved[to] ?? 0) + had;
+  }
+
   const parts: DamagePart[] = [];
   const byType: Record<string, number> = {};
   // Multiplied once at the end: per part is a different order, so a different bit.
   let raw = 0;
   for (const type of passes) {
     const typeBase = type === TYPELESS || active.includes(type) ? base : 0;
-    const b = aggregate(mods, 'damage', [...skill.tags, type]);
+    const raw_ = aggregate(mods, 'damage', [...skill.tags, type]);
+    const b = { ...raw_, flat: raw_.flat + (moved[type] ?? 0) };
     // Effectiveness weighs the ADDED half only, so a skill that takes half your
     // flat damage still gets full value from your increases.
     let pass = (typeBase + b.flat * added) * (1 + b.inc / 100);
