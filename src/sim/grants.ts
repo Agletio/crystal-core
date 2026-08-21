@@ -791,10 +791,31 @@ export const GRANTS: GrantDef[] = [
   },
 
   {
+    id: 'fieldOnCast',
+    changes: 'field',
+    what: 'the skill leaves a Cloud where it lands, every so many casts',
+    reads: ['single_target'],
+    say: (v) => {
+      const p = pair(v, 'every', 'radius');
+      return p && `Every ${p[0]} casts leaves a Cloud reaching ${p[1]} tiles where it lands`;
+    },
+  },
+  {
+    id: 'fieldEvery',
+    changes: 'field',
+    what: 'the Cloud comes round sooner',
+    reads: ['single_target'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null || n <= 0 ? null : `Clouds come ${more(1 / n)} as often`;
+    },
+  },
+  {
     id: 'fieldRadius',
     changes: 'field',
     what: 'the Cloud covers more ground',
-    reads: ['ailment_burst'],
+    reads: ['ailment_burst', 'single_target'],
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
@@ -805,7 +826,7 @@ export const GRANTS: GrantDef[] = [
     id: 'extraFields',
     changes: 'targets',
     what: 'the skill drops more Clouds, on other enemies',
-    reads: ['ailment_burst'],
+    reads: ['ailment_burst', 'single_target'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);

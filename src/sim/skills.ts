@@ -38,6 +38,8 @@ export interface SkillUse {
     seconds: number,
     spread?: { radius: number; generation: number }
   ): void;
+  /** What the damage TYPES carry, with no hit. A Cloud's whole content. */
+  leave(target: Entity): void;
   /** Area of Effect grows AREA, so radius goes by the square root. */
   areaRadius(base: number): number;
   /** Points are in tile units. Only the skill knows the shape of what it did. */
@@ -85,6 +87,27 @@ function spreadTargets(use: SkillUse, from: Entity[], count: number): Entity[] {
 // --- the shared vocabulary --------------------------------------------------
 // A behaviour opts into a grant by calling these, and the demo holds each tree
 // to what its own behaviour actually reads.
+
+/** A CLOUD where the spike went in, every Nth cast: no damage at all, and what
+ *  it leaves is the Ailment the build already applies at the chance it bought. */
+export function leaveClouds(use: SkillUse): void {
+  const g = use.grants;
+  const field = g.fieldOnCast as { every: number; radius: number } | undefined;
+  if (!field) return;
+  const every = Math.max(1, Math.round(field.every * num(g.fieldEvery, 1)));
+  if ((use.castIndex + 1) % every !== 0) return;
+
+  const radius = use.areaRadius(field.radius * num(g.fieldRadius, 1));
+  const spots = [use.primary, ...spreadTargets(use, use.enemies.filter((e) => e !== use.primary), num(g.extraFields, 0))];
+  for (const at of spots) {
+    for (const enemy of use.enemies) {
+      if (within(at, enemy, radius)) use.leave(enemy);
+    }
+    // Second point IS the radius, so the renderer draws what the sim used.
+    use.vfx('blight_field', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.5);
+
+  }
+}
 
 /** What this cast is worth before any target is chosen. */
 export function castScale(grants: Record<string, unknown>, castIndex: number): number {
@@ -189,6 +212,8 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(use.grants, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
     use.hit(use.primary, scale(use.primary));
+
+    leaveClouds(use);
 
     const extra = (use.grants.extraTargets as number) ?? 0;
     if (extra > 0) {

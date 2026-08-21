@@ -2254,6 +2254,7 @@ export class RunSim {
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
+      leave: (target) => this.applyTyped(user, target, user.stats.damageByType),
       areaRadius: (base) => this.areaRadius(user, base),
       vfx: (kind, points, ttl = 0.3) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),

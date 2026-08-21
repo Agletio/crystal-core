@@ -3161,6 +3161,7 @@ rule('FIREBALL — do the notables actually change the cast?');
       rng: new Rng(9), grants, crit, castIndex: 0, momentum,
       hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
       ailment: (who: any, _m: number, seconds: number) => burns.push({ who, seconds }),
+      leave: () => {},
       areaRadius: (base: number) => base,
       vfx: () => {},
     } as any);
@@ -3243,7 +3244,7 @@ rule('FIREBALL — do the notables actually change the cast?');
           // what makes it a wall rather than a slower link.
           if (who.life < 1e6) who.dead = true;
         },
-        ailment: () => {}, areaRadius: (base: number) => base, vfx: () => {},
+        ailment: () => {}, leave: () => {}, areaRadius: (base: number) => base, vfx: () => {},
       } as any);
       return reached;
     };
@@ -3303,6 +3304,7 @@ rule('FIREBALL — do the notables actually change the cast?');
       rng: new Rng(9), grants, crit: false, castIndex: 0,
       hit: (who: any) => hits.push(who),
       ailment: () => {},
+      leave: () => {},
       areaRadius: (base: number) => base,
       vfx: () => {},
     } as any);
@@ -3326,7 +3328,7 @@ rule('FIREBALL — do the notables actually change the cast?');
       skill: SKILL_BY_ID.shockwave,
       user, primary: dummy(2, 0), enemies: [dummy(2, 0)],
       rng: new Rng(9), grants: { coneReach: 3 }, crit: false, castIndex: 0,
-      hit: () => {}, ailment: () => {}, areaRadius: (base: number) => base,
+      hit: () => {}, ailment: () => {}, leave: () => {}, areaRadius: (base: number) => base,
       vfx: (kind: string, points: any[]) => shown.push({ kind, points }),
     } as any);
     const blast = shown.find((v) => v.kind === 'burst');
@@ -3549,6 +3551,58 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
 }
 
 // ===========================================================================
+rule('RIMEFIELD — does the one single-target skill reach a pack?');
+
+// Rimespike hits ONE body. The arm's whole job is the room, and what it leaves
+// is a CLOUD: no damage at all, and the build's own Chill on everything
+// standing in it. So what is counted is bodies CAUGHT, and the ones the cast
+// never touched are the whole answer.
+{
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
+       stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const primary = dummy(4, 0);
+  // Two inside a bare Cloud, one only a WIDER one reaches, one across the room.
+  const enemies = [primary, dummy(4.8, 0.5), dummy(3.4, 1.1), dummy(6.6, 0), dummy(24, 0)];
+  const grantsOf = (id: string) => nodeById('rimespike', id)?.grants ?? {};
+
+  /** Bodies a Cloud caught over four casts, counting repeats. */
+  const caught = (grants: Record<string, unknown>): number => {
+    let left = 0;
+    for (let castIndex = 0; castIndex < 4; castIndex++) {
+      SKILL_BEHAVIOURS.single_target({
+        skill: SKILL_BY_ID.rimespike,
+        user: dummy(0, 0), primary, enemies,
+        rng: new Rng(9), grants, crit: false, castIndex, momentum: 1,
+        hit: () => {}, ailment: () => {}, leave: () => { left++; },
+        areaRadius: (base: number) => base, vfx: () => {},
+      } as any);
+    }
+    return left;
+  };
+
+  const bare = caught({});
+  const field = { ...grantsOf('rs_field') };
+  const armed = caught(field);
+  const wide = caught({ ...field, ...grantsOf('rs_whiteout') });
+  const often = caught({ ...field, ...grantsOf('rs_frostfall') });
+  const bloom = caught({ ...field, ...grantsOf('rs_bloom') });
+  line(
+    `  bodies a Cloud catches in 4 casts: bare ${bare}, Rimefield ${armed}, ` +
+      `Whiteout ${wide}, Frostfall ${often}, Bloom ${bloom}`
+  );
+  check(bare === 0, 'a bare Rimespike leaves no Cloud at all', String(bare));
+  check(
+    armed > 1,
+    'Rimefield catches bodies the spike never touched',
+    `${armed} caught, and one of them is the target`
+  );
+  check(wide > armed, 'a wider Cloud catches more of them', `${wide} against ${armed}`);
+  check(often > armed, 'and a more frequent one catches them more often', `${often} against ${armed}`);
+  check(bloom > armed, 'and a second and third Cloud reach further still', `${bloom} against ${armed}`);
+}
+
+// ===========================================================================
 rule('EVERY TREE — does every notable actually change the cast?');
 
 // The same promise `npm run mods` makes about modifiers, made about talents.
@@ -3609,6 +3663,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
               who.ailments.push(1);
               marks.push(`a${enemies.indexOf(who)}:${m.toFixed(3)}:${seconds.toFixed(2)}:${spread?.radius ?? 0}`);
             },
+            // A Cloud's whole content: no damage, and it marks WHO it caught,
+            // so a wider one or a second one is a different fingerprint.
+            leave: (who: any) => marks.push(`l${enemies.indexOf(who)}`),
             areaRadius: (base: number) => base,
             vfx: (kind: string, points: any[]) =>
               marks.push(`v${kind}:${points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|')}`),
@@ -3801,6 +3858,7 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
         rng: new Rng(3), grants, crit: false, castIndex: 0,
         hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
         ailment: () => {},
+        leave: () => {},
         areaRadius: (base: number) => base,
         vfx: () => {},
       } as any);
@@ -4309,6 +4367,7 @@ rule('THE SHEET — does every number on it survive being checked?');
       rng: new Rng(3), grants, crit: false, castIndex: 0,
       hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
+      leave: () => {},
       areaRadius: (base: number) => base,
       vfx: () => {},
     } as any;
@@ -7181,6 +7240,7 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
     rng: new Rng(3), grants: {}, crit: false, castIndex: 0,
     hit: () => {},
     ailment: (t: any) => poisoned.push(t),
+    leave: () => {},
     areaRadius: (base: number) => base,
     vfx: (kind: string, points: any[]) => {
       if (kind === 'blight_field') drawn = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
@@ -7216,6 +7276,7 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
         rng: new Rng(3), grants: {}, crit: false, castIndex: 0,
         hit: () => {},
         ailment: (t: any) => caught.push(t),
+        leave: () => {},
         areaRadius: (base: number) => base * scale,
         vfx: (kind: string, points: any[]) => {
           if (kind === 'blight_field') wide = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
@@ -7412,6 +7473,7 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
       rng: new Rng(5),
       hit: (target: any) => hit.add(target),
       ailment: () => {},
+      leave: () => {},
       areaRadius: (base: number) => base,
       vfx: () => {},
     } as any);

@@ -7,6 +7,11 @@
  *
  * So every branch here is a different answer to the same question: what is a
  * Chill worth, and what happens to the body coming out of one.
+ *
+ * RIMEFIELD is how one target becomes a room. The Cloud deals nothing and
+ * leaves the Chill the build already applies, so the pack clear is the Rime
+ * tree reaching more bodies — never a second damage pipeline no danger number
+ * accounts for.
  */
 import { stat } from './node';
 import type { Branch, Minor, Notable, TreeSpec } from './spec';
@@ -109,41 +114,44 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[3], COMMON[4], COMMON[1], COMMON[4]],
   },
   {
-    id: 'depth',
-    theme: 'Depth',
+    id: 'field',
+    theme: 'Rimefield',
     enabler: {
-      id: 'rs_depth',
-      name: 'From Below',
-      description: 'Rimespike deals 30% more damage to enemies more than 3 tiles away.',
-      grants: { moreFar: { beyond: 3, more: 0.3 } },
+      id: 'rs_field',
+      name: 'Rimefield',
+      description:
+        'Every 4th Rimespike leaves a Cloud reaching 2 tiles where the spike ' +
+        'went in. It deals no damage: what it leaves is your Chill, at your ' +
+        'chance to apply it.',
+      grants: { fieldOnCast: { every: 4, radius: 2 }, manaMultiplier: 1.2 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
-          id: 'rs_reach',
-          name: 'Long Winter',
-          description: 'Rimespike reaches 30% further, and is cast 6% faster.',
-          stats: [stat('attackRange', 'inc', 30), stat('castSpeed', 'inc', 6)],
+          id: 'rs_whiteout',
+          name: 'Whiteout',
+          description: "Rimespike's Cloud covers 70% more ground.",
+          grants: { fieldRadius: 1.7 },
         },
       },
       {
         minors: 4,
         notable: {
-          id: 'rs_underfoot',
-          name: 'Underfoot',
-          description: 'Rimespike deals 35% more damage to enemies within 2.5 tiles of you.',
-          grants: { moreClose: { within: 2.5, more: 0.35 } },
+          id: 'rs_frostfall',
+          name: 'Frostfall',
+          description: 'Rimespike leaves a Cloud every 2nd cast instead of every 4th.',
+          grants: { fieldEvery: 0.5, manaMultiplier: 1.15 },
         },
       },
       {
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'rs_firstblood',
-          name: 'First Frost',
-          description: 'Rimespike deals 40% more damage to enemies above 80% of their life.',
-          grants: { moreVsFull: { above: 0.8, more: 0.4 } },
+          id: 'rs_bloom',
+          name: 'Bloom of Frost',
+          description: '+2 Clouds, on the two enemies nearest the one you hit.',
+          grants: { extraFields: 2, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -352,5 +360,9 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     ailmentChance: 'rs_rime',
     ailmentMultiplier: 'rs_rime',
     ailmentDuration: 'rs_rime',
+    // And a Cloud is nothing without one to leave.
+    fieldRadius: 'rs_field',
+    fieldEvery: 'rs_field',
+    extraFields: 'rs_field',
   },
 };

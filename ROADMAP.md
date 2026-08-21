@@ -6,11 +6,12 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**TWO PHASES ARE WAITING**: an AoE arm for Rimespike, and dual wielding — the
-largest art phase this game has had, which carries an open question of its own.
-**Take Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls,
-the kiting, the people you have met, what the sheet says about an ailment and
-the WHOLE of the camp all came first and landed.
+**ONE PHASE IS WAITING**: dual wielding — the largest art phase this game has
+had, and it carries an OPEN QUESTION that has to be answered before a
+generation is spent (what dual wielding IS, mechanically). **Ask it, then take
+Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the
+kiting, the people you have met, what the sheet says about an ailment, the WHOLE
+of the camp and Rimespike's pack clear all came first and landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -18,7 +19,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 3 (a quest log) stays parked by his word until the
+what it found is below. Phase 2 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -83,6 +84,7 @@ to look:
 | KITING IS GONE | tried as a passive, then as the SKILL's, then removed entirely — *"kiting is too op. I think remove it entirely for now"*. A build stands in it, ranged and melee alike. It comes back as a passive that pays for it, in Open questions |
 | a trade is taken up ONCE | the user's call: the one hard lock in a game that refunds everything else. What gold buys back instead is every ATTRIBUTE point, `respecCost` — the one allocation no click undoes |
 | the CAMP | `src/scenes/camp.ts` — a grassy shelf under its own generated tileset, the crack you came up out of, props you CLICK, and everybody you have met standing about. A `SceneDef` with `place: true`, not a fifth phase |
+| Rimespike reaches a PACK | the `depth` arm is gone and RIMEFIELD stands in its place — every 4th cast leaves a Cloud where the spike went in, no damage and the build's own Chill. `fieldOnCast` / `fieldEvery` in `src/sim/grants.ts`, `leaveClouds` in `src/sim/skills.ts`, and `SkillUse.leave` is the seam a Cloud applies through |
 | the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Four generated sockets on the wall face, a tent, a fire, a heap of kit; a PERSON is a fixture like the bench, and he WALKS to whatever you clicked before the screen opens |
 | NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
@@ -421,73 +423,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — Rimespike gets a way to clear a room
-
-**The user, watching it:** *"I also want to remove the branch for rimespike
-thats about damage near/far starts with a node called from below. I want to give
-it some sort of aoe clear capabilites because I feel like a completely single
-target ability is kinda useless in this game."*
-
-**What is true today.** `src/trees/rimespike.ts` has a `depth` arm whose enabler
-is **From Below** (`rs_depth`, `moreFar`) and whose three notables are Long
-Winter, Underfoot (`moreClose`) and First Frost (`moreVsFull`). Four nodes, and
-every one of them is a conditional multiplier on the same one target. Rimespike
-itself is `single_target`, 104 at 0.90/s.
-
-**Why it is wrong**, in one sentence: a skill that can only ever hit one thing
-has no answer to a pack, and this game is packs.
-
-**The user offered two shapes and his own objection kills the second.** *"I was
-thinking something to enable the ice passive that does some damage, so maybe
-with a cooldown of some it will leave an ice spike where it targets and that
-spike will aoe apply chill to enemies? that way the chill can spread and the ice
-passive will hit everything? Or maybe not that and instead killing a frozen
-enemy causes them to explode? My concern with that is with this ability being so
-hard hitting single target and the way we setup freeze then if your ability it
-strong it could make it where you one shot the target and never get it to freeze
-so maybe it needs to change how it freezes."*
-
-**He is right, and the numbers say so.** `AILMENTS.chill` has `freezeAt: 8` —
-a Freeze is EIGHT stacks on one body. A Rimespike built to hit hard kills in one
-or two, so "killing a frozen enemy" is a condition it can almost never reach.
-Changing how Freeze works to reach it would move Freeze for every build in the
-game, which is a much larger change than the arm being replaced.
-
-- [ ] **Take the ICE SPIKE, and say why.** *Recommended, and the user's own
-      first idea:* the arm's enabler leaves a spike where Rimespike lands, on a
-      cooldown, and the spike applies Chill in a radius. Nothing about Freeze
-      moves. It feeds Hoarfrost — the passive that spikes everything Chilled
-      every 0.7s — so the pack clear is the CHILL spreading rather than a second
-      damage pipeline, which is the shape this game already has.
-- [ ] **The arm is four nodes and it is replaced whole.** The enabler and all
-      three notables go; `moreFar`, `moreClose` and `moreVsFull` stay in
-      `GRANTS` for whoever else reads them, and `npm run demo` sweeps every node
-      for one that grants a switch nothing reads.
-- [ ] **A node id is what a save points at.** Deleting `rs_depth` and its three
-      refunds the points rather than stranding them — `replayWeb` and `heal()`
-      already do that, and the demo has a check for it.
-- [ ] **Say every number.** How wide the spike Chills, how long it stands, what
-      its cooldown is. "Applies Chill nearby" is the sentence this game does not
-      write.
-- [ ] **Automation is universal.** Whatever the spike does, `runToCompletion`
-      does it — there is no player pressing anything.
-
-**Traps.** The Chill an ailment applies is the HERO's and scales by its own
-tags; a spike that Chills is not a second unweighed damage source, and it must
-not become one. `AILMENTS` says Prismatic deliberately leaves nothing behind.
-Rimespike's `baseDamage` was calibrated single-target; an arm that clears packs
-moves what the skill is worth and the FLOOR AND CEILING table will say so.
-
-**Done when.** A Rimespike build that walks the ice arm clears a pack, the
-sentence on every node has its number in it, and the old arm's points are handed
-back rather than stranded.
-
-**What must not break.** `npm run demo` (the per-node sweep, the tree replay and
-the balance gauges), `mods`, `shots` (the skill web).
-
----
-
-## Phase 2 — Dual wielding
+## Phase 1 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -550,7 +486,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 3 — A quest log instead of a pointing finger
+## Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
