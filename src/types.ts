@@ -197,7 +197,7 @@ export interface GearBase {
 export interface EquipSlotDef {
   id: string;
   name: string;
-  accepts: GearKind;
+  accepts: GearKind[];
 }
 
 /** A socket in the Fissure. `accepts` is an item kind, so a slot that takes

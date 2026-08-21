@@ -103,9 +103,11 @@ function implicitsFor(def: GearBase | undefined): RolledMod[] {
   ];
 }
 
-/** Drop weight per kind: how many equip slots accept it. Two rings, twice as often. */
+/** Drop weight per kind: how many equip slots are FOR it. Two rings, twice as
+ *  often. A slot counts ONCE, for the kind it is named after — the off hand also
+ *  takes a weapon, and counting it twice doubles every weapon drop by accident. */
 const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
-  (acc, slot) => ({ ...acc, [slot.accepts]: (acc[slot.accepts] ?? 0) + 1 }),
+  (acc, slot) => ({ ...acc, [slot.accepts[0]]: (acc[slot.accepts[0]] ?? 0) + 1 }),
   {} as Record<string, number>
 );
 

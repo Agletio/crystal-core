@@ -2307,10 +2307,13 @@ export class RunSim {
     return pace;
   }
 
-  /** ONE answer, for a body with a skill and a body without. In two places a
-   *  Slow reached melee packs or ranged ones, never both. */
+  /** ONE answer, for a body with a skill and one without. A PAIR alternates —
+   *  this swing at the main hand's rate, the next at the off hand's — around
+   *  `attacksPerSecond`, which is already their even mean. */
   private swingCooldown(e: Entity): number {
-    return 1 / Math.max(0.01, e.stats.attacksPerSecond * this.hasteOf(e));
+    const hands = e.stats.handRates;
+    const share = hands.length > 1 ? hands[this.casts % hands.length] : 1;
+    return 1 / Math.max(0.01, e.stats.attacksPerSecond * share * this.hasteOf(e));
   }
 
   private dealDamage(

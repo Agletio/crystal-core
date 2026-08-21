@@ -12,11 +12,14 @@ import {
   CRYSTAL_LEVELS,
   DROP_BANDS,
   EQUIP_SLOTS,
+  GEAR_BASE_BY_ID,
+  OFF_SLOT,
   PLAYER_SKILLS,
   REFERENCE_ARMOUR_FAMILY,
   RUN_SLOTS,
   SKILL_BY_ID,
   SKILL_SLOTS,
+  WEAPON_SLOT,
 } from '../data';
 import { characterStats, damageDetail } from './stats';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
@@ -40,7 +43,7 @@ export function starterLoadout(
   const equipment: Record<string, Item> = {};
 
   for (const slot of EQUIP_SLOTS) {
-    const base = defaultGearBase(slot.accepts, ilvl, family);
+    const base = defaultGearBase(slot.accepts[0], ilvl, family);
     if (!base) continue;
     if ((base.hands ?? 1) > 1) continue; // never a bow: a reference set holds a shield
     // More than any base holds, and let modCapacity decide.
@@ -232,31 +235,52 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
   // Two passes, because the tree walk is nearly the whole cost: score every
   // arrangement BARE, then walk only the few worth walking. The order can move
   // between the passes, which is what the shortlist is for.
-  const made: Character[] = [];
+  const made: Array<{ character: Character; paired: boolean }> = [];
   for (const family of plate) {
     for (const focus of FOCUS) {
       for (const attrs of ATTR_PLANS) {
-        const pool = focus
-          ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
-          : new ModPool(ALL_MODS);
-        const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
-        character.level = level;
-        pour(character, attrs);
-        // The passives and the mover BEFORE the tree, since what they grant is
-        // in every score the walk reads.
-        fillPassives(character, passives);
-        walkBest(character, rng.pick(movers) ?? null);
-        made.push(character);
+        for (const paired of [false, true]) {
+          const pool = focus
+            ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
+            : new ModPool(ALL_MODS);
+          const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
+          character.level = level;
+          if (paired && !dualWield(character, ilvl, pool, rng)) continue;
+          pour(character, attrs);
+          // The passives and the mover BEFORE the tree, since what they grant is
+          // in every score the walk reads.
+          fillPassives(character, passives);
+          walkBest(character, rng.pick(movers) ?? null);
+          made.push({ character, paired });
+        }
       }
     }
   }
 
-  const shortlist = made.sort((a, b) => buildPower(b) - buildPower(a)).slice(0, SHORTLIST);
+  // THE SHORTLIST IS PER ARRANGEMENT: a pair scores higher BARE than a shield
+  // ever can, so one list took every place and the ceiling got WORSE for being
+  // offered more. Each brings its own best few and `played` decides, which is
+  // the only place a Block counts at all.
+  const ranked = made.sort((a, b) => buildPower(b.character) - buildPower(a.character));
+  const shortlist = [false, true].flatMap((paired) =>
+    ranked.filter((m) => m.paired === paired).slice(0, SHORTLIST).map((m) => m.character)
+  );
   for (const character of shortlist) greedyTree(character, skillId);
   // And then PLAYED: measured, the score alone picked a band 3 fireball that
   // cleared 0 of 6 where the random walk cleared 5. One target at a time is a
   // number the sheet reads; a pack is a thing it cannot see.
   return played(shortlist, band, rng) ?? shortlist[0] ?? ladderCharacter(band, rng, skillId);
+}
+
+/** A SECOND of what the main hand holds, in place of the shield. What an off
+ *  hand is FOR is a build decision, so the ceiling tries both and the floor
+ *  keeps its shield. False when there is nothing to pair with. */
+function dualWield(character: Character, ilvl: number, pool: ModPool, rng: Rng): boolean {
+  const main = character.equipment[WEAPON_SLOT];
+  const base = main ? GEAR_BASE_BY_ID[main.base] : undefined;
+  if (!base || (base.hands ?? 1) > 1) return false;
+  character.equipment[OFF_SLOT] = rollGear(base.id, ilvl, 99, pool, rng);
+  return true;
 }
 
 /** How many arrangements get their tree walked. The walk is 90% of the search

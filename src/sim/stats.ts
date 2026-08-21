@@ -27,6 +27,8 @@ import {
   MOD_BY_ID,
   GEAR_BASE_BY_ID,
   WEAPON_SLOT,
+  OFF_SLOT,
+  DUAL,
   UNIQUE_BY_ID,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -45,6 +47,9 @@ export interface CombatStats {
    * a cold ring on a fire spell resist as fire. What the sim delivers. */
   damageByType: Record<string, number>;
   attacksPerSecond: number;
+  /** Each hand's SHARE of `attacksPerSecond`, in hand order, when a pair is
+   *  held: the sim swings alternately between them. Empty otherwise. */
+  handRates: number[];
   critChance: number;
   moveSpeed: number;
   armour: number;
@@ -311,7 +316,9 @@ export function heroStats(
   baseArmour = 0,
   /** What the WEAPON swings at before anything worn scales it; a bare hand is
    *  the hero's own, which is what a harness holding nothing measures. */
-  rate = HERO_BASE.attacksPerSecond
+  rate = HERO_BASE.attacksPerSecond,
+  /** Each hand's own base rate; `rate` above is already their even mean. */
+  hands: number[] = []
 ): CombatStats {
   const breakdown = damageBreakdown(mods, level, skill, grants);
   const maxLife = computeStat(lifeFor(level), mods, 'life');
@@ -358,6 +365,12 @@ export function heroStats(
         mods,
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) * skill.rateMultiplier,
+    // Every increase is multiplicative, so the mean scaled by a hand's share of
+    // it is the number that hand's own base would have given.
+    handRates:
+      hands.length > 1 && !skill.tags.includes('spell')
+        ? hands.map((r) => r / Math.max(0.01, rate))
+        : [],
     // Tagged, so an ATTACK critical chance does nothing for a spell.
     critChance: computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags),
     // Tagged by the skill, so "…of Spells" would filter like any other line.
@@ -559,13 +572,16 @@ export function effectiveSkill(
  * Every stat line acting on a character. Implicits count exactly like rolled
  * mods — the only difference is that crafting can't reach them.
  */
-/** What the MAIN HAND swings for, as one flat line an ATTACK reads. LOCAL: a
- *  bow of 100 with 100% increased Physical ON IT is a bow of 200; the same line
- *  on a ring scales YOU. */
+/** BOTH HANDS, as one flat line an ATTACK reads. LOCAL: a bow of 100 with 100%
+ *  increased Physical ON IT is a bow of 200; the same line on a ring scales YOU.
+ *  A PAIR puts `DUAL.main` of one and `DUAL.off` of the other into every hit. */
 export function weaponMod(character: Character): RolledMod | null {
   const held = character.equipment?.[WEAPON_SLOT];
-  if (!held) return null;
-  const swing = weaponSwing(held);
+  const pair = offWeapon(character);
+  if (!held && !pair) return null;
+  const swing = held && pair
+    ? weaponSwing(held) * DUAL.main + weaponSwing(pair) * DUAL.off
+    : weaponSwing(held ?? pair!);
   if (swing <= 0) return null;
 
   return {
@@ -592,6 +608,24 @@ export function weaponSwing(held: Item): number {
   for (const m of own.more) swing *= 1 + m / 100;
   return swing;
 }
+
+/** The off hand's WEAPON, or null: it also takes a shield, which is not one. */
+export function offWeapon(character: Character): Item | null {
+  const held = character.equipment?.[OFF_SLOT];
+  return held && GEAR_BASE_BY_ID[held.base]?.kind === 'weapon' ? held : null;
+}
+
+/** THE RATES a character swings at, in hand order — one entry with a hand free. */
+export function weaponRates(character: Character): number[] {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (main && off) return [weaponRate(main), weaponRate(off)];
+  return [weaponRate(main ?? off)];
+}
+
+/** Two swings take `1/a + 1/b` seconds, so this is the rate, never the mean. */
+export const evenRate = (rates: number[]): number =>
+  rates.length / rates.reduce((n, r) => n + 1 / Math.max(0.01, r), 0);
 
 /** How often ONE weapon swings: its own base scaled by the increases rolled ON
  *  it. The mirror of `weaponSwing`, and why a dagger is fast and a maul is not. */
@@ -620,7 +654,8 @@ export function statMods(character: Character): RolledMod[] {
       [...i.mods, ...i.implicits].map((m) =>
         // Already in `weaponMod`. Left here they would scale the whole build
         // too, which is the bug local exists to stop.
-        i === character.equipment?.[WEAPON_SLOT] && m.stats.some(isLocal)
+        (i === character.equipment?.[WEAPON_SLOT] || i === offWeapon(character))
+        && m.stats.some(isLocal)
           ? { ...m, stats: m.stats.filter((line) => !isLocal(line)) }
           : m
       )
@@ -635,9 +670,9 @@ export function characterStats(character: Character): CombatStats {
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
   const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);
+  const rates = weaponRates(character);
   return heroStats(
-    statMods(character), character.level, skill, grants, baseArmour,
-    weaponRate(character.equipment?.[WEAPON_SLOT])
+    statMods(character), character.level, skill, grants, baseArmour, evenRate(rates), rates
   );
 }
 
@@ -689,6 +724,8 @@ export function monsterStats(
     damage: dealt,
     damageByType: byType,
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
+    handRates: [], // nothing dual wields but the hero
+
     critChance: percentStat(mods, 'monsterCrit'),
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,

@@ -9,6 +9,7 @@ import {
   BOSSES,
   CRYSTAL_QUESTS,
   EQUIP_SLOTS,
+  OFF_SLOT,
   FISSURE,
   GEAR_BASE_BY_ID,
   RELIC_BY_ID,
@@ -470,7 +471,7 @@ export function craftItem(game: GameState): Item | null {
  *  the save. By SLOT: "all the boots together" is what scanning the dock asks. */
 export function sortGear(items: Item[]): void {
   const rank = (i: Item) => {
-    const at = EQUIP_SLOTS.findIndex((s) => s.accepts === gearKindOf(i));
+    const at = EQUIP_SLOTS.findIndex((s) => s.accepts[0] === gearKindOf(i));
     return at < 0 ? EQUIP_SLOTS.length : at;
   };
   items.sort(
@@ -574,7 +575,11 @@ export function gearKindOf(item: Item): string | null {
 }
 
 export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
-  return gearKindOf(item) === slot.accepts;
+  const kind = gearKindOf(item);
+  if (!kind || !slot.accepts.includes(kind as never)) return false;
+  // A two-hander is held in BOTH hands, so the off hand is not a second place
+  // to put one — `handClash` empties the off hand for it instead.
+  return !(slot.id === OFF_SLOT && isTwoHanded(item));
 }
 
 /** Off the BASE, so an item out of a save answers the same. */

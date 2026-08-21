@@ -88,7 +88,11 @@ import {
   TRADE,
   UNIQUES,
   UNIQUE_BY_ID,
+  DUAL,
+  EQUIP_SLOTS,
+  OFF_SLOT,
 } from './data';
+import { heroSpriteFor } from './sim/appearance';
 import {
   balance,
   grant,
@@ -154,6 +158,8 @@ import {
   monsterStats,
   effectiveSkill,
   weaponMod,
+  weaponSwing,
+  weaponRates,
   skillBase,
   statMods,
   passiveScale,
@@ -288,6 +294,7 @@ import {
   stashUpgradeCost,
   toStash,
   unequipItem,
+  fitsSlot,
 } from './game/state';
 import { buildReport } from './game/report';
 import {
@@ -3562,6 +3569,94 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
       `${now} with a bow`
     );
   }
+}
+
+// ===========================================================================
+rule('DUAL WIELDING — is a pair two weapons or an average of one?');
+
+// The user's own shape: every hit is BOTH hands, and the RATE alternates. So
+// what has to hold is that a pair out-damages either weapon alone, that the two
+// rates are the two weapons' own rather than a blend, and that the sheet's one
+// number is what a long run of alternating swings actually comes to.
+{
+  const held = (main: string, off: string | null): Character => {
+    const c = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+    c.level = 1;
+    for (const worn of Object.values(c.equipment)) {
+      worn.mods = [];
+      worn.implicits = [];
+    }
+    c.equipment.weapon = makeGear(main, 1);
+    if (off) c.equipment.offhand = makeGear(off, 1);
+    else delete c.equipment.offhand;
+    return c;
+  };
+  const swing = (c: Character): number => weaponMod(c)?.stats[0].value ?? 0;
+
+  // A dagger is the fast one and a mace the slow one, so a mixed pair is the
+  // case a single blended rate would hide.
+  const alone = held('shiv', null);
+  const shielded = held('shiv', 'bark_buckler');
+  const pair = held('shiv', 'cudgel');
+  line(
+    `  a shiv alone swings ${swing(alone).toFixed(1)}, with a shield ` +
+      `${swing(shielded).toFixed(1)}, with a cudgel ${swing(pair).toFixed(1)}`
+  );
+  check(
+    Math.abs(swing(alone) - swing(shielded)) < 1e-6,
+    'a shield swings for nothing, so an off hand holding one is a hand held free',
+    `${swing(alone)} against ${swing(shielded)}`
+  );
+  const both =
+    weaponSwing(pair.equipment.weapon!) * DUAL.main + weaponSwing(pair.equipment.offhand!) * DUAL.off;
+  check(
+    Math.abs(swing(pair) - both) < 1e-6 && swing(pair) > swing(alone),
+    `a pair puts ${Math.round(DUAL.main * 100)}% of one hand and ` +
+      `${Math.round(DUAL.off * 100)}% of the other into ` +
+      'every hit, and beats either alone',
+    `${swing(pair).toFixed(2)} against ${swing(alone).toFixed(2)}`
+  );
+
+  const rates = weaponRates(pair);
+  const stats = characterStats(pair);
+  line(
+    `  and swings at ${rates.map((r) => r.toFixed(2)).join(' then ')} a second, ` +
+      `which is ${stats.attacksPerSecond.toFixed(3)} over any run of them`
+  );
+  check(
+    rates.length === 2 && Math.abs(rates[0] - rates[1]) > 0.01,
+    'the two hands keep their OWN rates rather than being blended into one',
+    rates.join(', ')
+  );
+  // Two swings take 1/a + 1/b seconds. The sheet prints one number and the sim
+  // alternates; this is the arithmetic that makes them the same answer.
+  const over = 2 / (1 / rates[0] + 1 / rates[1]);
+  check(
+    Math.abs(stats.attacksPerSecond - over) < 1e-6 && stats.handRates.length === 2,
+    'and the sheet says what a run of alternating swings comes to, not their average',
+    `${stats.attacksPerSecond.toFixed(4)} against ${over.toFixed(4)}`
+  );
+  // A pair is ORDERLESS in art and ORDERED in stats.
+  const swapped = held('cudgel', 'shiv');
+  check(
+    heroSpriteFor(pair) === heroSpriteFor(swapped),
+    'a pair is drawn by ONE picture whichever hand you filled',
+    `${heroSpriteFor(pair)} against ${heroSpriteFor(swapped)}`
+  );
+  check(
+    Math.abs(swing(pair) - swing(swapped)) > 1e-6,
+    'and which hand is which still decides what it swings for',
+    `${swing(pair).toFixed(2)} against ${swing(swapped).toFixed(2)}`
+  );
+  // The off hand takes a shield or a one-handed weapon and NOTHING else: a
+  // two-hander is held in both hands, so it is not a second place to put one.
+  const off = EQUIP_SLOTS.find((sl) => sl.id === OFF_SLOT);
+  check(
+    !!off && fitsSlot(makeGear('cudgel', 1), off) && fitsSlot(makeGear('bark_buckler', 1), off)
+      && !fitsSlot(makeGear('crude_bow', 1), off),
+    'the off hand takes a shield or a one-handed weapon, and never a two-hander',
+    String(off?.accepts)
+  );
 }
 
 // ===========================================================================

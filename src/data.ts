@@ -278,16 +278,22 @@ export const WEAPON_SLOT = 'weapon';
 export const OFF_SLOT = 'offhand';
 
 export const EQUIP_SLOTS: EquipSlotDef[] = [
-  { id: 'weapon', name: 'Main Hand', accepts: 'weapon' },
-  { id: 'offhand', name: 'Off Hand', accepts: 'shield' },
-  { id: 'helmet', name: 'Helmet', accepts: 'helmet' },
-  { id: 'body', name: 'Body', accepts: 'body' },
-  { id: 'gloves', name: 'Gloves', accepts: 'gloves' },
-  { id: 'boots', name: 'Boots', accepts: 'boots' },
-  { id: 'amulet', name: 'Amulet', accepts: 'amulet' },
-  { id: 'ring1', name: 'Ring I', accepts: 'ring' },
-  { id: 'ring2', name: 'Ring II', accepts: 'ring' },
+  { id: 'weapon', name: 'Main Hand', accepts: ['weapon'] },
+  // A SHIELD or a second one-handed weapon; a two-hander empties it.
+  { id: 'offhand', name: 'Off Hand', accepts: ['shield', 'weapon'] },
+  { id: 'helmet', name: 'Helmet', accepts: ['helmet'] },
+  { id: 'body', name: 'Body', accepts: ['body'] },
+  { id: 'gloves', name: 'Gloves', accepts: ['gloves'] },
+  { id: 'boots', name: 'Boots', accepts: ['boots'] },
+  { id: 'amulet', name: 'Amulet', accepts: ['amulet'] },
+  { id: 'ring1', name: 'Ring I', accepts: ['ring'] },
+  { id: 'ring2', name: 'Ring II', accepts: ['ring'] },
 ];
+
+/** DUAL WIELDING: every hit is BOTH hands and the rate ALTERNATES between them.
+ *  The shares add to more than one because a pair gives up a shield's armour and
+ *  its Block; what it is NOT is a second, independent swing. */
+export const DUAL = { main: 0.75, off: 0.55 };
 
 /** Where each rung of a family starts dropping, against a run's drop ilvl. */
 export const BASE_TIER_ILVL = [1, 22, 46];

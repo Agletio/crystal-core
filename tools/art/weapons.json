@@ -1,78 +1,111 @@
 {
-  "_": "What a WEAPON looks like in a hero's hands, as words. One row per art key in `HELD`, and the row is used VERBATIM for every hero who carries that weapon — that is the whole point of this file. A weapon written afresh per body is a weapon that looks different per body, which is what a player notices first. `tools/art/dress.mts <weapon> --state <character-id> <label>` reads it and asks `create_character_state`, which keeps the man and inherits his skeleton, so the variant animates like any other body.",
-  "_rules": "Five things every row does, learned the expensive way. (1) It gives the weapon's LENGTH against the man's OWN body — 'as long as his forearm', 'from his fist to the ground' — never in pixels, because two heroes are drawn at different heights and only a proportion carries across. (2) It is asked PALE against dark cloth: at the ~87 device pixels the camera lands a body in, a weapon the colour of the coat is not there at all. A SMALL weapon has to say it twice — the shared `pale` clause carried a sword and lost a dagger, which came back the exact brown of the apron and disappeared. (3) It says WHICH HANDS and WHERE, so a two-handed weapon is unmistakably two-handed in the still. (4) It excludes what it DREW INSTEAD, one clause per observed failure, and nothing else — an exclusion nobody earned costs drama for free. (5) `seed` is fixed at 7 in the tool, so a re-ask of the same words is the same weapon. A lesson is only learned when BOTH heroes have taken it: the dagger passed on the Alchemist's brown apron and vanished on the Aethermancer's indigo robe, and the staff's banded head came back a club-head on the second man. A weapon is judged across every hero who carries it, never on the first one it was asked for.",
-  "_keep": "Appended to every row. The edit DRESSES a man rather than replacing him and has to say so, or the state comes back as a different person holding the right thing.",
-  "keep": "Change NOTHING else about him: the same head, the same face, the same clothes, the same belt, the same boots, the same proportions, the same palette. Do not replace him. No ground, no floor, no shadow, no base.",
-  "_pale": "Appended to every row. The one rule that is about the GAME rather than about the picture.",
-  "pale": "The weapon is PALE against his dark clothes — light enough that its shape reads on its own at a glance.",
-  "weapons": {
-    "sword": {
-      "hands": 1,
-      "say": "Put a straight one-handed sword in his hand: he grips it by the hilt down beside his hip, the blade angled down and forward and well clear of his leg, the crossguard plain to see. His other hand is empty. The blade is grey steel with a dark wrapped grip, and it is as long as his own arm from shoulder to fingertips. It is NOT a greatsword, NOT held in two hands, NOT longer than he is tall.",
-      "attack": "a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him",
-      "noun": "sword"
-    },
-    "sword2h": {
-      "hands": 2,
-      "say": "Put a two-handed greatsword in BOTH his hands: both fists closed on the grip down at his WAIST, a wide flat CROSSGUARD just above them at chest height, and a BROAD grey steel blade rising STRAIGHT UP in front of his chest and face so that its POINT ends just above the top of his head. The blade is as wide as his own forearm and NO LONGER than the distance from his waist to the top of his head. Point, blade, crossguard and both fists are ALL inside the picture and nothing is cut off by the top edge. It is NOT a staff, NOT a pole, NOT a spear, NOT one-handed, NOT pointing down, NOT angled, NOT diagonal, NOT across his body, NOT taller than the picture, NOT running off the top.",
-      "attack": "a two-beat GREATSWORD SWING in both hands: he hauls the blade back over one shoulder with the weight on the back foot, then swings it round and FORWARD across his body at CHEST height and steps through, ending with the blade level and at full stretch out IN FRONT of him. Both hands stay on the grip and the blade never points down at the ground",
-      "carry": "The greatsword stays in BOTH his hands, gripped at his waist with the blade UPRIGHT in front of him and the point just above his head, in EVERY frame: the whole sword stays inside the picture and it never points down or lies across his body.",
-      "noun": "greatsword in both hands"
-    },
-    "dagger": {
-      "hands": 1,
-      "say": "Put a short dagger in his hand: he grips it by the hilt held low at his hip with the short blade angled forward. His other hand is empty. The blade is WHITE — pure bright polished silver-white, the BRIGHTEST thing anywhere in the picture, brighter than his skin — and the grip is dark. It is SHORT — no longer than his own forearm. It is a knife. It is NOT a sword, NOT a longsword, NOT a machete, NOT as long as his arm, NOT dark, NOT grey, NOT brown, NOT rusted, NOT the colour of his clothes.",
-      "attack": "a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him",
-      "noun": "knife"
-    },
-    "mace": {
-      "hands": 1,
-      "say": "Put a heavy club in his hand: a straight dark haft as long as his forearm with a ROUND BALL of pitted iron fixed on the end of it, the ball fist-sized and roughly spherical like a rock. He grips the haft near its base and holds it up across his chest. His other hand is empty. The ball is pale grey pitted iron against the dark haft, and it is ROUND and SOLID and THICK in every direction. It is NOT flat, NOT a paddle, NOT an oar, NOT a spade, NOT a blade, NOT an axe, NOT a leaf shape, NOT wide and thin.",
-      "attack": "a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him",
-      "noun": "iron club"
-    },
-    "mace2h": {
-      "hands": 2,
-      "say": "Put a huge two-handed maul in BOTH his hands: a long dark haft as tall as he is with a great BLOCK of pitted iron fixed on the end of it, the block bigger than his own head and roughly cubic. Both fists are closed on the haft, one above the other, and he holds it upright in front of his body with the block up near his own head. The block is pale grey pitted iron against the dark haft, and it is SOLID and THICK in every direction. BOTH hands are on it. It is NOT flat, NOT a paddle, NOT an axe, NOT a blade, NOT one-handed, NOT held at his hip.",
-      "attack": "a two-beat MAUL SWING in both hands: he heaves the head up over his shoulder with the weight on the back foot, then drives it round and DOWN in a heavy arc in front of him and steps through, ending with the head at full stretch low in front of him. Both hands stay on the haft",
-      "noun": "maul in both hands"
-    },
-    "staff": {
-      "hands": 2,
-      "say": "Put a heavy wooden staff in BOTH his hands: a straight pole as tall as he is, the same thickness all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top of it and pale iron shoeing at the foot. Both fists are closed on the pole a little apart, held upright and slightly across his body. The pole is dark wood and the rings are PALE grey iron. BOTH hands are on it. The top of the pole is the SAME WIDTH as the rest of it. It is NOT a mace, NOT a club, NOT a hammer, NOT a ball on a stick, NOT a lump on the end, NOT a knob, NOT wider at the top, NOT a spear, NOT a blade, NOT a scythe, NOT a lantern on a pole, NOT a crystal on a pole.",
-      "attack": "a two-beat STAFF THRUST in both hands: he draws the staff back level at his own hip with the weight on the back foot, then rams the shod foot of it straight FORWARD at chest height and steps through, ending with the staff at full stretch out in front of him. Both hands stay on the pole",
-      "noun": "banded staff in both hands"
-    },
-    "wand": {
-      "hands": 1,
-      "say": "Put a short wand in his hand: he grips it near its base in one fist and holds it up in front of him with the tip pointing forward and slightly up. His other hand is empty. It is pale bone-white with a dark bound grip, and it is SHORT — no longer than his own forearm. It is NOT a staff, NOT a stave, NOT a sceptre, NOT a pole, NOT taller than he is, NOT resting on the ground, NOT held in two hands.",
-      "attack": "a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward",
-      "noun": "wand"
-    },
-    "bow": {
-      "hands": 2,
-      "say": "Put a large longbow in his hand: he grips it at its middle and holds it upright in front of him, the bowstring nearest his body and the limbs curving away, and it is as tall as he is. His other hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string. It is NOT a crossbow, NOT a short bow, NOT drawn, NOT held sideways.",
-      "attack": "a two-beat BOW SHOT: he brings the bow up in front of him and draws the string back to his cheek with the other hand, weight on the back foot, then LOOSES, ending with the bow arm straight out in front and the string hand back beside his jaw",
-      "noun": "bow"
-    },
-    "shield": {
-      "hands": 0,
-      "off": true,
-      "say": "Strap exactly ONE round shield on his OTHER forearm, the arm NOT holding a weapon. That arm is BENT at the elbow and the shield rides beside his body at chest height with its flat ROUND FACE turned toward the viewer, the whole disc and the boss at its centre plainly visible. His own chest, front and face stay uncovered beside it. It is a plain disc a little wider than his chest: dark boards, PALE iron rim and boss. Whatever is already in his other hand is unchanged, and he keeps his ordinary standing pose. NOT edge-on, NOT turned sideways, NOT a thin line, NOT a narrow oval, NOT covering his face, NOT a tower shield, NOT a kite shield, NOT rectangular, NOT two shields, NOT a second shield on his back. His arms are NOT stretched straight out to the sides.",
-      "attack": "a two-beat SHIELD BASH: he draws the shield arm back across his own chest with the weight on the back foot, then drives the face of the shield straight FORWARD and steps through onto the front foot, ending with the shield arm at full stretch out in front of him",
-      "pale": false,
-      "carry": "There is exactly ONE shield in the picture, on that one arm, in every frame. There is no second shield anywhere, and nothing round is slung on his back or his shoulder.",
-      "noun": "round shield"
-    }
+ "_": "What a WEAPON looks like in a hero's hands, as words. One row per art key in `HELD`, and the row is used VERBATIM for every hero who carries that weapon — that is the whole point of this file. A weapon written afresh per body is a weapon that looks different per body, which is what a player notices first. `tools/art/dress.mts <weapon> --state <character-id> <label>` reads it and asks `create_character_state`, which keeps the man and inherits his skeleton, so the variant animates like any other body.",
+ "_rules": "Five things every row does, learned the expensive way. (1) It gives the weapon's LENGTH against the man's OWN body — 'as long as his forearm', 'from his fist to the ground' — never in pixels, because two heroes are drawn at different heights and only a proportion carries across. (2) It is asked PALE against dark cloth: at the ~87 device pixels the camera lands a body in, a weapon the colour of the coat is not there at all. A SMALL weapon has to say it twice — the shared `pale` clause carried a sword and lost a dagger, which came back the exact brown of the apron and disappeared. (3) It says WHICH HANDS and WHERE, so a two-handed weapon is unmistakably two-handed in the still. (4) It excludes what it DREW INSTEAD, one clause per observed failure, and nothing else — an exclusion nobody earned costs drama for free. (5) `seed` is fixed at 7 in the tool, so a re-ask of the same words is the same weapon. A lesson is only learned when BOTH heroes have taken it: the dagger passed on the Alchemist's brown apron and vanished on the Aethermancer's indigo robe, and the staff's banded head came back a club-head on the second man. A weapon is judged across every hero who carries it, never on the first one it was asked for.",
+ "_keep": "Appended to every row. The edit DRESSES a man rather than replacing him and has to say so, or the state comes back as a different person holding the right thing.",
+ "keep": "Change NOTHING else about him: the same head, the same face, the same clothes, the same belt, the same boots, the same proportions, the same palette. Do not replace him. No ground, no floor, no shadow, no base.",
+ "_pale": "Appended to every row. The one rule that is about the GAME rather than about the picture.",
+ "pale": "The weapon is PALE against his dark clothes — light enough that its shape reads on its own at a glance.",
+ "weapons": {
+  "sword": {
+   "hands": 1,
+   "say": "Put a straight one-handed sword in his hand: he grips it by the hilt down beside his hip, the blade angled down and forward and well clear of his leg, the crossguard plain to see. His other hand is empty. The blade is grey steel with a dark wrapped grip, and it is as long as his own arm from shoulder to fingertips. It is NOT a greatsword, NOT held in two hands, NOT longer than he is tall.",
+   "attack": "a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him",
+   "noun": "sword"
   },
-  "_roles": "A SPELL weapon and a MELEE one of the same family are the same ART and differ only in the implicits their base rolls — the user's call. So there is one staff row and one dagger row here, and `GearBase.art` is the family for both bases.",
-  "_hold": "Appended to every state a variant animates, so the weapon is still in his hand in frame 8. `attack` is the swing the weapon itself makes and is the whole reason a body holds its own weapon rather than wearing a pinned one: a maul does not jab and a bow does not smash. Every attack ENDS at full extension and never recovers — the renderer holds a one-shot state's last frame — and says he faces the same way in every frame.",
-  "hold": "He keeps hold of it in EVERY frame and never lets go of it or puts it down.",
-  "_off": "A row with `off: true` is worn on the OTHER arm and LAYERS onto a variant that already holds a weapon — `dress.mts shield --state <the sword variant's own id>` — so the sword in the picture is the same sword, by construction rather than by asking twice. Nothing it covers may be the body: which hero you are looking at is the SILHOUETTE, which is why it is held out to the side and why every clause about the chest and the face is there. Held 'out to the side' it came back EDGE-ON — a plank rather than a shield — and one man T-POSED with both arms straight out, so the row now asks for the round face toward the viewer, the elbow bent, and the ordinary standing pose kept.",
-  "_limit": "`edit_description` is capped at 1000 CHARACTERS and the server refuses a longer one outright — before billing, but a refusal in a batch of seven is seven runs wasted. `dress.mts` measures before it calls. A row that says PALE for itself sets `pale: false` and drops the shared clause rather than losing an earned exclusion to the cap.",
-  "_quiet": "Appended to an IDLE, and only there. A body with nothing to do is where the generator invents: across two passes an idle grew a floating white blade, a stray disc at the hero's feet and a green magic swirl round his chest, each in a different variant. A swing or a fall gives it something to draw and none of them showed this. Kept OUT of the shared `hold` clause on purpose — changing that would change the ask for every state of every body, and the words in `bodies.json` have to be the words the shipped art was asked with.",
-  "quiet": "NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding.",
-  "_carry": "Appended to every state a variant animates EXCEPT its attack, which describes the swing itself. It says where the weapon RESTS. Only a weapon that has been observed drifting carries one — a clause nobody earned costs drama for free. The greatsword's is earned: asked upright it came back diagonal across the body in the still and pointing at the floor by the third walk frame, which is what the user saw. The shield's is earned too: the alchemist's still held one shield and his idle grew a second.",
-  "_nouns": "What a variant's own states call the weapon. `tools/art/variant.mts` composes a variant's rows in `bodies.json` out of the base body's states and these, so two heroes carrying one weapon are asked in one set of words by construction rather than by care.",
-  "_upright": "SIX asks went into the greatsword and this is what they bought. 'Upright' alone came back diagonal across the body and pointing at the floor by the third walk frame. Naming the CROSSGUARD and both fists is what made it read as a sword rather than a pole. Anchoring each part vertically — fists at the waist, guard at the chest, point above the head — is what got it up. And 'rising UP and slightly BACK past his shoulder', asked to buy headroom, came back pointing DOWN and forward: the generator hears 'back' as trailing behind. **A tall body has no headroom in a 96 frame**, so the Alchemist's point still touches the top edge where the Aethermancer's clears it. That is the frame, not the words, and no wording bought it."
+  "sword2h": {
+   "hands": 2,
+   "say": "Put a two-handed greatsword in BOTH his hands: both fists closed on the grip down at his WAIST, a wide flat CROSSGUARD just above them at chest height, and a BROAD grey steel blade rising STRAIGHT UP in front of his chest and face so that its POINT ends just above the top of his head. The blade is as wide as his own forearm and NO LONGER than the distance from his waist to the top of his head. Point, blade, crossguard and both fists are ALL inside the picture and nothing is cut off by the top edge. It is NOT a staff, NOT a pole, NOT a spear, NOT one-handed, NOT pointing down, NOT angled, NOT diagonal, NOT across his body, NOT taller than the picture, NOT running off the top.",
+   "attack": "a two-beat GREATSWORD SWING in both hands: he hauls the blade back over one shoulder with the weight on the back foot, then swings it round and FORWARD across his body at CHEST height and steps through, ending with the blade level and at full stretch out IN FRONT of him. Both hands stay on the grip and the blade never points down at the ground",
+   "carry": "The greatsword stays in BOTH his hands, gripped at his waist with the blade UPRIGHT in front of him and the point just above his head, in EVERY frame: the whole sword stays inside the picture and it never points down or lies across his body.",
+   "noun": "greatsword in both hands"
+  },
+  "dagger": {
+   "hands": 1,
+   "say": "Put a short dagger in his hand: he grips it by the hilt held low at his hip with the short blade angled forward. His other hand is empty. The blade is WHITE — pure bright polished silver-white, the BRIGHTEST thing anywhere in the picture, brighter than his skin — and the grip is dark. It is SHORT — no longer than his own forearm. It is a knife. It is NOT a sword, NOT a longsword, NOT a machete, NOT as long as his arm, NOT dark, NOT grey, NOT brown, NOT rusted, NOT the colour of his clothes.",
+   "attack": "a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him",
+   "noun": "knife"
+  },
+  "mace": {
+   "hands": 1,
+   "say": "Put a heavy club in his hand: a straight dark haft as long as his forearm with a ROUND BALL of pitted iron fixed on the end of it, the ball fist-sized and roughly spherical like a rock. He grips the haft near its base and holds it up across his chest. His other hand is empty. The ball is pale grey pitted iron against the dark haft, and it is ROUND and SOLID and THICK in every direction. It is NOT flat, NOT a paddle, NOT an oar, NOT a spade, NOT a blade, NOT an axe, NOT a leaf shape, NOT wide and thin.",
+   "attack": "a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him",
+   "noun": "iron club"
+  },
+  "mace2h": {
+   "hands": 2,
+   "say": "Put a huge two-handed maul in BOTH his hands: a long dark haft as tall as he is with a great BLOCK of pitted iron fixed on the end of it, the block bigger than his own head and roughly cubic. Both fists are closed on the haft, one above the other, and he holds it upright in front of his body with the block up near his own head. The block is pale grey pitted iron against the dark haft, and it is SOLID and THICK in every direction. BOTH hands are on it. It is NOT flat, NOT a paddle, NOT an axe, NOT a blade, NOT one-handed, NOT held at his hip.",
+   "attack": "a two-beat MAUL SWING in both hands: he heaves the head up over his shoulder with the weight on the back foot, then drives it round and DOWN in a heavy arc in front of him and steps through, ending with the head at full stretch low in front of him. Both hands stay on the haft",
+   "noun": "maul in both hands"
+  },
+  "staff": {
+   "hands": 2,
+   "say": "Put a heavy wooden staff in BOTH his hands: a straight pole as tall as he is, the same thickness all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top of it and pale iron shoeing at the foot. Both fists are closed on the pole a little apart, held upright and slightly across his body. The pole is dark wood and the rings are PALE grey iron. BOTH hands are on it. The top of the pole is the SAME WIDTH as the rest of it. It is NOT a mace, NOT a club, NOT a hammer, NOT a ball on a stick, NOT a lump on the end, NOT a knob, NOT wider at the top, NOT a spear, NOT a blade, NOT a scythe, NOT a lantern on a pole, NOT a crystal on a pole.",
+   "attack": "a two-beat STAFF THRUST in both hands: he draws the staff back level at his own hip with the weight on the back foot, then rams the shod foot of it straight FORWARD at chest height and steps through, ending with the staff at full stretch out in front of him. Both hands stay on the pole",
+   "noun": "banded staff in both hands"
+  },
+  "wand": {
+   "hands": 1,
+   "say": "Put a short wand in his hand: he grips it near its base in one fist and holds it up in front of him with the tip pointing forward and slightly up. His other hand is empty. It is pale bone-white with a dark bound grip, and it is SHORT — no longer than his own forearm. It is NOT a staff, NOT a stave, NOT a sceptre, NOT a pole, NOT taller than he is, NOT resting on the ground, NOT held in two hands.",
+   "attack": "a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward",
+   "noun": "wand"
+  },
+  "bow": {
+   "hands": 2,
+   "say": "Put a large longbow in his hand: he grips it at its middle and holds it upright in front of him, the bowstring nearest his body and the limbs curving away, and it is as tall as he is. His other hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string. It is NOT a crossbow, NOT a short bow, NOT drawn, NOT held sideways.",
+   "attack": "a two-beat BOW SHOT: he brings the bow up in front of him and draws the string back to his cheek with the other hand, weight on the back foot, then LOOSES, ending with the bow arm straight out in front and the string hand back beside his jaw",
+   "noun": "bow"
+  },
+  "shield": {
+   "hands": 0,
+   "off": true,
+   "say": "Strap exactly ONE round shield on his OTHER forearm, the arm NOT holding a weapon. That arm is BENT at the elbow and the shield rides beside his body at chest height with its flat ROUND FACE turned toward the viewer, the whole disc and the boss at its centre plainly visible. His own chest, front and face stay uncovered beside it. It is a plain disc a little wider than his chest: dark boards, PALE iron rim and boss. Whatever is already in his other hand is unchanged, and he keeps his ordinary standing pose. NOT edge-on, NOT turned sideways, NOT a thin line, NOT a narrow oval, NOT covering his face, NOT a tower shield, NOT a kite shield, NOT rectangular, NOT two shields, NOT a second shield on his back. His arms are NOT stretched straight out to the sides.",
+   "attack": "a two-beat SHIELD BASH: he draws the shield arm back across his own chest with the weight on the back foot, then drives the face of the shield straight FORWARD and steps through onto the front foot, ending with the shield arm at full stretch out in front of him",
+   "pale": false,
+   "carry": "There is exactly ONE shield in the picture, on that one arm, in every frame. There is no second shield anywhere, and nothing round is slung on his back or his shoulder.",
+   "noun": "round shield"
+  },
+  "sword_off": {
+   "hands": 0,
+   "off": true,
+   "pale": false,
+   "say": "Put a SECOND straight one-handed sword in his OTHER hand, the one that is empty. He grips it by the hilt down beside that hip, its blade angled down and forward and well clear of his leg. It is grey steel with a dark wrapped grip and as long as his own arm from shoulder to fingertips. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. There is exactly ONE weapon in each hand and nothing else anywhere. NOT a greatsword, NOT held in two hands, NOT a third weapon, NOT one slung on his back, NOT crossed over his chest, NOT a shield. His arms are NOT stretched straight out to the sides.",
+   "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
+   "noun": "second sword"
+  },
+  "dagger_off": {
+   "hands": 0,
+   "off": true,
+   "pale": false,
+   "say": "Put a short dagger in his OTHER hand, the one that is empty. He grips it by the hilt held low at that hip with the short blade angled forward. Its blade is WHITE — pure bright polished silver-white, brighter than his skin — and its grip is dark. It is SHORT, no longer than his own forearm. It is a knife. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a sword, NOT as long as his arm, NOT dark, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
+   "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
+   "noun": "knife in the other hand"
+  },
+  "mace_off": {
+   "hands": 0,
+   "off": true,
+   "pale": false,
+   "say": "Put a short iron club in his OTHER hand, the one that is empty. He grips it by the haft down beside that hip with its heavy head hanging forward and clear of his leg. It is a PALE grey iron bar thickening to a blunt head, no longer than his own forearm. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a maul, NOT held in two hands, NOT an axe, NOT a hammer with a flat face, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
+   "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
+   "noun": "iron club in the other hand"
+  },
+  "wand_off": {
+   "hands": 0,
+   "off": true,
+   "pale": false,
+   "say": "Put a short wand in his OTHER hand, the one that is empty. He holds it upright in his closed fist beside that hip, its tip pointing up and forward. It is a PALE bone-white tapered rod no longer than his own forearm, plain and unlit. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a staff, NOT a sceptre, NOT held in two hands, NOT glowing, NOT sparking, NOT a torch, NOT a candle, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
+   "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
+   "noun": "wand in the other hand"
+  }
+ },
+ "_roles": "A SPELL weapon and a MELEE one of the same family are the same ART and differ only in the implicits their base rolls — the user's call. So there is one staff row and one dagger row here, and `GearBase.art` is the family for both bases.",
+ "_hold": "Appended to every state a variant animates, so the weapon is still in his hand in frame 8. `attack` is the swing the weapon itself makes and is the whole reason a body holds its own weapon rather than wearing a pinned one: a maul does not jab and a bow does not smash. Every attack ENDS at full extension and never recovers — the renderer holds a one-shot state's last frame — and says he faces the same way in every frame.",
+ "hold": "He keeps hold of it in EVERY frame and never lets go of it or puts it down.",
+ "_off": "A row with `off: true` is worn on the OTHER arm and LAYERS onto a variant that already holds a weapon — `dress.mts shield --state <the sword variant's own id>` — so the sword in the picture is the same sword, by construction rather than by asking twice. Nothing it covers may be the body: which hero you are looking at is the SILHOUETTE, which is why it is held out to the side and why every clause about the chest and the face is there. Held 'out to the side' it came back EDGE-ON — a plank rather than a shield — and one man T-POSED with both arms straight out, so the row now asks for the round face toward the viewer, the elbow bent, and the ordinary standing pose kept.",
+ "_limit": "`edit_description` is capped at 1000 CHARACTERS and the server refuses a longer one outright — before billing, but a refusal in a batch of seven is seven runs wasted. `dress.mts` measures before it calls. A row that says PALE for itself sets `pale: false` and drops the shared clause rather than losing an earned exclusion to the cap.",
+ "_quiet": "Appended to an IDLE, and only there. A body with nothing to do is where the generator invents: across two passes an idle grew a floating white blade, a stray disc at the hero's feet and a green magic swirl round his chest, each in a different variant. A swing or a fall gives it something to draw and none of them showed this. Kept OUT of the shared `hold` clause on purpose — changing that would change the ask for every state of every body, and the words in `bodies.json` have to be the words the shipped art was asked with.",
+ "quiet": "NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding.",
+ "_carry": "Appended to every state a variant animates EXCEPT its attack, which describes the swing itself. It says where the weapon RESTS. Only a weapon that has been observed drifting carries one — a clause nobody earned costs drama for free. The greatsword's is earned: asked upright it came back diagonal across the body in the still and pointing at the floor by the third walk frame, which is what the user saw. The shield's is earned too: the alchemist's still held one shield and his idle grew a second.",
+ "_nouns": "What a variant's own states call the weapon. `tools/art/variant.mts` composes a variant's rows in `bodies.json` out of the base body's states and these, so two heroes carrying one weapon are asked in one set of words by construction rather than by care.",
+ "_upright": "SIX asks went into the greatsword and this is what they bought. 'Upright' alone came back diagonal across the body and pointing at the floor by the third walk frame. Naming the CROSSGUARD and both fists is what made it read as a sword rather than a pole. Anchoring each part vertically — fists at the waist, guard at the chest, point above the head — is what got it up. And 'rising UP and slightly BACK past his shoulder', asked to buy headroom, came back pointing DOWN and forward: the generator hears 'back' as trailing behind. **A tall body has no headroom in a 96 frame**, so the Alchemist's point still touches the top edge where the Aethermancer's clears it. That is the frame, not the words, and no wording bought it.",
+ "_pairs": "A row ending `_off` is the SAME weapon carried in the OTHER hand, and a PAIR is one of those layered onto a variant that already holds one — `dress.mts sword_off --state <the mace variant's own id>` — so the mace in the picture is the same mace, by construction. There are four one-handed families and ten unordered pairs of them, which is ten variants a hero. Orderless: `variants()` in `src/sim/appearance.ts` sorts a pair before it looks one up, so which hand you filled never asks for a second picture. The `_off` rows drop the shared `pale` clause and say PALE for themselves, because they each carry an earned exclusion and `edit_description` is capped at 1000."
 }

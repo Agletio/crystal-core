@@ -17,8 +17,9 @@ import {
   EQUIP_SLOTS,
   LEVELLING,
   WEAPON_SLOT,
+  DUAL,
 } from '../data';
-import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
+import { characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates } from '../sim/stats';
 import { slotWorkings } from '../skill-text';
 import { starvedMultiplier } from '../sim/grants';
 import { ailmentLine, damageWorkings } from '../damage-text';
@@ -39,6 +40,7 @@ import { respecCost } from '../trades';
 import { ask } from './confirm';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
+import type { Character } from '../sim/character';
 import { gearIcon } from './icons';
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
@@ -432,6 +434,21 @@ export const skillSectionId = (slotId: string): string => `sheet-skill-${slotId}
 
 /** The rows only true of the skill that SWINGS. Everything here would be a
  *  different number for a different main skill, which is why it lives here. */
+/** What the SECOND weapon is worth, or null with a hand free. Both figures, in
+ *  their own units: a pair is a damage decision and a rate decision at once. */
+function pairLine(character: Character): string | null {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (!main || !off) return null;
+  const rates = weaponRates(character);
+  return (
+    `dual wielding: ${Math.round(DUAL.main * 100)}% of ${main.name} and ` +
+    `${Math.round(DUAL.off * 100)}% of ` +
+    `${off.name} in every hit, swinging at ${rates[0].toFixed(2)} and then ` +
+    `${rates[1].toFixed(2)} a second, alternately`
+  );
+}
+
 function mainRows(): StatRow[] {
   const s = characterStats(game.character);
   const detail = damageDetail(game.character);
@@ -522,6 +539,10 @@ function renderSkills(): void {
           `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
         )
       );
+      // A PAIR is two numbers you cannot read off one total: what each hand
+      // puts into every hit, and the two rates the swing alternates between.
+      const pairing = pairLine(game.character);
+      if (pairing) box.append(el('div', 'skillsec__how', pairing));
       for (const row of mainRows()) statRow(box, row);
     } else {
       for (const l of slotWorkings(held, game.character)) box.append(el('div', 'skillsec__how', l));
