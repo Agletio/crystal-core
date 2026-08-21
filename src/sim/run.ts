@@ -130,6 +130,11 @@ const AGGRO_CHAIN_RADIUS = 4.5;
 /** How near the way out the last encounter comes up the hole behind you. */
 const FINALE_RANGE = 5;
 const KITE_EDGE = 0.92; // of your own reach; short of all of it, or a hair of drift eats the use
+/** A skill reaching further than this GIVES GROUND while it recovers. Over
+ *  every swing (Shockwave's 2.2) and under everything thrown (Rimespike's 5). */
+const KITE_REACH = 3;
+/** Straight back, then off it: a hero against rock slides along it. */
+const KITE_TURNS = [0, Math.PI / 2, -Math.PI / 2, Math.PI / 4, -Math.PI / 4];
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
@@ -426,6 +431,8 @@ export class RunSim {
   private readonly queued: string[] = []; // presses waiting for the next tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
+  /** Read off the skill's own reach: kiting is what a RANGED build does. */
+  private readonly kites: boolean;
   private events: RunEvent[] = [];
   private nextId = 1;
   /** XP one monster on this map is worth, fixed by crystal tier at spawn. */
@@ -511,6 +518,7 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
+    this.kites = this.skill.range > KITE_REACH;
     this.set = runSet(crystals, trialMod(character));
     this.wellChance = percentStat(this.set.mods, 'wellChance');
 
@@ -999,10 +1007,9 @@ export class RunSim {
     if (grid.walkable(e.x, y)) e.y = y;
   }
 
-  /** A shove, refusing any component that would put a BODY inside a wall:
-   *  separation is what pushes things into rock, a path running only down tile
-   *  centres. One already overlapping a wall falls back to its centre, so it
-   *  can always walk out of somewhere it should never have been. */
+  /** A shove, refusing any component that would put a BODY inside a wall.
+   *  One already overlapping a wall falls back to its centre, so it can always
+   *  walk out of somewhere it should never have been. */
   private nudge(e: Entity, dx: number, dy: number): void {
     const { grid } = this.state.map;
     const stuck = !grid.fits(e.x, e.y, e.radius);
@@ -1013,10 +1020,11 @@ export class RunSim {
     if (ok(e.x, e.y + dy)) e.y += dy;
   }
 
-  /** A step away from whatever is nearest, only while the skill is recovering
-   *  and only out to `KITE_EDGE` of your reach. Returns whether it moved. */
+  /** A step away from whatever is nearest, out to `KITE_EDGE` of your reach.
+   *  Answers whether it MOVED, measured rather than attempted: a retreat that
+   *  cannot fail is one that grinds against rock and walks on the spot. */
   private kiteFrom(hero: Entity, dt: number): boolean {
-    if (this.grants.kite !== true) return false;
+    if (!this.kites) return false;
     let near: Entity | null = null;
     let closest = Infinity;
     for (const m of this.state.monsters) {
@@ -1032,8 +1040,16 @@ export class RunSim {
     if (closest >= edge || closest < 1e-3) return false;
 
     const step = Math.min(edge - closest, hero.stats.moveSpeed * dt * this.paceOf(hero));
-    this.nudge(hero, ((hero.x - near.x) / closest) * step, ((hero.y - near.y) / closest) * step);
-    return true;
+    const awayX = (hero.x - near.x) / closest;
+    const awayY = (hero.y - near.y) / closest;
+    const was = { x: hero.x, y: hero.y };
+    for (const turn of KITE_TURNS) {
+      const cos = Math.cos(turn);
+      const sin = Math.sin(turn);
+      this.nudge(hero, (awayX * cos - awayY * sin) * step, (awayX * sin + awayY * cos) * step);
+      if (Math.hypot(hero.x - was.x, hero.y - was.y) > step * 0.25) return true;
+    }
+    return false;
   }
 
   /** Decay the transient pose and fall back to whether it's moving. */
@@ -1358,10 +1374,8 @@ export class RunSim {
       if (d <= this.reachTo(hero, target) && this.canSee(hero, target)) {
         hero.path = [];
         this.face(hero, target.x, target.y);
-        // Standing in it is the default and a passive replaces it: while the
-        // skill is recovering, give ground out to the EDGE of your own reach
-        // and no further. Past the edge you would be walking back in for every
-        // use, which is a build that cannot kill rather than one that kites.
+        // A RANGED skill gives ground while it recovers, to the EDGE of its
+        // own reach: past that you walk back in for every use.
         const gave = hero.cooldown > 0 && this.kiteFrom(hero, dt);
         this.settleAction(hero, gave);
         if (hero.cooldown <= 0) this.swing(hero, target);
@@ -2016,6 +2030,11 @@ export class RunSim {
     const reach = ((skill.params?.distance as number) ?? 0) * further;
     const jumps = skill.behaviour === 'leap';
     const grid = this.state.map.grid;
+    // A KITING build never blinks INTO what it is backing away from: the mover
+    // is for crossing a room, and a landing inside your own reach is a step
+    // forward you spend the next second walking back out of.
+    const held = hero.targetId !== null ? this.byId.get(hero.targetId) : undefined;
+    const keep = this.kites && held && !held.dead ? this.reachTo(hero, held) * KITE_EDGE : 0;
     let landing: Vec2 | null = null;
     let steps = 0;
     let seen = 0;
@@ -2026,6 +2045,7 @@ export class RunSim {
       // mover doing the boss's work. A JUMP clears the body; a STEP wants a
       // line, and one is no clearer through a boss than through a wall.
       if (this.penned(wp, hero.radius)) continue;
+      if (keep > 0 && held && Math.hypot(wp.x - held.x, wp.y - held.y) < keep) continue;
       if (!jumps && this.throughBoss(hero, wp)) continue;
       if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) {
         landing = wp;

@@ -390,13 +390,6 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
-    id: 'kite',
-    what: 'you give ground while your skill is recovering instead of standing in it',
-    reads: [STATS],
-    say: (v) => (v === true ? 'You back off to the edge of your own reach while your skill recovers' : null),
-  },
-
-  {
     id: 'manaOnKill',
     what: 'a kill returns mana',
     reads: [STATS],

@@ -6,12 +6,11 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FOUR PHASES ARE WAITING.** Three are things the user found by watching it —
-kiting that looks like kiting, the people you have met moving into a camp, and
-the camp itself — and the fourth is dual wielding, which is the largest art
-phase this game has had and carries an open question of its own. **Take Phase
-1.** The weapon soft-lock, the two wrong weapon bodies and the walls, which came
-first, have landed.
+**THREE PHASES ARE WAITING.** Two are the user's camp — the people you have met
+moving into one, and the camp itself — and the third is dual wielding, which is
+the largest art phase this game has had and carries an open question of its own.
+**Take Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls
+and the kiting, which came first, have landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -19,7 +18,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 5 (a quest log) stays parked by his word until the
+what it found is below. Phase 4 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -38,8 +37,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the four phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the four are done, say so and
+**Under the three phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the three are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -80,6 +79,7 @@ to look:
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
+| kiting is the SKILL's | a build reaching further than 3 tiles gives ground while it recovers, `kiteFrom` answers whether it MOVED and slides along rock, and a kiting mover never lands inside its own reach. Featherstep is armour-into-Dodge and speed |
 | a wall has a SIDE | `wallSide` — rock with floor below it is a FACE and draws behind a body, rock with floor above it is a LIP and draws in front of one, stretched `LIP_RISE` over the floor. `SOUTH_ROOM` closes the tile of floor nothing stood on |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
@@ -416,65 +416,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — Kiting that looks like kiting
-
-**The user, after watching it.** *"For when you take the featherstep passive I
-think it works well but he kinda does this weird buggy thing where he runs into
-walls going backwards and just keeps trying to force his way into the wall...
-ideally we get this working nice to where its not so busted but just semi decent
-at kiting and all ranged abilites try and kite mobs. And convert this passive
-into just the convert armour to dodge and movespeed when you haven't been hit.
-Also it does a thing where it like blinks forward into enemies and then has to
-kite back out alot and looks weird."*
-
-**What is true today.** `kiteFrom` in `src/sim/run.ts` steps directly away from
-the nearest monster while `hero.cooldown > 0`, out to `reachTo × KITE_EDGE`. It
-moves through `nudge`, which slides each axis independently and simply declines
-the ones that do not fit — and then **returns `true` whatever happened**, so a
-hero pinned against rock reports that he gave ground and plays his walk on the
-spot. It is switched on by `grants.kite`, which exactly one thing in the game
-grants: the Featherstep passive.
-
-**Why it is wrong**, in one sentence: kiting is what a RANGED build does, not
-what one passive does, and a retreat that cannot fail is a retreat that walks
-into walls.
-
-- [ ] **`kite` stops being a grant and becomes a fact about the skill.** A skill
-      whose reach is longer than a swing kites; a melee one does not. Featherstep
-      keeps `armourToDodge` and `unhitHaste` and loses `kite` — the user's call,
-      in as many words — and its `description` loses the clause with it.
-      `GRANT_BY_ID.kite` goes, or stays only if something still hands it out.
-- [ ] **A retreat that is BLOCKED says so.** `kiteFrom` returns whether the hero
-      actually moved, measured against where he was — not whether it tried. A
-      blocked retreat stands and fights, which is the honest answer.
-- [ ] **And it slides rather than shoving.** Straight away from the monster is
-      one candidate; along the wall to either side are two more. Pick the one
-      that opens the most distance and is walkable, and take none if none is.
-- [ ] **The advance stops overshooting.** He walks to `reachTo` and is
-      immediately outside `reachTo × KITE_EDGE`, so he backs out of the range he
-      just walked into and does it again — that is the blink the user is
-      watching. Advance to the kite edge, not to the reach, so arriving and
-      holding are the same distance.
-- [ ] **`runToCompletion` is what proves it**, because automation is universal:
-      whatever this policy is, it is the one the headless runs use, and there is
-      no second implementation.
-
-**Traps.** This moves the hero, so it moves every balance number — ranged skills
-most. `bestBuild` PLAYS its shortlist, so the ceiling table will shift; read it,
-print it, do not tune to it in the same phase. **A run must always END**: a kite
-policy that can walk a hero away from the last monster forever is a mechanism
-failure, not a balance number, and `demo`'s termination check is what catches it.
-
-**Done when.** A ranged build gives ground while it recovers, never grinds
-against rock, and never walks into a pack it is about to walk back out of —
-watched at `npm run peek`, not read off a number.
-
-**What must not break.** `npm run demo` (termination, and the FLOOR AND CEILING
-table), then `smoke` and `peek`.
-
----
-
-## Phase 2 — Somebody you have met is somebody you can go and see
+## Phase 1 — Somebody you have met is somebody you can go and see
 
 **What is true today.** A room is SCHEDULED at the end of a cleared descent:
 `relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
@@ -510,7 +452,7 @@ who wants it can be walked to whenever you like.
 
 ---
 
-## Phase 3 — The camp: the home screen becomes a PLACE
+## Phase 2 — The camp: the home screen becomes a PLACE
 
 **The user's ask, in full, because the shape is all his:** *"I think the home
 screen should be more like an actual hideout in path of exile. Where you see your
@@ -545,7 +487,7 @@ one. The camp is a scene you are always in rather than a screen.
       It is the run panel that exists, anchored on a prop instead of the rail.
 - [ ] **The bench is a prop you click.** `openCraft` is already a function.
 - [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Do Phase 2 first; this is its payoff.
+      way. Do Phase 1 first; this is its payoff.
 - [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
       in, not a replacement, and a screen reachable only by finding a prop is a
       screen somebody will lose.
@@ -569,7 +511,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 4 — Dual wielding
+## Phase 3 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -632,7 +574,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 5 — A quest log instead of a pointing finger
+## Phase 4 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

@@ -5490,8 +5490,10 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
         `${light.dodgeChance} against ${bare.armourReduction}`
       );
 
-      // And it moves. A kiting hero gives ground while the skill recovers, so
-      // over a real descent he covers more ground than one that stands in it.
+      // KITING is the SKILL's, not the passive's: a build that reaches further
+      // than a swing gives ground while it recovers, and one that does not
+      // stands in the pack. Featherstep hands that out to nobody — one point
+      // making the same build play differently is what came out.
       const walked = (who: Character): number => {
         const sim = new RunSim([], who, new Rng(808));
         let far = 0;
@@ -5503,10 +5505,21 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
         }
         return far;
       };
-      const still = walked(makeCharacter(starterLoadout(new Rng(9)), 'strike'));
-      const kiting = walked(wearing('featherstep'));
-      line(`  and covers ${kiting.toFixed(0)} tiles against ${still.toFixed(0)} standing still`);
-      check(kiting > still, 'and a kiting hero covers more ground than one that stands in it', `${kiting} / ${still}`);
+      const melee = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+      const ranged = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
+      const still = walked(melee);
+      const kiting = walked(ranged);
+      line(`  a ranged build covers ${kiting.toFixed(0)} tiles against ${still.toFixed(0)} for a melee one`);
+      check(
+        kiting > still,
+        'a build that reaches further than a swing gives ground, and a melee one stands in it',
+        `${kiting.toFixed(0)} / ${still.toFixed(0)}`
+      );
+      check(
+        !('kite' in treeGrants(c)),
+        'and Featherstep hands out no kiting at all: it is armour into Dodge and speed',
+        Object.keys(treeGrants(c)).join(', ')
+      );
     }
 
     // SUNDERING and HOARFROST: what the BUILD may move about a passive's own

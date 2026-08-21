@@ -3867,12 +3867,12 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
-     * SPEED as a defensive layer, which is three rules rather than one: armour
-     * stops blunting and starts Dodging at 60% of what it was worth, standing
-     * untouched makes you faster, and you give ground while the skill recovers
-     * instead of standing in the pack. On average 60% of your armour is less
-     * mitigation than all of it, and it arrives all-or-nothing — the squishy
-     * half of the trade is both of those at once.
+     * SPEED as a defensive layer: armour stops blunting and starts Dodging at
+     * 60% of what it was worth, and standing untouched makes you faster. On
+     * average 60% of your armour is less mitigation than all of it, and it
+     * arrives all-or-nothing — the squishy half of the trade is both at once.
+     * Giving ground is NOT here: kiting is what a RANGED build does, and one
+     * passive owning it made the same build play differently for one point.
      */
     id: 'featherstep',
     name: 'Featherstep',
@@ -3889,7 +3889,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 0,
-    grants: { armourToDodge: 0.6, unhitHaste: { after: 2, more: 0.6 }, kite: true },
+    grants: { armourToDodge: 0.6, unhitHaste: { after: 2, more: 0.6 } },
   },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and
