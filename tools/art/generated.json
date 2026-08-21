@@ -760,6 +760,856 @@
    "grid": 48,
    "inks": 24,
    "luma": 32
+  },
+  {
+   "sprite": "alchemist_sword",
+   "character": "0e5185ea-c741-4132-a316-fb786ae101a2",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "a2397110-3dc9-465f-9f40-2ed30be4b3f2"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "d88f4d2b-bc30-4add-98af-05a43354142a"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": "902bae3f-73b2-4440-b21a-303c5bd0513f"
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": "ed312869-6e3e-40a3-9def-a3afba8351ca"
+    },
+    "death": {
+     "frames": 4,
+     "group": "3d949e1a-c5ae-44f5-b106-c87ea8e70a23"
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_sword2h",
+   "character": "1187c32f-cc4d-4df8-864a-000432b0f92e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "846ccb40-c0ae-475a-8d8f-5b79433eb55c"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "e0541ae4-2fda-4b5a-b026-7777a55a3c2c"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": "41975cfe-413b-4d4f-afdf-2d3362b157cb"
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": "83725e05-9298-427a-bafb-0a939e7bcac8"
+    },
+    "death": {
+     "frames": 4,
+     "group": "43cbe89b-bd5d-440a-89b3-b9174bfad83b"
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger",
+   "character": "a195673f-d286-4f69-9bce-1036b4712051",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace",
+   "character": "f1344b3a-3525-4e9b-8faa-7731790137a9",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace2h",
+   "character": "7779a059-5dd0-4f14-8009-89235d3e9bfb",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_staff",
+   "character": "fd8042b6-f20e-42a9-80bb-37356182f010",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_wand",
+   "character": "203793c8-e9bf-46ac-870f-df1771a8f4ca",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_bow",
+   "character": "928a12b1-f48d-4d98-89c6-30b18165db93",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword",
+   "character": "71c4b104-adee-48ec-8302-58f9b3e3a462",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword2h",
+   "character": "4426d05a-cae3-4b1d-b85f-f8fa6a0d877e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger",
+   "character": "982ac7ca-ee3a-4960-b110-1ee78b591719",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace",
+   "character": "61c8523e-6ccb-4712-8f1c-cd5a77e18164",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace2h",
+   "character": "df4ef1f6-debc-4643-b30a-07f4584dff2f",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_staff",
+   "character": "2dd913d3-3a48-433d-a30c-2f67003c38b4",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_wand",
+   "character": "775dec26-3ad3-4c1a-9a5c-7101ef38252c",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_sword_shield",
+   "character": "cbc62bd0-993d-475a-a220-8f54356d6e20",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger_shield",
+   "character": "8fb29b15-c532-4735-92ad-fc3d3974edfb",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace_shield",
+   "character": "6a4d0c07-87ba-42a2-9d35-7f1d1ac355c4",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_wand_shield",
+   "character": "77dc1d28-23f6-4117-8065-36482a4c0a44",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_shield",
+   "character": "ed5c746a-6861-4cb7-a7c9-5d5bfe78e0a6",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_shield",
+   "character": "80c3f029-6d5c-4e85-bb73-47144e1788cd",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger_shield",
+   "character": "db83f0f8-d267-4d62-b518-e130b4c28bf7",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace_shield",
+   "character": "2a546325-a5c1-4eb0-8219-cbc915c8dbd6",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_wand_shield",
+   "character": "42db90ea-bb60-448a-a6e9-cecff524e145",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_shield",
+   "character": "65a53a8a-f5fc-4ac7-8a49-c02d28ec655d",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": ""
+    },
+    "walk": {
+     "frames": 6,
+     "group": ""
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34,
+     "group": ""
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": ""
+    },
+    "death": {
+     "frames": 4,
+     "group": ""
+    }
+   }
   }
  ],
  "props": [

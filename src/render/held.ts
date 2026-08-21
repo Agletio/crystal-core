@@ -42,9 +42,9 @@ export const HELD: Record<string, HeldSpec> = {
   mace: { icon: 'gear_mace', grip: [0.5, 0.7], size: 1.0, turn: Math.PI + 0.5 },
   // Pinned only until a body that DRAWS one is imported — `HOLDING` names all
   // three — so the grips are the one-handed ones scaled up rather than tuned.
-  sword2h: { icon: 'gear_sword', grip: [0.5, 0.28], size: 1.6, turn: 0.5 },
-  mace2h: { icon: 'gear_mace', grip: [0.5, 0.7], size: 1.45, turn: Math.PI + 0.5 },
-  staff: { icon: 'gear_wand', grip: [0.5, 0.55], size: 1.7, turn: Math.PI + 0.5 },
+  sword2h: { icon: 'gear_sword2h', grip: [0.5, 0.28], size: 1.6, turn: 0.5 },
+  mace2h: { icon: 'gear_mace2h', grip: [0.5, 0.7], size: 1.45, turn: Math.PI + 0.5 },
+  staff: { icon: 'gear_staff', grip: [0.5, 0.55], size: 1.7, turn: Math.PI + 0.5 },
   wand: { icon: 'gear_wand', grip: [0.5, 0.55], size: 0.62, turn: Math.PI + 0.5 },
   // BEHIND the body and on the FAR arm: a shield drawn over the chest hides the
   // figure it belongs to, and which hero you are looking at is the silhouette.

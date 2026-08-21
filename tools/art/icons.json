@@ -1,526 +1,538 @@
 {
-  "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
-  "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
-  "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
-  "size": 64,
-  "grid": 48,
-  "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
-  "inks": [
-    "#0A0807",
-    "#151109",
-    "#221A10",
-    "#332618",
-    "#443322",
-    "#5A4530",
-    "#7A5C3C",
-    "#9C7A4E",
-    "#C2A06A",
-    "#E2C68E",
-    "#8A3A16",
-    "#C4631E",
-    "#E2871B",
-    "#F5C24A",
-    "#FFE9A8",
-    "#1E3A52",
-    "#2E6C93",
-    "#6FC2E0",
-    "#BFEFFF",
-    "#3A2352",
-    "#6B3FA0",
-    "#A97BE0",
-    "#243B22",
-    "#4F8A3A",
-    "#8FD654",
-    "#9AA3A8",
-    "#D6DDE0",
-    "#6E120E",
-    "#B0201A",
-    "#E84438"
-  ],
-  "icons": [
-    {
-      "id": "cat_attack",
-      "say": "a heavy notched iron blade crossed with a worn leather grip, seen straight on, cold steel and dark iron."
-    },
-    {
-      "id": "cat_spell",
-      "say": "a cracked violet crystal shard wreathed in a thin curl of arcane light, cold and glowing."
-    },
-    {
-      "id": "cat_passive",
-      "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
-    },
-    {
-      "id": "cat_movement",
-      "say": "a pair of winged iron boot-spurs trailing a streak of pale motion, light and fast."
-    },
-    {
-      "id": "sk_strike",
-      "say": "a heavy notched iron broadsword tilted diagonally, point to the upper right, with a broad curved streak of pale cold light sweeping behind its blade like the trail of a swing, nothing holding it, NOT a moon, NOT crossed swords."
-    },
-    {
-      "id": "sk_fireball",
-      "say": "a fireball in flight: a round blazing sphere of orange and gold flame with a searing white-hot core, tongues of fire streaming off it into a pointed trailing tail of flame and sparks, NOT a bonfire, NOT a candle, NOT a torch, NOT an explosion."
-    },
-    {
-      "id": "sk_bolt",
-      "say": "a narrow lance of orange fire flying point-first, a hot bright head with a thin trailing tail."
-    },
-    {
-      "id": "sk_frost_bolt",
-      "say": "a jagged shard of pale blue ice flying point-first, sharp and cold with a frosted trailing tail."
-    },
-    {
-      "id": "sk_arc",
-      "say": "a forked bolt of yellow-white lightning splitting into two branches, hard angular zigzags."
-    },
-    {
-      "id": "sk_blight",
-      "say": "a ragged vertical curtain of thick glossy sickly-green slime hanging alone in empty space, long runnels sliding down it and fat drops breaking off its ragged bottom edge, glossy wet highlights on the goo, floating with nothing above it, nothing below it and nothing beside it."
-    },
-    {
-      "id": "sk_surge",
-      "say": "a clenched iron gauntlet fist wrapped in a bright amber flare, a blow that has just landed."
-    },
-    {
-      "id": "sk_blink",
-      "say": "a violet arcane rift torn open in the air, an oval slit of cold light with the edges peeling back."
-    },
-    {
-      "id": "sk_leap",
-      "say": "a curving green arrow arcing up and over, with a puff of dust under its start."
-    },
-    {
-      "id": "crys_normal_t1",
-      "say": "a single rough uncut shard of warm amber-gold crystal, glowing with warm golden light, dull and barely lit."
-    },
-    {
-      "id": "crys_normal_t2",
-      "say": "a cleanly cut gem of warm amber-gold crystal, glowing with warm golden light, simple facets, a soft steady inner glow."
-    },
-    {
-      "id": "crys_normal_t3",
-      "say": "a large brilliant-cut amber-gold crystal standing point-down, tall kite-shaped facets rising to a peak, warm light blazing in its core, NOT round, NOT a ring."
-    },
-    {
-      "id": "crys_normal_t4",
-      "say": "a magnificent crown-cluster of warm amber-gold crystal, glowing with warm golden light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
-    },
-    {
-      "id": "crys_demonic_t1",
-      "say": "a single rough uncut shard of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, dull and barely lit."
-    },
-    {
-      "id": "crys_demonic_t2",
-      "say": "a cleanly cut gem of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, simple facets, a soft steady inner glow."
-    },
-    {
-      "id": "crys_demonic_t3",
-      "say": "a large jagged crystal of near-black volcanic glass, deep venom-green fire blazing in its core and thin green veins across its faces, NOT blue, NOT moss, NOT a boulder."
-    },
-    {
-      "id": "crys_demonic_t4",
-      "say": "a magnificent crown-cluster of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
-    },
-    {
-      "id": "crys_prismatic_t1",
-      "say": "a single rough uncut shard of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, dull and barely lit."
-    },
-    {
-      "id": "crys_prismatic_t2",
-      "say": "a cleanly cut gem of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, simple facets, a soft steady inner glow."
-    },
-    {
-      "id": "crys_prismatic_t3",
-      "say": "a large brilliant-cut crystal of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, light blazing in its core."
-    },
-    {
-      "id": "crys_prismatic_t4",
-      "say": "a magnificent crown-cluster of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
-    },
-    {
-      "id": "gear_bulwark_helmet",
-      "say": "a heavy great-helm of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
-    },
-    {
-      "id": "gear_bulwark_body",
-      "say": "a cuirass chest-plate of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
-    },
-    {
-      "id": "gear_bulwark_gloves",
-      "say": "a PAIR of armoured gauntlets side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
-    },
-    {
-      "id": "gear_bulwark_boots",
-      "say": "a PAIR of armoured boots side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
-    },
-    {
-      "id": "gear_vanguard_helmet",
-      "say": "a heavy great-helm of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
-    },
-    {
-      "id": "gear_vanguard_body",
-      "say": "a cuirass chest-plate of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
-    },
-    {
-      "id": "gear_vanguard_gloves",
-      "say": "a PAIR of armoured gauntlets side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
-    },
-    {
-      "id": "gear_vanguard_boots",
-      "say": "a PAIR of armoured boots side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
-    },
-    {
-      "id": "gear_arcanist_helmet",
-      "say": "a deep pointed hood of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
-    },
-    {
-      "id": "gear_arcanist_body",
-      "say": "a sleeved robe of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
-    },
-    {
-      "id": "gear_arcanist_gloves",
-      "say": "a PAIR of cloth gloves side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
-    },
-    {
-      "id": "gear_arcanist_boots",
-      "say": "a PAIR of soft boots side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
-    },
-    {
-      "id": "gear_oracle_helmet",
-      "say": "a deep pointed hood of bone-white cloth with warm gold trim, a game inventory item."
-    },
-    {
-      "id": "gear_oracle_body",
-      "say": "a sleeved robe of bone-white cloth with warm gold trim, a game inventory item."
-    },
-    {
-      "id": "gear_oracle_gloves",
-      "say": "a PAIR of cloth gloves side by side, made of bone-white cloth with warm gold trim, a game inventory item."
-    },
-    {
-      "id": "gear_oracle_boots",
-      "say": "a PAIR of soft boots side by side, made of bone-white cloth with warm gold trim, a game inventory item."
-    },
-    {
-      "id": "gear_shadow_helmet",
-      "say": "a leather cap with cheek-guards, made of matte near-black leather with venom-green stitching, a game inventory item."
-    },
-    {
-      "id": "gear_shadow_body",
-      "say": "a laced jerkin of matte near-black leather with venom-green stitching, a game inventory item."
-    },
-    {
-      "id": "gear_shadow_gloves",
-      "say": "a PAIR of gloves side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
-    },
-    {
-      "id": "gear_shadow_boots",
-      "say": "a PAIR of boots side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
-    },
-    {
-      "id": "gear_skirmisher_helmet",
-      "say": "a leather cap with cheek-guards, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
-    },
-    {
-      "id": "gear_skirmisher_body",
-      "say": "a laced jerkin of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
-    },
-    {
-      "id": "gear_skirmisher_gloves",
-      "say": "a PAIR of gloves side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
-    },
-    {
-      "id": "gear_skirmisher_boots",
-      "say": "a PAIR of boots side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
-    },
-    {
-      "id": "gear_templar_helmet",
-      "say": "a heavy great-helm of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
-    },
-    {
-      "id": "gear_templar_body",
-      "say": "a cuirass chest-plate of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
-    },
-    {
-      "id": "gear_templar_gloves",
-      "say": "a PAIR of armoured gauntlets side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
-    },
-    {
-      "id": "gear_templar_boots",
-      "say": "a PAIR of armoured boots side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
-    },
-    {
-      "id": "gear_runeguard_helmet",
-      "say": "a heavy great-helm of grey steel etched with thin glowing gold runes, a game inventory item."
-    },
-    {
-      "id": "gear_runeguard_body",
-      "say": "a cuirass chest-plate of grey steel etched with thin glowing gold runes, a game inventory item."
-    },
-    {
-      "id": "gear_runeguard_gloves",
-      "say": "a PAIR of armoured gauntlets side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
-    },
-    {
-      "id": "gear_runeguard_boots",
-      "say": "a PAIR of armoured boots side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
-    },
-    {
-      "id": "gear_nightweave_helmet",
-      "say": "a deep pointed hood of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
-    },
-    {
-      "id": "gear_nightweave_body",
-      "say": "a sleeved robe of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
-    },
-    {
-      "id": "gear_nightweave_gloves",
-      "say": "a PAIR of cloth gloves side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
-    },
-    {
-      "id": "gear_nightweave_boots",
-      "say": "a PAIR of soft boots side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
-    },
-    {
-      "id": "gear_whisper_helmet",
-      "say": "a deep pointed hood of muted grey-blue cloth, plain and quiet, a game inventory item."
-    },
-    {
-      "id": "gear_whisper_body",
-      "say": "a sleeved robe of muted grey-blue cloth, plain and quiet, a game inventory item."
-    },
-    {
-      "id": "gear_whisper_gloves",
-      "say": "a PAIR of cloth gloves side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
-    },
-    {
-      "id": "gear_whisper_boots",
-      "say": "a PAIR of soft boots side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
-    },
-    {
-      "id": "gear_raider_helmet",
-      "say": "a leather cap with cheek-guards, made of rough brown hide bound with iron studs and cord, a game inventory item."
-    },
-    {
-      "id": "gear_raider_body",
-      "say": "a laced jerkin of rough brown hide bound with iron studs and cord, a game inventory item."
-    },
-    {
-      "id": "gear_raider_gloves",
-      "say": "a PAIR of gloves side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
-    },
-    {
-      "id": "gear_raider_boots",
-      "say": "a PAIR of boots side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
-    },
-    {
-      "id": "gear_duelist_helmet",
-      "say": "a leather cap with cheek-guards, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
-    },
-    {
-      "id": "gear_duelist_body",
-      "say": "a laced jerkin of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
-    },
-    {
-      "id": "gear_duelist_gloves",
-      "say": "a PAIR of gloves side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
-    },
-    {
-      "id": "gear_duelist_boots",
-      "say": "a PAIR of boots side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
-    },
-    {
-      "id": "gear_wand",
-      "say": "a slender carved dark-wood wand with a pale glowing crystal at its tip, held upright."
-    },
-    {
-      "id": "gear_sword",
-      "say": "a single straight double-edged steel longsword standing point up, plain crossguard, leather grip."
-    },
-    {
-      "id": "gear_dagger",
-      "say": "a slim double-edged dagger pointing down, wrapped grip, NOT a sword."
-    },
-    {
-      "id": "gear_mace",
-      "say": "a heavy flanged iron mace standing head up on a dark wooden haft."
-    },
-    {
-      "id": "gear_amulet",
-      "say": "a gold amulet: one faceted violet gem pendant hanging from a fine chain pooled beneath it."
-    },
-    {
-      "id": "gear_ring",
-      "say": "one thick gold ring set with a small cut red gem, seen at a slight angle, NOT a hoop of rope."
-    },
-    {
-      "id": "cur_gold",
-      "say": "a small neat stack of worn gold coins, two lying flat and three stacked, warm gold with deep amber shadows."
-    },
-    {
-      "id": "cur_shard_of_making",
-      "say": "a jagged shard of raw amber crystal held point-up, a bright seed of new light welling up inside it."
-    },
-    {
-      "id": "cur_shard_of_change",
-      "say": "a jagged shard of pale blue crystal with thin threads of light coiling around it in a spiral, mid-transformation."
-    },
-    {
-      "id": "cur_shard_of_chaos",
-      "say": "a jagged shard of violet crystal split into three drifting slivers that no longer line up, unstable and wrong."
-    },
-    {
-      "id": "cur_shard_of_unmaking",
-      "say": "a jagged shard of near-black crystal crumbling to grey ash at its tip, cold and hungry."
-    },
-    {
-      "id": "cur_essence_of_the_swarm",
-      "say": "a small stoppered glass phial crowded with many tiny glowing green motes swarming inside, corked with wax."
-    },
-    {
-      "id": "cur_essence_of_greed",
-      "say": "a small stoppered glass phial of heavy molten gold liquid with one bright coin-glint in it, corked with wax."
-    },
-    {
-      "id": "cur_sigil_of_finality",
-      "say": "a heavy cast-iron seal stamped with a closed eye rune, ringed in dull brass, absolute and final."
-    },
-    {
-      "id": "cur_sigil_of_upheaval",
-      "say": "a heavy cast-iron seal cracked clean through the middle, the two halves shifted out of line, dull brass ring broken."
-    },
-    {
-      "id": "flask_life",
-      "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep red liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
-    },
-    {
-      "id": "flask_mana",
-      "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep blue liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
-    },
-    {
-      "id": "wn_flame",
-      "say": "a teardrop-shaped blaze of orange and gold fire floating alone in empty space, searing white-hot at its middle, nothing under it and nothing holding it, NOT a torch, NOT a candle, NOT a stick, NOT a match."
-    },
-    {
-      "id": "wn_frost",
-      "say": "a six-pointed pale blue ice crystal snowflake, sharp and cold, NOT a star, NOT a flower."
-    },
-    {
-      "id": "wn_bolt",
-      "say": "a single jagged yellow-white lightning bolt, hard angular zigzag, NOT a sword, NOT an arrow."
-    },
-    {
-      "id": "wn_skull",
-      "say": "a small pale bone skull seen from the front, hollow dark eye sockets, NOT a face, NOT a mask."
-    },
-    {
-      "id": "wn_star",
-      "say": "a four-pointed gold starburst glint, bright centre and thin rays, NOT a snowflake, NOT a cross."
-    },
-    {
-      "id": "wn_droplet",
-      "say": "a single fat round drop of glowing deep blue liquid, wet highlight, NOT a flame, NOT a gem."
-    },
-    {
-      "id": "wn_heart",
-      "say": "a deep red heart, chunky and solid with one bright highlight, NOT an apple, NOT a gem."
-    },
-    {
-      "id": "wn_arrow",
-      "say": "a single iron-tipped wooden arrow pointing straight up with grey feather fletching, NOT a spear, NOT a sword."
-    },
-    {
-      "id": "wn_burst",
-      "say": "concentric expanding shockwave rings, a small bright centre with two thin circles around it, NOT a target, NOT an eye."
-    },
-    {
-      "id": "wn_wing",
-      "say": "a single pale feathered wing swept to one side, light and fast, NOT a bird, NOT a leaf."
-    },
-    {
-      "id": "wn_shield",
-      "say": "a small round iron shield with a bright brass boss in the middle, seen straight on, NOT a coin, NOT a wheel."
-    },
-    {
-      "id": "wn_hourglass",
-      "say": "a small wooden hourglass with pale sand falling inside the glass, NOT a bottle, NOT a lantern."
-    },
-    {
-      "id": "wn_orb",
-      "say": "a small violet arcane orb with a bright inner spark and a thin curl of light around it, NOT an eye, NOT a planet."
-    },
-    {
-      "id": "wn_sword",
-      "say": "a short straight iron sword pointing up with a simple brass crossguard and dark grip, NOT crossed swords, NOT a dagger in a hand."
-    },
-    {
-      "id": "wn_pebble",
-      "say": "a small rough grey stone pebble, plain and rounded with one chipped edge, NOT a gem, NOT a coin."
-    },
-    {
-      "id": "dbf_stun",
-      "say": "a single skull seen from the front with its jaw hanging open and THREE CURLED SPIRAL LINES orbiting above the crown of the head, the universal picture of being dazed. Pale bone against nothing."
-    },
-    {
-      "id": "dbf_mark",
-      "say": "a single angular RUNE like three scratched tally marks struck into bone, glowing hot violet at the edges as if freshly cut. Nothing else."
-    },
-    {
-      "id": "gear_bow",
-      "say": "a THICK recurve war bow standing upright and filling the whole frame, its two heavy limbs carved from warm lit honey-brown timber with brass caps at the tips, a BRIGHT pale taut bowstring running straight down between them, a dark bound leather grip at the middle, strongly lit against the dark, NOT thin, NOT a crescent moon, NOT a harp, NOT a lyre, NOT an arrow."
-    },
-    {
-      "id": "gear_shield",
-      "say": "a heavy kite shield seen straight on, dark timber face bound with riveted iron bands and a raised round steel boss at its centre, wide at the top and tapering to a point at the bottom, NOT a crest, NOT a coat of arms, NOT lettering."
-    },
-    {
-      "id": "sk_arc_lightning",
-      "say": "a jagged yellow-white lightning bolt splitting into three forked branches that leap sideways, hard angular zigzags with a searing white core, NOT a cloud, NOT a storm, NOT a sky."
-    },
-    {
-      "id": "sk_lightning_arrow",
-      "say": "a single arrow flying point-first, its shaft crackling with yellow-white lightning and forked sparks arcing off it, feathered fletching at the tail, NOT a bow, NOT a bolt of lightning on its own."
-    },
-    {
-      "id": "sk_shockwave",
-      "say": "a heavy blunt iron maul head driven down point-first, nothing holding it, with a broad flat ring of pale grey dust-light spreading outward low and wide beneath it, NOT a mountain, NOT a rock, NOT an arch, NOT a cliff, NOT a crystal, NOT a person."
-    },
-    {
-      "id": "sk_contagion",
-      "say": "a burst cloud of fine sickly-green spores blowing outward from a small dark ruptured husk at the centre, uneven specks spread apart with gaps between them, glossy wet green at the core fading to dry motes, NOT a plant, NOT a tree, NOT a flower, NOT a skull."
-    },
-    {
-      "id": "sk_bloodpact",
-      "say": "a squat iron chalice brimming with thick dark red blood, a heavy runnel spilling over one lip and beading down the outside, dull hammered metal with a cold rim highlight, NOT a wine glass, NOT a goblet with a long stem, NOT a potion bottle, NOT a cup of water."
-    },
-    {
-      "id": "sk_refraction",
-      "say": "a hard straight white beam of light entering a small clear glass block edge-on and leaving the far side as a spreading fan of separate hard-edged coloured bands, the beam and the bands filling most of the frame and the block small, NOT a triangle, NOT a pyramid, NOT a tent, NOT a rainbow arc, NOT a gemstone."
-    },
-    {
-      "id": "sk_unmaking",
-      "say": "a round metal ward-plate cracked straight through and buckling apart, orange fire licking out of the split with pale blue frost creeping over one half and yellow sparks jumping across the break, NOT a shield with a handle, NOT a coin, NOT a clock, NOT a face."
-    },
-    {
-      "id": "sk_unbinding",
-      "say": "a heavy iron chain link snapped open in the middle, its broken ends peeling apart with a cold violet glow bleeding out of the break and thin green vapour curling off it, NOT a whole chain, NOT a ring, NOT a horseshoe, NOT a handcuff."
-    },
-    {
-      "id": "sk_featherstep",
-      "say": "a single long pale grey feather standing upright with a smear of speed-blur streaking off its trailing edge, weightless and tilted, NOT a bird, NOT a wing, NOT a quill pen, NOT an arrow, NOT a leaf."
-    },
-    {
-      "id": "sk_sundering",
-      "say": "a ring of chunky grey stone shards flung outward in a circle, each shard a hard angular slab tipped on its edge, spread apart with gaps between them around a dark hollow crater at the middle, NOT dust, NOT snow, NOT a splash, NOT fire, NOT a flower, NOT a sun."
-    },
-    {
-      "id": "sk_rimespike",
-      "say": "a tight cluster of sharp pale blue ice spikes stabbing straight upward out of a cracked frozen patch of ground, the tallest in the middle, frost dust blowing off their points, NOT a snowflake, NOT an icicle hanging down, NOT a mountain, NOT a crystal gem."
-    },
-    {
-      "id": "sk_hoarfrost",
-      "say": "a tight flight of four narrow pale blue ice darts flying point-first in the same direction, hard faceted shards with thin frost trails behind them, NOT a snowflake, NOT an arrow, NOT a bird, NOT a single large icicle."
-    }
-  ]
+ "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
+ "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
+ "size": 64,
+ "grid": 48,
+ "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
+ "inks": [
+  "#0A0807",
+  "#151109",
+  "#221A10",
+  "#332618",
+  "#443322",
+  "#5A4530",
+  "#7A5C3C",
+  "#9C7A4E",
+  "#C2A06A",
+  "#E2C68E",
+  "#8A3A16",
+  "#C4631E",
+  "#E2871B",
+  "#F5C24A",
+  "#FFE9A8",
+  "#1E3A52",
+  "#2E6C93",
+  "#6FC2E0",
+  "#BFEFFF",
+  "#3A2352",
+  "#6B3FA0",
+  "#A97BE0",
+  "#243B22",
+  "#4F8A3A",
+  "#8FD654",
+  "#9AA3A8",
+  "#D6DDE0",
+  "#6E120E",
+  "#B0201A",
+  "#E84438"
+ ],
+ "icons": [
+  {
+   "id": "cat_attack",
+   "say": "a heavy notched iron blade crossed with a worn leather grip, seen straight on, cold steel and dark iron."
+  },
+  {
+   "id": "cat_spell",
+   "say": "a cracked violet crystal shard wreathed in a thin curl of arcane light, cold and glowing."
+  },
+  {
+   "id": "cat_passive",
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
+  },
+  {
+   "id": "cat_movement",
+   "say": "a pair of winged iron boot-spurs trailing a streak of pale motion, light and fast."
+  },
+  {
+   "id": "sk_strike",
+   "say": "a heavy notched iron broadsword tilted diagonally, point to the upper right, with a broad curved streak of pale cold light sweeping behind its blade like the trail of a swing, nothing holding it, NOT a moon, NOT crossed swords."
+  },
+  {
+   "id": "sk_fireball",
+   "say": "a fireball in flight: a round blazing sphere of orange and gold flame with a searing white-hot core, tongues of fire streaming off it into a pointed trailing tail of flame and sparks, NOT a bonfire, NOT a candle, NOT a torch, NOT an explosion."
+  },
+  {
+   "id": "sk_bolt",
+   "say": "a narrow lance of orange fire flying point-first, a hot bright head with a thin trailing tail."
+  },
+  {
+   "id": "sk_frost_bolt",
+   "say": "a jagged shard of pale blue ice flying point-first, sharp and cold with a frosted trailing tail."
+  },
+  {
+   "id": "sk_arc",
+   "say": "a forked bolt of yellow-white lightning splitting into two branches, hard angular zigzags."
+  },
+  {
+   "id": "sk_blight",
+   "say": "a ragged vertical curtain of thick glossy sickly-green slime hanging alone in empty space, long runnels sliding down it and fat drops breaking off its ragged bottom edge, glossy wet highlights on the goo, floating with nothing above it, nothing below it and nothing beside it."
+  },
+  {
+   "id": "sk_surge",
+   "say": "a clenched iron gauntlet fist wrapped in a bright amber flare, a blow that has just landed."
+  },
+  {
+   "id": "sk_blink",
+   "say": "a violet arcane rift torn open in the air, an oval slit of cold light with the edges peeling back."
+  },
+  {
+   "id": "sk_leap",
+   "say": "a curving green arrow arcing up and over, with a puff of dust under its start."
+  },
+  {
+   "id": "crys_normal_t1",
+   "say": "a single rough uncut shard of warm amber-gold crystal, glowing with warm golden light, dull and barely lit."
+  },
+  {
+   "id": "crys_normal_t2",
+   "say": "a cleanly cut gem of warm amber-gold crystal, glowing with warm golden light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_normal_t3",
+   "say": "a large brilliant-cut amber-gold crystal standing point-down, tall kite-shaped facets rising to a peak, warm light blazing in its core, NOT round, NOT a ring."
+  },
+  {
+   "id": "crys_normal_t4",
+   "say": "a magnificent crown-cluster of warm amber-gold crystal, glowing with warm golden light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "crys_demonic_t1",
+   "say": "a single rough uncut shard of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, dull and barely lit."
+  },
+  {
+   "id": "crys_demonic_t2",
+   "say": "a cleanly cut gem of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_demonic_t3",
+   "say": "a large jagged crystal of near-black volcanic glass, deep venom-green fire blazing in its core and thin green veins across its faces, NOT blue, NOT moss, NOT a boulder."
+  },
+  {
+   "id": "crys_demonic_t4",
+   "say": "a magnificent crown-cluster of jagged near-black crystal shot with veins of burning venom-green, glowing with sickly green light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "crys_prismatic_t1",
+   "say": "a single rough uncut shard of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, dull and barely lit."
+  },
+  {
+   "id": "crys_prismatic_t2",
+   "say": "a cleanly cut gem of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, simple facets, a soft steady inner glow."
+  },
+  {
+   "id": "crys_prismatic_t3",
+   "say": "a large brilliant-cut crystal of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light, light blazing in its core."
+  },
+  {
+   "id": "crys_prismatic_t4",
+   "say": "a magnificent crown-cluster of pale iridescent crystal flashing faint violet and blue hues, glowing with cold white light: tall faceted spires around a blazing core, two small shards floating beside it, radiant."
+  },
+  {
+   "id": "gear_bulwark_helmet",
+   "say": "a heavy great-helm of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_body",
+   "say": "a cuirass chest-plate of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_bulwark_boots",
+   "say": "a PAIR of armoured boots side by side, made of heavy polished steel plate, cold blue-grey, dark joints, unadorned, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_helmet",
+   "say": "a heavy great-helm of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_body",
+   "say": "a cuirass chest-plate of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_vanguard_boots",
+   "say": "a PAIR of armoured boots side by side, made of dark scorched steel plate with a glowing ember crest and heat-blued edges, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_helmet",
+   "say": "a deep pointed hood of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_body",
+   "say": "a sleeved robe of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_arcanist_boots",
+   "say": "a PAIR of soft boots side by side, made of deep violet woven cloth with pale glowing thread at the hems, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_helmet",
+   "say": "a deep pointed hood of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_body",
+   "say": "a sleeved robe of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_oracle_boots",
+   "say": "a PAIR of soft boots side by side, made of bone-white cloth with warm gold trim, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_helmet",
+   "say": "a leather cap with cheek-guards, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_body",
+   "say": "a laced jerkin of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_gloves",
+   "say": "a PAIR of gloves side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_shadow_boots",
+   "say": "a PAIR of boots side by side, made of matte near-black leather with venom-green stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_helmet",
+   "say": "a leather cap with cheek-guards, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_body",
+   "say": "a laced jerkin of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_gloves",
+   "say": "a PAIR of gloves side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_skirmisher_boots",
+   "say": "a PAIR of boots side by side, made of hard tan leather with dark iron buckles and ember-orange stitching, a game inventory item."
+  },
+  {
+   "id": "gear_templar_helmet",
+   "say": "a heavy great-helm of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_body",
+   "say": "a cuirass chest-plate of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_templar_boots",
+   "say": "a PAIR of armoured boots side by side, made of pale bright steel inlaid with a violet gem and gold filigree, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_helmet",
+   "say": "a heavy great-helm of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_body",
+   "say": "a cuirass chest-plate of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_gloves",
+   "say": "a PAIR of armoured gauntlets side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_runeguard_boots",
+   "say": "a PAIR of armoured boots side by side, made of grey steel etched with thin glowing gold runes, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_helmet",
+   "say": "a deep pointed hood of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_body",
+   "say": "a sleeved robe of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_nightweave_boots",
+   "say": "a PAIR of soft boots side by side, made of near-black midnight cloth with a sickly venom-green sheen and glowing green trim at the hems, NOT bright violet, NOT purple, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_helmet",
+   "say": "a deep pointed hood of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_body",
+   "say": "a sleeved robe of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_gloves",
+   "say": "a PAIR of cloth gloves side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_whisper_boots",
+   "say": "a PAIR of soft boots side by side, made of muted grey-blue cloth, plain and quiet, a game inventory item."
+  },
+  {
+   "id": "gear_raider_helmet",
+   "say": "a leather cap with cheek-guards, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_body",
+   "say": "a laced jerkin of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_gloves",
+   "say": "a PAIR of gloves side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_raider_boots",
+   "say": "a PAIR of boots side by side, made of rough brown hide bound with iron studs and cord, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_helmet",
+   "say": "a leather cap with cheek-guards, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_body",
+   "say": "a laced jerkin of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_gloves",
+   "say": "a PAIR of gloves side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_duelist_boots",
+   "say": "a PAIR of boots side by side, made of slate-grey supple leather with silver clasps and a green sash, a game inventory item."
+  },
+  {
+   "id": "gear_wand",
+   "say": "a single short wand held upright, a plain PALE bone-white rod with a dark bound grip at its base, the same thickness all the way up. NOT a crystal, NOT a gem, NOT a glowing tip, NOT a staff, NOT a sceptre, NOT carved, NOT ornate."
+  },
+  {
+   "id": "gear_sword",
+   "say": "a single straight double-edged steel longsword standing point up, plain crossguard, leather grip."
+  },
+  {
+   "id": "gear_dagger",
+   "say": "a slim double-edged dagger pointing down, wrapped grip, NOT a sword."
+  },
+  {
+   "id": "gear_mace",
+   "say": "a single one-handed club standing head up: a ROUND BALL of pitted grey iron, roughly spherical like a rock, fixed on the end of a short dark wooden haft. The head is ROUND and SOLID and THICK in every direction. NOT flanged, NOT flat, NOT a paddle, NOT a blade, NOT an axe, NOT a hammer with a flat face, NOT wide and thin."
+  },
+  {
+   "id": "gear_amulet",
+   "say": "a gold amulet: one faceted violet gem pendant hanging from a fine chain pooled beneath it."
+  },
+  {
+   "id": "gear_ring",
+   "say": "one thick gold ring set with a small cut red gem, seen at a slight angle, NOT a hoop of rope."
+  },
+  {
+   "id": "cur_gold",
+   "say": "a small neat stack of worn gold coins, two lying flat and three stacked, warm gold with deep amber shadows."
+  },
+  {
+   "id": "cur_shard_of_making",
+   "say": "a jagged shard of raw amber crystal held point-up, a bright seed of new light welling up inside it."
+  },
+  {
+   "id": "cur_shard_of_change",
+   "say": "a jagged shard of pale blue crystal with thin threads of light coiling around it in a spiral, mid-transformation."
+  },
+  {
+   "id": "cur_shard_of_chaos",
+   "say": "a jagged shard of violet crystal split into three drifting slivers that no longer line up, unstable and wrong."
+  },
+  {
+   "id": "cur_shard_of_unmaking",
+   "say": "a jagged shard of near-black crystal crumbling to grey ash at its tip, cold and hungry."
+  },
+  {
+   "id": "cur_essence_of_the_swarm",
+   "say": "a small stoppered glass phial crowded with many tiny glowing green motes swarming inside, corked with wax."
+  },
+  {
+   "id": "cur_essence_of_greed",
+   "say": "a small stoppered glass phial of heavy molten gold liquid with one bright coin-glint in it, corked with wax."
+  },
+  {
+   "id": "cur_sigil_of_finality",
+   "say": "a heavy cast-iron seal stamped with a closed eye rune, ringed in dull brass, absolute and final."
+  },
+  {
+   "id": "cur_sigil_of_upheaval",
+   "say": "a heavy cast-iron seal cracked clean through the middle, the two halves shifted out of line, dull brass ring broken."
+  },
+  {
+   "id": "flask_life",
+   "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep red liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
+  },
+  {
+   "id": "flask_mana",
+   "say": "a tall round-bellied glass flask with a narrow neck and a small cork stopper, filled nearly to the neck with glowing deep blue liquid, bright wet highlights on the dark glass, standing upright, NOT a wine bottle, NOT a jug, NOT a cauldron."
+  },
+  {
+   "id": "wn_flame",
+   "say": "a teardrop-shaped blaze of orange and gold fire floating alone in empty space, searing white-hot at its middle, nothing under it and nothing holding it, NOT a torch, NOT a candle, NOT a stick, NOT a match."
+  },
+  {
+   "id": "wn_frost",
+   "say": "a six-pointed pale blue ice crystal snowflake, sharp and cold, NOT a star, NOT a flower."
+  },
+  {
+   "id": "wn_bolt",
+   "say": "a single jagged yellow-white lightning bolt, hard angular zigzag, NOT a sword, NOT an arrow."
+  },
+  {
+   "id": "wn_skull",
+   "say": "a small pale bone skull seen from the front, hollow dark eye sockets, NOT a face, NOT a mask."
+  },
+  {
+   "id": "wn_star",
+   "say": "a four-pointed gold starburst glint, bright centre and thin rays, NOT a snowflake, NOT a cross."
+  },
+  {
+   "id": "wn_droplet",
+   "say": "a single fat round drop of glowing deep blue liquid, wet highlight, NOT a flame, NOT a gem."
+  },
+  {
+   "id": "wn_heart",
+   "say": "a deep red heart, chunky and solid with one bright highlight, NOT an apple, NOT a gem."
+  },
+  {
+   "id": "wn_arrow",
+   "say": "a single iron-tipped wooden arrow pointing straight up with grey feather fletching, NOT a spear, NOT a sword."
+  },
+  {
+   "id": "wn_burst",
+   "say": "concentric expanding shockwave rings, a small bright centre with two thin circles around it, NOT a target, NOT an eye."
+  },
+  {
+   "id": "wn_wing",
+   "say": "a single pale feathered wing swept to one side, light and fast, NOT a bird, NOT a leaf."
+  },
+  {
+   "id": "wn_shield",
+   "say": "a small round iron shield with a bright brass boss in the middle, seen straight on, NOT a coin, NOT a wheel."
+  },
+  {
+   "id": "wn_hourglass",
+   "say": "a small wooden hourglass with pale sand falling inside the glass, NOT a bottle, NOT a lantern."
+  },
+  {
+   "id": "wn_orb",
+   "say": "a small violet arcane orb with a bright inner spark and a thin curl of light around it, NOT an eye, NOT a planet."
+  },
+  {
+   "id": "wn_sword",
+   "say": "a short straight iron sword pointing up with a simple brass crossguard and dark grip, NOT crossed swords, NOT a dagger in a hand."
+  },
+  {
+   "id": "wn_pebble",
+   "say": "a small rough grey stone pebble, plain and rounded with one chipped edge, NOT a gem, NOT a coin."
+  },
+  {
+   "id": "dbf_stun",
+   "say": "a single skull seen from the front with its jaw hanging open and THREE CURLED SPIRAL LINES orbiting above the crown of the head, the universal picture of being dazed. Pale bone against nothing."
+  },
+  {
+   "id": "dbf_mark",
+   "say": "a single angular RUNE like three scratched tally marks struck into bone, glowing hot violet at the edges as if freshly cut. Nothing else."
+  },
+  {
+   "id": "gear_bow",
+   "say": "a THICK recurve war bow standing upright and filling the whole frame, its two heavy limbs carved from warm lit honey-brown timber with brass caps at the tips, a BRIGHT pale taut bowstring running straight down between them, a dark bound leather grip at the middle, strongly lit against the dark, NOT thin, NOT a crescent moon, NOT a harp, NOT a lyre, NOT an arrow."
+  },
+  {
+   "id": "gear_shield",
+   "say": "a ROUND shield seen straight on, a plain circular disc of dark timber bound with a pale iron rim all the way round and a raised pale iron boss at its centre. NOT a kite shield, NOT a tower shield, NOT rectangular, NOT oval, NOT tapering to a point, NOT a crest, NOT a coat of arms, NOT lettering."
+  },
+  {
+   "id": "sk_arc_lightning",
+   "say": "a jagged yellow-white lightning bolt splitting into three forked branches that leap sideways, hard angular zigzags with a searing white core, NOT a cloud, NOT a storm, NOT a sky."
+  },
+  {
+   "id": "sk_lightning_arrow",
+   "say": "a single arrow flying point-first, its shaft crackling with yellow-white lightning and forked sparks arcing off it, feathered fletching at the tail, NOT a bow, NOT a bolt of lightning on its own."
+  },
+  {
+   "id": "sk_shockwave",
+   "say": "a heavy blunt iron maul head driven down point-first, nothing holding it, with a broad flat ring of pale grey dust-light spreading outward low and wide beneath it, NOT a mountain, NOT a rock, NOT an arch, NOT a cliff, NOT a crystal, NOT a person."
+  },
+  {
+   "id": "sk_contagion",
+   "say": "a burst cloud of fine sickly-green spores blowing outward from a small dark ruptured husk at the centre, uneven specks spread apart with gaps between them, glossy wet green at the core fading to dry motes, NOT a plant, NOT a tree, NOT a flower, NOT a skull."
+  },
+  {
+   "id": "sk_bloodpact",
+   "say": "a squat iron chalice brimming with thick dark red blood, a heavy runnel spilling over one lip and beading down the outside, dull hammered metal with a cold rim highlight, NOT a wine glass, NOT a goblet with a long stem, NOT a potion bottle, NOT a cup of water."
+  },
+  {
+   "id": "sk_refraction",
+   "say": "a hard straight white beam of light entering a small clear glass block edge-on and leaving the far side as a spreading fan of separate hard-edged coloured bands, the beam and the bands filling most of the frame and the block small, NOT a triangle, NOT a pyramid, NOT a tent, NOT a rainbow arc, NOT a gemstone."
+  },
+  {
+   "id": "sk_unmaking",
+   "say": "a round metal ward-plate cracked straight through and buckling apart, orange fire licking out of the split with pale blue frost creeping over one half and yellow sparks jumping across the break, NOT a shield with a handle, NOT a coin, NOT a clock, NOT a face."
+  },
+  {
+   "id": "sk_unbinding",
+   "say": "a heavy iron chain link snapped open in the middle, its broken ends peeling apart with a cold violet glow bleeding out of the break and thin green vapour curling off it, NOT a whole chain, NOT a ring, NOT a horseshoe, NOT a handcuff."
+  },
+  {
+   "id": "sk_featherstep",
+   "say": "a single long pale grey feather standing upright with a smear of speed-blur streaking off its trailing edge, weightless and tilted, NOT a bird, NOT a wing, NOT a quill pen, NOT an arrow, NOT a leaf."
+  },
+  {
+   "id": "sk_sundering",
+   "say": "a ring of chunky grey stone shards flung outward in a circle, each shard a hard angular slab tipped on its edge, spread apart with gaps between them around a dark hollow crater at the middle, NOT dust, NOT snow, NOT a splash, NOT fire, NOT a flower, NOT a sun."
+  },
+  {
+   "id": "sk_rimespike",
+   "say": "a tight cluster of sharp pale blue ice spikes stabbing straight upward out of a cracked frozen patch of ground, the tallest in the middle, frost dust blowing off their points, NOT a snowflake, NOT an icicle hanging down, NOT a mountain, NOT a crystal gem."
+  },
+  {
+   "id": "sk_hoarfrost",
+   "say": "a tight flight of four narrow pale blue ice darts flying point-first in the same direction, hard faceted shards with thin frost trails behind them, NOT a snowflake, NOT an arrow, NOT a bird, NOT a single large icicle."
+  },
+  {
+   "id": "gear_sword2h",
+   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE — as wide across as a man's hand — running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
+  },
+  {
+   "id": "gear_mace2h",
+   "say": "a single huge two-handed maul standing head up, a great roughly CUBIC block of pitted grey iron on a long dark wooden haft, the block far bigger than the haft is thick. NOT flat, NOT a paddle, NOT a blade, NOT an axe, NOT a round ball, NOT a pickaxe."
+  },
+  {
+   "id": "gear_staff",
+   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole — as thick as a man's wrist — the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
+  }
+ ]
 }
