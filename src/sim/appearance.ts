@@ -22,7 +22,7 @@ const HOLDING: Record<string, string> = {
 /** What BOTH hands hold, falling back to the hand that WAS drawn. A PAIR IS
  *  ORDERLESS — which hand you filled is a stats question, so the two sort into
  *  `HOLDING`'s order, where a shield is last and `sword_shield` reads forwards. */
-function variants(character: Character): string[] {
+export function variants(character: Character): string[] {
   const main = HOLDING[heldFor(character, WEAPON_SLOT) ?? ''];
   const off = HOLDING[heldFor(character, OFF_SLOT) ?? ''];
   if (!main || !off) return [main || off].filter(Boolean);

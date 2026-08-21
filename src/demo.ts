@@ -92,7 +92,7 @@ import {
   EQUIP_SLOTS,
   OFF_SLOT,
 } from './data';
-import { heroSpriteFor } from './sim/appearance';
+import { variants } from './sim/appearance';
 import {
   balance,
   grant,
@@ -3636,12 +3636,15 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
     'and the sheet says what a run of alternating swings comes to, not their average',
     `${stats.attacksPerSecond.toFixed(4)} against ${over.toFixed(4)}`
   );
-  // A pair is ORDERLESS in art and ORDERED in stats.
+  // A pair is ORDERLESS in art and ORDERED in stats. Asked of the KEY rather
+  // than of the resolved sprite: with no pair drawn yet both fall back to the
+  // same single-weapon body and the question answers itself.
   const swapped = held('cudgel', 'shiv');
+  const key = (c: Character) => variants(c)[0];
   check(
-    heroSpriteFor(pair) === heroSpriteFor(swapped),
-    'a pair is drawn by ONE picture whichever hand you filled',
-    `${heroSpriteFor(pair)} against ${heroSpriteFor(swapped)}`
+    key(pair) === key(swapped) && key(pair) === 'dagger_mace',
+    'a pair asks for ONE picture whichever hand you filled',
+    `${key(pair)} against ${key(swapped)}`
   );
   check(
     Math.abs(swing(pair) - swing(swapped)) > 1e-6,
