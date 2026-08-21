@@ -3357,6 +3357,7 @@ export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
   { id: 'potion_life', what: 'Drink the Flask of Blood', key: '4' },
   { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '5' },
+  { id: 'fissure', what: 'Look into the crack, and go down it', key: 'g' },
   { id: 'inventory', what: 'Open what you are carrying', key: 'i' },
   { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },

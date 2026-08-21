@@ -1795,6 +1795,7 @@
       <button class="railbtn railbtn--dev" id="open-dev">Dev menu</button>
     </div>
     <div class="rail__row rail__row--main">
+      <button class="railbtn" id="open-fissure" data-key="fissure">The Fissure</button>
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
       <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
       <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
@@ -1821,36 +1822,6 @@
 
   <div class="viewport">
   <div id="view-run">
-    <div id="run-menu">
-      <!-- Everybody you have met, and a way back to them. -->
-      <div class="folkcard" id="run-folk" hidden></div>
-      <!-- One place, always open. A crystal doesn't take you somewhere else,
-           it empowers what's already down there — so the socket is optional
-           and Enter is never disabled. Nothing else is on this screen: what a
-           character IS lives on the sheet, one key away, and putting it here
-           too made the one decision the screen exists for share the room. -->
-      <div class="panel fissurecard">
-        <p class="panel__title">The Fissure</p>
-        <p class="fissure">A thin place in the rock. Always open, always free.</p>
-
-        <div class="sockets" id="run-sockets"></div>
-        <div id="run-selected"></div>
-
-        <div class="runbar runbar--go">
-          <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
-        </div>
-        <div class="runbar runbar--go">
-          <button class="mini" id="run-camp">Step outside</button>
-        </div>
-        <p class="runblocked" id="run-blocked"></p>
-        <p class="runsrc">
-          Clear it all, then something waits at the exit.
-          A socketed crystal stays socketed, and a cleared descent starts the
-          next one until you die or your bags fill.
-        </p>
-      </div>
-    </div>
-
     <div id="run-stagewrap" hidden>
     <div class="runbar">
       <button class="mini" id="run-leave">Leave after this run</button>
@@ -2107,6 +2078,42 @@
       <div class="panel">
         <h3 class="panel__title">What is earned</h3>
         <div class="quests" id="crystals-quests"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE CRACK, opened by clicking it in the camp. One place, always open: a
+     crystal doesn't take you somewhere else, it empowers what's already down
+     there, so the socket is optional and Enter is never disabled. A WINDOW and
+     not a page — the camp is the ground the game stands on, and this is what
+     you walk up to the rock and look into. -->
+<div class="modal" id="run-menu" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">The Fissure</h2>
+      <div class="seedbar">
+        <button class="mini" id="run-menu-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <!-- Everybody you have met, and a way back to them. -->
+      <div class="folkcard" id="run-folk" hidden></div>
+      <div class="panel fissurecard">
+        <p class="fissure">A thin place in the rock. Always open, always free.</p>
+
+        <div class="sockets" id="run-sockets"></div>
+        <div id="run-selected"></div>
+
+        <div class="runbar runbar--go">
+          <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
+        </div>
+        <p class="runblocked" id="run-blocked"></p>
+        <p class="runsrc">
+          Clear it all, then something waits at the exit.
+          A socketed crystal stays socketed, and a cleared descent starts the
+          next one until you die or your bags fill.
+        </p>
       </div>
     </div>
   </div>

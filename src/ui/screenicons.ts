@@ -7,6 +7,19 @@
  * cell — these sit in buttons, and `CELL` does not bind them.
  */
 const ICONS: Record<string, string[]> = {
+  // The crack: a slab of rock with the light coming up through a split in it.
+  'open-fissure': [
+    '..........',
+    '.########.',
+    '.##+#####.',
+    '.##++####.',
+    '.###+####.',
+    '.###++###.',
+    '.####+###.',
+    '.###++###.',
+    '.########.',
+    '..........',
+  ],
   'open-inventory': [
     '..........',
     '..#....#..',

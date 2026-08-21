@@ -80,8 +80,17 @@ with it.
   descent. That is why `shots` is five minutes rather than two.
 - **The report is easily shot as a second picture of the dock** — a descent that
   found anything opens the dock ON TOP of it. Close it first.
-- **Pointer DRAG tests flake.** A reorder has been seen to fail once on a bundle
-  that passed either side of it. Re-run before treating one as a regression.
+- **Pointer DRAG tests flake, and the CAMP made it much worse before `nudge` and
+  `dropOn` were written.** The page is never idle now — a live map sits behind
+  every screen — so a synthetic `mouse.move` is coalesced away under the frame
+  loop, and a press that has stood still for `HOLD_MS` (450ms) is not a drag any
+  more: the LONG PRESS has already answered it, shown the item menu and called
+  `teardown()`. So a burst of moves goes out with no `evaluate` inside it, a miss
+  RETRIES THE WHOLE PRESS rather than nudging again, and the release waits for
+  `.slot--over` to say the drop would land where it is aimed — and the CLICK
+  after the drag is tried three times for the same reason. It went from 3 in 5
+  red to 12 clean runs. **Re-run before treating one as a regression**, and if it
+  is red twice running, it is real.
 - **Measure a box with `hover()` first when a drag test aims at one.**
   Playwright's actionability waits for the element to stop MOVING; a raw
   `boundingBox()` does not. The bench going from empty to full re-centres the

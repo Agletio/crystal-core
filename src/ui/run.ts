@@ -47,7 +47,7 @@ import { bossBeaten, folkMet, gaveKey, sceneWaiting, takeBoss, takeMet } from '.
 import { takeTrials } from '../game/trials';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
-import { CAMP, CAMP_FIXTURES, CAMP_SPOTS } from '../scenes/camp';
+import { CAMP, CAMP_FIXTURES, CAMP_SOCKETS, CAMP_SPOTS } from '../scenes/camp';
 import type { Fixture } from '../scenes/camp';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -167,7 +167,9 @@ function setPhase(next: Phase): void {
   // A room is a fraction of a descent's size, so the scale that frames one
   // leaves the other a postage stamp in the middle of the screen.
   if (was !== next) fitCanvas();
-  $('run-menu').hidden = next !== 'menu';
+  // The crack is a window and closes when you go down it: a card offering the
+  // way in, over a descent already under way, is a way in twice.
+  if (next !== 'scene') closeFissure();
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
   syncViewportLock();
@@ -198,12 +200,7 @@ export function sceneEnded(): void {
   // behind him, so this is the way back out of somebody's room.
   if (visiting) {
     visiting = false;
-    greeting = null;
-    greeted = null;
-    greetedState = null;
-    sim = null;
-    setPhase('menu');
-    refreshRunPanels();
+    goHome();
     renderInventory();
     return;
   }
@@ -263,6 +260,19 @@ function runHandler() {
  *  a bench is a worse game than walking up to it. */
 const FIXTURE_REACH = 1.4;
 
+/** EVERYTHING you can click in the camp. A PERSON is a fixture whose `opens`
+ *  is their own room, so walking up to one is the path walking up to the bench is. */
+function campFixtures(): Fixture[] {
+  const folk = folkMet(game).map((who, i) => ({
+    id: who.who,
+    at: CAMP_SPOTS[i % CAMP_SPOTS.length],
+    opens: 'room' as const,
+    room: who.id,
+    says: `${who.name}. ${who.said}`,
+  }));
+  return [...CAMP_FIXTURES, ...folk];
+}
+
 /** The fixture under a pointer, or null. Measured in TILES through the
  *  renderer's own `screenAt`, so it is right at every zoom and pan. */
 function fixtureAt(event: PointerEvent): Fixture | null {
@@ -272,7 +282,7 @@ function fixtureAt(event: PointerEvent): Fixture | null {
   const y = event.clientY - box.top;
   let best: Fixture | null = null;
   let closest = Infinity;
-  for (const fix of CAMP_FIXTURES) {
+  for (const fix of campFixtures()) {
     const at = renderer.screenAt({ x: fix.at.x + 0.5, y: fix.at.y + 0.5 });
     const one = renderer.screenAt({ x: fix.at.x + 1.5, y: fix.at.y + 0.5 });
     const tile = Math.max(1, Math.abs(one.x - at.x));
@@ -290,19 +300,20 @@ function hintFixture(fix: Fixture, event: PointerEvent): void {
   showTooltip(fix.says, event.clientX, event.clientY);
 }
 
+/** WALK TO IT FIRST: the difference between a place and a menu with grass on it. */
+let strolling: { to: Vec2; then: () => void } | null = null;
+
 function fixtureClick(event: PointerEvent): void {
   const fix = fixtureAt(event);
   if (!fix) return;
   hideTooltip();
-  OPENS[fix.opens]();
+  const open = fix.opens === 'room' ? () => enterRoomNow(fix.room ?? '') : OPENS[fix.opens];
+  strolling = { to: fix.at, then: open };
 }
 
 /** What a fixture IS, in one place: `camp.ts` names a screen and never calls one. */
-const OPENS: Record<Fixture['opens'], () => void> = {
-  fissure: () => {
-    sceneEnded();
-    $('run-launch')?.scrollIntoView({ block: 'center' });
-  },
+const OPENS: Record<Exclude<Fixture['opens'], 'room'>, () => void> = {
+  fissure: () => openFissure(),
   craft: () => openCraft(),
   stash: () => openStash(),
   shop: () => openShop(),
@@ -310,13 +321,36 @@ const OPENS: Record<Fixture['opens'], () => void> = {
   character: () => openCharacter(),
 };
 
+/** THE CRACK, as a window rather than a page. `initWindows` watches `hidden`,
+ *  so opening it is what raises it. */
+export function openFissure(): void {
+  renderMenu();
+  $('run-menu').hidden = false;
+}
+export function closeFissure(): void {
+  $('run-menu').hidden = true;
+}
+export const isFissureOpen = (): boolean => !$('run-menu').hidden;
+
+/** Which socket art goes on the wall: a set you are running is visible from
+ *  across the camp, so a full socket is drawn full. */
+function socketDressing(): { id: string; x: number; y: number }[] {
+  return CAMP_SOCKETS.map((at, i) => ({
+    id: game.sockets[RUN_SLOTS[i]?.id ?? ''] ? 'camp_socket_lit' : 'camp_socket',
+    x: at.x,
+    y: at.y,
+  }));
+}
+
 /**
- * INTO THE CAMP. Everybody you have met is standing about in it, in the order
- * you met them, and the hero stands where he arrived — nobody crosses to
- * anybody, which is what `place` means.
+ * HOME. The camp is the ground the game stands on — every way out of a descent,
+ * a room or a wipe comes back to it, and `menu` is the half-tick in between.
+ * Everybody you have met is standing about in it, in the order you met them,
+ * and nobody crosses to anybody: that is what `place` means.
  */
-export function openCamp(): boolean {
-  if (phase !== 'menu') return false;
+export function goHome(): boolean {
+  sim = null;
+  setPhase('menu');
   seed = Math.floor(Math.random() * 1e9);
   greeted = null;
   greetedState = null;
@@ -324,15 +358,20 @@ export function openCamp(): boolean {
   banked = null;
   pending = null;
   arriving = null;
+  strolling = null;
   handover = 0;
   leaving = false;
   descending = false;
   streak = 0;
-  enterScene(CAMP, folkMet(game).map((who, i) => ({
-    sprite: who.who,
-    at: CAMP_SPOTS[i % CAMP_SPOTS.length],
-  })));
-  visiting = true;
+  refreshRunPanels();
+  enterScene(
+    CAMP,
+    folkMet(game).map((who, i) => ({
+      sprite: who.who,
+      at: CAMP_SPOTS[i % CAMP_SPOTS.length],
+    })),
+    socketDressing()
+  );
   setLeaveLabel();
   return true;
 }
@@ -751,7 +790,11 @@ export function openOpening(): boolean {
   return true;
 }
 
-function enterScene(def: SceneDef, crowd: { sprite: string; at: Vec2 }[] = []): void {
+function enterScene(
+  def: SceneDef,
+  crowd: { sprite: string; at: Vec2 }[] = [],
+  dressing: { id: string; x: number; y: number }[] = []
+): void {
   visiting = false;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
@@ -764,7 +807,7 @@ function enterScene(def: SceneDef, crowd: { sprite: string; at: Vec2 }[] = []): 
   spoke = false;
   arrival = 0;
   banked = null;
-  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id, crowd });
+  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id, crowd, dressing });
   playing = false;
   accumulator = 0;
   note(def.said, 'add');
@@ -1104,13 +1147,9 @@ function renderResults(report: RunReport, run: RunState): void {
     );
   }
 
-  const again = el('button', 'mini', 'Back to the Fissure') as HTMLButtonElement;
+  const again = el('button', 'mini', 'Back to camp') as HTMLButtonElement;
   again.id = 'run-again';
-  again.onclick = () => {
-    sim = null;
-    setPhase('menu');
-    renderMenu();
-  };
+  again.onclick = () => goHome();
   card.append(again);
 
   host.append(card);
@@ -1158,7 +1197,13 @@ function frame(now: number): void {
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
       if (descending) sim.walkDown(TICK);
-      else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
+      else if (strolling) {
+        if (!sim.strollTo(strolling.to, TICK)) {
+          const open = strolling.then;
+          strolling = null;
+          open();
+        }
+      } else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
       // Nobody crosses to anybody in a PLACE: you stand in it and look about.
       else if (!SCENE_BY_ID[arrivedIn]?.place) sim.walkOut(TICK);
       accumulator -= TICK;
@@ -1330,9 +1375,7 @@ export function initRun(state: GameState): void {
   renderer = createCanvasRenderer(stage, palette);
   void upgradeRenderer(stage, palette);
 
-  ($('run-camp') as HTMLButtonElement).onclick = () => {
-    openCamp();
-  };
+  ($('run-menu-close') as HTMLButtonElement).onclick = () => closeFissure();
 
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (bagsFull(game)) return;
@@ -1501,6 +1544,7 @@ export function enterRoomNow(id: string): boolean {
   // Not the stair behind the Lampwright: a room you walked to is not the
   // opening, and `walkDown` would launch a descent out from under you.
   descending = false;
+  strolling = null;
   enterScene(def);
   visiting = true;
   setLeaveLabel();

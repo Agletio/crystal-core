@@ -269,7 +269,7 @@ export const SOLID_PROPS = new Set([
  *  a ring of teeth, a shaft broken through crystal. The Seam takes the
  *  Cavern's, being the half of it that is not the Rot. */
 export const MOUTH_ART: Record<string, string> = {
-  camp: 'mouth_stair', // the crack, and the one you arrive OUT of
+  camp: 'camp_crack', // the split in the rock, and the one you arrive OUT of
   fissure: 'mouth_stair',
   demonic: 'mouth_maw',
   prismatic: 'mouth_facet',

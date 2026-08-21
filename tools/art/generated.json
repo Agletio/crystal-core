@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -2001,6 +2001,43 @@
    "tiles": 2,
    "tone": 0.3,
    "dull": 0.25
+  },
+  {
+   "id": "camp_tent",
+   "object": "5c41e2f4-16fb-41df-bd02-b358be6c6b1a",
+   "tiles": 2.4,
+   "tone": 0.86,
+   "dull": 0.5
+  },
+  {
+   "id": "camp_fire",
+   "object": "61741fa0-2df8-4420-bc70-6a38ef2b5be6",
+   "tiles": 1.4,
+   "tone": 0,
+   "dull": 0.05
+  },
+  {
+   "id": "camp_gear",
+   "object": "75db3ba3-a47a-40bc-bbec-47c6868e961e",
+   "tiles": 1.5,
+   "tone": 0.86,
+   "dull": 0.5
+  },
+  {
+   "id": "camp_socket",
+   "object": "3e642e79-07be-4d89-b435-10a239debf05",
+   "tiles": 1
+  },
+  {
+   "id": "camp_socket_lit",
+   "object": "9de8220c-bb0a-4a2f-8267-6086880d03f3",
+   "tiles": 1
+  },
+  {
+   "id": "camp_crack",
+   "object": "082328ea-c3ec-473d-9ba4-0f3ac77c65b2",
+   "tiles": 2,
+   "tone": 0
   }
  ]
 }

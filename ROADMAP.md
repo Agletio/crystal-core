@@ -6,12 +6,11 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**THREE PHASES ARE WAITING**: the rest of the user's camp, an AoE arm for
-Rimespike, and dual wielding — the largest art phase this game has had, which
-carries an open question of its own. **Take Phase 1.** The weapon soft-lock, the
-two wrong weapon bodies, the walls, the kiting, the people you have met, the
-camp's first half and what the sheet says about an ailment all came first and
-landed.
+**TWO PHASES ARE WAITING**: an AoE arm for Rimespike, and dual wielding — the
+largest art phase this game has had, which carries an open question of its own.
+**Take Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls,
+the kiting, the people you have met, what the sheet says about an ailment and
+the WHOLE of the camp all came first and landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -19,7 +18,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 4 (a quest log) stays parked by his word until the
+what it found is below. Phase 3 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -84,6 +83,7 @@ to look:
 | KITING IS GONE | tried as a passive, then as the SKILL's, then removed entirely — *"kiting is too op. I think remove it entirely for now"*. A build stands in it, ranged and melee alike. It comes back as a passive that pays for it, in Open questions |
 | a trade is taken up ONCE | the user's call: the one hard lock in a game that refunds everything else. What gold buys back instead is every ATTRIBUTE point, `respecCost` — the one allocation no click undoes |
 | the CAMP | `src/scenes/camp.ts` — a grassy shelf under its own generated tileset, the crack you came up out of, props you CLICK, and everybody you have met standing about. A `SceneDef` with `place: true`, not a fifth phase |
+| the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Four generated sockets on the wall face, a tent, a fire, a heap of kit; a PERSON is a fixture like the bench, and he WALKS to whatever you clicked before the screen opens |
 | NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
@@ -421,73 +421,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — The camp: the home screen becomes a PLACE
-
-**The user's ask, in full, because the shape is all his:** *"I think the home
-screen should be more like an actual hideout in path of exile. Where you see your
-character in an area, you can click on objects in the area to interact rather
-than menu items. I mean still keep a lot of the menu but im thinking just like
-the hideout is a small camp you've made around the entrace to this cave like the
-title screen. You click on the crack in the wall and a fancy menu pops up with
-the crystal sockets and lets you enter... Around the camp you can have like a
-crafting bench you can click on to craft, when you find the characters like
-golenmancer they can start being in your camp so you can talk to them whenever...
-use the title screen as inspiration a grassy field, with a rock wall that have a
-glowing crack in it, and visiable sockets on the wall to put crystals in. Then a
-crafting bench and spots for the characters, maybe like a tent or just make it
-look lived in."*
-
-**HALF OF IT HAS LANDED, and the decision it turned on is written down.** The
-camp is a `SceneDef` (`src/scenes/camp.ts`) and not a fifth phase: a scene gets
-the walk, the camera, both renderers, `sceneMap`'s carve and the prop table for
-nothing, where a phase of its own was a blank canvas owing all five. What it
-cost is the `place` flag — a scene is otherwise somebody's ROOM, and three
-things read `SCENES` expecting that.
-
-What stands today: a grassy field carved by `sceneMap` under its own generated
-tileset (`camp_round`, retoned off the lime it came back as), a rock wall along
-the north with the crack in it, and the hero arriving out of that crack because
-it is the map's own `entrance`. The bench and the shelf are props you CLICK —
-`Fixture` names a screen and `src/ui/run.ts` maps the name onto the panel — the
-crack opens the Fissure, hover says what a thing is, and everybody in `folkMet`
-is standing about in it. `Step outside` on the Fissure card is the way in.
-
-**What is LEFT, and it is the half that makes it home:**
-
-- [ ] **The camp is what the game OPENS on.** Today it is a button on the
-      Fissure card, which is the wrong way round: the ask is a hideout you leave
-      to go down, not a screen you visit. `setPhase('menu')` is where this
-      lands, and every harness that waits for `#run-menu` is what it costs.
-- [ ] **Sockets on the wall, and a tent.** *"visiable sockets on the wall to put
-      crystals in... maybe like a tent or just make it look lived in."* Both are
-      generated props — load the `art` skill, `create_map_object`, and note that
-      every existing prop is toned to pale sand where this ground is green.
-- [ ] **A person you click is a person you talk to.** The four of them stand in
-      it and do nothing; clicking one should be what the `run-visit-*` buttons
-      are. The `Fixture` seam already takes a name — a person is a fixture whose
-      `opens` is their room.
-- [ ] **The rail stays.** *"still keep a lot of the menu"* — a screen reachable
-      only by finding a picture is a screen somebody will lose.
-- [ ] **Walk to what you clicked.** He stands still and the panel opens over
-      him; walking there first is the difference between a place and a menu with
-      grass on it. `advance` already does it.
-- [ ] **A new screen is a new shot**, and this one is the screen the game opens
-      on.
-
-**Traps.** The title screen is a still PICTURE, not a map — do not try to walk on
-it. `livingDecals` stand down on a `bare` map. **Nothing teaches**: a prop with a
-label floating over it is a hint bar in a new coat; hover may carry meaning
-because this is a desktop game.
-
-**Done when.** The game OPENS on the camp, the crack launches a descent, the
-bench crafts, and anyone you have met is standing in it and can be talked to.
-
-**What must not break.** All of it: `shots` most of all, and `smoke`, which
-clicks its way from the title into a descent through this screen.
-
----
-
-## Phase 2 — Rimespike gets a way to clear a room
+## Phase 1 — Rimespike gets a way to clear a room
 
 **The user, watching it:** *"I also want to remove the branch for rimespike
 thats about damage near/far starts with a node called from below. I want to give
@@ -553,7 +487,7 @@ the balance gauges), `mods`, `shots` (the skill web).
 
 ---
 
-## Phase 3 — Dual wielding
+## Phase 2 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -616,7 +550,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 4 — A quest log instead of a pointing finger
+## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

@@ -136,10 +136,13 @@ const AT_EXIT = 0.5;
 
 /** How far a pacing body walks from where it was standing, and back. */
 const PACE_STEP = 2;
+
 /** How close you get before the one who lurks comes out at you. */
 const LURK_RANGE = 4;
 /** A share of descent speed, for crossing a room you are meant to look at. */
 const SCENE_WALK = 0.4;
+/** Near enough a thing you walked up to. A picture with a foot, not a tile. */
+const STROLL_NEAR = 1.3;
 
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
@@ -329,6 +332,8 @@ export interface RunOptions {
   scene?: string;
   /** Who else is standing about. The GAME's business, not the scene table's. */
   crowd?: { sprite: string; at: Vec2 }[];
+  /** Props the GAME decides on top of the scene's own: full or empty sockets. */
+  dressing?: { id: string; x: number; y: number }[];
 }
 
 /** A thing that is true for a while. `id` names a `PotionDef` for now. */
@@ -517,10 +522,13 @@ export class RunSim {
     this.wellChance = percentStat(this.set.mods, 'wellChance');
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
+    const dressed = def && options.dressing?.length
+      ? { ...def, plan: { ...def.plan, props: [...def.plan.props, ...options.dressing] } }
+      : def;
     // Sockets are the only thing that lengthens a descent: an empty Fissure is
-    // index zero of the same table rather than a special case beside it.
-    const map = def
-      ? sceneMap(def.plan, def.theme, Math.max(1, Math.round(this.set.power)))
+    // index zero of the same table, not a special case beside it.
+    const map = dressed
+      ? sceneMap(dressed.plan, dressed.theme, Math.max(1, Math.round(this.set.power)))
       : generateMap(
           this.set.mods,
           rng,
@@ -541,8 +549,9 @@ export class RunSim {
       offhand: pinnedFor(character, 'offhand'),
       scale: HERO_SCALE,
       rank: 'common',
-      x: map.entrance.x,
-      y: map.entrance.y,
+      // A PLACE is stood IN: the crack is in the rock, and no room to stand.
+      x: dressed?.place ? dressed.plan.stands.x : map.entrance.x,
+      y: dressed?.place ? dressed.plan.stands.y : map.entrance.y,
       facing: 0,
       action: 'idle',
       radius: HERO_BASE.radius,
@@ -1405,9 +1414,8 @@ export class RunSim {
     }
   }
 
-  /** The mirror of `walkOut`: away from whoever you just met and down the way
-   *  on, which in a scene is the tile you came in by. `leaving` is true once he
-   *  stands on it, and the loop reads that as the next descent starting. */
+  /** The mirror of `walkOut`: down the way on, which in a scene is the tile you
+   *  came in by. `leaving` is true once he stands on it: the next descent. */
   walkDown(dt: number): void {
     const s = this.state;
     if (s.leaving) return;
@@ -1418,6 +1426,21 @@ export class RunSim {
     s.hero.path = [];
     this.settleAction(s.hero, false);
     s.leaving = true;
+  }
+
+  /** WALK TO WHAT YOU CLICKED. False once near enough, which opens the screen. */
+  strollTo(goal: Vec2, dt: number): boolean {
+    const s = this.state;
+    if (dist(s.hero, goal as Entity) <= STROLL_NEAR) {
+      s.hero.path = [];
+      this.settleAction(s.hero, false);
+      return false;
+    }
+    if (this.advance(s.hero, goal as Entity, dt, SCENE_WALK)) return true;
+    // Boxed in: a walk that cannot finish still opens what it set out for.
+    s.hero.path = [];
+    this.settleAction(s.hero, false);
+    return false;
   }
 
   walkOut(dt: number): void {

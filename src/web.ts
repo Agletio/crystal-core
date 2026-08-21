@@ -40,6 +40,10 @@ import {
   skipToGift,
   refreshRunPanels,
   forgetRun,
+  goHome,
+  openFissure,
+  closeFissure,
+  isFissureOpen,
   openOpening,
   enterRoomNow,
 } from './ui/run';
@@ -108,6 +112,7 @@ function restart(mode: StartMode): void {
   clearHistory();
   note(mode === 'fresh' ? 'New game — nothing but the Fissure.' : 'Dev kit granted.');
   refreshRunPanels();
+  goHome();
   // Same rule as booting: a stocked game has something to spend, a fresh one
   // has a map to run.
   if (mode === 'dev') openCraft();
@@ -133,9 +138,11 @@ function makeCharacter(): void {
 function begin(): void {
   refreshRunPanels();
   if (openOpening()) return;
+  goHome();
   onRunFocused();
 }
 
+document.getElementById('open-fissure')!.addEventListener('click', openFissure);
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
 document.getElementById('open-shop')!.addEventListener('click', openShop);
 document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
@@ -208,6 +215,7 @@ initSaveData(
     if (said) note(said);
     syncParkedPanels();
     refreshRunPanels();
+    goHome();
     onRunFocused();
     makeCharacter();
   },
@@ -332,6 +340,7 @@ const SCREENS: Record<
   { el: string; open: () => void; close: () => void; isOpen: () => boolean }
 > = {
   inventory: { el: 'dock', open: openInventory, close: closeInventory, isOpen: isInventoryOpen },
+  fissure: { el: 'run-menu', open: openFissure, close: closeFissure, isOpen: isFissureOpen },
   character: {
     el: 'sheet',
     open: () => openCharacter(),
@@ -366,10 +375,12 @@ initKeys(game, {
 
 dressRail(game);
 
+// THE CAMP IS HOME, and boot always lands in it: a hideout you leave to go
+// down, rather than a screen you visit. Opening a screen over it belongs to
+// the dev kit's stocked start.
+goHome();
 onRunFocused();
 
-// The Fissure is home, and boot always lands there. Opening a screen over it
-// belongs to the dev kit's stocked start.
 initWelcome(game, begin);
 initPick(game, maybeShowWelcome); // the trade, and then the name and the skill
 

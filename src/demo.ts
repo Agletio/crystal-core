@@ -111,6 +111,7 @@ import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
+import { CAMP, CAMP_FIXTURES, CAMP_SOCKETS, CAMP_SPOTS } from './scenes/camp';
 import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
@@ -2106,12 +2107,49 @@ rule('SPRITES — is the pixel art well formed?');
       }),
       // The way down is drawn TWO tiles across and centred on its tile, so an
       // authored one a step from the rock has half its rim inside the wall.
-      ...(clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
-        ? []
-        : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
+      // A PLACE is the opposite rule and the camp is built on it: its way down
+      // is a SPLIT IN THE ROCK, so it belongs against the face rather than clear
+      // of it.
+      ...(s.place
+        ? grid.at(entrance.x, entrance.y - 1) === WALL
+          ? []
+          : [`${s.id} entrance at ${entrance.x},${entrance.y} is not against the rock`]
+        : clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
+          ? []
+          : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
     ];
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
+
+  // THE CAMP is the screen the game OPENS on and everything in it is CLICKED,
+  // so a fixture in the rock is a screen with no way to reach it.
+  {
+    const { grid } = sceneMap(CAMP.plan, CAMP.theme, 1);
+    const floor = (at: { x: number; y: number }) => grid.at(at.x, at.y) !== WALL;
+    const meetable = SCENES.filter((s) => !s.place && !s.encounter);
+    const astray = [
+      ...CAMP_FIXTURES.filter((f) => !floor(f.at)).map((f) => `${f.id} in the rock`),
+      ...CAMP_FIXTURES.filter((f) => !PROP_ART[f.id]).map((f) => `${f.id} undrawn`),
+      ...CAMP_SPOTS.filter((at) => !floor(at)).map((at) => `a spot at ${at.x},${at.y} in the rock`),
+      // A socket hangs on the CUT FACE, like every other side-on prop: the rock
+      // tile at the boundary, with floor below it.
+      ...CAMP_SOCKETS.filter(
+        (at) => grid.at(at.x, at.y) !== WALL || grid.at(at.x, at.y + 1) === WALL
+      ).map((at) => `a socket at ${at.x},${at.y} off the face`),
+    ];
+    check(
+      astray.length === 0,
+      `the camp's ${CAMP_FIXTURES.length} fixtures, ${CAMP_SPOTS.length} spots and ` +
+        `${CAMP_SOCKETS.length} sockets are all somewhere they can be`,
+      astray.join(', ')
+    );
+    check(
+      CAMP_SPOTS.length >= meetable.length && CAMP_SOCKETS.length === RUN_SLOTS.length,
+      `and there is a place to stand for all ${meetable.length} people you can meet, ` +
+        `and a hole in the rock per socket in the set — ${RUN_SLOTS.length}`,
+      `${CAMP_SPOTS.length} spots, ${CAMP_SOCKETS.length} holes`
+    );
+  }
 
   // A WALL prop is drawn side-on and belongs ON the cut face — a deep set
   // draws that TWO rows tall, so it is the ROCK tile at the boundary: rock

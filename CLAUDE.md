@@ -162,6 +162,17 @@ the ceiling with it.
 
 ## The game
 
+**THE CAMP IS WHAT THE GAME OPENS ON**, and everything else is reached from it.
+A grassy shelf at the mouth of the cave: the crack you go down in the rock along
+the north, the four sockets set into that rock beside it, a bench, a shelf, a
+tent and a fire. It is a `SceneDef` with `place: true` (`src/scenes/camp.ts`),
+which is what buys it the walk, the camera, both renderers and the prop table
+for nothing. Every fixture is a prop you CLICK and he WALKS to it before the
+screen opens; everybody you have met is standing about in it and clicking one
+goes to their room. **The rail still reaches every screen** — the Fissure is one
+of them, and a screen you can only find by walking up to a picture is a screen
+somebody will lose.
+
 **One place you go.** Four sockets hold crystals permanently. Their COUNT is how
 long a run is, their MODIFIERS how hard it is; a crystal's LEVEL is only capacity
 and its FAMILY (Normal / Demonic / Prismatic) only which monsters spawn.

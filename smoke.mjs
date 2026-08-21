@@ -1015,10 +1015,12 @@ assert(
 );
 $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
-assert($('run-menu').hidden === false, 'and the Fissure is waiting underneath');
-assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
-// The Fissure screen is the sockets and the one button, and nothing else:
+assert($('run-stagewrap').hidden === false, 'and the camp is waiting underneath');
+assert(document.body.dataset.runPhase === 'scene', 'which is a place you stand in');
+// The Fissure window is the sockets and the one button, and nothing else:
 // what a character IS is on the sheet, which has its own checks below.
+$('open-fissure').click();
+assert($('run-menu').hidden === false, 'the crack opens over the camp');
 assert($('run-stats') === null, 'and the Fissure carries no character panel');
 assert($('run-launch') !== null, 'only the sockets and the way in');
 
@@ -1260,7 +1262,7 @@ const beforeLaunch = invItems().length;
 $('run-launch').click();
 
 assert($('run-stagewrap').hidden === false, 'the descent begins');
-assert($('run-menu').hidden === true, 'menu hides while running');
+assert($('run-menu').hidden === true, 'the crack closes behind you');
 assert(
   invItems().length === beforeLaunch,
   'and costs you nothing to enter',
@@ -1369,11 +1371,11 @@ assert(
 );
 $('run-again').click();
 assert(
-  !viewport.classList.contains('viewport--locked'),
-  'the frame unfreezes once the map is gone'
+  document.body.dataset.runPhase === 'scene',
+  'and going back comes up in the camp',
+  document.body.dataset.runPhase
 );
-assert($('run-menu').hidden === false, 'and going back returns to the menu');
-assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
+assert($('run-menu').hidden === true, 'with the crack shut until you walk to it');
 
 // --- character sheet ------------------------------------------------------
 assert($('sheet').hidden === true, 'character sheet starts closed');

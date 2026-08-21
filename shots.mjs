@@ -78,7 +78,9 @@ const overflowProbe = () => {
 const mapProbe = () => {
   if (!document.body.classList.contains('mapfull')) return null;
   const stage = document.getElementById('run-stage');
-  if (!stage || document.querySelector('.modal:not([hidden])')) return null;
+  // A layer that deliberately STOPS you is not a wrapper that forgot: the
+  // title and the cast stand over the camp, which the game now opens on.
+  if (!stage || document.querySelector('.modal:not([hidden]), .title:not([hidden]), .pick:not([hidden])')) return null;
   // The report covers the map on purpose: the descent it belongs to is over.
   if (document.getElementById('run-results')?.hidden === false) return null;
   const w = document.documentElement.clientWidth;
@@ -113,7 +115,7 @@ const hudProbe = () => {
 /** EVERY screen the game has, as a CHECKLIST: a state here with no file at the
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
-  'title', 'slots', 'pick', 'welcome', 'fissure',
+  'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'fissure',
   'dock', 'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
@@ -259,7 +261,46 @@ for (const vp of VIEWPORTS) {
   await shoot('results');
   await page.evaluate(() => document.getElementById('run-again')?.click());
   await page.waitForTimeout(300);
+  // THE SCREEN THE GAME OPENS ON, and the one every ending comes back to.
+  await shoot('camp');
+  // CLICKING THE CAMP, which is the whole of what makes it a place: the hit
+  // test says `stage--over` out loud, so the sweep finds a fixture rather than
+  // being told where one is, and the topmost one is the crack. He WALKS there
+  // and the window opens when he arrives — so waiting for it is the walk.
+  const at = await page.evaluate(() => {
+    const stage = document.getElementById('run-stage');
+    const box = stage.getBoundingClientRect();
+    const move = (x, y) =>
+      stage.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }));
+    for (let y = box.top + 8; y < box.bottom - 8; y += 10) {
+      for (let x = box.left + 8; x < box.right - 8; x += 10) {
+        move(x, y);
+        if (stage.classList.contains('stage--over')) return { x, y };
+      }
+    }
+    return null;
+  });
+  if (!at) problems.push(`${vp.name}: nothing in the camp answers a pointer`);
+  else {
+    await shoot('camp-hover');
+    await page.evaluate(({ x, y }) => {
+      const stage = document.getElementById('run-stage');
+      for (const kind of ['pointerdown', 'pointerup'])
+        stage.dispatchEvent(new PointerEvent(kind, { clientX: x, clientY: y, bubbles: true }));
+    }, at);
+    try {
+      await page.waitForFunction(() => document.getElementById('run-menu')?.hidden === false, null, {
+        timeout: 20000,
+      });
+    } catch {
+      problems.push(`${vp.name}: walking up to the crack never opened it`);
+      await page.evaluate(() => document.getElementById('open-fissure')?.click());
+      await page.waitForTimeout(250);
+    }
+  }
   await shoot('fissure');
+  await page.evaluate(() => document.getElementById('run-menu-close')?.click());
+  await page.waitForTimeout(200);
 
   // The collection. Nothing is in it yet on a fresh game, but the quest ladder
   // is text at full width, which is where a narrow screen tears.
