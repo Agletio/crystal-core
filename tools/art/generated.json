@@ -921,7 +921,7 @@
     },
     "walk": {
      "frames": 6,
-     "group": "28046da2-1ce1-4638-8fb4-5eb1810a8866"
+     "group": "b0b5000c-e82a-41ca-98a7-c89ac80d93f2"
     },
     "attack": {
      "frames": 4,
@@ -951,11 +951,11 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "1e2f6849-d61f-41a7-ada1-9bcfb3c3c8c3"
+     "group": "ea448cde-8036-4ca7-9344-5eff53f826f1"
     },
     "walk": {
      "frames": 6,
-     "group": "df1c9baa-2822-4f72-8b92-d86167cab86f"
+     "group": "bbb8a7bb-7364-47fb-848b-5af9453a42ee"
     },
     "attack": {
      "frames": 4,
@@ -985,11 +985,11 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "be1eac18-0621-412a-937b-7f1f6f29d290"
+     "group": "a7d8f295-ece5-4fc0-88bc-79871f82335f"
     },
     "walk": {
      "frames": 6,
-     "group": "bb117830-47ac-4015-bb2c-1a75580e45be"
+     "group": "2681ab33-3589-4e88-b5f9-d5ce18b4df74"
     },
     "attack": {
      "frames": 4,
@@ -1019,7 +1019,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "3e79e493-4498-4e4c-b48d-c9118e1abbde"
+     "group": "7c1d7042-c55d-4a9a-9adc-75acb9b7f001"
     },
     "walk": {
      "frames": 6,
@@ -1053,7 +1053,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "531acdd8-bcfe-472e-b520-5b0e9f529993"
+     "group": "dd86d050-5ef9-494d-96ff-5b4db4325e88"
     },
     "walk": {
      "frames": 6,
