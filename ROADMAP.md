@@ -6,13 +6,12 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FIVE PHASES ARE WAITING.** Four are things the user found by watching it —
-walls that are in front of him or behind him rather than under his feet, kiting
-that looks like kiting, the people you have met moving into a camp, and the camp
-itself — and the fifth is dual wielding, which is the largest art phase this
-game has had and carries an open question of its own. **Take Phase 1.** The
-weapon soft-lock and the two wrong weapon bodies, which came first, have
-landed.
+**FOUR PHASES ARE WAITING.** Three are things the user found by watching it —
+kiting that looks like kiting, the people you have met moving into a camp, and
+the camp itself — and the fourth is dual wielding, which is the largest art
+phase this game has had and carries an open question of its own. **Take Phase
+1.** The weapon soft-lock, the two wrong weapon bodies and the walls, which came
+first, have landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -20,7 +19,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 6 (a quest log) stays parked by his word until the
+what it found is below. Phase 5 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -39,8 +38,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the five phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the five are done, say so and
+**Under the four phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the four are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -81,6 +80,7 @@ to look:
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
+| a wall has a SIDE | `wallSide` — rock with floor below it is a FACE and draws behind a body, rock with floor above it is a LIP and draws in front of one, stretched `LIP_RISE` over the floor. `SOUTH_ROOM` closes the tile of floor nothing stood on |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
 | a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
@@ -416,66 +416,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — A wall is in FRONT of him or BEHIND him, and never under his feet
-
-**The user drew this one**, which is the clearest statement of it there will be:
-a screenshot with the north walls circled — *"Feet should never go on these
-north walls, character should lay over top of wall"* — and the south walls
-circled the other way — *"These walls should overlay on TOP of the character
-since we can't see the wall from this perspective feet should go under! dont let
-character walk so far under as to disappear but legs and waist should go
-under!"* His words on the whole: *"Currently it avoids the south walls by a
-large margin and takes really weird paths around stuff... on the north walls its
-kinda close but still walks a decent amount too far up and looks like hes on the
-walls."*
-
-**What is true today.** One `wallLayer` in `src/render/pixi.ts`, added to
-`world` BEFORE `entityLayer` — so every rock tile draws behind every body, north
-and south alike, and the comment says why: *"over them it sheared off heads."*
-`Grid.walkable` is `tile !== WALL`, one answer for every side. The zone tilesets
-were asked with `transition_size: 1`, which the `art` skill records as *"the
-cliff fills the cell BELOW the boundary, so a wall is two rows tall as drawn"* —
-so the drawn rock of a north wall spills into the topmost WALKABLE row, and
-standing on that row is standing on the wall as far as the eye is concerned.
-
-**Why it is wrong**, in one sentence: the map is drawn from slightly above, so
-rock ABOVE the floor is a face you see and rock BELOW it is a lip you look over
-— and one layer plus one walkability rule cannot say both.
-
-- [ ] **Two wall layers, split by which side the floor is on.** A rock tile with
-      floor ABOVE it is the near lip and belongs OVER `entityLayer`; every other
-      rock tile stays where it is. The "sheared off heads" comment is about rock
-      ABOVE a body and stays true — that half must not move.
-- [ ] **Decide how far under the lip he may go, and say it in tiles.** *"legs
-      and waist should go under"* and *"dont let character walk so far under as
-      to disappear"* is roughly half a body, and half a body is a number.
-      `canvas2d` draws no sprites, so this is a Pixi-side depth question with a
-      `renderer.ts` pure function behind it, per the standing rule.
-- [ ] **And the north side is the opposite: he stops SHORT.** Either the
-      walkable row under a north wall is refused, or the cliff is drawn one row
-      up. Measure both — refusing a row can seal a one-tile corridor, and
-      `carveRoom`/`fitCorners` in `src/sim/grid.ts` is what would have to widen.
-- [ ] **`npm run peek` on all four zones, at a crop, magnified.** *"every fault
-      found this way was invisible at ship size."* An art claim needs a
-      screenshot, and this claim needs four.
-
-**Traps.** A change to `walkable` changes PATHS, which changes seeds, which
-changes every measured number in the demo — expect the balance gauges to move
-and do not chase them. `sceneMap` builds authored rooms through the same grid,
-so the workshop and the ossuary are in scope. The `wallFade` band already draws
-`ROCK_DEPTH = 2` tiles of rock past the carve; whichever layer a tile lands in,
-its fade goes with it.
-
-**Done when.** No body's feet stand on drawn rock anywhere on the north side,
-the south lip draws over his legs without swallowing him, and a descent no
-longer swings wide of the south walls.
-
-**What must not break.** `npm run build` then `peek` and `shots`; `demo` for the
-termination check, since a walkability change can strand a route.
-
----
-
-## Phase 2 — Kiting that looks like kiting
+## Phase 1 — Kiting that looks like kiting
 
 **The user, after watching it.** *"For when you take the featherstep passive I
 think it works well but he kinda does this weird buggy thing where he runs into
@@ -533,7 +474,7 @@ table), then `smoke` and `peek`.
 
 ---
 
-## Phase 3 — Somebody you have met is somebody you can go and see
+## Phase 2 — Somebody you have met is somebody you can go and see
 
 **What is true today.** A room is SCHEDULED at the end of a cleared descent:
 `relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
@@ -569,7 +510,7 @@ who wants it can be walked to whenever you like.
 
 ---
 
-## Phase 4 — The camp: the home screen becomes a PLACE
+## Phase 3 — The camp: the home screen becomes a PLACE
 
 **The user's ask, in full, because the shape is all his:** *"I think the home
 screen should be more like an actual hideout in path of exile. Where you see your
@@ -604,7 +545,7 @@ one. The camp is a scene you are always in rather than a screen.
       It is the run panel that exists, anchored on a prop instead of the rail.
 - [ ] **The bench is a prop you click.** `openCraft` is already a function.
 - [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Do Phase 3 first; this is its payoff.
+      way. Do Phase 2 first; this is its payoff.
 - [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
       in, not a replacement, and a screen reachable only by finding a prop is a
       screen somebody will lose.
@@ -628,7 +569,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 5 — Dual wielding
+## Phase 4 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -691,7 +632,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 6 — A quest log instead of a pointing finger
+## Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

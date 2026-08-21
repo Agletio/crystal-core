@@ -3,11 +3,9 @@
  *
  *   npx tsx tools/art/side.mts out.png [scale] <png> [png ...]
  *
- * What a DESIGN or a rotation is judged on. `shipped.mts` draws a body out of
- * the game's own tables and `body.mts sheet` draws one off the server; this
- * draws whatever files you point it at, which is how two candidate asks — or
- * the same weapon on both heroes — are compared at a size the fault is visible
- * at. The cache under `cache/designs/` is what it is usually pointed at.
+ * What a DESIGN or a rotation is judged on: whatever files you point it at,
+ * which is how two candidate asks — or the same weapon on both heroes — are
+ * compared at a size the fault is visible at. Usually `cache/designs/`.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng, encodePng } from './png.mts';

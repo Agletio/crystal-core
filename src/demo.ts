@@ -251,6 +251,7 @@ import {
   stormCloud,
   paletteFrom,
   tileDecals,
+  wallSide,
 } from './render/renderer';
 import { VFX_ART } from './render/generated-vfx';
 import {
@@ -2308,6 +2309,54 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
     'the vein tracks the power of the set you socketed',
     `veins were ${veins.join(', ')}`
   );
+
+  // WHICH SIDE OF A WALL, and how close a body may stand to it. A body is drawn
+  // ABOVE its feet, so one clearance every way is not one clearance to look at:
+  // the same rule that reads tight under a face left a whole tile of floor
+  // above a lip that nothing ever stood on.
+  {
+    const map = generateMap([], new Rng(1717), 1, 3);
+    const { grid } = map;
+    const at = (x: number, y: number) => grid.at(x, y);
+    const sides = { face: 0, lip: 0, deep: 0 };
+    let wrong = 0;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const side = wallSide(at, x, y);
+        sides[side]++;
+        // A lip has floor ABOVE it and rock below; a face has floor below.
+        if (side === 'lip' && (at(x, y - 1) === WALL || at(x, y + 1) !== WALL)) wrong++;
+        if (side === 'face' && (at(x, y) !== WALL || at(x, y + 1) === WALL)) wrong++;
+      }
+    }
+    line(`  ${sides.face} wall faces, ${sides.lip} near lips, ${sides.deep} tiles neither`);
+    check(
+      wrong === 0 && sides.face > 0 && sides.lip > 0,
+      'a wall knows which side of it you are looking at',
+      `${wrong} tiles filed wrong, ${sides.face} faces, ${sides.lip} lips`
+    );
+
+    // How close the FEET come, north against south. A number rather than a
+    // failure: what it should be is the renderer's question, and what it must
+    // not be is the same both ways, which is what left a tile of floor above
+    // every lip that nothing ever stood on.
+    const reach = (dy: number): number => {
+      let worst = 0;
+      for (let y = 1; y < grid.height - 1; y++) {
+        for (let x = 1; x < grid.width - 1; x++) {
+          if (grid.at(x, y + dy) !== WALL || !grid.walkable(x, y)) continue;
+          let off = 0;
+          while (off < 0.5 && grid.fits(x, y + dy * (off + 0.05), HERO_BASE.radius)) off += 0.05;
+          worst = Math.max(worst, 0.5 - off);
+        }
+      }
+      return worst;
+    };
+    line(
+      `  feet stop ${reach(1).toFixed(2)} tiles short of rock to the SOUTH, ` +
+        `${reach(-1).toFixed(2)} to the NORTH`
+    );
+  }
 }
 
 // ===========================================================================
