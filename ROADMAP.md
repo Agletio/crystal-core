@@ -6,11 +6,13 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FOUR PHASES ARE WAITING**, all of them things the user found by watching it.
-In the order to take them: walls that are in front of him or behind him rather
-than under his feet, kiting that looks like kiting, the people you have met
-moving into a camp, and the camp itself. **Take Phase 1.** The weapon soft-lock
-and the two wrong weapon bodies, which came first, have landed.
+**FIVE PHASES ARE WAITING.** Four are things the user found by watching it —
+walls that are in front of him or behind him rather than under his feet, kiting
+that looks like kiting, the people you have met moving into a camp, and the camp
+itself — and the fifth is dual wielding, which is the largest art phase this
+game has had and carries an open question of its own. **Take Phase 1.** The
+weapon soft-lock and the two wrong weapon bodies, which came first, have
+landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -18,7 +20,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 5 (a quest log) stays parked by his word until the
+what it found is below. Phase 6 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -37,8 +39,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the four phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the four are done, say so and
+**Under the five phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the five are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -626,7 +628,70 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 5 — A quest log instead of a pointing finger
+## Phase 5 — Dual wielding
+
+**The user's ask, and his own sizing of it:** *"I want to add dual wielding
+which I assume means ALOT more animations since we need dual wielding of the
+same type as well as every combo. We can just have one version per combo though
+regardless of which slot you put in main/off hand."*
+
+**He is right about the cost, and here is the number.** Four one-handed art
+families — sword, dagger, mace, wand — and unordered pairs with repeats is
+**ten combinations**, ten again for the second hero: **twenty new variants**. At
+one `create_character_state` and five animations each, measured, that is roughly
+**1,900 generations and the better part of a day of wall clock**, against the
+~350 the two-body repair in the last round cost. It is the largest art phase
+this game has had. **The generations can be queued while other phases are being
+coded** — the pipeline is idempotent and the job cap is ten per account — so
+this does not have to block a keyboard for a day.
+
+**What is true today.** `EQUIP_SLOTS` gives the off hand `accepts: 'shield'`, so
+nothing but a shield goes there. `HOLDING` in `src/sim/appearance.ts` maps a
+base family to an art key and `variants()` already asks for `${main}_${off}`
+before falling back to either alone — **so the sprite lookup needs no change at
+all**, only bodies to find. `weaponRate` and `weaponSwing` read `WEAPON_SLOT`
+and nothing else.
+
+- [ ] **Decide what dual wielding IS, mechanically, and write it down as a
+      decision.** *Recommended, and not taken on his behalf:* the off-hand
+      weapon adds a share of its own base damage and a share of its rate, so a
+      dagger pair is fast and a mace pair hits, and neither is a shield's armour
+      and Block. The alternative — a second, independent swing — is a second
+      damage pipeline, and this game has one. **Ask before building either.**
+- [ ] **The off hand accepts a one-handed weapon.** `EquipSlotDef.accepts` is
+      one string today; a slot that takes two kinds is the edit. `handClash`
+      already empties the off hand for a two-hander and that stays.
+- [ ] **A pair is ORDERLESS in art and ORDERED in stats.** The user's call:
+      one body per combination whichever hand you filled. `variants()` sorts the
+      pair before looking it up; `weaponRate` still reads the main hand.
+- [ ] **`weapons.json` grows the pair vocabulary, not twenty new rows.** The
+      whole point of that file is that a sword is one sword. What a PAIR needs
+      is one clause about the second hand — where it is held, how it reads
+      against the first — and `variant.mts` composes the rest.
+- [ ] **Judge the first combination before queueing the other nineteen.** A
+      design is one generation and a finished variant is sixty-odd; the last
+      round spent six asks on one weapon and would have spent thirty if it had
+      animated first.
+- [ ] **The bundle.** Twenty-six variants took `generated-art.ts` to 3.82 MB and
+      twenty more is roughly another 3 MB. That makes open question 10 a
+      decision rather than a note — trim `frames` on the variant idle and walk
+      in the same phase, or say why not.
+
+**Traps.** `WEAPON_COUNTS_AS` answers what a skill may be SWUNG with and says
+nothing about a second hand; a skill requiring `twohand` must still refuse a
+pair. `starterLoadout` and `bestBuild` never hold two weapons, so nothing
+measured would notice dual wielding existed — the ceiling search has to learn
+the pair or the balance grid is blind to it.
+
+**Done when.** Two one-handed weapons can be worn at once, the body on screen is
+holding both of them, and the sheet says what the second one is worth.
+
+**What must not break.** `npm run demo` (the FLOOR AND CEILING table moves —
+print it, do not chase it), `smoke`, `shots`, `peek`.
+
+---
+
+## Phase 6 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
