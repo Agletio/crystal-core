@@ -239,28 +239,31 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
   for (const family of plate) {
     for (const focus of FOCUS) {
       for (const attrs of ATTR_PLANS) {
-        for (const paired of [false, true]) {
-          const pool = focus
-            ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
-            : new ModPool(ALL_MODS);
-          const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
-          character.level = level;
-          if (paired && !dualWield(character, ilvl, pool, rng)) continue;
-          pour(character, attrs);
-          // The passives and the mover BEFORE the tree, since what they grant is
-          // in every score the walk reads.
-          fillPassives(character, passives);
-          walkBest(character, rng.pick(movers) ?? null);
-          made.push({ character, paired });
+        const pool = focus
+          ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
+          : new ModPool(ALL_MODS);
+        const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
+        character.level = level;
+        pour(character, attrs);
+        // Before the tree: what they grant is in every score the walk reads.
+        fillPassives(character, passives);
+        walkBest(character, rng.pick(movers) ?? null);
+        made.push({ character, paired: false });
+
+        // THE PAIR IS THE SAME BUILD with its off hand swapped, off an rng of
+        // its OWN and after the draws above: taken out of the search's it
+        // would move every roll after it, and every number in this file.
+        const paired = JSON.parse(JSON.stringify(character)) as Character;
+        if (dualWield(paired, ilvl, pool, new Rng(made.length * 7919 + level))) {
+          made.push({ character: paired, paired: true });
         }
       }
     }
   }
 
-  // THE SHORTLIST IS PER ARRANGEMENT: a pair scores higher BARE than a shield
-  // ever can, so one list took every place and the ceiling got WORSE for being
-  // offered more. Each brings its own best few and `played` decides, which is
-  // the only place a Block counts at all.
+  // PER ARRANGEMENT: a pair scores higher BARE than a shield ever can, so one
+  // list took every place and the ceiling got WORSE for being offered more.
+  // `played` decides between them — the only place a Block counts at all.
   const ranked = made.sort((a, b) => buildPower(b.character) - buildPower(a.character));
   const shortlist = [false, true].flatMap((paired) =>
     ranked.filter((m) => m.paired === paired).slice(0, SHORTLIST).map((m) => m.character)
@@ -272,9 +275,9 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
   return played(shortlist, band, rng) ?? shortlist[0] ?? ladderCharacter(band, rng, skillId);
 }
 
-/** A SECOND of what the main hand holds, in place of the shield. What an off
- *  hand is FOR is a build decision, so the ceiling tries both and the floor
- *  keeps its shield. False when there is nothing to pair with. */
+/** A SECOND of what the main hand holds, in place of the shield: the ceiling
+ *  tries both and the floor keeps its shield, since a measurement may not pick
+ *  a build. False when there is nothing to pair with. */
 function dualWield(character: Character, ilvl: number, pool: ModPool, rng: Rng): boolean {
   const main = character.equipment[WEAPON_SLOT];
   const base = main ? GEAR_BASE_BY_ID[main.base] : undefined;

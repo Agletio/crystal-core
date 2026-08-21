@@ -21,12 +21,13 @@ type Body = {
   off?: string;
   states: Record<string, State>;
 };
-type Weapon = { say: string; attack: string; carry?: string; noun: string };
+type Weapon = { say: string; attack: string; carry?: string; noun: string; pair?: boolean };
 
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('weapons.json'), 'utf8')) as {
   hold: string;
   quiet: string;
+  quietPair: string;
   weapons: Record<string, Weapon>;
 };
 const book = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as { bodies: Body[] };
@@ -80,7 +81,9 @@ export function compose(body: Body, name: string, from: State): string {
     `${lead} with his ${held}, ${middle}`,
     words.hold,
     ...carries,
-    name === 'idle' ? words.quiet : '',
+    // The shared one forbids a SECOND weapon, which is the one thing a pair
+    // must have — so a body holding two takes the other.
+    name === 'idle' ? (off?.pair ? words.quietPair : words.quiet) : '',
   ]
     .filter(Boolean)
     .join(' ');

@@ -70,7 +70,8 @@
    "pale": false,
    "say": "Put a SECOND straight one-handed sword in his OTHER hand, the one that is empty. He grips it by the hilt down beside that hip, its blade angled down and forward and well clear of his leg. It is grey steel with a dark wrapped grip and as long as his own arm from shoulder to fingertips. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. There is exactly ONE weapon in each hand and nothing else anywhere. NOT a greatsword, NOT held in two hands, NOT a third weapon, NOT one slung on his back, NOT crossed over his chest, NOT a shield. His arms are NOT stretched straight out to the sides.",
    "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
-   "noun": "second sword"
+   "noun": "second sword",
+   "pair": true
   },
   "dagger_off": {
    "hands": 0,
@@ -78,7 +79,8 @@
    "pale": false,
    "say": "Put a short dagger in his OTHER hand, the one that is empty. He grips it by the hilt held low at that hip with the short blade angled forward. Its blade is WHITE — pure bright polished silver-white, brighter than his skin — and its grip is dark. It is SHORT, no longer than his own forearm. It is a knife. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a sword, NOT as long as his arm, NOT dark, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
    "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
-   "noun": "knife in the other hand"
+   "noun": "knife in the other hand",
+   "pair": true
   },
   "mace_off": {
    "hands": 0,
@@ -86,7 +88,8 @@
    "pale": false,
    "say": "Put a short iron club in his OTHER hand, the one that is empty. He grips it by the haft down beside that hip with its heavy head hanging forward and clear of his leg. It is a PALE grey iron bar thickening to a blunt head, no longer than his own forearm. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a maul, NOT held in two hands, NOT an axe, NOT a hammer with a flat face, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
    "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
-   "noun": "iron club in the other hand"
+   "noun": "iron club in the other hand",
+   "pair": true
   },
   "wand_off": {
    "hands": 0,
@@ -94,7 +97,8 @@
    "pale": false,
    "say": "Put a short wand in his OTHER hand, the one that is empty. He holds it upright in his closed fist beside that hip, its tip pointing up and forward. It is a PALE bone-white tapered rod no longer than his own forearm, plain and unlit. Whatever is already in his first hand is unchanged and stays exactly where it is, and he keeps his ordinary standing pose. NOT a staff, NOT a sceptre, NOT held in two hands, NOT glowing, NOT sparking, NOT a torch, NOT a candle, NOT a third weapon, NOT one slung on his back, NOT a shield. His arms are NOT stretched straight out to the sides.",
    "carry": "He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest.",
-   "noun": "wand in the other hand"
+   "noun": "wand in the other hand",
+   "pair": true
   }
  },
  "_roles": "A SPELL weapon and a MELEE one of the same family are the same ART and differ only in the implicits their base rolls — the user's call. So there is one staff row and one dagger row here, and `GearBase.art` is the family for both bases.",
@@ -102,10 +106,11 @@
  "hold": "He keeps hold of it in EVERY frame and never lets go of it or puts it down.",
  "_off": "A row with `off: true` is worn on the OTHER arm and LAYERS onto a variant that already holds a weapon — `dress.mts shield --state <the sword variant's own id>` — so the sword in the picture is the same sword, by construction rather than by asking twice. Nothing it covers may be the body: which hero you are looking at is the SILHOUETTE, which is why it is held out to the side and why every clause about the chest and the face is there. Held 'out to the side' it came back EDGE-ON — a plank rather than a shield — and one man T-POSED with both arms straight out, so the row now asks for the round face toward the viewer, the elbow bent, and the ordinary standing pose kept.",
  "_limit": "`edit_description` is capped at 1000 CHARACTERS and the server refuses a longer one outright — before billing, but a refusal in a batch of seven is seven runs wasted. `dress.mts` measures before it calls. A row that says PALE for itself sets `pale: false` and drops the shared clause rather than losing an earned exclusion to the cap.",
- "_quiet": "Appended to an IDLE, and only there. A body with nothing to do is where the generator invents: across two passes an idle grew a floating white blade, a stray disc at the hero's feet and a green magic swirl round his chest, each in a different variant. A swing or a fall gives it something to draw and none of them showed this. Kept OUT of the shared `hold` clause on purpose — changing that would change the ask for every state of every body, and the words in `bodies.json` have to be the words the shipped art was asked with.",
+ "_quiet": "Appended to an IDLE, and only there. A body with nothing to do is where the generator invents: across two passes an idle grew a floating white blade, a stray disc at the hero's feet and a green magic swirl round his chest, each in a different variant. A swing or a fall gives it something to draw and none of them showed this. Kept OUT of the shared `hold` clause on purpose — changing that would change the ask for every state of every body, and the words in `bodies.json` have to be the words the shipped art was asked with. A body holding TWO WEAPONS takes `quietPair` instead: the shared one forbids a second weapon, which is the one thing a pair must have.",
  "quiet": "NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding.",
  "_carry": "Appended to every state a variant animates EXCEPT its attack, which describes the swing itself. It says where the weapon RESTS. Only a weapon that has been observed drifting carries one — a clause nobody earned costs drama for free. The greatsword's is earned: asked upright it came back diagonal across the body in the still and pointing at the floor by the third walk frame, which is what the user saw. The shield's is earned too: the alchemist's still held one shield and his idle grew a second.",
  "_nouns": "What a variant's own states call the weapon. `tools/art/variant.mts` composes a variant's rows in `bodies.json` out of the base body's states and these, so two heroes carrying one weapon are asked in one set of words by construction rather than by care.",
  "_upright": "SIX asks went into the greatsword and this is what they bought. 'Upright' alone came back diagonal across the body and pointing at the floor by the third walk frame. Naming the CROSSGUARD and both fists is what made it read as a sword rather than a pole. Anchoring each part vertically — fists at the waist, guard at the chest, point above the head — is what got it up. And 'rising UP and slightly BACK past his shoulder', asked to buy headroom, came back pointing DOWN and forward: the generator hears 'back' as trailing behind. **A tall body has no headroom in a 96 frame**, so the Alchemist's point still touches the top edge where the Aethermancer's clears it. That is the frame, not the words, and no wording bought it.",
- "_pairs": "A row ending `_off` is the SAME weapon carried in the OTHER hand, and a PAIR is one of those layered onto a variant that already holds one — `dress.mts sword_off --state <the mace variant's own id>` — so the mace in the picture is the same mace, by construction. There are four one-handed families and ten unordered pairs of them, which is ten variants a hero. Orderless: `variants()` in `src/sim/appearance.ts` sorts a pair before it looks one up, so which hand you filled never asks for a second picture. The `_off` rows drop the shared `pale` clause and say PALE for themselves, because they each carry an earned exclusion and `edit_description` is capped at 1000."
+ "_pairs": "A row ending `_off` is the SAME weapon carried in the OTHER hand, and a PAIR is one of those layered onto a variant that already holds one — `dress.mts sword_off --state <the mace variant's own id>` — so the mace in the picture is the same mace, by construction. There are four one-handed families and ten unordered pairs of them, which is ten variants a hero. Orderless: `variants()` in `src/sim/appearance.ts` sorts a pair before it looks one up, so which hand you filled never asks for a second picture. The `_off` rows drop the shared `pale` clause and say PALE for themselves, because they each carry an earned exclusion and `edit_description` is capped at 1000.",
+ "quietPair": "NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
 }
