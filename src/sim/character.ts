@@ -71,6 +71,32 @@ export function weaponFits(skill: SkillDef | undefined, held: Item | null): bool
   return family !== undefined && weaponFamilies(skill).includes(family);
 }
 
+/** What a skill must be swung with, in words. `requires` names a family or a
+ *  group; a group is already a word and a family needs one. */
+const WEAPON_WORDS: Record<string, string> = {
+  melee: 'a melee weapon',
+  twohand: 'a two-handed weapon',
+  sword2h: 'a two-handed sword',
+  mace2h: 'a two-handed mace',
+};
+export const weaponWanted = (skill: SkillDef): string =>
+  WEAPON_WORDS[skill.requires ?? ''] ?? `a ${skill.requires}`;
+
+/** Why this build cannot go down, or null. A skill and the hand it is swung
+ *  with may DISAGREE — refusing the swap both ways is a deadlock you can only
+ *  leave through a spell — so the Fissure reads the mismatch here instead.
+ *  Every equipped slot: a mover may name a weapon as readily as a main. */
+export function weaponRefusal(character: Character): string | null {
+  const held = character.equipment?.[WEAPON_SLOT] ?? null;
+  for (const slot of SKILL_SLOTS) {
+    const skill = SKILL_BY_ID[character.equipped?.[slot.id] ?? ''];
+    if (!skill || weaponFits(skill, held)) continue;
+    const holding = held ? held.name : 'nothing';
+    return `${skill.name} needs ${weaponWanted(skill)}. You are holding ${holding}.`;
+  }
+  return null;
+}
+
 export function makeCharacter(
   equipment: Record<string, Item>,
   skillId: string
@@ -200,12 +226,6 @@ export function equipSkill(character: Character, skillId: string, slotId?: strin
   if (!slot) return false;
   const def = SKILL_SLOT_BY_ID[slot];
   if (!def || !def.accepts.includes(category) || !slotIsOpen(character, slot)) return false;
-  // Refused, not equipped-and-useless: a main skill you cannot swing is a
-  // descent that never ends. The MAIN slot only; a passive is not swung.
-  if (slot === MAIN_SLOT && !weaponFits(SKILL_BY_ID[skillId], character.equipment?.[WEAPON_SLOT] ?? null)) {
-    return false;
-  }
-
   const held = { ...(character.equipped ?? {}) };
   for (const [id, what] of Object.entries(held)) {
     if (what === skillId && id !== slot) delete held[id];

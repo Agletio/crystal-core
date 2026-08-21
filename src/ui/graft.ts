@@ -214,7 +214,12 @@ export function initGraft(state: GameState, done: () => void): void {
   ($('graft-do') as HTMLButtonElement).onclick = () => {
     if (!relic || !piece || !line) return;
     const made = spendRelic(game, relic, piece, line.mod.id);
-    if (made) note(`${room?.name} wrote ${line.mod.name} into your ${made.name}`, 'add');
+    note(
+      made
+        ? `${room?.name} wrote ${line.mod.name} into your ${made.name}`
+        : `${room?.name} could not find that piece — nothing was spent`,
+      made ? 'add' : 'fail'
+    );
     closeGraft();
     // The graft REPLACES the item object, and every card captured the old one:
     // a dock slot nobody redrew keeps showing the line that was written over.

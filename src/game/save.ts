@@ -312,15 +312,12 @@ function healSkillSlots(character: Character): boolean {
     seen.add(held);
     kept[slot.id] = held;
   }
-  // A save written before a skill wanted a weapon can hold the pair. A HELD
-  // mismatch only: an empty hand is the opening, and the choice there stands.
-  const held = character.equipment?.[WEAPON_SLOT] ?? null;
-  if (held && kept[MAIN_SLOT] && !weaponFits(SKILL_BY_ID[kept[MAIN_SLOT]], held)) {
-    delete kept[MAIN_SLOT];
-  }
+  // A skill the weapon cannot swing is LEGAL — the Fissure refuses to open on
+  // it — so nothing is healed away here; that would undo a swap in progress.
   if (!kept[MAIN_SLOT]) {
     // What the weapon is FOR first, then anything it can swing: a bow healing
     // to a spell keeps you playing but throws away the shape of the build.
+    const held = character.equipment?.[WEAPON_SLOT] ?? null;
     const family = held ? GEAR_BASE_BY_ID[held.base]?.family : undefined;
     kept[MAIN_SLOT] =
       MAIN_SKILLS.find((sk) => sk.requires && family && weaponFits(sk, held))?.id

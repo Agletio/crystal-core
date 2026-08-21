@@ -124,6 +124,9 @@
     --chain-lit: #6A5232;
     --on-lit:    #F0A055;
     --on-gem-lit:#FBE49B;
+    /** The ring around a node you HAVE. The one white in the game, and it is
+     *  white so that no amount of lamp-lit rock can be mistaken for it. */
+    --node-on:   #FFFFFF;
 
     /** The mark's three inks: the gem is lit from one side. */
     --gem-hi:    #FBEDC6;
@@ -1438,6 +1441,11 @@
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
   .slotcell__btn--worn { border-color: var(--edge-lit); }
+  /* The hand your skill cannot be swung with. Marked, never emptied — the
+     Fissure is what refuses, and it says the sentence in full. */
+  .slotcell--wrong .slotcell__btn { border-color: var(--ember); }
+  .slotcell--wrong .slotcell__label { color: var(--ember); }
+  .slotcell__wrong { font-size: 10px; color: var(--ember); line-height: 1.35; margin-bottom: 3px; }
   .slotcell__btn--picking { border-color: var(--citrine); background: var(--edge); }
   .slotcell__btn:hover { background: var(--edge); }
   .slotcell__body { display: flex; flex-direction: column; min-width: 0; }
@@ -1644,15 +1652,22 @@
   .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
   .web__node__img { image-rendering: auto; }
   .web__node:hover .web__node__img { filter: brightness(1.25); }
-  /* Allocated and available are told apart by VALUE and SPREAD, never by hue:
-     they were bone against citrine, two warm yellows three steps apart, over
-     art that is warm already. An allocated node is much brighter and carries a
-     tight core inside a wide halo; an available one is deliberately DIMMER
-     than the rock it sits on, with one soft ring and no core. */
-  .web__node--open .web__node__img { filter: brightness(.86) drop-shadow(0 0 4px var(--bone)); }
-  .web__node--on .web__node__img {
-    filter: brightness(1.55) drop-shadow(0 0 1px var(--on-gem-lit)) drop-shadow(0 0 8px var(--citrine));
+  /* State is a RING ON THE BORDER, not a glow around the picture: a filtered
+     halo takes the art's own silhouette, so it read as part of the drawing and
+     vanished into rock that is warm already. Allocated is white and thick over
+     a wide white core; available is cold cyan, thinner and unfilled — apart by
+     hue, value and weight at once, and neither is a brown. */
+  .web__node__halo { fill: none; stroke: none; pointer-events: none; }
+  .web__node--on .web__node__img { filter: brightness(1.45); }
+  .web__node--open .web__node__halo {
+    stroke: var(--quartz); opacity: .85;
+    filter: drop-shadow(0 0 3px var(--quartz));
   }
+  .web__node--on .web__node__halo {
+    stroke: var(--node-on);
+    filter: drop-shadow(0 0 2px var(--node-on)) drop-shadow(0 0 7px var(--node-on));
+  }
+  .web__node:hover .web__node__halo { stroke: var(--node-on); opacity: 1; }
   .web__centre { cursor: help; }
 
   /* Tooltip. Custom because the native title is delayed and drawn in the OS's

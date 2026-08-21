@@ -16,6 +16,7 @@ import {
   DEFENCE,
   EQUIP_SLOTS,
   LEVELLING,
+  WEAPON_SLOT,
 } from '../data';
 import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { slotWorkings } from '../skill-text';
@@ -29,6 +30,7 @@ import {
   openSlots,
   attributeSteps,
   spendAttribute,
+  weaponRefusal,
   xpToNext,
 } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
@@ -73,10 +75,19 @@ function renderSlots(): void {
   const host = $('sheet-slots');
   host.replaceChildren();
 
+  // The hand your skills are swung with, when the two disagree. Marked HERE
+  // because the weapon is the half you change: the Fissure says the sentence,
+  // this says which slot it is about.
+  const wrong = weaponRefusal(game.character);
+
   for (const slot of EQUIP_SLOTS) {
     const worn = game.character.equipment[slot.id];
     const cell = el('div', 'slotcell');
     cell.append(el('div', 'slotcell__label', slot.name));
+    if (wrong && slot.id === WEAPON_SLOT) {
+      cell.classList.add('slotcell--wrong');
+      cell.append(el('div', 'slotcell__wrong', wrong));
+    }
 
     const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
     btn.id = slotButtonId(slot.id);

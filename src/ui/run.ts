@@ -19,6 +19,7 @@ import {
   spareTreePoints,
   tradePointsLeft,
   trialPointsLeft,
+  weaponRefusal,
   xpToNext,
 } from '../sim/character';
 import { describeMod } from '../crafting';
@@ -315,18 +316,18 @@ function renderMenu(): void {
     )
   );
 
-  // The one thing that can shut the Fissure — and never a dead end, because
-  // selling needs no room anywhere.
-  const blocked = bagsFull(game);
+  // The two things that can shut the Fissure, and neither is a dead end: gear
+  // sells from anywhere, and a weapon is one click on the sheet.
+  const why = bagsFull(game)
+    ? 'Your bags are full. Sell or stash some of it before you go back down.'
+    : weaponRefusal(game.character);
   const launcher = $('run-launch') as HTMLButtonElement;
   launcher.textContent = game.called
     ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
     : 'Enter the Fissure';
-  launcher.disabled = blocked;
-  launcher.classList.toggle('mini--off', blocked);
-  $('run-blocked').textContent = blocked
-    ? 'Your bags are full. Sell or stash some of it before you go back down.'
-    : '';
+  launcher.disabled = why !== null;
+  launcher.classList.toggle('mini--off', why !== null);
+  $('run-blocked').textContent = why ?? '';
 }
 
 /**

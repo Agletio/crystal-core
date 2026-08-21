@@ -30,7 +30,7 @@ import {
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { crystalFamily, rewardRows } from '../sim/crystal';
-import { itemCard, statLines } from './itemcard';
+import { grantLines, itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
 import { FAMILY_BY_ID } from '../data';
@@ -221,9 +221,15 @@ function renderItem(): void {
     row.append(el('span', 'dot dot--citrine'));
     const b = el('div', 'mod__body');
     const stats = el('div', 'mod__stats');
-    stats.append(...statLines(imp));
+    stats.append(...statLines(imp), ...grantLines(imp));
     b.append(stats);
-    b.append(el('div', 'mod__name', 'base — cannot be changed'));
+    b.append(
+      el(
+        'div',
+        'mod__name',
+        item.meta.grafted !== undefined ? 'grafted — cannot be changed' : 'base — cannot be changed'
+      )
+    );
     row.append(b);
     list.append(row);
   }
@@ -260,7 +266,7 @@ function renderItem(): void {
     // item was the one place printing "+14 coldRes" — the exact leak the mods
     // check exists to catch, in the exact spot it does not look.
     const stats = el('div', 'mod__stats');
-    stats.append(...statLines(mod));
+    stats.append(...statLines(mod), ...grantLines(mod));
     b.append(stats);
     b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
     row.append(b);

@@ -127,6 +127,20 @@ function art(id: string, cls: string, cx: number, cy: number, s: number): SVGEle
   });
 }
 
+/** The STATE ring, on the node's own border. A glow filtered onto the picture
+ *  takes the picture's silhouette, which is a different shape on every node and
+ *  reads as art rather than as state; this is one circle at one radius, and the
+ *  stylesheet colours it off the group's classes for all four webs at once. */
+function halo(pos: { x: number; y: number }, r: number, prefix: string): SVGElement {
+  return svgEl('circle', {
+    class: `${prefix}__halo`,
+    cx: pos.x.toFixed(3),
+    cy: pos.y.toFixed(3),
+    r: (r * 1.1).toFixed(3),
+    'stroke-width': (r * 0.17).toFixed(3),
+  });
+}
+
 export function frame(
   kind: 'minor' | 'notable',
   pos: { x: number; y: number },
@@ -140,7 +154,7 @@ export function frame(
     pos.y,
     r * 2.3
   );
-  if (own) return [own];
+  if (own) return [own, halo(pos, r, prefix)];
   const n = 17;
   const out: SVGElement[] = [];
   if (kind === 'notable') {
@@ -156,7 +170,8 @@ export function frame(
     svgEl('path', {
       class: `${prefix}__frame ${prefix}__ring`,
       d: stamp(ring(n, kind === 'notable' ? 2.4 : 2), n, pos.x, pos.y, r),
-    })
+    }),
+    halo(pos, r, prefix)
   );
   return out;
 }

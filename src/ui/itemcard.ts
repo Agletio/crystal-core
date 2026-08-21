@@ -9,7 +9,7 @@ import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, GEAR_BASE_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import { FAMILY_BY_ID, GEAR_BASE_BY_ID, MOD_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import { weaponSwing } from '../sim/stats';
 import { glossaryOf, keywordLine } from './glossary';
@@ -40,10 +40,23 @@ export function statLines(mod: RolledMod): HTMLElement[] {
   return mod.stats.map(statLine);
 }
 
-/** One modifier: its stats, then the tier and family that produced them. */
+/** What one modifier SWITCHES, in its own numbers, off the table by `defId` —
+ *  the path `treeGrants` reads. A line whose whole effect is a grant, which is
+ *  every forged one, says nothing at all without this. */
+export function grantLines(mod: RolledMod): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  for (const [id, value] of Object.entries(MOD_BY_ID[mod.defId]?.grants ?? {})) {
+    const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
+    if (said) out.push(keywordLine(said, 'tip__grant'));
+  }
+  return out;
+}
+
+/** One modifier: its stats, its switches, then the tier and family behind them. */
 function modBlock(mod: RolledMod, named: boolean): HTMLElement {
   const block = el('div', 'tip__mod');
   for (const line of mod.stats) block.append(statLine(line));
+  block.append(...grantLines(mod));
   if (named) block.append(el('div', 'tip__modname', `T${mod.tier} ${mod.name}`));
   return block;
 }

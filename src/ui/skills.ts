@@ -46,6 +46,7 @@ import {
   slotForSkill,
   slotIsOpen,
   targetSlotFor,
+  weaponWanted,
   xpToNext,
 } from '../sim/character';
 import { AILMENT_OF_TYPE, DAMAGE_TYPE_BY_ID } from '../data';
@@ -201,6 +202,8 @@ function skillSummary(skill: SkillDef): string[] {
       (converted ? ` (converted from ${skill.damageTypes.join(', ')})` : ''),
     `added damage: ${skill.addedEffectiveness}%, as its own type`,
   ];
+  // Before the numbers, because it decides whether any of them apply to you.
+  if (skill.requires) lines.push(`swung with: ${weaponWanted(skill)}`);
 
   // Everything below is derived from what you are WEARING, which is only the
   // truth for the skill you actually have equipped.

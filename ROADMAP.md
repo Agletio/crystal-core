@@ -6,14 +6,18 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**NOTHING IS WAITING BUT A QUESTION.** Everything the user asked for in the
-trials-web round has landed — the web and its six arms, all three events, the
-skill-tree tints, the arrow, the ailment rework, settings and the book — and so
-has the trades round after it: pan and zoom, forty-five nodes a trade, Aether
-Ward and Overcharge. So has everything since — the Burst out of the trees, the
+**FOUR PHASES ARE WAITING, and they came in one message after playing it.** They
+are numbered below in the order to take them: the weapon soft-lock (a trap a
+player can walk into and not get out of), the warsword and shield bodies, the
+people you have met moving into a camp, and the camp itself. **Take Phase 1.**
+
+**Everything before them has landed.** The trials-web round — the web and its
+six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
+settings and the book — and the trades round after it: pan and zoom, forty-five
+nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 1 (a quest log) stays parked by his word until the
+what it found is below. Phase 5 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -32,8 +36,9 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**So this file holds a parked phase, a held pass, the open questions and a
-backlog nobody asked for. Say so and list them rather than inventing work.**
+**Under the four phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the four are done, say so and
+list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
 to look:
@@ -68,7 +73,7 @@ to look:
 | Contagion is capped | it spreads to 2, and each spread is an explosion drawn in the ailment's own colour |
 | shred is VISIBLE | `Entity.shred`, a ring under the body and arcs over it, in the group's colour |
 | a weapon has damage | base physical on 18 bases; its OWN increases are LOCAL, wands keep spell damage |
-| a skill names its weapon | `SkillDef.requires`; all three doors police it — both equips and taking one off |
+| a skill names its weapon | `SkillDef.requires`, and NOTHING is refused for it: `weaponRefusal` shuts the Fissure and marks the hand instead |
 | the Lampwright is FIRST | a new character opens in his workshop, is armed for the skill they chose, and the stair behind him is the first descent |
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
@@ -407,7 +412,196 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — A quest log instead of a pointing finger
+## Phase 1 — A weapon requirement is a WARNING, never a locked door
+
+**What is true today.** `weaponFits(skill, held)` in `src/sim/character.ts` is
+consulted by three doors that all REFUSE: `equipItem` and `unequipItem` in
+`src/game/state.ts` (605, 646) and `equipSkill` in `src/sim/character.ts` (205).
+`heal()` in `src/game/save.ts` (318-327) silently rewrites the main skill to
+something the held weapon can swing.
+
+**Why it is wrong**, in the user's words: *"if im on strike which requires a
+melee weapon and I want to switch to lightning arrow. I can't swap abilities it
+doesn't let me because my weapon type wont work with a bow skill, I also cant
+swap to a bow because my current skill strike doesn't work with a bow. The only
+way to swap is switch to a spell which requires nothing, swap your skill to bow,
+then you can equip your bow."* Two doors that each check the other are a
+deadlock, and the game's own rule is that **nothing is ever prevented**.
+
+- [ ] **All three doors stop refusing.** A mismatched pair becomes a legal state
+      of `GameState`, not an impossible one. Delete the checks; do not replace
+      them with a confirm.
+- [ ] **`heal()` stops rewriting the skill.** Repairing a state that is now legal
+      is what makes the player's own choice vanish on the next load. The lines it
+      keeps are the ones about a base that no longer exists.
+- [ ] **The Fissure REFUSES to launch, and says why.** Beside `bagsFull`, in the
+      same place and the same shape: *"You don't have the required weapon type
+      for that skill."* Name the skill and the family it wants, both off the
+      table — `weaponFamilies(skill)` already resolves a group to its members.
+- [ ] **The sheet marks the weapon.** A red border on the main-hand slot with
+      one line under it. `.slotcell` already carries state classes; a token for
+      the colour goes in `:root` like every other.
+- [ ] **Every equipped slot is checked, not just the main one.** A mover or a
+      passive may name a weapon too. `SKILL_SLOTS` is the loop.
+
+**Traps.**
+- `makeCharacter` also calls `weaponFits`, and that one STAYS: it builds a
+  character, and a character built holding a weapon its own skill refuses is a
+  starting state nobody chose. Same for `starterLoadout` and `bestBuild`.
+- **The sim must never meet the mismatch.** `runToCompletion` has no policy for
+  "cannot swing what you are holding", and inventing one is a mechanism change.
+  The launch refusal is what keeps it out; the demo builds matched loadouts, so
+  nothing headless can reach it.
+- The demo asserts today that all three doors police the requirement — *"a skill
+  names its weapon; all three doors police it"* in the landed table. Those checks
+  invert: they must now assert the swap is ALLOWED and the launch is refused.
+
+**Done when.** From Strike with a sword you can equip a bow, then equip
+Lightning Arrow, in either order, with no juggling — and the Fissure will not
+open until the pair agrees, saying so in one sentence.
+
+**What must not break.** `npm run typecheck`, `mods`, `demo` (the requirement
+checks), `smoke` (it equips), `shots` (the sheet).
+
+---
+
+## Phase 2 — The warsword swings, and one shield is one shield
+
+**What is true today.** `tools/art/bodies.json` holds 26 variant rows generated
+through `dress.mts` against the vocabulary in `tools/art/weapons.json`. Two came
+out wrong and the user found both by watching:
+
+- **`sword2h`** — *"Should be holding the sword with both hands and it pointed up
+  when walking, then swinging it forward never have it pointing straight down."*
+  Its walk points the blade at the floor and the attack window is `to: 0.56`.
+- **`sword_shield`** — *"its just the 1h sword and shield that does the double
+  shield"*. Two shields on one body: the generator drew the off hand twice.
+
+*"I checked all the other animations, the rest looked fine."* — so this is two
+rows, not a sweep.
+
+- [ ] **Load the `art` skill first.** The pipeline is `bodies.json` →
+      `body.mts`/`dress.mts`; nothing here is drawn by hand.
+- [ ] **`weapons.json` gains the carry rule for `sword2h`** — blade up at rest
+      and in the walk, forward through the swing — so a re-ask of any body
+      holding one says the same thing. The rules block is the point of the file.
+- [ ] **The `sword_shield` say names ONE shield and names the hand it is in.**
+      Watch the first 30 characters: the server keys an animation off them, so
+      the state's own VERB opens every say.
+- [ ] **Re-import with a window.** An artefact with a SHAPE is the import's
+      problem, not the generator's — `to: 0.4` on an idle is what fixed the last
+      three.
+- [ ] **`npm run peek` on each, and look.** An art claim needs a screenshot.
+
+**Traps.** `GAVE UP` on job-slot exhaustion arrives as TEXT and keeps the OLD
+group — grep the run before believing a variant re-rendered. `edit_description`
+caps at 1000 characters and `dress.mts` guards it with `SAY_MAX`.
+
+**Done when.** The warsword is held in two hands, up in the walk and forward
+through the swing, never down; the sword-and-shield body carries one shield.
+
+**What must not break.** `npm run build`, then `peek` and `shots` — both load
+the bundle. Bundle size is open question 10 and a re-ask of two variants does not
+move it.
+
+---
+
+## Phase 3 — Somebody you have met is somebody you can go and see
+
+**What is true today.** A room is SCHEDULED at the end of a cleared descent:
+`relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
+Astral-Geometer's room whenever you are carrying the relic he wants, every time,
+for as long as you keep it.
+
+**Why it is wrong**, in the user's words: *"make it to where after you encounter
+the golenmancer and the prismatic guy equivalent you don't encounter them
+randomly anymore, make it an option to just talk to them from the main menu, so
+if you decide to keep their currency you don't just keep encountering them
+repeatedly."*
+
+- [ ] **A met person is remembered.** `game.given` already records what has been
+      handed over once; met-ness is the same shape and belongs beside it.
+- [ ] **The schedule stops offering a room you have already been to.** The relic
+      still schedules the FIRST meeting — that is how you find him.
+- [ ] **You can go to him instead.** Reachable from home, and it opens the same
+      `enterScene` the schedule opens: *"a room entered from here is the room, not
+      a preview of one"* is already the rule `enterRoomNow` was written to.
+- [ ] **`heal()` reads met-ness off what the save already holds**, the way
+      `game.given` was back-filled, so an existing save is not stranded holding a
+      relic with nowhere to spend it.
+
+**Traps.** The Lampwright's workshop is the OPENING and is scheduled by
+`giftWaiting`, not by a relic — leave that path alone. The answering hall is a
+boss and is bought with a key; it is not a person to visit.
+
+**Done when.** Keeping a relic never puts you in the same room twice, and the man
+who wants it can be walked to whenever you like.
+
+**What must not break.** `npm run demo` (the relic and scene checks), `smoke`,
+`shots` (the graft screen).
+
+---
+
+## Phase 4 — The camp: the home screen becomes a PLACE
+
+**The user's ask, in full, because the shape is all his:** *"I think the home
+screen should be more like an actual hideout in path of exile. Where you see your
+character in an area, you can click on objects in the area to interact rather
+than menu items. I mean still keep a lot of the menu but im thinking just like
+the hideout is a small camp you've made around the entrace to this cave like the
+title screen. You click on the crack in the wall and a fancy menu pops up with
+the crystal sockets and lets you enter... Around the camp you can have like a
+crafting bench you can click on to craft, when you find the characters like
+golenmancer they can start being in your camp so you can talk to them whenever...
+use the title screen as inspiration a grassy field, with a rock wall that have a
+glowing crack in it, and visiable sockets on the wall to put crystals in. Then a
+crafting bench and spots for the characters, maybe like a tent or just make it
+look lived in."*
+
+**What is true today.** Home is `run-menu`: a panel of buttons over the last
+descent's canvas. Every screen is reached from the rail. **Nothing about this is
+a new engine** — a scene is already a `RunSim` over an authored `plan` with
+props at absolute positions and a person standing in it (`src/scenes/*.ts`,
+`sceneMap` beside `src/sim/grid.ts`), and `enterRoomNow` already walks you into
+one. The camp is a scene you are always in rather than a screen.
+
+- [ ] **Decide the seam FIRST and write it down: is the camp a `SceneDef`, or a
+      fifth phase beside `menu`/`running`/`scene`/`results`?** A `SceneDef` gets
+      the walk, the camera, both renderers and the prop table for free; a phase
+      gets a blank slate and owes all four. Recommend the first and say what it
+      beat.
+- [ ] **An outdoor plan.** Grass, a rock wall, the crack. `sceneMap` carves a
+      room out of rock — a field with a wall along one side is a plan it has
+      never been asked for, and that is the real work of this phase.
+- [ ] **The crack opens the Fissure panel** — sockets, the set, and the launch.
+      It is the run panel that exists, anchored on a prop instead of the rail.
+- [ ] **The bench is a prop you click.** `openCraft` is already a function.
+- [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
+      way. Do Phase 3 first; this is its payoff.
+- [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
+      in, not a replacement, and a screen reachable only by finding a prop is a
+      screen somebody will lose.
+- [ ] **Props are GENERATED.** A tent, a bench, sockets on the wall — `uikit.mts`
+      / `zoneset.mts`, load the `art` skill. Existing props are toned to pale
+      sand and a grass field is not.
+- [ ] **A new screen is a new shot**, and this one is the screen the game opens
+      on.
+
+**Traps.** The title screen is a still PICTURE, not a map — do not try to walk on
+it. `livingDecals` stand down on a `bare` map. **Nothing teaches**: a prop with a
+label floating over it is a hint bar in a new coat; hover may carry meaning
+because this is a desktop game.
+
+**Done when.** The game opens on a camp you can see your character standing in,
+the crack launches a descent, the bench crafts, and anyone you have met is
+standing in it.
+
+**What must not break.** All of it: `shots` most of all, and `smoke`, which
+clicks its way from the title into a descent through this screen.
+
+---
+
+## Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

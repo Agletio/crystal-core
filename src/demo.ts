@@ -166,7 +166,7 @@ import { mainWorkings, slotWorkings } from './skill-text';
 import { describeStatLine } from './mod-text';
 import { KEYWORDS, KEYWORD_BY_GRANT, bannedIn, keywordsIn } from './keywords';
 import type { KeywordDef } from './keywords';
-import { SKILL_BEHAVIOURS } from './sim/skills';
+import { SKILL_BEHAVIOURS, castScale, targetScale } from './sim/skills';
 import {
   GRANTS,
   GRANT_BY_ID,
@@ -221,6 +221,7 @@ import {
   mainSkillId,
   weaponFamilies,
   weaponFits,
+  weaponRefusal,
   openSlots,
   slotForSkill,
   makeCharacter,
@@ -3378,7 +3379,10 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
   }).map((sk) => `${sk.id} → ${starterWeapon(sk)}`);
   check(wrong.length === 0, 'and the weapon it is opened with is one it can be swung with', wrong.join(', '));
 
-  // BOTH directions refuse, or the pair can still be made from one side.
+  // NEITHER direction refuses. Two doors that each check the other are a
+  // deadlock: holding a mace and swinging Shockwave, the bow is refused because
+  // of the skill and the skill is refused because of the bow, and the only way
+  // out is a spell. What the mismatch costs is said at the Fissure instead.
   {
     const game = createGame('fresh');
     game.inventory = [];
@@ -3389,12 +3393,34 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
     equipSkill(game.character, 'shockwave');
 
     const tookBow = equipItem(game, bow, 'weapon') !== null;
+    const stuck = weaponRefusal(game.character);
     const tookArrow = equipSkill(game.character, 'lightning_arrow');
-    line(`  holding a mace and swinging Shockwave: a bow ${tookBow ? 'went on' : 'is refused'}, Lightning Arrow ${tookArrow ? 'went on' : 'is refused'}`);
+    line(`  a mace and Shockwave: the bow ${tookBow ? 'went on' : 'was refused'}, then Lightning Arrow ${tookArrow ? 'went on' : 'was refused'}`);
+    line(`  and in between, the Fissure said: ${stuck ?? '(nothing)'}`);
     check(
-      !tookBow && !tookArrow && mainSkillId(game.character) === 'shockwave',
-      'a weapon that would strand your skill is refused, and so is a skill your weapon cannot swing',
+      tookBow && tookArrow && mainSkillId(game.character) === 'lightning_arrow',
+      'a weapon and a skill swap freely in either order, with no juggling',
       `bow ${tookBow}, arrow ${tookArrow}, holding ${mainSkillId(game.character)}`
+    );
+    check(
+      stuck !== null && weaponRefusal(game.character) === null,
+      'and a pair that disagrees shuts the Fissure until it agrees again',
+      `mid-swap ${stuck}, after ${weaponRefusal(game.character)}`
+    );
+  }
+
+  // Taking the weapon OFF is the third door, and it does not refuse either.
+  {
+    const game = createGame('fresh');
+    game.inventory = [];
+    addItem(game, makeGear('cudgel', 20));
+    equipItem(game, game.inventory[0], 'weapon');
+    equipSkill(game.character, 'shockwave');
+    const off = unequipItem(game, 'weapon');
+    check(
+      off && weaponRefusal(game.character) !== null,
+      'and an empty hand is a state you can reach, and one the Fissure names',
+      `${off} / ${weaponRefusal(game.character)}`
     );
   }
 
@@ -3437,18 +3463,19 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
     );
   }
 
-  // And a SAVE written before the pair was policed is healed rather than left
-  // holding a skill it cannot use, which is a descent that never ends.
+  // And a SAVE holding a mismatched pair keeps it. Healing it away would undo
+  // a swap the player is halfway through: they put the bow on, closed the game,
+  // and came back to a skill they did not choose.
   {
     const game = createGame('fresh');
     game.character.equipment.weapon = makeGear('crude_bow', 20);
     game.character.equipped = { ...game.character.equipped, [MAIN_SLOT]: 'shockwave' };
     heal(game);
     const now = mainSkillId(game.character);
-    line(`  and a save holding a bow and Shockwave heals to ${SKILL_BY_ID[now]?.name}`);
+    line(`  and a save holding a bow and Shockwave comes back holding ${SKILL_BY_ID[now]?.name}`);
     check(
-      weaponFits(SKILL_BY_ID[now], game.character.equipment.weapon ?? null),
-      'and a save holding a pair neither equip would make is healed to one that works',
+      now === 'shockwave' && weaponRefusal(game.character) !== null,
+      'and a save holding a pair that disagrees keeps it, rather than choosing for you',
       `${now} with a bow`
     );
   }
@@ -4171,21 +4198,29 @@ rule('THE SHEET — does every number on it survive being checked?');
   const dummy = (x: number, y: number) =>
     ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
 
-  /** What one cast asks the sim for, against a single enemy standing on you. */
+  /**
+   * What one cast asks the sim for, against a single enemy standing on you —
+   * and, beside it, what the enemy's own STATE is worth. A node reading "35%
+   * more against something close" is real damage the sheet deliberately cannot
+   * promise, since it depends on where the monster is standing; dividing it out
+   * is what leaves the sheet's own promise to compare.
+   */
   const castOnce = (skillId: string, grants: Record<string, unknown>) => {
     const skill = SKILL_BY_ID[skillId];
     const user = dummy(0, 0);
     const target = dummy(0.2, 0);
     const asked: Array<{ multiplier: number; seconds: number }> = [];
-    SKILL_BEHAVIOURS[skill.behaviour]({
+    const use = {
       skill, user, primary: target, enemies: [target],
       rng: new Rng(3), grants, crit: false, castIndex: 0,
       hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
       areaRadius: (base: number) => base,
       vfx: () => {},
-    } as any);
-    return asked[0];
+    } as any;
+    SKILL_BEHAVIOURS[skill.behaviour](use);
+    const conditional = castScale(grants, 0) * targetScale(use, target);
+    return asked[0] ? { ...asked[0], conditional } : undefined;
   };
 
   const mismatched: string[] = [];
@@ -4214,8 +4249,9 @@ rule('THE SHEET — does every number on it survive being checked?');
         continue;
       }
 
-      // What the sim will actually compute, from its own two numbers.
-      const simWorth = stats.damage * asked.multiplier;
+      // What the sim will actually compute, from its own two numbers, less
+      // whatever the target's own position and state were worth.
+      const simWorth = (stats.damage * asked.multiplier) / asked.conditional;
       const gap = Math.abs(simWorth - detail.perApplication);
       if (gap > Math.max(1e-9, detail.perApplication * 1e-9)) {
         mismatched.push(
