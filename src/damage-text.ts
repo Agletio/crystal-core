@@ -2,9 +2,34 @@
  * The damage breakdown, in words. Here rather than in the sheet so the demo can
  * check that the working shown reproduces the number shown.
  */
-import type { DamagePart, DamageStep } from './sim/stats';
+import { AILMENT_OF_TYPE, DAMAGE_TYPE_BY_ID } from './data';
+import type { CombatStats, DamagePart, DamageStep } from './sim/stats';
 
 const round = (n: number) => Math.round(n).toString();
+const trim = (n: number): string => String(Math.round(n * 100) / 100);
+
+/** WHAT A DAMAGE TYPE LEAVES BEHIND at this build's numbers: how often, and
+ *  what one stack is worth in the ailment's OWN units. "Applies Chill" is the
+ *  sentence this game does not write. Here because TWO screens ask. */
+export function ailmentLine(type: string, stats: CombatStats): string {
+  const def = AILMENT_OF_TYPE[type];
+  const named = DAMAGE_TYPE_BY_ID[type]?.name ?? type;
+  if (!def) return `${named}: no Ailment`;
+
+  const chance = Math.round(stats.ailmentChance?.[def.id] ?? def.chance);
+  const dps = Math.round(stats.ailmentDps?.[def.id] ?? def.dps ?? 0);
+  const worth =
+    def.kind === 'chill'
+      ? `${def.slowPer}% slower a stack, Frozen at ${def.freezeAt} for ${def.freezeSeconds}s`
+      : def.kind === 'curse'
+        ? `${trim(def.burstShare ?? 0)}% of its maximum life a stack, ${trim(def.burstRadius ?? 0)} tiles across`
+        : def.kind === 'exposure'
+          ? `${def.takenPer}% increased damage taken a stack`
+          : def.kind === 'shock'
+            ? `${dps}/s a stack, and ${Math.round((def.arcShare ?? 0) * 100)}% of it to ${def.arcTargets} nearby`
+            : `${dps}/s a stack`;
+  return `${def.name}: ${chance}% a hit, ${worth}, for ${def.seconds}s`;
+}
 
 /** Every factor behind one damage type, in the order it was applied. */
 export function damageWorkings(part: DamagePart, steps: DamageStep[]): string {

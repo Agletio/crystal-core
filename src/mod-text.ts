@@ -88,6 +88,19 @@ function resistancePrefix(stat: string): string | null {
   return TAG_WORDS[key] ?? titled(key);
 }
 
+/** Stats whose FLAT form is a PERCENTAGE. "+8 Chance to apply Bleed" is eight
+ *  of nothing, and so is every chance beside it. */
+const FLAT_PERCENT = new Set([
+  'ailmentChance',
+  'critChance',
+  'blockChance',
+  'dodgeChance',
+  'monsterCrit',
+  ...DROP_GROUPS.map((g) => findStat(g.id)),
+]);
+
+const percentFlat = (stat: string): boolean => FLAT_PERCENT.has(stat) || stat.endsWith('Res');
+
 /** Falls back to splitting camelCase, so a new stat is unpolished, not unreadable. */
 export function statLabel(stat: string): string {
   const named = NAMED[stat];
@@ -150,7 +163,9 @@ export function statParts(line: StatRoll): StatParts {
   }
 
   const name = qualify(line.stat, line.tags);
-  if (line.form === 'flat') return { value: `${sign}${shown}`, label: name };
+  if (line.form === 'flat') {
+    return { value: `${sign}${shown}${percentFlat(line.stat) ? '%' : ''}`, label: name };
+  }
   if (line.form === 'inc') return { value: `${sign}${shown}%`, label: `increased ${name}` };
   return { value: `${shown}%`, label: `more ${name}` };
 }

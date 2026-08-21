@@ -5,6 +5,7 @@ import { canApply, craft, describeItem, describeMod, itemMatches } from './craft
 import {
   AILMENT,
   ALL_MODS,
+  AILMENT_OF_TYPE,
   ATTRIBUTES,
   DEFENCE,
   FISSURE,
@@ -160,7 +161,7 @@ import {
   ailmentChances,
   retag,
 } from './sim/stats';
-import { damageWorkings, readWorkings } from './damage-text';
+import { ailmentLine, damageWorkings, readWorkings } from './damage-text';
 import { potionReading, potionWorkings } from './potion-text';
 import { mainWorkings, slotWorkings } from './skill-text';
 import { describeStatLine } from './mod-text';
@@ -4010,6 +4011,33 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
     'and a skill that hits reports no duration at all',
     'a hit claims a duration'
   );
+
+  // WHAT IT LEAVES BEHIND, on the sheet. Every ailment says its chance AND
+  // what one stack is worth in its own units — a Burn is damage a second, a
+  // Chill is a share off speed and a count that Freezes — because "applies
+  // Chill" is the sentence this game does not write. Prismatic leaves nothing
+  // ON PURPOSE and has to say so rather than being left off.
+  {
+    const stats = characterStats(game.character);
+    const vague: string[] = [];
+    for (const type of DAMAGE_TYPES) {
+      const said = ailmentLine(type.id, stats);
+      line(`  ${said}`);
+      const def = AILMENT_OF_TYPE[type.id];
+      if (!def) {
+        if (!/no Ailment/.test(said)) vague.push(`${type.id} says nothing about having none`);
+        continue;
+      }
+      if (!/%/.test(said)) vague.push(`${def.id} never says how often`);
+      if (!/\d/.test(said.split(',').slice(1).join(','))) vague.push(`${def.id} never says what a stack is worth`);
+      if (!said.includes(`${def.seconds}s`)) vague.push(`${def.id} never says how long`);
+    }
+    check(
+      vague.length === 0,
+      'every damage type says what it leaves behind, how often, and what a stack is worth',
+      vague.join('; ')
+    );
+  }
 }
 
 // ===========================================================================

@@ -36,8 +36,9 @@ import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
 import { slotWorkings } from '../skill-text';
+import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
+import { characterStats, convertedType, damageDetail, retag, skillBase, treeGrants } from '../sim/stats';
 import {
   addSkillXp,
   equipSkill,
@@ -49,18 +50,7 @@ import {
   weaponWanted,
   xpToNext,
 } from '../sim/character';
-import { AILMENT_OF_TYPE, DAMAGE_TYPE_BY_ID } from '../data';
-import type { CombatStats } from '../sim/stats';
-
-/** What this skill's own damage type leaves behind, at this build's numbers. */
-function ailmentLine(type: string, stats: CombatStats): string {
-  const def = AILMENT_OF_TYPE[type];
-  if (!def) return `${DAMAGE_TYPE_BY_ID[type]?.name ?? type}: no Ailment`;
-  const chance = Math.round(stats.ailmentChance?.[def.id] ?? def.chance);
-  const dps = Math.round(stats.ailmentDps?.[def.id] ?? def.dps ?? 0);
-  const worth = def.dps ? ` for ${dps}/s over ${def.seconds}s` : ` for ${def.seconds}s`;
-  return `${def.name}: ${chance}% a hit${worth}`;
-}
+import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
@@ -161,6 +151,26 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 // ---------------------------------------------------------------------------
 // The skill's own numbers
 // ---------------------------------------------------------------------------
+
+/** A node's sentence AS THE SIM READS IT. `treeMod` retags every line a node
+ *  carries, ailment tags included, so a wedge of Bleed chance walked to reach a
+ *  Conversion really is Burn chance. The `description` was written for the
+ *  unconverted skill and did not move with it. */
+function asConverted(node: SkillNodeDef, skillId: string): string {
+  const skill = SKILL_BY_ID[skillId];
+  const converted = skill && convertedType(skill, treeGrants(game.character));
+  if (!skill || !converted) return node.description;
+  let said = node.description;
+  for (const line of node.stats ?? []) {
+    for (const tag of line.tags ?? []) {
+      const was = AILMENT_BY_ID[tag];
+      const now = AILMENT_BY_ID[retag(tag, skill, converted)];
+      if (!was || !now || was === now) continue;
+      said = said.split(was.name).join(now.name).split(was.verb ?? was.name).join(now.verb ?? now.name);
+    }
+  }
+  return said;
+}
 
 /** A shelf row's card, in the shape a tree node takes so the glossary comes
  *  with it. The only reading a WEBLESS skill has: the click equips it. */
@@ -633,7 +643,7 @@ function renderWeb(): void {
           ? `Chosen: ${picked.name} — ${picked.description}`
           : 'Click to choose.'
         : '';
-      return nodeCard(node.name, state, [node.description, cost(node), choice]);
+      return nodeCard(node.name, state, [asConverted(node, skillId), cost(node), choice]);
     });
 
     const act = () => {

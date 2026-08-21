@@ -21,7 +21,7 @@ import {
 import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
 import { slotWorkings } from '../skill-text';
 import { starvedMultiplier } from '../sim/grants';
-import { damageWorkings } from '../damage-text';
+import { ailmentLine, damageWorkings } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
   addXp,
@@ -270,6 +270,29 @@ function damagePanel(): HTMLElement {
     box.append(row);
   }
 
+  // REFRACTION and anything like it: a tail off the ELEMENTAL half, landing at
+  // the hit rather than in the pass above, and resisted as its own type. The
+  // sheet could not show it at all and the user could not tell a missing line
+  // from a dead passive.
+  const grants = treeGrants(game.character);
+  const tail = typeof grants.prismaticExtra === 'number' ? grants.prismaticExtra : 0;
+  const elemental = breakdown.parts
+    .filter((p) => DAMAGE_TYPE_BY_ID[p.type]?.group === 'elemental')
+    .reduce((sum, p) => sum + p.total, 0);
+  if (tail > 0) {
+    const row = el('div', `dmgrow${elemental === 0 ? ' dmgrow--nil' : ''}`);
+    row.append(el('span', 'dmgrow__n', `+${round(elemental * tail)}`));
+    row.append(el('span', 'dmgrow__t', 'Prismatic'));
+    row.append(
+      el(
+        'span',
+        'dmgrow__how',
+        `${round(elemental)} Elemental  ×${tail.toFixed(2)} on top  · resisted as Prismatic, not as what carried it`
+      )
+    );
+    box.append(row);
+  }
+
   // Every row lands as its own type, so the total has none: each is resisted
   // separately and the sum is only ever what you would deal to something that
   // resists nothing.
@@ -286,6 +309,23 @@ function damagePanel(): HTMLElement {
     )
   );
   box.append(total);
+
+  // WHAT IT LEAVES BEHIND. One row per type this build actually deals, in the
+  // ailment's own units: a Burn is damage a second, a Chill is a share off
+  // speed and a count that Freezes. Prismatic deliberately leaves nothing and
+  // says so rather than being left off.
+  const stats = characterStats(game.character);
+  const dealt = breakdown.parts.filter((p) => p.total > 0);
+  if (dealt.length > 0) {
+    const after = el('div', 'statdetail__note');
+    after.textContent = 'What it leaves behind';
+    box.append(after);
+    for (const part of dealt) {
+      const row = el('div', 'dmgrow dmgrow--ail');
+      row.append(el('span', 'dmgrow__how', ailmentLine(part.type, stats)));
+      box.append(row);
+    }
+  }
   return box;
 }
 
