@@ -6,11 +6,10 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**THREE PHASES ARE WAITING.** Two are the user's camp — the people you have met
-moving into one, and the camp itself — and the third is dual wielding, which is
-the largest art phase this game has had and carries an open question of its own.
-**Take Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls
-and the kiting, which came first, have landed.
+**TWO PHASES ARE WAITING**: the user's camp, and dual wielding — the largest
+art phase this game has had, which carries an open question of its own. **Take
+Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the
+kiting and the people you have met all came first and have landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -18,7 +17,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 4 (a quest log) stays parked by his word until the
+what it found is below. Phase 3 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -37,8 +36,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the three phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the three are done, say so and
+**Under the two phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the two are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -79,6 +78,7 @@ to look:
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
+| you go and SEE somebody | `metMark` / `folkMet` — meeting somebody takes them off the schedule and puts them on the Fissure screen, so a relic you keep is a decision rather than the same room at every clear |
 | kiting is the SKILL's | a build reaching further than 3 tiles gives ground while it recovers, `kiteFrom` answers whether it MOVED and slides along rock, and a kiting mover never lands inside its own reach. Featherstep is armour-into-Dodge and speed |
 | a wall has a SIDE | `wallSide` — rock with floor below it is a FACE and draws behind a body, rock with floor above it is a LIP and draws in front of one, stretched `LIP_RISE` over the floor. `SOUTH_ROOM` closes the tile of floor nothing stood on |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
@@ -416,43 +416,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — Somebody you have met is somebody you can go and see
-
-**What is true today.** A room is SCHEDULED at the end of a cleared descent:
-`relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
-Astral-Geometer's room whenever you are carrying the relic he wants, every time,
-for as long as you keep it.
-
-**Why it is wrong**, in the user's words: *"make it to where after you encounter
-the golenmancer and the prismatic guy equivalent you don't encounter them
-randomly anymore, make it an option to just talk to them from the main menu, so
-if you decide to keep their currency you don't just keep encountering them
-repeatedly."*
-
-- [ ] **A met person is remembered.** `game.given` already records what has been
-      handed over once; met-ness is the same shape and belongs beside it.
-- [ ] **The schedule stops offering a room you have already been to.** The relic
-      still schedules the FIRST meeting — that is how you find him.
-- [ ] **You can go to him instead.** Reachable from home, and it opens the same
-      `enterScene` the schedule opens: *"a room entered from here is the room, not
-      a preview of one"* is already the rule `enterRoomNow` was written to.
-- [ ] **`heal()` reads met-ness off what the save already holds**, the way
-      `game.given` was back-filled, so an existing save is not stranded holding a
-      relic with nowhere to spend it.
-
-**Traps.** The Lampwright's workshop is the OPENING and is scheduled by
-`giftWaiting`, not by a relic — leave that path alone. The answering hall is a
-boss and is bought with a key; it is not a person to visit.
-
-**Done when.** Keeping a relic never puts you in the same room twice, and the man
-who wants it can be walked to whenever you like.
-
-**What must not break.** `npm run demo` (the relic and scene checks), `smoke`,
-`shots` (the graft screen).
-
----
-
-## Phase 2 — The camp: the home screen becomes a PLACE
+## Phase 1 — The camp: the home screen becomes a PLACE
 
 **The user's ask, in full, because the shape is all his:** *"I think the home
 screen should be more like an actual hideout in path of exile. Where you see your
@@ -487,7 +451,7 @@ one. The camp is a scene you are always in rather than a screen.
       It is the run panel that exists, anchored on a prop instead of the rail.
 - [ ] **The bench is a prop you click.** `openCraft` is already a function.
 - [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Do Phase 1 first; this is its payoff.
+      way. Phase 1's `folkMet` list is what this turns into props.
 - [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
       in, not a replacement, and a screen reachable only by finding a prop is a
       screen somebody will lose.
@@ -511,7 +475,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 3 — Dual wielding
+## Phase 2 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -574,7 +538,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 4 — A quest log instead of a pointing finger
+## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

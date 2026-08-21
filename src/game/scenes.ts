@@ -1,8 +1,7 @@
 /**
- * The schedule: what happens at the end of THIS clear. `src/game/crystals.ts`
- * is the same shape for gifts and this ASKS it. At most ONE scene per cleared
- * descent, highest rung first and never rolled — schedules that interleave are
- * schedules nobody can read off a screen.
+ * The schedule: what happens at the end of THIS clear. At most ONE scene per
+ * cleared descent, highest rung first and never rolled — schedules that
+ * interleave are schedules nobody can read off a screen.
  */
 import { INTRO, LAMPWRIGHT } from '../data';
 import { SCENES, SCENE_BY_ID } from '../scenes';
@@ -26,9 +25,24 @@ export function takeBoss(game: GameState, id: string): void {
 export const bossBeaten = (game: GameState, id: string): boolean =>
   (game.bosses ?? []).includes(id);
 
-/** A key already handed over, as a `given` entry: a room owes its own until
- *  it has, which is rung 2's condition and never a roll. */
+/** A key already handed over, as a `given` entry. Rung 2's condition. */
 export const gaveKey = (id: string): string => `key:${id}`;
+
+/** A person you have MET, a `given` entry beside the keys. Meeting somebody
+ *  puts them where you can go and see them and takes them OFF the schedule:
+ *  a relic you keep was otherwise the same room at every clear. */
+export const metMark = (sceneId: string): string => `met:${sceneId}`;
+
+export const hasMet = (game: GameState, sceneId: string): boolean =>
+  (game.given ?? []).includes(metMark(sceneId));
+
+export function takeMet(game: GameState, sceneId: string): void {
+  if (!hasMet(game, sceneId)) game.given = [...(game.given ?? []), metMark(sceneId)];
+}
+
+/** Everyone you can go and see. A BOSS is not one: his room is a descent. */
+export const folkMet = (game: GameState): SceneDef[] =>
+  SCENES.filter((s) => !s.encounter && hasMet(game, s.id));
 
 function scheduled(game: GameState): SceneDef[] {
   const out: SceneDef[] = [];
@@ -47,6 +61,7 @@ export function sceneWaiting(game: GameState, clear: QuestFacts): SceneCall | nu
   const next = scheduled(game)[0];
   if (next) return { def: next, gift: null }; // rung 2
 
-  const wanted = SCENES.find((s) => relicFor(game, s.id) !== null);
+  // Rung 3, ONCE: the relic finds him, and after that you go and see him.
+  const wanted = SCENES.find((s) => relicFor(game, s.id) !== null && !hasMet(game, s.id));
   return wanted ? { def: wanted, gift: null } : null;
 }

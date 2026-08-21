@@ -1258,6 +1258,8 @@
     border: 30px solid transparent; border-image: var(--fix-win) 30 round;
     image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
   }
+  /* Two cards on one screen: the second does not want the first's headroom. */
+  #run-folk:not([hidden]) + .fissurecard { margin-top: 6px; }
   .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }
   .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
@@ -1441,6 +1443,19 @@
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
   .slotcell__btn--worn { border-color: var(--edge-lit); }
+  /* Who is about: one button a person, portrait and name. Sized on the
+     Fissure's card, above it, since it is the same screen's other question. */
+  .folkcard {
+    width: min(620px, 100%); margin: min(3vh, 22px) auto 0;
+    padding: 8px 14px; text-align: center;
+    background-clip: padding-box;
+    border: 30px solid transparent; border-image: var(--fix-win) 30 round;
+    image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
+  }
+  .folkcard .panel__title { font-size: 13px; margin-bottom: 6px; }
+  .folkrow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .folkbtn { display: flex; align-items: center; gap: 6px; padding: 5px 9px; }
+  .folkbtn__name { font-size: 11px; }
   /* The hand your skill cannot be swung with. Marked, never emptied — the
      Fissure is what refuses, and it says the sentence in full. */
   .slotcell--wrong .slotcell__btn { border-color: var(--ember); }
@@ -1798,6 +1813,8 @@
   <div class="viewport">
   <div id="view-run">
     <div id="run-menu">
+      <!-- Everybody you have met, and a way back to them. -->
+      <div class="folkcard" id="run-folk" hidden></div>
       <!-- One place, always open. A crystal doesn't take you somewhere else,
            it empowers what's already down there — so the socket is optional
            and Enter is never disabled. Nothing else is on this screen: what a

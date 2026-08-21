@@ -2735,6 +2735,16 @@ assert(
     relicSlots().every((b) => b.disabled),
     'and nothing in it has a click: it is carried to a person, never spent'
   );
+
+  // WHO IS ABOUT. Somebody you have met is somebody you can go back to, so a
+  // relic you decide to keep is a decision rather than the same room again.
+  const folk = [...document.querySelectorAll('[id^="run-visit-"]')];
+  assert(folk.length > 0, 'everybody the kit has met has a way back to them', String(folk.length));
+  assert($('run-folk').hidden === false, 'and the panel saying so is up');
+  assert(
+    folk.every((b) => b.textContent.trim().length > 0),
+    'and each one says whose room it is'
+  );
 }
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));

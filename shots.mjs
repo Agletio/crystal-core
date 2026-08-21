@@ -519,11 +519,11 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(150);
 
-  // The GRAFT bench, which no click reaches: it is the last beat of a room
-  // somebody holds a relic for, so it costs a second cleared descent. The dev
-  // kit carries a specimen, which IS the schedule.
+  // The GRAFT bench: the last beat of somebody's room. The kit has MET him, so
+  // this is the walk over rather than a cleared descent — a relic you keep no
+  // longer schedules him, which is the whole point of having met him.
   await page.evaluate(() => document.getElementById('open-inventory')?.click());
-  await page.evaluate(() => document.querySelector('#run-launch')?.click());
+  await page.evaluate(() => document.getElementById('run-visit-ossuary')?.click());
   try {
     await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
       timeout: 150000,

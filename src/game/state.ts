@@ -28,6 +28,8 @@ import { canSell, grant, makeCrystal, makeGear, makeRelic, makeUnique, sellPrice
 import { baseTier } from '../mods';
 import { equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
+import { SCENES } from '../scenes';
+import { metMark } from './scenes';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
 
@@ -195,8 +197,12 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.onboarded = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
-  // The dev kit is armed and holds every crystal: nothing waits at the mouth.
-  game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
+  // The dev kit is armed, holds every crystal, and has MET everybody: nothing
+  // waits at the mouth and every room is one click off the Fissure.
+  game.given =
+    mode === 'dev'
+      ? ['weapon', 'crystal', ...SCENES.filter((s) => !s.encounter).map((s) => metMark(s.id))]
+      : [];
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];

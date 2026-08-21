@@ -105,7 +105,7 @@ import {
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
-import { gaveKey, sceneWaiting, takeBoss } from './game/scenes';
+import { folkMet, gaveKey, hasMet, sceneWaiting, takeBoss, takeMet } from './game/scenes';
 import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
@@ -8814,6 +8814,8 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
   const settled = createGame('dev');
   settled.sockets = {};
   settled.relics = [];
+  // The kit has MET everybody, and meeting somebody takes him off the schedule.
+  settled.given = (settled.given ?? []).filter((g2) => !g2.startsWith('met:'));
   const facts = { set: sim.state.set, elapsed: sim.state.elapsed, socketed: [] };
   check(sceneWaiting(settled, facts) === null, 'nothing is owed with nothing carried', String(sceneWaiting(settled, facts)?.def.id));
   settled.relics = [makeRelic(RELICS[0])];
@@ -8844,6 +8846,47 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     'and the armour rating is not the implicit and is untouched',
     `${helm.armour} → ${made.armour}`
   );
+
+  // MET ONCE. A relic finds him the first time and after that he is somebody
+  // you go and see: keeping what he wants is a decision, not the same room at
+  // the end of every clear for as long as you keep it.
+  {
+    const fresh = createGame('fresh');
+    // Past the two rungs above him: what is left is the relic in your hands.
+    fresh.given = ['weapon', 'crystal'];
+    fresh.relics = [makeRelic(RELIC_BY_ID.pristine_specimen)];
+    const first = sceneWaiting(fresh, facts);
+    check(
+      first?.def.id === 'ossuary',
+      'a relic you are carrying finds the person who wants it',
+      first?.def.id ?? 'nobody'
+    );
+    takeMet(fresh, 'ossuary');
+    check(
+      sceneWaiting(fresh, facts) === null && hasMet(fresh, 'ossuary'),
+      'and once you have met him he is never scheduled at you again',
+      JSON.stringify(sceneWaiting(fresh, facts)?.def.id)
+    );
+    check(
+      folkMet(fresh).some((f) => f.id === 'ossuary')
+        && folkMet(fresh).every((f) => !f.encounter),
+      'he is somebody you can go and see instead, and a BOSS never is',
+      folkMet(fresh).map((f) => f.id).join(', ')
+    );
+
+    // A save written before any of this reads met-ness off a GRAFTED piece,
+    // which is the only proof it holds that you stood in that room.
+    const old = createGame('fresh');
+    old.given = ['weapon'];
+    const cap = makeGear('skirmisher_helmet_t1', 20);
+    old.inventory = [graft(cap, forgedFor(cap)[0].mod.id)!];
+    heal(old);
+    check(
+      hasMet(old, 'ossuary'),
+      'and a save holding a piece he wrote on knows you have met him',
+      (old.given ?? []).join(', ')
+    );
+  }
 
   // Wherever it was kept, it stays there. Worn is the one that matters: a
   // graft that dropped a worn helmet into the bag would undress you.

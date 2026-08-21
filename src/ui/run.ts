@@ -43,7 +43,7 @@ import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, gaveKey, sceneWaiting, takeBoss } from '../game/scenes';
+import { bossBeaten, folkMet, gaveKey, sceneWaiting, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
@@ -68,7 +68,7 @@ import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
 import { openCharacter } from './character';
-import { drawn, skillIcon } from './icons';
+import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
@@ -135,6 +135,9 @@ let arriving: SceneDef | null = null;
 /** The opening: his room is the first thing, and the stair behind him is what
  *  the first descent is entered by. Set while that walk is happening. */
 let descending = false;
+/** Set while the room was WALKED TO rather than scheduled: nothing was banked,
+ *  so leaving it goes back to the Fissure instead of down a stair. */
+let visiting = false;
 /** The room you are standing in, and whether its beats have been started. */
 let arrivedIn = '';
 let spoke = false;
@@ -184,6 +187,19 @@ export const runPhase = (): Phase => phase;
  *  rather than the run resuming. */
 export function sceneEnded(): void {
   sim?.takeGift();
+  // Walked to rather than arrived at: nothing was banked and there is no stair
+  // behind him, so this is the way back out of somebody's room.
+  if (visiting) {
+    visiting = false;
+    greeting = null;
+    greeted = null;
+    greetedState = null;
+    sim = null;
+    setPhase('menu');
+    refreshRunPanels();
+    renderInventory();
+    return;
+  }
   const report = greeted;
   const state = greetedState;
   greeted = null;
@@ -228,7 +244,34 @@ function runHandler() {
 // Menu
 // ---------------------------------------------------------------------------
 
+/** WHO IS ABOUT. Everybody you have met, and a button into their room — the
+ *  same `enterScene` the schedule calls, so it is the room rather than a
+ *  preview of one. Meeting somebody moves them from the end of a descent to
+ *  here, so a relic you keep is a decision instead of the same room twice. */
+function renderFolk(): void {
+  const host = $('run-folk');
+  const met = folkMet(game);
+  host.hidden = met.length === 0;
+  host.replaceChildren();
+  if (met.length === 0) return;
+
+  host.append(el('p', 'panel__title', 'Who is about'));
+  const row = el('div', 'folkrow');
+  for (const def of met) {
+    const button = el('button', 'mini folkbtn') as HTMLButtonElement;
+    button.id = `run-visit-${def.id}`;
+    const face = portraitIcon(def.who, 30);
+    if (face) button.append(face);
+    button.append(el('span', 'folkbtn__name', def.name));
+    button.onclick = () => enterRoomNow(def.id);
+    attachTooltip(button, () => def.said);
+    row.append(button);
+  }
+  host.append(row);
+}
+
 function renderMenu(): void {
+  renderFolk();
   const grid = $('run-sockets');
   grid.replaceChildren();
 
@@ -616,8 +659,12 @@ export function openOpening(): boolean {
 }
 
 function enterScene(def: SceneDef): void {
+  visiting = false;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
+  // Standing in somebody's room is MEETING them, which is what puts them on
+  // the list of people you can go back to and takes them off the schedule.
+  if (!def.encounter) takeMet(game, def.id);
   revisit = def.encounter !== null && bossBeaten(game, def.encounter);
   arriving = null;
   arrivedIn = def.id;
@@ -1075,12 +1122,17 @@ function setLeaveLabel(): void {
   const abandon = $('run-abandon') as HTMLButtonElement;
   abandon.disabled = phase !== 'running';
   const live = phase === 'running';
-  btn.textContent = !live
-    ? 'Last descent'
-    : leaving
-      ? 'Leaving after this one'
-      : 'Leave after this run';
-  btn.disabled = !live;
+  // A room you WALKED to has a way back out of it, and it is this button: a
+  // person with nothing to hand over would otherwise be a room with no exit.
+  const back = phase === 'scene' && visiting;
+  btn.textContent = back
+    ? 'Go back'
+    : !live
+      ? 'Last descent'
+      : leaving
+        ? 'Leaving after this one'
+        : 'Leave after this run';
+  btn.disabled = !live && !back;
   btn.classList.toggle('mini--on', live && leaving);
 }
 
@@ -1187,6 +1239,7 @@ export function initRun(state: GameState): void {
   };
 
   ($('run-leave') as HTMLButtonElement).onclick = () => {
+    if (visiting) return sceneEnded();
     if (phase !== 'running') return;
     leaving = !leaving;
     note(leaving ? 'Leaving after this descent.' : 'Staying down.');
@@ -1313,25 +1366,28 @@ export function forgetRun(): void {
   setPhase('menu');
 }
 
-/**
- * THE DEV MENU'S one way into a room. A room is normally SCHEDULED at the end
- * of a cleared descent, which is minutes of play for one look at it — so this
- * is the same `enterScene` the schedule calls, with whatever a descent had
- * half-finished dropped first. Nothing else may call it: a room arrived at any
- * other way is a room whose loot and clear belong to a descent nobody ran.
- */
+/** GOING TO SEE SOMEBODY, and the dev menu's one way into a room. The same
+ *  `enterScene` the schedule calls, with whatever a descent had half-finished
+ *  dropped first — so it has no loot and no clear, and may never be a BOSS. */
 export function enterRoomNow(id: string): boolean {
   const def = SCENE_BY_ID[id];
   if (!def) return false;
   greeted = null;
   greetedState = null;
-  greeting = null;
+  // He may still be holding what he was going to hand over.
+  greeting = def.id === LAMPWRIGHT.scene ? giftWaiting(game) : null;
   banked = null;
   pending = null;
+  arriving = null;
   handover = 0;
   leaving = false;
   streak = 0;
+  // Not the stair behind the Lampwright: a room you walked to is not the
+  // opening, and `walkDown` would launch a descent out from under you.
+  descending = false;
   enterScene(def);
+  visiting = true;
+  setLeaveLabel();
   return true;
 }
 

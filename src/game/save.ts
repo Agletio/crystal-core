@@ -6,6 +6,7 @@
  * story — a save from another one is refused rather than half-read.
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import { takeMet } from './scenes';
 import { healQuests, ownedCrystals } from './crystals';
 import { healTrials } from './trials';
 import { crystalFamily } from '../sim/crystal';
@@ -199,10 +200,8 @@ export function clearSave(slot: Slot = liveSlot()): void {
 // --- healing an old save ----------------------------------------------------
 //
 // A save is full of IDS pointing into the data tables and the trees, and those
-// move as the game is built. The shape looks after itself, so what rots is a
-// reference to something gone. Every one is dropped rather than trusted, and
-// anything paid for is handed back: a reshaped tree costs a respec, not the
-// character.
+// move as the game is built. What rots is a reference to something gone: every
+// one is dropped rather than trusted, and anything paid for is handed back.
 
 /** What a load had to throw away. Empty when the save was already current. */
 export interface Healed {
@@ -435,6 +434,14 @@ export function heal(game: GameState): Healed {
   if (!Array.isArray(game.given)) {
     game.given = game.firstClearDone ? ['weapon'] : [];
     if (ownedCrystals(game).some((c) => crystalFamily(c) === 'normal')) game.given.push('crystal');
+  }
+
+  // Before a person you had met stayed met: a GRAFTED piece is the only proof
+  // a save holds that you stood in that room. Anyone met and not spent is found
+  // again the next time a relic schedules him, which is the old behaviour.
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
+    const who = FORGED_BY_ID[String(item.meta.grafted)]?.who;
+    if (who) takeMet(game, who);
   }
 
   // Before descents were counted: read the count off the one milestone the
