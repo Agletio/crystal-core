@@ -6,11 +6,12 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FOUR PHASES ARE WAITING**: the rest of the user's camp, what the sheet says
-about an ailment, an AoE arm for Rimespike, and dual wielding — the largest art
-phase this game has had, which carries an open question of its own. **Take Phase
-1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the kiting,
-the people you have met and the camp's first half all came first and landed.
+**THREE PHASES ARE WAITING**: the rest of the user's camp, an AoE arm for
+Rimespike, and dual wielding — the largest art phase this game has had, which
+carries an open question of its own. **Take Phase 1.** The weapon soft-lock, the
+two wrong weapon bodies, the walls, the kiting, the people you have met, the
+camp's first half and what the sheet says about an ailment all came first and
+landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -18,7 +19,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 5 (a quest log) stays parked by his word until the
+what it found is below. Phase 4 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -91,6 +92,7 @@ to look:
 | nothing is PINNED any more | `HOLDING` names all nine `HELD` rows and `heroSpriteFor` picks a body off the PAIR of hands; a pin is the fallback for a pair nobody drew |
 | a weapon has a RATE | `WEAPON_RATE` and `weaponRate` — a maul swings 0.8/s where a dagger swings 1.55, and an untagged increase ON the weapon is LOCAL like its damage |
 | the card says both numbers | `addedEffectiveness` and `rateMultiplier` print on the main slot: you cannot pick a weapon off a damage total |
+| an ailment is PRICED on the sheet | `ailmentLine` in `src/damage-text.ts` — a row per damage type the build deals, each in its own units; Refraction's Prismatic gets a row of its own because it lands at hit time; `asConverted` retags a node's sentence; flat percentages say `%` |
 
 **The balance pass RAN, and what it found was that nothing had ever been
 measured against a build.** *The user's call: "I have a feeling your checks are
@@ -485,80 +487,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 2 — What the sheet says about an AILMENT
-
-**Four things the user found reading the sheet**, and they are one question:
-the game applies ailments, buys their chance and scales their damage, and says
-almost none of it.
-
-*"Add to the character sheet for the skill it should show chance to apply each
-ailment that it can apply, then also the damage / effect that ailment gives
-based on your stats. So for burn it should show the damage per stack for your
-burns based on all your character stats. Same for like chill effect how much
-slow each stack applies, dark how much the explosion does etc."*
-
-*"Refraction passive doesnt show added damage on the character sheet after you
-select it so not sure if its working."*
-
-*"When I select convert shockwave to fire the Chance to bleed node still says
-chance to bleed. Not sure if thats a ui bug and it does convert to chance to
-burn or if its really still just bleed."*
-
-*"On gear it says +x chance to ailment. It should be a percent sign so +x% the
-no percent is confusing."*
-
-**What is true today.** `AILMENTS` in `src/data.ts` is one row per damage type
-and `ailmentLine` in `src/ui/skills.ts` already prints one line for the skill's
-OWN type — chance, dps, seconds — on the web's hub tooltip. The character sheet
-does not. `characterStats` carries `ailmentChance` and `ailmentDps` per
-ailment, so the numbers exist and nothing reads them where the user is looking.
-
-- [ ] **Every ailment the skill can apply, on the SHEET.** Not just the one its
-      base type leaves: a conversion moves the type, an added flat line of
-      another type brings its own, and the sheet is where a build is read. One
-      row an ailment — chance, and what a stack is WORTH at these stats.
-- [ ] **The effect, in the ailment's own units.** Burn and Poison and Shock are
-      damage per second; Chill is `slowPer` a stack against the `freezeAt: 8`
-      that Freezes; Curse is an explosion with a number. Say each in its own
-      terms — "6% slower per stack, frozen at 8" — and never as "applies Chill".
-- [ ] **REFRACTION: find out whether it works before changing the sheet.** The
-      user cannot tell a missing line from a dead passive, and neither can this
-      file. `npm run demo` sweeps every node for a grant nothing reads; a
-      passive whose damage does not reach `damageDetail` is a real bug and a
-      passive whose damage reaches the sim but not the sheet is the same bug the
-      SHEET audit exists for. **Measure first, then fix what it turns out to be.**
-- [ ] **The conversion DOES move the ailment, and it is the SENTENCE that is
-      wrong.** Read before writing this: `treeMod` in `src/sim/stats.ts` maps
-      `retag(t, skill, converted)` over every tag of every allocated node,
-      ailment tags included, and its own comment says why — "a tree of Burn
-      chance survives a conversion to cold as a tree of chance to apply
-      something you no longer deal". So Shockwave converted to fire really does
-      roll Burn chance. What still says Bleed is `SkillNodeDef.description`, a
-      fixed string written for the unconverted skill. **The fix is that a node's
-      sentence is derived where its tags are, not that the sim is wrong.**
-- [ ] **`+x% chance`, with the sign.** `statParts` in `src/mod-text.ts`: a flat
-      line prints `+${n}` and `ailmentChance` rolls flat, so it comes out
-      "+8 Chance to apply Bleed". It is a PERCENTAGE and has to say so. One
-      branch, and every screen that prints a mod gets it — bench, tooltip,
-      sheet, filter.
-
-**Traps.** **Ailments are the HERO'S** — a monster's difficulty is what a
-crystal rolls. Nothing here may hand a monster one. A damage ailment scales by
-its OWN tags and nothing else, so Spell, Attack and Critical never reach one:
-the sheet must print what the sim computes, not a plausible-looking product of
-the stats beside it. Prismatic deliberately leaves NO ailment and its row says
-so — the sheet has to say that too rather than printing an empty line.
-
-**Done when.** Every ailment a build can apply is on the sheet with its chance
-and what one stack is worth, the gear line has its percent sign, and Refraction
-either shows its damage or is fixed.
-
-**What must not break.** `npm run demo` — the SHEET audit, which is the check
-that the sim asks for exactly what the sheet promised — then `mods` and `shots`.
-
----
-
-## Phase 3 — Rimespike gets a way to clear a room
+## Phase 2 — Rimespike gets a way to clear a room
 
 **The user, watching it:** *"I also want to remove the branch for rimespike
 thats about damage near/far starts with a node called from below. I want to give
@@ -624,7 +553,7 @@ the balance gauges), `mods`, `shots` (the skill web).
 
 ---
 
-## Phase 4 — Dual wielding
+## Phase 3 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -687,7 +616,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 5 — A quest log instead of a pointing finger
+## Phase 4 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
