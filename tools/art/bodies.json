@@ -792,11 +792,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -822,11 +822,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his greatsword in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his greatsword in both hands, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his greatsword in both hands, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -852,11 +852,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -882,11 +882,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -912,11 +912,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his maul in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his maul in both hands, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his maul in both hands, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -942,11 +942,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his banded staff in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his banded staff in both hands, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his banded staff in both hands, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -972,11 +972,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1002,11 +1002,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his bow, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his bow, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his bow, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1032,11 +1032,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1062,11 +1062,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his greatsword in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his greatsword in both hands, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his greatsword in both hands, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1092,11 +1092,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1122,11 +1122,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1152,11 +1152,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his maul in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his maul in both hands, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his maul in both hands, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1182,11 +1182,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his banded staff in both hands, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his banded staff in both hands, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his banded staff in both hands, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1212,11 +1212,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1242,11 +1242,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his bow, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his bow, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his bow, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1273,11 +1273,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his round shield, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1304,11 +1304,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his round shield, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1335,11 +1335,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his round shield, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1366,11 +1366,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand and his round shield, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1397,11 +1397,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his round shield, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1428,11 +1428,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his round shield, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1459,11 +1459,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his round shield, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1490,11 +1490,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his round shield, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1521,11 +1521,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand and his round shield, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
@@ -1552,11 +1552,11 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his round shield, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "attack": {
      "frames": 8,
