@@ -400,7 +400,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "6160a58a-1b67-43d5-bd43-38643ed1dd54"
+     "group": "6160a58a-1b67-43d5-bd43-38643ed1dd54",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -781,7 +782,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "7df79445-b0a1-4a03-b591-f8410139a63e"
+     "group": "7df79445-b0a1-4a03-b591-f8410139a63e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -815,7 +817,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "40b937d2-5a86-4e7c-adae-fe42edc4b224"
+     "group": "40b937d2-5a86-4e7c-adae-fe42edc4b224",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -849,7 +852,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c8766b5b-6352-491f-a098-0e673df0f41a"
+     "group": "c8766b5b-6352-491f-a098-0e673df0f41a",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -883,7 +887,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "7e8e6a31-3b27-49ff-9a2b-07e9fd98e81d"
+     "group": "7e8e6a31-3b27-49ff-9a2b-07e9fd98e81d",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -917,7 +922,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "66b05303-3254-4b59-9c9d-a1cd04bb6b9e"
+     "group": "66b05303-3254-4b59-9c9d-a1cd04bb6b9e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -951,7 +957,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "745f1e99-f6d3-4e99-9b24-27a61a8fccf4"
+     "group": "745f1e99-f6d3-4e99-9b24-27a61a8fccf4",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -985,7 +992,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "4e008714-1502-42ae-8819-39e72a53cc3e"
+     "group": "4e008714-1502-42ae-8819-39e72a53cc3e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1019,7 +1027,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "61a3089e-5dfb-4d89-b075-747e18c45d7e"
+     "group": "61a3089e-5dfb-4d89-b075-747e18c45d7e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1053,7 +1062,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "4422ae18-87db-4a80-acd7-1b5a03599af4"
+     "group": "4422ae18-87db-4a80-acd7-1b5a03599af4",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1087,7 +1097,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c7249926-2cdf-4911-a917-8a77640e5c8c"
+     "group": "c7249926-2cdf-4911-a917-8a77640e5c8c",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1121,7 +1132,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "2c3a5030-cab5-424b-883b-8b8c146dfce8"
+     "group": "2c3a5030-cab5-424b-883b-8b8c146dfce8",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1155,7 +1167,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "37f8ba81-6a5a-49bc-a26a-22abb104547d"
+     "group": "37f8ba81-6a5a-49bc-a26a-22abb104547d",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1189,7 +1202,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "7930cc8f-3eb1-4757-b65c-8f5c184bff71"
+     "group": "7930cc8f-3eb1-4757-b65c-8f5c184bff71",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1223,7 +1237,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "432fddaa-51f4-4a3e-b864-2a14cb9c338e"
+     "group": "432fddaa-51f4-4a3e-b864-2a14cb9c338e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1257,7 +1272,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "dbb63038-2388-4b5c-ae91-8cef6f9f2700"
+     "group": "1c3bd597-c552-4d6e-9b4c-b9009d589244",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1291,7 +1307,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c4500a4f-5d10-468e-9083-ce7dd1f7ecbb"
+     "group": "c4500a4f-5d10-468e-9083-ce7dd1f7ecbb",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1325,7 +1342,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "ade762f8-a10b-441e-b74c-15be918daebd"
+     "group": "ade762f8-a10b-441e-b74c-15be918daebd",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1359,7 +1377,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "bab24c53-2143-4e3b-8c0b-d7bba94f25cb"
+     "group": "3957bbf9-f7f3-4a24-b05e-cd6ac2497666",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1393,7 +1412,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "ee5cfb2b-83c7-4412-91c3-72a9485ad84d"
+     "group": "ee5cfb2b-83c7-4412-91c3-72a9485ad84d",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1427,7 +1447,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "a927221d-81e8-4ca9-b3c5-403df068a42a"
+     "group": "23aab9d8-5980-4250-9b93-533f63b43675",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1461,7 +1482,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "83717b6d-f9c1-490d-bcc0-3ae8779ab3bb"
+     "group": "a0875b49-2c91-4993-bcd9-0de767192258",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1495,7 +1517,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "cb3cf4c2-ac72-41bd-8103-c234d9629d49"
+     "group": "9282115b-7c62-4dc9-a3d5-aed1ca6ff2bd",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1529,7 +1552,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c960637a-3395-4b15-80b4-03cd082a3442"
+     "group": "64fbbe66-9c61-40ae-9fd6-5679c1e927ca",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1563,7 +1587,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "00e171db-2af4-47ad-9568-369fe9bb74e9"
+     "group": "253806d2-0f04-42d0-bdcd-d62ca28cf52e",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,
@@ -1597,7 +1622,8 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "60f61e3c-b0d1-40de-b97d-9feb5bab44e6"
+     "group": "cff12c32-b1e6-429b-ae09-2819742c5460",
+     "to": 0.4
     },
     "walk": {
      "frames": 6,

@@ -76,6 +76,7 @@ to look:
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
 | a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
 | greatswords, mauls, staves | three two-handed families, and a melee/spell split on the staff and the dagger: one ART, two implicits |
+| nothing is PINNED any more | `HOLDING` names all nine `HELD` rows and `heroSpriteFor` picks a body off the PAIR of hands; a pin is the fallback for a pair nobody drew |
 
 **The balance pass RAN, and what it found was that nothing had ever been
 measured against a build.** *The user's call: "I have a feeling your checks are
@@ -563,14 +564,16 @@ be picked up — they are decisions the user has not made. Ask before acting.
    at its own rim. The code is at `56d599a`. Never asked for twice; here so
    nobody rediscovers the geometry.
 
-10. **How big does the bundle get before it matters?** `generated-art.ts` is
-   0.48 MB for TEN bodies (33–52 KB each at grid 48, 120 KB for the Gaunt at
-   96); `docs/app.js` is 1.62 MB, 0.43 gzipped. Ten trade looks are about 0.5 MB
-   and twelve more monster bodies another 0.5 — **not the ~13 MB this file
-   parked two decisions on for months**, which was from the era when every body
-   was grid 96. Cost is grid SQUARED times frames. Nothing about "no binary
-   assets" is under pressure and there is no decision to take; what is wanted is
-   a number the user cares about (repo size, parse time on a cold load).
+10. **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
+   the question has teeth.** It was 1.62 MB / 0.43 gzipped when this said
+   "nothing about no binary assets is under pressure"; twenty-six weapon
+   variants took `generated-art.ts` to 3.82 MB on its own, and it is now 73%
+   of everything the game ships. Cost is grid SQUARED times frames, and a
+   variant is five states of a 48 grid. **What is wanted is still a number the
+   user cares about** — repo size, or parse time on a cold load — but the
+   cheap lever now exists and is worth writing down: a variant's IDLE is two
+   frames and its WALK is six, so trimming `frames` costs nothing to try and
+   `convert.mts` is re-runnable. Nothing has been trimmed on a guess.
 
 11. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
     fissure get decent t1 beat this boss and then you can progress to the

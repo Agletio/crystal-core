@@ -48,12 +48,9 @@ export const bagsFull = (game: GameState): boolean =>
 /** Sales the counter remembers — about one triage's worth. */
 export const SOLD_CAP = 12;
 
-/** Stash slots you start with. */
-export const STASH_START = 12;
-/** Slots one purchase adds. */
-export const STASH_STEP = 6;
-/** Where buying more stops. */
-export const STASH_MAX = 60;
+export const STASH_START = 12; // stash slots you start with
+export const STASH_STEP = 6; // slots one purchase adds
+export const STASH_MAX = 60; // where buying more stops
 
 /** The next block, or null at the top. Steep: storage is gold not spent. */
 export function stashUpgradeCost(slots: number): number | null {
@@ -173,10 +170,11 @@ export function resetGame(game: GameState, mode: StartMode): void {
     const def = UNIQUE_BY_ID[id];
     if (def) named.push(makeUnique(def, CRYSTAL_ILVL, rng));
   }
-  // Overflow to the STASH, keeping a slot: a kit that FILLS the bag cannot
-  // enter the Fissure. A BASE gives way, never a unique — and the bases keep
-  // the FRONT, since a unique holds no modifiers to craft on.
-  const room = Math.max(0, CARRY.gear - 1 - named.length);
+  // Overflow to the STASH, keeping TWO slots: a kit that fills the bag cannot
+  // enter the Fissure, and a two-hander puts the off hand back in it — so one
+  // spare slot is one equip away from locked out. A BASE gives way, never a
+  // unique, and the bases keep the FRONT: a unique holds nothing to craft on.
+  const room = Math.max(0, CARRY.gear - 2 - named.length);
   const stocked = [...plain.slice(0, room), ...named];
   game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
