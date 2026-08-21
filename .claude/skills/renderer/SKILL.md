@@ -123,11 +123,23 @@ it hung half its drawn height — 1.33 tiles for the Gaunt against the 0.7 radiu
 the sim keeps it inside the rock by, which is a big body drawn out over the
 void.
 
-**The number comes off the ART, not off the tile.** `FACE_FOOT` is how far down
-the cell under a boundary the cut face reaches, MEASURED on the shipping set at
-0.81 — so only the last fifth of the tile at a north wall is ground at all, and
-`FOOT_DROP` is `FACE_FOOT - 0.5` plus room for the half-tile of drift `fits`
-allows.
+**The number comes off the ART, not off the tile**, and it is `vignettes`' rather
+than a renderer's, because the GRID has to read the same one. `FACE_FOOT` is how
+far down the cell under a boundary the cut face reaches, MEASURED on the shipping
+set at 0.81 — so only the last fifth of a tile at a north wall is ground at all —
+`FOOT` is how far below its own position a body draws its feet, and `FOOT_DROP`
+is `FOOT - 0.5` because a tile's centre is half a tile in.
+
+**A DRAWING offset cannot hold on its own: `fits` is the other half.** `FOOT_DROP`
+was set to clear the face by 0.09 with the body at its tile CENTRE, and `fits`
+let it drift 0.16 north of that — so at the extreme the feet landed 0.74 down a
+tile whose face ends at 0.81 and were drawn inside the rock. `Grid.fits` now
+refuses anything higher than `FOOT - FACE_FOOT` above its centre with rock to the
+north; the tile centre always fits, so nothing is made unreachable, and the demo
+PRINTS where the feet land against where the face ends. **The south is the other
+way round and is a gap rather than a clip**: the first ROCK tile is drawn as
+ground down to `FACE_HEAD` (0.38), none of it is walkable, and the demo prints
+the 0.33 tiles of drawn ground that puts out of reach.
 
 **This fixes NORTH and SOUTH only.** East/west overhang is WIDTH, and a body's
 width is its `scale`, applied uniformly. Do not shrink a body to make a

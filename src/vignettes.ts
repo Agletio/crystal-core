@@ -1,13 +1,8 @@
 /**
- * A VIGNETTE is a small authored arrangement of props — a hauling run, a place
- * somebody slept, an altar with its candles — placed as one thing. Furniture
- * dropped a prop at a time reads as exactly that: every piece equally far from
- * every other, nothing anywhere for a reason. A cluster says somebody DID
- * something here.
- *
- * Offsets are tiles from its own top-left and `w`/`h` is the room it needs, so
- * two never overlap and a cart is never inside an altar. `dressRooms` in
- * `sim/grid.ts` does the placing, for a scene and later for a generated map.
+ * A VIGNETTE is a small authored arrangement of props placed as ONE thing —
+ * furniture dropped a prop at a time reads as exactly that, every piece equally
+ * far from every other. Offsets are tiles from its own top-left and `w`/`h` is
+ * the room it needs, so two never overlap. `dressRooms` in `sim/grid.ts` places.
  */
 export interface Vignette {
   id: string;
@@ -196,6 +191,17 @@ export interface Weighted {
   id: string;
   weight: number;
 }
+
+/** THE CUT FACE hangs into the floor tile under the rock, covering its top
+ *  `FACE_FOOT` — only the last fifth is ground. `FOOT` is how far below its own
+ *  position a body's feet are DRAWN. The grid and both renderers read these
+ *  two, so "nothing goes under a wall" is one sum rather than two that drift. */
+export const FACE_FOOT = 0.81;
+export const FOOT = 0.9;
+
+/** And the SOUTH of the same wall: the FIRST rock tile is still drawn as ground
+ *  down to here before its own face starts. Nothing may stand on any of it. */
+export const FACE_HEAD = 0.38;
 
 /** Three SHAPES, not three wordings: a run of cut face is the one place a
  *  single picture repeats within sight of itself. */

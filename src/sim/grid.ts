@@ -17,6 +17,7 @@ import {
   weighted,
 } from '../vignettes';
 import { ZONES } from '../render/generated-tiles';
+import { FACE_FOOT, FOOT } from '../vignettes';
 import type { Vignette } from '../vignettes';
 
 export interface Vec2 {
@@ -90,9 +91,8 @@ export class Grid {
     return tile !== WALL && !this.solid[ty * this.width + tx];
   }
 
-  /** Whether a BODY of this radius fits, not whether its centre does: a centre
-   *  test lets a sprite sit half a tile into the rock. Tile n covers
-   *  [n-0.5, n+0.5], so a body spans the tiles its extent rounds to. */
+  /** Whether a BODY of this radius fits, not whether its centre does. Tile n
+   *  covers [n-0.5, n+0.5], so a body spans the tiles its extent rounds to. */
   fits(x: number, y: number, radius: number): boolean {
     const r = Math.min(radius, BODY_MAX);
     for (let ty = Math.round(y - r); ty <= Math.round(y + r); ty++) {
@@ -100,12 +100,20 @@ export class Grid {
         if (!this.walkable(tx, ty)) return false;
       }
     }
+    // A tile with rock to the NORTH is walkable across its FOOT and not across
+    // the face hanging into it: higher, and the feet it draws are in the rock.
+    const ty = Math.round(y);
+    if (y < ty - FACE_LIP && this.at(Math.round(x), ty - 1) === WALL) return false;
     return true;
   }
 }
 
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
+
+/** How far above its tile's CENTRE a body may stand with rock north of it. A
+ *  tile centre always fits, so nothing is made unreachable. */
+const FACE_LIP = FOOT - FACE_FOOT;
 
 
 /** Sampled along the segment, not Bresenham: entities sit at fractional

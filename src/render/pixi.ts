@@ -94,6 +94,7 @@ import {
   COVER_DARK,
   COVER_SET,
   COVER_TINT,
+  FOOT,
   HUNG_PROPS,
   STAIN_ALPHA,
   STAIN_PROPS,
@@ -110,10 +111,9 @@ const EDGE = 4;
 const PLACE = [27, 9, 3, 1];
 const FLOATER_LIFE = 1.1;
 
-/** How far down the cell UNDER a boundary the cut face reaches, measured off
- *  the set: only its last fifth is ground. Feet clear it; growth ends on it. */
-const FACE_FOOT = 0.81;
-const FOOT_DROP = FACE_FOOT - 0.5 + 0.09;
+/** The face's own geometry is `vignettes`': the grid refuses to stand a body
+ *  inside it, so the two cannot drift. Drawn from the tile's CENTRE. */
+const FOOT_DROP = FOOT - 0.5;
 const FACE_HANG = 0.6;
 
 export async function createPixiRenderer(

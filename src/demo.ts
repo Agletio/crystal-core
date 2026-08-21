@@ -113,7 +113,7 @@ import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './ga
 import {SCENES, SCENE_BY_ID } from './scenes';
 import { CAMP, CAMP_FIXTURES, CAMP_SOCKETS, CAMP_SPOTS } from './scenes/camp';
 import type { SceneDef } from './scenes';
-import { COVER_PROPS, COVER_SET, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
+import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import { ZONES } from './render/generated-tiles';
 import type { RunState } from './sim/run';
@@ -2352,27 +2352,41 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
     `veins were ${veins.join(', ')}`
   );
 
-  // HOW CLOSE a body's feet come to rock, north against south. Nothing is
-  // drawn over a body — a wall that overlapped one looked worse in every spot
-  // something else clipped into it — so the clearance is the same every way and
-  // the number is what says so.
+  // WHERE A BODY'S FEET LAND against where the rock is DRAWN. The cut face
+  // hangs into the tile under it and only its last fifth is ground, so a body
+  // standing too high on that tile draws its feet inside the rock — which is
+  // what the user saw, and the arithmetic that says it cannot happen again.
   {
     const { grid } = generateMap([], new Rng(1717), 1, 3);
+    /** How far past its tile centre a body can get with rock `dy` away. */
     const reach = (dy: number): number => {
-      let worst = 0;
+      let far = 0;
       for (let y = 1; y < grid.height - 1; y++) {
         for (let x = 1; x < grid.width - 1; x++) {
           if (grid.at(x, y + dy) !== WALL || !grid.walkable(x, y)) continue;
           let off = 0;
-          while (off < 0.5 && grid.fits(x, y + dy * (off + 0.05), HERO_BASE.radius)) off += 0.05;
-          worst = Math.max(worst, 0.5 - off);
+          while (off < 0.5 && grid.fits(x, y + dy * (off + 0.01), HERO_BASE.radius)) off += 0.01;
+          far = Math.max(far, off);
         }
       }
-      return worst;
+      return far;
     };
+    // Feet are drawn FOOT below the body, and a tile centre is half a tile in.
+    const north = 0.5 - reach(-1) + FOOT - 0.5;
+    const south = reach(1) + FOOT - 0.5;
     line(
-      `  feet stop ${reach(1).toFixed(2)} tiles short of rock to the SOUTH, ` +
-        `${reach(-1).toFixed(2)} to the NORTH`
+      `  drawn feet land ${north.toFixed(2)} down their own tile against a NORTH wall, ` +
+        `where the face hanging into it ends at ${FACE_FOOT}`
+    );
+    line(
+      `  and ${(south - 0.5).toFixed(2)} into the wall tile to the SOUTH, whose own face ` +
+        `starts ${FACE_HEAD} down it — so ${(FACE_HEAD - south + 0.5).toFixed(2)} tiles of ` +
+        `drawn ground there is out of reach`
+    );
+    check(
+      north >= FACE_FOOT - 0.005,
+      'no body stands high enough on a tile to draw its feet inside the rock over it',
+      `feet at ${north.toFixed(2)} against a face ending at ${FACE_FOOT}`
     );
   }
 }
