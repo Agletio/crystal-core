@@ -2484,7 +2484,6 @@ $('dev-kit').click();
     'two trades are offered, and neither is picked for you',
     String(all('#trade-pick .catcard').length)
   );
-  assert($('trade-swap').hidden === true, 'and nothing offers to change one you do not have');
   assert(
     all('#trade-pick .catcard').every((c) => c.disabled === true),
     'and neither can be taken up before a level has paid for a point'
@@ -2511,7 +2510,12 @@ $('dev-kit').click();
 
   $('open-trade').click();
   $('trade-pick-alchemist').click();
-  assert($('trade-webwrap').hidden === false, 'taking one up draws its web');
+  // Permanent, so it asks first — the one hard lock in a game that refunds
+  // everything else, and the only screen that has earned a confirm.
+  assert($('confirm').hidden === false, 'taking one up asks first, because it is for good');
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert($('trade-webwrap').hidden === false, 'and then it draws its web');
   assert(
     all('#trade-web .web__node').length === 45,
     'forty-five nodes: five spokes of a stem, a gate and two branches',
@@ -2555,21 +2559,12 @@ $('dev-kit').click();
     String(all('#trade-web .web__node--on').length)
   );
 
-  // Changing trade names its price. Nothing is unforgiving in this game.
+  // A trade is taken up ONCE: the one hard lock in a game that refunds
+  // everything else, and the user's own call.
   assert(
-    /\d+ gold/.test(text('trade-swap')),
-    'and swapping says what it costs, in figures',
-    text('trade-swap')
+    $('trade-swap') === null && $('trade-pick').hidden === true,
+    'nothing on the screen offers a different trade once one is taken up'
   );
-  $('trade-swap').click();
-  assert(
-    $('trade-pick').hidden === false && $('trade-webwrap').hidden === true &&
-      all('#trade-pick .catcard').length === 1,
-    'asking to change offers the other trade, and only the other one',
-    String(all('#trade-pick .catcard').length)
-  );
-  $('trade-swap').click();
-  assert($('trade-webwrap').hidden === false, 'and backing out puts the web back');
   $('trade-close').click();
   assert($('trade').hidden === true, 'and it closes again');
 }

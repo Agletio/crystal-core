@@ -2085,12 +2085,10 @@ export const BURST = {
 export const TRADE = {
   levelsPerPoint: 5, // level 5 buys the first point, and picks the trade
   maxPoints: 10,
-  /**
-   * Gold to take up a different trade, per character level. Every point comes
-   * back — what you pay for is the walk — because a hard lock would be the only
-   * unforgiving thing in a game that replays allocations rather than trusting them.
-   */
-  switchPerLevel: 40,
+  /** Gold to take every ATTRIBUTE point back, per level: the one allocation a
+   *  click cannot undo. The TRADE is permanent — *"I think trade should be a
+   *  permanent decision"* — so nothing buys a different one. */
+  respecPerLevel: 40,
 };
 
 /**

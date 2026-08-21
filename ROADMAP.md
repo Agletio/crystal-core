@@ -6,10 +6,11 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**TWO PHASES ARE WAITING**: the user's camp, and dual wielding — the largest
-art phase this game has had, which carries an open question of its own. **Take
-Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the
-kiting and the people you have met all came first and have landed.
+**FOUR PHASES ARE WAITING**: the rest of the user's camp, what the sheet says
+about an ailment, an AoE arm for Rimespike, and dual wielding — the largest art
+phase this game has had, which carries an open question of its own. **Take Phase
+1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the kiting,
+the people you have met and the camp's first half all came first and landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -17,7 +18,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 3 (a quest log) stays parked by his word until the
+what it found is below. Phase 5 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -36,8 +37,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the two phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the two are done, say so and
+**Under the four phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the four are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -79,8 +80,10 @@ to look:
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
 | you go and SEE somebody | `metMark` / `folkMet` — meeting somebody takes them off the schedule and puts them on the Fissure screen, so a relic you keep is a decision rather than the same room at every clear |
-| kiting is the SKILL's | a build reaching further than 3 tiles gives ground while it recovers, `kiteFrom` answers whether it MOVED and slides along rock, and a kiting mover never lands inside its own reach. Featherstep is armour-into-Dodge and speed |
-| a wall has a SIDE | `wallSide` — rock with floor below it is a FACE and draws behind a body, rock with floor above it is a LIP and draws in front of one, stretched `LIP_RISE` over the floor. `SOUTH_ROOM` closes the tile of floor nothing stood on |
+| KITING IS GONE | tried as a passive, then as the SKILL's, then removed entirely — *"kiting is too op. I think remove it entirely for now"*. A build stands in it, ranged and melee alike. It comes back as a passive that pays for it, in Open questions |
+| a trade is taken up ONCE | the user's call: the one hard lock in a game that refunds everything else. What gold buys back instead is every ATTRIBUTE point, `respecCost` — the one allocation no click undoes |
+| the CAMP | `src/scenes/camp.ts` — a grassy shelf under its own generated tileset, the crack you came up out of, props you CLICK, and everybody you have met standing about. A `SceneDef` with `place: true`, not a fifth phase |
+| NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
 | a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
@@ -432,32 +435,40 @@ glowing crack in it, and visiable sockets on the wall to put crystals in. Then a
 crafting bench and spots for the characters, maybe like a tent or just make it
 look lived in."*
 
-**What is true today.** Home is `run-menu`: a panel of buttons over the last
-descent's canvas. Every screen is reached from the rail. **Nothing about this is
-a new engine** — a scene is already a `RunSim` over an authored `plan` with
-props at absolute positions and a person standing in it (`src/scenes/*.ts`,
-`sceneMap` beside `src/sim/grid.ts`), and `enterRoomNow` already walks you into
-one. The camp is a scene you are always in rather than a screen.
+**HALF OF IT HAS LANDED, and the decision it turned on is written down.** The
+camp is a `SceneDef` (`src/scenes/camp.ts`) and not a fifth phase: a scene gets
+the walk, the camera, both renderers, `sceneMap`'s carve and the prop table for
+nothing, where a phase of its own was a blank canvas owing all five. What it
+cost is the `place` flag — a scene is otherwise somebody's ROOM, and three
+things read `SCENES` expecting that.
 
-- [ ] **Decide the seam FIRST and write it down: is the camp a `SceneDef`, or a
-      fifth phase beside `menu`/`running`/`scene`/`results`?** A `SceneDef` gets
-      the walk, the camera, both renderers and the prop table for free; a phase
-      gets a blank slate and owes all four. Recommend the first and say what it
-      beat.
-- [ ] **An outdoor plan.** Grass, a rock wall, the crack. `sceneMap` carves a
-      room out of rock — a field with a wall along one side is a plan it has
-      never been asked for, and that is the real work of this phase.
-- [ ] **The crack opens the Fissure panel** — sockets, the set, and the launch.
-      It is the run panel that exists, anchored on a prop instead of the rail.
-- [ ] **The bench is a prop you click.** `openCraft` is already a function.
-- [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Phase 1's `folkMet` list is what this turns into props.
-- [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
-      in, not a replacement, and a screen reachable only by finding a prop is a
-      screen somebody will lose.
-- [ ] **Props are GENERATED.** A tent, a bench, sockets on the wall — `uikit.mts`
-      / `zoneset.mts`, load the `art` skill. Existing props are toned to pale
-      sand and a grass field is not.
+What stands today: a grassy field carved by `sceneMap` under its own generated
+tileset (`camp_round`, retoned off the lime it came back as), a rock wall along
+the north with the crack in it, and the hero arriving out of that crack because
+it is the map's own `entrance`. The bench and the shelf are props you CLICK —
+`Fixture` names a screen and `src/ui/run.ts` maps the name onto the panel — the
+crack opens the Fissure, hover says what a thing is, and everybody in `folkMet`
+is standing about in it. `Step outside` on the Fissure card is the way in.
+
+**What is LEFT, and it is the half that makes it home:**
+
+- [ ] **The camp is what the game OPENS on.** Today it is a button on the
+      Fissure card, which is the wrong way round: the ask is a hideout you leave
+      to go down, not a screen you visit. `setPhase('menu')` is where this
+      lands, and every harness that waits for `#run-menu` is what it costs.
+- [ ] **Sockets on the wall, and a tent.** *"visiable sockets on the wall to put
+      crystals in... maybe like a tent or just make it look lived in."* Both are
+      generated props — load the `art` skill, `create_map_object`, and note that
+      every existing prop is toned to pale sand where this ground is green.
+- [ ] **A person you click is a person you talk to.** The four of them stand in
+      it and do nothing; clicking one should be what the `run-visit-*` buttons
+      are. The `Fixture` seam already takes a name — a person is a fixture whose
+      `opens` is their room.
+- [ ] **The rail stays.** *"still keep a lot of the menu"* — a screen reachable
+      only by finding a picture is a screen somebody will lose.
+- [ ] **Walk to what you clicked.** He stands still and the panel opens over
+      him; walking there first is the difference between a place and a menu with
+      grass on it. `advance` already does it.
 - [ ] **A new screen is a new shot**, and this one is the screen the game opens
       on.
 
@@ -466,16 +477,154 @@ it. `livingDecals` stand down on a `bare` map. **Nothing teaches**: a prop with 
 label floating over it is a hint bar in a new coat; hover may carry meaning
 because this is a desktop game.
 
-**Done when.** The game opens on a camp you can see your character standing in,
-the crack launches a descent, the bench crafts, and anyone you have met is
-standing in it.
+**Done when.** The game OPENS on the camp, the crack launches a descent, the
+bench crafts, and anyone you have met is standing in it and can be talked to.
 
 **What must not break.** All of it: `shots` most of all, and `smoke`, which
 clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 2 — Dual wielding
+## Phase 2 — What the sheet says about an AILMENT
+
+**Four things the user found reading the sheet**, and they are one question:
+the game applies ailments, buys their chance and scales their damage, and says
+almost none of it.
+
+*"Add to the character sheet for the skill it should show chance to apply each
+ailment that it can apply, then also the damage / effect that ailment gives
+based on your stats. So for burn it should show the damage per stack for your
+burns based on all your character stats. Same for like chill effect how much
+slow each stack applies, dark how much the explosion does etc."*
+
+*"Refraction passive doesnt show added damage on the character sheet after you
+select it so not sure if its working."*
+
+*"When I select convert shockwave to fire the Chance to bleed node still says
+chance to bleed. Not sure if thats a ui bug and it does convert to chance to
+burn or if its really still just bleed."*
+
+*"On gear it says +x chance to ailment. It should be a percent sign so +x% the
+no percent is confusing."*
+
+**What is true today.** `AILMENTS` in `src/data.ts` is one row per damage type
+and `ailmentLine` in `src/ui/skills.ts` already prints one line for the skill's
+OWN type — chance, dps, seconds — on the web's hub tooltip. The character sheet
+does not. `characterStats` carries `ailmentChance` and `ailmentDps` per
+ailment, so the numbers exist and nothing reads them where the user is looking.
+
+- [ ] **Every ailment the skill can apply, on the SHEET.** Not just the one its
+      base type leaves: a conversion moves the type, an added flat line of
+      another type brings its own, and the sheet is where a build is read. One
+      row an ailment — chance, and what a stack is WORTH at these stats.
+- [ ] **The effect, in the ailment's own units.** Burn and Poison and Shock are
+      damage per second; Chill is `slowPer` a stack against the `freezeAt: 8`
+      that Freezes; Curse is an explosion with a number. Say each in its own
+      terms — "6% slower per stack, frozen at 8" — and never as "applies Chill".
+- [ ] **REFRACTION: find out whether it works before changing the sheet.** The
+      user cannot tell a missing line from a dead passive, and neither can this
+      file. `npm run demo` sweeps every node for a grant nothing reads; a
+      passive whose damage does not reach `damageDetail` is a real bug and a
+      passive whose damage reaches the sim but not the sheet is the same bug the
+      SHEET audit exists for. **Measure first, then fix what it turns out to be.**
+- [ ] **The conversion DOES move the ailment, and it is the SENTENCE that is
+      wrong.** Read before writing this: `treeMod` in `src/sim/stats.ts` maps
+      `retag(t, skill, converted)` over every tag of every allocated node,
+      ailment tags included, and its own comment says why — "a tree of Burn
+      chance survives a conversion to cold as a tree of chance to apply
+      something you no longer deal". So Shockwave converted to fire really does
+      roll Burn chance. What still says Bleed is `SkillNodeDef.description`, a
+      fixed string written for the unconverted skill. **The fix is that a node's
+      sentence is derived where its tags are, not that the sim is wrong.**
+- [ ] **`+x% chance`, with the sign.** `statParts` in `src/mod-text.ts`: a flat
+      line prints `+${n}` and `ailmentChance` rolls flat, so it comes out
+      "+8 Chance to apply Bleed". It is a PERCENTAGE and has to say so. One
+      branch, and every screen that prints a mod gets it — bench, tooltip,
+      sheet, filter.
+
+**Traps.** **Ailments are the HERO'S** — a monster's difficulty is what a
+crystal rolls. Nothing here may hand a monster one. A damage ailment scales by
+its OWN tags and nothing else, so Spell, Attack and Critical never reach one:
+the sheet must print what the sim computes, not a plausible-looking product of
+the stats beside it. Prismatic deliberately leaves NO ailment and its row says
+so — the sheet has to say that too rather than printing an empty line.
+
+**Done when.** Every ailment a build can apply is on the sheet with its chance
+and what one stack is worth, the gear line has its percent sign, and Refraction
+either shows its damage or is fixed.
+
+**What must not break.** `npm run demo` — the SHEET audit, which is the check
+that the sim asks for exactly what the sheet promised — then `mods` and `shots`.
+
+---
+
+## Phase 3 — Rimespike gets a way to clear a room
+
+**The user, watching it:** *"I also want to remove the branch for rimespike
+thats about damage near/far starts with a node called from below. I want to give
+it some sort of aoe clear capabilites because I feel like a completely single
+target ability is kinda useless in this game."*
+
+**What is true today.** `src/trees/rimespike.ts` has a `depth` arm whose enabler
+is **From Below** (`rs_depth`, `moreFar`) and whose three notables are Long
+Winter, Underfoot (`moreClose`) and First Frost (`moreVsFull`). Four nodes, and
+every one of them is a conditional multiplier on the same one target. Rimespike
+itself is `single_target`, 104 at 0.90/s.
+
+**Why it is wrong**, in one sentence: a skill that can only ever hit one thing
+has no answer to a pack, and this game is packs.
+
+**The user offered two shapes and his own objection kills the second.** *"I was
+thinking something to enable the ice passive that does some damage, so maybe
+with a cooldown of some it will leave an ice spike where it targets and that
+spike will aoe apply chill to enemies? that way the chill can spread and the ice
+passive will hit everything? Or maybe not that and instead killing a frozen
+enemy causes them to explode? My concern with that is with this ability being so
+hard hitting single target and the way we setup freeze then if your ability it
+strong it could make it where you one shot the target and never get it to freeze
+so maybe it needs to change how it freezes."*
+
+**He is right, and the numbers say so.** `AILMENTS.chill` has `freezeAt: 8` —
+a Freeze is EIGHT stacks on one body. A Rimespike built to hit hard kills in one
+or two, so "killing a frozen enemy" is a condition it can almost never reach.
+Changing how Freeze works to reach it would move Freeze for every build in the
+game, which is a much larger change than the arm being replaced.
+
+- [ ] **Take the ICE SPIKE, and say why.** *Recommended, and the user's own
+      first idea:* the arm's enabler leaves a spike where Rimespike lands, on a
+      cooldown, and the spike applies Chill in a radius. Nothing about Freeze
+      moves. It feeds Hoarfrost — the passive that spikes everything Chilled
+      every 0.7s — so the pack clear is the CHILL spreading rather than a second
+      damage pipeline, which is the shape this game already has.
+- [ ] **The arm is four nodes and it is replaced whole.** The enabler and all
+      three notables go; `moreFar`, `moreClose` and `moreVsFull` stay in
+      `GRANTS` for whoever else reads them, and `npm run demo` sweeps every node
+      for one that grants a switch nothing reads.
+- [ ] **A node id is what a save points at.** Deleting `rs_depth` and its three
+      refunds the points rather than stranding them — `replayWeb` and `heal()`
+      already do that, and the demo has a check for it.
+- [ ] **Say every number.** How wide the spike Chills, how long it stands, what
+      its cooldown is. "Applies Chill nearby" is the sentence this game does not
+      write.
+- [ ] **Automation is universal.** Whatever the spike does, `runToCompletion`
+      does it — there is no player pressing anything.
+
+**Traps.** The Chill an ailment applies is the HERO's and scales by its own
+tags; a spike that Chills is not a second unweighed damage source, and it must
+not become one. `AILMENTS` says Prismatic deliberately leaves nothing behind.
+Rimespike's `baseDamage` was calibrated single-target; an arm that clears packs
+moves what the skill is worth and the FLOOR AND CEILING table will say so.
+
+**Done when.** A Rimespike build that walks the ice arm clears a pack, the
+sentence on every node has its number in it, and the old arm's points are handed
+back rather than stranded.
+
+**What must not break.** `npm run demo` (the per-node sweep, the tree replay and
+the balance gauges), `mods`, `shots` (the skill web).
+
+---
+
+## Phase 4 — Dual wielding
 
 **The user's ask, and his own sizing of it:** *"I want to add dual wielding
 which I assume means ALOT more animations since we need dual wielding of the
@@ -538,7 +687,7 @@ print it, do not chase it), `smoke`, `shots`, `peek`.
 
 ---
 
-## Phase 3 — A quest log instead of a pointing finger
+## Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
@@ -597,7 +746,19 @@ still be satisfiable.
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
 
-1. **What the Lampwright wants.** The trade acquisition is a placeholder and
+1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
+   shape, after having it removed: *"I think later we can make a passive that
+   makes you kite but take way more damage when you do get hit but lets just do
+   that later."* It was built twice — once as one passive's grant, once as a
+   property of any skill reaching more than 3 tiles — and taken out both times
+   because it made a build strictly better for nothing. The passive shape is the
+   one that has never been tried, and it is the one that costs something. **Not
+   started, and explicitly later.** Two things it would owe: a retreat that
+   PATHS rather than sliding along rock (*"it kites into a corner and kinda bugs
+   out glitching in and out of the wall"*), and a mover that does not blink
+   forward into what it is backing away from.
+
+2. **What the Lampwright wants.** The trade acquisition is a placeholder and
    says so on its own screen: anyone may take one up at level 5. It was always
    meant to come out of a storyline with him — he is the only person in the
    game and the only voice it has. Nothing about it is written: what he is doing
@@ -617,7 +778,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    off — a branching `TRIALS` table is a different table from a linear one.
    Ask before authoring the second room.
 
-2. **Does Strike ship with one Echo, or none?** The user's words were *"it
+3. **Does Strike ship with one Echo, or none?** The user's words were *"it
    should just be a single target hit that hits pretty hard with ability to hit
    extra targets"*, and it was built exactly that way: zero Echoes bare, the
    whole branch bought. The measured cost is parked check 1 — an untreed Strike
@@ -626,7 +787,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    floor without giving anything back that reads as Area. **Not taken on his
    behalf: it is his line about what the skill IS.**
 
-3. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
+4. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
    seeds it sat 0.7% BELOW four Demonic crystals on damage taken per second;
    after the Normal pool became six generated bodies it is **-21.1%**. The cause
    is structural: the Seam takes exactly two crystals of each world, so only half
@@ -637,38 +798,38 @@ be picked up — they are decisions the user has not made. Ask before acting.
    several percent whenever anything in the sim changes, so the demo PRINTS the
    margin rather than asserting an ordering.
 
-4. **Does anyone live in the Seam?** Four characters, three worlds and the
+5. **Does anyone live in the Seam?** Four characters, three worlds and the
    Fissure — the room that is supposed to be the worst in the game has nobody in
    it. `RunState.folk` is a list partly for this. Leans on question 1.
 
-5. **Nothing but the Fissure hands out an element.** Every monster brings its
+6. **Nothing but the Fissure hands out an element.** Every monster brings its
    own, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack is as
    likely to throw frost as a Cavern one. Biasing the table by monster FAMILY
    would make a world's fights feel like that world's: one field on
    `MonsterFamilyDef` plus a weight lookup. Written down because the table it
    needs already exists.
 
-6. **The Cavern and the Fissure have no currency of their own.**
+7. **The Cavern and the Fissure have no currency of their own.**
    `sigil_of_upheaval` is gated to Demonic and `sigil_of_finality` to the Seam;
    the other two are gated to nothing. Every world now has uniques of its own —
    the Fissure two — so this may already be paid. **Provisional, and mine:** left
    as it is rather than inventing a gate. Ask before gating an EXISTING currency
    to the Cavern; it would make a staple zone-locked.
 
-7. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
+8. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
    this for now and get the base mechanics feeling good."* The intent is ONE
    unique interaction per trade, not a second system. Parked proposals: the
    Alchemist's flask extends whichever face is live when it fires, since potions
    are already that trade's engine; the Aethermancer refunds mana on a turn, so
    weaving is how they stay full.
 
-8. **What does a reworked TRADE web look like?** The user's word during the
+9. **What does a reworked TRADE web look like?** The user's word during the
    polish round: *"trades needs a rework"*, beyond the node theme, with no
    further spec. The retheme itself landed on all three webs, so what is left is
    the trade web's SHAPE or its content, and only the user can say which. **The
    skills layout is explicitly fine.**
 
-9. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
+10. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
    hanging into a hole, bridges — was built, judged and deleted at the user's
    instruction (`83b8488`). How to draw one: the wall tile placed ONE ROW LOWER
    than it is keyed (the same picture that reads as a wall standing up under
@@ -677,7 +838,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    at its own rim. The code is at `56d599a`. Never asked for twice; here so
    nobody rediscovers the geometry.
 
-10. **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
+11. **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
    the question has teeth.** It was 1.62 MB / 0.43 gzipped when this said
    "nothing about no binary assets is under pressure"; twenty-six weapon
    variants took `generated-art.ts` to 3.82 MB on its own, and it is now 73%
@@ -688,7 +849,7 @@ be picked up — they are decisions the user has not made. Ask before acting.
    frames and its WALK is six, so trimming `frames` costs nothing to try and
    `convert.mts` is re-runnable. Nothing has been trimmed on a guess.
 
-11. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
+12. **How does beating a boss OPEN a tier?** The user's shape: *"you grind the
     fissure get decent t1 beat this boss and then you can progress to the
     prismatic area where you can get t2 items fight a boss progress to demonic
     t3 etc."* — and his own caveat, *"I know the crystal system will probably

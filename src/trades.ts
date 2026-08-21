@@ -38,10 +38,10 @@ export const tradeNodeById = (
 export const tradePointsFor = (level: number): number =>
   Math.max(0, Math.min(TRADE.maxPoints, Math.floor(level / TRADE.levelsPerPoint)));
 
-/** What taking up a different trade costs. Every point comes back; the walk
- *  does not, and this is what the walk was worth. */
-export const tradeSwitchCost = (level: number): number =>
-  Math.max(TRADE.switchPerLevel, Math.round(level * TRADE.switchPerLevel));
+/** What taking every attribute point back costs. The one allocation with no
+ *  click to undo it, so gold is what undoes it. */
+export const respecCost = (level: number): number =>
+  Math.max(TRADE.respecPerLevel, Math.round(level * TRADE.respecPerLevel));
 
 export const neighboursOfTrade = (tradeId: string, nodeId: string): Set<string> =>
   neighboursIn(tradeNodes(tradeId), nodeId);

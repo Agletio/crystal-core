@@ -95,7 +95,7 @@ export class Grid {
    *  [n-0.5, n+0.5], so a body spans the tiles its extent rounds to. */
   fits(x: number, y: number, radius: number): boolean {
     const r = Math.min(radius, BODY_MAX);
-    for (let ty = Math.round(y - r); ty <= Math.round(y + SOUTH_ROOM); ty++) {
+    for (let ty = Math.round(y - r); ty <= Math.round(y + r); ty++) {
       for (let tx = Math.round(x - r); tx <= Math.round(x + r); tx++) {
         if (!this.walkable(tx, ty)) return false;
       }
@@ -107,9 +107,6 @@ export class Grid {
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
 
-/** A body is drawn ABOVE its feet, so `BODY_MAX` every way is not one clearance
- *  to LOOK at — and a lip draws in FRONT of a body, so closing it hides none. */
-const SOUTH_ROOM = 0;
 
 /** Sampled along the segment, not Bresenham: entities sit at fractional
  *  positions and the step is well under a tile. */
@@ -169,6 +166,7 @@ function overlaps(a: Room, b: Room, pad: number): boolean {
 export type Cut = 'dug' | 'grown' | 'gullet';
 
 const CUT: Record<MapTheme, Cut> = {
+  camp: 'dug',
   fissure: 'dug',
   demonic: 'gullet',
   prismatic: 'grown',
@@ -179,6 +177,7 @@ const CUT: Record<MapTheme, Cut> = {
  *  no rock of its own: a tileset IS the surface, and the zone's flagstones
  *  stamped over it is two floors at once. */
 export const ZONE: Partial<Record<MapTheme, string>> = {
+  camp: 'camp_round',
   fissure: 'lit_round',
   demonic: 'rot_round',
   prismatic: 'cavern_round',

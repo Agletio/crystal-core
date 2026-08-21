@@ -26,6 +26,7 @@ import { describeStatLine } from '../mod-text';
 import {
   addXp,
   attributePointsLeft,
+  forgetAttributes,
   equippedSkill,
   openSlots,
   attributeSteps,
@@ -34,6 +35,8 @@ import {
   xpToNext,
 } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
+import { respecCost } from '../trades';
+import { ask } from './confirm';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
 import { gearIcon } from './icons';
@@ -185,6 +188,27 @@ function renderAttributes(): void {
   const spare = $('sheet-attr-left');
   spare.hidden = left <= 0;
   spare.textContent = `${left} to spend`;
+
+  // A tree node refunds itself and so does a trade node; an attribute point is
+  // the one thing no click takes back, so gold does. Hidden with nothing spent.
+  const spent = Object.values(character.attributes ?? {}).reduce((a, b) => a + b, 0);
+  const cost = respecCost(character.level);
+  const undo = $('sheet-respec') as HTMLButtonElement;
+  undo.hidden = spent <= 0;
+  undo.textContent = `Take all ${spent} back — ${cost} gold`;
+  undo.disabled = game.wallet.gold < cost;
+  undo.onclick = async () => {
+    const yes = await ask({
+      title: `Take back all ${spent} attribute points?`,
+      text: `${cost} gold, and every point is yours to spend again.`,
+      confirm: `Pay ${cost}`,
+    });
+    if (!yes || game.wallet.gold < cost || !forgetAttributes(character)) return;
+    game.wallet.gold -= cost;
+    note(`You take back all ${spent} attribute points.`);
+    render();
+    onChanged?.();
+  };
 
   for (const attr of ATTRIBUTES) {
     const held = character.attributes?.[attr.id] ?? 0;

@@ -153,14 +153,23 @@ export function deallocateTrial(character: Character, nodeId: string): boolean {
 export const tradePointsLeft = (character: Character): number =>
   tradePointsFor(character.level) - (character.tradeAllocated?.length ?? 0);
 
-/**
- * IN PLACE. Taking up a trade for the first time, or swapping to another —
- * which refunds every point, since what a swap costs is gold and the walk.
- */
+/** IN PLACE, and ONCE: a trade is taken up and never swapped. */
 export function takeUpTrade(character: Character, tradeId: string): boolean {
-  if (!TRADE_BY_ID[tradeId] || character.trade === tradeId) return false;
+  // ONCE. Who you are is chosen when you come down here and it does not move
+  // again — the user's call. The WALK is still respecced a node at a time.
+  if (!TRADE_BY_ID[tradeId] || character.trade) return false;
   character.trade = tradeId;
   character.tradeAllocated = [];
+  return true;
+}
+
+/** Every attribute point back. The one allocation with no click to undo it —
+ *  a tree node refunds itself and so does a trade node — so this is the click,
+ *  and what it costs is the caller's to charge. */
+export function forgetAttributes(character: Character): boolean {
+  const spent = Object.values(character.attributes ?? {}).reduce((a, b) => a + b, 0);
+  if (spent <= 0) return false;
+  character.attributes = {};
   return true;
 }
 

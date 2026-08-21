@@ -21,7 +21,6 @@ import {
   neighboursOfTrade,
   tradeNodes,
   tradePointsFor,
-  tradeSwitchCost,
 } from '../trades';
 import { CENTRE } from '../trees/node';
 import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '../sim/character';
@@ -109,26 +108,19 @@ function renderPicker(): void {
   }
 }
 
-/** Taking one up. A swap refunds every point and costs gold; the first one is
- *  free, because nothing has been walked yet to pay for. */
+/** Taking one up, and there is no taking it back: who you are is chosen when
+ *  you come down here. The WALK still refunds a node at a time. */
 async function choose(tradeId: string): Promise<void> {
   const { character } = game;
   const name = TRADE_BY_ID[tradeId]?.spec.name ?? tradeId;
+  if (character.trade) return;
 
-  if (character.trade) {
-    const cost = tradeSwitchCost(character.level);
-    if (game.wallet.gold < cost) {
-      note(`Taking up the ${name} costs ${cost} gold — you have ${game.wallet.gold}`, 'fail');
-      return;
-    }
-    const yes = await ask({
-      title: `Take up the ${name}?`,
-      text: `${cost} gold, and all ${character.tradeAllocated.length} points you have spent come back.`,
-      confirm: `Pay ${cost}`,
-    });
-    if (!yes) return;
-    game.wallet.gold -= cost;
-  }
+  const yes = await ask({
+    title: `Take up the ${name}?`,
+    text: 'This is who you are for the rest of this character. The points you spend on its web come back one at a time; the trade itself does not.',
+    confirm: `Take it up`,
+  });
+  if (!yes) return;
 
   if (!takeUpTrade(character, tradeId)) return;
   note(`You take up the ${name}.`);
@@ -293,10 +285,9 @@ function render(): void {
       ? `${earned} point${earned === 1 ? '' : 's'} waiting — choose what to be.`
       : `A trade is yours at level ${TRADE.levelsPerPoint}. You are ${character.level}.`;
 
-  // Who you ARE is chosen when the character is made, so this screen is where
-  // one is WALKED. Changing it is the exception, and it charges for being one.
+  // Who you ARE is chosen once, so this screen is where one is WALKED.
   $('trade-placeholder').textContent = chosen
-    ? 'You chose this when you came down here. Becoming something else costs.'
+    ? 'You chose this when you came down here, and it does not change.'
     : '';
 
   const open = picking || !chosen;
@@ -304,14 +295,6 @@ function render(): void {
   $('trade-pick').hidden = !open;
   $('trade-webwrap').hidden = !showWeb;
   if (!showWeb) framed = false;
-
-  const swap = $('trade-swap') as HTMLButtonElement;
-  swap.hidden = !chosen;
-  swap.textContent = open ? 'Never mind' : `Change trade — ${tradeSwitchCost(character.level)} gold`;
-  swap.onclick = () => {
-    picking = !picking;
-    render();
-  };
 
   if (open) renderPicker();
   else renderWeb();

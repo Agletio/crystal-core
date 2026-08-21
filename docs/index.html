@@ -1453,6 +1453,9 @@
     image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
   }
   .folkcard .panel__title { font-size: 13px; margin-bottom: 6px; }
+  /* Something on the map you can click. The map itself is a thing you WATCH,
+     so this is the camp's alone and never a descent's. */
+  .stage--over { cursor: pointer; }
   .folkrow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .folkbtn { display: flex; align-items: center; gap: 6px; padding: 5px 9px; }
   .folkbtn__name { font-size: 11px; }
@@ -1830,6 +1833,9 @@
         <div class="runbar runbar--go">
           <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
         </div>
+        <div class="runbar runbar--go">
+          <button class="mini" id="run-camp">Step outside</button>
+        </div>
         <p class="runblocked" id="run-blocked"></p>
         <p class="runsrc">
           Clear it all, then something waits at the exit.
@@ -2193,6 +2199,8 @@
                on this screen that is a decision rather than a readout. -->
           <p class="panel__title">Attributes <span class="attrleft" id="sheet-attr-left" hidden></span></p>
           <div id="sheet-attrs"></div>
+          <!-- The one allocation a click cannot undo, so gold undoes it. -->
+          <button class="mini" id="sheet-respec" hidden></button>
           <p class="panel__title" style="margin-top:16px">Stats</p>
           <div id="sheet-stats"></div>
           <p class="panel__title" style="margin-top:16px">Resistances</p>
@@ -2291,7 +2299,6 @@
           <div class="skillhead__sub" id="trade-sub"></div>
           <div class="skillhead__sub" id="trade-placeholder"></div>
         </div>
-        <button class="mini" id="trade-swap" hidden></button>
       </div>
       <div id="trade-pick" class="catgrid"></div>
       <div class="webwrap" id="trade-webwrap" hidden>

@@ -43,6 +43,11 @@ interface Retone {
 }
 
 const RETONE: Record<string, Retone> = {
+  // The camp came back LIME — the one ask in this file whose colour is the
+  // point, and the generator took "fresh green" all the way to a highlighter.
+  // Half the chroma and a green-weighted gain puts it at field grass; the rock
+  // is already pure black, so nothing is lost at the dark end.
+  camp_round: { sat: 0.46, mul: [0.62, 0.7, 0.5] },
   // The Fissure asked older and dimmer. It came back as bright sand — a floor
   // mean of rgb(206,193,158) at luma 193, which reads as a beach rather than as
   // stone somebody stopped working. Half the chroma and about two thirds the
@@ -184,7 +189,44 @@ const CAVERN_LIGHT =
   'LIGHT lilac-white floor of fine crystal dust and grit, brightly lit, ' +
   'NOT dark, NOT black, NOT purple, NOT blue, NOT green, NOT sandy';
 
+// THE CAMP — the one place in the game that is not underground. Its identity
+// is the GREEN, and the tone rule holds all the same: light grass under
+// near-black cliff, or the field reads as the hole and the rock as the ground.
+const CAMP_LIGHT =
+  'LIGHT fresh green meadow grass in short tufts, brightly lit, ' +
+  'NOT dark, NOT black, NOT grey, NOT brown, NOT sandy, NOT dead, NOT yellow';
+const CAMP_DARK =
+  'VERY DARK grey-black cliff rock, almost black, unlit, ' +
+  'NOT pale, NOT light grey, NOT brown, NOT sandy, NOT green, NOT mossy';
+
 const ZONE_ASK: Record<string, Record<string, unknown>> = {
+  camp_round: {
+    lower_description: `a field of short green grass over packed earth, ${CAMP_LIGHT}`,
+    upper_description: `a mass of near-black cliff rock, ${CAMP_DARK}`,
+    transition_description: 'a sheer near-black rock face dropping to the grass',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  camp_pro: {
+    lower_description: `a field of short green grass over packed earth, ${CAMP_LIGHT}`,
+    upper_description: `a mass of near-black cliff rock, ${CAMP_DARK}`,
+    transition_description: 'a sheer near-black rock face dropping to the grass',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.85,
+    spread_x: 0.35,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   // THE ROT — "The rock has given way to something that grew here after it."
   // The walls are not stone with something on them, they are the thing, so
   // nothing in the ask may say stone.

@@ -504,6 +504,21 @@ interface ThemeInk {
 }
 
 const THEME_INK: Record<MapTheme, ThemeInk> = {
+  // The camp draws its whole surface from a tileset, so these are only what
+  // `canvas2d` falls back to and what the LIGHT is blended out of.
+  camp: {
+    ground: 'floor',
+    groundLit: 'floorLit',
+    rock: 'rock',
+    rockTop: 'rockTop',
+    deep: 'rockDeep',
+    growth: null,
+    growthAlt: null,
+    glint: 'chalk',
+    density: 0,
+    motion: 0,
+    surface: 'stone',
+  },
   fissure: {
     ground: 'floor',
     groundLit: 'floorLit',
@@ -632,19 +647,6 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
   }
   return false;
 }
-
-/** Rock with floor BELOW it is a FACE and goes behind a body, or it shears his
- *  head off; rock with floor ABOVE it is a LIP and goes in front. A band is a face. */
-export type WallSide = 'face' | 'lip' | 'deep';
-export function wallSide(at: (x: number, y: number) => number, x: number, y: number): WallSide {
-  if (at(x, y) !== WALL) return 'deep';
-  if (at(x, y + 1) !== WALL) return 'face';
-  return at(x, y - 1) !== WALL ? 'lip' : 'deep';
-}
-
-/** Tiles a LIP is stretched up over the floor, so a body standing flush against
- *  it passes BEHIND its boots rather than beside them. */
-export const LIP_RISE = 0.35;
 
 export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in
 

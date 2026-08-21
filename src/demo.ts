@@ -189,7 +189,7 @@ import {
   canDeallocateTrade,
   neighboursOfTrade,
   tradePointsFor,
-  tradeSwitchCost,
+  respecCost,
 } from './trades';
 import { INTERACTIONS, interactionOf } from './trees/interactions';
 import { ARM_COUNT, ARM_STEPS, MOVE_NODES, MOVE_POINTS } from './moves/layout';
@@ -215,6 +215,7 @@ import {
   addXp,
   attributePointsFor,
   attributePointsLeft,
+  forgetAttributes,
   attributesSpent,
   equipSkill,
   equippedSkill,
@@ -251,7 +252,6 @@ import {
   stormCloud,
   paletteFrom,
   tileDecals,
-  wallSide,
 } from './render/renderer';
 import { VFX_ART } from './render/generated-vfx';
 import {
@@ -1881,12 +1881,15 @@ rule('SPRITES — is the pixel art well formed?');
   // the other one speaks, and a character with only half of that is half a
   // person. Either table may hold the body — a generated one is not in
   // `BEASTIARY` at all, and must not be, or it would never draw.
-  const halfDrawn = SCENES.filter(
+  // A PLACE has nobody in it — whoever you have met is standing about, and who
+  // that is belongs to the game rather than to this table.
+  const rooms = SCENES.filter((s) => !s.place);
+  const halfDrawn = rooms.filter(
     (s) => !(BEASTIARY[s.who] || GENERATED[s.who]) || !PORTRAITS[s.who]
   ).map((s) => s.id);
   check(
     halfDrawn.length === 0,
-    `all ${SCENES.length} scenes have a sprite AND a portrait for whoever is in them`,
+    `all ${rooms.length} scenes have a sprite AND a portrait for whoever is in them`,
     halfDrawn.join(', ')
   );
   // A mis-typed id is a bench that silently is not there rather than a missing
@@ -2310,36 +2313,12 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
     `veins were ${veins.join(', ')}`
   );
 
-  // WHICH SIDE OF A WALL, and how close a body may stand to it. A body is drawn
-  // ABOVE its feet, so one clearance every way is not one clearance to look at:
-  // the same rule that reads tight under a face left a whole tile of floor
-  // above a lip that nothing ever stood on.
+  // HOW CLOSE a body's feet come to rock, north against south. Nothing is
+  // drawn over a body — a wall that overlapped one looked worse in every spot
+  // something else clipped into it — so the clearance is the same every way and
+  // the number is what says so.
   {
-    const map = generateMap([], new Rng(1717), 1, 3);
-    const { grid } = map;
-    const at = (x: number, y: number) => grid.at(x, y);
-    const sides = { face: 0, lip: 0, deep: 0 };
-    let wrong = 0;
-    for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) {
-        const side = wallSide(at, x, y);
-        sides[side]++;
-        // A lip has floor ABOVE it and rock below; a face has floor below.
-        if (side === 'lip' && (at(x, y - 1) === WALL || at(x, y + 1) !== WALL)) wrong++;
-        if (side === 'face' && (at(x, y) !== WALL || at(x, y + 1) === WALL)) wrong++;
-      }
-    }
-    line(`  ${sides.face} wall faces, ${sides.lip} near lips, ${sides.deep} tiles neither`);
-    check(
-      wrong === 0 && sides.face > 0 && sides.lip > 0,
-      'a wall knows which side of it you are looking at',
-      `${wrong} tiles filed wrong, ${sides.face} faces, ${sides.lip} lips`
-    );
-
-    // How close the FEET come, north against south. A number rather than a
-    // failure: what it should be is the renderer's question, and what it must
-    // not be is the same both ways, which is what left a tile of floor above
-    // every lip that nothing ever stood on.
+    const { grid } = generateMap([], new Rng(1717), 1, 3);
     const reach = (dy: number): number => {
       let worst = 0;
       for (let y = 1; y < grid.height - 1; y++) {
@@ -5490,10 +5469,11 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
         `${light.dodgeChance} against ${bare.armourReduction}`
       );
 
-      // KITING is the SKILL's, not the passive's: a build that reaches further
-      // than a swing gives ground while it recovers, and one that does not
-      // stands in the pack. Featherstep hands that out to nobody — one point
-      // making the same build play differently is what came out.
+      // KITING IS GONE. It was the passive's, then it was the skill's, and it
+      // is now nobody's — *the user's call: "kiting is too op. I think remove
+      // it entirely for now"* — so a build STANDS IN IT while the skill
+      // recovers, ranged and melee alike. What must not come back by accident
+      // is a build that gives ground for free.
       const walked = (who: Character): number => {
         const sim = new RunSim([], who, new Rng(808));
         let far = 0;
@@ -5507,17 +5487,10 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
       };
       const melee = makeCharacter(starterLoadout(new Rng(9)), 'strike');
       const ranged = makeCharacter(starterLoadout(new Rng(9)), 'fireball');
-      const still = walked(melee);
-      const kiting = walked(ranged);
-      line(`  a ranged build covers ${kiting.toFixed(0)} tiles against ${still.toFixed(0)} for a melee one`);
+      line(`  a ranged build covers ${walked(ranged).toFixed(0)} tiles, a melee one ${walked(melee).toFixed(0)}`);
       check(
-        kiting > still,
-        'a build that reaches further than a swing gives ground, and a melee one stands in it',
-        `${kiting.toFixed(0)} / ${still.toFixed(0)}`
-      );
-      check(
-        !('kite' in treeGrants(c)),
-        'and Featherstep hands out no kiting at all: it is armour into Dodge and speed',
+        !('kite' in treeGrants(c)) && !('kite' in GRANT_BY_ID),
+        'nothing in the game hands out kiting: a build stands in it',
         Object.keys(treeGrants(c)).join(', ')
       );
     }
@@ -6223,22 +6196,34 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     );
   }
 
-  // And what a swap costs: gold, and the walk. Never the points — a hard lock
-  // would be the only unforgiving thing in a game that replays allocations.
+  // A trade is taken up ONCE. The user's call, and the one hard lock in a game
+  // that otherwise replays every allocation: what a respec buys back is the
+  // ATTRIBUTES, which are the one thing no click undoes.
   {
     const who = makeCharacter({}, 'strike');
     who.level = 30;
     takeUpTrade(who, 'alchemist');
     allocateTrade(who, TRADE_BY_ID.alchemist.nodes[0].id);
-    const cost = tradeSwitchCost(who.level);
-    takeUpTrade(who, 'aethermancer');
-    line(`  changing trade at level ${who.level} costs ${cost} gold`);
+    const again = takeUpTrade(who, 'aethermancer');
     check(
-      cost > 0 && who.trade === 'aethermancer' && who.tradeAllocated.length === 0
-        && tradePointsLeft(who) === tradePointsFor(who.level),
-      'a swap hands every point back and charges gold for the walk',
-      `${who.tradeAllocated.length} points still spent`
+      !again && who.trade === 'alchemist' && who.tradeAllocated.length === 1,
+      'a trade is taken up once and never swapped, and the walk survives asking',
+      `${who.trade}, ${who.tradeAllocated.length} points`
     );
+
+    spendAttribute(who, ATTRIBUTES[0].id);
+    spendAttribute(who, ATTRIBUTES[1].id);
+    const cost = respecCost(who.level);
+    const before = attributePointsLeft(who);
+    const gave = forgetAttributes(who);
+    line(`  forgetting your attributes at level ${who.level} costs ${cost} gold`);
+    check(
+      cost > 0 && gave && attributePointsLeft(who) === before + 2
+        && Object.keys(who.attributes).length === 0,
+      'and every attribute point comes back for gold, which is the only way one does',
+      `${before} then ${attributePointsLeft(who)}`
+    );
+    check(!forgetAttributes(who), 'and asking twice does nothing', 'it refunded nothing twice');
   }
 
   // Replayed on load like everything else: a trade that is cut, or a level
@@ -7946,7 +7931,8 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     // whether it FITS, which is the same question until furniture blocks — and
     // then a body standing on a bench is exactly what the second one catches.
     const misplaced: string[] = [];
-    for (const scene of SCENES) {
+    // A PLACE has nobody standing in it: who is in the camp is the game's.
+    for (const scene of SCENES.filter((s2) => !s2.place)) {
       const built = new RunSim([], g.character, new Rng(6100), { scene: scene.id });
       const grid = built.state.map.grid;
       for (const p of built.state.map.props) {
@@ -7993,7 +7979,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     // into and arriving on top of the man skips looking at it. Whoever is
     // waiting stands where he is, and the meeting still happens.
     const crossed: string[] = [];
-    for (const scene of SCENES) {
+    for (const scene of SCENES.filter((s2) => !s2.place)) {
       const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
       const them = arriving.state.folk[0];
       const themAt = { x: them.x, y: them.y };
@@ -8019,7 +8005,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     const moved: string[] = [];
     for (const mover of MOVERS) {
       const walker = { ...g.character, equipped: { ...g.character.equipped, movement: mover } };
-      for (const scene of SCENES) {
+      for (const scene of SCENES.filter((s2) => !s2.place)) {
         const arriving = new RunSim([], walker, new Rng(77), { scene: scene.id });
         let t = 0;
         while (!arriving.state.meeting && t++ < 4000) arriving.walkOut(TICK);

@@ -47,6 +47,8 @@ import { bossBeaten, folkMet, gaveKey, sceneWaiting, takeBoss, takeMet } from '.
 import { takeTrials } from '../game/trials';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
+import { CAMP, CAMP_FIXTURES, CAMP_SPOTS } from '../scenes/camp';
+import type { Fixture } from '../scenes/camp';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -60,6 +62,7 @@ import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
+import type { Vec2 } from '../sim/grid';
 import { flaskIcon } from './flaskart';
 import { potionReading, potionWorkings } from '../potion-text';
 import { skillWorkings } from '../skill-text';
@@ -68,10 +71,14 @@ import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
 import { openCharacter } from './character';
+import { openCraft } from './craft';
+import { openShop } from './shop';
+import { openSkills } from './skills';
+import { openStash } from './stash';
 import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
-import { attachTooltip } from './tooltip';
+import { attachTooltip, hideTooltip, showTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -243,6 +250,92 @@ function runHandler() {
 // ---------------------------------------------------------------------------
 // Menu
 // ---------------------------------------------------------------------------
+
+// --- the camp --------------------------------------------------------------
+//
+// A PLACE rather than a screen: the crack, the bench and the shelf are props
+// standing on a map, and clicking one opens the screen it is. The rail still
+// reaches every one of them — a screen you can only find by walking up to a
+// picture is a screen somebody will lose.
+
+/** How near a fixture's own tile a click counts, in tiles. Generous on
+ *  purpose: a prop is a picture with a foot, and hunting for the lit pixels of
+ *  a bench is a worse game than walking up to it. */
+const FIXTURE_REACH = 1.4;
+
+/** The fixture under a pointer, or null. Measured in TILES through the
+ *  renderer's own `screenAt`, so it is right at every zoom and pan. */
+function fixtureAt(event: PointerEvent): Fixture | null {
+  if (phase !== 'scene' || arrivedIn !== CAMP.id || !renderer) return null;
+  const box = $('run-stage').getBoundingClientRect();
+  const x = event.clientX - box.left;
+  const y = event.clientY - box.top;
+  let best: Fixture | null = null;
+  let closest = Infinity;
+  for (const fix of CAMP_FIXTURES) {
+    const at = renderer.screenAt({ x: fix.at.x + 0.5, y: fix.at.y + 0.5 });
+    const one = renderer.screenAt({ x: fix.at.x + 1.5, y: fix.at.y + 0.5 });
+    const tile = Math.max(1, Math.abs(one.x - at.x));
+    const away = Math.hypot(x - at.x, y - at.y) / tile;
+    if (away < FIXTURE_REACH && away < closest) {
+      closest = away;
+      best = fix;
+    }
+  }
+  return best;
+}
+
+/** Hover carries meaning, because this is a desktop game. */
+function hintFixture(fix: Fixture, event: PointerEvent): void {
+  showTooltip(fix.says, event.clientX, event.clientY);
+}
+
+function fixtureClick(event: PointerEvent): void {
+  const fix = fixtureAt(event);
+  if (!fix) return;
+  hideTooltip();
+  OPENS[fix.opens]();
+}
+
+/** What a fixture IS, in one place: `camp.ts` names a screen and never calls one. */
+const OPENS: Record<Fixture['opens'], () => void> = {
+  fissure: () => {
+    sceneEnded();
+    $('run-launch')?.scrollIntoView({ block: 'center' });
+  },
+  craft: () => openCraft(),
+  stash: () => openStash(),
+  shop: () => openShop(),
+  skills: () => openSkills(),
+  character: () => openCharacter(),
+};
+
+/**
+ * INTO THE CAMP. Everybody you have met is standing about in it, in the order
+ * you met them, and the hero stands where he arrived — nobody crosses to
+ * anybody, which is what `place` means.
+ */
+export function openCamp(): boolean {
+  if (phase !== 'menu') return false;
+  seed = Math.floor(Math.random() * 1e9);
+  greeted = null;
+  greetedState = null;
+  greeting = null;
+  banked = null;
+  pending = null;
+  arriving = null;
+  handover = 0;
+  leaving = false;
+  descending = false;
+  streak = 0;
+  enterScene(CAMP, folkMet(game).map((who, i) => ({
+    sprite: who.who,
+    at: CAMP_SPOTS[i % CAMP_SPOTS.length],
+  })));
+  visiting = true;
+  setLeaveLabel();
+  return true;
+}
 
 /** WHO IS ABOUT. Everybody you have met, and a button into their room — the
  *  same `enterScene` the schedule calls, so it is the room rather than a
@@ -658,7 +751,7 @@ export function openOpening(): boolean {
   return true;
 }
 
-function enterScene(def: SceneDef): void {
+function enterScene(def: SceneDef, crowd: { sprite: string; at: Vec2 }[] = []): void {
   visiting = false;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
@@ -671,7 +764,7 @@ function enterScene(def: SceneDef): void {
   spoke = false;
   arrival = 0;
   banked = null;
-  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
+  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id, crowd });
   playing = false;
   accumulator = 0;
   note(def.said, 'add');
@@ -1066,7 +1159,8 @@ function frame(now: number): void {
     while (accumulator >= TICK && steps < 400) {
       if (descending) sim.walkDown(TICK);
       else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
-      else sim.walkOut(TICK);
+      // Nobody crosses to anybody in a PLACE: you stand in it and look about.
+      else if (!SCENE_BY_ID[arrivedIn]?.place) sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;
     }
@@ -1149,6 +1243,9 @@ const FLASK_GAP = 8;
 /** How much closer a ROOM is framed than a descent. `clampZoom` still bounds
  *  it, so this asks rather than sets. */
 const SCENE_ZOOM = 2;
+/** A PLACE is looked at whole: it is where you stand about rather than a room
+ *  you cross, and half of it off the edge of the screen is half a camp. */
+const PLACE_ZOOM = 1;
 
 function fitCanvas(): void {
   const box = $('run-stage');
@@ -1164,7 +1261,9 @@ function fitCanvas(): void {
   // Now that the surface has a real size, pick the scale that fits it. At
   // startup the stage is still unmeasured, so this is the first honest chance.
   if (!userZoomed && width > 0) {
-    setZoom(defaultZoom(Math.min(width, height)) * (phase === 'scene' ? SCENE_ZOOM : 1));
+    const place = phase === 'scene' && SCENE_BY_ID[arrivedIn]?.place;
+    const how = phase !== 'scene' ? 1 : place ? PLACE_ZOOM : SCENE_ZOOM;
+    setZoom(defaultZoom(Math.min(width, height)) * how);
   }
 }
 
@@ -1230,6 +1329,10 @@ export function initRun(state: GameState): void {
   const palette = readPalette(document.documentElement);
   renderer = createCanvasRenderer(stage, palette);
   void upgradeRenderer(stage, palette);
+
+  ($('run-camp') as HTMLButtonElement).onclick = () => {
+    openCamp();
+  };
 
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (bagsFull(game)) return;
@@ -1303,15 +1406,28 @@ export function initRun(state: GameState): void {
     renderer?.panBy(dx, dy);
     from = { x: event.clientX, y: event.clientY };
   });
-  const release = () => {
+  const release = (event?: PointerEvent) => {
+    // A pointer that never dragged is a CLICK, and in the camp a click on a
+    // fixture is how you open its screen. Nowhere else: a descent is watched.
+    if (event && from && held === null) fixtureClick(event);
     from = null;
     if (held !== null) stage.releasePointerCapture?.(held);
     held = null;
     stage.classList.remove('stage--drag');
   };
-  stage.addEventListener('pointerup', release);
-  stage.addEventListener('pointercancel', release);
-  stage.addEventListener('pointerleave', release);
+  stage.addEventListener('pointermove', (event) => {
+    if (from) return;
+    const found = fixtureAt(event);
+    stage.classList.toggle('stage--over', found !== null);
+    if (found) hintFixture(found, event);
+    else hideTooltip();
+  });
+  stage.addEventListener('pointerup', (event) => release(event));
+  stage.addEventListener('pointercancel', () => release());
+  stage.addEventListener('pointerleave', () => {
+    release();
+    hideTooltip();
+  });
 
   // A drawer under its own button. Closed by default, because a descent is
   // something you watch and the numbers are something you go and look at.

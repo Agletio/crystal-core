@@ -52,8 +52,6 @@ import {
   floorPalette,
   isWallFace,
   wallFade,
-  wallSide,
-  LIP_RISE,
   mix,
   poisonDrops,
   poisonFieldRadius,
@@ -182,9 +180,6 @@ export async function createPixiRenderer(
   const groundLayer = new Container();
   // Rock and its growth, UNDER the bodies: over them it sheared off heads.
   const wallLayer = new Container();
-  // The NEAR side of a wall, and the one exception: rock you look over the top
-  // of goes IN FRONT of whoever stands at its edge. Added after `entityLayer`.
-  const lipLayer = new Container();
   const mapLayer = new Graphics();
   // What the zone does rather than what it is: redrawn every frame, over the
   // map that was built once.
@@ -202,7 +197,7 @@ export async function createPixiRenderer(
 
   world.addChild(
     groundLayer, wallLayer, mapLayer, propLayer, auraLayer, vfxGroundLayer,
-    entityLayer, lipLayer, vfxLayer, vfxArtLayer
+    entityLayer, vfxLayer, vfxArtLayer
   );
   app.stage.addChild(world, textLayer);
 
@@ -441,7 +436,6 @@ export async function createPixiRenderer(
   function buildProps(map: GameMap): void {
     groundLayer.removeChildren().forEach((child) => child.destroy());
     wallLayer.removeChildren().forEach((child) => child.destroy());
-    lipLayer.removeChildren().forEach((child) => child.destroy());
     if (!map.bare) return;
 
     const set = map.zone ? ZONES[map.zone] : null;
@@ -522,16 +516,12 @@ export async function createPixiRenderer(
           if (lit <= 0) continue;
           const texture = pick(x, y);
           if (!texture) continue;
-          const side = wallSide(deep, x, y);
           const sprite = new Sprite(texture);
           sprite.x = x;
-          // A LIP is STRETCHED up rather than moved up: moved, the gap it left
-          // at the foot of its own tile read as a black bite out of the edge.
-          const rise = side === 'lip' ? LIP_RISE : 0;
-          sprite.y = y - rise;
-          sprite.scale.set(size, size * (1 + rise));
+          sprite.y = y;
+          sprite.scale.set(size);
           if (lit < 1) sprite.alpha = lit;
-          (side === 'lip' ? lipLayer : solid ? wallLayer : groundLayer).addChild(sprite);
+          (solid ? wallLayer : groundLayer).addChild(sprite);
         }
       }
     }
@@ -563,10 +553,8 @@ export async function createPixiRenderer(
         sprite.scale.set(sprite.scale.x * (0.82 + roll * 0.36));
         sprite.alpha = COVER_ALPHA;
       }
-      // What grows ON the rock rides the rock's own layer, near lip included.
-      const on = wallSide((x, y) => map.grid.at(x, y), prop.x, prop.y);
-      (on === 'lip' ? lipLayer : on === 'deep' && map.grid.at(prop.x, prop.y) !== WALL
-        ? groundLayer : wallLayer).addChild(sprite);
+      // What grows ON the rock rides the rock's own layer, drawn after its tiles.
+      (map.grid.at(prop.x, prop.y) === WALL ? wallLayer : groundLayer).addChild(sprite);
     }
 
     // THE WAY DOWN, over the floor it is cut into and CENTRED on its tile
