@@ -1,7 +1,7 @@
 /**
  * Armour onto a body that already exists.
  *   `dress.mts <outfit> <image> [image ...]`      one edit over a list of frames
- *   `dress.mts <outfit> --state <character-id>`   every rotation of a character
+ *   `dress.mts <outfit> --state <character-id> [label]`  every rotation of a character
  *
  * `edit_image` applies the SAME edit to a LIST of PNGs and bills by the frame
  * grid, and the man comes back the same man at 97% silhouette overlap. But it is
@@ -40,16 +40,18 @@ export const OUTFITS: Record<string, string> = {
     'Put heavy dark plate armour on him over the tattered clothes: a breastplate, shoulder ' +
     'pauldrons, a closed visored helm and steel greaves. Dark scarred iron, NOT shiny, ' +
     'NOT silver, NOT gold, NOT ornate. ' + KEEP,
-  // A WEAPON rather than a look, and the reason this is worth 40 generations:
-  // a bow the rotations actually HOLD is one an animation can keep hold of,
-  // where a bow named at animation time is invented afresh every frame.
-  bow:
-    'Put a large longbow in one hand: he grips it at its middle and holds it upright in ' +
-    'front of him, the bowstring nearest his body and the limbs curving away. His other ' +
-    'hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string — ' +
-    'light enough to stand out clearly against his dark clothes. Change NOTHING else: the ' +
-    'same head, the same coat, the same belt, the same boots. ' + KEEP,
 };
+
+/** Every weapon, said the SAME way for every hero who carries it — the words
+ *  are `weapons.json` and are never rewritten per body. A weapon written afresh
+ *  per man is a weapon that looks different per man. */
+const WORDS = JSON.parse(
+  readFileSync(new URL('./weapons.json', import.meta.url), 'utf8')
+) as { keep: string; pale: string; weapons: Record<string, { hands: number; say: string }> };
+
+for (const [id, row] of Object.entries(WORDS.weapons)) {
+  OUTFITS[id] = `${row.say} ${WORDS.pale} ${WORDS.keep}`;
+}
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -71,9 +73,12 @@ const DIRS = ['north', 'north-east', 'east', 'south-east', 'south'];
 if (frames[0] === '--state') {
   const source = frames[1];
   if (!source) throw new Error('--state wants a character id');
+  // A LABEL: one outfit is worn by more than one man now, and without it both
+  // heroes' maces are called `mace` and land on each other's cache files.
+  const label = frames[2] ?? name;
   const made = await callTool('create_character_state', {
     character_id: source,
-    state_name: name,
+    state_name: label,
     edit_description: description,
     seed: 7,
   });
@@ -90,8 +95,8 @@ if (frames[0] === '--state') {
   for (const dir of DIRS) {
     const url = new RegExp(`^ {2}${dir}: (https\\S+)$`, 'm').exec(said);
     if (!url) throw new Error(`${name}: no ${dir} rotation`);
-    writeFileSync(`${CACHE}${name}-${dir}.png`, await download(url[1]));
-    console.log(`  ${CACHE}${name}-${dir}.png`);
+    writeFileSync(`${CACHE}${label}-${dir}.png`, await download(url[1]));
+    console.log(`  ${CACHE}${label}-${dir}.png`);
   }
   process.exit(0);
 }

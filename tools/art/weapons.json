@@ -1,0 +1,50 @@
+{
+  "_": "What a WEAPON looks like in a hero's hands, as words. One row per art key in `HELD`, and the row is used VERBATIM for every hero who carries that weapon — that is the whole point of this file. A weapon written afresh per body is a weapon that looks different per body, which is what a player notices first. `tools/art/dress.mts <weapon> --state <character-id> <label>` reads it and asks `create_character_state`, which keeps the man and inherits his skeleton, so the variant animates like any other body.",
+  "_rules": "Five things every row does, learned the expensive way. (1) It gives the weapon's LENGTH against the man's OWN body — 'as long as his forearm', 'from his fist to the ground' — never in pixels, because two heroes are drawn at different heights and only a proportion carries across. (2) It is asked PALE against dark cloth: at the ~87 device pixels the camera lands a body in, a weapon the colour of the coat is not there at all. A SMALL weapon has to say it twice — the shared `pale` clause carried a sword and lost a dagger, which came back the exact brown of the apron and disappeared. (3) It says WHICH HANDS and WHERE, so a two-handed weapon is unmistakably two-handed in the still. (4) It excludes what it DREW INSTEAD, one clause per observed failure, and nothing else — an exclusion nobody earned costs drama for free. (5) `seed` is fixed at 7 in the tool, so a re-ask of the same words is the same weapon.",
+  "_keep": "Appended to every row. The edit DRESSES a man rather than replacing him and has to say so, or the state comes back as a different person holding the right thing.",
+  "keep": "Change NOTHING else about him: the same head, the same face, the same clothes, the same belt, the same boots, the same proportions, the same palette. Do not replace him. No ground, no floor, no shadow, no base.",
+  "_pale": "Appended to every row. The one rule that is about the GAME rather than about the picture.",
+  "pale": "The weapon is PALE against his dark clothes — light enough that its shape reads on its own at a glance.",
+  "weapons": {
+    "sword": {
+      "hands": 1,
+      "say": "Put a straight one-handed sword in his hand: he grips it by the hilt down beside his hip, the blade angled down and forward and well clear of his leg, the crossguard plain to see. His other hand is empty. The blade is grey steel with a dark wrapped grip, and it is as long as his own arm from shoulder to fingertips. It is NOT a greatsword, NOT held in two hands, NOT longer than he is tall."
+    },
+    "sword2h": {
+      "hands": 2,
+      "say": "Put a huge two-handed greatsword in BOTH his hands: both fists are closed on a long grip, one above the other, and he holds it upright in front of his body with the blade rising past his own head. The blade is broad grey steel with a dark wrapped grip, and it is as long as he is tall. BOTH hands are on it and neither hand is empty. It is NOT a one-handed sword, NOT held at his hip, NOT resting on his shoulder."
+    },
+    "dagger": {
+      "hands": 1,
+      "say": "Put a short dagger in his hand: he grips it by the hilt held low at his hip with the short blade angled forward. His other hand is empty. The blade is BRIGHT POLISHED SILVER-WHITE steel, far lighter than anything else on him, and the grip is dark. It is SHORT — no longer than his own forearm. It is a knife. It is NOT a sword, NOT a longsword, NOT a machete, NOT as long as his arm, NOT dark, NOT brown, NOT rusted, NOT the colour of his clothes."
+    },
+    "dagger_spell": {
+      "hands": 1,
+      "say": "Put a short ritual knife in his hand: he grips it by the hilt held up in front of his chest with the blade pointing up, and the blade is a narrow leaf shape with a cut stone set into the pommel below his fist. His other hand is empty. The blade is pale bone-white and the stone glows. It is SHORT — no longer than his own forearm. It is NOT a sword, NOT a plain knife, NOT a dagger of grey steel, NOT as long as his arm."
+    },
+    "mace": {
+      "hands": 1,
+      "say": "Put a heavy club in his hand: a straight dark haft as long as his forearm with a ROUND BALL of pitted iron fixed on the end of it, the ball fist-sized and roughly spherical like a rock. He grips the haft near its base and holds it up across his chest. His other hand is empty. The ball is pale grey pitted iron against the dark haft, and it is ROUND and SOLID and THICK in every direction. It is NOT flat, NOT a paddle, NOT an oar, NOT a spade, NOT a blade, NOT an axe, NOT a leaf shape, NOT wide and thin."
+    },
+    "mace2h": {
+      "hands": 2,
+      "say": "Put a huge two-handed maul in BOTH his hands: a long dark haft as tall as he is with a great BLOCK of pitted iron fixed on the end of it, the block bigger than his own head and roughly cubic. Both fists are closed on the haft, one above the other, and he holds it upright in front of his body with the block up near his own head. The block is pale grey pitted iron against the dark haft, and it is SOLID and THICK in every direction. BOTH hands are on it. It is NOT flat, NOT a paddle, NOT an axe, NOT a blade, NOT one-handed, NOT held at his hip."
+    },
+    "staff": {
+      "hands": 2,
+      "say": "Put a plain wooden quarterstaff in BOTH his hands: a straight pole as tall as he is, bound with pale metal at both ends and gripped in both fists a little apart, held upright and slightly across his body. The pole is pale bare wood with dark bindings. BOTH hands are on it and neither hand is empty. It is a plain fighting pole with NOTHING on the end of it: NOT a crystal, NOT a lamp, NOT a gem, NOT a carved head, NOT a spear, NOT a blade, NOT a scythe."
+    },
+    "staff_spell": {
+      "hands": 2,
+      "say": "Put a tall wizard's staff in BOTH his hands: a straight pole as tall as he is with a cut glowing STONE held in a claw of dark metal at the top of it, above his own head. Both fists are closed on the pole, one above the other, held upright and slightly across his body. The pole is pale bare wood, the stone glows brightly. BOTH hands are on it. It is NOT a plain pole, NOT a spear, NOT a blade, NOT a scythe, NOT a lantern on a pole, NOT resting on the ground."
+    },
+    "wand": {
+      "hands": 1,
+      "say": "Put a short wand in his hand: he grips it near its base in one fist and holds it up in front of him with the tip pointing forward and slightly up. His other hand is empty. It is pale bone-white with a dark bound grip, and it is SHORT — no longer than his own forearm. It is NOT a staff, NOT a stave, NOT a sceptre, NOT a pole, NOT taller than he is, NOT resting on the ground, NOT held in two hands."
+    },
+    "bow": {
+      "hands": 2,
+      "say": "Put a large longbow in his hand: he grips it at its middle and holds it upright in front of him, the bowstring nearest his body and the limbs curving away, and it is as tall as he is. His other hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string. It is NOT a crossbow, NOT a short bow, NOT drawn, NOT held sideways."
+    }
+  }
+}
