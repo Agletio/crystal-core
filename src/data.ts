@@ -257,9 +257,20 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // a new base needs no new mod content.
 
 // The main hand keeps the id `weapon`: a save points at it.
-/** What a skill is SWUNG with: one word naming several families. */
-export const WEAPON_GROUPS: Record<string, string[]> = {
-  melee: ['sword', 'dagger', 'mace'],
+/** What a weapon COUNTS AS, so a requirement is answered by anything that is a
+ *  bigger version of what it named: a skill wanting a mace is answered by a
+ *  maul, and one naming the maul itself is answered by nothing else. DERIVED
+ *  rather than listed the other way round — a new family declares what it
+ *  counts as, and every requirement already written picks it up. */
+export const WEAPON_COUNTS_AS: Record<string, string[]> = {
+  sword: ['sword', 'melee'],
+  sword2h: ['sword2h', 'sword', 'melee', 'twohand'],
+  dagger: ['dagger', 'melee'],
+  mace: ['mace', 'melee'],
+  mace2h: ['mace2h', 'mace', 'melee', 'twohand'],
+  staff: ['staff', 'melee', 'twohand'],
+  wand: ['wand'],
+  bow: ['bow', 'twohand'],
 };
 
 /** The hand a weapon's own damage is read off, named rather than searched for. */
@@ -602,6 +613,61 @@ export const WEAPON_BASES: GearBase[] = [
   weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], 52, [
     { stat: 'attackRange', form: 'inc', range: [55, 55] },
   ], 2),
+
+  // --- greatswords, mauls and staves: two hands, and a family a one-handed
+  // requirement is answered BY. See WEAPON_COUNTS_AS — a skill wanting a mace
+  // takes a maul, and only one naming the maul refuses everything else.
+  weapon('war_sword', 'War Sword', 'sword2h', BASE_TIER_ILVL[0], 30, [
+    { stat: 'attackSpeed', form: 'inc', range: [5, 5] },
+  ], 2),
+  weapon('great_sword', 'Great Sword', 'sword2h', BASE_TIER_ILVL[1], 48, [
+    { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
+  ], 2),
+  weapon('reaver_sword', 'Reaver', 'sword2h', BASE_TIER_ILVL[2], 74, [
+    { stat: 'attackSpeed', form: 'inc', range: [11, 11] },
+  ], 2),
+
+  weapon('sledge', 'Sledge', 'mace2h', BASE_TIER_ILVL[0], 44, [
+    { stat: 'damage', form: 'inc', range: [25, 25], tags: ['physical'] },
+  ], 2),
+  weapon('great_maul', 'Great Maul', 'mace2h', BASE_TIER_ILVL[1], 63, [
+    { stat: 'damage', form: 'inc', range: [38, 38], tags: ['physical'] },
+  ], 2),
+  weapon('breaker_maul', 'Breaker', 'mace2h', BASE_TIER_ILVL[2], 107, [
+    { stat: 'damage', form: 'inc', range: [58, 58], tags: ['physical'] },
+  ], 2),
+
+  // One ART and two implicits, at every rung: the shod one is swung and the
+  // grey one is cast with, and which you are holding is the line on the piece.
+  weapon('shod_staff', 'Shod Staff', 'staff', BASE_TIER_ILVL[0], 27, [
+    { stat: 'damage', form: 'inc', range: [18, 18], tags: ['physical'] },
+  ], 2),
+  weapon('grey_staff', 'Grey Staff', 'staff', BASE_TIER_ILVL[0], 12, [
+    { stat: 'damage', form: 'inc', range: [22, 22], tags: ['spell'] },
+  ], 2),
+  weapon('ironshod_staff', 'Ironshod Staff', 'staff', BASE_TIER_ILVL[1], 43, [
+    { stat: 'damage', form: 'inc', range: [28, 28], tags: ['physical'] },
+  ], 2),
+  weapon('ashen_staff', 'Ashen Staff', 'staff', BASE_TIER_ILVL[1], 19, [
+    { stat: 'damage', form: 'inc', range: [35, 35], tags: ['spell'] },
+  ], 2),
+  weapon('warden_staff', 'Warden Staff', 'staff', BASE_TIER_ILVL[2], 68, [
+    { stat: 'damage', form: 'inc', range: [42, 42], tags: ['physical'] },
+  ], 2),
+  weapon('seer_staff', 'Seer Staff', 'staff', BASE_TIER_ILVL[2], 28, [
+    { stat: 'damage', form: 'inc', range: [52, 52], tags: ['spell'] },
+  ], 2),
+
+  // The same split on the dagger, one-handed: a shiv stabs, a kris is a focus.
+  weapon('bone_kris', 'Bone Kris', 'dagger', BASE_TIER_ILVL[0], 6, [
+    { stat: 'damage', form: 'inc', range: [12, 12], tags: ['spell'] },
+  ]),
+  weapon('rune_kris', 'Rune Kris', 'dagger', BASE_TIER_ILVL[1], 10, [
+    { stat: 'damage', form: 'inc', range: [19, 19], tags: ['spell'] },
+  ]),
+  weapon('sigil_kris', 'Sigil Kris', 'dagger', BASE_TIER_ILVL[2], 15, [
+    { stat: 'damage', form: 'inc', range: [28, 28], tags: ['spell'] },
+  ]),
 ];
 
 /** The off hand, and the only source of Block in the game: a rating like a body
@@ -3262,7 +3328,7 @@ export const STARTER_WEAPON: Record<string, string> = {
 export const starterWeapon = (skill: SkillDef | undefined): string | null => {
   if (skill?.weapon) return skill.weapon;
   const wants = skill?.requires
-    ? WEAPON_GROUPS[skill.requires] ?? [skill.requires]
+    ? Object.keys(WEAPON_COUNTS_AS).filter((f) => WEAPON_COUNTS_AS[f].includes(skill.requires!))
     : [];
   const fitting = WEAPON_BASES.filter((b) => b.family && wants.includes(b.family));
   const humblest = fitting.sort((a, b) => (a.ilvl ?? 1) - (b.ilvl ?? 1))[0];

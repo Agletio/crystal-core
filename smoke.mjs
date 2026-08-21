@@ -258,7 +258,12 @@ assert($('dev').hidden === true, 'and the menu shuts behind it');
   assert(!use.disabled, 'and a flask you can drink is a button you can press');
   use.click();
   await new Promise((r) => setTimeout(r, 1500));
-  assert(charges()[0] === '1', 'drinking one spends a charge', charges().join(' '));
+  assert(
+    charges()[0] === '1',
+    'drinking one spends a charge',
+    `${charges().join(' ')} — phase ${document.body.dataset.runPhase}, ` +
+      `weapon ${$('slot-weapon') ? 'n/a' : 'n/a'}`
+  );
 
   $('run-abandon').click();
   $('run-again').click();
@@ -943,7 +948,15 @@ const stashSlots = () => all('#stash-slots .slot');
 const stashed = () => all('#stash-slots .slot:not(.slot--empty)');
 assert(stashSlots().length >= 10 && stashSlots().length <= 15,
   'it starts at a usable size', String(stashSlots().length));
-assert(stashed().length === 0, 'and starts empty');
+// The dev kit stocks one of every family off both tables, which outgrew the
+// bag — so what is in here at the start is exactly what the bag could not
+// hold, and everything below counts from there rather than from zero.
+const stashedFirst = stashed().length;
+assert(
+  stashedFirst < stashSlots().length,
+  'and holds the kit’s overflow with room left',
+  `${stashedFirst} of ${stashSlots().length}`
+);
 
 // You move things in by clicking the DOCK, not a list inside the popup —
 // which only works because every popup stops above the dock.
@@ -952,13 +965,15 @@ assert(stashed().length === 0, 'and starts empty');
   const target = filled('#inv-gear')[0];
   assert(/stash/i.test(named(target)), 'the dock offers to stash it', named(target));
   target.click();
-  assert(stashed().length === 1, 'the item is in the stash');
+  assert(stashed().length === stashedFirst + 1, 'the item is in the stash',
+    String(stashed().length));
   assert(dockItems().length === before - 1, 'and out of the bag', String(dockItems().length));
-  assert(text('stash-count').startsWith('1'), 'the count keeps up', text('stash-count'));
+  assert(text('stash-count').startsWith(String(stashedFirst + 1)), 'the count keeps up',
+    text('stash-count'));
 
   // And back out again. A stash you cannot empty is a bin.
-  stashed()[0].click();
-  assert(stashed().length === 0, 'it comes back out');
+  stashed()[stashed().length - 1].click();
+  assert(stashed().length === stashedFirst, 'it comes back out', String(stashed().length));
   assert(dockItems().length === before, 'and returns to the bag', String(dockItems().length));
 }
 

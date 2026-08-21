@@ -73,6 +73,9 @@ to look:
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
+| bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
+| a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
+| greatswords, mauls, staves | three two-handed families, and a melee/spell split on the staff and the dagger: one ART, two implicits |
 
 **The balance pass RAN, and what it found was that nothing had ever been
 measured against a build.** *The user's call: "I have a feeling your checks are
@@ -199,11 +202,11 @@ got. The section to read first is **FLOOR AND CEILING**, which did not exist
 before this round and is the one that says whether any of the others mean
 anything.
 
-### It owes five parked checks
+### It owes four parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — five today.**
+count and this list has to agree with it — four today.**
 
 1. **"none of the four is a wall for the character that clears the Fissure"** —
    **read this one first.** Demonic and the Seam each kill it 7 times in 12,
@@ -216,19 +219,18 @@ count and this list has to agree with it — five today.**
    DESIGN question and open — see Open questions.**
 2. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
-3. **"Before The Lamp Dies: 90s against a median clear"** — the room takes
-   128s and a searched build clears it 2 times in 6. The clock was written
-   against a game where nothing could kill you.
-4. **"every band still pays more than the one below"** — 145 → 180 → 452 → 389
-   → 1587 → 3797 → 3221, so bands 3 and 6 dip. Both are the bands where a
+3. **"every band still pays more than the one below"** — 145 → 180 → 452 → 408
+   → 1510 → 3839 → 3288, so bands 3 and 6 dip. Both are the bands where a
    ceiling build is slowest rather than where it earns least: gold is per
    MINUTE, and the danger curve made those two rungs long.
 
-**"the sim asks for exactly what the sheet promised" came back on its own** when
-weapons took base damage, and is a `check` again. Nothing was done to it
-directly; the number it was measuring moved under it.
+**Two came back on their own** and are `check`s again. "the sim asks for exactly
+what the sheet promised" recovered when weapons took base damage; **"Before The
+Lamp Dies: 90s against a median clear"** recovered when the two-handers landed —
+a searched build now brings a greatsword or a maul to a room with a clock on it.
+Nothing was done to either directly; the numbers moved under them.
 
-5. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
+4. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
    is fixed and the other half is not. Weapons taking damage of their own put
    full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
    thin tier 1 SPEED now clears **5/8 against a floor of 0**: a weapon carries

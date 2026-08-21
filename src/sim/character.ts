@@ -4,7 +4,7 @@ import {
   ATTRIBUTE_BY_ID,
   ATTRIBUTE_STEP,
   GEAR_BASE_BY_ID,
-  WEAPON_GROUPS,
+  WEAPON_COUNTS_AS,
   WEAPON_SLOT,
   LEVELLING,
   MAIN_SLOT,
@@ -59,7 +59,9 @@ export interface Character {
 
 /** Every family a skill will be swung with, resolving a group to its members. */
 export const weaponFamilies = (skill: SkillDef): string[] =>
-  !skill.requires ? [] : WEAPON_GROUPS[skill.requires] ?? [skill.requires];
+  !skill.requires
+    ? []
+    : Object.keys(WEAPON_COUNTS_AS).filter((f) => WEAPON_COUNTS_AS[f].includes(skill.requires!));
 
 /** Whether what is in your hand can swing this skill. A spell requires nothing
  *  and is cast bare-handed; a skill that names a weapon needs one IN your hand. */

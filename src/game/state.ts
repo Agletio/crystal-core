@@ -33,11 +33,9 @@ import type { Item, ItemKind, Wallet } from '../types';
 
 export const SAVE_VERSION = 1;
 
-/**
- * What you can carry. The dock draws exactly this many and never scrolls, so
- * the limit is visible rather than discovered. Crystals are not in here: one is
- * never spent, sold or carried, and `GameState.crystals` takes every one.
- */
+/** What you can carry. The dock draws exactly this many and never scrolls, so
+ *  the limit is visible rather than discovered. Crystals are not in here: one
+ *  is never spent, sold or carried, and `GameState.crystals` takes every one. */
 export const CARRY: Record<'gear', number> = {
   gear: 32,
 };
@@ -168,17 +166,24 @@ export function resetGame(game: GameState, mode: StartMode): void {
   grant(game.wallet, 'gold', preset.gold);
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
-  game.inventory = preset.gear.map((g) => makeGear(g.base, g.ilvl));
+  const plain = preset.gear.map((g) => makeGear(g.base, g.ilvl));
   const rng = new Rng(7);
+  const named: Item[] = [];
   for (const id of preset.uniques ?? []) {
     const def = UNIQUE_BY_ID[id];
-    if (def) game.inventory.push(makeUnique(def, CRYSTAL_ILVL, rng));
+    if (def) named.push(makeUnique(def, CRYSTAL_ILVL, rng));
   }
+  // Overflow to the STASH, keeping a slot: a kit that FILLS the bag cannot
+  // enter the Fissure. A BASE gives way, never a unique — and the bases keep
+  // the FRONT, since a unique holds no modifiers to craft on.
+  const room = Math.max(0, CARRY.gear - 1 - named.length);
+  const stocked = [...plain.slice(0, room), ...named];
+  game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
-  game.stash = [];
+  game.stash = plain.slice(room);
   game.junk = [];
-  game.stashSlots = STASH_START;
+  game.stashSlots = Math.max(STASH_START, game.stash.length);
 
   // The dev preset wears a rolled set, so the stat pipeline has something in it.
   game.character = makeCharacter(

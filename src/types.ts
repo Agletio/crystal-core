@@ -298,7 +298,7 @@ export interface MonsterDef {
 export type SkillCategory = 'spell' | 'attack' | 'passive' | 'movement';
 
 export interface SkillDef {
-  /** A weapon FAMILY or `WEAPON_GROUPS` name this is swung with. Spells: none. */
+  /** What this is swung with — any name in `WEAPON_COUNTS_AS`. Spells: none. */
   requires?: string;
   /** A share of one type reaching this skill, delivered as another; `to`
    *  follows a tree Conversion. */
