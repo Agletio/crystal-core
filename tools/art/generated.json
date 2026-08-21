@@ -1053,7 +1053,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "dd86d050-5ef9-494d-96ff-5b4db4325e88"
+     "group": "4422ae18-87db-4a80-acd7-1b5a03599af4"
     },
     "walk": {
      "frames": 6,
@@ -1121,7 +1121,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "55e2e80f-0309-4a06-81b1-613f44620f34"
+     "group": "2c3a5030-cab5-424b-883b-8b8c146dfce8"
     },
     "walk": {
      "frames": 6,
@@ -1155,7 +1155,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "2ded3b61-9061-4718-96be-39d1c783f06b"
+     "group": "37f8ba81-6a5a-49bc-a26a-22abb104547d"
     },
     "walk": {
      "frames": 6,
@@ -1189,7 +1189,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "920e4684-70c9-4827-8af3-cf66374f1e9f"
+     "group": "7930cc8f-3eb1-4757-b65c-8f5c184bff71"
     },
     "walk": {
      "frames": 6,
@@ -1223,7 +1223,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "4989ab79-1479-4e74-988c-6514e8159def"
+     "group": "432fddaa-51f4-4a3e-b864-2a14cb9c338e"
     },
     "walk": {
      "frames": 6,
@@ -1291,7 +1291,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "381930b7-f95e-4633-9cbc-00755c052711"
+     "group": "c4500a4f-5d10-468e-9083-ce7dd1f7ecbb"
     },
     "walk": {
      "frames": 6,
@@ -1325,7 +1325,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "4b8467dd-c830-4223-a181-c63d162748c5"
+     "group": "ade762f8-a10b-441e-b74c-15be918daebd"
     },
     "walk": {
      "frames": 6,
@@ -1393,7 +1393,7 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "ddcbce80-b504-4d44-ba8c-d5026454f022"
+     "group": "ee5cfb2b-83c7-4412-91c3-72a9485ad84d"
     },
     "walk": {
      "frames": 6,
