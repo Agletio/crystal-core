@@ -792,7 +792,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -822,7 +822,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -852,7 +852,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -882,7 +882,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -912,7 +912,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -942,7 +942,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -972,7 +972,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1002,7 +1002,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1032,7 +1032,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1062,7 +1062,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his greatsword in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1092,7 +1092,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1122,7 +1122,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1152,7 +1152,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his maul in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1182,7 +1182,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his banded staff in both hands, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1212,7 +1212,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1242,7 +1242,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his bow, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1273,7 +1273,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1304,7 +1304,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1335,7 +1335,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1366,7 +1366,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1397,7 +1397,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1428,7 +1428,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his sword and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1459,7 +1459,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his knife and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1490,7 +1490,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his iron club and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1521,7 +1521,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his wand and his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
@@ -1552,7 +1552,7 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Standing still with his round shield, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
     },
     "walk": {
      "frames": 8,
