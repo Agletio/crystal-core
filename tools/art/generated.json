@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -807,7 +807,7 @@
   },
   {
    "sprite": "alchemist_sword2h",
-   "character": "1187c32f-cc4d-4df8-864a-000432b0f92e",
+   "character": "c4072224-0314-4ed1-abd5-05338476d39e",
    "dirs": [
     "south-east"
    ],
@@ -817,26 +817,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "40b937d2-5a86-4e7c-adae-fe42edc4b224",
+     "group": "9596bc14-345c-474d-8d47-21382bb0fb78",
      "to": 0.4
     },
     "walk": {
      "frames": 6,
-     "group": "d32d47c3-2af2-4c85-8d71-871d3a26b97d"
+     "group": "de74b766-b254-4fe6-bda4-fbe953df3327"
     },
     "attack": {
      "frames": 4,
-     "group": "41975cfe-413b-4d4f-afdf-2d3362b157cb",
-     "to": 0.56
+     "group": "aea00c34-c4da-4d31-b6b5-8ffbfe78b61e",
+     "from": 0.55
     },
     "cast": {
      "frames": 5,
      "to": 0.82,
-     "group": "83725e05-9298-427a-bafb-0a939e7bcac8"
+     "group": "137c8dd5-9ae1-44c8-8a95-d118a2f35556"
     },
     "death": {
      "frames": 4,
-     "group": "43cbe89b-bd5d-440a-89b3-b9174bfad83b"
+     "group": "85256fdf-6a71-4b78-9d48-a80b6b42f344"
     }
    }
   },
@@ -1087,7 +1087,7 @@
   },
   {
    "sprite": "aethermancer_sword2h",
-   "character": "4426d05a-cae3-4b1d-b85f-f8fa6a0d877e",
+   "character": "6cae8451-53c2-4a5a-9fc7-ae6e763d3446",
    "dirs": [
     "south-east"
    ],
@@ -1097,26 +1097,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c7249926-2cdf-4911-a917-8a77640e5c8c",
+     "group": "b4bf266c-4a94-4f9c-b479-f8e3f76b94b1",
      "to": 0.4
     },
     "walk": {
      "frames": 6,
-     "group": "220e00a4-aae8-4a05-b3a0-7ed647b6bb8a"
+     "group": "b63f701d-1238-41f2-abd4-8aa6e5f15170"
     },
     "attack": {
      "frames": 4,
-     "group": "a36fc19c-4d0a-45a9-8906-cfc1a7c09121",
-     "to": 0.56
+     "group": "207e8045-382e-42c2-8a2f-6469174bad8a",
+     "from": 0.55
     },
     "cast": {
      "frames": 5,
      "to": 0.82,
-     "group": "81c3180f-47b7-4db1-9047-c74b76b41aa2"
+     "group": "4cbe30f5-ad03-4413-bf1e-6b48f6b999ee"
     },
     "death": {
      "frames": 4,
-     "group": "4b4256d3-853d-40f9-9f22-7a0d12dd1567"
+     "group": "391e67b1-f373-4327-820a-f83c151c529d"
     }
    }
   },
@@ -1297,7 +1297,7 @@
   },
   {
    "sprite": "alchemist_sword_shield",
-   "character": "cbc62bd0-993d-475a-a220-8f54356d6e20",
+   "character": "5145a6b6-b3f3-4a84-ac34-aae7e2c39c7e",
    "dirs": [
     "south-east"
    ],
@@ -1307,26 +1307,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "c4500a4f-5d10-468e-9083-ce7dd1f7ecbb",
+     "group": "04fa44ea-31d2-4cc2-b9d4-177d24df3da1",
      "to": 0.4
     },
     "walk": {
      "frames": 6,
-     "group": "7a0f68ea-534d-40fe-92ce-314a0ab3faa6"
+     "group": "ea4e02d2-b09b-4729-87a5-3cbd75a8beb7"
     },
     "attack": {
      "frames": 4,
-     "group": "4805798d-ba24-4a19-bcfd-f6ebf53d1b1f",
+     "group": "b5e48a72-ca65-428d-8722-b303d198a39b",
      "to": 0.67
     },
     "cast": {
      "frames": 5,
      "to": 0.82,
-     "group": "95070c4c-8613-4053-bd7c-872d11522689"
+     "group": "4df12dd3-d432-4751-8145-3e0703922f82"
     },
     "death": {
      "frames": 4,
-     "group": "4359fa87-b59f-4164-893c-aa75fb05ebe7"
+     "group": "66e52e27-c992-4913-96f8-89d5822e61f0"
     }
    }
   },
@@ -1472,7 +1472,7 @@
   },
   {
    "sprite": "aethermancer_sword_shield",
-   "character": "80c3f029-6d5c-4e85-bb73-47144e1788cd",
+   "character": "33d1bb2d-9227-485b-a616-d543af23812f",
    "dirs": [
     "south-east"
    ],
@@ -1482,26 +1482,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "a0875b49-2c91-4993-bcd9-0de767192258",
-     "to": 0.4
+     "group": "a8a0637f-6bb9-4b84-9e0e-42966ff3cb87",
+     "from": 0.6
     },
     "walk": {
      "frames": 6,
-     "group": "545c36f6-8160-4bfb-b6ae-708396f63d54"
+     "group": "66e39222-a892-491a-aaaa-60cbac293449"
     },
     "attack": {
      "frames": 4,
-     "group": "c9738db7-08c8-4efd-976c-6ab7349761d5",
+     "group": "cc503b7b-fe4b-49cd-aa0e-04f78f159f0d",
      "to": 0.67
     },
     "cast": {
      "frames": 5,
      "to": 0.82,
-     "group": "7afd779e-a6d5-4e1c-b683-093444b93c1c"
+     "group": "d9c74ddd-3a18-4c2a-9923-ed65b83d345a"
     },
     "death": {
      "frames": 4,
-     "group": "fa85f80f-b9d4-4ccb-a184-548c98c4e3c9"
+     "group": "c2e5ed67-00ab-48dc-acf6-ffc07dd01392"
     }
    }
   },

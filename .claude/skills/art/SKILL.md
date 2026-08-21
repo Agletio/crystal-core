@@ -189,12 +189,53 @@ is kept; only the ids are the server's to say.
    - **East half only.** The renderer mirrors anything facing left.
 6. **Judge** — `body.mts sheet <sprite> out.png` and LOOK at it. Each state
    names `from`/`to`, the fraction of its run worth keeping. Hand work, no way
-   round it.
+   round it. **A window that ends before the STRIKE lands keeps the wind-up and
+   throws the blow away** — the renderer holds a one-shot state's last frame, so
+   read the sheet's last kept frame as the pose the game will sit on.
 7. **Import** — `tables.mts bodies` (also takes `tiles`, `props`). Free.
    **Name the table**: with no argument it writes all three and one dead row
    stops the other two.
+   - **THE CHARACTER ID LIVES IN TWO FILES AND THEY MUST AGREE.** `body.mts`
+     reads it off `bodies.json`; `tables.mts` reads the MANIFEST, which is
+     `generated.json`. Re-dress a body, update one, and the animations queue
+     against the new character while the import asks the old one for them —
+     which arrives as `no group <id> — standing still`, imports a one-frame
+     body of six colours, and fails nothing. **Grep the import log for
+     `no group` before believing it.**
 8. **Wire** — a row in `MONSTERS`, then `npm run demo`, `npm run build`,
    `npm run peek`.
+9. **Look at what SHIPPED** — `npx tsx tools/art/shipped.mts <sprite> out.png
+   [scale] [state,state]` draws a body out of `GENERATED`, which is the data the
+   renderer actually reads. `body.mts sheet` draws what the SERVER holds, and
+   the two differ by the whole import: the window, the fitting, the levelling
+   and the quantisation. Both faults in the weapon round were found this way and
+   neither was visible on the server's own sheet.
+
+### A variant: one hero holding one weapon
+
+Twenty-six of them, and none of their words are written by hand.
+`tools/art/weapons.json` says what a weapon looks like, once, for every hero
+that carries it; `tools/art/variant.mts` composes each variant's five states out
+of that and the BASE body's own states.
+
+- `variant.mts check` composes all 26 and prints what differs from the stored
+  rows. Fourteen come back byte-identical to what shipped, which is what makes
+  the composer trustworthy — change the vocabulary and `check` tells you exactly
+  which art is now asking for something it was not generated with.
+- `variant.mts write <sprite> …` rewrites only the rows it is named. **The words
+  in a row are the words its shipped art was ASKED with**, so a sweep would make
+  every other row a lie.
+- A weapon row may carry a **`carry`** clause, appended to every state but the
+  attack: where the weapon RESTS. Only a weapon observed drifting earns one —
+  the greatsword, asked upright, came back diagonal in the still and pointing at
+  the floor by the third walk frame.
+- **A tall body has no headroom in a 96 frame.** A weapon held vertically with
+  its point above the head fits the Aethermancer and is cut off for the
+  Alchemist, and no wording bought it back: six asks went in. Anchoring each
+  part vertically — fists at the waist, guard at the chest, point above the head
+  — is what got it upright at all; asking it to rise "up and slightly BACK past
+  his shoulder" to buy room came back pointing DOWN and forward, because the
+  generator hears *back* as trailing behind.
 
 ### Dressing a body
 

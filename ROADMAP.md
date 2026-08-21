@@ -6,11 +6,11 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FIVE PHASES ARE WAITING**, all of them things the user found by watching it.
-In the order to take them: the warsword and shield bodies, walls that are in
-front of him or behind him rather than under his feet, kiting that looks like
-kiting, the people you have met moving into a camp, and the camp itself. **Take
-Phase 1.** The weapon soft-lock, which was the first of them, has landed.
+**FOUR PHASES ARE WAITING**, all of them things the user found by watching it.
+In the order to take them: walls that are in front of him or behind him rather
+than under his feet, kiting that looks like kiting, the people you have met
+moving into a camp, and the camp itself. **Take Phase 1.** The weapon soft-lock
+and the two wrong weapon bodies, which came first, have landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -18,7 +18,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 6 (a quest log) stays parked by his word until the
+what it found is below. Phase 5 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -37,8 +37,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the five phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the five are done, say so and
+**Under the four phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the four are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -79,6 +79,7 @@ to look:
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
+| the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
 | bodies HOLD their weapons | 26 variants over two heroes: eight weapons, four of them again with a shield, and a shield alone. `weapons.json` is the shared vocabulary |
 | a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
 | greatswords, mauls, staves | three two-handed families, and a melee/spell split on the staff and the dagger: one ART, two implicits |
@@ -413,48 +414,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — The warsword swings, and one shield is one shield
-
-**What is true today.** `tools/art/bodies.json` holds 26 variant rows generated
-through `dress.mts` against the vocabulary in `tools/art/weapons.json`. Two came
-out wrong and the user found both by watching:
-
-- **`sword2h`** — *"Should be holding the sword with both hands and it pointed up
-  when walking, then swinging it forward never have it pointing straight down."*
-  Its walk points the blade at the floor and the attack window is `to: 0.56`.
-- **`sword_shield`** — *"its just the 1h sword and shield that does the double
-  shield"*. Two shields on one body: the generator drew the off hand twice.
-
-*"I checked all the other animations, the rest looked fine."* — so this is two
-rows, not a sweep.
-
-- [ ] **Load the `art` skill first.** The pipeline is `bodies.json` →
-      `body.mts`/`dress.mts`; nothing here is drawn by hand.
-- [ ] **`weapons.json` gains the carry rule for `sword2h`** — blade up at rest
-      and in the walk, forward through the swing — so a re-ask of any body
-      holding one says the same thing. The rules block is the point of the file.
-- [ ] **The `sword_shield` say names ONE shield and names the hand it is in.**
-      Watch the first 30 characters: the server keys an animation off them, so
-      the state's own VERB opens every say.
-- [ ] **Re-import with a window.** An artefact with a SHAPE is the import's
-      problem, not the generator's — `to: 0.4` on an idle is what fixed the last
-      three.
-- [ ] **`npm run peek` on each, and look.** An art claim needs a screenshot.
-
-**Traps.** `GAVE UP` on job-slot exhaustion arrives as TEXT and keeps the OLD
-group — grep the run before believing a variant re-rendered. `edit_description`
-caps at 1000 characters and `dress.mts` guards it with `SAY_MAX`.
-
-**Done when.** The warsword is held in two hands, up in the walk and forward
-through the swing, never down; the sword-and-shield body carries one shield.
-
-**What must not break.** `npm run build`, then `peek` and `shots` — both load
-the bundle. Bundle size is open question 10 and a re-ask of two variants does not
-move it.
-
----
-
-## Phase 2 — A wall is in FRONT of him or BEHIND him, and never under his feet
+## Phase 1 — A wall is in FRONT of him or BEHIND him, and never under his feet
 
 **The user drew this one**, which is the clearest statement of it there will be:
 a screenshot with the north walls circled — *"Feet should never go on these
@@ -513,7 +473,7 @@ termination check, since a walkability change can strand a route.
 
 ---
 
-## Phase 3 — Kiting that looks like kiting
+## Phase 2 — Kiting that looks like kiting
 
 **The user, after watching it.** *"For when you take the featherstep passive I
 think it works well but he kinda does this weird buggy thing where he runs into
@@ -571,7 +531,7 @@ table), then `smoke` and `peek`.
 
 ---
 
-## Phase 4 — Somebody you have met is somebody you can go and see
+## Phase 3 — Somebody you have met is somebody you can go and see
 
 **What is true today.** A room is SCHEDULED at the end of a cleared descent:
 `relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
@@ -607,7 +567,7 @@ who wants it can be walked to whenever you like.
 
 ---
 
-## Phase 5 — The camp: the home screen becomes a PLACE
+## Phase 4 — The camp: the home screen becomes a PLACE
 
 **The user's ask, in full, because the shape is all his:** *"I think the home
 screen should be more like an actual hideout in path of exile. Where you see your
@@ -642,7 +602,7 @@ one. The camp is a scene you are always in rather than a screen.
       It is the run panel that exists, anchored on a prop instead of the rail.
 - [ ] **The bench is a prop you click.** `openCraft` is already a function.
 - [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Do Phase 4 first; this is its payoff.
+      way. Do Phase 3 first; this is its payoff.
 - [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
       in, not a replacement, and a screen reachable only by finding a prop is a
       screen somebody will lose.
@@ -666,7 +626,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 6 — A quest log instead of a pointing finger
+## Phase 5 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
