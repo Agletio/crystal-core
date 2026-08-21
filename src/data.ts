@@ -264,6 +264,7 @@ export const WEAPON_GROUPS: Record<string, string[]> = {
 
 /** The hand a weapon's own damage is read off, named rather than searched for. */
 export const WEAPON_SLOT = 'weapon';
+export const OFF_SLOT = 'offhand';
 
 export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'weapon', name: 'Main Hand', accepts: 'weapon' },

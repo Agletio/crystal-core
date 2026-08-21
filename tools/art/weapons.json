@@ -45,9 +45,18 @@
       "hands": 2,
       "say": "Put a large longbow in his hand: he grips it at its middle and holds it upright in front of him, the bowstring nearest his body and the limbs curving away, and it is as tall as he is. His other hand is empty. The bow is pale tan wood with bone-white horn tips and a dark string. It is NOT a crossbow, NOT a short bow, NOT drawn, NOT held sideways.",
       "attack": "a two-beat BOW SHOT: he brings the bow up in front of him and draws the string back to his cheek with the other hand, weight on the back foot, then LOOSES, ending with the bow arm straight out in front and the string hand back beside his jaw"
+    },
+    "shield": {
+      "hands": 0,
+      "off": true,
+      "say": "Strap a round shield on his OTHER forearm, the arm NOT holding a weapon. That arm is BENT at the elbow and the shield rides beside his body at chest height with its flat ROUND FACE turned toward the viewer, the whole disc and the boss at its centre plainly visible. His own chest, front and face stay uncovered beside it. It is a plain disc a little wider than his chest: dark boards, a PALE iron rim all the way round, a PALE iron boss. Whatever is already in his other hand is unchanged, and he keeps his ordinary standing pose. NOT edge-on, NOT turned sideways, NOT a thin line, NOT a narrow oval, NOT held across his chest, NOT covering his face, NOT a tower shield, NOT a kite shield, NOT rectangular. His arms are NOT stretched straight out to the sides.",
+      "attack": "a two-beat SHIELD BASH: he draws the shield arm back across his own chest with the weight on the back foot, then drives the face of the shield straight FORWARD and steps through onto the front foot, ending with the shield arm at full stretch out in front of him",
+      "pale": false
     }
   },
   "_roles": "A SPELL weapon and a MELEE one of the same family are the same ART and differ only in the implicits their base rolls — the user's call. So there is one staff row and one dagger row here, and `GearBase.art` is the family for both bases.",
   "_hold": "Appended to every state a variant animates, so the weapon is still in his hand in frame 8. `attack` is the swing the weapon itself makes and is the whole reason a body holds its own weapon rather than wearing a pinned one: a maul does not jab and a bow does not smash. Every attack ENDS at full extension and never recovers — the renderer holds a one-shot state's last frame — and says he faces the same way in every frame.",
-  "hold": "He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+  "hold": "He keeps hold of it in EVERY frame and never lets go of it or puts it down.",
+  "_off": "A row with `off: true` is worn on the OTHER arm and LAYERS onto a variant that already holds a weapon — `dress.mts shield --state <the sword variant's own id>` — so the sword in the picture is the same sword, by construction rather than by asking twice. Nothing it covers may be the body: which hero you are looking at is the SILHOUETTE, which is why it is held out to the side and why every clause about the chest and the face is there. Held 'out to the side' it came back EDGE-ON — a plank rather than a shield — and one man T-POSED with both arms straight out, so the row now asks for the round face toward the viewer, the elbow bent, and the ordinary standing pose kept.",
+  "_limit": "`edit_description` is capped at 1000 CHARACTERS and the server refuses a longer one outright — before billing, but a refusal in a batch of seven is seven runs wasted. `dress.mts` measures before it calls. A row that says PALE for itself sets `pale: false` and drops the shared clause rather than losing an earned exclusion to the cap."
 }

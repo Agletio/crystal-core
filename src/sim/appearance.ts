@@ -1,42 +1,54 @@
 /**
  * What a character looks like: the renderer is handed art keys and nothing else.
- * A hero IS his trade, and what he HOLDS is normally a picture pinned at the
- * hand rather than the body. A BOW is the exception and is a body of its own —
- * a VARIANT of the same man holding one, so the arms are drawn round it.
+ * A hero IS his trade, and what he carries is drawn ON the body — a VARIANT of
+ * the same man holding it, so the arms are round it. A picture pinned at the
+ * fist is the fallback for a pair nobody has drawn.
  */
 import { GENERATED } from '../render/generated-art';
 import { HELD } from '../render/held';
-import { GEAR_BASE_BY_ID } from '../data';
+import { GEAR_BASE_BY_ID, OFF_SLOT, WEAPON_SLOT } from '../data';
 import { TRADE_BY_ID } from '../trades';
 import type { Character } from './character';
 
 export const HERO_SPRITE = 'wanderer';
 
-/** Tiles on screen; the gait gauge measures a stride against this too. */
-export const HERO_SCALE = 1.5;
+export const HERO_SCALE = 1.5; // tiles on screen; the gait gauge reads it too
 
 /** `HELD` row -> the `<body>_<suffix>` that DRAWS it; absent, it is pinned. */
-const HOLDING: Record<string, string> = { bow: 'bow' };
+const HOLDING: Record<string, string> = {
+  sword: 'sword', sword2h: 'sword2h', dagger: 'dagger', mace: 'mace',
+  mace2h: 'mace2h', staff: 'staff', wand: 'wand', bow: 'bow', shield: 'shield',
+};
+
+/** What BOTH hands hold, longest first — a sword and a shield is its own
+ *  drawing. Falling back a step still draws the hand that WAS drawn. */
+function variants(character: Character): string[] {
+  const main = HOLDING[heldFor(character, WEAPON_SLOT) ?? ''];
+  const off = HOLDING[heldFor(character, OFF_SLOT) ?? ''];
+  if (main && off) return [`${main}_${off}`, main, off];
+  return [main || off].filter(Boolean);
+}
 
 export function heroSpriteFor(character: Character): string {
   const worn = character.trade ? TRADE_BY_ID[character.trade]?.spec.sprite : undefined;
   const body = worn && GENERATED[worn] ? worn : HERO_SPRITE;
-  const holding = HOLDING[heldFor(character) ?? ''];
-  const variant = holding ? `${body}_${holding}` : '';
-  return variant && GENERATED[variant] ? variant : body;
+  for (const suffix of variants(character)) {
+    if (GENERATED[`${body}_${suffix}`]) return `${body}_${suffix}`;
+  }
+  return body;
 }
 
-/** The `HELD` row a SLOT draws, off the base's `art` — a weapon's is its FAMILY. */
-export function heldFor(character: Character, slotId = 'weapon'): string | undefined {
+/** The `HELD` row a SLOT draws, off the base's `art`. */
+export function heldFor(character: Character, slotId = WEAPON_SLOT): string | undefined {
   const worn = character.equipment[slotId];
   const art = worn ? GEAR_BASE_BY_ID[worn.base]?.art : undefined;
   return art && HELD[art] ? art : undefined;
 }
 
 /** What is left to PIN once the body has drawn what it already holds. */
-export function pinnedFor(character: Character, slotId = 'weapon'): string | undefined {
+export function pinnedFor(character: Character, slotId = WEAPON_SLOT): string | undefined {
   const art = heldFor(character, slotId);
-  return art && HOLDING[art] && heroSpriteFor(character).endsWith(`_${HOLDING[art]}`)
-    ? undefined
-    : art;
+  if (!art || !HOLDING[art]) return art;
+  const drawn = heroSpriteFor(character).split('_').slice(1);
+  return drawn.includes(HOLDING[art]) ? undefined : art;
 }

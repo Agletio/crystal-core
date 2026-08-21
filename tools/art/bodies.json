@@ -1261,6 +1261,316 @@
      "say": "Dying with his bow, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
    }
+  },
+  {
+   "sprite": "alchemist_sword_shield",
+   "character": "cbc62bd0-993d-475a-a220-8f54356d6e20",
+   "name": "The Alchemist, with a sword and shield",
+   "size": 96,
+   "weapon": "sword",
+   "off": "shield",
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his sword and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his sword and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his sword and his round shield, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his sword and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his sword and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger_shield",
+   "character": "8fb29b15-c532-4735-92ad-fc3d3974edfb",
+   "name": "The Alchemist, with a dagger and shield",
+   "size": 96,
+   "weapon": "dagger",
+   "off": "shield",
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his knife and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his knife and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his knife and his round shield, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his knife and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his knife and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace_shield",
+   "character": "6a4d0c07-87ba-42a2-9d35-7f1d1ac355c4",
+   "name": "The Alchemist, with a mace and shield",
+   "size": 96,
+   "weapon": "mace",
+   "off": "shield",
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his iron club and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his iron club and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his iron club and his round shield, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his iron club and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his iron club and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_wand_shield",
+   "character": "77dc1d28-23f6-4117-8065-36482a4c0a44",
+   "name": "The Alchemist, with a wand and shield",
+   "size": 96,
+   "weapon": "wand",
+   "off": "shield",
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his wand and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his wand and his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his wand and his round shield, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his wand and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his wand and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_shield",
+   "character": "ed5c746a-6861-4cb7-a7c9-5d5bfe78e0a6",
+   "name": "The Alchemist, with a shield",
+   "size": 96,
+   "weapon": "shield",
+   "off": "shield",
+   "look": "an ALCHEMIST in a heavy stained leather work apron over rolled shirtsleeves, the apron burned through with acid holes, thick gauntlets to the elbow, a bandolier of stoppered flasks of glowing green liquid across the chest and a brass burner hooked at the hip. Goggles pushed up onto a balding head, a rag tied over the mouth and pulled down under the chin. Worn down and half-poisoned by his own work: sallow, patient rather than wild. His glass and his brews are ACID GREEN, glowing faintly; his cloth is stained brown leather and drab canvas with brass fittings. NOT violet, NOT purple, NOT indigo, NOT black robes, NOT pale. He is a LIVING BREATHING MAN with FLESH on him. NOT a skull, NOT a skeleton, NOT undead, NOT a hero, NOT armoured, NOT a wizard, NOT a robe, NOT a mage, NOT a swordsman, NO sword, NO weapon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his round shield, walking forward at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his round shield, a two-beat SHIELD BASH: he draws the shield arm back across his own chest with the weight on the back foot, then drives the face of the shield straight FORWARD and steps through onto the front foot, ending with the shield arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_shield",
+   "character": "80c3f029-6d5c-4e85-bb73-47144e1788cd",
+   "name": "The Aethermancer, with a sword and shield",
+   "size": 96,
+   "weapon": "sword",
+   "off": "shield",
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his sword and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his sword and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his sword and his round shield, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his sword and his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his sword and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger_shield",
+   "character": "db83f0f8-d267-4d62-b518-e130b4c28bf7",
+   "name": "The Aethermancer, with a dagger and shield",
+   "size": 96,
+   "weapon": "dagger",
+   "off": "shield",
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his knife and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his knife and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his knife and his round shield, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his knife and his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his knife and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace_shield",
+   "character": "2a546325-a5c1-4eb0-8219-cbc915c8dbd6",
+   "name": "The Aethermancer, with a mace and shield",
+   "size": 96,
+   "weapon": "mace",
+   "off": "shield",
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his iron club and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his iron club and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his iron club and his round shield, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his iron club and his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his iron club and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_wand_shield",
+   "character": "42db90ea-bb60-448a-a6e9-cecff524e145",
+   "name": "The Aethermancer, with a wand and shield",
+   "size": 96,
+   "weapon": "wand",
+   "off": "shield",
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his wand and his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his wand and his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his wand and his round shield, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his wand and his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his wand and his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_shield",
+   "character": "65a53a8a-f5fc-4ac7-8a49-c02d28ec655d",
+   "name": "The Aethermancer, with a shield",
+   "size": 96,
+   "weapon": "shield",
+   "off": "shield",
+   "look": "a MAGE hung with GLASS — that is the whole silhouette: two dozen small glass phials of glowing violet fluid strung on cords all down the front and sleeves of a filthy dark rag robe, half of them empty and cracked, a leather strap cinched tight round one skinny bare upper arm above a forearm covered in puncture marks and bruises. Emaciated, hollow-cheeked, hunched, staring. A wrecked ADDICT: starved, wired, unsteady, hollowed out, filthy. His cloth is DARK: deep indigo, cold violet, near-black. BOTH HANDS EMPTY — no staff, no rod, no wand, no weapon. He is a LIVING BREATHING MAN with FLESH on him, warm skin at the face and the bare arms. NOT a skull, NOT a skeleton, NOT undead, NOT bone, NOT calm, NOT dignified, NOT a wise old wizard, NOT a priest, NOT a hero, NOT handsome, NOT armoured, NOT pale robes. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "Standing still with his round shield, standing still at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Walking forward with his round shield, walking forward at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "attack": {
+     "frames": 8,
+     "say": "Attacking with his round shield, a two-beat SHIELD BASH: he draws the shield arm back across his own chest with the weight on the back foot, then drives the face of the shield straight FORWARD and steps through onto the front foot, ending with the shield arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "cast": {
+     "frames": 10,
+     "say": "Casting with his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    },
+    "death": {
+     "frames": 6,
+     "say": "Dying with his round shield, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+    }
+   }
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",

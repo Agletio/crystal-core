@@ -47,10 +47,22 @@ export const OUTFITS: Record<string, string> = {
  *  per man is a weapon that looks different per man. */
 const WORDS = JSON.parse(
   readFileSync(new URL('./weapons.json', import.meta.url), 'utf8')
-) as { keep: string; pale: string; weapons: Record<string, { hands: number; say: string }> };
+) as {
+  keep: string;
+  pale: string;
+  weapons: Record<string, { say: string; pale?: boolean }>;
+};
+
+/** The server refuses an `edit_description` over this OUTRIGHT. It refuses
+ *  before billing, but a refusal in a batch of seven is seven runs wasted. */
+const SAY_MAX = 1000;
 
 for (const [id, row] of Object.entries(WORDS.weapons)) {
-  OUTFITS[id] = `${row.say} ${WORDS.pale} ${WORDS.keep}`;
+  const said = [row.say, row.pale === false ? '' : WORDS.pale, WORDS.keep].filter(Boolean).join(' ');
+  if (said.length > SAY_MAX) {
+    throw new Error(`${id}: ${said.length} characters of ask, and ${SAY_MAX} is the ceiling`);
+  }
+  OUTFITS[id] = said;
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
