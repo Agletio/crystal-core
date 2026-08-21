@@ -6,10 +6,11 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**FOUR PHASES ARE WAITING, and they came in one message after playing it.** They
-are numbered below in the order to take them: the weapon soft-lock (a trap a
-player can walk into and not get out of), the warsword and shield bodies, the
-people you have met moving into a camp, and the camp itself. **Take Phase 1.**
+**FIVE PHASES ARE WAITING**, all of them things the user found by watching it.
+In the order to take them: the warsword and shield bodies, walls that are in
+front of him or behind him rather than under his feet, kiting that looks like
+kiting, the people you have met moving into a camp, and the camp itself. **Take
+Phase 1.** The weapon soft-lock, which was the first of them, has landed.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -17,7 +18,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 5 (a quest log) stays parked by his word until the
+what it found is below. Phase 6 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -36,8 +37,8 @@ carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
-**Under the four phases this file holds a parked phase, a held pass, the open
-questions and a backlog nobody asked for. Once the four are done, say so and
+**Under the five phases this file holds a parked phase, a held pass, the open
+questions and a backlog nobody asked for. Once the five are done, say so and
 list what is left rather than inventing work.**
 
 **What landed, in one line each**, so a session that has to undo one knows where
@@ -412,60 +413,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — A weapon requirement is a WARNING, never a locked door
-
-**What is true today.** `weaponFits(skill, held)` in `src/sim/character.ts` is
-consulted by three doors that all REFUSE: `equipItem` and `unequipItem` in
-`src/game/state.ts` (605, 646) and `equipSkill` in `src/sim/character.ts` (205).
-`heal()` in `src/game/save.ts` (318-327) silently rewrites the main skill to
-something the held weapon can swing.
-
-**Why it is wrong**, in the user's words: *"if im on strike which requires a
-melee weapon and I want to switch to lightning arrow. I can't swap abilities it
-doesn't let me because my weapon type wont work with a bow skill, I also cant
-swap to a bow because my current skill strike doesn't work with a bow. The only
-way to swap is switch to a spell which requires nothing, swap your skill to bow,
-then you can equip your bow."* Two doors that each check the other are a
-deadlock, and the game's own rule is that **nothing is ever prevented**.
-
-- [ ] **All three doors stop refusing.** A mismatched pair becomes a legal state
-      of `GameState`, not an impossible one. Delete the checks; do not replace
-      them with a confirm.
-- [ ] **`heal()` stops rewriting the skill.** Repairing a state that is now legal
-      is what makes the player's own choice vanish on the next load. The lines it
-      keeps are the ones about a base that no longer exists.
-- [ ] **The Fissure REFUSES to launch, and says why.** Beside `bagsFull`, in the
-      same place and the same shape: *"You don't have the required weapon type
-      for that skill."* Name the skill and the family it wants, both off the
-      table — `weaponFamilies(skill)` already resolves a group to its members.
-- [ ] **The sheet marks the weapon.** A red border on the main-hand slot with
-      one line under it. `.slotcell` already carries state classes; a token for
-      the colour goes in `:root` like every other.
-- [ ] **Every equipped slot is checked, not just the main one.** A mover or a
-      passive may name a weapon too. `SKILL_SLOTS` is the loop.
-
-**Traps.**
-- `makeCharacter` also calls `weaponFits`, and that one STAYS: it builds a
-  character, and a character built holding a weapon its own skill refuses is a
-  starting state nobody chose. Same for `starterLoadout` and `bestBuild`.
-- **The sim must never meet the mismatch.** `runToCompletion` has no policy for
-  "cannot swing what you are holding", and inventing one is a mechanism change.
-  The launch refusal is what keeps it out; the demo builds matched loadouts, so
-  nothing headless can reach it.
-- The demo asserts today that all three doors police the requirement — *"a skill
-  names its weapon; all three doors police it"* in the landed table. Those checks
-  invert: they must now assert the swap is ALLOWED and the launch is refused.
-
-**Done when.** From Strike with a sword you can equip a bow, then equip
-Lightning Arrow, in either order, with no juggling — and the Fissure will not
-open until the pair agrees, saying so in one sentence.
-
-**What must not break.** `npm run typecheck`, `mods`, `demo` (the requirement
-checks), `smoke` (it equips), `shots` (the sheet).
-
----
-
-## Phase 2 — The warsword swings, and one shield is one shield
+## Phase 1 — The warsword swings, and one shield is one shield
 
 **What is true today.** `tools/art/bodies.json` holds 26 variant rows generated
 through `dress.mts` against the vocabulary in `tools/art/weapons.json`. Two came
@@ -506,7 +454,124 @@ move it.
 
 ---
 
-## Phase 3 — Somebody you have met is somebody you can go and see
+## Phase 2 — A wall is in FRONT of him or BEHIND him, and never under his feet
+
+**The user drew this one**, which is the clearest statement of it there will be:
+a screenshot with the north walls circled — *"Feet should never go on these
+north walls, character should lay over top of wall"* — and the south walls
+circled the other way — *"These walls should overlay on TOP of the character
+since we can't see the wall from this perspective feet should go under! dont let
+character walk so far under as to disappear but legs and waist should go
+under!"* His words on the whole: *"Currently it avoids the south walls by a
+large margin and takes really weird paths around stuff... on the north walls its
+kinda close but still walks a decent amount too far up and looks like hes on the
+walls."*
+
+**What is true today.** One `wallLayer` in `src/render/pixi.ts`, added to
+`world` BEFORE `entityLayer` — so every rock tile draws behind every body, north
+and south alike, and the comment says why: *"over them it sheared off heads."*
+`Grid.walkable` is `tile !== WALL`, one answer for every side. The zone tilesets
+were asked with `transition_size: 1`, which the `art` skill records as *"the
+cliff fills the cell BELOW the boundary, so a wall is two rows tall as drawn"* —
+so the drawn rock of a north wall spills into the topmost WALKABLE row, and
+standing on that row is standing on the wall as far as the eye is concerned.
+
+**Why it is wrong**, in one sentence: the map is drawn from slightly above, so
+rock ABOVE the floor is a face you see and rock BELOW it is a lip you look over
+— and one layer plus one walkability rule cannot say both.
+
+- [ ] **Two wall layers, split by which side the floor is on.** A rock tile with
+      floor ABOVE it is the near lip and belongs OVER `entityLayer`; every other
+      rock tile stays where it is. The "sheared off heads" comment is about rock
+      ABOVE a body and stays true — that half must not move.
+- [ ] **Decide how far under the lip he may go, and say it in tiles.** *"legs
+      and waist should go under"* and *"dont let character walk so far under as
+      to disappear"* is roughly half a body, and half a body is a number.
+      `canvas2d` draws no sprites, so this is a Pixi-side depth question with a
+      `renderer.ts` pure function behind it, per the standing rule.
+- [ ] **And the north side is the opposite: he stops SHORT.** Either the
+      walkable row under a north wall is refused, or the cliff is drawn one row
+      up. Measure both — refusing a row can seal a one-tile corridor, and
+      `carveRoom`/`fitCorners` in `src/sim/grid.ts` is what would have to widen.
+- [ ] **`npm run peek` on all four zones, at a crop, magnified.** *"every fault
+      found this way was invisible at ship size."* An art claim needs a
+      screenshot, and this claim needs four.
+
+**Traps.** A change to `walkable` changes PATHS, which changes seeds, which
+changes every measured number in the demo — expect the balance gauges to move
+and do not chase them. `sceneMap` builds authored rooms through the same grid,
+so the workshop and the ossuary are in scope. The `wallFade` band already draws
+`ROCK_DEPTH = 2` tiles of rock past the carve; whichever layer a tile lands in,
+its fade goes with it.
+
+**Done when.** No body's feet stand on drawn rock anywhere on the north side,
+the south lip draws over his legs without swallowing him, and a descent no
+longer swings wide of the south walls.
+
+**What must not break.** `npm run build` then `peek` and `shots`; `demo` for the
+termination check, since a walkability change can strand a route.
+
+---
+
+## Phase 3 — Kiting that looks like kiting
+
+**The user, after watching it.** *"For when you take the featherstep passive I
+think it works well but he kinda does this weird buggy thing where he runs into
+walls going backwards and just keeps trying to force his way into the wall...
+ideally we get this working nice to where its not so busted but just semi decent
+at kiting and all ranged abilites try and kite mobs. And convert this passive
+into just the convert armour to dodge and movespeed when you haven't been hit.
+Also it does a thing where it like blinks forward into enemies and then has to
+kite back out alot and looks weird."*
+
+**What is true today.** `kiteFrom` in `src/sim/run.ts` steps directly away from
+the nearest monster while `hero.cooldown > 0`, out to `reachTo × KITE_EDGE`. It
+moves through `nudge`, which slides each axis independently and simply declines
+the ones that do not fit — and then **returns `true` whatever happened**, so a
+hero pinned against rock reports that he gave ground and plays his walk on the
+spot. It is switched on by `grants.kite`, which exactly one thing in the game
+grants: the Featherstep passive.
+
+**Why it is wrong**, in one sentence: kiting is what a RANGED build does, not
+what one passive does, and a retreat that cannot fail is a retreat that walks
+into walls.
+
+- [ ] **`kite` stops being a grant and becomes a fact about the skill.** A skill
+      whose reach is longer than a swing kites; a melee one does not. Featherstep
+      keeps `armourToDodge` and `unhitHaste` and loses `kite` — the user's call,
+      in as many words — and its `description` loses the clause with it.
+      `GRANT_BY_ID.kite` goes, or stays only if something still hands it out.
+- [ ] **A retreat that is BLOCKED says so.** `kiteFrom` returns whether the hero
+      actually moved, measured against where he was — not whether it tried. A
+      blocked retreat stands and fights, which is the honest answer.
+- [ ] **And it slides rather than shoving.** Straight away from the monster is
+      one candidate; along the wall to either side are two more. Pick the one
+      that opens the most distance and is walkable, and take none if none is.
+- [ ] **The advance stops overshooting.** He walks to `reachTo` and is
+      immediately outside `reachTo × KITE_EDGE`, so he backs out of the range he
+      just walked into and does it again — that is the blink the user is
+      watching. Advance to the kite edge, not to the reach, so arriving and
+      holding are the same distance.
+- [ ] **`runToCompletion` is what proves it**, because automation is universal:
+      whatever this policy is, it is the one the headless runs use, and there is
+      no second implementation.
+
+**Traps.** This moves the hero, so it moves every balance number — ranged skills
+most. `bestBuild` PLAYS its shortlist, so the ceiling table will shift; read it,
+print it, do not tune to it in the same phase. **A run must always END**: a kite
+policy that can walk a hero away from the last monster forever is a mechanism
+failure, not a balance number, and `demo`'s termination check is what catches it.
+
+**Done when.** A ranged build gives ground while it recovers, never grinds
+against rock, and never walks into a pack it is about to walk back out of —
+watched at `npm run peek`, not read off a number.
+
+**What must not break.** `npm run demo` (termination, and the FLOOR AND CEILING
+table), then `smoke` and `peek`.
+
+---
+
+## Phase 4 — Somebody you have met is somebody you can go and see
 
 **What is true today.** A room is SCHEDULED at the end of a cleared descent:
 `relicFor(game, def.id)` in `src/ui/run.ts` puts you in the Osteomancer's or the
@@ -542,7 +607,7 @@ who wants it can be walked to whenever you like.
 
 ---
 
-## Phase 4 — The camp: the home screen becomes a PLACE
+## Phase 5 — The camp: the home screen becomes a PLACE
 
 **The user's ask, in full, because the shape is all his:** *"I think the home
 screen should be more like an actual hideout in path of exile. Where you see your
@@ -577,7 +642,7 @@ one. The camp is a scene you are always in rather than a screen.
       It is the run panel that exists, anchored on a prop instead of the rail.
 - [ ] **The bench is a prop you click.** `openCraft` is already a function.
 - [ ] **A met person STANDS somewhere**, which is Phase 3's list read a second
-      way. Do Phase 3 first; this is its payoff.
+      way. Do Phase 4 first; this is its payoff.
 - [ ] **The rail stays.** *"still keep a lot of the menu"* — this is a second way
       in, not a replacement, and a screen reachable only by finding a prop is a
       screen somebody will lose.
@@ -601,7 +666,7 @@ clicks its way from the title into a descent through this screen.
 
 ---
 
-## Phase 5 — A quest log instead of a pointing finger
+## Phase 6 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
