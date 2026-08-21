@@ -186,6 +186,7 @@ export interface GearBase {
   implicit?: StatSpec[];
   /** Bare PHYSICAL added to an ATTACK; increases rolled ON it scale this alone. */
   damage?: number;
+  attackSpeed?: number; // swings a second, its OWN: a maul is slow, a dagger is not
   hands?: number; // two is a bow, and its off hand stays empty
   family?: string;
   ilvl?: number; // lowest item level that may drop it; absent means from the start

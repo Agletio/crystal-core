@@ -523,6 +523,16 @@ export const implicitSpend = (base: GearBase): number =>
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
+/** Swings a second per FAMILY, before anything worn scales it. This is the
+ *  whole of what a two-hander PAYS for its damage — a Sledge hits for 44 where
+ *  a Cudgel hits for 24, and swings at three quarters of the speed with no off
+ *  hand to put a shield in. A spell never reads it: `heroStats` keeps the
+ *  hero's own rate for one, so a wand's number is here for a wand ATTACK. */
+export const WEAPON_RATE: Record<string, number> = {
+  dagger: 1.55, sword: 1.3, wand: 1.25, bow: 1.2, mace: 1.05,
+  staff: 1.0, sword2h: 0.95, mace2h: 0.8,
+};
+
 const weapon = (
   id: string,
   name: string,
@@ -533,6 +543,7 @@ const weapon = (
   hands = 1
 ): GearBase => ({
   id, name, kind: 'weapon', art: family, family, ilvl, damage,
+  attackSpeed: WEAPON_RATE[family] ?? HERO_BASE.attacksPerSecond,
   // Off the rung it drops at, so a side-grade arriving beside a rung holds
   // exactly what that rung holds.
   tier: BASE_TIER_ILVL.indexOf(ilvl) + 1,
@@ -559,24 +570,24 @@ export const WEAPON_BASES: GearBase[] = [
   ]),
 
   // --- swords: attack speed ------------------------------------------
-  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], 16, [
+  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], 21, [
     { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
   ]),
   weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], 26, [
     { stat: 'attackSpeed', form: 'inc', range: [13, 13] },
   ]),
-  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], 40, [
+  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], 48, [
     { stat: 'attackSpeed', form: 'inc', range: [18, 18] },
   ]),
 
   // --- daggers: crit --------------------------------------------------
-  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], 11, [
+  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], 19, [
     { stat: 'critChance', form: 'flat', range: [3, 3] },
   ]),
-  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], 18, [
+  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], 25, [
     { stat: 'critChance', form: 'flat', range: [5, 5] },
   ]),
-  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], 28, [
+  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], 47, [
     { stat: 'critChance', form: 'flat', range: [8, 8] },
   ]),
 
@@ -587,71 +598,71 @@ export const WEAPON_BASES: GearBase[] = [
   weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], 24, [
     { stat: 'damage', form: 'inc', range: [20, 20], tags: ['physical'] },
   ]),
-  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], 34, [
+  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['fire', 'attack'] },
   ]),
-  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], 34, [
+  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['cold', 'attack'] },
   ]),
-  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], 34, [
+  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['lightning', 'attack'] },
   ]),
   weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], 58, [
-    { stat: 'damage', form: 'inc', range: [45, 45], tags: ['physical'] },
+    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['physical'] },
   ]),
 
   // --- bows: the attack family, and the only two-handed one -----------
   //
   // Tagged 'attack' where the wand's line is tagged 'spell'. Twice the increase,
   // because holding one gives up an off hand — a shield's Block and its rating.
-  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], 21, [
+  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], 29, [
     { stat: 'attackRange', form: 'inc', range: [25, 25] },
   ], 2),
-  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], 34, [
+  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], 37, [
     { stat: 'attackRange', form: 'inc', range: [38, 38] },
   ], 2),
-  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], 52, [
+  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], 70, [
     { stat: 'attackRange', form: 'inc', range: [55, 55] },
   ], 2),
 
   // --- greatswords, mauls and staves: two hands, and a family a one-handed
   // requirement is answered BY. See WEAPON_COUNTS_AS — a skill wanting a mace
   // takes a maul, and only one naming the maul refuses everything else.
-  weapon('war_sword', 'War Sword', 'sword2h', BASE_TIER_ILVL[0], 30, [
+  weapon('war_sword', 'War Sword', 'sword2h', BASE_TIER_ILVL[0], 45, [
     { stat: 'attackSpeed', form: 'inc', range: [5, 5] },
   ], 2),
-  weapon('great_sword', 'Great Sword', 'sword2h', BASE_TIER_ILVL[1], 48, [
+  weapon('great_sword', 'Great Sword', 'sword2h', BASE_TIER_ILVL[1], 55, [
     { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
   ], 2),
-  weapon('reaver_sword', 'Reaver', 'sword2h', BASE_TIER_ILVL[2], 74, [
+  weapon('reaver_sword', 'Reaver', 'sword2h', BASE_TIER_ILVL[2], 105, [
     { stat: 'attackSpeed', form: 'inc', range: [11, 11] },
   ], 2),
 
-  weapon('sledge', 'Sledge', 'mace2h', BASE_TIER_ILVL[0], 44, [
+  weapon('sledge', 'Sledge', 'mace2h', BASE_TIER_ILVL[0], 45, [
     { stat: 'damage', form: 'inc', range: [25, 25], tags: ['physical'] },
   ], 2),
-  weapon('great_maul', 'Great Maul', 'mace2h', BASE_TIER_ILVL[1], 63, [
+  weapon('great_maul', 'Great Maul', 'mace2h', BASE_TIER_ILVL[1], 52, [
     { stat: 'damage', form: 'inc', range: [38, 38], tags: ['physical'] },
   ], 2),
-  weapon('breaker_maul', 'Breaker', 'mace2h', BASE_TIER_ILVL[2], 107, [
+  weapon('breaker_maul', 'Breaker', 'mace2h', BASE_TIER_ILVL[2], 87, [
     { stat: 'damage', form: 'inc', range: [58, 58], tags: ['physical'] },
   ], 2),
 
   // One ART and two implicits, at every rung: the shod one is swung and the
   // grey one is cast with, and which you are holding is the line on the piece.
-  weapon('shod_staff', 'Shod Staff', 'staff', BASE_TIER_ILVL[0], 27, [
+  weapon('shod_staff', 'Shod Staff', 'staff', BASE_TIER_ILVL[0], 38, [
     { stat: 'damage', form: 'inc', range: [18, 18], tags: ['physical'] },
   ], 2),
   weapon('grey_staff', 'Grey Staff', 'staff', BASE_TIER_ILVL[0], 12, [
     { stat: 'damage', form: 'inc', range: [22, 22], tags: ['spell'] },
   ], 2),
-  weapon('ironshod_staff', 'Ironshod Staff', 'staff', BASE_TIER_ILVL[1], 43, [
+  weapon('ironshod_staff', 'Ironshod Staff', 'staff', BASE_TIER_ILVL[1], 45, [
     { stat: 'damage', form: 'inc', range: [28, 28], tags: ['physical'] },
   ], 2),
   weapon('ashen_staff', 'Ashen Staff', 'staff', BASE_TIER_ILVL[1], 19, [
     { stat: 'damage', form: 'inc', range: [35, 35], tags: ['spell'] },
   ], 2),
-  weapon('warden_staff', 'Warden Staff', 'staff', BASE_TIER_ILVL[2], 68, [
+  weapon('warden_staff', 'Warden Staff', 'staff', BASE_TIER_ILVL[2], 77, [
     { stat: 'damage', form: 'inc', range: [42, 42], tags: ['physical'] },
   ], 2),
   weapon('seer_staff', 'Seer Staff', 'staff', BASE_TIER_ILVL[2], 28, [

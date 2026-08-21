@@ -77,6 +77,8 @@ to look:
 | a weapon COUNTS AS | `WEAPON_COUNTS_AS` — a requirement is answered by anything bigger. A skill wanting a mace takes a maul; one naming the maul takes only that |
 | greatswords, mauls, staves | three two-handed families, and a melee/spell split on the staff and the dagger: one ART, two implicits |
 | nothing is PINNED any more | `HOLDING` names all nine `HELD` rows and `heroSpriteFor` picks a body off the PAIR of hands; a pin is the fallback for a pair nobody drew |
+| a weapon has a RATE | `WEAPON_RATE` and `weaponRate` — a maul swings 0.8/s where a dagger swings 1.55, and an untagged increase ON the weapon is LOCAL like its damage |
+| the card says both numbers | `addedEffectiveness` and `rateMultiplier` print on the main slot: you cannot pick a weapon off a damage total |
 
 **The balance pass RAN, and what it found was that nothing had ever been
 measured against a build.** *The user's call: "I have a feeling your checks are
@@ -203,35 +205,15 @@ got. The section to read first is **FLOOR AND CEILING**, which did not exist
 before this round and is the one that says whether any of the others mean
 anything.
 
-### It owes four parked checks
+### It owes two parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — four today.**
+count and this list has to agree with it — two today.**
 
-1. **"none of the four is a wall for the character that clears the Fissure"** —
-   **read this one first.** Demonic and the Seam each kill it 7 times in 12,
-   where before Strike lost its free Splash they killed it none. The cause is
-   measured and is not a number: `ladderCharacter` walks its tree at RANDOM and
-   sixteen points never reach a branch, so that character now has no coverage
-   at all — it takes **11.5 damage a second in Demonic where Shockwave takes
-   3.3, Blight 2.8 and Fireball 7.3.** Melee with nothing bought, standing in an
-   aura pack, is the finding. **Whether Strike answers it with a base Echo is a
-   DESIGN question and open — see Open questions.**
-2. **"the characters checked actually cover every shape it polices"** — the
+1. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
-3. **"every band still pays more than the one below"** — 145 → 180 → 452 → 408
-   → 1510 → 3839 → 3288, so bands 3 and 6 dip. Both are the bands where a
-   ceiling build is slowest rather than where it earns least: gold is per
-   MINUTE, and the danger curve made those two rungs long.
-
-**Two came back on their own** and are `check`s again. "the sim asks for exactly
-what the sheet promised" recovered when weapons took base damage; **"Before The
-Lamp Dies: 90s against a median clear"** recovered when the two-handers landed —
-a searched build now brings a greatsword or a maul to a room with a clock on it.
-Nothing was done to either directly; the numbers moved under them.
-
-4. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
+2. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
    is fixed and the other half is not. Weapons taking damage of their own put
    full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
    thin tier 1 SPEED now clears **5/8 against a floor of 0**: a weapon carries

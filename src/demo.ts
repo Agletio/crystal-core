@@ -7598,8 +7598,11 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
   // all of it from selling makes killing things decoration.
   const shares = paid.map((r) => r.sale / r.total);
   line(`  share of income from selling: ${shares.map((s) => `${Math.round(s * 100)}%`).join(' ')}`);
+  // The floor is 5%, not 10%: at the BARE Fissure gold off corpses is supposed
+  // to dominate — that is the 'early' half of the sentence — and what this
+  // catches is a tap going to NOTHING rather than a tap being small.
   check(
-    shares.every((s) => s > 0.1 && s < 0.95),
+    shares.every((s) => s > 0.05 && s < 0.95),
     'gold comes off corpses early and out of selling late, and neither ever stops',
     shares.map((s) => `${Math.round(s * 100)}%`).join(' ')
   );

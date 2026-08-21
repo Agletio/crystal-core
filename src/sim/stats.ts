@@ -77,10 +77,8 @@ export interface CombatStats {
   ailmentChance: Record<string, number>; // per id, percent per hit; over 100 stacks
 }
 
-/**
- * Curved on POINTS rather than on the size of the hit, so it prints as one
- * honest number. A linear conversion has no good divisor.
- */
+/** Curved on POINTS rather than on the size of the hit, so it prints as one
+ *  honest number. A linear conversion has no good divisor. */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
   const raw = (100 * armour) / (armour + DEFENCE.armourHalfPoint);
@@ -98,9 +96,8 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   return out;
 }
 
-/** An ailment's damage a second at one stack, under ITS tags. That is the whole
- *  of why Spell, Attack and Critical do not scale a Burn: none is tagged fire,
- *  burn or overTime, so the filter never lets them through. */
+/** An ailment's damage a second at one stack, under ITS tags — the whole of why
+ *  Spell, Attack and Critical never scale a Burn. */
 export function ailmentDamage(mods: RolledMod[], skill?: SkillDef): Record<string, number> {
   const out: Record<string, number> = {};
   for (const def of AILMENTS) {
@@ -311,7 +308,10 @@ export function heroStats(
   level: number,
   skill: SkillDef,
   grants: Record<string, unknown> = {},
-  baseArmour = 0
+  baseArmour = 0,
+  /** What the WEAPON swings at before anything worn scales it; a bare hand is
+   *  the hero's own, which is what a harness holding nothing measures. */
+  rate = HERO_BASE.attacksPerSecond
 ): CombatStats {
   const breakdown = damageBreakdown(mods, level, skill, grants);
   const maxLife = computeStat(lifeFor(level), mods, 'life');
@@ -350,10 +350,11 @@ export function heroStats(
     ailmentChance: ailmentChances(mods),
     damage: breakdown.total,
     damageByType: breakdown.byType,
-    // A spell has no business getting faster because you found a sharper sword.
+    // A spell has no business getting faster for a sharper sword, so it keeps
+    // the hero's own rate; an ATTACK swings at the WEAPON's.
     attacksPerSecond:
       computeStat(
-        HERO_BASE.attacksPerSecond,
+        skill.tags.includes('spell') ? HERO_BASE.attacksPerSecond : rate,
         mods,
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) * skill.rateMultiplier,
@@ -592,11 +593,25 @@ export function weaponSwing(held: Item): number {
   return swing;
 }
 
-/** True for a line the WEAPON keeps to itself, so nothing counts it twice. */
+/** How often ONE weapon swings: its own base scaled by the increases rolled ON
+ *  it. The mirror of `weaponSwing`, and why a dagger is fast and a maul is not. */
+export function weaponRate(held: Item | null | undefined): number {
+  const base = held ? GEAR_BASE_BY_ID[held.base]?.attackSpeed : undefined;
+  if (!held || !base) return HERO_BASE.attacksPerSecond; // a bare hand is the hero's own
+  const own = aggregate([...held.mods, ...held.implicits], 'attackSpeed', []);
+  let rate = base * (1 + own.inc / 100);
+  for (const m of own.more) rate *= 1 + m / 100;
+  return rate;
+}
+
+/** True for a line the WEAPON keeps to itself, so nothing counts it twice: an
+ *  untagged increase to its damage or its rate scales the base it is rolled on
+ *  and nothing else. */
 const isLocal = (line: StatRoll): boolean =>
-  line.stat === 'damage'
-  && line.form !== 'flat'
-  && line.tags.every((t: string) => t === 'physical');
+  (line.stat === 'damage'
+    && line.form !== 'flat'
+    && line.tags.every((t: string) => t === 'physical'))
+  || (line.stat === 'attackSpeed' && line.form !== 'flat' && line.tags.length === 0);
 
 export function statMods(character: Character): RolledMod[] {
   const extra = [treeMod(character), attributeMod(character), weaponMod(character)];
@@ -620,7 +635,10 @@ export function characterStats(character: Character): CombatStats {
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
   const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);
-  return heroStats(statMods(character), character.level, skill, grants, baseArmour);
+  return heroStats(
+    statMods(character), character.level, skill, grants, baseArmour,
+    weaponRate(character.equipment?.[WEAPON_SLOT])
+  );
 }
 
 /**

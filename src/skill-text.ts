@@ -27,6 +27,10 @@ export function mainWorkings(character: Character): string[] {
       ? `${round(detail.perApplication)} ${type} damage over ${trim(detail.seconds)}s per ${use}`
       : `${round(detail.perApplication)} ${type} damage per ${use}`,
     `${trim(stats.attacksPerSecond)} ${spell ? 'casts' : 'attacks'} per second`,
+    // The two that decide WHICH weapon a skill wants, and neither was said
+    // anywhere: a damage total cannot tell fast-and-light from slow-and-heavy.
+    `×${trim(detail.skill.rateMultiplier)} ${spell ? 'cast' : 'attack'} speed`,
+    `${round(detail.skill.addedEffectiveness)}% of added damage`,
     `${round(detail.perSecond)} damage per second`,
     `${Math.round(stats.critChance)}% critical chance for ×${(2 + stats.critMultiplier / 100).toFixed(2)}`,
     `${trim(stats.manaCost)} mana per use`,
