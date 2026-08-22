@@ -3032,6 +3032,36 @@
    },
    "inks": "demonic",
    "character": "009c27f8-c8b6-4545-895d-4c09a819aa80"
+  },
+  {
+   "sprite": "obreth",
+   "name": "Obreth",
+   "size": 96,
+   "inks": "obsidian",
+   "look": "a lean HOODED FIGURE in tight dark leathers, a deep hood shadowing the face to nothing, a high collar and a wrapped scarf across the mouth, a SHORT cloak cut off at the waist so both legs are free, strapped bracers, and a belt of EMPTY sheaths across the chest and hips. Everything cold black and hard grey with one band of dull violet at the collar. Lean and quick rather than bulky, tall and long-limbed with a SMALL head. BOTH HANDS EMPTY — no knife, no dagger, no sword, no bow, no weapon at all. NOT a long robe, NOT a mage, NOT a wizard, NOT a monk, NOT plate armour, NOT a helmet, NOT a skull, NOT a skeleton, NOT undead, NOT a cape to the floor, NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing lightly on the balls of the feet, weight rocking a little, hands open and loose at the sides"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "prowling forward at a quick low pace, shoulders level, the short cloak swinging behind"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, stepping through off the front foot and driving one arm forward and across in a short committed thrust, ending at full forward extension"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "strict side profile, dropping into a crouch with both arms drawn back and low, then snapping upright with both arms flung wide"
+    },
+    "death": {
+     "frames": 4,
+     "say": "folding at the waist and dropping to one knee, then going down onto the side and lying flat and still"
+    }
+   },
+   "character": "8cd3f41f-cae5-45a7-bf01-42d2dccedbd9"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",
@@ -3077,6 +3107,20 @@
    "#2C2046",
    "#5E4382",
    "#9C7FCC"
+  ],
+  "obsidian": [
+   "#050508",
+   "#0A0A10",
+   "#101018",
+   "#171722",
+   "#1E1E2C",
+   "#262636",
+   "#303042",
+   "#3C3C50",
+   "#4A4A5E",
+   "#5E5E72",
+   "#3A2450",
+   "#7A6A90"
   ]
  },
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
