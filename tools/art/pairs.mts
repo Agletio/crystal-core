@@ -46,9 +46,7 @@ const NOUN: Record<string, string> = { sword: 'sword', dagger: 'dagger', mace: '
 
 const [command, ...only] = process.argv.slice(2);
 
-// Seeding `generated.json` rows to import into is `variant.mts manifest <hero>`,
-// which does singles and pairs off ONE rule: a variant carries its parent's own
-// sampling. Two seeders was one of them being wrong.
+// One seeder, one rule: a variant carries its parent's own sampling.
 if (command === 'seed') {
   console.log('use: npx tsx tools/art/variant.mts manifest <hero>');
   process.exit(1);
