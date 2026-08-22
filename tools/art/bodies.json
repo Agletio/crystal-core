@@ -1582,23 +1582,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his second sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his second sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his second sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his second sword, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his second sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "fee09498-94d5-4abc-9368-21c3c04c1421"
@@ -1613,23 +1613,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his knife in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his knife in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his knife in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his knife in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his knife in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "22398d09-847e-4ef9-8086-d54e22146e6e"
@@ -1644,23 +1644,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his iron club in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his iron club in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his iron club in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "2da9fb7c-353e-4798-961e-9ca03e16017c"
@@ -1675,23 +1675,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his wand in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his wand in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his wand in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "1ad93803-f062-4ee7-b929-3fe763f2c04b"
@@ -1706,23 +1706,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his knife in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his knife in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his knife in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his knife in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his knife in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "89aa2a93-4b51-45f4-9d85-f5ef56fb2cb9"
@@ -1737,23 +1737,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his iron club in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his iron club in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his iron club in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "e24faa5d-54a0-4eb7-adc8-d2dda4f774c1"
@@ -1768,23 +1768,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his wand in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his wand in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his wand in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "3c47143e-25ac-4eeb-b383-ae08d8eab399"
@@ -1799,26 +1799,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his iron club and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his iron club in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his iron club, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his iron club and his iron club in the other hand, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his iron club, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his iron club and his iron club in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his iron club, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his iron club and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
-   "character": "9e2f1f4b-765e-4888-8cac-896e48caf97e"
+   "character": "bb1e26d2-cfc5-4867-930a-e6cbc05abb7a"
   },
   {
    "sprite": "alchemist_mace_wand",
@@ -1830,26 +1830,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his iron club and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his wand in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his iron club, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his iron club and his wand in the other hand, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his iron club, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his iron club and his wand in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his iron club, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his iron club and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
-   "character": "07d521dc-4dcd-439d-8e8d-7353b3df3051"
+   "character": "4e24f433-7f2b-4a3b-b060-6d64d6282f8a"
   },
   {
    "sprite": "alchemist_wand_wand",
@@ -1861,26 +1861,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his wand and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging flasks swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand and his wand in the other hand, at a three-quarter angle at a heavy deliberate stride, knees lifting clear, arms swinging, the hanging flasks swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his wand, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his wand and his wand in the other hand, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his wand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his wand and his wand in the other hand, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his wand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his wand and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
-   "character": "77abc4fd-aaa5-4526-8099-92418f7eda1a"
+   "character": "03a9c474-d51f-4517-8f1b-8c7743318da0"
   },
   {
    "sprite": "aethermancer_sword_sword",
@@ -1892,23 +1892,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his second sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his second sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his second sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his second sword, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his second sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "afd84720-3cc0-4312-ae96-4e5b9d0d336a"
@@ -1923,23 +1923,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his knife in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his knife in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his knife in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his knife in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his knife in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "ead69995-269e-433a-9c73-01fc1455ed1e"
@@ -1954,23 +1954,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his iron club in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his iron club in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his iron club in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "80f57fa2-f0fc-4b74-8b24-317fcd01ef0e"
@@ -1985,23 +1985,23 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his sword, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his sword and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his sword, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his sword and his wand in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his sword, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his sword and his wand in the other hand, a two-beat SWORD CUT: he coils with the weight on the back foot and the sword drawn back low behind his hip, then swings it up and FORWARD across his body at chest height and steps through onto the front foot, ending with the blade at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his sword, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his sword and his wand in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his sword, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his sword and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
    },
    "character": "ff4a3afd-8ea0-40bf-add1-4315fecd3d6b"
@@ -2016,25 +2016,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his knife in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his knife in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his knife in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his knife in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his knife in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "cd798ebd-e814-457b-9dc6-95f7ad95d981"
   },
   {
    "sprite": "aethermancer_dagger_mace",
@@ -2046,25 +2047,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his iron club in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his iron club in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his iron club in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "a54a231b-9285-4e8f-b1fb-ad5f8966b28f"
   },
   {
    "sprite": "aethermancer_dagger_wand",
@@ -2076,25 +2078,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his knife, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his knife and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his knife, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his knife and his wand in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his knife, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his knife and his wand in the other hand, a two-beat KNIFE STAB: he draws the knife hand back beside his own ribs with the weight on the back foot, then drives it straight FORWARD at waist height and steps through onto the front foot, ending with the arm at full stretch out in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his wand in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his knife, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his knife and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "7192dc76-c7db-448e-a87a-9e75092436f6"
   },
   {
    "sprite": "aethermancer_mace_mace",
@@ -2106,25 +2109,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his iron club and his iron club in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his iron club in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his iron club, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his iron club and his iron club in the other hand, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his iron club, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his iron club and his iron club in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his iron club, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his iron club and his iron club in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "e9b78c89-4a6a-4c94-967c-d62a6aef4eee"
   },
   {
    "sprite": "aethermancer_mace_wand",
@@ -2136,25 +2140,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his iron club, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his iron club and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his iron club, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his iron club and his wand in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his iron club, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his iron club and his wand in the other hand, a two-beat CLUB SWING: he cocks the club back over his shoulder with the weight on the back foot, then swings it round and DOWN in front of him and steps through onto the front foot, ending with the club at full stretch low in front of him, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his iron club, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his iron club and his wand in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his iron club, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his iron club and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "46daf67c-af81-4c6b-b051-f9c2983e7a2e"
   },
   {
    "sprite": "aethermancer_wand_wand",
@@ -2166,25 +2171,26 @@
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Standing still with his wand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. NOTHING else is in the picture: no second weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and what he is holding."
+     "say": "Standing still with his wand and his wand in the other hand, at a three-quarter angle, shoulders rising and falling, the hanging phials swaying a little. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest. NOTHING else is in the picture beyond the ONE weapon in each hand: no third weapon, no shield, no other object, no glow, no magic, no sparks, no smoke, no aura, no dropped item, nothing floating beside him or at his feet. Only the man and the two things he is holding."
     },
     "walk": {
      "frames": 8,
-     "say": "Walking forward with his wand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Walking forward with his wand and his wand in the other hand, at a three-quarter angle at a hurried unsteady stride, knees lifting clear, arms swinging, the hanging phials swinging with him. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "attack": {
      "frames": 8,
-     "say": "Attacking with his wand, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Attacking with his wand and his wand in the other hand, a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward, seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away from the viewer, and the animation ENDS at full extension with no recovery and no settling back. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his wand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his wand and his wand in the other hand, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 6,
-     "say": "Dying with his wand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Dying with his wand and his wand in the other hand, his legs buckling under him and the body pitching forward, folding down onto the ground and coming to rest face down, and staying there, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     }
-   }
+   },
+   "character": "4f937066-4e26-4d7c-a1fe-968b949f522a"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",

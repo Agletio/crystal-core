@@ -1644,6 +1644,610 @@
      "group": "136b612c-491c-4c0e-b28a-87b20fad244c"
     }
    }
+  },
+  {
+   "sprite": "alchemist_sword_sword",
+   "character": "fee09498-94d5-4abc-9368-21c3c04c1421",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4,
+     "group": "9096f4b2-ffa0-4d31-b106-a6356bff9e7b"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "deec658f-6eca-4f89-889c-c8a886176811"
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67,
+     "group": "dcc962f2-5461-41a9-82d0-4931e3c2348d"
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82,
+     "group": "08cd7047-f8e2-4dcb-b2de-ca23ddc8fec7"
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_sword_dagger",
+   "character": "22398d09-847e-4ef9-8086-d54e22146e6e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_sword_mace",
+   "character": "2da9fb7c-353e-4798-961e-9ca03e16017c",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_sword_wand",
+   "character": "1ad93803-f062-4ee7-b929-3fe763f2c04b",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger_dagger",
+   "character": "89aa2a93-4b51-45f4-9d85-f5ef56fb2cb9",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger_mace",
+   "character": "e24faa5d-54a0-4eb7-adc8-d2dda4f774c1",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_dagger_wand",
+   "character": "3c47143e-25ac-4eeb-b383-ae08d8eab399",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace_mace",
+   "character": "bb1e26d2-cfc5-4867-930a-e6cbc05abb7a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_mace_wand",
+   "character": "4e24f433-7f2b-4a3b-b060-6d64d6282f8a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "alchemist_wand_wand",
+   "character": "03a9c474-d51f-4517-8f1b-8c7743318da0",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.19,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_sword",
+   "character": "afd84720-3cc0-4312-ae96-4e5b9d0d336a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_dagger",
+   "character": "ead69995-269e-433a-9c73-01fc1455ed1e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_mace",
+   "character": "80f57fa2-f0fc-4b74-8b24-317fcd01ef0e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_sword_wand",
+   "character": "ff4a3afd-8ea0-40bf-add1-4315fecd3d6b",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "to": 0.67
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger_dagger",
+   "character": "cd798ebd-e814-457b-9dc6-95f7ad95d981",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger_mace",
+   "character": "a54a231b-9285-4e8f-b1fb-ad5f8966b28f",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_dagger_wand",
+   "character": "7192dc76-c7db-448e-a87a-9e75092436f6",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace_mace",
+   "character": "e9b78c89-4a6a-4c94-967c-d62a6aef4eee",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_mace_wand",
+   "character": "46daf67c-af81-4c6b-b051-f9c2983e7a2e",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
+  },
+  {
+   "sprite": "aethermancer_wand_wand",
+   "character": "4f937066-4e26-4d7c-a1fe-968b949f522a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.13,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "to": 0.4
+    },
+    "walk": {
+     "frames": 6
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.34
+    },
+    "cast": {
+     "frames": 5,
+     "to": 0.82
+    },
+    "death": {
+     "frames": 4
+    }
+   }
   }
  ],
  "props": [
