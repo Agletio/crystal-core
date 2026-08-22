@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -2832,6 +2832,356 @@
      "group": "8b86812e-1abb-4bc4-b94d-ba178add4075",
      "frames": 4,
      "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword_sword",
+   "character": "712c4e1c-d6ff-40ea-9692-06671007aa13",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "3ec526a6-aca4-46f9-96c4-18a583769053"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "403a948a-4cb3-4fdc-96b7-d66a14cc1846"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "c8a51e0e-8059-41aa-adff-87bf6d9092c5"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "9df76fc3-7dae-4ec6-b7a9-06d0709bde43"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "87dc70b1-3871-4e0d-80c3-4a666d0f7d29"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword_dagger",
+   "character": "5c9a078a-5e9c-4e2b-933d-6dfbbc1288c4",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "1c767c50-285a-421a-a8cf-a158cef92656"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "6f39bf78-c14e-4253-a20d-301fdebe4620"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "1748c00d-771b-4edd-b371-ff5eb28e83b5"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "e5a2932f-1e52-44ef-9df6-0f19450f1bd0"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "30e8bbdb-e526-49a7-bda6-e3b98d3a36d9"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword_mace",
+   "character": "f52ac117-4100-45c6-b43d-5bf9ae8b713a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "82b7c45e-5eb1-42f5-a2b7-5c24dfc4424d"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "d3f9c9f6-283a-4670-8bdc-699beb0e31f9"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "d694d4f5-ea6d-4cb9-aff7-005f8d09677d"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "5adc6b5e-094d-4b14-b051-58715f0055e7"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "3ae1533e-73cb-41c4-8be3-41dea428657e"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword_wand",
+   "character": "4362583c-73e6-4b64-a4e9-5b7589ae83e7",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "e66d5a76-e543-4fa9-8fe0-64c82377daa8"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "2552e7e3-ed17-4cf1-a8d3-9b1a22319d76"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "949380e9-46b6-40f5-9df9-7dbecddeaee9"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "2617cff7-e956-4a26-9f5f-21bf263d4709"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "d910f695-1ea9-4527-abe4-f1f17daf3fbb"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_dagger_dagger",
+   "character": "0e292dbe-5925-4ba0-8704-fb3c9794980a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "ebe1f3c8-cce8-4950-9527-6cff17b3969f"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "74fbd173-369a-4eab-883e-b66ec1413ba0"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "889842f4-c82c-4dd7-b39a-591ad78a21d8"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "df81edba-08c0-4a26-8b69-2ce000ec06f5"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "b994a1d6-6b0a-47b6-a9d4-f021454225c5"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_dagger_mace",
+   "character": "4707973e-ef28-4365-ba42-5ed6f8e748a1",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "bbae8e0f-0100-4897-a986-e75bacb612a7"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "7fff6b25-2d8d-4ee3-a4bd-25e881615f4e"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "51852df5-469f-48d9-b85b-027e580fce67"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "63dfb09e-0373-468c-af51-8eb72e83e335"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "6ad68ecf-a249-41b3-b801-16a44dcbb527"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_dagger_wand",
+   "character": "c174d071-05a5-4809-8634-2de674c5e5f8",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "9c8ed7c2-8fa2-4edc-8619-290995eab67a"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "f5ab5f71-c45f-4120-b836-b02b07f85be0"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "70c74e6b-2d54-4cf2-bdee-ba22d416e0b3"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "e3756224-867d-4859-a1f5-5140b9aebe12"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "b039fa42-f8d6-4212-bb6e-09df711ca9c5"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_mace_mace",
+   "character": "5ef3af6a-4bc8-4e8a-b5ec-daa72fd636f9",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "cf219019-84fc-4c10-9662-f9289359071a"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "583f3232-3525-45ef-af3d-09b149e263ad"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "da30ab7a-309a-43e9-a900-c4edd34db314"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "c9c832a1-5f6f-4c27-b13a-deb3cc2ea134"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "a15e3ed0-33c4-4430-b453-842a37b7b14a"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_mace_wand",
+   "character": "10a3b41b-7ed6-4d2d-80d9-09f022331ae3",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "b9adfe61-4d74-4068-b662-98e08cdb0320"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "9386cfbb-e669-4fc8-8c96-17b2fc2a0e18"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "6e0b91da-1900-494f-bc0e-1ffc5565d01c"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "b04a35ea-80b0-49cb-9daa-4fa94e2300c0"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "41f2b7ca-d349-4608-973f-31fcd5c08e29"
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_wand_wand",
+   "character": "742fe247-6131-4b4a-b248-be01ec84aae4",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "frames": 2,
+     "group": "84f0f9b9-8a37-496b-b1b7-7ed3407e0b5c"
+    },
+    "walk": {
+     "frames": 6,
+     "group": "cf5868ea-0b29-460b-bc9b-c888db8a200c"
+    },
+    "attack": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "5aed8492-d376-4956-b482-afc5beb10604"
+    },
+    "cast": {
+     "frames": 4,
+     "from": 0.4,
+     "group": "7d7ac25c-49ed-439f-9b60-248e1c7fe475"
+    },
+    "death": {
+     "frames": 4,
+     "from": 0.3,
+     "group": "9f903fb1-6823-4462-bb3b-845d531886c7"
     }
    }
   }
