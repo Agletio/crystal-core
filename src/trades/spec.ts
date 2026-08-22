@@ -33,6 +33,7 @@ export interface TradeSpec {
   lore: string; // who he IS, where the blurb is the rule he changes
   prefix: string; // node ids start `${prefix}_`, and a save points at them
   sprite?: string; // the generated body he is DRAWN as; omitted, the base man
+  dualWields?: boolean; // DUAL WIELDING IS ONE TRADE'S PRIVILEGE: this grants it
   spokes: Spoke[]; // five; buildTrade refuses anything else
   needs: Record<string, string>; // grant -> the node it is useless without
 }

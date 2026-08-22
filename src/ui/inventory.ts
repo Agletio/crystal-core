@@ -389,7 +389,9 @@ function landing(target: Element | null, item: Item): Landing {
   const slotId = (target as HTMLElement).dataset?.equip;
   if (slotId) {
     const into = EQUIP_SLOTS.find((s) => s.id === slotId);
-    return into && fitsSlot(item, into) ? { kind: 'equip', slotId } : null;
+    return into && game && fitsSlot(item, into, game.character)
+      ? { kind: 'equip', slotId }
+      : null;
   }
   if (target.closest('[data-drop="bench"]')) return { kind: 'bench' };
   if (!target.classList.contains('slot')) return null;

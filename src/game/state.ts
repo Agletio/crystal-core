@@ -37,7 +37,7 @@ import {
   sellPrice,
 } from '../economy';
 import { baseTier } from '../mods';
-import { equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
+import { canDualWield, equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import { SCENES } from '../scenes';
 import { metMark } from './scenes';
@@ -594,12 +594,15 @@ export function gearKindOf(item: Item): string | null {
   return (item.meta.gearKind as string) ?? null;
 }
 
-export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
+export function fitsSlot(item: Item, slot: EquipSlotDef, character: Character): boolean {
   const kind = gearKindOf(item);
   if (!kind || !slot.accepts.includes(kind as never)) return false;
+  if (slot.id !== OFF_SLOT) return true;
   // A two-hander is held in BOTH hands, so the off hand is not a second place
   // to put one — `handClash` empties the off hand for it instead.
-  return !(slot.id === OFF_SLOT && isTwoHanded(item));
+  if (isTwoHanded(item)) return false;
+  // And a second WEAPON there is one trade's privilege. A shield is anybody's.
+  return kind !== 'weapon' || canDualWield(character);
 }
 
 /** The slot this equip would empty, or null. A bow and an off hand cannot both
@@ -621,7 +624,7 @@ export type Undo = () => boolean;
 /** Worn items leave the inventory: the character sheet is where they now live. */
 export function equipItem(game: GameState, item: Item, slotId: string): Undo | null {
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
-  if (!slot || !fitsSlot(item, slot)) return null;
+  if (!slot || !fitsSlot(item, slot, game.character)) return null;
 
   // What comes off the OTHER hand is a net addition to the bag, so it can be
   // refused for the same reason unequipping can: the removal below frees the
@@ -668,7 +671,7 @@ export function unequipItem(game: GameState, slotId: string): boolean {
 
 /** The first empty slot this item fits, else the first it fits at all. */
 export function slotFor(game: GameState, item: Item): string | null {
-  const fitting = EQUIP_SLOTS.filter((s) => fitsSlot(item, s));
+  const fitting = EQUIP_SLOTS.filter((s) => fitsSlot(item, s, game.character));
   if (fitting.length === 0) return null;
   const empty = fitting.find((s) => !game.character.equipment[s.id]);
   return (empty ?? fitting[0]).id;

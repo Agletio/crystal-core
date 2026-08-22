@@ -99,8 +99,8 @@ assert($('savedata').hidden === true, 'Play now takes you into the live slot');
 // A character is MADE before it is played, and the trade is who you ARE, so
 // the cast comes up before the name and the skill do.
 assert($('pick').hidden === false, 'and a character with no trade is made first');
-assert(all('#pick-cast .pickfig').length === 3, 'all three trades stand there');
-assert($('pick-warrior') !== null, 'the warrior among them');
+assert(all('#pick-cast .pickfig').length === 4, 'all four trades stand there');
+assert($('pick-warrior') !== null && $('pick-rogue') !== null, 'the warrior and the rogue among them');
 assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
 $('pick-aethermancer').click();
 assert($('pick-say').hidden === false, 'clicking one says who he is');
@@ -2548,8 +2548,8 @@ $('dev-kit').click();
   $('open-trade').click();
   assert($('trade').hidden === false, 'and it opens a screen of its own');
   assert(
-    all('#trade-pick .catcard').length === 3,
-    'three trades are offered, and none is picked for you',
+    all('#trade-pick .catcard').length === 4,
+    'four trades are offered, and none is picked for you',
     String(all('#trade-pick .catcard').length)
   );
   assert(
@@ -2877,13 +2877,51 @@ assert(
     filled('#inv-gear').filter((b) => /wear as (main|off) hand/i.test(named(b)));
   const before = oneHanded().length;
   assert(before >= 2, 'the dev kit carries more than one one-handed weapon', String(before));
-  // The main hand is already full and the off hand is now empty, so this is
-  // the click that dual wields — `slotFor` fills the empty hand.
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE. This character is an Aethermancer,
+  // so the empty off hand is not on offer at all: a second weapon can only
+  // swap the main one.
   const second = oneHanded()[0];
   assert(
-    /wear as off hand/i.test(named(second)),
-    'a one-handed weapon asks for the empty OFF hand rather than swapping the main one',
+    /wear as main hand/i.test(named(second)),
+    'a one-handed weapon offers the MAIN hand — this trade may not hold two',
     named(second)
+  );
+  second.click();
+  $('open-character').click();
+  assert(
+    !/dual wielding/i.test(text('sheet')),
+    'and the sheet says nothing about dual wielding, because nothing is',
+    (text('sheet').match(/dual wielding[^.]*/i) ?? ['nothing'])[0]
+  );
+  $('sheet-close').click();
+}
+
+// --- AND THE ONE TRADE THAT MAY -------------------------------------------
+// A trade is chosen once and never changes, so standing a rogue up inside one
+// run of this means dealing a new game. The pair's arithmetic is the demo's;
+// what is checked here is that the SCREEN lets it happen at all.
+{
+  $('open-dev').click();
+  $('dev-kit').click();
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert($('pick').hidden === false, 'a wipe asks who you are again');
+  $('pick-rogue').click();
+  $('pick-take').click();
+  $('welcome-name').value = 'Sallow';
+  all('#welcome-skills .welcomecard')[0].click();
+
+  $('open-character').click();
+  if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
+  $('sheet-close').click();
+  $('open-inventory').click();
+  const oneHanded = () =>
+    filled('#inv-gear').filter((b) => /wear as (main|off) hand/i.test(named(b)));
+  const second = oneHanded()[0];
+  assert(
+    !!second && /wear as off hand/i.test(named(second)),
+    'a rogue is offered the empty OFF hand for a second weapon',
+    named(second ?? {})
   );
   second.click();
 
@@ -2891,7 +2929,7 @@ assert(
   const said = text('sheet');
   assert(
     /dual wielding: \d+% of .+ and \d+% of .+ in every hit/i.test(said),
-    'the sheet says what each hand puts into a hit',
+    'and the sheet says what each hand puts into a hit',
     (said.match(/dual wielding[^.]*/i) ?? ['nothing'])[0]
   );
   assert(

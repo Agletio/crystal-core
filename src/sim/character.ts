@@ -157,6 +157,10 @@ export const tradePointsLeft = (character: Character): number =>
   tradePointsFor(character.level) - (character.tradeAllocated?.length ?? 0);
 
 /** IN PLACE, and ONCE: a trade is taken up and never swapped. */
+/** WHO MAY HOLD TWO WEAPONS: one read, so nothing can disagree with it. */
+export const canDualWield = (character: Character): boolean =>
+  !!(character.trade && TRADE_BY_ID[character.trade]?.spec.dualWields);
+
 export function takeUpTrade(character: Character, tradeId: string): boolean {
   // ONCE. Who you are is chosen when you come down here and it does not move
   // again — the user's call. The WALK is still respecced a node at a time.

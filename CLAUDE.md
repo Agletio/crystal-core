@@ -263,9 +263,12 @@ the weapon that skill wants — *"It should just be you pick character/name/skil
 and land in the town."* There is no opening room; `armForSkill` is what puts it
 in your hand. The trade is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
-Three of them: potions as an engine, mana as one, and **what is in your other
-hand** — a shield's Block against a two-hander's swing, which is Mahthar's whole
-web and the only thing in the game that reads what you are holding.
+Four of them: potions as an engine, mana as one, **what is in your other hand**
+(a shield's Block against a two-hander's swing — Mahthar's whole web), and
+**TWO WEAPONS**, which is Obreth's and which nobody else may hold at all.
+**DUAL WIELDING IS ONE TRADE'S PRIVILEGE** — `TradeSpec.dualWields`, read
+through `canDualWield` and nowhere else. Obreth and the Lambengolmor are both of
+**the Obsidian Order** (`ORDER`), who hold that the rock is writing.
 Its web is five spokes of TEN — one minor, a GATE everyone on that spoke takes,
 then a fork into two branches of minor, notable, minor, notable. **Every notable
 sits at an EVEN step from the middle and points come TWO AT A TIME**, so a grant

@@ -3354,6 +3354,30 @@ export const UNIQUE_BY_ID: Record<string, UniqueDef> = Object.fromEntries(
  *  the chance the same way it moves everything else; a gate is still a wall. */
 export const UNIQUE_DROP = { chance: 0.015 };
 
+/** WHAT EACH WEAPON FAMILY IS FOR, as the Specialist reads it — *"crit per
+ *  dagger equipped, attack speed for swords."* PER WEAPON HELD, so a matched
+ *  pair is the bonus twice. */
+export const WEAPON_SPECIALITY: Record<string, { stat: string; per: number }> = {
+  dagger: { stat: 'critChance', per: 4 },
+  sword: { stat: 'attackSpeed', per: 7 },
+  mace: { stat: 'damage', per: 12 },
+  wand: { stat: 'castSpeed', per: 9 },
+  staff: { stat: 'castSpeed', per: 9 },
+  bow: { stat: 'attackSpeed', per: 7 },
+};
+
+/** THE OBSIDIAN ORDER, written HERE and quoted from so it has one spelling. */
+export const ORDER = {
+  name: 'the Obsidian Order',
+  blurb: 'They hold that everything down here has a true name, and that the rock is writing.',
+};
+
+/** The fixed halves of the rogue's switches, beside `WARRIOR`'s. */
+export const ROGUE = {
+  guardSeconds: 3, // how long a kill's cover lasts
+  hasteSeconds: 3,
+};
+
 /** A PERFECT base: 25% more of everything the BASE hands over — the armour
  *  rating, the swing, every implicit. It rolls modifiers like any other. */
 export const PERFECT = {

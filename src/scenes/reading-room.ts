@@ -1,9 +1,12 @@
 /**
  * The Lambengolmor, who believes the crystal is writing and has gone to live
- * in it. He hands over the NAME, which is a key for the Fissure's fifth
- * socket — in the camp, once, and in person. What it calls up is called up
- * down the crack.
+ * in it. He is OF THE OBSIDIAN ORDER and says so; they are the ones who hold
+ * that everything has a true name, which is the whole of what he is for.
+ *
+ * He hands over the NAME, a key for the Fissure's fifth socket — in the camp,
+ * once, and in person. What it calls up is called up down the crack.
  */
+import { ORDER } from '../data';
 import type { SceneDef } from '../scenes';
 
 export const READING_ROOM: SceneDef = {
@@ -26,7 +29,7 @@ export const READING_ROOM: SceneDef = {
       act: 'pace',
     },
     {
-      said: 'Everything down here has a true name and everything down here can be told. This one I have written out for you. Three marks, copied off a wall nobody was meant to reach.',
+      said: `Everything down here has a true name and everything down here can be told — that is ${ORDER.name}, and I am the last of it that came down. This one I have written out for you. Three marks, copied off a wall nobody was meant to reach.`,
       act: 'work',
     },
     {

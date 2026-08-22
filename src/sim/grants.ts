@@ -8,7 +8,7 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { BURST, MANA, PASSIVE_DAMAGE, WARRIOR } from '../data';
+import { BURST, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY } from '../data';
 
 export const STATS = 'stats';
 
@@ -609,6 +609,154 @@ export const GRANTS: GrantDef[] = [
       return n === null
         ? null
         : `Your hits Slow what they land on by ${Math.round(n)}% for ${WARRIOR.heavyHandSeconds}s`;
+    },
+  },
+
+  // --- what the ROGUE's trade hands over -------------------------------------
+  //
+  // TWO WEAPONS instead of a shield, which no other trade may hold at all. Most
+  // of these pay only while both hands are full; the rest are what a kill and a
+  // first strike buy. `ROGUE` carries the seconds, the grant the amount.
+  {
+    id: 'pairMore',
+    what: 'two weapons hit harder than one and a shield',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `While you hold two weapons you deal ${more(n)} more damage`;
+    },
+  },
+  {
+    id: 'pairRate',
+    what: 'two weapons swing faster',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `While you hold two weapons you attack ${Math.round(n)}% faster`;
+    },
+  },
+  {
+    id: 'offHandShare',
+    what: 'the off hand puts more of itself into every hit',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Your off hand puts a further ${pct(n)} of its own damage into every hit`;
+    },
+  },
+  {
+    id: 'weaponSpecialist',
+    what: 'each weapon you hold grants what its family is for',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      if (n === null) return null;
+      const each = Object.entries(WEAPON_SPECIALITY)
+        .filter(([, s], i, all) => all.findIndex(([, o]) => o.stat === s.stat) === i)
+        .map(([family, s]) => `${Math.round(s.per * n)}% per ${family}`);
+      return `Every weapon you hold grants what its family is for — ${each.join(', ')}`;
+    },
+  },
+  {
+    id: 'matchedPair',
+    what: 'two of the SAME family hit harder',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While both your weapons are the same family you deal ${Math.round(n)}% more damage`;
+    },
+  },
+  {
+    id: 'oddPair',
+    what: 'two of DIFFERENT families hit harder',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While your two weapons are different families you deal ${Math.round(n)}% more damage`;
+    },
+  },
+  {
+    id: 'pairCrit',
+    what: 'two weapons find the gap more often',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While you hold two weapons you have +${Math.round(n)}% Critical Chance`;
+    },
+  },
+  {
+    id: 'firstBlood',
+    what: 'the FIRST hit on a body lands harder',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `The first hit you land on a body deals ${Math.round(n)}% more damage`;
+    },
+  },
+  {
+    id: 'critEcho',
+    what: 'a Critical strikes again with the off hand',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A Critical strikes again with your off hand for ${Math.round(n)}% of the hit`;
+    },
+  },
+  {
+    id: 'killGuard',
+    what: 'a kill covers you for a moment',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `For ${ROGUE.guardSeconds}s after a kill you take ${Math.round(n)}% less damage`;
+    },
+  },
+  {
+    id: 'killHaste',
+    what: 'a kill quickens the next swing',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `For ${ROGUE.hasteSeconds}s after a kill you attack ${Math.round(n)}% faster`;
+    },
+  },
+  {
+    id: 'killMove',
+    what: 'a kill carries you to the next one',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `For ${ROGUE.hasteSeconds}s after a kill you move ${Math.round(n)}% faster`;
     },
   },
 

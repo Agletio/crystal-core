@@ -26,6 +26,7 @@ import {
   LADDER,
   MAIN_SKILLS,
   MAIN_SLOT,
+  OFF_SLOT,
   WEAPON_SLOT,
   PLAYER_SKILLS,
   SKILL_SLOTS,
@@ -40,6 +41,7 @@ import {
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
 import { isPerfect, makeGear, reserveItemIds } from '../economy';
+import { canDualWield } from '../sim/character';
 import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
@@ -460,6 +462,18 @@ export function heal(game: GameState): Healed {
     if (Number.isFinite(was) && was > 0) climbed[zone.theme] = Math.min(zone.rungs, was);
   }
   game.character.climbed = climbed;
+
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE now. A save written before that can
+  // hold two weapons on somebody who may not: the off hand comes off into the
+  // bag rather than the piece being dropped — it is still a real item.
+  {
+    const off = game.character.equipment[OFF_SLOT];
+    if (off && GEAR_BASE_BY_ID[off.base]?.kind === 'weapon' && !canDualWield(game.character)) {
+      delete game.character.equipment[OFF_SLOT];
+      game.inventory.push(off);
+      out.items++;
+    }
+  }
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;

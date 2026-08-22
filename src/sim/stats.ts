@@ -26,6 +26,7 @@ import {
   MAIN_SLOT,
   MOD_BY_ID,
   GEAR_BASE_BY_ID,
+  WEAPON_SPECIALITY,
   WEAPON_SLOT,
   OFF_SLOT,
   DUAL,
@@ -327,14 +328,25 @@ export function heroStats(
   hands: number[] = [],
   /** What is in your hands. `one` for a harness holding nothing, which is what
    *  every measurement is compared across. */
-  grip: Grip = 'one'
+  grip: Grip = 'one',
+  /** Whether a PAIR is two of one family. Only the rogue's web reads it. */
+  matched = false
 ): CombatStats {
   // BOTH HANDS, as a STEP in the workings: the sheet must add up.
   const bothHands = grip === 'both' ? ((grants.twoHandMore as number) ?? 1) : 1;
-  const breakdown = damageBreakdown(
-    mods, level, skill, grants,
-    bothHands !== 1 ? [{ label: 'Both Hands', value: bothHands }] : []
-  );
+  // AND A PAIR, which is the other arrangement and the other trade's. Both are
+  // STEPS in the workings, so the sheet still adds up to its own total.
+  const steps: DamageStep[] = [];
+  if (bothHands !== 1) steps.push({ label: 'Both Hands', value: bothHands });
+  if (grip === 'pair') {
+    const pair = (grants.pairMore as number) ?? 1;
+    if (pair !== 1) steps.push({ label: 'Two Weapons', value: pair });
+    const suited = (grants[matched ? 'matchedPair' : 'oddPair'] as number) ?? 0;
+    if (suited > 0) {
+      steps.push({ label: matched ? 'A Matched Pair' : 'An Odd Pair', value: 1 + suited / 100 });
+    }
+  }
+  const breakdown = damageBreakdown(mods, level, skill, grants, steps);
   // Bare to the rock. `characterStats` is what stops counting the rating.
   const bare = typeof grants.bareChest === 'number' ? grants.bareChest : 0;
   const maxLife = computeStat(lifeFor(level), mods, 'life') * (1 + bare);
@@ -382,7 +394,8 @@ export function heroStats(
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
       ) *
       skill.rateMultiplier *
-      (grip === 'both' ? 1 + ((grants.twoHandRate as number) ?? 0) / 100 : 1),
+      (grip === 'both' ? 1 + ((grants.twoHandRate as number) ?? 0) / 100 : 1) *
+      (grip === 'pair' ? 1 + ((grants.pairRate as number) ?? 0) / 100 : 1),
     // Every increase is multiplicative, so the mean scaled by a hand's share of
     // it is the number that hand's own base would have given.
     handRates:
@@ -390,7 +403,9 @@ export function heroStats(
         ? hands.map((r) => r / Math.max(0.01, rate))
         : [],
     // Tagged, so an ATTACK critical chance does nothing for a spell.
-    critChance: computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags),
+    critChance:
+      computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags) +
+      (grip === 'pair' ? ((grants.pairCrit as number) ?? 0) : 0),
     // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
@@ -643,12 +658,18 @@ export function effectiveSkill(
 /** BOTH HANDS, as one flat line an ATTACK reads. LOCAL: a bow of 100 with 100%
  *  increased Physical ON IT is a bow of 200; the same line on a ring scales YOU.
  *  A PAIR puts `DUAL.main` of one and `DUAL.off` of the other into every hit. */
-export function weaponMod(character: Character): RolledMod | null {
+export function weaponMod(
+  character: Character,
+  grants: Record<string, unknown> = {}
+): RolledMod | null {
   const held = character.equipment?.[WEAPON_SLOT];
   const pair = offWeapon(character);
   if (!held && !pair) return null;
+  // The one trade that holds two can buy the off hand a bigger share of the
+  // hit. `DUAL.off` is what everybody else's would be, if they could.
+  const off = DUAL.off + Math.max(0, (grants.offHandShare as number) ?? 0);
   const swing = held && pair
-    ? weaponSwing(held) * DUAL.main + weaponSwing(pair) * DUAL.off
+    ? weaponSwing(held) * DUAL.main + weaponSwing(pair) * off
     : weaponSwing(held ?? pair!);
   if (swing <= 0) return null;
 
@@ -729,8 +750,11 @@ const isLocal = (line: StatRoll): boolean =>
     && line.tags.every((t: string) => t === 'physical'))
   || (line.stat === 'attackSpeed' && line.form !== 'flat' && line.tags.length === 0);
 
-export function statMods(character: Character): RolledMod[] {
-  const extra = [treeMod(character), attributeMod(character), weaponMod(character)];
+export function statMods(
+  character: Character,
+  grants: Record<string, unknown> = {}
+): RolledMod[] {
+  const extra = [treeMod(character), attributeMod(character), weaponMod(character, grants)];
   return [
     ...equippedItems(character).flatMap((i) =>
       [...i.mods, ...i.implicits].map((m) =>
@@ -747,6 +771,49 @@ export function statMods(character: Character): RolledMod[] {
 }
 
 /** Stats for a character, resolving its selected skill, gear and tree. */
+/**
+ * THE SPECIALIST, as one synthetic mod — the way `treeMod` and `attributeMod`
+ * are. Per WEAPON HELD, so a matched pair is its family's line twice, and it
+ * goes through the same aggregation as gear rather than a second pipeline.
+ */
+/** TWO OF ONE FAMILY. A dagger beside a dagger, not a dagger beside a shiv —
+ *  the FAMILY is what the Specialist reads, so it is what this reads too. */
+export function matchedPair(character: Character): boolean {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (!main || !off) return false;
+  const family = (i: Item) => GEAR_BASE_BY_ID[i.base]?.family ?? '';
+  return family(main) !== '' && family(main) === family(off);
+}
+
+export function specialistMod(
+  character: Character,
+  grants: Record<string, unknown>
+): RolledMod | null {
+  const scale = typeof grants.weaponSpecialist === 'number' ? grants.weaponSpecialist : 0;
+  if (scale <= 0) return null;
+  const held = [character.equipment?.[WEAPON_SLOT], offWeapon(character)]
+    .filter((i): i is Item => !!i)
+    .map((i) => GEAR_BASE_BY_ID[i.base]?.family ?? '')
+    .map((family) => WEAPON_SPECIALITY[family])
+    .filter(Boolean);
+  if (held.length === 0) return null;
+
+  const stats: RolledMod['stats'] = [];
+  for (const speciality of held) {
+    stats.push({
+      stat: speciality.stat,
+      form: speciality.stat === 'critChance' ? 'flat' : 'inc',
+      value: speciality.per * scale,
+      tags: [],
+    });
+  }
+  return {
+    entryId: 'specialist', defId: 'specialist', group: 'trade', slot: 'trade',
+    name: 'Weapon Specialist', tier: 1, tags: [], stats,
+  };
+}
+
 export function characterStats(character: Character): CombatStats {
   const base = SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0];
   const grants = treeGrants(character);
@@ -758,9 +825,13 @@ export function characterStats(character: Character): CombatStats {
     .filter((i) => i !== chest)
     .reduce((n, i) => n + (i.armour ?? 0), 0);
   const rates = weaponRates(character);
+  // The Specialist reads what is in your HANDS, so it cannot be part of
+  // `statMods` — that is walked webs and worn lines, and neither knows.
+  const speciality = specialistMod(character, grants);
   return heroStats(
-    statMods(character), character.level, skill, grants, baseArmour,
-    evenRate(rates), rates, gripOf(character)
+    [...statMods(character, grants), ...(speciality ? [speciality] : [])],
+    character.level, skill, grants, baseArmour,
+    evenRate(rates), rates, gripOf(character), matchedPair(character)
   );
 }
 

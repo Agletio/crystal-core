@@ -144,7 +144,7 @@ function sheetHandler() {
   const slot: EquipSlotDef | undefined = EQUIP_SLOTS.find((s) => s.id === picking);
   return {
     actionFor: (item: Item) => {
-      if (!slot || !fitsSlot(item, slot)) return null;
+      if (!slot || !fitsSlot(item, slot, game.character)) return null;
       return {
         label: `Wear as ${slot.name.toLowerCase()}`,
         run: () => {
@@ -154,7 +154,7 @@ function sheetHandler() {
         },
       };
     },
-    highlighted: (item: Item) => !!slot && fitsSlot(item, slot),
+    highlighted: (item: Item) => !!slot && fitsSlot(item, slot, game.character),
   };
 }
 
@@ -167,7 +167,7 @@ function renderPickHint(): void {
 
   // Only when there is nothing. Anything else is described by the slots
   // lighting up in the dock, which you are already looking at.
-  const options = game.inventory.filter((i) => fitsSlot(i, slot));
+  const options = game.inventory.filter((i) => fitsSlot(i, slot, game.character));
   host.hidden = options.length > 0;
   host.textContent = `Nothing you carry fits the ${slot.name.toLowerCase()} slot.`;
 }

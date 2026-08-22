@@ -52,6 +52,7 @@ import {
   CURRENCIES,
   CURRENCY_DROP,
   DEFENCE,
+  ROGUE,
   WARRIOR,
   ENCOUNTERS,
   ALL_MODS,
@@ -239,6 +240,7 @@ export interface Entity {
   stats: CombatStats;
   cooldown: number;
   stun?: number; // held still by something that landed on you: only the Fall
+  struck?: boolean; // whether ANY hit has landed on it: First Blood reads it
   /** Which shred aura reaches this body: for whatever DRAWS it. The sim asks
    *  `shredding` when a hit lands and never reads this. */
   shred?: 'elemental' | 'occult' | 'both';
@@ -488,6 +490,8 @@ export class RunSim {
   private momentumStacks = 0;
   /** Seconds left of a Block having sharpened the next hit. */
   private riposte = 0;
+  /** Seconds left of a KILL still covering and quickening you. */
+  private sinceKill = 0;
   /** What is in the hero's hands, read once: nothing swaps gear mid-descent. */
   private readonly grip: Grip;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
@@ -1364,6 +1368,7 @@ export class RunSim {
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
     this.sinceHit += dt;
     if (this.riposte > 0) this.riposte -= dt;
+    if (this.sinceKill > 0) this.sinceKill -= dt;
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
     if (hero.life < hero.stats.maxLife) {
@@ -2311,8 +2316,10 @@ export class RunSim {
   /** What a swing rate is multiplied by: a flask, and a Slow. */
   private hasteOf(e: Entity): number {
     const slow = 1 - (e.slowed ?? 0);
-    if (e.kind !== 'hero' || !this.flasked()) return slow;
-    return slow * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
+    if (e.kind !== 'hero') return slow;
+    const killed = this.sinceKill > 0 ? 1 + ((this.grants.killHaste as number) ?? 0) / 100 : 1;
+    if (!this.flasked()) return slow * killed;
+    return slow * killed * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
   }
 
   /** What a step is multiplied by: a running flask, and nothing else yet. */
@@ -2323,6 +2330,7 @@ export class RunSim {
     // than a stat so that being hit takes it away the instant it happens.
     const ramp = this.grants.unhitHaste as { after: number; more: number } | undefined;
     if (ramp && this.sinceHit >= ramp.after) pace *= 1 + ramp.more;
+    if (this.sinceKill > 0) pace *= 1 + ((this.grants.killMove as number) ?? 0) / 100;
     return pace;
   }
 
@@ -2401,6 +2409,9 @@ export class RunSim {
       if (dread > 0 && dist(attacker, defender) <= WARRIOR.dreadRadius) {
         scale *= Math.max(0, 1 - dread / 100);
       }
+      // What a KILL bought: cover, for as long as it lasts.
+      const guard = (this.grants.killGuard as number) ?? 0;
+      if (guard > 0 && this.sinceKill > 0) scale *= Math.max(0, 1 - guard / 100);
     }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
@@ -2416,6 +2427,10 @@ export class RunSim {
       const paint = (this.grants.warPaint as number) ?? 0;
       if (paint > 0 && dist(attacker, defender) <= WARRIOR.paintRadius) scale *= 1 + paint / 100;
       if (this.riposte > 0) scale *= 1 + ((this.grants.blockRiposte as number) ?? 0) / 100;
+      // THE FIRST HIT on a body. `struck` is set below, so a second swing at
+      // the same thing is an ordinary one however long the fight runs.
+      const opening = (this.grants.firstBlood as number) ?? 0;
+      if (opening > 0 && !defender.struck) scale *= 1 + opening / 100;
     }
     // From a crit that landed BEFORE this one: the crit granting it never
     // hits harder for doing so.
@@ -2485,6 +2500,7 @@ export class RunSim {
     this.wake(defender, true);
 
     defender.life -= dmg;
+    defender.struck = true; // FIRST BLOOD is spent the moment one lands
     // A HEAVY HAND, on the ONE Slow seam a landing already writes.
     const heavy = attacker.kind === 'hero' ? ((this.grants.heavyHand as number) ?? 0) : 0;
     if (heavy > 0 && defender.kind !== 'hero' && defender.life > 0) {
@@ -2541,6 +2557,19 @@ export class RunSim {
     // of a build runs dry for free.
     const bleed = attacker.kind === 'hero' ? bleedOf(this.grants) : null;
     if (bleed && defender.life > 0) this.leaveBleed(defender, dmg, bleed);
+
+    // A CRITICAL STRIKES AGAIN with the off hand — a share of what just landed,
+    // dealt straight rather than through `dealDamage`, or a crit could echo an
+    // echo. Only with a pair: it is the off hand that swings.
+    const echo = attacker.kind === 'hero' ? ((this.grants.critEcho as number) ?? 0) : 0;
+    if (crit && echo > 0 && this.grip === 'pair' && defender.life > 0) {
+      const back = dmg * (echo / 100);
+      defender.life -= back;
+      s.floaters.push({
+        x: defender.x, y: defender.y, text: String(Math.round(back)), age: 0,
+        crit: false, on: defender.kind,
+      });
+    }
 
     if (defender.life <= 0) this.kill(defender);
   }
@@ -3098,6 +3127,10 @@ export class RunSim {
     if (back > 0) {
       const hero = s.hero;
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+    }
+    // A KILL carries the rogue on: cover, pace and swing, off one clock.
+    if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
+      this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
     }
     const fed = (this.grants.killHeal as number) ?? 0;
     if (fed > 0) {

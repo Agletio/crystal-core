@@ -646,16 +646,19 @@ type, hooded figure spec is all about dual wielding, one node can be a weapon
 specialist node where you can pick bonus depending on what weapon you have
 equipped? Like crit per dagger equipped, attack speed for swords etc."*
 
-- [ ] **DUAL WIELDING BECOMES A TRADE'S PRIVILEGE.** `fitsSlot` stops taking a
-      one-handed weapon in the off hand unless the character's trade allows it.
-      One flag on `TradeSpec`, read through ONE seam, and `handClash` empties
-      the off hand the way a two-hander already does.
-- [ ] **The rogue: body, portrait, thirteen variants, ten pairs.** ~2,200
-      generations and most of a day.
-- [ ] **A WEAPON SPECIALIST node** — one notable, a bonus that reads what is in
-      your hands: crit per dagger, attack speed per sword, and so on. That is
-      `gripOf`'s question asked of the FAMILY rather than of the arrangement,
-      so the seam already exists.
+- [x] **DUAL WIELDING IS A TRADE'S PRIVILEGE. DONE.** `TradeSpec.dualWields` is
+      the only thing that grants it and `canDualWield` the only read; `fitsSlot`
+      takes a character now, so nowhere can forget to ask. `heal` takes a second
+      weapon off a save written before the rule and puts it in the bag.
+- [x] **THE ROGUE'S WEB IS DONE** — `src/trades/rogue.ts`, twelve new switches,
+      and he is playable on the fallback body. **Obreth, of the Obsidian
+      Order.**
+- [x] **THE WEAPON SPECIALIST is in**, and it is the user's own node:
+      `WEAPON_SPECIALITY` says what each family is for and `specialistMod`
+      reads it PER WEAPON HELD, so a matched pair is that line twice.
+- [ ] **The rogue's ART: body, portrait, thirteen variants, ten pairs.** ~2,200
+      generations and most of a day. He plays without it — `heroSpriteFor`
+      falls back to the base man.
 
 **THE COST, said plainly:** thirty pair variants are already drawn — ten each
 for the Alchemist, the Aethermancer and Mahthar — and this rule makes all thirty

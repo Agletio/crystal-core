@@ -78,6 +78,7 @@ import {
   KEEP_GROUPS,
   KEEP_TIERS,
   WARD_GROUPS,
+  WEAPON_SPECIALITY,
   PERFECT,
   tierKeepId,
   keepGroupFor,
@@ -88,6 +89,7 @@ import {
   RECIPES,
   CHALLENGE,
   LADDER,
+  ORDER,
   SKILLS,
   SKILL_BY_ID,
   THEME_BY_ID,
@@ -167,6 +169,7 @@ const cel = (of: Partial<Cel>): Cel => ({
 import {
   characterStats,
   gripOf,
+  specialistMod,
   convertedType,
   heroStats,
   damageBreakdown,
@@ -3604,14 +3607,31 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
     'and which hand is which still decides what it swings for',
     `${swing(pair).toFixed(2)} against ${swing(swapped).toFixed(2)}`
   );
-  // The off hand takes a shield or a one-handed weapon and NOTHING else: a
-  // two-hander is held in both hands, so it is not a second place to put one.
-  const off = EQUIP_SLOTS.find((sl) => sl.id === OFF_SLOT);
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE. *"All characters should just not be
+  // able to dual wield and then we just have a trade that can."* Everybody may
+  // hold a shield; a second WEAPON is a decision made at character creation.
+  const off = EQUIP_SLOTS.find((sl) => sl.id === OFF_SLOT)!;
+  const anybody = makeCharacter({}, 'strike');
+  const wielder = TRADES.find((t) => t.spec.dualWields)?.spec.id;
+  const dual = makeCharacter({}, 'strike');
+  if (wielder) takeUpTrade(dual, wielder);
   check(
-    !!off && fitsSlot(makeGear('cudgel', 1), off) && fitsSlot(makeGear('bark_buckler', 1), off)
-      && !fitsSlot(makeGear('crude_bow', 1), off),
-    'the off hand takes a shield or a one-handed weapon, and never a two-hander',
-    String(off?.accepts)
+    fitsSlot(makeGear('bark_buckler', 1), off, anybody)
+      && !fitsSlot(makeGear('crude_bow', 1), off, anybody)
+      && !fitsSlot(makeGear('cudgel', 1), off, anybody),
+    'the off hand takes a shield from anybody, and never a two-hander or a second weapon',
+    String(off.accepts)
+  );
+  check(
+    !!wielder && fitsSlot(makeGear('cudgel', 1), off, dual)
+      && !fitsSlot(makeGear('crude_bow', 1), off, dual),
+    `and a second weapon only from the one trade that dual wields — ${wielder ?? 'nobody'}`,
+    `wielder ${wielder}`
+  );
+  check(
+    TRADES.filter((t) => t.spec.dualWields).length === 1,
+    'and exactly one trade has it, or it is not a privilege',
+    String(TRADES.filter((t) => t.spec.dualWields).length)
   );
 }
 
@@ -6809,6 +6829,269 @@ rule('THE ROSTER — is every hero drawn holding what it carries?');
       `every one of ${body}'s ${seen.size} arrangements is a picture of him holding it`,
       `${missing.length} fall back to the bare body: ${[...new Set(missing)].join(', ')}`
     );
+  }
+}
+
+// ===========================================================================
+rule('THE ROGUE — is a second weapon worth the shield it costs?');
+
+// *"All characters should just not be able to dual wield and then we just have
+// a trade that can."* So a pair is a thing exactly one character can reach, and
+// almost every notable here pays only while both hands are full. What breaks
+// quietly is a rule that reads on a card and does nothing in the sim.
+{
+  const STANDING = 1e7;
+  const rogue = (nodes: string[], main = 'shiv', off?: string): Character => {
+    const who = makeCharacter(starterLoadout(new Rng(21), 30), 'strike');
+    who.level = 50;
+    takeUpTrade(who, 'rogue');
+    who.tradeAllocated = nodes;
+    who.equipment[WEAPON_SLOT] = makeGear(main, 60);
+    if (off) who.equipment[OFF_SLOT] = makeGear(off, 60);
+    else delete who.equipment[OFF_SLOT];
+    return who;
+  };
+
+  // THE OBSIDIAN ORDER. A faction rather than a person, and it is only a
+  // faction if more than one of them is in it — the Lambengolmor says so where
+  // he hands over the name, and Obreth says so on the card you pick him from.
+  {
+    const said = [
+      ...(SCENE_BY_ID.reading_room.beats ?? []).map((b) => b.said),
+      TRADE_BY_ID.rogue.spec.lore,
+    ];
+    const naming = said.filter((line) => line.includes(ORDER.name));
+    check(
+      naming.length >= 2,
+      `${ORDER.name} is named by both of the people in it`,
+      `${naming.length} of ${said.length} lines name it`
+    );
+    check(
+      TRADE_BY_ID.rogue.spec.sprite === 'obreth',
+      'and the rogue is drawn as one of them',
+      String(TRADE_BY_ID.rogue.spec.sprite)
+    );
+  }
+
+  check(
+    gripOf(rogue([], 'shiv', 'cudgel')) === 'pair' && gripOf(rogue([])) === 'one',
+    'a rogue holding two weapons reads as a pair',
+    `${gripOf(rogue([], 'shiv', 'cudgel'))}, ${gripOf(rogue([]))}`
+  );
+
+  // A PAIR, and what the gate buys for holding one.
+  {
+    const bare = characterStats(rogue([], 'shiv', 'cudgel'));
+    const paired = characterStats(rogue(['rog_pair_m0', 'rog_pair'], 'shiv', 'cudgel'));
+    const alone = characterStats(rogue(['rog_pair_m0', 'rog_pair'], 'shiv'));
+    const aloneBare = characterStats(rogue([], 'shiv'));
+    check(
+      paired.damage > bare.damage * 1.24,
+      `two weapons deal ${Math.round((paired.damage / bare.damage - 1) * 100)}% more for the gate`,
+      `${paired.damage.toFixed(1)} against ${bare.damage.toFixed(1)}`
+    );
+    check(
+      Math.abs(alone.damage - aloneBare.damage) < 1e-6,
+      'and one weapon and an empty hand buys nothing at all, which is the choice',
+      `${alone.damage} against ${aloneBare.damage}`
+    );
+    const faster = characterStats(
+      rogue(['rog_pair_m0', 'rog_pair', 'rog_alternating_m0', 'rog_rhythm'], 'shiv', 'cudgel')
+    );
+    check(
+      faster.attacksPerSecond > bare.attacksPerSecond * 1.09,
+      `and a pair swings ${Math.round((faster.attacksPerSecond / bare.attacksPerSecond - 1) * 100)}% faster for a point`,
+      `${faster.attacksPerSecond.toFixed(3)} against ${bare.attacksPerSecond.toFixed(3)}`
+    );
+    const heavier = characterStats(
+      rogue(['rog_pair_m0', 'rog_pair', 'rog_weakhand_m0', 'rog_evenly'], 'shiv', 'cudgel')
+    );
+    check(
+      heavier.damage > paired.damage,
+      `and the off hand puts ${Math.round((heavier.damage / paired.damage - 1) * 100)}% more of itself in`,
+      `${heavier.damage.toFixed(1)} against ${paired.damage.toFixed(1)}`
+    );
+  }
+
+  // THE SPECIALIST — the user's own node. PER WEAPON, so a matched pair is its
+  // family's line twice, and every family in the table has to do something.
+  {
+    const spec = ['rog_trade_m0', 'rog_specialist'];
+    const knives = characterStats(rogue(spec, 'shiv', 'stiletto'));
+    const plain = characterStats(rogue([], 'shiv', 'stiletto'));
+    check(
+      knives.critChance > plain.critChance + WEAPON_SPECIALITY.dagger.per * 1.5,
+      `two daggers grant the dagger line TWICE — ${knives.critChance.toFixed(1)}% crit against ${plain.critChance.toFixed(1)}%`,
+      `${knives.critChance} against ${plain.critChance}`
+    );
+    // Against the SAME weapons without the node — a dagger and a club start
+    // from a different crit than two daggers do, and that is the weapons.
+    const one = characterStats(rogue(spec, 'shiv', 'cudgel'));
+    const oneBare = characterStats(rogue([], 'shiv', 'cudgel'));
+    check(
+      one.critChance > oneBare.critChance
+        && one.critChance - oneBare.critChance < knives.critChance - plain.critChance,
+      `and one dagger grants it once — +${(one.critChance - oneBare.critChance).toFixed(1)}% against +${(knives.critChance - plain.critChance).toFixed(1)}%`,
+      `${one.critChance} against ${oneBare.critChance}`
+    );
+
+    // EVERY FAMILY IN THE TABLE writes a line, asked of the seam rather than of
+    // a character: a wand's cast speed changes nothing for a build swinging a
+    // knife, and that is the SKILL rather than the switch doing nothing.
+    const dead = Object.entries(WEAPON_SPECIALITY).filter(([family, want]) => {
+      const base = GEAR_BASES.find((b) => b.family === family);
+      if (!base) return true;
+      const who = rogue(spec, base.id);
+      const mod = specialistMod(who, treeGrants(who));
+      return mod?.stats.length !== 1 || mod.stats[0].stat !== want.stat;
+    });
+    check(
+      dead.length === 0,
+      `and all ${Object.keys(WEAPON_SPECIALITY).length} families in the table write their own line`,
+      dead.map(([f]) => f).join(', ')
+    );
+    // And it reaches a build that actually uses the stat.
+    const caster = makeCharacter(starterLoadout(new Rng(21), 30), 'fireball');
+    caster.level = 50;
+    takeUpTrade(caster, 'rogue');
+    caster.tradeAllocated = spec;
+    caster.equipment[WEAPON_SLOT] = makeGear('ash_wand', 60);
+    delete caster.equipment[OFF_SLOT];
+    const bareCaster = { ...caster, tradeAllocated: [] as string[] };
+    check(
+      characterStats(caster).attacksPerSecond > characterStats(bareCaster).attacksPerSecond,
+      `a wand's cast speed reaches a build that casts — ${characterStats(caster).attacksPerSecond.toFixed(3)} against ${characterStats(bareCaster).attacksPerSecond.toFixed(3)}`,
+      `${characterStats(caster).attacksPerSecond} against ${characterStats(bareCaster).attacksPerSecond}`
+    );
+  }
+
+  // MATCHED against ODD: two rules that cannot both be live, which is what
+  // makes the fork a decision rather than a sum.
+  {
+    const twin = ['rog_trade_m0', 'rog_specialist', 'rog_matched_m0', 'rog_twinned'];
+    const odd = ['rog_trade_m0', 'rog_specialist', 'rog_mixed_m0', 'rog_odd'];
+    const same = characterStats(rogue(twin, 'shiv', 'stiletto')).damage;
+    const sameOnOdd = characterStats(rogue(twin, 'shiv', 'cudgel')).damage;
+    const base = characterStats(rogue(['rog_trade_m0', 'rog_specialist'], 'shiv', 'stiletto')).damage;
+    const mixed = characterStats(rogue(odd, 'shiv', 'cudgel')).damage;
+    const mixedOnSame = characterStats(rogue(odd, 'shiv', 'stiletto')).damage;
+    const mixedBase = characterStats(rogue(['rog_trade_m0', 'rog_specialist'], 'shiv', 'cudgel')).damage;
+    check(
+      same > base * 1.19 && Math.abs(sameOnOdd / mixedBase - 1) < 1e-9,
+      'Twinned pays on two of one family and nothing on two of different ones',
+      `${(same / base).toFixed(3)} matched, ${(sameOnOdd / mixedBase).toFixed(3)} odd`
+    );
+    check(
+      mixed > mixedBase * 1.17 && Math.abs(mixedOnSame / base - 1) < 1e-9,
+      'and Odd Hands is the exact mirror of it',
+      `${(mixed / mixedBase).toFixed(3)} odd, ${(mixedOnSame / base).toFixed(3)} matched`
+    );
+  }
+
+  // What a hit COMES TO, in front of the sim. The FIRST one on a body, and
+  // every one after it.
+  {
+    const opened = (nodes: string[], first: boolean): number => {
+      const sim = new RunSim([], rogue(nodes, 'shiv', 'cudgel'), new Rng(808)) as any;
+      const hero = sim.state.hero;
+      const foe = sim.state.monsters[0];
+      foe.x = hero.x + 9;
+      foe.y = hero.y;
+      foe.life = STANDING;
+      if (!first) foe.struck = true;
+      sim.dealDamage(hero, foe, 1, undefined);
+      return STANDING - foe.life;
+    };
+    const unseen = ['rog_shadow_m0', 'rog_unseen'];
+    const opener = opened(unseen, true);
+    const after = opened(unseen, false);
+    const flat = opened([], true);
+    check(
+      opener > after * 1.5 && Math.abs(after - flat) < 0.01,
+      `Unseen is ${Math.round((opener / after - 1) * 100)}% more on the FIRST hit and nothing after it`,
+      `${opener.toFixed(1)} first, ${after.toFixed(1)} after, ${flat.toFixed(1)} bare`
+    );
+  }
+
+  // WHAT A KILL BUYS: cover, swing and pace, off one clock.
+  {
+    const killed = (nodes: string[]) => {
+      const sim = new RunSim([], rogue(nodes, 'shiv', 'cudgel'), new Rng(808)) as any;
+      const before = { haste: sim.hasteOf(sim.state.hero), pace: sim.paceOf(sim.state.hero) };
+      sim.kill(sim.state.monsters[0]);
+      return { sim, before, after: { haste: sim.hasteOf(sim.state.hero), pace: sim.paceOf(sim.state.hero) } };
+    };
+    const quick = killed(['rog_quick_m0', 'rog_quickening']);
+    check(
+      quick.after.haste > quick.before.haste * 1.14,
+      `a kill quickens the next swing by ${Math.round((quick.after.haste / quick.before.haste - 1) * 100)}%`,
+      `${quick.after.haste} against ${quick.before.haste}`
+    );
+    const running = killed(['rog_quick_m0', 'rog_quickening', 'rog_footwork_m0', 'rog_carried']);
+    check(
+      running.after.pace > running.before.pace * 1.14,
+      `and carries you ${Math.round((running.after.pace / running.before.pace - 1) * 100)}% faster to the next`,
+      `${running.after.pace} against ${running.before.pace}`
+    );
+    // And COVER, which is on the way in rather than the way out.
+    const took = (nodes: string[], afterKill: boolean): number => {
+      const sim = new RunSim([], rogue(nodes, 'shiv', 'cudgel'), new Rng(808)) as any;
+      if (afterKill) sim.kill(sim.state.monsters[1] ?? sim.state.monsters[0]);
+      const hero = sim.state.hero;
+      const was = hero.life;
+      sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
+      return was - hero.life;
+    };
+    const cover = ['rog_shadow_m0', 'rog_unseen', 'rog_vanishing_m0', 'rog_cover'];
+    check(
+      took(cover, true) < took(cover, false) * 0.95,
+      `and a kill covers you for ${Math.round((1 - took(cover, true) / took(cover, false)) * 100)}% of the next hit`,
+      `${took(cover, true).toFixed(1)} against ${took(cover, false).toFixed(1)}`
+    );
+  }
+
+  // A CRITICAL STRIKES AGAIN, and only with a pair — it is the off hand that
+  // swings, so one weapon and an empty fist has nothing to swing with.
+  {
+    const echo = ['rog_edge_m0', 'rog_edge', 'rog_follow_m0', 'rog_follow'];
+    const crit = (nodes: string[], off?: string): number => {
+      const sim = new RunSim([], rogue(nodes, 'shiv', off), new Rng(808)) as any;
+      const hero = sim.state.hero;
+      const foe = sim.state.monsters[0];
+      foe.x = hero.x + 9;
+      foe.y = hero.y;
+      foe.life = STANDING;
+      sim.useCrit = true;
+      sim.dealDamage(hero, foe, 1, undefined);
+      return STANDING - foe.life;
+    };
+    check(
+      crit(echo, 'cudgel') > crit([], 'cudgel') * 1.2,
+      `a Critical strikes again for ${Math.round((crit(echo, 'cudgel') / crit([], 'cudgel') - 1) * 100)}% more`,
+      `${crit(echo, 'cudgel').toFixed(1)} against ${crit([], 'cudgel').toFixed(1)}`
+    );
+    check(
+      Math.abs(crit(echo) - crit([])) < 0.01,
+      'and nothing at all with one hand empty',
+      `${crit(echo).toFixed(1)} against ${crit([]).toFixed(1)}`
+    );
+  }
+
+  // And it PLAYS, with the arrangement no other character in the game can hold.
+  {
+    const walk = (nodes: string[], main: string, off?: string): string => {
+      const sim = new RunSim([], rogue(nodes, main, off), new Rng(4242));
+      const final = runToCompletion(sim, 900);
+      return `${final.status} in ${final.elapsed.toFixed(0)}s, ${final.killed} down`;
+    };
+    gauge(`two daggers, Specialist to Mirror Work: ${walk(
+      ['rog_trade_m0', 'rog_specialist', 'rog_matched_m0', 'rog_twinned', 'rog_matched_m1', 'rog_mirror'],
+      'shiv', 'stiletto'
+    )}`);
+    gauge(`dagger and club, Both Hands Full to Ambidextrous: ${walk(
+      ['rog_pair_m0', 'rog_pair', 'rog_weakhand_m0', 'rog_evenly', 'rog_weakhand_m1', 'rog_ambidextrous'],
+      'shiv', 'cudgel'
+    )}`);
   }
 }
 
