@@ -12,7 +12,9 @@
  * 4 frames a chamber, 9 fits a good deal of the map. `pan` is pixels the map
  * moves under the camera. `crop` is `x,y,w,h,scale`, magnified NEAREST, because
  * a fault half a tile across is invisible at the size it ships at. `hold` is a
- * weapon base to put in the hand first — the kit carries one of each family.
+ * weapon base to put in the hand first — the kit carries two of each one-handed
+ * family — and `a+b` DUAL WIELDS them: the off hand is emptied of its shield and
+ * the second weapon goes there, since `slotFor` fills the empty hand.
  * `skill` is which one to take at the welcome, by name, since an EFFECT is a
  * skill's and cannot be judged behind another one; `shots` is how many frames
  * to take, as fast as they can be taken, because an effect is over in a fifth
@@ -155,21 +157,37 @@ for (const want of SOCKETS[zone] ?? []) {
 // What the main hand is holding is drawn ON the body, so judging it means
 // putting one there: the kit carries one of every family, in the dock.
 if (hold) {
+  const wanted = String(hold).split('+');
   await page.evaluate(() => document.getElementById('open-inventory')?.click());
   await page.waitForTimeout(250);
-  const took = await page.evaluate((want) => {
-    const slot = [...document.querySelectorAll('#inv-gear .slot')].find((b) =>
-      (b.getAttribute('aria-label') ?? '').toLowerCase().includes(want.toLowerCase())
-    );
-    if (!slot) return false;
-    slot.click();
-    return true;
-  }, hold);
-  if (!took) {
-    console.error(`descent-peek: nothing in the dock reads as "${hold}"`);
-    process.exit(1);
+  // The kit starts wearing a shield, so a PAIR has to empty that hand first or
+  // the second weapon swaps the first out of the main hand instead.
+  if (wanted.length > 1) {
+    await page.evaluate(() => document.getElementById('open-character')?.click());
+    await page.waitForTimeout(250);
+    // `slot-offhand` is the sheet's own button for that hand, and clicking a
+    // worn one takes it off — the same click a player makes.
+    await page.evaluate(() => document.getElementById('slot-offhand')?.click());
+    await page.waitForTimeout(250);
+    await page.evaluate(() => document.getElementById('sheet-close')?.click());
+    await page.waitForTimeout(200);
   }
-  await page.waitForTimeout(250);
+  for (const [i, want] of wanted.entries()) {
+    const took = await page.evaluate(([name, skip]) => {
+      const slots = [...document.querySelectorAll('#inv-gear .slot')].filter((b) =>
+        (b.getAttribute('aria-label') ?? '').toLowerCase().includes(name.toLowerCase())
+      );
+      const slot = slots[0];
+      if (!slot) return false;
+      slot.click();
+      return true;
+    }, [want, i]);
+    if (!took) {
+      console.error(`descent-peek: nothing in the dock reads as "${want}"`);
+      process.exit(1);
+    }
+    await page.waitForTimeout(300);
+  }
   await page.evaluate(() => document.getElementById('inv-close')?.click());
   await page.waitForTimeout(200);
 }

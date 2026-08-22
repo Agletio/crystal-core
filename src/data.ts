@@ -3443,6 +3443,10 @@ export const DEV_CURRENCY: Record<string, number> = {
  * each weapon family. NOT one of every base or icon: a kit that overflows the
  * dock is a kit you cannot read.
  */
+const ONE_HANDED = WEAPON_BASES.filter(
+  (b, i) => (b.hands ?? 1) === 1 && WEAPON_BASES.findIndex((o) => o.family === b.family) === i
+);
+
 export const DEV_GEAR = [
   ...new Set([
     ...ARMOUR_SLOT_KINDS.map((k) => `${REFERENCE_ARMOUR_FAMILY}_${k}_t2`),
@@ -3454,6 +3458,8 @@ export const DEV_GEAR = [
     'amulet',
     'ring',
   ]),
+  // A SECOND of every one-handed family: one of each makes no matched pair.
+  ...ONE_HANDED.map((b) => b.id),
 ].map((base) => ({ base, ilvl: 20 }));
 
 START_PRESETS.dev.currency = DEV_CURRENCY;

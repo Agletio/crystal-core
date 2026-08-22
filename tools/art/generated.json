@@ -1693,7 +1693,7 @@
     "idle": {
      "frames": 2,
      "to": 0.4,
-     "group": "77dd6e6f-a8dc-48f9-9604-a102d5315c9c"
+     "group": "326d735e-2ef0-427d-8514-273a53ebd3c6"
     },
     "walk": {
      "frames": 6,
@@ -1881,10 +1881,12 @@
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "fad99e91-f504-41f5-841e-a0c32bb8b860"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "b1f725b8-6604-4e6b-bab4-f2627ce8e8c0"
     }
    }
   },
@@ -1900,21 +1902,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "3691ec86-eb4b-4389-aa9b-94a9535bd2e6"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "a746654d-a8d2-431b-a558-b0aabf687efe"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "9a35d60f-b4e9-46a9-b24f-ad2c30d02a75"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "765e6966-0e33-40e4-a9c2-559b079c7cf8"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "120d28b8-d395-49af-8ab4-5d4e4faa6cb1"
     }
    }
   },
@@ -1930,21 +1937,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "561d777c-db5f-41fc-ab6c-5c3483010567"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "ebdb9b1f-0586-4097-9cf6-7f016eaa0fcc"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "8184c4f6-5e19-43c7-be87-b91f1d43307b"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "ddff0f7a-f933-469d-866c-d5d93f2625fa"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "f5391c0b-4a52-4a88-916d-d71d8f5b7700"
     }
    }
   },
@@ -1960,21 +1972,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "8acd58ed-5cbc-4882-8f36-c00de7ba6dc1"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "5fea2272-53af-45ef-82da-0a697974e800"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "f42a0f07-0fe5-4931-bd3a-d22b4614640b"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "52766db5-ddd2-4603-b709-da7689bd937d"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "97b1a4ee-0535-4c2f-ab51-ecf1902e4935"
     }
    }
   },
@@ -1990,21 +2007,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "1e6c0d77-8afb-495a-80b2-c458778ffa94"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "b3e1146f-15aa-4c4a-994c-f15114a0713b"
     },
     "attack": {
      "frames": 4,
-     "to": 0.67
+     "to": 0.67,
+     "group": "15216b40-0dd8-4ffe-9d40-977ed2a83f53"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "a43ff7bb-1eb6-402b-914c-ec0c125fd091"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "4301b1c8-05af-422e-b395-4ab562e22cbc"
     }
    }
   },
@@ -2020,21 +2042,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "f2b49f43-7adc-4f24-b9d0-927b87ba6e26"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "9eb60fcc-b8d8-4ed0-b1d5-1da0e37292ca"
     },
     "attack": {
      "frames": 4,
-     "to": 0.67
+     "to": 0.67,
+     "group": "55ffc7d7-f1fa-465a-b918-7c77cf36fa20"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "b7e66d43-a61e-4b49-9ea5-d8fe721d4bf1"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "0cc43ea3-33b6-4062-89f3-880ec1d82d9c"
     }
    }
   },
@@ -2050,21 +2077,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "bcef40c6-744a-4f3f-b21d-df08aff1cf21"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "82c866f4-0b73-4d23-a106-a1d2c56e9119"
     },
     "attack": {
      "frames": 4,
-     "to": 0.67
+     "to": 0.67,
+     "group": "b938afdf-9930-4154-97b3-06f07d0a13fd"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "1c89287e-c2a8-4e75-bf9d-3aacf28bddf5"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "df250cba-16d8-48d5-bd8f-df2b41cdf60c"
     }
    }
   },
@@ -2080,21 +2112,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "3857d83d-60c3-41d0-a93f-a35188d43543"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "9afc3afc-f072-4b08-8203-ce3a6c259c1b"
     },
     "attack": {
      "frames": 4,
-     "to": 0.67
+     "to": 0.67,
+     "group": "374fb761-9678-466a-96e5-3009d267b773"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "6a08658f-9b57-4667-9c2b-a9d96c99e228"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "9e560588-4e7d-4c4f-97c2-0e137398f159"
     }
    }
   },
@@ -2110,21 +2147,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "e124d97a-e003-4197-a988-96a1c05a4321"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "b71c5638-3a00-482d-ab76-fe51be2a6cb3"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "888aa560-db08-49cd-a240-3986ebe3bf93"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "c0fdd902-c83d-40a6-98b4-8cf5a61449fe"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "c1b5908e-6047-40e3-b42a-d7053d643469"
     }
    }
   },
@@ -2140,21 +2182,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "3a0c756a-b910-4682-bd29-91fd032c7c21"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "f96ccaec-7610-4818-a5ef-b01baa3fe222"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "850824b3-46dd-4c73-9e42-f134113d5385"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "f4e32c48-1e9e-4dca-b7ef-a616d008302b"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "7e9b7aea-fbd5-4240-9882-5ee81e14f3c9"
     }
    }
   },
@@ -2170,21 +2217,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "7c04130e-3ccd-46dc-bac9-b9e0f96097fd"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "568d702a-bcb9-4c49-9574-626769ae9c80"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "d3608adc-2672-44d8-8bab-0f816301b90c"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "0f8de8b9-eee0-4574-85f2-8827645e0b39"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "a6c86f59-73b0-49d5-b779-750cff20f67c"
     }
    }
   },
@@ -2200,21 +2252,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "cfca9955-960f-4ceb-b093-519744c2a5fd"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "79e68a91-6825-4c0d-bafc-5f6cb5f3b264"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "504e56b2-3cd8-402c-a3de-84ccc39a4cbf"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "069fe29f-3932-4c0d-957b-ce1bee25708c"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "e59fa392-cb9e-41d2-8b86-a51c6d1b22f4"
     }
    }
   },
@@ -2230,21 +2287,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "8f46178f-d66b-4eb4-99df-5a3fa27ff28d"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "2e7a25b1-3df6-422d-b3eb-1478abb1e703"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "8569f3b5-b20c-4e63-aee6-960dad7e2ccb"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "6e79e4da-66d2-462f-bc18-6cb86ab8a605"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "79398c3a-0330-44f4-a315-9211a8864abb"
     }
    }
   },
@@ -2260,21 +2322,26 @@
    "states": {
     "idle": {
      "frames": 2,
-     "to": 0.4
+     "to": 0.4,
+     "group": "0765a7ae-08e8-468a-8fd0-6c6922b164d4"
     },
     "walk": {
-     "frames": 6
+     "frames": 6,
+     "group": "550378e3-20a8-4bdc-911a-dc78c9271bf8"
     },
     "attack": {
      "frames": 4,
-     "from": 0.34
+     "from": 0.34,
+     "group": "43ffdc9b-af21-41b9-a23c-5df05bd9271e"
     },
     "cast": {
      "frames": 5,
-     "to": 0.82
+     "to": 0.82,
+     "group": "317a5658-cdf3-4841-a3f8-09d1372bf1b3"
     },
     "death": {
-     "frames": 4
+     "frames": 4,
+     "group": "3a23b4a3-f9fd-4b77-a365-95917d57e534"
     }
    }
   }

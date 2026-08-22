@@ -6,12 +6,13 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**ONE PHASE IS WAITING**: dual wielding — the largest art phase this game has
-had, and it carries an OPEN QUESTION that has to be answered before a
-generation is spent (what dual wielding IS, mechanically). **Ask it, then take
-Phase 1.** The weapon soft-lock, the two wrong weapon bodies, the walls, the
-kiting, the people you have met, what the sheet says about an ailment, the WHOLE
-of the camp and Rimespike's pack clear all came first and landed.
+**NOTHING IS WAITING BUT A PARKED PHASE.** The quest log below is Phase 1 by
+position only — it stays parked by the user's word until the stripped opening
+has been played. Everything else that was asked for has landed: the weapon
+soft-lock, the two wrong weapon bodies, the walls and the north lip, the
+kiting, the people you have met, what the sheet says about an ailment, the
+WHOLE of the camp, Rimespike's pack clear and dual wielding. **Say so and list
+the open questions rather than inventing work.**
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -19,7 +20,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 2 (a quest log) stays parked by his word until the
+what it found is below. Phase 1 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -84,6 +85,7 @@ to look:
 | KITING IS GONE | tried as a passive, then as the SKILL's, then removed entirely — *"kiting is too op. I think remove it entirely for now"*. A build stands in it, ranged and melee alike. It comes back as a passive that pays for it, in Open questions |
 | a trade is taken up ONCE | the user's call: the one hard lock in a game that refunds everything else. What gold buys back instead is every ATTRIBUTE point, `respecCost` — the one allocation no click undoes |
 | the CAMP | `src/scenes/camp.ts` — a grassy shelf under its own generated tileset, the crack you came up out of, props you CLICK, and everybody you have met standing about. A `SceneDef` with `place: true`, not a fifth phase |
+| DUAL WIELDING | the off hand takes a second one-handed weapon: `DUAL` in `src/data.ts` puts 75% of one hand and 55% of the other into every hit, and `swingCooldown` ALTERNATES between the two rates around their even mean. Twenty pair variants over two heroes — `pairs.mts` layers a `_off` row onto the variant that already holds the other weapon, so a pair is 20 asks and not 20 rewrites |
 | Rimespike reaches a PACK | the `depth` arm is gone and RIMEFIELD stands in its place — every 4th cast leaves a Cloud where the spike went in, no damage and the build's own Chill. `fieldOnCast` / `fieldEvery` in `src/sim/grants.ts`, `leaveClouds` in `src/sim/skills.ts`, and `SkillUse.leave` is the seam a Cloud applies through |
 | the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Four generated sockets on the wall face, a tent, a fire, a heap of kit; a PERSON is a fixture like the bench, and he WALKS to whatever you clicked before the screen opens |
 | NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
@@ -424,70 +426,7 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — Dual wielding
-
-**The user's ask, and his own sizing of it:** *"I want to add dual wielding
-which I assume means ALOT more animations since we need dual wielding of the
-same type as well as every combo. We can just have one version per combo though
-regardless of which slot you put in main/off hand."*
-
-**He is right about the cost, and here is the number.** Four one-handed art
-families — sword, dagger, mace, wand — and unordered pairs with repeats is
-**ten combinations**, ten again for the second hero: **twenty new variants**. At
-one `create_character_state` and five animations each, measured, that is roughly
-**1,900 generations and the better part of a day of wall clock**, against the
-~350 the two-body repair in the last round cost. It is the largest art phase
-this game has had. **The generations can be queued while other phases are being
-coded** — the pipeline is idempotent and the job cap is ten per account — so
-this does not have to block a keyboard for a day.
-
-**What is true today.** `EQUIP_SLOTS` gives the off hand `accepts: 'shield'`, so
-nothing but a shield goes there. `HOLDING` in `src/sim/appearance.ts` maps a
-base family to an art key and `variants()` already asks for `${main}_${off}`
-before falling back to either alone — **so the sprite lookup needs no change at
-all**, only bodies to find. `weaponRate` and `weaponSwing` read `WEAPON_SLOT`
-and nothing else.
-
-- [ ] **Decide what dual wielding IS, mechanically, and write it down as a
-      decision.** *Recommended, and not taken on his behalf:* the off-hand
-      weapon adds a share of its own base damage and a share of its rate, so a
-      dagger pair is fast and a mace pair hits, and neither is a shield's armour
-      and Block. The alternative — a second, independent swing — is a second
-      damage pipeline, and this game has one. **Ask before building either.**
-- [ ] **The off hand accepts a one-handed weapon.** `EquipSlotDef.accepts` is
-      one string today; a slot that takes two kinds is the edit. `handClash`
-      already empties the off hand for a two-hander and that stays.
-- [ ] **A pair is ORDERLESS in art and ORDERED in stats.** The user's call:
-      one body per combination whichever hand you filled. `variants()` sorts the
-      pair before looking it up; `weaponRate` still reads the main hand.
-- [ ] **`weapons.json` grows the pair vocabulary, not twenty new rows.** The
-      whole point of that file is that a sword is one sword. What a PAIR needs
-      is one clause about the second hand — where it is held, how it reads
-      against the first — and `variant.mts` composes the rest.
-- [ ] **Judge the first combination before queueing the other nineteen.** A
-      design is one generation and a finished variant is sixty-odd; the last
-      round spent six asks on one weapon and would have spent thirty if it had
-      animated first.
-- [ ] **The bundle.** Twenty-six variants took `generated-art.ts` to 3.82 MB and
-      twenty more is roughly another 3 MB. That makes open question 10 a
-      decision rather than a note — trim `frames` on the variant idle and walk
-      in the same phase, or say why not.
-
-**Traps.** `WEAPON_COUNTS_AS` answers what a skill may be SWUNG with and says
-nothing about a second hand; a skill requiring `twohand` must still refuse a
-pair. `starterLoadout` and `bestBuild` never hold two weapons, so nothing
-measured would notice dual wielding existed — the ceiling search has to learn
-the pair or the balance grid is blind to it.
-
-**Done when.** Two one-handed weapons can be worn at once, the body on screen is
-holding both of them, and the sheet says what the second one is worth.
-
-**What must not break.** `npm run demo` (the FLOOR AND CEILING table moves —
-print it, do not chase it), `smoke`, `shots`, `peek`.
-
----
-
-## Phase 2 — A quest log instead of a pointing finger
+## Phase 1 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
@@ -638,7 +577,15 @@ be picked up — they are decisions the user has not made. Ask before acting.
    at its own rim. The code is at `56d599a`. Never asked for twice; here so
    nobody rediscovers the geometry.
 
-11. **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
+11. **MEASURED, and it has far less teeth than this feared.** Twenty pair
+   variants took the bundle from 5.34 MB to **6.33 MB**, and 1.04 to **1.15
+   gzipped** — about 50 KB of source a variant, not the ~150 KB the estimate
+   below assumed, because a pair is five states at ONE facing rather than a
+   whole body. Nothing has been trimmed and nothing needs to be on these
+   numbers. The lever is still there if a number the user cares about ever
+   appears. The original note, for the arithmetic:
+
+   **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
    the question has teeth.** It was 1.62 MB / 0.43 gzipped when this said
    "nothing about no binary assets is under pressure"; twenty-six weapon
    variants took `generated-art.ts` to 3.82 MB on its own, and it is now 73%

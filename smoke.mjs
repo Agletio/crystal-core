@@ -2744,6 +2744,51 @@ assert(
   );
 }
 
+// --- dual wielding, on the sheet -------------------------------------------
+// LAST, because it changes what both hands hold and a dozen checks above pick a
+// dock item by position. What has to hold is that the second weapon is WEARABLE
+// and that the sheet says what it is worth, in both its units.
+{
+  // The kit wears a shield, and a full off hand makes the second weapon offer
+  // to SWAP the main one instead. Clicking a worn slot is how it comes off.
+  $('open-character').click();
+  if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
+  assert(
+    !$('slot-offhand').classList.contains('slotcell__btn--worn'),
+    'the off hand empties when you click what is in it'
+  );
+  $('sheet-close').click();
+
+  $('open-inventory').click();
+  const oneHanded = () =>
+    filled('#inv-gear').filter((b) => /wear as (main|off) hand/i.test(named(b)));
+  const before = oneHanded().length;
+  assert(before >= 2, 'the dev kit carries more than one one-handed weapon', String(before));
+  // The main hand is already full and the off hand is now empty, so this is
+  // the click that dual wields — `slotFor` fills the empty hand.
+  const second = oneHanded()[0];
+  assert(
+    /wear as off hand/i.test(named(second)),
+    'a one-handed weapon asks for the empty OFF hand rather than swapping the main one',
+    named(second)
+  );
+  second.click();
+
+  $('open-character').click();
+  const said = text('sheet');
+  assert(
+    /dual wielding: \d+% of .+ and \d+% of .+ in every hit/i.test(said),
+    'the sheet says what each hand puts into a hit',
+    (said.match(/dual wielding[^.]*/i) ?? ['nothing'])[0]
+  );
+  assert(
+    /swinging at [\d.]+ and then [\d.]+ a second, alternately/i.test(said),
+    'and that the swing alternates between their two rates',
+    (said.match(/swinging at[^.]*/i) ?? ['nothing'])[0]
+  );
+  $('sheet-close').click();
+}
+
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
 
 window.close();
