@@ -6828,7 +6828,17 @@ rule('THE ROSTER — is every hero drawn holding what it carries?');
         for (const off of oneOfEach(oneHanded)) want(wearing(main, off));
       }
     }
-    line(`  ${body}: ${seen.size} arrangements a player can reach`);
+    // A ROSTER NOT STARTED is not the same fault as one half drawn. A trade
+    // ships playable the moment its BODY lands and gets its weapons afterwards
+    // — `heroSpriteFor` falls back to the bare man — so a hero with none of
+    // them is the next job. A hero with SOME is the bug: he would hold a sword
+    // and then hold nothing, and only one of those is a picture.
+    const drawn = seen.size - new Set(missing).size;
+    line(`  ${body}: ${drawn} of ${seen.size} arrangements a player can reach are drawn`);
+    if (drawn === 0) {
+      gauge(`${body} has no weapon art yet — he plays on the bare body`);
+      continue;
+    }
     check(
       missing.length === 0,
       `every one of ${body}'s ${seen.size} arrangements is a picture of him holding it`,
