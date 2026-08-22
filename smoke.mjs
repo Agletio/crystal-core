@@ -2478,15 +2478,15 @@ $('dev-kit').click();
   const before = text('trade-sub');
   assert(/\d/.test(before), 'the screen says which level hands over the first point', before);
 
-  // Five character levels buy the first point. Levelling is the only thing
-  // that does, which is what makes a trade the second job a level has.
+  // Five character levels buy the first PAIR, and a pair is what they come in:
+  // a notable is always two steps on, so an odd number would strand a build.
   $('trade-close').click();
   $('open-character').click();
   for (let i = 0; i < 6; i++) $('sheet-devlevel').click();
   $('sheet-close').click();
   assert(
-    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
-    'the header says one trade point is waiting',
+    $('open-trade').querySelector('.tabbadge')?.textContent === '2',
+    'the header says a PAIR of trade points is waiting',
     $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
   );
 
@@ -2499,8 +2499,8 @@ $('dev-kit').click();
   await new Promise((r) => setTimeout(r, 0));
   assert($('trade-webwrap').hidden === false, 'and then it draws its web');
   assert(
-    all('#trade-web .web__node').length === 45,
-    'forty-five nodes: five spokes of a stem, a gate and two branches',
+    all('#trade-web .web__node').length === 50,
+    'fifty nodes: five spokes of a minor, a gate and two branches of four',
     String(all('#trade-web .web__node').length)
   );
   // It ROAMS now, like the skills web and through the same camera.
@@ -2515,10 +2515,12 @@ $('dev-kit').click();
   assert(open().length === 5, 'five ways in, one per spoke', String(open().length));
   // The FORK: nothing past a gate is reachable until the gate is.
   assert(
-    all('#trade-web .web__node--locked').length === 40,
+    all('#trade-web .web__node--locked').length === 45,
     'and everything past the first step is locked behind the walk to it',
     String(all('#trade-web .web__node--locked').length)
   );
+  // A PAIR IS A MINOR AND THE NOTABLE BEHIND IT, which is the whole rework:
+  // spend both and you are standing on a notable rather than one step short.
   open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trade-web .web__node--on').length === 1,
@@ -2526,16 +2528,31 @@ $('dev-kit').click();
     String(all('#trade-web .web__node--on').length)
   );
   assert(
+    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
+    'and the badge counts the other one of the pair down',
+    $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
+  );
+  const second = open()[0];
+  assert(
+    second.classList.contains('web__node--notable'),
+    'the very next step is a NOTABLE, so the second of the pair lands on one'
+  );
+  second.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#trade-web .web__node--on.web__node--notable').length === 1,
+    'spending it takes the notable',
+    String(all('#trade-web .web__node--on.web__node--notable').length)
+  );
+  assert(
     $('open-trade').querySelector('.tabbadge') === null,
     'and the badge goes away rather than reading 0'
   );
-  assert(open().length === 0, 'nothing else lights up with nothing left to spend');
 
-  all('#trade-web .web__node--on')[0].dispatchEvent(
+  all('#trade-web .web__node--on.web__node--notable')[0].dispatchEvent(
     new window.MouseEvent('click', { bubbles: true })
   );
   assert(
-    all('#trade-web .web__node--on').length === 0 &&
+    all('#trade-web .web__node--on').length === 1 &&
       $('open-trade').querySelector('.tabbadge')?.textContent === '1',
     'clicking it again refunds the point',
     String(all('#trade-web .web__node--on').length)
