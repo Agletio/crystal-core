@@ -879,7 +879,7 @@
     width: min(520px, calc(100vw - 220px)); pointer-events: none;
     padding: 6px 12px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
   }
   .bossbar__name {
@@ -906,7 +906,7 @@
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     padding: 5px 11px; max-width: 240px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
     font-family: var(--display); font-size: 13px; letter-spacing: .08em;
     color: var(--ember); text-align: center; white-space: nowrap;
@@ -917,7 +917,7 @@
   .debuff {
     width: 40px; padding: 2px 0 1px; text-align: center;
     background-color: var(--panel); background-clip: padding-box;
-    border: 10px solid transparent; border-image: var(--fix-card) 10 / 10px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
   }
   .debuff__art { display: block; margin: 0 auto; image-rendering: pixelated; }
@@ -1060,7 +1060,7 @@
     width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
     padding: 4px 8px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated; box-shadow: var(--lift);
   }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
@@ -1200,7 +1200,7 @@
   .socket {
     display: block; width: 100%; text-align: left;
     background-color: var(--ink); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated; box-shadow: none; border-radius: 0;
   }
   .socket:hover { filter: brightness(1.08) drop-shadow(0 0 4px var(--citrine)); }
@@ -1358,16 +1358,16 @@
      what makes stacking two harmless. Each still stops above the dock, because
      the bench works ON the inventory it would otherwise cover. */
   /* THE CAMP is the GROUND the game stands on, so it sits under every window
-     and over nothing. `--camp-scale` is set once per resize and everything
-     inside the stage is in art pixels, which is what keeps a hotspot on the
-     thing it was measured against at any window size. */
+     and over nothing. `--camp-sx` / `--camp-sy` are set once per resize and
+     everything inside the stage is in art pixels, which is what keeps a
+     hotspot on the thing it was measured against at any window size. */
   .camp {
     position: fixed; inset: 0; z-index: -1; overflow: hidden;
     background-color: var(--ink); background-image: var(--grit);
   }
   .camp__stage {
     position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -50%) scale(var(--camp-scale, 1));
+    transform: translate(-50%, -50%) scale(var(--camp-sx, 1), var(--camp-sy, 1));
     transform-origin: 50% 50%;
   }
   .camp__art, .camp__live, .camp__crystals, .camp__hotspots {
@@ -1428,15 +1428,17 @@
     width: max-content; max-width: min(300px, calc(100vw - 32px));
     display: flex; align-items: flex-end; gap: 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
     box-shadow: 0 5px 0 rgba(0,0,0,.55);
     padding: 2px 4px 2px 1px;
   }
   /* Out of the box on two sides. A portrait cropped to the padding reads as an
-     icon; one that breaks the frame reads as somebody leaning in. */
+     icon; one that breaks the frame reads as somebody leaning in — and the
+     frame is a slim rail now, so the lean is over the brass END CAP rather
+     than up through a band that is barely there. */
   .speech__who {
-    flex: none; line-height: 0; margin: -18px 0 -9px -14px; align-self: flex-start;
+    flex: none; line-height: 0; margin: -12px 0 -6px -26px; align-self: flex-start;
   }
   .speech__who .icon { image-rendering: pixelated; }
   .speech__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
@@ -1459,7 +1461,7 @@
   .modal__card--bubble .modal__body { padding: 9px 11px; }
   .modal__card--bubble .met { padding: 0; gap: 9px; }
   /* Out of the frame, like the bubble's. Same person, same lean. */
-  .modal__card--bubble .met__who { margin: -18px 0 -8px -14px; align-self: flex-start; }
+  .modal__card--bubble .met__who { margin: -12px 0 -6px -26px; align-self: flex-start; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
   /* TREATMENT 1 of 4 — the WINDOW. The panel's slab, lifted off the map and
@@ -1657,7 +1659,7 @@
        instead — the spokes hanging off the low half of a web, gone. 205px is
        everything above and below it inside the card. */
     position: relative; height: min(50vh, 430px, calc(100vh - var(--dock-h, 0px) - 205px)); min-height: 170px;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     box-shadow: none;
     background-color: var(--web-ground); background-clip: padding-box;
     background-image:
@@ -1683,7 +1685,7 @@
   .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
   .trialsplit .webwrap--trade { margin-top: 0; }
   .trialladder { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-  .trialrow { border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; background-color: var(--panel); background-clip: padding-box; padding: 4px 6px; }
+  .trialrow { border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round; background-color: var(--panel); background-clip: padding-box; padding: 4px 6px; }
   .trialrow--done { filter: brightness(1.12); }
   .trialrow__head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .trialrow__name { color: var(--text); }
@@ -1700,7 +1702,7 @@
   .bookrow__means { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
-  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
   .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
   .webmenu__row:hover { background: var(--edge); border-color: var(--citrine); }
   .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
@@ -1750,7 +1752,7 @@
     position: fixed; z-index: 100; pointer-events: none;
     max-width: 340px; padding: 6px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent; border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
     color: var(--text); font-size: 11px; line-height: 1.5;
     box-shadow: var(--lift);

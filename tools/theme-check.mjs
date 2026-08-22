@@ -17,7 +17,7 @@ const text = readFileSync(resolve(root, file), 'utf8');
 
 /** Set by JS at runtime, so declared where they are computed. `--fix-*` is the
  *  generated fixture kit, mounted by `src/ui/fixtures.ts` at boot. */
-const RUNTIME = new Set(['--camp-scale', '--cols', '--dock-h', '--sx', '--sy', '--wx', '--wy']);
+const RUNTIME = new Set(['--camp-sx', '--camp-sy', '--cols', '--dock-h', '--sx', '--sy', '--wx', '--wy']);
 const runtime = (name) => RUNTIME.has(name) || name.startsWith('--fix-');
 
 const open = text.indexOf(':root {');

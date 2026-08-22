@@ -39,17 +39,25 @@ let opens: Record<string, (spot: Hotspot, at: DOMRect) => void> = {};
 let live = false;
 let started = 0;
 
-/** How many art pixels the picture is drawn at, so everything else can use the
- *  same one. Recomputed on resize and nowhere else. */
+/** How far a window may be off the picture's own shape before the picture is
+ *  let go of rather than pulled: past this it reads as squashed. */
+const STRETCH = 1.3;
+
+/** FILLS THE WINDOW, and the two axes are allowed to differ. Cover is not on:
+ *  the bench is against the left edge and the shelf against the right, so a
+ *  crop takes a verb off the screen. A 16:10 window is a 12% pull on a 16:9
+ *  picture, which reads as a wider room; past `STRETCH` the excess axis is
+ *  let go and the black comes back rather than the camp looking wrong. */
 function fit(): void {
   const art = SCENE_ART[CAMP_ART];
   if (!art) return;
   const box = $('camp').getBoundingClientRect();
   const wide = (box.width || globalThis.innerWidth) / art.w;
   const tall = (box.height || globalThis.innerHeight) / art.h;
-  // CONTAIN, never cover: the bench and the shelf are against the edges, and
-  // a crop that eats either is a screen with a missing verb.
-  $('camp-stage').style.setProperty('--camp-scale', String(Math.max(0.2, Math.min(wide, tall))));
+  const most = Math.min(wide, tall) * STRETCH;
+  const style = $('camp-stage').style;
+  style.setProperty('--camp-sx', String(Math.max(0.2, Math.min(wide, most))));
+  style.setProperty('--camp-sy', String(Math.max(0.2, Math.min(tall, most))));
 }
 
 export function initCamp(

@@ -141,12 +141,22 @@ a family that is not there.
 ## Fixtures
 
 **A FIXTURE is generated pixel art applied as a CSS 9-slice; a glyph is grid
-art.** The kit ships as data URIs in `src/render/generated-ui.ts` and is mounted
+art.** *(Adding one: `create_ui_asset` with no `pieces` returns a whole KIT
+SHEET whatever the description says and its minimum is 192x192, so a new
+fixture is asked through `pieces` or not at all — see `uikit.json`.)* The kit ships as data URIs in `src/render/generated-ui.ts` and is mounted
 as `--fix-<id>` at boot by `src/ui/fixtures.ts`. `theme-check` treats the
 `--fix-` prefix as runtime. A fixture is authored at the CSS pixel size it
-displays at so a 9-slice's corners draw 1:1; the socket is shipped at 96 for a
-48px button because device ratio 2 then lands it pixel-perfect.
+displays at so a 9-slice's corners draw 1:1.
 
+- **ONE FRAME DOES THE WHOLE SHELL, and it is `head`.** Every panel, chat
+  bubble, web menu and trial row is `border: 6px solid transparent` with 16px
+  ends and `border-image: var(--fix-head) 6 16 / 6px 16px round`, at the art's
+  own scale so no row of it is resampled. `card` was a 14px riveted band and
+  is no longer referenced by the stylesheet at all — *the user's call: "the
+  chats have that same border as the old ui, replace that border everywhere it
+  exists with the new one"*. `win` is still the big WINDOW frame at 30, and
+  `socket` is no longer worn by the rail: a riveted socket behind every icon
+  was a second frame inside the first, in another metal.
 - **The `border` SHORTHAND resets `border-image`.** A later rule with
   `border: 1px solid …` silently kills an earlier fixture at equal specificity —
   the HUD vessels drew nothing until their rule moved BELOW the base `.hp` block.
