@@ -167,8 +167,10 @@ if (command === 'manifest') {
     const states: Record<string, unknown> = {};
     for (const [name, state] of Object.entries(parent.states as Record<string, any>)) {
       const { group, ...judged } = state;
-      const held = already?.states?.[name]?.group;
-      states[name] = { ...judged, ...(held ? { group: held } : {}) };
+      // What was judged of THIS row wins: a variant whose own window had to be
+      // narrowed to drop a bad frame is a decision, not drift from the parent.
+      const own = already?.states?.[name] ?? {};
+      states[name] = { ...judged, ...own };
     }
     const seeded = { ...parent, sprite: row.sprite, character: row.character, states };
     if (already) Object.assign(already, seeded);

@@ -2091,7 +2091,7 @@ export const MELEE = {
  *  instant, it reads as one hit doing double damage rather than as a second
  *  teleport, and watching it happen is the point of the node. */
 export const AMBUSH = {
-  behind: 0.2, // the gap past both bodies' radii the landing leaves
+  behind: 0.45, // the gap past both bodies' radii: touching, the two sprites overlap
   chainDelay: 0.3, // seconds before a Critical's follow-up lands
   chainReach: 9, // how far a follow-up may cross, in tiles
   chainDamage: 0.7, // what it lands for, where the one you aimed at takes all

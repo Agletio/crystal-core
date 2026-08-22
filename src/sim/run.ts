@@ -2300,8 +2300,8 @@ export class RunSim {
   }
 
   /** BEHIND a body: the far side of it from where you stand, and round the ring
-   *  a step at a time when that tile is not one you may stand on. Nothing moves
-   *  at all rather than landing somewhere illegal, and the hit still lands. */
+   *  when that tile is not one you may stand on. Nothing moves at all rather
+   *  than landing somewhere illegal, and the hit lands either way. */
   private stepBehind(user: Entity, target: Entity): void {
     if (user.kind !== 'hero') return;
     const grid = this.state.map.grid;
@@ -2332,14 +2332,15 @@ export class RunSim {
   }
 
   /** A teleport into another body and the whole skill again, a moment later.
-   *  Prefers one this chain has not opened on; with nothing else in reach it
-   *  repeats on the same body, and that repeat is where it stops. */
+   *  Prefers one this chain has not opened on; a repeat is where it stops. */
   private stepChains(dt: number): void {
     if (this.chained.length === 0) return;
     const hero = this.state.hero;
-    const due = this.chained.filter((c) => (c.in -= dt) <= 0);
+    for (const chain of this.chained) chain.in -= dt;
+    const due = this.chained.filter((c) => c.in <= 0);
     this.chained = this.chained.filter((c) => c.in > 0);
-    if (hero.dead) return;
+    // A Fall EATS the follow-up: teleporting out of being held is not being held.
+    if (hero.dead || (hero.stun ?? 0) > 0) return;
 
     const reach = AMBUSH.chainReach * ((this.grants.chainReach as number) ?? 1);
     for (const chain of due) {
