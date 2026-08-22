@@ -101,7 +101,9 @@ import {
 } from './data';
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
-import { canEnter, challengesIn, climbed, furthest, isChallenge, takeRung, zoneOpen } from './ladder';
+import {
+  arenaAt, canEnter, challengesIn, climbed, furthest, isChallenge, takeRung, zoneOpen,
+} from './ladder';
 import {
   balance,
   grant,
@@ -8876,6 +8878,74 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       `and pays for itself off the same seam — ${Math.round(paidFor(CHALLENGE.every).rarity)}% rarity against ${Math.round(paidFor(CHALLENGE.every - 1).rarity)}%`,
       'a spike pays no more than the rung under it'
     );
+  }
+
+  // A BOSS AT THE TOP OF EACH ZONE. *"One at the end of each zone which will be
+  // a unique boss each time."* The last rung is a fight rather than a descent,
+  // and clearing it is the whole of what opens the zone above.
+  {
+    const arenas = LADDER.zones.map((zone, z) => ({
+      zone,
+      z,
+      id: arenaAt({ zone: z, rung: zone.rungs }),
+      under: arenaAt({ zone: z, rung: zone.rungs - 1 }),
+    }));
+    line(`  arenas: ${arenas.map((a) => `${a.zone.theme} ${a.zone.rungs} → ${a.id}`).join(' · ')}`);
+    check(
+      arenas.every((a) => a.id !== null) && arenas.every((a) => a.under === null),
+      'every zone ends on an arena, and only its LAST rung is one',
+      arenas.map((a) => `${a.zone.theme}:${a.id}/${a.under}`).join(' ')
+    );
+
+    // Each arena is a real room, holding a real boss, drawn as its own body.
+    const broken: string[] = [];
+    const fought: string[] = [];
+    for (const at of arenas) {
+      const room = SCENE_BY_ID[at.id ?? ''];
+      const boss = BOSS_BY_ID[room?.encounter ?? ''];
+      if (!room) broken.push(`${at.zone.theme}: no room ${at.id}`);
+      else if (!boss) broken.push(`${at.id}: no boss ${room.encounter}`);
+      else if (!GENERATED[boss.sprite]) broken.push(`${boss.id}: nothing drawn for ${boss.sprite}`);
+      else if (room.theme !== at.zone.theme) broken.push(`${at.id} is ${room.theme}, not ${at.zone.theme}`);
+      else fought.push(boss.id);
+    }
+    check(
+      broken.length === 0 && new Set(fought).size === arenas.length,
+      `and each is its own boss on its own zone's rock — ${fought.join(', ')}`,
+      broken.join(' | ')
+    );
+
+    // HARDER AS YOU CLIMB, and each is drawn with a full set of states: a boss
+    // missing its slam is a phase the fight cannot show.
+    const want = ['idle', 'walk', 'attack', 'slam', 'roar', 'hurt', 'death'];
+    const thin = fought.filter((id) => {
+      const art = GENERATED[BOSS_BY_ID[id].sprite];
+      return want.some((state) => !art?.states?.[state]?.length);
+    });
+    check(thin.length === 0, 'and every one of them has all seven states drawn', thin.join(', '));
+    const lives = fought.map((id) => BOSS_BY_ID[id].life);
+    const hits = fought.map((id) => BOSS_BY_ID[id].damage);
+    line(`  bosses: ${fought.map((id, i) => `${BOSS_BY_ID[id].name} ${lives[i]} life, ${hits[i]} hit`).join(' · ')}`);
+    check(
+      lives.every((n, i) => i === 0 || n > lives[i - 1]) &&
+        hits.every((n, i) => i === 0 || n > hits[i - 1]),
+      'and each stands above the one in the zone below it',
+      `${lives.join(', ')} · ${hits.join(', ')}`
+    );
+
+    // AND IT IS THE GATE. Everything but the last rung leaves the zone above
+    // shut; the boss is what opens it.
+    {
+      const nearly = makeCharacter({}, 'strike');
+      for (let rung = 1; rung < LADDER.zones[0].rungs; rung++) takeRung(nearly, { zone: 0, rung });
+      const shut = !zoneOpen(nearly, 1);
+      takeRung(nearly, { zone: 0, rung: LADDER.zones[0].rungs });
+      check(
+        shut && zoneOpen(nearly, 1),
+        'every rung but the arena leaves the next zone shut, and the arena opens it',
+        `shut before ${shut}, open after ${zoneOpen(nearly, 1)}`
+      );
+    }
   }
 
   // A save is the one thing that can hold a climb nobody walked.

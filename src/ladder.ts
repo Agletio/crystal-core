@@ -41,15 +41,21 @@ export function furthest(character: Character): Rung {
   return best;
 }
 
-/** A SPIKE rather than a step. Never the last rung of a zone: that is the
- *  boss's, and two things asking for the same rung is one of them lost. */
+/** THE ARENA at the top of a zone: its LAST rung is a boss rather than a
+ *  descent, so the climb's one gate is a fight. */
+export function arenaAt(at: Rung): string | null {
+  const zone = zoneAt(at.zone);
+  return zone && at.rung === zone.rungs ? (zone.arena ?? null) : null;
+}
+
+/** A SPIKE rather than a step, never a zone's LAST rung — that is the boss's. */
 export function isChallenge(zone: number, rung: number): boolean {
   const at = zoneAt(zone);
   if (!at || rung < 1 || rung >= at.rungs) return false;
   return rung % CHALLENGE.every === 0;
 }
 
-/** Every challenge floor in a zone, for anything that draws them. */
+/** Every challenge floor in a zone, for whatever draws them. */
 export const challengesIn = (zone: number): number[] =>
   Array.from({ length: zoneAt(zone)?.rungs ?? 0 }, (_, i) => i + 1).filter((r) =>
     isChallenge(zone, r)

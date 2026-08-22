@@ -48,7 +48,7 @@ import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
 import { openTalk } from './talk';
 import { climbLine, renderClimb, rungLabel, rungNow } from './climb';
-import { takeRung } from '../ladder';
+import { arenaAt, takeRung } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -491,6 +491,14 @@ function launch(): void {
   // WHICH RUNG: read at the launch, so a chained descent stays on one rung.
   ran = rungNow(game.character);
 
+  // THE TOP OF A ZONE IS A FIGHT, and clearing it opens the zone above.
+  const arena = SCENE_BY_ID[arenaAt(ran) ?? ''];
+  if (arena) {
+    seed = Math.floor(Math.random() * 1e9);
+    enterScene(arena, [], [], ran);
+    return;
+  }
+
   seed = Math.floor(Math.random() * 1e9);
   // WHO IS DOWN THERE. *"I want to encounter them randomly in the maps."*
   // Rolled HERE and not in the sim, off its own draw, so whether somebody is
@@ -646,6 +654,8 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again. BEFORE
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
+  // And if the room WAS a rung, the climb records it.
+  if (report.cleared && ran) takeRung(game.character, ran);
   if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];
@@ -659,11 +669,12 @@ function endEncounter(): void {
 function enterScene(
   def: SceneDef,
   crowd: { sprite: string; at: Vec2 }[] = [],
-  dressing: { id: string; x: number; y: number }[] = []
+  dressing: { id: string; x: number; y: number }[] = [],
+  /** The rung this room IS when it is a zone's arena; any other is not one. */
+  at: Rung | null = null
 ): void {
   visiting = false;
-  // A room is not a rung: nothing in here may record a clear.
-  ran = null;
+  ran = at;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
   // Standing in somebody's room is MEETING them, which is what puts them on

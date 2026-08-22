@@ -11,6 +11,8 @@ import { READING_ROOM } from './scenes/reading-room';
 import { OSSUARY } from './scenes/ossuary';
 import { ORRERY } from './scenes/orrery';
 import { ANSWERING_HALL } from './scenes/answering';
+import { REFRACTION_HALL } from './scenes/refraction';
+import { FLOWERING_HALL } from './scenes/flowering';
 
 /** What somebody DOES between two lines, off the pose machinery that exists. */
 export type SceneAct = 'pace' | 'work' | 'face';
@@ -53,7 +55,9 @@ export const LURKS = new Set(['osteomancer']); // everyone else crosses to you
 export const scaleFor = (sprite: string): number =>
   FOLK_SCALE[sprite] ?? FOLK_SCALE_DEFAULT;
 
-export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, ANSWERING_HALL, OSSUARY, ORRERY];
+export const SCENES: SceneDef[] = [
+  WORKSHOP, READING_ROOM, ANSWERING_HALL, REFRACTION_HALL, FLOWERING_HALL, OSSUARY, ORRERY,
+];
 
 /** Every room is in `SCENES`: one the schedule cannot reach is one nobody
  *  arrives in. */

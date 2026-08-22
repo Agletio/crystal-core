@@ -565,8 +565,13 @@ and never in the bulk heap. The card says it with its figure in it.
       Measured on The Fissure: rung 3 is 20 common / 1 magic / 0 rare at danger
       3; rung 4 is 11 / 12 / 5 at danger 102, 28 bodies against 21, 74% rarity
       against 3%. Marked on the pip in ember BEFORE you walk into it.
-- [ ] **Phase 1c — a boss at the end of each zone.** Three, one apiece, and
-      clearing one is what opens the zone above rather than the rung count.
+- [x] **Phase 1c — a boss at the end of each zone. DONE.** THE REFRACTION (a
+      crystal crab, the Cavern) and THE FLOWERING (a fungal thing, the Rot) join
+      The Answering, each with its own body, seven states, arena and phase
+      cycle. `LADDER.zones[z].arena` is the zone's LAST rung, `arenaAt` is the
+      one read, and clearing it is what records the rung the zone above opens
+      on — so the climb has one gate and it is a fight. 600 / 2600 / 7200 life
+      and 1.4 / 3.4 / 6.2 damage up the three.
 - [ ] **Phase 1d — crystals as tier tokens.** The spine: nothing rolls and
       nothing levels until all four are held, and item tier comes off crystals
       socketed rather than off power.

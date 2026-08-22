@@ -187,8 +187,10 @@ difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 nothing written twice — and the rung is also the ZONE, composition only picking
 one for a set with no rung. The CLIMB draws it: a row a zone, a pip a rung.
 **Every fourth rung is a CHALLENGE FLOOR** — `challengeMod`, a second mod on the
-same seam — and the room fills with rares instead of stepping. Never a zone's
-last rung; that one is the boss's.
+same seam — and the room fills with rares instead of stepping. **A zone's LAST
+rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read through
+`arenaAt`), and clearing that is the whole of what opens the zone above: The
+Answering, The Refraction, The Flowering.
 
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY

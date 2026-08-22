@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -3186,7 +3186,7 @@
    }
   },
   {
-   "grid": 48,
+   "grid": 160,
    "inks": 24,
    "luma": 32,
    "sprite": "flowering",
@@ -3196,30 +3196,40 @@
    ],
    "states": {
     "idle": {
-     "group": "b26da5ac-4a9b-43be-9f6d-94b5afaaff4f"
+     "group": "b26da5ac-4a9b-43be-9f6d-94b5afaaff4f",
+     "frames": 3
     },
     "walk": {
-     "group": "78ab2f66-3ee7-45b6-a802-136f9432d038"
+     "group": "78ab2f66-3ee7-45b6-a802-136f9432d038",
+     "frames": 6,
+     "to": 0.85
     },
     "attack": {
-     "group": "7485d33b-e9c7-4d30-b47a-2cfcb5ee9035"
+     "group": "7485d33b-e9c7-4d30-b47a-2cfcb5ee9035",
+     "frames": 4
     },
     "slam": {
-     "group": "bae55eaa-50df-4dbf-9499-79cfc3ca1af0"
+     "group": "bae55eaa-50df-4dbf-9499-79cfc3ca1af0",
+     "frames": 6
     },
     "roar": {
-     "group": "4022e1b8-a586-4a52-97f3-82758b244583"
+     "group": "4022e1b8-a586-4a52-97f3-82758b244583",
+     "frames": 4,
+     "to": 0.85
     },
     "hurt": {
-     "group": "4afd166a-8136-49b2-ac12-1cff97b953d3"
+     "group": "4afd166a-8136-49b2-ac12-1cff97b953d3",
+     "frames": 3
     },
     "death": {
-     "group": "218e04fe-b8bd-44c5-90ff-47975dd81dfe"
+     "group": "218e04fe-b8bd-44c5-90ff-47975dd81dfe",
+     "frames": 4
     }
-   }
+   },
+   "stride": 1.44
   },
   {
-   "grid": 48,
+   "grid": 160,
    "inks": 24,
    "luma": 32,
    "sprite": "refraction",
@@ -3229,27 +3239,37 @@
    ],
    "states": {
     "idle": {
-     "group": "3fdc13ed-453b-4047-b0f1-6e3bc262a4f6"
+     "group": "3fdc13ed-453b-4047-b0f1-6e3bc262a4f6",
+     "frames": 3
     },
     "walk": {
-     "group": "ca5f7591-1707-4282-86d3-36bcb15091d2"
+     "group": "ca5f7591-1707-4282-86d3-36bcb15091d2",
+     "frames": 6,
+     "to": 0.8
     },
     "attack": {
-     "group": "a1d38996-94ad-447d-b65a-e85c0f61cbe6"
+     "group": "a1d38996-94ad-447d-b65a-e85c0f61cbe6",
+     "frames": 4
     },
     "slam": {
-     "group": "77df24a0-76b4-4445-b5a6-c80ee795cb75"
+     "group": "77df24a0-76b4-4445-b5a6-c80ee795cb75",
+     "frames": 6
     },
     "roar": {
-     "group": "e14c6556-7aef-4df4-936d-98f64a52d1b5"
+     "group": "e14c6556-7aef-4df4-936d-98f64a52d1b5",
+     "frames": 4,
+     "to": 0.85
     },
     "hurt": {
-     "group": "9be276d6-712b-44b7-a3bc-77d878d9fa38"
+     "group": "9be276d6-712b-44b7-a3bc-77d878d9fa38",
+     "frames": 3
     },
     "death": {
-     "group": "ed9de71e-75b7-41e3-9ef9-27c874d61efa"
+     "group": "ed9de71e-75b7-41e3-9ef9-27c874d61efa",
+     "frames": 4
     }
-   }
+   },
+   "stride": 1.3
   }
  ],
  "props": [

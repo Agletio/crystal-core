@@ -2163,10 +2163,12 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
  *  `*AtTop` is the LAST rung of the LAST zone; a rung is a share of it, so the
  *  climb is one curve rather than three. `curve` above 1 bites late. */
 export const LADDER = {
+  // `arena` is the LAST RUNG of the zone: a fight rather than a descent, and
+  // clearing it is what records the rung the zone above opens on.
   zones: [
-    { theme: 'fissure' as MapTheme, rungs: 12 },
-    { theme: 'prismatic' as MapTheme, rungs: 14 },
-    { theme: 'demonic' as MapTheme, rungs: 16 },
+    { theme: 'fissure' as MapTheme, rungs: 12, arena: 'answering_hall' },
+    { theme: 'prismatic' as MapTheme, rungs: 14, arena: 'refraction_hall' },
+    { theme: 'demonic' as MapTheme, rungs: 16, arena: 'flowering_hall' },
   ],
   lifeAtTop: 520,
   damageAtTop: 430,
@@ -2774,6 +2776,47 @@ export const BOSSES: BossDef[] = [
       { kind: 'reading', seconds: 5 },
       { kind: 'fall', seconds: 5 },
       { kind: 'split', seconds: 4 },
+    ],
+  },
+  // ONE PER ZONE, and each is the last rung of its own. Life and damage ride
+  // the Fissure's, scaled by where its zone sits on the climb — a boss you
+  // reach at rung 14 of the Cavern is fought by a character the Cavern built.
+  {
+    id: 'refraction',
+    name: 'The Refraction',
+    sprite: 'refraction',
+    herald: 'The light in the walls stops moving, and gathers.',
+    life: 2600,
+    damage: 3.4,
+    size: 5,
+    bounty: 60,
+    reinforce: { every: 6, size: 2, from: 'shardling' },
+    // Longer Falls than the Fissure's and one fewer opening: the Cavern's is
+    // fought by a build that has already answered the Answering.
+    phases: [
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 5 },
+      { kind: 'split', seconds: 4 },
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 6 },
+    ],
+  },
+  {
+    id: 'flowering',
+    name: 'The Flowering',
+    sprite: 'flowering',
+    herald: 'Everything that grew down here turns to face one way.',
+    life: 7200,
+    damage: 6.2,
+    size: 5,
+    bounty: 110,
+    reinforce: { every: 5, size: 3, from: 'flenser' },
+    phases: [
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 6 },
+      { kind: 'fall', seconds: 6 },
+      { kind: 'split', seconds: 3 },
+      { kind: 'reading', seconds: 7 },
     ],
   },
 ];
