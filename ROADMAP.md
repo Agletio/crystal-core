@@ -242,11 +242,11 @@ got. The section to read first is **FLOOR AND CEILING**, which did not exist
 before this round and is the one that says whether any of the others mean
 anything.
 
-### It owes two parked checks
+### It owes three parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — two today.**
+count and this list has to agree with it — three today.**
 
 1. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
@@ -261,8 +261,15 @@ The boss grid's MECHANISM is still a real `check` and stays one — speed answer
 it at full tier 1, a build with neither answer never does, and t2 trivialises
 it. Only the rung PLATE comes good at is parked.
 
-One more `parkedCheck` site exists and currently PASSES — every band paying more
-than the one below — so it prints a tick and counts for nothing. **Strike's
+3. **"every band pays more than the one below"** — it PASSED until the ward
+   pass, and now dips twice: `155 → 207 → 377 → 356 → 2745 → 2294 → 4383`, at
+   bands 3 and 5. Folding eight wards into three took five weak modifiers out of
+   the crystal pool, which made the average roll worth more danger and moved
+   every band's income with it. The dips are small against the noise in a
+   ten-run cell; what the pass owes is more runs per cell before deciding
+   whether the curve is actually non-monotone.
+
+**Strike's
 `baseDamage` was calibrated against the boss grid** at 80 (95 let thin tier 1
 clear it 5 times in 8; 72 left full tier 1 plate at 4/8), and that calibration
 is now against a grid whose plate row is parked, so it is worth re-deriving in
@@ -507,24 +514,29 @@ clickable for the rest of that character's life.
 
 **Say if either answer is wrong**; both are one table and one function.
 
-### The questions that STILL block it — do not guess at these
+### ALL THREE QUESTIONS ARE ANSWERED — the user's words, and what they settle
 
-1. **Do crystals roll modifiers from the moment you earn one, or only in the
-   endgame zone?** *"Once you have all 4 there should be a new zone where you can
-   begin leveling crystals, rolling mods etc"* reads as: a crystal on the ladder
-   is a plain TIER TOKEN with nothing on it, and modifiers arrive only at the
-   end. If that is right, `crystalRewards`, the whole crafting bench for crystals
-   and every finding modifier are dark for the entire first three cycles.
+1. **A crystal on the ladder is a PLAIN TIER TOKEN.** *"No can only level once
+   you get to the end so no mods."* Nothing rolls on a crystal and nothing
+   levels one until all four are held and the endgame zone is open. So
+   `crystalRewards`, the crystal bench and every finding modifier are DARK for
+   the whole of the first three cycles, deliberately — the ladder's difficulty
+   is `rungMod` and the challenge floors, and a socket is a TIER, not a roll.
 
-2. **How many challenge rooms are there — three, or twelve?** One per zone reused
-   at every cycle with the ladder's own scaling, or a distinct one per zone per
-   cycle. Three is a phase; twelve is four phases and a lot of art.
+2. **One boss at the end of each zone, and CHALLENGE FLOORS in between.** *"Let's
+   just do one at the end of each zone which will be a unique boss each time.
+   And then I also want to add like challenge floors for each zone where it's
+   just a spike in difficulty like a bunch of rares or something."* So: three
+   bosses, one per zone, each its own; plus a rung KIND that is a spike rather
+   than a step.
 
-3. **How generic is generic?** The concrete version: collapse the five
-   resistances into ELEMENTAL and OCCULT, so a crystal rolls two resistance mods
-   instead of five. Say if it should go further — one "defence" mod, one
-   "offence" mod — because `DANGER_STATS` weighs each stat by the arithmetic it
-   does, and merging two stats into one changes what danger is worth.
+3. **Generic means EVERY BUILD CARES.** *"I just don't want it to be like 90% of
+   mods are irrelevant to specific builds. So the resistance one is good to
+   combine but like just percent of damage as extra fire or something is
+   generally more danger, where like lightning resistance on monsters are
+   irrelevant to almost all builds."* The test is not "how few mods" — it is
+   whether a roll can be IGNORED. The eight per-type wards are the whole of the
+   offence; the added-damage mods and everything else already pass it.
 
 ### PERFECT BASES HAVE LANDED
 
@@ -535,9 +547,24 @@ under 3 crystals socketed, 0.40% of gear drops at three and 1.50% at four,
 lifted to 4.50% by danger 900 and saturating there. Never junked by the filter
 and never in the bulk heap. The card says it with its figure in it.
 
-### What is still NOT blocked
+### What is left, in order
 
-- **The generic crystal modifier pass**, once question 3 is answered.
+- [x] **Phase 1a — wards by FAMILY. DONE.** Eight per-type wards became three:
+      Elemental (fire, cold, lightning, prismatic), Occult (poison, dark, light)
+      and Physical. Every damage type is covered exactly once, every ward writes
+      its whole family at every tier, and the per-type roll came down by the
+      average family size so what a build FACES did not move. Measured at four
+      sockets, level 4: **4.35 ward rolls → 1.96**, and mean danger 502 → 586
+      because taking five weak modifiers out of the pool made the average roll
+      worth more. A crystal rolled before the pass keeps its retired ward and it
+      still works — a `RolledMod` carries its own lines.
+- [ ] **Phase 1b — challenge floors.** A rung KIND, not a new system: a spike
+      inside a zone that pays for itself.
+- [ ] **Phase 1c — a boss at the end of each zone.** Three, one apiece, and
+      clearing one is what opens the zone above rather than the rung count.
+- [ ] **Phase 1d — crystals as tier tokens.** The spine: nothing rolls and
+      nothing levels until all four are held, and item tier comes off crystals
+      socketed rather than off power.
 
 ---
 
@@ -592,11 +619,30 @@ that hero holding that thing rather than to the fallback. The bundle is 7.5 MB,
 
 **WHAT IS LEFT OF THIS PHASE:**
 
-- [ ] **ASK BEFORE A FOURTH.** A trade is a one-sentence idea before it is 50
-      nodes — potions as an engine, mana as one, what is in your other hand.
-      **Do not invent one.** The art is ~2,200 generations and most of a day.
+**THE FOURTH IS ANSWERED, and it changes a RULE for everybody else.** *"I think
+all characters should just not be able to dual wield and then we just have a
+trade that can dual wield lol. So make this down for future characters, no dual
+wielding except for this new character who can dual wield. Think just dark rogue
+type, hooded figure spec is all about dual wielding, one node can be a weapon
+specialist node where you can pick bonus depending on what weapon you have
+equipped? Like crit per dagger equipped, attack speed for swords etc."*
 
-**Everything else in Phase 2 is done.**
+- [ ] **DUAL WIELDING BECOMES A TRADE'S PRIVILEGE.** `fitsSlot` stops taking a
+      one-handed weapon in the off hand unless the character's trade allows it.
+      One flag on `TradeSpec`, read through ONE seam, and `handClash` empties
+      the off hand the way a two-hander already does.
+- [ ] **The rogue: body, portrait, thirteen variants, ten pairs.** ~2,200
+      generations and most of a day.
+- [ ] **A WEAPON SPECIALIST node** — one notable, a bonus that reads what is in
+      your hands: crit per dagger, attack speed per sword, and so on. That is
+      `gripOf`'s question asked of the FAMILY rather than of the arrangement,
+      so the seam already exists.
+
+**THE COST, said plainly:** thirty pair variants are already drawn — ten each
+for the Alchemist, the Aethermancer and Mahthar — and this rule makes all thirty
+unreachable. Nothing is deleted: they stay in `GENERATED`, cost ~1.5 MB of a
+7.5 MB bundle, and come back the day the rule does. **Do not regenerate them and
+do not cut them.**
 
 **Traps.** `takeUpTrade` refuses a second trade outright — it is the one hard
 lock in a game that refunds everything else, so a new trade is not something a

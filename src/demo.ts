@@ -77,6 +77,7 @@ import {
   GEAR_BASE_BY_ID,
   KEEP_GROUPS,
   KEEP_TIERS,
+  WARD_GROUPS,
   PERFECT,
   tierKeepId,
   keepGroupFor,
@@ -5000,8 +5001,10 @@ rule('THE FINALE — what is waiting at the exit?');
   // knows how many are coming before they are all out.
   const arrivals: string[] = [];
   const problems: string[] = [];
+  const seeds = [11, 13, 15];
+  let never = 0;
 
-  for (const seed of [11, 13, 15]) {
+  for (const seed of seeds) {
     const c = rollCrystal(3, pool, rng);
     const sim = new RunSim([c], makeCharacter(starterLoadout(new Rng(7), 70), 'strike'), new Rng(seed * 101));
     let started = 0;
@@ -5023,6 +5026,14 @@ rule('THE FINALE — what is waiting at the exit?');
       if (sim.state.finale) peak = Math.max(peak, live);
     }
 
+    // A RUN THAT DIED ON THE WAY is not a reading on where the finale arrives:
+    // it never arrived, and `toExit` is still its sentinel. Counted rather than
+    // dropped, so three of three skipped cannot pass as evidence of anything.
+    if (!sim.state.finale) {
+      never++;
+      arrivals.push(`seed ${seed} died before the exit`);
+      continue;
+    }
     const def = ENCOUNTERS.find((e) => e.name === sim.state.finale);
     arrivals.push(
       `${sim.state.finale} ${atStart}→${peak} of ${def?.count} at ${toExit.toFixed(1)} tiles`
@@ -5043,9 +5054,12 @@ rule('THE FINALE — what is waiting at the exit?');
 
   line(`  arrivals: ${arrivals.join(' · ')}`);
   check(
-    problems.length === 0,
-    'it comes up the hole as you near it, a wave at a time, counted whole',
-    problems.join('; ')
+    problems.length === 0 && never < seeds.length,
+    `it comes up the hole as you near it, a wave at a time, counted whole` +
+      `${never > 0 ? ` (${never} of ${seeds.length} seeds died first)` : ''}`,
+    never === seeds.length
+      ? `every seed died before the exit — nothing was measured`
+      : problems.join('; ')
   );
   check(
     ENCOUNTERS.every((e) => e.wave.size >= 1 && e.wave.every >= 0),
@@ -8317,6 +8331,116 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
     'no world pays in the same thing as another, so none of them is the correct one',
     rows.join('; ')
   );
+}
+
+// ===========================================================================
+rule('WARDS — is there a crystal roll your build can ignore?');
+
+// *"I just don't want it to be like 90% of mods are irrelevant to specific
+// builds… lightning resistance on monsters are irrelevant to almost all
+// builds."* A modifier a build walks past is a mod slot doing nothing, and one
+// ward per damage type meant seven of every eight rolls were that.
+{
+  const wards = ALL_MODS.filter(
+    (m) => m.appliesTo?.includes('crystal') && m.id.endsWith('_ward')
+  );
+  const crystalMods = ALL_MODS.filter((m) => m.appliesTo?.includes('crystal'));
+  line(`  ${crystalMods.length} crystal modifiers, ${wards.length} of them wards`);
+
+  // EVERY TYPE COVERED, and none of them twice: a type in no ward is a damage
+  // family the deep end never argues with, and one in two is weighed twice.
+  const covered = new Map<string, string[]>();
+  for (const group of WARD_GROUPS) {
+    for (const type of group.types) {
+      covered.set(type, [...(covered.get(type) ?? []), group.id]);
+    }
+  }
+  const uncovered = DAMAGE_TYPES.filter((t) => !covered.has(t.id)).map((t) => t.id);
+  const twice = [...covered].filter(([, gs]) => gs.length > 1).map(([t]) => t);
+  check(
+    uncovered.length === 0 && twice.length === 0,
+    `${WARD_GROUPS.length} families cover all ${DAMAGE_TYPES.length} damage types, each exactly once`,
+    `uncovered ${uncovered.join(', ')} · twice ${twice.join(', ')}`
+  );
+
+  // And a ward WRITES every type in its family, at every tier. A family that
+  // named four types and rolled one would read as generic and act as narrow.
+  const thin: string[] = [];
+  for (const group of WARD_GROUPS) {
+    const def = wards.find((m) => m.id === `monster_${group.id}_ward`);
+    if (!def) {
+      thin.push(`${group.id}: no modifier`);
+      continue;
+    }
+    for (const tier of def.tiers) {
+      const wrote = new Set(tier.stats.map((st) => st.stat));
+      const want = group.types.map((t: string) => monsterResStat(t));
+      if (want.some((w: string) => !wrote.has(w)) || wrote.size !== want.length) {
+        thin.push(`${def.id} ilvl ${tier.ilvl}: ${[...wrote].join(', ')}`);
+      }
+    }
+  }
+  check(thin.length === 0, 'and every ward writes its whole family at every tier', thin.join(' | '));
+
+  // THE TEST THE PASS EXISTS FOR: pick any damage type a build can deal, and
+  // some ward argues with it. Asked of the ROLLED modifier rather than of the
+  // table, so it is what a crystal actually hands the sim.
+  const blind: string[] = [];
+  for (const type of DAMAGE_TYPES) {
+    const stat = monsterResStat(type.id);
+    const answers = wards.filter((m) => m.tiers.some((t) => t.stats.some((st) => st.stat === stat)));
+    if (answers.length === 0) blind.push(type.id);
+  }
+  check(
+    blind.length === 0,
+    'so no damage type in the game is one the deep end never wards against',
+    `nothing wards ${blind.join(', ')}`
+  );
+
+  // What it came to, measured by ROLLING rather than by reading the table.
+  {
+    const pool = new ModPool(ALL_MODS);
+    for (const level of CRYSTAL_LEVELS.map((t) => t.level)) {
+      let danger = 0;
+      let rolls = 0;
+      const runs = 200;
+      for (let i = 0; i < runs; i++) {
+        const set = [0, 1, 2, 3].map((k) => rollCrystal(level, pool, new Rng(i * 97 + k * 13 + level)));
+        danger += runSet(set).rewards.danger;
+        rolls += set.flatMap((c) => c.mods).filter((m) => m.defId.endsWith('_ward')).length;
+      }
+      gauge(
+        `level ${level}: ${(rolls / runs).toFixed(2)} ward rolls in four sockets, ` +
+          `mean danger ${Math.round(danger / runs)}`
+      );
+    }
+  }
+
+  // A SAVE WRITTEN BEFORE THE PASS. A `RolledMod` carries its own stat lines,
+  // so a retired def leaves a line that still reads and still reaches the sim —
+  // it simply cannot be rolled again. Nothing to heal, and that is the finding.
+  {
+    const g = createGame('fresh');
+    const old = makeCrystal(3);
+    old.mods.push({
+      entryId: 'monster_fire_ward', defId: 'monster_fire_ward', group: '', slot: 'mod',
+      name: 'of Cinders', tier: 1, tags: ['danger'],
+      stats: [{ stat: 'monsterFireRes', form: 'inc', value: 14, tags: [] }],
+    });
+    g.crystals.push(old);
+    heal(g);
+    const kept = g.crystals.find((c) => c.id === old.id);
+    check(
+      kept?.mods.length === 1 && runSet([kept!]).rewards.danger > 0,
+      'a crystal rolled before the pass keeps its retired ward, and it still scores danger',
+      `${kept?.mods.length} mods, danger ${kept ? runSet([kept]).rewards.danger : 'gone'}`
+    );
+    check(
+      !ALL_MODS.some((m) => m.id === 'monster_fire_ward') && describeMod(kept!.mods[0]).length > 0,
+      'and it still reads, off its own lines rather than off a table row that is gone',
+      describeMod(kept!.mods[0])
+    );
+  }
 }
 
 // ===========================================================================

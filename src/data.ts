@@ -854,16 +854,21 @@ export const KEEP_TIERS: number[] = BASE_TIER_ILVL.map((_, i) => i + 1);
 // oversubscribed: more candidates than slots is what makes a roll a roll.
 
 /** A crystal's ward names the thing it turns aside, not the type by id. */
-const MONSTER_WARD_NAMES: Record<string, string> = {
-  physical: 'of Thick Hide',
-  fire: 'of Cinders',
-  cold: 'of Deep Frost',
-  lightning: 'of Earthing',
-  poison: 'of Clean Blood',
-  dark: 'of Lanterns',
-  light: 'of Long Shadow',
-  prismatic: 'of Dull Facets',
-};
+/** WARDS BY FAMILY: a ward has to be one NO BUILD CAN IGNORE, and one per type
+ *  failed that seven times in eight. Prismatic rides with Elemental. */
+/** A ward's rungs, PER TYPE — scaled down from a single-type ward's by the
+ *  average family size, so what a build actually FACES did not move. */
+export const WARD_TIERS: ReadonlyArray<readonly [number, number, number, number]> = [
+  [60, 120, 15, 19],
+  [40, 260, 10, 13],
+  [1, 620, 4, 7],
+];
+
+export const WARD_GROUPS = [
+  { id: 'elemental', name: 'of Cinders and Frost', types: ['fire', 'cold', 'lightning', 'prismatic'] },
+  { id: 'occult', name: 'of Clean Blood', types: ['poison', 'dark', 'light'] },
+  { id: 'physical', name: 'of Thick Hide', types: ['physical'] },
+];
 
 export const CRYSTAL_MODS: ModDef[] = [
   {
@@ -1022,32 +1027,24 @@ export const CRYSTAL_MODS: ModDef[] = [
       },
     ],
   },
-  // One ward per damage type, so a map can be hostile to what you deal rather
-  // than to everything at once. Uniform resistance is a wall; a named one is a
-  // reason to carry a second damage type.
-  ...DAMAGE_TYPES.map((type) => ({
-    id: `monster_${type.id}_ward`,
+  // The answer is a second damage FAMILY rather than a second element.
+  ...WARD_GROUPS.map((group) => ({
+    id: `monster_${group.id}_ward`,
     slot: 'mod' as const,
-    name: MONSTER_WARD_NAMES[type.id] ?? `of the ${type.name} Ward`,
+    name: group.name,
     appliesTo: ['crystal' as const],
     tags: ['danger'],
-    tiers: [
-      {
-        ilvl: 60,
-        weight: 120,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [40, 50] as [number, number] }],
-      },
-      {
-        ilvl: 40,
-        weight: 260,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [26, 34] as [number, number] }],
-      },
-      {
-        ilvl: 1,
-        weight: 620,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [10, 18] as [number, number] }],
-      },
-    ],
+    tiers: WARD_TIERS.map(
+      ([ilvl, weight, low, high]) => ({
+        ilvl,
+        weight,
+        stats: group.types.map((type) => ({
+          stat: monsterResStat(type),
+          form: 'inc' as const,
+          range: [low, high] as [number, number],
+        })),
+      })
+    ),
   })),
 
   // What the rock gives up, rather than what it holds. These carry no danger
@@ -3081,7 +3078,7 @@ export interface DangerStat {
 
 const ARMOUR_SATURATION = 900; // where reduction reaches the cap
 export const DANGER_STATS: Record<string, DangerStat> = {
-  // A ward is ONE type: it costs a character that deals two almost nothing.
+  // Weighed PER TYPE: what a family's ward is worth falls out of its size.
   ...Object.fromEntries(
     DAMAGE_TYPES.map((t) => [
       monsterResStat(t.id),
@@ -3092,11 +3089,8 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   monsterLife: { weight: 0.7, rewards: true },
   monsterArmour: { weight: 0.55, rewards: true, cap: ARMOUR_SATURATION },
   monsterCrit: { weight: 0.5, rewards: true, cap: 100 }, // a chance saturates at certain
-  // Unchanged at 0.9 from when this was a conversion, and deliberately: the
-  // arithmetic is the same either way — a hit is still multiplied by
-  // (1 + share/100) — and what moved is only that the share now lands as its
-  // own type on TOP of the monster's rather than replacing the whole hit. That
-  // makes it harder to answer, not easier, so nothing here comes down.
+  // 0.9, and it does not come down: added damage still multiplies a hit by
+  // (1 + share/100), and landing as its OWN type is harder to answer.
   ...Object.fromEntries(
     ADDED_DAMAGE_STATS.map((stat) => [stat, { weight: 0.9, rewards: true }])
   ),
