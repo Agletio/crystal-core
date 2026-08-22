@@ -3513,6 +3513,244 @@
      "group": "d6d03083-1294-45e3-abf5-81b1e06ffbf7"
     }
    }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_shield",
+   "character": "094d722f-13f8-4b7b-8934-0a552f28957a",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "b552572c-0df0-43b2-be4d-a8c1c23ac584"
+    },
+    "walk": {
+     "group": "7449fea2-47ad-4b08-a87b-9ca13ac7c5b6"
+    },
+    "attack": {
+     "group": "b7fe7ec5-ca06-42a6-8ec3-799d9f959eff"
+    },
+    "cast": {
+     "group": "dee99474-d649-45eb-994c-cb11898f70d9"
+    },
+    "death": {
+     "group": "b979509e-2395-421c-a435-6f7d1fb35da1"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword_shield",
+   "character": "438cd0f3-498b-47ef-b4b0-61ac65de515e",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "adcc2f02-b4c4-4ba4-8a12-835996a59114"
+    },
+    "walk": {
+     "group": "72e0f5ac-e203-4a79-a4a0-823e4f27e22a"
+    },
+    "attack": {
+     "group": "8367c95f-a31c-41b8-90e4-775d8112a41e"
+    },
+    "cast": {
+     "group": "a8dee651-d2aa-4e00-839f-b4e597812c03"
+    },
+    "death": {
+     "group": "5a1cba64-7f9d-4bd7-ac66-4819c906dd77"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword_sword",
+   "character": "c42c0474-8926-4aa6-9c34-d6a03560419c",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword_dagger",
+   "character": "4c47a573-fcfb-44bb-9a46-30c58b566323",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword_mace",
+   "character": "533f77a8-1b79-404b-8389-a8834db3866f",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword_wand",
+   "character": "74e45bd9-8610-4757-aa3d-e7f59200d037",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_dagger_dagger",
+   "character": "9d3525e3-6197-4d3f-9e78-05df8fc91aa3",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_dagger_mace",
+   "character": "1f364adf-b6f9-48ff-86b0-1203646f61ba",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_dagger_wand",
+   "character": "0a6041bb-97bc-488c-a6be-5299ffd0a3df",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_mace_mace",
+   "character": "0795b4db-473d-40dc-94e9-866a2f3467ca",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_mace_wand",
+   "character": "e100b6b4-df6e-4c94-bdc6-5acdce16ee12",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_wand_wand",
+   "character": "5ebeb96d-32b0-4d19-bc7b-c5e5d46eb50d",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {},
+    "walk": {},
+    "attack": {},
+    "cast": {},
+    "death": {}
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_dagger_shield",
+   "character": "7f8dbcbe-9c93-48e6-ae25-48d0ef7fe51c",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "f040b449-0af4-46a8-ad96-29356c37a40b"
+    },
+    "walk": {
+     "group": "24bce5e8-f8ff-4687-a97d-1aaf03a5c8a2"
+    },
+    "attack": {
+     "group": "1d3d9945-4a01-4b85-a40a-0d73515ea3fa"
+    },
+    "cast": {
+     "group": ""
+    },
+    "death": {
+     "group": ""
+    }
+   }
   }
  ],
  "props": [

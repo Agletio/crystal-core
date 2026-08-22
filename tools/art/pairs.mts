@@ -3,7 +3,6 @@
  *
  *   npx tsx tools/art/pairs.mts plan            what is missing, and nothing else
  *   npx tsx tools/art/pairs.mts dress [sprite]  the states that have no character yet
- *   npx tsx tools/art/pairs.mts seed            rows in generated.json to animate into
  *
  * Ten unordered pairs of the four one-handed families, twice over. A pair is
  * the `_off` row for one weapon layered onto the variant that already holds the
@@ -47,32 +46,12 @@ const NOUN: Record<string, string> = { sword: 'sword', dagger: 'dagger', mace: '
 
 const [command, ...only] = process.argv.slice(2);
 
-/** A row in `generated.json` to animate INTO, carrying the parent variant's own
- *  sampling — the grid, the inks, the stride and each state's kept window are
- *  what a human judged of the same man in the same states, and a pair changes
- *  only what is in his hands. `group` is left empty: it is the server's to say. */
+// Seeding `generated.json` rows to import into is `variant.mts manifest <hero>`,
+// which does singles and pairs off ONE rule: a variant carries its parent's own
+// sampling. Two seeders was one of them being wrong.
 if (command === 'seed') {
-  const madePath = here('generated.json');
-  const made = JSON.parse(readFileSync(madePath, 'utf8')) as { bodies: any[] };
-  for (const { hero, a, b } of pairs) {
-    const sprite = `${hero}_${a}_${b}`;
-    const row = find(sprite);
-    if (!row?.character) continue;
-    const parent = made.bodies.find((x) => x.sprite === `${hero}_${a}`);
-    if (!parent) throw new Error(`${sprite}: ${hero}_${a} has never been imported`);
-    const already = made.bodies.find((x) => x.sprite === sprite);
-    const states: Record<string, unknown> = {};
-    for (const [name, state] of Object.entries(parent.states as Record<string, any>)) {
-      const { group, ...judged } = state;
-      states[name] = { ...judged, ...(already?.states?.[name]?.group ? { group: already.states[name].group } : {}) };
-    }
-    const seeded = { ...parent, sprite, character: row.character, states };
-    if (already) Object.assign(already, seeded);
-    else made.bodies.push(seeded);
-    console.log(`${sprite}: seeded off ${parent.sprite}`);
-  }
-  writeFileSync(madePath, `${JSON.stringify(made, null, 1)}\n`);
-  process.exit(0);
+  console.log('use: npx tsx tools/art/variant.mts manifest <hero>');
+  process.exit(1);
 }
 
 for (const { hero, a, b } of pairs) {

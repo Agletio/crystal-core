@@ -4,6 +4,7 @@
  *   npx tsx tools/art/variant.mts check                  every variant, against its row
  *   npx tsx tools/art/variant.mts write <sprite> [...]   rewrite those rows in bodies.json
  *   npx tsx tools/art/variant.mts seed <hero>            the thirteen rows a hero carries
+ *   npx tsx tools/art/variant.mts manifest <hero>        rows to IMPORT into, off his own
  *
  * A variant is one hero holding one weapon, and there are 26 over two heroes.
  * Its five states are the BASE body's states with the weapon named in them, so
@@ -137,6 +138,47 @@ if (command === 'seed') {
   process.exit(0);
 }
 
+/**
+ * A row in `generated.json` to import INTO, carrying its parent's own sampling
+ * — the grid, the inks, the stride, the luma and each state's kept window are
+ * what a human judged of the same man in the same states, and a variant changes
+ * only what is in his hands. A PAIR takes the variant holding its main weapon;
+ * everything else takes the bare body. `group` is left to `record.mts`: an id
+ * is the server's to say, and one already there is kept.
+ */
+if (command === 'manifest') {
+  const hero = only[0];
+  const madePath = here('generated.json');
+  const made = JSON.parse(readFileSync(madePath, 'utf8')) as { bodies: any[] };
+  const mine = book.bodies.filter((b) => b.sprite.split('_')[0] === hero && b.sprite.includes('_'));
+  for (const row of mine) {
+    if (!row.character) {
+      console.log(`${row.sprite}: not dressed yet`);
+      continue;
+    }
+    const parts = row.sprite.split('_');
+    // `<hero>_<a>_<b>` where b is a WEAPON is a pair; `_shield` is not one.
+    const pair = parts.length === 3 && parts[2] !== 'shield';
+    const parent = made.bodies.find(
+      (x) => x.sprite === (pair ? `${hero}_${parts[1]}` : hero)
+    );
+    if (!parent) throw new Error(`${row.sprite}: nothing to sample off`);
+    const already = made.bodies.find((x) => x.sprite === row.sprite);
+    const states: Record<string, unknown> = {};
+    for (const [name, state] of Object.entries(parent.states as Record<string, any>)) {
+      const { group, ...judged } = state;
+      const held = already?.states?.[name]?.group;
+      states[name] = { ...judged, ...(held ? { group: held } : {}) };
+    }
+    const seeded = { ...parent, sprite: row.sprite, character: row.character, states };
+    if (already) Object.assign(already, seeded);
+    else made.bodies.push(seeded);
+    console.log(`${row.sprite}: sampled off ${parent.sprite}`);
+  }
+  writeFileSync(madePath, `${JSON.stringify(made, null, 1)}\n`);
+  process.exit(0);
+}
+
 const variants = book.bodies.filter((b) => b.sprite.includes('_') && (b.weapon || b.off));
 
 if (command === 'check') {
@@ -165,5 +207,5 @@ if (command === 'check') {
   }
   writeFileSync(here('bodies.json'), `${JSON.stringify(book, null, 1)}\n`);
 } else {
-  console.log('check | write <sprite> [sprite ...]');
+  console.log('check | write <sprite> [...] | seed <hero> | manifest <hero>');
 }
