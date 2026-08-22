@@ -451,6 +451,49 @@ not add a check that fails on one.
 
 ---
 
+## Phase 0 — THE CRIT REWORK, AMBUSH, AND OBRETH'S WEAPONS
+
+**Asked for after Phase 1 landed, so it is FIRST.** Four things, in his words,
+and the task list mirrors them.
+
+1. **Obreth's idle has one bad frame** — *"he brings his arms back behind his
+   body and it looks super weird, probably just delete that frame."* Narrow the
+   kept window on `obreth.states.idle` in `generated.json` and re-import. Free.
+
+2. **NO MORE PINNED WEAPONS.** *"The rogue also just has a weapon pasted on
+   instead of actual regens like all the other characters. We do not paste
+   weapons on anymore. Redo the rogue so it has actual animations."* He has a
+   body and no variants, so `pinnedFor` pastes a weapon at his fist. Draw the
+   13 variants (`dressbody.sh obreth`) and the 10 pairs (`pairs.mts`, add
+   `obreth` to `HEROES`). ~2,200 generations — run it in the BACKGROUND.
+   **Done when `THE ROSTER` reports 23 of 23 for obreth.**
+
+3. **CRIT MOVES ONTO THE SKILL.** *"Make skills have a base crit chance so it
+   can be easier or harder to get crit capped. Then convert all mods on gear
+   related to crit to be % increased crit chance, so if you have base 10% crit
+   and 100% increased crit chance you get 20%. You can keep the flat % to base
+   crit increases in the skill tree."*
+   - `SkillDef.critChance` is the base, replacing `HERO_BASE.critChance`.
+   - Every GEAR mod that adds flat crit becomes an INCREASE.
+   - The TREE keeps flat, and flat adds to BASE before the increase multiplies:
+     `(skillBase + flat) * (1 + increased/100)`, one seam in `heroStats`.
+   - Watch a dagger's flat `critChance` implicit and the rogue's Weapon
+     Specialist: both are base-adders, not increases.
+
+4. **A NEW MAIN SKILL: AMBUSH.** *"Teleport behind a target from a medium range
+   and have high base crit, single target."* The delivery is new, so it earns a
+   `SKILL_BEHAVIOURS` entry. Its own tree, icon, `MAIN_SKILLS` and shelf row.
+   - **And one node:** *"When you crit it immediately teleports to another
+     target and attacks again — prioritise other targets but can be the same
+     target if there are no others. It can chain if it hits different targets
+     every time, but not if it triggers on the same one, so single target you
+     just get the double hit. Don't have it actually be instant, give it a
+     slight delay so you can tell when it triggers."*
+   - **That rule is the termination proof**: a chain is bounded by the number
+     of distinct bodies, because a repeat ends it. Write it down as such.
+
+---
+
 ## Phase 1 — THE LADDER: what a crystal is for, and where difficulty comes from
 
 **This replaces the spine of the game**, so it is written down before a line of
