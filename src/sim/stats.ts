@@ -30,6 +30,9 @@ import {
   OFF_SLOT,
   DUAL,
   UNIQUE_BY_ID,
+  LADDER,
+  LADDER_RUNGS,
+  rungsBelow,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
@@ -455,6 +458,36 @@ export function trialMod(character: Character): RolledMod | null {
     tier: 1,
     tags: [],
     stats: stats.map((s) => ({ ...s, tags: s.tags ?? [] })),
+  };
+}
+
+/** A RUNG as ONE synthetic mod, beside `trialMod` and `treeMod` — the whole of
+ *  where difficulty comes from before anything is socketed. It rides the
+ *  crystal seam on purpose: `crystalRewards` scores these like any other stats,
+ *  so a harder rung pays more and drops better with nothing written twice. */
+export function rungMod(zone: number, rung: number): RolledMod | null {
+  if (rung <= 0) return null;
+  const at = LADDER_RUNGS > 1 ? rungsBelow(zone, rung) / (LADDER_RUNGS - 1) : 0;
+  const up = Math.pow(at, LADDER.curve);
+  const stats: RolledMod['stats'] = (
+    [
+      ['monsterLife', LADDER.lifeAtTop],
+      ['monsterDamage', LADDER.damageAtTop],
+      ['packSize', LADDER.packAtTop],
+    ] as const
+  )
+    .map(([stat, top]) => ({ stat, form: 'inc' as const, value: Math.round(top * up), tags: [] }))
+    .filter((line) => line.value > 0);
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'rung',
+    defId: 'rung',
+    group: 'rung',
+    slot: 'rung',
+    name: 'The climb',
+    tier: 1,
+    tags: [],
+    stats,
   };
 }
 

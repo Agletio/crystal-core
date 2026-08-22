@@ -2147,6 +2147,32 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
  *  defence MULTIPLIES — that build stopped 88% of every hit on 1813 life and
  *  out-REGENERATED the whole map. Read off what danger alone BUYS, so it
  *  saturates where the hero's item level does. */
+/** THE LADDER, in order. A RUNG is CHOSEN — one you have cleared stays open and
+ *  failing costs nothing but time — and its difficulty rides the crystal seam
+ *  through `rungMod`, so what it pays and drops is arithmetic already written.
+ *  `*AtTop` is the LAST rung of the LAST zone; a rung is a share of it, so the
+ *  climb is one curve rather than three. `curve` above 1 bites late. */
+export const LADDER = {
+  zones: [
+    { theme: 'fissure' as MapTheme, rungs: 12 },
+    { theme: 'prismatic' as MapTheme, rungs: 14 },
+    { theme: 'demonic' as MapTheme, rungs: 16 },
+  ],
+  lifeAtTop: 520,
+  damageAtTop: 430,
+  packAtTop: 55,
+  curve: 1.8,
+};
+
+/** Rungs below this one across the WHOLE ladder. */
+export function rungsBelow(zone: number, rung: number): number {
+  let below = 0;
+  for (let z = 0; z < zone; z++) below += LADDER.zones[z]?.rungs ?? 0;
+  return below + Math.max(0, rung - 1);
+}
+
+export const LADDER_RUNGS = LADDER.zones.reduce((n, z) => n + z.rungs, 0);
+
 export const DANGER = {
   lifeAtTop: 10, // what the top of the curve adds to a body's life
   hitAtTop: 14, //  and to its hit

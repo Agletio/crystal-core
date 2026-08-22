@@ -334,6 +334,9 @@ export interface RunOptions {
   /** SOMEBODY TO FIND: a `SceneDef` id and the sprite. Placed in the room
    *  FURTHEST from the way in, never rolled — a draw moves every roll after it. */
   meets?: { id: string; sprite: string };
+  /** WHICH RUNG this is, which is where difficulty comes from. The sim is told;
+   *  nothing in `src/sim` decides how far up the ladder anybody is. */
+  rung?: { zone: number; rung: number };
   /** Props the GAME decides on top of the scene's own: full or empty sockets. */
   dressing?: { id: string; x: number; y: number }[];
 }
@@ -520,7 +523,7 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
-    this.set = runSet(crystals, trialMod(character));
+    this.set = runSet(crystals, trialMod(character), options.rung);
     this.wellChance = percentStat(this.set.mods, 'wellChance');
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;

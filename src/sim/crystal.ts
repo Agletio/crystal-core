@@ -8,12 +8,13 @@ import {
   DROP_GROUPS,
   FAMILY_BY_ID,
   FAMILY_YIELD,
+  LADDER,
   MONSTER_FAMILIES,
   POWER,
   REWARD,
   bandFor,
 } from '../data';
-import { dropBias } from './stats';
+import { dropBias, rungMod } from './stats';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
@@ -130,9 +131,19 @@ export interface RunSet {
   pays: { gold: number; currency: number; rarity: number };
 }
 
-export function runSet(crystals: Item[], standing?: RolledMod | null): RunSet {
-  // The trials web, as one mod. Optional: a measured SET carries no walked web.
-  const mods = [...crystals.flatMap((c) => c.mods), ...(standing ? [standing] : [])];
+export function runSet(
+  crystals: Item[],
+  standing?: RolledMod | null,
+  at?: { zone: number; rung: number } | null
+): RunSet {
+  // The trials web and the RUNG, each as one mod. Both optional: a measured SET
+  // carries no walked web and sits at the bottom of the climb.
+  const rung = at ? rungMod(at.zone, at.rung) : null;
+  const mods = [
+    ...crystals.flatMap((c) => c.mods),
+    ...(standing ? [standing] : []),
+    ...(rung ? [rung] : []),
+  ];
   const rewards = crystalRewards(mods);
   const power = Math.min(
     POWER.max,
@@ -148,7 +159,9 @@ export function runSet(crystals: Item[], standing?: RolledMod | null): RunSet {
     power,
     band: bandFor(power),
     composition: share,
-    theme: mapTheme(share),
+    // THE RUNG IS THE ZONE. Composition still picks one for anything with no
+    // rung — a measured set, a harness — but a climb says where it is.
+    theme: (at ? LADDER.zones[at.zone]?.theme : undefined) ?? mapTheme(share),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),

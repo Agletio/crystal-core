@@ -51,6 +51,8 @@ export interface Character {
   /** Trials done, in the order they were done. Its LENGTH is the point budget
    *  for the trials web — a second counter is a number that can disagree. */
   trials: string[];
+  /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
+  climbed: Record<string, number>;
   /** Nodes walked on the trials web. */
   trialAllocated: string[];
   /** Trials node id -> the option taken on it, for nodes that offer one. */
@@ -124,6 +126,7 @@ export function makeCharacter(
     trade: null,
     tradeAllocated: [],
     trials: [],
+    climbed: {},
     trialAllocated: [],
   };
 }
