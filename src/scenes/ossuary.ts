@@ -12,7 +12,7 @@ export const OSSUARY: SceneDef = {
   theme: 'demonic', // his world, and the only one a specimen comes out of
   said: OSTEOMANCER.seen,
   greets:
-    'Do not step there. Do NOT — thank you. Thank you. Half of that was still in order. I will be up top if you find one that came apart right.',
+    'Mind your feet. MIND — thank you. Half of that was still in order and I have been at it since the lamp was lit. Bring me something that came apart right and I will be up top.',
   idles:
     'Nothing on you. Nothing at all. Go down and bring me something that came apart RIGHT, and then we will talk.',
   beats: OSTEOMANCER.beats,

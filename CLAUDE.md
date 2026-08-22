@@ -198,17 +198,23 @@ takes.
 keeps going until you die, your bag fills, someone is waiting at the mouth, or
 you say so. All five end on the same report and open the same dock.
 
-**THERE ARE NO ROOMS, and a person is FOUND IN A DESCENT.** *"Honestly just
+**THERE ARE NO ROOMS, and a person is FOUND IN THEIR OWN ZONE.** *"Honestly just
 ditch all the rooms. I want to encounter them randomly in the maps and they
-just say like one thing thanking you for saving them… then they can be in the
-camp and you can just talk to them."* One unmet person stands in the room
-furthest from the way in, at `MEET_CHANCE` a descent — placed with NO draw, so
+just say like one thing… then they can be in the camp and you can just talk to
+them."* `SceneDef.theme` is where somebody LIVES and they are only ever found
+there — a man who turns up in every world lives in none. One unmet person from
+THAT zone stands in the room furthest from the way in, at `MEET_CHANCE` a
+descent — placed with NO draw, so
 whether somebody is down there cannot move a single roll — and walking past
 them is the whole meeting: `SceneDef.greets` goes into the log, nothing stops,
 and they stand there for the rest of the run. Afterwards they are in the camp,
 and clicking them runs `SceneDef.beats` and then whatever they are FOR: the
 Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's
-benches. **The one `plan` left is the ANSWERING HALL**, because a boss fight
+benches. **A MARK over the head says somebody is holding something** — `wants()`
+in `src/ui/talk.ts`, the same question `offer` answers, asked before the
+conversation instead of after — so a picture is never swept for the one person
+whose mind has changed. Nobody is being RESCUED: they live down there, and
+`greets` says so. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
 **Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is

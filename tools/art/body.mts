@@ -337,12 +337,22 @@ if (command === 'design') {
       into ??= got;
       console.log(`${name}/${facing}: ${got}`);
     }
-    // Written back like a prop's, or a re-roll leaves the shipped row pointing
-    // at the group it meant to REPLACE. The author's sampling is kept.
+    // Written back like a prop's, or a re-roll points the shipped row at the
+    // group it meant to REPLACE. A MISSING ROW IS SEEDED rather than skipped: a
+    // body DRESSED into a variant never went through `rotate`, so it has a
+    // character and no row, and skipping threw away 65 ids already billed for.
     if (into) {
       const now = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as typeof shipped; // re-read: a stale snapshot reverts what was edited mid-run
-      const row = now.bodies.find((b: { sprite: string }) => b.sprite === sprite);
-      const state = row?.states?.[name];
+      let row = now.bodies.find((b: { sprite: string }) => b.sprite === sprite);
+      if (!row) {
+        row = {
+          grid: 48, inks: 24, sprite, character,
+          dirs: [body!.face ?? asks.face],
+          states: Object.fromEntries(Object.keys(body!.states).map((n) => [n, { group: '' }])),
+        } as never;
+        now.bodies.push(row as never);
+      }
+      const state = row!.states?.[name];
       if (state) {
         state.group = into;
         writeFileSync(here('generated.json'), `${JSON.stringify(now, null, 1)}\n`);

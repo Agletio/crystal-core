@@ -29,7 +29,7 @@ import { RUN_SLOTS } from '../data';
 import { folkMet } from '../game/scenes';
 import { crystalIcon } from './icons';
 import { showTooltip, hideTooltip } from './tooltip';
-import { syncTalk } from './talk';
+import { syncTalk, wants } from './talk';
 import type { GameState } from '../game/state';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -88,7 +88,7 @@ export function initCamp(
 /** One button per rectangle. A hotspot is a BUTTON rather than a hit test on a
  *  canvas: a keyboard reaches it, a screen reader names it, and the hover is
  *  the game's own tooltip like everywhere else. */
-function mount(spot: Hotspot, host = 'camp-hotspots'): void {
+function mount(spot: Hotspot, host = 'camp-hotspots'): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.className = 'camp__hot';
   btn.id = `camp-${spot.id}`;
@@ -105,6 +105,7 @@ function mount(spot: Hotspot, host = 'camp-hotspots'): void {
   btn.onpointerenter = (event) => showTooltip(says(spot), event.clientX, event.clientY);
   btn.onpointerleave = () => hideTooltip();
   $(host).append(btn);
+  return btn;
 }
 
 /** A PERSON is a hotspot too, and theirs moves: it is wherever their body was
@@ -115,7 +116,7 @@ function mountFolk(): void {
   folkMet(game).forEach((def, i) => {
     const grid = (GENERATED[def.who]?.grid ?? 32) * CAMP_HERO_SCALE;
     const at = CAMP_SPOTS[i % CAMP_SPOTS.length];
-    mount(
+    const btn = mount(
       {
         id: `who-${def.id}`,
         x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
@@ -124,6 +125,15 @@ function mountFolk(): void {
       },
       'camp-folk'
     );
+    // A MARK over the head of anybody holding something for you, so a picture
+    // never has to be swept for the one person who has changed his mind.
+    if (wants(def)) {
+      const mark = document.createElement('span');
+      mark.className = 'camp__mark';
+      mark.id = `camp-mark-${def.id}`;
+      mark.textContent = '!';
+      btn.append(mark);
+    }
   });
 }
 

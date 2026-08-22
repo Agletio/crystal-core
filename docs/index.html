@@ -1398,6 +1398,19 @@
     outline: none;
   }
   .camp__hot:active { background: radial-gradient(closest-side, rgba(252,222,111,.32), transparent); }
+  /* SOMEBODY WANTS YOU: over the head, and the only thing on the picture that
+     moves without the wind. It takes no pointer of its own, so the click still
+     lands on the person underneath it. */
+  .camp__mark {
+    position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
+    font-family: var(--display); font-size: 20px; line-height: 1;
+    color: var(--citrine); text-shadow: 0 0 6px rgba(0,0,0,.9), 0 2px 0 rgba(0,0,0,.8);
+    pointer-events: none; animation: campmark 1.6s ease-in-out infinite;
+  }
+  @keyframes campmark {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+  }
 
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over

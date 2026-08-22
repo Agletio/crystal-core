@@ -8174,6 +8174,15 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       // Every person has the ONE line, or they are met in silence.
       const mute = SCENES.filter((s) => !s.encounter && !s.greets).map((s) => s.id);
       check(mute.length === 0, 'and every one of them has a line to say where you find them', mute.join(', '));
+      // IN THEIR OWN ZONE. `theme` is where somebody LIVES, and a man who turns
+      // up in every world lives in none — so every zone that holds anybody has
+      // to be a zone the game can actually build.
+      const homeless = SCENES.filter(
+        (s) => !s.encounter && !MAP_THEMES.some((t) => t.id === s.theme)
+      ).map((s) => `${s.id}@${s.theme}`);
+      check(homeless.length === 0, 'and a zone of their own to be found in', homeless.join(', '));
+      const zones = new Set(SCENES.filter((s) => !s.encounter).map((s) => s.theme));
+      line(`  ${SCENES.filter((s) => !s.encounter).length} people across ${zones.size} zones`);
       // And something to say in the camp both ways round: what they WANT, and
       // one standing line for when they want nothing. Without the second,
       // every visit is a demand and the camp reads as a row of shops.

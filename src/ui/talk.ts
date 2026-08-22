@@ -56,6 +56,15 @@ export function syncTalk(): void {
 
 export const isTalking = (): boolean => !$('speech').hidden;
 
+/** WHETHER THEY WANT YOU. What the mark over their head is for: something to
+ *  hand over, a key owed, or a bench you are carrying the relic for. The same
+ *  question `offer` answers, asked before the conversation instead of after. */
+export function wants(def: SceneDef): boolean {
+  if (def.id === LAMPWRIGHT.scene) return giftWaiting(game) !== null;
+  if (def.gives) return keyOwed(game, def);
+  return relicFor(game, def.id) !== null;
+}
+
 /** What they are FOR. At most one is ever true, so nothing chooses. */
 function offer(def: SceneDef): void {
   // A KEY, once and in person. What it opens is the fifth socket's business.

@@ -2712,6 +2712,19 @@ assert(
   // there is somebody standing there to click.
   const who = [...document.querySelectorAll('#camp-folk .camp__hot')];
   assert(who.length > 0, 'everybody the kit has met is standing in the camp', String(who.length));
+  // A MARK over anybody holding something for you. The kit carries a specimen,
+  // so the man who wants one is wearing it and nobody else is.
+  const marked = [...document.querySelectorAll('#camp-folk .camp__mark')];
+  assert(marked.length > 0, 'and a mark over whoever has something for you', String(marked.length));
+  assert(
+    marked.length < who.length,
+    'but not over everybody, or it says nothing at all',
+    `${marked.length} of ${who.length}`
+  );
+  assert(
+    marked.every((m) => window.getComputedStyle(m).pointerEvents === 'none'),
+    'and the mark takes no pointer, so the click still lands on the person'
+  );
   who[0].click();
   assert($('speech').hidden === false, 'and clicking one starts them talking');
   assert(

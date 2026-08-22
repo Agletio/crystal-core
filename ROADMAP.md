@@ -6,14 +6,17 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**ONE PHASE IS WAITING and it is BLOCKED on a question**: more characters, which
-the user asked for in the same breath as dual wielding — *"We also need to add a
-few more characters so we are going to end up well into the 10s of thousands of
-gens."* What a character IS here is a TRADE, and a trade is a body, a roster of
-weapon variants and a 45-node web whose every notable changes a RULE. The art is
-arithmetic; **the web is not, and open question 9 says the user wants trades
-reworked with no spec.** Ask before spending. The quest log after it is parked
-by his word until a start with nothing explaining it has been played.
+**PHASE 1 IS THE LADDER and it is BLOCKED on five questions**, all written into
+the phase. It replaces the spine of the game — composition choosing the zone,
+sockets being length and difficulty, item tier coming off power — so it is not
+something to start halfway. Two pieces of it are NOT blocked and can go first:
+Perfect items, and the generic-crystal-modifier pass.
+
+**Phase 2 is more characters, and it is HALF DONE.** Mahthar's body and all
+thirteen weapon variants are drawn, animated and shipped; what is left is his
+own trade web (the shape is settled now) and the ten dual-wield pairs. The quest
+log after it is parked by the user's word until a start with nothing explaining
+it has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
@@ -439,7 +442,90 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — More characters
+## Phase 1 — THE LADDER: what a crystal is for, and where difficulty comes from
+
+**This replaces the spine of the game**, so it is written down before a line of
+it is built. The user's design, in his own words:
+
+*"A set amount of clears that progressively get harder until you reach a final
+challenge room for that floor type. It can be a boss, a bunch of rares, whatever
+but it's hard. Once you beat it you progress to the next zone… First run t1 only
+clear fissure, then prismatic, then demonic, then a boss then get a crystal.
+Maybe 10-20 clears per zone before you progress each one getting harder to where
+by the time you get to demonic you need a smart build and well rolled gear in all
+your slots. Repeat again for t2 and second crystal, t3 and third crystal… Once
+you have all 4 there should be a new zone where you can begin leveling crystals,
+rolling mods etc and this final zone can be just an amalgamation of all the
+zones enemies, it can be randomly stylized… It should drop the strongest gear,
+uniques that only drop there etc."*
+
+Plus: **Perfect items** — a normal base with implicits 25% higher, t3 only, only
+at 3 crystals socketed, rarer than rare and a little less so at 4; **danger
+raises the odds of one**. And: **crystal modifiers get more generic** — *"instead
+of like just fire resistance make them have occult and elemental resistance or
+something. Having so many very niche mods is cool on gear but on crystals it just
+means most of them you can ignore."*
+
+### What this DELETES, and it is most of the current spine
+
+Nothing below is a small edit. Written out so nobody starts and discovers it:
+
+- **Composition stops choosing the zone.** `mapTheme` reads the whole socketed
+  set today; the ladder says which zone you are in.
+- **Sockets stop being length and difficulty.** `RUN_SLOTS`, `socketSize`,
+  `POWER` (sockets + danger), `crystalRewards` and `DANGER_STATS` all read a set
+  that no longer exists in the first playthrough at all.
+- **Item tier stops coming off power.** `DROP_BANDS[power].ilvl` against
+  `BASE_TIER_ILVL` is the whole drop ladder, and the ask replaces it with
+  crystals socketed. That was open question 12, and this answers it.
+- **The fifth socket and the boss key** were the tier gate. The ladder is now.
+- **`CRYSTAL_LEVELS` / `CRYSTAL_XP` are endgame-only**, since nothing levels a
+  crystal until all four are in.
+- **`FAMILY_YIELD` and the family-as-a-look rule**: families become a LADDER
+  (Fissure, then Prismatic, then Demonic), which reverses *"a family decides
+  WHICH monsters you fight and nothing about how hard they are"* and retires the
+  two Normal-only uniques written to give Normal its reason.
+
+### The questions that BLOCK it — do not guess at these
+
+1. **Where does difficulty come from during the first ladder, before any crystal
+   exists?** Nothing is socketed, so there is no danger, no modifiers and no
+   power. Is a clear's difficulty a fixed curve off *"how many clears into this
+   zone you are"*, and if so what moves — monster life and hit like `dangerStep`,
+   or pack size, or the zone's own floor? This decides whether `RunSet` is
+   rebuilt or has a second source bolted beside it, and it is the single largest
+   fork in the work.
+
+2. **Do crystals roll modifiers from the moment you earn one, or only in the
+   endgame zone?** *"Once you have all 4 there should be a new zone where you can
+   begin leveling crystals, rolling mods etc"* reads as: a crystal on the ladder
+   is a plain TIER TOKEN with nothing on it, and modifiers arrive only at the
+   end. If that is right, `crystalRewards`, the whole crafting bench for crystals
+   and every finding modifier are dark for the entire first three cycles.
+
+3. **How many challenge rooms are there — three, or twelve?** One per zone reused
+   at every cycle with the ladder's own scaling, or a distinct one per zone per
+   cycle. Three is a phase; twelve is four phases and a lot of art.
+
+4. **Does the ladder belong to the CHARACTER or the account?** Everything else
+   that progresses (trials, trade, levels) is per character.
+
+5. **How generic is generic?** The concrete version: collapse the five
+   resistances into ELEMENTAL and OCCULT, so a crystal rolls two resistance mods
+   instead of five. Say if it should go further — one "defence" mod, one
+   "offence" mod — because `DANGER_STATS` weighs each stat by the arithmetic it
+   does, and merging two stats into one changes what danger is worth.
+
+### What is NOT blocked and can be built first
+
+- **Perfect items.** `GearBase.implicit` at 1.25x, an `Item.meta.perfect` flag,
+  a roll gated on crystals socketed and lifted by danger, and the item card
+  saying so. It touches `makeGear` and nothing else, and it is testable alone.
+- **The generic crystal modifier pass**, once question 5 is answered.
+
+---
+
+## Phase 2 — More characters
 
 **The user's ask, in full:** *"We also need to add a few more characters so we
 are going to end up well into the 10s of thousands of gens."* He is right about
@@ -502,7 +588,7 @@ and its web changes rules the other two do not.
 
 ---
 
-## Phase 2 — A quest log instead of a pointing finger
+## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually

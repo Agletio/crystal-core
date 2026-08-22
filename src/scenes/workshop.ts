@@ -12,6 +12,6 @@ export const WORKSHOP: SceneDef = {
   theme: 'fissure', // a working, and it is the shallow end's
   said: LAMPWRIGHT.seen,
   greets:
-    'Put it down, put it down — I am not one of them. I have been holding this lantern up for eleven hours. Walk me out and I will make it worth the trip.',
+    'Do not put it out. Do NOT — thank you. That is eleven hours of lamp and I am not walking back up in the dark. I keep a bench at the top; come and find me.',
   encounter: null,
 };

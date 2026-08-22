@@ -2379,6 +2379,461 @@
     }
    },
    "stride": 1.15
+  },
+  {
+   "sprite": "mahthar_sword",
+   "character": "040562c9-07f4-4cd8-9d28-9fb2966a2115",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "0815c4b7-0149-4f7a-b7dc-22acdb3e9931",
+     "frames": 2
+    },
+    "walk": {
+     "group": "4d634b95-d34a-4402-a5dd-43c35926a9f6",
+     "frames": 6
+    },
+    "attack": {
+     "group": "c1cacb2c-e3b5-43b9-a4ef-63cd71f5d8fc",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "6d6202af-a136-4cb9-abac-f390edf9ec5f",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "e8a645b2-e3c9-486c-8a90-093d36488955",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword2h",
+   "character": "95f58851-98d0-454d-8e56-4b7dd28ac9bd",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "ebacc599-6766-47a4-9416-11eedf94c137",
+     "frames": 2
+    },
+    "walk": {
+     "group": "93579320-8fe2-4629-9e4b-908ea26f6406",
+     "frames": 6
+    },
+    "attack": {
+     "group": "846b2b55-c90b-4cd9-8f9d-5c05725ec13b",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "e6230f52-90fb-4e3a-829e-7728833ed519",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "f659539a-303e-4a92-8f92-c6d0216eab3a",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_dagger",
+   "character": "e69eb176-b21d-4d4a-b631-6f81bed13477",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "96c9e454-3b73-482b-a622-e4eac68fd337",
+     "frames": 2
+    },
+    "walk": {
+     "group": "0dbe4bb5-2dab-4997-9f8a-d790b5a7c81a",
+     "frames": 6
+    },
+    "attack": {
+     "group": "819c8c64-d18d-420c-b998-6e0ffe833383",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "e0005892-0125-46de-810f-d0404158fc60",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "e465f885-9854-4846-9d82-5406b879b250",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_mace",
+   "character": "d028c0b3-83c7-4550-8713-c5dfa1dc8a63",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "0f2a0d8f-d557-421e-8e02-daf6b9d438f3",
+     "frames": 2
+    },
+    "walk": {
+     "group": "99ccba6e-f7bb-46b8-8172-f48454cfae65",
+     "frames": 6
+    },
+    "attack": {
+     "group": "0577ee58-bcf5-43f3-9f94-044be4946233",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "6c4ecf8e-7400-454e-9975-1064407a0e76",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "febc6f07-050d-4de3-8748-cbea211b48a7",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_mace2h",
+   "character": "bbf1053e-8f7d-4729-8b4a-473eb5067f64",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "faf043e3-cef7-4f20-a6b8-8fe85bffc9c5",
+     "frames": 2
+    },
+    "walk": {
+     "group": "1011ce6a-3fa8-4d0a-861f-be2bdd24829a",
+     "frames": 6
+    },
+    "attack": {
+     "group": "789c72a9-eb00-431b-9be1-64eb1737ec61",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "0d0223d3-1302-411b-a422-866ca3b305c9",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "f222897d-bd12-4a2d-8439-5a8e6d347e08",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_staff",
+   "character": "f639514c-c261-42b1-84c2-c279fa06e377",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "b43974c0-f0de-4935-bf9c-5a906fad20aa",
+     "frames": 2
+    },
+    "walk": {
+     "group": "9a39bc64-0be4-4b1b-a118-689874cbd472",
+     "frames": 6
+    },
+    "attack": {
+     "group": "0e0a0411-3383-452e-a81b-bd64d4acc77c",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "6989d8e7-e31c-4f31-a42b-9ae0ab19f951",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "9e830e2e-0b8e-4c56-802b-dc4e35aabcf5",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_wand",
+   "character": "71e1a08f-3192-4806-a6ca-a576b6611b09",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "4220ea76-f71f-46f4-8de9-5aaf49357c16",
+     "frames": 2
+    },
+    "walk": {
+     "group": "8aec96f7-91f6-48c9-8bce-06c4cb2b8a8b",
+     "frames": 6
+    },
+    "attack": {
+     "group": "06538801-ccd0-422e-8168-4318b902becb",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "3106698d-9d8e-457e-aebf-443159a13f2e",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "0a1063f6-5bad-421b-8bb2-35ed2b32b309",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_bow",
+   "character": "4b743315-0ccf-4305-8de0-b2ec6f73726a",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "2638f311-46c7-4c05-ab25-b6f2c5d036ec",
+     "frames": 2
+    },
+    "walk": {
+     "group": "b3bce536-494a-49f1-971a-b04c309511fe",
+     "frames": 6
+    },
+    "attack": {
+     "group": "393ee2a7-fd12-42b4-9110-4d2fc0604222",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "a8770e4a-6713-496f-ac28-f21550ab0765",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "22de909f-813c-4d0d-b644-8f2ef7972b21",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_shield",
+   "character": "de8c9d6c-23d3-4a7e-81ba-6f4a1f99dc71",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "591b5da8-2625-4445-bd14-f5c93e06568b",
+     "frames": 2
+    },
+    "walk": {
+     "group": "4d145a41-90eb-460d-9a59-ebb68ac7c013",
+     "frames": 6
+    },
+    "attack": {
+     "group": "3c1b5eb7-db29-47b0-85bd-23e01a875f42",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "423ed7a7-a51e-4c6b-8502-8394470c8d25",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "d7104e8f-c294-4cd8-a2d7-5c87b9d8ffea",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_sword_shield",
+   "character": "e64e5cae-f825-414b-bda5-267d37f2f7dd",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "025b5959-a813-46ce-857b-c810c5069f9d",
+     "frames": 2
+    },
+    "walk": {
+     "group": "3f921a6a-fb55-423f-bc07-67ad7fe166c7",
+     "frames": 6
+    },
+    "attack": {
+     "group": "add1f725-9ca4-403d-8b18-74cc1151f57a",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "afade7aa-e774-479e-92b8-4de5a78a718c",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "1e9941a4-0550-4e7e-99c7-f349e0fd23f0",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_dagger_shield",
+   "character": "b371a7ef-ad9e-4509-8b4b-83f0bc0ff30b",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "389cee77-464b-439e-b626-3c666648f2d3",
+     "frames": 2
+    },
+    "walk": {
+     "group": "5d88ea62-a0bc-44fb-b246-609734b5069c",
+     "frames": 6
+    },
+    "attack": {
+     "group": "21d4a043-2c16-4a9e-ba10-6336fd5613c8",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "3d29de4e-3dd8-4848-bba6-641391cd8ae1",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "473e0de5-1d25-43b3-94a7-4b6307c9f71e",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_mace_shield",
+   "character": "20281f5a-8045-408f-91d6-d450ca9fd20d",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "a85d9f93-882d-4500-b708-cba28c0940d4",
+     "frames": 2
+    },
+    "walk": {
+     "group": "114c4c00-28ba-4d58-ba48-a332f4f9b93b",
+     "frames": 6
+    },
+    "attack": {
+     "group": "c91f9360-bac2-4554-bd00-2b006b09c07e",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "b86a3f2a-27e9-4188-a256-284a2aff388e",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "faef9e3e-1208-4999-b3ea-6ad61a4994c3",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
+  },
+  {
+   "sprite": "mahthar_wand_shield",
+   "character": "c9ed58b0-ddba-4e32-ac88-5239d91ff666",
+   "dirs": [
+    "south-east"
+   ],
+   "grid": 48,
+   "inks": 24,
+   "stride": 1.15,
+   "states": {
+    "idle": {
+     "group": "d66a6004-d365-4185-a0bc-2c8a270622bf",
+     "frames": 2
+    },
+    "walk": {
+     "group": "60613eca-0a4c-44ed-ba7a-da7e69fe2b15",
+     "frames": 6
+    },
+    "attack": {
+     "group": "82d14a52-fff2-4db1-853c-fef8a1d10500",
+     "frames": 4,
+     "from": 0.4
+    },
+    "cast": {
+     "group": "f73600b8-c9cf-423a-ac4a-f1f6471d4f18",
+     "frames": 4,
+     "from": 0.4
+    },
+    "death": {
+     "group": "8b86812e-1abb-4bc4-b94d-ba178add4075",
+     "frames": 4,
+     "from": 0.3
+    }
+   }
   }
  ],
  "props": [

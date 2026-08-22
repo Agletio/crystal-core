@@ -12,7 +12,7 @@ export const ORRERY: SceneDef = {
   theme: 'prismatic', // his world, and the only one dust comes out of
   said: ASTRAL_GEOMETER.seen,
   greets:
-    'Hold still — no, stay exactly there, you are making the angle. Right. Thank you. Come and find me above and bring dust.',
+    'Stand still. No — exactly there, you are holding the angle. Right. It reads the same here as it does in nine other rooms. Bring me dust and find me above.',
   idles:
     'No dust? Then there is nothing to measure and we are both standing here wasting the light.',
   beats: ASTRAL_GEOMETER.beats,

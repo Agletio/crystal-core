@@ -24,6 +24,7 @@ import {
 } from '../sim/character';
 import { describeMod } from '../crafting';
 import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
+import type { MapTheme } from '../types';
 import {
   BOSS_BY_ID,
   BOSS_KEYS,
@@ -454,10 +455,11 @@ function renderKeySocket(grid: HTMLElement): void {
 // Run
 // ---------------------------------------------------------------------------
 
-/** Somebody unmet, sometimes: one at random out of everyone you have not found
- *  yet, at `MEET_CHANCE` a descent. Null once you have met them all. */
-function whoIsDown(): { id: string; sprite: string } | undefined {
-  const left = SCENES.filter((s) => !s.encounter && !hasMet(game, s.id));
+/** Somebody unmet, sometimes — and only IN THEIR OWN ZONE. `SceneDef.theme` is
+ *  where they live, so the Osteomancer is found in the Rot and nowhere else;
+ *  a man who turns up in every world is a man who lives in none. */
+function whoIsDown(theme: MapTheme): { id: string; sprite: string } | undefined {
+  const left = SCENES.filter((s) => !s.encounter && s.theme === theme && !hasMet(game, s.id));
   if (left.length === 0 || Math.random() > MEET_CHANCE) return undefined;
   const def = left[Math.floor(Math.random() * left.length)];
   return { id: def.id, sprite: def.who };
@@ -487,7 +489,7 @@ function launch(): void {
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
-    meets: whoIsDown(),
+    meets: whoIsDown(runSet(set).theme),
   });
 
   note(

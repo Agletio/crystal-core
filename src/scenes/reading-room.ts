@@ -13,7 +13,7 @@ export const READING_ROOM: SceneDef = {
   theme: 'prismatic',
   said: 'A room somebody swept. The walls are covered in marks and none of them are yours.',
   greets:
-    'Do not thank me. You have no idea what you have just walked past. Find me above and I will tell you what he has you doing.',
+    'Do not touch the wall. You are standing in the middle of a sentence and you cannot read it. Come and find me above and I will tell you whose it is.',
   idles:
     'Set more of them in the wall. I want you to have read a little further before I hand you the rest of it.',
   beats: [
