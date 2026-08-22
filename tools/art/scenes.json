@@ -1,0 +1,18 @@
+{
+ "_": "A whole SCENE as ONE picture, where every other tool here draws a piece. The camp is drawn rather than carved out of a tileset — the user's call: 'build it not using the tile sets and just use art and then make objects clickable on it' — so what this file holds is the camp, and anything else a player LOOKS at rather than walks through.",
+ "_rules": "(1) The COMPOSITION is load-bearing, because objects on it are CLICKED: say where each thing stands and keep the middle of the ground OPEN, or there is nowhere to put the character. (2) NO PEOPLE. The hero is drawn on top out of his own art, and a painted one is a second hero who never moves. (3) It is a BACKGROUND, so `no_background` is false and nothing may be a frame, a border or a UI panel. (4) Colours by exclusion as everywhere else, and the zone's own words: the camp is green meadow grass under near-black cliff rock.",
+ "_size": "688x384 is the 16:9 ceiling for `create_image_pro`, and at 2x it covers a 1376x768 stage. Bigger is not on offer.",
+ "scenes": {
+  "camp": {
+   "width": 688,
+   "height": 384,
+   "say": "A small lived-in CAMP on a grassy shelf at the mouth of a cave, drawn as a game background seen from a HIGH THREE-QUARTER ANGLE looking down and slightly forward. Across the TOP THIRD of the picture a sheer wall of VERY DARK grey-black cliff rock runs the full width, and a tall jagged SPLIT is torn open through the middle of it with cold VIOLET light pouring out of the dark inside. Set into the rock face either side of that split are FOUR round sockets with rough iron rims, two to the left and two to the right, evenly spaced, empty and dark inside. Below the cliff the ground is open short GREEN meadow grass, brightly lit. Standing on the grass at the LEFT is a heavy wooden work bench with tools and a vice on it. At the RIGHT is a small ridge tent of weathered olive canvas with its flaps folded open, and beside it a tall wooden shelf stacked with jars and bundles. In the near FOREGROUND, low and slightly left of centre, a campfire of crossed charred logs burns bright orange in a ring of stones. THE MIDDLE OF THE GRASS IS OPEN AND EMPTY — nothing stands in the centre of the picture. Warm low evening light from the fire and a hanging lantern, deep shadows under the cliff. NOT a village, NOT a town, NOT houses, NOT buildings, NOT a castle, NOT a wall of masonry, NOT a road, NOT a person, NOT people, NOT a figure, NOT a character, NOT animals, NOT text, NOT letters, NOT a frame, NOT a border, NOT a user interface.",
+   "asked": {
+    "A": "9f51d29a-330a-4fd8-bc80-bdcd9f77a7c7",
+    "B": "c6b1c213-6bda-48cd-837b-411952d3ac2f",
+    "C": "e63ba223-108a-4f74-b927-3c896f5ef9dd"
+   }
+  }
+ },
+ "_seen": "Three candidates off one wording, seeds 1-3, 40 generations each. All three put every named thing where it was asked for; they differ in how much OPEN GRASS is left in the middle, which is the only thing that matters, because that is where the hero stands. A is the widest. The hero reads right at x4 against a scene at x2 — x3 is small and x5 is big."
+}
