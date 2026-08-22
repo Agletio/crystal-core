@@ -17,8 +17,9 @@ by his word until the stripped opening has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
-have met, what the sheet says about an ailment, the WHOLE of the camp,
-Rimespike's pack clear and dual wielding.
+have met, what the sheet says about an ailment, Rimespike's pack clear, dual
+wielding, and the camp REDRAWN as a picture you click rather than a place you
+walk.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
