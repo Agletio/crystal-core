@@ -2956,6 +2956,82 @@
     }
    },
    "character": "742fe247-6131-4b4a-b248-be01ec84aae4"
+  },
+  {
+   "sprite": "refraction",
+   "name": "The Refraction",
+   "size": 160,
+   "look": "a COLOSSAL CRAB of jagged violet crystal, a low wide body of fused shards carried on six long angled legs, two enormous front claws drawn out into tapering points, cold light glowing deep inside the body. Deep violet and pale cyan over near-black. NOT a person, NOT armour, NOT a knight, NOT a robot, NOT a humanoid, NOT anime, NOT chibi, NOT a cartoon. No ground, NO SHADOW under it, no base.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "crouched low at a three-quarter angle, the six legs shifting very slightly, both front claws held out"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "scuttling forward at a three-quarter angle, the six legs working in sequence, body kept low and level"
+    },
+    "attack": {
+     "frames": 6,
+     "say": "sweeping one enormous front claw across in a flat arc at a three-quarter angle, body pivoting with it"
+    },
+    "slam": {
+     "frames": 8,
+     "say": "rearing up on the back legs at a three-quarter angle and driving both front claws straight DOWN into the floor"
+    },
+    "roar": {
+     "frames": 6,
+     "say": "splaying every leg wide at a three-quarter angle with the body blazing open from inside, holding the pose"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "skidding back at a three-quarter angle as the legs buckle, shards scattering"
+    },
+    "death": {
+     "frames": 6,
+     "say": "dropping flat at a three-quarter angle as the legs fold under it and the body cracks apart"
+    }
+   },
+   "inks": "prismatic",
+   "character": "f33c2b6f-0cee-4ff6-8020-19c9b6451ac0"
+  },
+  {
+   "sprite": "flowering",
+   "name": "The Flowering",
+   "size": 160,
+   "look": "a COLOSSAL fungal BEAST standing on two thick legs, a bloated body of dark red flesh split open across the back into a crown of pale growths, a tiny head sunk low between the shoulders, both forearms swollen into heavy knotted clubs. Dark red and black with sickly yellow-green inside the growths. NOT a muscular man, NOT a demon, NOT horns, NOT a tree, NOT a flower on a stem, NOT anime, NOT chibi, NOT a cartoon. No ground, NO SHADOW under it, no base.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "hunched upright at a three-quarter angle breathing slowly, the growths across its back opening and closing"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "lurching forward at a three-quarter angle on thick uneven legs, both root-clubs dragging low"
+    },
+    "attack": {
+     "frames": 6,
+     "say": "hammering one root-club across in a wide flat arc at a three-quarter angle, the shoulder following through"
+    },
+    "slam": {
+     "frames": 8,
+     "say": "raising both root-clubs overhead and bringing them straight DOWN into the floor at a three-quarter angle"
+    },
+    "roar": {
+     "frames": 6,
+     "say": "arching backwards at a three-quarter angle with every growth on its back thrown wide open, holding it"
+    },
+    "hurt": {
+     "frames": 4,
+     "say": "buckling sideways at a three-quarter angle, the small head snapping down"
+    },
+    "death": {
+     "frames": 6,
+     "say": "folding to the floor at a three-quarter angle and coming apart, the stalks going slack"
+    }
+   },
+   "inks": "demonic",
+   "character": "009c27f8-c8b6-4545-895d-4c09a819aa80"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",
