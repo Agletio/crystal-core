@@ -558,8 +558,13 @@ and never in the bulk heap. The card says it with its figure in it.
       because taking five weak modifiers out of the pool made the average roll
       worth more. A crystal rolled before the pass keeps its retired ward and it
       still works — a `RolledMod` carries its own lines.
-- [ ] **Phase 1b — challenge floors.** A rung KIND, not a new system: a spike
-      inside a zone that pays for itself.
+- [x] **Phase 1b — challenge floors. DONE.** `CHALLENGE` in `src/data.ts` and
+      `isChallenge` in `src/ladder.ts`: every 4th rung, never a zone's last —
+      that one is the boss's. `challengeMod` is a second synthetic mod beside
+      `rungMod`, so it pays through the seam everything else pays through.
+      Measured on The Fissure: rung 3 is 20 common / 1 magic / 0 rare at danger
+      3; rung 4 is 11 / 12 / 5 at danger 102, 28 bodies against 21, 74% rarity
+      against 3%. Marked on the pip in ember BEFORE you walk into it.
 - [ ] **Phase 1c — a boss at the end of each zone.** Three, one apiece, and
       clearing one is what opens the zone above rather than the rung count.
 - [ ] **Phase 1d — crystals as tier tokens.** The spine: nothing rolls and

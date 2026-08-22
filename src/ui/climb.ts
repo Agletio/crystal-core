@@ -14,7 +14,7 @@
  */
 import { LADDER } from '../data';
 import { THEME_BY_ID } from '../data';
-import { canEnter, climbed, furthest, zoneAt, zoneOpen } from '../ladder';
+import { canEnter, climbed, furthest, isChallenge, zoneAt, zoneOpen } from '../ladder';
 import type { Rung } from '../ladder';
 import type { Character } from '../sim/character';
 import { attachTooltip } from './tooltip';
@@ -85,9 +85,12 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   const totals = climbTotals(character);
 
   host.append(el('p', 'panel__title', 'The climb'));
-  host.append(
-    el('p', 'climb__where', `${rungLabel(character)} · ${totals.done} of ${totals.all} rungs cleared`)
-  );
+  const where = el('p', 'climb__where',
+    `${rungLabel(character)} · ${totals.done} of ${totals.all} rungs cleared`);
+  if (isChallenge(at.zone, at.rung)) {
+    where.append(el('span', 'climb__spike', ' · a challenge floor'));
+  }
+  host.append(where);
 
   LADDER.zones.forEach((zone, z) => {
     const theme = THEME_BY_ID[zone.theme];
@@ -104,19 +107,23 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
       const can = canEnter(character, here);
       const pip = el('button', 'pip', String(rung)) as HTMLButtonElement;
       pip.id = `climb-pip-${z}-${rung}`;
+      // A SPIKE is marked before you walk into it: a rung that is suddenly four
+      // times the fight, unannounced, reads as the game breaking.
+      pip.classList.toggle('pip--spike', isChallenge(z, rung));
       pip.classList.toggle('pip--done', rung <= done);
       pip.classList.toggle('pip--next', can && rung > done);
       pip.classList.toggle('pip--shut', !can);
       pip.classList.toggle('pip--here', at.zone === z && at.rung === rung);
       pip.disabled = !can;
+      const spike = isChallenge(z, rung) ? ' A challenge floor: the room fills with rares.' : '';
       attachTooltip(pip, () =>
-        !open
+        (!open
           ? `${theme?.name ?? zone.theme}, rung ${rung}. Shut until ${shutBy(z)} is cleared whole.`
           : !can
             ? `${theme?.name ?? zone.theme}, rung ${rung}. Clear rung ${done + 1} first.`
             : rung <= done
               ? `${theme?.name ?? zone.theme}, rung ${rung}. Cleared. Go back and grind it any time.`
-              : `${theme?.name ?? zone.theme}, rung ${rung}. The furthest you may go.`
+              : `${theme?.name ?? zone.theme}, rung ${rung}. The furthest you may go.`) + spike
       );
       pip.onclick = () => {
         if (pickRung(character, here)) onPick();

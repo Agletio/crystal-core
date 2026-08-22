@@ -2174,6 +2174,16 @@ export const LADDER = {
   curve: 1.8,
 };
 
+/** A CHALLENGE FLOOR: a rung that SPIKES rather than steps, and never a zone's
+ *  last — that one is the boss's. One more mod on the crystal seam. */
+export const CHALLENGE = {
+  every: 4,
+  rank: 1600, // percent on every rank above common: the room fills with rares
+  packSize: 20,
+  life: 25,
+  damage: 15,
+};
+
 /** Rungs below this one across the WHOLE ladder. */
 export function rungsBelow(zone: number, rung: number): number {
   let below = 0;

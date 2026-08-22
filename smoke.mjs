@@ -180,6 +180,18 @@ assert(all('#run-climb .climbrow').length === 3, 'the climb draws a row per zone
 assert(all('#run-climb .pip').length === 42, 'and a pip per rung', String(all('#run-climb .pip').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
 assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
+// A CHALLENGE FLOOR is marked BEFORE you walk into it: a rung that is suddenly
+// four times the fight, unannounced, reads as the game breaking.
+assert(
+  all('#run-climb .pip--spike').length > 0,
+  'the challenge floors are marked on the pips',
+  String(all('#run-climb .pip--spike').length)
+);
+assert(
+  $('climb-pip-0-4').classList.contains('pip--spike')
+    && !$('climb-pip-0-3').classList.contains('pip--spike'),
+  'and only the rungs that are one'
+);
 assert($('climb-pip-1-1').disabled === true, 'and so is the whole zone above');
 assert(
   /the fissure, rung 1/i.test($('run-launch').textContent),
@@ -224,6 +236,11 @@ assert(
   /the fissure, rung 4/i.test($('run-launch').textContent),
   'and the way in follows the pick',
   $('run-launch').textContent
+);
+assert(
+  /challenge floor/i.test(text('run-climb')),
+  'and picking a challenge floor says so before you enter it',
+  text('run-climb').slice(0, 120)
 );
 $('climb-pip-0-1').click();
 $('run-menu-close').click();

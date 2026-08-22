@@ -4,7 +4,7 @@
  * later."* Nothing is ever taken away: a rung you have beaten is open for the
  * rest of that character's life.
  */
-import { LADDER } from './data';
+import { CHALLENGE, LADDER } from './data';
 import type { Character } from './sim/character';
 
 export interface Rung {
@@ -40,6 +40,20 @@ export function furthest(character: Character): Rung {
   });
   return best;
 }
+
+/** A SPIKE rather than a step. Never the last rung of a zone: that is the
+ *  boss's, and two things asking for the same rung is one of them lost. */
+export function isChallenge(zone: number, rung: number): boolean {
+  const at = zoneAt(zone);
+  if (!at || rung < 1 || rung >= at.rungs) return false;
+  return rung % CHALLENGE.every === 0;
+}
+
+/** Every challenge floor in a zone, for anything that draws them. */
+export const challengesIn = (zone: number): number[] =>
+  Array.from({ length: zoneAt(zone)?.rungs ?? 0 }, (_, i) => i + 1).filter((r) =>
+    isChallenge(zone, r)
+  );
 
 /** Cleared, and never un-cleared: re-grinding an old rung records nothing. */
 export function takeRung(character: Character, at: Rung): void {

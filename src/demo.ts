@@ -86,6 +86,7 @@ import {
   armourBudget,
   implicitSpend,
   RECIPES,
+  CHALLENGE,
   LADDER,
   SKILLS,
   SKILL_BY_ID,
@@ -100,7 +101,7 @@ import {
 } from './data';
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
-import { canEnter, climbed, furthest, takeRung, zoneOpen } from './ladder';
+import { canEnter, challengesIn, climbed, furthest, isChallenge, takeRung, zoneOpen } from './ladder';
 import {
   balance,
   grant,
@@ -8744,22 +8745,40 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
 
   // DANGER RISES, every single rung, and the very first one is untouched: the
   // bare Fissure a new character walks into is the game's floor.
-  const dangers: number[] = [];
+  // The STEPS only. A challenge floor is deliberately out of line — the rung
+  // after one is easier than it was, and that is what makes it a spike rather
+  // than a rung — so the curve is read across the rungs that step.
+  const steps: number[] = [];
+  const spiked: string[] = [];
   LADDER.zones.forEach((zone, z) => {
     for (let rung = 1; rung <= zone.rungs; rung++) {
-      dangers.push(runSet([], null, { zone: z, rung }).rewards.danger);
+      const danger = runSet([], null, { zone: z, rung }).rewards.danger;
+      if (isChallenge(z, rung)) spiked.push(`${z}:${rung}`);
+      else steps.push(danger);
     }
   });
   check(
-    Math.round(dangers[0]) === 0,
+    Math.round(steps[0]) === 0,
     'the first rung of the first zone is danger 0 — the bare Fissure is untouched',
-    `the first rung arrives at danger ${dangers[0].toFixed(1)}`
+    `the first rung arrives at danger ${steps[0].toFixed(1)}`
   );
-  const dips = dangers.filter((d, i) => i > 0 && d <= dangers[i - 1]).length;
+  const dips = steps.filter((d, i) => i > 0 && d <= steps[i - 1]).length;
   check(
     dips === 0,
-    `and danger rises on every one of the ${dangers.length} rungs, to ${Math.round(dangers[dangers.length - 1])}`,
+    `and danger rises on every one of the ${steps.length} rungs that STEP, to ${Math.round(steps[steps.length - 1])}`,
     `${dips} rungs are no harder than the one below them`
+  );
+  // And every SPIKE stands above both its neighbours, which is the whole of
+  // what makes it one.
+  const flat = spiked.filter((id) => {
+    const [z, rung] = id.split(':').map(Number);
+    const danger = (r: number) => runSet([], null, { zone: z, rung: r }).rewards.danger;
+    return danger(rung) <= danger(rung - 1) || danger(rung) <= danger(rung + 1);
+  });
+  check(
+    flat.length === 0 && spiked.length > 0,
+    `and each of the ${spiked.length} challenge floors stands above both its neighbours`,
+    flat.join(', ') || 'there are no challenge floors at all'
   );
 
   // What a rung actually DOES to a body, read through a real sim rather than
@@ -8798,6 +8817,66 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `the top rung's bodies carry ${(high / Math.max(1, low)).toFixed(1)}× the life of the first rung's`,
     `top rung life ${Math.round(high)} against ${Math.round(low)}`
   );
+
+  // CHALLENGE FLOORS. *"A spike in difficulty like a bunch of rares."* A spike
+  // is not a bigger rung: it is a room that fills with things that are normally
+  // rare, on a rung you can see coming.
+  {
+    const spikes = LADDER.zones.map((_, z) => challengesIn(z));
+    line(`  challenge floors: ${LADDER.zones.map((zone, z) =>
+      `${THEME_BY_ID[zone.theme]?.name ?? zone.theme} ${spikes[z].join('/')}`).join(' · ')}`);
+    check(
+      spikes.every((list) => list.length > 0),
+      'every zone has challenge floors on it',
+      spikes.map((l) => l.length).join(', ')
+    );
+    // NEVER THE LAST RUNG of a zone: that one is the boss's, and two things
+    // asking for one rung is one of them lost.
+    check(
+      LADDER.zones.every((zone, z) => !isChallenge(z, zone.rungs)),
+      'and never the last rung of one, which belongs to the boss',
+      LADDER.zones.map((zone, z) => `${z}:${isChallenge(z, zone.rungs)}`).join(' ')
+    );
+
+    // WHAT IT DOES, read off real rooms rather than off the table.
+    line('  zone   rung   danger   monsters   common/magic/rare');
+    const ranksAt = (z: number, rung: number) => {
+      const sim = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(700 + rung), {
+        rung: { zone: z, rung },
+      });
+      const by: Record<string, number> = {};
+      for (const m of sim.state.monsters) by[m.rank] = (by[m.rank] ?? 0) + 1;
+      return { sim, by, uncommon: sim.state.monsters.filter((m) => m.rank !== 'common').length };
+    };
+    const step = ranksAt(0, CHALLENGE.every - 1);
+    const spike = ranksAt(0, CHALLENGE.every);
+    for (const [rung, at] of [[CHALLENGE.every - 1, step], [CHALLENGE.every, spike]] as const) {
+      gauge(
+        `The Fissure ${String(rung).padStart(4)}   ` +
+          `${Math.round(at.sim.set.rewards.danger).toString().padStart(6)}   ` +
+          `${String(at.sim.state.totalMonsters).padStart(8)}   ` +
+          `${['common', 'magic', 'rare'].map((r) => at.by[r] ?? 0).join('/')}`
+      );
+    }
+    check(
+      spike.uncommon > step.uncommon * 3,
+      `a challenge floor is ${spike.uncommon} bodies above common against ${step.uncommon} on the rung below it`,
+      `${spike.uncommon} against ${step.uncommon}`
+    );
+    check(
+      spike.sim.set.rewards.danger > step.sim.set.rewards.danger,
+      `and it is worth more danger — ${Math.round(spike.sim.set.rewards.danger)} against ${Math.round(step.sim.set.rewards.danger)}`,
+      `${spike.sim.set.rewards.danger} against ${step.sim.set.rewards.danger}`
+    );
+    // It pays through the SEAM everything else pays through, so nothing about
+    // what a spike is worth is written a second time.
+    const paidFor = (rung: number) => runSet([], null, { zone: 0, rung }).rewards;
+    check(
+      paidFor(CHALLENGE.every).rarity > paidFor(CHALLENGE.every - 1).rarity,
+      `and pays for itself off the same seam — ${Math.round(paidFor(CHALLENGE.every).rarity)}% rarity against ${Math.round(paidFor(CHALLENGE.every - 1).rarity)}%`,
+      'a spike pays no more than the rung under it'
+    );
+  }
 
   // A save is the one thing that can hold a climb nobody walked.
   const bent = createGame();

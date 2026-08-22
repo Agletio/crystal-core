@@ -30,6 +30,7 @@ import {
   OFF_SLOT,
   DUAL,
   UNIQUE_BY_ID,
+  CHALLENGE,
   LADDER,
   LADDER_RUNGS,
   rungsBelow,
@@ -41,6 +42,7 @@ import { tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
 import { isTwoHanded } from '../economy';
+import { isChallenge } from '../ladder';
 import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
 
 export interface CombatStats {
@@ -478,6 +480,26 @@ export function trialMod(character: Character): RolledMod | null {
  *  where difficulty comes from before anything is socketed. It rides the
  *  crystal seam on purpose: `crystalRewards` scores these like any other stats,
  *  so a harder rung pays more and drops better with nothing written twice. */
+/** THE SPIKE, as its own mod beside `rungMod` — separate so a readout can name
+ *  it and so what a challenge floor costs is one table nobody has to hunt for.
+ *  Null on every ordinary rung, which is most of them. */
+export function challengeMod(zone: number, rung: number): RolledMod | null {
+  if (!isChallenge(zone, rung)) return null;
+  return {
+    entryId: 'challenge',
+    defId: 'challenge',
+    group: 'rung',
+    slot: 'rung',
+    name: 'A challenge floor',
+    tier: 1,
+    tags: [],
+    stats: (
+      [['monsterRank', CHALLENGE.rank], ['packSize', CHALLENGE.packSize],
+       ['monsterLife', CHALLENGE.life], ['monsterDamage', CHALLENGE.damage]] as const
+    ).map(([stat, value]) => ({ stat, form: 'inc' as const, value, tags: [] })),
+  };
+}
+
 export function rungMod(zone: number, rung: number): RolledMod | null {
   if (rung <= 0) return null;
   const at = LADDER_RUNGS > 1 ? rungsBelow(zone, rung) / (LADDER_RUNGS - 1) : 0;
