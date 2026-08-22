@@ -280,7 +280,7 @@ src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
 src/economy.ts     prices
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
-src/trades.ts      the character's own web; src/trades/* the two trades
+src/trades.ts      the character's own web; src/trades/* the three trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/ladder.ts      the CLIMB: which rung is open, and what a clear records

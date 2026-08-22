@@ -29,6 +29,7 @@ import {
   canSell,
   grant,
   isPerfect,
+  isTwoHanded,
   makeCrystal,
   makeGear,
   makeRelic,
@@ -320,6 +321,8 @@ function takeFrom(list: Item[], item: Item): boolean {
   return true;
 }
 
+export { isTwoHanded };
+
 export function removeItem(game: GameState, item: Item): boolean {
   if (item.kind === 'crystal') return takeFrom(game.crystals, item);
   return takeFrom(game.inventory, item);
@@ -598,10 +601,6 @@ export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
   // to put one — `handClash` empties the off hand for it instead.
   return !(slot.id === OFF_SLOT && isTwoHanded(item));
 }
-
-/** Off the BASE, so an item out of a save answers the same. */
-export const isTwoHanded = (item: Item): boolean =>
-  (GEAR_BASE_BY_ID[item.base]?.hands ?? 1) > 1;
 
 /** The slot this equip would empty, or null. A bow and an off hand cannot both
  *  be held, and putting one on takes the other off rather than being refused. */

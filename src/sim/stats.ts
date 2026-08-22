@@ -40,6 +40,7 @@ import { nodeById } from '../skills-tree';
 import { tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
+import { isTwoHanded } from '../economy';
 import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
 
 export interface CombatStats {
@@ -321,10 +322,20 @@ export function heroStats(
    *  the hero's own, which is what a harness holding nothing measures. */
   rate = HERO_BASE.attacksPerSecond,
   /** Each hand's own base rate; `rate` above is already their even mean. */
-  hands: number[] = []
+  hands: number[] = [],
+  /** What is in your hands. `one` for a harness holding nothing, which is what
+   *  every measurement is compared across. */
+  grip: Grip = 'one'
 ): CombatStats {
-  const breakdown = damageBreakdown(mods, level, skill, grants);
-  const maxLife = computeStat(lifeFor(level), mods, 'life');
+  // BOTH HANDS, as a STEP in the workings: the sheet must add up.
+  const bothHands = grip === 'both' ? ((grants.twoHandMore as number) ?? 1) : 1;
+  const breakdown = damageBreakdown(
+    mods, level, skill, grants,
+    bothHands !== 1 ? [{ label: 'Both Hands', value: bothHands }] : []
+  );
+  // Bare to the rock. `characterStats` is what stops counting the rating.
+  const bare = typeof grants.bareChest === 'number' ? grants.bareChest : 0;
+  const maxLife = computeStat(lifeFor(level), mods, 'life') * (1 + bare);
   // Worn ratings are the BASE armour computes from, not a flat mod, so
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
@@ -367,7 +378,9 @@ export function heroStats(
         skill.tags.includes('spell') ? HERO_BASE.attacksPerSecond : rate,
         mods,
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
-      ) * skill.rateMultiplier,
+      ) *
+      skill.rateMultiplier *
+      (grip === 'both' ? 1 + ((grants.twoHandRate as number) ?? 0) / 100 : 1),
     // Every increase is multiplicative, so the mean scaled by a hand's share of
     // it is the number that hand's own base would have given.
     handRates:
@@ -643,6 +656,19 @@ export function weaponSwing(held: Item): number {
   return swing;
 }
 
+/** WHAT IS IN YOUR HANDS, as one word. The warrior's trade turns on it and
+ *  nothing else asks, so it is derived rather than stored. */
+export type Grip = 'shield' | 'both' | 'pair' | 'one';
+
+export function gripOf(character: Character): Grip {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = character.equipment?.[OFF_SLOT];
+  if (main && isTwoHanded(main)) return 'both';
+  if (off && offWeapon(character)) return 'pair';
+  if (off) return 'shield';
+  return 'one';
+}
+
 /** The off hand's WEAPON, or null: it also takes a shield, which is not one. */
 export function offWeapon(character: Character): Item | null {
   const held = character.equipment?.[OFF_SLOT];
@@ -703,10 +729,16 @@ export function characterStats(character: Character): CombatStats {
   const base = SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0];
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
-  const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);
+  // The CHEST and nothing else: helm, gloves and boots are still worn, so it
+  // is one slot given up rather than plate.
+  const chest = grants.bareChest ? character.equipment?.body : undefined;
+  const baseArmour = equippedItems(character)
+    .filter((i) => i !== chest)
+    .reduce((n, i) => n + (i.armour ?? 0), 0);
   const rates = weaponRates(character);
   return heroStats(
-    statMods(character), character.level, skill, grants, baseArmour, evenRate(rates), rates
+    statMods(character), character.level, skill, grants, baseArmour,
+    evenRate(rates), rates, gripOf(character)
   );
 }
 

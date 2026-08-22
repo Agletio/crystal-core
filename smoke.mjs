@@ -99,7 +99,8 @@ assert($('savedata').hidden === true, 'Play now takes you into the live slot');
 // A character is MADE before it is played, and the trade is who you ARE, so
 // the cast comes up before the name and the skill do.
 assert($('pick').hidden === false, 'and a character with no trade is made first');
-assert(all('#pick-cast .pickfig').length === 2, 'both trades stand there');
+assert(all('#pick-cast .pickfig').length === 3, 'all three trades stand there');
+assert($('pick-warrior') !== null, 'the warrior among them');
 assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
 $('pick-aethermancer').click();
 assert($('pick-say').hidden === false, 'clicking one says who he is');
@@ -2516,13 +2517,13 @@ $('dev-kit').click();
   $('open-trade').click();
   assert($('trade').hidden === false, 'and it opens a screen of its own');
   assert(
-    all('#trade-pick .catcard').length === 2,
-    'two trades are offered, and neither is picked for you',
+    all('#trade-pick .catcard').length === 3,
+    'three trades are offered, and none is picked for you',
     String(all('#trade-pick .catcard').length)
   );
   assert(
     all('#trade-pick .catcard').every((c) => c.disabled === true),
-    'and neither can be taken up before a level has paid for a point'
+    'and none can be taken up before a level has paid for a point'
   );
   assert($('trade-webwrap').hidden === true, 'no web is drawn before one is taken up');
   assert(

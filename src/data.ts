@@ -229,6 +229,19 @@ export const DEFENCE = {
   monsterHitFloor: 0.25,
 };
 
+/** The fixed halves of the warrior's switches: a grant carries the AMOUNT and
+ *  this carries what it is measured against, so two nodes ADD UP. */
+export const WARRIOR = {
+  corneredBelow: 50, // percent of maximum life
+  riposteSeconds: 4, // how long a Block leaves the next hit sharpened
+  heavyHandSeconds: 2,
+  staggerSeconds: 3,
+  paintRadius: 4, // tiles, War Paint
+  dreadRadius: 5,
+  shieldLessCap: 0.6,
+  secondSkinCap: 1,
+};
+
 /** Sockets in the Fissure. Count is run LENGTH; what is in them is difficulty. */
 export const RUN_SLOTS: RunSlotDef[] = [
   { id: 's1', name: 'First socket', accepts: 'crystal' },

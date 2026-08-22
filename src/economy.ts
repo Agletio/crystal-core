@@ -107,6 +107,11 @@ function implicitsFor(def: GearBase | undefined, perfect = false): RolledMod[] {
 /** `meta.perfect` is the flag; what it lifts is written onto the ITEM. */
 export const isPerfect = (item: Item): boolean => item.meta.perfect === true;
 
+/** HANDS ARE A FACT ABOUT THE BASE, never a tag and never a family name. Lives
+ *  beside the other base facts so the sim can ask without reaching into game/. */
+export const isTwoHanded = (item: Item): boolean =>
+  (GEAR_BASE_BY_ID[item.base]?.hands ?? 1) > 1;
+
 /** Whether a base may be one at all: the top tier, and never a unique. */
 export const canBePerfect = (base: string): boolean =>
   (GEAR_BASE_BY_ID[base]?.tier ?? 0) >= PERFECT.tier;

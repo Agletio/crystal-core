@@ -14,11 +14,11 @@ item tier coming off power. It is not something to start halfway, and it is
 blocked on three questions written into the phase. The generic-crystal-modifier
 pass is the one unblocked piece left, and it waits on question 3.
 
-**Phase 2 is more characters, and it is HALF DONE.** Mahthar's body and all
-thirteen weapon variants are drawn, animated and shipped; what is left is his
-own trade web (the shape is settled now) and the ten dual-wield pairs. The quest
-log after it is parked by the user's word until a start with nothing explaining
-it has been played.
+**Phase 2 is more characters, and Mahthar is IN** — body, thirteen weapon
+variants, and now his web and the fifteen switches under it. What is left of the
+phase is his ten dual-wield pairs, which is art and wall clock. The quest log
+after it is parked by the user's word until a start with nothing explaining it
+has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
@@ -570,25 +570,26 @@ onto the variant that already holds the other weapon and seeds the row to
 animate into. A new hero is `bodies.json` + `pairs.mts` + one run of each — no
 new words per weapon and no new tools.
 
-**THE WEB IS THE PART THAT IS NOT ARITHMETIC, and it is the blocker.** Five
-spokes of nine, 45 nodes, and **every notable changes a RULE rather than a
-number** — the demo fails a notable whose whole content is stat lines, and that
-is the rule the whole system lives on. Two trades exist and open question 9 says
-the user wants them REWORKED, with no spec. Authoring two more webs against a
-shape he may be about to change is the expensive way to find that out.
+**MAHTHAR HAS LANDED, WEB AND ALL.** The user's ask: *"Another character should
+be a warrior type. Maybe you can choose to build around either a shield or a 2h.
+Think like tribal warrior guy tribal tattoos, shirtless."* That one sentence is
+the whole web — `src/trades/warrior.ts` asks it five ways and fifteen new
+switches in `GRANTS` answer it, none of which writes `blockChance`. His body,
+his portrait and all thirteen weapon variants were drawn, animated and shipped
+in the round before it.
 
-- [ ] **ASK FIRST: how many, and what is each one ABOUT?** A trade is a
-      one-sentence idea before it is 45 nodes — the Alchemist is potions as an
-      engine, the Aethermancer is mana as one. **Do not invent a third.**
-- [ ] **And ask whether the WEB comes first.** Open question 9 is unanswered; a
-      new trade authored against the current shape is a new trade to redo.
-- [ ] **The body is designed, approved, rotated, animated and JUDGED before
-      any variant is queued.** A design is one generation and a roster is 2,200.
-- [ ] **A trade's sprite is a `TradeSpec.sprite`**, and `heroSpriteFor` falls
-      back to the base body for a variant nobody has drawn — so a trade ships
-      playable the moment its body lands and gets its weapons afterwards.
-- [ ] **Every phase puts itself in the dev kit.** A trade nobody can take up
-      without making a character is a trade nobody tests.
+**Question 9 is ANSWERED and no longer blocks anything** — the user specified
+the rework himself (*"slightly more nodes… you get 2 points at a time and need 2
+to get to any notable"*) and it landed on all three webs.
+
+**WHAT IS LEFT OF THIS PHASE:**
+
+- [ ] **Mahthar's ten dual-wield PAIRS**, through `pairs.mts`. ~900
+      generations, and the only thing between him and the roster the other two
+      have. He plays without them: `heroSpriteFor` falls back to the body.
+- [ ] **ASK BEFORE A FOURTH.** A trade is a one-sentence idea before it is 50
+      nodes — potions as an engine, mana as one, what is in your other hand.
+      **Do not invent one.**
 
 **Traps.** `takeUpTrade` refuses a second trade outright — it is the one hard
 lock in a game that refunds everything else, so a new trade is not something a
@@ -740,16 +741,14 @@ be picked up — they are decisions the user has not made. Ask before acting.
    are already that trade's engine; the Aethermancer refunds mana on a turn, so
    weaving is how they stay full.
 
-9. **What does a reworked TRADE web look like?** The user's word during the
-   polish round: *"trades needs a rework"*, beyond the node theme, with no
-   further spec. The retheme itself landed on all three webs, so what is left is
-   the trade web's SHAPE or its content, and only the user can say which. **The
-   skills layout is explicitly fine.**
-
-   **THIS NOW BLOCKS PHASE 1.** More characters means more trade webs, and two
-   more authored against a shape that is about to change is two more to redo.
-   Answer this before the third trade's web, not before its body — the art is
-   independent of it and is the long pole.
+9. **ANSWERED, and it landed.** *"The trade web needs a minor rework, I want
+   slightly more nodes, and I want it to line up where you end up getting a
+   notable with your last points. Let's make it where you get 2 points at a time
+   and need 2 to get to any notable."* Fifty nodes a web, every notable at an
+   EVEN step, six points two at a time from level 5 — so a pair always buys a
+   notable and the last pair finishes a branch. On all three webs, and the demo
+   walks each one a pair at a time and fails if any stop lands on a minor.
+   Nothing here is open; kept because it is what the shape is FOR.
 
 10. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
    hanging into a hole, bridges — was built, judged and deleted at the user's

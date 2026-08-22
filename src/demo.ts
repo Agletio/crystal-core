@@ -95,6 +95,7 @@ import {
   DUAL,
   EQUIP_SLOTS,
   OFF_SLOT,
+  WEAPON_SLOT,
 } from './data';
 import { variants } from './sim/appearance';
 import { canEnter, climbed, furthest, takeRung, zoneOpen } from './ladder';
@@ -160,6 +161,7 @@ const cel = (of: Partial<Cel>): Cel => ({
 });
 import {
   characterStats,
+  gripOf,
   convertedType,
   heroStats,
   damageBreakdown,
@@ -6731,6 +6733,286 @@ rule('TRADE RULES — does each one actually change what the sim does?');
       'and every measured ladder character has no trade at all, so a rung is a rung',
       `${measured.trade}`
     );
+  }
+}
+
+// ===========================================================================
+rule('THE WARRIOR — does what is in your other hand change anything?');
+
+// Mahthar's whole web asks ONE question and every notable answers it: a shield
+// blunts and a Block pays, or both hands are on one weapon and it swings. What
+// breaks quietly here is a rule that reads on a card and does nothing in the
+// sim, so each is put in front of the sim rather than checked off a table.
+{
+  /** Life put on a body so it lives through a measured hit. */
+  const STANDING = 1e7;
+
+  const warrior = (nodes: string[], off?: string, main?: string): Character => {
+    const who = makeCharacter(starterLoadout(new Rng(21), 30), 'strike');
+    who.level = 50;
+    takeUpTrade(who, 'warrior');
+    who.tradeAllocated = nodes;
+    // Straight into the slot: `equipItem` is the game's undoable move and
+    // wants a bag under it, and what is being measured here is the ARRANGEMENT.
+    if (main) {
+      who.equipment[WEAPON_SLOT] = makeGear(main, 60);
+      delete who.equipment[OFF_SLOT];
+    }
+    if (off) who.equipment[OFF_SLOT] = makeGear(off, 60);
+    return who;
+  };
+
+  const withShield = warrior([], 'tower_shield');
+  const withBoth = warrior([], undefined, 'reaver_sword');
+  const withPair = warrior([], 'steel_sword');
+  const bare = warrior([]);
+  delete bare.equipment[OFF_SLOT];
+  const grips = [withShield, withBoth, withPair, bare].map(gripOf);
+  check(
+    grips.join(',') === 'shield,both,pair,one',
+    `what is in your hands reads as one word — ${grips.join(', ')}`,
+    grips.join(', ')
+  );
+  check(
+    withShield.equipment[OFF_SLOT] !== undefined && characterStats(withShield).blockChance > 0,
+    `a shield in the off hand is ${Math.round(characterStats(withShield).blockChance)}% Block`,
+    String(characterStats(withShield).blockChance)
+  );
+  // NOTHING in the web writes it. A shield's whole worth stays one number.
+  const writes = TRADE_BY_ID.warrior.nodes.filter(
+    (n) => (n.stats ?? []).some((l) => l.stat === 'blockChance') || 'blockChance' in (n.grants ?? {})
+  );
+  check(writes.length === 0, 'and not one node in the web raises it', writes.map((n) => n.id).join(', '));
+
+  // BOTH HANDS, and the sheet's own workings: a factor the breakdown cannot
+  // show is a sheet that does not add up to its own total.
+  {
+    const plain = characterStats(warrior([], undefined, 'reaver_sword'));
+    const swung = characterStats(
+      warrior(['mah_bothhands_m0', 'mah_bothhands'], undefined, 'reaver_sword')
+    );
+    const wasted = characterStats(warrior(['mah_bothhands_m0', 'mah_bothhands'], 'tower_shield'));
+    const shieldPlain = characterStats(warrior([], 'tower_shield'));
+    check(
+      swung.damage > plain.damage * 1.29,
+      `both hands on one weapon deal ${Math.round((swung.damage / plain.damage - 1) * 100)}% more`,
+      `${swung.damage.toFixed(1)} against ${plain.damage.toFixed(1)}`
+    );
+    check(
+      Math.abs(wasted.damage / shieldPlain.damage - swung.damage / plain.damage) > 0.25,
+      'and the same points buy a shield build nothing at all, which is the choice',
+      `${(wasted.damage / shieldPlain.damage).toFixed(3)} against ${(swung.damage / plain.damage).toFixed(3)}`
+    );
+    const faster = characterStats(
+      warrior(['mah_bothhands_m0', 'mah_bothhands', 'mah_swinging_m0', 'mah_followthrough'], undefined, 'reaver_sword')
+    );
+    check(
+      faster.attacksPerSecond > plain.attacksPerSecond * 1.11,
+      `and it swings ${Math.round((faster.attacksPerSecond / plain.attacksPerSecond - 1) * 100)}% faster for a point`,
+      `${faster.attacksPerSecond.toFixed(3)} against ${plain.attacksPerSecond.toFixed(3)}`
+    );
+  }
+
+  // BARE TO THE ROCK: a slot given up, and the life it is given up for.
+  {
+    const clothed = characterStats(warrior([], 'tower_shield'));
+    const stripped = characterStats(warrior(['mah_blood_m0', 'mah_bare'], 'tower_shield'));
+    check(
+      stripped.maxLife > clothed.maxLife * 1.29 && stripped.armour < clothed.armour,
+      `bare to the rock is ${Math.round(stripped.maxLife)} life against ${Math.round(clothed.maxLife)}, ` +
+        `and ${Math.round(stripped.armour)} armour against ${Math.round(clothed.armour)}`,
+      `${stripped.maxLife} / ${stripped.armour} against ${clothed.maxLife} / ${clothed.armour}`
+    );
+  }
+
+  // What a hit COMES TO, put in front of the sim. Two sims off one seed differ
+  // only by the grant, and neither draws a number the other does not.
+  const hitFor = (who: Character, gap = 0.5): number => {
+    const sim = new RunSim([], who, new Rng(808)) as any;
+    const hero = sim.state.hero;
+    const foe = sim.state.monsters[0];
+    foe.x = hero.x + gap;
+    foe.y = hero.y;
+    // A BODY THAT SURVIVES IT. A level 50 hero one-shots anything in the bare
+    // Fissure, and every reading off a corpse is the same number: its life.
+    foe.life = STANDING;
+    sim.dealDamage(hero, foe, 1, undefined);
+    return STANDING - foe.life;
+  };
+
+  {
+    const plain = hitFor(warrior([]));
+    const painted = hitFor(warrior(['mah_paint_m0', 'mah_paint']));
+    check(
+      painted > plain * 1.2,
+      `War Paint is ${Math.round((painted / plain - 1) * 100)}% more damage on a body 0.5 tiles away`,
+      `${painted.toFixed(1)} against ${plain.toFixed(1)}`
+    );
+    const far = hitFor(warrior(['mah_paint_m0', 'mah_paint']), 9);
+    check(
+      Math.abs(far - hitFor(warrior([]), 9)) < 0.01,
+      'and nothing at all on one 9 tiles away, which is what makes it a rule',
+      `${far.toFixed(1)} against ${hitFor(warrior([]), 9).toFixed(1)}`
+    );
+    // Against a body with ARMOUR ON IT: nothing in the bare Fissure has any,
+    // and a share of nothing is nothing however the switch is wired.
+    const throughPlate = (nodes: string[]): number => {
+      const sim = new RunSim([], warrior(nodes), new Rng(808)) as any;
+      const hero = sim.state.hero;
+      const foe = sim.state.monsters[0];
+      foe.x = hero.x + 9;
+      foe.y = hero.y;
+      foe.life = STANDING;
+      foe.stats = { ...foe.stats, armourReduction: 60 };
+      sim.dealDamage(hero, foe, 1, undefined);
+      return STANDING - foe.life;
+    };
+    const armoured = throughPlate(['mah_bothhands_m0', 'mah_bothhands', 'mah_sundering_m0', 'mah_overwhelm']);
+    const without = throughPlate(['mah_bothhands_m0', 'mah_bothhands']);
+    check(
+      armoured > without * 1.3,
+      `Overwhelm gets ${Math.round((armoured / without - 1) * 100)}% more through 60% Armour`,
+      `${armoured.toFixed(1)} against ${without.toFixed(1)}`
+    );
+  }
+
+  // CORNERED reads the life you are standing on, so it is checked at both ends.
+  {
+    const hurt = (who: Character): number => {
+      const sim = new RunSim([], who, new Rng(808)) as any;
+      const hero = sim.state.hero;
+      hero.life = hero.stats.maxLife * 0.2;
+      const foe = sim.state.monsters[0];
+      foe.x = hero.x + 9;
+      foe.y = hero.y;
+      foe.life = STANDING;
+      sim.dealDamage(hero, foe, 1, undefined);
+      return STANDING - foe.life;
+    };
+    const backs = warrior(['mah_cornered_m0', 'mah_cornered', 'mah_cornered_m1', 'mah_laststand']);
+    check(
+      hurt(backs) > hurt(warrior([])) * 1.8 && Math.abs(hitFor(backs, 9) - hitFor(warrior([]), 9)) < 0.01,
+      `Cornered is ${Math.round((hurt(backs) / hurt(warrior([])) - 1) * 100)}% more at a fifth life and nothing at full`,
+      `${hurt(backs).toFixed(1)} hurt, ${hitFor(backs, 9).toFixed(1)} whole`
+    );
+  }
+
+  // WHAT A BLOCK IS WORTH beyond stopping the hit. Blocks are frequent over a
+  // descent and rare in any one tick, so this puts one in front of the sim.
+  {
+    const blocked = (nodes: string[]) => {
+      const who = warrior(nodes, 'tower_shield');
+      const sim = new RunSim([], who, new Rng(808)) as any;
+      const hero = sim.state.hero;
+      hero.life = hero.stats.maxLife * 0.5;
+      const foe = sim.state.monsters[0];
+      foe.life = STANDING;
+      const was = { life: hero.life, foe: foe.life, slow: foe.slowed ?? 0 };
+      sim.afterBlock(hero, foe);
+      return { sim, hero, foe, was };
+    };
+    const thorns = blocked(['mah_wall_m0', 'mah_wall', 'mah_bracing_m0', 'mah_boss']);
+    check(
+      thorns.foe.life < thorns.was.foe,
+      `a Block gives ${Math.round(thorns.was.foe - thorns.foe.life)} damage back to what you blocked`,
+      `${thorns.foe.life} against ${thorns.was.foe}`
+    );
+    const wind = blocked(['mah_wall_m0', 'mah_wall', 'mah_turning_m0', 'mah_wind']);
+    check(
+      wind.hero.life > wind.was.life,
+      `and Second Wind puts ${Math.round(wind.hero.life - wind.was.life)} life back`,
+      `${wind.hero.life} against ${wind.was.life}`
+    );
+    const shaken = blocked(['mah_wall_m0', 'mah_wall', 'mah_turning_m0', 'mah_wind', 'mah_turning_m1', 'mah_unshaken']);
+    check(
+      (shaken.foe.slowed ?? 0) > 0 && shaken.foe.effects.length > 0,
+      `and Unshaken Slows what you blocked by ${Math.round((shaken.foe.slowed ?? 0) * 100)}%`,
+      `slowed ${shaken.foe.slowed}`
+    );
+    // The RIPOSTE window: sharpened for its seconds and nothing after them.
+    const riposte = blocked(['mah_answer_m0', 'mah_answer']);
+    const sharp = (sim: any, who: Character): number => {
+      const foe = sim.state.monsters[1] ?? sim.state.monsters[0];
+      foe.x = sim.state.hero.x + 9;
+      foe.y = sim.state.hero.y;
+      foe.life = STANDING;
+      sim.dealDamage(sim.state.hero, foe, 1, undefined);
+      return STANDING - foe.life;
+    };
+    const after = sharp(riposte.sim, riposte.hero as unknown as Character);
+    const flat = sharp(blocked([]).sim, bare);
+    check(
+      after > flat * 1.3,
+      `and The Answer sharpens the next hit by ${Math.round((after / flat - 1) * 100)}%`,
+      `${after.toFixed(1)} against ${flat.toFixed(1)}`
+    );
+  }
+
+  // A SHIELD BLUNTS, a kill feeds, a hit Slows, and Armour gets a say over
+  // Ailments — the four that are read where they are read and nowhere else.
+  {
+    const lessSim = new RunSim([], warrior(['mah_wall_m0', 'mah_wall'], 'tower_shield'), new Rng(808)) as any;
+    const plainSim = new RunSim([], warrior([], 'tower_shield'), new Rng(808)) as any;
+    const took = (sim: any): number => {
+      const hero = sim.state.hero;
+      const before = hero.life;
+      sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
+      return before - hero.life;
+    };
+    const a = took(lessSim);
+    const b = took(plainSim);
+    check(
+      a < b * 0.9,
+      `The Wall takes ${Math.round((1 - a / b) * 100)}% less from a hit while a shield is up`,
+      `${a.toFixed(1)} against ${b.toFixed(1)}`
+    );
+
+    const fed = new RunSim([], warrior(['mah_blood_m0', 'mah_bare', 'mah_feeding_m0', 'mah_feed'], 'tower_shield'), new Rng(808)) as any;
+    fed.state.hero.life = fed.state.hero.stats.maxLife * 0.5;
+    const wasLife = fed.state.hero.life;
+    fed.kill(fed.state.monsters[0]);
+    check(
+      fed.state.hero.life > wasLife,
+      `a kill feeds ${Math.round(fed.state.hero.life - wasLife)} life back`,
+      `${fed.state.hero.life} against ${wasLife}`
+    );
+
+    const heavy = new RunSim([], warrior(['mah_paint_m0', 'mah_paint', 'mah_marks_m0', 'mah_heavyhand']), new Rng(808)) as any;
+    const target = heavy.state.monsters[0];
+    target.x = heavy.state.hero.x + 9;
+    target.y = heavy.state.hero.y;
+    target.life = STANDING;
+    heavy.dealDamage(heavy.state.hero, target, 1, undefined);
+    check(
+      (target.slowed ?? 0) > 0,
+      `a Heavy Hand Slows what it lands on by ${Math.round((target.slowed ?? 0) * 100)}%`,
+      `slowed ${target.slowed}`
+    );
+
+    const skinned = new RunSim([], warrior(['mah_answer_m0', 'mah_answer', 'mah_hide_m0', 'mah_secondskin'], 'tower_shield'), new Rng(808)) as any;
+    const naked = new RunSim([], warrior([], 'tower_shield'), new Rng(808)) as any;
+    check(
+      skinned.hide(skinned.state.hero) < 1 && naked.hide(naked.state.hero) === 1,
+      `Second Skin blunts an Ailment by ${Math.round((1 - skinned.hide(skinned.state.hero)) * 100)}%, and every other build by nothing`,
+      `${skinned.hide(skinned.state.hero)} against ${naked.hide(naked.state.hero)}`
+    );
+  }
+
+  // And it PLAYS: the same six points on the two arrangements the trade is
+  // about, each walked to its own tip and each clearing what it walks into.
+  {
+    const walk = (nodes: string[], off?: string, main?: string): string => {
+      const sim = new RunSim([], warrior(nodes, off, main), new Rng(4242));
+      const final = runToCompletion(sim, 900);
+      return `${final.status} in ${final.elapsed.toFixed(0)}s, ${final.killed} down`;
+    };
+    gauge(`shield, The Wall to Teeth in the Rim: ${walk(
+      ['mah_wall_m0', 'mah_wall', 'mah_bracing_m0', 'mah_boss', 'mah_bracing_m1', 'mah_teeth'], 'tower_shield'
+    )}`);
+    gauge(`two hands, Both Hands to Shatter the Plate: ${walk(
+      ['mah_bothhands_m0', 'mah_bothhands', 'mah_sundering_m0', 'mah_overwhelm', 'mah_sundering_m1', 'mah_shatterplate'],
+      undefined, 'reaver_sword'
+    )}`);
   }
 }
 

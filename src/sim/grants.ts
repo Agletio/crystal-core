@@ -8,7 +8,7 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { BURST, MANA, PASSIVE_DAMAGE } from '../data';
+import { BURST, MANA, PASSIVE_DAMAGE, WARRIOR } from '../data';
 
 export const STATS = 'stats';
 
@@ -428,6 +428,187 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `${pct(n)} of your maximum life is added to your mana pool`;
+    },
+  },
+
+  // --- what the WARRIOR's trade hands over ----------------------------------
+  //
+  // ONE QUESTION, asked fifteen ways: what is in your other hand. A shield's
+  // Block and a two-hander's swing each buy things the other cannot, and every
+  // switch here pays in exactly one of the two arrangements or in neither.
+  // NOTHING writes `blockChance` — a shield's whole worth stays one number you
+  // read off the piece. Each carries an AMOUNT and `WARRIOR` carries what it is
+  // measured against, so two nodes granting one of these ADD UP.
+  {
+    id: 'shieldLess',
+    what: 'a shield in the off hand blunts every hit',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While your off hand holds a shield you take ${pct(n)} less damage from hits`;
+    },
+  },
+  {
+    id: 'blockThorns',
+    what: 'a Block deals damage back',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A Block deals ${pct(n)} of your damage back to what you blocked`;
+    },
+  },
+  {
+    id: 'blockHeal',
+    what: 'a Block restores life',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A Block restores ${pct(n)} of your maximum life`;
+    },
+  },
+  {
+    id: 'blockRiposte',
+    what: 'the hit after a Block lands harder',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `For ${WARRIOR.riposteSeconds}s after a Block your hits deal ${Math.round(n)}% more damage`;
+    },
+  },
+  {
+    id: 'blockStagger',
+    what: 'a Block Slows what you blocked',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A Block Slows what you blocked by ${Math.round(n)}% for ${WARRIOR.staggerSeconds}s`;
+    },
+  },
+  {
+    id: 'twoHandMore',
+    what: 'both hands on one weapon hit harder',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While both hands are on one weapon you deal ${more(n)} more damage`;
+    },
+  },
+  {
+    id: 'twoHandRate',
+    what: 'both hands on one weapon swing faster',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `While both hands are on one weapon you attack ${Math.round(n)}% faster`;
+    },
+  },
+  {
+    id: 'overwhelm',
+    what: 'your hits ignore part of what a body\u2019s Armour blunts',
+    reads: [STATS],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Your hits ignore ${pct(n)} of what a body's Armour blunts`;
+    },
+  },
+  {
+    id: 'bareChest',
+    what: 'the plate on your chest counts for nothing and you are bigger for it',
+    // A TRADE, not a bonus: every armour line on a body piece is dead weight
+    // from the moment this is taken, which is what the life is paid for with.
+    reads: [STATS],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Your body armour's rating counts for nothing, and your maximum life is ${pct(n)} higher`;
+    },
+  },
+  {
+    id: 'secondSkin',
+    what: 'part of your Armour blunts Ailments too',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of what your Armour blunts also blunts Ailments`;
+    },
+  },
+  {
+    id: 'killHeal',
+    what: 'a kill restores life',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Every kill restores ${pct(n)} of your maximum life`;
+    },
+  },
+  {
+    id: 'cornered',
+    what: 'you hit harder with your back to the wall',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Below ${WARRIOR.corneredBelow}% of your maximum life you deal ${Math.round(n)}% more damage`;
+    },
+  },
+  {
+    id: 'dread',
+    what: 'what stands near you swings softer',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Enemies within ${WARRIOR.dreadRadius} tiles deal ${Math.round(n)}% less damage`;
+    },
+  },
+  {
+    id: 'warPaint',
+    what: 'you hit what is close to you harder',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `You deal ${Math.round(n)}% more damage to enemies within ${WARRIOR.paintRadius} tiles`;
+    },
+  },
+  {
+    id: 'heavyHand',
+    what: 'your hits Slow what they land on',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Your hits Slow what they land on by ${Math.round(n)}% for ${WARRIOR.heavyHandSeconds}s`;
     },
   },
 

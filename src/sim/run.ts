@@ -26,6 +26,7 @@ import {
   characterStats,
   dropBias,
   effectiveSkill,
+  gripOf,
   mapDensity,
   monsterStats,
   passiveScale,
@@ -33,7 +34,7 @@ import {
   treeGrants,
   trialMod,
 } from './stats';
-import type { CombatStats } from './stats';
+import type { CombatStats, Grip } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { bleedOf, critBuff, landingOf, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { equippedSkill, mainSkillId, monsterXp } from './character';
@@ -51,6 +52,7 @@ import {
   CURRENCIES,
   CURRENCY_DROP,
   DEFENCE,
+  WARRIOR,
   ENCOUNTERS,
   ALL_MODS,
   HERO_BASE,
@@ -484,6 +486,10 @@ export class RunSim {
   /** Whose body Momentum is built against, and how many uses have gone into it. */
   private momentumOn = -1;
   private momentumStacks = 0;
+  /** Seconds left of a Block having sharpened the next hit. */
+  private riposte = 0;
+  /** What is in the hero's hands, read once: nothing swaps gear mid-descent. */
+  private readonly grip: Grip;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
   private readonly passiveScale: Record<string, number>;
   /** One aura's worth of flat damage on this map, in real damage. */
@@ -514,6 +520,7 @@ export class RunSim {
     this.rng = rng;
     this.options = options;
     this.grants = treeGrants(character);
+    this.grip = gripOf(character);
     this.level = character.level;
     this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
     // The tree can change what the skill IS — its damage type, its tags — and
@@ -1356,6 +1363,7 @@ export class RunSim {
     if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
     this.sinceHit += dt;
+    if (this.riposte > 0) this.riposte -= dt;
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
     if (hero.life < hero.stats.maxLife) {
@@ -2344,6 +2352,7 @@ export class RunSim {
         s.blocked++;
         s.floaters.push({ x: defender.x, y: defender.y, text: 'block', age: 0, crit: false, on: 'hero' });
         this.wake(defender, true);
+        this.afterBlock(defender, attacker);
         return;
       }
     }
@@ -2382,12 +2391,31 @@ export class RunSim {
     if (defender.kind === 'hero' && this.flasked()) {
       scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
     }
+    // A shield blunts every hit; what stands close enough to feel you swings
+    // softer. Both are what the other hand bought.
+    if (defender.kind === 'hero') {
+      if (this.grip === 'shield') {
+        scale *= 1 - Math.min(WARRIOR.shieldLessCap, (this.grants.shieldLess as number) ?? 0);
+      }
+      const dread = (this.grants.dread as number) ?? 0;
+      if (dread > 0 && dist(attacker, defender) <= WARRIOR.dreadRadius) {
+        scale *= Math.max(0, 1 - dread / 100);
+      }
+    }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
     // Conditions on the WHOLE use: a burst is worth what made it.
     if (attacker.kind === 'hero') {
       if (this.flasked()) scale *= (this.grants.potionMore as number) ?? 1;
+      // Cornered, close, and freshly off a Block: state the tick already holds.
+      const back = (this.grants.cornered as number) ?? 0;
+      if (back > 0 && attacker.life < attacker.stats.maxLife * (WARRIOR.corneredBelow / 100)) {
+        scale *= 1 + back / 100;
+      }
+      const paint = (this.grants.warPaint as number) ?? 0;
+      if (paint > 0 && dist(attacker, defender) <= WARRIOR.paintRadius) scale *= 1 + paint / 100;
+      if (this.riposte > 0) scale *= 1 + ((this.grants.blockRiposte as number) ?? 0) / 100;
     }
     // From a crit that landed BEFORE this one: the crit granting it never
     // hits harder for doing so.
@@ -2457,6 +2485,14 @@ export class RunSim {
     this.wake(defender, true);
 
     defender.life -= dmg;
+    // A HEAVY HAND, on the ONE Slow seam a landing already writes.
+    const heavy = attacker.kind === 'hero' ? ((this.grants.heavyHand as number) ?? 0) : 0;
+    if (heavy > 0 && defender.kind !== 'hero' && defender.life > 0) {
+      defender.slowed = Math.max(defender.slowed ?? 0, Math.min(0.9, heavy / 100));
+      const live = defender.effects.find((x) => x.id === SLOWED);
+      if (live) live.remaining = Math.max(live.remaining, WARRIOR.heavyHandSeconds);
+      else defender.effects.push({ id: SLOWED, remaining: WARRIOR.heavyHandSeconds });
+    }
     if (attacker.kind === 'hero' && defender.kind !== 'hero') this.sunder(defender);
     if (defender.kind === 'hero') this.sinceHit = 0;
     defender.hitFlash = 0.18;
@@ -2844,7 +2880,8 @@ export class RunSim {
       // Resisted per type, never armoured — which is what lets an ailment
       // threaten a build no hit can get through.
       for (const [type, dps] of Object.entries(ailment.dps)) {
-        const dealt = this.afterResistance(e, dps * scale, type);
+        // SECOND SKIN: the one thing that puts Armour in front of an Ailment.
+        const dealt = this.afterResistance(e, dps * scale, type) * this.hide(e);
         total += dealt;
         ticked[ailment.id] = (ticked[ailment.id] ?? 0) + dealt;
         if (e.kind === 'hero') byType[type] = (byType[type] ?? 0) + dealt;
@@ -2936,6 +2973,42 @@ export class RunSim {
     return damage - paid;
   }
 
+  /** WHAT A BLOCK IS WORTH BEYOND STOPPING THE HIT. Nothing here writes
+   *  `blockChance`: the shield's own number is the whole of whether it runs. */
+  private afterBlock(hero: Entity, by: Entity): void {
+    const thorns = (this.grants.blockThorns as number) ?? 0;
+    if (thorns > 0 && !by.dead && by.kind !== 'hero') {
+      const back = Object.values(hero.stats.damageByType).reduce((n, v) => n + v, 0) * thorns;
+      if (back > 0) {
+        by.life -= this.afterResistance(by, back, 'physical');
+        this.state.floaters.push({
+          x: by.x, y: by.y, text: String(Math.round(back)), age: 0, crit: false, on: by.kind,
+        });
+        if (by.life <= 0) this.kill(by);
+      }
+    }
+    const heal = (this.grants.blockHeal as number) ?? 0;
+    if (heal > 0) hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * heal);
+    if (((this.grants.blockRiposte as number) ?? 0) > 0) this.riposte = WARRIOR.riposteSeconds;
+
+    const stagger = (this.grants.blockStagger as number) ?? 0;
+    if (stagger > 0 && !by.dead && by.kind !== 'hero') {
+      by.slowed = Math.max(by.slowed ?? 0, Math.min(0.9, stagger / 100));
+      const live = by.effects.find((x) => x.id === SLOWED);
+      if (live) live.remaining = Math.max(live.remaining, WARRIOR.staggerSeconds);
+      else by.effects.push({ id: SLOWED, remaining: WARRIOR.staggerSeconds });
+    }
+  }
+
+  /** What an AILMENT is multiplied by into this body: 1 for every build but
+   *  the one that bought Armour a say over them. */
+  private hide(e: Entity): number {
+    if (e.kind !== 'hero') return 1;
+    const share = Math.min(WARRIOR.secondSkinCap, (this.grants.secondSkin as number) ?? 0);
+    if (share <= 0) return 1;
+    return 1 - (e.stats.armourReduction / 100) * share;
+  }
+
   /** Damage dealt, back as mana. The road that pays for spending the pool. */
   private leech(hero: Entity, damage: number): void {
     const share = (this.grants.manaLeech as number) ?? 0;
@@ -2958,14 +3031,17 @@ export class RunSim {
   /** A defender's armour once the room has had its say. The stat pipeline's
    *  floor holds here too: a quarter of every hit still lands. */
   private blunting(defender: Entity): number {
+    // OVERWHELM: only ever downward, and only ever against a monster.
+    const ignore =
+      defender.kind === 'hero' ? 0 : Math.min(1, (this.grants.overwhelm as number) ?? 0);
     const boost = defender.boost;
     if (!boost || (boost.flatArmour === 0 && boost.incArmour === 0)) {
-      return defender.stats.armourReduction;
+      return defender.stats.armourReduction * (1 - ignore);
     }
     const armour = (defender.stats.armour + boost.flatArmour) * (1 + boost.incArmour / 100);
     const hardest = Math.max(0, ...Object.values(defender.stats.resistances)) / 100;
     const room = 1 - DEFENCE.monsterHitFloor / Math.max(0.01, 1 - hardest);
-    return Math.max(0, Math.min(armourReduction(armour), room * 100));
+    return Math.max(0, Math.min(armourReduction(armour), room * 100)) * (1 - ignore);
   }
 
   /**
@@ -3022,6 +3098,11 @@ export class RunSim {
     if (back > 0) {
       const hero = s.hero;
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+    }
+    const fed = (this.grants.killHeal as number) ?? 0;
+    if (fed > 0) {
+      const hero = s.hero;
+      hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * fed);
     }
     s.xpGained += this.xpPerKill * victim.bounty;
     s.loot.currency.gold =
