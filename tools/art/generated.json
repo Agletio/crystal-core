@@ -2344,6 +2344,33 @@
      "group": "3a23b4a3-f9fd-4b77-a365-95917d57e534"
     }
    }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "mahthar",
+   "character": "1f92fbab-3518-45fd-894c-b5ff29396cf6",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": ""
+    },
+    "walk": {
+     "group": ""
+    },
+    "attack": {
+     "group": ""
+    },
+    "cast": {
+     "group": ""
+    },
+    "death": {
+     "group": ""
+    }
+   }
   }
  ],
  "props": [
