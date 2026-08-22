@@ -3184,6 +3184,72 @@
      "group": "9f903fb1-6823-4462-bb3b-845d531886c7"
     }
    }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "flowering",
+   "character": "009c27f8-c8b6-4545-895d-4c09a819aa80",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "b26da5ac-4a9b-43be-9f6d-94b5afaaff4f"
+    },
+    "walk": {
+     "group": "78ab2f66-3ee7-45b6-a802-136f9432d038"
+    },
+    "attack": {
+     "group": "7485d33b-e9c7-4d30-b47a-2cfcb5ee9035"
+    },
+    "slam": {
+     "group": "bae55eaa-50df-4dbf-9499-79cfc3ca1af0"
+    },
+    "roar": {
+     "group": "4022e1b8-a586-4a52-97f3-82758b244583"
+    },
+    "hurt": {
+     "group": "4afd166a-8136-49b2-ac12-1cff97b953d3"
+    },
+    "death": {
+     "group": "218e04fe-b8bd-44c5-90ff-47975dd81dfe"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "refraction",
+   "character": "f33c2b6f-0cee-4ff6-8020-19c9b6451ac0",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "3fdc13ed-453b-4047-b0f1-6e3bc262a4f6"
+    },
+    "walk": {
+     "group": "ca5f7591-1707-4282-86d3-36bcb15091d2"
+    },
+    "attack": {
+     "group": "a1d38996-94ad-447d-b65a-e85c0f61cbe6"
+    },
+    "slam": {
+     "group": "77df24a0-76b4-4445-b5a6-c80ee795cb75"
+    },
+    "roar": {
+     "group": "e14c6556-7aef-4df4-936d-98f64a52d1b5"
+    },
+    "hurt": {
+     "group": "9be276d6-712b-44b7-a3bc-77d878d9fa38"
+    },
+    "death": {
+     "group": "ed9de71e-75b7-41e3-9ef9-27c874d61efa"
+    }
+   }
   }
  ],
  "props": [
