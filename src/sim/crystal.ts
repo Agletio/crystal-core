@@ -13,6 +13,7 @@ import {
   POWER,
   REWARD,
   bandFor,
+  tierForSockets,
 } from '../data';
 import { challengeMod, dropBias, rungMod } from './stats';
 import { dangerScore } from '../mods';
@@ -121,6 +122,8 @@ export interface RunSet {
   /** See POWER. 0 is the bare Fissure. */
   power: number;
   band: DropBand;
+  /** Best base TIER this run can drop: what the SOCKETS buy. */
+  maxTier: number;
   composition: Composition; // which monsters, in what share; never how hard
   theme: MapTheme; // which world the rock is; follows the composition
   /** 1 when the two other worlds are split evenly, 0 when neither is here. */
@@ -162,6 +165,7 @@ export function runSet(
     rewards,
     power,
     band: bandFor(power),
+    maxTier: tierForSockets(crystals.length),
     composition: share,
     // THE RUNG IS THE ZONE. Composition still picks one for anything with no
     // rung — a measured set, a harness — but a climb says where it is.

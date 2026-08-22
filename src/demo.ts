@@ -297,6 +297,7 @@ import {
   giftWeapon,
   keepsItem,
   plainGear,
+  isUnique,
   replaceItem,
   selectForCraft,
   sellAll,
@@ -321,6 +322,7 @@ import {
   questDanger,
   QUEST_CONDITIONS,
   ownedCrystals,
+  crystalsUnlocked,
   takeHandover,
   questMet,
   xpForClear,
@@ -9535,21 +9537,78 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     `${stale.name} after healing`
   );
 
+  // NOTHING LEVELS UNTIL THE CLIMB IS BEHIND YOU. *"No, can only level once you
+  // get to the end so no mods."* A crystal on the ladder is a plain TIER TOKEN.
+  const climbing = createGame('fresh');
+  climbing.character = ladderCharacter(1, new Rng(3));
+  const early = makeCrystal(1);
+  addItem(climbing, early);
+  socketItem(climbing, early, RUN_SLOTS[0].id);
+  {
+    const sim = new RunSim([early], climbing.character, new Rng(515));
+    runToCompletion(sim, 400);
+    buildReport(climbing, sim.state);
+    check(
+      !crystalsUnlocked(climbing) && crystalXp(early) === CRYSTAL_LEVELS[0].xp,
+      `a crystal earns nothing while fewer than ${RUN_SLOTS.length} are held`,
+      `held ${ownedCrystals(climbing).length}, xp ${crystalXp(early)}`
+    );
+  }
+
+  // And once all four are in hand the seam is the old one: sockets are paid
+  // and a bag is not.
   const game = createGame('fresh');
   game.character = ladderCharacter(1, new Rng(3));
   const socketed = makeCrystal(1);
   const pocketed = makeCrystal(1);
-  addItem(game, socketed);
-  addItem(game, pocketed);
+  for (const c of [socketed, pocketed, makeCrystal(1), makeCrystal(1)]) addItem(game, c);
   socketItem(game, socketed, RUN_SLOTS[0].id);
   const sim = new RunSim([socketed], game.character, new Rng(515));
   runToCompletion(sim, 400);
   const report = buildReport(game, sim.state);
   check(
-    report.cleared && crystalXp(socketed) > crystalXp(pocketed) && crystalXp(pocketed) === 0,
-    'a cleared run pays the sockets and nothing in a bag',
+    crystalsUnlocked(game) && report.cleared
+      && crystalXp(socketed) > crystalXp(pocketed) && crystalXp(pocketed) === 0,
+    'and once all four are held a cleared run pays the sockets and nothing in a bag',
     `${sim.state.status}: socketed ${crystalXp(socketed)}, carried ${crystalXp(pocketed)}`
   );
+
+  // THE TIER A CRYSTAL BUYS. The climb makes a run harder and richer; a socket
+  // is what makes it drop a better BASE, and it never touches item level.
+  {
+    const tiers = [0, 1, 2, 3, 4].map((n) =>
+      runSet(Array.from({ length: n }, () => makeCrystal(1))).maxTier
+    );
+    line(`  best base tier by sockets: ${tiers.join(' · ')}`);
+    check(
+      tiers[0] === 1 && tiers.every((t, i) => i === 0 || t >= tiers[i - 1]) && tiers[4] === 3,
+      'nothing socketed drops tier 1 bases only, and the tier climbs with the sockets',
+      tiers.join(', ')
+    );
+    // Played out: what a real run at the top of the climb can actually hand you.
+    const dropped = (sockets: number): Set<number> => {
+      const out = new Set<number>();
+      const crystals = Array.from({ length: sockets }, () => makeCrystal(4));
+      for (let seed = 0; seed < 60; seed++) {
+        const sim = new RunSim(crystals, ladderCharacter(6, new Rng(seed)), new Rng(900 + seed), {
+          rung: { zone: 2, rung: 15 },
+        });
+        runToCompletion(sim, 900);
+        for (const item of sim.state.loot.items) {
+          if (item.kind === 'gear' && !isUnique(item)) out.add(GEAR_BASE_BY_ID[item.base]?.tier ?? 1);
+        }
+      }
+      return out;
+    };
+    const bare = dropped(0);
+    const full = dropped(4);
+    line(`  tiers actually dropped: none socketed ${[...bare].sort().join('/')} · four ${[...full].sort().join('/')}`);
+    check(
+      bare.size > 0 && Math.max(...bare) === 1 && Math.max(...full) === 3,
+      'and the deepest rung in the game drops tier 1 with nothing in, tier 3 with four',
+      `${[...bare].join(',')} against ${[...full].join(',')}`
+    );
+  }
 }
 
 // The quests. Each one is a wall if its objective is out of reach of the

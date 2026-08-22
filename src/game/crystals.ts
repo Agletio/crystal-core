@@ -13,6 +13,7 @@ import {
   INTRO,
   LAMPWRIGHT,
   QUEST_BY_ID,
+  RUN_SLOTS,
   SKILL_BY_ID,
   crystalName,
 } from '../data';
@@ -197,8 +198,14 @@ export interface CrystalGain {
   levels: number;
 }
 
-/** Only while socketed — a crystal in the collection is one not being used. */
+/** THE ENDGAME GATE: a crystal on the climb is a plain TIER TOKEN, and nothing
+ *  rolls on one or levels one until all four are HELD. */
+export const crystalsUnlocked = (game: GameState): boolean =>
+  ownedCrystals(game).length >= RUN_SLOTS.length;
+
+/** Only while socketed, and only once the climb is behind you. */
 export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
+  if (!crystalsUnlocked(game)) return [];
   const xp = xpForClear(set.rewards.danger);
   const out: CrystalGain[] = [];
   for (const crystal of Object.values(game.sockets ?? {})) {

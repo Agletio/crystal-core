@@ -133,17 +133,16 @@ const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
   {} as Record<string, number>
 );
 
-/**
- * Kind first, base only within it: one uniform pick would make composition a
- * side effect of content volume, and there are 144 armour bases to one ring.
- * Bases above the item level are ineligible.
- */
+/** Kind first, base only within it: one uniform pick would make composition a
+ *  side effect of content volume — 144 armour bases to one ring. */
 export function pickGearBase(
   ilvl: number,
   rng: Rng,
-  bias: Record<string, number> = {}
+  bias: Record<string, number> = {},
+  /** Best base TIER this may drop: what a SOCKET buys, not what a rung does. */
+  maxTier = Infinity
 ): GearBase | undefined {
-  const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl);
+  const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl && (b.tier ?? 1) <= maxTier);
   const kinds = [...new Set(eligible.map((b) => b.kind))];
   // A crystal hunting weapons weights the KIND pick and nothing else, so it
   // cannot conjure a base the item level does not already allow.

@@ -33,7 +33,7 @@ import { crystalFamily, rewardRows } from '../sim/crystal';
 import { grantLines, itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
-import { FAMILY_BY_ID } from '../data';
+import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
@@ -276,6 +276,11 @@ function renderItem(): void {
 
 /** Id of one crystal's button beside the bench, so the guide can ring it. */
 export const crystalSlotId = (itemId: string): string => `bench-${itemId}`;
+
+/** Said in one place, because it is said twice: on a crystal, and under them. */
+const WHY_SHUT =
+  `The bench cannot reach a crystal until you hold all ${RUN_SLOTS.length}. ` +
+  'Until then a crystal is a tier and nothing else.';
 
 /**
  * Every crystal you own, beside the bench. They are never carried, so the dock

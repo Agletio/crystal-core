@@ -3239,6 +3239,14 @@ export const DROP_BANDS: DropBand[] = [
   { fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
 ];
 
+/** THE TIER A CRYSTAL BUYS, by how many are SOCKETED — *"first run t1 only…
+ *  repeat again for t2 and second crystal, t3 and third."* It caps the base's
+ *  TIER and never its item level, so a cycle is WELL-ROLLED t1, not bad t1. */
+export const TIER_BY_SOCKETS = [1, 2, 3, 3, 3];
+
+export const tierForSockets = (filled: number): number =>
+  TIER_BY_SOCKETS[Math.max(0, Math.min(TIER_BY_SOCKETS.length - 1, filled))];
+
 export const bandFor = (power: number): DropBand =>
   DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];
 

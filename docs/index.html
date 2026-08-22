@@ -1644,6 +1644,8 @@
   .wornslot:hover:not(:disabled) { background: var(--edge); }
   .wornslot--on { border-left-color: var(--citrine); background: var(--edge); }
   .wornslot--bare { opacity: .55; }
+  /* A crystal the climb has not opened yet: shut, and the reason is on it. */
+  .wornslot--off { opacity: .45; cursor: default; }
   .wornslot__body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
   .wornslot__name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .wornslot__slot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }

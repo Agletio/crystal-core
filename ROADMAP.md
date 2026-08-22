@@ -6,13 +6,13 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**PHASE 1 IS THE LADDER, and two pieces of it have landed.** The CLIMB — 42
-rungs across three zones, the pips that draw them, and a rung as ONE mod on the
-crystal seam — and PERFECT bases. What is left of the phase replaces the spine
-of the game: composition choosing the zone, sockets being length and difficulty,
-item tier coming off power. It is not something to start halfway, and it is
-blocked on three questions written into the phase. The generic-crystal-modifier
-pass is the one unblocked piece left, and it waits on question 3.
+**PHASE 1 — THE LADDER — IS DONE.** The CLIMB (42 rungs, three zones, a rung as
+ONE mod on the crystal seam), PERFECT bases, wards by FAMILY, CHALLENGE FLOORS
+every fourth rung, a BOSS at the top of each zone, and crystals as TIER TOKENS.
+All three of its questions were answered and every piece of it has landed. What
+it leaves behind is a balance question for the balance pass: a first cycle is
+now tier 1 gear for all 42 rungs, and nobody has measured whether that clears
+the deep end.
 
 **Phase 2 is more characters, and Mahthar is FINISHED** — body, thirteen weapon
 variants, ten dual-wield pairs, his web and the fifteen switches under it. All
@@ -572,9 +572,18 @@ and never in the bulk heap. The card says it with its figure in it.
       one read, and clearing it is what records the rung the zone above opens
       on — so the climb has one gate and it is a fight. 600 / 2600 / 7200 life
       and 1.4 / 3.4 / 6.2 damage up the three.
-- [ ] **Phase 1d — crystals as tier tokens.** The spine: nothing rolls and
-      nothing levels until all four are held, and item tier comes off crystals
-      socketed rather than off power.
+- [x] **Phase 1d — crystals as tier tokens. DONE.** `crystalsUnlocked` is the
+      one gate: nothing levels and the bench cannot reach a crystal until all
+      four are HELD. And `TIER_BY_SOCKETS` caps the base TIER a run may drop —
+      1 / 2 / 3 / 3 / 3 — while leaving ITEM LEVEL to the rung, so a first cycle
+      is well-rolled tier 1 rather than tier 1 rolled badly. Played out at the
+      Rot's rung 15: nothing socketed drops tier 1 only; four sockets drop 1/2/3.
+
+**PHASE 1 IS COMPLETE.** What is left of it is a BALANCE question, not a build
+one: the ladder's `lifeAtTop` / `damageAtTop` were set when a run's gear climbed
+with its power, and a first cycle is now tier 1 for all 42 rungs. Nobody has
+measured whether well-rolled tier 1 can clear The Flowering, and the balance
+pass is where that is answered.
 
 ---
 

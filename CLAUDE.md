@@ -198,6 +198,13 @@ MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 
+**ON THE CLIMB A CRYSTAL IS A TIER TOKEN.** Nothing rolls on one and nothing
+levels one until all four are HELD (`crystalsUnlocked`) — the ladder's
+difficulty is the rung and the challenge floors, never a socket. What a socket
+buys instead is the base TIER a run may drop (`TIER_BY_SOCKETS`, 1/2/3/3/3),
+where the RUNG buys the item level: a first cycle is well-rolled tier 1 rather
+than tier 1 rolled badly.
+
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
 is a standing set of modifiers on top — earned one point at a time by doing a

@@ -3160,7 +3160,9 @@ export class RunSim {
       return;
     }
 
-    const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods));
+    // THE SOCKETS CAP THE BASE and the rung caps its item level: a first cycle
+    // is well-rolled tier 1 rather than tier 1 rolled badly.
+    const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods), this.set.maxTier);
     if (!base) return;
 
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);

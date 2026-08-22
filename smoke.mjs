@@ -1222,6 +1222,20 @@ assert(
   one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 }
 
+// THE BENCH CANNOT REACH A CRYSTAL until the climb is behind you. The dev kit
+// holds every crystal in the game, so this is the OPEN state; what it proves is
+// that the gate is a real one and says so rather than failing silently.
+{
+  $('open-craft').click();
+  const chips = benchCrystals();
+  assert(chips.length > 0, 'the dev kit stands every crystal beside the bench');
+  assert(
+    chips.every((c) => !c.disabled),
+    'and holding all four opens every one of them',
+    String(chips.filter((c) => c.disabled).length)
+  );
+}
+
 // A crystal is the same card, saying the things a crystal has instead: which
 // world it opens, what the danger buys, and how far it has left to level.
 {
