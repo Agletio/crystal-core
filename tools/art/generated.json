@@ -3283,7 +3283,8 @@
    "states": {
     "idle": {
      "group": "37a24cc7-ef05-47bd-b612-12dbdbd7dbfe",
-     "frames": 3
+     "frames": 3,
+     "to": 0.6
     },
     "walk": {
      "group": "c77674c0-3cfc-4756-88d2-20c3b1b20289",
