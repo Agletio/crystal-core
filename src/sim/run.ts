@@ -8,7 +8,7 @@ import { Rng } from '../rng';
 import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
+import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
 import { percentStat } from '../mods';
 import type { BossPhase } from '../data';
 
@@ -425,6 +425,8 @@ export interface RunState {
   regained: number;
   /** Uses that spent a share of the pool for damage. Zero without the node. */
   overcharges: number;
+  /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
+  relays: number;
   /** Damage the mana pool paid for instead of your life. */
   absorbed: number;
 }
@@ -492,6 +494,10 @@ export class RunSim {
   private riposte = 0;
   /** Seconds left of a KILL still covering and quickening you. */
   private sinceKill = 0;
+  /** A Critical's follow-ups, each with every body ITS chain has opened on. */
+  private chained: { in: number; seen: number[] }[] = [];
+  /** The chain the use running right now belongs to, and null outside one. */
+  private chaining: number[] | null = null;
   /** What is in the hero's hands, read once: nothing swaps gear mid-descent. */
   private readonly grip: Grip;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
@@ -618,6 +624,7 @@ export class RunSim {
       drunk: 0,
       regained: 0,
       overcharges: 0,
+      relays: 0,
       absorbed: 0,
       folk: [],
       meeting: false,
@@ -955,6 +962,7 @@ export class RunSim {
     // Slow, and were ticked nowhere at all until one could carry one.
     for (const m of s.monsters) if (!m.dead && m.effects.length > 0) this.stepEffects(m, dt);
 
+    this.stepChains(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -2282,10 +2290,72 @@ export class RunSim {
       areaRadius: (base) => this.areaRadius(user, base),
       vfx: (kind, points, ttl = 0.3) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
+      blink: (target) => this.stepBehind(user, target),
     });
 
     this.useCrit = null;
     user.cooldown = this.swingCooldown(user);
+    // Only off the skill in the MAIN slot: a follow-up is another use of it.
+    if (user.kind === 'hero' && skill === this.skill) this.maybeChain(primary, crit);
+  }
+
+  /** BEHIND a body: the far side of it from where you stand, and round the ring
+   *  a step at a time when that tile is not one you may stand on. Nothing moves
+   *  at all rather than landing somewhere illegal, and the hit still lands. */
+  private stepBehind(user: Entity, target: Entity): void {
+    if (user.kind !== 'hero') return;
+    const grid = this.state.map.grid;
+    const gap = user.radius + target.radius + AMBUSH.behind;
+    const away = Math.atan2(target.y - user.y, target.x - user.x);
+    for (let i = 0; i < 8; i++) {
+      const turn = away + (Math.PI / 4) * Math.ceil(i / 2) * (i % 2 === 0 ? 1 : -1);
+      const spot = { x: target.x + Math.cos(turn) * gap, y: target.y + Math.sin(turn) * gap };
+      if (!grid.walkable(spot.x, spot.y) || this.penned(spot, user.radius)) continue;
+      this.emit('blink', [{ x: user.x, y: user.y }, spot], 'physical', 0.25);
+      user.x = spot.x;
+      user.y = spot.y;
+      // The path was to where he WAS walking; from here it is somebody else's.
+      user.path = [];
+      this.face(user, target.x, target.y);
+      return;
+    }
+  }
+
+  /** THE FOLLOW-UP a Critical buys. A body this chain has already opened on
+   *  ENDS it, which is also the whole proof that it terminates. */
+  private maybeChain(on: Entity, crit: boolean): void {
+    if (!crit || this.grants.critChain !== true) return;
+    const seen = this.chaining ?? [];
+    if (seen.includes(on.id)) return;
+    const sooner = (this.grants.chainSooner as number) ?? 1;
+    this.chained.push({ in: AMBUSH.chainDelay * sooner, seen: [...seen, on.id] });
+  }
+
+  /** A teleport into another body and the whole skill again, a moment later.
+   *  Prefers one this chain has not opened on; with nothing else in reach it
+   *  repeats on the same body, and that repeat is where it stops. */
+  private stepChains(dt: number): void {
+    if (this.chained.length === 0) return;
+    const hero = this.state.hero;
+    const due = this.chained.filter((c) => (c.in -= dt) <= 0);
+    this.chained = this.chained.filter((c) => c.in > 0);
+    if (hero.dead) return;
+
+    const reach = AMBUSH.chainReach * ((this.grants.chainReach as number) ?? 1);
+    for (const chain of due) {
+      const live = this.state.monsters.filter((m) => !m.dead && dist(m, hero) <= reach);
+      const fresh = live.filter((m) => !chain.seen.includes(m.id));
+      const pick = (fresh.length > 0 ? fresh : live).sort(
+        (a, b) => dist(hero, a) - dist(hero, b)
+      )[0];
+      if (!pick) continue;
+      this.chaining = chain.seen;
+      this.state.relays++;
+      // PAID like any other use: a free hit off a Critical is a build with no
+      // ceiling, where one that pays runs the pool dry and lands Starved.
+      this.swing(hero, pick);
+      this.chaining = null;
+    }
   }
 
   /** MOMENTUM, advanced once per use: what THIS use is worth against the body

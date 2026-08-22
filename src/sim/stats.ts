@@ -402,9 +402,11 @@ export function heroStats(
       hands.length > 1 && !skill.tags.includes('spell')
         ? hands.map((r) => r / Math.max(0.01, rate))
         : [],
-    // Tagged, so an ATTACK critical chance does nothing for a spell.
+    // The SKILL's own base, scaled by what gear rolls: `computeStat` is
+    // (base + flat) × (1 + increased), so a skill that starts high is a skill
+    // near the cap. Tagged, so an ATTACK critical chance does nothing for a spell.
     critChance:
-      computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags) +
+      computeStat(skill.critChance ?? HERO_BASE.critChance, mods, 'critChance', skill.tags) +
       (grip === 'pair' ? ((grants.pairCrit as number) ?? 0) : 0),
     // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),

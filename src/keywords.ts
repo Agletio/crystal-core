@@ -299,8 +299,9 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Critical', 'Critically', 'Criticals'],
     means:
       'A Critical hit deals ×2 your damage, plus whatever Critical Damage you ' +
-      'have found. Critical Chance is how often, and a spell and an attack ' +
-      'count it separately.',
+      'have found. Critical Chance is how often: every skill has its own, and ' +
+      'increased Critical Chance scales THAT. A spell and an attack count it ' +
+      'separately.',
   },
   {
     id: 'resistance',

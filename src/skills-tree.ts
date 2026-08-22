@@ -12,6 +12,7 @@ import { GRANT_BY_ID } from './sim/grants';
 import type { Changes } from './sim/grants';
 import { interactionOf } from './trees/interactions';
 import { buildTree } from './trees/layout';
+import { AMBUSH_SPEC } from './trees/ambush';
 import { ARC_LIGHTNING_SPEC } from './trees/arc_lightning';
 import { BLIGHT_SPEC } from './trees/blight';
 import { FIREBALL_SPEC } from './trees/fireball';
@@ -42,6 +43,7 @@ export const BUILT_TREES: BuiltTree[] = [
   BLIGHT_SPEC,
   ARC_LIGHTNING_SPEC,
   LIGHTNING_ARROW_SPEC,
+  AMBUSH_SPEC,
 ].map(buildTree);
 
 /** The movement webs: their own geometry and their own budget, but a web the

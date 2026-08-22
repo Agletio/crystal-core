@@ -111,7 +111,7 @@ assert($('pick').hidden === true, 'taking him closes the hall');
 // A slot can hold a game that was never asked what it swings, so playing one
 // still puts the question up rather than assuming a save answered it.
 assert($('welcome').hidden === false, 'and a game with no skill still asks for one');
-assert(all('#welcome-skills .welcomecard').length === 7, 'all skills offered');
+assert(all('#welcome-skills .welcomecard').length === 8, 'all 8 main skills offered');
 assert($('welcome-name') !== null, 'and asks who you are');
 
 $('welcome-name').value = 'Vespera';
@@ -1785,7 +1785,7 @@ cats[0].click();
 assert($('skills-cats').hidden === true, 'picking a category leaves the categories');
 assert($('skills-list').hidden === false, 'and shows what is on that shelf');
 assert($('skills-back').hidden === false, 'with a way back');
-assert(all('#skills-list .skilltile').length === 7, 'every ability on the shelf is listed');
+assert(all('#skills-list .skilltile').length === 8, 'every ability on the shelf is listed');
 
 // Back really does go back.
 $('skills-back').click();

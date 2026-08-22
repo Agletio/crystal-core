@@ -337,7 +337,7 @@ const ARMOUR_SLOT_LAYOUT: Record<string, Record<string, number>> = {
 /**
  * What one budget point buys. These rates are what make the budget comparable
  * across families — a point of move speed has to be worth a point of armour or
- * the invariant is decoration. Crit is flat on a 5% base, so it is the dearest.
+ * the invariant is decoration. Crit is INCREASED, scaling a base of about 5.
  */
 const IMPLICIT_PER_POINT: Record<string, number> = {
   armour: 6,
@@ -346,13 +346,13 @@ const IMPLICIT_PER_POINT: Record<string, number> = {
   attackSpeed: 0.75,
   castSpeed: 0.75,
   moveSpeed: 0.5,
-  critChance: 0.25,
+  critChance: 3,
 };
 
 /** Armour and increases are whole numbers; the dear stats need a decimal. */
 const IMPLICIT_STEP: Record<string, number> = {
   armour: 1, attackDamage: 1, spellDamage: 1,
-  attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 0.1,
+  attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 1,
 };
 
 const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
@@ -362,7 +362,7 @@ const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?:
   attackSpeed: { stat: 'attackSpeed', form: 'inc' },
   castSpeed: { stat: 'castSpeed', form: 'inc' },
   moveSpeed: { stat: 'moveSpeed', form: 'inc' },
-  critChance: { stat: 'critChance', form: 'flat' },
+  critChance: { stat: 'critChance', form: 'inc' },
 };
 
 interface ArmourFamily {
@@ -601,13 +601,13 @@ export const WEAPON_BASES: GearBase[] = [
 
   // --- daggers: crit --------------------------------------------------
   weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], 19, [
-    { stat: 'critChance', form: 'flat', range: [3, 3] },
+    { stat: 'critChance', form: 'inc', range: [25, 25] },
   ]),
   weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], 25, [
-    { stat: 'critChance', form: 'flat', range: [5, 5] },
+    { stat: 'critChance', form: 'inc', range: [45, 45] },
   ]),
   weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], 47, [
-    { stat: 'critChance', form: 'flat', range: [8, 8] },
+    { stat: 'critChance', form: 'inc', range: [75, 75] },
   ]),
 
   // --- maces: the heaviest base, and one damage type each ------------
@@ -1536,7 +1536,7 @@ export const ATTRIBUTES: AttributeDef[] = [
     id: 'dexterity',
     name: 'Dexterity',
     per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['attack'] },
+      { stat: 'critChance', form: 'inc', value: 1.5, tags: ['attack'] },
       { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
     ],
   },
@@ -1544,7 +1544,7 @@ export const ATTRIBUTES: AttributeDef[] = [
     id: 'acuity',
     name: 'Acuity',
     per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['spell'] },
+      { stat: 'critChance', form: 'inc', value: 1.5, tags: ['spell'] },
       { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
     ],
   },
@@ -1617,7 +1617,7 @@ export const FORGED: ForgedDef[] = [
       tags: ['forged'],
       grants: { explodeOnKill: { radius: 2, multiplier: 0.35 } },
       tiers: [
-        { ilvl: 1, weight: 0, stats: [{ stat: 'critChance', form: 'flat', range: [4, 4] }] },
+        { ilvl: 1, weight: 0, stats: [{ stat: 'critChance', form: 'inc', range: [40, 40] }] },
       ],
     },
   },
@@ -2084,6 +2084,17 @@ export const MELEE = {
   echo: 1.5, // how far the FIRST Echo looks, from the enemy you struck
   echoStep: 0.6, // and how much further out each one after it may look
   echoDamage: 0.7, // what an Echo lands for, where the one you aimed at takes all
+};
+
+/** AMBUSH puts you BEHIND the body before it hits it, and a Critical does the
+ *  whole thing again on somebody else. The follow-up is DELAYED on purpose:
+ *  instant, it reads as one hit doing double damage rather than as a second
+ *  teleport, and watching it happen is the point of the node. */
+export const AMBUSH = {
+  behind: 0.2, // the gap past both bodies' radii the landing leaves
+  chainDelay: 0.3, // seconds before a Critical's follow-up lands
+  chainReach: 9, // how far a follow-up may cross, in tiles
+  chainDamage: 0.7, // what it lands for, where the one you aimed at takes all
 };
 
 /** A killed enemy's Burst sets off the Burst of whatever IT kills, so a floor
@@ -3300,7 +3311,7 @@ export const UNIQUES: UniqueDef[] = [
     flavour: 'The dead are a resource. It is only manners to say so.',
     stats: [
       { stat: 'life', form: 'inc', range: [-30, -20] },
-      { stat: 'critChance', form: 'flat', range: [6, 10] },
+      { stat: 'critChance', form: 'inc', range: [60, 100] },
     ],
     grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
     gate: { zone: 'demonic', minPower: 2 },
@@ -3646,10 +3657,35 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'melee',
     damageTypes: ['physical'],
     baseDamage: 80,
+    critChance: 6,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
+    vfxKind: 'slash',
+  },
+  {
+    /** The DELIVERY is the skill: it closes 5.5 tiles by itself and opens from
+     *  behind, so the hit lands where a walk would still be arriving. Paid for
+     *  in damage — 64 against Strike's 80 at the same rate — and the 25% base
+     *  crit is what the rest of it is built on. */
+    id: 'ambush',
+    requires: 'melee',
+    name: 'Ambush',
+    category: 'attack',
+    description:
+      'You step through the room to behind one enemy and open on it. One ' +
+      'target, from 5.5 tiles, and it crits at 25% before anything you wear.',
+    tags: ['attack', 'melee'],
+    behaviour: 'ambush',
+    damageTypes: ['physical'],
+    weapon: 'shiv', // the knife the whole skill is written for
+    baseDamage: 64,
+    critChance: 25,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 5.5,
     vfxKind: 'slash',
   },
   {
@@ -3667,6 +3703,7 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'cone',
     damageTypes: ['physical'],
     baseDamage: 58,
+    critChance: 5,
     addedEffectiveness: 100,
     rateMultiplier: 0.75,
     manaCost: 10,
@@ -3694,6 +3731,7 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'single_target',
     damageTypes: ['cold'],
     baseDamage: 104,
+    critChance: 6,
     addedEffectiveness: 100,
     rateMultiplier: 0.75,
     manaCost: 10,
@@ -3715,6 +3753,7 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'projectile',
     damageTypes: ['fire'],
     baseDamage: 72,
+    critChance: 5,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
@@ -3786,6 +3825,7 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'projectile',
     damageTypes: ['lightning'],
     baseDamage: 44,
+    critChance: 4,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
@@ -3812,6 +3852,7 @@ export const SKILLS: SkillDef[] = [
     damageTypes: ['lightning'],
     weapon: 'crude_bow', // a bow, not the attack shelf's sword
     baseDamage: 58,
+    critChance: 7,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
@@ -3841,6 +3882,7 @@ export const SKILLS: SkillDef[] = [
     // Both high because a cast is spread over 10s and caps at 9 stacks at the
     // base cast rate — 0.9 applications a second against a hit skill's 1.2.
     baseDamage: 115,
+    critChance: 4,
     addedEffectiveness: 160,
     rateMultiplier: 0.75,
     manaCost: 10,

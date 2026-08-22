@@ -3,6 +3,7 @@
  *
  *   npx tsx tools/art/variant.mts check                  every variant, against its row
  *   npx tsx tools/art/variant.mts write <sprite> [...]   rewrite those rows in bodies.json
+ *   npx tsx tools/art/variant.mts seed <hero>            the thirteen rows a hero carries
  *
  * A variant is one hero holding one weapon, and there are 26 over two heroes.
  * Its five states are the BASE body's states with the weapon named in them, so
@@ -17,6 +18,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 type State = { frames: number; say: string };
 type Body = {
   sprite: string;
+  name?: string;
+  size?: number;
+  look?: string;
   weapon?: string;
   off?: string;
   states: Record<string, State>;
@@ -93,6 +97,46 @@ const strip = (say: string, lead: string): string =>
   say.toLowerCase().startsWith(`${lead.toLowerCase()} `) ? say.slice(lead.length + 1) : say;
 
 const [command, ...only] = process.argv.slice(2);
+
+/** WHAT ONE HERO CARRIES: nine weapons, and the four one-handers with a shield
+ *  strapped to the other arm. `dressbody.sh` walks this same list. */
+const CARRIES: Array<{ weapon: string; off?: string }> = [
+  ...['sword', 'sword2h', 'dagger', 'mace', 'mace2h', 'staff', 'wand', 'bow'].map((weapon) => ({ weapon })),
+  { weapon: 'shield', off: 'shield' },
+  ...['sword', 'dagger', 'mace', 'wand'].map((weapon) => ({ weapon, off: 'shield' })),
+];
+
+if (command === 'seed') {
+  const hero = only[0];
+  const from = book.bodies.find((b) => b.sprite === hero && !b.sprite.includes('_'));
+  if (!from) throw new Error(`no base body ${hero}`);
+  for (const { weapon, off } of CARRIES) {
+    const sprite = [hero, weapon, off === weapon ? undefined : off].filter(Boolean).join('_');
+    if (book.bodies.some((b) => b.sprite === sprite)) {
+      console.log(`${sprite}: already there`);
+      continue;
+    }
+    const held = words.weapons[weapon]?.noun ?? weapon;
+    const second = off && off !== weapon ? ` and a ${words.weapons[off]?.noun}` : '';
+    const row: Body = {
+      sprite,
+      name: `${from.name ?? hero}, with a ${held}${second}`,
+      size: from.size ?? 96,
+      weapon,
+      ...(off ? { off } : {}),
+      look: from.look,
+      states: JSON.parse(JSON.stringify(from.states)),
+    };
+    for (const [name, state] of Object.entries(row.states)) {
+      state.say = compose(row, name, from.states[name] ?? state);
+    }
+    book.bodies.push(row);
+    console.log(`${sprite}: ${Object.keys(row.states).length} states`);
+  }
+  writeFileSync(here('bodies.json'), `${JSON.stringify(book, null, 1)}\n`);
+  process.exit(0);
+}
+
 const variants = book.bodies.filter((b) => b.sprite.includes('_') && (b.weapon || b.off));
 
 if (command === 'check') {

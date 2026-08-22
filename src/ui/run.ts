@@ -47,8 +47,8 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
 import { openTalk } from './talk';
-import { climbLine, renderClimb, rungLabel, rungNow } from './climb';
-import { arenaAt, takeRung } from '../ladder';
+import { climbLine, renderClimb, rungLabel, rungName, rungNow } from './climb';
+import { arenaAt, isChallenge, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -170,6 +170,7 @@ function setPhase(next: Phase): void {
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
   syncViewportLock();
+  syncRung();
   setInventoryBase(runHandler());
 }
 
@@ -511,7 +512,7 @@ function launch(): void {
   });
 
   note(
-    `${rungLabel(game.character)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
+    `${rungName(ran)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
       `seed ${seed} · ${sim.state.totalMonsters} monsters`
   );
   accumulator = 0;
@@ -1498,6 +1499,21 @@ function syncBossBar(): void {
   if (label.textContent !== name) label.textContent = name;
   const frac = Math.max(0, Math.min(1, boss.life / boss.stats.maxLife));
   $('run-boss-fill').style.width = `${(frac * 100).toFixed(1)}%`;
+}
+
+/** WHICH RUNG IS UNDER YOU. `ran` is the rung being run rather than the one
+ *  picked, so a chained descent keeps saying the rung it stayed on, and a room
+ *  that is not a rung says nothing at all. */
+function syncRung(): void {
+  const host = $('run-rung');
+  const at = ran;
+  host.hidden = !at || (phase !== 'running' && phase !== 'scene');
+  if (host.hidden || !at) return;
+  $('run-rung-zone').textContent = THEME_BY_ID[zoneAt(at.zone)?.theme ?? '']?.name ?? '';
+  $('run-rung-n').textContent = `Rung ${at.rung}`;
+  const what = $('run-rung-what');
+  what.textContent = arenaAt(at) ? 'Boss' : isChallenge(at.zone, at.rung) ? 'Challenge floor' : '';
+  what.hidden = what.textContent === '';
 }
 
 /** What is ON you, over the pools it is spoiling: a picture, the seconds left

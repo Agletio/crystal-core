@@ -239,6 +239,12 @@ whose mind has changed. Nobody is being RESCUED: they live down there, and
 `greets` says so. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
+**CRIT CHANCE IS THE SKILL'S, and gear only SCALES it.** `SkillDef.critChance`
+is what a skill crits at bare — 4% for Arc Lightning, 25% for Ambush — and every
+crit line on a piece of gear is *increased* Critical Chance, so 10% base and
+100% increased is 20%. FLAT crit stays a tree and trade line, which is what
+keeps a web able to change what a build is capable of rather than nudging it.
+
 **Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is
 one row per type — Burn, Bleed, Chill, Shock, Poison, Curse, Exposure, and
 Prismatic deliberately none. Dealing the type applies it, at a chance you BUY
@@ -278,7 +284,7 @@ sits at an EVEN step from the middle and points come TWO AT A TIME**, so a grant
 is always a minor and the notable behind it and the last pair finishes a branch
 instead of stranding you short of its tip. Six points against fifty nodes: one
 branch whole, three notables, and the fork is still a decision at the cap.
-Seven main skills, each with its own tree; a mover and THREE passives fill the
+Eight main skills, each with its own tree; a mover and THREE passives fill the
 other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40
 of the 99 there are. Attributes are bought per level. Every use costs mana; out

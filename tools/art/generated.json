@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -3305,6 +3305,214 @@
     }
    },
    "stride": 1.15
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword",
+   "character": "50757ad1-3154-49b1-a133-aa4e0e286009",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "5b1d7aaa-fa44-48b4-bf61-3ce03104a9f4"
+    },
+    "walk": {
+     "group": "92c0e74e-1ca6-4e42-8ade-47c5992940ae"
+    },
+    "attack": {
+     "group": "74d19935-9608-4ba4-9865-e4e4a6a39011"
+    },
+    "cast": {
+     "group": "cb0865c2-b238-4bcf-b073-a9a12761aabc"
+    },
+    "death": {
+     "group": "47dba66d-a813-4801-a6aa-08014ef9e45b"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_sword2h",
+   "character": "901e2b6d-4786-45de-acc3-c1001ecad9ee",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "27422d5d-931e-4d73-851d-dda14fa14c8c"
+    },
+    "walk": {
+     "group": "9f59d4cf-a915-4c8f-a954-8dfb27a8f2c1"
+    },
+    "attack": {
+     "group": "d3ca8d59-7c26-4f28-8425-e48586088460"
+    },
+    "cast": {
+     "group": "63760299-76ba-481a-a737-d313fde65520"
+    },
+    "death": {
+     "group": "990a6ba1-884c-423d-b0d5-8889d062e14c"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_dagger",
+   "character": "cd79381c-9444-4c19-a0c1-fc6953ccfda7",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "a87ad7cc-6c8a-43b9-9db0-5af4256eed2e"
+    },
+    "walk": {
+     "group": "192ab7af-1f72-43ef-a126-1456e17be9a6"
+    },
+    "attack": {
+     "group": "04a30e27-a178-44d8-a892-5f4b5942f895"
+    },
+    "cast": {
+     "group": "ce13733b-f936-4b4d-a9ee-feedeb3218d8"
+    },
+    "death": {
+     "group": "b6aed45b-9767-4fef-ba15-8c9d69a1b536"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_mace",
+   "character": "01e3cc01-b07f-43d4-8101-dbd1187fb949",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "04401e8a-f8f7-46a6-9419-37698fc78cf5"
+    },
+    "walk": {
+     "group": "2f543166-1da6-4dac-803b-6f33ab204a3b"
+    },
+    "attack": {
+     "group": "9b5398d6-9f49-4b52-8b54-9420ee0de5f4"
+    },
+    "cast": {
+     "group": "e5272694-6be6-4a73-9666-bef287ce2684"
+    },
+    "death": {
+     "group": "d5d17320-2cf8-463d-9445-8107cc2213fb"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_mace2h",
+   "character": "1667f1d4-183c-4a70-a2f2-53a7889e4002",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "3ebfcdf8-0eb5-4ef7-b193-3941d29e5ff3"
+    },
+    "walk": {
+     "group": "6622a7dd-069b-415a-80d4-7d723f69845b"
+    },
+    "attack": {
+     "group": "a280239c-8de3-462f-984f-19787a00c528"
+    },
+    "cast": {
+     "group": "2383f732-edd0-42ab-b2e5-47796958e1d6"
+    },
+    "death": {
+     "group": "fc61ae52-0186-4875-a08f-d75b837d7ea1"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_staff",
+   "character": "67ea4aea-fc7b-412d-b633-8e4854d15819",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "aa8abc1f-fb4a-429f-add6-ba0cbcb68a81"
+    },
+    "walk": {
+     "group": "c7319d13-bc7d-4b9b-8e45-aba0215329b5"
+    },
+    "attack": {
+     "group": "6213b826-f1cf-4fec-95f3-e298a10047c3"
+    },
+    "cast": {
+     "group": "d8e35b9f-f930-46a8-9e09-d4abdecf7f42"
+    },
+    "death": {
+     "group": "397e621c-7204-46ae-b448-ccb47de877d3"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_wand",
+   "character": "15a88c67-d52b-4950-ab19-d7528b8f04a6",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "d3b7bb5a-a508-4eb3-a0e7-1c0c8ebf1704"
+    },
+    "walk": {
+     "group": "5fb8e36e-7026-48d1-88e3-b8af35b4f177"
+    },
+    "attack": {
+     "group": "c16dafad-9807-4645-84a5-80573a82a203"
+    },
+    "cast": {
+     "group": "abfa033c-22ec-4f26-b94b-881681c20b05"
+    },
+    "death": {
+     "group": "a16c0e94-f4cf-43b1-a171-fd7e5febba3e"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "sprite": "obreth_bow",
+   "character": "7874b4a8-af85-453b-963a-abe27579dac9",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "c1ff17bb-2b25-4670-812a-c3a7758fb9c2"
+    },
+    "walk": {
+     "group": "a2fccfe6-05b5-445a-9964-d4faf4185a4f"
+    },
+    "attack": {
+     "group": "87ff0439-822d-40fb-99ab-f36a57e30637"
+    },
+    "cast": {
+     "group": "9787650a-10aa-4969-bb10-1f56b1a5b83a"
+    },
+    "death": {
+     "group": "d6d03083-1294-45e3-abf5-81b1e06ffbf7"
+    }
+   }
   }
  ],
  "props": [

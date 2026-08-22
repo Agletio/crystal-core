@@ -33,7 +33,7 @@ function keep(change: (now: Book) => void): void {
 
 /** `HOLDING`'s own order, which is what `variants()` sorts a pair by. */
 const ORDER = ['sword', 'dagger', 'mace', 'wand'];
-const HEROES = ['alchemist', 'aethermancer', 'mahthar'];
+const HEROES = ['alchemist', 'aethermancer', 'mahthar', 'obreth'];
 
 const pairs: Array<{ hero: string; a: string; b: string }> = [];
 for (const hero of HEROES) {

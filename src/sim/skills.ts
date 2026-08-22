@@ -44,6 +44,8 @@ export interface SkillUse {
   areaRadius(base: number): number;
   /** Points are in tile units. Only the skill knows the shape of what it did. */
   vfx(kind: string, points: Vec2[], ttl?: number): void;
+  /** BEHIND a body, if there is anywhere to stand: only the sim knows tiles. */
+  blink(target: Entity): void;
 }
 
 export type SkillBehaviour = (use: SkillUse) => void;
@@ -228,6 +230,21 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     }
 
     use.vfx(use.skill.vfxKind ?? 'swing', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.primary.x, y: use.primary.y },
+    ]);
+  },
+
+  /** The STEP is the delivery: behind the body, then one hit and nothing else.
+   *  A Critical's follow-up is the SIM's, landing after this use has ended —
+   *  which is what makes it a second teleport rather than a bigger hit. */
+  ambush: (use) => {
+    const castMultiplier = castScale(use.grants, use.castIndex);
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+    use.blink(use.primary);
+    use.hit(use.primary, scale(use.primary));
+    burstFrom(use, use.primary, scale, true);
+    use.vfx(use.skill.vfxKind ?? 'slash', [
       { x: use.user.x, y: use.user.y },
       { x: use.primary.x, y: use.primary.y },
     ]);

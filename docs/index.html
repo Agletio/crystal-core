@@ -882,6 +882,23 @@
     border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
   }
+  /* Top right, clear of the boss bar's own 110px of margin at 1280. Read at a
+     glance and never clicked, so a window over it costs nothing. */
+  #run-rung {
+    position: fixed; right: 16px; top: 14px; z-index: 19;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    padding: 4px 8px 5px; pointer-events: none;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 5px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: var(--fix-head) 6 16 / 5px 14px round; image-rendering: pixelated;
+  }
+  .rungtag__zone {
+    font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .rungtag__n {
+    font-family: var(--display); font-size: 13px; letter-spacing: .1em; color: var(--citrine);
+  }
+  .rungtag__what { font-size: 9px; letter-spacing: .06em; color: var(--ember); }
   .bossbar__name {
     font-family: var(--display); font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
     color: var(--citrine); text-align: center; margin-bottom: 4px;
@@ -1988,6 +2005,13 @@
              you cannot see the life bar of is one you are watching blind. -->
         <!-- Thin, and only what is TRUE OF YOU: the two pools you watch and
              the level they belong to. Bottom left, out of the way of the map. -->
+        <!-- WHICH RUNG YOU ARE ON, top right. Nothing on the map itself says,
+             and a rung is what a death sends you back down. -->
+        <div id="run-rung" hidden>
+          <span class="rungtag__zone" id="run-rung-zone"></span>
+          <span class="rungtag__n" id="run-rung-n"></span>
+          <span class="rungtag__what" id="run-rung-what" hidden></span>
+        </div>
         <!-- THE TURN. Only up while something is listening: three faces, one
              live, and turning is free. -->
         <div id="run-boss" hidden>

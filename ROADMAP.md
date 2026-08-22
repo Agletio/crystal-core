@@ -61,6 +61,10 @@ to look:
 
 | | |
 |---|---|
+| crit on the SKILL | `SkillDef.critChance`; every gear crit line is INCREASED, the tree keeps flat, one seam in `heroStats` |
+| Ambush | the eighth main skill: the `ambush` behaviour, `SkillUse.blink`, `AMBUSH` in `src/data.ts`, `src/trees/ambush.ts` |
+| the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
+| the rung tag | `#run-rung` and `syncRung` in `src/ui/run.ts` — which rung a descent is on, top right |
 | the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |
 | Hoards | a pack modifier: `HOARD`, `hoardChance`, the `cart` prop, `openHoard` |
 | the Welling | `wellChance`, and the `risen` rank at weight 0 that bounds it |
@@ -451,46 +455,32 @@ not add a check that fails on one.
 
 ---
 
-## Phase 0 — THE CRIT REWORK, AMBUSH, AND OBRETH'S WEAPONS
+## Phase 0 — OBRETH'S WEAPONS
 
-**Asked for after Phase 1 landed, so it is FIRST.** Four things, in his words,
-and the task list mirrors them.
+**Everything else in this phase has LANDED.** The crit rework, Ambush and its
+Relay node, the bad idle frame and the rung indicator are all in and the suite
+is green on them. What is left is the art, which is hours of wall clock:
 
-1. **Obreth's idle has one bad frame** — *"he brings his arms back behind his
-   body and it looks super weird, probably just delete that frame."* Narrow the
-   kept window on `obreth.states.idle` in `generated.json` and re-import. Free.
+**NO MORE PINNED WEAPONS.** *"The rogue also just has a weapon pasted on instead
+of actual regens like all the other characters. We do not paste weapons on
+anymore. Redo the rogue so it has actual animations."* Without variants
+`pinnedFor` pastes a weapon at his fist.
 
-2. **NO MORE PINNED WEAPONS.** *"The rogue also just has a weapon pasted on
-   instead of actual regens like all the other characters. We do not paste
-   weapons on anymore. Redo the rogue so it has actual animations."* He has a
-   body and no variants, so `pinnedFor` pastes a weapon at his fist. Draw the
-   13 variants (`dressbody.sh obreth`) and the 10 pairs (`pairs.mts`, add
-   `obreth` to `HEROES`). ~2,200 generations — run it in the BACKGROUND.
-   **Done when `THE ROSTER` reports 23 of 23 for obreth.**
+- **Dressed already**: the 13 he carries alone and the 10 pairs are queued off
+  `dressbody.sh obreth` and `pairs.mts dress`; every character id lands on its
+  row in `bodies.json` as it arrives, and re-running either is free for a row
+  that already has one.
+- **Still to do**: `body.mts state obreth_<w>` for each of the 23 — five states
+  apiece, ~13 generations each — then a row in `generated.json` per variant
+  carrying `obreth`'s own judged sampling (grid 48, luma 45, stride 1.15, and
+  each state's window), `record.mts` to read the group ids back, and
+  `tables.mts bodies`.
+- **Judge before believing it**: grep the import log for `no group`, and look at
+  `shipped.mts obreth_<w>` rather than the server's own sheet.
+- **Done when `THE ROSTER` reports 23 of 23 for obreth.**
 
-3. **CRIT MOVES ONTO THE SKILL.** *"Make skills have a base crit chance so it
-   can be easier or harder to get crit capped. Then convert all mods on gear
-   related to crit to be % increased crit chance, so if you have base 10% crit
-   and 100% increased crit chance you get 20%. You can keep the flat % to base
-   crit increases in the skill tree."*
-   - `SkillDef.critChance` is the base, replacing `HERO_BASE.critChance`.
-   - Every GEAR mod that adds flat crit becomes an INCREASE.
-   - The TREE keeps flat, and flat adds to BASE before the increase multiplies:
-     `(skillBase + flat) * (1 + increased/100)`, one seam in `heroStats`.
-   - Watch a dagger's flat `critChance` implicit and the rogue's Weapon
-     Specialist: both are base-adders, not increases.
-
-4. **A NEW MAIN SKILL: AMBUSH.** *"Teleport behind a target from a medium range
-   and have high base crit, single target."* The delivery is new, so it earns a
-   `SKILL_BEHAVIOURS` entry. Its own tree, icon, `MAIN_SKILLS` and shelf row.
-   - **And one node:** *"When you crit it immediately teleports to another
-     target and attacks again — prioritise other targets but can be the same
-     target if there are no others. It can chain if it hits different targets
-     every time, but not if it triggers on the same one, so single target you
-     just get the double hit. Don't have it actually be instant, give it a
-     slight delay so you can tell when it triggers."*
-   - **That rule is the termination proof**: a chain is bounded by the number
-     of distinct bodies, because a repeat ends it. Write it down as such.
+`variant.mts seed <hero>` now writes the 13 single-weapon rows off a base body,
+so no variant's words are hand-written any more.
 
 ---
 

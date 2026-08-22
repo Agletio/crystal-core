@@ -198,6 +198,7 @@ import { SKILL_BEHAVIOURS, castScale, targetScale } from './sim/skills';
 import {
   GRANTS,
   GRANT_BY_ID,
+  SIM,
   STATS,
   behaviourReads,
   critBuff,
@@ -3689,6 +3690,68 @@ rule('RIMEFIELD — does the one single-target skill reach a pack?');
 }
 
 // ===========================================================================
+rule('THE RELAY — does a Critical carry you into the next body?');
+
+// The one switch the SIM reads rather than the delivery: it lands after the use
+// that bought it has ended, so firing a behaviour twice cannot see it and only
+// a descent can. What has to hold is that it FIRES, that it chains past one
+// follow-up, and that a room full of bodies at 100% crit still ends.
+{
+  /** Every node between the middle and one named, in order. Nothing else
+   *  reaches a particular enabler, and the enabler is the whole point. */
+  const walkTo = (skillId: string, goal: string): string[] => {
+    const from = new Map<string, string | null>([[CENTRE, null]]);
+    const queue: string[] = [CENTRE];
+    while (queue.length > 0) {
+      const at = queue.shift()!;
+      if (at === goal) break;
+      for (const next of neighboursOf(skillId, at)) {
+        if (from.has(next)) continue;
+        from.set(next, at);
+        queue.push(next);
+      }
+    }
+    const route: string[] = [];
+    for (let at = goal; at && at !== CENTRE; at = from.get(at) ?? '') route.unshift(at);
+    return route;
+  };
+
+  const descend = (relay: boolean) => {
+    const character = ladderCharacter(3, new Rng(88), 'ambush');
+    const progress = skillProgress(character, 'ambush');
+    progress.allocated = relay ? walkTo('ambush', 'am_relay') : [];
+    const sim = new RunSim([], character, new Rng(404));
+    // FORCED, so the reading is about the chain rather than about a crit roll.
+    sim.state.hero.stats.critChance = 100;
+    return runToCompletion(sim, 400);
+  };
+
+  const bare = descend(false);
+  const armed = descend(true);
+  // A follow-up PAYS, so it counts as a use: what the hero started himself is
+  // the difference, and the ratio between them is how deep a chain runs.
+  const started = armed.casts - armed.relays;
+  line(
+    `  at 100% crit: bare ${bare.casts} uses and ${bare.relays} follow-ups, ` +
+      `with Relay ${started} started and ${armed.relays} followed`
+  );
+  check(bare.relays === 0, 'nothing chains without the node', String(bare.relays));
+  check(armed.relays > 0, 'and a Critical buys a follow-up with it', String(armed.relays));
+  check(
+    armed.relays > started,
+    'and the follow-up chains rather than stopping at one',
+    `${armed.relays} follow-ups off ${started} uses`
+  );
+  // A chain that landed on a body it had already opened on would go round for
+  // ever; that it does not is what makes the node shippable at all.
+  check(
+    armed.status !== 'running',
+    'and a room at 100% crit still ends, because a repeat ends the chain',
+    `${armed.status} at ${armed.elapsed.toFixed(0)}s`
+  );
+}
+
+// ===========================================================================
 rule('EVERY TREE — does every notable actually change the cast?');
 
 // The same promise `npm run mods` makes about modifiers, made about talents.
@@ -3755,6 +3818,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
             areaRadius: (base: number) => base,
             vfx: (kind: string, points: any[]) =>
               marks.push(`v${kind}:${points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|')}`),
+            // Where the sim would PUT you. There is no map here, so it records
+            // the ask: a step behind the body it was aimed at.
+            blink: (who: any) => marks.push(`b${enemies.indexOf(who)}`),
           } as any);
         }
       }
@@ -3775,9 +3841,10 @@ rule('EVERY TREE — does every notable actually change the cast?');
         : [node.grants ?? {}];
 
       for (const answer of answers) {
-        // The stat layer is checked by the stat pipeline, not by casting.
+        // The stat layer is checked by the stat pipeline, not by casting — and
+        // a SIM switch lands after the use, so a cast cannot show it either.
         const switches = Object.keys(answer).filter(
-          (k) => !GRANT_BY_ID[k]?.reads.includes(STATS)
+          (k) => !GRANT_BY_ID[k]?.reads.some((r) => r === STATS || r === SIM)
         );
         if (switches.length === 0) continue;
 
@@ -4456,6 +4523,7 @@ rule('THE SHEET — does every number on it survive being checked?');
       leave: () => {},
       areaRadius: (base: number) => base,
       vfx: () => {},
+      blink: () => {},
     } as any;
     SKILL_BEHAVIOURS[skill.behaviour](use);
     const conditional = castScale(grants, 0) * targetScale(use, target);
@@ -7721,9 +7789,15 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
     let monsters = 0;
     let xp = 0;
 
+    // A CEILING, and one build for the whole band: what a descent PAYS can
+    // only be read off a character that lives to bank it, and a floor build
+    // dying at the deep end reports the band as worth nothing at all. The sim
+    // never writes to the character, so ten descents may share one.
+    const hero = bestBuild(band, new Rng(700 + band));
+
     for (let i = 0; i < runs; i++) {
       const set = ladderSet(band, new Rng(3300 + i * 13 + band), pool);
-      const sim = new RunSim(set, ladderCharacter(band, new Rng(700 + i)), new Rng(5000 + band * 31 + i));
+      const sim = new RunSim(set, hero, new Rng(5000 + band * 31 + i));
       power += sim.set.power;
       monsters += sim.state.totalMonsters;
       const final = runToCompletion(sim, 400);

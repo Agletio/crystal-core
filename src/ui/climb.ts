@@ -51,11 +51,12 @@ export function climbTotals(character: Character): { done: number; all: number }
   return { done, all };
 }
 
+/** A rung named: what it IS, rather than which one anybody is pointed at. */
+export const rungName = (at: Rung): string =>
+  `${THEME_BY_ID[zoneAt(at.zone)?.theme ?? '']?.name ?? '?'}, rung ${at.rung}`;
+
 /** What the Enter button says: the rung you are about to walk into. */
-export function rungLabel(character: Character): string {
-  const at = rungNow(character);
-  return `${THEME_BY_ID[zoneAt(at.zone)?.theme ?? '']?.name ?? '?'}, rung ${at.rung}`;
-}
+export const rungLabel = (character: Character): string => rungName(rungNow(character));
 
 /** The report's line about the climb: what a clear opened, or where a death
  *  leaves you. The report is the one screen every descent ends on. */

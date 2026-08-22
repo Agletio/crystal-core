@@ -8,9 +8,14 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { BURST, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY } from '../data';
+import { AMBUSH, BURST, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY } from '../data';
 
 export const STATS = 'stats';
+
+/** The SIM's own, beside the delivery that triggers it: a switch whose whole
+ *  effect lands after the use that started it has ended, so casting one twice
+ *  cannot show it. What it does is proved by running a descent instead. */
+export const SIM = 'sim';
 
 /** What two nodes granting the same thing come to. `replace` is the default. */
 export type Merge = 'sum' | 'product' | 'max' | 'append' | 'replace';
@@ -64,10 +69,10 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
 
 /** What EVERY delivery scales by: how good this cast is, and what the body in
  *  front of you is. A behaviour opts in by calling `castScale`/`targetScale`. */
-const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target'];
+const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target', 'ambush'];
 /** And the ones that call `blastAround`, which is a narrower list. */
-const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone'];
-const HITTERS = ['projectile', 'melee', 'cone'];
+const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush'];
+const HITTERS = ['projectile', 'melee', 'cone', 'ambush'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
  *  landing from a step that never lands anywhere. */
 const MOVERS = ['step', 'leap'];
@@ -958,6 +963,41 @@ export const GRANTS: GrantDef[] = [
         `A killed enemy Bursts ${p[0]} tiles across, for ${pct(p[1])} of the damage — ` +
           `and what THAT kills Bursts too, ${BURST.chainDepth} deep`
       );
+    },
+  },
+
+  // --- what a Critical STARTS ----------------------------------------------
+  {
+    id: 'critChain',
+    changes: 'targets',
+    what: 'a Critical teleports you into another enemy and Ambushes it too',
+    reads: ['ambush', SIM],
+    say: (v) =>
+      v === true
+        ? `A Critical teleports you into another enemy ${AMBUSH.chainDelay}s later and ` +
+          `Ambushes it, chaining until it lands on a body it has already opened on`
+        : null,
+  },
+  {
+    id: 'chainSooner',
+    changes: 'targets',
+    what: 'the follow-up a Critical bought arrives sooner',
+    reads: ['ambush', SIM],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The follow-up lands ${pct(1 - n)} sooner`;
+    },
+  },
+  {
+    id: 'chainReach',
+    changes: 'targets',
+    what: 'the follow-up a Critical bought crosses further',
+    reads: ['ambush', SIM],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The follow-up crosses ${more(n)} further`;
     },
   },
 

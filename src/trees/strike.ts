@@ -258,7 +258,7 @@ const BRANCHES: Branch[] = [
         minors: 4,
         notable: {
           id: 'st_ambush',
-          name: 'Ambush',
+          name: 'Unspoiled',
           description: 'Strike deals 35% more damage to enemies above 80% of their life.',
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },

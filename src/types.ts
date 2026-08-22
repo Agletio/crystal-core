@@ -1,9 +1,7 @@
 /**
- * Core types.
- *
- * Gear and crystals are the SAME structure — a crystal is an item whose mods
- * affect map generation instead of your character — so every currency works on
- * both with no special-casing.
+ * Core types. Gear and crystals are the SAME structure — a crystal is an item
+ * whose mods affect map generation instead of your character — so every
+ * currency works on both with no special-casing.
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
@@ -317,6 +315,9 @@ export interface SkillDef {
   damageTypes: string[]; // what the SKILL'S OWN damage is dealt as
   /** The skill's own damage at level 1. Grows by LEVELLING.damagePerLevel. */
   baseDamage: number;
+  /** What this crits at BARE. Gear rolls INCREASED crit and SCALES this, so
+   *  the skill decides how near the cap a build gets. Absent takes HERO_BASE. */
+  critChance?: number;
   /**
    * Percent of flat damage from gear and the tree this skill takes on. 100 is
    * a point for a point; the number is per skill because a lasting skill
