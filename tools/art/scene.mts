@@ -32,7 +32,8 @@ if (command === 'ask') {
       no_background: false,
       seed,
     });
-    console.log(`${id}/${seed}: ${out.split('\n').filter((l) => /id|status|cost/i.test(l)).join(' | ')}`);
+    const said = out.split('\n').filter((l) => /id|status|cost|error|valid/i.test(l)).join(' | ');
+    console.log(`${id}/${seed}: ${said.slice(0, 400)}`);
   }
 } else if (command === 'get') {
   const out = await callTool('get_image', { job_id: id });
