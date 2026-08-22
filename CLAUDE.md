@@ -209,6 +209,17 @@ Critical on a body thawing out of a Freeze. **Ailments are the HERO'S**: a
 monster's difficulty is what a crystal rolls, and a second unweighed source is
 one no danger number accounts for.
 
+**THE OFF HAND TAKES A SHIELD OR A SECOND ONE-HANDED WEAPON.** A pair puts
+`DUAL.main` of one and `DUAL.off` of the other into every hit — 1.30 between
+them, which is what a shield's armour and its Block are given up for — and the
+rate ALTERNATES: this swing at the main hand's, the next at the off hand's. So a
+dagger beside a maul is a fast swing and a slow one rather than an average
+nobody can see. `attacksPerSecond` is their EVEN mean, `2 / (1/a + 1/b)`, which
+is what two swings actually take, so the sheet prints one number and a long run
+agrees with it. A two-hander is never in the off hand; `handClash` empties the
+other hand instead. **A pair is ORDERLESS in art and ORDERED in stats** —
+`variants()` sorts it, so which hand you filled never asks for a second picture.
+
 **A character is a trade, a main skill, two more slots and a bag.** The trade is
 chosen when the character is made and is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
