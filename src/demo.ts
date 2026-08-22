@@ -98,6 +98,7 @@ import {
   WEAPON_SLOT,
 } from './data';
 import { variants } from './sim/appearance';
+import type { GearBase } from './types';
 import { canEnter, climbed, furthest, takeRung, zoneOpen } from './ladder';
 import {
   balance,
@@ -6732,6 +6733,62 @@ rule('TRADE RULES — does each one actually change what the sim does?');
       measured.trade === null && measured.tradeAllocated.length === 0,
       'and every measured ladder character has no trade at all, so a rung is a rung',
       `${measured.trade}`
+    );
+  }
+}
+
+// ===========================================================================
+rule('THE ROSTER — is every hero drawn holding what it carries?');
+
+// A trade is what the hero LOOKS like, and `heroSpriteFor` falls back to the
+// bare body for an arrangement nobody has drawn. That fallback is what lets a
+// trade ship playable the day its body lands — and it is also how a missing
+// picture hides, because the game draws SOMETHING either way.
+{
+  // Every base a hand can hold, by the `HELD` row its art names — so this is
+  // the arrangements a PLAYER can reach rather than a list kept beside them.
+  const oneHanded = GEAR_BASES.filter((b) => b.kind === 'weapon' && (b.hands ?? 1) === 1);
+  const twoHanded = GEAR_BASES.filter((b) => b.kind === 'weapon' && (b.hands ?? 1) > 1);
+  const artOf = (b: GearBase) => b.art ?? '';
+  const oneOfEach = (list: GearBase[]) =>
+    list.filter((b, i) => list.findIndex((o) => artOf(o) === artOf(b)) === i);
+
+  for (const trade of TRADES) {
+    const body = trade.spec.sprite;
+    if (!body || !GENERATED[body]) continue;
+
+    const wearing = (main?: GearBase, off?: GearBase): Character => {
+      const who = makeCharacter({}, 'strike');
+      who.trade = trade.spec.id;
+      if (main) who.equipment[WEAPON_SLOT] = makeGear(main.id, 20);
+      if (off) who.equipment[OFF_SLOT] = makeGear(off.id, 20);
+      return who;
+    };
+
+    const missing: string[] = [];
+    const seen = new Set<string>();
+    // The FIRST variant, not whatever `heroSpriteFor` settles for: a pair falls
+    // back to the hand that WAS drawn, which is a picture of him holding one
+    // thing and reads as a complete roster from the outside.
+    const want = (who: Character) => {
+      const asked = variants(who);
+      if (asked.length === 0) return;
+      seen.add(asked[0]);
+      if (!GENERATED[`${body}_${asked[0]}`]) missing.push(asked[0]);
+    };
+    for (const main of oneOfEach([...oneHanded, ...twoHanded])) want(wearing(main));
+    for (const shield of oneOfEach(GEAR_BASES.filter((b) => b.kind === 'shield'))) {
+      want(wearing(undefined, shield));
+      for (const main of oneOfEach(oneHanded)) want(wearing(main, shield));
+    }
+    for (const main of oneOfEach(oneHanded)) {
+      for (const off of oneOfEach(oneHanded)) want(wearing(main, off));
+    }
+    line(`  ${body}: ${seen.size} arrangements a player can reach`);
+    check(
+      missing.length === 0,
+      `every one of ${body}'s ${seen.size} arrangements is a picture of him holding it`,
+      `${missing.length} fall back to the bare body: ${[...new Set(missing)].join(', ')}`
     );
   }
 }

@@ -14,11 +14,11 @@ item tier coming off power. It is not something to start halfway, and it is
 blocked on three questions written into the phase. The generic-crystal-modifier
 pass is the one unblocked piece left, and it waits on question 3.
 
-**Phase 2 is more characters, and Mahthar is IN** — body, thirteen weapon
-variants, and now his web and the fifteen switches under it. What is left of the
-phase is his ten dual-wield pairs, which is art and wall clock. The quest log
-after it is parked by the user's word until a start with nothing explaining it
-has been played.
+**Phase 2 is more characters, and Mahthar is FINISHED** — body, thirteen weapon
+variants, ten dual-wield pairs, his web and the fifteen switches under it. All
+that is left of the phase is a decision nobody has been asked for: whether there
+is a fourth. The quest log after it is parked by the user's word until a start
+with nothing explaining it has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
@@ -582,14 +582,21 @@ in the round before it.
 the rework himself (*"slightly more nodes… you get 2 points at a time and need 2
 to get to any notable"*) and it landed on all three webs.
 
+**AND SO HAVE HIS TEN PAIRS.** `pairs.mts` took a third name, ten character
+states were dressed off the variants that already held one of the two weapons,
+fifty animations went in with no refusals, and the import came back with no
+`no group`. **`THE ROSTER` in the demo is what says it is finished**: all 23
+arrangements a player can reach, for all three heroes, resolve to a picture of
+that hero holding that thing rather than to the fallback. The bundle is 7.5 MB,
+1.40 gzipped.
+
 **WHAT IS LEFT OF THIS PHASE:**
 
-- [ ] **Mahthar's ten dual-wield PAIRS**, through `pairs.mts`. ~900
-      generations, and the only thing between him and the roster the other two
-      have. He plays without them: `heroSpriteFor` falls back to the body.
 - [ ] **ASK BEFORE A FOURTH.** A trade is a one-sentence idea before it is 50
       nodes — potions as an engine, mana as one, what is in your other hand.
-      **Do not invent one.**
+      **Do not invent one.** The art is ~2,200 generations and most of a day.
+
+**Everything else in Phase 2 is done.**
 
 **Traps.** `takeUpTrade` refuses a second trade outright — it is the one hard
 lock in a game that refunds everything else, so a new trade is not something a
