@@ -6,8 +6,9 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**PHASE 1 IS THE LADDER and it is BLOCKED on five questions**, all written into
-the phase. It replaces the spine of the game — composition choosing the zone,
+**PHASE 1 IS THE LADDER. Its CLIMB has landed** — 42 rungs, the pips that draw
+them, and a rung as one mod on the crystal seam. What is left of the phase is
+blocked on three questions, all written into it. It replaces the spine of the game — composition choosing the zone,
 sockets being length and difficulty, item tier coming off power — so it is not
 something to start halfway. Two pieces of it are NOT blocked and can go first:
 Perfect items, and the generic-crystal-modifier pass.
@@ -486,31 +487,39 @@ Nothing below is a small edit. Written out so nobody starts and discovers it:
   WHICH monsters you fight and nothing about how hard they are"* and retires the
   two Normal-only uniques written to give Normal its reason.
 
-### The questions that BLOCK it — do not guess at these
+### THE CLIMB HAS LANDED, and it answers questions 1 and 4
 
-1. **Where does difficulty come from during the first ladder, before any crystal
-   exists?** Nothing is socketed, so there is no danger, no modifiers and no
-   power. Is a clear's difficulty a fixed curve off *"how many clears into this
-   zone you are"*, and if so what moves — monster life and hit like `dangerStep`,
-   or pack size, or the zone's own floor? This decides whether `RunSet` is
-   rebuilt or has a second source bolted beside it, and it is the single largest
-   fork in the work.
+Built and shipped: `LADDER` in `src/data.ts` (12 / 14 / 16 rungs across the
+Fissure, the Cavern and the Rot, 42 in all), `rungMod` in `src/sim/stats.ts`,
+`src/ladder.ts` for what is open, `Character.climbed` for what is cleared, and
+the CLIMB inside the Fissure window — a row a zone, a pip a rung, cleared
+clickable for the rest of that character's life.
 
-2. **Do crystals roll modifiers from the moment you earn one, or only in the
+- **Question 1 is answered by the shape rather than by a new system.** A rung is
+  ONE synthetic mod on the crystal seam, beside `trialMod` and `treeMod`, so
+  `crystalRewards` scores it like anything else and a harder rung pays more with
+  nothing written twice. Measured: danger 0 at the first rung, 822 at the last;
+  monster life 48 to 3478; packs 21 to 35.
+- **Question 4 is answered per CHARACTER**, like trials, trade and levels.
+- **The rung is also the ZONE.** Composition still picks one for a set with no
+  rung — a measured set, a harness — but a climb says where it is.
+
+**Say if either answer is wrong**; both are one table and one function.
+
+### The questions that STILL block it — do not guess at these
+
+1. **Do crystals roll modifiers from the moment you earn one, or only in the
    endgame zone?** *"Once you have all 4 there should be a new zone where you can
    begin leveling crystals, rolling mods etc"* reads as: a crystal on the ladder
    is a plain TIER TOKEN with nothing on it, and modifiers arrive only at the
    end. If that is right, `crystalRewards`, the whole crafting bench for crystals
    and every finding modifier are dark for the entire first three cycles.
 
-3. **How many challenge rooms are there — three, or twelve?** One per zone reused
+2. **How many challenge rooms are there — three, or twelve?** One per zone reused
    at every cycle with the ladder's own scaling, or a distinct one per zone per
    cycle. Three is a phase; twelve is four phases and a lot of art.
 
-4. **Does the ladder belong to the CHARACTER or the account?** Everything else
-   that progresses (trials, trade, levels) is per character.
-
-5. **How generic is generic?** The concrete version: collapse the five
+3. **How generic is generic?** The concrete version: collapse the five
    resistances into ELEMENTAL and OCCULT, so a crystal rolls two resistance mods
    instead of five. Say if it should go further — one "defence" mod, one
    "offence" mod — because `DANGER_STATS` weighs each stat by the arithmetic it
@@ -521,7 +530,7 @@ Nothing below is a small edit. Written out so nobody starts and discovers it:
 - **Perfect items.** `GearBase.implicit` at 1.25x, an `Item.meta.perfect` flag,
   a roll gated on crystals socketed and lifted by danger, and the item card
   saying so. It touches `makeGear` and nothing else, and it is testable alone.
-- **The generic crystal modifier pass**, once question 5 is answered.
+- **The generic crystal modifier pass**, once question 3 is answered.
 
 ---
 

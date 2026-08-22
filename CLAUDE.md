@@ -179,12 +179,19 @@ body was drawn. **The rail still reaches every screen** — the Fissure is one
 of them, and a screen you can only find by clicking a picture is a screen
 somebody will lose.
 
-**One place you go.** Four sockets hold crystals permanently. Their COUNT is how
-long a run is, their MODIFIERS how hard it is; a crystal's LEVEL is only capacity
-and its FAMILY (Normal / Demonic / Prismatic) only which monsters spawn.
-Composition also picks the ZONE — four of them, each drawn by its own generated
-tileset. Danger and socket count fold into one **run power**, and every reward
-reads that and nothing else. A fifth socket takes a **boss key**.
+**One place you go, at the RUNG you pick.** `LADDER` is three zones of 12, 14
+and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of
+that character's life, and a zone opens when the one below it is whole. Its
+difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
+`trialMod` and `treeMod`), so `crystalRewards` pays a harder rung more with
+nothing written twice — and the rung is also the ZONE, composition only picking
+one for a set with no rung. The CLIMB draws it: a row a zone, a pip a rung.
+
+Four sockets hold crystals permanently. Their COUNT is how long a run is, their
+MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
+(Normal / Demonic / Prismatic) only which monsters spawn. Danger and socket
+count fold into one **run power**, and every reward reads that and nothing else.
+A fifth socket takes a **boss key**.
 
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
@@ -276,6 +283,7 @@ src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the sha
 src/trades.ts      the character's own web; src/trades/* the two trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
+src/ladder.ts      the CLIMB: which rung is open, and what a clear records
 src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
 src/scenes.ts      the PEOPLE and the one arena; src/scenes/camp.ts the picture
 src/vignettes.ts   what the rock does: cover, growth, solidity

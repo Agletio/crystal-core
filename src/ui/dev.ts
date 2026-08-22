@@ -8,7 +8,7 @@
  */
 import { Rng } from '../rng';
 import { SCENES } from '../scenes';
-import { BOSS_BY_ID, INTRO, TRIALS } from '../data';
+import { BOSS_BY_ID, INTRO, LADDER, THEME_BY_ID, TRIALS } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
@@ -160,6 +160,29 @@ function render(): void {
     close();
   };
   trials.append(paid);
+
+  // The climb is 42 rungs of real play, so the deep zones are otherwise only
+  // reachable on a save that has already done it.
+  const climb = group(
+    'The climb',
+    'Rungs cleared. Normally one per cleared descent, and a zone opens when the one before it is whole.'
+  );
+  LADDER.zones.forEach((zone, z) => {
+    const button = el('button', 'mini devbtn') as HTMLButtonElement;
+    button.id = `dev-climb-${z}`;
+    const name = THEME_BY_ID[zone.theme]?.name ?? zone.theme;
+    button.append(el('span', 'devbtn__name', `Clear ${name}`));
+    button.append(el('span', 'devbtn__what', `${zone.rungs} rungs, and everything above it`));
+    button.onclick = () => {
+      const done: Record<string, number> = { ...game.character.climbed };
+      for (let i = 0; i <= z; i++) done[LADDER.zones[i].theme] = LADDER.zones[i].rungs;
+      game.character.climbed = done;
+      hooks.refresh();
+      note(`Dev: ${name} cleared.`);
+      close();
+    };
+    climb.append(button);
+  });
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;

@@ -334,8 +334,7 @@ export interface RunOptions {
   /** SOMEBODY TO FIND: a `SceneDef` id and the sprite. Placed in the room
    *  FURTHEST from the way in, never rolled — a draw moves every roll after it. */
   meets?: { id: string; sprite: string };
-  /** WHICH RUNG this is, which is where difficulty comes from. The sim is told;
-   *  nothing in `src/sim` decides how far up the ladder anybody is. */
+  /** WHICH RUNG, where difficulty comes from. The sim is TOLD. */
   rung?: { zone: number; rung: number };
   /** Props the GAME decides on top of the scene's own: full or empty sockets. */
   dressing?: { id: string; x: number; y: number }[];

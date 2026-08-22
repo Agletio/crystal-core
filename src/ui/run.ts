@@ -1,11 +1,9 @@
 /**
- * The Fissure, in three states: prepare, descend, read the result. There is only
- * one place you go; crystals empower it rather than replacing it, so Enter is
- * never disabled and an empty set is a legitimate run.
- *
- * Owns real time and nothing else — the sim advances in fixed TICK steps, so a
- * janky frame changes how fast you watch a run, never its outcome. Sockets are
- * PERMANENT: a run reads them and never spends them.
+ * The Fissure, in three states: prepare, descend, read the result. One place
+ * you go, at the RUNG you pick; crystals empower it rather than replacing it,
+ * so Enter is never disabled and an empty set is a legitimate run. Owns real
+ * time and nothing else — the sim advances in fixed TICK steps, so a janky
+ * frame changes how fast you watch a run, never its outcome.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
@@ -49,6 +47,9 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
 import { openTalk } from './talk';
+import { climbLine, renderClimb, rungLabel, rungNow } from './climb';
+import { takeRung } from '../ladder';
+import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -110,6 +111,9 @@ let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
 let leaving = false;
 /** A boss whose key is armed, spent by the launch. UI state like `leaving`:
  *  what is SAVED is the room a spent key has already paid for. */
+/** THE RUNG THIS DESCENT IS, set at the launch: a clear records what was
+ *  walked rather than what is picked by the time it ends. */
+let ran: Rung | null = null;
 /** Whether the room being stood in is a REPEAT of a beaten boss: the speech
  *  played once, so a bought rematch goes straight to the fight. */
 let revisit = false;
@@ -153,9 +157,8 @@ let zoom = DEFAULT_ZOOM;
 function setPhase(next: Phase): void {
   const was = phase;
   phase = next;
-  // A scene and a descent are both a map with nothing else on screen, so from
-  // outside they are indistinguishable by what is hidden. A harness needs to
-  // be able to tell the two apart, and this is the only thing that says so.
+  // A scene and a descent are both a map with nothing else on screen: this is
+  // the only thing that tells a harness the two apart.
   document.body.dataset.runPhase = next;
   // A room is a fraction of a descent's size, so the scale that frames one
   // leaves the other a postage stamp in the middle of the screen.
@@ -315,6 +318,7 @@ function renderFolk(): void {
 
 function renderMenu(): void {
   renderFolk();
+  renderClimb($('run-climb'), game.character, () => renderMenu());
   const grid = $('run-sockets');
   grid.replaceChildren();
 
@@ -370,7 +374,9 @@ function renderMenu(): void {
   const set = socketed(game);
   const chips = el('div', 'setrows');
   const standing = trialMod(game.character);
-  for (const row of setRows(set, standing)) {
+  // Read AT THE RUNG, or the danger printed is not the danger you walk into.
+  const at = rungNow(game.character);
+  for (const row of setRows(set, standing, at)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
     chip.append(el('span', 'mult__v', row.value));
@@ -380,7 +386,7 @@ function renderMenu(): void {
   // What you will be fighting, before you commit to fighting it — and where,
   // since half of one world takes the rock as well as the packs.
   host.append(el('p', 'setcomp', compositionText(set)));
-  const zone = THEME_BY_ID[runSet(set).theme];
+  const zone = THEME_BY_ID[runSet(set, standing, at).theme];
   const where = el('p', 'setzone', zone.name);
   where.title = zone.blurb;
   where.append(el('span', 'setzone__blurb', ` — ${zone.blurb}`));
@@ -388,7 +394,7 @@ function renderMenu(): void {
 
   // What the set is FOR. Every world pays in its own currency and no two are
   // comparable, so this is the difference between choosing and guessing.
-  const farms = farmingText(set, standing);
+  const farms = farmingText(set, standing, at);
   if (farms) host.append(el('p', 'setcomp', farms));
   host.append(
     el(
@@ -410,7 +416,7 @@ function renderMenu(): void {
   const launcher = $('run-launch') as HTMLButtonElement;
   launcher.textContent = game.called
     ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
-    : 'Enter the Fissure';
+    : `Enter ${rungLabel(game.character)}`;
   launcher.disabled = why !== null;
   launcher.classList.toggle('mini--off', why !== null);
   $('run-blocked').textContent = why ?? '';
@@ -482,6 +488,9 @@ function launch(): void {
   // running out of crystals a setback rather than an end.
   const set = socketed(game);
 
+  // WHICH RUNG: read at the launch, so a chained descent stays on one rung.
+  ran = rungNow(game.character);
+
   seed = Math.floor(Math.random() * 1e9);
   // WHO IS DOWN THERE. *"I want to encounter them randomly in the maps."*
   // Rolled HERE and not in the sim, off its own draw, so whether somebody is
@@ -489,12 +498,13 @@ function launch(): void {
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
-    meets: whoIsDown(runSet(set).theme),
+    rung: ran,
+    meets: whoIsDown(runSet(set, trialMod(game.character), ran).theme),
   });
 
   note(
-    `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
-      `${sim.state.totalMonsters} monsters`
+    `${rungLabel(game.character)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
+      `seed ${seed} · ${sim.state.totalMonsters} monsters`
   );
   accumulator = 0;
   playing = true;
@@ -545,6 +555,9 @@ function finish(left = false): void {
   renderBadges(); // the level this descent bought has landed, so a point may have
 
   if (report.cleared) streak++;
+
+  // THE CLIMB. A rung already cleared records nothing.
+  if (report.cleared && !left && ran) takeRung(game.character, ran);
 
   if (report.cleared) payTrials(sim.state);
 
@@ -649,6 +662,8 @@ function enterScene(
   dressing: { id: string; x: number; y: number }[] = []
 ): void {
   visiting = false;
+  // A room is not a rung: nothing in here may record a clear.
+  ran = null;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
   // Standing in somebody's room is MEETING them, which is what puts them on
@@ -931,6 +946,9 @@ function renderResults(report: RunReport, run: RunState): void {
   if (streak > 1 || halt !== 'once') {
     card.append(el('p', 'resultcard__sub', haltLine(report)));
   }
+  // WHERE THE CLIMB IS NOW: the screen every descent ends on says it.
+  const step = climbLine(game.character, ran, report.cleared);
+  if (step) card.append(el('p', 'resultcard__climb', step));
 
   // Two columns: what happened on the left, what you got on the right. As one
   // stacked column a good run — several stat rows and a handful of drops —

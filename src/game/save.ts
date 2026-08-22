@@ -23,6 +23,7 @@ import {
   GEAR_BASE_BY_ID,
   KEEP_GROUPS,
   KEEP_TIERS,
+  LADDER,
   MAIN_SKILLS,
   MAIN_SLOT,
   WEAPON_SLOT,
@@ -450,6 +451,15 @@ export function heal(game: GameState): Healed {
   if (!Number.isFinite(game.clears)) {
     game.clears = game.firstClearDone ? 1 : 0;
   }
+
+  // THE CLIMB. A zone that is gone takes its progress, and a count past what
+  // the zone holds is clamped: the zone after it reads that number.
+  const climbed: Record<string, number> = {};
+  for (const zone of LADDER.zones) {
+    const was = Math.floor(Number(game.character.climbed?.[zone.theme] ?? 0));
+    if (Number.isFinite(was) && was > 0) climbed[zone.theme] = Math.min(zone.rungs, was);
+  }
+  game.character.climbed = climbed;
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
     if (baseExists(worn)) continue;

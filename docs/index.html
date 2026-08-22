@@ -1274,6 +1274,33 @@
   }
   /* Two cards on one screen: the second does not want the first's headroom. */
   #run-folk:not([hidden]) + .fissurecard { margin-top: 6px; }
+  /* The climb: a row a zone, a pip a rung. Ruled off inside the Fissure's own
+     card rather than framed again — a third frame put Enter below the fold. */
+  .climbcard {
+    text-align: left; margin: 0 0 14px;
+    border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge);
+    padding: 8px 0 4px;
+  }
+  .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
+  .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 6px; text-align: center; }
+  /* ONE LINE A ZONE: name, pips, count. Stacked, the three zones pushed the
+     way in off the bottom of the screen. */
+  .climbrow { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .climbrow--shut { opacity: .5; }
+  .climbrow__name { font-family: var(--display); font-size: 10px; color: var(--text); width: 74px; flex: none; }
+  .climbrow__count { font-size: 9px; color: var(--text-dim); margin-left: auto; text-align: right; flex: none; }
+  .climbrow__pips { display: flex; flex-wrap: wrap; gap: 2px; }
+  .pip {
+    width: 19px; height: 17px; padding: 0; font: inherit; font-size: 9px; line-height: 17px;
+    background: var(--panel); color: var(--text-dim);
+    border: 1px solid var(--edge); border-radius: 0; cursor: pointer;
+  }
+  .pip--done { background: var(--edge); color: var(--text); }
+  .pip--next { border-color: var(--citrine); color: var(--citrine); }
+  .pip--shut { cursor: default; color: var(--edge-lit); }
+  /* Where you are pointed. The one pip that has to be findable at a glance. */
+  .pip--here { outline: 2px solid var(--citrine); outline-offset: 0; color: var(--bone); }
+  .pip:hover:not(:disabled) { background: var(--panel-lit); }
   .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }
   .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
@@ -1338,6 +1365,7 @@
   .resultcard--died .resultcard__head { color: var(--ember); }
   .resultcard--left .resultcard__head { color: var(--text-dim); }
   .resultcard__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin: 14px 0 6px; }
+  .resultcard__climb { font-size: 12px; color: var(--citrine); margin: 4px 0 0; }
   .resultcard__warn { font-size: 11px; color: var(--ember); margin: 8px 0 0; }
   .resultcard .mini { margin-top: 14px; width: 100%; }
 
@@ -2182,6 +2210,11 @@
       <div class="folkcard" id="run-folk" hidden></div>
       <div class="panel fissurecard">
         <p class="fissure">A thin place in the rock. Always open, always free.</p>
+
+        <!-- WHERE YOU ARE ON THE CLIMB. Above the sockets because it is the
+             choice made first: a rung is where you go, a crystal is what you
+             take. Inside the same card, or the way in falls off the screen. -->
+        <div class="climbcard" id="run-climb"></div>
 
         <div class="sockets" id="run-sockets"></div>
         <div id="run-selected"></div>

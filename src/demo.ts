@@ -82,8 +82,10 @@ import {
   armourBudget,
   implicitSpend,
   RECIPES,
+  LADDER,
   SKILLS,
   SKILL_BY_ID,
+  THEME_BY_ID,
   TRADE,
   UNIQUES,
   UNIQUE_BY_ID,
@@ -92,6 +94,7 @@ import {
   OFF_SLOT,
 } from './data';
 import { variants } from './sim/appearance';
+import { canEnter, climbed, furthest, takeRung, zoneOpen } from './ladder';
 import {
   balance,
   grant,
@@ -8081,6 +8084,129 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
     (cheap?.ilvl ?? 1) <= 10,
     'and hunts only what the item level already allows',
     `${cheap?.id} at ilvl ${cheap?.ilvl}`
+  );
+}
+
+// ===========================================================================
+rule('THE CLIMB — does a rung open, stay open, and get harder?');
+
+// The whole of where difficulty comes from before anything is socketed, and
+// the whole of what the player is shown as progress. What must hold is that
+// nothing is ever taken away and nothing is ever skipped.
+{
+  const who = () => makeCharacter({}, 'strike');
+
+  const fresh = who();
+  const start = furthest(fresh);
+  check(
+    start.zone === 0 && start.rung === 1,
+    'a new character is pointed at the first rung of the first zone',
+    `pointed at zone ${start.zone} rung ${start.rung}`
+  );
+  check(
+    canEnter(fresh, { zone: 0, rung: 1 }) &&
+      !canEnter(fresh, { zone: 0, rung: 2 }) &&
+      !canEnter(fresh, { zone: 1, rung: 1 }),
+    'and may enter that rung and nothing past it',
+    'a fresh character can walk into a rung it has not earned'
+  );
+
+  const walker = who();
+  for (let rung = 1; rung <= LADDER.zones[0].rungs; rung++) {
+    takeRung(walker, { zone: 0, rung });
+  }
+  check(
+    zoneOpen(walker, 1) && canEnter(walker, { zone: 1, rung: 1 }),
+    `clearing all ${LADDER.zones[0].rungs} rungs opens the zone above it`,
+    'a whole zone cleared and the next one is still shut'
+  );
+  check(
+    canEnter(walker, { zone: 0, rung: 3 }) && canEnter(walker, { zone: 0, rung: 1 }),
+    'and every rung under it stays open to grind',
+    'a cleared rung shut behind the character that cleared it'
+  );
+  takeRung(walker, { zone: 0, rung: 3 });
+  check(
+    climbed(walker, 0) === LADDER.zones[0].rungs,
+    're-grinding an old rung records nothing',
+    `re-grinding rung 3 moved the count to ${climbed(walker, 0)}`
+  );
+
+  // The rung IS the zone: composition still picks one for a set with no rung,
+  // but a climb says where it is, and that is what the pips promise.
+  const themes = LADDER.zones.map((zone, z) => runSet([], null, { zone: z, rung: 1 }).theme);
+  check(
+    themes.every((theme, z) => theme === LADDER.zones[z].theme),
+    `each zone's rungs land in its own world — ${themes.join(', ')}`,
+    `a rung sent the run somewhere else: ${themes.join(', ')}`
+  );
+
+  // DANGER RISES, every single rung, and the very first one is untouched: the
+  // bare Fissure a new character walks into is the game's floor.
+  const dangers: number[] = [];
+  LADDER.zones.forEach((zone, z) => {
+    for (let rung = 1; rung <= zone.rungs; rung++) {
+      dangers.push(runSet([], null, { zone: z, rung }).rewards.danger);
+    }
+  });
+  check(
+    Math.round(dangers[0]) === 0,
+    'the first rung of the first zone is danger 0 — the bare Fissure is untouched',
+    `the first rung arrives at danger ${dangers[0].toFixed(1)}`
+  );
+  const dips = dangers.filter((d, i) => i > 0 && d <= dangers[i - 1]).length;
+  check(
+    dips === 0,
+    `and danger rises on every one of the ${dangers.length} rungs, to ${Math.round(dangers[dangers.length - 1])}`,
+    `${dips} rungs are no harder than the one below them`
+  );
+
+  // What a rung actually DOES to a body, read through a real sim rather than
+  // off the table: the mod has to reach the monsters or the pips are a lie.
+  line('  zone            rung   danger   monster life   monster damage   monsters');
+  LADDER.zones.forEach((zone, z) => {
+    for (const rung of [1, zone.rungs]) {
+      const sim = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(700 + z * 31 + rung), {
+        rung: { zone: z, rung },
+      });
+      const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+      const life = mean(sim.state.monsters.map((m) => m.stats.maxLife));
+      const hit = mean(sim.state.monsters.map((m) => m.stats.damage));
+      gauge(
+        `${(THEME_BY_ID[zone.theme]?.name ?? zone.theme).padEnd(14)}` +
+          `${String(rung).padStart(5)}   ${Math.round(sim.set.rewards.danger).toString().padStart(6)}   ` +
+          `${Math.round(life).toString().padStart(12)}   ` +
+          `${Math.round(hit).toString().padStart(14)}   ` +
+          `${String(sim.state.totalMonsters).padStart(8)}`
+      );
+    }
+  });
+
+  const bottom = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(4242), {
+    rung: { zone: 0, rung: 1 },
+  });
+  const top = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(4242), {
+    rung: { zone: LADDER.zones.length - 1, rung: LADDER.zones[LADDER.zones.length - 1].rungs },
+  });
+  const lifeOf = (sim: RunSim): number =>
+    sim.state.monsters.reduce((a, m) => a + m.stats.maxLife, 0) / Math.max(1, sim.state.monsters.length);
+  const low = lifeOf(bottom);
+  const high = lifeOf(top);
+  check(
+    high > low * 2,
+    `the top rung's bodies carry ${(high / Math.max(1, low)).toFixed(1)}× the life of the first rung's`,
+    `top rung life ${Math.round(high)} against ${Math.round(low)}`
+  );
+
+  // A save is the one thing that can hold a climb nobody walked.
+  const bent = createGame();
+  bent.character.climbed = { [LADDER.zones[0].theme]: 999, nowhere: 4 };
+  heal(bent);
+  check(
+    climbed(bent.character, 0) === LADDER.zones[0].rungs &&
+      !('nowhere' in bent.character.climbed),
+    'and heal clamps a climb to the rungs that exist',
+    `heal left ${JSON.stringify(bent.character.climbed)}`
   );
 }
 

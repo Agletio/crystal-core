@@ -211,9 +211,10 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
  *  quotes a danger the run will not have. */
 export function setRows(
   crystals: Item[],
-  standing?: RolledMod | null
+  standing?: RolledMod | null,
+  at?: { zone: number; rung: number } | null
 ): Array<{ label: string; value: string }> {
-  const set = runSet(crystals, standing);
+  const set = runSet(crystals, standing, at);
   return [
     { label: 'sockets', value: `${set.filled}/4` },
     { label: 'danger', value: Math.round(set.rewards.danger).toString() },
@@ -224,8 +225,12 @@ export function setRows(
 
 /** What this set is FOR, in words: what its worlds pay, what a mix adds, and
  *  what its modifiers point the drops at. Empty for the bare Fissure. */
-export function farmingText(crystals: Item[], standing?: RolledMod | null): string {
-  const set = runSet(crystals, standing);
+export function farmingText(
+  crystals: Item[],
+  standing?: RolledMod | null,
+  at?: { zone: number; rung: number } | null
+): string {
+  const set = runSet(crystals, standing, at);
   const said: string[] = [];
   if (set.pays.gold > 1.02) said.push(`+${Math.round((set.pays.gold - 1) * 100)}% gold`);
   if (set.pays.currency > 1.02) {

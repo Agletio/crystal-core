@@ -171,6 +171,21 @@ assert(
   'and say so',
   text('run-selected').slice(0, 80)
 );
+
+// THE CLIMB. Progress drawn as pips: a row a zone, a pip a rung, and nothing
+// ever taken away — a cleared rung stays clickable so a wipe is answered by
+// dropping back two and grinding.
+assert(all('#run-climb .climbrow').length === 3, 'the climb draws a row per zone');
+assert(all('#run-climb .pip').length === 42, 'and a pip per rung', String(all('#run-climb .pip').length));
+assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
+assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
+assert($('climb-pip-1-1').disabled === true, 'and so is the whole zone above');
+assert(
+  /the fissure, rung 1/i.test($('run-launch').textContent),
+  'and the way in names where it goes',
+  $('run-launch').textContent
+);
+
 assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
 const beforeFissure = dockItems().length;
 $('run-launch').click();
@@ -194,6 +209,24 @@ assert(
 for (const id of ['dev-meet-workshop', 'dev-room-answering_hall', 'dev-gear-3', 'dev-kit', 'dev-owe']) {
   assert($(id) !== null, `and ${id} is one of them`);
 }
+// Clearing a zone from the kit is 12 real descents otherwise, so the zones
+// above the first are unreachable to every check under here without it.
+assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb');
+$('dev-climb-0').click();
+$('open-fissure').click();
+assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
+assert($('climb-pip-1-1').disabled === false, 'and opens the zone above');
+assert($('climb-pip-1-2').disabled === true, 'one rung at a time');
+$('climb-pip-0-4').click();
+assert($('climb-pip-0-4').classList.contains('pip--here'), 'a cleared rung is still yours to grind');
+assert(
+  /the fissure, rung 4/i.test($('run-launch').textContent),
+  'and the way in follows the pick',
+  $('run-launch').textContent
+);
+$('climb-pip-0-1').click();
+$('run-menu-close').click();
+$('open-dev').click();
 $('dev-kit').click();
 $('confirm-yes').click();
 await new Promise((r) => setTimeout(r, 0));
