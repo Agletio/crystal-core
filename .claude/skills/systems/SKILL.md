@@ -120,6 +120,17 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
 - **A trade is funded by CHARACTER level** (`TRADE`: `pointsPerGrant` every
   `levelsPerGrant` from `firstAt`, capped at `maxPoints`), out of its own budget — funded from skill points, "identity" and
   "generic stats" compete for the same point and the beeline is back.
+- **THE WARRIOR IS THE ONE TRADE THAT READS WHAT YOU ARE HOLDING.** `gripOf`
+  in `src/sim/stats.ts` answers `shield` / `both` / `pair` / `one`, read ONCE at
+  the top of a descent because nothing swaps gear mid-run, and fifteen switches
+  pay in exactly one arrangement or in neither. **Nothing in the web writes
+  `blockChance`** — a shield's whole worth stays one number off the piece; what
+  is bought is what a Block DOES. Each grant carries the AMOUNT and `WARRIOR` in
+  `src/data.ts` carries what it is measured against, so two nodes granting one
+  of them add up rather than one replacing the other's threshold.
+- **A monster never applies an Ailment**, so any switch about what a hit LEAVES
+  on you is a switch that does nothing. A Block that "also stops the Ailment"
+  was written and cut for exactly that; it is a Slow on what you blocked now.
 - **Changing trade refunds every point and costs gold.** `replayTrade` does for
   a trade what `replayTree` does for a skill, through the one `replayWeb`.
 
