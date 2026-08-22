@@ -139,6 +139,8 @@ const PACE_STEP = 2;
 
 /** How close you get before the one who lurks comes out at you. */
 const LURK_RANGE = 4;
+/** Near enough somebody standing in a descent to have seen them. */
+const MEET_RANGE = 2.6;
 /** A share of descent speed, for crossing a room you are meant to look at. */
 const SCENE_WALK = 0.4;
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
@@ -329,6 +331,9 @@ export interface RunOptions {
   scene?: string;
   /** Who else is standing about. The GAME's business, not the scene table's. */
   crowd?: { sprite: string; at: Vec2 }[];
+  /** SOMEBODY TO FIND: a `SceneDef` id and the sprite. Placed in the room
+   *  FURTHEST from the way in, never rolled — a draw moves every roll after it. */
+  meets?: { id: string; sprite: string };
   /** Props the GAME decides on top of the scene's own: full or empty sockets. */
   dressing?: { id: string; x: number; y: number }[];
 }
@@ -383,9 +388,9 @@ export interface RunState {
   folk: Entity[];
   /** True from the moment the hero reaches them until the panel is dismissed. */
   meeting: boolean;
-  /** True once he has walked back to the way on and is standing on it. Only a
-   *  scene sets it: a descent ENDS at its exit rather than carrying on. */
-  leaving: boolean;
+  /** Somebody FOUND in this descent, once the hero has come near enough. Never
+   *  cleared: they stand there for the rest of the run. */
+  found: string | null;
   /** What has to be put down before a room is yours, once it has been called
    *  up. Null everywhere else — a descent has a finale, never a boss. */
   boss: Entity | null;
@@ -519,9 +524,12 @@ export class RunSim {
     this.wellChance = percentStat(this.set.mods, 'wellChance');
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
-    const dressed = def && options.dressing?.length
-      ? { ...def, plan: { ...def.plan, props: [...def.plan.props, ...options.dressing] } }
-      : def;
+    const plan = def?.plan;
+    const dressed = plan && options.dressing?.length
+      ? { plan: { ...plan, props: [...plan.props, ...options.dressing] }, theme: def.theme }
+      : plan
+        ? { plan, theme: def.theme }
+        : undefined;
     // Sockets are the only thing that lengthens a descent: an empty Fissure is
     // index zero of the same table, not a special case beside it.
     const map = dressed
@@ -602,7 +610,7 @@ export class RunSim {
       absorbed: 0,
       folk: [],
       meeting: false,
-      leaving: false,
+      found: null,
       boss: null,
       phase: null,
       phaseLeft: 0,
@@ -614,8 +622,43 @@ export class RunSim {
       dodged: 0,
     };
 
-    if (def?.who) this.state.folk.push(this.stand(def.who, def.plan.stands));
+    if (def?.who && def.plan) this.state.folk.push(this.stand(def.who, def.plan.stands));
     for (const one of options.crowd ?? []) this.state.folk.push(this.stand(one.sprite, one.at));
+    if (!def && options.meets) {
+      this.found = options.meets.id;
+      this.state.folk.push(this.stand(options.meets.sprite, this.farthestRoom()));
+    }
+  }
+
+  /** Who is standing in this descent to be found, before the hero reaches them. */
+  private found: string | null = null;
+
+  /** The MIDDLE of the room furthest from the way in: somewhere a clear has to
+   *  visit, the way out is not, and no draw decides it. */
+  private farthestRoom(): Vec2 {
+    const { rooms, entrance } = this.state.map;
+    let best = rooms[0] ?? { x: entrance.x, y: entrance.y, w: 1, h: 1 };
+    let far = -1;
+    for (const room of rooms) {
+      const at = { x: room.x + room.w / 2, y: room.y + room.h / 2 };
+      const away = Math.hypot(at.x - entrance.x, at.y - entrance.y);
+      if (away > far) {
+        far = away;
+        best = room;
+      }
+    }
+    return { x: Math.floor(best.x + best.w / 2), y: Math.floor(best.y + best.h / 2) };
+  }
+
+  /** MET BY WALKING PAST: no click and no stop, which is what satisfies the
+   *  automation rule by construction. */
+  private stepMeeting(): void {
+    const s = this.state;
+    if (!this.found || s.found) return;
+    const who = s.folk[0];
+    if (!who || dist(s.hero, who) > MEET_RANGE) return;
+    s.found = this.found;
+    this.face(who, s.hero.x, s.hero.y);
   }
 
   /** A person in a room: no stats worth anything, no bounty, and out of
@@ -877,6 +920,7 @@ export class RunSim {
     }
     if (this.sunderIn > 0) this.sunderIn -= dt;
     this.stepFrost(dt);
+    this.stepMeeting();
 
     // Whatever is still climbing out, on its own clock rather than on the
     // room emptying: reinforcements arrive whether or not you are winning.
@@ -1408,20 +1452,6 @@ export class RunSim {
       if (!this.rng.chance(Math.min(1, odds))) continue;
       this.state.loot.currency[key.id] = (this.state.loot.currency[key.id] ?? 0) + 1;
     }
-  }
-
-  /** The mirror of `walkOut`: down the way on, which in a scene is the tile you
-   *  came in by. `leaving` is true once he stands on it: the next descent. */
-  walkDown(dt: number): void {
-    const s = this.state;
-    if (s.leaving) return;
-    const way = s.map.exit;
-    if (dist(s.hero, { x: way.x, y: way.y } as Entity) > 0.9) {
-      if (this.advance(s.hero, { x: way.x, y: way.y } as Entity, dt, SCENE_WALK)) return;
-    }
-    s.hero.path = [];
-    this.settleAction(s.hero, false);
-    s.leaving = true;
   }
 
   walkOut(dt: number): void {

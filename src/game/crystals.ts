@@ -67,23 +67,23 @@ export function giftSchedule(game: GameState): string {
   const who = LAMPWRIGHT.name;
   const given = game.given ?? [];
   if (!given.includes('weapon')) {
-    return `${who} is waiting on the stair, before you go down at all.`;
+    return `${who} owes you the weapon your skill wants. Find him below.`;
   }
   if (!given.includes('crystal')) {
     if (crystalEarned(game)) {
-      return `${who} is waiting at the mouth of your next cleared descent.`;
+      return `${who} has one for you. Go and talk to him in the camp.`;
     }
     const skillId = mainSkillId(game.character);
     const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
     const progress = game.character.skills?.[skillId];
     const spare = progress ? pointsAvailable(skillId, progress) : 1;
     return (
-      `${who} brings your first crystal to the mouth of a cleared descent once ` +
+      `${who} has your first crystal for you in the camp once ` +
       `${name} is level ${INTRO.crystalSkillLevel} with every one of its points spent. ` +
       `${name} is level ${progress?.level ?? 1}, with ${spare} unspent.`
     );
   }
-  return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;
+  return `${who} hands over whatever is owed when you talk to him in the camp. Everything left is earned below.`;
 }
 
 /** Everything one meeting puts in your hands. Currency has no slot. */

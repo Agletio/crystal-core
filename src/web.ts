@@ -30,6 +30,7 @@ import { initFilter } from './ui/filter';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
+import { initTalk } from './ui/talk';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import {
   centreCamera,
@@ -265,6 +266,7 @@ initGraft(game, () => {
 });
 initRun(game);
 initSpeech();
+initTalk(game);
 initMenu();
 
 /**

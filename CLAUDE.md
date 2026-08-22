@@ -196,12 +196,18 @@ takes.
 keeps going until you die, your bag fills, someone is waiting at the mouth, or
 you say so. All five end on the same report and open the same dock.
 
-**Crystals are given in person, never bought or rolled.** At the end of a
-cleared descent that owes something you come up in a **scene** — an authored
-room with somebody standing in it — instead of the next descent. Five rooms:
-the Lampwright's workshop, the Lambengolmor's reading room, the answering hall
-(a boss), the ossuary and the orrery (two people who take a relic and write a
-line on your gear that nothing else can).
+**THERE ARE NO ROOMS, and a person is FOUND IN A DESCENT.** *"Honestly just
+ditch all the rooms. I want to encounter them randomly in the maps and they
+just say like one thing thanking you for saving them… then they can be in the
+camp and you can just talk to them."* One unmet person stands in the room
+furthest from the way in, at `MEET_CHANCE` a descent — placed with NO draw, so
+whether somebody is down there cannot move a single roll — and walking past
+them is the whole meeting: `SceneDef.greets` goes into the log, nothing stops,
+and they stand there for the rest of the run. Afterwards they are in the camp,
+and clicking them runs `SceneDef.beats` and then whatever they are FOR: the
+Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's
+benches. **The one `plan` left is the ANSWERING HALL**, because a boss fight
+needs a floor with nothing on it.
 
 **Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is
 one row per type — Burn, Bleed, Chill, Shock, Poison, Curse, Exposure, and
@@ -259,7 +265,7 @@ src/trades.ts      the character's own web; src/trades/* the two trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
-src/scenes.ts      the authored rooms; src/scenes/* their content, camp.ts the picture
+src/scenes.ts      the PEOPLE and the one arena; src/scenes/camp.ts the picture
 src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation
 src/sim/grants.ts  every switch anything may hand the sim, and who reads it
@@ -267,7 +273,7 @@ src/sim/grid.ts    generate and carve a map; sceneMap beside it
 src/game/          save, state, report, crystals, scenes, graft
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
-src/ui/            one module per screen; settings holds keys, the filter, the book
+src/ui/            one module per screen; talk.ts is a person in the camp
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep

@@ -190,7 +190,8 @@ assert(
   'with a button per room, per rung of gear, and the kit',
   String(all('#dev-body .devbtn').length)
 );
-for (const id of ['dev-room-workshop', 'dev-room-answering_hall', 'dev-gear-3', 'dev-kit']) {
+// A ROOM is a fight now; everybody else is somebody the kit can have met.
+for (const id of ['dev-meet-workshop', 'dev-room-answering_hall', 'dev-gear-3', 'dev-kit', 'dev-owe']) {
   assert($(id) !== null, `and ${id} is one of them`);
 }
 $('dev-kit').click();
@@ -854,7 +855,7 @@ assert(
 // Nothing about a gift is a probability any more, so the screen states a fact.
 // A percentage here would be the one thing on it a player cannot act on.
 assert(
-  /at the mouth of a cleared descent/i.test(text('crystals-npc')),
+  /talk to him in the camp/i.test(text('crystals-npc')),
   'the collection says where whatever is owed gets handed over',
   text('crystals-npc')
 );
@@ -2669,9 +2670,10 @@ assert(
   assert(!socket.disabled, 'an unarmed keyhole is clickable');
 }
 
-// --- he talks in the room, not over a sheet covering it --------------------
-// A scene IS a stop — nothing is ticking and the map is not yours to click —
-// so it does not need a scrim to prove it.
+// --- TALKING TO SOMEBODY IN THE CAMP ---------------------------------------
+// *"Then they can be in the camp and you can just talk to them."* The bubble is
+// the map's own, pinned over the body the picture drew, and what follows the
+// last line is whatever they are for.
 {
   assert($('speech') !== null, 'there is a bubble to say a line in');
   assert($('speech').hidden === true, 'and nothing is being said before anyone speaks');
@@ -2681,13 +2683,29 @@ assert(
   );
   assert(
     !$('met').classList.contains('modal--stop'),
-    'the Lampwright no longer paints a scrim over his own workshop'
+    'a conversation paints no scrim over the camp it is standing in'
   );
   assert(
     $('met').classList.contains('modal--speech') && $('met-card') !== null,
-    'his panel is the last bubble, anchored like every line before it'
+    'the handover is the last bubble, anchored like every line before it'
   );
   assert($('met-said') === null, 'and his words are beats rather than a block of text');
+
+  // Clicking a body in the camp starts one. The kit has met everybody, so
+  // there is somebody standing there to click.
+  const who = [...document.querySelectorAll('#camp-folk .camp__hot')];
+  assert(who.length > 0, 'everybody the kit has met is standing in the camp', String(who.length));
+  who[0].click();
+  assert($('speech').hidden === false, 'and clicking one starts them talking');
+  assert(
+    $('speech-said').textContent.trim().length > 0,
+    'with a line in the bubble',
+    $('speech-said').textContent
+  );
+  for (let i = 0; i < 12 && $('speech').hidden === false; i++) $('speech-next').click();
+  assert($('speech').hidden === true, 'and the last line ends the conversation');
+  if ($('met').hidden === false) $('met-take').click();
+  if ($('graft').hidden === false) $('graft-leave').click();
 }
 
 // --- the Osteomancer's bench ----------------------------------------------
@@ -2697,14 +2715,14 @@ assert(
   assert($('graft').hidden === true, 'his bench starts closed');
   assert(
     $('graft').classList.contains('modal--speech') && $('graft-card') !== null,
-    'and it is the last bubble of his room rather than a screen'
+    'and it is the last bubble of the conversation rather than a screen'
   );
   assert(
     !$('graft').classList.contains('modal--stop'),
-    'so it paints no scrim over the room it is standing in'
+    'so it paints no scrim over the camp it is standing in'
   );
 
-  // The dev kit carries one, which is the whole of what schedules him.
+  // The dev kit carries one, which is the whole of what puts his bench up.
   assert(relicSlots().length > 0, 'the dev kit carries a specimen', String(relicSlots().length));
   assert($('inv-relics-col').hidden === false, 'and the column it lives in is up');
   assert(
@@ -2712,14 +2730,14 @@ assert(
     'and nothing in it has a click: it is carried to a person, never spent'
   );
 
-  // WHO IS ABOUT. Somebody you have met is somebody you can go back to, so a
-  // relic you decide to keep is a decision rather than the same room again.
+  // WHO IS ABOUT. Somebody you have found is somebody standing in the camp,
+  // so a relic you decide to keep is a decision rather than the same room again.
   const folk = [...document.querySelectorAll('[id^="run-visit-"]')];
   assert(folk.length > 0, 'everybody the kit has met has a way back to them', String(folk.length));
   assert($('run-folk').hidden === false, 'and the panel saying so is up');
   assert(
-    folk.every((b) => b.textContent.trim().length > 0),
-    'and each one says whose room it is'
+    folk.every((b) => b.getAttribute('aria-label') !== ''),
+    'and each one says who they are'
   );
 }
 

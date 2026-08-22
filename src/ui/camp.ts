@@ -29,12 +29,13 @@ import { RUN_SLOTS } from '../data';
 import { folkMet } from '../game/scenes';
 import { crystalIcon } from './icons';
 import { showTooltip, hideTooltip } from './tooltip';
+import { syncTalk } from './talk';
 import type { GameState } from '../game/state';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 let game: GameState;
-let opens: Record<string, (spot: Hotspot) => void> = {};
+let opens: Record<string, (spot: Hotspot, at: DOMRect) => void> = {};
 let live = false;
 let started = 0;
 
@@ -51,7 +52,10 @@ function fit(): void {
   $('camp-stage').style.setProperty('--camp-scale', String(Math.max(0.2, Math.min(wide, tall))));
 }
 
-export function initCamp(state: GameState, screens: Record<string, (spot: Hotspot) => void>): void {
+export function initCamp(
+  state: GameState,
+  screens: Record<string, (spot: Hotspot, at: DOMRect) => void>
+): void {
   game = state;
   opens = screens;
   const art = SCENE_ART[CAMP_ART];
@@ -66,7 +70,10 @@ export function initCamp(state: GameState, screens: Record<string, (spot: Hotspo
   }
 
   for (const spot of CAMP_HOTSPOTS) mount(spot);
-  globalThis.addEventListener('resize', fit);
+  globalThis.addEventListener('resize', () => {
+    fit();
+    syncTalk();
+  });
   fit();
 }
 
@@ -84,7 +91,7 @@ function mount(spot: Hotspot, host = 'camp-hotspots'): void {
   btn.setAttribute('aria-label', spot.says);
   btn.onclick = () => {
     hideTooltip();
-    opens[spot.opens]?.(spot);
+    opens[spot.opens]?.(spot, btn.getBoundingClientRect());
   };
   // Hover carries meaning, because this is a desktop game.
   btn.onpointerenter = (event) => showTooltip(says(spot), event.clientX, event.clientY);

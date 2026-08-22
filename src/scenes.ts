@@ -1,7 +1,8 @@
 /**
- * Scenes: the authored rooms you come up into at the end of a cleared descent.
- * A `RunSim` over a map nobody generated — one chamber, the props where
- * somebody put them, the people in it. `src/scenes/*` is content.
+ * The people, and the one room left. *"Honestly just ditch all the rooms. I
+ * want to encounter them randomly in the maps and they just say like one thing
+ * thanking you for saving them… then they can be in the camp and you can just
+ * talk to them."* A `SceneDef` is a PERSON; only the BOSS ARENA keeps a `plan`.
  */
 import type { MapProp, Room, Vec2 } from './sim/grid';
 import type { MapTheme } from './types';
@@ -32,11 +33,13 @@ export interface SceneDef {
   id: string;
   who: string; // a sprite id in BOTH `BEASTIARY` and `PORTRAITS`
   name: string; // what the bubble calls them, since a portrait is not a label
-  theme: MapTheme; // some world's rock: a room is a PLACE, not the last descent
-  plan: ScenePlan;
-  said: string; // noted on arrival; what a PERSON says is beats, per gift
-  beats?: SceneBeat[]; // the room's own person, before the fight
-  after?: SceneBeat[]; // and once it is down
+  theme: MapTheme; // some world's rock: the arena is a PLACE, not the last descent
+  plan?: ScenePlan; // the BOSS ARENA alone; a person is met where you find them
+  said: string; // what the place looked like, noted on arrival
+  greets?: string; // the ONE line, said where you find them in a descent
+  beats?: SceneBeat[]; // what they say in the camp when they WANT something
+  idles?: string; // and when they do not, so a visit is never only a demand
+  after?: SceneBeat[]; // and once the fight is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
   gives?: string; // a `BossKeyDef` id handed over here, once and in person
 }

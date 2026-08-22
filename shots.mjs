@@ -220,32 +220,28 @@ for (const vp of VIEWPORTS) {
   await shoot('camp-hover');
   await page.evaluate(() => document.getElementById('tooltip')?.setAttribute('hidden', ''));
 
-  // HIS ROOM, and what he is holding. The gift is a schedule away — level 4
-  // with every point spent — so the dev menu walks the game into owing one and
-  // then goes to the room the schedule would have sent you to.
+  // TALKING TO SOMEBODY IN THE CAMP. *"Then they can be in the camp and you
+  // can just talk to them."* The gift is a schedule away — level 4 with every
+  // point spent — so the dev menu owes one and puts him in the camp, and then
+  // it is his body on the picture you click.
   await page.evaluate(() => document.getElementById('open-dev')?.click());
   await page.waitForTimeout(200);
   await page.evaluate(() => document.getElementById('dev-owe')?.click());
   await page.waitForTimeout(300);
   await page.evaluate(() => document.getElementById('open-dev')?.click());
   await page.waitForTimeout(200);
-  await page.evaluate(() => document.getElementById('dev-room-workshop')?.click());
+  await page.evaluate(() => document.getElementById('dev-meet-workshop')?.click());
+  await page.waitForTimeout(400);
   try {
-    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
-      timeout: 30000,
-    });
-    await shoot('scene');
+    await page.click('#camp-who-workshop');
     await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
-      timeout: 30000,
+      timeout: 10000,
     });
     await shoot('speech');
     // The BUTTON advances a beat, so this is the interaction rather than a
     // wait: bounded, because a bubble nobody can advance is the failure.
     for (let i = 0; i < 8; i++) {
       if (await page.evaluate(() => document.getElementById('met')?.hidden === false)) break;
-      // Through the DOM, not the mouse: the box is anchored to a world point
-      // and the camera is still easing after the walk across, so it never
-      // holds still long enough for an actionability check to pass.
       await page.evaluate(() => document.getElementById('speech-next')?.click());
       await page.waitForTimeout(250);
     }
@@ -267,12 +263,29 @@ for (const vp of VIEWPORTS) {
     }
     await page.evaluate(() => document.getElementById('met-take')?.click());
   } catch {
-    problems.push(`${vp.name}: the schedule never reached the Lampwright`);
+    problems.push(`${vp.name}: talking to the Lampwright in the camp never got to his panel`);
   }
-  // The handover, caught in the middle: the hero walking back out of the room
-  // with what he was given.
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(400);
   await shoot('handover');
+
+  // THE ARENA, the one room left, through the dev menu's own door.
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('dev-room-answering_hall')?.click());
+  try {
+    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
+      timeout: 30000,
+    });
+    await page.waitForTimeout(600);
+    await shoot('scene');
+  } catch {
+    problems.push(`${vp.name}: the arena never opened`);
+    await shoot('scene');
+  }
+  // 'Go back' is the way out of a room you walked to; the fight itself is the
+  // only way out of one you bought with a key.
+  await page.evaluate(() => document.getElementById('run-leave')?.click());
+  await page.waitForTimeout(600);
 
   // THE DESCENT. Nothing has been cleared yet, so the crack is the way in.
   await page.waitForFunction(() => document.getElementById('camp')?.hidden === false, null, {
@@ -569,19 +582,16 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(150);
 
-  // The GRAFT bench: the last beat of somebody's room. The kit has MET him, so
-  // this is the walk over rather than a cleared descent — a relic you keep no
-  // longer schedules him, which is the whole point of having met him.
-  await page.evaluate(() => document.getElementById('open-inventory')?.click());
+  // The GRAFT bench: the last beat of a CONVERSATION IN THE CAMP. The kit has
+  // met him and carries what he wants, which is the whole of what puts it up.
+  await page.evaluate(() => document.getElementById('open-fissure')?.click());
+  await page.waitForTimeout(200);
   await page.evaluate(() => document.getElementById('run-visit-ossuary')?.click());
   try {
-    await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
-      timeout: 150000,
-    });
     await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
       timeout: 30000,
     });
-    // Through the DOM: the bubble is anchored to a world point.
+    // Through the DOM: the bubble is anchored to a point on the page.
     for (let i = 0; i < 12; i++) {
       if (await page.evaluate(() => document.getElementById('graft')?.hidden === false)) break;
       await page.evaluate(() => document.getElementById('speech-next')?.click());
@@ -632,7 +642,7 @@ for (const vp of VIEWPORTS) {
     });
     if (armed) problems.push(`${vp.name}/graft: ${armed}`);
   } catch {
-    problems.push(`${vp.name}: the second descent never reached a bench in a room`);
+    problems.push(`${vp.name}: talking to the Osteomancer never reached his bench`);
   }
 
   const spilled = await page.evaluate(() => {

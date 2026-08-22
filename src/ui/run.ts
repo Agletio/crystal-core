@@ -27,7 +27,6 @@ import { compositionText, crystalFamily, farmingText, runSet, setRows } from '..
 import {
   BOSS_BY_ID,
   BOSS_KEYS,
-  BOSS_KEY_BY_ID,
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
@@ -43,19 +42,17 @@ import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, folkMet, gaveKey, sceneWaiting, takeBoss, takeMet } from '../game/scenes';
+import { bossBeaten, folkMet, hasMet, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
-import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
+import { openTalk } from './talk';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
-import { giftWaiting } from '../game/crystals';
-import type { Waiting } from '../game/crystals';
-import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
-import { closeGraft, isGraftOpen, openGraft } from './graft';
+import { closeMet, isMetOpen } from './met';
+import { closeGraft, isGraftOpen } from './graft';
 import { anchor, endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { createCanvasRenderer } from '../render/canvas2d';
@@ -131,15 +128,8 @@ let pending: RunReport | null = null;
 /** Held while the room is being crossed, for `land()` afterwards — the report
  *  and the STATE are the descent's, not the scene's, or the card that lands
  *  lists the loot of a room with nothing in it. */
-let greeted: RunReport | null = null;
-let greetedState: RunState | null = null;
 /** What he is holding, until the hero reaches him and the panel opens. */
-let greeting: Waiting | null = null;
 /** The room waiting at the bottom of the hole, until the drop has played. */
-let arriving: SceneDef | null = null;
-/** The opening: his room is the first thing, and the stair behind him is what
- *  the first descent is entered by. Set while that walk is happening. */
-let descending = false;
 /** Set while the room was WALKED TO rather than scheduled: nothing was banked,
  *  so leaving it goes back to the Fissure instead of down a stair. */
 let visiting = false;
@@ -151,6 +141,10 @@ let spoke = false;
 const SHOUT_FOR = 1.9;
 /** The look at what you called up, there and back. */
 const ARRIVAL = 2.6;
+
+/** How often somebody unmet is standing in a descent. They are found by walking
+ *  past — no click, no stop — so this is the only thing that gates a meeting. */
+const MEET_CHANCE = 0.5;
 let arrival = 0;
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
@@ -196,27 +190,19 @@ export const runPhase = (): Phase => phase;
  *  cleared and banked long before anyone spoke, so this is the report landing
  *  rather than the run resuming. */
 export function sceneEnded(): void {
-  sim?.takeGift();
-  // Walked to rather than arrived at: nothing was banked and there is no stair
-  // behind him, so this is the way back out of somebody's room.
-  if (visiting) {
-    visiting = false;
-    goHome();
+  // Both panels are the CAMP's now: nothing is ticking and nothing is banked,
+  // so the whole of ending one is drawing the picture again.
+  if (isCampOpen()) {
+    renderCamp();
     renderInventory();
     return;
   }
-  const report = greeted;
-  const state = greetedState;
-  greeted = null;
-  greetedState = null;
-  greeting = null;
-  if (report && state) {
-    land(report, state);
-    return;
+  sim?.takeGift();
+  if (visiting) {
+    visiting = false;
+    goHome();
   }
-  // The OPENING has no report behind it: nothing has been descended yet, and
-  // what is left is the stair behind him that the first descent is entered by.
-  descending = true;
+  renderInventory();
 }
 
 /** Escape, anywhere in a meeting: the rest of the lines are skipped and what
@@ -253,16 +239,16 @@ function runHandler() {
 //
 // A PICTURE rather than a map: `src/ui/camp.ts` owns everything on it and this
 // only says what a hotspot OPENS. The rail still reaches every one of those
-// screens — a screen you can only find on a picture is one somebody will lose.
-// A SOCKET does what its socket on the Fissure card does, being the same
-// socket; a PERSON is the room they stand in.
-const OPENS: Record<Hotspot['opens'], (spot: Hotspot) => void> = {
+// screens. A SOCKET does what its socket on the Fissure card does, being the
+// same socket; a PERSON is TALKED TO, where they are standing.
+const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
   stash: () => openStash(),
   character: () => openCharacter(),
-  room: (spot) => {
-    enterRoomNow(spot.room ?? '');
+  room: (spot, at) => {
+    const def = SCENE_BY_ID[spot.room ?? ''];
+    if (def) openTalk(def, at);
   },
   socket: (spot) => {
     const slot = RUN_SLOTS[spot.slot ?? 0];
@@ -290,15 +276,10 @@ export const isFissureOpen = (): boolean => !$('run-menu').hidden;
 export function goHome(): boolean {
   sim = null;
   setPhase('menu');
-  greeted = null;
-  greetedState = null;
-  greeting = null;
   banked = null;
   pending = null;
-  arriving = null;
   handover = 0;
   leaving = false;
-  descending = false;
   streak = 0;
   refreshRunPanels();
   openCamp();
@@ -306,10 +287,9 @@ export function goHome(): boolean {
   return true;
 }
 
-/** WHO IS ABOUT. Everybody you have met, and a button into their room — the
- *  same `enterScene` the schedule calls, so it is the room rather than a
- *  preview of one. Meeting somebody moves them from the end of a descent to
- *  here, so a relic you keep is a decision instead of the same room twice. */
+/** WHO IS ABOUT. Everybody you have found, and a button that TALKS to them —
+ *  the same conversation clicking their body in the camp starts. A picture is
+ *  easy to miss, so this is the readable way to the same thing. */
 function renderFolk(): void {
   const host = $('run-folk');
   const met = folkMet(game);
@@ -325,7 +305,7 @@ function renderFolk(): void {
     const face = portraitIcon(def.who, 30);
     if (face) button.append(face);
     button.append(el('span', 'folkbtn__name', def.name));
-    button.onclick = () => enterRoomNow(def.id);
+    button.onclick = () => openTalk(def, button.getBoundingClientRect());
     attachTooltip(button, () => def.said);
     row.append(button);
   }
@@ -474,6 +454,15 @@ function renderKeySocket(grid: HTMLElement): void {
 // Run
 // ---------------------------------------------------------------------------
 
+/** Somebody unmet, sometimes: one at random out of everyone you have not found
+ *  yet, at `MEET_CHANCE` a descent. Null once you have met them all. */
+function whoIsDown(): { id: string; sprite: string } | undefined {
+  const left = SCENES.filter((s) => !s.encounter && !hasMet(game, s.id));
+  if (left.length === 0 || Math.random() > MEET_CHANCE) return undefined;
+  const def = left[Math.floor(Math.random() * left.length)];
+  return { id: def.id, sprite: def.who };
+}
+
 function launch(): void {
   // A socketed key opens the fight AT the door: the descent this entry would
   // have been is the fight, not a wait for one.
@@ -492,11 +481,13 @@ function launch(): void {
   const set = socketed(game);
 
   seed = Math.floor(Math.random() * 1e9);
-  // Who you might meet is the player's business, not the set's: the chance
-  // falls as the collection fills, and the sim is only told the number.
+  // WHO IS DOWN THERE. *"I want to encounter them randomly in the maps."*
+  // Rolled HERE and not in the sim, off its own draw, so whether somebody is
+  // waiting cannot move a single roll of the descent itself.
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
+    meets: whoIsDown(),
   });
 
   note(
@@ -553,34 +544,7 @@ function finish(left = false): void {
 
   if (report.cleared) streak++;
 
-  // A room through the hole. Already banked, so it is a reason the loop
-  // stopped rather than a new ending — same `land()`, same report. You drop
-  // in exactly as a chained descent does and come up somewhere else. Asked
-  // AFTER the report, so the level and the crystal experience this descent
-  // just bought both count towards the meeting it schedules.
-  // A scene never schedules a scene: the queue is read at the end of a
-  // DESCENT, or a room hands you straight into the next room.
   if (report.cleared) payTrials(sim.state);
-
-  const scene = report.cleared && phase !== 'scene'
-    ? sceneWaiting(game, {
-        set: sim.state.set,
-        elapsed: sim.state.elapsed,
-        socketed: socketed(game),
-      })
-    : null;
-  if (scene) {
-    halt = 'met';
-    greeted = report;
-    greetedState = sim.state;
-    greeting = scene.gift;
-    arriving = scene.def;
-    handover = 0.0001;
-    banked = report;
-    pending = null;
-    absorbEvents();
-    return;
-  }
 
   halt = left
     ? 'left'
@@ -650,35 +614,6 @@ function speak(): void {
     });
     return;
   }
-  // Somebody who hands over a KEY: he says his piece and it is yours, once and
-  // in person, like everything else in this game. What it opens is the fifth
-  // socket's business, never this room's.
-  if (def.gives) {
-    const key = BOSS_KEY_BY_ID[def.gives];
-    startSpeech(def.who, def.name, def.beats ?? [], () => {
-      if (key && !(game.given ?? []).includes(gaveKey(key.id))) {
-        game.wallet[key.id] = (game.wallet[key.id] ?? 0) + 1;
-        game.given = [...(game.given ?? []), gaveKey(key.id)];
-        note(`${def.name} hands you ${key.name}. It goes in the Fissure's fifth socket.`);
-      }
-      renderInventory();
-      sceneEnded();
-    });
-    return;
-  }
-
-  // Somebody who wants what you are carrying. His bench is the last beat, the
-  // same shape as a gift's panel — the difference is that nothing is handed
-  // over until you press the button, and Keep it walks out still holding it.
-  const wanted = relicFor(game, def.id);
-  if (wanted) {
-    startSpeech(def.who, def.name, def.beats ?? [], () => openGraft(def, wanted));
-    return;
-  }
-  if (!greeting) return;
-  const words = lampwrightWords(greeting);
-  const held = greeting;
-  startSpeech(def.who, def.name, words.beats, () => openMet(held));
 }
 
 /** The boss is down, or you are. A boss room is a DESCENT: its loot banks, its
@@ -718,7 +653,6 @@ function enterScene(
   // the list of people you can go back to and takes them off the schedule.
   if (!def.encounter) takeMet(game, def.id);
   revisit = def.encounter !== null && bossBeaten(game, def.encounter);
-  arriving = null;
   arrivedIn = def.id;
   spoke = false;
   arrival = 0;
@@ -742,7 +676,6 @@ function land(report: RunReport, run: RunState): void {
   handover = 0;
   pending = null;
   banked = null;
-  arriving = null;
   renderResults(report, run);
   setPhase('results');
   setLeaveLabel();
@@ -1071,8 +1004,20 @@ function renderResults(report: RunReport, run: RunState): void {
   host.append(card);
 }
 
+/** FOUND SOMEBODY, mid-descent: their one line into the log, and MET. Nothing
+ *  stops. Marked here because the sim knows no `GameState`. */
+function absorbMeeting(): void {
+  const id = sim?.state.found;
+  if (!id || hasMet(game, id)) return;
+  const def = SCENE_BY_ID[id];
+  takeMet(game, id);
+  if (def?.greets) note(`${def.name}: ${def.greets}`, 'add', sim?.state.elapsed);
+  renderBadges();
+}
+
 function absorbEvents(): void {
   if (!sim) return;
+  absorbMeeting();
   const at = sim.state.elapsed;
 
   // Kills aren't logged. Sixty "+1 killed" lines bury the three entries that
@@ -1097,8 +1042,7 @@ function frame(now: number): void {
     if (playing === false && handover >= HANDOVER * DESCEND) {
       // The bottom of the hole: a report, a room, or the next descent. This
       // runs every frame of the climb out, so a room already entered says so.
-      if (pending) land(pending, greetedState ?? sim!.state);
-      else if (arriving) enterScene(arriving);
+      if (pending) land(pending, sim!.state);
       else if (phase !== 'scene') launch();
     }
     if (handover >= HANDOVER) handover = 0;
@@ -1112,17 +1056,12 @@ function frame(now: number): void {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
-      if (descending) sim.walkDown(TICK);
-      else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
+      if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
       else sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;
     }
-    if (descending && sim.state.leaving) {
-      descending = false;
-      launch();
-    }
-    if (!descending && sim.state.meeting && !spoke && arrival <= 0) speak();
+    if (sim.state.meeting && !spoke && arrival <= 0) speak();
   }
   if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
     syncSpeech(renderer, sim.state.folk[0]);
@@ -1303,8 +1242,6 @@ export function initRun(state: GameState): void {
   // banked as it happened, so it ends on the same card.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
     if (!sim || phase === 'scene') return;
-    // Walking over to him: already banked, so nothing to walk out of.
-    if (greeting) return;
     if (phase !== 'running') return;
     // Mid-drop the descent is already over and banked, so this means "do not
     // go back down": the report lands at the bottom instead of a new map.
@@ -1410,11 +1347,6 @@ export function refreshRunPanels(): void {
  *  standing there to hand over refuses every Abandon for the rest of the run. */
 export function forgetRun(): void {
   sim = null;
-  greeting = null;
-  greeted = null;
-  greetedState = null;
-  arriving = null;
-  descending = false;
   banked = null;
   pending = null;
   handover = 0;
@@ -1422,25 +1354,17 @@ export function forgetRun(): void {
   setPhase('menu');
 }
 
-/** GOING TO SEE SOMEBODY, and the dev menu's one way into a room. The same
- *  `enterScene` the schedule calls, with whatever a descent had half-finished
- *  dropped first — so it has no loot and no clear, and may never be a BOSS. */
+/** THE ARENA, now the only room there is: the dev menu's way into the fight,
+ *  with whatever a descent had half-finished dropped first. A person is not a
+ *  room any more — you talk to them where they stand. */
 export function enterRoomNow(id: string): boolean {
   const def = SCENE_BY_ID[id];
-  if (!def) return false;
-  greeted = null;
-  greetedState = null;
-  // He may still be holding what he was going to hand over.
-  greeting = def.id === LAMPWRIGHT.scene ? giftWaiting(game) : null;
+  if (!def?.plan) return false;
   banked = null;
   pending = null;
-  arriving = null;
   handover = 0;
   leaving = false;
   streak = 0;
-  // Not the stair behind the Lampwright: a room you walked to is not the
-  // opening, and `walkDown` would launch a descent out from under you.
-  descending = false;
   enterScene(def);
   visiting = true;
   setLeaveLabel();

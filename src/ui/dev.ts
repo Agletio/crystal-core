@@ -12,6 +12,7 @@ import { BOSS_BY_ID, INTRO, TRIALS } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
+import { takeMet } from '../game/scenes';
 import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
@@ -84,17 +85,24 @@ function render(): void {
   };
 
   const rooms = group(
-    'Rooms',
-    'A room is normally scheduled at the end of a cleared descent. These go straight there, with whatever you are wearing.'
+    'People and the arena',
+    'A person is normally FOUND in a descent and stands in the camp afterwards; the arena is normally bought with a key. These do both without the play.'
   );
   for (const scene of SCENES) {
     const boss = scene.encounter ? BOSS_BY_ID[scene.encounter] : null;
     const button = el('button', 'mini devbtn') as HTMLButtonElement;
-    button.id = `dev-room-${scene.id}`;
+    // A room is a FIGHT now, and everything else is somebody to have met.
+    button.id = scene.plan ? `dev-room-${scene.id}` : `dev-meet-${scene.id}`;
     button.append(el('span', 'devbtn__name', scene.name));
-    button.append(el('span', 'devbtn__what', boss ? `fight — ${boss.name}` : 'no fight'));
+    button.append(el('span', 'devbtn__what', boss ? `fight — ${boss.name}` : 'stand in the camp'));
     button.onclick = () => {
-      if (!hooks.enterRoom(scene.id)) return;
+      if (scene.plan) {
+        if (!hooks.enterRoom(scene.id)) return;
+      } else {
+        takeMet(game, scene.id);
+        hooks.refresh();
+        note(`Dev: ${scene.name} is in the camp.`);
+      }
       close();
     };
     rooms.append(button);

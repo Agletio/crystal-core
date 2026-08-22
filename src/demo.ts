@@ -13,7 +13,6 @@ import {
   HERO_BASE,
   MANA,
   MELEE,
-  PASSIVE_DAMAGE,
   POTIONS,
   DROP_BANDS,
   monsterResStat,
@@ -110,16 +109,16 @@ import {
 import { hasArmourArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
-import { folkMet, gaveKey, hasMet, sceneWaiting, takeBoss, takeMet } from './game/scenes';
+import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
 import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
-import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
+import { forgedFor, graft, graftRefusal, graftableKinds, relicFor, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
 import { CAMP_ART, CAMP_HOTSPOTS, CAMP_SPOTS, CAMP_STAND } from './scenes/camp';
 import type { Hotspot } from './scenes/camp';
 import { SCENE_ART } from './render/generated-scene';
 import type { SceneDef } from './scenes';
-import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
+import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import { ZONES } from './render/generated-tiles';
 import type { RunState } from './sim/run';
@@ -132,7 +131,7 @@ import {
   slotTypes,
   slotUsed,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, clearSpot, dist, generateMap, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -1892,6 +1891,8 @@ rule('SPRITES — is the pixel art well formed?');
   // the other one speaks, and a character with only half of that is half a
   // person. Either table may hold the body — a generated one is not in
   // `BEASTIARY` at all, and must not be, or it would never draw.
+  // A ROOM is a fight now and everything else is somebody you meet.
+  const ARENAS = SCENES.filter((s) => s.plan);
   const rooms = SCENES;
   const halfDrawn = rooms.filter(
     (s) => !(BEASTIARY[s.who] || GENERATED[s.who]) || !PORTRAITS[s.who]
@@ -1905,8 +1906,8 @@ rule('SPRITES — is the pixel art well formed?');
   // texture. A BARE room draws the generated picture and skips the decals, so
   // which table has to hold it depends on whether its zone has a set — and a
   // room that went bare with only decals behind it is an EMPTY room.
-  const noProp = SCENES.flatMap((s) => {
-    const map = sceneMap(s.plan, s.theme, 1);
+  const noProp = ARENAS.flatMap((s) => {
+    const map = sceneMap(s.plan!, s.theme, 1);
     const table = map.bare ? PROP_ART : PROPS;
     return map.props
       .filter((p) => !(p.id in table))
@@ -2001,69 +2002,26 @@ rule('SPRITES — is the pixel art well formed?');
   // thing you go round. `findPath` asks `walkable`, and anything reading
   // `tiles` alone parks the hero on a tile it can never step off.
   const standsIn = (room: SceneDef) => ({
-    x: Math.round(room.plan.stands.x),
-    y: Math.round(room.plan.stands.y),
+    x: Math.round(room.plan!.stands.x),
+    y: Math.round(room.plan!.stands.y),
   });
   const at = (grid: Grid, v: { x: number; y: number }) =>
     Math.round(v.y) * grid.width + Math.round(v.x);
-  {
-    const furnished = SCENES.map((room) => ({ room, map: sceneMap(room.plan, room.theme, 1) }));
-    const bad: string[] = [];
-    let solids = 0;
-    for (const { room, map } of furnished) {
-      for (const p of room.plan.props) {
-        if (!SOLID_PROPS.has(p.id)) continue;
-        solids++;
-        if (!map.grid.solid[at(map.grid, p)]) bad.push(`${room.id}: ${p.id}@${p.x},${p.y} is walked through`);
-      }
-      for (let y = 0; y < map.grid.height; y++) {
-        for (let x = 0; x < map.grid.width; x++) {
-          if (!map.grid.solid[y * map.grid.width + x]) continue;
-          const tile = map.grid.at(x, y);
-          if (tile !== FLOOR && tile !== TUNNEL) bad.push(`${room.id}: ${x},${y} is not floor`);
-          if (!map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) {
-            bad.push(`${room.id}: ${x},${y} blocks with nothing standing on it`);
-          }
-        }
-      }
-    }
-    line(`  ${solids} pieces of furniture across ${SCENES.length} rooms, and you walk round every one`);
-    check(
-      bad.length === 0,
-      `all ${solids} pieces of furniture in the authored rooms block, and only where they may`,
-      bad.slice(0, 4).join(', ')
-    );
 
-    // And a ROUTE goes around each of them. `Grid.solid` is a second layer, so
-    // anything reading `tiles` alone paths straight through the bench.
-    const barred = furnished.flatMap(({ room, map }) => {
-      const route = findPath(map.grid, map.entrance, standsIn(room));
-      if (route.length === 0) return [`${room.id}: no way across at all`];
-      return route
-        .filter((wp) => map.grid.solid[wp.y * map.grid.width + wp.x])
-        .map((wp) => `${room.id}: ${wp.x},${wp.y}`);
-    });
-    check(
-      barred.length === 0,
-      `and in all ${SCENES.length} the route from the hole to whoever is waiting goes around it rather than through`,
-      barred.slice(0, 4).join(', ')
-    );
-  }
-
-  // `block` is order-dependent and UNDOES the piece that strands something,
-  // which nothing a room actually places exercises — so it is driven by hand.
-  // Beside the person is the hardest place to put one: a ring of them is a
-  // meeting that can never happen, and the tile that closes it has to be
-  // refused. A check whose subject nothing reaches is vacuous, not green.
+  // `block` is order-dependent and UNDOES the piece that strands something, so
+  // it is DRIVEN BY HAND: nothing the game authors places furniture any more,
+  // and a check whose subject nothing reaches is vacuous rather than green.
+  // Beside the person is the hardest place to put one — a ring of them is a
+  // meeting that can never happen, and the tile that closes it is refused.
   {
-    const room = SCENES[0];
-    const plain = sceneMap(room.plan, room.theme, 1);
+    const room = ARENAS[0];
+    const plain = sceneMap(room.plan!, room.theme, 1);
     const stands = standsIn(room);
     const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
       .map(([dx, dy]) => ({ x: stands.x + dx, y: stands.y + dy }))
       .filter((v) => plain.grid.at(v.x, v.y) === FLOOR);
     const walled = sceneMap(
-      { ...room.plan, props: [...room.plan.props, ...ring.map((v) => ({ id: 'cairn', ...v }))] },
+      { ...room.plan!, props: [...room.plan!.props, ...ring.map((v) => ({ id: 'cairn', ...v }))] },
       room.theme,
       1
     );
@@ -2085,41 +2043,21 @@ rule('SPRITES — is the pixel art well formed?');
     }
     const held = ring.filter((v) => grid.solid[at(grid, v)]).length;
     const spared = ring.length - held;
-    line(`  ${ring.length} more put round the person, ${held} of them block, ${spared} refused`);
+    line(`  ${ring.length} pieces put round the person, ${held} block, ${spared} refused`);
     check(
       held >= 4 && spared >= 1 && seen.has(at(grid, stands)),
-      'and the piece that would wall somebody off is refused instead',
+      'a solid piece of furniture blocks, and the one that would wall somebody off is refused',
       `${held} blocked, ${spared} refused${seen.has(at(grid, stands)) ? '' : ' — the person is cut off'}`
     );
+    // And the route across the arena goes round whatever is standing in it.
+    const route = findPath(plain.grid, plain.entrance, stands);
+    const through = route.filter((wp) => plain.grid.solid[wp.y * plain.grid.width + wp.x]);
+    check(
+      route.length > 0 && through.length === 0,
+      'and the way across the arena is walkable end to end',
+      route.length === 0 ? 'no way across at all' : `${through.length} solid waypoints`
+    );
   }
-
-  // Where a prop is PUT, which the id check cannot see. A room is authored by
-  // hand in absolute tiles, so the three ways to get that wrong are outside the
-  // walls, stacked on another prop, and standing on the hole or on the person.
-  const misplaced = SCENES.flatMap((s) => {
-    const { entrance, stands } = s.plan;
-    const { grid, props } = sceneMap(s.plan, s.theme, 1);
-    const seen = new Set<string>();
-    const rock = (at: { x: number; y: number }): boolean => grid.at(at.x, at.y) === WALL;
-    return [
-      ...props.flatMap((p) => {
-        const at = `${p.x},${p.y}`;
-        const wrong: string[] = [];
-        if (rock(p)) wrong.push('in the rock');
-        if (seen.has(at)) wrong.push('stacked');
-        if (p.x === entrance.x && p.y === entrance.y) wrong.push('on the hole');
-        if (p.x === stands.x && p.y === stands.y) wrong.push('on the person');
-        seen.add(at);
-        return wrong.map((why) => `${s.id} ${p.id}@${at} ${why}`);
-      }),
-      // The way down is drawn TWO tiles across and centred on its tile, so an
-      // authored one a step from the rock has half its rim inside the wall.
-      ...(clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
-        ? []
-        : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
-    ];
-  });
-  check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
 
   // THE CAMP is the screen the game OPENS on, and it is a PICTURE — so what
   // can go wrong is not rock but ARITHMETIC: a hotspot off the edge of the art,
@@ -2188,16 +2126,6 @@ rule('SPRITES — is the pixel art well formed?');
       off.slice(0, 4).join(', ')
     );
   }
-
-  // A room of one shape is a room that reads as the last one. Each has its own
-  // signature furniture; the lanterns are the only thing they all share.
-  // A room somebody LIVES in, never an arena: a boss room is empty by design,
-  // because furniture in a fight about leaving a circle is what you get caught
-  // against.
-  const thin = SCENES.filter(
-    (s) => !s.encounter && new Set(s.plan.props.map((p) => p.id)).size < 3
-  ).map((s) => s.id);
-  check(thin.length === 0, 'and no room is furnished out of one or two shapes', thin.join(', '));
 
   // Every monster the tables can spawn has to have a drawing, or a pack of
   // them arrives as whatever the fallback happens to be. Either table draws
@@ -8097,13 +8025,6 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
 // ===========================================================================
 rule('THE COLLECTION — do crystals arrive, and do they grow?');
 
-/** What a cleared descent was, in the shape an objective is asked about. */
-const facts = (g: GameState, run: RunState): QuestFacts => ({
-  set: run.set,
-  elapsed: run.elapsed,
-  socketed: socketed(g),
-});
-
 // Nothing here can be bought, so if the giving is wrong the game has no way
 // up at all. Three things have to hold: the first four arrive, a socketed
 // crystal levels, and the other two worlds are reachable on purpose.
@@ -8160,61 +8081,65 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       `${sim.state.status}, ${sim.state.folk.length} folk`
     );
 
+    // SOMEBODY DOWN THERE. *"I want to encounter them randomly in the maps and
+    // they just say like one thing."* Placed without a draw, so the descent
+    // rolls exactly as it did without them — and FOUND by walking past, which
+    // is what makes a headless run reach them with no policy of its own.
     buildReport(g, sim.state);
-    const call = sceneWaiting(g, facts(g, sim.state));
-    check(
-      call?.gift?.weapon === true && call.def.encounter === null,
-      'and a cleared descent that owes something schedules a quiet room',
-      `${call ? call.def.id : 'nothing'}`
-    );
+    {
+      // BOTH FRESH: `totalMonsters` grows as the Welling raises bodies, so a
+      // finished run against a new one compares two different questions.
+      const alone = new RunSim([], g.character, new Rng(6100));
+      const withHim = new RunSim([], g.character, new Rng(6100), {
+        meets: { id: 'workshop', sprite: LAMPWRIGHT.sprite },
+      });
+      check(
+        withHim.state.folk.length === 1 && withHim.state.found === null,
+        'somebody unmet is standing in the descent, and unfound until you reach them',
+        `${withHim.state.folk.length} folk, found ${withHim.state.found}`
+      );
+      check(
+        withHim.state.totalMonsters === alone.state.totalMonsters,
+        'and putting them there moved not one roll of the descent',
+        `${withHim.state.totalMonsters} against ${alone.state.totalMonsters}`
+      );
+      runToCompletion(withHim, 400);
+      check(
+        withHim.state.status === 'cleared' && withHim.state.found === 'workshop',
+        'and clearing the map finds them, with nothing clicked and nothing stopped',
+        `${withHim.state.status}, found ${withHim.state.found}`
+      );
+      // Every person has the ONE line, or they are met in silence.
+      const mute = SCENES.filter((s) => !s.encounter && !s.greets).map((s) => s.id);
+      check(mute.length === 0, 'and every one of them has a line to say where you find them', mute.join(', '));
+      // And something to say in the camp both ways round: what they WANT, and
+      // one standing line for when they want nothing. Without the second,
+      // every visit is a demand and the camp reads as a row of shops.
+      // The Lampwright is exempt from both: his three speeches are in
+      // `LAMPWRIGHT` because which one he says is what he OWES you.
+      const talkers = SCENES.filter((s) => !s.encounter && s.id !== LAMPWRIGHT.scene);
+      const dumb = talkers.filter((s) => !s.beats?.length).map((s) => s.id);
+      check(dumb.length === 0, 'and something to say when they want something', dumb.join(', '));
+      const nagging = talkers.filter((s) => !s.idles).map((s) => s.id);
+      check(nagging.length === 0, 'and a standing line for when they do not', nagging.join(', '));
+    }
 
-    // The room. A `RunSim` like any other, which is what makes a boss room a
-    // filled-in field rather than a second engine.
-    const room = new RunSim([], g.character, new Rng(6100), { scene: call!.def.id });
+    // THE ARENA, the one room left. A `RunSim` like any other, which is what
+    // makes a boss room a filled-in field rather than a second engine.
+    const room = new RunSim([], g.character, new Rng(6100), { scene: INTRO.bossRoom });
     check(
       room.state.monsters.length === 0 && room.state.folk.length === 1,
-      'the room has nobody in it but the man standing in it',
+      'the arena has nobody in it but the one you came to say the name at',
       `${room.state.monsters.length} monsters, ${room.state.folk.length} folk`
     );
     check(
-      room.state.map.exit === room.state.map.entrance && room.state.map.props.length > 0,
-      'one hole and furniture somebody put there',
+      room.state.map.exit === room.state.map.entrance,
+      'and one hole, which is the way you came in',
       `${room.state.map.props.length} props`
-    );
-    // Everything authored has to be standing on floor, in EVERY room: a bench
-    // in the rock is a bench nobody can see, and the cut worries the edges of
-    // a room away tile by tile. A prop is asked about the TILE and a body about
-    // whether it FITS, which is the same question until furniture blocks — and
-    // then a body standing on a bench is exactly what the second one catches.
-    const misplaced: string[] = [];
-    // A PLACE has nobody standing in it: who is in the camp is the game's.
-    for (const scene of SCENES) {
-      const built = new RunSim([], g.character, new Rng(6100), { scene: scene.id });
-      const grid = built.state.map.grid;
-      for (const p of built.state.map.props) {
-        if (grid.at(p.x, p.y) === WALL) misplaced.push(`${scene.id}: ${p.id} at ${p.x},${p.y}`);
-      }
-      const bodies: Array<readonly [string, number, number]> = [
-        [scene.who, built.state.folk[0].x, built.state.folk[0].y] as const,
-        ['the hole', built.state.map.entrance.x, built.state.map.entrance.y] as const,
-      ];
-      for (const [id, x, y] of bodies) {
-        if (!grid.fits(x, y, 0.3)) misplaced.push(`${scene.id}: ${id} at ${x},${y}`);
-      }
-      // And the hole has to reach the person, or you arrive in a room you
-      // cannot cross and the beats never start.
-      if (!findPath(grid, built.state.map.entrance, built.state.folk[0]).length) {
-        misplaced.push(`${scene.id}: no way across to ${scene.who}`);
-      }
-    }
-    check(
-      misplaced.length === 0,
-      `every prop and every person in all ${SCENES.length} rooms fits where it was put`,
-      misplaced.join(', ')
     );
     check(
       dist(room.state.hero, room.state.folk[0]) > 3,
-      'you arrive across the room from him, so meeting him is a walk',
+      'you arrive across it, so reaching them is a walk',
       `${dist(room.state.hero, room.state.folk[0]).toFixed(1)} tiles`
     );
     check(
@@ -8222,6 +8147,19 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'and the meeting is the hero walking over, not a panel appearing',
       `meeting ${room.state.meeting}, ${dist(room.state.hero, room.state.folk[0]).toFixed(2)} apart`
     );
+
+    // Nobody MOVES across it, whichever skill fills the slot: a mover firing
+    // mid-conversation reads as a bug rather than as a build, and the guard is
+    // for the SLOT rather than for the one mover it was written against.
+    const moved: string[] = [];
+    for (const mover of MOVERS) {
+      const walker = { ...g.character, equipped: { ...g.character.equipped, movement: mover } };
+      const arriving = new RunSim([], walker, new Rng(77), { scene: INTRO.bossRoom });
+      let t = 0;
+      while (!arriving.state.meeting && t++ < 4000) arriving.walkOut(TICK);
+      if (arriving.state.blinks > 0) moved.push(mover);
+    }
+    check(moved.length === 0, 'and nobody moves across it, whichever mover is held', moved.join(', '));
 
     // What he says, and what he does while he says it. An act only ever sets
     // `action` and `actionTimer`, which is the whole of what `poseOf` reads.
@@ -8231,44 +8169,6 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       'every one of his three speeches is beats, and every beat has words',
       script.map((w) => w.beats.length).join('/')
     );
-    // Who crosses the room. YOU do, at a walk: the room is what you came up
-    // into and arriving on top of the man skips looking at it. Whoever is
-    // waiting stands where he is, and the meeting still happens.
-    const crossed: string[] = [];
-    for (const scene of SCENES) {
-      const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
-      const them = arriving.state.folk[0];
-      const themAt = { x: them.x, y: them.y };
-      const youAt = { x: arriving.state.hero.x, y: arriving.state.hero.y };
-      let ticks = 0;
-      while (!arriving.state.meeting && ticks++ < 4000) arriving.walkOut(TICK);
-      const theyMoved = dist(them, themAt);
-      const youMoved = dist(arriving.state.hero, youAt);
-      if (!arriving.state.meeting) crossed.push(`${scene.id}: never met`);
-      else if (youMoved <= theyMoved) crossed.push(`${scene.id}: they came to you`);
-    }
-    check(
-      crossed.length === 0,
-      'you cross the room to whoever is waiting, and they stand where they are',
-      crossed.join(', ')
-    );
-
-    // And nobody MOVES across an authored room, whichever skill fills the slot:
-    // there is nothing in here to get to faster, and a mover firing
-    // mid-conversation reads as a bug rather than as a build. The guard is for
-    // the SLOT, so every mover has to be held to it rather than the one it was
-    // written for.
-    const moved: string[] = [];
-    for (const mover of MOVERS) {
-      const walker = { ...g.character, equipped: { ...g.character.equipped, movement: mover } };
-      for (const scene of SCENES) {
-        const arriving = new RunSim([], walker, new Rng(77), { scene: scene.id });
-        let t = 0;
-        while (!arriving.state.meeting && t++ < 4000) arriving.walkOut(TICK);
-        if (arriving.state.blinks > 0) moved.push(`${mover}/${scene.id}`);
-      }
-    }
-    check(moved.length === 0, 'and nobody moves across one, whichever mover is held', moved.join(', '));
 
     const who = room.state.folk[0];
     who.action = 'idle';
@@ -8307,36 +8207,26 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     // that outranks every other one here is that it ENDS: a reinforcement
     // clock with no stop condition is a run nobody can walk out of.
     {
+      const objector = SCENE_BY_ID[INTRO.bossScene];
       const at = createGame('dev');
       at.sockets = {};
-      // The kit is handed a specimen too, and holding one is a room of its own
-      // at a lower rung — this question is about the wall, not about him.
-      at.relics = [];
-      check(
-        sceneWaiting(at, facts(at, sim.state)) === null,
-        'nobody objects to a wall with nothing in it',
-        JSON.stringify(sceneWaiting(at, facts(at, sim.state))?.def.id)
-      );
+      at.given = (at.given ?? []).filter((mark) => mark !== gaveKey(objector.gives!));
+      check(!keyOwed(at, objector), 'nobody objects to a wall with nothing in it', 'offered anyway');
       const two = createGame('dev');
       two.bosses = []; // the kit is handed every door; this is somebody meeting one
+      two.given = (two.given ?? []).filter((mark) => mark !== gaveKey(objector.gives!));
       two.sockets = { first: makeCrystal(2, 'normal'), second: makeCrystal(2, 'normal') };
-      const called = sceneWaiting(two, facts(two, sim.state));
       check(
-        called?.def.id === INTRO.bossScene && called.gift === null,
+        keyOwed(two, objector),
         'two crystals set in the wall is what it takes for somebody to object',
-        called?.def.id ?? 'nobody'
+        JSON.stringify(Object.keys(two.sockets))
       );
       const bossId = SCENE_BY_ID[INTRO.bossRoom].encounter!;
       takeBoss(two, bossId);
-      two.relics = [];
-      // His room is owed until he has HANDED the name over, never until the
-      // thing it calls up is down: the fight is the fifth socket's.
-      two.given = [...(two.given ?? []), gaveKey(SCENE_BY_ID[INTRO.bossScene].gives!)];
-      check(
-        sceneWaiting(two, facts(two, sim.state)) === null,
-        'and once he has handed it over he never asks you back',
-        JSON.stringify(sceneWaiting(two, facts(two, sim.state))?.def.id)
-      );
+      // The name is owed until he has HANDED it over, never until the thing it
+      // calls up is down: the fight is the fifth socket's.
+      two.given = [...(two.given ?? []), gaveKey(objector.gives!)];
+      check(!keyOwed(two, objector), 'and once he has handed it over he never offers again', 'offered twice');
 
       // --- going back for one you have already put down -----------------
       // A key is a wallet entry in its own table. Never a currency: the bench's
@@ -8367,18 +8257,6 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
       check(dropped > 0, 'and one does once it has been', `${dropped} in 40 bare clears`);
       gauge(`a way back drops ${dropped} times in 40 bare clears`);
 
-      // A key already SPENT schedules nothing: it opens the fight at the
-      // door, so the clear it would have ridden on owes no room at all.
-      const back = createGame('dev');
-      back.sockets = {};
-      back.bosses = [bossId];
-      back.called = bossId;
-      back.relics = [];
-      check(
-        sceneWaiting(back, facts(back, sim.state)) === null,
-        'a socketed key schedules nothing — the fight is at the door',
-        JSON.stringify(sceneWaiting(back, facts(back, sim.state))?.def.id)
-      );
       // And a room never drops the key that opens it, or the loop feeds itself.
       const inRoom = new RunSim([], g.character, new Rng(900), {
         scene: INTRO.bossRoom,
@@ -8551,7 +8429,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
 
     // What the panel does. The run is already banked, so this is a handover
     // and not a payout — nothing about it can be lost.
-    const waiting = call!.gift;
+    const waiting = giftWaiting(g);
     const hand = takeHandover(g, waiting!);
     room.takeGift();
     const weapon = hand.items[0];
@@ -9056,13 +8934,18 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
   const settled = createGame('dev');
   settled.sockets = {};
   settled.relics = [];
-  // The kit has MET everybody, and meeting somebody takes him off the schedule.
-  settled.given = (settled.given ?? []).filter((g2) => !g2.startsWith('met:'));
-  const facts = { set: sim.state.set, elapsed: sim.state.elapsed, socketed: [] };
-  check(sceneWaiting(settled, facts) === null, 'nothing is owed with nothing carried', String(sceneWaiting(settled, facts)?.def.id));
+  const wants = RELICS[0].wants;
+  check(
+    relicFor(settled, wants) === null,
+    "nobody's bench is offered with nothing carried",
+    relicFor(settled, wants)?.base ?? ''
+  );
   settled.relics = [makeRelic(RELICS[0])];
-  const owed = sceneWaiting(settled, facts);
-  check(owed?.def.id === RELICS[0].wants, 'and holding one is the whole of what schedules his room', owed?.def.id ?? 'nobody');
+  check(
+    relicFor(settled, wants)?.base === RELICS[0].id,
+    'and carrying one is the whole of what puts his bench in front of you',
+    relicFor(settled, wants)?.base ?? 'nothing'
+  );
 
   // The trade. `helmet`, `body` and `boots` only, and the base's own line is
   // what it is written over.
@@ -9089,25 +8972,22 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     `${helm.armour} → ${made.armour}`
   );
 
-  // MET ONCE. A relic finds him the first time and after that he is somebody
-  // you go and see: keeping what he wants is a decision, not the same room at
-  // the end of every clear for as long as you keep it.
+  // MET ONCE, in a descent, and afterwards he is somebody standing in the camp
+  // that you go and talk to.
   {
     const fresh = createGame('fresh');
-    // Past the two rungs above him: what is left is the relic in your hands.
     fresh.given = ['weapon', 'crystal'];
     fresh.relics = [makeRelic(RELIC_BY_ID.pristine_specimen)];
-    const first = sceneWaiting(fresh, facts);
     check(
-      first?.def.id === 'ossuary',
-      'a relic you are carrying finds the person who wants it',
-      first?.def.id ?? 'nobody'
+      folkMet(fresh).length === 0,
+      'somebody you have not found is not standing in the camp',
+      folkMet(fresh).map((f) => f.id).join(', ')
     );
     takeMet(fresh, 'ossuary');
     check(
-      sceneWaiting(fresh, facts) === null && hasMet(fresh, 'ossuary'),
-      'and once you have met him he is never scheduled at you again',
-      JSON.stringify(sceneWaiting(fresh, facts)?.def.id)
+      hasMet(fresh, 'ossuary') && relicFor(fresh, 'ossuary')?.base === 'pristine_specimen',
+      'and once you have found him, what you carry is what his bench is offered for',
+      relicFor(fresh, 'ossuary')?.base ?? 'nothing'
     );
     check(
       folkMet(fresh).some((f) => f.id === 'ossuary')
