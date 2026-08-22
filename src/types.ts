@@ -233,7 +233,7 @@ export interface MonsterFamilyDef {
 
 /** Which world you stand in, off the composition. A LOOK: same generator,
  *  same packs, different rock under them. */
-export type MapTheme = 'fissure' | 'demonic' | 'prismatic' | 'seam' | 'camp';
+export type MapTheme = 'fissure' | 'demonic' | 'prismatic' | 'seam';
 
 export interface MapThemeDef {
   id: MapTheme;

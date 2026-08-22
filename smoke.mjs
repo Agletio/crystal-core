@@ -1015,8 +1015,12 @@ assert(
 );
 $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
-assert($('run-stagewrap').hidden === false, 'and the camp is waiting underneath');
-assert(document.body.dataset.runPhase === 'scene', 'which is a place you stand in');
+assert($('camp').hidden === false, 'and the camp is waiting underneath');
+assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
+assert(
+  document.querySelectorAll('.camp__hot').length === 8,
+  'with everything on the picture there is to click'
+);
 // The Fissure window is the sockets and the one button, and nothing else:
 // what a character IS is on the sheet, which has its own checks below.
 $('open-fissure').click();
@@ -1371,11 +1375,11 @@ assert(
 );
 $('run-again').click();
 assert(
-  document.body.dataset.runPhase === 'scene',
+  document.body.dataset.runPhase === 'menu' && $('camp').hidden === false,
   'and going back comes up in the camp',
   document.body.dataset.runPhase
 );
-assert($('run-menu').hidden === true, 'with the crack shut until you walk to it');
+assert($('run-menu').hidden === true, 'with the crack shut until you click it');
 
 // --- character sheet ------------------------------------------------------
 assert($('sheet').hidden === true, 'character sheet starts closed');

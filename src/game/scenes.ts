@@ -42,7 +42,7 @@ export function takeMet(game: GameState, sceneId: string): void {
 
 /** Everyone you can go and see. A BOSS is not one: his room is a descent. */
 export const folkMet = (game: GameState): SceneDef[] =>
-  SCENES.filter((s) => !s.encounter && !s.place && hasMet(game, s.id));
+  SCENES.filter((s) => !s.encounter && hasMet(game, s.id));
 
 function scheduled(game: GameState): SceneDef[] {
   const out: SceneDef[] = [];

@@ -115,7 +115,9 @@ import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
 import { forgedFor, graft, graftRefusal, graftableKinds, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
-import { CAMP, CAMP_FIXTURES, CAMP_SOCKETS, CAMP_SPOTS } from './scenes/camp';
+import { CAMP_ART, CAMP_HOTSPOTS, CAMP_SPOTS, CAMP_STAND } from './scenes/camp';
+import type { Hotspot } from './scenes/camp';
+import { SCENE_ART } from './render/generated-scene';
 import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, SOLID_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
@@ -1890,9 +1892,7 @@ rule('SPRITES — is the pixel art well formed?');
   // the other one speaks, and a character with only half of that is half a
   // person. Either table may hold the body — a generated one is not in
   // `BEASTIARY` at all, and must not be, or it would never draw.
-  // A PLACE has nobody in it — whoever you have met is standing about, and who
-  // that is belongs to the game rather than to this table.
-  const rooms = SCENES.filter((s) => !s.place);
+  const rooms = SCENES;
   const halfDrawn = rooms.filter(
     (s) => !(BEASTIARY[s.who] || GENERATED[s.who]) || !PORTRAITS[s.who]
   ).map((s) => s.id);
@@ -2114,49 +2114,57 @@ rule('SPRITES — is the pixel art well formed?');
       }),
       // The way down is drawn TWO tiles across and centred on its tile, so an
       // authored one a step from the rock has half its rim inside the wall.
-      // A PLACE is the opposite rule and the camp is built on it: its way down
-      // is a SPLIT IN THE ROCK, so it belongs against the face rather than clear
-      // of it.
-      ...(s.place
-        ? grid.at(entrance.x, entrance.y - 1) === WALL
-          ? []
-          : [`${s.id} entrance at ${entrance.x},${entrance.y} is not against the rock`]
-        : clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
-          ? []
-          : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
+      ...(clearSpot(grid, entrance).x === entrance.x && clearSpot(grid, entrance).y === entrance.y
+        ? []
+        : [`${s.id} entrance at ${entrance.x},${entrance.y} has rock against it`]),
     ];
   });
   check(misplaced.length === 0, 'and every one of them is somewhere it can be', misplaced.join(', '));
 
-  // THE CAMP is the screen the game OPENS on and everything in it is CLICKED,
-  // so a fixture in the rock is a screen with no way to reach it.
+  // THE CAMP is the screen the game OPENS on, and it is a PICTURE — so what
+  // can go wrong is not rock but ARITHMETIC: a hotspot off the edge of the art,
+  // two of them overlapping so one can never be clicked, or a body standing
+  // where the picture has already ended.
   {
-    const { grid } = sceneMap(CAMP.plan, CAMP.theme, 1);
-    const floor = (at: { x: number; y: number }) => grid.at(at.x, at.y) !== WALL;
-    const meetable = SCENES.filter((s) => !s.place && !s.encounter);
+    const art = SCENE_ART[CAMP_ART];
+    const inside = (x: number, y: number, w = 0, h = 0) =>
+      !!art && x >= 0 && y >= 0 && x + w <= art.w && y + h <= art.h;
+    const overlap = (a: Hotspot, b: Hotspot) =>
+      a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
     const astray = [
-      ...CAMP_FIXTURES.filter((f) => !floor(f.at)).map((f) => `${f.id} in the rock`),
-      ...CAMP_FIXTURES.filter((f) => !PROP_ART[f.id]).map((f) => `${f.id} undrawn`),
-      ...CAMP_SPOTS.filter((at) => !floor(at)).map((at) => `a spot at ${at.x},${at.y} in the rock`),
-      // A socket hangs on the CUT FACE, like every other side-on prop: the rock
-      // tile at the boundary, with floor below it.
-      ...CAMP_SOCKETS.filter(
-        (at) => grid.at(at.x, at.y) !== WALL || grid.at(at.x, at.y + 1) === WALL
-      ).map((at) => `a socket at ${at.x},${at.y} off the face`),
+      ...CAMP_HOTSPOTS.filter((h) => !inside(h.x, h.y, h.w, h.h)).map((h) => `${h.id} off the art`),
+      ...CAMP_HOTSPOTS.flatMap((a, i) =>
+        CAMP_HOTSPOTS.slice(i + 1).filter((b) => overlap(a, b)).map((b) => `${a.id} over ${b.id}`)
+      ),
+      ...CAMP_SPOTS.filter((at) => !inside(at.x, at.y)).map((at) => `a spot at ${at.x},${at.y} off the art`),
+      ...(inside(CAMP_STAND.x, CAMP_STAND.y) ? [] : ['the hero stands off the art']),
     ];
+    line(`  the camp is ${art?.w}x${art?.h} of drawn art with ${CAMP_HOTSPOTS.length} things on it`);
     check(
-      astray.length === 0,
-      `the camp's ${CAMP_FIXTURES.length} fixtures, ${CAMP_SPOTS.length} spots and ` +
-        `${CAMP_SOCKETS.length} sockets are all somewhere they can be`,
+      !!art && astray.length === 0,
+      'every hotspot is ON the picture, and no two cover each other',
       astray.join(', ')
     );
+    // A SOCKET on the wall is one of the four the Fissure card holds; a fifth
+    // would be a hole nothing can ever go in.
+    const sockets = CAMP_HOTSPOTS.filter((h) => h.opens === 'socket');
+    const slots = sockets.map((h) => h.slot).sort();
     check(
-      CAMP_SPOTS.length >= meetable.length && CAMP_SOCKETS.length === RUN_SLOTS.length,
-      `and there is a place to stand for all ${meetable.length} people you can meet, ` +
-        `and a hole in the rock per socket in the set — ${RUN_SLOTS.length}`,
-      `${CAMP_SPOTS.length} spots, ${CAMP_SOCKETS.length} holes`
+      sockets.length === RUN_SLOTS.length && slots.join() === RUN_SLOTS.map((_, i) => i).join(),
+      `and its ${sockets.length} sockets are the ${RUN_SLOTS.length} the set has, one each`,
+      slots.join(',')
+    );
+    // Everybody you can MEET has somewhere to stand, or the fifth one you meet
+    // stands inside the first.
+    const meetable = SCENES.filter((s) => !s.encounter);
+    check(
+      CAMP_SPOTS.length >= meetable.length,
+      `and a place to stand for all ${meetable.length} people you can meet`,
+      `${CAMP_SPOTS.length} spots`
     );
   }
+
 
   // A WALL prop is drawn side-on and belongs ON the cut face — a deep set
   // draws that TWO rows tall, so it is the ROCK tile at the boundary: rock
@@ -8172,7 +8180,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     // then a body standing on a bench is exactly what the second one catches.
     const misplaced: string[] = [];
     // A PLACE has nobody standing in it: who is in the camp is the game's.
-    for (const scene of SCENES.filter((s2) => !s2.place)) {
+    for (const scene of SCENES) {
       const built = new RunSim([], g.character, new Rng(6100), { scene: scene.id });
       const grid = built.state.map.grid;
       for (const p of built.state.map.props) {
@@ -8219,7 +8227,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     // into and arriving on top of the man skips looking at it. Whoever is
     // waiting stands where he is, and the meeting still happens.
     const crossed: string[] = [];
-    for (const scene of SCENES.filter((s2) => !s2.place)) {
+    for (const scene of SCENES) {
       const arriving = new RunSim([], g.character, new Rng(77), { scene: scene.id });
       const them = arriving.state.folk[0];
       const themAt = { x: them.x, y: them.y };
@@ -8245,7 +8253,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     const moved: string[] = [];
     for (const mover of MOVERS) {
       const walker = { ...g.character, equipped: { ...g.character.equipped, movement: mover } };
-      for (const scene of SCENES.filter((s2) => !s2.place)) {
+      for (const scene of SCENES) {
         const arriving = new RunSim([], walker, new Rng(77), { scene: scene.id });
         let t = 0;
         while (!arriving.state.meeting && t++ < 4000) arriving.walkOut(TICK);

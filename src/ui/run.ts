@@ -47,8 +47,8 @@ import { bossBeaten, folkMet, gaveKey, sceneWaiting, takeBoss, takeMet } from '.
 import { takeTrials } from '../game/trials';
 import { relicFor } from '../game/graft';
 import { SCENES, SCENE_BY_ID } from '../scenes';
-import { CAMP, CAMP_FIXTURES, CAMP_SOCKETS, CAMP_SPOTS } from '../scenes/camp';
-import type { Fixture } from '../scenes/camp';
+import type { Hotspot } from '../scenes/camp';
+import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
@@ -170,6 +170,7 @@ function setPhase(next: Phase): void {
   // The crack is a window and closes when you go down it: a card offering the
   // way in, over a descent already under way, is a way in twice.
   if (next !== 'scene') closeFissure();
+  if (next !== 'menu') closeCamp();
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
   syncViewportLock();
@@ -180,7 +181,9 @@ function setPhase(next: Phase): void {
  *  map is up. Left on while you tabbed to the bench it froze that page with its
  *  items out of reach. `mapfull` rides on the same answer. */
 export function syncViewportLock(): void {
-  const showing = phase !== 'menu';
+  // The CAMP is full-bleed too, so the menu is no exception any more: a picture
+  // that fills the screen needs the shell over it and pointer-transparent.
+  const showing = true;
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', showing);
   document.body.classList.toggle('mapfull', showing);
   // The stage's box just changed shape, and nothing else will tell the
@@ -250,79 +253,29 @@ function runHandler() {
 
 // --- the camp --------------------------------------------------------------
 //
-// A PLACE rather than a screen: the crack, the bench and the shelf are props
-// standing on a map, and clicking one opens the screen it is. The rail still
-// reaches every one of them — a screen you can only find by walking up to a
-// picture is a screen somebody will lose.
-
-/** How near a fixture's own tile a click counts, in tiles. Generous on
- *  purpose: a prop is a picture with a foot, and hunting for the lit pixels of
- *  a bench is a worse game than walking up to it. */
-const FIXTURE_REACH = 1.4;
-
-/** EVERYTHING you can click in the camp. A PERSON is a fixture whose `opens`
- *  is their own room, so walking up to one is the path walking up to the bench is. */
-function campFixtures(): Fixture[] {
-  const folk = folkMet(game).map((who, i) => ({
-    id: who.who,
-    at: CAMP_SPOTS[i % CAMP_SPOTS.length],
-    opens: 'room' as const,
-    room: who.id,
-    says: `${who.name}. ${who.said}`,
-  }));
-  return [...CAMP_FIXTURES, ...folk];
-}
-
-/** The fixture under a pointer, or null. Measured in TILES through the
- *  renderer's own `screenAt`, so it is right at every zoom and pan. */
-function fixtureAt(event: PointerEvent): Fixture | null {
-  if (phase !== 'scene' || arrivedIn !== CAMP.id || !renderer) return null;
-  const box = $('run-stage').getBoundingClientRect();
-  const x = event.clientX - box.left;
-  const y = event.clientY - box.top;
-  let best: Fixture | null = null;
-  let closest = Infinity;
-  for (const fix of campFixtures()) {
-    const at = renderer.screenAt({ x: fix.at.x + 0.5, y: fix.at.y + 0.5 });
-    const one = renderer.screenAt({ x: fix.at.x + 1.5, y: fix.at.y + 0.5 });
-    const tile = Math.max(1, Math.abs(one.x - at.x));
-    const away = Math.hypot(x - at.x, y - at.y) / tile;
-    if (away < FIXTURE_REACH && away < closest) {
-      closest = away;
-      best = fix;
-    }
-  }
-  return best;
-}
-
-/** Hover carries meaning, because this is a desktop game. */
-function hintFixture(fix: Fixture, event: PointerEvent): void {
-  showTooltip(fix.says, event.clientX, event.clientY);
-}
-
-/** WALK TO IT FIRST: the difference between a place and a menu with grass on it. */
-let strolling: { to: Vec2; then: () => void } | null = null;
-
-function fixtureClick(event: PointerEvent): void {
-  const fix = fixtureAt(event);
-  if (!fix) return;
-  hideTooltip();
-  const open = fix.opens === 'room' ? () => enterRoomNow(fix.room ?? '') : OPENS[fix.opens];
-  strolling = { to: fix.at, then: open };
-}
-
-/** What a fixture IS, in one place: `camp.ts` names a screen and never calls one. */
-const OPENS: Record<Exclude<Fixture['opens'], 'room'>, () => void> = {
+// A PICTURE rather than a map: `src/ui/camp.ts` owns everything on it and this
+// only says what a hotspot OPENS. The rail still reaches every one of those
+// screens — a screen you can only find on a picture is one somebody will lose.
+// A SOCKET does what its socket on the Fissure card does, being the same
+// socket; a PERSON is the room they stand in.
+const OPENS: Record<Hotspot['opens'], (spot: Hotspot) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
   stash: () => openStash(),
-  shop: () => openShop(),
-  skills: () => openSkills(),
   character: () => openCharacter(),
+  room: (spot) => {
+    enterRoomNow(spot.room ?? '');
+  },
+  socket: (spot) => {
+    const slot = RUN_SLOTS[spot.slot ?? 0];
+    if (!slot) return;
+    if (!game.sockets[slot.id]) return openCrystals();
+    unsocket(game, slot.id);
+    refreshRunPanels();
+    renderInventory();
+  },
 };
 
-/** THE CRACK, as a window rather than a page. `initWindows` watches `hidden`,
- *  so opening it is what raises it. */
 export function openFissure(): void {
   renderMenu();
   $('run-menu').hidden = false;
@@ -332,46 +285,25 @@ export function closeFissure(): void {
 }
 export const isFissureOpen = (): boolean => !$('run-menu').hidden;
 
-/** Which socket art goes on the wall: a set you are running is visible from
- *  across the camp, so a full socket is drawn full. */
-function socketDressing(): { id: string; x: number; y: number }[] {
-  return CAMP_SOCKETS.map((at, i) => ({
-    id: game.sockets[RUN_SLOTS[i]?.id ?? ''] ? 'camp_socket_lit' : 'camp_socket',
-    x: at.x,
-    y: at.y,
-  }));
-}
-
 /**
  * HOME. The camp is the ground the game stands on — every way out of a descent,
- * a room or a wipe comes back to it, and `menu` is the half-tick in between.
- * Everybody you have met is standing about in it, in the order you met them,
- * and nobody crosses to anybody: that is what `place` means.
+ * a room or a wipe comes back to it, and `menu` is the phase it is.
  */
 export function goHome(): boolean {
   sim = null;
   setPhase('menu');
-  seed = Math.floor(Math.random() * 1e9);
   greeted = null;
   greetedState = null;
   greeting = null;
   banked = null;
   pending = null;
   arriving = null;
-  strolling = null;
   handover = 0;
   leaving = false;
   descending = false;
   streak = 0;
   refreshRunPanels();
-  enterScene(
-    CAMP,
-    folkMet(game).map((who, i) => ({
-      sprite: who.who,
-      at: CAMP_SPOTS[i % CAMP_SPOTS.length],
-    })),
-    socketDressing()
-  );
+  openCamp();
   setLeaveLabel();
   return true;
 }
@@ -1197,15 +1129,8 @@ function frame(now: number): void {
     let steps = 0;
     while (accumulator >= TICK && steps < 400) {
       if (descending) sim.walkDown(TICK);
-      else if (strolling) {
-        if (!sim.strollTo(strolling.to, TICK)) {
-          const open = strolling.then;
-          strolling = null;
-          open();
-        }
-      } else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
-      // Nobody crosses to anybody in a PLACE: you stand in it and look about.
-      else if (!SCENE_BY_ID[arrivedIn]?.place) sim.walkOut(TICK);
+      else if (sim.state.meeting) sim.perform(speakingAt(), speakingBeat()?.act, TICK);
+      else sim.walkOut(TICK);
       accumulator -= TICK;
       steps++;
     }
@@ -1288,9 +1213,6 @@ const FLASK_GAP = 8;
 /** How much closer a ROOM is framed than a descent. `clampZoom` still bounds
  *  it, so this asks rather than sets. */
 const SCENE_ZOOM = 2;
-/** A PLACE is looked at whole: it is where you stand about rather than a room
- *  you cross, and half of it off the edge of the screen is half a camp. */
-const PLACE_ZOOM = 1;
 
 function fitCanvas(): void {
   const box = $('run-stage');
@@ -1306,9 +1228,7 @@ function fitCanvas(): void {
   // Now that the surface has a real size, pick the scale that fits it. At
   // startup the stage is still unmeasured, so this is the first honest chance.
   if (!userZoomed && width > 0) {
-    const place = phase === 'scene' && SCENE_BY_ID[arrivedIn]?.place;
-    const how = phase !== 'scene' ? 1 : place ? PLACE_ZOOM : SCENE_ZOOM;
-    setZoom(defaultZoom(Math.min(width, height)) * how);
+    setZoom(defaultZoom(Math.min(width, height)) * (phase === 'scene' ? SCENE_ZOOM : 1));
   }
 }
 
@@ -1376,6 +1296,8 @@ export function initRun(state: GameState): void {
   void upgradeRenderer(stage, palette);
 
   ($('run-menu-close') as HTMLButtonElement).onclick = () => closeFissure();
+
+  initCamp(game, OPENS);
 
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (bagsFull(game)) return;
@@ -1450,21 +1372,11 @@ export function initRun(state: GameState): void {
     from = { x: event.clientX, y: event.clientY };
   });
   const release = (event?: PointerEvent) => {
-    // A pointer that never dragged is a CLICK, and in the camp a click on a
-    // fixture is how you open its screen. Nowhere else: a descent is watched.
-    if (event && from && held === null) fixtureClick(event);
     from = null;
     if (held !== null) stage.releasePointerCapture?.(held);
     held = null;
     stage.classList.remove('stage--drag');
   };
-  stage.addEventListener('pointermove', (event) => {
-    if (from) return;
-    const found = fixtureAt(event);
-    stage.classList.toggle('stage--over', found !== null);
-    if (found) hintFixture(found, event);
-    else hideTooltip();
-  });
   stage.addEventListener('pointerup', (event) => release(event));
   stage.addEventListener('pointercancel', () => release());
   stage.addEventListener('pointerleave', () => {
@@ -1504,6 +1416,7 @@ export function drinkFlask(id: string): void {
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
+  if (isCampOpen()) renderCamp();
   renderBadges();
   renderSkillIcons();
 }
@@ -1544,7 +1457,6 @@ export function enterRoomNow(id: string): boolean {
   // Not the stair behind the Lampwright: a room you walked to is not the
   // opening, and `walkDown` would launch a descent out from under you.
   descending = false;
-  strolling = null;
   enterScene(def);
   visiting = true;
   setLeaveLabel();

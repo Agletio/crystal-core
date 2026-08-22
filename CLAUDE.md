@@ -163,14 +163,17 @@ the ceiling with it.
 ## The game
 
 **THE CAMP IS WHAT THE GAME OPENS ON**, and everything else is reached from it.
-A grassy shelf at the mouth of the cave: the crack you go down in the rock along
-the north, the four sockets set into that rock beside it, a bench, a shelf, a
-tent and a fire. It is a `SceneDef` with `place: true` (`src/scenes/camp.ts`),
-which is what buys it the walk, the camera, both renderers and the prop table
-for nothing. Every fixture is a prop you CLICK and he WALKS to it before the
-screen opens; everybody you have met is standing about in it and clicking one
+**It is a PICTURE, not a place** — *"build it not using the tile sets and just
+use art and then make objects clickable on it… we don't need the characters to
+move around"*. One generated 688×384 scene in `src/render/generated-scene.ts`;
+`src/scenes/camp.ts` is every rectangle and every anchor measured in THAT
+picture's own pixels, and `src/ui/camp.ts` scales the whole stage by one factor,
+so a hotspot cannot drift off the thing it sits on. There is no map, no carve
+and no walk: eight hotspots — the crack, four sockets in the rock, the bench,
+the shelf, the tent — and what MOVES is light, wind and idling bodies on one
+canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room. **The rail still reaches every screen** — the Fissure is one
-of them, and a screen you can only find by walking up to a picture is a screen
+of them, and a screen you can only find by clicking a picture is a screen
 somebody will lose.
 
 **One place you go.** Four sockets hold crystals permanently. Their COUNT is how
@@ -252,7 +255,7 @@ src/trades.ts      the character's own web; src/trades/* the two trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
-src/scenes.ts      the authored rooms; src/scenes/* their content
+src/scenes.ts      the authored rooms; src/scenes/* their content, camp.ts the picture
 src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation
 src/sim/grants.ts  every switch anything may hand the sim, and who reads it

@@ -10,7 +10,6 @@ import { READING_ROOM } from './scenes/reading-room';
 import { OSSUARY } from './scenes/ossuary';
 import { ORRERY } from './scenes/orrery';
 import { ANSWERING_HALL } from './scenes/answering';
-import { CAMP } from './scenes/camp';
 
 /** What somebody DOES between two lines, off the pose machinery that exists. */
 export type SceneAct = 'pace' | 'work' | 'face';
@@ -40,8 +39,6 @@ export interface SceneDef {
   after?: SceneBeat[]; // and once it is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
   gives?: string; // a `BossKeyDef` id handed over here, once and in person
-  /** A PLACE: nobody crosses to you, and nothing schedules it. */
-  place?: boolean;
 }
 
 // A person smaller than the things you kill reads as set dressing.
@@ -53,7 +50,7 @@ export const LURKS = new Set(['osteomancer']); // everyone else crosses to you
 export const scaleFor = (sprite: string): number =>
   FOLK_SCALE[sprite] ?? FOLK_SCALE_DEFAULT;
 
-export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, ANSWERING_HALL, OSSUARY, ORRERY, CAMP];
+export const SCENES: SceneDef[] = [WORKSHOP, READING_ROOM, ANSWERING_HALL, OSSUARY, ORRERY];
 
 /** Every room is in `SCENES`: one the schedule cannot reach is one nobody
  *  arrives in. */

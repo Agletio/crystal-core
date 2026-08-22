@@ -1,100 +1,80 @@
 /**
- * THE CAMP: a grassy shelf at the mouth of the cave, the crack you go down
- * through in the rock along the north side, and what you have made of the
- * ground in front of it. The one place in the game that is not underground.
- *
- * It is a `SceneDef` and NOT a fifth phase, which is the DECISION this file
- * is. A scene gets the walk, the camera, both renderers, `sceneMap`'s carve
- * and the prop table for nothing; a phase of its own was a blank canvas owing
- * all five. What it cost is `place` — a scene is otherwise somebody's ROOM,
- * and three things read `SCENES` expecting that. Authored to the tile.
+ * THE CAMP, as a PICTURE — *"build it not using the tile sets and just use art
+ * and then make objects clickable on it… we don't need the characters to move
+ * around."* No map, no carve, no walk. EVERY NUMBER HERE IS IN THE ART'S OWN
+ * PIXELS; `src/ui/camp.ts` scales the lot by one factor, so a hotspot cannot
+ * drift off what it sits on.
  */
-import type { SceneDef } from '../scenes';
-import type { Vec2 } from '../sim/grid';
 
-/** A thing you CLICK. `opens` NAMES a screen rather than calling one — a room
- *  that imported the UI would be content importing its own frame — and
- *  `src/ui/run.ts` maps the name onto the panel. `room` is the one that names
- *  a scene instead: a PERSON standing about is a fixture like the bench is. */
-export interface Fixture {
-  id: string; // a `PROP_ART` id, drawn from `plan.props` like any other
-  at: Vec2;
-  opens: 'fissure' | 'craft' | 'stash' | 'shop' | 'skills' | 'character' | 'room';
-  room?: string;
-  says: string; // on the hover, because this is a DESKTOP game
+/** A rectangle you CLICK. `opens` names a screen, `room` names a scene. */
+export interface Hotspot {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'room';
+  slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
+  room?: string; // which `SceneDef`, for somebody standing about
+  says: string;
 }
 
-export const CAMP_FIXTURES: Fixture[] = [
-  // The crack is the map's own ENTRANCE, drawn by `MOUTH_ART`: no prop of its own.
+export const CAMP_ART = 'camp';
+
+/** THE FOUR SOCKETS in the rock ARE the four `RUN_SLOTS`: clicking one is
+ *  clicking that socket, and what is in it is drawn over it. */
+export const CAMP_HOTSPOTS: Hotspot[] = [
   {
-    id: 'camp_crack',
-    at: { x: 13, y: 2 },
+    id: 'crack',
+    x: 300, y: 0, w: 80, h: 250,
     opens: 'fissure',
     says: 'The crack. It goes down a long way, and it is always open.',
   },
+  { id: 'socket0', x: 222, y: 30, w: 76, h: 76, opens: 'socket', slot: 0, says: 'A socket cut into the rock.' },
+  { id: 'socket1', x: 392, y: 30, w: 76, h: 76, opens: 'socket', slot: 1, says: 'A socket cut into the rock.' },
+  { id: 'socket2', x: 220, y: 118, w: 76, h: 76, opens: 'socket', slot: 2, says: 'A socket cut into the rock.' },
+  { id: 'socket3', x: 392, y: 120, w: 76, h: 76, opens: 'socket', slot: 3, says: 'A socket cut into the rock.' },
   {
     id: 'bench',
-    at: { x: 6, y: 8 },
+    x: 14, y: 186, w: 172, h: 116,
     opens: 'craft',
     says: 'Your bench. Somewhere to pour a currency over a piece and see what it does.',
   },
   {
     id: 'shelf',
-    at: { x: 20, y: 8 },
+    x: 618, y: 174, w: 68, h: 152,
     opens: 'stash',
     says: 'The shelf. What you are not carrying, and what you meant to come back for.',
   },
+  // The FABRIC: a rectangle round the guy ropes reaches the socket and the shelf.
   {
-    id: 'camp_gear',
-    at: { x: 17, y: 6 },
+    id: 'tent',
+    x: 470, y: 136, w: 148, h: 166,
     opens: 'character',
-    says: 'Your kit, dropped where you stopped carrying it.',
+    says: 'Your tent. What you are wearing, and what it comes to.',
   },
 ];
+
+/** Where the hero stands: his FEET, on the open grass in front of the split. */
+export const CAMP_STAND = { x: 344, y: 306 };
+
+/** Art pixels a sprite pixel: measured against the tent, not chosen. */
+export const CAMP_HERO_SCALE = 2;
 
 /** Where somebody you have MET stands, in the order you met them. */
-export const CAMP_SPOTS: Vec2[] = [
-  { x: 3, y: 5 },
-  { x: 23, y: 5 },
-  { x: 9, y: 10 },
-  { x: 18, y: 10 },
-  { x: 3, y: 9 },
+export const CAMP_SPOTS = [
+  { x: 214, y: 302 },
+  { x: 474, y: 322 },
+  { x: 150, y: 332 },
+  { x: 566, y: 300 },
+  { x: 262, y: 350 },
 ];
 
-/** THE ROCK ALONG THE NORTH: four sockets either side of the crack, in
- *  `RUN_SLOTS` order, on the wall FACE — so the x's are the ones `fitCorners`
- *  left floor UNDER, not a tidy spacing. Filled or empty is the art. */
-export const CAMP_SOCKETS: Vec2[] = [
-  { x: 8, y: 0 },
-  { x: 10, y: 0 },
-  { x: 16, y: 0 },
-  { x: 18, y: 0 },
+/** WHAT MOVES: light breathing over what burns. `period` is a cycle, seconds. */
+export const CAMP_GLOW = [
+  { id: 'crack', x: 292, y: 0, w: 96, h: 272, hue: '#fcde6f', period: 5.2, depth: 0.2 },
+  { id: 'fire', x: 166, y: 292, w: 120, h: 92, hue: '#ff9a3c', period: 1.7, depth: 0.32 },
 ];
 
-export const CAMP: SceneDef = {
-  id: 'camp',
-  who: '', // nobody in particular: whoever you have met is standing about
-  name: 'The camp',
-  theme: 'camp',
-  place: true,
-  plan: {
-    room: { x: 1, y: 1, w: 25, h: 11 },
-    entrance: { x: 13, y: 1 }, // the crack, IN the rock: you come up out of it
-    stands: { x: 13, y: 8 },
-    props: [
-      ...CAMP_FIXTURES.filter((f) => f.opens !== 'fissure')
-        .map((f) => ({ id: f.id, x: f.at.x, y: f.at.y })),
-      { id: 'camp_tent', x: 21, y: 9 },
-      { id: 'camp_fire', x: 13, y: 10 },
-      { id: 'lantern_lit', x: 11, y: 5 },
-      { id: 'lantern_lit', x: 7, y: 7 },
-      { id: 'lantern_dark', x: 19, y: 7 },
-      { id: 'pebbles', x: 10, y: 9 },
-      { id: 'pebbles', x: 21, y: 4 },
-      { id: 'roots', x: 2, y: 10 },
-      { id: 'roots', x: 24, y: 10 },
-    ],
-  },
-  said: 'Grass, and the crack in the rock. Everything you have carried up is here.',
-  encounter: null,
-};
+/** The band the gusts blow across: the grass, and never the rock above it. */
+export const CAMP_WIND = { x: 0, y: 232, w: 688, h: 152 };

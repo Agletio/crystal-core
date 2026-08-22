@@ -90,10 +90,10 @@ to look:
 | you go and SEE somebody | `metMark` / `folkMet` — meeting somebody takes them off the schedule and puts them on the Fissure screen, so a relic you keep is a decision rather than the same room at every clear |
 | KITING IS GONE | tried as a passive, then as the SKILL's, then removed entirely — *"kiting is too op. I think remove it entirely for now"*. A build stands in it, ranged and melee alike. It comes back as a passive that pays for it, in Open questions |
 | a trade is taken up ONCE | the user's call: the one hard lock in a game that refunds everything else. What gold buys back instead is every ATTRIBUTE point, `respecCost` — the one allocation no click undoes |
-| the CAMP | `src/scenes/camp.ts` — a grassy shelf under its own generated tileset, the crack you came up out of, props you CLICK, and everybody you have met standing about. A `SceneDef` with `place: true`, not a fifth phase |
+| the CAMP is a PICTURE | *"build it not using the tile sets and just use art… we don't need the characters to move around"* — one 688×384 generated scene in `src/render/generated-scene.ts`, hotspot rectangles measured in its own pixels in `src/scenes/camp.ts`, and `src/ui/camp.ts` scaling the lot by one factor so nothing can drift. No map, no carve, no walk: `place` is gone from `SceneDef` and the `camp` `MapTheme` with it |
 | DUAL WIELDING | the off hand takes a second one-handed weapon: `DUAL` in `src/data.ts` puts 75% of one hand and 55% of the other into every hit, and `swingCooldown` ALTERNATES between the two rates around their even mean. Twenty pair variants over two heroes — `pairs.mts` layers a `_off` row onto the variant that already holds the other weapon, so a pair is 20 asks and not 20 rewrites |
 | Rimespike reaches a PACK | the `depth` arm is gone and RIMEFIELD stands in its place — every 4th cast leaves a Cloud where the spike went in, no damage and the build's own Chill. `fieldOnCast` / `fieldEvery` in `src/sim/grants.ts`, `leaveClouds` in `src/sim/skills.ts`, and `SkillUse.leave` is the seam a Cloud applies through |
-| the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Four generated sockets on the wall face, a tent, a fire, a heap of kit; a PERSON is a fixture like the bench, and he WALKS to whatever you clicked before the screen opens |
+| the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Eight hotspots: the crack, the four sockets in the rock, the bench, the shelf and the tent. What MOVES is light and wind on one canvas over the art, plus the hero and everybody you have met drawn from `GENERATED` at their own idle cadence |
 | NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
 | and the NORTH lip is closed | the drawing offset cleared the face with the body at its tile CENTRE and `fits` let it drift 0.16 north of that, so at the extreme the feet drew 0.07 tiles INSIDE the rock. `FACE_FOOT` / `FOOT` moved to `src/vignettes.ts` where the grid reads them too, and `Grid.fits` refuses a body high enough to draw its feet in the face. The south is a GAP rather than a clip and the demo prints it: 0.33 tiles of drawn ground out of reach |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
@@ -655,9 +655,11 @@ be picked up — they are decisions the user has not made. Ask before acting.
    variants took the bundle from 5.34 MB to **6.33 MB**, and 1.04 to **1.15
    gzipped** — about 50 KB of source a variant, not the ~150 KB the estimate
    below assumed, because a pair is five states at ONE facing rather than a
-   whole body. Nothing has been trimmed and nothing needs to be on these
-   numbers. The lever is still there if a number the user cares about ever
-   appears. The original note, for the arithmetic:
+   whole body. The camp round then ADDED a 93 KB scene and gave back 64 KB of
+   camp tileset and props, which is what a picture costs against a place.
+   Nothing has been trimmed and nothing needs to be on these numbers. The lever
+   is still there if a number the user cares about ever appears. The original
+   note, for the arithmetic:
 
    **The bundle is 5.27 MB now, 1.02 MB gzipped, and this is the first time
    the question has teeth.** It was 1.62 MB / 0.43 gzipped when this said

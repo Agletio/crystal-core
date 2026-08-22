@@ -141,9 +141,6 @@ const PACE_STEP = 2;
 const LURK_RANGE = 4;
 /** A share of descent speed, for crossing a room you are meant to look at. */
 const SCENE_WALK = 0.4;
-/** Near enough a thing you walked up to. A picture with a foot, not a tile. */
-const STROLL_NEAR = 1.3;
-
 /** The passive's buff, as a `TimedEffect` id. Not a potion; nothing fills. */
 const CRIT_BUFF = 'crit_surge';
 
@@ -549,9 +546,8 @@ export class RunSim {
       offhand: pinnedFor(character, 'offhand'),
       scale: HERO_SCALE,
       rank: 'common',
-      // A PLACE is stood IN: the crack is in the rock, and no room to stand.
-      x: dressed?.place ? dressed.plan.stands.x : map.entrance.x,
-      y: dressed?.place ? dressed.plan.stands.y : map.entrance.y,
+      x: map.entrance.x,
+      y: map.entrance.y,
       facing: 0,
       action: 'idle',
       radius: HERO_BASE.radius,
@@ -1426,21 +1422,6 @@ export class RunSim {
     s.hero.path = [];
     this.settleAction(s.hero, false);
     s.leaving = true;
-  }
-
-  /** WALK TO WHAT YOU CLICKED. False once near enough, which opens the screen. */
-  strollTo(goal: Vec2, dt: number): boolean {
-    const s = this.state;
-    if (dist(s.hero, goal as Entity) <= STROLL_NEAR) {
-      s.hero.path = [];
-      this.settleAction(s.hero, false);
-      return false;
-    }
-    if (this.advance(s.hero, goal as Entity, dt, SCENE_WALK)) return true;
-    // Boxed in: a walk that cannot finish still opens what it set out for.
-    s.hero.path = [];
-    this.settleAction(s.hero, false);
-    return false;
   }
 
   walkOut(dt: number): void {

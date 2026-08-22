@@ -1349,6 +1349,45 @@
      and any other window stay reachable. Only the CARD takes a click, which is
      what makes stacking two harmless. Each still stops above the dock, because
      the bench works ON the inventory it would otherwise cover. */
+  /* THE CAMP is the GROUND the game stands on, so it sits under every window
+     and over nothing. `--camp-scale` is set once per resize and everything
+     inside the stage is in art pixels, which is what keeps a hotspot on the
+     thing it was measured against at any window size. */
+  .camp {
+    position: fixed; inset: 0; z-index: -1; overflow: hidden;
+    background-color: var(--ink); background-image: var(--grit);
+  }
+  .camp__stage {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(var(--camp-scale, 1));
+    transform-origin: 50% 50%;
+  }
+  .camp__art, .camp__live, .camp__crystals, .camp__hotspots {
+    position: absolute; inset: 0;
+  }
+  .camp__art {
+    background-repeat: no-repeat; background-size: 100% 100%;
+    image-rendering: pixelated;
+  }
+  .camp__live { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+  .camp__crystals { pointer-events: none; }
+  /* Centred ON the socket it fills, at the size the hollow is. */
+  .camp__crystal { position: absolute; transform: translate(-50%, -50%); }
+  /* A hotspot is INVISIBLE until you are on it, and then it is the thing's own
+     edge lit rather than a box drawn round it — a rectangle over a tent reads
+     as a bug. `drop-shadow` on a transparent button lights nothing, so the
+     highlight is a soft radial wash inside the rectangle instead. */
+  .camp__hot {
+    position: absolute; padding: 0; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none; cursor: pointer;
+    transition: background-color .12s ease;
+  }
+  .camp__hot:hover, .camp__hot:focus-visible {
+    background: radial-gradient(closest-side, rgba(252,222,111,.20), rgba(252,222,111,.05) 70%, transparent);
+    outline: none;
+  }
+  .camp__hot:active { background: radial-gradient(closest-side, rgba(252,222,111,.32), transparent); }
+
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
      the whole window band, since raising one on focus would otherwise let a
@@ -1786,6 +1825,19 @@
 </head>
 <body>
 <div class="wrap">
+<!-- THE CAMP: one drawn picture, things on it you click, and the hero standing
+     in it. Not a map — there is no walk, so what a player does here is LOOK and
+     CLICK. Everything inside the stage is positioned in the art's own pixels
+     and the whole stage is scaled by one number, so nothing can drift. -->
+<div class="camp" id="camp" hidden>
+  <div class="camp__stage" id="camp-stage">
+    <div class="camp__art" id="camp-art"></div>
+    <canvas class="camp__live" id="camp-live"></canvas>
+    <div class="camp__crystals" id="camp-crystals"></div>
+    <div class="camp__hotspots" id="camp-hotspots"></div>
+  </div>
+</div>
+
   <div class="corner" id="corner">
     <nav class="rail" id="rail">
     <!-- The utility trio on its own small plate, above the screens. -->

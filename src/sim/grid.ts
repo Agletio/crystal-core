@@ -174,7 +174,6 @@ function overlaps(a: Room, b: Room, pad: number): boolean {
 export type Cut = 'dug' | 'grown' | 'gullet';
 
 const CUT: Record<MapTheme, Cut> = {
-  camp: 'dug',
   fissure: 'dug',
   demonic: 'gullet',
   prismatic: 'grown',
@@ -185,7 +184,6 @@ const CUT: Record<MapTheme, Cut> = {
  *  no rock of its own: a tileset IS the surface, and the zone's flagstones
  *  stamped over it is two floors at once. */
 export const ZONE: Partial<Record<MapTheme, string>> = {
-  camp: 'camp_round',
   fissure: 'lit_round',
   demonic: 'rot_round',
   prismatic: 'cavern_round',

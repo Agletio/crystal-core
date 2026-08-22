@@ -504,21 +504,6 @@ interface ThemeInk {
 }
 
 const THEME_INK: Record<MapTheme, ThemeInk> = {
-  // The camp draws its whole surface from a tileset, so these are only what
-  // `canvas2d` falls back to and what the LIGHT is blended out of.
-  camp: {
-    ground: 'floor',
-    groundLit: 'floorLit',
-    rock: 'rock',
-    rockTop: 'rockTop',
-    deep: 'rockDeep',
-    growth: null,
-    growthAlt: null,
-    glint: 'chalk',
-    density: 0,
-    motion: 0,
-    surface: 'stone',
-  },
   fissure: {
     ground: 'floor',
     groundLit: 'floorLit',
