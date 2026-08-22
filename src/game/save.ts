@@ -39,7 +39,7 @@ import {
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
-import { makeGear, reserveItemIds } from '../economy';
+import { isPerfect, makeGear, reserveItemIds } from '../economy';
 import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
@@ -398,7 +398,7 @@ export function heal(game: GameState): Healed {
   // where the base's line used to be and nothing can ever fill it.
   for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     if (item.meta.grafted === undefined || FORGED_BY_ID[String(item.meta.grafted)]) continue;
-    item.implicits = makeGear(item.base, item.ilvl).implicits;
+    item.implicits = makeGear(item.base, item.ilvl, undefined, isPerfect(item)).implicits;
     delete item.meta.grafted;
     out.items++;
   }

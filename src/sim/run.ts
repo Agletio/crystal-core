@@ -82,7 +82,7 @@ import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
-import { makeRelic, makeUnique, pickGearBase, rollGear } from '../economy';
+import { makeRelic, makeUnique, perfectChance, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -236,10 +236,9 @@ export interface Entity {
   effects: TimedEffect[];
   stats: CombatStats;
   cooldown: number;
-  /** Held still by something that landed on you. Only the Fall sets it. */
-  stun?: number;
-  /** Which shred aura reaches this body, for whatever draws it. Never read by
-   *  the sim, which asks `shredding` when a hit lands. */
+  stun?: number; // held still by something that landed on you: only the Fall
+  /** Which shred aura reaches this body: for whatever DRAWS it. The sim asks
+   *  `shredding` when a hit lands and never reads this. */
   shred?: 'elemental' | 'occult' | 'both';
   path: Vec2[];
   pathTimer: number;
@@ -252,8 +251,7 @@ export interface Entity {
   aura?: string;
   /** What nearby auras are doing to it, re-read a few times a second. */
   boost?: Boost;
-  /** Seconds of "just got hit" left, for the renderer to flash. */
-  hitFlash: number;
+  hitFlash: number; // seconds of "just got hit" left, for the renderer to flash
   /** Share off this one's swing rate while a Slow is running. Absent is none. */
   slowed?: number;
   /** Tiles this body has actually walked, for the walk cycle to read. */
@@ -3085,7 +3083,14 @@ export class RunSim {
     if (!base) return;
 
     const mods = this.rng.int(drops.fill[0], drops.fill[1]);
-    this.state.loot.items.push(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng));
+    // PERFECT, and drawn ONLY when the odds are above zero — the same rule
+    // Block is under. A draw at 0% moves every roll after it, which is a whole
+    // game's worth of measurements re-seeded for a thing that cannot happen.
+    const odds = perfectChance(this.set.filled, this.set.rewards.danger);
+    const perfect = odds > 0 && this.rng.chance(odds);
+    this.state.loot.items.push(
+      rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng, perfect)
+    );
   }
 
   /**

@@ -279,6 +279,16 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   `[2,4,6]`; `GearBase.slots` says only WHERE a modifier may go. A bigger item
   is a better base, FOUND. The one exception is `sigil_of_upheaval`, which adds
   past the cap and locks the item; the demo holds every other currency to it.
+- **A PERFECT base is 25% more of what the BASE hands over** — the armour
+  rating, the swing and every implicit line, all three written ONTO the item at
+  `makeGear` so nothing recomputes them off the table row. `PERFECT` in
+  `src/data.ts`; `meta.perfect` is the flag and `isPerfect` the only read.
+  Top base tier only, never a unique, and **zero under `PERFECT.minSockets`
+  crystals socketed** — it is what the last two sockets are FOR; danger lifts
+  the odds and never gates them. **The draw is skipped when the chance is 0**,
+  the same rule Block is under, or a thing that cannot happen re-seeds every
+  measurement in the game. Never junked and never in the bulk heap: like a
+  unique, it is only ever a decision.
 - **Currencies are DATA.** `CurrencyDef` is `targets` / `requires` / `effects`,
   and the named behaviours live in two registries in `src/crafting.ts` —
   `CONDITIONS` and `EFFECTS`. Effects apply in order and roll back whole if one

@@ -76,6 +76,9 @@ import {
   GEAR_BASES,
   GEAR_BASE_BY_ID,
   KEEP_GROUPS,
+  KEEP_TIERS,
+  PERFECT,
+  tierKeepId,
   keepGroupFor,
   BASE_TIER_MODS,
   RUN_SLOTS,
@@ -106,6 +109,8 @@ import {
   makeUnique,
   makeRelic,
   canSell,
+  isPerfect,
+  perfectChance,
   rollGear,
   sellPrice,
 } from './economy';
@@ -8085,6 +8090,139 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
     'and hunts only what the item level already allows',
     `${cheap?.id} at ilvl ${cheap?.ilvl}`
   );
+}
+
+// ===========================================================================
+rule('PERFECT BASES — is the rarest thing in the game worth the socket?');
+
+// *"Just a normal armor piece that just has say 25% higher implicit stats. Can
+// only happen to t3 items once you have 3 crystals equipped and is super rare
+// then and goes up once you have 4 crystals but still really rare."*
+{
+  const plainSword = makeGear('steel_sword', 60);
+  const bestSword = makeGear('steel_sword', 60, undefined, true);
+  check(
+    isPerfect(bestSword) && !isPerfect(plainSword),
+    'a Perfect base says so on the item and a plain one does not',
+    'the flag did not land'
+  );
+  check(
+    bestSword.name.startsWith('Perfect ') && bestSword.tags.includes('perfect'),
+    `and is named for it — ${bestSword.name}`,
+    `named ${bestSword.name}`
+  );
+
+  const lift = 1 + PERFECT.lift;
+  check(
+    weaponSwing(bestSword) >= weaponSwing(plainSword) * lift - 0.51,
+    `it swings for ${Math.round(weaponSwing(bestSword))} against ${Math.round(weaponSwing(plainSword))}`,
+    `${weaponSwing(bestSword)} against ${weaponSwing(plainSword)}`
+  );
+  const impPlain = plainSword.implicits[0]?.stats[0]?.value ?? 0;
+  const impBest = bestSword.implicits[0]?.stats[0]?.value ?? 0;
+  check(
+    impBest >= Math.ceil(impPlain * lift),
+    `and its implicit reads ${impBest} where the plain one reads ${impPlain}`,
+    `${impBest} against ${impPlain}`
+  );
+
+  const plainBody = makeGear('bulwark_body_t3', 60);
+  const bestBody = makeGear('bulwark_body_t3', 60, undefined, true);
+  check(
+    (bestBody.armour ?? 0) >= Math.ceil((plainBody.armour ?? 0) * lift),
+    `a family that spends everything on the rating carries ${bestBody.armour} against ${plainBody.armour}`,
+    `${bestBody.armour} against ${plainBody.armour}`
+  );
+
+  // The GATE. A tier below the top cannot be one however it is asked for.
+  const lowly = makeGear('rusted_sword', 60, undefined, true);
+  check(
+    !isPerfect(lowly) && lowly.name === 'Rusted Sword',
+    'a base under the top tier is not one however it is asked for',
+    `${lowly.name} came back perfect`
+  );
+  const capacity = GEAR_BASES.filter((b) => (b.tier ?? 0) >= PERFECT.tier).length;
+  check(capacity > 0, `${capacity} bases in the game can ever be one`, 'no base can be one');
+
+  // A named piece holds its whole identity in `implicits` and declares no
+  // slots: it is never a base, so it can never be a Perfect one.
+  const named = makeUnique(UNIQUES[0], 60, new Rng(5));
+  check(!isPerfect(named), 'and a named piece never is', `${named.name} came back perfect`);
+
+  // THE ODDS. Nothing under three sockets, and danger only ever lifts them.
+  const odds = [0, 1, 2, 3, 4].map((n) => perfectChance(n, 0));
+  check(
+    odds.slice(0, PERFECT.minSockets).every((o) => o === 0),
+    `nothing drops one under ${PERFECT.minSockets} crystals socketed`,
+    `odds ${odds.join(', ')}`
+  );
+  check(
+    odds[4] > odds[3] && odds[3] > 0,
+    `at three sockets ${(odds[3] * 100).toFixed(2)}% of gear drops, at four ${(odds[4] * 100).toFixed(2)}%`,
+    `three ${odds[3]}, four ${odds[4]}`
+  );
+  const deep = perfectChance(4, PERFECT.dangerFull);
+  const deeper = perfectChance(4, PERFECT.dangerFull * 4);
+  check(
+    deep > odds[4] && deeper === deep,
+    `danger lifts it to ${(deep * 100).toFixed(2)}% and then saturates`,
+    `${deep} then ${deeper}`
+  );
+  gauge(
+    `at 4 sockets: ${[0, 300, 600, 900].map((d) => `danger ${d} ${(perfectChance(4, d) * 100).toFixed(2)}%`).join(' · ')}`
+  );
+
+  // NEVER SWEPT UP. The filter and the bulk button both exist because they
+  // cannot eat a decision, and a Perfect base with nothing on it is one.
+  {
+    const g = createGame('fresh');
+    g.junk = KEEP_GROUPS.map((k) => k.id).concat(KEEP_TIERS.map((t) => tierKeepId(t)));
+    const bare = makeGear('bulwark_body_t3', 60);
+    const best = makeGear('bulwark_body_t3', 60, undefined, true);
+    check(
+      !keepsItem(g, bare) && keepsItem(g, best),
+      'a filter set to sell everything still walks a Perfect base up out of the Fissure',
+      `bare ${keepsItem(g, bare)}, perfect ${keepsItem(g, best)}`
+    );
+    const heap = plainGear([bare, best]);
+    check(
+      heap.length === 1 && heap[0] === bare,
+      'and the bulk button leaves it where a plain one goes',
+      `${heap.length} in the heap`
+    );
+  }
+
+  // A SAVE. Everything the lift touches is written onto the item, so nothing
+  // recomputes it off the base — including the one heal that repairs a LINE.
+  {
+    const g = createGame('fresh');
+    const best = makeGear('steel_sword', 60, undefined, true);
+    best.meta.grafted = 'no_such_forge';
+    g.inventory.push(best);
+    heal(g);
+    const after = g.inventory.find((i) => i.id === best.id);
+    check(
+      (after?.implicits[0]?.stats[0]?.value ?? 0) === impBest,
+      'and a graft healed off a forge that is gone puts the PERFECT line back, not the plain one',
+      `heal left ${after?.implicits[0]?.stats[0]?.value}`
+    );
+    const round = JSON.parse(JSON.stringify(best)) as typeof best;
+    check(
+      isPerfect(round) && round.damage === best.damage,
+      'a Perfect piece survives a save and reload whole',
+      'the lift did not round-trip'
+    );
+  }
+
+  // And it DROPS: what the odds say, played out through the sim's own roll.
+  {
+    let perfect = 0;
+    const tries = 4000;
+    const rng = new Rng(4242);
+    const odds = perfectChance(4, 900);
+    for (let i = 0; i < tries; i++) if (rng.chance(odds)) perfect++;
+    gauge(`${perfect} of ${tries} gear drops at the deep end, against ${(odds * tries).toFixed(0)} expected`);
+  }
 }
 
 // ===========================================================================

@@ -3286,6 +3286,18 @@ export const UNIQUE_BY_ID: Record<string, UniqueDef> = Object.fromEntries(
  *  the chance the same way it moves everything else; a gate is still a wall. */
 export const UNIQUE_DROP = { chance: 0.015 };
 
+/** A PERFECT base: 25% more of everything the BASE hands over — the armour
+ *  rating, the swing, every implicit. It rolls modifiers like any other. */
+export const PERFECT = {
+  lift: 0.25,
+  tier: 3, // the top base tier and no other
+  minSockets: 3, // what the last two sockets are FOR
+  atThree: 0.004, // share of gear drops, before danger
+  atFull: 0.015,
+  dangerLift: 2, // at `dangerFull`, three times the odds
+  dangerFull: 900,
+};
+
 // --- the shop's shelf ------------------------------------------------------
 //
 // Grows with you. At level 1 it holds a Rough piece or two and the currencies
@@ -3417,7 +3429,7 @@ export interface StartPreset {
   gold: number;
   currency: Record<string, number>;
   crystals: Array<{ level: number; family: MonsterFamily }>;
-  gear: Array<{ base: string; ilvl: number }>;
+  gear: Array<{ base: string; ilvl: number; perfect?: boolean }>;
   uniques?: string[];
   relics?: string[];
   /** Whether that gear starts worn, or has to be earned first. */
@@ -3476,7 +3488,11 @@ const ONE_HANDED = WEAPON_BASES.filter(
   (b, i) => (b.hands ?? 1) === 1 && WEAPON_BASES.findIndex((o) => o.family === b.family) === i
 );
 
-export const DEV_GEAR = [
+export const DEV_GEAR = ([
+  // One PERFECT of each shape, FIRST so both are in the bag: a rating, a swing.
+  { base: 'bulwark_body_t3', ilvl: 60, perfect: true },
+  { base: 'steel_sword', ilvl: 60, perfect: true },
+] as Array<{ base: string; ilvl: number; perfect?: boolean }>).concat([
   ...new Set([
     ...ARMOUR_SLOT_KINDS.map((k) => `${REFERENCE_ARMOUR_FAMILY}_${k}_t2`),
     ...ARMOUR_FAMILIES.map((f) => `${f.id}_body_t2`),
@@ -3489,7 +3505,7 @@ export const DEV_GEAR = [
   ]),
   // A SECOND of every one-handed family: one of each makes no matched pair.
   ...ONE_HANDED.map((b) => b.id),
-].map((base) => ({ base, ilvl: 20 }));
+].map((base) => ({ base, ilvl: 20 })));
 
 START_PRESETS.dev.currency = DEV_CURRENCY;
 START_PRESETS.dev.gear = DEV_GEAR;

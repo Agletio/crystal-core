@@ -8,7 +8,9 @@ import {
   GEAR_BASES,
   GEAR_SLOTS,
   GROUP_OF_KIND,
+  PERFECT,
   RECIPES,
+  RUN_SLOTS,
   SHOP,
   crystalName,
 } from './data';
@@ -78,29 +80,44 @@ export function makeCrystal(level: number, family: MonsterFamily = 'normal'): It
   };
 }
 
-/**
- * Implicits use fixed ranges, so nothing here is random — they take a mod's
- * shape purely so stat aggregation needs no special case for them.
- */
-function implicitsFor(def: GearBase | undefined): RolledMod[] {
+/** Implicits use fixed ranges: they take a mod's shape purely so stat
+ *  aggregation needs no special case for them. */
+function implicitsFor(def: GearBase | undefined, perfect = false): RolledMod[] {
   if (!def?.implicit?.length) return [];
+  const lift = perfect ? 1 + PERFECT.lift : 1;
   return [
     {
       entryId: `${def.id}_implicit`,
       defId: `${def.id}_implicit`,
       group: 'implicit',
       slot: 'implicit',
-      name: 'Base',
+      name: perfect ? 'Perfect' : 'Base',
       tier: 0,
       tags: ['implicit'],
       stats: def.implicit.map((s) => ({
         stat: s.stat,
         form: s.form,
-        value: s.range[0],
+        value: perfect ? Math.ceil(s.range[0] * lift) : s.range[0],
         tags: s.tags ?? [],
       })),
     },
   ];
+}
+
+/** `meta.perfect` is the flag; what it lifts is written onto the ITEM. */
+export const isPerfect = (item: Item): boolean => item.meta.perfect === true;
+
+/** Whether a base may be one at all: the top tier, and never a unique. */
+export const canBePerfect = (base: string): boolean =>
+  (GEAR_BASE_BY_ID[base]?.tier ?? 0) >= PERFECT.tier;
+
+/** THE ODDS per gear drop. Zero under `PERFECT.minSockets` — it is what the
+ *  last two sockets are for — and danger only ever lifts it. */
+export function perfectChance(sockets: number, danger: number): number {
+  if (sockets < PERFECT.minSockets) return 0;
+  const at = sockets >= RUN_SLOTS.length ? PERFECT.atFull : PERFECT.atThree;
+  const steep = Math.min(1, Math.max(0, danger) / PERFECT.dangerFull);
+  return at * (1 + steep * PERFECT.dangerLift);
 }
 
 /** Drop weight per kind: how many equip slots are FOR it. Two rings, twice as
@@ -145,24 +162,33 @@ export function defaultGearBase(
   );
 }
 
-export function makeGear(base: string, ilvl: number, name?: string): Item {
+export function makeGear(base: string, ilvl: number, name?: string, perfect = false): Item {
   const def = GEAR_BASE_BY_ID[base];
+  // A base that cannot be Perfect simply is not one, so a caller may ask.
+  const lifted = perfect && canBePerfect(base);
+  const lift = (n: number) => Math.ceil(n * (1 + PERFECT.lift));
   return {
     id: uid('gear'),
     kind: 'gear',
     base,
-    name: name ?? def?.name ?? base,
-    tags: ['gear', base],
+    name: name ?? `${lifted ? 'Perfect ' : ''}${def?.name ?? base}`,
+    tags: ['gear', base, ...(lifted ? ['perfect'] : [])],
     ilvl,
     // The whole restriction mechanism: a base with no utility slots can never
     // roll move speed, whatever its tier.
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
-    implicits: implicitsFor(def),
-    ...(def?.armour ? { armour: def.armour } : {}), // the item outlives its base
+    implicits: implicitsFor(def, lifted),
+    // The item outlives its base, and a Perfect one differs from its row.
+    ...(def?.armour ? { armour: lifted ? lift(def.armour) : def.armour } : {}),
+    ...(def?.damage ? { damage: lifted ? lift(def.damage) : def.damage } : {}),
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
-    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },
+    meta: {
+      gearKind: def?.kind ?? 'body',
+      art: def?.art ?? 'body',
+      ...(lifted ? { perfect: true } : {}),
+    },
   };
 }
 
@@ -175,9 +201,10 @@ export function rollGear(
   ilvl: number,
   mods: number,
   pool: ModPool,
-  rng: Rng
+  rng: Rng,
+  perfect = false
 ): Item {
-  const item = makeGear(base, ilvl);
+  const item = makeGear(base, ilvl, undefined, perfect);
   // modCapacity is the truth, not the caller: a tier 1 base asked for four
   // mods gets two, and a base with no utility slots gets whatever fits.
   const want = Math.min(mods, modCapacity(item));

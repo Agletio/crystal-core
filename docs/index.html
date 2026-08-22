@@ -1133,6 +1133,7 @@
   .slot--t3     { border-color: var(--tier3); box-shadow: inset 0 0 0 1px rgba(217,164,65,.3); }
   .slot--locked { border-color: var(--locked); box-shadow: inset 0 0 0 1px rgba(196,99,30,.35); }
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
+  .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
 
   /* Currency stacks. Class colours the border, matching the icon's fill, so
      rarity reads from the grid before you've learned a single silhouette. */
@@ -1154,6 +1155,7 @@
      border rules so it beats every base tier: what a unique IS outranks what it
      is a version of. */
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
+  .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
   .icon { flex: none; display: block; }
 
   /* Narrow: the columns wrap rather than shrink, and the dock scrolls
@@ -1817,6 +1819,8 @@
   .tip__card--locked > .tip__name { color: var(--locked); }
   .tip__sub { font-size: 10px; color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase; }
   .tip__locked { font-size: 10px; color: var(--locked); letter-spacing: .04em; margin-top: 3px; }
+  /* A base 25% above its own row. Rarer than a rare and worth reading first. */
+  .tip__perfect { font-size: 10px; color: var(--gem-hi); letter-spacing: .04em; margin-top: 3px; }
   .tip__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 
   /* One rule per group, so the base and each slot type read as blocks rather
@@ -1830,6 +1834,7 @@
   .tip__card--unique { border-left-color: var(--ember); }
   .tip__card--unique > .tip__name { color: var(--ember); }
   .tip__name--unique { color: var(--ember); }
+  .tip__name--perfect { color: var(--gem-hi); }
   .tip__grant { font-size: 11px; color: var(--verdite); }
   .tip__grant + .tip__grant { margin-top: 3px; }
   .tip__flavour { margin-top: 7px; font-size: 10px; color: var(--bone); font-style: italic; opacity: .75; }

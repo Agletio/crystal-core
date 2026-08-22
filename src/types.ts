@@ -96,6 +96,7 @@ export interface Item {
   implicits: RolledMod[];
   /** Armour rating off the base. Increases scale it; crafting cannot reach it. */
   armour?: number;
+  damage?: number; // one swing off the base: a PERFECT one beats its row
   meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 

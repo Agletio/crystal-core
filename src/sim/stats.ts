@@ -634,7 +634,8 @@ export function weaponMod(character: Character): RolledMod | null {
  *  untagged or naming Physical. A typed maul's flat fire and a dagger's crit
  *  are global and not in here. The card and the sim both ask this. */
 export function weaponSwing(held: Item): number {
-  const base = GEAR_BASE_BY_ID[held.base]?.damage ?? 0;
+  // The ITEM's own, so a PERFECT one swings for more than its table row says.
+  const base = held.damage ?? GEAR_BASE_BY_ID[held.base]?.damage ?? 0;
   if (base <= 0) return 0;
   const own = aggregate([...held.mods, ...held.implicits], 'damage', ['physical']);
   let swing = base * (1 + own.inc / 100);

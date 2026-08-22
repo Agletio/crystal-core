@@ -25,7 +25,16 @@ import {
   tierKeepId,
 } from '../data';
 import type { EquipSlotDef, RunSlotDef } from '../types';
-import { canSell, grant, makeCrystal, makeGear, makeRelic, makeUnique, sellPrice } from '../economy';
+import {
+  canSell,
+  grant,
+  isPerfect,
+  makeCrystal,
+  makeGear,
+  makeRelic,
+  makeUnique,
+  sellPrice,
+} from '../economy';
 import { baseTier } from '../mods';
 import { equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
@@ -166,7 +175,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   grant(game.wallet, 'gold', preset.gold);
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
-  const plain = preset.gear.map((g) => makeGear(g.base, g.ilvl));
+  const plain = preset.gear.map((g) => makeGear(g.base, g.ilvl, undefined, g.perfect));
   const rng = new Rng(7);
   const named: Item[] = [];
   for (const id of preset.uniques ?? []) {
@@ -319,11 +328,12 @@ export function removeItem(game: GameState, item: Item): boolean {
 /**
  * Whether the filter lets this piece up out of the Fissure. Kept when its RUNG
  * is kept AND its GROUP is, so "tier 3 mage gear" is two clicks rather than a
- * row per combination. A named piece is never junk: a unique is only ever a
- * decision, and a filter set weeks ago was not a decision about this one.
+ * row per combination. A named piece is never junk, and neither is a PERFECT
+ * one: both are only ever a decision, and a filter set weeks ago was not a
+ * decision about this one.
  */
 export function keepsItem(game: GameState, item: Item): boolean {
-  if (!canSell(item) || isUnique(item)) return true;
+  if (!canSell(item) || isUnique(item) || isPerfect(item)) return true;
   const junk = game.junk ?? [];
   if (junk.length === 0) return true;
   const base = GEAR_BASE_BY_ID[item.base];
@@ -401,9 +411,12 @@ export const isUnique = (i: Item): boolean => i.meta.unique !== undefined; // se
 
 /** Gear with nothing rolled on it: the heap you can clear without reading it.
  *  A named piece rolls nothing and is never in it — the bulk button exists
- *  because it cannot eat a decision, and a unique is only a decision. */
+ *  because it cannot eat a decision, and a unique is only a decision. Nor is a
+ *  PERFECT base, which is worth keeping with nothing on it at all. */
 export const plainGear = (items: Item[]): Item[] =>
-  items.filter((i) => i.kind === 'gear' && i.mods.length === 0 && !isUnique(i));
+  items.filter(
+    (i) => i.kind === 'gear' && i.mods.length === 0 && !isUnique(i) && !isPerfect(i)
+  );
 
 /** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
 export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {

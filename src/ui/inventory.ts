@@ -13,7 +13,7 @@ import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
-import { balance } from '../economy';
+import { balance, isPerfect } from '../economy';
 import { CURRENCIES } from '../data';
 import { CARRY, fitsSlot, relicsIn, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
@@ -517,7 +517,8 @@ function fill(host: HTMLElement, items: Item[]): void {
       'button',
       `slot slot--gear slot--t${baseTier(item)}` +
         (item.meta.corrupted ? ' slot--locked' : '') +
-        (item.meta.unique !== undefined ? ' slot--unique' : '')
+        (item.meta.unique !== undefined ? ' slot--unique' : '') +
+        (isPerfect(item) ? ' slot--perfect' : '')
     ) as HTMLButtonElement;
 
     btn.append(itemIcon(item, 30));

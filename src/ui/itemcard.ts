@@ -9,7 +9,8 @@ import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, GEAR_BASE_BY_ID, MOD_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import { FAMILY_BY_ID, GEAR_BASE_BY_ID, MOD_BY_ID, PERFECT, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import { isPerfect } from '../economy';
 import { GRANT_BY_ID } from '../sim/grants';
 import { weaponSwing } from '../sim/stats';
 import { glossaryOf, keywordLine } from './glossary';
@@ -87,6 +88,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   head.append(itemIcon(item, 36));
   const name = el('div', 'tip__name', item.name);
   if (unique) name.classList.add('tip__name--unique');
+  if (isPerfect(item)) name.classList.add('tip__name--perfect');
   head.append(name);
   card.append(head);
 
@@ -109,6 +111,14 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   if (!unique) facts.push(`${item.mods.length}/${modCapacity(item)} modifiers`);
   card.append(el('div', 'tip__sub', facts.join(' · ')));
 
+  // PERFECT. Said with its figure, because the whole of what it is is a number:
+  // the base's own lines are 25% higher and nothing else about it differs.
+  if (isPerfect(item)) {
+    card.append(
+      el('div', 'tip__perfect', `Perfect — ${Math.round(PERFECT.lift * 100)}% more from the base`)
+    );
+  }
+
   // Locked is the one state worth saying twice: the border carries it across
   // the screen, and the word carries it for anyone who has not learnt the
   // border yet.
@@ -129,7 +139,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   // The base, or what stands where it stood: a grafted line under a heading
   // reading "base" is a lie about where it came from.
   const hands = GEAR_BASE_BY_ID[item.base]?.hands ?? 1;
-  const swings = GEAR_BASE_BY_ID[item.base]?.damage ?? 0;
+  const swings = item.damage ?? GEAR_BASE_BY_ID[item.base]?.damage ?? 0;
   if (item.armour || item.implicits.length > 0 || hands > 1 || swings > 0) {
     const base = group(item.meta.grafted !== undefined ? 'grafted' : 'base');
     // What it costs to hold, said where the rest of the base is said: an off

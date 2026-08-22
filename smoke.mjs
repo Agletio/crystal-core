@@ -1183,6 +1183,27 @@ assert(
   one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 }
 
+// A PERFECT base: the same card again, saying the one number that is the whole
+// of what it is. Rarer than a named piece and worth reading first.
+{
+  const one = filled('#inv-gear').find((b) => b.className.includes('slot--perfect'));
+  assert(!!one, 'the dock marks a Perfect base apart from a plain one');
+  one.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  const card = $('tooltip').querySelector('.tip__card');
+  assert(!!card.querySelector('.tip__name--perfect'), 'and its card names it in its own colour');
+  assert(
+    /perfect — 25% more from the base/i.test(card.textContent),
+    'and says what it is with its figure in it',
+    card.textContent.slice(0, 120)
+  );
+  assert(
+    /^Perfect /.test(card.querySelector('.tip__name').textContent),
+    'and the piece is named for it',
+    card.querySelector('.tip__name').textContent
+  );
+  one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
 // A crystal is the same card, saying the things a crystal has instead: which
 // world it opens, what the danger buys, and how far it has left to level.
 {

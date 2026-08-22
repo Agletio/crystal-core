@@ -6,12 +6,13 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**PHASE 1 IS THE LADDER. Its CLIMB has landed** — 42 rungs, the pips that draw
-them, and a rung as one mod on the crystal seam. What is left of the phase is
-blocked on three questions, all written into it. It replaces the spine of the game — composition choosing the zone,
-sockets being length and difficulty, item tier coming off power — so it is not
-something to start halfway. Two pieces of it are NOT blocked and can go first:
-Perfect items, and the generic-crystal-modifier pass.
+**PHASE 1 IS THE LADDER, and two pieces of it have landed.** The CLIMB — 42
+rungs across three zones, the pips that draw them, and a rung as ONE mod on the
+crystal seam — and PERFECT bases. What is left of the phase replaces the spine
+of the game: composition choosing the zone, sockets being length and difficulty,
+item tier coming off power. It is not something to start halfway, and it is
+blocked on three questions written into the phase. The generic-crystal-modifier
+pass is the one unblocked piece left, and it waits on question 3.
 
 **Phase 2 is more characters, and it is HALF DONE.** Mahthar's body and all
 thirteen weapon variants are drawn, animated and shipped; what is left is his
@@ -525,11 +526,17 @@ clickable for the rest of that character's life.
    "offence" mod — because `DANGER_STATS` weighs each stat by the arithmetic it
    does, and merging two stats into one changes what danger is worth.
 
-### What is NOT blocked and can be built first
+### PERFECT BASES HAVE LANDED
 
-- **Perfect items.** `GearBase.implicit` at 1.25x, an `Item.meta.perfect` flag,
-  a roll gated on crystals socketed and lifted by danger, and the item card
-  saying so. It touches `makeGear` and nothing else, and it is testable alone.
+`PERFECT` in `src/data.ts`: 25% more of everything the base hands over — the
+armour rating, the swing and every implicit — written onto the ITEM so nothing
+recomputes it off the table row. Top base tier only, never a unique, nothing
+under 3 crystals socketed, 0.40% of gear drops at three and 1.50% at four,
+lifted to 4.50% by danger 900 and saturating there. Never junked by the filter
+and never in the bulk heap. The card says it with its figure in it.
+
+### What is still NOT blocked
+
 - **The generic crystal modifier pass**, once question 3 is answered.
 
 ---
