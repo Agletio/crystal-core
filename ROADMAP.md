@@ -65,6 +65,7 @@ to look:
 | Ambush | the eighth main skill: the `ambush` behaviour, `SkillUse.blink`, `AMBUSH` in `src/data.ts`, `src/trees/ambush.ts` |
 | the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
 | the rung tag | `#run-rung` and `syncRung` in `src/ui/run.ts` — which rung a descent is on, top right |
+| Obreth's weapons | 23 variants: `tools/art/bodies.json`, `variant.mts seed`/`manifest`, `roster.mts` |
 | the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |
 | Hoards | a pack modifier: `HOARD`, `hoardChance`, the `cart` prop, `openHoard` |
 | the Welling | `wellChance`, and the `risen` rank at weight 0 that bounds it |
@@ -455,32 +456,42 @@ not add a check that fails on one.
 
 ---
 
-## Phase 0 — OBRETH'S WEAPONS
+## Phase 0 — WHAT THE OFF HAND IS DRAWN AS
 
-**Everything else in this phase has LANDED.** The crit rework, Ambush and its
-Relay node, the bad idle frame and the rung indicator are all in and the suite
-is green on them. What is left is the art, which is hours of wall clock:
+**Obreth's 23 arrangements have landed** — thirteen he carries alone and ten
+pairs, dressed off his own body and animated in five states each; `THE ROSTER`
+reports 23 of 23 and nothing of his is pinned at the fist any more. Every
+variant's words came out of `weapons.json`, so his sword was asked for in the
+same words as Mahthar's: the attack clause is identical for all nine families.
 
-**NO MORE PINNED WEAPONS.** *"The rogue also just has a weapon pasted on instead
-of actual regens like all the other characters. We do not paste weapons on
-anymore. Redo the rogue so it has actual animations."* Without variants
-`pinnedFor` pastes a weapon at his fist.
+**What judging found, and it is NOT his alone.** The MAIN hand is right
+everywhere. What comes back wrong is what the OFF hand is holding, in a subset
+of frames — the generator draws it as a bright blob instead of the thing:
 
-- **Dressed already**: the 13 he carries alone and the 10 pairs are queued off
-  `dressbody.sh obreth` and `pairs.mts dress`; every character id lands on its
-  row in `bodies.json` as it arrives, and re-running either is free for a row
-  that already has one.
-- **Still to do**: `body.mts state obreth_<w>` for each of the 23 — five states
-  apiece, ~13 generations each — then a row in `generated.json` per variant
-  carrying `obreth`'s own judged sampling (grid 48, luma 45, stride 1.15, and
-  each state's window), `record.mts` to read the group ids back, and
-  `tables.mts bodies`.
-- **Judge before believing it**: grep the import log for `no group`, and look at
-  `shipped.mts obreth_<w>` rather than the server's own sheet.
-- **Done when `THE ROSTER` reports 23 of 23 for obreth.**
+| variant | what it draws |
+|---|---|
+| `obreth_mace_shield` | a gold flare where the shield is, idle 2–3; white rings in the attack |
+| `obreth_wand_shield` | a white slab in idle 2, and no shield at all in 1 and 3 |
+| `obreth_mace_mace` | the second club is a white slab in idle 2 and a white burst in 3 |
+| `obreth_mace2h` | the maul head is an enormous white cube and the body reads maroon; the attack drops the maul and leaves the block on the floor |
 
-`variant.mts seed <hero>` now writes the 13 single-weapon rows off a base body,
-so no variant's words are hand-written any more.
+The two worst SINGLES were re-rolled and are fixed: the club changed size and
+threw a starburst, and the wand hung an orb in the air.
+
+**The repair is a decision nobody has been asked for, because it is roster-wide.**
+The `*_off` and `shield` clauses in `weapons.json` are ONE set of words for every
+hero that carries them, and the other three heroes' pairs were generated from
+them and shipped. Re-wording them to kill the blob makes those rows a lie about
+their own art — `variant.mts check` will say so — and the honest finish is to
+re-dress and re-animate every affected variant, which is ~100 generations apiece.
+**Ask before spending it.**
+
+`variant.mts seed <hero>` writes the thirteen rows a hero carries off his base
+body; `variant.mts manifest <hero>` writes the `generated.json` rows to import
+into and keeps a row's OWN window, since narrowing one to drop a bad frame is a
+decision rather than drift. `roster.mts <hero>` draws one hero's variants as a
+contact sheet, one row each — the only view that answers whether a weapon is the
+same weapon in every hand.
 
 ---
 
