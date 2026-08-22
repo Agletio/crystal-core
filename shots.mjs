@@ -195,9 +195,41 @@ for (const vp of VIEWPORTS) {
   });
   await page.waitForTimeout(700);
 
-  // The Lampwright is the FIRST thing a character sees, before the dock and
-  // before any descent. The ROOM first, then a line over his head, then what
-  // he is holding.
+  // THE SCREEN THE GAME OPENS ON, straight off the welcome — *"It should just
+  // be you pick character/name/skill and land in the town."* No room in
+  // between, and the weapon the skill wants is already in hand.
+  await page.waitForFunction(() => document.getElementById('camp')?.hidden === false, null, {
+    timeout: 30000,
+  }).catch(() => problems.push(`${vp.name}: choosing a skill never landed in the camp`));
+  await shoot('camp');
+  // CLICKING THE CAMP, which is the whole of what makes it a place. The
+  // hotspots are BUTTONS on the picture, so the sweep asks what is under each
+  // one's own centre: a hotspot the shell covers hit-tests to something else.
+  const buried = await page.evaluate(() => {
+    const out = [];
+    for (const b of document.querySelectorAll('.camp__hot')) {
+      const r = b.getBoundingClientRect();
+      const on = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if (on !== b) out.push(b.id);
+    }
+    return out;
+  });
+  if (buried.length) problems.push(`${vp.name}: buried in the camp: ${buried.join(', ')}`);
+  await page.hover('#camp-bench').catch(() => {});
+  await page.waitForTimeout(300);
+  await shoot('camp-hover');
+  await page.evaluate(() => document.getElementById('tooltip')?.setAttribute('hidden', ''));
+
+  // HIS ROOM, and what he is holding. The gift is a schedule away — level 4
+  // with every point spent — so the dev menu walks the game into owing one and
+  // then goes to the room the schedule would have sent you to.
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('dev-owe')?.click());
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('dev-room-workshop')?.click());
   try {
     await page.waitForFunction(() => document.body.dataset.runPhase === 'scene', null, {
       timeout: 30000,
@@ -235,22 +267,29 @@ for (const vp of VIEWPORTS) {
     }
     await page.evaluate(() => document.getElementById('met-take')?.click());
   } catch {
-    problems.push(`${vp.name}: a new character never met the Lampwright`);
+    problems.push(`${vp.name}: the schedule never reached the Lampwright`);
   }
-
-  // The handover, caught in the middle: the hero climbing out of the entrance
-  // with the dark still receding. Taking the weapon walks him to the stair
-  // behind the workshop, and that stair IS the first descent — nothing is
-  // clicked to start it.
-  try {
-    await page.waitForFunction(() => document.body.dataset.runPhase === 'running', null, {
-      timeout: 30000,
-    });
-  } catch {
-    problems.push(`${vp.name}: the stair behind him never ran into a descent`);
-  }
+  // The handover, caught in the middle: the hero walking back out of the room
+  // with what he was given.
+  await page.waitForTimeout(600);
   await shoot('handover');
 
+  // THE DESCENT. Nothing has been cleared yet, so the crack is the way in.
+  await page.waitForFunction(() => document.getElementById('camp')?.hidden === false, null, {
+    timeout: 60000,
+  }).catch(() => problems.push(`${vp.name}: the room never came back to the camp`));
+  await page.click('#camp-crack').catch(() => {});
+  await page.waitForTimeout(300);
+  if (await page.evaluate(() => document.getElementById('run-menu')?.hidden !== false)) {
+    problems.push(`${vp.name}: clicking the crack never opened it`);
+    await page.evaluate(() => document.getElementById('open-fissure')?.click());
+    await page.waitForTimeout(250);
+  }
+  await shoot('fissure');
+  await page.evaluate(() => document.getElementById('run-launch')?.click());
+  await page.waitForFunction(() => document.body.dataset.runPhase === 'running', null, {
+    timeout: 30000,
+  }).catch(() => problems.push(`${vp.name}: the Fissure never started a descent`));
   await page.waitForTimeout(4300);
   await shoot('descent');
 
@@ -262,34 +301,13 @@ for (const vp of VIEWPORTS) {
   // IS the state, and the card lays itself out in what is left of the screen.
   await shoot('results');
   await page.evaluate(() => document.getElementById('run-again')?.click());
-  await page.waitForTimeout(300);
-  // THE SCREEN THE GAME OPENS ON, and the one every ending comes back to.
-  await shoot('camp');
-  // CLICKING THE CAMP, which is the whole of what makes it a place. The
-  // hotspots are BUTTONS on the picture, so the sweep asks what is under each
-  // one's own centre: a hotspot the shell covers hit-tests to something else.
-  const buried = await page.evaluate(() => {
-    const out = [];
-    for (const b of document.querySelectorAll('.camp__hot')) {
-      const r = b.getBoundingClientRect();
-      const on = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (on !== b) out.push(b.id);
-    }
-    return out;
-  });
-  if (buried.length) problems.push(`${vp.name}: buried in the camp: ${buried.join(', ')}`);
-  await page.hover('#camp-bench').catch(() => {});
-  await page.waitForTimeout(300);
-  await shoot('camp-hover');
-  await page.evaluate(() => document.getElementById('tooltip')?.setAttribute('hidden', ''));
-  await page.click('#camp-crack').catch(() => {});
-  await page.waitForTimeout(300);
-  if (await page.evaluate(() => document.getElementById('run-menu')?.hidden !== false)) {
-    problems.push(`${vp.name}: clicking the crack never opened it`);
-    await page.evaluate(() => document.getElementById('open-fissure')?.click());
-    await page.waitForTimeout(250);
+  await page.waitForTimeout(400);
+  // AND BACK TO THE CAMP, which every ending comes home to.
+  if (await page.evaluate(() => document.getElementById('camp')?.hidden !== false)) {
+    problems.push(`${vp.name}: the report did not come home to the camp`);
   }
-  await shoot('fissure');
+  await page.evaluate(() => document.getElementById('open-fissure')?.click());
+  await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('run-menu-close')?.click());
   await page.waitForTimeout(200);
 

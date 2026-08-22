@@ -72,13 +72,11 @@ import { note } from './history';
 import { badge } from './badge';
 import { openCharacter } from './character';
 import { openCraft } from './craft';
-import { openShop } from './shop';
-import { openSkills } from './skills';
 import { openStash } from './stash';
 import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
-import { attachTooltip, hideTooltip, showTooltip } from './tooltip';
+import { attachTooltip, hideTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -708,20 +706,6 @@ function endEncounter(): void {
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other
  *  — the packs are what a scene leaves out — so both renderers draw it with no
  *  changes, and nothing ticks: the walk across is the whole of it. */
-/** THE OPENING: his room before anything at all, because going down with
- *  nothing in your hands is the thing he is standing there to stop. Answers
- *  whether it took, so a game past it falls through to the dock. */
-export function openOpening(): boolean {
-  const waiting = giftWaiting(game);
-  const workshop = SCENE_BY_ID[LAMPWRIGHT.scene];
-  if (!waiting?.weapon || !workshop) return false;
-  seed = Math.floor(Math.random() * 1e9);
-  greeting = waiting;
-  descending = false;
-  enterScene(workshop);
-  return true;
-}
-
 function enterScene(
   def: SceneDef,
   crowd: { sprite: string; at: Vec2 }[] = [],

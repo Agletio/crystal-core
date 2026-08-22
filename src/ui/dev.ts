@@ -8,10 +8,11 @@
  */
 import { Rng } from '../rng';
 import { SCENES } from '../scenes';
-import { BOSS_BY_ID, TRIALS } from '../data';
+import { BOSS_BY_ID, INTRO, TRIALS } from '../data';
 import { ladderCharacter } from '../sim/loadout';
-import { mainSkillId } from '../sim/character';
+import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
+import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
 import { note } from './history';
@@ -98,6 +99,28 @@ function render(): void {
     };
     rooms.append(button);
   }
+
+  // The HANDOVER panel is a schedule away and the schedule is real play: he
+  // owes a crystal once the skill you chose is at the level the opening names
+  // with every point spent. This walks the game there rather than opening it.
+  const owe = el('button', 'mini devbtn') as HTMLButtonElement;
+  owe.id = 'dev-owe';
+  owe.append(el('span', 'devbtn__name', 'Owe a crystal'));
+  owe.append(
+    el('span', 'devbtn__what', `main skill to level ${INTRO.crystalSkillLevel}, every point spent`)
+  );
+  owe.onclick = () => {
+    game.given = (game.given ?? []).filter((mark) => mark !== 'crystal');
+    const id = mainSkillId(game.character);
+    const progress = skillProgress(game.character, id);
+    progress.level = Math.max(progress.level, INTRO.crystalSkillLevel);
+    for (const node of pathToNotable(id, progress.allocated)) progress.allocated.push(node.id);
+    heal(game);
+    hooks.refresh();
+    note('Dev: a crystal is owed at the next meeting.');
+    close();
+  };
+  rooms.append(owe);
 
   const gear = group(
     'Gear',

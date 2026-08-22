@@ -429,13 +429,18 @@
      touching sockets sized to clear the flask bar at 1280; the utility trio
      — Fill, Hide, the dev kit — sits on its own small plate above. */
   .rail { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  /* The PLATE is the slim horizontal one, not the heavy riveted square: a
+     14px frame round a 34px row of buttons was almost as much border as
+     content. `head` is authored as a bar — a 6px brass-edged band above and
+     below, end caps at 16 — and it is applied at the art's own scale, so no
+     row of it is resampled. */
   .rail__row {
     display: flex; justify-content: flex-end;
     align-items: center; gap: 0;
-    padding: 4px 2px;
+    padding: 0 2px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 14px solid transparent;
-    border-image: var(--fix-card) 14 / 14px round;
+    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px;
+    border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
   }
   .railbtn {
@@ -1370,7 +1375,10 @@
     image-rendering: pixelated;
   }
   .camp__live { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
-  .camp__crystals { pointer-events: none; }
+  /* Every layer over the art is full-bleed, so a structural one takes no
+     pointer and the BUTTONS take it back — the folk layer sits over the
+     fixtures and swallowed all eight of them the moment it existed. */
+  .camp__crystals, .camp__hotspots { pointer-events: none; }
   /* Centred ON the socket it fills, at the size the hollow is. */
   .camp__crystal { position: absolute; transform: translate(-50%, -50%); }
   /* A hotspot is INVISIBLE until you are on it, and then it is the thing's own
@@ -1380,7 +1388,7 @@
   .camp__hot {
     position: absolute; padding: 0; border: 0; border-radius: 0;
     background: transparent; box-shadow: none; cursor: pointer;
-    transition: background-color .12s ease;
+    transition: background-color .12s ease; pointer-events: auto;
   }
   .camp__hot:hover, .camp__hot:focus-visible {
     background: radial-gradient(closest-side, rgba(252,222,111,.20), rgba(252,222,111,.05) 70%, transparent);
@@ -1835,6 +1843,9 @@
     <canvas class="camp__live" id="camp-live"></canvas>
     <div class="camp__crystals" id="camp-crystals"></div>
     <div class="camp__hotspots" id="camp-hotspots"></div>
+    <!-- Everybody you have met, over the fixtures: a person standing in front
+         of the tent is the thing you meant to click. -->
+    <div class="camp__hotspots" id="camp-folk"></div>
   </div>
 </div>
 

@@ -279,7 +279,7 @@ import {
   equipItem,
   grantFirstClear,
   handClash,
-  lampwrightWeapon,
+  armForSkill,
   giftWeapon,
   keepsItem,
   plainGear,
@@ -8117,6 +8117,14 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
     'a character who has never cleared anything is owed a weapon at the mouth',
     JSON.stringify(giftWaiting(fresh))
   );
+  // ARMED AS THE CHARACTER IS MADE, and marked, so the same schedule that owed
+  // it a moment ago owes it nothing at all.
+  armForSkill(fresh);
+  check(
+    giftWaiting(fresh)?.weapon !== true,
+    'and arming one settles that debt rather than leaving him a second to hand over',
+    JSON.stringify(giftWaiting(fresh))
+  );
 
   // A weapon picked off the SKILL. A Strike character handed a wand is the
   // first item the game gives you and the first one it teaches you to craft.
@@ -8124,7 +8132,7 @@ const facts = (g: GameState, run: RunState): QuestFacts => ({
   for (const skill of MAIN_SKILLS) {
     const g = createGame('fresh');
     g.character = makeCharacter({}, skill.id);
-    const given = lampwrightWeapon(g);
+    const given = armForSkill(g);
     bySkill.push(`${skill.id}=${given?.item.base ?? 'NOTHING'}`);
   }
   line(`  the first weapon, by skill: ${bySkill.join(' ')}`);

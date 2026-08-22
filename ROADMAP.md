@@ -13,13 +13,14 @@ gens."* What a character IS here is a TRADE, and a trade is a body, a roster of
 weapon variants and a 45-node web whose every notable changes a RULE. The art is
 arithmetic; **the web is not, and open question 9 says the user wants trades
 reworked with no spec.** Ask before spending. The quest log after it is parked
-by his word until the stripped opening has been played.
+by his word until a start with nothing explaining it has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
 have met, what the sheet says about an ailment, Rimespike's pack clear, dual
-wielding, and the camp REDRAWN as a picture you click rather than a place you
-walk.
+wielding, the camp REDRAWN as a picture you click rather than a place you walk,
+the rail's border cut from 14px to 6, and the opening deleted — a character is
+armed as it is made and lands in the camp.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -27,8 +28,8 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 2 (a quest log) stays parked by his word until the
-stripped opening has been played.
+what it found is below. Phase 2 (a quest log) stays parked by his word until a
+start with nothing explaining it has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
 skill.** *The user's call: "make sure you're using the pixel lab art generator
@@ -84,7 +85,7 @@ to look:
 | shred is VISIBLE | `Entity.shred`, a ring under the body and arcs over it, in the group's colour |
 | a weapon has damage | base physical on 18 bases; its OWN increases are LOCAL, wands keep spell damage |
 | a skill names its weapon | `SkillDef.requires`, and NOTHING is refused for it: `weaponRefusal` shuts the Fissure and marks the hand instead |
-| the Lampwright is FIRST | a new character opens in his workshop, is armed for the skill they chose, and the stair behind him is the first descent |
+| THERE IS NO OPENING | *"It should just be you pick character/name/skill and land in the town. Have it just give you an appropriate weapon for the skill you picked."* `begin()` calls `armForSkill` and `goHome()`; the workshop is no longer the first thing a character sees, and `openOpening` is gone. The Lampwright keeps his later meetings, and `dev-owe` is how a harness reaches one |
 | rock fades to black | `wallFade` — a generated tileset drew a screen of repeating slab past the carve; now it is the band next to the floor and nothing else |
 | the CEILING is measured | `bestBuild` beside `ladderCharacter`, and a FLOOR AND CEILING table in the demo |
 | danger reaches the body | `DANGER` and `dangerStep` — monster life and hit rise with what danger alone buys, saturating with run power |
@@ -94,7 +95,10 @@ to look:
 | the CAMP is a PICTURE | *"build it not using the tile sets and just use art… we don't need the characters to move around"* — one 688×384 generated scene in `src/render/generated-scene.ts`, hotspot rectangles measured in its own pixels in `src/scenes/camp.ts`, and `src/ui/camp.ts` scaling the lot by one factor so nothing can drift. No map, no carve, no walk: `place` is gone from `SceneDef` and the `camp` `MapTheme` with it |
 | DUAL WIELDING | the off hand takes a second one-handed weapon: `DUAL` in `src/data.ts` puts 75% of one hand and 55% of the other into every hit, and `swingCooldown` ALTERNATES between the two rates around their even mean. Twenty pair variants over two heroes — `pairs.mts` layers a `_off` row onto the variant that already holds the other weapon, so a pair is 20 asks and not 20 rewrites |
 | Rimespike reaches a PACK | the `depth` arm is gone and RIMEFIELD stands in its place — every 4th cast leaves a Cloud where the spike went in, no damage and the build's own Chill. `fieldOnCast` / `fieldEvery` in `src/sim/grants.ts`, `leaveClouds` in `src/sim/skills.ts`, and `SkillUse.leave` is the seam a Cloud applies through |
+| a person in the camp is CLICKABLE | `mountFolk` in `src/ui/camp.ts` — everybody you have met gets a hotspot the size of their own body's grid, where that body is drawn, and it opens their room |
 | the camp is HOME | the game OPENS on it and every ending comes back to it — `goHome()`; the Fissure card is a WINDOW the crack opens, `open-fissure` on the rail beside it. Eight hotspots: the crack, the four sockets in the rock, the bench, the shelf and the tent. What MOVES is light and wind on one canvas over the art, plus the hero and everybody you have met drawn from `GENERATED` at their own idle cadence |
+| and a PERSON in it is clicked | `mountFolk` in `src/ui/camp.ts` — everybody you have met gets a hotspot the size of their own body's grid, where that body is drawn, and it opens their room |
+| the rail is a SLIM plate | the `card` frame put a 14px riveted band round a 34px row of buttons, which is nearly as much border as content. `head` is authored as a bar and is applied at its own scale — `var(--fix-head) 6 16 / 6px 16px` — so the corner is 48px shorter and no row of the art is resampled |
 | NOTHING goes under a wall | tried and REVERTED at the user's word — *"it looks really bad when other things clip under the walls in certain spots"*. One `wallLayer` behind every body, one clearance every way, and the demo PRINTS how close feet come to rock so the margin is a number |
 | and the NORTH lip is closed | the drawing offset cleared the face with the body at its tile CENTRE and `fits` let it drift 0.16 north of that, so at the extreme the feet drew 0.07 tiles INSIDE the rock. `FACE_FOOT` / `FOOT` moved to `src/vignettes.ts` where the grid reads them too, and `Grid.fits` refuses a body high enough to draw its feet in the face. The south is a GAP rather than a clip and the demo prints it: 0.33 tiles of drawn ground out of reach |
 | the greatsword points UP | `weapons.json` gains a `carry` clause and `variant.mts` composes a variant's states out of it; the sword-and-shield bodies carry ONE shield |
@@ -533,7 +537,7 @@ to hand one over, and a reward that is not always a crystal.
 - [ ] **Start from what actually confused a player.** The suspected pair is the
       bench and the socket — nobody discovers "drag a currency onto an item" by
       clicking about — but that is a guess until somebody has played the
-      stripped opening and got stuck.
+      opening-less start and got stuck.
 
 **Traps.** Teaching has no harness and this phase owes one: can a fresh
 character reach the first crystal by doing what the log says? `npm run guide`

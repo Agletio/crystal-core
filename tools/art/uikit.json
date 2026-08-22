@@ -20,7 +20,12 @@
    "width": 512,
    "height": 288,
    "asset": "3756c312-4e50-460f-82e8-edf335b8c270",
-   "crop": [56, 46, 400, 196],
+   "crop": [
+    56,
+    46,
+    400,
+    196
+   ],
    "say": "a wide pixel art landscape SCENE for a game title screen: the sheer cliff face of a huge near-black rock wall filling most of the frame, a strip of wild dark grassy meadow running along its base in the foreground, a tall narrow vertical CRACK split up the middle of the rock glowing warm amber from deep inside as if something wondrous is hidden within, the glow spilling out onto the grass, one small lit iron lantern standing at each side of the crack's mouth. Filled edge to edge. NOT a frame, NOT a border, NOT text, NOT letters, NOT people.",
    "style": "Moody dark fantasy pixel art, near-black weathered stone, muted dark green grass, warm amber lamplight, in the style of Path of Exile and Diablo loading screen art. Dark and atmospheric, NOT bright, NOT colorful, NOT cartoonish, NOT sci-fi."
   }
@@ -86,5 +91,6 @@
    "h": 28,
    "radius": 3
   }
- ]
+ ],
+ "_rim": "A SLIM frame for the rail was asked twice and `create_ui_asset` returned a whole KIT SHEET both times \u2014 free-form, with no `pieces`, that tool's prior is a sheet of assets whatever the description says, and 'ONE frame filling the image, NOT a sheet, NOT a set' did not move it. Its minimum is 192x192, so a small piece cannot be asked for at all. The rail uses the shipped `head` plate instead, at its own scale: `border-image: var(--fix-head) 6 16 / 6px 16px round`. Ask a new fixture through `pieces` or not at all."
 }

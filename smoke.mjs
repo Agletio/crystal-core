@@ -119,51 +119,25 @@ assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
 assert($('craft').hidden === true, 'and drops you at the Fissure, not the bench');
 
-// --- the opening: he is the first thing, and he arms you ---------------------
-// You do not go down with nothing in your hands, so the stair starts in his
-// room. He warns you, hands one over, and it goes ON — a weapon in the bag is
-// exactly what he told you not to descend with.
+// --- armed, and standing in the camp ---------------------------------------
+// *"It should just be you pick character/name/skill and land in the town. Have
+// it just give you an appropriate weapon for the skill you picked."* No room
+// in between, and the weapon is ON rather than in the bag.
 {
   assert(
-    document.body.dataset.runPhase === 'scene',
-    'choosing opens on his room rather than on the dock',
+    document.body.dataset.runPhase === 'menu' && $('camp').hidden === false,
+    'choosing lands you in the camp rather than in a room',
     document.body.dataset.runPhase
   );
-  // The walk over, his beats, and the panel at the end of them.
-  for (let i = 0; i < 60 && $('met').hidden !== false; i++) {
-    if ($('speech-next')) $('speech-next').click();
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  assert($('met').hidden === false, 'his lines end on a panel with the weapon in it');
-
-  const take = [...$('met').querySelectorAll('button')].find((b) => /Take/.test(b.textContent));
-  assert(!!take, 'and a button that takes it');
-  take.click();
-  await new Promise((r) => setTimeout(r, 100));
-
   assert(dockItems().length === 0, 'and nothing of it lands in the bag', String(dockItems().length));
   $('open-character').click();
   const hand = $('slot-weapon');
   assert(
     hand.classList.contains('slotcell__btn--worn'),
-    'taking it puts it in your HAND',
+    'the skill you chose armed the hand it needs',
     hand.className
   );
   $('sheet-close').click();
-
-  // And then he walks to the stair behind him and keeps going: no results
-  // card, no climb out, straight into the first descent.
-  for (let i = 0; i < 80 && document.body.dataset.runPhase === 'scene'; i++) {
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  assert(
-    document.body.dataset.runPhase === 'running',
-    'and the stair behind him runs straight into the first descent',
-    document.body.dataset.runPhase
-  );
-  $('run-abandon').click();
-  await new Promise((r) => setTimeout(r, 60));
-  if ($('run-again')) $('run-again').click();
 }
 assert($('run-launch').disabled === false, 'ready to enter again');
 
@@ -1018,8 +992,9 @@ assert($('craft').hidden === true, 'crafting closes');
 assert($('camp').hidden === false, 'and the camp is waiting underneath');
 assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
 assert(
-  document.querySelectorAll('.camp__hot').length === 8,
-  'with everything on the picture there is to click'
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 8,
+  'with everything on the picture there is to click',
+  String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
 );
 // The Fissure window is the sockets and the one button, and nothing else:
 // what a character IS is on the sheet, which has its own checks below.

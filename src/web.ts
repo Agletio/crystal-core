@@ -6,7 +6,7 @@
  * it, uncovered — crafting works ON the dock, so covering it is the one mistake
  * this layout cannot afford.
  */
-import { createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './game/state';
+import { armForSkill, createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './game/state';
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
@@ -44,7 +44,6 @@ import {
   openFissure,
   closeFissure,
   isFissureOpen,
-  openOpening,
   enterRoomNow,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
@@ -133,11 +132,14 @@ function makeCharacter(): void {
   if (!maybeShowPick()) maybeShowWelcome();
 }
 
-/** After choosing a skill: the Lampwright, who arms you and points at the
- *  stair behind him. A game already past him goes straight to the dock. */
+/** After choosing a skill: the weapon that skill wants, and the camp. There is
+ *  no room in between — *"It should just be you pick character/name/skill and
+ *  land in the town. Have it just give you an appropriate weapon for the skill
+ *  you picked."* */
 function begin(): void {
+  const armed = armForSkill(game);
+  if (armed) note(`You set out with ${armed.item.name}`, 'add');
   refreshRunPanels();
-  if (openOpening()) return;
   goHome();
   onRunFocused();
 }

@@ -172,7 +172,8 @@ so a hotspot cannot drift off the thing it sits on. There is no map, no carve
 and no walk: eight hotspots — the crack, four sockets in the rock, the bench,
 the shelf, the tent — and what MOVES is light, wind and idling bodies on one
 canvas over the art. Everybody you have met stands about in it and clicking one
-goes to their room. **The rail still reaches every screen** — the Fissure is one
+goes to their room — a person's hotspot is their own body's grid, where that
+body was drawn. **The rail still reaches every screen** — the Fissure is one
 of them, and a screen you can only find by clicking a picture is a screen
 somebody will lose.
 
@@ -223,8 +224,11 @@ agrees with it. A two-hander is never in the off hand; `handClash` empties the
 other hand instead. **A pair is ORDERLESS in art and ORDERED in stats** —
 `variants()` sorts it, so which hand you filled never asks for a second picture.
 
-**A character is a trade, a main skill, two more slots and a bag.** The trade is
-chosen when the character is made and is what the hero LOOKS like; it is funded
+**A character is a trade, a main skill, two more slots and a bag.** Making one
+is a trade, a name and a skill, and then you are STANDING IN THE CAMP holding
+the weapon that skill wants — *"It should just be you pick character/name/skill
+and land in the town."* There is no opening room; `armForSkill` is what puts it
+in your hand. The trade is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
 then a fork into two branches — and ten points reach one spoke whole.

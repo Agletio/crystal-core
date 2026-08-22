@@ -18,7 +18,7 @@ import {
 } from '../data';
 import type { CrystalQuest } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
-import { giveGift, lampwrightWeapon } from './state';
+import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
@@ -97,8 +97,7 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
   const currency: Record<string, number> = {};
 
   if (waiting.weapon) {
-    game.given = [...(game.given ?? []), 'weapon'];
-    const gift = lampwrightWeapon(game);
+    const gift = armForSkill(game); // marks `given` itself
     if (gift) items.push(gift.item);
   }
   if (waiting.crystal) {

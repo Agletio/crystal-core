@@ -231,15 +231,19 @@ export function grantFirstClear(game: GameState): {
   grant(game.wallet, 'gold', gift.gold);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
-  // No weapon here: `lampwrightWeapon` is where one is put in your hands.
+  // No weapon here: `armForSkill` is where one is put in your hands.
   return { gold: gift.gold, currency: gift.currency };
 }
 
-/** The first weapon, picked off the SKILL. Marked, because the guided opening
- *  rings this piece and every looser reading let a drop satisfy the step. */
-export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlace } | null {
+/** THE FIRST WEAPON, picked off the SKILL and put in your hands as the
+ *  character is MADE — *"It should just be you pick character/name/skill and
+ *  land in the town. Have it just give you an appropriate weapon for the skill
+ *  you picked."* Marked twice over: `given` so nobody hands you a second, and
+ *  `meta.firstClear` so a heal can find the piece again. */
+export function armForSkill(game: GameState): { item: Item; where: GiftPlace } | null {
   const base = starterWeapon(SKILL_BY_ID[mainSkillId(game.character)]);
   if (!base) return null;
+  if (!(game.given ?? []).includes('weapon')) game.given = [...(game.given ?? []), 'weapon'];
   const item = makeGear(base, 1);
   item.meta.firstClear = true;
   const where = giveGift(game, item);

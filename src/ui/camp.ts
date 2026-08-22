@@ -73,7 +73,7 @@ export function initCamp(state: GameState, screens: Record<string, (spot: Hotspo
 /** One button per rectangle. A hotspot is a BUTTON rather than a hit test on a
  *  canvas: a keyboard reaches it, a screen reader names it, and the hover is
  *  the game's own tooltip like everywhere else. */
-function mount(spot: Hotspot): void {
+function mount(spot: Hotspot, host = 'camp-hotspots'): void {
   const btn = document.createElement('button');
   btn.className = 'camp__hot';
   btn.id = `camp-${spot.id}`;
@@ -89,7 +89,27 @@ function mount(spot: Hotspot): void {
   // Hover carries meaning, because this is a desktop game.
   btn.onpointerenter = (event) => showTooltip(says(spot), event.clientX, event.clientY);
   btn.onpointerleave = () => hideTooltip();
-  $('camp-hotspots').append(btn);
+  $(host).append(btn);
+}
+
+/** A PERSON is a hotspot too, and theirs moves: it is wherever their body was
+ *  drawn, which is a spot and the size of that body's own grid. */
+function mountFolk(): void {
+  const host = $('camp-folk');
+  host.replaceChildren();
+  folkMet(game).forEach((def, i) => {
+    const grid = (GENERATED[def.who]?.grid ?? 32) * CAMP_HERO_SCALE;
+    const at = CAMP_SPOTS[i % CAMP_SPOTS.length];
+    mount(
+      {
+        id: `who-${def.id}`,
+        x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
+        opens: 'room', room: def.id,
+        says: `${def.name}. ${def.said}`,
+      },
+      'camp-folk'
+    );
+  });
 }
 
 /** What a socket says is what is IN it, which the table cannot know. */
@@ -101,6 +121,7 @@ function says(spot: Hotspot): string {
 
 /** THE SOCKETS SHOW WHAT IS IN THEM, over the hollow the art drew. */
 export function renderCamp(): void {
+  mountFolk();
   const host = $('camp-crystals');
   host.replaceChildren();
   for (const spot of CAMP_HOTSPOTS) {
